@@ -88,7 +88,7 @@ struct _FlRendererClass {
  *
  * Returns: %TRUE if successfully setup.
  */
-gboolean fl_renderer_setup(FlRenderer* self, GError** error);
+gboolean fl_renderer_setup(FlRenderer* renderer, GError** error);
 
 /**
  * fl_renderer_get_visual:
@@ -101,7 +101,7 @@ gboolean fl_renderer_setup(FlRenderer* self, GError** error);
  *
  * Returns: a #GdkVisual.
  */
-GdkVisual* fl_renderer_get_visual(FlRenderer* self,
+GdkVisual* fl_renderer_get_visual(FlRenderer* renderer,
                                   GdkScreen* screen,
                                   GError** error);
 
@@ -124,7 +124,7 @@ void fl_renderer_set_window(FlRenderer* renderer, GdkWindow* window);
  *
  * Returns: %TRUE if successfully started.
  */
-gboolean fl_renderer_start(FlRenderer* self, GError** error);
+gboolean fl_renderer_start(FlRenderer* renderer, GError** error);
 
 /**
  * fl_renderer_set_geometry:

@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/mapping.h"
@@ -23,14 +22,15 @@ namespace testing {
 
 class TestIOManager final : public IOManager {
  public:
-  TestIOManager(fml::RefPtr<fml::TaskRunner> task_runner,
-                bool has_gpu_context = true)
+  explicit TestIOManager(fml::RefPtr<fml::TaskRunner> task_runner,
+                         bool has_gpu_context = true)
       : gl_surface_(SkISize::Make(1, 1)),
         gl_context_(has_gpu_context ? gl_surface_.CreateGrContext() : nullptr),
         weak_gl_context_factory_(
-            has_gpu_context ? std::make_unique<fml::WeakPtrFactory<GrContext>>(
-                                  gl_context_.get())
-                            : nullptr),
+            has_gpu_context
+                ? std::make_unique<fml::WeakPtrFactory<GrDirectContext>>(
+                      gl_context_.get())
+                : nullptr),
         unref_queue_(fml::MakeRefCounted<SkiaUnrefQueue>(
             task_runner,
             fml::TimeDelta::FromNanoseconds(0))),
@@ -59,9 +59,9 @@ class TestIOManager final : public IOManager {
   }
 
   // |IOManager|
-  fml::WeakPtr<GrContext> GetResourceContext() const override {
+  fml::WeakPtr<GrDirectContext> GetResourceContext() const override {
     return weak_gl_context_factory_ ? weak_gl_context_factory_->GetWeakPtr()
-                                    : fml::WeakPtr<GrContext>{};
+                                    : fml::WeakPtr<GrDirectContext>{};
   }
 
   // |IOManager|
@@ -79,8 +79,9 @@ class TestIOManager final : public IOManager {
 
  private:
   TestGLSurface gl_surface_;
-  sk_sp<GrContext> gl_context_;
-  std::unique_ptr<fml::WeakPtrFactory<GrContext>> weak_gl_context_factory_;
+  sk_sp<GrDirectContext> gl_context_;
+  std::unique_ptr<fml::WeakPtrFactory<GrDirectContext>>
+      weak_gl_context_factory_;
   fml::RefPtr<SkiaUnrefQueue> unref_queue_;
   fml::WeakPtr<TestIOManager> weak_prototype_;
   fml::RefPtr<fml::TaskRunner> runner_;
@@ -163,7 +164,8 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
     ASSERT_FALSE(data);
 
     fml::RefPtr<ImageDescriptor> image_descriptor =
-        fml::MakeRefCounted<ImageDescriptor>(std::move(data), nullptr);
+        fml::MakeRefCounted<ImageDescriptor>(std::move(data),
+                                             std::unique_ptr<SkCodec>(nullptr));
 
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());

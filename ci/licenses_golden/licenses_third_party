@@ -1,4 +1,4 @@
-Signature: ace4b50b35dcf1f0615ef82b87950698
+Signature: e5e62a5e316512fab90e0e3943c31ce0
 
 UNUSED LICENSES:
 
@@ -394,10 +394,10 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/WindowSurfaceEGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/android/DisplayAndroid.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/android/DisplayAndroid.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/functionsegl_typedefs.h
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/ozone/DisplayOzone.cpp
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/ozone/DisplayOzone.h
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/ozone/SurfaceOzone.cpp
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/ozone/SurfaceOzone.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/gbm/DisplayGbm.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/gbm/DisplayGbm.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/gbm/SurfaceGbm.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/gbm/SurfaceGbm.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/SurfaceGLX.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/null/BufferNULL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/null/BufferNULL.h
@@ -645,6 +645,7 @@ FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/ang
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/Receiver.java
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/SearchProvider.java
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/vk_ext_provoking_vertex.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/vk_google_filtering_precision.h
 FILE: ../../../third_party/angle/util/android/third_party/android_native_app_glue.c
 FILE: ../../../third_party/angle/util/android/third_party/android_native_app_glue.h
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/METADATA
@@ -1287,7 +1288,6 @@ FILE: ../../../third_party/angle/src/common/system_utils_unittest.cpp
 FILE: ../../../third_party/angle/src/common/system_utils_win32.cpp
 FILE: ../../../third_party/angle/src/common/system_utils_winuwp.cpp
 FILE: ../../../third_party/angle/src/common/third_party/xxhash/xxhash_fuzzer.cpp
-FILE: ../../../third_party/angle/src/common/uniform_type_info_autogen.cpp
 FILE: ../../../third_party/angle/src/compiler/preprocessor/preprocessor.l
 FILE: ../../../third_party/angle/src/compiler/preprocessor/preprocessor.y
 FILE: ../../../third_party/angle/src/compiler/preprocessor/preprocessor_lex_autogen.cpp
@@ -1415,8 +1415,6 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_state_cache.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_state_cache.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_utils.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_utils.mm
-FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/serial_utils.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/serial_utils_unittest.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/DisplayVk_api.h
@@ -1892,15 +1890,6 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/Conver
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000005.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000006.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000007.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000008.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000009.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000A.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000B.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000C.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000D.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000E.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000F.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000010.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/FullScreenQuad.vert.00000000.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ImageClear.frag.00000000.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ImageClear.frag.00000001.inc
@@ -2175,10 +2164,14 @@ FILE: ../../../third_party/angle/include/GLES2/gl2ext_explicit_context_autogen.i
 FILE: ../../../third_party/angle/include/GLES3/gl31ext_explicit_context_autogen.inc
 FILE: ../../../third_party/angle/include/GLES3/gl32ext_explicit_context_autogen.inc
 FILE: ../../../third_party/angle/include/GLES3/gl3ext_explicit_context_autogen.inc
+FILE: ../../../third_party/angle/include/platform/Platform.h
 FILE: ../../../third_party/angle/src/common/PackedEGLEnums_autogen.cpp
 FILE: ../../../third_party/angle/src/common/PackedEGLEnums_autogen.h
 FILE: ../../../third_party/angle/src/common/PackedGLEnums_autogen.cpp
 FILE: ../../../third_party/angle/src/common/PackedGLEnums_autogen.h
+FILE: ../../../third_party/angle/src/common/uniform_type_info_autogen.cpp
+FILE: ../../../third_party/angle/src/common/vulkan/vulkan_icd.cpp
+FILE: ../../../third_party/angle/src/common/vulkan/vulkan_icd.h
 FILE: ../../../third_party/angle/src/compiler/translator/ImmutableString_ESSL_autogen.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/ImmutableString_autogen.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/ParseContext_ESSL_autogen.h
@@ -2269,10 +2262,18 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/RendererEAGL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/RendererEAGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.mm
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/PixmapSurfaceGLX.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/PixmapSurfaceGLX.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/glx_utils.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/glx_utils.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/null_functions.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/null_functions.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/load_functions_table_autogen.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_format_table_autogen.mm
+FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc
+FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/CommandProcessor.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/CommandProcessor.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/ProgramExecutableVk.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/ProgramExecutableVk.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/mac/IOSurfaceSurfaceVkMac.h
@@ -2374,6 +2375,8 @@ FILE: ../../../third_party/angle/util/egl_loader_autogen.h
 FILE: ../../../third_party/angle/util/frame_capture_utils.h
 FILE: ../../../third_party/angle/util/gles_loader_autogen.cpp
 FILE: ../../../third_party/angle/util/gles_loader_autogen.h
+FILE: ../../../third_party/angle/util/png_utils.cpp
+FILE: ../../../third_party/angle/util/png_utils.h
 FILE: ../../../third_party/angle/util/windows/wgl_loader_autogen.cpp
 FILE: ../../../third_party/angle/util/windows/wgl_loader_autogen.h
 ----------------------------------------------------------------------------------------------------
@@ -2939,7 +2942,7 @@ ORIGIN: ../../../third_party/angle/include/platform/FeaturesD3D.h + ../../../thi
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/include/platform/FeaturesD3D.h
 FILE: ../../../third_party/angle/include/platform/FeaturesGL.h
-FILE: ../../../third_party/angle/include/platform/Platform.h
+FILE: ../../../third_party/angle/include/platform/PlatformMethods.h
 FILE: ../../../third_party/angle/samples/WindowTest/WindowTest.cpp
 FILE: ../../../third_party/angle/samples/multi_window/MultiWindow.cpp
 FILE: ../../../third_party/angle/src/common/Optional.h
@@ -3389,6 +3392,48 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: angle
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/DmaBufImageSiblingEGL.cpp + ../../../third_party/angle/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/DmaBufImageSiblingEGL.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/DmaBufImageSiblingEGL.h
+FILE: ../../../third_party/angle/util/fuchsia/FuchsiaPixmap.cpp
+FILE: ../../../third_party/angle/util/fuchsia/FuchsiaPixmap.h
+----------------------------------------------------------------------------------------------------
+Copyright The ANGLE Project Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+    Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+    Redistributions in binary form must reproduce the above
+    copyright notice, this list of conditions and the following
+    disclaimer in the documentation and/or other materials provided
+    with the distribution.
+
+    Neither the name of TransGaming Inc., Google Inc., 3DLabs Inc.
+    Ltd., nor the names of their contributors may be used to endorse
+    or promote products derived from this software without specific
+    prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: angle
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/blit.metal + ../../../third_party/angle/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/blit.metal
@@ -3588,6 +3633,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: base
 LIBRARY: icu
+LIBRARY: zlib
 ORIGIN: ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/numerics/safe_conversions.h
@@ -3595,6 +3641,9 @@ FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/numerics/
 FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/numerics/safe_math.h
 FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/numerics/safe_math_impl.h
 FILE: ../../../third_party/icu/icu.isolate
+FILE: ../../../third_party/zlib/google/compression_utils.cc
+FILE: ../../../third_party/zlib/google/compression_utils.h
+FILE: ../../../third_party/zlib/google/compression_utils_unittest.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2014 The Chromium Authors. All rights reserved.
 
@@ -3671,9 +3720,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: base
+LIBRARY: zlib
 ORIGIN: ../../../third_party/angle/src/common/third_party/base/anglebase/no_destructor.h + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/no_destructor.h
+FILE: ../../../third_party/zlib/contrib/bench/zlib_bench.cc
+FILE: ../../../third_party/zlib/contrib/optimizations/slide_hash_neon.h
+FILE: ../../../third_party/zlib/cpu_features.c
+FILE: ../../../third_party/zlib/cpu_features.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Chromium Authors. All rights reserved.
 
@@ -8375,6 +8429,7 @@ FILE: ../../../third_party/dart/sdk/lib/_http/embedder_config.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_struct_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/io/network_policy.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
@@ -9815,10 +9870,10 @@ FILE: ../../../third_party/dart/sdk/lib/core/null.dart
 FILE: ../../../third_party/dart/sdk/lib/core/stacktrace.dart
 FILE: ../../../third_party/dart/sdk/lib/core/string_sink.dart
 FILE: ../../../third_party/dart/sdk/lib/core/symbol.dart
+FILE: ../../../third_party/dart/sdk/lib/internal/bytes_builder.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/list.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/print.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/symbol.dart
-FILE: ../../../third_party/dart/sdk/lib/io/bytes_builder.dart
 FILE: ../../../third_party/dart/sdk/lib/io/data_transformer.dart
 FILE: ../../../third_party/dart/sdk/lib/io/file.dart
 FILE: ../../../third_party/dart/sdk/lib/io/file_impl.dart
@@ -22045,6 +22100,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/LICENSE
 TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/DEPS
 FILE: ../../../third_party/zlib/contrib/minizip/ChangeLogUnzip
 FILE: ../../../third_party/zlib/contrib/minizip/crypt.h
 FILE: ../../../third_party/zlib/contrib/minizip/ioapi.c
@@ -22058,17 +22114,19 @@ FILE: ../../../third_party/zlib/contrib/minizip/mztools.h
 FILE: ../../../third_party/zlib/contrib/minizip/unzip.c
 FILE: ../../../third_party/zlib/contrib/minizip/zip.c
 FILE: ../../../third_party/zlib/crc32.h
-FILE: ../../../third_party/zlib/google.patch
 FILE: ../../../third_party/zlib/google/DEPS
 FILE: ../../../third_party/zlib/inffixed.h
-FILE: ../../../third_party/zlib/mixed-source.patch
-FILE: ../../../third_party/zlib/mozzconf.h
+FILE: ../../../third_party/zlib/patches/0000-build.patch
+FILE: ../../../third_party/zlib/patches/0001-simd.patch
+FILE: ../../../third_party/zlib/patches/0002-uninitializedcheck.patch
+FILE: ../../../third_party/zlib/patches/0003-uninitializedjump.patch
+FILE: ../../../third_party/zlib/patches/0004-fix-uwp.patch
+FILE: ../../../third_party/zlib/patches/0005-infcover-gtest.patch
 FILE: ../../../third_party/zlib/trees.h
 ----------------------------------------------------------------------------------------------------
-zlib.h -- interface of the 'zlib' general purpose compression library
-version 1.2.4, March 14th, 2010
+version 1.2.11, January 15th, 2017
 
-Copyright (C) 1995-2010 Jean-loup Gailly and Mark Adler
+Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22085,9 +22143,6 @@ freely, subject to the following restrictions:
 2. Altered source versions must be plainly marked as such, and must not be
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
-
-Jean-loup Gailly
-Mark Adler
 ====================================================================================================
 
 ====================================================================================================
@@ -22096,7 +22151,7 @@ ORIGIN: ../../../third_party/zlib/adler32.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/adler32.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2007 Mark Adler
+Copyright (C) 1995-2011, 2016 Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22121,7 +22176,7 @@ ORIGIN: ../../../third_party/zlib/compress.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/compress.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2005 Jean-loup Gailly.
+Copyright (C) 1995-2005, 2014, 2016 Jean-loup Gailly, Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22209,11 +22264,165 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/chunkcopy.h + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/zlib/contrib/optimizations/chunkcopy.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2017 ARM, Inc.
+Copyright 2017 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.c + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.c
+FILE: ../../../third_party/zlib/inffast.c
+FILE: ../../../third_party/zlib/inftrees.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2017 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.h + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2003, 2010 Mark Adler
+Copyright (C) 2017 ARM, Inc.
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/inflate.c + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/contrib/optimizations/inflate.c
+FILE: ../../../third_party/zlib/infback.c
+FILE: ../../../third_party/zlib/inflate.c
+FILE: ../../../third_party/zlib/inflate.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/insert_string.h + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/zlib/contrib/optimizations/insert_string.h
+FILE: ../../../third_party/zlib/google/compression_utils_portable.cc
+FILE: ../../../third_party/zlib/google/compression_utils_portable.h
+----------------------------------------------------------------------------------------------------
+Copyright 2019 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/crc32.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/crc32.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2006, 2010 Mark Adler
+Copyright (C) 1995-2006, 2010, 2011, 2012, 2016 Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22269,7 +22478,7 @@ ORIGIN: ../../../third_party/zlib/deflate.h + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/deflate.h
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2010 Jean-loup Gailly
+Copyright (C) 1995-2016 Jean-loup Gailly
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22318,42 +22527,6 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/google/compression_utils_portable.cc + ../../../LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/zlib/google/compression_utils_portable.cc
-FILE: ../../../third_party/zlib/google/compression_utils_portable.h
-----------------------------------------------------------------------------------------------------
-Copyright 2019 The Chromium Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/google/zip.cc + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/zlib/google/zip.cc
@@ -22390,10 +22563,50 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/google/zip_writer.cc + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/zlib/adler32_simd.c
+FILE: ../../../third_party/zlib/adler32_simd.h
+FILE: ../../../third_party/zlib/chromeconf.h
+FILE: ../../../third_party/zlib/crc32_simd.c
+FILE: ../../../third_party/zlib/crc32_simd.h
+FILE: ../../../third_party/zlib/google/zip_writer.cc
+FILE: ../../../third_party/zlib/google/zip_writer.h
+----------------------------------------------------------------------------------------------------
+Copyright 2017 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/gzclose.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/gzclose.c
-FILE: ../../../third_party/zlib/gzlib.c
 ----------------------------------------------------------------------------------------------------
 Copyright (C) 2004, 2010 Mark Adler
 
@@ -22420,60 +22633,34 @@ ORIGIN: ../../../third_party/zlib/gzguts.h + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/gzguts.h
 FILE: ../../../third_party/zlib/gzread.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013, 2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/gzlib.c + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/gzlib.c
 FILE: ../../../third_party/zlib/gzwrite.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 2004, 2005, 2010 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/infback.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/infback.c
-FILE: ../../../third_party/zlib/inflate.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2009 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/inffast.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/inffast.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2008, 2010 Mark Adler
+Copyright (C) 2004-2017 Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22519,32 +22706,6 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/inflate.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/inflate.c
-FILE: ../../../third_party/zlib/inftrees.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2010 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/inftrees.h + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/inftrees.h
@@ -22570,36 +22731,11 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/simd_stub.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/simd_stub.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 2014 Intel Corporation
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/trees.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/trees.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2010 Jean-loup Gailly
+Copyright (C) 1995-2017 Jean-loup Gailly
 detect_data_type() function provided freely by Cosmin Truta, 2006
 
 This software is provided 'as-is', without any express or implied
@@ -22625,59 +22761,7 @@ ORIGIN: ../../../third_party/zlib/uncompr.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/uncompr.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2003, 2010 Jean-loup Gailly.
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/x86.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/x86.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 2013 Intel Corporation. All rights reserved.
-Author:
- Jim Kukunas
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/x86.h + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/x86.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 2013 Intel Corporation Jim Kukunas
+Copyright (C) 1995-2003, 2010, 2014, 2016 Jean-loup Gailly, Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22703,7 +22787,7 @@ TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/zconf.h
 FILE: ../../../third_party/zlib/zutil.h
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2010 Jean-loup Gailly.
+Copyright (C) 1995-2016 Jean-loup Gailly, Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22729,7 +22813,7 @@ TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/deflate.c
 FILE: ../../../third_party/zlib/zlib.h
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2010 Jean-loup Gailly and Mark Adler
+Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22754,7 +22838,7 @@ ORIGIN: ../../../third_party/zlib/zutil.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/zutil.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2005, 2010 Jean-loup Gailly.
+Copyright (C) 1995-2017 Jean-loup Gailly
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22772,4 +22856,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 359
+Total license count: 360
