@@ -22,7 +22,7 @@ class EngineLineMetrics implements ui.LineMetrics {
         startIndex = -1,
         endIndex = -1,
         endIndexWithoutNewlines = -1,
-        widthWithSpaces = width;
+        widthWithTrailingSpaces = width;
 
   EngineLineMetrics.withText(
     String this.displayText, {
@@ -31,7 +31,7 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.endIndexWithoutNewlines,
     required this.hardBreak,
     required this.width,
-    required this.widthWithSpaces,
+    required this.widthWithTrailingSpaces,
     required this.left,
     required this.lineNumber,
   })  : assert(displayText != null), // ignore: unnecessary_null_comparison
@@ -84,15 +84,15 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   /// The full width of the line including all trailing space but not new lines.
   ///
-  /// The difference between [width] and [widthWithSpaces] is that
-  /// [widthWithSpaces] includes trailing spaces in the width calculation
-  /// while [width] doesn't.
+  /// The difference between [width] and [widthWithTrailingSpaces] is that
+  /// [widthWithTrailingSpaces] includes trailing spaces in the width
+  /// calculation while [width] doesn't.
   ///
   /// For alignment purposes for example, the [width] property is the right one
   /// to use because trailing spaces shouldn't affect the centering of text.
   /// But for placing cursors in text fields, we do care about trailing
-  /// spaces so [widthWithSpaces] is more suitable.
-  final double widthWithSpaces;
+  /// spaces so [widthWithTrailingSpaces] is more suitable.
+  final double widthWithTrailingSpaces;
 
   @override
   final double left;
@@ -467,7 +467,7 @@ class EngineParagraph implements ui.Paragraph {
     return ui.TextBox.fromLTRBD(
       line.left + widthBeforeBox,
       top,
-      line.left + line.widthWithSpaces - widthAfterBox,
+      line.left + line.widthWithTrailingSpaces - widthAfterBox,
       top + _lineHeight,
       _textDirection,
     );
