@@ -21,6 +21,18 @@
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
   FlutterPlatformPlugin* plugin =
       [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()];
+
+  // Set some string to the pasteboard.
+  __block bool calledSet = false;
+  FlutterResult resultSet = ^(id result) {
+    calledSet = true;
+  };
+  FlutterMethodCall* methodCallSet =
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setClipboardData" arguments:@{@"text": @"some string"}];
+  [plugin handleMethodCall:methodCallSet result:resultSet];
+  XCTAssertEqual(calledSet, true);
+
+  // Call hasStrings and expect it to be true.
   __block bool called = false;
   __block bool value;
   FlutterResult result = ^(id result) {
