@@ -18,7 +18,11 @@ namespace flutter {
 
 class FlutterWindowsView;
 
-// Manages state associated with the underlying FlutterEngine.
+// Manages state associated with the underlying FlutterEngine that isn't
+// related to its display.
+//
+// In most cases this will be associated with a FlutterView, but if not will
+// run in headless mode.
 class FlutterWindowsEngine {
  public:
   // Creates a new Flutter engine object configured to run |project|.

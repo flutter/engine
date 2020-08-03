@@ -18,7 +18,11 @@
 
 namespace flutter {
 
-// An engine for running a headless Flutter application.
+// An instance of a Flutter engine.
+//
+// In the future, this will be the API surface used for all interactions with
+// the engine, rather than having them duplicated on FlutterViewController.
+// For now it is only used in the rare where you need a headless Flutter engine.
 class FlutterEngine : public PluginRegistry {
  public:
   // Creates a new engine for running the given project.
