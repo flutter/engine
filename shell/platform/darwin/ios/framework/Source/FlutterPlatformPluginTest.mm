@@ -28,7 +28,7 @@
     value = result[@"value"];
   };
   FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:@{}];
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
   [plugin handleMethodCall:methodCall result:result];
 
   XCTAssertEqual(called, true);
