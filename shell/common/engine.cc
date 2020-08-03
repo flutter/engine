@@ -28,12 +28,26 @@
 
 namespace flutter {
 
-static constexpr char kAssetChannel[] = "flutter/assets";
-static constexpr char kLifecycleChannel[] = "flutter/lifecycle";
-static constexpr char kNavigationChannel[] = "flutter/navigation";
-static constexpr char kLocalizationChannel[] = "flutter/localization";
-static constexpr char kSettingsChannel[] = "flutter/settings";
-static constexpr char kIsolateChannel[] = "flutter/isolate";
+Engine::Engine(
+    Delegate& delegate,
+    const PointerDataDispatcherMaker& dispatcher_maker,
+    std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
+    TaskRunners task_runners,
+    Settings settings,
+    std::unique_ptr<Animator> animator,
+    fml::WeakPtr<IOManager> io_manager,
+    std::unique_ptr<RuntimeController> runtime_controller)
+    : delegate_(delegate),
+      settings_(std::move(settings)),
+      animator_(std::move(animator)),
+      runtime_controller_(std::move(runtime_controller)),
+      activity_running_(true),
+      have_surface_(false),
+      image_decoder_(task_runners, image_decoder_task_runner, io_manager),
+      task_runners_(std::move(task_runners)),
+      weak_factory_(this) {
+  pointer_data_dispatcher_ = dispatcher_maker(*this);
+}
 
 Engine::Engine(Delegate& delegate,
                const PointerDataDispatcherMaker& dispatcher_maker,
@@ -46,19 +60,14 @@ Engine::Engine(Delegate& delegate,
                fml::WeakPtr<IOManager> io_manager,
                fml::RefPtr<SkiaUnrefQueue> unref_queue,
                fml::WeakPtr<SnapshotDelegate> snapshot_delegate)
-    : delegate_(delegate),
-      settings_(std::move(settings)),
-      animator_(std::move(animator)),
-      activity_running_(true),
-      have_surface_(false),
-      image_decoder_(task_runners,
-                     vm.GetConcurrentWorkerTaskRunner(),
-                     io_manager),
-      task_runners_(std::move(task_runners)),
-      weak_factory_(this) {
-  // Runtime controller is initialized here because it takes a reference to this
-  // object as its delegate. The delegate may be called in the constructor and
-  // we want to be fully initilazed by that point.
+    : Engine(delegate,
+             dispatcher_maker,
+             vm.GetConcurrentWorkerTaskRunner(),
+             task_runners,
+             settings,
+             std::move(animator),
+             io_manager,
+             nullptr) {
   runtime_controller_ = std::make_unique<RuntimeController>(
       *this,                        // runtime delegate
       &vm,                          // VM
@@ -76,8 +85,6 @@ Engine::Engine(Delegate& delegate,
       settings_.isolate_shutdown_callback,   // isolate shutdown callback
       settings_.persistent_isolate_data      // persistent isolate data
   );
-
-  pointer_data_dispatcher_ = dispatcher_maker(*this);
 }
 
 Engine::~Engine() = default;
@@ -291,31 +298,7 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
 }
 
 void Engine::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
-  std::string channel = message->channel();
-  if (channel == kLifecycleChannel) {
-    if (HandleLifecyclePlatformMessage(message.get())) {
-      return;
-    }
-  } else if (channel == kLocalizationChannel) {
-    if (HandleLocalizationPlatformMessage(message.get())) {
-      return;
-    }
-  } else if (channel == kSettingsChannel) {
-    HandleSettingsPlatformMessage(message.get());
-    return;
-  } else if (!runtime_controller_->IsRootIsolateRunning() &&
-             channel == kNavigationChannel) {
-    // If there's no runtime_, we may still need to set the initial route.
-    HandleNavigationPlatformMessage(std::move(message));
-    return;
-  }
-
-  if (runtime_controller_->IsRootIsolateRunning() &&
-      runtime_controller_->DispatchPlatformMessage(std::move(message))) {
-    return;
-  }
-
-  FML_DLOG(WARNING) << "Dropping platform message on channel: " << channel;
+  DispatchPlatformMessage(message, runtime_controller_.get());
 }
 
 bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {

@@ -249,6 +249,20 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   };
 
   //----------------------------------------------------------------------------
+  /// @brief      Creates an instance of the engine with a supplied
+  ///             `RuntimeController`.  Use the other constructor except for
+  ///             tests.
+  ///
+  Engine(Delegate& delegate,
+         const PointerDataDispatcherMaker& dispatcher_maker,
+         std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
+         TaskRunners task_runners,
+         Settings settings,
+         std::unique_ptr<Animator> animator,
+         fml::WeakPtr<IOManager> io_manager,
+         std::unique_ptr<RuntimeController> runtime_controller);
+
+  //----------------------------------------------------------------------------
   /// @brief      Creates an instance of the engine. This is done by the Shell
   ///             on the UI task runner.
   ///
@@ -664,6 +678,41 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
+  /// @brief      A version of `DispatchPlatformMessage` that allows delegating
+  ///             to a RuntimeControllerProxy.  You probably want the other
+  ///             `DispatchPlatformMessage` unless you are writing tests.
+  ///
+  template <typename RuntimeControllerProxy>
+  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message,
+                               RuntimeControllerProxy runtime_controller) {
+    std::string channel = message->channel();
+    if (channel == kLifecycleChannel) {
+      if (HandleLifecyclePlatformMessage(message.get())) {
+        return;
+      }
+    } else if (channel == kLocalizationChannel) {
+      if (HandleLocalizationPlatformMessage(message.get())) {
+        return;
+      }
+    } else if (channel == kSettingsChannel) {
+      HandleSettingsPlatformMessage(message.get());
+      return;
+    } else if (!runtime_controller->IsRootIsolateRunning() &&
+               channel == kNavigationChannel) {
+      // If there's no runtime_, we may still need to set the initial route.
+      HandleNavigationPlatformMessage(std::move(message));
+      return;
+    }
+
+    if (runtime_controller->IsRootIsolateRunning() &&
+        runtime_controller->DispatchPlatformMessage(std::move(message))) {
+      return;
+    }
+
+    FML_DLOG(WARNING) << "Dropping platform message on channel: " << channel;
+  }
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a pointer
   ///             data packet. A pointer data packet may contain multiple
   ///             input events. This call originates in the platform view and
@@ -756,7 +805,20 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   const std::string& GetLastEntrypointLibrary() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Getter for the initial route.  This can be set with a platform
+  ///             message.
+  ///
+  const std::string& InitialRoute() const { return initial_route_; }
+
  private:
+  static constexpr char kAssetChannel[] = "flutter/assets";
+  static constexpr char kLifecycleChannel[] = "flutter/lifecycle";
+  static constexpr char kNavigationChannel[] = "flutter/navigation";
+  static constexpr char kLocalizationChannel[] = "flutter/localization";
+  static constexpr char kSettingsChannel[] = "flutter/settings";
+  static constexpr char kIsolateChannel[] = "flutter/isolate";
+
   Engine::Delegate& delegate_;
   const Settings settings_;
   std::unique_ptr<Animator> animator_;
