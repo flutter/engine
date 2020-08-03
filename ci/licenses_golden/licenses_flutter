@@ -335,12 +335,17 @@ FILE: ../../../flutter/lib/ui/painting/image.h
 FILE: ../../../flutter/lib/ui/painting/image_decoder.cc
 FILE: ../../../flutter/lib/ui/painting/image_decoder.h
 FILE: ../../../flutter/lib/ui/painting/image_decoder_unittests.cc
+FILE: ../../../flutter/lib/ui/painting/image_descriptor.cc
+FILE: ../../../flutter/lib/ui/painting/image_descriptor.h
 FILE: ../../../flutter/lib/ui/painting/image_encoding.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.h
+FILE: ../../../flutter/lib/ui/painting/image_encoding_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.h
 FILE: ../../../flutter/lib/ui/painting/image_shader.cc
 FILE: ../../../flutter/lib/ui/painting/image_shader.h
+FILE: ../../../flutter/lib/ui/painting/immutable_buffer.cc
+FILE: ../../../flutter/lib/ui/painting/immutable_buffer.h
 FILE: ../../../flutter/lib/ui/painting/matrix.cc
 FILE: ../../../flutter/lib/ui/painting/matrix.h
 FILE: ../../../flutter/lib/ui/painting/multi_frame_codec.cc
@@ -394,6 +399,9 @@ FILE: ../../../flutter/lib/ui/ui_benchmarks.cc
 FILE: ../../../flutter/lib/ui/ui_dart_state.cc
 FILE: ../../../flutter/lib/ui/ui_dart_state.h
 FILE: ../../../flutter/lib/ui/window.dart
+FILE: ../../../flutter/lib/ui/window/platform_configuration.cc
+FILE: ../../../flutter/lib/ui/window/platform_configuration.h
+FILE: ../../../flutter/lib/ui/window/platform_configuration_unittests.cc
 FILE: ../../../flutter/lib/ui/window/platform_message.cc
 FILE: ../../../flutter/lib/ui/window/platform_message.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response.cc
@@ -570,6 +578,8 @@ FILE: ../../../flutter/runtime/dart_vm_unittests.cc
 FILE: ../../../flutter/runtime/embedder_resources.cc
 FILE: ../../../flutter/runtime/embedder_resources.h
 FILE: ../../../flutter/runtime/fixtures/runtime_test.dart
+FILE: ../../../flutter/runtime/platform_data.cc
+FILE: ../../../flutter/runtime/platform_data.h
 FILE: ../../../flutter/runtime/ptrace_ios.cc
 FILE: ../../../flutter/runtime/ptrace_ios.h
 FILE: ../../../flutter/runtime/runtime_controller.cc
@@ -582,8 +592,6 @@ FILE: ../../../flutter/runtime/skia_concurrent_executor.cc
 FILE: ../../../flutter/runtime/skia_concurrent_executor.h
 FILE: ../../../flutter/runtime/test_font_data.cc
 FILE: ../../../flutter/runtime/test_font_data.h
-FILE: ../../../flutter/runtime/window_data.cc
-FILE: ../../../flutter/runtime/window_data.h
 FILE: ../../../flutter/shell/common/animator.cc
 FILE: ../../../flutter/shell/common/animator.h
 FILE: ../../../flutter/shell/common/animator_unittests.cc
@@ -811,6 +819,9 @@ FILE: ../../../flutter/shell/platform/android/platform_message_response_android.
 FILE: ../../../flutter/shell/platform/android/platform_message_response_android.h
 FILE: ../../../flutter/shell/platform/android/platform_view_android.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android.h
+FILE: ../../../flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate.cc
+FILE: ../../../flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate.h
+FILE: ../../../flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate_unittests.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android_jni_impl.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android_jni_impl.h
 FILE: ../../../flutter/shell/platform/android/robolectric.properties

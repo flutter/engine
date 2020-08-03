@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
+// @dart = 2.10
 
 part of dart.ui;
 
@@ -25,7 +25,7 @@ class _StoredMessage {
 
 /// A fixed-size circular queue.
 class _RingBuffer<T> {
-  /// The underlying data for the RingBuffer.  ListQueue's dynamically resize,
+  /// The underlying data for the RingBuffer.  ListQueues dynamically resize,
   /// [_RingBuffer]s do not.
   final collection.ListQueue<T> _queue;
 
@@ -213,7 +213,7 @@ class ChannelBuffers {
   }
 }
 
-/// [ChannelBuffer]s that allow the storage of messages between the
+/// [ChannelBuffers] that allow the storage of messages between the
 /// Engine and the Framework.  Typically messages that can't be delivered
 /// are stored here until the Framework is able to process them.
 ///

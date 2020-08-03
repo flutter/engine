@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
@@ -11,7 +12,7 @@
 #include "flutter/shell/platform/android/surface/android_surface_mock.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 namespace testing {
@@ -30,7 +31,7 @@ class SurfaceMock : public Surface {
 
   MOCK_METHOD(SkMatrix, GetRootTransformation, (), (const, override));
 
-  MOCK_METHOD(GrContext*, GetContext, (), (override));
+  MOCK_METHOD(GrDirectContext*, GetContext, (), (override));
 
   MOCK_METHOD(flutter::ExternalViewEmbedder*,
               GetExternalViewEmbedder,
@@ -160,7 +161,6 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
 
   auto postpreroll_result = embedder->PostPrerollAction(raster_thread_merger);
   ASSERT_EQ(PostPrerollResult::kResubmitFrame, postpreroll_result);
-  ASSERT_TRUE(embedder->SubmitFrame(nullptr, nullptr));
 
   EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
   embedder->EndFrame(/*should_resubmit_frame=*/true, raster_thread_merger);
@@ -260,7 +260,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
       std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
 
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
-  auto gr_context = GrContext::MakeMock(nullptr);
+  auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
   auto surface_factory =
       [gr_context, window, frame_size](
@@ -479,7 +479,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
       std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
 
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
-  auto gr_context = GrContext::MakeMock(nullptr);
+  auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
   auto surface_factory =
       [gr_context, window, frame_size](

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// Listens to HTML "click" gestures detected by the browser.
@@ -24,7 +24,8 @@ class Tappable extends RoleManager {
     semanticsObject.setAriaRole(
         'button', semanticsObject.hasFlag(ui.SemanticsFlag.isButton));
 
-    if (!semanticsObject.hasFlag(ui.SemanticsFlag.isEnabled) &&
+    // Add `aria-disabled` for disabled buttons.
+    if (semanticsObject.enabledState() == EnabledState.disabled &&
         semanticsObject.hasFlag(ui.SemanticsFlag.isButton)) {
       semanticsObject.element.setAttribute('aria-disabled', 'true');
       _stopListening();

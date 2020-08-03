@@ -4,7 +4,7 @@
 
 // TODO(dnfield): Remove unused_import ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
-// @dart = 2.9
+// @dart = 2.10
 
 part of dart.ui;
 
@@ -238,7 +238,7 @@ void _runMainZoned(Function startMainIsolateFunction,
   }, null);
 }
 
-void _reportUnhandledException(String error, String stackTrace) native 'Window_reportUnhandledException';
+void _reportUnhandledException(String error, String stackTrace) native 'PlatformConfiguration_reportUnhandledException';
 
 /// Invokes [callback] inside the given [zone].
 void _invoke(void callback()?, Zone zone) {

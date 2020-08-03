@@ -56,7 +56,8 @@ bool RasterThreadMerger::IsOnRasterizingThread() const {
 
 void RasterThreadMerger::ExtendLeaseTo(size_t lease_term) {
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
-  if (lease_term_ != kLeaseNotSet && (int)lease_term > lease_term_) {
+  if (lease_term_ != kLeaseNotSet &&
+      static_cast<int>(lease_term) > lease_term_) {
     lease_term_ = lease_term;
   }
 }

@@ -13,7 +13,7 @@
 namespace fml {
 namespace benchmarking {
 
-static void BM_RegisterAndGetTasks(benchmark::State& state) {
+static void BM_RegisterAndGetTasks(benchmark::State& state) {  // NOLINT
   while (state.KeepRunning()) {
     auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
 
