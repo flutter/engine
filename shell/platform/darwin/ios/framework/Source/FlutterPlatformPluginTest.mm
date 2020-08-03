@@ -28,7 +28,8 @@
     calledSet = true;
   };
   FlutterMethodCall* methodCallSet =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setClipboardData" arguments:@{@"text": @"some string"}];
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setClipboardData"
+                                        arguments:@{@"text" : @"some string"}];
   [plugin handleMethodCall:methodCallSet result:resultSet];
   XCTAssertEqual(calledSet, true);
 
