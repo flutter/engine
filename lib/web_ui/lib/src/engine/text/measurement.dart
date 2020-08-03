@@ -435,6 +435,7 @@ class DomTextMeasurementService extends TextMeasurementService {
               _excludeTrailing(text, 0, text.length, _newlinePredicate),
           hardBreak: true,
           width: lineWidth,
+          widthWithSpaces: lineWidth,
           left: alignOffset,
           lineNumber: 0,
         ),
@@ -804,6 +805,7 @@ class LinesCalculator {
               _excludeTrailing(_text!, _chunkStart, chunkEnd, _newlinePredicate),
           hardBreak: false,
           width: widthOfResultingLine,
+          widthWithSpaces: widthOfResultingLine,
           left: alignOffset,
           lineNumber: lines.length,
         ));
@@ -858,6 +860,8 @@ class LinesCalculator {
     );
     final int lineNumber = lines.length;
     final double lineWidth = measureSubstring(_lineStart, endWithoutSpace);
+    final double lineWidthWithSpaces =
+        measureSubstring(_lineStart, endWithoutNewlines);
     final double alignOffset = _calculateAlignOffsetForLine(
       paragraph: _paragraph,
       lineWidth: lineWidth,
@@ -870,6 +874,7 @@ class LinesCalculator {
       endIndexWithoutNewlines: endWithoutNewlines,
       hardBreak: isHardBreak,
       width: lineWidth,
+      widthWithSpaces: lineWidthWithSpaces,
       left: alignOffset,
       lineNumber: lineNumber,
     );
