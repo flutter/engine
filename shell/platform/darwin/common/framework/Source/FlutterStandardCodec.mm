@@ -109,6 +109,7 @@
   [writer writeValue:error.code];
   [writer writeValue:error.message];
   [writer writeValue:error.details];
+  [writer writeValue:error.stacktrace];
   return data;
 }
 
@@ -135,11 +136,13 @@
       id code = [reader readValue];
       id message = [reader readValue];
       id details = [reader readValue];
+      id stacktrace = [reader readValue];
       NSAssert(![reader hasMore], @"Corrupted standard envelope");
       NSAssert([code isKindOfClass:[NSString class]], @"Invalid standard envelope");
       NSAssert(message == nil || [message isKindOfClass:[NSString class]],
                @"Invalid standard envelope");
-      result = [FlutterError errorWithCode:code message:message details:details];
+      result = [FlutterError errorWithStacktrace:code message:message details:details
+          stacktrace:stacktrace];
     } break;
   }
   return result;

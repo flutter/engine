@@ -98,16 +98,24 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 
 @implementation FlutterError
 + (instancetype)errorWithCode:(NSString*)code message:(NSString*)message details:(id)details {
-  return [[[FlutterError alloc] initWithCode:code message:message details:details] autorelease];
+  return [[[FlutterError alloc] initWithCode:code message:message details:details
+      stacktrace:nil] autorelease];
 }
 
-- (instancetype)initWithCode:(NSString*)code message:(NSString*)message details:(id)details {
++ (instancetype)errorWithStacktrace:(NSString*)code message:(NSString*)message details:(id)details
+    stacktrace:(NSString*)stacktrace {
+  return [[[FlutterError alloc] initWithCode:code message:message details:details stacktrace:stacktrace] autorelease];
+}
+
+- (instancetype)initWithCode:(NSString*)code message:(NSString*)message details:(id)details
+    stacktrace:(NSString*) stacktrace {
   NSAssert(code, @"Code cannot be nil");
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _code = [code retain];
   _message = [message retain];
   _details = [details retain];
+  _stacktrace = [stacktrace retain];
   return self;
 }
 
@@ -115,6 +123,7 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
   [_code release];
   [_message release];
   [_details release];
+  [_stacktrace release];
   [super dealloc];
 }
 
@@ -242,6 +251,7 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   NSObject<FlutterMethodCodec>* codec = _codec;
   FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
     FlutterMethodCall* call = [codec decodeMethodCall:message];
+    @try {
     handler(call, ^(id result) {
       if (result == FlutterMethodNotImplemented)
         callback(nil);
@@ -250,6 +260,13 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
       else
         callback([codec encodeSuccessEnvelope:result]);
     });
+    } @catch (NSException *exception) {
+      NSString * stacktrace = [[exception.callStackSymbols valueForKey:@"description"] componentsJoinedByString:@"\n"];
+      callback([codec encodeErrorEnvelope:[FlutterError errorWithStacktrace:exception.name
+      message:exception.reason
+      details:nil
+      stacktrace:stacktrace]]);
+    }
   };
   _connection = [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
 }
