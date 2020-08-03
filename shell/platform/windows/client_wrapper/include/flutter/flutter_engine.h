@@ -55,14 +55,25 @@ class FlutterEngine : public PluginRegistry {
       const std::string& plugin_name) override;
 
  private:
-  using UniqueEnginePtr =
-      std::unique_ptr<FlutterDesktopEngine, bool (*)(FlutterDesktopEngine*)>;
+  // For access to RelinquishEngine.
+  friend class FlutterViewController;
+
+  // Gives up ownership of |engine_|, but keeps a weak reference to it.
+  //
+  // This is intended to be used by FlutterViewController, since the underlying
+  // C API for view controllers takes over engine ownership.
+  FlutterDesktopEngineRef RelinquishEngine();
 
   // Handle for interacting with the C API's engine reference.
-  UniqueEnginePtr engine_ =
-      UniqueEnginePtr(nullptr, FlutterDesktopShutDownEngine);
+  FlutterDesktopEngineRef engine_ = nullptr;
 
-  std::unique_ptr<DartProject> project_;
+  // Whether or not this wrapper owns |engine_|.
+  bool owns_engine_ = true;
+
+  // Whether the engine has been run. This will be true if Run has been called,
+  // or if RelinquishEngine has been called (since the view controller will
+  // run the engine if it hasn't already been run).
+  bool has_been_run_ = false;
 };
 
 }  // namespace flutter
