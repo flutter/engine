@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
@@ -160,7 +161,7 @@ class Surface {
         return _makeSoftwareCanvasSurface(htmlCanvas);
       }
 
-      return CkSurface(skSurface!, _grContext, glContext);
+      return CkSurface(skSurface, _grContext, glContext);
     }
   }
 

@@ -13,7 +13,7 @@
 #include "hb_wrappers.h"
 
 hb_codepoint_t ParseCodepoint(const std::string& arg) {
-  unsigned long value = 0;
+  uint64_t value = 0;
   // Check for \u123, u123, otherwise let strtoul work it out.
   if (arg[0] == 'u') {
     value = strtoul(arg.c_str() + 1, nullptr, 16);

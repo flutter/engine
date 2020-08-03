@@ -118,8 +118,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           if (platformViewRequests.get(viewId) != null) {
             platformViewRequests.remove(viewId);
           }
-          if (platformViews.get(viewId) != null) {
-            ((FlutterView) flutterView).removeView(mutatorViews.get(viewId));
+
+          final View platformView = platformViews.get(viewId);
+          if (platformView != null) {
+            final FlutterMutatorView mutatorView = mutatorViews.get(viewId);
+            mutatorView.removeView(platformView);
+            ((FlutterView) flutterView).removeView(mutatorView);
             platformViews.remove(viewId);
             mutatorViews.remove(viewId);
           }
@@ -679,13 +683,22 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     PlatformView platformView = factory.create(context, viewId, createParams);
     View view = platformView.getView();
+
+    if (view == null) {
+      throw new IllegalStateException(
+          "PlatformView#getView() returned null, but an Android view reference was expected.");
+    }
+    if (view.getParent() != null) {
+      throw new IllegalStateException(
+          "The Android view returned from PlatformView#getView() was already added to a parent view.");
+    }
     platformViews.put(viewId, view);
 
     FlutterMutatorView mutatorView =
         new FlutterMutatorView(
             context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
     mutatorViews.put(viewId, mutatorView);
-    mutatorView.addView(platformView.getView());
+    mutatorView.addView(view);
     ((FlutterView) flutterView).addView(mutatorView);
   }
 
@@ -700,7 +713,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       int width,
       int height,
       int viewWidth,
-      int ViewHeight,
+      int viewHeight,
       FlutterMutatorsStack mutatorsStack) {
     initializeRootImageViewIfNeeded();
     initializePlatformViewIfNeeded(viewId);
@@ -710,7 +723,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     mutatorView.setVisibility(View.VISIBLE);
     mutatorView.bringToFront();
 
-    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(viewWidth, ViewHeight);
+    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(viewWidth, viewHeight);
     View platformView = platformViews.get(viewId);
     platformView.setLayoutParams(layoutParams);
     platformView.bringToFront();
@@ -740,6 +753,20 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   public void onEndFrame() {
+    final FlutterView view = (FlutterView) flutterView;
+    // If there are no platform views in the current frame,
+    // then revert the image view surface and use the previous surface.
+    //
+    // Otherwise, acquire the latest image.
+    if (flutterViewConvertedToImageView && currentFrameUsedPlatformViewIds.isEmpty()) {
+      flutterViewConvertedToImageView = false;
+      view.revertImageView(
+          () -> {
+            // Destroy overlay surfaces once the surface reversion is completed.
+            finishFrame(false);
+          });
+      return;
+    }
     // Whether the current frame was rendered using ImageReaders.
     //
     // Since the image readers may not have images available at this point,
@@ -749,22 +776,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // If one of the surfaces doesn't have an image, the frame may be incomplete and must be
     // dropped.
     // For example, a toolbar widget painted by Flutter may not be rendered.
-    boolean isFrameRenderedUsingImageReaders = false;
+    boolean isFrameRenderedUsingImageReaders =
+        flutterViewConvertedToImageView && view.acquireLatestImageViewFrame();
+    finishFrame(isFrameRenderedUsingImageReaders);
+  }
 
-    if (flutterViewConvertedToImageView) {
-      FlutterView view = (FlutterView) flutterView;
-      // If there are no platform views in the current frame,
-      // then revert the image view surface and use the previous surface.
-      //
-      // Otherwise, acquire the latest image.
-      if (currentFrameUsedPlatformViewIds.isEmpty()) {
-        view.revertImageView();
-        flutterViewConvertedToImageView = false;
-      } else {
-        isFrameRenderedUsingImageReaders = view.acquireLatestImageViewFrame();
-      }
-    }
-
+  private void finishFrame(boolean isFrameRenderedUsingImageReaders) {
     for (int i = 0; i < overlayLayerViews.size(); i++) {
       int overlayId = overlayLayerViews.keyAt(i);
       FlutterImageView overlayView = overlayLayerViews.valueAt(i);
@@ -805,6 +822,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
   }
 
+  @VisibleForTesting
+  @TargetApi(19)
+  public FlutterOverlaySurface createOverlaySurface(@NonNull FlutterImageView imageView) {
+    final int id = nextOverlayLayerId++;
+    overlayLayerViews.put(id, imageView);
+    return new FlutterOverlaySurface(id, imageView.getSurface());
+  }
+
   @TargetApi(19)
   public FlutterOverlaySurface createOverlaySurface() {
     // Overlay surfaces have the same size as the background surface.
@@ -813,17 +838,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // if the drawings they contain have a different tight bound.
     //
     // The final view size is determined when its frame is set.
-    FlutterImageView imageView =
+    return createOverlaySurface(
         new FlutterImageView(
             flutterView.getContext(),
             flutterView.getWidth(),
             flutterView.getHeight(),
-            FlutterImageView.SurfaceKind.overlay);
-
-    int id = nextOverlayLayerId++;
-    overlayLayerViews.put(id, imageView);
-
-    return new FlutterOverlaySurface(id, imageView.getSurface());
+            FlutterImageView.SurfaceKind.overlay));
   }
 
   public void destroyOverlaySurfaces() {
