@@ -90,9 +90,12 @@ void _hideAutofillElements(html.HtmlElement domElement,
 /// text fields with more than one text field.
 class EngineAutofillForm {
   EngineAutofillForm(
-      {this.formElement, this.elements, this.items, this.formIdentifier = ''});
+      {required this.formElement,
+      this.elements,
+      this.items,
+      this.formIdentifier = ''});
 
-  final html.FormElement? formElement;
+  final html.FormElement formElement;
 
   final Map<String, html.HtmlElement>? elements;
 
@@ -104,7 +107,7 @@ class EngineAutofillForm {
   /// form.
   ///
   /// It used for storing the form until submission.
-  /// See [FormStore].
+  /// See [formsOnTheDom].
   final String formIdentifier;
 
   static EngineAutofillForm? fromFrameworkMessage(
@@ -167,21 +170,30 @@ class EngineAutofillForm {
       }
     }
 
+    final String formIdentifier = ids.toString();
     // Remove.
-    print('form id: ${ids.toString()}');
-    // TODO: if there is a form with the same id in the FormStore, remove it.
+    print('form id: ${formIdentifier}');
+
+    // If a form with the same Autofill elements is already on the dom, remove
+    // it from DOM.
+    if (formsOnTheDom[formIdentifier] != null) {
+      final html.FormElement form =
+          formsOnTheDom[formIdentifier] as html.FormElement;
+      form.remove();
+    }
 
     // In order to submit the form when Framework sends a `TextInput.commit`
     // message, we add a submit button to the form.
     final html.InputElement submitButton = html.InputElement();
     _hideAutofillElements(submitButton, outsideOfScreen: true);
+    submitButton.className = 'submitBtn';
     submitButton.type = 'submit';
 
     return EngineAutofillForm(
       formElement: formElement,
       elements: elements,
       items: items,
-      formIdentifier: ids.toString(),
+      formIdentifier: formIdentifier,
     );
   }
 
@@ -190,10 +202,8 @@ class EngineAutofillForm {
     domRenderer.glassPaneElement!.append(formElement!);
   }
 
-  void removeForm() {
-    // Remove.
-    // formElement!.remove();
-    // TODO: store the form in the FormStore.
+  void storeForm() {
+    formsOnTheDom[formIdentifier] = this.formElement;
   }
 
   /// Listens to `onInput` event on the form fields.
@@ -752,7 +762,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     _subscriptions.clear();
     domElement.remove();
     _domElement = null;
-    _inputConfiguration.autofillGroup?.removeForm();
+    _inputConfiguration.autofillGroup?.storeForm();
   }
 
   @mustCallSuper
@@ -1212,8 +1222,12 @@ class TextEditingChannel {
     window._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
   }
 
-  void saveForm() {
-    // TODO: submit all the forms in the formstore.
+  void saveForms() {
+    formsOnTheDom.forEach((String identifier, html.FormElement form) {
+      final html.InputElement submitBtn =
+          form.getElementsByClassName('submitBtn').first as html.InputElement;
+      submitBtn.click();
+    });
   }
 
   void cleanForms() {
@@ -1274,10 +1288,14 @@ class TextEditingChannel {
 /// Text editing singleton.
 final HybridTextEditing textEditing = HybridTextEditing();
 
-// Remove.
-/// Form storage singleton.
+/// Map for storing forms left attached on the DOM.
 ///
-/// Used for keeping the form elements on the DOM until
+/// Used for keeping the form elements on the DOM until user confirms to
+/// save or cancel them.
+///
+/// See: https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/text_input.dart#L1277
+final Map<String, html.FormElement> formsOnTheDom =
+    Map<String, html.FormElement>();
 
 /// Should be used as a singleton to provide support for text editing in
 /// Flutter Web.

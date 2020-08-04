@@ -1516,7 +1516,7 @@ void main() {
       // Form is attached to the DOM.
       expect(form, equals(formOnDom));
 
-      autofillForm.removeForm();
+      autofillForm.storeForm();
       expect(document.getElementsByTagName('form'), isEmpty);
     });
 
