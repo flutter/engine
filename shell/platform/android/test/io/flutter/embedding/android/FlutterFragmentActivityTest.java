@@ -1,6 +1,6 @@
 package io.flutter.embedding.android;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 import androidx.annotation.NonNull;
 import org.junit.Test;
@@ -12,10 +12,21 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 public class FlutterFragmentActivityTest {
   @Test
-  public void placeholder() {
-    // This is just a placeholder since this file only has a compile check currently.
-    // Delete when adding the first real test.
-    assertTrue(true);
+  public void createFlutterFragment__defaultRenderMode() {
+    final FlutterFragmentActivity activity = new FlutterFragmentActivity();
+    assertEquals(activity.createFlutterFragment().getRenderMode(), RenderMode.surface);
+  }
+
+  @Test
+  public void createFlutterFragment__customRenderMode() {
+    final FlutterFragmentActivity activity =
+        new FlutterFragmentActivity() {
+          @Override
+          protected RenderMode getRenderMode() {
+            return RenderMode.texture;
+          }
+        };
+    assertEquals(activity.createFlutterFragment().getRenderMode(), RenderMode.texture);
   }
 
   // This is just a compile time check to ensure that it's possible for FlutterFragmentActivity
