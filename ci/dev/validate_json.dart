@@ -31,7 +31,10 @@ Future<void> main(List<String> args) async {
         "builders":[
           {
             "name":"xxx",
-            "repo":"cocoon"
+            "repo":"engine"
+          }, {
+            "name":"xxx",
+            "repo":"engine"
           }
         ]
       }''');
@@ -40,7 +43,7 @@ Future<void> main(List<String> args) async {
   } on ExitException catch (error) {
     error.apply();
   }
-  print('$clock ${bold}Analysis successful.$reset');
+  print('$clock ${bold}Analysis successful for ${args[0]}.$reset');
 }
 
 class ExitException implements Exception {
