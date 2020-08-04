@@ -28,6 +28,13 @@
 
 namespace flutter {
 
+static constexpr char kAssetChannel[] = "flutter/assets";
+static constexpr char kLifecycleChannel[] = "flutter/lifecycle";
+static constexpr char kNavigationChannel[] = "flutter/navigation";
+static constexpr char kLocalizationChannel[] = "flutter/localization";
+static constexpr char kSettingsChannel[] = "flutter/settings";
+static constexpr char kIsolateChannel[] = "flutter/isolate";
+
 Engine::Engine(
     Delegate& delegate,
     const PointerDataDispatcherMaker& dispatcher_maker,

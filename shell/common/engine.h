@@ -777,13 +777,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   const std::string& InitialRoute() const { return initial_route_; }
 
  private:
-  static constexpr char kAssetChannel[] = "flutter/assets";
-  static constexpr char kLifecycleChannel[] = "flutter/lifecycle";
-  static constexpr char kNavigationChannel[] = "flutter/navigation";
-  static constexpr char kLocalizationChannel[] = "flutter/localization";
-  static constexpr char kSettingsChannel[] = "flutter/settings";
-  static constexpr char kIsolateChannel[] = "flutter/isolate";
-
   Engine::Delegate& delegate_;
   const Settings settings_;
   std::unique_ptr<Animator> animator_;
