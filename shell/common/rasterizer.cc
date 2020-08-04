@@ -290,6 +290,7 @@ RasterStatus Rasterizer::DoDraw(
 #if !defined(OS_FUCHSIA)
   const fml::TimePoint frame_target_time = layer_tree->target_time();
 #endif
+  timing.Set(FrameTiming::kVsyncStart, layer_tree->vsync_start());
   timing.Set(FrameTiming::kBuildStart, layer_tree->build_start());
   timing.Set(FrameTiming::kBuildFinish, layer_tree->build_finish());
   timing.Set(FrameTiming::kRasterStart, fml::TimePoint::Now());
@@ -382,7 +383,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   // There is no way for the compositor to know how long the layer tree
   // construction took. Fortunately, the layer tree does. Grab that time
   // for instrumentation.
-  compositor_context_->ui_time().SetLapTime(layer_tree.build_time());
+  compositor_context_->ui_time().SetLapTime(layer_tree.vsync_time());
 
   auto* external_view_embedder = surface_->GetExternalViewEmbedder();
 

@@ -47,6 +47,11 @@ typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 ///
 /// [FrameTiming] records a timestamp of each phase for performance analysis.
 enum FramePhase {
+  /// When the UI thread receives the vsync signal from the operating system.
+  ///
+  /// See also [FrameTiming.vsyncOverhead].
+  vsyncStart,
+
   /// When the UI thread starts building a frame.
   ///
   /// See also [FrameTiming.buildDuration].
@@ -143,6 +148,10 @@ class FrameTiming {
   /// {@macro dart.ui.FrameTiming.fps_milliseconds}
   Duration get rasterDuration => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.rasterStart);
 
+  /// The duration between receiving the vsync signal and starting building the
+  /// frame.
+  Duration get vsyncOverhead => _rawDuration(FramePhase.vsyncStart) - _rawDuration(FramePhase.buildStart);
+
   /// The timespan between build start and raster finish.
   ///
   /// To achieve the lowest latency on an X fps display, this should not exceed
@@ -150,7 +159,7 @@ class FrameTiming {
   /// {@macro dart.ui.FrameTiming.fps_milliseconds}
   ///
   /// See also [buildDuration] and [rasterDuration].
-  Duration get totalSpan => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.buildStart);
+  Duration get totalSpan => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.vsyncStart);
 
   final List<int> _timestamps;  // in microseconds
 
