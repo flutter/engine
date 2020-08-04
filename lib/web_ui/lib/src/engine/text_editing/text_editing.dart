@@ -55,7 +55,8 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
 /// element.
 ///
 /// They are assigned once during the creation of the DOM element.
-void _hideAutofillElements(html.HtmlElement domElement) {
+void _hideAutofillElements(html.HtmlElement domElement,
+    {bool outsideOfScreen = false}) {
   final html.CssStyleDeclaration elementStyle = domElement.style;
   elementStyle
     ..whiteSpace = 'pre-wrap'
@@ -73,6 +74,12 @@ void _hideAutofillElements(html.HtmlElement domElement) {
     ..textShadow = 'transparent'
     ..transformOrigin = '0 0 0';
 
+  if (outsideOfScreen) {
+    elementStyle
+      ..top = '-50px'
+      ..left = '-50px';
+  }
+
   /// This property makes the input's blinking cursor transparent.
   elementStyle.setProperty('caret-color', 'transparent');
 }
@@ -82,13 +89,23 @@ void _hideAutofillElements(html.HtmlElement domElement) {
 /// These values are to be used when autofill is enabled and there is a group of
 /// text fields with more than one text field.
 class EngineAutofillForm {
-  EngineAutofillForm({this.formElement, this.elements, this.items});
+  EngineAutofillForm(
+      {this.formElement, this.elements, this.items, this.formIdentifier = ''});
 
   final html.FormElement? formElement;
 
   final Map<String, html.HtmlElement>? elements;
 
   final Map<String, AutofillInfo>? items;
+
+  /// Identifier for the form.
+  ///
+  /// It is constructed by concatenating uniqie ids of input elements on the
+  /// form.
+  ///
+  /// It used for storing the form until submission.
+  /// See [FormStore].
+  final String formIdentifier;
 
   static EngineAutofillForm? fromFrameworkMessage(
     Map<String, dynamic>? focusedElementAutofill,
@@ -109,8 +126,17 @@ class EngineAutofillForm {
 
     // Validation is in the framework side.
     formElement.noValidate = true;
+    formElement.method = 'post';
+    formElement.action = '#';
+    formElement.addEventListener('submit', (e) {
+      e.preventDefault();
+    });
 
     _hideAutofillElements(formElement);
+
+    // Form elements are always send with the same order from Framework
+    // therefore no sorting necessary for the ids.
+    final StringBuffer ids = StringBuffer();
 
     if (fields != null) {
       for (Map<String, dynamic> field in fields.cast<Map<String, dynamic>>()) {
@@ -119,6 +145,8 @@ class EngineAutofillForm {
             autofillInfo,
             textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
                 field['textCapitalization']));
+
+        ids.write(autofill.uniqueIdentifier);
 
         // The focused text editing element will not be created here.
         final AutofillInfo focusedElement =
@@ -139,10 +167,21 @@ class EngineAutofillForm {
       }
     }
 
+    // Remove.
+    print('form id: ${ids.toString()}');
+    // TODO: if there is a form with the same id in the FormStore, remove it.
+
+    // In order to submit the form when Framework sends a `TextInput.commit`
+    // message, we add a submit button to the form.
+    final html.InputElement submitButton = html.InputElement();
+    _hideAutofillElements(submitButton, outsideOfScreen: true);
+    submitButton.type = 'submit';
+
     return EngineAutofillForm(
       formElement: formElement,
       elements: elements,
       items: items,
+      formIdentifier: ids.toString(),
     );
   }
 
@@ -152,7 +191,9 @@ class EngineAutofillForm {
   }
 
   void removeForm() {
-    formElement!.remove();
+    // Remove.
+    // formElement!.remove();
+    // TODO: store the form in the FormStore.
   }
 
   /// Listens to `onInput` event on the form fields.
@@ -1156,8 +1197,12 @@ class TextEditingChannel {
         break;
 
       case 'TextInput.finishAutofillContext':
-        // TODO(nurhan): Handle saving autofill information on web.
-        // https://github.com/flutter/flutter/issues/59378
+        final bool saveForm = call.arguments as bool;
+        if (saveForm) {
+          print('save form');
+        } else {
+          cleanForms();
+        }
         break;
 
       default:
@@ -1165,6 +1210,16 @@ class TextEditingChannel {
             'Unsupported method call on the flutter/textinput channel: ${call.method}');
     }
     window._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+  }
+
+  void saveForm() {
+    // TODO: submit all the forms in the formstore.
+  }
+
+  void cleanForms() {
+    while (html.document.getElementsByTagName('form').length > 0) {
+      html.document.getElementsByTagName('form').last.remove();
+    }
   }
 
   /// Sends the 'TextInputClient.updateEditingState' message to the framework.
@@ -1218,6 +1273,11 @@ class TextEditingChannel {
 
 /// Text editing singleton.
 final HybridTextEditing textEditing = HybridTextEditing();
+
+// Remove.
+/// Form storage singleton.
+///
+/// Used for keeping the form elements on the DOM until
 
 /// Should be used as a singleton to provide support for text editing in
 /// Flutter Web.

@@ -1456,7 +1456,7 @@ void main() {
     test('validate multi element form', () {
       final List<dynamic> fields = createFieldValues(
           ['username', 'password', 'newPassword'],
-          ['field1', 'fields2', 'field3']);
+          ['field1', 'field2', 'field3']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
               createAutofillInfo('username', 'field1'), fields);
@@ -1467,6 +1467,8 @@ void main() {
       expect(autofillForm.items, hasLength(2));
       expect(autofillForm.formElement, isNotNull);
 
+      expect(autofillForm.formIdentifier, 'field1field2field3');
+
       final FormElement form = autofillForm.formElement;
       expect(form.childNodes, hasLength(2));
 
@@ -1474,7 +1476,7 @@ void main() {
       // Autofill value is applied to the element.
       expect(firstElement.name,
           BrowserAutofillHints.instance.flutterToEngine('password'));
-      expect(firstElement.id, 'fields2');
+      expect(firstElement.id, 'field2');
       expect(firstElement.type, 'password');
       if (browserEngine == BrowserEngine.firefox) {
         expect(firstElement.name,
