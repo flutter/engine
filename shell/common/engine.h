@@ -678,41 +678,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
-  /// @brief      A version of `DispatchPlatformMessage` that allows delegating
-  ///             to a RuntimeControllerProxy.  You probably want the other
-  ///             `DispatchPlatformMessage` unless you are writing tests.
-  ///
-  template <typename RuntimeControllerProxy>
-  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message,
-                               RuntimeControllerProxy runtime_controller) {
-    std::string channel = message->channel();
-    if (channel == kLifecycleChannel) {
-      if (HandleLifecyclePlatformMessage(message.get())) {
-        return;
-      }
-    } else if (channel == kLocalizationChannel) {
-      if (HandleLocalizationPlatformMessage(message.get())) {
-        return;
-      }
-    } else if (channel == kSettingsChannel) {
-      HandleSettingsPlatformMessage(message.get());
-      return;
-    } else if (!runtime_controller->IsRootIsolateRunning() &&
-               channel == kNavigationChannel) {
-      // If there's no runtime_, we may still need to set the initial route.
-      HandleNavigationPlatformMessage(std::move(message));
-      return;
-    }
-
-    if (runtime_controller->IsRootIsolateRunning() &&
-        runtime_controller->DispatchPlatformMessage(std::move(message))) {
-      return;
-    }
-
-    FML_DLOG(WARNING) << "Dropping platform message on channel: " << channel;
-  }
-
-  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a pointer
   ///             data packet. A pointer data packet may contain multiple
   ///             input events. This call originates in the platform view and
