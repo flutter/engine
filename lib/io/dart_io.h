@@ -6,6 +6,7 @@
 #define FLUTTER_LIB_IO_DART_IO_H_
 
 #include <cstdint>
+#include <string>
 
 #include "flutter/fml/macros.h"
 
@@ -13,7 +14,7 @@ namespace flutter {
 
 class DartIO {
  public:
-  static void InitForIsolate(bool disable_http);
+  static void InitForIsolate(bool prevent_insecure_connections, std::string domain_network_policy);
 
  private:
   FML_DISALLOW_IMPLICIT_CONSTRUCTORS(DartIO);

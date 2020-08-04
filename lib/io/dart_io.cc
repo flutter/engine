@@ -16,19 +16,25 @@ using tonic::ToDart;
 
 namespace flutter {
 
-void DartIO::InitForIsolate(bool disable_http) {
-  Dart_Handle result = Dart_SetNativeResolver(
-      Dart_LookupLibrary(ToDart("dart:io")), dart::bin::LookupIONative,
-      dart::bin::LookupIONativeSymbol);
+void DartIO::InitForIsolate(bool prevent_insecure_connections, std::string domain_network_policy) {
+  Dart_Handle ioLibrary = Dart_LookupLibrary(ToDart("dart:io"));
+  Dart_Handle result = Dart_SetNativeResolver(ioLibrary, dart::bin::LookupIONative, dart::bin::LookupIONativeSymbol);
   FML_CHECK(!LogIfError(result));
 
-  // The SDK expects this field to represent "allow http" so we switch the
+  // The SDK expects this field to represent "allow insecure connections" so we switch the
   // value.
-  Dart_Handle allow_http_value = disable_http ? Dart_False() : Dart_True();
-  Dart_Handle set_field_result =
-      Dart_SetField(Dart_LookupLibrary(ToDart("dart:_http")),
-                    ToDart("_embedderAllowsHttp"), allow_http_value);
-  FML_CHECK(!LogIfError(set_field_result));
+  Dart_Handle allow_insecure_connections = prevent_insecure_connections ? Dart_False() : Dart_True();
+  Dart_Handle allow_insecure_connections_result =
+      Dart_SetField(ioLibrary, ToDart("_mayInsecurelyConnectToAllDomains"), allow_insecure_connections);
+  FML_CHECK(!LogIfError(allow_insecure_connections_result));
+
+  if (!domain_network_policy.empty()) {
+    Dart_Handle dart_args[1];
+    dart_args[0] = ToDart(domain_network_policy);
+    Dart_Handle set_domain_network_policy_result =
+      Dart_Invoke(ioLibrary, ToDart("_setDomainPolicies"), 1, dart_args);
+    FML_CHECK(!LogIfError(set_domain_network_policy_result));
+  }
 }
 
 }  // namespace flutter

@@ -110,8 +110,8 @@ struct Settings {
   bool disable_dart_asserts = false;
 
   bool prevent_insecure_socket_connections = false;
-  // JSON-formatted domain network configuration.
-  std::string domain_network_configuration;
+  // JSON-formatted domain network policy.
+  std::string domain_network_policy;
 
   // Used as the script URI in debug messages. Does not affect how the Dart code
   // is executed.

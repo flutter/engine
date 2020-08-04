@@ -14,6 +14,9 @@ final class FlutterApplicationInfo {
   final String domainNetworkPolicy;
   final String nativeLibraryDir;
   final boolean preventInsecureSocketConnections;
+  // TODO(cyanlaz): Remove this when dynamic thread merging is done.
+  // https://github.com/flutter/flutter/issues/59930
+  final boolean useEmbeddedView;
 
   FlutterApplicationInfo(
       String aotSharedLibraryName,
@@ -22,7 +25,8 @@ final class FlutterApplicationInfo {
       String flutterAssetsDir,
       String domainNetworkPolicy,
       String nativeLibraryDir,
-      boolean preventInsecureSocketConnections) {
+      boolean preventInsecureSocketConnections,
+      boolean useEmbeddedView) {
     this.aotSharedLibraryName =
         aotSharedLibraryName == null ? DEFAULT_AOT_SHARED_LIBRARY_NAME : aotSharedLibraryName;
     this.vmSnapshotData =
@@ -35,6 +39,7 @@ final class FlutterApplicationInfo {
     // Can be null
     this.domainNetworkPolicy = domainNetworkPolicy;
     this.preventInsecureSocketConnections = preventInsecureSocketConnections;
+    this.useEmbeddedView = useEmbeddedView;
   }
 }
 

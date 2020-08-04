@@ -139,7 +139,8 @@ DartIsolate::DartIsolate(const Settings& settings,
                   settings.unhandled_exception_callback,
                   DartVMRef::GetIsolateNameServer(),
                   is_root_isolate),
-      disable_http_(settings.disable_http) {
+      prevent_insecure_connections_(settings.prevent_insecure_socket_connections),
+      domain_network_policy_(settings.domain_network_policy) {
   phase_ = Phase::Uninitialized;
 }
 
@@ -263,7 +264,7 @@ bool DartIsolate::LoadLibraries() {
 
   tonic::DartState::Scope scope(this);
 
-  DartIO::InitForIsolate(disable_http_);
+  DartIO::InitForIsolate(prevent_insecure_connections_, domain_network_policy_);
 
   DartUI::InitForIsolate();
 

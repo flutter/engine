@@ -74,6 +74,11 @@ final class ApplicationInfoLoader {
     return output.toString();
   }
 
+  private boolean getUseEmbeddedView(ApplicationInfo appInfo) {
+    Bundle bundle = appInfo.metaData;
+    return bundle != null && bundle.getBoolean("io.flutter.embedded_views_preview");
+  }
+
   private void parseDomainConfig(
       XmlResourceParser xrp, JSONArray output, boolean inheritedCleartextPermitted)
       throws IOException, XmlPullParserException {
@@ -123,21 +128,21 @@ final class ApplicationInfoLoader {
   @NonNull
   public FlutterApplicationInfo initConfig(@NonNull Context applicationContext) {
     ApplicationInfo appInfo = getApplicationInfo(applicationContext);
-    String networkPolicy = getNetworkPolicy(appInfo, applicationContext);
-    System.err.println("mehmet: " + networkPolicy);
     // Prior to API 23, cleartext traffic is allowed.
     boolean preventInsecureSocketConnections = false;
     if (android.os.Build.VERSION.SDK_INT >= 23) {
       preventInsecureSocketConnections = !(NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted());
     }
+ 
     return new FlutterApplicationInfo(
         getString(appInfo.metaData, PUBLIC_AOT_SHARED_LIBRARY_NAME),
         getString(appInfo.metaData, PUBLIC_VM_SNAPSHOT_DATA_KEY),
         getString(appInfo.metaData, PUBLIC_ISOLATE_SNAPSHOT_DATA_KEY),
         getString(appInfo.metaData, PUBLIC_FLUTTER_ASSETS_DIR_KEY),
-        networkPolicy,
+        getNetworkPolicy(appInfo, applicationContext),
         appInfo.nativeLibraryDir,
-        preventInsecureSocketConnections);
+        preventInsecureSocketConnections,
+        getUseEmbeddedView(appInfo));
   }
 }
 

@@ -26,7 +26,7 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
-static NSString* DomainNetworkConfiguration(NSDictionary* appTransportSecurity) {
+static NSString* DomainNetworkPolicy(NSDictionary* appTransportSecurity) {
   if (appTransportSecurity == nil) {
     return @"";
   }
@@ -165,7 +165,7 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   // Domain network configuration
   NSDictionary *appTransportSecurity = [mainBundle objectForInfoDictionaryKey:@"NSAppTransportSecurity"];
   settings.prevent_insecure_socket_connections = !AllowsArbitraryLoads(appTransportSecurity);
-  settings.domain_network_configuration = DomainNetworkConfiguration(appTransportSecurity).UTF8String;
+  settings.domain_network_policy = DomainNetworkPolicy(appTransportSecurity).UTF8String;
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // There are no ownership concerns here as all mappings are owned by the
