@@ -43,10 +43,41 @@ class MockResponse : public PlatformMessageResponse {
   MOCK_METHOD(void, CompleteEmpty, (), (override));
 };
 
-class MockRuntimeController {
+class MockRuntimeDelegate : public RuntimeDelegate {
  public:
-  MOCK_METHOD(bool, IsRootIsolateRunning, ());
-  MOCK_METHOD(bool, DispatchPlatformMessage, (fml::RefPtr<PlatformMessage>));
+  MOCK_METHOD(std::string, DefaultRouteName, (), (override));
+  MOCK_METHOD(void, ScheduleFrame, (bool), (override));
+  MOCK_METHOD(void, Render, (std::unique_ptr<flutter::LayerTree>), (override));
+  MOCK_METHOD(void,
+              UpdateSemantics,
+              (SemanticsNodeUpdates, CustomAccessibilityActionUpdates),
+              (override));
+  MOCK_METHOD(void,
+              HandlePlatformMessage,
+              (fml::RefPtr<PlatformMessage>),
+              (override));
+  MOCK_METHOD(FontCollection&, GetFontCollection, (), (override));
+  MOCK_METHOD(void,
+              UpdateIsolateDescription,
+              (const std::string, int64_t),
+              (override));
+  MOCK_METHOD(void, SetNeedsReportTimings, (bool), (override));
+
+  MOCK_METHOD(std::unique_ptr<std::vector<std::string>>,
+              ComputePlatformResolvedLocale,
+              (const std::vector<std::string>&),
+              (override));
+};
+
+class MockRuntimeController : public RuntimeController {
+ public:
+  MockRuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners)
+      : RuntimeController(client, p_task_runners) {}
+  MOCK_METHOD(bool, IsRootIsolateRunning, (), (override, const));
+  MOCK_METHOD(bool,
+              DispatchPlatformMessage,
+              (fml::RefPtr<PlatformMessage>),
+              (override));
 };
 
 fml::RefPtr<PlatformMessage> MakePlatformMessage(
@@ -134,6 +165,11 @@ TEST_F(EngineTest, Create) {
 
 TEST_F(EngineTest, DispatchPlatformMessageUnknown) {
   PostUITaskSync([this] {
+    MockRuntimeDelegate client;
+    auto mock_runtime_controller =
+        std::make_unique<MockRuntimeController>(client, task_runners_);
+    EXPECT_CALL(*mock_runtime_controller, IsRootIsolateRunning())
+        .WillRepeatedly(::testing::Return(false));
     auto engine = std::make_unique<Engine>(
         /*delegate=*/delegate_,
         /*dispatcher_maker=*/dispatcher_maker_,
@@ -142,21 +178,23 @@ TEST_F(EngineTest, DispatchPlatformMessageUnknown) {
         /*settings=*/settings_,
         /*animator=*/std::move(animator_),
         /*io_manager=*/io_manager_,
-        /*runtime_controller=*/std::move(runtime_controller_));
+        /*runtime_controller=*/std::move(mock_runtime_controller));
 
     fml::RefPtr<PlatformMessageResponse> response =
         fml::MakeRefCounted<MockResponse>();
     fml::RefPtr<PlatformMessage> message =
         fml::MakeRefCounted<PlatformMessage>("foo", response);
-    MockRuntimeController mock_runtime_controller;
-    EXPECT_CALL(mock_runtime_controller, IsRootIsolateRunning())
-        .WillRepeatedly(::testing::Return(false));
-    engine->DispatchPlatformMessage(message, &mock_runtime_controller);
+    engine->DispatchPlatformMessage(message);
   });
 }
 
 TEST_F(EngineTest, DispatchPlatformMessageInitialRoute) {
   PostUITaskSync([this] {
+    MockRuntimeDelegate client;
+    auto mock_runtime_controller =
+        std::make_unique<MockRuntimeController>(client, task_runners_);
+    EXPECT_CALL(*mock_runtime_controller, IsRootIsolateRunning())
+        .WillRepeatedly(::testing::Return(false));
     auto engine = std::make_unique<Engine>(
         /*delegate=*/delegate_,
         /*dispatcher_maker=*/dispatcher_maker_,
@@ -165,7 +203,7 @@ TEST_F(EngineTest, DispatchPlatformMessageInitialRoute) {
         /*settings=*/settings_,
         /*animator=*/std::move(animator_),
         /*io_manager=*/io_manager_,
-        /*runtime_controller=*/std::move(runtime_controller_));
+        /*runtime_controller=*/std::move(mock_runtime_controller));
 
     fml::RefPtr<PlatformMessageResponse> response =
         fml::MakeRefCounted<MockResponse>();
@@ -175,16 +213,20 @@ TEST_F(EngineTest, DispatchPlatformMessageInitialRoute) {
     };
     fml::RefPtr<PlatformMessage> message =
         MakePlatformMessage("flutter/navigation", values, response);
-    MockRuntimeController mock_runtime_controller;
-    EXPECT_CALL(mock_runtime_controller, IsRootIsolateRunning())
-        .WillRepeatedly(::testing::Return(false));
-    engine->DispatchPlatformMessage(message, &mock_runtime_controller);
+    engine->DispatchPlatformMessage(message);
     EXPECT_EQ(engine->InitialRoute(), "test_initial_route");
   });
 }
 
 TEST_F(EngineTest, DispatchPlatformMessageInitialRouteIgnored) {
   PostUITaskSync([this] {
+    MockRuntimeDelegate client;
+    auto mock_runtime_controller =
+        std::make_unique<MockRuntimeController>(client, task_runners_);
+    EXPECT_CALL(*mock_runtime_controller, IsRootIsolateRunning())
+        .WillRepeatedly(::testing::Return(true));
+    EXPECT_CALL(*mock_runtime_controller, DispatchPlatformMessage(::testing::_))
+        .WillRepeatedly(::testing::Return(true));
     auto engine = std::make_unique<Engine>(
         /*delegate=*/delegate_,
         /*dispatcher_maker=*/dispatcher_maker_,
@@ -193,7 +235,7 @@ TEST_F(EngineTest, DispatchPlatformMessageInitialRouteIgnored) {
         /*settings=*/settings_,
         /*animator=*/std::move(animator_),
         /*io_manager=*/io_manager_,
-        /*runtime_controller=*/std::move(runtime_controller_));
+        /*runtime_controller=*/std::move(mock_runtime_controller));
 
     fml::RefPtr<PlatformMessageResponse> response =
         fml::MakeRefCounted<MockResponse>();
@@ -203,12 +245,7 @@ TEST_F(EngineTest, DispatchPlatformMessageInitialRouteIgnored) {
     };
     fml::RefPtr<PlatformMessage> message =
         MakePlatformMessage("flutter/navigation", values, response);
-    MockRuntimeController mock_runtime_controller;
-    EXPECT_CALL(mock_runtime_controller, IsRootIsolateRunning())
-        .WillRepeatedly(::testing::Return(true));
-    EXPECT_CALL(mock_runtime_controller, DispatchPlatformMessage(::testing::_))
-        .WillRepeatedly(::testing::Return(true));
-    engine->DispatchPlatformMessage(message, &mock_runtime_controller);
+    engine->DispatchPlatformMessage(message);
     EXPECT_EQ(engine->InitialRoute(), "");
   });
 }

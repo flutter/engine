@@ -298,7 +298,31 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
 }
 
 void Engine::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
-  DispatchPlatformMessage(message, runtime_controller_.get());
+  std::string channel = message->channel();
+  if (channel == kLifecycleChannel) {
+    if (HandleLifecyclePlatformMessage(message.get())) {
+      return;
+    }
+  } else if (channel == kLocalizationChannel) {
+    if (HandleLocalizationPlatformMessage(message.get())) {
+      return;
+    }
+  } else if (channel == kSettingsChannel) {
+    HandleSettingsPlatformMessage(message.get());
+    return;
+  } else if (!runtime_controller_->IsRootIsolateRunning() &&
+             channel == kNavigationChannel) {
+    // If there's no runtime_, we may still need to set the initial route.
+    HandleNavigationPlatformMessage(std::move(message));
+    return;
+  }
+
+  if (runtime_controller_->IsRootIsolateRunning() &&
+      runtime_controller_->DispatchPlatformMessage(std::move(message))) {
+    return;
+  }
+
+  FML_DLOG(WARNING) << "Dropping platform message on channel: " << channel;
 }
 
 bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {

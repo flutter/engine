@@ -16,6 +16,9 @@
 
 namespace flutter {
 
+RuntimeController::RuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners)
+    : client_(client), vm_(nullptr), task_runners_(p_task_runners) {}
+
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
     DartVM* p_vm,
@@ -113,7 +116,7 @@ bool RuntimeController::IsRootIsolateRunning() const {
 
 std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
   return std::unique_ptr<RuntimeController>(new RuntimeController(
-      client_,                      //
+      client_,                     //
       vm_,                          //
       isolate_snapshot_,            //
       task_runners_,                //
