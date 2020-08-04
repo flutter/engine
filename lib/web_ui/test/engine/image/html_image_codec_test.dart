@@ -31,7 +31,6 @@ Future<void> main() async {
     test('loads sample image from web', () async {
       final Uri uri = Uri.base.resolve('sample_image1.png');
       final HtmlCodec codec = await ui.webOnlyInstantiateImageCodecFromUrl(uri);
-      ;
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       expect(frameInfo.image, isNotNull);
       expect(frameInfo.image.width, 100);

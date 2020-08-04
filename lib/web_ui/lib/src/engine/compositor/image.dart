@@ -18,17 +18,13 @@ void skiaInstantiateImageCodec(Uint8List list, Callback<ui.Codec> callback,
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia after requesting from URI.
 void skiaInstantiateWebImageCodec(String src, Callback<ui.Codec> callback,
     WebOnlyImageCodecChunkCallback? chunkCallback) {
-  if (chunkCallback != null) {
-    chunkCallback!(0, 100);
-  }
+  chunkCallback?.call(0, 100);
   //TODO: Switch to using MakeImageFromCanvasImageSource when animated images are supported.
   html.HttpRequest.request(
     src,
     responseType: "arraybuffer",
   ).then((html.HttpRequest response) {
-    if (chunkCallback != null) {
-      chunkCallback!(100, 100);
-    }
+    chunkCallback?.call(100, 100);
     final Uint8List list =
         new Uint8List.view((response.response as ByteBuffer));
     final SkAnimatedImage skAnimatedImage =
@@ -38,6 +34,7 @@ void skiaInstantiateWebImageCodec(String src, Callback<ui.Codec> callback,
     callback(codec);
   });
 }
+
 /// A wrapper for `SkAnimatedImage`.
 class CkAnimatedImage implements ui.Image {
   final SkAnimatedImage _skAnimatedImage;
