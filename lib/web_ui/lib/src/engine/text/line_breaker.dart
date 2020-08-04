@@ -21,10 +21,39 @@ enum LineBreakType {
 }
 
 /// Acts as a tuple that encapsulates information about a line break.
+///
+/// It contains multiple indices that are helpful when it comes to measuring the
+/// width of a line of text.
+///
+/// [indexWithoutTrailingSpaces] <= [indexWithoutTrailingNewlines] <= [index]
 class LineBreakResult {
-  LineBreakResult(this.index, this.type);
+  LineBreakResult(
+    this.index,
+    this.indexWithoutTrailingNewlines,
+    this.indexWithoutTrailingSpaces,
+    this.type,
+  );
 
+  LineBreakResult.sameIndex(this.index, this.type)
+      : indexWithoutTrailingNewlines = index,
+        indexWithoutTrailingSpaces = index;
+
+  /// The true index at which the line break should occur, including all spaces
+  /// and new lines.
   final int index;
+
+  /// The index of the line break excluding any trailing new lines.
+  final int indexWithoutTrailingNewlines;
+
+  /// The index of the line break excluding any trailing spaces.
+  final int indexWithoutTrailingSpaces;
+
+  /// The type of line break is useful to determine the behavior in text
+  /// measurement.
+  ///
+  /// For example, a mandatory line break always causes a line break regardless
+  /// of width constraints. But a line break opportunity requires further checks
+  /// to decide whether to take the line break or not.
   final LineBreakType type;
 }
 
@@ -80,6 +109,12 @@ LineBreakResult nextLineBreak(String text, int index) {
   // sequence.
   LineCharProperty? baseOfSpaceSequence;
 
+  /// The index of the last character that wasn't a space.
+  int lastNonSpaceIndex = index;
+
+  /// The index of the last character that wasn't a new line.
+  int lastNonNewlineIndex = index;
+
   // When the text/line starts with SP, we should treat the begining of text/line
   // as if it were a WJ (word joiner).
   if (curr == LineCharProperty.SP) {
@@ -131,12 +166,15 @@ LineBreakResult nextLineBreak(String text, int index) {
     // LB4: BK !
     //
     // Treat CR followed by LF, as well as CR, LF, and NL as hard line breaks.
-    // LB5: CR × LF
-    //      CR !
-    //      LF !
+    // LB5: LF !
     //      NL !
     if (_isHardBreak(prev1)) {
-      return LineBreakResult(index, LineBreakType.mandatory);
+      return LineBreakResult(
+        index,
+        lastNonNewlineIndex,
+        lastNonSpaceIndex,
+        LineBreakType.mandatory,
+      );
     }
 
     if (prev1 == LineCharProperty.CR) {
@@ -145,8 +183,19 @@ LineBreakResult nextLineBreak(String text, int index) {
         continue;
       } else {
         // LB5: CR !
-        return LineBreakResult(index, LineBreakType.mandatory);
+        return LineBreakResult(
+          index,
+          lastNonNewlineIndex,
+          lastNonSpaceIndex,
+          LineBreakType.mandatory,
+        );
       }
+    }
+
+    // At this point, we know for sure the prev character wasn't a new line.
+    lastNonNewlineIndex = index;
+    if (prev1 != LineCharProperty.SP) {
+      lastNonSpaceIndex = index;
     }
 
     // Do not break before hard line breaks.
@@ -158,7 +207,12 @@ LineBreakResult nextLineBreak(String text, int index) {
     // Always break at the end of text.
     // LB3: ! eot
     if (index >= text.length) {
-      return LineBreakResult(text.length, LineBreakType.endOfText);
+      return LineBreakResult(
+        text.length,
+        lastNonNewlineIndex,
+        lastNonSpaceIndex,
+        LineBreakType.endOfText,
+      );
     }
 
     // Do not break before spaces or zero width space.
@@ -186,7 +240,12 @@ LineBreakResult nextLineBreak(String text, int index) {
     // LB8: ZW SP* ÷
     if (prev1 == LineCharProperty.ZW ||
         baseOfSpaceSequence == LineCharProperty.ZW) {
-      return LineBreakResult(index, LineBreakType.opportunity);
+      return LineBreakResult(
+        index,
+        lastNonNewlineIndex,
+        lastNonSpaceIndex,
+        LineBreakType.opportunity,
+      );
     }
 
     // Do not break a combining character sequence; treat it as if it has the
@@ -292,7 +351,12 @@ LineBreakResult nextLineBreak(String text, int index) {
     // Break after spaces.
     // LB18: SP ÷
     if (prev1 == LineCharProperty.SP) {
-      return LineBreakResult(index, LineBreakType.opportunity);
+      return LineBreakResult(
+        index,
+        lastNonNewlineIndex,
+        lastNonSpaceIndex,
+        LineBreakType.opportunity,
+      );
     }
 
     // Do not break before or after quotation marks, such as ‘”’.
@@ -306,7 +370,12 @@ LineBreakResult nextLineBreak(String text, int index) {
     // LB20: ÷ CB
     //       CB ÷
     if (prev1 == LineCharProperty.CB || curr == LineCharProperty.CB) {
-      return LineBreakResult(index, LineBreakType.opportunity);
+      return LineBreakResult(
+        index,
+        lastNonNewlineIndex,
+        lastNonSpaceIndex,
+        LineBreakType.opportunity,
+      );
     }
 
     // Do not break before hyphen-minus, other hyphens, fixed-width spaces,
@@ -471,7 +540,12 @@ LineBreakResult nextLineBreak(String text, int index) {
       if (regionalIndicatorCount.isOdd) {
         continue;
       } else {
-        return LineBreakResult(index, LineBreakType.opportunity);
+        return LineBreakResult(
+          index,
+          lastNonNewlineIndex,
+          lastNonSpaceIndex,
+          LineBreakType.opportunity,
+        );
       }
     }
 
@@ -484,7 +558,17 @@ LineBreakResult nextLineBreak(String text, int index) {
     // Break everywhere else.
     // LB31: ALL ÷
     //       ÷ ALL
-    return LineBreakResult(index, LineBreakType.opportunity);
+    return LineBreakResult(
+      index,
+      lastNonNewlineIndex,
+      lastNonSpaceIndex,
+      LineBreakType.opportunity,
+    );
   }
-  return LineBreakResult(text.length, LineBreakType.endOfText);
+  return LineBreakResult(
+    text.length,
+    lastNonNewlineIndex,
+    lastNonSpaceIndex,
+    LineBreakType.endOfText,
+  );
 }
