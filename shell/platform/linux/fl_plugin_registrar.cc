@@ -17,6 +17,9 @@ struct _FlPluginRegistrar {
   FlBinaryMessenger* messenger;
 };
 
+// Added here to stop the compiler from optimising this function away.
+G_MODULE_EXPORT GType fl_plugin_registrar_get_type();
+
 G_DEFINE_TYPE(FlPluginRegistrar, fl_plugin_registrar, G_TYPE_OBJECT)
 
 static void view_weak_notify_cb(gpointer user_data, GObject* object) {
@@ -45,14 +48,15 @@ static void fl_plugin_registrar_init(FlPluginRegistrar* self) {}
 
 FlPluginRegistrar* fl_plugin_registrar_new(FlView* view,
                                            FlBinaryMessenger* messenger) {
-  g_return_val_if_fail(FL_IS_VIEW(view), nullptr);
+  g_return_val_if_fail(view == nullptr || FL_IS_VIEW(view), nullptr);
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
   FlPluginRegistrar* self = FL_PLUGIN_REGISTRAR(
       g_object_new(fl_plugin_registrar_get_type(), nullptr));
 
   self->view = view;
-  g_object_weak_ref(G_OBJECT(view), view_weak_notify_cb, self);
+  if (view != nullptr)
+    g_object_weak_ref(G_OBJECT(view), view_weak_notify_cb, self);
   self->messenger = FL_BINARY_MESSENGER(g_object_ref(messenger));
 
   return self;

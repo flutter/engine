@@ -10,20 +10,7 @@
 namespace flutter {
 
 OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
-    : alpha_(alpha), offset_(offset) {
-  // Ensure OpacityLayer has only one direct child.
-  //
-  // This is needed to ensure that retained rendering can always be applied to
-  // save the costly saveLayer.
-  //
-  // Any children will be actually added as children of this empty
-  // ContainerLayer.
-  ContainerLayer::Add(std::make_shared<ContainerLayer>());
-}
-
-void OpacityLayer::Add(std::shared_ptr<Layer> layer) {
-  GetChildContainer()->Add(std::move(layer));
-}
+    : alpha_(alpha), offset_(offset) {}
 
 void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "OpacityLayer::Preroll");
@@ -41,7 +28,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   context->is_opaque = parent_is_opaque && (alpha_ == SK_AlphaOPAQUE);
   context->mutators_stack.PushTransform(
-      SkMatrix::MakeTrans(offset_.fX, offset_.fY));
+      SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
@@ -55,7 +42,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
 #endif
-    TryToPrepareRasterCache(context, container, child_matrix);
+    TryToPrepareRasterCache(context, GetCacheableChild(), child_matrix);
   }
 
   // Restore cull_rect
@@ -78,7 +65,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
 #endif
 
   if (context.raster_cache &&
-      context.raster_cache->Draw(GetChildContainer(),
+      context.raster_cache->Draw(GetCacheableChild(),
                                  *context.leaf_nodes_canvas, &paint)) {
     return;
   }
@@ -101,7 +88,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 
 void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
   float saved_alpha = context.alphaf();
@@ -110,12 +97,6 @@ void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
   context.set_alphaf(saved_alpha);
 }
 
-#endif  // defined(OS_FUCHSIA)
-
-ContainerLayer* OpacityLayer::GetChildContainer() const {
-  FML_DCHECK(layers().size() == 1);
-
-  return static_cast<ContainerLayer*>(layers()[0].get());
-}
+#endif
 
 }  // namespace flutter

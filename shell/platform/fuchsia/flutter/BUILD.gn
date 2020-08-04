@@ -12,18 +12,166 @@ import("//flutter/tools/fuchsia/dart.gni")
 import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
 import("//flutter/vulkan/config.gni")
-import("engine_flutter_runner.gni")
 
-shell_gpu_configuration("fuchsia_gpu_configuration") {
+# Fuchsia uses its own custom Surface implementation.
+shell_gpu_configuration("fuchsia_legacy_gpu_configuration") {
   enable_software = false
   enable_gl = false
-  enable_vulkan = true
+  enable_vulkan = false
   enable_metal = false
+}
+
+source_set("flutter_runner_sources") {
+  sources = [
+    "accessibility_bridge.cc",
+    "accessibility_bridge.h",
+    "component.cc",
+    "component.h",
+    "compositor_context.cc",
+    "compositor_context.h",
+    "engine.cc",
+    "engine.h",
+    "flutter_runner_product_configuration.cc",
+    "flutter_runner_product_configuration.h",
+    "fuchsia_intl.cc",
+    "fuchsia_intl.h",
+    "isolate_configurator.cc",
+    "isolate_configurator.h",
+    "logging.h",
+    "loop.cc",
+    "loop.h",
+    "platform_view.cc",
+    "platform_view.h",
+    "runner.cc",
+    "runner.h",
+    "session_connection.cc",
+    "session_connection.h",
+    "surface.cc",
+    "surface.h",
+    "task_observers.cc",
+    "task_observers.h",
+    "task_runner_adapter.cc",
+    "task_runner_adapter.h",
+    "thread.cc",
+    "thread.h",
+    "unique_fdio_ns.h",
+    "vsync_recorder.cc",
+    "vsync_recorder.h",
+    "vsync_waiter.cc",
+    "vsync_waiter.h",
+    "vulkan_surface.cc",
+    "vulkan_surface.h",
+    "vulkan_surface_pool.cc",
+    "vulkan_surface_pool.h",
+    "vulkan_surface_producer.cc",
+    "vulkan_surface_producer.h",
+  ]
+
+  # The use of these dependencies is temporary and will be moved behind the
+  # embedder API.
+  flutter_public_deps = [
+    "//flutter/flow:flow_fuchsia_legacy",
+    "//flutter/lib/ui:ui_fuchsia_legacy",
+    "//flutter/runtime:runtime_fuchsia_legacy",
+    "//flutter/shell/common:common_fuchsia_legacy",
+  ]
+  flutter_deps = [
+    ":fuchsia_legacy_gpu_configuration",
+    "//flutter/assets",
+    "//flutter/common",
+    "//flutter/fml",
+    "//flutter/vulkan",
+  ]
+
+  public_deps = [
+                  "$fuchsia_sdk_root/pkg:scenic_cpp",
+                  "$fuchsia_sdk_root/pkg:sys_cpp",
+                  "//flutter/shell/platform/fuchsia/runtime/dart/utils",
+                ] + flutter_public_deps
+
+  deps = [
+           "$fuchsia_sdk_root/fidl:fuchsia.accessibility.semantics",
+           "$fuchsia_sdk_root/fidl:fuchsia.fonts",
+           "$fuchsia_sdk_root/fidl:fuchsia.images",
+           "$fuchsia_sdk_root/fidl:fuchsia.intl",
+           "$fuchsia_sdk_root/fidl:fuchsia.io",
+           "$fuchsia_sdk_root/fidl:fuchsia.sys",
+           "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+           "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
+           "$fuchsia_sdk_root/pkg:async-cpp",
+           "$fuchsia_sdk_root/pkg:async-default",
+           "$fuchsia_sdk_root/pkg:async-loop",
+           "$fuchsia_sdk_root/pkg:async-loop-cpp",
+           "$fuchsia_sdk_root/pkg:fdio",
+           "$fuchsia_sdk_root/pkg:fidl_cpp",
+           "$fuchsia_sdk_root/pkg:syslog",
+           "$fuchsia_sdk_root/pkg:trace",
+           "$fuchsia_sdk_root/pkg:trace-engine",
+           "$fuchsia_sdk_root/pkg:trace-provider-so",
+           "$fuchsia_sdk_root/pkg:vfs_cpp",
+           "$fuchsia_sdk_root/pkg:zx",
+           "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
+           "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+         ] + flutter_deps
 }
 
 # Things that explicitly being excluded:
 # 1. Kernel snapshot framework mode.
 # 2. Profiler symbols.
+
+# Builds a flutter_runner
+#
+# Parameters:
+#
+#  output_name (required):
+#    The name of the resulting binary.
+#
+#  extra_deps (required):
+#    Any additional dependencies.
+#
+#  product (required):
+#    Whether to link against a Product mode Dart VM.
+#
+#  extra_defines (optional):
+#    Any additional preprocessor defines.
+template("flutter_runner") {
+  assert(defined(invoker.output_name), "flutter_runner must define output_name")
+  assert(defined(invoker.extra_deps), "flutter_runner must define extra_deps")
+  assert(defined(invoker.product), "flutter_runner must define product")
+
+  invoker_output_name = invoker.output_name
+  extra_deps = invoker.extra_deps
+
+  extra_defines = []
+  if (defined(invoker.extra_defines)) {
+    extra_defines += invoker.extra_defines
+  }
+
+  executable(target_name) {
+    output_name = invoker_output_name
+
+    defines = extra_defines
+
+    sources = [ "main.cc" ]
+
+    deps = [
+             ":flutter_runner_sources",
+             "$fuchsia_sdk_root/pkg:async-loop-cpp",
+             "$fuchsia_sdk_root/pkg:trace",
+             "$fuchsia_sdk_root/pkg:trace-provider-so",
+           ] + extra_deps
+
+    # The flags below are needed so that Dart's CPU profiler can walk the
+    # C++ stack.
+    cflags = [ "-fno-omit-frame-pointer" ]
+
+    if (!invoker.product) {
+      # This flag is needed so that the call to dladdr() in Dart's native symbol
+      # resolver can report good symbol information for the CPU profiler.
+      ldflags = [ "-rdynamic" ]
+    }
+  }
+}
 
 flutter_runner("jit") {
   output_name = "flutter_jit_runner"
@@ -183,9 +331,7 @@ template("aot_runner") {
   }
 
   fuchsia_archive(target_name) {
-    deps = [
-      ":aot${product_suffix}",
-    ]
+    deps = [ ":aot${product_suffix}" ]
 
     if (!product) {
       deps += [
@@ -268,61 +414,36 @@ executable("flutter_runner_unittests") {
   output_name = "flutter_runner_tests"
 
   sources = [
-    "accessibility_bridge.cc",
-    "accessibility_bridge.h",
     "accessibility_bridge_unittest.cc",
+    "component_unittest.cc",
     "flutter_runner_fakes.h",
-    "flutter_runner_product_configuration.cc",
-    "flutter_runner_product_configuration.h",
-    "fuchsia_intl.cc",
-    "fuchsia_intl.h",
     "fuchsia_intl_unittest.cc",
-    "logging.h",
-    "loop.cc",
-    "loop.h",
-    "platform_view.cc",
-    "platform_view.h",
     "platform_view_unittest.cc",
-    "runner.cc",
-    "runner.h",
     "runner_unittest.cc",
-    "surface.cc",
-    "surface.h",
-    "task_observers.cc",
-    "task_observers.h",
-    "task_runner_adapter.cc",
-    "task_runner_adapter.h",
     "tests/flutter_runner_product_configuration_unittests.cc",
     "tests/vsync_recorder_unittests.cc",
-    "thread.cc",
-    "thread.h",
-    "vsync_recorder.cc",
-    "vsync_recorder.h",
-    "vsync_waiter.cc",
-    "vsync_waiter.h",
     "vsync_waiter_unittests.cc",
   ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
   libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
-  deps = [
-    ":aot",
-    ":flutter_runner_fixtures",
-    "//build/fuchsia/fidl:fuchsia.accessibility.semantics",
-    "//build/fuchsia/pkg:async-default",
-    "//build/fuchsia/pkg:async-loop-cpp",
-    "//build/fuchsia/pkg:async-loop-default",
-    "//build/fuchsia/pkg:scenic_cpp",
-    "//build/fuchsia/pkg:sys_cpp_testing",
-    "//flutter/lib/ui",
-    "//flutter/runtime",
-    "//flutter/shell/common",
-    "//flutter/shell/platform/fuchsia/runtime/dart/utils",
-    "//flutter/testing",
+  # The use of these dependencies is temporary and will be moved behind the
+  # embedder API.
+  flutter_deps = [
+    "//flutter/flow:flow_fuchsia_legacy",
+    "//flutter/lib/ui:ui_fuchsia_legacy",
+    "//flutter/shell/common:common_fuchsia_legacy",
     "//third_party/dart/runtime:libdart_jit",
     "//third_party/dart/runtime/platform:libdart_platform_jit",
   ]
+
+  deps = [
+           ":flutter_runner_fixtures",
+           ":flutter_runner_sources",
+           "//build/fuchsia/pkg:sys_cpp_testing",
+           "//flutter/testing",
+         ] + flutter_deps
 }
 
 executable("flutter_runner_tzdata_unittests") {
@@ -330,41 +451,56 @@ executable("flutter_runner_tzdata_unittests") {
 
   output_name = "flutter_runner_tzdata_tests"
 
-  sources = [
-    "runner.cc",
-    "runner.h",
-    "runner_tzdata_unittest.cc",
-  ]
+  sources = [ "runner_tzdata_unittest.cc" ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
   libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
-  deps = [
-    ":aot",
-    ":flutter_runner_fixtures",
-    "//build/fuchsia/fidl:fuchsia.accessibility.semantics",
-    "//build/fuchsia/pkg:async-loop-cpp",
-    "//build/fuchsia/pkg:async-loop-default",
-    "//build/fuchsia/pkg:scenic_cpp",
-    "//build/fuchsia/pkg:sys_cpp_testing",
-    "//flutter/lib/ui",
-    "//flutter/runtime",
-    "//flutter/shell/common",
-    "//flutter/shell/platform/fuchsia/runtime/dart/utils",
-    "//flutter/testing",
+  # The use of these dependencies is temporary and will be moved behind the
+  # embedder API.
+  flutter_deps = [
+    "//flutter/lib/ui:ui_fuchsia_legacy",
     "//third_party/dart/runtime:libdart_jit",
     "//third_party/dart/runtime/platform:libdart_platform_jit",
-    "//third_party/icu",
-    "//third_party/skia",
   ]
+
+  deps = [
+           ":flutter_runner_fixtures",
+           ":flutter_runner_sources",
+           "//flutter/testing",
+         ] + flutter_deps
+}
+
+executable("flutter_runner_scenic_unittests") {
+  testonly = true
+
+  output_name = "flutter_runner_scenic_tests"
+
+  sources = [ "tests/session_connection_unittests.cc" ]
+
+  # This is needed for //third_party/googletest for linking zircon symbols.
+  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+
+  # The use of these dependencies is temporary and will be moved behind the
+  # embedder API.
+  flutter_deps = [
+    "//flutter/lib/ui:ui_fuchsia_legacy",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
+  ]
+
+  deps = [
+           ":flutter_runner_fixtures",
+           ":flutter_runner_sources",
+           "$fuchsia_sdk_root/fidl:fuchsia.ui.policy",
+           "//flutter/testing",
+         ] + flutter_deps
 }
 
 fuchsia_archive("flutter_runner_tests") {
   testonly = true
 
-  deps = [
-    ":flutter_runner_unittests",
-  ]
+  deps = [ ":flutter_runner_unittests" ]
 
   binary = "$target_name"
 
@@ -405,9 +541,7 @@ fuchsia_archive("flutter_runner_tests") {
 fuchsia_archive("flutter_runner_tzdata_tests") {
   testonly = true
 
-  deps = [
-    ":flutter_runner_tzdata_unittests",
-  ]
+  deps = [ ":flutter_runner_tzdata_unittests" ]
 
   binary = "$target_name"
 
@@ -427,98 +561,13 @@ fuchsia_archive("flutter_runner_tzdata_tests") {
       path = rebase_path("meta/$target_name.cmx")
       dest = "$target_name.cmx"
     },
-  ]
-}
-
-executable("flutter_runner_scenic_unittests") {
-  testonly = true
-
-  output_name = "flutter_runner_scenic_tests"
-
-  sources = [
-    "component.cc",
-    "component.h",
-    "compositor_context.cc",
-    "compositor_context.h",
-    "engine.cc",
-    "engine.h",
-    "fuchsia_intl.cc",
-    "fuchsia_intl.h",
-    "isolate_configurator.cc",
-    "isolate_configurator.h",
-    "logging.h",
-    "loop.cc",
-    "loop.h",
-    "platform_view.cc",
-    "platform_view.h",
-    "runner.cc",
-    "runner.h",
-    "session_connection.cc",
-    "session_connection.h",
-    "surface.cc",
-    "surface.h",
-    "task_observers.cc",
-    "task_observers.h",
-    "task_runner_adapter.cc",
-    "task_runner_adapter.h",
-    "tests/session_connection_unittests.cc",
-    "thread.cc",
-    "thread.h",
-    "unique_fdio_ns.h",
-    "vsync_recorder.cc",
-    "vsync_recorder.h",
-    "vsync_waiter.cc",
-    "vsync_waiter.h",
-    "vsync_waiter_unittests.cc",
-    "vulkan_surface.cc",
-    "vulkan_surface.h",
-    "vulkan_surface_pool.cc",
-    "vulkan_surface_pool.h",
-    "vulkan_surface_producer.cc",
-    "vulkan_surface_producer.h",
-  ]
-
-  # This is needed for //third_party/googletest for linking zircon symbols.
-  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
-
-  deps = [
-    ":flutter_runner_fixtures",
-    ":jit",
-    "$fuchsia_sdk_root/fidl:fuchsia.ui.policy",
-    "$fuchsia_sdk_root/pkg:trace-provider-so",
-    "//build/fuchsia/fidl:fuchsia.accessibility.semantics",
-    "//build/fuchsia/pkg:async-default",
-    "//build/fuchsia/pkg:async-loop-cpp",
-    "//build/fuchsia/pkg:async-loop-default",
-    "//build/fuchsia/pkg:scenic_cpp",
-    "//build/fuchsia/pkg:sys_cpp_testing",
-    "//flutter/common:common",
-    "//flutter/flow:flow",
-    "//flutter/lib/ui",
-    "//flutter/runtime",
-    "//flutter/shell/common",
-    "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia:sdk_ext",
-    "//flutter/shell/platform/fuchsia/dart-pkg/zircon:zircon",
-    "//flutter/shell/platform/fuchsia/runtime/dart/utils",
-    "//flutter/testing",
-    "//flutter/vulkan:vulkan",
-    "//third_party/dart/runtime:libdart_jit",
-    "//third_party/dart/runtime/platform:libdart_platform_jit",
-    "//third_party/icu",
-    "//third_party/skia",
-  ]
-
-  public_deps = [
-    "//third_party/googletest:gtest",
   ]
 }
 
 fuchsia_archive("flutter_runner_scenic_tests") {
   testonly = true
 
-  deps = [
-    ":flutter_runner_scenic_unittests",
-  ]
+  deps = [ ":flutter_runner_scenic_unittests" ]
 
   binary = "$target_name"
 
@@ -538,5 +587,281 @@ fuchsia_archive("flutter_runner_scenic_tests") {
       path = rebase_path("meta/$target_name.cmx")
       dest = "$target_name.cmx"
     },
+  ]
+}
+
+fuchsia_test_archive("fml_tests") {
+  deps = [ "//flutter/fml:fml_unittests" ]
+
+  binary = "fml_unittests"
+}
+
+fuchsia_test_archive("flow_tests") {
+  deps = [ "//flutter/flow:flow_unittests" ]
+
+  binary = "flow_unittests"
+
+  resources = [
+    {
+      path = rebase_path(
+              "//flutter/testing/resources/performance_overlay_gold_60fps.png")
+      dest = "flutter/testing/resources/performance_overlay_gold_60fps.png"
+    },
+    {
+      path = rebase_path(
+              "//flutter/testing/resources/performance_overlay_gold_90fps.png")
+      dest = "flutter/testing/resources/performance_overlay_gold_90fps.png"
+    },
+    {
+      path = rebase_path(
+              "//flutter/testing/resources/performance_overlay_gold_120fps.png")
+      dest = "flutter/testing/resources/performance_overlay_gold_120fps.png"
+    },
+  ]
+}
+
+fuchsia_test_archive("flow_tests_next") {
+  deps = [ "//flutter/flow:flow_unittests_next" ]
+
+  binary = "flow_unittests_next"
+
+  resources = [
+    {
+      path = rebase_path(
+              "//flutter/testing/resources/performance_overlay_gold_60fps.png")
+      dest = "flutter/testing/resources/performance_overlay_gold_60fps.png"
+    },
+    {
+      path = rebase_path(
+              "//flutter/testing/resources/performance_overlay_gold_90fps.png")
+      dest = "flutter/testing/resources/performance_overlay_gold_90fps.png"
+    },
+    {
+      path = rebase_path(
+              "//flutter/testing/resources/performance_overlay_gold_120fps.png")
+      dest = "flutter/testing/resources/performance_overlay_gold_120fps.png"
+    },
+  ]
+}
+
+fuchsia_test_archive("runtime_tests") {
+  deps = [
+    "//flutter/runtime:runtime_fixtures",
+    "//flutter/runtime:runtime_unittests",
+  ]
+
+  binary = "runtime_unittests"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/runtime/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+  ]
+}
+
+fuchsia_test_archive("runtime_tests_next") {
+  deps = [
+    "//flutter/runtime:runtime_fixtures",
+    "//flutter/runtime:runtime_unittests_next",
+  ]
+
+  binary = "runtime_unittests_next"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/runtime/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+  ]
+}
+
+fuchsia_test_archive("shell_tests") {
+  deps = [
+    "//flutter/shell/common:shell_unittests",
+    "//flutter/shell/common:shell_unittests_fixtures",
+  ]
+
+  binary = "shell_unittests"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/shell/common/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+    {
+      path =
+          "$root_gen_dir/flutter/shell/common/assets/shelltest_screenshot.png"
+      dest = "assets/shelltest_screenshot.png"
+    },
+  ]
+
+  libraries = vulkan_validation_libs
+  resources += vulkan_icds
+}
+
+fuchsia_test_archive("shell_tests_next") {
+  deps = [
+    "//flutter/shell/common:shell_unittests_fixtures",
+    "//flutter/shell/common:shell_unittests_next",
+  ]
+
+  binary = "shell_unittests_next"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/shell/common/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+    {
+      path =
+          "$root_gen_dir/flutter/shell/common/assets/shelltest_screenshot.png"
+      dest = "assets/shelltest_screenshot.png"
+    },
+  ]
+
+  libraries = vulkan_validation_libs
+  resources += vulkan_icds
+}
+
+fuchsia_test_archive("testing_tests") {
+  deps = [ "//flutter/testing:testing_unittests" ]
+
+  binary = "testing_unittests"
+}
+
+fuchsia_test_archive("txt_tests") {
+  deps = [ "//flutter/third_party/txt:txt_unittests" ]
+
+  binary = "txt_unittests"
+
+  resources = [
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl.dat"
+    },
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl2.dat"
+    },
+  ]
+}
+
+fuchsia_test_archive("ui_tests") {
+  deps = [
+    "//flutter/lib/ui:ui_unittests",
+    "//flutter/lib/ui:ui_unittests_fixtures",
+  ]
+
+  binary = "ui_unittests"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/DashInNooglerHat.jpg"
+      dest = "assets/DashInNooglerHat.jpg"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/Horizontal.jpg"
+      dest = "assets/Horizontal.jpg"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/Horizontal.png"
+      dest = "assets/Horizontal.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/hello_loop_2.gif"
+      dest = "assets/hello_loop_2.gif"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/hello_loop_2.webp"
+      dest = "assets/hello_loop_2.webp"
+    },
+  ]
+
+  libraries = vulkan_validation_libs
+  resources += vulkan_icds
+}
+
+fuchsia_test_archive("ui_tests_next") {
+  deps = [
+    "//flutter/lib/ui:ui_unittests_fixtures",
+    "//flutter/lib/ui:ui_unittests_next",
+  ]
+
+  binary = "ui_unittests_next"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/DashInNooglerHat.jpg"
+      dest = "assets/DashInNooglerHat.jpg"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/Horizontal.jpg"
+      dest = "assets/Horizontal.jpg"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/Horizontal.png"
+      dest = "assets/Horizontal.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/hello_loop_2.gif"
+      dest = "assets/hello_loop_2.gif"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/hello_loop_2.webp"
+      dest = "assets/hello_loop_2.webp"
+    },
+  ]
+
+  libraries = vulkan_validation_libs
+  resources += vulkan_icds
+}
+
+# When adding a new dep here, please also ensure the dep is added to
+# testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
+group("tests") {
+  testonly = true
+
+  deps = [
+    ":flow_tests",
+    ":flow_tests_next",
+    ":flutter_runner_scenic_tests",
+    ":flutter_runner_tests",
+    ":flutter_runner_tzdata_tests",
+    ":fml_tests",
+    ":runtime_tests",
+    ":runtime_tests_next",
+    ":shell_tests",
+    ":shell_tests_next",
+    ":testing_tests",
+    ":txt_tests",
+    ":ui_tests",
+    ":ui_tests_next",
   ]
 }

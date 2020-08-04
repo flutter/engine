@@ -313,6 +313,27 @@ final List<LicenseFileReferencePattern> csReferencesByFilename = <LicenseFileRef
     )
   ),
 
+  // Chromium's zlib extensions.
+  LicenseFileReferencePattern(
+    firstPrefixIndex: 1,
+    indentPrefixIndex: 2,
+    copyrightIndex: 3,
+    authorIndex: 4,
+    fileIndex: 5,
+    pattern: RegExp(
+      kIndent +
+      // The " \* " is needed to ensure that both copyright lines start with
+      // the comment decoration in the captured match, otherwise it won't be
+      // stripped from the second line when generating output.
+      r'((?: \* Copyright \(C\) 2017 ARM, Inc.\n)?'
+      r'Copyright .+(The .+ Authors)\. +All rights reserved\.)\n'
+      r'Use of this source code is governed by a BSD-style license that can be\n'
+      r'found in the Chromium source repository ([^ ]+) file.'.replaceAll(r'\n', _linebreakLoose),
+      multiLine: true,
+      caseSensitive: false,
+    )
+  ),
+
   // Mojo code
   LicenseFileReferencePattern(
     firstPrefixIndex: 1,
@@ -1147,12 +1168,27 @@ final List<MultipleVersionedLicenseReferencePattern> csReferencesByUrl = <Multip
   MultipleVersionedLicenseReferencePattern(
     firstPrefixIndex: 1,
     indentPrefixIndex: 2,
+    licenseIndices: const <int>[4],
+    checkLocalFirst: false,
+    pattern: RegExp(
+      kIndent +
+      r'(?:©|Copyright (©|\(C\))) 20.. and later: Unicode, Inc. and others.[ *]*\n'
+      r'^\1\2License & terms of use: (http://www.unicode.org/copyright.html)',
+      multiLine: true,
+      caseSensitive: false,
+    )
+  ),
+
+  // ICU (Unicode)
+  MultipleVersionedLicenseReferencePattern(
+    firstPrefixIndex: 1,
+    indentPrefixIndex: 2,
     licenseIndices: const <int>[3],
     checkLocalFirst: false,
     pattern: RegExp(
       kIndent +
-      r'(?:©|Copyright \(C\)) 20.. and later: Unicode, Inc. and others.[ *]*\n'
-      r'^\1\2License & terms of use: (http://www.unicode.org/copyright.html)',
+      r'(?:Copyright ©) 20..-20.. Unicode, Inc. and others. All rights reserved. '
+      r'Distributed under the Terms of Use in (http://www.unicode.org/copyright.html)',
       multiLine: true,
       caseSensitive: false,
     )

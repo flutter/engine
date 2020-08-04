@@ -4,6 +4,8 @@
 
 #include "flutter/lib/ui/painting/picture.h"
 
+#include <memory>
+
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -26,17 +28,20 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
 DART_BIND_ALL(Picture, FOR_EACH_BINDING)
 
-fml::RefPtr<Picture> Picture::Create(
-    Dart_Handle dart_handle,
-    flutter::SkiaGPUObject<SkPicture> picture) {
-  auto canvas_picture = fml::MakeRefCounted<Picture>(std::move(picture));
+fml::RefPtr<Picture> Picture::Create(Dart_Handle dart_handle,
+                                     flutter::SkiaGPUObject<SkPicture> picture,
+                                     size_t external_allocation_size) {
+  auto canvas_picture = fml::MakeRefCounted<Picture>(std::move(picture),
+                                                     external_allocation_size);
 
   canvas_picture->AssociateWithDartWrapper(dart_handle);
   return canvas_picture;
 }
 
-Picture::Picture(flutter::SkiaGPUObject<SkPicture> picture)
-    : picture_(std::move(picture)) {}
+Picture::Picture(flutter::SkiaGPUObject<SkPicture> picture,
+                 size_t external_allocation_size)
+    : picture_(std::move(picture)),
+      external_allocation_size_(external_allocation_size) {}
 
 Picture::~Picture() = default;
 
@@ -52,11 +57,13 @@ Dart_Handle Picture::toImage(uint32_t width,
 
 void Picture::dispose() {
   ClearDartWrapper();
+  picture_.reset();
 }
 
-size_t Picture::GetAllocationSize() {
+size_t Picture::GetAllocationSize() const {
   if (auto picture = picture_.get()) {
-    return picture->approximateBytesUsed();
+    return picture->approximateBytesUsed() + sizeof(Picture) +
+           external_allocation_size_;
   } else {
     return sizeof(Picture);
   }
@@ -75,8 +82,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
   }
 
   auto* dart_state = UIDartState::Current();
-  tonic::DartPersistentValue* image_callback =
-      new tonic::DartPersistentValue(dart_state, raw_image_callback);
+  auto image_callback = std::make_unique<tonic::DartPersistentValue>(
+      dart_state, raw_image_callback);
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
@@ -89,7 +96,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
 
   auto picture_bounds = SkISize::Make(width, height);
 
-  auto ui_task = fml::MakeCopyable([image_callback, unref_queue](
+  auto ui_task = fml::MakeCopyable([image_callback = std::move(image_callback),
+                                    unref_queue](
                                        sk_sp<SkImage> raster_image) mutable {
     auto dart_state = image_callback->dart_state().lock();
     if (!dart_state) {
@@ -111,8 +119,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
     tonic::DartInvoke(image_callback->Get(), {raw_dart_image});
 
     // image_callback is associated with the Dart isolate and must be deleted
-    // on the UI thread
-    delete image_callback;
+    // on the UI thread.
+    image_callback.reset();
   });
 
   // Kick things off on the raster rask runner.

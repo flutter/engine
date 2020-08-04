@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 /// The HTML engine used by the current browser.
@@ -28,7 +28,7 @@ enum BrowserEngine {
 }
 
 /// Lazily initialized current browser engine.
-BrowserEngine _browserEngine;
+late final BrowserEngine _browserEngine = _detectBrowserEngine();
 
 /// Override the value of [browserEngine].
 ///
@@ -36,16 +36,13 @@ BrowserEngine _browserEngine;
 /// app is running on.
 ///
 /// This is intended to be used for testing and debugging only.
-BrowserEngine debugBrowserEngineOverride;
+BrowserEngine? debugBrowserEngineOverride;
 
 /// Returns the [BrowserEngine] used by the current browser.
 ///
 /// This is used to implement browser-specific behavior.
 BrowserEngine get browserEngine {
-  if (debugBrowserEngineOverride != null) {
-    return debugBrowserEngineOverride;
-  }
-  return _browserEngine ??= _detectBrowserEngine();
+  return debugBrowserEngineOverride ?? _browserEngine;
 }
 
 BrowserEngine _detectBrowserEngine() {
@@ -57,6 +54,10 @@ BrowserEngine _detectBrowserEngine() {
     return BrowserEngine.webkit;
   } else if (agent.contains('edge/')) {
     return BrowserEngine.edge;
+  } else if (agent.contains('Edg/')) {
+    // Chromium based Microsoft Edge has `Edg` in the user-agent.
+    // https://docs.microsoft.com/en-us/microsoft-edge/web-platform/user-agent-string
+    return BrowserEngine.blink;
   } else if (agent.contains('trident/7.0')) {
     return BrowserEngine.ie11;
   } else if (vendor == '' && agent.contains('firefox')) {
@@ -65,7 +66,7 @@ BrowserEngine _detectBrowserEngine() {
     return BrowserEngine.firefox;
   }
 
-  // Assume blink otherwise, but issue a warning.
+  // Assume unknown otherwise, but issue a warning.
   print('WARNING: failed to detect current browser engine.');
   return BrowserEngine.unknown;
 }
@@ -95,17 +96,14 @@ enum OperatingSystem {
 }
 
 /// Lazily initialized current operating system.
-OperatingSystem _operatingSystem;
+late final OperatingSystem _operatingSystem = _detectOperatingSystem();
 
 /// Returns the [OperatingSystem] the current browsers works on.
 ///
 /// This is used to implement operating system specific behavior such as
 /// soft keyboards.
 OperatingSystem get operatingSystem {
-  if (debugOperatingSystemOverride != null) {
-    return debugOperatingSystemOverride;
-  }
-  return _operatingSystem ??= _detectOperatingSystem();
+  return debugOperatingSystemOverride ?? _operatingSystem;
 }
 
 /// Override the value of [operatingSystem].
@@ -114,10 +112,10 @@ OperatingSystem get operatingSystem {
 /// app is running on.
 ///
 /// This is intended to be used for testing and debugging only.
-OperatingSystem debugOperatingSystemOverride;
+OperatingSystem? debugOperatingSystemOverride;
 
 OperatingSystem _detectOperatingSystem() {
-  final String platform = html.window.navigator.platform;
+  final String platform = html.window.navigator.platform!;
   final String userAgent = html.window.navigator.userAgent;
 
   if (platform.startsWith('Mac')) {

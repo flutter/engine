@@ -13,30 +13,30 @@
 struct _FlMethodChannel {
   GObject parent_instance;
 
-  // Messenger to communicate on
+  // Messenger to communicate on.
   FlBinaryMessenger* messenger;
 
-  // TRUE if the channel has been closed
+  // TRUE if the channel has been closed.
   gboolean channel_closed;
 
-  // Channel name
+  // Channel name.
   gchar* name;
 
-  // Codec to en/decode messages
+  // Codec to en/decode messages.
   FlMethodCodec* codec;
 
-  // Function called when a method call is received
+  // Function called when a method call is received.
   FlMethodChannelMethodCallHandler method_call_handler;
   gpointer method_call_handler_data;
   GDestroyNotify method_call_handler_destroy_notify;
 };
 
-// Added here to stop the compiler from optimising this function away
+// Added here to stop the compiler from optimising this function away.
 G_MODULE_EXPORT GType fl_method_channel_get_type();
 
 G_DEFINE_TYPE(FlMethodChannel, fl_method_channel, G_TYPE_OBJECT)
 
-// Called when a binary message is received on this channel
+// Called when a binary message is received on this channel.
 static void message_cb(FlBinaryMessenger* messenger,
                        const gchar* channel,
                        GBytes* message,
@@ -61,7 +61,7 @@ static void message_cb(FlBinaryMessenger* messenger,
   self->method_call_handler(self, method_call, self->method_call_handler_data);
 }
 
-// Called when a response is received to a sent message
+// Called when a response is received to a sent message.
 static void message_response_cb(GObject* object,
                                 GAsyncResult* result,
                                 gpointer user_data) {
@@ -69,13 +69,13 @@ static void message_response_cb(GObject* object,
   g_task_return_pointer(task, result, g_object_unref);
 }
 
-// Called when the channel handler is closed
+// Called when the channel handler is closed.
 static void channel_closed_cb(gpointer user_data) {
   g_autoptr(FlMethodChannel) self = FL_METHOD_CHANNEL(user_data);
 
   self->channel_closed = TRUE;
 
-  // Disconnect handler
+  // Disconnect handler.
   if (self->method_call_handler_destroy_notify != nullptr)
     self->method_call_handler_destroy_notify(self->method_call_handler_data);
   self->method_call_handler = nullptr;
@@ -86,9 +86,10 @@ static void channel_closed_cb(gpointer user_data) {
 static void fl_method_channel_dispose(GObject* object) {
   FlMethodChannel* self = FL_METHOD_CHANNEL(object);
 
-  if (self->messenger != nullptr)
+  if (self->messenger != nullptr) {
     fl_binary_messenger_set_message_handler_on_channel(
         self->messenger, self->name, nullptr, nullptr, nullptr);
+  }
 
   g_clear_object(&self->messenger);
   g_clear_pointer(&self->name, g_free);
@@ -138,9 +139,12 @@ G_MODULE_EXPORT void fl_method_channel_set_method_call_handler(
     GDestroyNotify destroy_notify) {
   g_return_if_fail(FL_IS_METHOD_CHANNEL(self));
 
-  // Don't set handler if channel closed
+  // Don't set handler if channel closed.
   if (self->channel_closed) {
-    g_warning("Attempted to set method call handler on closed FlMethodChannel");
+    if (handler != nullptr) {
+      g_warning(
+          "Attempted to set method call handler on a closed FlMethodChannel");
+    }
     if (destroy_notify != nullptr)
       destroy_notify(user_data);
     return;
@@ -225,10 +229,11 @@ gboolean fl_method_channel_respond(
         self->codec, fl_method_error_response_get_code(r),
         fl_method_error_response_get_message(r),
         fl_method_error_response_get_details(r), error);
-  } else if (FL_IS_METHOD_NOT_IMPLEMENTED_RESPONSE(response))
+  } else if (FL_IS_METHOD_NOT_IMPLEMENTED_RESPONSE(response)) {
     message = nullptr;
-  else
+  } else {
     g_assert_not_reached();
+  }
 
   return fl_binary_messenger_send_response(self->messenger, response_handle,
                                            message, error);

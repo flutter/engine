@@ -14,8 +14,7 @@ namespace flutter {
 // Ignores special states like "insert mode" for now.
 class TextInputModel {
  public:
-  TextInputModel(const std::string& input_type,
-                 const std::string& input_action);
+  TextInputModel();
   virtual ~TextInputModel();
 
   // Attempts to set the text state.
@@ -33,11 +32,17 @@ class TextInputModel {
   // code point.
   void AddCodePoint(char32_t c);
 
-  // Adds a UTF-16 text.
+  // Adds UTF-16 text.
   //
   // Either appends after the cursor (when selection base and extent are the
   // same), or deletes the selected text, replacing it with the given text.
   void AddText(const std::u16string& text);
+
+  // Adds UTF-8 text.
+  //
+  // Either appends after the cursor (when selection base and extent are the
+  // same), or deletes the selected text, replacing it with the given text.
+  void AddText(const std::string& text);
 
   // Deletes either the selection, or one character ahead of the cursor.
   //
@@ -46,6 +51,17 @@ class TextInputModel {
   //
   // Returns true if any deletion actually occurred.
   bool Delete();
+
+  // Deletes text near the cursor.
+  //
+  // A section is made starting at @offset code points past the cursor (negative
+  // values go before the cursor). @count code points are removed. The selection
+  // may go outside the bounds of the text and will result in only the part
+  // selection that covers the available text being deleted. The existing
+  // selection is ignored and removed after this operation.
+  //
+  // Returns true if any deletion actually occurred.
+  bool DeleteSurrounding(int offset_from_cursor, int count);
 
   // Deletes either the selection, or one character behind the cursor.
   //
@@ -57,14 +73,14 @@ class TextInputModel {
 
   // Attempts to move the cursor backward.
   //
-  // Returns true if the cursor could be moved. Changes base and extent to be
-  // equal to either the extent (if extent is at the end of the string), or
-  // for extent to be equal to
+  // Returns true if the cursor could be moved. If a selection is active, moves
+  // to the start of the selection.
   bool MoveCursorBack();
 
   // Attempts to move the cursor forward.
   //
-  // Returns true if the cursor could be moved.
+  // Returns true if the cursor could be moved. If a selection is active, moves
+  // to the end of the selection.
   bool MoveCursorForward();
 
   // Attempts to move the cursor to the beginning.
@@ -77,35 +93,41 @@ class TextInputModel {
   // Returns true if the cursor could be moved.
   bool MoveCursorToEnd();
 
-  // Get the current text
+  // Gets the current text as UTF-8.
   std::string GetText() const;
 
-  // The position of the cursor
+  // Gets the cursor position as a byte offset in UTF-8 string returned from
+  // GetText().
+  int GetCursorOffset() const;
+
+  // The position where the selection starts.
   int selection_base() const {
     return static_cast<int>(selection_base_ - text_.begin());
   }
 
-  // The end of the selection
+  // The position of the cursor.
   int selection_extent() const {
     return static_cast<int>(selection_extent_ - text_.begin());
   }
-
-  // Keyboard type of the client. See available options:
-  // https://docs.flutter.io/flutter/services/TextInputType-class.html
-  std::string input_type() const { return input_type_; }
-
-  // An action requested by the user on the input client. See available options:
-  // https://docs.flutter.io/flutter/services/TextInputAction-class.html
-  std::string input_action() const { return input_action_; }
 
  private:
   void DeleteSelected();
 
   std::u16string text_;
-  std::string input_type_;
-  std::string input_action_;
   std::u16string::iterator selection_base_;
   std::u16string::iterator selection_extent_;
+
+  // Returns the left hand side of the selection.
+  std::u16string::iterator selection_start() {
+    return selection_base_ < selection_extent_ ? selection_base_
+                                               : selection_extent_;
+  }
+
+  // Returns the right hand side of the selection.
+  std::u16string::iterator selection_end() {
+    return selection_base_ > selection_extent_ ? selection_base_
+                                               : selection_extent_;
+  }
 };
 
 }  // namespace flutter

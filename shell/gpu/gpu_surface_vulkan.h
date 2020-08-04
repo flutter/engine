@@ -7,9 +7,9 @@
 
 #include <memory>
 
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/common/surface.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
 #include "flutter/vulkan/vulkan_native_surface.h"
 #include "flutter/vulkan/vulkan_window.h"
@@ -34,7 +34,7 @@ class GPUSurfaceVulkan : public Surface {
   SkMatrix GetRootTransformation() const override;
 
   // |Surface|
-  GrContext* GetContext() override;
+  GrDirectContext* GetContext() override;
 
   // |Surface|
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;

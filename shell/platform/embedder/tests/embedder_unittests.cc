@@ -1,10 +1,12 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
 #include <string>
+#include <vector>
 
 #include "embedder.h"
 #include "embedder_engine.h"
@@ -1021,7 +1023,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
 }
 
 static sk_sp<SkSurface> CreateRenderSurface(const FlutterLayer& layer,
-                                            GrContext* context) {
+                                            GrDirectContext* context) {
   const auto image_info =
       SkImageInfo::MakeN32Premul(layer.size.width, layer.size.height);
   auto surface = context ? SkSurface::MakeRenderTarget(
@@ -1258,7 +1260,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
       });
 
   context.GetCompositor().SetPlatformViewRendererCallback(
-      [&](const FlutterLayer& layer, GrContext* context) -> sk_sp<SkImage> {
+      [&](const FlutterLayer& layer,
+          GrDirectContext* context) -> sk_sp<SkImage> {
         auto surface = CreateRenderSurface(layer, context);
         auto canvas = surface->getCanvas();
         FML_CHECK(canvas != nullptr);
@@ -1430,7 +1433,7 @@ TEST_F(EmbedderTest,
       });
 
   context.GetCompositor().SetPlatformViewRendererCallback(
-      [&](const FlutterLayer& layer, GrContext*
+      [&](const FlutterLayer& layer, GrDirectContext*
           /* don't use because software compositor */) -> sk_sp<SkImage> {
         auto surface = CreateRenderSurface(
             layer, nullptr /* null because software compositor */);
@@ -1746,7 +1749,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
       });
 
   context.GetCompositor().SetPlatformViewRendererCallback(
-      [&](const FlutterLayer& layer, GrContext* context) -> sk_sp<SkImage> {
+      [&](const FlutterLayer& layer,
+          GrDirectContext* context) -> sk_sp<SkImage> {
         auto surface = CreateRenderSurface(layer, context);
         auto canvas = surface->getCanvas();
         FML_CHECK(canvas != nullptr);
@@ -1915,7 +1919,8 @@ TEST_F(EmbedderTest,
       });
 
   context.GetCompositor().SetPlatformViewRendererCallback(
-      [&](const FlutterLayer& layer, GrContext* context) -> sk_sp<SkImage> {
+      [&](const FlutterLayer& layer,
+          GrDirectContext* context) -> sk_sp<SkImage> {
         auto surface = CreateRenderSurface(layer, context);
         auto canvas = surface->getCanvas();
         FML_CHECK(canvas != nullptr);
@@ -2217,7 +2222,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
       });
 
   context.GetCompositor().SetPlatformViewRendererCallback(
-      [&](const FlutterLayer& layer, GrContext* context) -> sk_sp<SkImage> {
+      [&](const FlutterLayer& layer,
+          GrDirectContext* context) -> sk_sp<SkImage> {
         auto surface = CreateRenderSurface(layer, context);
         auto canvas = surface->getCanvas();
         FML_CHECK(canvas != nullptr);
@@ -2327,7 +2333,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
       });
 
   context.GetCompositor().SetPlatformViewRendererCallback(
-      [&](const FlutterLayer& layer, GrContext* context) -> sk_sp<SkImage> {
+      [&](const FlutterLayer& layer,
+          GrDirectContext* context) -> sk_sp<SkImage> {
         auto surface = CreateRenderSurface(layer, context);
         auto canvas = surface->getCanvas();
         FML_CHECK(canvas != nullptr);
@@ -2841,6 +2848,16 @@ TEST_F(EmbedderTest, CanUpdateLocales) {
       CREATE_NATIVE_ENTRY(
           [&latch](Dart_NativeArguments args) { latch.Signal(); }));
 
+  fml::AutoResetWaitableEvent check_latch;
+  context.AddNativeCallback(
+      "SignalNativeCount",
+      CREATE_NATIVE_ENTRY([&check_latch](Dart_NativeArguments args) {
+        ASSERT_EQ(tonic::DartConverter<int>::FromDart(
+                      Dart_GetNativeArgument(args, 0)),
+                  2);
+        check_latch.Signal();
+      }));
+
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 
@@ -2876,16 +2893,34 @@ TEST_F(EmbedderTest, CanUpdateLocales) {
       FlutterEngineUpdateLocales(engine.get(), locales.data(), locales.size()),
       kSuccess);
 
-  fml::AutoResetWaitableEvent check_latch;
-  context.AddNativeCallback(
-      "SignalNativeCount",
-      CREATE_NATIVE_ENTRY([&check_latch](Dart_NativeArguments args) {
-        ASSERT_EQ(tonic::DartConverter<int>::FromDart(
-                      Dart_GetNativeArgument(args, 0)),
-                  2);
-        check_latch.Signal();
-      }));
   check_latch.Wait();
+}
+
+TEST_F(EmbedderTest, LocalizationCallbacksCalled) {
+  auto& context = GetEmbedderContext();
+  fml::AutoResetWaitableEvent latch;
+  context.AddIsolateCreateCallback([&latch]() { latch.Signal(); });
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  // Wait for the root isolate to launch.
+  latch.Wait();
+
+  flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
+  std::vector<std::string> supported_locales;
+  supported_locales.push_back("es");
+  supported_locales.push_back("MX");
+  supported_locales.push_back("");
+  auto result = shell.GetPlatformView()->ComputePlatformResolvedLocales(
+      supported_locales);
+
+  ASSERT_EQ((*result).size(), supported_locales.size());  // 3
+  ASSERT_EQ((*result)[0], supported_locales[0]);
+  ASSERT_EQ((*result)[1], supported_locales[1]);
+  ASSERT_EQ((*result)[2], supported_locales[2]);
+
+  engine.reset();
 }
 
 TEST_F(EmbedderTest, CanQueryDartAOTMode) {
@@ -2961,7 +2996,8 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
       });
 
   context.GetCompositor().SetPlatformViewRendererCallback(
-      [](const FlutterLayer& layer, GrContext* context) -> sk_sp<SkImage> {
+      [](const FlutterLayer& layer,
+         GrDirectContext* context) -> sk_sp<SkImage> {
         auto surface = CreateRenderSurface(
             layer, nullptr /* null because software compositor */);
         auto canvas = surface->getCanvas();
@@ -3258,7 +3294,7 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValidWithPixelRatio) {
               case kFlutterPlatformViewMutationTypeTransformation:
                 mutation.type = kFlutterPlatformViewMutationTypeTransformation;
                 mutation.transformation =
-                    FlutterTransformationMake(SkMatrix::MakeScale(2.0));
+                    FlutterTransformationMake(SkMatrix::Scale(2.0, 2.0));
                 break;
             }
 
@@ -3643,7 +3679,7 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
           ASSERT_EQ(mutations[2]->type,
                     kFlutterPlatformViewMutationTypeTransformation);
           ASSERT_EQ(SkMatrixMake(mutations[2]->transformation),
-                    SkMatrix::MakeTrans(512.0, 0.0));
+                    SkMatrix::Translate(512.0, 0.0));
 
           ASSERT_EQ(mutations[3]->type,
                     kFlutterPlatformViewMutationTypeClipRect);
@@ -3653,7 +3689,7 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
           ASSERT_EQ(mutations[4]->type,
                     kFlutterPlatformViewMutationTypeTransformation);
           ASSERT_EQ(SkMatrixMake(mutations[4]->transformation),
-                    SkMatrix::MakeTrans(-256.0, 0.0));
+                    SkMatrix::Translate(-256.0, 0.0));
 
           ASSERT_EQ(mutations[5]->type,
                     kFlutterPlatformViewMutationTypeClipRect);

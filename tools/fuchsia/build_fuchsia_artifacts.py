@@ -115,6 +115,8 @@ def CopyGenSnapshotIfExists(source, destination):
                     destination_base, 'kernel_compiler.snapshot')
   FindFileAndCopyTo('frontend_server.dart.snapshot', source_root,
                     destination_base, 'flutter_frontend_server.snapshot')
+  FindFileAndCopyTo('list_libraries.dart.snapshot', source_root,
+                    destination_base, 'list_libraries.snapshot')
 
 
 def CopyFlutterTesterBinIfExists(source, destination):
@@ -159,6 +161,10 @@ def CopyVulkanDepsToBucket(src, dst, arch):
     FindFileAndCopyTo('VkLayer_khronos_validation.json', '%s/pkg' % (sdk_path), deps_bucket_path)
     FindFileAndCopyTo('VkLayer_khronos_validation.so', '%s/arch/%s' % (sdk_path, arch), deps_bucket_path)
 
+def CopyIcuDepsToBucket(src, dst):
+  source_root = os.path.join(_out_dir, src)
+  deps_bucket_path = os.path.join(_bucket_directory, dst)
+  FindFileAndCopyTo('icudtl.dat', source_root, deps_bucket_path)
 
 def BuildBucket(runtime_mode, arch, product):
   out_dir = 'fuchsia_%s_%s/' % (runtime_mode, arch)
@@ -166,6 +172,7 @@ def BuildBucket(runtime_mode, arch, product):
   deps_dir = 'flutter/%s/deps/' % (arch)
   CopyToBucket(out_dir, bucket_dir, product)
   CopyVulkanDepsToBucket(out_dir, deps_dir, arch)
+  CopyIcuDepsToBucket(out_dir, deps_dir)
 
 
 def ProcessCIPDPackage(upload, engine_version):
@@ -214,15 +221,7 @@ def GetRunnerTarget(runner_type, product, aot):
   target += 'runner'
   return base + target
 
-
-def GetTargetsToBuild(product=False):
-  targets_to_build = [
-      'flutter/shell/platform/fuchsia:fuchsia',
-  ]
-  return targets_to_build
-
-
-def BuildTarget(runtime_mode, arch, product, enable_lto):
+def BuildTarget(runtime_mode, arch, enable_lto, additional_targets=[]):
   out_dir = 'fuchsia_%s_%s' % (runtime_mode, arch)
   flags = [
       '--fuchsia',
@@ -236,7 +235,7 @@ def BuildTarget(runtime_mode, arch, product, enable_lto):
     flags.append('--no-lto')
 
   RunGN(out_dir, flags)
-  BuildNinjaTargets(out_dir, GetTargetsToBuild(product))
+  BuildNinjaTargets(out_dir, [ 'flutter' ] + additional_targets)
 
   return
 
@@ -276,6 +275,12 @@ def main():
       default=False,
       help='If set, skips building and just creates packages.')
 
+  parser.add_argument(
+      '--targets',
+      default='',
+      help=('Comma-separated list; adds additional targets to build for '
+           'Fuchsia.'))
+
   args = parser.parse_args()
   RemoveDirectoryIfExists(_bucket_directory)
   build_mode = args.runtime_mode
@@ -292,7 +297,7 @@ def main():
       product = product_modes[i]
       if build_mode == 'all' or runtime_mode == build_mode:
         if not args.skip_build:
-          BuildTarget(runtime_mode, arch, product, enable_lto)
+          BuildTarget(runtime_mode, arch, enable_lto, args.targets.split(","))
         BuildBucket(runtime_mode, arch, product)
 
   if args.upload:

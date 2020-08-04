@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #define RAPIDJSON_HAS_STDSTRING 1
 #include "flutter/shell/common/shell.h"
@@ -42,7 +43,7 @@ constexpr char kFontChange[] = "fontsChange";
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
     TaskRunners task_runners,
-    const WindowData window_data,
+    const PlatformData platform_data,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
@@ -133,7 +134,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
       fml::MakeCopyable([&engine_promise,                                 //
                          shell = shell.get(),                             //
                          &dispatcher_maker,                               //
-                         &window_data,                                    //
+                         &platform_data,                                  //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          vsync_waiter = std::move(vsync_waiter),          //
                          &weak_io_manager_future,                         //
@@ -154,7 +155,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
             *shell->GetDartVM(),            //
             std::move(isolate_snapshot),    //
             task_runners,                   //
-            window_data,                    //
+            platform_data,                  //
             shell->GetSettings(),           //
             std::move(animator),            //
             weak_io_manager_future.get(),   //
@@ -212,10 +213,10 @@ static void PerformInitializationTasks(Settings& settings) {
       InitSkiaEventTracer(settings.trace_skia);
     }
 
-    if (!settings.trace_whitelist.empty()) {
+    if (!settings.trace_allowlist.empty()) {
       std::vector<std::string> prefixes;
-      Tokenize(settings.trace_whitelist, &prefixes, ',');
-      fml::tracing::TraceSetWhitelist(prefixes);
+      Tokenize(settings.trace_allowlist, &prefixes, ',');
+      fml::tracing::TraceSetAllowlist(prefixes);
     }
 
     if (!settings.skia_deterministic_rendering_on_cpu) {
@@ -241,17 +242,17 @@ std::unique_ptr<Shell> Shell::Create(
     Settings settings,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer) {
-  return Shell::Create(std::move(task_runners),                //
-                       WindowData{/* default window data */},  //
-                       std::move(settings),                    //
-                       std::move(on_create_platform_view),     //
-                       std::move(on_create_rasterizer)         //
+  return Shell::Create(std::move(task_runners),                    //
+                       PlatformData{/* default platform data */},  //
+                       std::move(settings),                        //
+                       std::move(on_create_platform_view),         //
+                       std::move(on_create_rasterizer)             //
   );
 }
 
 std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
-    const WindowData window_data,
+    const PlatformData platform_data,
     Settings settings,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
@@ -266,7 +267,7 @@ std::unique_ptr<Shell> Shell::Create(
   auto vm_data = vm->GetVMData();
 
   return Shell::Create(std::move(task_runners),        //
-                       std::move(window_data),         //
+                       std::move(platform_data),       //
                        std::move(settings),            //
                        vm_data->GetIsolateSnapshot(),  // isolate snapshot
                        on_create_platform_view,        //
@@ -277,7 +278,7 @@ std::unique_ptr<Shell> Shell::Create(
 
 std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
-    const WindowData window_data,
+    const PlatformData platform_data,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
@@ -301,7 +302,7 @@ std::unique_ptr<Shell> Shell::Create(
                          vm = std::move(vm),                              //
                          &shell,                                          //
                          task_runners = std::move(task_runners),          //
-                         window_data,                                     //
+                         platform_data,                                   //
                          settings,                                        //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          on_create_platform_view,                         //
@@ -309,7 +310,7 @@ std::unique_ptr<Shell> Shell::Create(
   ]() mutable {
         shell = CreateShellOnPlatformThread(std::move(vm),
                                             std::move(task_runners),      //
-                                            window_data,                  //
+                                            platform_data,                //
                                             settings,                     //
                                             std::move(isolate_snapshot),  //
                                             on_create_platform_view,      //
@@ -431,6 +432,9 @@ Shell::~Shell() {
 }
 
 void Shell::NotifyLowMemoryWarning() const {
+  auto trace_id = fml::tracing::TraceNonce();
+  TRACE_EVENT_ASYNC_BEGIN0("flutter", "Shell::NotifyLowMemoryWarning",
+                           trace_id);
   // This does not require a current isolate but does require a running VM.
   // Since a valid shell will not be returned to the embedder without a valid
   // DartVMRef, we can be certain that this is a safe spot to assume a VM is
@@ -438,10 +442,12 @@ void Shell::NotifyLowMemoryWarning() const {
   ::Dart_NotifyLowMemory();
 
   task_runners_.GetRasterTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr()]() {
+      [rasterizer = rasterizer_->GetWeakPtr(), trace_id = trace_id]() {
         if (rasterizer) {
           rasterizer->NotifyLowMemoryWarning();
         }
+        TRACE_EVENT_ASYNC_END0("flutter", "Shell::NotifyLowMemoryWarning",
+                               trace_id);
       });
   // The IO Manager uses resource cache limits of 0, so it is not necessary
   // to purge them.
@@ -542,6 +548,14 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   weak_rasterizer_ = rasterizer_->GetWeakPtr();
   weak_platform_view_ = platform_view_->GetWeakPtr();
 
+  // Setup the time-consuming default font manager right after engine created.
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
+                                    [engine = weak_engine_] {
+                                      if (engine) {
+                                        engine->SetupDefaultFontManager();
+                                      }
+                                    });
+
   is_setup_ = true;
 
   vm_->GetServiceProtocol()->AddHandler(this, GetServiceProtocolDescription());
@@ -551,6 +565,10 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   PersistentCache::GetCacheForProcess()->SetIsDumpingSkp(
       settings_.dump_skp_on_shader_compilation);
+
+  if (settings_.purge_persistent_cache) {
+    PersistentCache::GetCacheForProcess()->Purge();
+  }
 
   // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
   // same thread as it was created on. Shell is constructed on the platform
@@ -1090,6 +1108,19 @@ void Shell::SetNeedsReportTimings(bool value) {
   needs_report_timings_ = value;
 }
 
+// |Engine::Delegate|
+std::unique_ptr<std::vector<std::string>> Shell::ComputePlatformResolvedLocale(
+    const std::vector<std::string>& supported_locale_data) {
+  return ComputePlatformViewResolvedLocale(supported_locale_data);
+}
+
+// |PlatformView::Delegate|
+std::unique_ptr<std::vector<std::string>>
+Shell::ComputePlatformViewResolvedLocale(
+    const std::vector<std::string>& supported_locale_data) {
+  return platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
+}
+
 void Shell::ReportTimings() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
@@ -1199,7 +1230,7 @@ fml::RefPtr<fml::TaskRunner> Shell::GetServiceProtocolHandlerTaskRunner(
 bool Shell::HandleServiceProtocolMessage(
     std::string_view method,  // one if the extension names specified above.
     const ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   auto found = service_protocol_handlers_.find(method);
   if (found != service_protocol_handlers_.end()) {
     return found->second.second(params, response);
@@ -1216,44 +1247,44 @@ ServiceProtocol::Handler::Description Shell::GetServiceProtocolDescription()
   };
 }
 
-static void ServiceProtocolParameterError(rapidjson::Document& response,
+static void ServiceProtocolParameterError(rapidjson::Document* response,
                                           std::string error_details) {
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
+  auto& allocator = response->GetAllocator();
+  response->SetObject();
   const int64_t kInvalidParams = -32602;
-  response.AddMember("code", kInvalidParams, allocator);
-  response.AddMember("message", "Invalid params", allocator);
+  response->AddMember("code", kInvalidParams, allocator);
+  response->AddMember("message", "Invalid params", allocator);
   {
     rapidjson::Value details(rapidjson::kObjectType);
     details.AddMember("details", error_details, allocator);
-    response.AddMember("data", details, allocator);
+    response->AddMember("data", details, allocator);
   }
 }
 
-static void ServiceProtocolFailureError(rapidjson::Document& response,
+static void ServiceProtocolFailureError(rapidjson::Document* response,
                                         std::string message) {
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
+  auto& allocator = response->GetAllocator();
+  response->SetObject();
   const int64_t kJsonServerError = -32000;
-  response.AddMember("code", kJsonServerError, allocator);
-  response.AddMember("message", message, allocator);
+  response->AddMember("code", kJsonServerError, allocator);
+  response->AddMember("message", message, allocator);
 }
 
 // Service protocol handler
 bool Shell::OnServiceProtocolScreenshot(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   auto screenshot = rasterizer_->ScreenshotLastLayerTree(
       Rasterizer::ScreenshotType::CompressedImage, true);
   if (screenshot.data) {
-    response.SetObject();
-    auto& allocator = response.GetAllocator();
-    response.AddMember("type", "Screenshot", allocator);
+    response->SetObject();
+    auto& allocator = response->GetAllocator();
+    response->AddMember("type", "Screenshot", allocator);
     rapidjson::Value image;
     image.SetString(static_cast<const char*>(screenshot.data->data()),
                     screenshot.data->size(), allocator);
-    response.AddMember("screenshot", image, allocator);
+    response->AddMember("screenshot", image, allocator);
     return true;
   }
   ServiceProtocolFailureError(response, "Could not capture image screenshot.");
@@ -1263,18 +1294,18 @@ bool Shell::OnServiceProtocolScreenshot(
 // Service protocol handler
 bool Shell::OnServiceProtocolScreenshotSKP(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   auto screenshot = rasterizer_->ScreenshotLastLayerTree(
       Rasterizer::ScreenshotType::SkiaPicture, true);
   if (screenshot.data) {
-    response.SetObject();
-    auto& allocator = response.GetAllocator();
-    response.AddMember("type", "ScreenshotSkp", allocator);
+    response->SetObject();
+    auto& allocator = response->GetAllocator();
+    response->AddMember("type", "ScreenshotSkp", allocator);
     rapidjson::Value skp;
     skp.SetString(static_cast<const char*>(screenshot.data->data()),
                   screenshot.data->size(), allocator);
-    response.AddMember("skp", skp, allocator);
+    response->AddMember("skp", skp, allocator);
     return true;
   }
   ServiceProtocolFailureError(response, "Could not capture SKP screenshot.");
@@ -1284,7 +1315,7 @@ bool Shell::OnServiceProtocolScreenshotSKP(
 // Service protocol handler
 bool Shell::OnServiceProtocolRunInView(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (params.count("mainScript") == 0) {
@@ -1320,14 +1351,14 @@ bool Shell::OnServiceProtocolRunInView(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
           asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
 
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
+  auto& allocator = response->GetAllocator();
+  response->SetObject();
   if (engine_->Restart(std::move(configuration))) {
-    response.AddMember("type", "Success", allocator);
+    response->AddMember("type", "Success", allocator);
     auto new_description = GetServiceProtocolDescription();
     rapidjson::Value view(rapidjson::kObjectType);
     new_description.Write(this, view, allocator);
-    response.AddMember("view", view, allocator);
+    response->AddMember("view", view, allocator);
     return true;
   } else {
     FML_DLOG(ERROR) << "Could not run configuration in engine.";
@@ -1343,7 +1374,7 @@ bool Shell::OnServiceProtocolRunInView(
 // Service protocol handler
 bool Shell::OnServiceProtocolFlushUIThreadTasks(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   // This API should not be invoked by production code.
   // It can potentially starve the service isolate if the main isolate pauses
@@ -1351,28 +1382,28 @@ bool Shell::OnServiceProtocolFlushUIThreadTasks(
   //
   // It should be invoked from the VM Service and and blocks it until UI thread
   // tasks are processed.
-  response.SetObject();
-  response.AddMember("type", "Success", response.GetAllocator());
+  response->SetObject();
+  response->AddMember("type", "Success", response->GetAllocator());
   return true;
 }
 
 bool Shell::OnServiceProtocolGetDisplayRefreshRate(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-  response.SetObject();
-  response.AddMember("type", "DisplayRefreshRate", response.GetAllocator());
-  response.AddMember("fps", engine_->GetDisplayRefreshRate(),
-                     response.GetAllocator());
+  response->SetObject();
+  response->AddMember("type", "DisplayRefreshRate", response->GetAllocator());
+  response->AddMember("fps", engine_->GetDisplayRefreshRate(),
+                      response->GetAllocator());
   return true;
 }
 
 bool Shell::OnServiceProtocolGetSkSLs(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetIOTaskRunner()->RunsTasksOnCurrentThread());
-  response.SetObject();
-  response.AddMember("type", "GetSkSLs", response.GetAllocator());
+  response->SetObject();
+  response->AddMember("type", "GetSkSLs", response->GetAllocator());
 
   rapidjson::Value shaders_json(rapidjson::kObjectType);
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
@@ -1384,19 +1415,19 @@ bool Shell::OnServiceProtocolGetSkSLs(
     char* b64_char = static_cast<char*>(b64_data->writable_data());
     SkBase64::Encode(sksl.second->data(), sksl.second->size(), b64_char);
     b64_char[b64_size] = 0;  // make it null terminated for printing
-    rapidjson::Value shader_value(b64_char, response.GetAllocator());
+    rapidjson::Value shader_value(b64_char, response->GetAllocator());
     rapidjson::Value shader_key(PersistentCache::SkKeyToFilePath(*sksl.first),
-                                response.GetAllocator());
-    shaders_json.AddMember(shader_key, shader_value, response.GetAllocator());
+                                response->GetAllocator());
+    shaders_json.AddMember(shader_key, shader_value, response->GetAllocator());
   }
-  response.AddMember("SkSLs", shaders_json, response.GetAllocator());
+  response->AddMember("SkSLs", shaders_json, response->GetAllocator());
   return true;
 }
 
 // Service protocol handler
 bool Shell::OnServiceProtocolSetAssetBundlePath(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (params.count("assetDirectory") == 0) {
@@ -1405,8 +1436,8 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
     return false;
   }
 
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
+  auto& allocator = response->GetAllocator();
+  response->SetObject();
 
   auto asset_manager = std::make_shared<AssetManager>();
 
@@ -1415,11 +1446,11 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
                          fml::FilePermission::kRead)));
 
   if (engine_->UpdateAssetManager(std::move(asset_manager))) {
-    response.AddMember("type", "Success", allocator);
+    response->AddMember("type", "Success", allocator);
     auto new_description = GetServiceProtocolDescription();
     rapidjson::Value view(rapidjson::kObjectType);
     new_description.Write(this, view, allocator);
-    response.AddMember("view", view, allocator);
+    response->AddMember("view", view, allocator);
     return true;
   } else {
     FML_DLOG(ERROR) << "Could not update asset directory.";

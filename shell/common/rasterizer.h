@@ -12,6 +12,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer_tree.h"
+#include "flutter/flow/surface.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/raster_thread_merger.h"
@@ -21,7 +22,6 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
-#include "flutter/shell/common/surface.h"
 
 namespace flutter {
 
@@ -454,6 +454,12 @@ class Rasterizer final : public SnapshotDelegate {
 
   // |SnapshotDelegate|
   sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;
+
+  sk_sp<SkData> ScreenshotLayerTreeAsImage(
+      flutter::LayerTree* tree,
+      flutter::CompositorContext& compositor_context,
+      GrDirectContext* surface_context,
+      bool compressed);
 
   sk_sp<SkImage> DoMakeRasterSnapshot(
       SkISize size,

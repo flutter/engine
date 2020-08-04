@@ -9,6 +9,39 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// This file defines an Application Binary Interface (ABI), which requires more
+// stability than regular code to remain functional for exchanging messages
+// between different versions of the embedding and the engine, to allow for both
+// forward and backward compatibility.
+//
+// Specifically,
+// - The order, type, and size of the struct members below must remain the same,
+//   and members should not be removed.
+// - New structures that are part of the ABI must be defined with "size_t
+//   struct_size;" as their first member, which should be initialized using
+//   "sizeof(Type)".
+// - Enum values must not change or be removed.
+// - Enum members without explicit values must not be reordered.
+// - Function signatures (names, argument counts, argument order, and argument
+//   type) cannot change.
+// - The core behavior of existing functions cannot change.
+//
+// These changes are allowed:
+// - Adding new struct members at the end of a structure.
+// - Adding new enum members with a new value.
+// - Renaming a struct member as long as its type, size, and intent remain the
+//   same.
+// - Renaming an enum member as long as its value and intent remains the same.
+//
+// It is expected that struct members and implicitly-valued enums will not
+// always be declared in an order that is optimal for the reader, since members
+// will be added over time, and they can't be reordered.
+//
+// Existing functions should continue to appear from the caller's point of view
+// to operate as they did when they were first introduced, so introduce a new
+// function instead of modifying the core behavior of a function (and continue
+// to support the existing function with the previous behavior).
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -559,7 +592,7 @@ typedef struct {
   /// Has length `custom_accessibility_actions_count`.
   const int32_t* custom_accessibility_actions;
   /// Identifier of the platform view associated with this semantics node, or
-  /// zero if none.
+  /// -1 if none.
   FlutterPlatformViewIdentifier platform_view_id;
 } FlutterSemanticsNode;
 
@@ -860,6 +893,10 @@ typedef struct {
   /// specified.
   const char* variant_code;
 } FlutterLocale;
+
+typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
+    const FlutterLocale** /* supported_locales*/,
+    size_t /* Number of locales*/);
 
 typedef int64_t FlutterEngineDartPort;
 
@@ -1205,6 +1242,17 @@ typedef struct {
   ///
   /// Embedders can provide either snapshot buffers or aot_data, but not both.
   FlutterEngineAOTData aot_data;
+
+  /// A callback that computes the locale the platform would natively resolve
+  /// to.
+  ///
+  /// The input parameter is an array of FlutterLocales which represent the
+  /// locales supported by the app. One of the input supported locales should
+  /// be selected and returned to best match with the user/device's preferred
+  /// locale. The implementation should produce a result that as closely
+  /// matches what the platform would natively resolve to as possible.
+  FlutterComputePlatformResolvedLocaleCallback
+      compute_platform_resolved_locale_callback;
 } FlutterProjectArgs;
 
 //------------------------------------------------------------------------------

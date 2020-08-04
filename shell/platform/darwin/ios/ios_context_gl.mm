@@ -28,11 +28,11 @@ IOSContextGL::~IOSContextGL() = default;
 
 std::unique_ptr<IOSRenderTargetGL> IOSContextGL::CreateRenderTarget(
     fml::scoped_nsobject<CAEAGLLayer> layer) {
-  return std::make_unique<IOSRenderTargetGL>(std::move(layer), context_, resource_context_);
+  return std::make_unique<IOSRenderTargetGL>(std::move(layer), context_);
 }
 
 // |IOSContext|
-sk_sp<GrContext> IOSContextGL::CreateResourceContext() {
+sk_sp<GrDirectContext> IOSContextGL::CreateResourceContext() {
   if (![EAGLContext setCurrentContext:resource_context_.get()]) {
     FML_DLOG(INFO) << "Could not make resource context current on IO thread. Async texture uploads "
                       "will be disabled. On Simulators, this is expected.";
@@ -44,8 +44,9 @@ sk_sp<GrContext> IOSContextGL::CreateResourceContext() {
 }
 
 // |IOSContext|
-bool IOSContextGL::MakeCurrent() {
-  return [EAGLContext setCurrentContext:context_.get()];
+std::unique_ptr<GLContextResult> IOSContextGL::MakeCurrent() {
+  return std::make_unique<GLContextSwitch>(
+      std::make_unique<IOSSwitchableGLContext>(context_.get()));
 }
 
 // |IOSContext|

@@ -14,10 +14,14 @@ import 'package:test_core/src/runner/hack_register_platform.dart'
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
+import 'package:simulators/simulator_manager.dart';
 
+import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 import 'integration_tests_manager.dart';
+import 'macos_info.dart';
+import 'safari_installation.dart';
 import 'supported_browsers.dart';
 import 'test_platform.dart';
 import 'utils.dart';
@@ -57,17 +61,17 @@ class TestCommand extends Command<bool> with ArgUtils {
             'tests.',
       )
       ..addFlag('use-system-flutter',
-        defaultsTo: false,
-        help: 'integration tests are using flutter repository for various tasks'
-        ', such as flutter drive, flutter pub get. If this flag is set, felt '
-        'will use flutter command without cloning the repository. This flag '
-        'can save internet bandwidth. However use with caution. Note that '
-        'since flutter repo is always synced to youngest commit older than '
-        'the engine commit for the tests running in CI, the tests results '
-        'won\'t be consistent with CIs when this flag is set. flutter '
-        'command should be set in the PATH for this flag to be useful.'
-        'This flag can also be used to test local Flutter changes.'
-      )
+          defaultsTo: false,
+          help:
+              'integration tests are using flutter repository for various tasks'
+              ', such as flutter drive, flutter pub get. If this flag is set, felt '
+              'will use flutter command without cloning the repository. This flag '
+              'can save internet bandwidth. However use with caution. Note that '
+              'since flutter repo is always synced to youngest commit older than '
+              'the engine commit for the tests running in CI, the tests results '
+              'won\'t be consistent with CIs when this flag is set. flutter '
+              'command should be set in the PATH for this flag to be useful.'
+              'This flag can also be used to test local Flutter changes.')
       ..addFlag(
         'update-screenshot-goldens',
         defaultsTo: false,
@@ -104,7 +108,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       print('Running the unit tests only');
       return TestTypesRequested.unit;
     } else if (boolArg('integration-tests-only')) {
-      if (!isChrome) {
+      if (!isChrome && !isSafariOnMacOS && !isFirefox) {
         throw UnimplementedError(
             'Integration tests are only available on Chrome Desktop for now');
       }
@@ -122,6 +126,16 @@ class TestCommand extends Command<bool> with ArgUtils {
     // Check the flags to see what type of integration tests are requested.
     testTypesRequested = findTestType();
 
+    if (isSafariOnMacOS) {
+      /// Collect information on the bot.
+      final MacOSInfo macOsInfo = new MacOSInfo();
+      await macOsInfo.printInformation();
+      /// Tests may fail on the CI, therefore exit test_runner.
+      if (isLuci) {
+        return true;
+      }
+    }
+
     switch (testTypesRequested) {
       case TestTypesRequested.unit:
         return runUnitTests();
@@ -130,7 +144,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       case TestTypesRequested.all:
         // TODO(nurhan): https://github.com/flutter/flutter/issues/53322
         // TODO(nurhan): Expand browser matrix for felt integration tests.
-        if (runAllTests && isChrome) {
+        if (runAllTests && (isChrome || isSafariOnMacOS || isFirefox)) {
           bool unitTestResult = await runUnitTests();
           bool integrationTestResult = await runIntegrationTests();
           if (integrationTestResult != unitTestResult) {
@@ -159,33 +173,81 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runPubGet();
     }
 
-    await _buildTests(targets: targetFiles);
+    // In order to run iOS Safari unit tests we need to make sure iOS Simulator
+    // is booted.
+    if (browser == 'ios-safari') {
+      final IosSimulatorManager iosSimulatorManager = IosSimulatorManager();
+      IosSimulator iosSimulator;
+      try {
+        iosSimulator = await iosSimulatorManager.getSimulator(
+            IosSafariArgParser.instance.iosMajorVersion,
+            IosSafariArgParser.instance.iosMinorVersion,
+            IosSafariArgParser.instance.iosDevice);
+      } catch (e) {
+        throw Exception('Error getting requested simulator. Try running '
+            '`felt create` command first before running the tests. exception: '
+            '$e');
+      }
 
-    // Many tabs will be left open after Safari runs, quit Safari during
-    // cleanup.
-    if (browser == 'safari') {
-      cleanupCallbacks.add(() async {
-        // Only close Safari if felt is running in CI environments. Do not close
-        // Safari for the local testing.
-        if (io.Platform.environment['LUCI_CONTEXT'] != null || isCirrus) {
-          print('INFO: Safari tests ran. Quit Safari.');
-          await runProcess(
-            'sudo',
-            ['pkill', '-lf', 'Safari'],
-            workingDirectory: environment.webUiRootDir.path,
-          );
-        } else {
-          print('INFO: Safari tests ran. Please quit Safari tabs.');
-        }
-      });
+      if (!iosSimulator.booted) {
+        await iosSimulator.boot();
+        print('INFO: Simulator ${iosSimulator.id} booted.');
+        cleanupCallbacks.add(() async {
+          await iosSimulator.shutdown();
+          print('INFO: Simulator ${iosSimulator.id} shutdown.');
+        });
+      }
     }
+
+    await _buildTargets();
 
     if (runAllTests) {
-      await _runAllTests();
+      await _runAllTestsForCurrentPlatform();
     } else {
-      await _runTargetTests(targetFiles);
+      await _runSpecificTests(targetFiles);
     }
     return true;
+  }
+
+  /// Builds all test targets that will be run.
+  Future<void> _buildTargets() async {
+    final Stopwatch stopwatch = Stopwatch()..start();
+    List<FilePath> allTargets;
+    if (runAllTests) {
+      allTargets = environment.webUiTestDir
+          .listSync(recursive: true)
+          .whereType<io.File>()
+          .where((io.File f) => f.path.endsWith('_test.dart'))
+          .map<FilePath>((io.File f) => FilePath.fromWebUi(
+              path.relative(f.path, from: environment.webUiRootDir.path)))
+          .toList();
+    } else {
+      allTargets = targetFiles;
+    }
+
+    // Separate HTML targets from CanvasKit targets because the two use
+    // different dart2js options (and different build.*.yaml files).
+    final List<FilePath> htmlTargets = <FilePath>[];
+    final List<FilePath> canvasKitTargets = <FilePath>[];
+    final String canvasKitTestDirectory =
+        path.join(environment.webUiTestDir.path, 'canvaskit');
+    for (FilePath target in allTargets) {
+      if (path.isWithin(canvasKitTestDirectory, target.absolute)) {
+        canvasKitTargets.add(target);
+      } else {
+        htmlTargets.add(target);
+      }
+    }
+
+    if (htmlTargets.isNotEmpty) {
+      await _buildTests(targets: htmlTargets, forCanvasKit: false);
+    }
+
+    if (canvasKitTargets.isNotEmpty) {
+      await _buildTests(targets: canvasKitTargets, forCanvasKit: true);
+    }
+    stopwatch.stop();
+    print('The build took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
   }
 
   /// Whether to start the browser in debug mode.
@@ -213,6 +275,13 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Whether [browser] is set to "chrome".
   bool get isChrome => browser == 'chrome';
 
+  /// Whether [browser] is set to "firefox".
+  bool get isFirefox => browser == 'firefox';
+
+  /// Whether [browser] is set to "safari".
+  bool get isSafariOnMacOS => browser == 'safari'
+      && io.Platform.isMacOS;
+
   /// Use system flutter instead of cloning the repository.
   ///
   /// Read the flag help for more details. Uses PATH to locate flutter.
@@ -222,12 +291,18 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// ".dart_tool/goldens".
   bool get doUpdateScreenshotGoldens => boolArg('update-screenshot-goldens');
 
-  Future<void> _runTargetTests(List<FilePath> targets) async {
+  /// Runs all tests specified in [targets].
+  ///
+  /// Unlike [_runAllTestsForCurrentPlatform], this does not filter targets
+  /// by platform/browser capabilites, and instead attempts to run all of
+  /// them.
+  Future<void> _runSpecificTests(List<FilePath> targets) async {
     await _runTestBatch(targets, concurrency: 1, expectFailure: false);
     _checkExitCode();
   }
 
-  Future<void> _runAllTests() async {
+  /// Runs as many tests as possible on the current OS/browser combination.
+  Future<void> _runAllTestsForCurrentPlatform() async {
     final io.Directory testDir = io.Directory(path.join(
       environment.webUiRootDir.path,
       'test',
@@ -373,21 +448,35 @@ class TestCommand extends Command<bool> with ArgUtils {
     timestampFile.writeAsStringSync(timestamp);
   }
 
-  Future<void> _buildTests({List<FilePath> targets}) async {
+  /// Builds the specific test [targets].
+  ///
+  /// [targets] must not be null.
+  ///
+  /// When building for CanvasKit we have to use a separate `build.canvaskit.yaml`
+  /// config file. Otherwise, `build.html.yaml` is used. Because `build_runner`
+  /// overwrites the output directories, we redirect the CanvasKit output to a
+  /// separate directory, then copy the files back to `build/test`.
+  Future<void> _buildTests({List<FilePath> targets, bool forCanvasKit}) async {
+    print(
+        'Building ${targets.length} targets for ${forCanvasKit ? 'CanvasKit' : 'HTML'}');
+    final String canvasKitOutputRelativePath =
+        path.join('.dart_tool', 'canvaskit_tests');
     List<String> arguments = <String>[
       'run',
       'build_runner',
       'build',
+      '--enable-experiment=non-nullable',
       'test',
       '-o',
-      'build',
-      if (targets != null)
-        for (FilePath path in targets) ...[
-          '--build-filter=${path.relativeToWebUi}.js',
-          '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
-        ],
+      forCanvasKit ? canvasKitOutputRelativePath : 'build',
+      '--config',
+      // CanvasKit uses `build.canvaskit.yaml`, which HTML Uses `build.html.yaml`.
+      forCanvasKit ? 'canvaskit' : 'html',
+      for (FilePath path in targets) ...[
+        '--build-filter=${path.relativeToWebUi}.js',
+        '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
+      ],
     ];
-    final Stopwatch stopwatch = Stopwatch()..start();
 
     final int exitCode = await runProcess(
       environment.pubExecutable,
@@ -401,15 +490,27 @@ class TestCommand extends Command<bool> with ArgUtils {
         // In a testing on a 32-core 132GB workstation increasing this number to
         // 32 sped up the build from ~4min to ~1.5min.
         if (io.Platform.environment.containsKey('BUILD_MAX_WORKERS_PER_TASK'))
-          'BUILD_MAX_WORKERS_PER_TASK': io.Platform.environment['BUILD_MAX_WORKERS_PER_TASK'],
+          'BUILD_MAX_WORKERS_PER_TASK':
+              io.Platform.environment['BUILD_MAX_WORKERS_PER_TASK'],
       },
     );
-    stopwatch.stop();
-    print('The build took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
 
     if (exitCode != 0) {
       throw ToolException(
           'Failed to compile tests. Compiler exited with exit code $exitCode');
+    }
+
+    if (forCanvasKit) {
+      final io.Directory canvasKitTemporaryOutputDirectory = io.Directory(
+          path.join(environment.webUiRootDir.path, canvasKitOutputRelativePath,
+              'test', 'canvaskit'));
+      final io.Directory canvasKitOutputDirectory = io.Directory(
+          path.join(environment.webUiBuildDir.path, 'test', 'canvaskit'));
+      if (await canvasKitOutputDirectory.exists()) {
+        await canvasKitOutputDirectory.delete(recursive: true);
+      }
+      await canvasKitTemporaryOutputDirectory
+          .rename(canvasKitOutputDirectory.path);
     }
   }
 

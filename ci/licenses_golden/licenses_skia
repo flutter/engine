@@ -1,4 +1,4 @@
-Signature: 09e4beba9ab1874ab508d9d7a41ae312
+Signature: 56bf901075bf752d3c88cf8037fb5abf
 
 UNUSED LICENSES:
 
@@ -423,7 +423,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/AndroidCodecBench.cpp
 FILE: ../../../third_party/skia/bench/AndroidCodecBench.h
 FILE: ../../../third_party/skia/bench/EncodeBench.cpp
-FILE: ../../../third_party/skia/bench/GrMipMapBench.cpp
+FILE: ../../../third_party/skia/bench/GrMipmapBench.cpp
 FILE: ../../../third_party/skia/bench/HardStopGradientBench_ScaleNumColors.cpp
 FILE: ../../../third_party/skia/bench/HardStopGradientBench_ScaleNumHardStops.cpp
 FILE: ../../../third_party/skia/bench/HardStopGradientBench_SpecialHardStops.cpp
@@ -668,7 +668,6 @@ FILE: ../../../third_party/skia/src/gpu/gl/GrGLOpsRenderPass.h
 FILE: ../../../third_party/skia/src/gpu/gl/glfw/GrGLMakeNativeInterface_glfw.cpp
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLColorSpaceXformHelper.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLProgramDataManager.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrClearStencilClipOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrPathStencilSettings.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrRegionOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrRegionOp.h
@@ -970,6 +969,11 @@ FILE: ../../../third_party/skia/bench/microbench.json
 FILE: ../../../third_party/skia/bench/skpbench.json
 FILE: ../../../third_party/skia/build/fuchsia/skqp/skqp.cmx
 FILE: ../../../third_party/skia/build/fuchsia/skqp/test_manifest.json
+FILE: ../../../third_party/skia/demos.skia.org/demos/hello_world/index.html
+FILE: ../../../third_party/skia/demos.skia.org/demos/web_worker/index.html
+FILE: ../../../third_party/skia/demos.skia.org/demos/web_worker/main.js
+FILE: ../../../third_party/skia/demos.skia.org/demos/web_worker/shared.js
+FILE: ../../../third_party/skia/demos.skia.org/demos/web_worker/worker.js
 FILE: ../../../third_party/skia/docker/binary-size/Dockerfile
 FILE: ../../../third_party/skia/docker/cmake-release/Dockerfile
 FILE: ../../../third_party/skia/docker/skia-build-tools/Dockerfile
@@ -997,6 +1001,7 @@ FILE: ../../../third_party/skia/experimental/skottiekit/interface.js
 FILE: ../../../third_party/skia/experimental/skottiekit/postamble.js
 FILE: ../../../third_party/skia/experimental/skottiekit/preamble.js
 FILE: ../../../third_party/skia/experimental/skottiekit/release.js
+FILE: ../../../third_party/skia/experimental/skottiekit/skottiekit/package.json
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/cpu.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger/anim.mskp
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger/index.html
@@ -1032,6 +1037,9 @@ FILE: ../../../third_party/skia/infra/bots/assets/go_win/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/ios-dev-image-11.4/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/ios-dev-image-12.4/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/ios-dev-image-13.3/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/ios-dev-image-13.4/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/ios-dev-image-13.5/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/ios-dev-image-13.6/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/linux_vulkan_sdk/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/lottie-samples/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/mesa_intel_driver_linux/VERSION
@@ -1052,16 +1060,17 @@ FILE: ../../../third_party/skia/infra/bots/assets/text_blob_traces/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/valgrind/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/win_ninja/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/win_toolchain/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/xcode-11.4.1/VERSION
 FILE: ../../../third_party/skia/infra/bots/canvaskit.isolate
 FILE: ../../../third_party/skia/infra/bots/cfg.json
 FILE: ../../../third_party/skia/infra/bots/compile.isolate
 FILE: ../../../third_party/skia/infra/bots/compile_android_framework.isolate
-FILE: ../../../third_party/skia/infra/bots/compile_g3_framework.isolate
 FILE: ../../../third_party/skia/infra/bots/empty.isolate
 FILE: ../../../third_party/skia/infra/bots/infra_tests.isolate
 FILE: ../../../third_party/skia/infra/bots/infrabots.isolate
 FILE: ../../../third_party/skia/infra/bots/ios_bin.isolate
 FILE: ../../../third_party/skia/infra/bots/jobs.json
+FILE: ../../../third_party/skia/infra/bots/lottie_ci.isolate
 FILE: ../../../third_party/skia/infra/bots/lottie_web.isolate
 FILE: ../../../third_party/skia/infra/bots/pathkit.isolate
 FILE: ../../../third_party/skia/infra/bots/perf_puppeteer.isolate
@@ -1110,6 +1119,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-CommandBuffer.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-Metal.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac10.15.5-Clang-arm64-Debug-iOS.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-arm64-Release-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86-Debug-Exceptions.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86_64-Debug-ANGLE.json
@@ -1184,19 +1194,11 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.exp
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/integer_issue.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/win_test.json
 FILE: ../../../third_party/skia/infra/bots/recipes.isolate
-FILE: ../../../third_party/skia/infra/bots/recipes/android_compile.expected/android_compile_nontrybot.json
-FILE: ../../../third_party/skia/infra/bots/recipes/android_compile.expected/android_compile_sdk_trybot.json
-FILE: ../../../third_party/skia/infra/bots/recipes/android_compile.expected/android_compile_trybot.json
-FILE: ../../../third_party/skia/infra/bots/recipes/android_compile.expected/android_compile_trybot_failure.json
-FILE: ../../../third_party/skia/infra/bots/recipes/android_compile.expected/android_compile_unrecognized_target.json
 FILE: ../../../third_party/skia/infra/bots/recipes/check_generated_files.expected/Housekeeper-PerCommit-CheckGeneratedFiles.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Win-Clang-x86-Debug.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compute_buildstats.expected/normal_bot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compute_buildstats.expected/trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compute_test.expected/Test-Debian10-Clang-NUC7i5BNK-GPU-IntelIris640-x86_64-Debug-All-OpenCL.json
-FILE: ../../../third_party/skia/infra/bots/recipes/g3_compile.expected/g3_compile_nontrybot.json
-FILE: ../../../third_party/skia/infra/bots/recipes/g3_compile.expected/g3_compile_trybot.json
-FILE: ../../../third_party/skia/infra/bots/recipes/g3_compile.expected/g3_compile_trybot_failure.json
 FILE: ../../../third_party/skia/infra/bots/recipes/housekeeper.expected/Housekeeper-PerCommit-Trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/housekeeper.expected/Housekeeper-PerCommit.json
 FILE: ../../../third_party/skia/infra/bots/recipes/infra.expected/infra_tests.json
@@ -1229,7 +1231,6 @@ FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Androi
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Release-All-Vulkan_Skpbench.json
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/Perf-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Release-All-Vulkan_Skpbench_DDLTotal_9x9.json
 FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/trybot.json
-FILE: ../../../third_party/skia/infra/bots/recipes/skqp_test.expected/Test-Debian10-Clang-GCE-CPU-AVX2-universal-devrel-All-Android_SKQP.json
 FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Debian10-Clang-arm-Release-Flutter_Android.json
 FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Debian10-Clang-universal-devrel-Android_SKQP.json
 FILE: ../../../third_party/skia/infra/bots/recipes/sync_and_compile.expected/Build-Mac-Clang-x86_64-Debug-CommandBuffer.json
@@ -1271,7 +1272,6 @@ FILE: ../../../third_party/skia/infra/bots/tools/luci-go/win64/isolate.exe.sha1
 FILE: ../../../third_party/skia/infra/canvaskit/docker/canvaskit-emsdk/Dockerfile
 FILE: ../../../third_party/skia/infra/config/recipes.cfg
 FILE: ../../../third_party/skia/infra/cross-compile/docker/cross-linux-arm64/Dockerfile
-FILE: ../../../third_party/skia/infra/cts/whitelist_devices.json
 FILE: ../../../third_party/skia/infra/docker/debian9/Dockerfile
 FILE: ../../../third_party/skia/infra/gcc/Debian10-x86/Dockerfile
 FILE: ../../../third_party/skia/infra/gcc/Debian10/Dockerfile
@@ -1310,6 +1310,7 @@ FILE: ../../../third_party/skia/modules/canvaskit/interface.js
 FILE: ../../../third_party/skia/modules/canvaskit/karma.bench.conf.js
 FILE: ../../../third_party/skia/modules/canvaskit/karma.conf.js
 FILE: ../../../third_party/skia/modules/canvaskit/karma.google3.conf.js
+FILE: ../../../third_party/skia/modules/canvaskit/package-lock.json
 FILE: ../../../third_party/skia/modules/canvaskit/package.json
 FILE: ../../../third_party/skia/modules/canvaskit/paragraph.js
 FILE: ../../../third_party/skia/modules/canvaskit/particles.js
@@ -1319,6 +1320,9 @@ FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/confetti.json
 FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/drinks.json
 FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/lego_loader.json
 FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/onboarding.json
+FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/test_1500x959.jpg
+FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/test_512x512.png
+FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/test_64x64.png
 FILE: ../../../third_party/skia/modules/canvaskit/perf/canvas.bench.js
 FILE: ../../../third_party/skia/modules/canvaskit/perf/matrix.bench.js
 FILE: ../../../third_party/skia/modules/canvaskit/postamble.js
@@ -1347,6 +1351,7 @@ FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphStyle.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextShadow.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextStyle.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TypefaceFontProvider.h
+FILE: ../../../third_party/skia/modules/skparagraph/samples/SampleParagraph.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/FontCollection.cpp
@@ -1359,6 +1364,8 @@ FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphCache.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphImpl.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphImpl.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphStyle.cpp
+FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphUtil.cpp
+FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphUtil.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/Run.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Run.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/TextLine.cpp
@@ -1372,7 +1379,6 @@ FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/modules/skparagraph/utils/TestFontCollection.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/utils/TestFontCollection.h
 FILE: ../../../third_party/skia/public.bzl
-FILE: ../../../third_party/skia/samplecode/SampleParagraph.cpp
 FILE: ../../../third_party/skia/site/METADATA
 FILE: ../../../third_party/skia/site/dev/METADATA
 FILE: ../../../third_party/skia/site/dev/design/PdfLogicalDocumentStructure.png
@@ -1446,15 +1452,27 @@ FILE: ../../../third_party/skia/specs/web-img-decode/proposed/index.html
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/ports/SkTLS_pthread.cpp
 FILE: ../../../third_party/skia/src/ports/SkTLS_win.cpp
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_fp.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.c.inc
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_geom.c.inc
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_geom.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.c.inc
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.c.inc
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_pipeline.c.inc
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_pipeline.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.c.inc
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
-FILE: ../../../third_party/skia/src/sksl/sksl_blend.inc
-FILE: ../../../third_party/skia/src/sksl/sksl_fp.inc
-FILE: ../../../third_party/skia/src/sksl/sksl_frag.inc
-FILE: ../../../third_party/skia/src/sksl/sksl_geom.inc
-FILE: ../../../third_party/skia/src/sksl/sksl_gpu.inc
-FILE: ../../../third_party/skia/src/sksl/sksl_interp.inc
-FILE: ../../../third_party/skia/src/sksl/sksl_pipeline.inc
-FILE: ../../../third_party/skia/src/sksl/sksl_vert.inc
+FILE: ../../../third_party/skia/src/sksl/sksl_fp_raw.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_frag.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_geom.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_gpu.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_interp.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_pipeline.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_vert.sksl
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2011 Google Inc. All rights reserved.
 
@@ -1510,8 +1528,6 @@ FILE: ../../../third_party/skia/bench/RegionBench.cpp
 FILE: ../../../third_party/skia/bench/RepeatTileBench.cpp
 FILE: ../../../third_party/skia/bench/ScalarBench.cpp
 FILE: ../../../third_party/skia/bench/VertBench.cpp
-FILE: ../../../third_party/skia/experimental/Networking/SkSockets.cpp
-FILE: ../../../third_party/skia/experimental/Networking/SkSockets.h
 FILE: ../../../third_party/skia/gm/aaclip.cpp
 FILE: ../../../third_party/skia/gm/aarectmodes.cpp
 FILE: ../../../third_party/skia/gm/arithmode.cpp
@@ -1917,9 +1933,6 @@ FILE: ../../../third_party/skia/src/gpu/GrRectanizerPow2.h
 FILE: ../../../third_party/skia/src/gpu/GrRectanizerSkyline.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceCache.cpp
 FILE: ../../../third_party/skia/src/gpu/GrResourceCache.h
-FILE: ../../../third_party/skia/src/gpu/GrSurfacePriv.h
-FILE: ../../../third_party/skia/src/gpu/GrTRecorder.h
-FILE: ../../../third_party/skia/src/gpu/GrTexturePriv.h
 FILE: ../../../third_party/skia/src/gpu/GrTracing.h
 FILE: ../../../third_party/skia/src/gpu/GrXferProcessor.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrBicubicEffect.cpp
@@ -2029,6 +2042,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/BenchLogger.cpp
 FILE: ../../../third_party/skia/bench/BenchLogger.h
 FILE: ../../../third_party/skia/bench/ChecksumBench.cpp
+FILE: ../../../third_party/skia/bench/FilteringBench.cpp
 FILE: ../../../third_party/skia/bench/GameBench.cpp
 FILE: ../../../third_party/skia/bench/GrMemoryPoolBench.cpp
 FILE: ../../../third_party/skia/bench/LineBench.cpp
@@ -2203,7 +2217,6 @@ FILE: ../../../third_party/skia/src/shaders/gradients/SkTwoPointConicalGradient.
 FILE: ../../../third_party/skia/src/shaders/gradients/SkTwoPointConicalGradient.h
 FILE: ../../../third_party/skia/src/utils/SkFloatUtils.h
 FILE: ../../../third_party/skia/src/utils/SkNullCanvas.cpp
-FILE: ../../../third_party/skia/src/utils/mac/SkStream_mac.cpp
 FILE: ../../../third_party/skia/src/utils/win/SkDWriteFontFileStream.cpp
 FILE: ../../../third_party/skia/src/utils/win/SkDWriteFontFileStream.h
 FILE: ../../../third_party/skia/src/utils/win/SkDWriteGeometrySink.cpp
@@ -2255,7 +2268,7 @@ FILE: ../../../third_party/skia/bench/DrawBitmapAABench.cpp
 FILE: ../../../third_party/skia/bench/ImageBench.cpp
 FILE: ../../../third_party/skia/bench/InterpBench.cpp
 FILE: ../../../third_party/skia/bench/MathBench.cpp
-FILE: ../../../third_party/skia/bench/MipMapBench.cpp
+FILE: ../../../third_party/skia/bench/MipmapBench.cpp
 FILE: ../../../third_party/skia/bench/PictureOverheadBench.cpp
 FILE: ../../../third_party/skia/bench/SKPAnimationBench.cpp
 FILE: ../../../third_party/skia/bench/SKPAnimationBench.h
@@ -2329,12 +2342,11 @@ FILE: ../../../third_party/skia/gm/textblobtransforms.cpp
 FILE: ../../../third_party/skia/gm/textblobuseaftergpufree.cpp
 FILE: ../../../third_party/skia/gm/transparency.cpp
 FILE: ../../../third_party/skia/gm/xform.cpp
-FILE: ../../../third_party/skia/include/android/SkBRDAllocator.h
-FILE: ../../../third_party/skia/include/android/SkBitmapRegionDecoder.h
 FILE: ../../../third_party/skia/include/codec/SkAndroidCodec.h
 FILE: ../../../third_party/skia/include/codec/SkCodec.h
 FILE: ../../../third_party/skia/include/core/SkEncodedImageFormat.h
 FILE: ../../../third_party/skia/include/core/SkFilterQuality.h
+FILE: ../../../third_party/skia/include/core/SkPathBuilder.h
 FILE: ../../../third_party/skia/include/core/SkPixmap.h
 FILE: ../../../third_party/skia/include/core/SkPngChunkReader.h
 FILE: ../../../third_party/skia/include/core/SkPoint3.h
@@ -2367,7 +2379,6 @@ FILE: ../../../third_party/skia/samplecode/SampleClipDrawMatch.cpp
 FILE: ../../../third_party/skia/samplecode/SampleFilterQuality.cpp
 FILE: ../../../third_party/skia/samplecode/SampleShip.cpp
 FILE: ../../../third_party/skia/samplecode/SampleXfer.cpp
-FILE: ../../../third_party/skia/src/android/SkBitmapRegionDecoder.cpp
 FILE: ../../../third_party/skia/src/c/sk_c_from_to.h
 FILE: ../../../third_party/skia/src/c/sk_paint.cpp
 FILE: ../../../third_party/skia/src/c/sk_types_priv.h
@@ -2423,6 +2434,7 @@ FILE: ../../../third_party/skia/src/core/SkMiniRecorder.h
 FILE: ../../../third_party/skia/src/core/SkNextID.h
 FILE: ../../../third_party/skia/src/core/SkOpts.cpp
 FILE: ../../../third_party/skia/src/core/SkOpts.h
+FILE: ../../../third_party/skia/src/core/SkPathBuilder.cpp
 FILE: ../../../third_party/skia/src/core/SkPathPriv.h
 FILE: ../../../third_party/skia/src/core/SkPictureCommon.h
 FILE: ../../../third_party/skia/src/core/SkPictureImageGenerator.cpp
@@ -2468,7 +2480,6 @@ FILE: ../../../third_party/skia/src/gpu/GrPipeline.h
 FILE: ../../../third_party/skia/src/gpu/GrProcessorUnitTest.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRenderTargetContext.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRenderTargetContext.h
-FILE: ../../../third_party/skia/src/gpu/GrRenderTargetPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrResourceProvider.h
 FILE: ../../../third_party/skia/src/gpu/GrSamplerState.h
@@ -2478,13 +2489,11 @@ FILE: ../../../third_party/skia/src/gpu/GrTestUtils.h
 FILE: ../../../third_party/skia/src/gpu/GrTriangulator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrTriangulator.h
 FILE: ../../../third_party/skia/src/gpu/GrXferProcessor.cpp
-FILE: ../../../third_party/skia/src/gpu/GrYUVProvider.cpp
-FILE: ../../../third_party/skia/src/gpu/GrYUVProvider.h
 FILE: ../../../third_party/skia/src/gpu/SkGpuDevice_drawTexture.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/GrBlendFragmentProcessor.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/GrBlendFragmentProcessor.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrCustomXfermode.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrCustomXfermode.h
-FILE: ../../../third_party/skia/src/gpu/effects/GrXfermodeFragmentProcessor.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/GrXfermodeFragmentProcessor.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrQuad.h
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLTextureRenderTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLUniformHandler.cpp
@@ -2534,9 +2543,6 @@ FILE: ../../../third_party/skia/src/gpu/text/GrTextBlob.cpp
 FILE: ../../../third_party/skia/src/gpu/text/GrTextBlob.h
 FILE: ../../../third_party/skia/src/gpu/text/GrTextBlobCache.cpp
 FILE: ../../../third_party/skia/src/gpu/text/GrTextBlobCache.h
-FILE: ../../../third_party/skia/src/gpu/text/GrTextContext.cpp
-FILE: ../../../third_party/skia/src/gpu/text/GrTextContext.h
-FILE: ../../../third_party/skia/src/gpu/text/GrTextTarget.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkBuffer.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkCaps.cpp
@@ -2607,8 +2613,6 @@ FILE: ../../../third_party/skia/src/svg/SkSVGCanvas.cpp
 FILE: ../../../third_party/skia/src/svg/SkSVGDevice.cpp
 FILE: ../../../third_party/skia/src/svg/SkSVGDevice.h
 FILE: ../../../third_party/skia/src/utils/SkPaintFilterCanvas.cpp
-FILE: ../../../third_party/skia/src/utils/SkWhitelistChecksums.inc
-FILE: ../../../third_party/skia/src/utils/SkWhitelistTypefaces.cpp
 FILE: ../../../third_party/skia/src/xps/SkXPSDocument.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2015 Google Inc.
@@ -2771,8 +2775,8 @@ FILE: ../../../third_party/skia/src/core/SkGpuBlurUtils.h
 FILE: ../../../third_party/skia/src/core/SkLegacyGpuBlurUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixUtils.h
 FILE: ../../../third_party/skia/src/core/SkMessageBus.h
-FILE: ../../../third_party/skia/src/core/SkMipMap.cpp
-FILE: ../../../third_party/skia/src/core/SkMipMap.h
+FILE: ../../../third_party/skia/src/core/SkMipmap.cpp
+FILE: ../../../third_party/skia/src/core/SkMipmap.h
 FILE: ../../../third_party/skia/src/core/SkPaintPriv.cpp
 FILE: ../../../third_party/skia/src/core/SkPaintPriv.h
 FILE: ../../../third_party/skia/src/core/SkPathRef.cpp
@@ -2783,7 +2787,6 @@ FILE: ../../../third_party/skia/src/core/SkStringUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkStringUtils.h
 FILE: ../../../third_party/skia/src/core/SkTDynamicHash.h
 FILE: ../../../third_party/skia/src/core/SkTMultiMap.h
-FILE: ../../../third_party/skia/src/core/SkValidatingReadBuffer.h
 FILE: ../../../third_party/skia/src/core/SkValidationUtils.h
 FILE: ../../../third_party/skia/src/effects/SkLumaColorFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkAlphaThresholdFilter.cpp
@@ -2793,7 +2796,6 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkDropShadowImageFilter
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkTileImageFilter.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBlend.h
 FILE: ../../../third_party/skia/src/gpu/GrCaps.h
-FILE: ../../../third_party/skia/src/gpu/GrCoordTransform.h
 FILE: ../../../third_party/skia/src/gpu/GrGeometryProcessor.h
 FILE: ../../../third_party/skia/src/gpu/GrPaint.cpp
 FILE: ../../../third_party/skia/src/gpu/GrPathProcessor.cpp
@@ -3039,11 +3041,11 @@ FILE: ../../../third_party/skia/gm/video_decoder.cpp
 FILE: ../../../third_party/skia/gm/yuv420_odd_dim.cpp
 FILE: ../../../third_party/skia/include/core/SkTileMode.h
 FILE: ../../../third_party/skia/include/gpu/GrContextThreadSafeProxy.h
+FILE: ../../../third_party/skia/include/gpu/GrRecordingContext.h
 FILE: ../../../third_party/skia/include/gpu/dawn/GrDawnTypes.h
 FILE: ../../../third_party/skia/include/ports/SkCFObject.h
 FILE: ../../../third_party/skia/include/private/GrContext_Base.h
 FILE: ../../../third_party/skia/include/private/GrImageContext.h
-FILE: ../../../third_party/skia/include/private/GrRecordingContext.h
 FILE: ../../../third_party/skia/include/private/SkVx.h
 FILE: ../../../third_party/skia/modules/skottie/src/Composition.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Composition.h
@@ -3218,7 +3220,6 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/ClearBench.cpp
 FILE: ../../../third_party/skia/bench/CompositingImagesBench.cpp
 FILE: ../../../third_party/skia/bench/CubicMapBench.cpp
-FILE: ../../../third_party/skia/bench/GrCCFillGeometryBench.cpp
 FILE: ../../../third_party/skia/bench/ImageCycleBench.cpp
 FILE: ../../../third_party/skia/bench/JSONBench.cpp
 FILE: ../../../third_party/skia/bench/PathOpsBench.cpp
@@ -3290,7 +3291,6 @@ FILE: ../../../third_party/skia/include/private/SkSafe32.h
 FILE: ../../../third_party/skia/include/private/SkTo.h
 FILE: ../../../third_party/skia/include/utils/SkAnimCodecPlayer.h
 FILE: ../../../third_party/skia/include/utils/SkTextUtils.h
-FILE: ../../../third_party/skia/infra/cts/run_testlab.go
 FILE: ../../../third_party/skia/modules/skottie/include/SkottieProperty.h
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieJson.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieJson.h
@@ -3305,24 +3305,20 @@ FILE: ../../../third_party/skia/modules/skottie/utils/SkottieUtils.cpp
 FILE: ../../../third_party/skia/modules/skottie/utils/SkottieUtils.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGClipEffect.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGColorFilter.h
-FILE: ../../../third_party/skia/modules/sksg/include/SkSGGeometryTransform.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGGradient.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGImage.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGMaskEffect.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGOpacityEffect.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGPlane.h
-FILE: ../../../third_party/skia/modules/sksg/include/SkSGRoundEffect.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGScene.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGText.h
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGClipEffect.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGColorFilter.cpp
-FILE: ../../../third_party/skia/modules/sksg/src/SkSGGeometryTransform.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGGradient.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGImage.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGMaskEffect.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGOpacityEffect.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGPlane.cpp
-FILE: ../../../third_party/skia/modules/sksg/src/SkSGRoundEffect.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGScene.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGText.cpp
 FILE: ../../../third_party/skia/modules/skshaper/src/SkShaper.cpp
@@ -3341,7 +3337,6 @@ FILE: ../../../third_party/skia/src/core/SkCanvasPriv.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpaceXformSteps.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpaceXformSteps.h
 FILE: ../../../third_party/skia/src/core/SkContourMeasure.cpp
-FILE: ../../../third_party/skia/src/core/SkCoverageModePriv.h
 FILE: ../../../third_party/skia/src/core/SkCubicMap.cpp
 FILE: ../../../third_party/skia/src/core/SkCubicSolver.h
 FILE: ../../../third_party/skia/src/core/SkDeferredDisplayList.cpp
@@ -3372,9 +3367,9 @@ FILE: ../../../third_party/skia/src/effects/SkTrimPE.h
 FILE: ../../../third_party/skia/src/effects/SkTrimPathEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/GrContextThreadSafeProxyPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrDDLContext.cpp
+FILE: ../../../third_party/skia/src/gpu/GrDirectContext.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDriverBugWorkarounds.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFPArgs.h
-FILE: ../../../third_party/skia/src/gpu/GrLegacyDirectContext.cpp
 FILE: ../../../third_party/skia/src/gpu/GrProxyProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrProxyProvider.h
 FILE: ../../../third_party/skia/src/gpu/GrRenderTargetProxyPriv.h
@@ -3402,7 +3397,6 @@ FILE: ../../../third_party/skia/src/gpu/effects/GrConfigConversionEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrConstColorProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrLumaColorFilterEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrMagnifierEffect.fp
-FILE: ../../../third_party/skia/src/gpu/effects/GrPremulInputFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrRRectBlurEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrRectBlurEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrSkSLFP.cpp
@@ -3423,8 +3417,6 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrLumaColorFilterEffec
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrLumaColorFilterEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMagnifierEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMagnifierEffect.h
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrPremulInputFragmentProcessor.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrPremulInputFragmentProcessor.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrRRectBlurEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrRRectBlurEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrRectBlurEffect.cpp
@@ -3440,7 +3432,6 @@ FILE: ../../../third_party/skia/src/gpu/gradients/GrLinearGradientLayout.fp
 FILE: ../../../third_party/skia/src/gpu/gradients/GrRadialGradientLayout.fp
 FILE: ../../../third_party/skia/src/gpu/gradients/GrSingleIntervalGradientColorizer.fp
 FILE: ../../../third_party/skia/src/gpu/gradients/GrSweepGradientLayout.fp
-FILE: ../../../third_party/skia/src/gpu/gradients/GrTextureGradientColorizer.fp
 FILE: ../../../third_party/skia/src/gpu/gradients/GrTiledGradientEffect.fp
 FILE: ../../../third_party/skia/src/gpu/gradients/GrTwoPointConicalGradientLayout.fp
 FILE: ../../../third_party/skia/src/gpu/gradients/GrUnrolledBinaryGradientColorizer.fp
@@ -3456,8 +3447,6 @@ FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrSingleIntervalGrad
 FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrSingleIntervalGradientColorizer.h
 FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrSweepGradientLayout.cpp
 FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrSweepGradientLayout.h
-FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrTextureGradientColorizer.cpp
-FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrTextureGradientColorizer.h
 FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrTiledGradientEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrTiledGradientEffect.h
 FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrTwoPointConicalGradientLayout.cpp
@@ -3488,7 +3477,6 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlUniformHandler.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlUniformHandler.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlVaryingHandler.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlVaryingHandler.mm
-FILE: ../../../third_party/skia/src/gpu/ops/GrClearStencilClipOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrDrawableOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrDrawableOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrFillRRectOp.cpp
@@ -3499,6 +3487,8 @@ FILE: ../../../third_party/skia/src/gpu/ops/GrQuadPerEdgeAA.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrQuadPerEdgeAA.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrStrokeRectOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrStrokeRectOp.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokePatchBuilder.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokePatchBuilder.h
 FILE: ../../../third_party/skia/src/gpu/text/GrAtlasManager.cpp
 FILE: ../../../third_party/skia/src/gpu/text/GrAtlasManager.h
 FILE: ../../../third_party/skia/src/gpu/text/GrSDFMaskFilter.cpp
@@ -3594,7 +3584,6 @@ FILE: ../../../third_party/skia/experimental/svg/model/SkSVGUse.cpp
 FILE: ../../../third_party/skia/experimental/svg/model/SkSVGUse.h
 FILE: ../../../third_party/skia/fuzz/FuzzCanvas.cpp
 FILE: ../../../third_party/skia/gm/alpha_image.cpp
-FILE: ../../../third_party/skia/gm/atlastext.cpp
 FILE: ../../../third_party/skia/gm/bitmaptiled.cpp
 FILE: ../../../third_party/skia/gm/blurignorexform.cpp
 FILE: ../../../third_party/skia/gm/blurimagevmask.cpp
@@ -3627,10 +3616,6 @@ FILE: ../../../third_party/skia/gm/testgradient.cpp
 FILE: ../../../third_party/skia/gm/text_scale_skew.cpp
 FILE: ../../../third_party/skia/gm/thinconcavepaths.cpp
 FILE: ../../../third_party/skia/include/android/SkAndroidFrameworkUtils.h
-FILE: ../../../third_party/skia/include/atlastext/SkAtlasTextContext.h
-FILE: ../../../third_party/skia/include/atlastext/SkAtlasTextFont.h
-FILE: ../../../third_party/skia/include/atlastext/SkAtlasTextRenderer.h
-FILE: ../../../third_party/skia/include/atlastext/SkAtlasTextTarget.h
 FILE: ../../../third_party/skia/include/codec/SkEncodedOrigin.h
 FILE: ../../../third_party/skia/include/core/SkDeferredDisplayList.h
 FILE: ../../../third_party/skia/include/core/SkDeferredDisplayListRecorder.h
@@ -3650,6 +3635,7 @@ FILE: ../../../third_party/skia/include/gpu/GrBackendSemaphore.h
 FILE: ../../../third_party/skia/include/gpu/GrBackendSurface.h
 FILE: ../../../third_party/skia/include/gpu/mock/GrMockTypes.h
 FILE: ../../../third_party/skia/include/gpu/mtl/GrMtlTypes.h
+FILE: ../../../third_party/skia/include/ports/SkFontMgr_mac_ct.h
 FILE: ../../../third_party/skia/include/private/GrSharedEnums.h
 FILE: ../../../third_party/skia/include/private/SkImageInfoPriv.h
 FILE: ../../../third_party/skia/include/private/SkMalloc.h
@@ -3672,7 +3658,6 @@ FILE: ../../../third_party/skia/modules/sksg/include/SkSGPath.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGRect.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGRenderNode.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGTransform.h
-FILE: ../../../third_party/skia/modules/sksg/include/SkSGTrimEffect.h
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGDraw.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGEffectNode.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGGeometryNode.cpp
@@ -3685,7 +3670,6 @@ FILE: ../../../third_party/skia/modules/sksg/src/SkSGPath.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGRect.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGRenderNode.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGTransform.cpp
-FILE: ../../../third_party/skia/modules/sksg/src/SkSGTrimEffect.cpp
 FILE: ../../../third_party/skia/samplecode/SampleCCPRGeometry.cpp
 FILE: ../../../third_party/skia/samplecode/SampleChineseFling.cpp
 FILE: ../../../third_party/skia/samplecode/SampleCowboy.cpp
@@ -3695,10 +3679,6 @@ FILE: ../../../third_party/skia/samplecode/SampleShadowColor.cpp
 FILE: ../../../third_party/skia/samplecode/SampleShadowReference.cpp
 FILE: ../../../third_party/skia/samplecode/SampleShadowUtils.cpp
 FILE: ../../../third_party/skia/src/android/SkAndroidFrameworkUtils.cpp
-FILE: ../../../third_party/skia/src/atlastext/SkAtlasTextContext.cpp
-FILE: ../../../third_party/skia/src/atlastext/SkAtlasTextTarget.cpp
-FILE: ../../../third_party/skia/src/atlastext/SkInternalAtlasTextContext.cpp
-FILE: ../../../third_party/skia/src/atlastext/SkInternalAtlasTextContext.h
 FILE: ../../../third_party/skia/src/c/sk_effects.cpp
 FILE: ../../../third_party/skia/src/codec/SkBmpBaseCodec.cpp
 FILE: ../../../third_party/skia/src/codec/SkBmpBaseCodec.h
@@ -3827,6 +3807,7 @@ FILE: ../../../third_party/skia/src/pdf/SkPDFGradientShader.h
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_custom_directory.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_custom_embedded.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_custom_empty.cpp
+FILE: ../../../third_party/skia/src/ports/SkFontMgr_mac_ct_factory.cpp
 FILE: ../../../third_party/skia/src/ports/SkOSFile_ios.h
 FILE: ../../../third_party/skia/src/sfnt/SkOTTable_fvar.h
 FILE: ../../../third_party/skia/src/shaders/SkShaderBase.h
@@ -3842,6 +3823,8 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSectionAndParameterHelper.h
 FILE: ../../../third_party/skia/src/sksl/SkSLString.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLString.h
 FILE: ../../../third_party/skia/src/sksl/SkSLStringStream.h
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_fp.c.inc
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_fp.sksl
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLEnum.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSetting.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwitchCase.h
@@ -3858,7 +3841,6 @@ FILE: ../../../third_party/skia/src/sksl/lex/RegexNode.cpp
 FILE: ../../../third_party/skia/src/sksl/lex/RegexNode.h
 FILE: ../../../third_party/skia/src/sksl/lex/RegexParser.cpp
 FILE: ../../../third_party/skia/src/sksl/lex/RegexParser.h
-FILE: ../../../third_party/skia/src/sksl/sksl_enums.inc
 FILE: ../../../third_party/skia/src/utils/SkFloatToDecimal.cpp
 FILE: ../../../third_party/skia/src/utils/SkFloatToDecimal.h
 FILE: ../../../third_party/skia/src/utils/SkJSONWriter.cpp
@@ -3908,37 +3890,57 @@ ORIGIN: ../../../third_party/skia/bench/CreateBackendTextureBench.cpp + ../../..
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/CreateBackendTextureBench.cpp
 FILE: ../../../third_party/skia/bench/GrQuadBench.cpp
+FILE: ../../../third_party/skia/bench/SkSLBench.h
 FILE: ../../../third_party/skia/experimental/skottiekit/skottiekit_bindings.cpp
 FILE: ../../../third_party/skia/gm/crbug_1041204.cpp
 FILE: ../../../third_party/skia/gm/crbug_224618.cpp
+FILE: ../../../third_party/skia/gm/encode_color_types.cpp
 FILE: ../../../third_party/skia/gm/userfont.cpp
+FILE: ../../../third_party/skia/gm/ycbcrimage.cpp
+FILE: ../../../third_party/skia/include/gpu/GrBackendSurfaceMutableState.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypes.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypesMinimal.h
 FILE: ../../../third_party/skia/include/private/GrD3DTypesPriv.h
 FILE: ../../../third_party/skia/include/private/SkIDChangeListener.h
+FILE: ../../../third_party/skia/include/private/SkSLSampleUsage.h
 FILE: ../../../third_party/skia/include/utils/SkCustomTypeface.h
 FILE: ../../../third_party/skia/modules/canvaskit/viewer_bindings.cpp
+FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_float_capabilities.cpp
+FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_int_capabilities.cpp
 FILE: ../../../third_party/skia/src/core/SkIDChangeListener.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixProvider.h
 FILE: ../../../third_party/skia/src/core/SkVM_fwd.h
+FILE: ../../../third_party/skia/src/gpu/GrBackendSemaphore.cpp
+FILE: ../../../third_party/skia/src/gpu/GrBackendSurfaceMutableStateImpl.h
+FILE: ../../../third_party/skia/src/gpu/GrBackendUtils.h
 FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrManagedResource.cpp
+FILE: ../../../third_party/skia/src/gpu/GrRingBuffer.cpp
+FILE: ../../../third_party/skia/src/gpu/GrRingBuffer.h
+FILE: ../../../third_party/skia/src/gpu/GrStagingBufferManager.cpp
+FILE: ../../../third_party/skia/src/gpu/GrStagingBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/GrStencilMaskHelper.cpp
 FILE: ../../../third_party/skia/src/gpu/GrStencilMaskHelper.h
 FILE: ../../../third_party/skia/src/gpu/GrUniformDataManager.cpp
 FILE: ../../../third_party/skia/src/gpu/GrUniformDataManager.h
-FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DAttachmentViewManager.cpp
-FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DAttachmentViewManager.h
+FILE: ../../../third_party/skia/src/gpu/GrUnrefDDLTask.h
+FILE: ../../../third_party/skia/src/gpu/GrUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DBuffer.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCaps.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCaps.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCommandList.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCommandList.h
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCommandSignature.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCommandSignature.h
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCpuDescriptorManager.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCpuDescriptorManager.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DDescriptorHeap.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DDescriptorHeap.h
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DDescriptorTableManager.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DDescriptorTableManager.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DGpu.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DOpsRenderPass.cpp
@@ -3955,6 +3957,8 @@ FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DResourceProvider.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DResourceState.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DRootSignature.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DRootSignature.h
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DSemaphore.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DSemaphore.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DStencilAttachment.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DStencilAttachment.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTexture.cpp
@@ -3967,19 +3971,22 @@ FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTypesPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DUtil.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrDeviceSpaceEffect.fp
-FILE: ../../../third_party/skia/src/gpu/effects/GrMatrixEffect.fp
+FILE: ../../../third_party/skia/src/gpu/effects/GrMatrixEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/GrMatrixEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDeviceSpaceEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDeviceSpaceEffect.h
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMatrixEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMatrixEffect.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.cpp
 FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLUniformHandler.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkManagedResource.h
+FILE: ../../../third_party/skia/src/image/SkRescaleAndReadPixels.cpp
+FILE: ../../../third_party/skia/src/image/SkRescaleAndReadPixels.h
+FILE: ../../../third_party/skia/src/sksl/SkSLAnalysis.h
+FILE: ../../../third_party/skia/src/sksl/SkSLDehydrator.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLDehydrator.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.h
-FILE: ../../../third_party/skia/src/sksl/SkSLSampleMatrix.cpp
-FILE: ../../../third_party/skia/src/sksl/SkSLSampleMatrix.h
+FILE: ../../../third_party/skia/src/sksl/SkSLSampleUsage.cpp
 FILE: ../../../third_party/skia/src/utils/SkCustomTypeface.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC
@@ -4015,9 +4022,63 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/bench/ParagraphBench.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/bench/ReadPixBench.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/bench/ParagraphBench.cpp
+FILE: ../../../third_party/skia/bench/ReadPixBench.cpp
+FILE: ../../../third_party/skia/bench/WriterBench.cpp
+FILE: ../../../third_party/skia/include/effects/SkColorFilterImageFilter.h
+FILE: ../../../third_party/skia/include/effects/SkLightingImageFilter.h
+FILE: ../../../third_party/skia/include/effects/SkMagnifierImageFilter.h
+FILE: ../../../third_party/skia/include/effects/SkMatrixConvolutionImageFilter.h
+FILE: ../../../third_party/skia/include/effects/SkMergeImageFilter.h
+FILE: ../../../third_party/skia/include/effects/SkMorphologyImageFilter.h
+FILE: ../../../third_party/skia/include/effects/SkOffsetImageFilter.h
+FILE: ../../../third_party/skia/src/core/SkImageFilter.cpp
+FILE: ../../../third_party/skia/src/core/SkUtilsArm.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkColorFilterImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkLightingImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkMagnifierImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkMatrixConvolutionImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkMergeImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkMorphologyImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkOffsetImageFilter.cpp
+FILE: ../../../third_party/skia/src/images/SkImageEncoderFns.h
+----------------------------------------------------------------------------------------------------
+Copyright 2012 The Android Open Source Project
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
+ORIGIN: ../../../third_party/skia/bench/ShaperBench.cpp + ../../../third_party/skia/LICENSE
+TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/ShaperBench.cpp
 FILE: ../../../third_party/skia/bench/SkGlyphCacheBench.h
 FILE: ../../../third_party/skia/docs/examples/Alpha_Constants_a.cpp
@@ -4074,7 +4135,6 @@ FILE: ../../../third_party/skia/docs/examples/Bitmap_installPixels_3.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_isImmutable.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_isNull.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_isOpaque.cpp
-FILE: ../../../third_party/skia/docs/examples/Bitmap_isVolatile.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_move_SkBitmap.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_move_operator.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_notifyPixelsChanged.cpp
@@ -4093,7 +4153,6 @@ FILE: ../../../third_party/skia/docs/examples/Bitmap_rowBytesAsPixels.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_setAlphaType.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_setImmutable.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_setInfo.cpp
-FILE: ../../../third_party/skia/docs/examples/Bitmap_setIsVolatile.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_setPixelRef.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_setPixels.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_shiftPerPixel.cpp
@@ -5030,7 +5089,6 @@ FILE: ../../../third_party/skia/docs/examples/State_Stack_a.cpp
 FILE: ../../../third_party/skia/docs/examples/State_Stack_b.cpp
 FILE: ../../../third_party/skia/docs/examples/Stroke_Width.cpp
 FILE: ../../../third_party/skia/docs/examples/Surface_MakeFromBackendTexture.cpp
-FILE: ../../../third_party/skia/docs/examples/Surface_MakeFromBackendTextureAsRenderTarget.cpp
 FILE: ../../../third_party/skia/docs/examples/Surface_MakeNull.cpp
 FILE: ../../../third_party/skia/docs/examples/Surface_MakeRaster.cpp
 FILE: ../../../third_party/skia/docs/examples/Surface_MakeRasterDirect.cpp
@@ -5084,14 +5142,17 @@ FILE: ../../../third_party/skia/experimental/xform/SkXform.cpp
 FILE: ../../../third_party/skia/experimental/xform/SkXform.h
 FILE: ../../../third_party/skia/experimental/xform/XContext.cpp
 FILE: ../../../third_party/skia/gm/crbug_918512.cpp
+FILE: ../../../third_party/skia/gm/fp_sample_chaining.cpp
 FILE: ../../../third_party/skia/gm/fpcoordinateoverride.cpp
 FILE: ../../../third_party/skia/gm/inverseclip.cpp
 FILE: ../../../third_party/skia/gm/labyrinth.cpp
 FILE: ../../../third_party/skia/gm/preservefillrule.cpp
 FILE: ../../../third_party/skia/gm/sample_matrix_constant.cpp
 FILE: ../../../third_party/skia/gm/sample_matrix_variable.cpp
+FILE: ../../../third_party/skia/gm/swizzle.cpp
 FILE: ../../../third_party/skia/gm/tilemodes_alpha.cpp
 FILE: ../../../third_party/skia/include/core/SkPathTypes.h
+FILE: ../../../third_party/skia/modules/skparagraph/bench/ParagraphBench.cpp
 FILE: ../../../third_party/skia/modules/skplaintexteditor/app/editor_application.cpp
 FILE: ../../../third_party/skia/modules/skplaintexteditor/include/editor.h
 FILE: ../../../third_party/skia/modules/skplaintexteditor/include/stringslice.h
@@ -5114,10 +5175,10 @@ FILE: ../../../third_party/skia/src/gpu/ccpr/GrStencilAtlasOp.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrComposeLerpEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpEffect.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathTessellateOp.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathTessellateOp.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStencilPathShader.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStencilPathShader.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrTessellatePathOp.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrTessellatePathOp.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrTessellationPathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrTessellationPathRenderer.h
 FILE: ../../../third_party/skia/src/pdf/SkPDFGraphicStackState.cpp
@@ -5159,64 +5220,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/bench/ReadPixBench.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/bench/TessellateBench.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/bench/ReadPixBench.cpp
-FILE: ../../../third_party/skia/bench/WriterBench.cpp
-FILE: ../../../third_party/skia/include/effects/SkColorFilterImageFilter.h
-FILE: ../../../third_party/skia/include/effects/SkLightingImageFilter.h
-FILE: ../../../third_party/skia/include/effects/SkMagnifierImageFilter.h
-FILE: ../../../third_party/skia/include/effects/SkMatrixConvolutionImageFilter.h
-FILE: ../../../third_party/skia/include/effects/SkMergeImageFilter.h
-FILE: ../../../third_party/skia/include/effects/SkMorphologyImageFilter.h
-FILE: ../../../third_party/skia/include/effects/SkOffsetImageFilter.h
-FILE: ../../../third_party/skia/src/core/SkImageFilter.cpp
-FILE: ../../../third_party/skia/src/core/SkUtilsArm.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkColorFilterImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkLightingImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkMagnifierImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkMatrixConvolutionImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkMergeImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkMorphologyImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkOffsetImageFilter.cpp
-FILE: ../../../third_party/skia/src/images/SkImageEncoderFns.h
-----------------------------------------------------------------------------------------------------
-Copyright 2012 The Android Open Source Project
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-  * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
-  * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in
-    the documentation and/or other materials provided with the
-    distribution.
-
-  * Neither the name of the copyright holder nor the names of its
-    contributors may be used to endorse or promote products derived
-    from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: skia
-ORIGIN: ../../../third_party/skia/bench/TessellatePathBench.cpp + ../../../third_party/skia/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/bench/TessellatePathBench.cpp
+FILE: ../../../third_party/skia/bench/TessellateBench.cpp
+FILE: ../../../third_party/skia/experimental/skrive/include/SkRive.h
+FILE: ../../../third_party/skia/experimental/skrive/src/Artboard.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/Color.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/Component.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/Drawable.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/Ellipse.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/Node.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/Paint.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/Rectangle.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/Shape.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/SkRive.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/reader/BinaryReader.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/reader/JsonReader.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/reader/StreamReader.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/reader/StreamReader.h
 FILE: ../../../third_party/skia/gm/3d.cpp
 FILE: ../../../third_party/skia/gm/bc1_transparency.cpp
 FILE: ../../../third_party/skia/gm/bicubic.cpp
@@ -5227,8 +5248,11 @@ FILE: ../../../third_party/skia/gm/skbug_9819.cpp
 FILE: ../../../third_party/skia/gm/strokerect_anisotropic.cpp
 FILE: ../../../third_party/skia/gm/verifiers/gmverifier.cpp
 FILE: ../../../third_party/skia/gm/verifiers/gmverifier.h
+FILE: ../../../third_party/skia/gm/widebuttcaps.cpp
 FILE: ../../../third_party/skia/include/core/SkM44.h
 FILE: ../../../third_party/skia/include/effects/SkStrokeAndFillPathEffect.h
+FILE: ../../../third_party/skia/include/gpu/GrDirectContext.h
+FILE: ../../../third_party/skia/include/private/SkOpts_spi.h
 FILE: ../../../third_party/skia/modules/skottie/include/ExternalLayer.h
 FILE: ../../../third_party/skia/modules/skottie/src/Adapter.h
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.cpp
@@ -5254,32 +5278,46 @@ FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Ellipse.cp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/FillStroke.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Gradient.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/MergePaths.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/OffsetPaths.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Polystar.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/PuckerBloat.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Rectangle.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Repeater.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/RoundCorners.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/ShapeLayer.h
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/TrimPaths.cpp
-FILE: ../../../third_party/skia/modules/sksg/include/SkSGDashEffect.h
-FILE: ../../../third_party/skia/modules/sksg/src/SkSGDashEffect.cpp
+FILE: ../../../third_party/skia/modules/skparagraph/gm/simple_gm.cpp
+FILE: ../../../third_party/skia/modules/sksg/include/SkSGGeometryEffect.h
+FILE: ../../../third_party/skia/modules/sksg/src/SkSGGeometryEffect.cpp
 FILE: ../../../third_party/skia/modules/skshaper/src/SkShaper_coretext.cpp
+FILE: ../../../third_party/skia/modules/skshaper/src/SkUnicode.h
+FILE: ../../../third_party/skia/modules/skshaper/src/SkUnicode_icu.cpp
 FILE: ../../../third_party/skia/samplecode/Sample3D.cpp
+FILE: ../../../third_party/skia/samplecode/SampleFitCubicToCircle.cpp
+FILE: ../../../third_party/skia/samplecode/SampleSimpleStroker.cpp
 FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
 FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.h
 FILE: ../../../third_party/skia/src/core/SkM44.cpp
 FILE: ../../../third_party/skia/src/core/SkMarkerStack.cpp
 FILE: ../../../third_party/skia/src/core/SkMarkerStack.h
-FILE: ../../../third_party/skia/src/core/SkOpts_skx.cpp
 FILE: ../../../third_party/skia/src/core/SkVerticesPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.h
 FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.h
-FILE: ../../../third_party/skia/src/gpu/GrStagingBuffer.cpp
-FILE: ../../../third_party/skia/src/gpu/GrStagingBuffer.h
+FILE: ../../../third_party/skia/src/gpu/GrHashMapWithCache.h
+FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.cpp
+FILE: ../../../third_party/skia/src/gpu/GrSTArenaList.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrAutoMapVertexBuffer.h
-FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnStagingBuffer.cpp
-FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnStagingBuffer.h
+FILE: ../../../third_party/skia/src/gpu/effects/GrArithmeticProcessor.fp
+FILE: ../../../third_party/skia/src/gpu/effects/GrDitherEffect.fp
+FILE: ../../../third_party/skia/src/gpu/effects/GrHighContrastFilterEffect.fp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrArithmeticProcessor.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrArithmeticProcessor.h
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.h
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrHighContrastFilterEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrHighContrastFilterEffect.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.cpp
@@ -5289,6 +5327,15 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/GrMidpointContourParser.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrResolveLevelCounter.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrVectorXform.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrWangsFormula.h
+FILE: ../../../third_party/skia/src/gpu/text/GrSDFTOptions.cpp
+FILE: ../../../third_party/skia/src/gpu/text/GrSDFTOptions.h
+FILE: ../../../third_party/skia/src/opts/SkOpts_skx.cpp
+FILE: ../../../third_party/skia/src/ports/SkScalerContext_mac_ct.h
+FILE: ../../../third_party/skia/src/ports/SkTypeface_mac_ct.h
+FILE: ../../../third_party/skia/src/utils/mac/SkCGBase.h
+FILE: ../../../third_party/skia/src/utils/mac/SkCGGeometry.h
+FILE: ../../../third_party/skia/src/utils/mac/SkCTFontSmoothBehavior.cpp
+FILE: ../../../third_party/skia/src/utils/mac/SkCTFontSmoothBehavior.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google Inc.
 
@@ -5499,7 +5546,14 @@ FILE: ../../../third_party/skia/src/gpu/GrFinishCallbacks.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrFillPathShader.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrFillPathShader.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathShader.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellateOp.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellateOp.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellateShader.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellateShader.h
 FILE: ../../../third_party/skia/src/opts/SkVM_opts.h
+FILE: ../../../third_party/skia/src/sksl/SkSLAnalysis.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC.
 
@@ -5612,6 +5666,48 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
+ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzAPICreateDDL.cpp + ../../../third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/fuzz/FuzzCreateDDL.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzAPICreateDDL.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzAPISVGCanvas.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKP.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSVG.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkRuntimeEffect.cpp
+----------------------------------------------------------------------------------------------------
+Copyright 2020 Google, LLC
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
 ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzAPIImageFilter.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/fuzz/FuzzCommon.h
@@ -5668,10 +5764,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzAPISkDescriptor.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2GLSL.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/fuzz/FuzzSkDescriptor.cpp
-FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzAPISkDescriptor.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2GLSL.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2Metal.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2Pipeline.cpp
@@ -5813,6 +5907,7 @@ FILE: ../../../third_party/skia/src/core/SkBuffer.cpp
 FILE: ../../../third_party/skia/src/core/SkBuffer.h
 FILE: ../../../third_party/skia/src/core/SkColor.cpp
 FILE: ../../../third_party/skia/src/core/SkColorFilter.cpp
+FILE: ../../../third_party/skia/src/core/SkColorFilterBase.h
 FILE: ../../../third_party/skia/src/core/SkCoreBlitters.h
 FILE: ../../../third_party/skia/src/core/SkDebug.cpp
 FILE: ../../../third_party/skia/src/core/SkDeque.cpp
@@ -5876,11 +5971,13 @@ FILE: ../../../third_party/skia/src/images/SkPngEncoder.cpp
 FILE: ../../../third_party/skia/src/ports/SkDebug_android.cpp
 FILE: ../../../third_party/skia/src/ports/SkDebug_stdio.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontHost_FreeType.cpp
-FILE: ../../../third_party/skia/src/ports/SkFontHost_mac.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontHost_win.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_custom.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_custom.h
+FILE: ../../../third_party/skia/src/ports/SkFontMgr_mac_ct.cpp
 FILE: ../../../third_party/skia/src/ports/SkOSFile_stdio.cpp
+FILE: ../../../third_party/skia/src/ports/SkScalerContext_mac_ct.cpp
+FILE: ../../../third_party/skia/src/ports/SkTypeface_mac_ct.cpp
 FILE: ../../../third_party/skia/src/shaders/SkBitmapProcShader.h
 FILE: ../../../third_party/skia/src/shaders/SkComposeShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkComposeShader.h
@@ -5987,7 +6084,6 @@ FILE: ../../../third_party/skia/src/core/SkMath.cpp
 FILE: ../../../third_party/skia/src/core/SkPathMeasure.cpp
 FILE: ../../../third_party/skia/src/core/SkPoint.cpp
 FILE: ../../../third_party/skia/src/core/SkPtrRecorder.h
-FILE: ../../../third_party/skia/src/core/SkReader32.h
 FILE: ../../../third_party/skia/src/core/SkStroke.cpp
 FILE: ../../../third_party/skia/src/core/SkWriter32.h
 FILE: ../../../third_party/skia/src/effects/SkPackBits.h
@@ -6212,7 +6308,7 @@ FILE: ../../../third_party/skia/src/gpu/GrGlyph.h
 FILE: ../../../third_party/skia/src/gpu/GrGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRectanizer.h
 FILE: ../../../third_party/skia/src/gpu/GrRectanizerPow2.cpp
-FILE: ../../../third_party/skia/src/gpu/GrTAllocator.h
+FILE: ../../../third_party/skia/src/gpu/GrTBlockList.h
 FILE: ../../../third_party/skia/src/gpu/GrVertexWriter.h
 FILE: ../../../third_party/skia/src/gpu/SkGpuDevice.h
 FILE: ../../../third_party/skia/src/gpu/SkGr.cpp
@@ -6335,9 +6431,16 @@ FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/job_builder.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/nano_flags.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/schema.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/task_builder.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/canary/canary.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/fm_driver/fm_driver.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/g3_canary/g3_canary.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_canvas/perf_puppeteer_canvas.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_canvas/perf_puppeteer_canvas_test.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_render_skps/perf_puppeteer_render_skps.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_render_skps/perf_puppeteer_render_skps_test.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_skottie_frames/perf_puppeteer_skottie_frames.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_skottie_frames/perf_puppeteer_skottie_frames_test.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/run_gn_to_bp/run_gn_to_bp.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 The Chromium Authors. All rights reserved.
 
@@ -7117,4 +7220,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ====================================================================================================
-Total license count: 58
+Total license count: 59

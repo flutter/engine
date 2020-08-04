@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 
+#include <iostream>
+
 namespace flutter {
 
 AngleSurfaceManager::AngleSurfaceManager()
@@ -69,7 +71,7 @@ bool AngleSurfaceManager::Initialize() {
       reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
           eglGetProcAddress("eglGetPlatformDisplayEXT"));
   if (!eglGetPlatformDisplayEXT) {
-    OutputDebugString(L"EGL: Failed to get a compatible EGLdisplay");
+    std::cerr << "EGL: eglGetPlatformDisplayEXT not available" << std::endl;
     return false;
   }
 
@@ -78,7 +80,7 @@ bool AngleSurfaceManager::Initialize() {
       eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY,
                                default_display_attributes);
   if (egl_display_ == EGL_NO_DISPLAY) {
-    OutputDebugString(L"EGL: Failed to get a compatible EGLdisplay");
+    std::cerr << "EGL: Failed to get a compatible EGLdisplay" << std::endl;
     return false;
   }
 
@@ -89,7 +91,8 @@ bool AngleSurfaceManager::Initialize() {
         eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY,
                                  fl9_3_display_attributes);
     if (egl_display_ == EGL_NO_DISPLAY) {
-      OutputDebugString(L"EGL: Failed to get a compatible EGLdisplay");
+      std::cerr << "EGL: Failed to get a compatible 9.3 EGLdisplay"
+                << std::endl;
       return false;
     }
 
@@ -100,12 +103,13 @@ bool AngleSurfaceManager::Initialize() {
                                               EGL_DEFAULT_DISPLAY,
                                               warp_display_attributes);
       if (egl_display_ == EGL_NO_DISPLAY) {
-        OutputDebugString(L"EGL: Failed to get a compatible EGLdisplay");
+        std::cerr << "EGL: Failed to get a compatible WARP EGLdisplay"
+                  << std::endl;
         return false;
       }
 
       if (eglInitialize(egl_display_, nullptr, nullptr) == EGL_FALSE) {
-        OutputDebugString(L"EGL: Failed to initialize EGL");
+        std::cerr << "EGL: Failed to initialize EGL" << std::endl;
         return false;
       }
     }
@@ -115,14 +119,14 @@ bool AngleSurfaceManager::Initialize() {
   if ((eglChooseConfig(egl_display_, configAttributes, &egl_config_, 1,
                        &numConfigs) == EGL_FALSE) ||
       (numConfigs == 0)) {
-    OutputDebugString(L"EGL: Failed to choose first context");
+    std::cerr << "EGL: Failed to choose first context" << std::endl;
     return false;
   }
 
   egl_context_ = eglCreateContext(egl_display_, egl_config_, EGL_NO_CONTEXT,
                                   display_context_attributes);
   if (egl_context_ == EGL_NO_CONTEXT) {
-    OutputDebugString(L"EGL: Failed to create EGL context");
+    std::cerr << "EGL: Failed to create EGL context" << std::endl;
     return false;
   }
 
@@ -130,7 +134,7 @@ bool AngleSurfaceManager::Initialize() {
       egl_display_, egl_config_, egl_context_, display_context_attributes);
 
   if (egl_resource_context_ == EGL_NO_CONTEXT) {
-    OutputDebugString(L"EGL: Failed to create EGL resource context");
+    std::cerr << "EGL: Failed to create EGL resource context" << std::endl;
     return false;
   }
 
@@ -145,7 +149,7 @@ void AngleSurfaceManager::CleanUp() {
     egl_context_ = EGL_NO_CONTEXT;
 
     if (result == EGL_FALSE) {
-      OutputDebugString(L"EGL: Failed to destroy context");
+      std::cerr << "EGL: Failed to destroy context" << std::endl;
     }
   }
 
@@ -155,7 +159,7 @@ void AngleSurfaceManager::CleanUp() {
     egl_resource_context_ = EGL_NO_CONTEXT;
 
     if (result == EGL_FALSE) {
-      OutputDebugString(L"EGL: Failed to destroy resource context");
+      std::cerr << "EGL: Failed to destroy resource context" << std::endl;
     }
   }
 
@@ -165,46 +169,52 @@ void AngleSurfaceManager::CleanUp() {
   }
 }
 
-EGLSurface AngleSurfaceManager::CreateSurface(HWND window) {
-  if (!window || !initialize_succeeded_) {
-    return EGL_NO_SURFACE;
+bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target) {
+  if (!render_target || !initialize_succeeded_) {
+    return false;
   }
 
   EGLSurface surface = EGL_NO_SURFACE;
 
   const EGLint surfaceAttributes[] = {EGL_NONE};
 
-  surface = eglCreateWindowSurface(egl_display_, egl_config_,
-                                   static_cast<EGLNativeWindowType>(window),
-                                   surfaceAttributes);
+  surface = eglCreateWindowSurface(
+      egl_display_, egl_config_,
+      static_cast<EGLNativeWindowType>(std::get<HWND>(*render_target)),
+      surfaceAttributes);
   if (surface == EGL_NO_SURFACE) {
-    OutputDebugString(L"Surface creation failed.");
+    std::cerr << "Surface creation failed." << std::endl;
   }
 
-  return surface;
+  render_surface_ = surface;
+  return true;
 }
 
-void AngleSurfaceManager::GetSurfaceDimensions(const EGLSurface surface,
-                                               EGLint* width,
-                                               EGLint* height) {
-  if (surface == EGL_NO_SURFACE || !initialize_succeeded_) {
+void AngleSurfaceManager::GetSurfaceDimensions(EGLint* width, EGLint* height) {
+  if (render_surface_ == EGL_NO_SURFACE || !initialize_succeeded_) {
     width = 0;
     height = 0;
     return;
   }
 
-  eglQuerySurface(egl_display_, surface, EGL_WIDTH, width);
-  eglQuerySurface(egl_display_, surface, EGL_HEIGHT, height);
+  eglQuerySurface(egl_display_, render_surface_, EGL_WIDTH, width);
+  eglQuerySurface(egl_display_, render_surface_, EGL_HEIGHT, height);
 }
 
-void AngleSurfaceManager::DestroySurface(const EGLSurface surface) {
-  if (egl_display_ != EGL_NO_DISPLAY && surface != EGL_NO_SURFACE) {
-    eglDestroySurface(egl_display_, surface);
+void AngleSurfaceManager::DestroySurface() {
+  if (egl_display_ != EGL_NO_DISPLAY && render_surface_ != EGL_NO_SURFACE) {
+    eglDestroySurface(egl_display_, render_surface_);
   }
+  render_surface_ = EGL_NO_SURFACE;
 }
 
-bool AngleSurfaceManager::MakeCurrent(const EGLSurface surface) {
-  return (eglMakeCurrent(egl_display_, surface, surface, egl_context_) ==
+bool AngleSurfaceManager::MakeCurrent() {
+  return (eglMakeCurrent(egl_display_, render_surface_, render_surface_,
+                         egl_context_) == EGL_TRUE);
+}
+
+bool AngleSurfaceManager::ClearContext() {
+  return (eglMakeCurrent(egl_display_, nullptr, nullptr, egl_context_) ==
           EGL_TRUE);
 }
 
@@ -213,8 +223,8 @@ bool AngleSurfaceManager::MakeResourceCurrent() {
                          egl_resource_context_) == EGL_TRUE);
 }
 
-EGLBoolean AngleSurfaceManager::SwapBuffers(const EGLSurface surface) {
-  return (eglSwapBuffers(egl_display_, surface));
+EGLBoolean AngleSurfaceManager::SwapBuffers() {
+  return (eglSwapBuffers(egl_display_, render_surface_));
 }
 
 }  // namespace flutter

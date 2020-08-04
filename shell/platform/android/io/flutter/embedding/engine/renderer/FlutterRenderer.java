@@ -131,11 +131,11 @@ public class FlutterRenderer implements TextureRegistry {
         new SurfaceTexture.OnFrameAvailableListener() {
           @Override
           public void onFrameAvailable(@NonNull SurfaceTexture texture) {
-            if (released) {
-              // Even though we make sure to unregister the callback before releasing, as of Android
-              // O
-              // SurfaceTexture has a data race when accessing the callback, so the callback may
-              // still be called by a stale reference after released==true and mNativeView==null.
+            if (released || !flutterJNI.isAttached()) {
+              // Even though we make sure to unregister the callback before releasing, as of
+              // Android O, SurfaceTexture has a data race when accessing the callback, so the
+              // callback may still be called by a stale reference after released==true and
+              // mNativeView==null.
               return;
             }
             markTextureFrameAvailable(id);
@@ -181,6 +181,18 @@ public class FlutterRenderer implements TextureRegistry {
     this.surface = surface;
 
     flutterJNI.onSurfaceCreated(surface);
+  }
+
+  /**
+   * Swaps the {@link Surface} used to render the current frame.
+   *
+   * <p>In hybrid composition, the root surfaces changes from {@link
+   * android.view.SurfaceHolder#getSurface()} to {@link android.media.ImageReader#getSurface()} when
+   * a platform view is in the current frame.
+   */
+  public void swapSurface(@NonNull Surface surface) {
+    this.surface = surface;
+    flutterJNI.onSurfaceWindowChanged(surface);
   }
 
   /**
@@ -302,7 +314,7 @@ public class FlutterRenderer implements TextureRegistry {
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public boolean isSoftwareRenderingEnabled() {
-    return flutterJNI.nativeGetIsSoftwareRenderingEnabled();
+    return flutterJNI.getIsSoftwareRenderingEnabled();
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
