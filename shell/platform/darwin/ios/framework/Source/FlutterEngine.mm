@@ -502,7 +502,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   );
   // Create the shell. This is a blocking operation.
   _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
-                                  std::move(windowData),    // window data
+                                  std::move(platformData),    // window data
                                   std::move(settings),      // settings
                                   on_create_platform_view,  // platform view creation
                                   on_create_rasterizer      // rasterzier creation

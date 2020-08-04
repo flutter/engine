@@ -59,7 +59,7 @@ class RasterThreadMerger
   fml::TaskQueueId gpu_queue_id_;
   fml::RefPtr<fml::MessageLoopTaskQueues> task_queues_;
   std::atomic_int lease_term_;
-  std::atomic<bool> is_merged_;
+  std::atomic_bool is_merged_;
 
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(RasterThreadMerger);
   FML_FRIEND_MAKE_REF_COUNTED(RasterThreadMerger);
