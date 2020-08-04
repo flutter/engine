@@ -53,7 +53,8 @@ class MultiFrameCodec : public Codec {
     // The index of the last decoded required frame.
     int lastRequiredFrameIndex_ = -1;
 
-    sk_sp<SkImage> GetNextFrameImage(fml::WeakPtr<GrDirectContext> resourceContext);
+    sk_sp<SkImage> GetNextFrameImage(
+        fml::WeakPtr<GrDirectContext> resourceContext);
 
     void GetNextFrameAndInvokeCallback(
         std::unique_ptr<DartPersistentValue> callback,
