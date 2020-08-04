@@ -116,7 +116,7 @@ bool RuntimeController::IsRootIsolateRunning() const {
 
 std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
   return std::unique_ptr<RuntimeController>(new RuntimeController(
-      client_,                     //
+      client_,                      //
       vm_,                          //
       isolate_snapshot_,            //
       task_runners_,                //
