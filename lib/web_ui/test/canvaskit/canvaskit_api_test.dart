@@ -1175,6 +1175,21 @@ void _canvasTests() {
       20,
     );
   });
+
+  test('toImage.toByteData', () {
+    final SkPictureRecorder otherRecorder = SkPictureRecorder();
+    final SkCanvas otherCanvas = otherRecorder.beginRecording(SkRect(
+      fLeft: 0,
+      fTop: 0,
+      fRight: 1,
+      fBottom: 1,
+    ));
+    otherCanvas.drawRect(0, 0, 1, 1, SkPaint());
+    final SkPicture picture = otherRecorder.finishRecordingAsPicture();
+    final SkImage image = picture.toImage();
+    final Uint8List data = image.toByteData();
+    expect(data, isNotNull);
+  });
 }
 
 final Uint8List kTransparentImage = Uint8List.fromList(<int>[
