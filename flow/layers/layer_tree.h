@@ -59,7 +59,6 @@ class LayerTree {
                        fml::TimePoint target_time);
   fml::TimePoint vsync_start() const { return vsync_start_; }
   fml::TimeDelta vsync_overhead() const { return build_start_ - vsync_start_; }
-  fml::TimeDelta vsync_time() const { return build_finish_ - vsync_start_; }
   fml::TimePoint build_start() const { return build_start_; }
   fml::TimePoint build_finish() const { return build_finish_; }
   fml::TimeDelta build_time() const { return build_finish_ - build_start_; }

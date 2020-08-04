@@ -383,7 +383,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   // There is no way for the compositor to know how long the layer tree
   // construction took. Fortunately, the layer tree does. Grab that time
   // for instrumentation.
-  compositor_context_->ui_time().SetLapTime(layer_tree.vsync_time());
+  compositor_context_->ui_time().SetLapTime(layer_tree.build_time());
 
   auto* external_view_embedder = surface_->GetExternalViewEmbedder();
 
