@@ -23,7 +23,7 @@ void main() {
 
   test('FrameTiming.toString has the correct format', () {
     final FrameTiming timing = FrameTiming(<int>[500, 1000, 8000, 9000, 19500]);
-    expect(timing.toString(), 'FrameTiming(buildDuration: 6.5ms, rasterDuration: 10.5ms, vsyncOverhead: 0.5ms, totalSpan: 18.5ms)');
+    expect(timing.toString(), 'FrameTiming(buildDuration: 7.0ms, rasterDuration: 10.5ms, vsyncOverhead: 0.5ms, totalSpan: 19.0ms)');
   });
 
   test('computePlatformResolvedLocale basic', () {

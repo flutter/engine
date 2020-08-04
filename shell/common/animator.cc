@@ -137,7 +137,7 @@ void Animator::BeginFrame(fml::TimePoint vsync_start_time,
   last_frame_begin_time_ = fml::TimePoint::Now();
   last_vsync_start_time_ = vsync_start_time;
   fml::tracing::TraceEventAsyncComplete("flutter", "VsyncSchedulingOverhead",
-                                        last_frame_begin_time_,
+                                        last_vsync_start_time_,
                                         last_frame_begin_time_);
   last_frame_target_time_ = frame_target_time;
   dart_frame_deadline_ = FxlToDartOrEarlier(frame_target_time);
@@ -184,8 +184,7 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   last_layer_tree_size_ = layer_tree->frame_size();
 
   // Note the frame time for instrumentation.
-  layer_tree->RecordBuildTime(last_vsync_start_time_,
-                              last_frame_begin_time_,
+  layer_tree->RecordBuildTime(last_vsync_start_time_, last_frame_begin_time_,
                               last_frame_target_time_);
 
   // Commit the pending continuation.
