@@ -10,7 +10,7 @@ LIBRARY: tonic
 LIBRARY: txt
 ORIGIN: ../../../flutter/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/dev/validate_json.dart
+FILE: ../../../flutter/ci/dev/validate_json.dart
 FILE: ../../../flutter/.clang-tidy
 FILE: ../../../flutter/DEPS
 FILE: ../../../flutter/assets/asset_manager.cc
@@ -20,13 +20,13 @@ FILE: ../../../flutter/assets/directory_asset_bundle.cc
 FILE: ../../../flutter/assets/directory_asset_bundle.h
 FILE: ../../../flutter/benchmarking/benchmarking.cc
 FILE: ../../../flutter/benchmarking/benchmarking.h
+FILE: ../../../flutter/ci/dev/engine_prod_builders.json
+FILE: ../../../flutter/ci/dev/engine_try_builders.json
 FILE: ../../../flutter/common/exported_symbols.sym
 FILE: ../../../flutter/common/settings.cc
 FILE: ../../../flutter/common/settings.h
 FILE: ../../../flutter/common/task_runners.cc
 FILE: ../../../flutter/common/task_runners.h
-FILE: ../../../flutter/dev/engine_prod_builders.json
-FILE: ../../../flutter/dev/engine_try_builders.json
 FILE: ../../../flutter/flow/compositor_context.cc
 FILE: ../../../flutter/flow/compositor_context.h
 FILE: ../../../flutter/flow/embedded_view_params_unittests.cc
