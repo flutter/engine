@@ -66,7 +66,7 @@ bool RasterThreadMerger::IsMerged() const {
 }
 
 void RasterThreadMerger::WaitUntilMerged() {
-  FML_CHECK(MessageLoop::GetCurrentTaskQueueId() != gpu_queue_id_);
+  FML_CHECK(IsOnPlatformThread());
   while (!is_merged_)
     ;
 }
