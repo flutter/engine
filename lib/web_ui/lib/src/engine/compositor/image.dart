@@ -63,6 +63,7 @@ class CkAnimatedImage implements ui.Image {
       bytes = canvasKit.getSkDataBytes(skData);
     }
 
+    // Without copying, the data would go away immediately with the returned SkData
     final ByteData data = Uint8List.fromList(bytes).buffer.asByteData(0, bytes.length);
     return Future<ByteData>.value(data);
   }
@@ -103,6 +104,7 @@ class CkImage implements ui.Image {
       bytes = canvasKit.getSkDataBytes(skData);
     }
 
+    // Without copying, the data would go away immediately with the returned SkData
     final ByteData data = Uint8List.fromList(bytes).buffer.asByteData(0, bytes.length);
     return Future<ByteData>.value(data);
   }
