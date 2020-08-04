@@ -131,9 +131,10 @@ final class ApplicationInfoLoader {
     // Prior to API 23, cleartext traffic is allowed.
     boolean preventInsecureSocketConnections = false;
     if (android.os.Build.VERSION.SDK_INT >= 23) {
-      preventInsecureSocketConnections = !(NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted());
+      preventInsecureSocketConnections =
+          !(NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted());
     }
- 
+
     return new FlutterApplicationInfo(
         getString(appInfo.metaData, PUBLIC_AOT_SHARED_LIBRARY_NAME),
         getString(appInfo.metaData, PUBLIC_VM_SNAPSHOT_DATA_KEY),
@@ -145,4 +146,3 @@ final class ApplicationInfoLoader {
         getUseEmbeddedView(appInfo));
   }
 }
-

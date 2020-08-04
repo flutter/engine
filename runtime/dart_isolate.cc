@@ -139,7 +139,8 @@ DartIsolate::DartIsolate(const Settings& settings,
                   settings.unhandled_exception_callback,
                   DartVMRef::GetIsolateNameServer(),
                   is_root_isolate),
-      prevent_insecure_connections_(settings.prevent_insecure_socket_connections),
+      prevent_insecure_connections_(
+          settings.prevent_insecure_socket_connections),
       domain_network_policy_(settings.domain_network_policy) {
   phase_ = Phase::Uninitialized;
 }

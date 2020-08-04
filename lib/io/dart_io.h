@@ -14,7 +14,8 @@ namespace flutter {
 
 class DartIO {
  public:
-  static void InitForIsolate(bool prevent_insecure_connections, std::string domain_network_policy);
+  static void InitForIsolate(bool prevent_insecure_connections,
+                             std::string domain_network_policy);
 
  private:
   FML_DISALLOW_IMPLICIT_CONSTRUCTORS(DartIO);

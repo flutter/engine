@@ -29,8 +29,7 @@ final class FlutterApplicationInfo {
       boolean useEmbeddedView) {
     this.aotSharedLibraryName =
         aotSharedLibraryName == null ? DEFAULT_AOT_SHARED_LIBRARY_NAME : aotSharedLibraryName;
-    this.vmSnapshotData =
-        vmSnapshotData == null ? DEFAULT_VM_SNAPSHOT_DATA : vmSnapshotData;
+    this.vmSnapshotData = vmSnapshotData == null ? DEFAULT_VM_SNAPSHOT_DATA : vmSnapshotData;
     this.isolateSnapshotData =
         isolateSnapshotData == null ? DEFAULT_ISOLATE_SNAPSHOT_DATA : isolateSnapshotData;
     this.flutterAssetsDir =
@@ -42,4 +41,3 @@ final class FlutterApplicationInfo {
     this.useEmbeddedView = useEmbeddedView;
   }
 }
-

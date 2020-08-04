@@ -31,20 +31,23 @@ static NSString* DomainNetworkPolicy(NSDictionary* appTransportSecurity) {
     return @"";
   }
   // https://developer.apple.com/documentation/bundleresources/information_property_list/nsapptransportsecurity/nsexceptiondomains
-  NSDictionary *exceptionDomains = [appTransportSecurity objectForKey:@"NSExceptionDomains"];
+  NSDictionary* exceptionDomains = [appTransportSecurity objectForKey:@"NSExceptionDomains"];
   if (exceptionDomains == nil) {
     return @"";
   }
-  NSMutableArray *networkConfigArray = [[NSMutableArray alloc] init];
+  NSMutableArray* networkConfigArray = [[NSMutableArray alloc] init];
   for (NSString* domain in exceptionDomains) {
     NSDictionary* domainConfiguration = [exceptionDomains objectForKey:domain];
     BOOL includesSubDomains =
         [[domainConfiguration objectForKey:@"NSIncludesSubdomains"] boolValue];
     BOOL allowsCleartextCommunication =
         [[domainConfiguration objectForKey:@"NSExceptionAllowsInsecureHTTPLoads"] boolValue];
-    [networkConfigArray addObject:[NSArray arrayWithObjects:domain, includesSubDomains, allowsCleartextCommunication, nil]];
+    [networkConfigArray addObject:[NSArray arrayWithObjects:domain, includesSubDomains,
+                                                            allowsCleartextCommunication, nil]];
   }
-  NSData *jsonData = [NSJSONSerialization dataWithJSONObject:networkConfigArray options:0 error:NULL];
+  NSData* jsonData = [NSJSONSerialization dataWithJSONObject:networkConfigArray
+                                                     options:0
+                                                       error:NULL];
   return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 }
 
@@ -163,7 +166,8 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   }
 
   // Domain network configuration
-  NSDictionary *appTransportSecurity = [mainBundle objectForInfoDictionaryKey:@"NSAppTransportSecurity"];
+  NSDictionary* appTransportSecurity =
+      [mainBundle objectForInfoDictionaryKey:@"NSAppTransportSecurity"];
   settings.prevent_insecure_socket_connections = !AllowsArbitraryLoads(appTransportSecurity);
   settings.domain_network_policy = DomainNetworkPolicy(appTransportSecurity).UTF8String;
 

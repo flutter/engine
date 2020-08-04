@@ -187,7 +187,8 @@ DEF_SWITCH(PreventInsecureSocketConnections,
            "is set, all insecure connections are rejected.")
 DEF_SWITCH(DomainNetworkPolicy,
            "domain-network-policy",
-           "JSON encoded network policy per domain. This overrides the PreventInsecureSocketConnections "
+           "JSON encoded network policy per domain. This overrides the "
+           "PreventInsecureSocketConnections "
            "switch. Embedder can specify whether to allow or disallow "
            "insecure connections at a domain level.")
 DEF_SWITCH(
