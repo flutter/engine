@@ -20,17 +20,17 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     String? ellipsis,
     ui.Locale? locale,
   }) : skParagraphStyle = toSkParagraphStyle(
-    textAlign,
-    textDirection,
-    maxLines,
-    fontFamily,
-    fontSize,
-    height,
-    textHeightBehavior,
-    fontWeight,
-    fontStyle,
-    ellipsis,
-  ) {
+          textAlign,
+          textDirection,
+          maxLines,
+          fontFamily,
+          fontSize,
+          height,
+          textHeightBehavior,
+          fontWeight,
+          fontStyle,
+          ellipsis,
+        ) {
     assert(skParagraphStyle != null);
     _textDirection = textDirection ?? ui.TextDirection.ltr;
     _fontFamily = fontFamily;
@@ -58,9 +58,6 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     if (fontFamily == null ||
         !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
       fontFamily = 'Roboto';
-    }
-    if (skiaFontCollection.fontFamilyOverrides.containsKey(fontFamily)) {
-      fontFamily = skiaFontCollection.fontFamilyOverrides[fontFamily]!;
     }
     skTextStyle.fontFamilies = [fontFamily];
 
@@ -173,9 +170,6 @@ class CkTextStyle implements ui.TextStyle {
       fontFamily = 'Roboto';
     }
 
-    if (skiaFontCollection.fontFamilyOverrides.containsKey(fontFamily)) {
-      fontFamily = skiaFontCollection.fontFamilyOverrides[fontFamily]!;
-    }
     List<String> fontFamilies = <String>[fontFamily];
     if (fontFamilyFallback != null &&
         !fontFamilyFallback.every((font) => fontFamily == font)) {
@@ -208,8 +202,7 @@ class CkTextStyle implements ui.TextStyle {
   CkTextStyle._(this.skTextStyle);
 }
 
-SkFontStyle toSkFontStyle(
-    ui.FontWeight? fontWeight, ui.FontStyle? fontStyle) {
+SkFontStyle toSkFontStyle(ui.FontWeight? fontWeight, ui.FontStyle? fontStyle) {
   final style = SkFontStyle();
   if (fontWeight != null) {
     style.weight = toSkFontWeight(fontWeight);
@@ -220,7 +213,8 @@ SkFontStyle toSkFontStyle(
   return style;
 }
 
-class CkParagraph extends ResurrectableSkiaObject<SkParagraph> implements ui.Paragraph {
+class CkParagraph extends ResurrectableSkiaObject<SkParagraph>
+    implements ui.Paragraph {
   CkParagraph(
       this._initialParagraph, this._paragraphStyle, this._paragraphCommands);
 
@@ -285,8 +279,7 @@ class CkParagraph extends ResurrectableSkiaObject<SkParagraph> implements ui.Par
   bool get isResurrectionExpensive => true;
 
   @override
-  double get alphabeticBaseline =>
-      skiaObject.getAlphabeticBaseline();
+  double get alphabeticBaseline => skiaObject.getAlphabeticBaseline();
 
   @override
   bool get didExceedMaxLines => skiaObject.didExceedMaxLines();
@@ -295,8 +288,7 @@ class CkParagraph extends ResurrectableSkiaObject<SkParagraph> implements ui.Par
   double get height => skiaObject.getHeight();
 
   @override
-  double get ideographicBaseline =>
-      skiaObject.getIdeographicBaseline();
+  double get ideographicBaseline => skiaObject.getIdeographicBaseline();
 
   @override
   double get longestLine => skiaObject.getLongestLine();
@@ -414,9 +406,9 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   CkParagraphBuilder(ui.ParagraphStyle style)
       : _commands = <_ParagraphCommand>[],
         _style = style as CkParagraphStyle,
-        _paragraphBuilder = canvasKit.ParagraphBuilder.Make(
+        _paragraphBuilder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
           style.skParagraphStyle,
-          skiaFontCollection.skFontMgr,
+          skiaFontCollection.fontProvider,
         );
 
   // TODO(hterkelsen): Implement placeholders.
