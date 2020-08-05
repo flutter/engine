@@ -61,7 +61,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
   void DispatchSemanticsAction(int32_t id,
                                flutter::SemanticsAction action,
                                std::vector<uint8_t> args) override;
-  void AccessibilityFocusDidChange(int32_t focused_id) override;
+  void AccessibilityFocusDidChange(int32_t id) override;
 
   UIView<UITextInput>* textInputView() override;
 

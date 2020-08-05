@@ -67,8 +67,8 @@ UIView<UITextInput>* AccessibilityBridge::textInputView() {
   return [[platform_view_->GetOwnerViewController().get().engine textInputPlugin] textInputView];
 }
 
-void AccessibilityBridge::AccessibilityFocusDidChange(int32_t focused_id) {
-  last_focused_semantics_object_id_ = focused_id;
+void AccessibilityBridge::AccessibilityFocusDidChange(int32_t id) {
+  last_focused_semantics_object_id_ = id;
 }
 
 void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
