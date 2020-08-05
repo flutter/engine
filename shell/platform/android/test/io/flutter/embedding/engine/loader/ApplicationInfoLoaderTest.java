@@ -113,9 +113,55 @@ public class ApplicationInfoLoaderTest {
     Context context = generateMockContext(bundle, networkPolicyXml);
     FlutterApplicationInfo info = ApplicationInfoLoader.load(context);
     assertNotNull(info);
-    assertEquals("[[\"secure.example.com\",false,false]]", info.domainNetworkPolicy);
+    assertEquals("[[\"secure.example.com\",true,false]]", info.domainNetworkPolicy);
   }
 
+  @Test
+  public void itHandlesBogusInformationInNetworkPolicy() throws Exception {
+    Bundle bundle = new Bundle();
+    String networkPolicyXml =
+        "<network-security-config>"
+            + "<domain-config cleartextTrafficPermitted=\"false\">"
+            + "<domain includeSubdomains=\"true\">secure.example.com</domain>"
+            + "<pin-set expiration=\"2018-01-01\">"
+            + "<pin digest=\"SHA-256\">7HIpactkIAq2Y49orFOOQKurWxmmSFZhBCoQYcRhJ3Y=</pin>"
+            + "<!-- backup pin -->"
+            + "<pin digest=\"SHA-256\">fwza0LRMXouZHRC8Ei+4PyuldPDcf3UKgO/04cDM1oE=</pin>"
+            + "</pin-set>"
+            + "</domain-config>"
+            + "</network-security-config>";
+    Context context = generateMockContext(bundle, networkPolicyXml);
+    FlutterApplicationInfo info = ApplicationInfoLoader.load(context);
+    assertNotNull(info);
+    assertEquals("[[\"secure.example.com\",true,false]]", info.domainNetworkPolicy);
+  }
+
+  @Test
+  public void itHandlesNestedSubDomains() throws Exception {
+    Bundle bundle = new Bundle();
+    String networkPolicyXml =
+        "<network-security-config>"
+            + "<domain-config cleartextTrafficPermitted=\"true\">"
+            + "<domain includeSubdomains=\"true\">example.com</domain>"
+            + "<domain-config>"
+            + "<domain includeSubdomains=\"true\">insecure.example.com</domain>"
+            + "</domain-config>"
+            + "<domain-config cleartextTrafficPermitted=\"false\">"
+            + "<domain includeSubdomains=\"true\">secure.example.com</domain>"
+            + "</domain-config>"
+            + "</domain-config>"
+            + "</network-security-config>";
+    Context context = generateMockContext(bundle, networkPolicyXml);
+    FlutterApplicationInfo info = ApplicationInfoLoader.load(context);
+    assertNotNull(info);
+    assertEquals(
+        "[[\"example.com\",true,true],[\"insecure.example.com\",true,true],[\"secure.example.com\",true,false]]",
+        info.domainNetworkPolicy);
+  }
+
+  // The following ridiculousness is needed because Android gives no way for us
+  // to customize XmlResourceParser. We have to mock it and tie each method
+  // we use to an actual Xml parser.
   private XmlResourceParser createMockResourceParser(String xml) throws Exception {
     final XmlPullParser xpp = XmlPullParserFactory.newInstance().newPullParser();
     xpp.setInput(new StringReader(xml));
@@ -131,6 +177,17 @@ public class ApplicationInfoLoaderTest {
     when(resourceParser.getAttributeValue(anyInt())).thenAnswer(invokeMethodOnRealParser);
     when(resourceParser.getAttributeValue(any(String.class), any(String.class)))
         .thenAnswer(invokeMethodOnRealParser);
+    when(resourceParser.getAttributeBooleanValue(
+            any(String.class), any(String.class), any(Boolean.class)))
+        .thenAnswer(
+            invocation -> {
+              Object[] args = invocation.getArguments();
+              String result = xpp.getAttributeValue((String) args[0], (String) args[1]);
+              if (result == null) {
+                return (Boolean) args[2];
+              }
+              return Boolean.parseBoolean(result);
+            });
     return resourceParser;
   }
 }

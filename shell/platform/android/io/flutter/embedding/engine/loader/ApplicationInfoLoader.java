@@ -94,11 +94,19 @@ final class ApplicationInfoLoader {
         } else if (xrp.getName().equals("domain-config")) {
           parseDomainConfig(xrp, output, cleartextTrafficPermitted);
         } else {
-          throw new IllegalStateException("Unexpected tag " + xrp.getName());
+          skipTag(xrp);
         }
       } else if (eventType == XmlResourceParser.END_TAG) {
         break;
       }
+    }
+  }
+
+  private static void skipTag(XmlResourceParser xrp) throws IOException, XmlPullParserException {
+    String name = xrp.getName();
+    int eventType = xrp.getEventType();
+    while (eventType != XmlResourceParser.END_TAG || xrp.getName() != name) {
+      eventType = xrp.next();
     }
   }
 
