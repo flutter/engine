@@ -16,7 +16,7 @@
 // https://github.com/google/googletest/issues/2490
 #undef GTEST_STRINGIFY_
 #define GTEST_STRINGIFY_HELPER_(name, ...) #name
-#define GTEST_STRINGIFY_(...) GTEST_STRINGIFY_HELPER_(__VA_ARGS__,)
+#define GTEST_STRINGIFY_(...) GTEST_STRINGIFY_HELPER_(__VA_ARGS__, )
 
 namespace flutter {
 
