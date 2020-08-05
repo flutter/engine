@@ -1407,6 +1407,8 @@ class SkParagraphBuilderNamespace {
 class SkParagraphBuilder {
   external void addText(String text);
   external void pushStyle(SkTextStyle textStyle);
+  external void pushPaintStyle(
+      SkTextStyle textStyle, SkPaint foreground, SkPaint background);
   external void pop();
   external SkParagraph build();
   external void delete();

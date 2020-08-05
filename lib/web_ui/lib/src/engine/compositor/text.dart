@@ -111,6 +111,8 @@ class CkParagraphStyle implements ui.ParagraphStyle {
 
 class CkTextStyle implements ui.TextStyle {
   SkTextStyle skTextStyle;
+  CkPaint? background;
+  CkPaint? foreground;
 
   factory CkTextStyle({
     ui.Color? color,
@@ -196,10 +198,11 @@ class CkTextStyle implements ui.TextStyle {
     //   - locale
     //   - shadows
     //   - fontFeatures
-    return CkTextStyle._(canvasKit.TextStyle(properties));
+    return CkTextStyle._(
+        canvasKit.TextStyle(properties), foreground, background);
   }
 
-  CkTextStyle._(this.skTextStyle);
+  CkTextStyle._(this.skTextStyle, this.foreground, this.background);
 }
 
 SkFontStyle toSkFontStyle(ui.FontWeight? fontWeight, ui.FontStyle? fontStyle) {
@@ -460,7 +463,14 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   void pushStyle(ui.TextStyle style) {
     final CkTextStyle skStyle = style as CkTextStyle;
     _commands.add(_ParagraphCommand.pushStyle(skStyle));
-    _paragraphBuilder.pushStyle(skStyle.skTextStyle);
+    if (skStyle.foreground != null || skStyle.background != null) {
+      final SkPaint foreground = skStyle.foreground?.skiaObject ?? SkPaint();
+      final SkPaint background = skStyle.background?.skiaObject ?? SkPaint();
+      _paragraphBuilder.pushPaintStyle(
+          skStyle.skTextStyle, foreground, background);
+    } else {
+      _paragraphBuilder.pushStyle(skStyle.skTextStyle);
+    }
   }
 }
 
