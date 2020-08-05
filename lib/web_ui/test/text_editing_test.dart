@@ -719,6 +719,102 @@ void main() {
         skip: (browserEngine == BrowserEngine.webkit ||
             browserEngine == BrowserEngine.edge));
 
+    test('finishAutofillContext closes connection no autofill element',
+        () async {
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+
+      // Editing shouldn't have started yet.
+      expect(document.activeElement, document.body);
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'abcd', 2, 3);
+
+      const MethodCall finishAutofillContext =
+          MethodCall('TextInput.finishAutofillContext', false);
+      sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
+
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
+      expect(
+        spy.messages[0].methodArguments,
+        <dynamic>[
+          123, // Client ID
+        ],
+      );
+      spy.messages.clear();
+      // Input element is removed from DOM.
+      expect(document.getElementsByTagName('input'), hasLength(0));
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
+
+    test('finishAutofillContext removes form from DOM', () async {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'username',
+              autofillHintsForFields: [
+            'username',
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // Form is added to DOM.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      // Confirm that [HybridTextEditing] didn't send any messages.
+      expect(spy.messages, isEmpty);
+      // Form stays on the DOM until autofill context is finalized.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(formsOnTheDom, hasLength(1));
+
+      const MethodCall finishAutofillContext =
+          MethodCall('TextInput.finishAutofillContext', false);
+      sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
+
+      // Form element is removed from DOM.
+      expect(document.getElementsByTagName('form'), hasLength(0));
+      expect(formsOnTheDom, hasLength(0));
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
+
     test('setClient, setEditingState, show, setClient', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
@@ -816,14 +912,17 @@ void main() {
           textEditing.editingElement.domElement, 'abcd', 2, 3);
 
       final FormElement formElement = document.getElementsByTagName('form')[0];
-      expect(formElement.childNodes, hasLength(1));
+      // The form has one input element and one submit button.
+      expect(formElement.childNodes, hasLength(2));
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
 
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
-      expect(document.getElementsByTagName('form'), isEmpty);
+      // Form stays on the DOM until autofill context is finalized.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(formsOnTheDom, hasLength(1));
     });
 
     test(
@@ -859,14 +958,17 @@ void main() {
           textEditing.editingElement.domElement, 'abcd', 2, 3);
 
       final FormElement formElement = document.getElementsByTagName('form')[0];
-      expect(formElement.childNodes, hasLength(4));
+      // The form has 4 input elements and one submit button.
+      expect(formElement.childNodes, hasLength(5));
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
 
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
-      expect(document.getElementsByTagName('form'), isEmpty);
+      // Form stays on the DOM until autofill context is finalized.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(formsOnTheDom, hasLength(1));
     });
 
     test('No capitilization: setClient, setEditingState, show', () {
@@ -1228,7 +1330,8 @@ void main() {
           textEditing.editingElement.domElement, 'abcd', 2, 3);
 
       final FormElement formElement = document.getElementsByTagName('form')[0];
-      expect(formElement.childNodes, hasLength(4));
+      // The form has 4 input elements and one submit button.
+      expect(formElement.childNodes, hasLength(5));
 
       // Autofill one of the form elements.
       InputElement element = formElement.childNodes.first;
@@ -1450,6 +1553,10 @@ void main() {
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
     });
+
+    tearDown(() {
+      clearForms();
+    });
   });
 
   group('EngineAutofillForm', () {
@@ -1470,7 +1577,9 @@ void main() {
       expect(autofillForm.formIdentifier, 'field1field2field3');
 
       final FormElement form = autofillForm.formElement;
-      expect(form.childNodes, hasLength(2));
+      // Note that we also add a submit button. Therefore the form element has
+      // 3 child nodes.
+      expect(form.childNodes, hasLength(3));
 
       final InputElement firstElement = form.childNodes.first;
       // Autofill value is applied to the element.
@@ -1497,7 +1606,9 @@ void main() {
       expect(css.backgroundColor, 'transparent');
     });
 
-    test('place remove form', () {
+    test('place and store form', () {
+      expect(document.getElementsByTagName('form'), isEmpty);
+
       final List<dynamic> fields = createFieldValues(
           ['username', 'password', 'newPassword'],
           ['field1', 'fields2', 'field3']);
@@ -1508,16 +1619,18 @@ void main() {
       final InputElement testInputElement = InputElement();
       autofillForm.placeForm(testInputElement);
 
-      // The focused element is appended to the form,
+      // The focused element is appended to the form, form also has the button
+      // so in total it shoould have 4 elements.
       final FormElement form = autofillForm.formElement;
-      expect(form.childNodes, hasLength(3));
+      expect(form.childNodes, hasLength(4));
 
       final FormElement formOnDom = document.getElementsByTagName('form')[0];
       // Form is attached to the DOM.
       expect(form, equals(formOnDom));
 
       autofillForm.storeForm();
-      expect(document.getElementsByTagName('form'), isEmpty);
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(formsOnTheDom, hasLength(1));
     });
 
     test('Validate single element form', () {
@@ -1533,7 +1646,13 @@ void main() {
       expect(autofillForm.formElement, isNotNull);
 
       final FormElement form = autofillForm.formElement;
-      expect(form.childNodes, isEmpty);
+      // Submit button is added to the form.
+      expect(form.childNodes, isNotEmpty);
+      final InputElement inputElement = form.childNodes.first;
+      expect(inputElement.type, 'submit');
+
+      // The submit button should have class `submitBtn`.
+      expect(inputElement.className, 'submitBtn');
     });
 
     test('Return null if no focused element', () {
@@ -1542,6 +1661,10 @@ void main() {
           EngineAutofillForm.fromFrameworkMessage(null, fields);
 
       expect(autofillForm, isNull);
+    });
+
+    tearDown(() {
+      clearForms();
     });
   });
 
@@ -1758,7 +1881,7 @@ MethodCall configureSetSizeAndTransformMethodCall(
 /// Will disable editing element which will also clean the backup DOM
 /// element from the page.
 void cleanTextEditingElement() {
-  if (editingElement.isEnabled) {
+  if (editingElement != null && editingElement.isEnabled) {
     // Clean up all the DOM elements and event listeners.
     editingElement.disable();
   }
@@ -1869,3 +1992,11 @@ Map<String, dynamic> createOneFieldValue(String hint, String uniqueId) =>
       'textCapitalization': 'TextCapitalization.none',
       'autofill': createAutofillInfo(hint, uniqueId)
     };
+
+/// In order to not leak test state, clean up the forms from dom if any remains.
+void clearForms() {
+  while (document.getElementsByTagName('form').length > 0) {
+    document.getElementsByTagName('form').last.remove();
+  }
+  formsOnTheDom.clear();
+}

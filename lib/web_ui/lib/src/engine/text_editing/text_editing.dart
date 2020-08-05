@@ -141,6 +141,10 @@ class EngineAutofillForm {
     // therefore no sorting necessary for the ids.
     final StringBuffer ids = StringBuffer();
 
+    // The focused text editing element will not be created here.
+    final AutofillInfo focusedElement =
+        AutofillInfo.fromFrameworkMessage(focusedElementAutofill);
+
     if (fields != null) {
       for (Map<String, dynamic> field in fields.cast<Map<String, dynamic>>()) {
         final Map<String, dynamic> autofillInfo = field['autofill'];
@@ -151,9 +155,6 @@ class EngineAutofillForm {
 
         ids.write(autofill.uniqueIdentifier);
 
-        // The focused text editing element will not be created here.
-        final AutofillInfo focusedElement =
-            AutofillInfo.fromFrameworkMessage(focusedElementAutofill);
         if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
           EngineInputType engineInputType =
               EngineInputType.fromName(field['inputType']['name']);
@@ -168,11 +169,11 @@ class EngineAutofillForm {
           formElement.append(htmlElement);
         }
       }
+    } else {
+      ids.write(focusedElement.uniqueIdentifier);
     }
 
     final String formIdentifier = ids.toString();
-    // Remove.
-    print('form id: ${formIdentifier}');
 
     // If a form with the same Autofill elements is already on the dom, remove
     // it from DOM.
@@ -189,6 +190,8 @@ class EngineAutofillForm {
     submitButton.className = 'submitBtn';
     submitButton.type = 'submit';
 
+    formElement.append(submitButton);
+
     return EngineAutofillForm(
       formElement: formElement,
       elements: elements,
@@ -198,12 +201,13 @@ class EngineAutofillForm {
   }
 
   void placeForm(html.HtmlElement mainTextEditingElement) {
-    formElement!.append(mainTextEditingElement);
+    formElement.append(mainTextEditingElement);
     domRenderer.glassPaneElement!.append(formElement!);
   }
 
   void storeForm() {
     formsOnTheDom[formIdentifier] = this.formElement;
+    _hideAutofillElements(formElement, outsideOfScreen: true);
   }
 
   /// Listens to `onInput` event on the form fields.
@@ -662,6 +666,10 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   bool get hasAutofillGroup => _inputConfiguration.autofillGroup != null;
 
+  /// Whether the focused input element is part of a form.
+  bool get appendedToForm => _appendedToForm;
+  bool _appendedToForm = false;
+
   html.FormElement? get focusedFormElement =>
       _inputConfiguration.autofillGroup?.formElement;
 
@@ -687,12 +695,14 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     _setStaticStyleAttributes(domElement);
     _style?.applyToDomElement(domElement);
+
     if (!hasAutofillGroup) {
       // If there is an Autofill Group the `FormElement`, it will be appended to the
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
       domRenderer.glassPaneElement!.append(domElement);
+      _appendedToForm = false;
     }
 
     initializeElementPlacement();
@@ -760,9 +770,19 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       _subscriptions[i].cancel();
     }
     _subscriptions.clear();
-    domElement.remove();
+    // If focused element is a part of a form, it needs to stay on the DOM
+    // until the autofill context of the form is finalized.
+    // More details on `TextInput.finishAutofillContext` call.
+    if (_appendedToForm &&
+        _inputConfiguration.autofillGroup?.formElement != null) {
+      // Subscriptions are removed, listeners won't be triggered.
+      domElement.blur();
+      _hideAutofillElements(domElement, outsideOfScreen: true);
+      _inputConfiguration.autofillGroup?.storeForm();
+    } else {
+      domElement.remove();
+    }
     _domElement = null;
-    _inputConfiguration.autofillGroup?.storeForm();
   }
 
   @mustCallSuper
@@ -781,6 +801,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   void placeForm() {
     _inputConfiguration.autofillGroup!.placeForm(domElement);
+    _appendedToForm = true;
   }
 
   void _handleChange(html.Event event) {
@@ -1208,11 +1229,13 @@ class TextEditingChannel {
 
       case 'TextInput.finishAutofillContext':
         final bool saveForm = call.arguments as bool;
+        // Close the text editing connection. Form is finalizing.
+        implementation.sendTextConnectionClosedToFrameworkIfAny();
         if (saveForm) {
-          print('save form');
-        } else {
-          cleanForms();
+          saveForms();
         }
+        // Clean the forms from DOM after submitting them.
+        cleanForms();
         break;
 
       default:
@@ -1222,6 +1245,12 @@ class TextEditingChannel {
     window._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
   }
 
+  /// Used for submitting the forms attached on the DOM.
+  ///
+  /// Browser will save the information entered to the form.
+  ///
+  /// Called when the form is finalized with save option `true`.
+  /// See: https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/text_input.dart#L1277
   void saveForms() {
     formsOnTheDom.forEach((String identifier, html.FormElement form) {
       final html.InputElement submitBtn =
@@ -1230,10 +1259,14 @@ class TextEditingChannel {
     });
   }
 
+  /// Used for removing the forms on the DOM.
+  ///
+  /// Called when the form is finalized.
   void cleanForms() {
     while (html.document.getElementsByTagName('form').length > 0) {
       html.document.getElementsByTagName('form').last.remove();
     }
+    formsOnTheDom.clear();
   }
 
   /// Sends the 'TextInputClient.updateEditingState' message to the framework.
