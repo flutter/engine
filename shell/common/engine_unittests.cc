@@ -12,6 +12,12 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
+// This is a hack to get gmock working on windows until a fix lands for:
+// https://github.com/google/googletest/issues/2490
+#undef GTEST_STRINGIFY_
+#define GTEST_STRINGIFY_HELPER_(name, ...) #name
+#define GTEST_STRINGIFY_(...) GTEST_STRINGIFY_HELPER_(__VA_ARGS__,)
+
 namespace flutter {
 
 namespace {
