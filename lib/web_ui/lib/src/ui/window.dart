@@ -1035,6 +1035,9 @@ class FrameTiming {
 
   /// Construct [FrameTiming] with given timestamp in micrseconds.
   ///
+  /// This constructor is used for unit test only. Real [FrameTiming]s should
+  /// be retrieved from [Window.onReportTimings].
+  ///
   /// TODO(CareF): This is part of #20229. Remove back to default constructor
   /// after #20229 lands and corresponding framwork PRs land.
   FrameTiming.fromTimeStamps({
