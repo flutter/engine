@@ -14,7 +14,7 @@ namespace flutter {
 
 class DartIO {
  public:
-  static void InitForIsolate(bool prevent_insecure_connections,
+  static void InitForIsolate(bool may_insecurely_connect_to_all_domains,
                              std::string domain_network_policy);
 
  private:

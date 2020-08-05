@@ -242,8 +242,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     }
   }
 
-  settings.prevent_insecure_socket_connections = command_line.HasOption(
-      FlagForSwitch(Switch::PreventInsecureSocketConnections));
+  settings.may_insecurely_connect_to_all_domains = !command_line.HasOption(
+      FlagForSwitch(Switch::DisallowInsecureConnections));
 
   command_line.GetOptionValue(FlagForSwitch(Switch::DomainNetworkPolicy),
                               &settings.domain_network_policy);

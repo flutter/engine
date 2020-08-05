@@ -168,7 +168,8 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   // Domain network configuration
   NSDictionary* appTransportSecurity =
       [mainBundle objectForInfoDictionaryKey:@"NSAppTransportSecurity"];
-  settings.prevent_insecure_socket_connections = !AllowsArbitraryLoads(appTransportSecurity);
+  // TODO(mehmetf): Announce this since it is breaking change then enable it.
+  // settings.may_insecurely_connect_to_all_domains = AllowsArbitraryLoads(appTransportSecurity);
   settings.domain_network_policy = DomainNetworkPolicy(appTransportSecurity).UTF8String;
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG

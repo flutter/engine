@@ -110,7 +110,7 @@ public class FlutterLoader {
     this.settings = settings;
 
     initStartTimestampMillis = SystemClock.uptimeMillis();
-    flutterApplicationInfo = new ApplicationInfoLoader().initConfig(appContext);
+    flutterApplicationInfo = ApplicationInfoLoader.load(appContext);
     VsyncWaiter.getInstance((WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE))
         .init();
 
@@ -209,9 +209,10 @@ public class FlutterLoader {
       }
 
       shellArgs.add("--cache-dir-path=" + result.engineCachesPath);
-      if (flutterApplicationInfo.preventInsecureSocketConnections) {
-        shellArgs.add("--prevent-insecure-socket-connections");
-      }
+      // TODO(mehmetf): Announce this since it is a breaking change then enable it.
+      // if (!flutterApplicationInfo.clearTextPermitted) {
+      //   shellArgs.add("--disallow-insecure-connections");
+      // }
       if (flutterApplicationInfo.domainNetworkPolicy != null) {
         shellArgs.add("--domain-network-policy=" + flutterApplicationInfo.domainNetworkPolicy);
       }

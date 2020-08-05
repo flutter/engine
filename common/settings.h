@@ -110,7 +110,7 @@ struct Settings {
   bool disable_dart_asserts = false;
 
   // Whether embedder only allows secure connections.
-  bool prevent_insecure_socket_connections = false;
+  bool may_insecurely_connect_to_all_domains = true;
   // JSON-formatted domain network policy.
   std::string domain_network_policy;
 

@@ -181,8 +181,8 @@ DEF_SWITCH(DisableDartAsserts,
            "disabled. This flag may be specified if the user wishes to run "
            "with assertions disabled in the debug product mode (i.e. with JIT "
            "or DBC).")
-DEF_SWITCH(PreventInsecureSocketConnections,
-           "prevent-insecure-socket-connections",
+DEF_SWITCH(DisallowInsecureConnections,
+           "disallow-insecure-connections",
            "By default, dart:io allows all socket connections. If this switch "
            "is set, all insecure connections are rejected.")
 DEF_SWITCH(DomainNetworkPolicy,

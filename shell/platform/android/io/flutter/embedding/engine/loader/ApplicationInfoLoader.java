@@ -14,17 +14,17 @@ import org.xmlpull.v1.XmlPullParserException;
 /** Loads application information. */
 final class ApplicationInfoLoader {
   // XML Attribute keys supported in AndroidManifest.xml
-  private static final String PUBLIC_AOT_SHARED_LIBRARY_NAME =
+  static final String PUBLIC_AOT_SHARED_LIBRARY_NAME =
       FlutterLoader.class.getName() + '.' + FlutterLoader.AOT_SHARED_LIBRARY_NAME;
-  private static final String PUBLIC_VM_SNAPSHOT_DATA_KEY =
+  static final String PUBLIC_VM_SNAPSHOT_DATA_KEY =
       FlutterLoader.class.getName() + '.' + FlutterLoader.VM_SNAPSHOT_DATA_KEY;
-  private static final String PUBLIC_ISOLATE_SNAPSHOT_DATA_KEY =
+  static final String PUBLIC_ISOLATE_SNAPSHOT_DATA_KEY =
       FlutterLoader.class.getName() + '.' + FlutterLoader.ISOLATE_SNAPSHOT_DATA_KEY;
-  private static final String PUBLIC_FLUTTER_ASSETS_DIR_KEY =
+  static final String PUBLIC_FLUTTER_ASSETS_DIR_KEY =
       FlutterLoader.class.getName() + '.' + FlutterLoader.FLUTTER_ASSETS_DIR_KEY;
 
   @NonNull
-  private ApplicationInfo getApplicationInfo(@NonNull Context applicationContext) {
+  private static ApplicationInfo getApplicationInfo(@NonNull Context applicationContext) {
     try {
       return applicationContext
           .getPackageManager()
@@ -34,14 +34,14 @@ final class ApplicationInfoLoader {
     }
   }
 
-  private String getString(Bundle metadata, String key) {
+  private static String getString(Bundle metadata, String key) {
     if (metadata == null) {
       return null;
     }
     return metadata.getString(key, null);
   }
 
-  private String getNetworkPolicy(ApplicationInfo appInfo, Context context) {
+  private static String getNetworkPolicy(ApplicationInfo appInfo, Context context) {
     // We cannot use reflection to look at networkSecurityConfigRes because
     // Android throws an error when we try to access fields marked as @hide.
     // Instead we rely on metadata.
@@ -74,12 +74,12 @@ final class ApplicationInfoLoader {
     return output.toString();
   }
 
-  private boolean getUseEmbeddedView(ApplicationInfo appInfo) {
+  private static boolean getUseEmbeddedView(ApplicationInfo appInfo) {
     Bundle bundle = appInfo.metaData;
     return bundle != null && bundle.getBoolean("io.flutter.embedded_views_preview");
   }
 
-  private void parseDomainConfig(
+  private static void parseDomainConfig(
       XmlResourceParser xrp, JSONArray output, boolean inheritedCleartextPermitted)
       throws IOException, XmlPullParserException {
     boolean cleartextTrafficPermitted =
@@ -102,7 +102,8 @@ final class ApplicationInfoLoader {
     }
   }
 
-  private void parseDomain(XmlResourceParser xrp, JSONArray output, boolean cleartextPermitted)
+  private static void parseDomain(
+      XmlResourceParser xrp, JSONArray output, boolean cleartextPermitted)
       throws IOException, XmlPullParserException {
     boolean includeSubDomains = xrp.getAttributeBooleanValue(null, "includeSubdomains", false);
     xrp.next();
@@ -126,13 +127,12 @@ final class ApplicationInfoLoader {
    * to default values.
    */
   @NonNull
-  public FlutterApplicationInfo initConfig(@NonNull Context applicationContext) {
+  public static FlutterApplicationInfo load(@NonNull Context applicationContext) {
     ApplicationInfo appInfo = getApplicationInfo(applicationContext);
     // Prior to API 23, cleartext traffic is allowed.
-    boolean preventInsecureSocketConnections = false;
+    boolean clearTextPermitted = true;
     if (android.os.Build.VERSION.SDK_INT >= 23) {
-      preventInsecureSocketConnections =
-          !(NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted());
+      clearTextPermitted = NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted();
     }
 
     return new FlutterApplicationInfo(
@@ -142,7 +142,7 @@ final class ApplicationInfoLoader {
         getString(appInfo.metaData, PUBLIC_FLUTTER_ASSETS_DIR_KEY),
         getNetworkPolicy(appInfo, applicationContext),
         appInfo.nativeLibraryDir,
-        preventInsecureSocketConnections,
+        clearTextPermitted,
         getUseEmbeddedView(appInfo));
   }
 }
