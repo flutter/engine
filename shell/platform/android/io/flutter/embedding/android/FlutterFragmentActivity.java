@@ -693,8 +693,8 @@ public class FlutterFragmentActivity extends FragmentActivity
    * Returns the desired {@link RenderMode} for the {@link FlutterView} displayed in this {@code
    * FlutterFragmentActivity}.
    *
-   * <p>That is, {@link RenderMode#surface} if {@link FlutterFragmentActivity#getBackgroundMode()} is
-   * {@link BackgroundMode.opaque} or {@link RenderMode#texture} otherwise.
+   * <p>That is, {@link RenderMode#surface} if {@link FlutterFragmentActivity#getBackgroundMode()}
+   * is {@link BackgroundMode.opaque} or {@link RenderMode#texture} otherwise.
    */
   @NonNull
   protected RenderMode getRenderMode() {
