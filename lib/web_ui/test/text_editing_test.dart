@@ -1677,7 +1677,7 @@ void main() {
       expect(autofillForm.items, hasLength(2));
       expect(autofillForm.formElement, isNotNull);
 
-      expect(autofillForm.formIdentifier, 'field1field2field3');
+      expect(autofillForm.formIdentifier, 'field1*field2*field3');
 
       final FormElement form = autofillForm.formElement;
       // Note that we also add a submit button. Therefore the form element has
