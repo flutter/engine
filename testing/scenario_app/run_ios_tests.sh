@@ -2,7 +2,9 @@
 
 set -e
 
+echo "zzzzzzzzzzzzz##########################"
 xcrun --sdk iphonesimulator --show-sdk-path
+echo "zzzzzzzzzzzzz##########################"
 FLUTTER_ENGINE=ios_debug_sim_unopt
 
 if [ $# -eq 1 ]; then
