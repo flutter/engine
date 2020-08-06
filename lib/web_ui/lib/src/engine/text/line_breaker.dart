@@ -26,17 +26,33 @@ enum LineBreakType {
 /// width of a line of text.
 ///
 /// [indexWithoutTrailingSpaces] <= [indexWithoutTrailingNewlines] <= [index]
+///
+/// Example: for the string "foo \nbar " here are the indices:
+/// ```
+///   f   o   o       \n  b   a   r
+/// ^   ^   ^   ^   ^   ^   ^   ^   ^   ^
+/// 0   1   2   3   4   5   6   7   8   9
+/// ```
+/// It contains two line breaks:
+/// ```
+/// // The first line break:
+/// LineBreakResult(5, 4, 3, LineBreakType.mandatory)
+///
+/// // Second line break:
+/// LineBreakResult(9, 9, 8, LineBreakType.mandatory)
+/// ```
 class LineBreakResult {
-  LineBreakResult(
+  const LineBreakResult(
     this.index,
     this.indexWithoutTrailingNewlines,
     this.indexWithoutTrailingSpaces,
     this.type,
-  );
+  ): assert(indexWithoutTrailingSpaces <= indexWithoutTrailingNewlines),
+     assert(indexWithoutTrailingNewlines <= index);
 
   /// Creates a [LineBreakResult] where all indices are the same (i.e. there are
   /// no trailing spaces or new lines).
-  LineBreakResult.sameIndex(this.index, this.type)
+  const LineBreakResult.sameIndex(this.index, this.type)
       : indexWithoutTrailingNewlines = index,
         indexWithoutTrailingSpaces = index;
 
@@ -57,6 +73,41 @@ class LineBreakResult {
   /// of width constraints. But a line break opportunity requires further checks
   /// to decide whether to take the line break or not.
   final LineBreakType type;
+
+  @override
+  int get hashCode => ui.hashValues(
+        index,
+        indexWithoutTrailingNewlines,
+        indexWithoutTrailingSpaces,
+        type,
+      );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is LineBreakResult &&
+        other.index == index &&
+        other.indexWithoutTrailingNewlines == indexWithoutTrailingNewlines &&
+        other.indexWithoutTrailingSpaces == indexWithoutTrailingSpaces &&
+        other.type == type;
+  }
+
+  @override
+  String toString() {
+    if (assertionsEnabled) {
+      return 'LineBreakResult(index: $index, '
+          'without new lines: $indexWithoutTrailingNewlines, '
+          'without spaces: $indexWithoutTrailingSpaces, '
+          'type: $type)';
+    } else {
+      return super.toString();
+    }
+  }
 }
 
 bool _isHardBreak(LineCharProperty? prop) {
@@ -80,7 +131,7 @@ bool _isKoreanSyllable(LineCharProperty? prop) {
       prop == LineCharProperty.H3;
 }
 
-/// Whether the given char code has an Easter Asian width property of F, W or H.
+/// Whether the given char code has an Eastern Asian width property of F, W or H.
 ///
 /// See:
 /// - https://www.unicode.org/reports/tr14/tr14-45.html#LB30
@@ -92,6 +143,18 @@ bool _hasEastAsianWidthFWH(int charCode) {
 }
 
 /// Finds the next line break in the given [text] starting from [index].
+///
+/// Wethink about indices as pointing between characters, and they go all the
+/// way from 0 to the string length. For example, here are the indices for the
+/// string "foo bar":
+///
+/// ```
+///   f   o   o       b   a   r
+/// ^   ^   ^   ^   ^   ^   ^   ^
+/// 0   1   2   3   4   5   6   7
+/// ```
+///
+/// This way the indices work well with [String.substring()].
 ///
 /// Useful resources:
 ///

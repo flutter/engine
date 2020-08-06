@@ -733,13 +733,15 @@ class LinesCalculator {
 
   /// The last line break regardless of whether it was optional or mandatory, or
   /// whether we took it or not.
-  LineBreakResult? _lastBreak;
+  LineBreakResult _lastBreak =
+      const LineBreakResult.sameIndex(0, LineBreakType.mandatory);
 
   /// The last line break that actually caused a new line to exist.
-  LineBreakResult? _lastTakenBreak;
+  LineBreakResult _lastTakenBreak =
+      const LineBreakResult.sameIndex(0, LineBreakType.mandatory);
 
-  int get _lineStart => _lastTakenBreak?.index ?? 0;
-  int get _chunkStart => _lastBreak?.index ?? 0;
+  int get _lineStart => _lastTakenBreak.index;
+  int get _chunkStart => _lastBreak.index;
   bool _reachedMaxLines = false;
 
   double? _cachedEllipsisWidth;
@@ -830,7 +832,7 @@ class LinesCalculator {
       } else {
         // The control case of current line exceeding [_maxWidth], we break the
         // line.
-        _addLineBreak(_lastBreak!);
+        _addLineBreak(_lastBreak);
       }
     }
 
