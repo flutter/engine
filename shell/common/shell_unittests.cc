@@ -285,7 +285,6 @@ TEST_F(ShellTest, AllowedDartVMFlag) {
   const std::vector<fml::CommandLine::Option> options = {
 #if !FLUTTER_RELEASE
     fml::CommandLine::Option("dart-flags",
-                             "--lazy_async_stacks,--no-causal_async_stacks,"
                              "--max_profile_depth 1,--random_seed 42")
 #endif
   };
@@ -293,11 +292,9 @@ TEST_F(ShellTest, AllowedDartVMFlag) {
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
 #if !FLUTTER_RELEASE
-  EXPECT_EQ(settings.dart_flags.size(), 4u);
-  EXPECT_EQ(settings.dart_flags[0], "--lazy_async_stacks");
-  EXPECT_EQ(settings.dart_flags[1], "--no-causal_async_stacks");
-  EXPECT_EQ(settings.dart_flags[2], "--max_profile_depth 1");
-  EXPECT_EQ(settings.dart_flags[3], "--random_seed 42");
+  EXPECT_EQ(settings.dart_flags.size(), 2u);
+  EXPECT_EQ(settings.dart_flags[0], "--max_profile_depth 1");
+  EXPECT_EQ(settings.dart_flags[1], "--random_seed 42");
 #else
   EXPECT_EQ(settings.dart_flags.size(), 0u);
 #endif
@@ -687,7 +684,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get(), {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_FALSE(result.ok());
@@ -805,8 +802,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -825,8 +821,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 800, 400, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400});
       });
   PumpOneFrame(shell.get());
 
@@ -844,8 +839,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -873,8 +867,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -1238,7 +1231,7 @@ TEST_F(ShellTest, CanDecompressImageFromAsset) {
 }
 
 TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
-  // Create 2 dummpy SkSL cache file IE (base32 encoding of A), II (base32
+  // Create 2 dummy SkSL cache file IE (base32 encoding of A), II (base32
   // encoding of B) with content x and y.
   fml::ScopedTemporaryDirectory temp_dir;
   PersistentCache::SetCacheDirectoryPath(temp_dir.path());
@@ -1263,7 +1256,7 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
   rapidjson::Document document;
   OnServiceProtocol(shell.get(), ServiceProtocolEnum::kGetSkSLs,
                     shell->GetTaskRunners().GetIOTaskRunner(), empty_params,
-                    document);
+                    &document);
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);

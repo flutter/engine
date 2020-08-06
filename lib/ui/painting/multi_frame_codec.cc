@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 
@@ -76,17 +75,18 @@ static bool CopyToBitmap(SkBitmap* dst,
 }
 
 sk_sp<SkImage> MultiFrameCodec::State::GetNextFrameImage(
-    fml::WeakPtr<GrContext> resourceContext) {
+    fml::WeakPtr<GrDirectContext> resourceContext) {
   SkBitmap bitmap = SkBitmap();
   SkImageInfo info = generator_->getInfo().makeColorType(kN32_SkColorType);
   if (info.alphaType() == kUnpremul_SkAlphaType) {
-    info = info.makeAlphaType(kPremul_SkAlphaType);
+    SkImageInfo updated = info.makeAlphaType(kPremul_SkAlphaType);
+    info = updated;
   }
   bitmap.allocPixels(info);
 
   SkCodec::Options options;
   options.fFrameIndex = nextFrameIndex_;
-  SkCodec::FrameInfo frameInfo;
+  SkCodec::FrameInfo frameInfo{0};
   generator_->getFrameInfo(nextFrameIndex_, &frameInfo);
   const int requiredFrameIndex = frameInfo.fRequiredFrame;
   if (requiredFrameIndex != SkCodec::kNoFrame) {
@@ -136,7 +136,7 @@ sk_sp<SkImage> MultiFrameCodec::State::GetNextFrameImage(
 void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
     std::unique_ptr<DartPersistentValue> callback,
     fml::RefPtr<fml::TaskRunner> ui_task_runner,
-    fml::WeakPtr<GrContext> resourceContext,
+    fml::WeakPtr<GrDirectContext> resourceContext,
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
     size_t trace_id) {
   fml::RefPtr<FrameInfo> frameInfo = NULL;
@@ -144,7 +144,7 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
   if (skImage) {
     fml::RefPtr<CanvasImage> image = CanvasImage::Create();
     image->set_image({skImage, std::move(unref_queue)});
-    SkCodec::FrameInfo skFrameInfo;
+    SkCodec::FrameInfo skFrameInfo{0};
     generator_->getFrameInfo(nextFrameIndex_, &skFrameInfo);
     frameInfo =
         fml::MakeRefCounted<FrameInfo>(std::move(image), skFrameInfo.fDuration);

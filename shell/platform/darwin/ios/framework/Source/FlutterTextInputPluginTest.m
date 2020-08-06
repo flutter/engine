@@ -17,6 +17,10 @@ FLUTTER_ASSERT_ARC
 - (BOOL)isVisibleToAutofill;
 @end
 
+@interface FlutterSecureTextInputView : FlutterTextInputView
+@property(nonatomic, strong) UITextField* textField;
+@end
+
 @interface FlutterTextInputPlugin ()
 @property(nonatomic, strong) FlutterTextInputView* reusableInputView;
 @property(nonatomic, assign) FlutterTextInputView* activeView;
@@ -140,6 +144,9 @@ FLUTTER_ASSERT_ARC
 
   // Verify secureTextEntry is set to the correct value.
   XCTAssertTrue(inputView.secureTextEntry);
+
+  // Verify keyboardType is set to the default value.
+  XCTAssertEqual(inputView.keyboardType, UIKeyboardTypeDefault);
 
   // We should have only ever created one FlutterTextInputView.
   XCTAssertEqual(inputFields.count, 1);
@@ -444,6 +451,20 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotEqual([inputView performSelector:@selector(font)], nil);
 }
 
+- (void)testKeyboardType {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@{@"name" : @"TextInputType.url"} forKey:@"inputType"];
+  [self setClientId:123 configuration:config];
+
+  // Find all the FlutterTextInputViews we created.
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+
+  FlutterTextInputView* inputView = inputFields[0];
+
+  // Verify keyboardType is set to the value specified in config.
+  XCTAssertEqual(inputView.keyboardType, UIKeyboardTypeURL);
+}
+
 - (void)testAutocorrectionPromptRectAppears {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
   inputView.textInputDelegate = engine;
@@ -495,5 +516,16 @@ FLUTTER_ASSERT_ARC
 
   [inputView unmarkText];
   XCTAssertEqual(updateCount, 6);
+}
+
+- (void)testNoZombies {
+  // Regression test for https://github.com/flutter/flutter/issues/62501.
+  FlutterSecureTextInputView* passwordView = [[FlutterSecureTextInputView alloc] init];
+
+  @autoreleasepool {
+    // Initialize the lazy textField.
+    [passwordView.textField description];
+  }
+  XCTAssert([[passwordView.textField description] containsString:@"TextField"]);
 }
 @end
