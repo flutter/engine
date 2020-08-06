@@ -1083,7 +1083,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       height * scale,
       alignment,
       baselineOffset: (baselineOffset ?? height) * scale,
-      baseline: baseline,
+      baseline: baseline ?? ui.TextBaseline.alphabetic,
     ));
   }
 
@@ -1398,7 +1398,7 @@ class ParagraphPlaceholder {
   final double baselineOffset;
 
   /// Dictates whether to use alphabetic or ideographic baseline.
-  final ui.TextBaseline? baseline;
+  final ui.TextBaseline baseline;
 }
 
 /// Converts [fontWeight] to its CSS equivalent value.
@@ -1625,12 +1625,14 @@ html.Element _createPlaceholderElement({
     ..display = 'inline-block'
     ..width = '${placeholder.width}px'
     ..height = '${placeholder.height}px'
-    ..verticalAlign = _getCssPlaceholderAlignment(placeholder);
+    ..verticalAlign = _placeholderAlignmentToCssVerticalAlign(placeholder);
 
   return element;
 }
 
-String _getCssPlaceholderAlignment(ParagraphPlaceholder placeholder) {
+String _placeholderAlignmentToCssVerticalAlign(
+  ParagraphPlaceholder placeholder,
+) {
   // For more details about the vertical-align CSS property, see:
   // - https://developer.mozilla.org/en-US/docs/Web/CSS/vertical-align
   switch (placeholder.alignment) {
