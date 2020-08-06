@@ -133,7 +133,6 @@ class EngineAutofillForm {
     formElement.action = '#';
     formElement.addEventListener('submit', (e) {
       e.preventDefault();
-      _debugVisibleTextEditing = true;
     });
 
     _hideAutofillElements(formElement);
