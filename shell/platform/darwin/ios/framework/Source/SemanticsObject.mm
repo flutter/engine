@@ -455,6 +455,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     return;
   [self bridge]->AccessibilityFocusDidChange([self uid]);
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsHidden) ||
+      [self node].HasFlag(flutter::SemanticsFlags::kIsPartiallyHidden) ||
       [self node].HasFlag(flutter::SemanticsFlags::kIsHeader)) {
     [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
   }

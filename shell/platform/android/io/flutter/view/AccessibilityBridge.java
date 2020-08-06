@@ -936,9 +936,23 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
       case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS:
         {
+          // Must be preserved before sending TYPE_VIEW_ACCESSIBILITY_FOCUSED,
+          // because that will trigger ACTION_CLEAR_ACCESSIBILITY_FOCUS which
+          // sets accessibilityFocusedSemanticsNode to null.
+          SemanticsNode oldFocusedNode = accessibilityFocusedSemanticsNode;
+
           accessibilityChannel.dispatchSemanticsAction(
               virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
           sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
+
+          // Nodes which are partially hidden (ex: at the edge of a GridView)
+          // should be shown on screen when focused. We should check to ensure
+          // the previously focused node is not hidden, otherwise 2-3 finger
+          // scrolling will be interrupted.
+          if (semanticsNode.hasFlag(Flag.IS_PARTIALLY_HIDDEN)
+              && (oldFocusedNode == null || !oldFocusedNode.hasFlag(Flag.IS_HIDDEN))) {
+            accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.SHOW_ON_SCREEN);
+          }
 
           if (accessibilityFocusedSemanticsNode == null) {
             // When Android focuses a node, it doesn't invalidate the view.
@@ -1723,7 +1737,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // IS_MULTILINE(1 << 19);
     IS_READ_ONLY(1 << 20),
     IS_FOCUSABLE(1 << 21),
-    IS_LINK(1 << 22);
+    IS_LINK(1 << 22),
+    IS_PARTIALLY_HIDDEN(1 << 23);
 
     final int value;
 

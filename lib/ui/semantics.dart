@@ -300,6 +300,7 @@ class SemanticsFlag {
   static const int _kIsReadOnlyIndex = 1 << 20;
   static const int _kIsFocusableIndex = 1 << 21;
   static const int _kIsLinkIndex = 1 << 22;
+  static const int _kIsPartiallyHiddenIndex = 1 << 23;
   // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
   // value in testing/dart/semantics_test.dart, or tests will fail.
 
@@ -474,6 +475,25 @@ class SemanticsFlag {
   /// used to implement accessibility scrolling on iOS.
   static const SemanticsFlag isHidden = SemanticsFlag._(_kIsHiddenIndex);
 
+  /// Whether the semantics node is considered partially hidden.
+  ///
+  /// Elements with this flag are both partially hidden off screen and partially
+  /// visible on screen. They may be partially covered by other elements or
+  /// positioned partway outside of the visible area of a viewport.
+  ///
+  /// Partially hidden elements are brought fully on screen upon gaining
+  /// accessibility focus.
+  ///
+  /// This flag is different from [isHidden], since partially hidden elements
+  /// are still valid memebers of the semantics tree for all platforms.
+  /// 
+  /// Platforms should generally call [SemanticsAction.showOnScreen] when an
+  /// element with [isPartiallyHidden] receives accessibility focus, although
+  /// additional platform-specific considerations may be needed to ensure
+  /// this does not interfere with other actions, such as smooth scrolling
+  /// on Android.
+  static const SemanticsFlag isPartiallyHidden = SemanticsFlag._(_kIsPartiallyHiddenIndex);
+
   /// Whether the semantics node represents an image.
   ///
   /// Both TalkBack and VoiceOver will inform the user the semantics node
@@ -551,6 +571,7 @@ class SemanticsFlag {
     _kIsReadOnlyIndex: isReadOnly,
     _kIsFocusableIndex: isFocusable,
     _kIsLinkIndex: isLink,
+    _kIsPartiallyHiddenIndex: isPartiallyHidden,
   };
 
   @override
@@ -602,6 +623,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.isFocusable';
       case _kIsLinkIndex:
         return 'SemanticsFlag.isLink';
+      case _kIsPartiallyHiddenIndex:
+        return 'SemanticsFlag.isPartiallyHidden';
     }
     assert(false, 'Unhandled index: $index');
     return '';
