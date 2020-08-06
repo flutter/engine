@@ -6,7 +6,7 @@
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
-bool _debugVisibleTextEditing = false;
+bool _debugVisibleTextEditing = true;
 
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
@@ -344,7 +344,7 @@ class AutofillInfo {
     } else if (domElement is html.TextAreaElement) {
       html.TextAreaElement element = domElement;
       element.name = hint;
-      element.id = uniqueIdentifier;
+      element.id = hint;
       element.setAttribute('autocomplete', hint);
     }
   }

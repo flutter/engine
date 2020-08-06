@@ -1688,7 +1688,7 @@ void main() {
       // Autofill value is applied to the element.
       expect(firstElement.name,
           BrowserAutofillHints.instance.flutterToEngine('password'));
-      expect(firstElement.id, 'field2');
+      expect(firstElement.id, BrowserAutofillHints.instance.flutterToEngine('password'));
       expect(firstElement.type, 'password');
       if (browserEngine == BrowserEngine.firefox) {
         expect(firstElement.name,
@@ -1798,7 +1798,8 @@ void main() {
       // browsers.
       expect(testInputElement.name,
           BrowserAutofillHints.instance.flutterToEngine(testHint));
-      expect(testInputElement.id, testId);
+      expect(testInputElement.id,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
       expect(testInputElement.type, 'text');
       if (browserEngine == BrowserEngine.firefox) {
         expect(testInputElement.name,
@@ -1820,7 +1821,8 @@ void main() {
       // browsers.
       expect(testInputElement.name,
           BrowserAutofillHints.instance.flutterToEngine(testHint));
-      expect(testInputElement.id, testId);
+      expect(testInputElement.id,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
       expect(testInputElement.getAttribute('autocomplete'),
           BrowserAutofillHints.instance.flutterToEngine(testHint));
     });
@@ -1836,7 +1838,8 @@ void main() {
       // browsers.
       expect(testInputElement.name,
           BrowserAutofillHints.instance.flutterToEngine(testPasswordHint));
-      expect(testInputElement.id, testId);
+      expect(testInputElement.id,
+          BrowserAutofillHints.instance.flutterToEngine(testPasswordHint));
       expect(testInputElement.type, 'password');
       expect(testInputElement.getAttribute('autocomplete'),
           BrowserAutofillHints.instance.flutterToEngine(testPasswordHint));
