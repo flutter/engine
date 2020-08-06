@@ -6,7 +6,7 @@
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
-bool _debugVisibleTextEditing = true;
+bool _debugVisibleTextEditing = false;
 
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
