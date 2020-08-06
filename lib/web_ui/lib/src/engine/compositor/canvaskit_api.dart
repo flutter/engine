@@ -111,6 +111,8 @@ class SkColorSpace {}
 class SkWebGLContextOptions {
   external factory SkWebGLContextOptions({
     required int anitalias,
+    // WebGL version: 1 or 2.
+    required int majorVersion,
   });
 }
 
