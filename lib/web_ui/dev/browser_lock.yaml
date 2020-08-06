@@ -1,11 +1,11 @@
 chrome:
   # It seems Chrome can't always release from the same build for all operating
   # systems, so we specify per-OS build number.
-  # Note: 768962 binary is for Chrome Version 84. Driver for Chrome version 83
+  # Note: 741412 binary is for Chrome Version 82. Driver for Chrome version 83
   # is not working with chrome.binary option.
-  Linux: 768968
-  Mac: 768968
-  Win: 768975
+  Linux: 741412
+  Mac: 735194
+  Win: 735105
 firefox:
   version: '72.0'
 edge:
