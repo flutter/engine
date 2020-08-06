@@ -89,12 +89,32 @@ enum FramePhase {
 class FrameTiming {
   /// Construct [FrameTiming] with raw timestamps in microseconds.
   ///
+  /// This constructor is used for unit test only. Real [FrameTiming]s should
+  /// be retrieved from [Window.onReportTimings].
+  factory FrameTiming({
+    required int vsyncStart,
+    required int buildStart,
+    required int buildFinish,
+    required int rasterStart,
+    required int rasterFinish,
+  }) {
+    return FrameTiming._(<int>[
+      vsyncStart,
+      buildStart,
+      buildFinish,
+      rasterStart,
+      rasterFinish
+    ]);
+  }
+
+  /// Construct [FrameTiming] with raw timestamps in microseconds.
+  ///
   /// List [timestamps] must have the same number of elements as
   /// [FramePhase.values].
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
   /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
-  FrameTiming(List<int> timestamps)
+  FrameTiming._(List<int> timestamps)
       : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
 
   /// Construct [FrameTiming] with given timestamp in micrseconds.
@@ -111,7 +131,9 @@ class FrameTiming {
     required int rasterStart,
     required int rasterFinish
   }) {
-    return FrameTiming(<int>[
+    return FrameTiming._(<int>[
+      // This is for temporarily backward compatiblilty.
+      vsyncStart ?? buildStart,
       buildStart,
       buildFinish,
       rasterStart,
