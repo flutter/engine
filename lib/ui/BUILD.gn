@@ -97,6 +97,8 @@ source_set_maybe_fuchsia_legacy("ui") {
     "window/key_data.h",
     "window/key_data_packet.cc",
     "window/key_data_packet.h",
+    "window/platform_configuration.cc",
+    "window/platform_configuration.h",
     "window/platform_message.cc",
     "window/platform_message.h",
     "window/platform_message_response.cc",
@@ -182,7 +184,9 @@ if (enable_unittests) {
     public_configs = [ "//flutter:export_dynamic_symbols" ]
 
     sources = [
+      "painting/image_encoding_unittests.cc",
       "painting/vertices_unittests.cc",
+      "window/platform_configuration_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]
 

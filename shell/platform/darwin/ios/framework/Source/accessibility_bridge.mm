@@ -16,27 +16,12 @@ FLUTTER_ASSERT_NOT_ARC
 namespace flutter {
 namespace {
 
-FlutterViewController* _Nullable GetFlutterViewControllerForView(UIView* view) {
-  // There is no way to get a view's view controller in UIKit directly, this is
-  // somewhat of a hacky solution to get that.  This could be eliminated if the
-  // bridge actually kept a reference to a FlutterViewController instead of a
-  // UIView.
-  id nextResponder = [view nextResponder];
-  if ([nextResponder isKindOfClass:[FlutterViewController class]]) {
-    return nextResponder;
-  } else if ([nextResponder isKindOfClass:[UIView class]]) {
-    return GetFlutterViewControllerForView(nextResponder);
-  } else {
-    return nil;
-  }
-}
-
 class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
  public:
-  bool IsFlutterViewControllerPresentingModalViewController(UIView* view) override {
-    FlutterViewController* viewController = GetFlutterViewControllerForView(view);
-    if (viewController) {
-      return viewController.isPresentingViewController;
+  bool IsFlutterViewControllerPresentingModalViewController(
+      FlutterViewController* view_controller) override {
+    if (view_controller) {
+      return view_controller.isPresentingViewController;
     } else {
       return false;
     }
@@ -49,13 +34,14 @@ class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
 };
 }  // namespace
 
-AccessibilityBridge::AccessibilityBridge(UIView* view,
+AccessibilityBridge::AccessibilityBridge(FlutterViewController* view_controller,
                                          PlatformViewIOS* platform_view,
                                          FlutterPlatformViewsController* platform_views_controller,
                                          std::unique_ptr<IosDelegate> ios_delegate)
-    : view_(view),
+    : view_controller_(view_controller),
       platform_view_(platform_view),
       platform_views_controller_(platform_views_controller),
+      last_focused_semantics_object_id_(0),
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
@@ -74,11 +60,15 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
 AccessibilityBridge::~AccessibilityBridge() {
   [accessibility_channel_.get() setMessageHandler:nil];
   clearState();
-  view_.accessibilityElements = nil;
+  view_controller_.view.accessibilityElements = nil;
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
   return [[platform_view_->GetOwnerViewController().get().engine textInputPlugin] textInputView];
+}
+
+void AccessibilityBridge::AccessibilityFocusDidChange(int32_t id) {
+  last_focused_semantics_object_id_ = id;
 }
 
 void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
@@ -164,8 +154,8 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   SemanticsObject* lastAdded = nil;
 
   if (root) {
-    if (!view_.accessibilityElements) {
-      view_.accessibilityElements = @[ [root accessibilityContainer] ];
+    if (!view_controller_.view.accessibilityElements) {
+      view_controller_.view.accessibilityElements = @[ [root accessibilityContainer] ];
     }
     NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
     [root collectRoutes:newRoutes];
@@ -188,7 +178,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
       previous_routes_.push_back([route uid]);
     }
   } else {
-    view_.accessibilityElements = nil;
+    view_controller_.view.accessibilityElements = nil;
   }
 
   NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
@@ -198,17 +188,21 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
   if (routeChanged) {
-    if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_)) {
+    if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {
       ios_delegate_->PostAccessibilityNotification(UIAccessibilityScreenChangedNotification,
                                                    [lastAdded routeFocusObject]);
     }
   } else if (layoutChanged) {
-    // TODO(goderbauer): figure out which node to focus next.
-    ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification, nil);
+    // Tries to refocus the previous focused semantics object to avoid random jumps.
+    ios_delegate_->PostAccessibilityNotification(
+        UIAccessibilityLayoutChangedNotification,
+        [objects_.get() objectForKey:@(last_focused_semantics_object_id_)]);
   }
   if (scrollOccured) {
-    // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
-    ios_delegate_->PostAccessibilityNotification(UIAccessibilityPageScrolledNotification, @"");
+    // Tries to refocus the previous focused semantics object to avoid random jumps.
+    ios_delegate_->PostAccessibilityNotification(
+        UIAccessibilityPageScrolledNotification,
+        [objects_.get() objectForKey:@(last_focused_semantics_object_id_)]);
   }
 }
 

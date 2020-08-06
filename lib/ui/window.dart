@@ -95,6 +95,28 @@ class FrameTiming {
   FrameTiming(List<int> timestamps)
       : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
 
+  /// Construct [FrameTiming] with given timestamp in micrseconds.
+  ///
+  /// This constructor is used for unit test only. Real [FrameTiming]s should
+  /// be retrieved from [Window.onReportTimings].
+  ///
+  /// TODO(CareF): This is part of #20229. Remove back to default constructor
+  /// after #20229 lands and corresponding framwork PRs land.
+  factory FrameTiming.fromTimeStamps({
+    int? vsyncStart,
+    required int buildStart,
+    required int buildFinish,
+    required int rasterStart,
+    required int rasterFinish
+  }) {
+    return FrameTiming(<int>[
+      buildStart,
+      buildFinish,
+      rasterStart,
+      rasterFinish
+    ]);
+  }
+
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
   /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
   int timestampInMicroseconds(FramePhase phase) => _timestamps[phase.index];
@@ -826,7 +848,7 @@ class Window {
     }
     return null;
   }
-  List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) native 'Window_computePlatformResolvedLocale';
+  List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) native 'PlatformConfiguration_computePlatformResolvedLocale';
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -1004,7 +1026,7 @@ class Window {
   }
 
   late _SetNeedsReportTimingsFunc _setNeedsReportTimings;
-  void _nativeSetNeedsReportTimings(bool value) native 'Window_setNeedsReportTimings';
+  void _nativeSetNeedsReportTimings(bool value) native 'PlatformConfiguration_setNeedsReportTimings';
 
   /// A callback that is invoked when pointer data is available.
   ///
@@ -1066,7 +1088,7 @@ class Window {
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
   String get defaultRouteName => _defaultRouteName();
-  String _defaultRouteName() native 'Window_defaultRouteName';
+  String _defaultRouteName() native 'PlatformConfiguration_defaultRouteName';
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame]
   /// and [onDrawFrame] callbacks be invoked.
@@ -1075,7 +1097,7 @@ class Window {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
-  void scheduleFrame() native 'Window_scheduleFrame';
+  void scheduleFrame() native 'PlatformConfiguration_scheduleFrame';
 
   /// Updates the application's rendering on the GPU with the newly provided
   /// [Scene]. This function must be called within the scope of the
@@ -1101,7 +1123,7 @@ class Window {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  void render(Scene scene) native 'Window_render';
+  void render(Scene scene) native 'PlatformConfiguration_render';
 
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.
@@ -1141,7 +1163,7 @@ class Window {
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
-  // The zero value matches the default value in `window_data.h`.
+  // The zero value matches the default value in `platform_data.h`.
   AccessibilityFeatures _accessibilityFeatures = const AccessibilityFeatures._(0);
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
@@ -1163,7 +1185,7 @@ class Window {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) native 'Window_updateSemantics';
+  void updateSemantics(SemanticsUpdate update) native 'PlatformConfiguration_updateSemantics';
 
   /// Set the debug name associated with this window's root isolate.
   ///
@@ -1173,7 +1195,7 @@ class Window {
   /// This can be combined with flutter tools `--isolate-filter` flag to debug
   /// specific root isolates. For example: `flutter attach --isolate-filter=[name]`.
   /// Note that this does not rename any child isolates of the root.
-  void setIsolateDebugName(String name) native 'Window_setIsolateDebugName';
+  void setIsolateDebugName(String name) native 'PlatformConfiguration_setIsolateDebugName';
 
   /// Sends a message to a platform-specific plugin.
   ///
@@ -1194,7 +1216,7 @@ class Window {
   }
   String? _sendPlatformMessage(String name,
                               PlatformMessageResponseCallback? callback,
-                              ByteData? data) native 'Window_sendPlatformMessage';
+                              ByteData? data) native 'PlatformConfiguration_sendPlatformMessage';
 
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.
@@ -1219,7 +1241,7 @@ class Window {
 
   /// Called by [_dispatchPlatformMessage].
   void _respondToPlatformMessage(int responseId, ByteData? data)
-      native 'Window_respondToPlatformMessage';
+      native 'PlatformConfiguration_respondToPlatformMessage';
 
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
@@ -1245,7 +1267,7 @@ class Window {
   ///
   /// For asynchronous communication between the embedder and isolate, a
   /// platform channel may be used.
-  ByteData? getPersistentIsolateData() native 'Window_getPersistentIsolateData';
+  ByteData? getPersistentIsolateData() native 'PlatformConfiguration_getPersistentIsolateData';
 }
 
 /// Additional accessibility features that may be enabled by the platform.
