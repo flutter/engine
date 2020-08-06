@@ -6,7 +6,7 @@
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
-const bool _debugVisibleTextEditing = false;
+bool _debugVisibleTextEditing = false;
 
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
@@ -133,6 +133,7 @@ class EngineAutofillForm {
     formElement.action = '#';
     formElement.addEventListener('submit', (e) {
       e.preventDefault();
+      _debugVisibleTextEditing = true;
     });
 
     _hideAutofillElements(formElement);
@@ -202,7 +203,7 @@ class EngineAutofillForm {
 
   void placeForm(html.HtmlElement mainTextEditingElement) {
     formElement.append(mainTextEditingElement);
-    domRenderer.glassPaneElement!.append(formElement!);
+    domRenderer.glassPaneElement!.append(formElement);
   }
 
   void storeForm() {
@@ -929,8 +930,6 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     inputConfig.inputType.configureInputMode(domElement);
     if (hasAutofillGroup) {
       placeForm();
-    } else {
-      domRenderer.glassPaneElement!.append(domElement);
     }
     inputConfig.textCapitalization.setAutocapitalizeAttribute(domElement);
   }

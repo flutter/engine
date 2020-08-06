@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+import 'dart:async';
 import 'dart:html';
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
@@ -806,6 +807,108 @@ void main() {
           MethodCall('TextInput.finishAutofillContext', false);
       sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
 
+      // Form element is removed from DOM.
+      expect(document.getElementsByTagName('form'), hasLength(0));
+      expect(formsOnTheDom, hasLength(0));
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
+
+    test('finishAutofillContext with save submits forms', () async {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'username',
+              autofillHintsForFields: [
+            'username',
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // Form is added to DOM.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      FormElement formElement = document.getElementsByTagName('form')[0];
+      final Completer<bool> submittedForm = Completer<bool>();
+      formElement.addEventListener(
+          'submit', (event) => submittedForm.complete(true));
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      const MethodCall finishAutofillContext =
+          MethodCall('TextInput.finishAutofillContext', true);
+      sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
+
+      // `submit` action is called on form.
+      await expectLater(await submittedForm.future, true);
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
+
+    test('forms submits for focused input', () async {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'username',
+              autofillHintsForFields: [
+            'username',
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // Form is added to DOM.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      FormElement formElement = document.getElementsByTagName('form')[0];
+      final Completer<bool> submittedForm = Completer<bool>();
+      formElement.addEventListener(
+          'submit', (event) => submittedForm.complete(true));
+
+      // Clear client is not called. The used requested context to be finalized.
+      const MethodCall finishAutofillContext =
+          MethodCall('TextInput.finishAutofillContext', true);
+      sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
+
+      // Connection is closed by the engine.
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
+
+      // `submit` action is called on form.
+      await expectLater(await submittedForm.future, true);
       // Form element is removed from DOM.
       expect(document.getElementsByTagName('form'), hasLength(0));
       expect(formsOnTheDom, hasLength(0));
