@@ -731,12 +731,16 @@ class LinesCalculator {
   /// The lines that have been consumed so far.
   List<EngineLineMetrics> lines = <EngineLineMetrics>[];
 
+  /// The last line break regardless of whether it was optional or mandatory, or
+  /// whether we took it or not.
+  LineBreakResult? _lastBreak;
+
+  /// The last line break that actually caused a new line to exist.
+  LineBreakResult? _lastTakenBreak;
+
   int get _lineStart => _lastTakenBreak?.index ?? 0;
   int get _chunkStart => _lastBreak?.index ?? 0;
   bool _reachedMaxLines = false;
-
-  LineBreakResult? _lastBreak;
-  LineBreakResult? _lastTakenBreak;
 
   double? _cachedEllipsisWidth;
   double get _ellipsisWidth => _cachedEllipsisWidth ??=

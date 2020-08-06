@@ -34,6 +34,8 @@ class LineBreakResult {
     this.type,
   );
 
+  /// Creates a [LineBreakResult] where all indices are the same (i.e. there are
+  /// no trailing spaces or new lines).
   LineBreakResult.sameIndex(this.index, this.type)
       : indexWithoutTrailingNewlines = index,
         indexWithoutTrailingSpaces = index;
