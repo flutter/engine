@@ -12,78 +12,53 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
-// This is a hack to get gmock working on windows until a fix lands for:
+///\note Deprecated MOCK_METHOD macros used until this issue is resolved:
 // https://github.com/google/googletest/issues/2490
-#undef GTEST_STRINGIFY_
-#define GTEST_STRINGIFY_HELPER_(name, ...) #name
-#define GTEST_STRINGIFY_(...) GTEST_STRINGIFY_HELPER_(__VA_ARGS__, )
 
 namespace flutter {
 
 namespace {
 class MockDelegate : public Engine::Delegate {
-  MOCK_METHOD(void,
-              OnEngineUpdateSemantics,
-              (SemanticsNodeUpdates, CustomAccessibilityActionUpdates),
-              (override));
-  MOCK_METHOD(void,
-              OnEngineHandlePlatformMessage,
-              (fml::RefPtr<PlatformMessage>),
-              (override));
-  MOCK_METHOD(void, OnPreEngineRestart, (), (override));
-  MOCK_METHOD(void,
-              UpdateIsolateDescription,
-              (const std::string, int64_t),
-              (override));
-  MOCK_METHOD(void, SetNeedsReportTimings, (bool), (override));
-
-  MOCK_METHOD(std::unique_ptr<std::vector<std::string>>,
-              ComputePlatformResolvedLocale,
-              (const std::vector<std::string>&),
-              (override));
+  MOCK_METHOD2(OnEngineUpdateSemantics,
+               void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
+  MOCK_METHOD1(OnEngineHandlePlatformMessage,
+               void(fml::RefPtr<PlatformMessage>));
+  MOCK_METHOD0(OnPreEngineRestart, void());
+  MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
+  MOCK_METHOD1(SetNeedsReportTimings, void(bool));
+  MOCK_METHOD1(ComputePlatformResolvedLocale,
+               std::unique_ptr<std::vector<std::string>>(
+                   const std::vector<std::string>&));
 };
 
 class MockResponse : public PlatformMessageResponse {
  public:
-  MOCK_METHOD(void, Complete, (std::unique_ptr<fml::Mapping> data), (override));
-  MOCK_METHOD(void, CompleteEmpty, (), (override));
+  MOCK_METHOD1(Complete, void(std::unique_ptr<fml::Mapping> data));
+  MOCK_METHOD0(CompleteEmpty, void());
 };
 
 class MockRuntimeDelegate : public RuntimeDelegate {
  public:
-  MOCK_METHOD(std::string, DefaultRouteName, (), (override));
-  MOCK_METHOD(void, ScheduleFrame, (bool), (override));
-  MOCK_METHOD(void, Render, (std::unique_ptr<flutter::LayerTree>), (override));
-  MOCK_METHOD(void,
-              UpdateSemantics,
-              (SemanticsNodeUpdates, CustomAccessibilityActionUpdates),
-              (override));
-  MOCK_METHOD(void,
-              HandlePlatformMessage,
-              (fml::RefPtr<PlatformMessage>),
-              (override));
-  MOCK_METHOD(FontCollection&, GetFontCollection, (), (override));
-  MOCK_METHOD(void,
-              UpdateIsolateDescription,
-              (const std::string, int64_t),
-              (override));
-  MOCK_METHOD(void, SetNeedsReportTimings, (bool), (override));
-
-  MOCK_METHOD(std::unique_ptr<std::vector<std::string>>,
-              ComputePlatformResolvedLocale,
-              (const std::vector<std::string>&),
-              (override));
+  MOCK_METHOD0(DefaultRouteName, std::string());
+  MOCK_METHOD1(ScheduleFrame, void(bool));
+  MOCK_METHOD1(Render, void(std::unique_ptr<flutter::LayerTree>));
+  MOCK_METHOD2(UpdateSemantics,
+               void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
+  MOCK_METHOD1(HandlePlatformMessage, void(fml::RefPtr<PlatformMessage>));
+  MOCK_METHOD0(GetFontCollection, FontCollection&());
+  MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
+  MOCK_METHOD1(SetNeedsReportTimings, void(bool));
+  MOCK_METHOD1(ComputePlatformResolvedLocale,
+               std::unique_ptr<std::vector<std::string>>(
+                   const std::vector<std::string>&));
 };
 
 class MockRuntimeController : public RuntimeController {
  public:
   MockRuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners)
       : RuntimeController(client, p_task_runners) {}
-  MOCK_METHOD(bool, IsRootIsolateRunning, (), (override, const));
-  MOCK_METHOD(bool,
-              DispatchPlatformMessage,
-              (fml::RefPtr<PlatformMessage>),
-              (override));
+  MOCK_CONST_METHOD0(IsRootIsolateRunning, bool());
+  MOCK_METHOD1(DispatchPlatformMessage, bool(fml::RefPtr<PlatformMessage>));
 };
 
 fml::RefPtr<PlatformMessage> MakePlatformMessage(
