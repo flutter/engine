@@ -602,7 +602,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       _geometry?.applyToDomElement(focusedFormElement!);
       placeForm();
       // On Chrome, when a form is focused, it opens an autofill menu
-      // immeddiately.
+      // immediately.
       // Flutter framework sends `setEditableSizeAndTransform` for informing
       // the engine about the location of the text field. This call will
       // arrive after `show` call.
@@ -614,6 +614,53 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
     } else {
       _geometry?.applyToDomElement(domElement);
     }
+  }
+}
+
+/// A [TextEditingStrategy] for Safari Desktop Browser.
+///
+/// It places its [domElement] assuming no prior transform or sizing is applied
+/// to it.
+///
+/// In case of an autofill enabled form, it does not append the form element
+/// to the DOM, until the geometry information is updated.
+///
+/// This implementation is used by text editables when semantics is not
+/// enabled. With semantics enabled the placement is provided by the semantics
+/// tree.
+class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
+  SafariDesktopTextEditingStrategy(HybridTextEditing owner) : super(owner);
+
+  /// Appending an element on the DOM for Safari Desktop Browser.
+  ///
+  /// This method is only called when geometry information is updated by
+  /// 'TextInput.setEditableSizeAndTransform' message.
+  ///
+  /// This method is similar to the [GloballyPositionedTextEditingStrategy].
+  /// The only part different: this method does not call `super.placeElement()`,
+  /// which in current state calls `domElement.focus()`.
+  ///
+  /// Making an extra `focus` request causes flickering in Safari.
+  @override
+  void placeElement() {
+    _geometry?.applyToDomElement(domElement);
+    if (hasAutofillGroup) {
+      placeForm();
+      // On Safari Desktop, when a form is focused, it opens an autofill menu
+      // immediately.
+      // Flutter framework sends `setEditableSizeAndTransform` for informing
+      // the engine about the location of the text field. This call will
+      // arrive after `show` call. Therefore form is placed, when
+      //  `setEditableSizeAndTransform` method is called and focus called on the
+      // form only after placing it to the correct position and only once after
+      // that. Calling focus multiple times causes flickering.
+      focusedFormElement!.focus();
+    }
+  }
+
+  @override
+  void initializeElementPlacement() {
+    domElement.focus();
   }
 }
 
@@ -1119,8 +1166,6 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         onChange: onChange, onAction: onAction);
     if (hasAutofillGroup) {
       placeForm();
-    } else {
-      domRenderer.glassPaneElement!.append(domElement);
     }
   }
 
@@ -1351,6 +1396,8 @@ class HybridTextEditing {
     if (browserEngine == BrowserEngine.webkit &&
         operatingSystem == OperatingSystem.iOs) {
       this._defaultEditingElement = IOSTextEditingStrategy(this);
+    } else if (browserEngine == BrowserEngine.webkit) {
+      this._defaultEditingElement = SafariDesktopTextEditingStrategy(this);
     } else if (browserEngine == BrowserEngine.blink &&
         operatingSystem == OperatingSystem.android) {
       this._defaultEditingElement = AndroidTextEditingStrategy(this);
