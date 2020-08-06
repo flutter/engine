@@ -66,8 +66,9 @@ Paragraph _createParagraphWithPlaceholder(PlaceholderAlignment alignment) {
     placeholderSize.height,
     alignment,
     baselineOffset: 40.0,
+    baseline: TextBaseline.alphabetic,
   );
-  builder.pushStyle(TextStyle(color: blue));
+  builder.pushStyle(TextStyle(color: blue, fontFamily: 'Roboto', fontSize: 14));
   builder.addText('dolor sit amet, consectetur.');
   return builder.build()..layout(ParagraphConstraints(width: 200.0));
 }
