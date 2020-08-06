@@ -2,6 +2,7 @@
 
 set -e
 
+xcrun --sdk iphonesimulator --show-sdk-path
 FLUTTER_ENGINE=ios_debug_sim_unopt
 
 if [ $# -eq 1 ]; then
