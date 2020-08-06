@@ -632,6 +632,10 @@ class ParagraphRuler {
     assert(!_debugIsDisposed);
     assert(_paragraph != null);
 
+    if (_paragraph!.placeholderCount == 0) {
+      return const <ui.TextBox>[];
+    }
+
     final List<html.Element> placeholderElements =
         constrainedDimensions._element.querySelectorAll('.$_placeholderClass');
     final List<ui.TextBox> boxes = <ui.TextBox>[];

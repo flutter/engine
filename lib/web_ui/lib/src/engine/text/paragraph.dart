@@ -176,6 +176,7 @@ class EngineParagraph implements ui.Paragraph {
     required ui.TextAlign textAlign,
     required ui.TextDirection textDirection,
     required ui.Paint? background,
+    required this.placeholderCount,
   })  : assert((plainText == null && paint == null) ||
             (plainText != null && paint != null)),
         _paragraphElement = paragraphElement,
@@ -193,6 +194,8 @@ class EngineParagraph implements ui.Paragraph {
   final ui.TextAlign _textAlign;
   final ui.TextDirection _textDirection;
   final SurfacePaint? _background;
+
+  final int placeholderCount;
 
   @visibleForTesting
   String? get plainText => _plainText;
@@ -485,6 +488,7 @@ class EngineParagraph implements ui.Paragraph {
       textAlign: _textAlign,
       textDirection: _textDirection,
       background: _background,
+      placeholderCount: placeholderCount,
     );
   }
 
@@ -1076,6 +1080,11 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
     double? baselineOffset,
     ui.TextBaseline? baseline,
   }) {
+    // Require a baseline to be specified if using a baseline-based alignment.
+    assert((alignment == ui.PlaceholderAlignment.aboveBaseline ||
+            alignment == ui.PlaceholderAlignment.belowBaseline ||
+            alignment == ui.PlaceholderAlignment.baseline) ? baseline != null : true);
+
     _placeholderCount++;
     _placeholderScales.add(scale);
     _ops.add(ParagraphPlaceholder(
@@ -1263,6 +1272,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
         textAlign: textAlign,
         textDirection: textDirection,
         background: cumulativeStyle._background,
+        placeholderCount: placeholderCount,
       );
     }
 
@@ -1317,6 +1327,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       textAlign: textAlign,
       textDirection: textDirection,
       background: cumulativeStyle._background,
+      placeholderCount: placeholderCount,
     );
   }
 
@@ -1366,6 +1377,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       textAlign: _paragraphStyle._effectiveTextAlign,
       textDirection: _paragraphStyle._effectiveTextDirection,
       background: null,
+      placeholderCount: placeholderCount,
     );
   }
 }
