@@ -154,7 +154,7 @@ class EngineAutofillForm {
                 field['textCapitalization']));
 
         // Add a seperator if this is not the first id to be added.
-        if(ids.length > 0) {
+        if (ids.length > 0) {
           ids.write('*');
         }
         ids.write(autofill.uniqueIdentifier);
@@ -334,15 +334,12 @@ class AutofillInfo {
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
       element.name = hint;
-      element.id = uniqueIdentifier;
+      element.id = hint;
       element.autocomplete = hint;
-      // Do not change the element type for the focused element.
-      if (focusedElement == false) {
-        if (hint.contains('password')) {
-          element.type = 'password';
-        } else {
-          element.type = 'text';
-        }
+      if (hint.contains('password')) {
+        element.type = 'password';
+      } else {
+        element.type = 'text';
       }
     } else if (domElement is html.TextAreaElement) {
       html.TextAreaElement element = domElement;
@@ -1269,7 +1266,8 @@ class TextEditingChannel {
   /// Called when the form is finalized.
   void cleanForms() {
     while (formsOnTheDom.length > 0) {
-      final html.FormElement form = formsOnTheDom[formsOnTheDom.entries.last.key] as html.FormElement;
+      final html.FormElement form =
+          formsOnTheDom[formsOnTheDom.entries.last.key] as html.FormElement;
       form.remove();
       formsOnTheDom.remove(formsOnTheDom.entries.last.key);
     }
