@@ -1269,10 +1269,11 @@ class TextEditingChannel {
   ///
   /// Called when the form is finalized.
   void cleanForms() {
-    while (html.document.getElementsByTagName('form').length > 0) {
-      html.document.getElementsByTagName('form').last.remove();
+    while (formsOnTheDom.length > 0) {
+      final html.FormElement form = formsOnTheDom[formsOnTheDom.entries.last.key] as html.FormElement;
+      form.remove();
+      formsOnTheDom.remove(formsOnTheDom.entries.last.key);
     }
-    formsOnTheDom.clear();
   }
 
   /// Sends the 'TextInputClient.updateEditingState' message to the framework.
