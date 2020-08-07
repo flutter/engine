@@ -81,10 +81,11 @@ class CkAnimatedImage implements ui.Image {
       bytes = _skAnimatedImage.readPixels(imageInfo, 0, 0);
     } else {
       final SkData skData = _skAnimatedImage.encodeToData(); //defaults to PNG 100%
-      bytes = canvasKit.getSkDataBytes(skData);
+      // make a copy that we can return
+      bytes = Uint8List.fromList(canvasKit.getSkDataBytes(skData));
     }
 
-    final ByteData data = Uint8List.fromList(bytes).buffer.asByteData(0, bytes.length);
+    final ByteData data = bytes.buffer.asByteData(0, bytes.length);
     return Future<ByteData>.value(data);
   }
 }
@@ -121,10 +122,11 @@ class CkImage implements ui.Image {
       bytes = skImage.readPixels(imageInfo, 0, 0);
     } else {
       final SkData skData = skImage.encodeToData(); //defaults to PNG 100%
-      bytes = canvasKit.getSkDataBytes(skData);
+      // make a copy that we can return
+      bytes = Uint8List.fromList(canvasKit.getSkDataBytes(skData));
     }
 
-    final ByteData data = Uint8List.fromList(bytes).buffer.asByteData(0, bytes.length);
+    final ByteData data = bytes.buffer.asByteData(0, bytes.length);
     return Future<ByteData>.value(data);
   }
 }

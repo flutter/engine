@@ -1184,7 +1184,15 @@ void _canvasTests() {
       fRight: 1,
       fBottom: 1,
     ));
-    otherCanvas.drawRect(0, 0, 1, 1, SkPaint());
+    otherCanvas.drawRect(
+      SkRect(
+        fLeft: 0,
+        fTop: 0,
+        fRight: 1,
+        fBottom: 1,
+      ),
+      SkPaint(),
+    );
     final SkPicture picture = otherRecorder.finishRecordingAsPicture();
     final SkImage image = picture.toImage();
     final Uint8List data = image.toByteData();
