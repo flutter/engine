@@ -883,8 +883,8 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
                     CREATE_NATIVE_ENTRY(nativeTimingCallback));
   RunEngine(shell.get(), std::move(configuration));
 
-  PumpOneFrame(shell.get());
   for (int i = 0; i < 10; i += 1) {
+    PumpOneFrame(shell.get());
   }
 
   reportLatch.Wait();
