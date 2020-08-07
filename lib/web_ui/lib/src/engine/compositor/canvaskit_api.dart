@@ -1676,6 +1676,7 @@ external Object? get _finalizationRegistryConstructor;
 /// Whether the current browser supports `FinalizationRegistry`.
 bool browserSupportsFinalizationRegistry = _finalizationRegistryConstructor != null;
 
+@JS()
 class SkData {
   external int size();
   external bool isEmpty();
