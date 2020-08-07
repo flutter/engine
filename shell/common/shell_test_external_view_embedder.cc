@@ -2,6 +2,14 @@
 
 namespace flutter {
 
+ShellTestExternalViewEmbedder::ShellTestExternalViewEmbedder(
+    const EndFrameCallBack& end_frame_call_back,
+    PostPrerollResult post_preroll_result)
+    : end_frame_call_back_(end_frame_call_back),
+      post_preroll_result_(post_preroll_result) {
+  resubmit_once_ = false;
+}
+
 void ShellTestExternalViewEmbedder::UpdatePostPrerollResult(
     PostPrerollResult post_preroll_result) {
   post_preroll_result_ = post_preroll_result;

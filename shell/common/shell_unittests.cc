@@ -502,14 +502,14 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
 TEST_F(ShellTest,
        ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit) {
   auto settings = CreateSettingsForFixture();
-  fml::AutoResetWaitableEvent endFrameLatch;
+  fml::AutoResetWaitableEvent end_frame_latch;
   bool end_frame_called = false;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
         ASSERT_TRUE(should_resubmit_frame);
         end_frame_called = true;
-        endFrameLatch.Signal();
+        end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kResubmitFrame);
@@ -540,7 +540,7 @@ TEST_F(ShellTest,
   };
 
   PumpOneFrame(shell.get(), 100, 100, builder);
-  endFrameLatch.Wait();
+  end_frame_latch.Wait();
 
   ASSERT_TRUE(end_frame_called);
 
@@ -550,14 +550,14 @@ TEST_F(ShellTest,
 TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
   const size_t ThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
-  fml::AutoResetWaitableEvent endFrameLatch;
+  fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
         if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
           raster_thread_merger->MergeWithLease(ThreadMergingLease);
         }
-        endFrameLatch.Signal();
+        end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess);
@@ -591,7 +591,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
 
   PumpOneFrame(shell.get(), 100, 100, builder);
   // Pump one frame to trigger thread merging.
-  endFrameLatch.Wait();
+  end_frame_latch.Wait();
   // Pump another frame to ensure threads are merged and a regular layer tree is
   // submitted.
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -616,7 +616,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
 TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
   const size_t ThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
-  fml::AutoResetWaitableEvent endFrameLatch;
+  fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
@@ -625,7 +625,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
           FML_DLOG(ERROR) << "END FRAME merge threads";
           raster_thread_merger->MergeWithLease(ThreadMergingLease);
         }
-        endFrameLatch.Signal();
+        end_frame_latch.Signal();
       };
   // Start with a regular layer tree with `PostPrerollResult::kSuccess` so we
   // can later check if the rasterizer is tore down using
@@ -661,7 +661,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
 
   PumpOneFrame(shell.get(), 100, 100, builder);
   // Pump one frame and threads aren't merged
-  endFrameLatch.Wait();
+  end_frame_latch.Wait();
   ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
       shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
       shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
@@ -691,10 +691,12 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
 TEST_F(ShellTest,
        OnPlatformViewDestroyWithThreadMergerWhileThreadsAreUnmerged) {
   auto settings = CreateSettingsForFixture();
-
+  fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
-          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {};
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        end_frame_latch.Signal();
+      };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess);
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
@@ -723,6 +725,7 @@ TEST_F(ShellTest,
     root->Add(picture_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
+  end_frame_latch.Wait();
 
   // Threads should not be merged.
   ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(

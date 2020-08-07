@@ -19,9 +19,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
       std::function<void(bool, fml::RefPtr<fml::RasterThreadMerger>)>;
 
   ShellTestExternalViewEmbedder(const EndFrameCallBack& end_frame_call_back,
-                                PostPrerollResult post_preroll_result)
-      : end_frame_call_back_(end_frame_call_back),
-        post_preroll_result_(post_preroll_result) {}
+                                PostPrerollResult post_preroll_result);
 
   ~ShellTestExternalViewEmbedder() = default;
 
