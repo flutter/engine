@@ -1176,7 +1176,7 @@ void _canvasTests() {
     );
   });
 
-  test('toImage.toByteData', () {
+  test('toImage.toByteData', () async {
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas = otherRecorder.beginRecording(SkRect(
       fLeft: 0,
@@ -1193,10 +1193,12 @@ void _canvasTests() {
       ),
       SkPaint(),
     );
-    final SkPicture picture = otherRecorder.finishRecordingAsPicture();
-    final SkImage image = picture.toImage();
-    final Uint8List data = image.toByteData();
-    expect(data, isNotNull);
+    final CkPicture picture = otherRecorder.finishRecordingAsPicture();
+    final CkImage image = await picture.toImage(1, 1);
+    final ByteData rawData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    expect(rawData, isNotNull);
+    final ByteData pngData = await image.toByteData(format: ui.ImageByteFormat.png);
+    expect(pngData, isNotNull);
   });
 }
 
