@@ -13,7 +13,8 @@ FLUTTER_ASSERT_ARC
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
 
-- (void)setTextInputState:(NSDictionary*)state;
+- (BOOL)setTextInputState:(NSDictionary*)state;
+- (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
 @end
 
@@ -169,12 +170,12 @@ FLUTTER_ASSERT_ARC
   inputView.selectedTextRange = nil;
 
   // Text changes trigger update.
-  [inputView setTextInputState:@{@"text" : @"AFTER"}];
-  OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil]]);
+  XCTAssertTrue([inputView setTextInputState:@{@"text" : @"AFTER"}]);
+  // OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil]]);
 
   // Don't send anything if there's nothing new.
-  [inputView setTextInputState:@{@"text" : @"AFTER"}];
-  OCMReject([engine updateEditingClient:0 withState:[OCMArg any]]);
+  XCTAssertFalse([inputView setTextInputState:@{@"text" : @"AFTER"}]);
+  // OCMReject([engine updateEditingClient:0 withState:[OCMArg any]]);
 }
 
 - (void)testSelectionChangeTriggersUpdateEditingClient {
@@ -185,22 +186,26 @@ FLUTTER_ASSERT_ARC
   inputView.markedTextRange = nil;
   inputView.selectedTextRange = nil;
 
-  [inputView
+  BOOL shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @3}];
-  OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil]]);
+  XCTAssertTrue(shouldUpdate);
+  // OCMVerify([engine updateEditingClient:1 withState:[OCMArg isNotNil]]);
 
-  [inputView
+  shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @3}];
-  OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil]]);
+  XCTAssertTrue(shouldUpdate);
+  // OCMVerify([engine updateEditingClient:1 withState:[OCMArg isNotNil]]);
 
-  [inputView
+  shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @2}];
-  OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil]]);
+  XCTAssertTrue(shouldUpdate);
+  // OCMVerify([engine updateEditingClient:1 withState:[OCMArg isNotNil]]);
 
   // Don't send anything if there's nothing new.
-  [inputView
+  shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @2}];
-  OCMReject([engine updateEditingClient:0 withState:[OCMArg any]]);
+  XCTAssertFalse(shouldUpdate);
+  // OCMReject([engine updateEditingClient:1 withState:[OCMArg any]]);
 }
 
 - (void)testComposingChangeTriggersUpdateEditingClient {
@@ -212,22 +217,26 @@ FLUTTER_ASSERT_ARC
   inputView.markedTextRange = nil;
   inputView.selectedTextRange = nil;
 
-  [inputView
+  BOOL shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @0, @"composingExtent" : @3}];
-  OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil]]);
+  XCTAssertTrue(shouldUpdate);
+  // OCMVerify([engine updateEditingClient:1 withState:[OCMArg isNotNil]]);
 
-  [inputView
+  shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
-  OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil]]);
+  XCTAssertTrue(shouldUpdate);
+  // OCMVerify([engine updateEditingClient:1 withState:[OCMArg isNotNil]]);
 
-  [inputView
+  shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
-  OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil]]);
+  XCTAssertTrue(shouldUpdate);
+  // OCMVerify([engine updateEditingClient:1 withState:[OCMArg isNotNil]]);
 
   // Don't send anything if there's nothing new.
-  [inputView
+  shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
-  OCMReject([engine updateEditingClient:0 withState:[OCMArg any]]);
+  XCTAssertFalse(shouldUpdate);
+  // OCMReject([engine updateEditingClient:1 withState:[OCMArg any]]);
 }
 
 - (void)testUpdateEditingClientNegativeSelection {
@@ -243,10 +252,87 @@ FLUTTER_ASSERT_ARC
     @"selectionBase" : @-1,
     @"selectionExtent" : @-1
   }];
+  [inputView updateEditingState];
   OCMVerify([engine updateEditingClient:0
                               withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                                 return ([state[@"selectionBase"] intValue]) == 0 &&
                                        ([state[@"selectionExtent"] intValue] == 0);
+                              }]]);
+
+  // Returns (0, 0) when either end goes below 0.
+  [inputView
+      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @-1, @"selectionExtent" : @1}];
+  [inputView updateEditingState];
+  OCMVerify([engine updateEditingClient:0
+                              withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                return ([state[@"selectionBase"] intValue]) == 0 &&
+                                       ([state[@"selectionExtent"] intValue] == 0);
+                              }]]);
+
+  [inputView
+      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @-1}];
+  [inputView updateEditingState];
+  OCMVerify([engine updateEditingClient:0
+                              withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                return ([state[@"selectionBase"] intValue]) == 0 &&
+                                       ([state[@"selectionExtent"] intValue] == 0);
+                              }]]);
+}
+
+- (void)testUpdateEditingClientSelectionClamping {
+  // Regression test for https://github.com/flutter/flutter/issues/62992.
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  inputView.textInputDelegate = engine;
+
+  [inputView.text setString:@"SELECTION"];
+  inputView.markedTextRange = nil;
+  inputView.selectedTextRange = nil;
+
+  [inputView
+      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @0}];
+  [inputView updateEditingState];
+  OCMVerify([engine updateEditingClient:0
+                              withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                return ([state[@"selectionBase"] intValue]) == 0 &&
+                                       ([state[@"selectionExtent"] intValue] == 0);
+                              }]]);
+
+  // Needs clamping.
+  [inputView setTextInputState:@{
+    @"text" : @"SELECTION",
+    @"selectionBase" : @0,
+    @"selectionExtent" : @9999
+  }];
+  [inputView updateEditingState];
+
+  OCMVerify([engine updateEditingClient:0
+                              withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                return ([state[@"selectionBase"] intValue]) == 0 &&
+                                       ([state[@"selectionExtent"] intValue] == 9);
+                              }]]);
+
+  // No clamping needed, but in reverse direction.
+  [inputView
+      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @0}];
+  [inputView updateEditingState];
+  OCMVerify([engine updateEditingClient:0
+                              withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                return ([state[@"selectionBase"] intValue]) == 0 &&
+                                       ([state[@"selectionExtent"] intValue] == 1);
+                              }]]);
+
+  // Both ends need clamping.
+  [inputView setTextInputState:@{
+    @"text" : @"SELECTION",
+    @"selectionBase" : @9999,
+    @"selectionExtent" : @9999
+  }];
+  [inputView updateEditingState];
+
+  OCMVerify([engine updateEditingClient:0
+                              withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                return ([state[@"selectionBase"] intValue]) == 9 &&
+                                       ([state[@"selectionExtent"] intValue] == 9);
                               }]]);
 }
 
