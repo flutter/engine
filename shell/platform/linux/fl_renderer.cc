@@ -10,6 +10,8 @@
 G_DEFINE_QUARK(fl_renderer_error_quark, fl_renderer_error)
 
 typedef struct {
+  FlView* view;
+
   EGLDisplay egl_display;
   EGLConfig egl_config;
   EGLSurface egl_surface;
@@ -123,8 +125,8 @@ static gboolean setup_gdk_window(FlRenderer* self,
 
   if (FL_RENDERER_GET_CLASS(self)->setup_window_attr) {
     if (!FL_RENDERER_GET_CLASS(self)->setup_window_attr(
-            self, widget, priv->egl_display, priv->egl_config,
-            &window_attributes, &window_attributes_mask, error)) {
+            self, priv->egl_display, priv->egl_config, &window_attributes,
+            &window_attributes_mask, error)) {
       return FALSE;
     }
   }
@@ -134,10 +136,6 @@ static gboolean setup_gdk_window(FlRenderer* self,
                      window_attributes_mask);
   gtk_widget_register_window(widget, window);
   gtk_widget_set_window(widget, window);
-
-  if (FL_RENDERER_GET_CLASS(self)->set_window) {
-    FL_RENDERER_GET_CLASS(self)->set_window(self, window);
-  }
 
   return TRUE;
 }
@@ -181,14 +179,19 @@ static gboolean setup_egl_surfaces(FlRenderer* self, GError** error) {
   return TRUE;
 }
 
-gboolean fl_renderer_start(FlRenderer* self,
-                           GtkWidget* widget,
-                           GError** error) {
+gboolean fl_renderer_start(FlRenderer* self, FlView* view, GError** error) {
+  FlRendererPrivate* priv =
+      static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
+
+  g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
+
+  priv->view = view;
+
   if (!setup_egl_display(self, error)) {
     return FALSE;
   }
 
-  if (!setup_gdk_window(self, widget, error)) {
+  if (!setup_gdk_window(self, GTK_WIDGET(view), error)) {
     return FALSE;
   }
 
@@ -197,6 +200,15 @@ gboolean fl_renderer_start(FlRenderer* self,
   }
 
   return TRUE;
+}
+
+FlView* fl_renderer_get_view(FlRenderer* self) {
+  FlRendererPrivate* priv =
+      static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
+
+  g_return_val_if_fail(FL_IS_RENDERER(self), nullptr);
+
+  return priv->view;
 }
 
 void fl_renderer_set_geometry(FlRenderer* self,

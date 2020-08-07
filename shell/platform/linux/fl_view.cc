@@ -209,7 +209,7 @@ static void fl_view_realize(GtkWidget* widget) {
 
   gtk_widget_set_realized(widget, TRUE);
 
-  if (!fl_renderer_start(self->renderer, widget, &error)) {
+  if (!fl_renderer_start(self->renderer, self, &error)) {
     g_warning("Failed to start Flutter renderer: %s", error->message);
     return;
   }

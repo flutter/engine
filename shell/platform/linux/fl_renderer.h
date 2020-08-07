@@ -9,6 +9,7 @@
 #include <gtk/gtk.h>
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 G_BEGIN_DECLS
 
@@ -39,18 +40,11 @@ struct _FlRendererClass {
    * Does not need to be implemented.
    */
   gboolean (*setup_window_attr)(FlRenderer* renderer,
-                                GtkWidget* widget,
                                 EGLDisplay egl_display,
                                 EGLConfig egl_config,
                                 GdkWindowAttr* window_attributes,
                                 gint* mask,
                                 GError** error);
-
-  /**
-   * Virtual method called after a GDK window has been created.
-   * This is called once. Does not need to be implemented.
-   */
-  void (*set_window)(FlRenderer* renderer, GdkWindow* window);
 
   /**
    * Virtual method to create a new EGL display.
@@ -87,7 +81,7 @@ struct _FlRendererClass {
 /**
  * fl_renderer_start:
  * @renderer: an #FlRenderer.
- * @widget: the widget Flutter is renderering to.
+ * @view: the #FlView widget this renderer is using.
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
  *
@@ -95,9 +89,15 @@ struct _FlRendererClass {
  *
  * Returns: %TRUE if successfully started.
  */
-gboolean fl_renderer_start(FlRenderer* renderer,
-                           GtkWidget* widget,
-                           GError** error);
+gboolean fl_renderer_start(FlRenderer* renderer, FlView* view, GError** error);
+
+/**
+ * fl_renderer_get_view:
+ * @renderer: an #FlRenderer.
+ *
+ * Returns the #FlView that is using the renderer.
+ */
+FlView* fl_renderer_get_view(FlRenderer* renderer);
 
 /**
  * fl_renderer_set_geometry:
