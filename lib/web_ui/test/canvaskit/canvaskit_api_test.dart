@@ -267,7 +267,14 @@ void _imageTests() {
     expect(frame.height(), 1);
 
     expect(nonAnimated.decodeNextFrame(), -1);
-    expect(frame.makeShader(canvasKit.TileMode.Repeat, canvasKit.TileMode.Mirror), isNotNull);
+    expect(
+      frame.makeShader(
+        canvasKit.TileMode.Repeat,
+        canvasKit.TileMode.Mirror,
+        toSkMatrixFromFloat32(Matrix4.identity().storage),
+      ),
+      isNotNull,
+    );
   });
 
   test('MakeAnimatedImageFromEncoded makes an animated image', () {

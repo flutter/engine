@@ -643,7 +643,11 @@ class SkImage {
   external void delete();
   external int width();
   external int height();
-  external SkShader makeShader(SkTileMode tileModeX, SkTileMode tileModeY);
+  external SkShader makeShader(
+    SkTileMode tileModeX,
+    SkTileMode tileModeY,
+    Float32List? matrix, // 3x3 matrix
+  );
 }
 
 @JS()
@@ -676,6 +680,18 @@ class SkShaderNamespace {
     SkTileMode tileMode,
     Float32List? matrix, // 3x3 matrix
     int flags,
+  );
+
+  external SkShader MakeSweepGradient(
+    double cx,
+    double cy,
+    List<Float32List> colors,
+    Float32List colorStops,
+    SkTileMode tileMode,
+    Float32List? matrix, // 3x3 matrix
+    int flags,
+    double startAngle,
+    double endAngle,
   );
 }
 
