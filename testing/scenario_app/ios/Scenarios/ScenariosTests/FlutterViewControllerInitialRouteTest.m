@@ -29,7 +29,7 @@
 - (void)testSettingInitialRoute {
   self.flutterViewController =
       [[FlutterViewController alloc] initWithProject:nil
-                                    withInitialRoute:@"myCustomInitialRoute"
+                                        initialRoute:@"myCustomInitialRoute"
                                              nibName:nil
                                               bundle:nil];
 
