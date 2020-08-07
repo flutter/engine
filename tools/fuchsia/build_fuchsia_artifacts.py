@@ -10,6 +10,7 @@ import argparse
 import errno
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -175,17 +176,39 @@ def BuildBucket(runtime_mode, arch, product):
   CopyIcuDepsToBucket(out_dir, deps_dir)
 
 
+def CheckCIPDPackageExists(package_name, tag):
+  '''Check to see if the current package/tag combo has been published'''
+  command = [
+    'cipd',
+    'search',
+    package_name,
+    '-tag',
+    tag,
+  ]
+  stdout = subprocess.check_output(command)
+  match = re.search(r'No matching instances\.', stdout)
+  if match:
+    return False
+  else:
+    return True
+
+
 def ProcessCIPDPackage(upload, engine_version):
   # Copy the CIPD YAML template from the source directory to be next to the bucket
   # we are about to package.
   cipd_yaml = os.path.join(_script_dir, 'fuchsia.cipd.yaml')
   CopyFiles(cipd_yaml, os.path.join(_bucket_directory, 'fuchsia.cipd.yaml'))
 
-  if upload and IsLinux():
+  tag = 'git_revision:%s' % engine_version
+  already_exists = CheckCIPDPackageExists('flutter/fuchsia', tag)
+  if already_exists:
+    print('CIPD package flutter/fuchsia tag %s already exists!' % tag)
+
+  if upload and IsLinux() and not already_exists:
     command = [
         'cipd', 'create', '-pkg-def', 'fuchsia.cipd.yaml', '-ref', 'latest',
         '-tag',
-        'git_revision:%s' % engine_version
+        tag,
     ]
   else:
     command = [
@@ -221,15 +244,7 @@ def GetRunnerTarget(runner_type, product, aot):
   target += 'runner'
   return base + target
 
-
-def GetTargetsToBuild(product=False, additional_targets=[]):
-  targets_to_build = [
-      'flutter/shell/platform/fuchsia:fuchsia',
-  ] + additional_targets
-  return targets_to_build
-
-
-def BuildTarget(runtime_mode, arch, product, enable_lto, additional_targets=[]):
+def BuildTarget(runtime_mode, arch, enable_lto, additional_targets=[]):
   out_dir = 'fuchsia_%s_%s' % (runtime_mode, arch)
   flags = [
       '--fuchsia',
@@ -243,7 +258,7 @@ def BuildTarget(runtime_mode, arch, product, enable_lto, additional_targets=[]):
     flags.append('--no-lto')
 
   RunGN(out_dir, flags)
-  BuildNinjaTargets(out_dir, GetTargetsToBuild(product))
+  BuildNinjaTargets(out_dir, [ 'flutter' ] + additional_targets)
 
   return
 
@@ -305,8 +320,7 @@ def main():
       product = product_modes[i]
       if build_mode == 'all' or runtime_mode == build_mode:
         if not args.skip_build:
-          BuildTarget(runtime_mode, arch, product, enable_lto,
-                      args.targets.split(","))
+          BuildTarget(runtime_mode, arch, enable_lto, args.targets.split(","))
         BuildBucket(runtime_mode, arch, product)
 
   if args.upload:
