@@ -22,6 +22,7 @@ final class ApplicationInfoLoader {
       FlutterLoader.class.getName() + '.' + FlutterLoader.ISOLATE_SNAPSHOT_DATA_KEY;
   static final String PUBLIC_FLUTTER_ASSETS_DIR_KEY =
       FlutterLoader.class.getName() + '.' + FlutterLoader.FLUTTER_ASSETS_DIR_KEY;
+  static final String NETWORK_POLICY_METADATA_KEY = "io.flutter.network-policy";
 
   @NonNull
   private static ApplicationInfo getApplicationInfo(@NonNull Context applicationContext) {
@@ -50,7 +51,7 @@ final class ApplicationInfoLoader {
       return null;
     }
 
-    int networkSecurityConfigRes = metadata.getInt("network-policy", 0);
+    int networkSecurityConfigRes = metadata.getInt(NETWORK_POLICY_METADATA_KEY, 0);
     if (networkSecurityConfigRes <= 0) {
       return null;
     }

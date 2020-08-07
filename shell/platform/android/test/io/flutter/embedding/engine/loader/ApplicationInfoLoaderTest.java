@@ -73,7 +73,7 @@ public class ApplicationInfoLoaderTest {
     when(packageManager.getApplicationInfo(any(String.class), any(int.class)))
         .thenReturn(applicationInfo);
     if (networkPolicyXml != null) {
-      metadata.putInt("network-policy", 5);
+      metadata.putInt(ApplicationInfoLoader.NETWORK_POLICY_METADATA_KEY, 5);
       doAnswer(invocationOnMock -> createMockResourceParser(networkPolicyXml))
           .when(resources)
           .getXml(5);
