@@ -1,4 +1,4 @@
-Signature: 1cbd9ba9c5b8d6409ac5c2f40f0591a4
+Signature: d2843695e11c14d932bf55cdcbfb151d
 
 UNUSED LICENSES:
 
@@ -8156,8 +8156,6 @@ FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/SoundSplayTr
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/sound_splay_tree.dart
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart2/SoundSplayTreeSieve.dart
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart2/sound_splay_tree.dart
-FILE: ../../../third_party/dart/runtime/bin/abi_version.h
-FILE: ../../../third_party/dart/runtime/bin/abi_version_in.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.h
 FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension.cc
@@ -8943,7 +8941,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/cli.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/debugger.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/sample_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/allocation_profile/allocation_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/app/analytics.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/cli/command.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/debugger/debugger.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/debugger/debugger_location.dart

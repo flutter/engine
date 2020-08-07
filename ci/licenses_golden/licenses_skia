@@ -1,4 +1,4 @@
-Signature: 648bb8c8a92f1eab892fdc727826b4db
+Signature: 2b088fd6d8bfa2c00e764f0c9e414cb2
 
 UNUSED LICENSES:
 
@@ -1453,17 +1453,11 @@ FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/ports/SkTLS_pthread.cpp
 FILE: ../../../third_party/skia/src/ports/SkTLS_win.cpp
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_fp.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_geom.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_geom.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_pipeline.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_pipeline.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
 FILE: ../../../third_party/skia/src/sksl/sksl_fp_raw.sksl
@@ -3823,7 +3817,6 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSectionAndParameterHelper.h
 FILE: ../../../third_party/skia/src/sksl/SkSLString.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLString.h
 FILE: ../../../third_party/skia/src/sksl/SkSLStringStream.h
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_fp.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_fp.sksl
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLEnum.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSetting.cpp
@@ -3901,6 +3894,7 @@ FILE: ../../../third_party/skia/include/gpu/GrBackendSurfaceMutableState.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypes.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypesMinimal.h
+FILE: ../../../third_party/skia/include/ports/SkImageGeneratorNDK.h
 FILE: ../../../third_party/skia/include/private/GrD3DTypesPriv.h
 FILE: ../../../third_party/skia/include/private/SkIDChangeListener.h
 FILE: ../../../third_party/skia/include/private/SkSLSampleUsage.h
@@ -3910,6 +3904,7 @@ FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_float_cap
 FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_int_capabilities.cpp
 FILE: ../../../third_party/skia/src/core/SkIDChangeListener.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixProvider.h
+FILE: ../../../third_party/skia/src/core/SkRuntimeEffectPriv.h
 FILE: ../../../third_party/skia/src/core/SkVM_fwd.h
 FILE: ../../../third_party/skia/src/gpu/GrBackendSemaphore.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendSurfaceMutableStateImpl.h
@@ -3926,6 +3921,7 @@ FILE: ../../../third_party/skia/src/gpu/GrStencilMaskHelper.h
 FILE: ../../../third_party/skia/src/gpu/GrUniformDataManager.cpp
 FILE: ../../../third_party/skia/src/gpu/GrUniformDataManager.h
 FILE: ../../../third_party/skia/src/gpu/GrUnrefDDLTask.h
+FILE: ../../../third_party/skia/src/gpu/GrUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DBuffer.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCaps.cpp
@@ -3980,6 +3976,7 @@ FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLUniformHandler.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkManagedResource.h
 FILE: ../../../third_party/skia/src/image/SkRescaleAndReadPixels.cpp
 FILE: ../../../third_party/skia/src/image/SkRescaleAndReadPixels.h
+FILE: ../../../third_party/skia/src/ports/SkImageGeneratorNDK.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLAnalysis.h
 FILE: ../../../third_party/skia/src/sksl/SkSLDehydrator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLDehydrator.h
@@ -5319,6 +5316,7 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrHighContrastFilterEf
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrHighContrastFilterEffect.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.h
+FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathShapeData.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrMiddleOutPolygonTriangulator.h
