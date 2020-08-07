@@ -36,6 +36,6 @@ class SkPictureSkiaObject extends OneShotSkiaObject<SkPicture> {
 
   @override
   void delete() {
-    rawSkiaObject?.delete();
+    rawSkiaObject.delete();
   }
 }
