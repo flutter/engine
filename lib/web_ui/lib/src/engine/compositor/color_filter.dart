@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// A [ui.ColorFilter] backed by Skia's [CkColorFilter].
-class CkColorFilter extends ResurrectableSkiaObject<SkColorFilter> {
+class CkColorFilter extends ManagedSkiaObject<SkColorFilter> {
   final EngineColorFilter _engineFilter;
 
   CkColorFilter.mode(EngineColorFilter filter) : _engineFilter = filter;

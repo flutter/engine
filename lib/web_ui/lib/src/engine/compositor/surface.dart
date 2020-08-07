@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
@@ -122,7 +123,7 @@ class Surface {
       ..height = '${logicalSize.height.ceil()}px';
 
     htmlElement = htmlCanvas;
-    if (canvasKitForceCpuOnly) {
+    if (webGLVersion == -1 || canvasKitForceCpuOnly) {
       return _makeSoftwareCanvasSurface(htmlCanvas);
     } else {
       // Try WebGL first.
@@ -132,6 +133,7 @@ class Surface {
           // Default to no anti-aliasing. Paint commands can be explicitly
           // anti-aliased by setting their `Paint` object's `antialias` property.
           anitalias: 0,
+          majorVersion: webGLVersion,
         ),
       );
 
@@ -160,7 +162,7 @@ class Surface {
         return _makeSoftwareCanvasSurface(htmlCanvas);
       }
 
-      return CkSurface(skSurface!, _grContext, glContext);
+      return CkSurface(skSurface, _grContext, glContext);
     }
   }
 

@@ -201,6 +201,7 @@ bool DartServiceIsolate::Startup(std::string server_ip,
   result = Dart_SetField(
       library, Dart_NewStringFromCString("_enableServicePortFallback"),
       Dart_NewBoolean(enable_service_port_fallback));
+  SHUTDOWN_ON_ERROR(result);
   return true;
 }
 

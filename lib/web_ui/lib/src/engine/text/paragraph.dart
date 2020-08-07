@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
+
+const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
 
 class EngineLineMetrics implements ui.LineMetrics {
   EngineLineMetrics({
@@ -18,7 +21,8 @@ class EngineLineMetrics implements ui.LineMetrics {
   })  : displayText = null,
         startIndex = -1,
         endIndex = -1,
-        endIndexWithoutNewlines = -1;
+        endIndexWithoutNewlines = -1,
+        widthWithTrailingSpaces = width;
 
   EngineLineMetrics.withText(
     String this.displayText, {
@@ -27,6 +31,7 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.endIndexWithoutNewlines,
     required this.hardBreak,
     required this.width,
+    required this.widthWithTrailingSpaces,
     required this.left,
     required this.lineNumber,
   })  : assert(displayText != null), // ignore: unnecessary_null_comparison
@@ -76,6 +81,18 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   @override
   final double width;
+
+  /// The full width of the line including all trailing space but not new lines.
+  ///
+  /// The difference between [width] and [widthWithTrailingSpaces] is that
+  /// [widthWithTrailingSpaces] includes trailing spaces in the width
+  /// calculation while [width] doesn't.
+  ///
+  /// For alignment purposes for example, the [width] property is the right one
+  /// to use because trailing spaces shouldn't affect the centering of text.
+  /// But for placing cursors in text fields, we do care about trailing
+  /// spaces so [widthWithTrailingSpaces] is more suitable.
+  final double widthWithTrailingSpaces;
 
   @override
   final double left;
@@ -450,7 +467,7 @@ class EngineParagraph implements ui.Paragraph {
     return ui.TextBox.fromLTRBD(
       line.left + widthBeforeBox,
       top,
-      line.left + line.width - widthAfterBox,
+      line.left + line.widthWithTrailingSpaces - widthAfterBox,
       top + _lineHeight,
       _textDirection,
     );
@@ -1109,15 +1126,15 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
   /// paragraph. Plain text is more efficient to lay out and measure than rich
   /// text.
   EngineParagraph? _tryBuildPlainText() {
-    ui.Color? color;
+    ui.Color color = _defaultTextColor;
     ui.TextDecoration? decoration;
     ui.Color? decorationColor;
     ui.TextDecorationStyle? decorationStyle;
     ui.FontWeight? fontWeight = _paragraphStyle._fontWeight;
     ui.FontStyle? fontStyle = _paragraphStyle._fontStyle;
     ui.TextBaseline? textBaseline;
-    String? fontFamily = _paragraphStyle._fontFamily;
-    double? fontSize = _paragraphStyle._fontSize;
+    String fontFamily = _paragraphStyle._fontFamily ?? DomRenderer.defaultFontFamily;
+    double fontSize = _paragraphStyle._fontSize ?? DomRenderer.defaultFontSize;
     final ui.TextAlign textAlign = _paragraphStyle._effectiveTextAlign;
     final ui.TextDirection textDirection = _paragraphStyle._effectiveTextDirection;
     double? letterSpacing;
@@ -1137,7 +1154,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
     while (i < _ops.length && _ops[i] is EngineTextStyle) {
       final EngineTextStyle style = _ops[i];
       if (style._color != null) {
-        color = style._color;
+        color = style._color!;
       }
       if (style._decoration != null) {
         decoration = style._decoration;
@@ -1159,7 +1176,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       }
       fontFamily = style._fontFamily;
       if (style._fontSize != null) {
-        fontSize = style._fontSize;
+        fontSize = style._fontSize!;
       }
       if (style._letterSpacing != null) {
         letterSpacing = style._letterSpacing;
@@ -1209,9 +1226,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       paint = foreground;
     } else {
       paint = ui.Paint();
-      if (color != null) {
-        paint.color = color;
-      }
+      paint.color = color;
     }
 
     if (i >= _ops.length) {
@@ -1688,7 +1703,6 @@ String? textAlignToCssValue(ui.TextAlign? align, ui.TextDirection textDirection)
         case ui.TextDirection.rtl:
           return 'left';
       }
-      break;
     default: // including ui.TextAlign.start
       switch (textDirection) {
         case ui.TextDirection.ltr:
@@ -1696,7 +1710,6 @@ String? textAlignToCssValue(ui.TextAlign? align, ui.TextDirection textDirection)
         case ui.TextDirection.rtl:
           return 'right';
       }
-      break;
   }
 }
 

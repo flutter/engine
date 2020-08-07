@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 _GlRenderer? _glRenderer;
@@ -163,8 +163,7 @@ class _WebGlRenderer implements _GlRenderer {
     }
     _GlContext gl =
         _OffscreenCanvas.createGlContext(widthInPixels, heightInPixels)!;
-    final bool isWebKit = (browserEngine == BrowserEngine.webkit);
-    _GlProgram glProgram = isWebKit
+    _GlProgram glProgram = webGLVersion == 1
         ? gl.useAndCacheProgram(
             _vertexShaderTriangleEs1, _fragmentShaderTriangleEs1)!
         : gl.useAndCacheProgram(
@@ -499,13 +498,10 @@ class _GlContext {
     switch (mode) {
       case ui.VertexMode.triangles:
         return kTriangles;
-        break;
       case ui.VertexMode.triangleFan:
         return kTriangleFan;
-        break;
       case ui.VertexMode.triangleStrip:
         return kTriangleStrip;
-        break;
     }
   }
 

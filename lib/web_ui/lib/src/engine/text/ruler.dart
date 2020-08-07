@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// Contains the subset of [ui.ParagraphStyle] properties that affect layout.
@@ -84,11 +84,10 @@ class ParagraphGeometricStyle {
 
     if (fontSize != null) {
       result.write(fontSize!.floor());
-      result.write('px');
     } else {
       result.write(DomRenderer.defaultFontSize);
     }
-    result.write(' ');
+    result.write('px ');
     result.write(canonicalizeFontFamily(effectiveFontFamily));
 
     return result.toString();

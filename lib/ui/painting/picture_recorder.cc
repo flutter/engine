@@ -43,8 +43,9 @@ SkCanvas* PictureRecorder::BeginRecording(SkRect bounds) {
 }
 
 fml::RefPtr<Picture> PictureRecorder::endRecording(Dart_Handle dart_picture) {
-  if (!canvas_)
+  if (!canvas_) {
     return nullptr;
+  }
 
   fml::RefPtr<Picture> picture =
       Picture::Create(dart_picture,

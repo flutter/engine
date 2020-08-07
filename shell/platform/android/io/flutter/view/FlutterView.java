@@ -169,7 +169,7 @@ public class FlutterView extends SurfaceView
 
     dartExecutor = mNativeView.getDartExecutor();
     flutterRenderer = new FlutterRenderer(mNativeView.getFlutterJNI());
-    mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().nativeGetIsSoftwareRenderingEnabled();
+    mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().getIsSoftwareRenderingEnabled();
     mMetrics = new ViewportMetrics();
     mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
     setFocusable(true);
@@ -231,7 +231,7 @@ public class FlutterView extends SurfaceView
       mMouseCursorPlugin = null;
     }
     mLocalizationPlugin = new LocalizationPlugin(context, localizationChannel);
-    androidKeyProcessor = new AndroidKeyProcessor(this, keyEventChannel, mTextInputPlugin);
+    androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
     androidTouchProcessor =
         new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ false);
     platformViewsController.attachToFlutterRenderer(flutterRenderer);
@@ -270,7 +270,8 @@ public class FlutterView extends SurfaceView
     if (!isAttached()) {
       return super.onKeyUp(keyCode, event);
     }
-    return androidKeyProcessor.onKeyUp(event) || super.onKeyUp(keyCode, event);
+    androidKeyProcessor.onKeyUp(event);
+    return super.onKeyUp(keyCode, event);
   }
 
   @Override
@@ -278,7 +279,8 @@ public class FlutterView extends SurfaceView
     if (!isAttached()) {
       return super.onKeyDown(keyCode, event);
     }
-    return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
+    androidKeyProcessor.onKeyDown(event);
+    return super.onKeyDown(keyCode, event);
   }
 
   public FlutterNativeView getFlutterNativeView() {

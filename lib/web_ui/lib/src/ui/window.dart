@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 // Synced 2019-05-30T14:20:57.841444.
 
-// @dart = 2.9
+// @dart = 2.10
 part of ui;
 
 /// Signature of callbacks that have no arguments and return no data.
@@ -1045,6 +1045,21 @@ class FrameTiming {
   FrameTiming(List<int> timestamps)
       : assert(timestamps.length == FramePhase.values.length),
         _timestamps = timestamps;
+
+  /// Construct [FrameTiming] with given timestamp in micrseconds.
+  ///
+  /// This constructor is used for unit test only. Real [FrameTiming]s should
+  /// be retrieved from [Window.onReportTimings].
+  ///
+  /// TODO(CareF): This is part of #20229. Remove back to default constructor
+  /// after #20229 lands and corresponding framwork PRs land.
+  FrameTiming.fromTimeStamps({
+    int? vsyncStart,
+    required int buildStart,
+    required int buildFinish,
+    required int rasterStart,
+    required int rasterFinish
+  }) : _timestamps = <int>[buildStart, buildFinish, rasterStart, rasterFinish];
 
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
   /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
