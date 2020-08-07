@@ -336,8 +336,8 @@ TEST_F(ShellTest, NoNeedToReportTimingsByDefault) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  PumpOneFrame(shell.get());
   RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
   ASSERT_FALSE(GetNeedsReportTimings(shell.get()));
 
   // This assertion may or may not be the direct result of needs_report_timings_
@@ -364,8 +364,8 @@ TEST_F(ShellTest, NeedsReportTimingsIsSetWithCallback) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("dummyReportTimingsMain");
 
-  PumpOneFrame(shell.get());
   RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
   ASSERT_TRUE(GetNeedsReportTimings(shell.get()));
   DestroyShell(std::move(shell));
 }
@@ -418,8 +418,8 @@ TEST_F(ShellTest, DISABLED_ReportTimingsIsCalled) {
 
   // Pump many frames so we can trigger the report quickly instead of waiting
   // for the 1 second threshold.
-  PumpOneFrame(shell.get());
   for (int i = 0; i < 200; i += 1) {
+    PumpOneFrame(shell.get());
   }
 
   reportLatch.Wait();
@@ -538,8 +538,8 @@ TEST_F(ShellTest,
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
-  PumpOneFrame(shell.get(), 100, 100, builder);
 
+  PumpOneFrame(shell.get(), 100, 100, builder);
   endFrameLatch.Wait();
 
   ASSERT_TRUE(end_frame_called);
@@ -836,8 +836,8 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
   AddNativeCallback("NativeReportTimingsCallback",
                     CREATE_NATIVE_ENTRY(nativeTimingCallback));
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get());
 
+  PumpOneFrame(shell.get());
   PumpOneFrame(shell.get());
 
   reportLatch.Wait();
@@ -932,8 +932,8 @@ TEST_F(ShellTest, WaitForFirstFrame) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  PumpOneFrame(shell.get());
   RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_TRUE(result.ok());
@@ -951,8 +951,8 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
   RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_FALSE(result.ok());
@@ -990,8 +990,8 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  PumpOneFrame(shell.get());
   RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_TRUE(result.ok());
@@ -1019,8 +1019,8 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  PumpOneFrame(shell.get());
   RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
   fml::AutoResetWaitableEvent event;
   task_runner->PostTask([&shell, &event] {
     fml::Status result =
@@ -1062,8 +1062,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  PumpOneFrame(shell.get());
   RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(24 * (1 << 20)));
@@ -1071,8 +1071,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
-        PumpOneFrame(shell.get());
       });
+  PumpOneFrame(shell.get());
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 3840000U);
 
@@ -1083,15 +1083,15 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   std::vector<uint8_t> data(request_json.begin(), request_json.end());
   auto platform_message = fml::MakeRefCounted<PlatformMessage>(
       "flutter/skia", std::move(data), nullptr);
-  PumpOneFrame(shell.get());
   SendEnginePlatformMessage(shell.get(), std::move(platform_message));
+  PumpOneFrame(shell.get());
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 10000U);
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400});
-        PumpOneFrame(shell.get());
       });
+  PumpOneFrame(shell.get());
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 10000U);
   DestroyShell(std::move(shell), std::move(task_runners));
@@ -1108,8 +1108,8 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
-        PumpOneFrame(shell.get());
       });
+  PumpOneFrame(shell.get());
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -1117,8 +1117,8 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  PumpOneFrame(shell.get());
   RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(3840000U));
@@ -1136,8 +1136,8 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
-        PumpOneFrame(shell.get());
       });
+  PumpOneFrame(shell.get());
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -1153,8 +1153,8 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
                       latch.Signal();
                     }));
 
-  PumpOneFrame(shell.get());
   RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
 
   latch.Wait();
 
@@ -1342,8 +1342,8 @@ TEST_F(ShellTest, Screenshot) {
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
-  PumpOneFrame(shell.get(), 100, 100, builder);
 
+  PumpOneFrame(shell.get(), 100, 100, builder);
   firstFrameLatch.Wait();
 
   std::promise<Rasterizer::Screenshot> screenshot_promise;
@@ -1558,6 +1558,7 @@ TEST_F(ShellTest, RasterizerScreenshot) {
   RunEngine(shell.get(), std::move(configuration));
 
   auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
+
   PumpOneFrame(shell.get());
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -1588,6 +1589,7 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
   RunEngine(shell.get(), std::move(configuration));
 
   auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
+
   PumpOneFrame(shell.get());
 
   fml::TaskRunner::RunNowOrPostTask(
