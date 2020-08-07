@@ -48,6 +48,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, readonly) NSMutableDictionary<NSString*, FlutterEngineRegistrar*>* registrars;
 
 @property(nonatomic, readwrite, copy) NSString* isolateId;
+@property(nonatomic, copy) NSString* initialRoute;
 @property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
 @end
 
@@ -56,7 +57,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   flutter::ThreadHost _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
   NSString* _labelPrefix;
-  NSString* _initialRoute;
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
 
   fml::WeakPtr<FlutterViewController> _viewController;
@@ -167,6 +167,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       }];
 
   [_labelPrefix release];
+  [_initialRoute release];
   [_pluginPublications release];
   [_registrars release];
   _binaryMessenger.parent = nil;
@@ -459,7 +460,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   }
 
   static size_t shellCount = 1;
-  _initialRoute = [initialRoute copy];
+  self.initialRoute = initialRoute;
 
   auto settings = [_dartProject.get() settings];
   auto platformData = [_dartProject.get() defaultPlatformData];
