@@ -22,7 +22,7 @@ class RasterCacheResult {
 
   virtual ~RasterCacheResult() = default;
 
-  virtual void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const;
+  virtual void draw(SkCanvas& canvas, const SkPaint* paint) const;
 
   virtual SkISize image_dimensions() const {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);
@@ -60,7 +60,7 @@ class RasterCache {
    * to be stored in the cache.
    *
    * @param picture the SkPicture object to be cached.
-   * @param context the GrContext used for rendering.
+   * @param context the GrDirectContext used for rendering.
    * @param ctm the transformation matrix used for rendering.
    * @param dst_color_space the destination color space that the cached
    *        rendering will be drawn into
