@@ -1193,7 +1193,7 @@ void _canvasTests() {
       ),
       SkPaint(),
     );
-    final CkPicture picture = otherRecorder.finishRecordingAsPicture();
+    final CkPicture picture = CkPicture(otherRecorder.finishRecordingAsPicture());
     final CkImage image = await picture.toImage(1, 1);
     final ByteData rawData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     expect(rawData, isNotNull);
