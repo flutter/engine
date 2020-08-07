@@ -538,8 +538,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       composingRange.length > 0 ? [FlutterTextRange rangeWithNSRange:composingRange] : nil;
   needsEditingStateUpdate =
       needsEditingStateUpdate ||
-      (newMarkedRange == nil ? self.markedTextRange != nil
-                             : ![newMarkedRange isEqualTo:(FlutterTextRange*)self.markedTextRange]);
+      (!newMarkedRange ? self.markedTextRange != nil
+                       : ![newMarkedRange isEqualTo:(FlutterTextRange*)self.markedTextRange]);
   self.markedTextRange = newMarkedRange;
 
   NSRange selectedRange = [self clampSelectionFromBase:[state[@"selectionBase"] intValue]
@@ -547,8 +547,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                                forText:self.text];
 
   NSRange oldSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
-  if (selectedRange.location != oldSelectedRange.location ||
-      selectedRange.length != oldSelectedRange.length) {
+  if (!NSEqualRanges(selectedRange, oldSelectedRange)) {
     needsEditingStateUpdate = YES;
     [self.inputDelegate selectionWillChange:self];
 
@@ -571,7 +570,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // Extracts the selection information from the editing state dictionary.
 //
 // The state may contain an invalid selection, such as when no selection was
-// explicitly set in the framework (-1, -1). This is handled here by setting the
+// explicitly set in the framework. This is handled here by setting the
 // selection to (0,0). In contrast, Android handles this situation by
 // clearing the selection, but the result in both cases is that the cursor
 // is placed at the beginning of the field.
@@ -579,8 +578,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                            extent:(int)selectionExtent
                           forText:(NSString*)text {
   int loc = MIN(selectionBase, selectionExtent);
-  NSUInteger len = ABS(selectionExtent - selectionBase);
-  // returns (0, 0) when the start or the end of the selection is less than 0.
+  int len = ABS(selectionExtent - selectionBase);
   return loc < 0 ? NSMakeRange(0, 0)
                  : [self clampSelection:NSMakeRange(loc, len) forText:self.text];
 }
