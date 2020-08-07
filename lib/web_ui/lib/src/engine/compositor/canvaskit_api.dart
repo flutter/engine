@@ -1601,8 +1601,6 @@ class SkFontMgrNamespace {
 }
 
 @JS()
-<<<<<<< HEAD
-<<<<<<< HEAD
 class TypefaceFontProviderNamespace {
   external TypefaceFontProvider Make();
 }
