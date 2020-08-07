@@ -127,7 +127,7 @@ class EngineWindow extends ui.Window {
     // This method compares the new dimensions with the previous ones.
     // Return false if the previous dimensions are not set.
     if(_physicalSize != null) {
-      // First confirm both height and width is effected.
+      // First confirm both height and width are effected.
       if (_physicalSize!.height != height && _physicalSize!.width != width) {
         // If prior to rotation height is bigger than width it should be the
         // opposite after the rotation and vice versa.

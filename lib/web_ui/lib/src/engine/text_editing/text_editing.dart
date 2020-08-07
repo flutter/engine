@@ -1297,7 +1297,7 @@ class TextEditingChannel {
   /// Browser will save the information entered to the form.
   ///
   /// Called when the form is finalized with save option `true`.
-  /// See: https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/text_input.dart#L1277
+  /// See: https://github.com/flutter/flutter/blob/bf9f3a3dcfea3022f9cf2dfc3ab10b120b48b19d/packages/flutter/lib/src/services/text_input.dart#L1277
   void saveForms() {
     formsOnTheDom.forEach((String identifier, html.FormElement form) {
       final html.InputElement submitBtn =
@@ -1375,7 +1375,7 @@ final HybridTextEditing textEditing = HybridTextEditing();
 /// Used for keeping the form elements on the DOM until user confirms to
 /// save or cancel them.
 ///
-/// See: https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/text_input.dart#L1277
+/// See: https://github.com/flutter/flutter/blob/bf9f3a3dcfea3022f9cf2dfc3ab10b120b48b19d/packages/flutter/lib/src/services/text_input.dart#L1277
 final Map<String, html.FormElement> formsOnTheDom =
     Map<String, html.FormElement>();
 
