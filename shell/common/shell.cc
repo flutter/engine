@@ -719,7 +719,6 @@ void Shell::OnPlatformViewDestroyed() {
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
                                     raster_task);
   latch.Wait();
-  FML_DLOG(ERROR) << "shell unmerged";
 }
 
 // |PlatformView::Delegate|

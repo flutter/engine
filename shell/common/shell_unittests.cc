@@ -63,6 +63,32 @@ static bool ValidateShell(Shell* shell) {
   return true;
 }
 
+static bool RasterizerHasLayerTree(Shell* shell) {
+  fml::AutoResetWaitableEvent latch;
+  bool has_layer_tree = false;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetRasterTaskRunner(),
+      [shell, &latch, &has_layer_tree]() {
+        has_layer_tree = shell->GetRasterizer()->GetLastLayerTree() != nullptr;
+        latch.Signal();
+      });
+  latch.Wait();
+  return has_layer_tree;
+}
+
+static void ValidateDestroyPlatformView(Shell* shell) {
+  ASSERT_TRUE(shell != nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+
+  // To validate destroy platform view, we must ensure the rasterizer has a
+  // layer tree before the platform view is destroyed.
+  ASSERT_TRUE(RasterizerHasLayerTree(shell));
+
+  ShellTest::PlatformViewNotifyDestroyed(shell);
+  // Validate the layer tree is destroyed
+  ASSERT_FALSE(RasterizerHasLayerTree(shell));
+}
+
 TEST_F(ShellTest, InitializeWithInvalidThreads) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
@@ -310,8 +336,8 @@ TEST_F(ShellTest, NoNeedToReportTimingsByDefault) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
+  RunEngine(shell.get(), std::move(configuration));
   ASSERT_FALSE(GetNeedsReportTimings(shell.get()));
 
   // This assertion may or may not be the direct result of needs_report_timings_
@@ -338,8 +364,8 @@ TEST_F(ShellTest, NeedsReportTimingsIsSetWithCallback) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("dummyReportTimingsMain");
 
-  RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
+  RunEngine(shell.get(), std::move(configuration));
   ASSERT_TRUE(GetNeedsReportTimings(shell.get()));
   DestroyShell(std::move(shell));
 }
@@ -392,8 +418,8 @@ TEST_F(ShellTest, DISABLED_ReportTimingsIsCalled) {
 
   // Pump many frames so we can trigger the report quickly instead of waiting
   // for the 1 second threshold.
+  PumpOneFrame(shell.get());
   for (int i = 0; i < 200; i += 1) {
-    PumpOneFrame(shell.get());
   }
 
   reportLatch.Wait();
@@ -453,7 +479,6 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
                     CREATE_NATIVE_ENTRY(nativeOnBeginFrame));
 
   RunEngine(shell.get(), std::move(configuration));
-
   PumpOneFrame(shell.get());
 
   // Check that timing is properly set. This implies that
@@ -479,11 +504,13 @@ TEST_F(ShellTest,
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent endFrameLatch;
   bool end_frame_called = false;
-  auto end_frame_callback = [&](bool should_resubmit_frame) {
-    ASSERT_TRUE(should_resubmit_frame);
-    end_frame_called = true;
-    endFrameLatch.Signal();
-  };
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        ASSERT_TRUE(should_resubmit_frame);
+        end_frame_called = true;
+        endFrameLatch.Signal();
+      };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
@@ -511,11 +538,252 @@ TEST_F(ShellTest,
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
-
   PumpOneFrame(shell.get(), 100, 100, builder);
+
   endFrameLatch.Wait();
 
   ASSERT_TRUE(end_frame_called);
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
+  const size_t ThreadMergingLease = 10;
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent endFrameLatch;
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
+          raster_thread_merger->MergeWithLease(ThreadMergingLease);
+        }
+        endFrameLatch.Signal();
+      };
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kSuccess);
+  // Set resubmit once to trigger thread merging.
+  external_view_embedder->SetResubmitOnce();
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    SkPictureRecorder recorder;
+    SkCanvas* recording_canvas =
+        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
+    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
+                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+    auto sk_picture = recorder.finishRecordingAsPicture();
+    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+    auto picture_layer = std::make_shared<PictureLayer>(
+        SkPoint::Make(10, 10),
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
+    root->Add(picture_layer);
+  };
+
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  // Pump one frame to trigger thread merging.
+  endFrameLatch.Wait();
+  // Pump another frame to ensure threads are merged and a regular layer tree is
+  // submitted.
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  // Threads are merged here. PlatformViewNotifyDestroy should be executed
+  // successfully.
+  ASSERT_TRUE(fml::TaskRunnerChecker::RunsOnTheSameThread(
+      shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
+      shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
+  ValidateDestroyPlatformView(shell.get());
+
+  // Ensure threads are unmerged after platform view destroy
+  ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
+      shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
+      shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
+
+  // Validate the platform view can be recreated and destroyed again
+  ValidateShell(shell.get());
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
+  const size_t ThreadMergingLease = 10;
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent endFrameLatch;
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        FML_DLOG(ERROR) << "END FRAME called";
+        if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
+          FML_DLOG(ERROR) << "END FRAME merge threads";
+          raster_thread_merger->MergeWithLease(ThreadMergingLease);
+        }
+        endFrameLatch.Signal();
+      };
+  // Start with a regular layer tree with `PostPrerollResult::kSuccess` so we
+  // can later check if the rasterizer is tore down using
+  // |ValidateDestroyPlatformView|
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kSuccess);
+
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    SkPictureRecorder recorder;
+    SkCanvas* recording_canvas =
+        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
+    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
+                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+    auto sk_picture = recorder.finishRecordingAsPicture();
+    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+    auto picture_layer = std::make_shared<PictureLayer>(
+        SkPoint::Make(10, 10),
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
+    root->Add(picture_layer);
+  };
+
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  // Pump one frame and threads aren't merged
+  endFrameLatch.Wait();
+  ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
+      shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
+      shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
+
+  // Pump a frame with `PostPrerollResult::kResubmitFrame` to start merging
+  // threads
+  external_view_embedder->SetResubmitOnce();
+  PumpOneFrame(shell.get(), 100, 100, builder);
+
+  // Now destroy the platform view immediately.
+  // Two things can happen here:
+  // 1. Threads haven't merged. 2. Threads has already merged.
+  // |Shell:OnPlatformViewDestroy| should be able to handle both cases.
+  ValidateDestroyPlatformView(shell.get());
+
+  // Ensure threads are unmerged after platform view destroy
+  ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
+      shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
+      shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
+
+  // Validate the platform view can be recreated and destroyed again
+  ValidateShell(shell.get());
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest,
+       OnPlatformViewDestroyWithThreadMergerWhileThreadsAreUnmerged) {
+  auto settings = CreateSettingsForFixture();
+
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {};
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kSuccess);
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    SkPictureRecorder recorder;
+    SkCanvas* recording_canvas =
+        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
+    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
+                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+    auto sk_picture = recorder.finishRecordingAsPicture();
+    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+    auto picture_layer = std::make_shared<PictureLayer>(
+        SkPoint::Make(10, 10),
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
+    root->Add(picture_layer);
+  };
+  PumpOneFrame(shell.get(), 100, 100, builder);
+
+  // Threads should not be merged.
+  ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
+      shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
+      shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
+  ValidateDestroyPlatformView(shell.get());
+
+  // Ensure threads are unmerged after platform view destroy
+  ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
+      shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
+      shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
+
+  // Validate the platform view can be recreated and destroyed again
+  ValidateShell(shell.get());
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
+  auto settings = CreateSettingsForFixture();
+
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, nullptr);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    SkPictureRecorder recorder;
+    SkCanvas* recording_canvas =
+        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
+    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
+                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+    auto sk_picture = recorder.finishRecordingAsPicture();
+    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+    auto picture_layer = std::make_shared<PictureLayer>(
+        SkPoint::Make(10, 10),
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
+    root->Add(picture_layer);
+  };
+  PumpOneFrame(shell.get(), 100, 100, builder);
+
+  // Threads should not be merged.
+  ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
+      shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
+      shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
+  ValidateDestroyPlatformView(shell.get());
+
+  // Ensure threads are unmerged after platform view destroy
+  ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
+      shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
+      shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
+
+  // Validate the platform view can be recreated and destroyed again
+  ValidateShell(shell.get());
 
   DestroyShell(std::move(shell));
 }
@@ -568,8 +836,8 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
   AddNativeCallback("NativeReportTimingsCallback",
                     CREATE_NATIVE_ENTRY(nativeTimingCallback));
   RunEngine(shell.get(), std::move(configuration));
-
   PumpOneFrame(shell.get());
+
   PumpOneFrame(shell.get());
 
   reportLatch.Wait();
@@ -612,8 +880,8 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
                     CREATE_NATIVE_ENTRY(nativeTimingCallback));
   RunEngine(shell.get(), std::move(configuration));
 
+  PumpOneFrame(shell.get());
   for (int i = 0; i < 10; i += 1) {
-    PumpOneFrame(shell.get());
   }
 
   reportLatch.Wait();
@@ -664,8 +932,8 @@ TEST_F(ShellTest, WaitForFirstFrame) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
+  RunEngine(shell.get(), std::move(configuration));
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_TRUE(result.ok());
@@ -683,8 +951,8 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
+  RunEngine(shell.get(), std::move(configuration));
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_FALSE(result.ok());
@@ -722,8 +990,8 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
+  RunEngine(shell.get(), std::move(configuration));
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_TRUE(result.ok());
@@ -751,8 +1019,8 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
+  RunEngine(shell.get(), std::move(configuration));
   fml::AutoResetWaitableEvent event;
   task_runner->PostTask([&shell, &event] {
     fml::Status result =
@@ -794,8 +1062,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
+  RunEngine(shell.get(), std::move(configuration));
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(24 * (1 << 20)));
@@ -803,8 +1071,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        PumpOneFrame(shell.get());
       });
-  PumpOneFrame(shell.get());
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 3840000U);
 
@@ -815,15 +1083,15 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   std::vector<uint8_t> data(request_json.begin(), request_json.end());
   auto platform_message = fml::MakeRefCounted<PlatformMessage>(
       "flutter/skia", std::move(data), nullptr);
-  SendEnginePlatformMessage(shell.get(), std::move(platform_message));
   PumpOneFrame(shell.get());
+  SendEnginePlatformMessage(shell.get(), std::move(platform_message));
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 10000U);
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400});
+        PumpOneFrame(shell.get());
       });
-  PumpOneFrame(shell.get());
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 10000U);
   DestroyShell(std::move(shell), std::move(task_runners));
@@ -840,8 +1108,8 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        PumpOneFrame(shell.get());
       });
-  PumpOneFrame(shell.get());
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -849,8 +1117,8 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
 
-  RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
+  RunEngine(shell.get(), std::move(configuration));
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(3840000U));
@@ -868,8 +1136,8 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        PumpOneFrame(shell.get());
       });
-  PumpOneFrame(shell.get());
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -885,8 +1153,8 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
                       latch.Signal();
                     }));
 
-  RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
+  RunEngine(shell.get(), std::move(configuration));
 
   latch.Wait();
 
@@ -1074,8 +1342,8 @@ TEST_F(ShellTest, Screenshot) {
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
-
   PumpOneFrame(shell.get(), 100, 100, builder);
+
   firstFrameLatch.Wait();
 
   std::promise<Rasterizer::Screenshot> screenshot_promise;
@@ -1290,7 +1558,6 @@ TEST_F(ShellTest, RasterizerScreenshot) {
   RunEngine(shell.get(), std::move(configuration));
 
   auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
-
   PumpOneFrame(shell.get());
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -1321,7 +1588,6 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
   RunEngine(shell.get(), std::move(configuration));
 
   auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
-
   PumpOneFrame(shell.get());
 
   fml::TaskRunner::RunNowOrPostTask(

@@ -30,6 +30,7 @@ void RasterThreadMerger::MergeWithLease(size_t lease_term) {
     is_merged_ = task_queues_->Merge(platform_queue_id_, gpu_queue_id_);
     lease_term_ = lease_term;
   }
+  merged_condition_.notify_one();
 }
 
 void RasterThreadMerger::UnMergeNow() {
@@ -66,9 +67,11 @@ bool RasterThreadMerger::IsMerged() const {
 }
 
 void RasterThreadMerger::WaitUntilMerged() {
+  FML_DLOG(ERROR) << "--- wait until merged start";
   FML_CHECK(IsOnPlatformThread());
-  while (!is_merged_)
-    ;
+  std::unique_lock<std::mutex> lock(merged_mutex_);
+  merged_condition_.wait(lock, [&] { return IsMerged(); });
+  FML_DLOG(ERROR) << "--- wait until merged end";
 }
 
 RasterThreadStatus RasterThreadMerger::DecrementLease() {

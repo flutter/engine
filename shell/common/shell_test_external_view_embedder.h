@@ -15,7 +15,8 @@ namespace flutter {
 ///
 class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
  public:
-  using EndFrameCallBack = std::function<void(bool)>;
+  using EndFrameCallBack =
+      std::function<void(bool, fml::RefPtr<fml::RasterThreadMerger>)>;
 
   ShellTestExternalViewEmbedder(const EndFrameCallBack& end_frame_call_back,
                                 PostPrerollResult post_preroll_result)
@@ -23,6 +24,11 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
         post_preroll_result_(post_preroll_result) {}
 
   ~ShellTestExternalViewEmbedder() = default;
+
+  void UpdatePostPrerollResult(PostPrerollResult post_preroll_result);
+
+  // Resubmit the layer tree to trigger thread merging onces
+  void SetResubmitOnce();
 
  private:
   // |ExternalViewEmbedder|
@@ -63,7 +69,8 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   SkCanvas* GetRootCanvas() override;
 
   const EndFrameCallBack end_frame_call_back_;
-  const PostPrerollResult post_preroll_result_;
+  PostPrerollResult post_preroll_result_;
+  bool resubmit_once_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestExternalViewEmbedder);
 };

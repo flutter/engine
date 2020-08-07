@@ -5,6 +5,8 @@
 #ifndef FML_SHELL_COMMON_TASK_RUNNER_MERGER_H_
 #define FML_SHELL_COMMON_TASK_RUNNER_MERGER_H_
 
+#include <condition_variable>
+#include <mutex>
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/message_loop_task_queues.h"
@@ -60,6 +62,8 @@ class RasterThreadMerger
   fml::RefPtr<fml::MessageLoopTaskQueues> task_queues_;
   std::atomic_int lease_term_;
   std::atomic_bool is_merged_;
+  std::condition_variable merged_condition_;
+  std::mutex merged_mutex_;
 
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(RasterThreadMerger);
   FML_FRIEND_MAKE_REF_COUNTED(RasterThreadMerger);

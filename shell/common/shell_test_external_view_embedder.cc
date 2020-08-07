@@ -2,6 +2,15 @@
 
 namespace flutter {
 
+void ShellTestExternalViewEmbedder::UpdatePostPrerollResult(
+    PostPrerollResult post_preroll_result) {
+  post_preroll_result_ = post_preroll_result;
+}
+
+void ShellTestExternalViewEmbedder::SetResubmitOnce() {
+  resubmit_once_ = true;
+}
+
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::CancelFrame() {}
 
@@ -21,6 +30,10 @@ void ShellTestExternalViewEmbedder::PrerollCompositeEmbeddedView(
 PostPrerollResult ShellTestExternalViewEmbedder::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   FML_DCHECK(raster_thread_merger);
+  if (resubmit_once_) {
+    resubmit_once_ = false;
+    return PostPrerollResult::kResubmitFrame;
+  }
   return post_preroll_result_;
 }
 
@@ -45,7 +58,7 @@ void ShellTestExternalViewEmbedder::SubmitFrame(
 void ShellTestExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  end_frame_call_back_(should_resubmit_frame);
+  end_frame_call_back_(should_resubmit_frame, raster_thread_merger);
 }
 
 // |ExternalViewEmbedder|

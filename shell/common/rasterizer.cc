@@ -97,6 +97,7 @@ void Rasterizer::Teardown() {
   last_layer_tree_.reset();
   if (raster_thread_merger_.get() != nullptr) {
     raster_thread_merger_->UnMergeNow();
+    FML_DLOG(ERROR) << "Rasterizer::Teardown unmerged";
   }
 }
 
@@ -151,6 +152,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
     bool result =
         front_continuation.Complete(std::move(resubmitted_layer_tree_));
     if (result) {
+      FML_DLOG(ERROR) << "Draw resubmit more available";
       consume_result = PipelineConsumeResult::MoreAvailable;
     }
   } else if (raster_status == RasterStatus::kEnqueuePipeline) {
@@ -168,12 +170,15 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // Consume as many pipeline items as possible. But yield the event loop
   // between successive tries.
   switch (consume_result) {
+    FML_DLOG(ERROR) << "Draw resubmit more available post task";
     case PipelineConsumeResult::MoreAvailable: {
       task_runners_.GetRasterTaskRunner()->PostTask(
           [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
+            FML_DLOG(ERROR) << "Draw resubmit draw again";
             if (weak_this) {
               weak_this->Draw(pipeline);
             }
+            FML_DLOG(ERROR) << "Draw resubmit draw again finished";
           });
       break;
     }
@@ -304,6 +309,7 @@ RasterStatus Rasterizer::DoDraw(
   if (raster_status == RasterStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
   } else if (raster_status == RasterStatus::kResubmit) {
+    FML_DLOG(ERROR) << "DoDraw resubmit";
     resubmitted_layer_tree_ = std::move(layer_tree);
     return raster_status;
   }
