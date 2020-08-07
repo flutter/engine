@@ -1709,6 +1709,18 @@ void main() {
       expect(css.backgroundColor, 'transparent');
     });
 
+    test('validate multi element form ids sorted for form id', () {
+      final List<dynamic> fields = createFieldValues(
+          ['username', 'password', 'newPassword'],
+          ['zzyyxx', 'aabbcc', 'jjkkll']);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              createAutofillInfo('username', 'field1'), fields);
+
+
+      expect(autofillForm.formIdentifier, 'aabbcc*jjkkll*zzyyxx');
+    });
+
     test('place and store form', () {
       expect(document.getElementsByTagName('form'), isEmpty);
 

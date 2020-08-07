@@ -137,9 +137,9 @@ class EngineAutofillForm {
 
     _hideAutofillElements(formElement);
 
-    // Form elements are always sent with the same order from Framework
-    // therefore no sorting necessary for the ids.
-    final StringBuffer ids = StringBuffer();
+    // We keep the ids in a list then sort them later, in case the text fields'
+    // locations are re-ordered on the framework side.
+    final List<String> ids = List.empty(growable: true);
 
     // The focused text editing element will not be created here.
     final AutofillInfo focusedElement =
@@ -153,11 +153,7 @@ class EngineAutofillForm {
             textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
                 field['textCapitalization']));
 
-        // Add a seperator if this is not the first id to be added.
-        if (ids.length > 0) {
-          ids.write('*');
-        }
-        ids.write(autofill.uniqueIdentifier);
+        ids.add(autofill.uniqueIdentifier);
 
         if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
           EngineInputType engineInputType =
@@ -175,10 +171,21 @@ class EngineAutofillForm {
       }
     } else {
       // There is one input element in the form.
-      ids.write(focusedElement.uniqueIdentifier);
+      ids.add(focusedElement.uniqueIdentifier);
     }
 
-    final String formIdentifier = ids.toString();
+    ids.sort();
+    final StringBuffer idBuffer = StringBuffer();
+
+    // Add a seperator between element identifiers.
+    for (final String id in ids) {
+      if (idBuffer.length > 0) {
+          idBuffer.write('*');
+        }
+     idBuffer.write(id);
+    }
+
+    final String formIdentifier = idBuffer.toString();
 
     // If a form with the same Autofill elements is already on the dom, remove
     // it from DOM.
@@ -1310,12 +1317,10 @@ class TextEditingChannel {
   ///
   /// Called when the form is finalized.
   void cleanForms() {
-    while (formsOnTheDom.length > 0) {
-      final html.FormElement form =
-          formsOnTheDom[formsOnTheDom.entries.last.key] as html.FormElement;
+    for (html.FormElement form in formsOnTheDom.values) {
       form.remove();
-      formsOnTheDom.remove(formsOnTheDom.entries.last.key);
     }
+    formsOnTheDom.clear();
   }
 
   /// Sends the 'TextInputClient.updateEditingState' message to the framework.
