@@ -45,8 +45,8 @@ class CustomEncodableValue {
   ~CustomEncodableValue() = default;
 
   // Allow implict conversion to std::any to allow direct use of any_cast.
-  operator std::any&() { return value_; }
-  operator const std::any&() const { return value_; }
+  operator std::any &() { return value_; }
+  operator const std::any &() const { return value_; }
 
   // Passthrough to std::any's type().
   const std::type_info& type() const noexcept { return value_.type(); }
