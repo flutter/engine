@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.embedding.engine.loader;
 
 import android.content.Context;
@@ -11,7 +15,7 @@ import java.io.IOException;
 import org.json.JSONArray;
 import org.xmlpull.v1.XmlPullParserException;
 
-/** Loads application information. */
+/** Loads application information given a Context. */
 final class ApplicationInfoLoader {
   // XML Attribute keys supported in AndroidManifest.xml
   static final String PUBLIC_AOT_SHARED_LIBRARY_NAME =

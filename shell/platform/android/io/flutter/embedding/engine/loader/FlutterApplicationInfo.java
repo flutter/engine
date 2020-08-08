@@ -1,7 +1,11 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.embedding.engine.loader;
 
-/** */
-final class FlutterApplicationInfo {
+/** Encapsulates all the information that Flutter needs from application manifest. */
+public final class FlutterApplicationInfo {
   private static final String DEFAULT_AOT_SHARED_LIBRARY_NAME = "libapp.so";
   private static final String DEFAULT_VM_SNAPSHOT_DATA = "vm_snapshot_data";
   private static final String DEFAULT_ISOLATE_SNAPSHOT_DATA = "isolate_snapshot_data";
@@ -18,7 +22,7 @@ final class FlutterApplicationInfo {
   // https://github.com/flutter/flutter/issues/59930
   final boolean useEmbeddedView;
 
-  FlutterApplicationInfo(
+  public FlutterApplicationInfo(
       String aotSharedLibraryName,
       String vmSnapshotData,
       String isolateSnapshotData,

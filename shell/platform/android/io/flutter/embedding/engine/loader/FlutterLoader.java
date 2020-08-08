@@ -56,6 +56,13 @@ public class FlutterLoader {
     return instance;
   }
 
+  @NonNull
+  public static FlutterLoader getInstanceForTest(FlutterApplicationInfo flutterApplicationInfo) {
+    FlutterLoader loader = new FlutterLoader();
+    loader.flutterApplicationInfo = flutterApplicationInfo;
+    return loader;
+  }
+
   private boolean initialized = false;
   @Nullable private Settings settings;
   private long initStartTimestampMillis;
