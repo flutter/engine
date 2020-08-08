@@ -111,6 +111,11 @@ FLUTTER_EXPORT bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine);
 // Starts running the given engine instance and optional entry point in the Dart
 // project. If the entry point is null, defaults to main().
 //
+// If provided, entry_point must be the name of a top-level function from the
+// same Dart library that contains the app's main() function, and must be
+// decorated with `@pragma(vm:entry-point)` to ensure the method is not
+// tree-shaken by the Dart compiler.
+//
 // Returns false if running the engine failed.
 FLUTTER_EXPORT bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
                                             const char* entry_point);
