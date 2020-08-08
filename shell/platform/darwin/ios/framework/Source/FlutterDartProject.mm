@@ -51,13 +51,14 @@ static NSString* DomainNetworkPolicy(NSDictionary* appTransportSecurity) {
   return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 }
 
-static bool AllowsArbitraryLoads(NSDictionary* appTransportSecurity) {
-  if (appTransportSecurity != nil) {
-    return [[appTransportSecurity objectForKey:@"NSAllowsArbitraryLoads"] boolValue];
-  } else {
-    return false;
-  }
-}
+// TODO(mehmetf): Announce this since it is breaking change then enable it.
+// static bool AllowsArbitraryLoads(NSDictionary* appTransportSecurity) {
+//   if (appTransportSecurity != nil) {
+//     return [[appTransportSecurity objectForKey:@"NSAllowsArbitraryLoads"] boolValue];
+//   } else {
+//     return false;
+//   }
+// }
 
 static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   auto command_line = flutter::CommandLineFromNSProcessInfo();
