@@ -63,6 +63,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   bool MakeResourceCurrent();
   bool SwapBuffers();
 
+  void SendInitialBounds();
+
   // |WindowBindingHandlerDelegate|
   void OnWindowSizeChanged(size_t width, size_t height) const override;
 
