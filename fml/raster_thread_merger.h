@@ -32,6 +32,9 @@ class RasterThreadMerger
   // unless an |ExtendLeaseTo| gets called.
   void MergeWithLease(size_t lease_term);
 
+  // Unmerge the threads now, resets the lease term to 0.
+  //
+  // Must be executed on the raster task runner.
   void UnMergeNow();
 
   void ExtendLeaseTo(size_t lease_term);
@@ -42,6 +45,9 @@ class RasterThreadMerger
 
   bool IsMerged() const;
 
+  // Wait until the threads are merged.
+  //
+  // Must run on the platform task runner.
   void WaitUntilMerged();
 
   RasterThreadMerger(fml::TaskQueueId platform_queue_id,

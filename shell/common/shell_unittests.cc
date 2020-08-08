@@ -620,9 +620,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-        FML_DLOG(ERROR) << "END FRAME called";
         if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
-          FML_DLOG(ERROR) << "END FRAME merge threads";
           raster_thread_merger->MergeWithLease(ThreadMergingLease);
         }
         end_frame_latch.Signal();

@@ -23,9 +23,12 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
 
   ~ShellTestExternalViewEmbedder() = default;
 
+  // Updates the post preroll result so the |PostPrerollAction| after always
+  // returns the new `post_preroll_result`.
   void UpdatePostPrerollResult(PostPrerollResult post_preroll_result);
 
-  // Resubmit the layer tree to trigger thread merging onces
+  // Update the post preroll result to PostPrerollResult::kResubmitFrame for
+  // only the next frame.
   void SetResubmitOnce();
 
  private:
