@@ -614,6 +614,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
   // Note:
   // This is a synchronous operation because certain platforms depend on
   // setup/suspension of all activities that may be interacting with the GPU in
@@ -635,13 +636,36 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
         latch.Signal();
       });
 
-  auto ui_task = [engine = engine_->GetWeakPtr(),  //
-                  &latch                           //
+  // The normal flow executed by this method is that the platform thread is
+  // starting the sequence and waiting on the latch. Later the UI thread posts
+  // raster_task to the raster thread which signals the latch. If the raster and
+  // the platform threads are the same this results in a deadlock as the
+  // raster_task will never be posted to the plaform/raster thread that is
+  // blocked on a latch. To avoid the described deadlock, if the raster and the
+  // platform threads are the same, should_post_raster_task will be false, and
+  // then instead of posting a task to the raster thread, the ui thread just
+  // signals the latch and the platform/raster thread follows with executing
+  // raster_task.
+  bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
+                                 task_runners_.GetPlatformTaskRunner();
+
+  auto ui_task = [engine = engine_->GetWeakPtr(),                            //
+                  raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
+                  raster_task, should_post_raster_task,
+                  &latch  //
   ] {
     if (engine) {
       engine->OnOutputSurfaceCreated();
     }
-    latch.Signal();
+    // Step 2: Next, tell the raster thread that it should create a surface for
+    // its rasterizer.
+    if (should_post_raster_task) {
+      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
+    } else {
+      // See comment on should_post_raster_task, in this case we just unblock
+      // the platform thread.
+      latch.Signal();
+    }
   };
 
   // Threading: Capture platform view by raw pointer and not the weak pointer.
@@ -664,10 +688,14 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   };
 
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetIOTaskRunner(), io_task);
+
   latch.Wait();
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
-                                    raster_task);
-  latch.Wait();
+  if (!should_post_raster_task) {
+    // See comment on should_post_raster_task, in this case the raster_task
+    // wasn't executed, and we just run it here as the platform thread
+    // is the raster thread.
+    raster_task();
+  }
 }
 
 // |PlatformView::Delegate|

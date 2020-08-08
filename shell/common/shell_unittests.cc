@@ -792,6 +792,62 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
 }
 #endif
 
+TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent end_frame_latch;
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        end_frame_latch.Signal();
+      };
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kSuccess);
+  ThreadHost thread_host(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI);
+  TaskRunners task_runners(
+      "test",
+      thread_host.platform_thread->GetTaskRunner(),  // platform
+      thread_host.platform_thread->GetTaskRunner(),  // raster
+      thread_host.ui_thread->GetTaskRunner(),        // ui
+      thread_host.io_thread->GetTaskRunner()         // io
+  );
+  auto shell = CreateShell(std::move(settings), std::move(task_runners), false,
+                           external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    SkPictureRecorder recorder;
+    SkCanvas* recording_canvas =
+        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
+    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
+                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+    auto sk_picture = recorder.finishRecordingAsPicture();
+    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+    auto picture_layer = std::make_shared<PictureLayer>(
+        SkPoint::Make(10, 10),
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
+    root->Add(picture_layer);
+  };
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  end_frame_latch.Wait();
+
+  ValidateDestroyPlatformView(shell.get());
+
+  // Validate the platform view can be recreated and destroyed again
+  ValidateShell(shell.get());
+
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
 TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   // Ensure that all phases are in kPhases.
   ASSERT_EQ(sizeof(FrameTiming::kPhases),
