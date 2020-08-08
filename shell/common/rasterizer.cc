@@ -95,7 +95,8 @@ void Rasterizer::Teardown() {
   compositor_context_->OnGrContextDestroyed();
   surface_.reset();
   last_layer_tree_.reset();
-  if (raster_thread_merger_.get() != nullptr) {
+  if (raster_thread_merger_.get() != nullptr &&
+      raster_thread_merger_.get()->IsMerged()) {
     raster_thread_merger_->UnMergeNow();
     FML_DLOG(ERROR) << "Rasterizer::Teardown unmerged";
   }
@@ -680,7 +681,8 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
 }
 
 bool Rasterizer::EnsureThreadsAreMerged() {
-  if (raster_thread_merger_.get() == nullptr) {
+  if (surface_ == nullptr || raster_thread_merger_.get() == nullptr) {
+    FML_DLOG(ERROR) << "--- no surface_";
     return false;
   }
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
