@@ -130,6 +130,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       /// Collect information on the bot.
       final MacOSInfo macOsInfo = new MacOSInfo();
       await macOsInfo.printInformation();
+
       /// Tests may fail on the CI, therefore exit test_runner.
       if (isLuci) {
         return true;
@@ -279,8 +280,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   bool get isFirefox => browser == 'firefox';
 
   /// Whether [browser] is set to "safari".
-  bool get isSafariOnMacOS => browser == 'safari'
-      && io.Platform.isMacOS;
+  bool get isSafariOnMacOS => browser == 'safari' && io.Platform.isMacOS;
 
   /// Use system flutter instead of cloning the repository.
   ///
@@ -452,65 +452,51 @@ class TestCommand extends Command<bool> with ArgUtils {
   ///
   /// [targets] must not be null.
   ///
-  /// When building for CanvasKit we have to use a separate `build.canvaskit.yaml`
-  /// config file. Otherwise, `build.html.yaml` is used. Because `build_runner`
-  /// overwrites the output directories, we redirect the CanvasKit output to a
-  /// separate directory, then copy the files back to `build/test`.
-  Future<void> _buildTests({List<FilePath> targets, bool forCanvasKit}) async {
-    print(
-        'Building ${targets.length} targets for ${forCanvasKit ? 'CanvasKit' : 'HTML'}');
-    final String canvasKitOutputRelativePath =
-        path.join('.dart_tool', 'canvaskit_tests');
-    List<String> arguments = <String>[
-      'run',
-      'build_runner',
-      'build',
-      '--enable-experiment=non-nullable',
-      'test',
-      '-o',
-      forCanvasKit ? canvasKitOutputRelativePath : 'build',
-      '--config',
-      // CanvasKit uses `build.canvaskit.yaml`, which HTML Uses `build.html.yaml`.
-      forCanvasKit ? 'canvaskit' : 'html',
-      for (FilePath path in targets) ...[
-        '--build-filter=${path.relativeToWebUi}.js',
-        '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
-      ],
-    ];
+  /// Uses `dart2js` for building the tests.
+  ///
+  /// When building for CanvasKit we have to use extra argument
+  /// `DFLUTTER_WEB_USE_SKIA=true`.
+  Future<void> _buildTests(
+      {List<FilePath> targets, bool forCanvasKit = false}) async {
+    print('Building ${targets.length} targets for HTML');
 
-    final int exitCode = await runProcess(
-      environment.pubExecutable,
-      arguments,
-      workingDirectory: environment.webUiRootDir.path,
-      environment: <String, String>{
-        // This determines the number of concurrent dart2js processes.
-        //
-        // By default build_runner uses 4 workers.
-        //
-        // In a testing on a 32-core 132GB workstation increasing this number to
-        // 32 sped up the build from ~4min to ~1.5min.
-        if (io.Platform.environment.containsKey('BUILD_MAX_WORKERS_PER_TASK'))
-          'BUILD_MAX_WORKERS_PER_TASK':
-              io.Platform.environment['BUILD_MAX_WORKERS_PER_TASK'],
-      },
-    );
+    for (FilePath file in targets) {
+      final targetFileName = file.relativeToWebUi
+          .replaceFirst('.dart', '.dart.browser_test.dart.js');
+      final String targetPath = path.join('build', targetFileName);
+      print('target path: $targetPath current file: ${file.relativeToWebUi}');
 
-    if (exitCode != 0) {
-      throw ToolException(
-          'Failed to compile tests. Compiler exited with exit code $exitCode');
-    }
+      final io.Directory directoryToTarget = io.Directory(path.join(
+          environment.webUiBuildDir.path, path.dirname(file.relativeToWebUi)));
 
-    if (forCanvasKit) {
-      final io.Directory canvasKitTemporaryOutputDirectory = io.Directory(
-          path.join(environment.webUiRootDir.path, canvasKitOutputRelativePath,
-              'test', 'canvaskit'));
-      final io.Directory canvasKitOutputDirectory = io.Directory(
-          path.join(environment.webUiBuildDir.path, 'test', 'canvaskit'));
-      if (await canvasKitOutputDirectory.exists()) {
-        await canvasKitOutputDirectory.delete(recursive: true);
+      if (!directoryToTarget.existsSync()) {
+        directoryToTarget.createSync(recursive: true);
       }
-      await canvasKitTemporaryOutputDirectory
-          .rename(canvasKitOutputDirectory.path);
+
+      List<String> arguments = <String>[
+        '--no-minify',
+        '--disable-inlining',
+        '--enable-asserts',
+        '--enable-experiment=non-nullable',
+        '--no-sound-null-safety',
+        if (forCanvasKit) '-DFLUTTER_WEB_USE_SKIA=true',
+        '-O2',
+        '-o',
+        '${targetPath}', // target path
+        '${file.relativeToWebUi}', // current path
+      ];
+
+      final int exitCode = await runProcess(
+        environment.dart2jsExecutable,
+        arguments,
+        workingDirectory: environment.webUiRootDir.path,
+        // environment.
+      );
+
+      if (exitCode != 0) {
+        throw ToolException(
+            'Failed to compile tests. Dart2js exited with exit code $exitCode');
+      }
     }
   }
 
