@@ -1,4 +1,4 @@
-Signature: 136fde8bd13a90ef1b7d48686ef7a064
+Signature: 3c7ccf0ef2eb71e1bae57c50cd60559a
 
 UNUSED LICENSES:
 
@@ -8156,8 +8156,6 @@ FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/SoundSplayTr
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/sound_splay_tree.dart
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart2/SoundSplayTreeSieve.dart
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart2/sound_splay_tree.dart
-FILE: ../../../third_party/dart/runtime/bin/abi_version.h
-FILE: ../../../third_party/dart/runtime/bin/abi_version_in.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.h
 FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension.cc

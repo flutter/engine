@@ -1,4 +1,4 @@
-Signature: fb1f7e529dec316b42b6cdf642f8b7e4
+Signature: 943c2bc86dd07b40e6ee4533db8f3598
 
 UNUSED LICENSES:
 
@@ -2595,7 +2595,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module_manifest.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/puppet_master.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story_command.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story_options.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story_visibility_state.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.http/client.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/net.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/launcher.fidl
@@ -2891,12 +2890,11 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/limits.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/namespace.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/private.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/unsafe.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/decoding.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/decoding_and_validating.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/encoding.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/formatting.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/coding.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/internal.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/validating.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/function.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/function_internal.h
 FILE: ../../../fuchsia/sdk/linux/pkg/memfs/include/lib/memfs/memfs.h
@@ -3056,9 +3054,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.math/math.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.playback/problem.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.playback/seeking_reader.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/audio.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/focus.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module_context.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/session_shell.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story_info.fidl
@@ -3210,6 +3206,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/pointer.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/device.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/event.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/display_backlight.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/view_ref.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/view_ref_focused.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/view_ref_installed.fidl
