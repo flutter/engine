@@ -5,6 +5,7 @@
 // @dart = 2.6
 import 'dart:math' as math;
 
+import 'package:test/bootstrap/browser.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
