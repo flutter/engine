@@ -13,6 +13,7 @@ import io.flutter.embedding.android.FlutterViewTest;
 import io.flutter.embedding.engine.FlutterEngineCacheTest;
 import io.flutter.embedding.engine.FlutterEnginePluginRegistryTest;
 import io.flutter.embedding.engine.FlutterJNITest;
+import io.flutter.embedding.engine.LocalizationPluginTest;
 import io.flutter.embedding.engine.RenderingComponentTest;
 import io.flutter.embedding.engine.plugins.shim.ShimPluginRegistryTest;
 import io.flutter.embedding.engine.renderer.FlutterRendererTest;
@@ -24,6 +25,7 @@ import io.flutter.plugin.editing.InputConnectionAdaptorTest;
 import io.flutter.plugin.editing.TextInputPluginTest;
 import io.flutter.plugin.mouse.MouseCursorPluginTest;
 import io.flutter.plugin.platform.PlatformPluginTest;
+import io.flutter.plugin.platform.PlatformViewsControllerTest;
 import io.flutter.plugin.platform.SingleViewPresentationTest;
 import io.flutter.util.PreconditionsTest;
 import io.flutter.view.AccessibilityBridgeTest;
@@ -52,7 +54,9 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
   FlutterRendererTest.class,
   FlutterViewTest.class,
   InputConnectionAdaptorTest.class,
+  LocalizationPluginTest.class,
   PlatformPluginTest.class,
+  PlatformViewsControllerTest.class,
   PluginComponentTest.class,
   PreconditionsTest.class,
   RenderingComponentTest.class,

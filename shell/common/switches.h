@@ -148,6 +148,10 @@ DEF_SWITCH(CacheSkSL,
            "should only be used during development phases. The generated SkSLs "
            "can later be used in the release build for shader precompilation "
            "at launch in order to eliminate the shader-compile jank.")
+DEF_SWITCH(PurgePersistentCache,
+           "purge-persistent-cache",
+           "Remove all existing persistent cache. This is mainly for debugging "
+           "purposes such as reproducing the shader compilation jank.")
 DEF_SWITCH(
     TraceSystrace,
     "trace-systrace",
@@ -189,6 +193,15 @@ DEF_SWITCH(
     "Uses separate threads for the platform, UI, GPU and IO task runners. "
     "By default, a single thread is used for all task runners. Only available "
     "in the flutter_tester.")
+// TODO(cyanlaz): Remove this when dynamic thread merging is done.
+// https://github.com/flutter/flutter/issues/59930
+DEF_SWITCH(UseEmbeddedView,
+           "use-embedded-view",
+           "Whether an android application uses embedded views."
+           "This is a temporary flag to make the raster task runner runs on "
+           "the platform thread."
+           "This flag should be removed once the dynamic thread merging is "
+           "enabled on android.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

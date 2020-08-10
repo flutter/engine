@@ -1,9 +1,11 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
+#include <time.h>
 #include <algorithm>
 #include <functional>
 #include <future>
@@ -31,6 +33,7 @@
 #include "flutter/shell/version/version.h"
 #include "flutter/testing/testing.h"
 #include "rapidjson/writer.h"
+#include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -245,7 +248,7 @@ TEST_F(ShellTest, LastEntrypoint) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
-TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
+TEST(ShellTestNoFixture, EnableMirrorsIsAllowed) {
   if (DartVM::IsRunningPrecompiledCode()) {
     // This covers profile and release modes which use AOT (where this flag does
     // not make sense anyway).
@@ -264,7 +267,7 @@ TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
   EXPECT_EQ(settings.dart_flags.size(), 1u);
 }
 
-TEST_F(ShellTest, BlacklistedDartVMFlag) {
+TEST_F(ShellTest, DisallowedDartVMFlag) {
   // Run this test in a thread-safe manner, otherwise gtest will complain.
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
@@ -272,13 +275,13 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
       fml::CommandLine::Option("dart-flags", "--verify_after_gc")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
 
-  // Upon encountering a non-whitelisted Dart flag the process terminates.
+  // Upon encountering a disallowed Dart flag the process terminates.
   const char* expected =
-      "Encountered blacklisted Dart VM flag: --verify_after_gc";
+      "Encountered disallowed Dart VM flag: --verify_after_gc";
   ASSERT_DEATH(flutter::SettingsFromCommandLine(command_line), expected);
 }
 
-TEST_F(ShellTest, WhitelistedDartVMFlag) {
+TEST_F(ShellTest, AllowedDartVMFlag) {
   const std::vector<fml::CommandLine::Option> options = {
 #if !FLUTTER_RELEASE
     fml::CommandLine::Option("dart-flags",
@@ -468,12 +471,16 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   DestroyShell(std::move(shell));
 }
 
+#if !defined(OS_FUCHSIA)
+// TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
+// support for raster thread merger for Fuchsia.
 TEST_F(ShellTest,
        ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent endFrameLatch;
   bool end_frame_called = false;
-  auto end_frame_callback = [&] {
+  auto end_frame_callback = [&](bool should_resubmit_frame) {
+    ASSERT_TRUE(should_resubmit_frame);
     end_frame_called = true;
     endFrameLatch.Signal();
   };
@@ -512,6 +519,7 @@ TEST_F(ShellTest,
 
   DestroyShell(std::move(shell));
 }
+#endif
 
 TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   // Ensure that all phases are in kPhases.
@@ -676,7 +684,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get(), {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_FALSE(result.ok());
@@ -794,8 +802,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -814,8 +821,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 800, 400, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400});
       });
   PumpOneFrame(shell.get());
 
@@ -833,8 +839,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -862,8 +867,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -937,7 +941,8 @@ class MockTexture : public Texture {
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
-             GrContext* context) override {}
+             GrDirectContext* context,
+             SkFilterQuality filter_quality) override {}
 
   void OnGrContextCreated() override {}
 
@@ -1148,6 +1153,54 @@ TEST_F(ShellTest, CanConvertToAndFromMappings) {
   DestroyShell(std::move(shell));
 }
 
+// Compares local times as seen by the dart isolate and as seen by this test
+// fixture, to a resolution of 1 hour.
+//
+// This verifies that (1) the isolate is able to get a timezone (doesn't lock
+// up for example), and (2) that the host and the isolate agree on what the
+// timezone is.
+TEST_F(ShellTest, LocaltimesMatch) {
+  fml::AutoResetWaitableEvent latch;
+  std::string dart_isolate_time_str;
+
+  // See fixtures/shell_test.dart, the callback NotifyLocalTime is declared
+  // there.
+  AddNativeCallback("NotifyLocalTime", CREATE_NATIVE_ENTRY([&](auto args) {
+                      dart_isolate_time_str =
+                          tonic::DartConverter<std::string>::FromDart(
+                              Dart_GetNativeArgument(args, 0));
+                      latch.Signal();
+                    }));
+
+  auto settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("localtimesMatch");
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  ASSERT_NE(shell.get(), nullptr);
+  RunEngine(shell.get(), std::move(configuration));
+  latch.Wait();
+
+  char timestr[200];
+  const time_t timestamp = time(nullptr);
+  const struct tm* local_time = localtime(&timestamp);
+  ASSERT_NE(local_time, nullptr)
+      << "Could not get local time: errno=" << errno << ": " << strerror(errno);
+  // Example: "2020-02-26 14" for 2pm on February 26, 2020.
+  const size_t format_size =
+      strftime(timestr, sizeof(timestr), "%Y-%m-%d %H", local_time);
+  ASSERT_NE(format_size, 0UL)
+      << "strftime failed: host time: " << std::string(timestr)
+      << " dart isolate time: " << dart_isolate_time_str;
+
+  const std::string host_local_time_str = timestr;
+
+  ASSERT_EQ(dart_isolate_time_str, host_local_time_str)
+      << "Local times in the dart isolate and the local time seen by the test "
+      << "differ by more than 1 hour, but are expected to be about equal";
+
+  DestroyShell(std::move(shell));
+}
+
 TEST_F(ShellTest, CanDecompressImageFromAsset) {
   fml::AutoResetWaitableEvent latch;
   AddNativeCallback("NotifyWidthHeight", CREATE_NATIVE_ENTRY([&](auto args) {
@@ -1178,7 +1231,7 @@ TEST_F(ShellTest, CanDecompressImageFromAsset) {
 }
 
 TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
-  // Create 2 dummpy SkSL cache file IE (base32 encoding of A), II (base32
+  // Create 2 dummy SkSL cache file IE (base32 encoding of A), II (base32
   // encoding of B) with content x and y.
   fml::ScopedTemporaryDirectory temp_dir;
   PersistentCache::SetCacheDirectoryPath(temp_dir.path());
@@ -1203,7 +1256,7 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
   rapidjson::Document document;
   OnServiceProtocol(shell.get(), ServiceProtocolEnum::kGetSkSLs,
                     shell->GetTaskRunners().GetIOTaskRunner(), empty_params,
-                    document);
+                    &document);
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);

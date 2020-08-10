@@ -15,9 +15,10 @@
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/android/android_native_window.h"
-#include "flutter/shell/platform/android/android_surface.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate.h"
+#include "flutter/shell/platform/android/surface/android_native_window.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
 
 namespace flutter {
 
@@ -40,6 +41,9 @@ class PlatformViewAndroid final : public PlatformView {
   ~PlatformViewAndroid() override;
 
   void NotifyCreated(fml::RefPtr<AndroidNativeWindow> native_window);
+
+  void NotifySurfaceWindowChanged(
+      fml::RefPtr<AndroidNativeWindow> native_window);
 
   void NotifyChanged(const SkISize& size);
 
@@ -77,6 +81,8 @@ class PlatformViewAndroid final : public PlatformView {
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
 
+  PlatformViewAndroidDelegate platform_view_android_delegate_;
+
   std::unique_ptr<AndroidSurface> android_surface_;
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;
@@ -102,7 +108,7 @@ class PlatformViewAndroid final : public PlatformView {
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|
-  sk_sp<GrContext> CreateResourceContext() const override;
+  sk_sp<GrDirectContext> CreateResourceContext() const override;
 
   // |PlatformView|
   void ReleaseResourceContext() const override;
@@ -117,7 +123,6 @@ class PlatformViewAndroid final : public PlatformView {
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroid);
 };
-
 }  // namespace flutter
 
 #endif  // SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_H_

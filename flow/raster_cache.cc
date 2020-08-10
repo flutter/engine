@@ -14,6 +14,7 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -87,7 +88,7 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
 
 /// @note Procedure doesn't copy all closures.
 static std::unique_ptr<RasterCacheResult> Rasterize(
-    GrContext* context,
+    GrDirectContext* context,
     const SkMatrix& ctm,
     SkColorSpace* dst_color_space,
     bool checkerboard,
@@ -124,7 +125,7 @@ static std::unique_ptr<RasterCacheResult> Rasterize(
 
 std::unique_ptr<RasterCacheResult> RasterCache::RasterizePicture(
     SkPicture* picture,
-    GrContext* context,
+    GrDirectContext* context,
     const SkMatrix& ctm,
     SkColorSpace* dst_color_space,
     bool checkerboard) const {
@@ -158,10 +159,11 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
                                            canvas_size.height());
         internal_nodes_canvas.addCanvas(canvas);
         Layer::PaintContext paintContext = {
-            (SkCanvas*)&internal_nodes_canvas,  // internal_nodes_canvas
-            canvas,                             // leaf_nodes_canvas
-            context->gr_context,                // gr_context
-            nullptr,                            // view_embedder
+            /* internal_nodes_canvas= */ static_cast<SkCanvas*>(
+                &internal_nodes_canvas),
+            /* leaf_nodes_canvas= */ canvas,
+            /* gr_context= */ context->gr_context,
+            /* view_embedder= */ nullptr,
             context->raster_time,
             context->ui_time,
             context->texture_registry,
@@ -175,7 +177,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
       });
 }
 
-bool RasterCache::Prepare(GrContext* context,
+bool RasterCache::Prepare(GrDirectContext* context,
                           SkPicture* picture,
                           const SkMatrix& transformation_matrix,
                           SkColorSpace* dst_color_space,
@@ -231,7 +233,7 @@ bool RasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {
   entry.used_this_frame = true;
 
   if (entry.image) {
-    entry.image->draw(canvas);
+    entry.image->draw(canvas, nullptr);
     return true;
   }
 

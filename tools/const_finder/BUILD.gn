@@ -6,18 +6,15 @@ import("//third_party/dart/utils/application_snapshot.gni")
 
 application_snapshot("const_finder") {
   main_dart = "bin/main.dart"
-  dot_packages = ".packages"
+  dot_packages = ".dart_tool/package_config.json"
 
   training_args = [ "--help" ]
 
   inputs = [
     "bin/main.dart",
     "lib/const_finder.dart",
-    ".packages",
     ".dart_tool/package_config.json",
   ]
 
-  deps = [
-    "//flutter/flutter_frontend_server:frontend_server",
-  ]
+  deps = [ "//flutter/flutter_frontend_server:frontend_server" ]
 }

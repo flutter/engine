@@ -10,8 +10,8 @@
 namespace vulkan {
 
 VulkanSurface::VulkanSurface(
-    VulkanProcTable& p_vk,
-    VulkanApplication& application,
+    VulkanProcTable& p_vk,           // NOLINT
+    VulkanApplication& application,  // NOLINT
     std::unique_ptr<VulkanNativeSurface> native_surface)
     : vk(p_vk),
       application_(application),

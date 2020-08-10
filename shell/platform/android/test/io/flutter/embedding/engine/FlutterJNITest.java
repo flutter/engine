@@ -12,6 +12,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.LocaleList;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -96,7 +97,10 @@ public class FlutterJNITest {
           "en", "CA", ""
         };
     result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
-    assertEquals(result.length, 0); // This should change when full algo is implemented.
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "en");
+    assertEquals(result[1], "CA");
+    assertEquals(result[2], "");
 
     supportedLocales =
         new String[] {
@@ -137,7 +141,11 @@ public class FlutterJNITest {
     localeList = new LocaleList();
     when(config.getLocales()).thenReturn(localeList);
     result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
-    assertEquals(result.length, 0);
+    // The first locale is default.
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "fr");
+    assertEquals(result[1], "FR");
+    assertEquals(result[2], "");
   }
 
   public void onDisplayPlatformView__callsPlatformViewsController() {
@@ -145,15 +153,29 @@ public class FlutterJNITest {
 
     FlutterJNI flutterJNI = new FlutterJNI();
     flutterJNI.setPlatformViewsController(platformViewsController);
-
+    FlutterMutatorsStack stack = new FlutterMutatorsStack();
     // --- Execute Test ---
     flutterJNI.onDisplayPlatformView(
-        /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+        /*viewId=*/ 1,
+        /*x=*/ 10,
+        /*y=*/ 20,
+        /*width=*/ 100,
+        /*height=*/ 200,
+        /*viewWidth=*/ 100,
+        /*viewHeight=*/ 200,
+        /*mutatorsStack=*/ stack);
 
     // --- Verify Results ---
     verify(platformViewsController, times(1))
         .onDisplayPlatformView(
-            /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+            /*viewId=*/ 1,
+            /*x=*/ 10,
+            /*y=*/ 20,
+            /*width=*/ 100,
+            /*height=*/ 200,
+            /*viewWidth=*/ 100,
+            /*viewHeight=*/ 200,
+            /*mutatorsStack=*/ stack);
   }
 
   @Test
@@ -200,5 +222,19 @@ public class FlutterJNITest {
 
     // --- Verify Results ---
     verify(platformViewsController, times(1)).onEndFrame();
+  }
+
+  @Test
+  public void createOverlaySurface__callsPlatformViewsController() {
+    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
+
+    FlutterJNI flutterJNI = new FlutterJNI();
+    flutterJNI.setPlatformViewsController(platformViewsController);
+
+    // --- Execute Test ---
+    flutterJNI.createOverlaySurface();
+
+    // --- Verify Results ---
+    verify(platformViewsController, times(1)).createOverlaySurface();
   }
 }

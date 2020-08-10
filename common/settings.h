@@ -22,10 +22,17 @@ namespace flutter {
 
 class FrameTiming {
  public:
-  enum Phase { kBuildStart, kBuildFinish, kRasterStart, kRasterFinish, kCount };
+  enum Phase {
+    kVsyncStart,
+    kBuildStart,
+    kBuildFinish,
+    kRasterStart,
+    kRasterFinish,
+    kCount
+  };
 
-  static constexpr Phase kPhases[kCount] = {kBuildStart, kBuildFinish,
-                                            kRasterStart, kRasterFinish};
+  static constexpr Phase kPhases[kCount] = {
+      kVsyncStart, kBuildStart, kBuildFinish, kRasterStart, kRasterFinish};
 
   fml::TimePoint Get(Phase phase) const { return data_[phase]; }
   fml::TimePoint Set(Phase phase, fml::TimePoint value) {
@@ -97,6 +104,7 @@ struct Settings {
   bool trace_systrace = false;
   bool dump_skp_on_shader_compilation = false;
   bool cache_sksl = false;
+  bool purge_persistent_cache = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
@@ -212,6 +220,15 @@ struct Settings {
   /// on the clock used by the Dart timeline APIs. This timestamp is used
   /// to log a timeline event that tracks the latency of engine startup.
   std::chrono::microseconds engine_start_timestamp = {};
+
+  /// Whether the application claims that it uses the android embedded view for
+  /// platform views.
+  ///
+  /// A `true` value will result the raster task runner always run on the
+  /// platform thread.
+  // TODO(cyanlaz): Remove this when dynamic thread merging is done.
+  // https://github.com/flutter/flutter/issues/59930
+  bool use_embedded_view = false;
 
   std::string ToString() const;
 };

@@ -14,15 +14,74 @@ static constexpr char kBadArgumentsError[] = "Bad Arguments";
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
 
+static constexpr char kFallbackCursor[] = "default";
+
 struct _FlMouseCursorPlugin {
   GObject parent_instance;
 
   FlMethodChannel* channel;
 
   FlView* view;
+
+  GHashTable* system_cursor_table;
 };
 
 G_DEFINE_TYPE(FlMouseCursorPlugin, fl_mouse_cursor_plugin, G_TYPE_OBJECT)
+
+// Insert a new entry into a hashtable from strings to strings.
+//
+// Returns whether the newly added value was already in the hash table or not.
+static bool define_system_cursor(GHashTable* table,
+                                 const gchar* key,
+                                 const gchar* value) {
+  return g_hash_table_insert(
+      table, reinterpret_cast<gpointer>(const_cast<gchar*>(key)),
+      reinterpret_cast<gpointer>(const_cast<gchar*>(value)));
+}
+
+// Populate the hash table so that it maps from Flutter's cursor kinds to GTK's
+// cursor values.
+//
+// The table must have been created as a hashtable from strings to strings.
+static void populate_system_cursor_table(GHashTable* table) {
+  // The following mapping must be kept in sync with Flutter framework's
+  // mouse_cursor.dart.
+  define_system_cursor(table, "alias", "alias");
+  define_system_cursor(table, "allScroll", "all-scroll");
+  define_system_cursor(table, "basic", "default");
+  define_system_cursor(table, "cell", "cell");
+  define_system_cursor(table, "click", "pointer");
+  define_system_cursor(table, "contextMenu", "context-menu");
+  define_system_cursor(table, "copy", "copy");
+  define_system_cursor(table, "forbidden", "not-allowed");
+  define_system_cursor(table, "grab", "grab");
+  define_system_cursor(table, "grabbing", "grabbing");
+  define_system_cursor(table, "help", "help");
+  define_system_cursor(table, "move", "move");
+  define_system_cursor(table, "none", "none");
+  define_system_cursor(table, "noDrop", "no-drop");
+  define_system_cursor(table, "precise", "crosshair");
+  define_system_cursor(table, "progress", "progress");
+  define_system_cursor(table, "text", "text");
+  define_system_cursor(table, "resizeColumn", "col-resize");
+  define_system_cursor(table, "resizeDown", "s-resize");
+  define_system_cursor(table, "resizeDownLeft", "sw-resize");
+  define_system_cursor(table, "resizeDownRight", "se-resize");
+  define_system_cursor(table, "resizeLeft", "w-resize");
+  define_system_cursor(table, "resizeLeftRight", "ew-resize");
+  define_system_cursor(table, "resizeRight", "e-resize");
+  define_system_cursor(table, "resizeRow", "row-resize");
+  define_system_cursor(table, "resizeUp", "n-resize");
+  define_system_cursor(table, "resizeUpDown", "ns-resize");
+  define_system_cursor(table, "resizeUpLeft", "nw-resize");
+  define_system_cursor(table, "resizeUpRight", "ne-resize");
+  define_system_cursor(table, "resizeUpLeftDownRight", "nwse-resize");
+  define_system_cursor(table, "resizeUpRightDownLeft", "nesw-resize");
+  define_system_cursor(table, "verticalText", "vertical-text");
+  define_system_cursor(table, "wait", "wait");
+  define_system_cursor(table, "zoomIn", "zoom-in");
+  define_system_cursor(table, "zoomOut", "zoom-out");
+}
 
 // Sets the mouse cursor.
 FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
@@ -37,27 +96,15 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
   if (fl_value_get_type(kind_value) == FL_VALUE_TYPE_STRING)
     kind = fl_value_get_string(kind_value);
 
-  const gchar* cursor_name = nullptr;
-  if (g_strcmp0(kind, "none") == 0)
-    cursor_name = "none";
-  else if (g_strcmp0(kind, "basic") == 0)
-    cursor_name = "default";
-  else if (g_strcmp0(kind, "click") == 0)
-    cursor_name = "pointer";
-  else if (g_strcmp0(kind, "text") == 0)
-    cursor_name = "text";
-  else if (g_strcmp0(kind, "forbidden") == 0)
-    cursor_name = "not-allowed";
-  else if (g_strcmp0(kind, "grab") == 0)
-    cursor_name = "grab";
-  else if (g_strcmp0(kind, "grabbing") == 0)
-    cursor_name = "grabbing";
-  else if (g_strcmp0(kind, "resizeLeftRight") == 0)
-    cursor_name = "ew-resize";
-  else if (g_strcmp0(kind, "resizeUpDown") == 0)
-    cursor_name = "ns-resize";
-  else
-    cursor_name = "default";
+  if (self->system_cursor_table == nullptr) {
+    self->system_cursor_table = g_hash_table_new(g_str_hash, g_str_equal);
+    populate_system_cursor_table(self->system_cursor_table);
+  }
+
+  const gchar* cursor_name = reinterpret_cast<const gchar*>(
+      g_hash_table_lookup(self->system_cursor_table, kind));
+  if (cursor_name == nullptr)
+    cursor_name = kFallbackCursor;
 
   GdkWindow* window =
       gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
@@ -101,6 +148,8 @@ static void fl_mouse_cursor_plugin_dispose(GObject* object) {
     g_object_weak_unref(G_OBJECT(self->view), view_weak_notify_cb, self);
     self->view = nullptr;
   }
+
+  g_clear_pointer(&self->system_cursor_table, g_hash_table_unref);
 
   G_OBJECT_CLASS(fl_mouse_cursor_plugin_parent_class)->dispose(object);
 }

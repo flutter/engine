@@ -9,9 +9,9 @@
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/android/android_context.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
-#include "flutter/shell/platform/android/android_native_window.h"
+#include "flutter/shell/platform/android/context/android_context.h"
+#include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
@@ -21,7 +21,7 @@ namespace flutter {
 ///
 ///
 /// This can be used in conjuction to unique_ptr to provide better guarantees
-/// about the lifespam of the `EGLSurface` object.
+/// about the lifespan of the `EGLSurface` object.
 ///
 class AndroidEGLSurface {
  public:

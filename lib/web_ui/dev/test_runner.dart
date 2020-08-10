@@ -16,9 +16,11 @@ import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
 import 'package:simulators/simulator_manager.dart';
 
+import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 import 'integration_tests_manager.dart';
+import 'macos_info.dart';
 import 'safari_installation.dart';
 import 'supported_browsers.dart';
 import 'test_platform.dart';
@@ -106,7 +108,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       print('Running the unit tests only');
       return TestTypesRequested.unit;
     } else if (boolArg('integration-tests-only')) {
-      if (!isChrome) {
+      if (!isChrome && !isSafariOnMacOS && !isFirefox) {
         throw UnimplementedError(
             'Integration tests are only available on Chrome Desktop for now');
       }
@@ -124,6 +126,16 @@ class TestCommand extends Command<bool> with ArgUtils {
     // Check the flags to see what type of integration tests are requested.
     testTypesRequested = findTestType();
 
+    if (isSafariOnMacOS) {
+      /// Collect information on the bot.
+      final MacOSInfo macOsInfo = new MacOSInfo();
+      await macOsInfo.printInformation();
+      /// Tests may fail on the CI, therefore exit test_runner.
+      if (isLuci) {
+        return true;
+      }
+    }
+
     switch (testTypesRequested) {
       case TestTypesRequested.unit:
         return runUnitTests();
@@ -132,7 +144,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       case TestTypesRequested.all:
         // TODO(nurhan): https://github.com/flutter/flutter/issues/53322
         // TODO(nurhan): Expand browser matrix for felt integration tests.
-        if (runAllTests && isChrome) {
+        if (runAllTests && (isChrome || isSafariOnMacOS || isFirefox)) {
           bool unitTestResult = await runUnitTests();
           bool integrationTestResult = await runIntegrationTests();
           if (integrationTestResult != unitTestResult) {
@@ -262,6 +274,13 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   /// Whether [browser] is set to "chrome".
   bool get isChrome => browser == 'chrome';
+
+  /// Whether [browser] is set to "firefox".
+  bool get isFirefox => browser == 'firefox';
+
+  /// Whether [browser] is set to "safari".
+  bool get isSafariOnMacOS => browser == 'safari'
+      && io.Platform.isMacOS;
 
   /// Use system flutter instead of cloning the repository.
   ///
@@ -446,6 +465,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       'run',
       'build_runner',
       'build',
+      '--enable-experiment=non-nullable',
       'test',
       '-o',
       forCanvasKit ? canvasKitOutputRelativePath : 'build',

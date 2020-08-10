@@ -2,40 +2,65 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
-/// A [ui.ColorFilter] backed by Skia's [SkColorFilter].
-class SkColorFilter {
-  js.JsObject skColorFilter;
+/// A [ui.ColorFilter] backed by Skia's [CkColorFilter].
+class CkColorFilter extends ManagedSkiaObject<SkColorFilter> {
+  final EngineColorFilter _engineFilter;
 
-  SkColorFilter.mode(EngineColorFilter filter) {
-    setSharedSkColor1(filter._color);
-    skColorFilter =
-        canvasKit['SkColorFilter'].callMethod('MakeBlend', <dynamic>[
-      sharedSkColor1,
-      makeSkBlendMode(filter._blendMode),
-    ]);
-  }
+  CkColorFilter.mode(EngineColorFilter filter) : _engineFilter = filter;
 
-  SkColorFilter.matrix(EngineColorFilter filter) {
-    // TODO(het): Find a way to remove these array conversions.
-    final js.JsArray<double> colorMatrix = js.JsArray<double>();
-    colorMatrix.length = 20;
-    for (int i = 0; i < 20; i++) {
-      colorMatrix[i] = filter._matrix[i];
+  CkColorFilter.matrix(EngineColorFilter filter) : _engineFilter = filter;
+
+  CkColorFilter.linearToSrgbGamma(EngineColorFilter filter)
+      : _engineFilter = filter;
+
+  CkColorFilter.srgbToLinearGamma(EngineColorFilter filter)
+      : _engineFilter = filter;
+
+  SkColorFilter _createSkiaObjectFromFilter() {
+    SkColorFilter skColorFilter;
+    switch (_engineFilter._type) {
+      case EngineColorFilter._TypeMode:
+        skColorFilter = canvasKit.SkColorFilter.MakeBlend(
+          toSharedSkColor1(_engineFilter._color!),
+          toSkBlendMode(_engineFilter._blendMode!),
+        );
+        break;
+      case EngineColorFilter._TypeMatrix:
+        final Float32List colorMatrix = Float32List(20);
+        final List<double> matrix = _engineFilter._matrix!;
+        for (int i = 0; i < 20; i++) {
+          colorMatrix[i] = matrix[i];
+        }
+        skColorFilter = canvasKit.SkColorFilter.MakeMatrix(colorMatrix);
+        break;
+      case EngineColorFilter._TypeLinearToSrgbGamma:
+        skColorFilter = canvasKit.SkColorFilter.MakeLinearToSRGBGamma();
+        break;
+      case EngineColorFilter._TypeSrgbToLinearGamma:
+        skColorFilter = canvasKit.SkColorFilter.MakeSRGBToLinearGamma();
+        break;
+      default:
+        throw StateError(
+            'Unknown mode ${_engineFilter._type} for ColorFilter.');
     }
-    skColorFilter = canvasKit['SkColorFilter']
-        .callMethod('MakeMatrix', <js.JsArray>[colorMatrix]);
+    return skColorFilter;
   }
 
-  SkColorFilter.linearToSrgbGamma(EngineColorFilter filter) {
-    skColorFilter =
-        canvasKit['SkColorFilter'].callMethod('MakeLinearToSRGBGamma');
+  @override
+  SkColorFilter createDefault() {
+    return _createSkiaObjectFromFilter();
   }
 
-  SkColorFilter.srgbToLinearGamma(EngineColorFilter filter) {
-    skColorFilter =
-        canvasKit['SkColorFilter'].callMethod('MakeSRGBToLinearGamma');
+  @override
+  SkColorFilter resurrect() {
+    return _createSkiaObjectFromFilter();
+  }
+
+  @override
+  void delete() {
+    rawSkiaObject?.delete();
   }
 }

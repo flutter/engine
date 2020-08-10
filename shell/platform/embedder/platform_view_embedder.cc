@@ -74,7 +74,7 @@ std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
 }
 
 // |PlatformView|
-sk_sp<GrContext> PlatformViewEmbedder::CreateResourceContext() const {
+sk_sp<GrDirectContext> PlatformViewEmbedder::CreateResourceContext() const {
   if (embedder_surface_ == nullptr) {
     FML_LOG(ERROR) << "Embedder surface was null.";
     return nullptr;
@@ -97,6 +97,11 @@ std::unique_ptr<VsyncWaiter> PlatformViewEmbedder::CreateVSyncWaiter() {
 std::unique_ptr<std::vector<std::string>>
 PlatformViewEmbedder::ComputePlatformResolvedLocales(
     const std::vector<std::string>& supported_locale_data) {
+  if (platform_dispatch_table_.compute_platform_resolved_locale_callback !=
+      nullptr) {
+    return platform_dispatch_table_.compute_platform_resolved_locale_callback(
+        supported_locale_data);
+  }
   std::unique_ptr<std::vector<std::string>> out =
       std::make_unique<std::vector<std::string>>();
   return out;

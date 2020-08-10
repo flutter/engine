@@ -43,7 +43,7 @@ static constexpr char kInternalConsistencyError[] =
 
 namespace flutter {
 
-void TextInputPlugin::TextHook(Win32FlutterWindow* window,
+void TextInputPlugin::TextHook(FlutterWindowsView* view,
                                const std::u16string& text) {
   if (active_model_ == nullptr) {
     return;
@@ -52,7 +52,7 @@ void TextInputPlugin::TextHook(Win32FlutterWindow* window,
   SendStateUpdate(*active_model_);
 }
 
-void TextInputPlugin::KeyboardHook(Win32FlutterWindow* window,
+void TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
                                    int key,
                                    int scancode,
                                    int action,
@@ -189,9 +189,13 @@ void TextInputPlugin::HandleMethodCall(
                     "Selection base/extent values invalid.");
       return;
     }
-    active_model_->SetEditingState(selection_base->value.GetInt(),
-                                   selection_extent->value.GetInt(),
-                                   text->value.GetString());
+    // Flutter uses -1/-1 for invalid; translate that to 0/0 for the model.
+    int base = selection_base->value.GetInt();
+    int extent = selection_extent->value.GetInt();
+    if (base == -1 && extent == -1) {
+      base = extent = 0;
+    }
+    active_model_->SetEditingState(base, extent, text->value.GetString());
   } else {
     result->NotImplemented();
     return;

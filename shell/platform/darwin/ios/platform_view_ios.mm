@@ -107,9 +107,8 @@ void PlatformViewIOS::attachView() {
   FML_DCHECK(ios_surface_ != nullptr);
 
   if (accessibility_bridge_) {
-    accessibility_bridge_.reset(
-        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                [owner_controller_.get() platformViewsController]));
+    accessibility_bridge_.reset(new AccessibilityBridge(
+        owner_controller_.get(), this, [owner_controller_.get() platformViewsController]));
   }
 }
 
@@ -138,7 +137,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 }
 
 // |PlatformView|
-sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
+sk_sp<GrDirectContext> PlatformViewIOS::CreateResourceContext() const {
   return ios_context_->CreateResourceContext();
 }
 
@@ -150,9 +149,8 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
     return;
   }
   if (enabled && !accessibility_bridge_) {
-    accessibility_bridge_.reset(
-        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                [owner_controller_.get() platformViewsController]));
+    accessibility_bridge_.reset(new AccessibilityBridge(
+        owner_controller_.get(), this, [owner_controller_.get() platformViewsController]));
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
   } else {

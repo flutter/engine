@@ -21,8 +21,10 @@ LayerTree::LayerTree(const SkISize& frame_size,
       checkerboard_raster_cache_images_(false),
       checkerboard_offscreen_layers_(false) {}
 
-void LayerTree::RecordBuildTime(fml::TimePoint build_start,
+void LayerTree::RecordBuildTime(fml::TimePoint vsync_start,
+                                fml::TimePoint build_start,
                                 fml::TimePoint target_time) {
+  vsync_start_ = vsync_start;
   build_start_ = build_start;
   target_time_ = target_time;
   build_finish_ = fml::TimePoint::Now();
@@ -61,7 +63,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   return context.surface_needs_readback;
 }
 
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 void LayerTree::UpdateScene(SceneUpdateContext& context,
                             scenic::ContainerNode& container) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
@@ -116,7 +118,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   }
 
   Layer::PaintContext context = {
-      (SkCanvas*)&internal_nodes_canvas,
+      static_cast<SkCanvas*>(&internal_nodes_canvas),
       frame.canvas(),
       frame.gr_context(),
       frame.view_embedder(),
@@ -128,8 +130,9 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       frame_physical_depth_,
       frame_device_pixel_ratio_};
 
-  if (root_layer_->needs_painting())
+  if (root_layer_->needs_painting()) {
     root_layer_->Paint(context);
+  }
 }
 
 sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
@@ -170,7 +173,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   internal_nodes_canvas.addCanvas(canvas);
 
   Layer::PaintContext paint_context = {
-      (SkCanvas*)&internal_nodes_canvas,
+      static_cast<SkCanvas*>(&internal_nodes_canvas),
       canvas,  // canvas
       nullptr,
       nullptr,

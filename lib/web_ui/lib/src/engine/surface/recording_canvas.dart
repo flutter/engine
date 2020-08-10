@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 /// Enable this to print every command applied by a canvas.
@@ -34,14 +34,14 @@ class RawRecordingCanvas extends BitmapCanvas
   @override
   ui.Picture endRecording() => throw UnsupportedError('');
 
-  RecordingCanvas _canvas; // ignore: unused_field
+  RecordingCanvas? _canvas; // ignore: unused_field
 
   bool _isRecording = true; // ignore: unused_field
 
   @override
   bool get isRecording => true;
 
-  ui.Rect cullRect;
+  ui.Rect? cullRect;
 }
 
 /// Records canvas commands to be applied to a [EngineCanvas].
@@ -56,14 +56,14 @@ class RecordingCanvas {
   /// The bounds contain the full picture. The commands recorded for the picture
   /// are later pruned based on the clip applied to the picture. See the [apply]
   /// method for more details.
-  ui.Rect get pictureBounds {
+  ui.Rect? get pictureBounds {
     assert(
-      _debugRecordingEnded,
+      _recordingEnded,
       'Picture bounds not available yet. Call [endRecording] before accessing picture bounds.',
     );
     return _pictureBounds;
   }
-  ui.Rect _pictureBounds;
+  ui.Rect? _pictureBounds;
 
   final List<PaintCommand> _commands = <PaintCommand>[];
 
@@ -75,7 +75,7 @@ class RecordingCanvas {
     throw UnsupportedError('For debugging only.');
   }
 
-  RecordingCanvas(ui.Rect bounds) : _paintBounds = _PaintBounds(bounds);
+  RecordingCanvas(ui.Rect? bounds) : _paintBounds = _PaintBounds(bounds ?? ui.Rect.largest);
 
   /// Whether this canvas is doing arbitrary paint operations not expressible
   /// via DOM elements.
@@ -101,9 +101,14 @@ class RecordingCanvas {
   bool get didDraw => _didDraw;
   bool _didDraw = false;
 
-  /// When assertions are enabled used to ensure that [endRecording] is called
-  /// before calling [apply] or [pictureBounds].
-  bool _debugRecordingEnded = false;
+  /// Used to ensure that [endRecording] is called before calling [apply] or
+  /// [pictureBounds].
+  ///
+  /// When [PaintingContext] is used by [ClipContext], the painter may
+  /// end a recording and start a new one and cause [ClipContext] to call
+  /// restore on a new canvas before prior save calls, [_recordingEnded]
+  /// prevents transforms removals in that case.
+  bool _recordingEnded = false;
 
   /// Stops recording drawing commands and computes paint bounds.
   ///
@@ -114,9 +119,7 @@ class RecordingCanvas {
   /// directly it is up to you to call this method explicitly.
   void endRecording() {
     _pictureBounds = _paintBounds.computeBounds();
-    if (assertionsEnabled) {
-      _debugRecordingEnded = true;
-    }
+    _recordingEnded = true;
   }
 
   /// Applies the recorded commands onto an [engineCanvas].
@@ -125,14 +128,14 @@ class RecordingCanvas {
   /// a minimum). The commands that fall outside the clip are skipped and are
   /// not applied to the [engineCanvas]. A command must have a non-zero
   /// intersection with the clip in order to be applied.
-  void apply(EngineCanvas engineCanvas, ui.Rect clipRect) {
-    assert(_debugRecordingEnded);
+  void apply(EngineCanvas? engineCanvas, ui.Rect? clipRect) {
+    assert(_recordingEnded);
     if (_debugDumpPaintCommands) {
       final StringBuffer debugBuf = StringBuffer();
       int skips = 0;
       debugBuf.writeln(
-          '--- Applying RecordingCanvas to ${engineCanvas.runtimeType} '
-          'with bounds $_paintBounds and clip $clipRect (w = ${clipRect.width},'
+          '--- Applying RecordingCanvas to ${engineCanvas!.runtimeType} '
+          'with bounds $_paintBounds and clip $clipRect (w = ${clipRect!.width},'
           ' h = ${clipRect.height})');
       for (int i = 0; i < _commands.length; i++) {
         final PaintCommand command = _commands[i];
@@ -154,7 +157,7 @@ class RecordingCanvas {
       print(debugBuf);
     } else {
       try {
-        if (rectContainsOther(clipRect, _pictureBounds)) {
+        if (rectContainsOther(clipRect!, _pictureBounds!)) {
           // No need to check if commands fit in the clip rect if we already
           // know that the entire picture fits it.
           for (int i = 0, len = _commands.length; i < len; i++) {
@@ -182,11 +185,11 @@ class RecordingCanvas {
         }
       }
     }
-    engineCanvas.endOfPaint();
+    engineCanvas!.endOfPaint();
   }
 
   /// Prints recorded commands.
-  String debugPrintCommands() {
+  String? debugPrintCommands() {
     if (assertionsEnabled) {
       final StringBuffer debugBuf = StringBuffer();
       for (int i = 0; i < _commands.length; i++) {
@@ -199,14 +202,14 @@ class RecordingCanvas {
   }
 
   void save() {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _paintBounds.saveTransformsAndClip();
     _commands.add(const PaintSave());
     _saveCount++;
   }
 
   void saveLayerWithoutBounds(SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     // TODO(het): Implement this correctly using another canvas.
     _commands.add(const PaintSave());
@@ -215,7 +218,7 @@ class RecordingCanvas {
   }
 
   void saveLayer(ui.Rect bounds, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     // TODO(het): Implement this correctly using another canvas.
     _commands.add(const PaintSave());
@@ -224,8 +227,9 @@ class RecordingCanvas {
   }
 
   void restore() {
-    assert(!_debugRecordingEnded);
-    _paintBounds.restoreTransformsAndClip();
+    if (!_recordingEnded) {
+      _paintBounds.restoreTransformsAndClip();
+    }
     if (_commands.isNotEmpty && _commands.last is PaintSave) {
       // A restore followed a save without any drawing operations in between.
       // This means that the save didn't have any effect on drawing operations
@@ -239,38 +243,38 @@ class RecordingCanvas {
   }
 
   void translate(double dx, double dy) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _paintBounds.translate(dx, dy);
     _commands.add(PaintTranslate(dx, dy));
   }
 
   void scale(double sx, double sy) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _paintBounds.scale(sx, sy);
     _commands.add(PaintScale(sx, sy));
   }
 
   void rotate(double radians) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _paintBounds.rotateZ(radians);
     _commands.add(PaintRotate(radians));
   }
 
   void transform(Float32List matrix4) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _paintBounds.transform(matrix4);
     _commands.add(PaintTransform(matrix4));
   }
 
   void skew(double sx, double sy) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _paintBounds.skew(sx, sy);
     _commands.add(PaintSkew(sx, sy));
   }
 
   void clipRect(ui.Rect rect) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     final PaintClipRect command = PaintClipRect(rect);
     _paintBounds.clipRect(rect, command);
     _hasArbitraryPaint = true;
@@ -278,7 +282,7 @@ class RecordingCanvas {
   }
 
   void clipRRect(ui.RRect rrect) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     final PaintClipRRect command = PaintClipRRect(rrect);
     _paintBounds.clipRect(rrect.outerRect, command);
     _hasArbitraryPaint = true;
@@ -286,22 +290,22 @@ class RecordingCanvas {
   }
 
   void clipPath(ui.Path path, {bool doAntiAlias = true}) {
-    assert(!_debugRecordingEnded);
-    final PaintClipPath command = PaintClipPath(path);
+    assert(!_recordingEnded);
+    final PaintClipPath command = PaintClipPath(path as SurfacePath);
     _paintBounds.clipRect(path.getBounds(), command);
     _hasArbitraryPaint = true;
     _commands.add(command);
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     final PaintDrawColor command = PaintDrawColor(color, blendMode);
     _commands.add(command);
     _paintBounds.grow(_paintBounds.maxPaintBounds, command);
   }
 
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     final double paintSpread = math.max(_getPaintSpread(paint), 1.0);
     final PaintDrawLine command = PaintDrawLine(p1, p2, paint.paintData);
     // TODO(yjbanov): This can be optimized. Currently we create a box around
@@ -324,7 +328,7 @@ class RecordingCanvas {
   }
 
   void drawPaint(SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawPaint command = PaintDrawPaint(paint.paintData);
@@ -333,7 +337,7 @@ class RecordingCanvas {
   }
 
   void drawRect(ui.Rect rect, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     if (paint.shader != null) {
       _hasArbitraryPaint = true;
     }
@@ -349,7 +353,7 @@ class RecordingCanvas {
   }
 
   void drawRRect(ui.RRect rrect, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     if (paint.shader != null || !rrect.webOnlyUniformRadii) {
       _hasArbitraryPaint = true;
     }
@@ -365,7 +369,7 @@ class RecordingCanvas {
   }
 
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     // Check the inner bounds are contained within the outer bounds
     // see: https://cs.chromium.org/chromium/src/third_party/skia/src/core/SkCanvas.cpp?l=1787-1789
     ui.Rect innerRect = inner.outerRect;
@@ -418,7 +422,7 @@ class RecordingCanvas {
   }
 
   void drawOval(ui.Rect rect, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
@@ -432,7 +436,7 @@ class RecordingCanvas {
   }
 
   void drawCircle(ui.Offset c, double radius, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
@@ -449,24 +453,24 @@ class RecordingCanvas {
   }
 
   void drawPath(ui.Path path, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     if (paint.shader == null) {
       // For Rect/RoundedRect paths use drawRect/drawRRect code paths for
       // DomCanvas optimization.
-      SurfacePath sPath = path;
-      final ui.Rect rect = sPath.webOnlyPathAsRect;
+      SurfacePath sPath = path as SurfacePath;
+      final ui.Rect? rect = sPath.webOnlyPathAsRect;
       if (rect != null) {
         drawRect(rect, paint);
         return;
       }
-      final ui.RRect rrect = sPath.webOnlyPathAsRoundedRect;
+      final ui.RRect? rrect = sPath.webOnlyPathAsRoundedRect;
       if (rrect != null) {
         drawRRect(rrect, paint);
         return;
       }
     }
-    SurfacePath sPath = path;
-    if (sPath.subpaths.isNotEmpty) {
+    SurfacePath sPath = path as SurfacePath;
+    if (!sPath.pathRef.isEmpty) {
       _hasArbitraryPaint = true;
       _didDraw = true;
       ui.Rect pathBounds = sPath.getBounds();
@@ -476,7 +480,7 @@ class RecordingCanvas {
       }
       // Clone path so it can be reused for subsequent draw calls.
       final ui.Path clone = SurfacePath._shallowCopy(path);
-      final PaintDrawPath command = PaintDrawPath(clone, paint.paintData);
+      final PaintDrawPath command = PaintDrawPath(clone as SurfacePath, paint.paintData);
       _paintBounds.grow(pathBounds, command);
       clone.fillType = sPath.fillType;
       _commands.add(command);
@@ -484,7 +488,7 @@ class RecordingCanvas {
   }
 
   void drawImage(ui.Image image, ui.Offset offset, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double left = offset.dx;
@@ -496,7 +500,7 @@ class RecordingCanvas {
 
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawImageRect command = PaintDrawImageRect(image, src, dst, paint.paintData);
@@ -505,8 +509,8 @@ class RecordingCanvas {
   }
 
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    assert(!_debugRecordingEnded);
-    final EngineParagraph engineParagraph = paragraph;
+    assert(!_recordingEnded);
+    final EngineParagraph engineParagraph = paragraph as EngineParagraph;
     if (!engineParagraph._isLaidOut) {
       // Ignore non-laid out paragraphs. This matches Flutter's behavior.
       return;
@@ -531,19 +535,19 @@ class RecordingCanvas {
 
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final ui.Rect shadowRect =
         computePenumbraBounds(path.getBounds(), elevation);
-    final PaintDrawShadow command = PaintDrawShadow(path, color, elevation, transparentOccluder);
+    final PaintDrawShadow command = PaintDrawShadow(path as SurfacePath, color, elevation, transparentOccluder);
     _paintBounds.grow(shadowRect, command);
     _commands.add(command);
   }
 
   void drawVertices(
       SurfaceVertices vertices, ui.BlendMode blendMode, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawVertices command = PaintDrawVertices(vertices, blendMode, paint.paintData);
@@ -553,10 +557,7 @@ class RecordingCanvas {
 
   void drawRawPoints(
       ui.PointMode pointMode, Float32List points, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
-    if (paint.strokeWidth == null) {
-      return;
-    }
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawPoints command = PaintDrawPoints(pointMode, points, paint.paintData);
@@ -606,7 +607,7 @@ class RecordingCanvas {
 abstract class PaintCommand {
   const PaintCommand();
 
-  void apply(EngineCanvas canvas);
+  void apply(EngineCanvas? canvas);
 
   void serializeToCssPaint(List<List<dynamic>> serializedCommands);
 }
@@ -634,14 +635,14 @@ abstract class DrawCommand extends PaintCommand {
   double bottomBound = double.infinity;
 
   /// Whether this command intersects with the [clipRect].
-  bool isInvisible(ui.Rect clipRect) {
+  bool isInvisible(ui.Rect? clipRect) {
     if (isClippedOut) {
       return true;
     }
 
     // Check top and bottom first because vertical scrolling is more common
     // than horizontal scrolling.
-    return bottomBound < clipRect.top ||
+    return bottomBound < clipRect!.top ||
       topBound > clipRect.bottom ||
       rightBound < clipRect.left ||
       leftBound > clipRect.right;
@@ -652,8 +653,8 @@ class PaintSave extends PaintCommand {
   const PaintSave();
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.save();
+  void apply(EngineCanvas? canvas) {
+    canvas!.save();
   }
 
   @override
@@ -675,8 +676,8 @@ class PaintRestore extends PaintCommand {
   const PaintRestore();
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.restore();
+  void apply(EngineCanvas? canvas) {
+    canvas!.restore();
   }
 
   @override
@@ -701,8 +702,8 @@ class PaintTranslate extends PaintCommand {
   PaintTranslate(this.dx, this.dy);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.translate(dx, dy);
+  void apply(EngineCanvas? canvas) {
+    canvas!.translate(dx, dy);
   }
 
   @override
@@ -727,8 +728,8 @@ class PaintScale extends PaintCommand {
   PaintScale(this.sx, this.sy);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.scale(sx, sy);
+  void apply(EngineCanvas? canvas) {
+    canvas!.scale(sx, sy);
   }
 
   @override
@@ -752,8 +753,8 @@ class PaintRotate extends PaintCommand {
   PaintRotate(this.radians);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.rotate(radians);
+  void apply(EngineCanvas? canvas) {
+    canvas!.rotate(radians);
   }
 
   @override
@@ -777,8 +778,8 @@ class PaintTransform extends PaintCommand {
   PaintTransform(this.matrix4);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.transform(matrix4);
+  void apply(EngineCanvas? canvas) {
+    canvas!.transform(matrix4);
   }
 
   @override
@@ -803,8 +804,8 @@ class PaintSkew extends PaintCommand {
   PaintSkew(this.sx, this.sy);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.skew(sx, sy);
+  void apply(EngineCanvas? canvas) {
+    canvas!.skew(sx, sy);
   }
 
   @override
@@ -828,8 +829,8 @@ class PaintClipRect extends DrawCommand {
   PaintClipRect(this.rect);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.clipRect(rect);
+  void apply(EngineCanvas? canvas) {
+    canvas!.clipRect(rect);
   }
 
   @override
@@ -853,8 +854,8 @@ class PaintClipRRect extends DrawCommand {
   PaintClipRRect(this.rrect);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.clipRRect(rrect);
+  void apply(EngineCanvas? canvas) {
+    canvas!.clipRRect(rrect);
   }
 
   @override
@@ -881,8 +882,8 @@ class PaintClipPath extends DrawCommand {
   PaintClipPath(this.path);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.clipPath(path);
+  void apply(EngineCanvas? canvas) {
+    canvas!.clipPath(path);
   }
 
   @override
@@ -907,8 +908,8 @@ class PaintDrawColor extends DrawCommand {
   PaintDrawColor(this.color, this.blendMode);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawColor(color, blendMode);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawColor(color, blendMode);
   }
 
   @override
@@ -935,8 +936,8 @@ class PaintDrawLine extends DrawCommand {
   PaintDrawLine(this.p1, this.p2, this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawLine(p1, p2, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawLine(p1, p2, paint);
   }
 
   @override
@@ -967,8 +968,8 @@ class PaintDrawPaint extends DrawCommand {
   PaintDrawPaint(this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawPaint(paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawPaint(paint);
   }
 
   @override
@@ -993,8 +994,8 @@ class PaintDrawVertices extends DrawCommand {
   PaintDrawVertices(this.vertices, this.blendMode, this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawVertices(vertices, blendMode, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawVertices(vertices as SurfaceVertices, blendMode, paint);
   }
 
   @override
@@ -1019,8 +1020,8 @@ class PaintDrawPoints extends DrawCommand {
   PaintDrawPoints(this.pointMode, this.points, this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawPoints(pointMode, points, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawPoints(pointMode, points, paint);
   }
 
   @override
@@ -1045,8 +1046,8 @@ class PaintDrawRect extends DrawCommand {
   PaintDrawRect(this.rect, this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawRect(rect, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawRect(rect, paint);
   }
 
   @override
@@ -1075,8 +1076,8 @@ class PaintDrawRRect extends DrawCommand {
   PaintDrawRRect(this.rrect, this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawRRect(rrect, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawRRect(rrect, paint);
   }
 
   @override
@@ -1102,12 +1103,18 @@ class PaintDrawDRRect extends DrawCommand {
   final ui.RRect outer;
   final ui.RRect inner;
   final SurfacePaintData paint;
-
-  PaintDrawDRRect(this.outer, this.inner, this.paint);
+  ui.Path? path;
+  PaintDrawDRRect(this.outer, this.inner, this.paint) {
+    path = ui.Path()
+      ..fillType = ui.PathFillType.evenOdd
+      ..addRRect(outer)
+      ..addRRect(inner)
+      ..close();
+  }
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawDRRect(outer, inner, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawPath(path!, paint);
   }
 
   @override
@@ -1137,8 +1144,8 @@ class PaintDrawOval extends DrawCommand {
   PaintDrawOval(this.rect, this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawOval(rect, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawOval(rect, paint);
   }
 
   @override
@@ -1168,8 +1175,8 @@ class PaintDrawCircle extends DrawCommand {
   PaintDrawCircle(this.c, this.radius, this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawCircle(c, radius, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawCircle(c, radius, paint);
   }
 
   @override
@@ -1200,8 +1207,8 @@ class PaintDrawPath extends DrawCommand {
   PaintDrawPath(this.path, this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawPath(path, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawPath(path, paint);
   }
 
   @override
@@ -1233,8 +1240,8 @@ class PaintDrawShadow extends DrawCommand {
   final bool transparentOccluder;
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawShadow(path, color, elevation, transparentOccluder);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawShadow(path, color, elevation, transparentOccluder);
   }
 
   @override
@@ -1271,8 +1278,8 @@ class PaintDrawImage extends DrawCommand {
   PaintDrawImage(this.image, this.offset, this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawImage(image, offset, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawImage(image, offset, paint);
   }
 
   @override
@@ -1301,8 +1308,8 @@ class PaintDrawImageRect extends DrawCommand {
   PaintDrawImageRect(this.image, this.src, this.dst, this.paint);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawImageRect(image, src, dst, paint);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawImageRect(image, src, dst, paint);
   }
 
   @override
@@ -1329,8 +1336,8 @@ class PaintDrawParagraph extends DrawCommand {
   PaintDrawParagraph(this.paragraph, this.offset);
 
   @override
-  void apply(EngineCanvas canvas) {
-    canvas.drawParagraph(paragraph, offset);
+  void apply(EngineCanvas? canvas) {
+    canvas!.drawParagraph(paragraph, offset);
   }
 
   @override
@@ -1351,7 +1358,7 @@ class PaintDrawParagraph extends DrawCommand {
 }
 
 List<dynamic> _serializePaintToCssPaint(SurfacePaintData paint) {
-  final EngineGradient engineShader = paint.shader;
+  final EngineGradient? engineShader = paint.shader as EngineGradient?;
   return <dynamic>[
     paint.blendMode?.index,
     paint.style?.index,
@@ -1573,11 +1580,7 @@ class Ellipse extends PathCommand {
         anticlockwise ? startAngle - endAngle : endAngle - startAngle,
         matrix4,
         bezierPath);
-    if (matrix4 != null) {
-      targetPath._addPathWithMatrix(bezierPath, 0, 0, matrix4);
-    } else {
-      targetPath._addPath(bezierPath, 0, 0);
-    }
+    targetPath._addPath(bezierPath, 0, 0, matrix4, SPathAddPathMode.kAppend);
   }
 
   void _drawArcWithBezier(
@@ -1855,11 +1858,7 @@ class RRectCommand extends PathCommand {
   void transform(Float32List matrix4, SurfacePath targetPath) {
     final ui.Path roundRectPath = ui.Path();
     _RRectToPathRenderer(roundRectPath).render(rrect);
-    if (matrix4 != null) {
-      targetPath._addPathWithMatrix(roundRectPath, 0, 0, matrix4);
-    } else {
-      targetPath._addPath(roundRectPath, 0, 0);
-    }
+    targetPath._addPath(roundRectPath, 0, 0, matrix4, SPathAddPathMode.kAppend);
   }
 
   @override
@@ -1908,11 +1907,15 @@ class _PaintBounds {
   // Bounds of actually painted area. If _left is not set, reported paintBounds
   // should be empty since growLTRB calls were outside active clipping
   // region.
-  double _left, _top, _right, _bottom;
+  double _left = double.maxFinite;
+  double _top = double.maxFinite;
+  double _right = -double.maxFinite;
+  double _bottom = -double.maxFinite;
+
   // Stack of transforms.
-  List<Matrix4> _transforms;
+  late List<Matrix4> _transforms = <Matrix4>[];
   // Stack of clip bounds.
-  List<ui.Rect> _clipStack;
+  late List<ui.Rect?> _clipStack = <ui.Rect?>[];
   bool _currentMatrixIsIdentity = true;
   Matrix4 _currentMatrix = Matrix4.identity();
   bool _clipRectInitialized = false;
@@ -1921,7 +1924,7 @@ class _PaintBounds {
       _currentClipRight = 0.0,
       _currentClipBottom = 0.0;
 
-  _PaintBounds(this.maxPaintBounds);
+  _PaintBounds(ui.Rect maxPaintBounds) : maxPaintBounds = maxPaintBounds;
 
   void translate(double dx, double dy) {
     if (dx != 0.0 || dy != 0.0) {
@@ -2100,9 +2103,7 @@ class _PaintBounds {
   }
 
   void saveTransformsAndClip() {
-    _clipStack ??= <ui.Rect>[];
-    _transforms ??= <Matrix4>[];
-    _transforms.add(_currentMatrix?.clone());
+    _transforms.add(_currentMatrix.clone());
     _clipStack.add(_clipRectInitialized
         ? ui.Rect.fromLTRB(_currentClipLeft, _currentClipTop, _currentClipRight,
             _currentClipBottom)
@@ -2111,7 +2112,7 @@ class _PaintBounds {
 
   void restoreTransformsAndClip() {
     _currentMatrix = _transforms.removeLast();
-    final ui.Rect clipRect = _clipStack.removeLast();
+    final ui.Rect? clipRect = _clipStack.removeLast();
     if (clipRect != null) {
       _currentClipLeft = clipRect.left;
       _currentClipTop = clipRect.top;
@@ -2176,14 +2177,14 @@ class _PaintBounds {
 /// boxes for paint operations that apply the paint.
 double _getPaintSpread(SurfacePaint paint) {
   double spread = 0.0;
-  final ui.MaskFilter maskFilter = paint?.maskFilter;
+  final ui.MaskFilter? maskFilter = paint.maskFilter;
   if (maskFilter != null) {
     // Multiply by 2 because the sigma is the standard deviation rather than
     // the length of the blur.
     // See also: https://developer.mozilla.org/en-US/docs/Web/CSS/filter-function/blur
     spread += maskFilter.webOnlySigma * 2.0;
   }
-  if (paint.strokeWidth != null && paint.strokeWidth != 0) {
+  if (paint.strokeWidth != 0) {
     // The multiplication by sqrt(2) is to account for line joints that
     // meet at 90-degree angle. Division by 2 is because only half of the
     // stroke is sticking out of the original shape. The other half is

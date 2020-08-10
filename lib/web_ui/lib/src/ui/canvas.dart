@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of ui;
 
 /// Defines how a list of points is interpreted when drawing a set of points.
@@ -70,14 +70,14 @@ class Vertices {
   /// If the [indices] parameter is provided, all values in the list must be
   /// valid index values for [positions].
   factory Vertices(
-    VertexMode/*!*/ mode,
-    List<Offset/*!*/>/*!*/ positions, {
-    List<Offset/*!*/>/*?*/ textureCoordinates,
-    List<Color/*!*/>/*?*/ colors,
-    List<int/*!*/>/*?*/ indices,
+    VertexMode mode,
+    List<Offset> positions, {
+    List<Offset>? textureCoordinates,
+    List<Color>? colors,
+    List<int>? indices,
   }) {
     if (engine.experimentalUseSkia) {
-      return engine.SkVertices(mode, positions,
+      return engine.CkVertices(mode, positions,
           textureCoordinates: textureCoordinates,
           colors: colors,
           indices: indices);
@@ -106,14 +106,14 @@ class Vertices {
   /// If the [indices] list is provided, all values in the list must be
   /// valid index values for [positions].
   factory Vertices.raw(
-    VertexMode/*!*/ mode,
-    Float32List/*!*/ positions, {
-    Float32List/*?*/ textureCoordinates,
-    Int32List/*?*/ colors,
-    Uint16List/*?*/ indices,
+    VertexMode mode,
+    Float32List positions, {
+    Float32List? textureCoordinates,
+    Int32List? colors,
+    Uint16List? indices,
   }) {
     if (engine.experimentalUseSkia) {
-      return engine.SkVertices.raw(mode, positions,
+      return engine.CkVertices.raw(mode, positions,
           textureCoordinates: textureCoordinates,
           colors: colors,
           indices: indices);
@@ -134,7 +134,7 @@ abstract class PictureRecorder {
   /// [Canvas] constructor.
   factory PictureRecorder() {
     if (engine.experimentalUseSkia) {
-      return engine.SkPictureRecorder();
+      return engine.CkPictureRecorder();
     } else {
       return engine.EnginePictureRecorder();
     }
@@ -147,14 +147,14 @@ abstract class PictureRecorder {
   /// call to [endRecording], and false if either this
   /// [PictureRecorder] has not yet been associated with a [Canvas],
   /// or the [endRecording] method has already been called.
-  bool/*!*/ get isRecording;
+  bool get isRecording;
 
   /// Finishes recording graphical operations.
   ///
   /// Returns a picture containing the graphical operations that have been
   /// recorded thus far. After calling this function, both the picture recorder
   /// and the canvas objects are invalid and cannot be used further.
-  Picture/*!*/ endRecording();
+  Picture endRecording();
 }
 
 /// An interface for recording graphical operations.
@@ -175,11 +175,11 @@ abstract class PictureRecorder {
 /// The current transform and clip can be saved and restored using the stack
 /// managed by the [save], [saveLayer], and [restore] methods.
 abstract class Canvas {
-  factory Canvas(PictureRecorder/*!*/ recorder, [Rect/*?*/ cullRect]) {
+  factory Canvas(PictureRecorder recorder, [Rect? cullRect]) {
     if (engine.experimentalUseSkia) {
       return engine.CanvasKitCanvas(recorder, cullRect);
     } else {
-      return engine.SurfaceCanvas(recorder, cullRect);
+      return engine.SurfaceCanvas(recorder as engine.EnginePictureRecorder, cullRect);
     }
   }
 
@@ -302,7 +302,7 @@ abstract class Canvas {
   ///    for subsequent commands.
   ///  * [BlendMode], which discusses the use of [Paint.blendMode] with
   ///    [saveLayer].
-  void saveLayer(Rect/*?*/ bounds, Paint/*!*/ paint);
+  void saveLayer(Rect? bounds, Paint paint);
 
   /// Pops the current save stack, if there is anything to pop.
   /// Otherwise, does nothing.
@@ -319,11 +319,11 @@ abstract class Canvas {
   /// each matching call to [restore] decrements it.
   ///
   /// This number cannot go below 1.
-  int/*!*/ getSaveCount();
+  int getSaveCount();
 
   /// Add a translation to the current transform, shifting the coordinate space
   /// horizontally by the first argument and vertically by the second argument.
-  void translate(double/*!*/ dx, double/*!*/ dy);
+  void translate(double dx, double dy);
 
   /// Add an axis-aligned scale to the current transform, scaling by the first
   /// argument in the horizontal direction and the second in the vertical
@@ -331,20 +331,20 @@ abstract class Canvas {
   ///
   /// If [sy] is unspecified, [sx] will be used for the scale in both
   /// directions.
-  void scale(double/*!*/ sx, [double/*?*/ sy]);
+  void scale(double sx, [double? sy]);
 
   /// Add a rotation to the current transform. The argument is in radians clockwise.
-  void rotate(double/*!*/ radians);
+  void rotate(double radians);
 
   /// Add an axis-aligned skew to the current transform, with the first argument
   /// being the horizontal skew in radians clockwise around the origin, and the
   /// second argument being the vertical skew in radians clockwise around the
   /// origin.
-  void skew(double/*!*/ sx, double/*!*/ sy);
+  void skew(double sx, double sy);
 
   /// Multiply the current transform by the specified 4⨉4 transformation matrix
   /// specified as a list of values in column-major order.
-  void transform(Float64List/*!*/ matrix4);
+  void transform(Float64List matrix4);
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rectangle.
@@ -357,8 +357,8 @@ abstract class Canvas {
   ///
   /// Use [ClipOp.difference] to subtract the provided rectangle from the
   /// current clip.
-  void clipRect(Rect/*!*/ rect,
-      {ClipOp clipOp/*!*/ = ClipOp.intersect, bool/*!*/ doAntiAlias = true});
+  void clipRect(Rect rect,
+      {ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true});
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rounded rectangle.
@@ -368,7 +368,7 @@ abstract class Canvas {
   /// If multiple draw commands intersect with the clip boundary, this can result
   /// in incorrect blending at the clip boundary. See [saveLayer] for a
   /// discussion of how to address that and some examples of using [clipRRect].
-  void clipRRect(RRect/*!*/ rrect, {bool/*!*/ doAntiAlias = true});
+  void clipRRect(RRect rrect, {bool doAntiAlias = true});
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given [Path].
@@ -379,50 +379,50 @@ abstract class Canvas {
   /// multiple draw commands intersect with the clip boundary, this can result
   /// in incorrect blending at the clip boundary. See [saveLayer] for a
   /// discussion of how to address that.
-  void clipPath(Path/*!*/ path, {bool/*!*/ doAntiAlias = true});
+  void clipPath(Path path, {bool doAntiAlias = true});
 
   /// Paints the given [Color] onto the canvas, applying the given
   /// [BlendMode], with the given color being the source and the background
   /// being the destination.
-  void drawColor(Color/*!*/ color, BlendMode/*!*/ blendMode);
+  void drawColor(Color color, BlendMode blendMode);
 
   /// Draws a line between the given points using the given paint. The line is
   /// stroked, the value of the [Paint.style] is ignored for this call.
   ///
   /// The `p1` and `p2` arguments are interpreted as offsets from the origin.
-  void drawLine(Offset/*!*/ p1, Offset/*!*/ p2, Paint/*!*/ paint);
+  void drawLine(Offset p1, Offset p2, Paint paint);
 
   /// Fills the canvas with the given [Paint].
   ///
   /// To fill the canvas with a solid color and blend mode, consider
   /// [drawColor] instead.
-  void drawPaint(Paint/*!*/ paint);
+  void drawPaint(Paint paint);
 
   /// Draws a rectangle with the given [Paint]. Whether the rectangle is filled
   /// or stroked (or both) is controlled by [Paint.style].
-  void drawRect(Rect/*!*/ rect, Paint/*!*/ paint);
+  void drawRect(Rect rect, Paint paint);
 
   /// Draws a rounded rectangle with the given [Paint]. Whether the rectangle is
   /// filled or stroked (or both) is controlled by [Paint.style].
-  void drawRRect(RRect/*!*/ rrect, Paint/*!*/ paint);
+  void drawRRect(RRect rrect, Paint paint);
 
   /// Draws a shape consisting of the difference between two rounded rectangles
   /// with the given [Paint]. Whether this shape is filled or stroked (or both)
   /// is controlled by [Paint.style].
   ///
   /// This shape is almost but not quite entirely unlike an annulus.
-  void drawDRRect(RRect/*!*/ outer, RRect/*!*/ inner, Paint/*!*/ paint);
+  void drawDRRect(RRect outer, RRect inner, Paint paint);
 
   /// Draws an axis-aligned oval that fills the given axis-aligned rectangle
   /// with the given [Paint]. Whether the oval is filled or stroked (or both) is
   /// controlled by [Paint.style].
-  void drawOval(Rect/*!*/ rect, Paint/*!*/ paint);
+  void drawOval(Rect rect, Paint paint);
 
   /// Draws a circle centered at the point given by the first argument and
   /// that has the radius given by the second argument, with the [Paint] given in
   /// the third argument. Whether the circle is filled or stroked (or both) is
   /// controlled by [Paint.style].
-  void drawCircle(Offset/*!*/ c, double/*!*/ radius, Paint/*!*/ paint);
+  void drawCircle(Offset c, double radius, Paint paint);
 
   /// Draw an arc scaled to fit inside the given rectangle. It starts from
   /// startAngle radians around the oval up to startAngle + sweepAngle
@@ -434,17 +434,17 @@ abstract class Canvas {
   /// not closed, forming a circle segment.
   ///
   /// This method is optimized for drawing arcs and should be faster than [Path.arcTo].
-  void drawArc(Rect/*!*/ rect, double/*!*/ startAngle, double/*!*/ sweepAngle, bool/*!*/ useCenter,
-      Paint/*!*/ paint);
+  void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter,
+      Paint paint);
 
   /// Draws the given [Path] with the given [Paint]. Whether this shape is
   /// filled or stroked (or both) is controlled by [Paint.style]. If the path is
   /// filled, then subpaths within it are implicitly closed (see [Path.close]).
-  void drawPath(Path/*!*/ path, Paint/*!*/ paint);
+  void drawPath(Path path, Paint paint);
 
   /// Draws the given [Image] into the canvas with its top-left corner at the
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
-  void drawImage(Image/*!*/ image, Offset/*!*/ offset, Paint/*!*/ paint);
+  void drawImage(Image image, Offset offset, Paint paint);
 
   /// Draws the subset of the given image described by the `src` argument into
   /// the canvas in the axis-aligned rectangle given by the `dst` argument.
@@ -455,7 +455,7 @@ abstract class Canvas {
   /// Multiple calls to this method with different arguments (from the same
   /// image) can be batched into a single call to [drawAtlas] to improve
   /// performance.
-  void drawImageRect(Image/*!*/ image, Rect/*!*/ src, Rect/*!*/ dst, Paint/*!*/ paint);
+  void drawImageRect(Image image, Rect src, Rect dst, Paint paint);
 
   /// Draws the given [Image] into the canvas using the given [Paint].
   ///
@@ -470,11 +470,11 @@ abstract class Canvas {
   /// five regions are drawn by stretching them to fit such that they exactly
   /// cover the destination rectangle while maintaining their relative
   /// positions.
-  void drawImageNine(Image/*!*/ image, Rect/*!*/ center, Rect/*!*/ dst, Paint/*!*/ paint);
+  void drawImageNine(Image image, Rect center, Rect dst, Paint paint);
 
   /// Draw the given picture onto the canvas. To create a picture, see
   /// [PictureRecorder].
-  void drawPicture(Picture/*!*/ picture);
+  void drawPicture(Picture picture);
 
   /// Draws the text in the given [Paragraph] into this canvas at the given
   /// [Offset].
@@ -496,7 +496,7 @@ abstract class Canvas {
   /// If the text is centered, the centering axis will be at the position
   /// described by adding half of the [ParagraphConstraints.width] given to
   /// [Paragraph.layout], to the `offset` argument's [Offset.dx] coordinate.
-  void drawParagraph(Paragraph/*!*/ paragraph, Offset/*!*/ offset);
+  void drawParagraph(Paragraph paragraph, Offset offset);
 
   /// Draws a sequence of points according to the given [PointMode].
   ///
@@ -506,7 +506,7 @@ abstract class Canvas {
   ///
   ///  * [drawRawPoints], which takes `points` as a [Float32List] rather than a
   ///    [List<Offset>].
-  void drawPoints(PointMode/*!*/ pointMode, List<Offset/*!*/>/*!*/ points, Paint/*!*/ paint);
+  void drawPoints(PointMode pointMode, List<Offset> points, Paint paint);
 
   /// Draws a sequence of points according to the given [PointMode].
   ///
@@ -517,37 +517,159 @@ abstract class Canvas {
   ///
   ///  * [drawPoints], which takes `points` as a [List<Offset>] rather than a
   ///    [List<Float32List>].
-  void drawRawPoints(PointMode/*!*/ pointMode, Float32List/*!*/ points, Paint/*!*/ paint);
+  void drawRawPoints(PointMode pointMode, Float32List points, Paint paint);
 
-  void drawVertices(Vertices/*!*/ vertices, BlendMode/*!*/ blendMode, Paint/*!*/ paint);
+  void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint);
 
-  /// Draws part of an image - the [atlas] - onto the canvas.
+  /// Draws many parts of an image - the [atlas] - onto the canvas.
   ///
-  /// This method allows for optimization when you only want to draw part of an
-  /// image on the canvas, such as when using sprites or zooming. It is more
-  /// efficient than using clips or masks directly.
+  /// This method allows for optimization when you want to draw many parts of an
+  /// image onto the canvas, such as when using sprites or zooming. It is more efficient
+  /// than using multiple calls to [drawImageRect] and provides more functionality
+  /// to individually transform each image part by a separate rotation or scale and
+  /// blend or modulate those parts with a solid color.
   ///
-  /// All parameters must not be null.
+  /// The method takes a list of [Rect] objects that each define a piece of the
+  /// [atlas] image to be drawn independently. Each [Rect] is associated with an
+  /// [RSTransform] entry in the [transforms] list which defines the location,
+  /// rotation, and (uniform) scale with which to draw that portion of the image.
+  /// Each [Rect] can also be associated with an optional [Color] which will be
+  /// composed with the associated image part using the [blendMode] before blending
+  /// the result onto the canvas. The full operation can be broken down as:
+  ///
+  /// - Blend each rectangular portion of the image specified by an entry in the
+  /// [rects] argument with its associated entry in the [colors] list using the
+  /// [blendMode] argument (if a color is specified). In this part of the operation,
+  /// the image part will be considered the source of the operation and the associated
+  /// color will be considered the destination.
+  /// - Blend the result from the first step onto the canvas using the translation,
+  /// rotation, and scale properties expressed in the associated entry in the
+  /// [transforms] list using the properties of the [Paint] object.
+  ///
+  /// If the first stage of the operation which blends each part of the image with
+  /// a color is needed, then both the [colors] and [blendMode] arguments must
+  /// not be null and there must be an entry in the [colors] list for each
+  /// image part. If that stage is not needed, then the [colors] argument can
+  /// be either null or an empty list and the [blendMode] argument may also be null.
+  ///
+  /// The optional [cullRect] argument can provide an estimate of the bounds of the
+  /// coordinates rendered by all components of the atlas to be compared against
+  /// the clip to quickly reject the operation if it does not intersect.
+  ///
+  /// An example usage to render many sprites from a single sprite atlas with no
+  /// rotations or scales:
+  ///
+  /// ```dart
+  /// class Sprite {
+  ///   int index;
+  ///   double centerX;
+  ///   double centerY;
+  /// }
+  ///
+  /// class MyPainter extends CustomPainter {
+  ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
+  ///   ui.Image spriteAtlas;
+  ///   List<Sprite> allSprites;
+  ///
+  ///   @override
+  ///   void paint(Canvas canvas, Size size) {
+  ///     Paint paint = Paint();
+  ///     canvas.drawAtlas(spriteAtlas, <RSTransform>[
+  ///       for (Sprite sprite in allSprites)
+  ///         RSTransform.fromComponents(
+  ///           rotation: 0.0,
+  ///           scale: 1.0,
+  ///           // Center of the sprite relative to its rect
+  ///           anchorX: 5.0,
+  ///           anchorY: 5.0,
+  ///           // Location at which to draw the center of the sprite
+  ///           translateX: sprite.centerX,
+  ///           translateY: sprite.centerY,
+  ///         ),
+  ///     ], <Rect>[
+  ///       for (Sprite sprite in allSprites)
+  ///         Rect.fromLTWH(sprite.index * 10.0, 0.0, 10.0, 10.0),
+  ///     ], null, null, null, paint);
+  ///   }
+  ///
+  ///   ...
+  /// }
+  /// ```
+  ///
+  /// Another example usage which renders sprites with an optional opacity and rotation:
+  ///
+  /// ```dart
+  /// class Sprite {
+  ///   int index;
+  ///   double centerX;
+  ///   double centerY;
+  ///   int alpha;
+  ///   double rotation;
+  /// }
+  ///
+  /// class MyPainter extends CustomPainter {
+  ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
+  ///   ui.Image spriteAtlas;
+  ///   List<Sprite> allSprites;
+  ///
+  ///   @override
+  ///   void paint(Canvas canvas, Size size) {
+  ///     Paint paint = Paint();
+  ///     canvas.drawAtlas(spriteAtlas, <RSTransform>[
+  ///       for (Sprite sprite in allSprites)
+  ///         RSTransform.fromComponents(
+  ///           rotation: sprite.rotation,
+  ///           scale: 1.0,
+  ///           // Center of the sprite relative to its rect
+  ///           anchorX: 5.0,
+  ///           anchorY: 5.0,
+  ///           // Location at which to draw the center of the sprite
+  ///           translateX: sprite.centerX,
+  ///           translateY: sprite.centerY,
+  ///         ),
+  ///     ], <Rect>[
+  ///       for (Sprite sprite in allSprites)
+  ///         Rect.fromLTWH(sprite.index * 10.0, 0.0, 10.0, 10.0),
+  ///     ], <Color>[
+  ///       for (Sprite sprite in allSprites)
+  ///         Color.white.withAlpha(sprite.alpha),
+  ///     ], BlendMode.srcIn, null, paint);
+  ///   }
+  ///
+  ///   ...
+  /// }
+  /// ```
+  ///
+  /// The length of the [transforms] and [rects] lists must be equal and
+  /// if the [colors] argument is not null then it must either be empty or
+  /// have the same length as the other two lists.
   ///
   /// See also:
   ///
   ///  * [drawRawAtlas], which takes its arguments as typed data lists rather
   ///    than objects.
   void drawAtlas(
-    Image/*!*/ atlas,
-    List<RSTransform/*!*/>/*!*/ transforms,
-    List<Rect/*!*/>/*!*/ rects,
-    List<Color/*!*/>/*!*/ colors,
-    BlendMode/*!*/ blendMode,
-    Rect/*?*/ cullRect,
-    Paint/*!*/ paint,
+    Image atlas,
+    List<RSTransform> transforms,
+    List<Rect> rects,
+    List<Color>? colors,
+    BlendMode? blendMode,
+    Rect? cullRect,
+    Paint paint,
   );
 
-  /// Draws part of an image - the [atlas] - onto the canvas.
+  /// Draws many parts of an image - the [atlas] - onto the canvas.
   ///
-  /// This method allows for optimization when you only want to draw part of an
-  /// image on the canvas, such as when using sprites or zooming. It is more
-  /// efficient than using clips or masks directly.
+  /// This method allows for optimization when you want to draw many parts of an
+  /// image onto the canvas, such as when using sprites or zooming. It is more efficient
+  /// than using multiple calls to [drawImageRect] and provides more functionality
+  /// to individually transform each image part by a separate rotation or scale and
+  /// blend or modulate those parts with a solid color. It is also more efficient
+  /// than [drawAtlas] as the data in the arguments is already packed in a format
+  /// that can be directly used by the rendering code.
+  ///
+  /// A full description of how this method uses its arguments to draw onto the
+  /// canvas can be found in the description of the [drawAtlas] method.
   ///
   /// The [rstTransforms] argument is interpreted as a list of four-tuples, with
   /// each tuple being ([RSTransform.scos], [RSTransform.ssin],
@@ -557,20 +679,134 @@ abstract class Canvas {
   /// tuple being ([Rect.left], [Rect.top], [Rect.right], [Rect.bottom]).
   ///
   /// The [colors] argument, which can be null, is interpreted as a list of
-  /// 32-bit colors, with the same packing as [Color.value].
+  /// 32-bit colors, with the same packing as [Color.value]. If the [colors]
+  /// argument is not null then the [blendMode] argument must also not be null.
+  ///
+  /// An example usage to render many sprites from a single sprite atlas with no rotations
+  /// or scales:
+  ///
+  /// ```dart
+  /// class Sprite {
+  ///   int index;
+  ///   double centerX;
+  ///   double centerY;
+  /// }
+  ///
+  /// class MyPainter extends CustomPainter {
+  ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
+  ///   ui.Image spriteAtlas;
+  ///   List<Sprite> allSprites;
+  ///
+  ///   @override
+  ///   void paint(Canvas canvas, Size size) {
+  ///     // For best advantage, these lists should be cached and only specific
+  ///     // entries updated when the sprite information changes. This code is
+  ///     // illustrative of how to set up the data and not a recommendation for
+  ///     // optimal usage.
+  ///     Float32List rectList = Float32List(allSprites.length * 4);
+  ///     Float32List transformList = Float32List(allSprites.length * 4);
+  ///     for (int i = 0; i < allSprites.length; i++) {
+  ///       final double rectX = sprite.spriteIndex * 10.0;
+  ///       rectList[i * 4 + 0] = rectX;
+  ///       rectList[i * 4 + 1] = 0.0;
+  ///       rectList[i * 4 + 2] = rectX + 10.0;
+  ///       rectList[i * 4 + 3] = 10.0;
+  ///
+  ///       // This example sets the RSTransform values directly for a common case of no
+  ///       // rotations or scales and just a translation to position the atlas entry. For
+  ///       // more complicated transforms one could use the RSTransform class to compute
+  ///       // the necessary values or do the same math directly.
+  ///       transformList[i * 4 + 0] = 1.0;
+  ///       transformList[i * 4 + 1] = 0.0;
+  ///       transformList[i * 4 + 2] = sprite.centerX - 5.0;
+  ///       transformList[i * 4 + 2] = sprite.centerY - 5.0;
+  ///     }
+  ///     Paint paint = Paint();
+  ///     canvas.drawAtlas(spriteAtlas, transformList, rectList, null, null, null, paint);
+  ///   }
+  ///
+  ///   ...
+  /// }
+  /// ```
+  ///
+  /// Another example usage which renders sprites with an optional opacity and rotation:
+  ///
+  /// ```dart
+  /// class Sprite {
+  ///   int index;
+  ///   double centerX;
+  ///   double centerY;
+  ///   int alpha;
+  ///   double rotation;
+  /// }
+  ///
+  /// class MyPainter extends CustomPainter {
+  ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
+  ///   ui.Image spriteAtlas;
+  ///   List<Sprite> allSprites;
+  ///
+  ///   @override
+  ///   void paint(Canvas canvas, Size size) {
+  ///     // For best advantage, these lists should be cached and only specific
+  ///     // entries updated when the sprite information changes. This code is
+  ///     // illustrative of how to set up the data and not a recommendation for
+  ///     // optimal usage.
+  ///     Float32List rectList = Float32List(allSprites.length * 4);
+  ///     Float32List transformList = Float32List(allSprites.length * 4);
+  ///     Int32List colorList = Int32List(allSprites.length);
+  ///     for (int i = 0; i < allSprites.length; i++) {
+  ///       final double rectX = sprite.spriteIndex * 10.0;
+  ///       rectList[i * 4 + 0] = rectX;
+  ///       rectList[i * 4 + 1] = 0.0;
+  ///       rectList[i * 4 + 2] = rectX + 10.0;
+  ///       rectList[i * 4 + 3] = 10.0;
+  ///
+  ///       // This example uses an RSTransform object to compute the necessary values for
+  ///       // the transform using a factory helper method because the sprites contain
+  ///       // rotation values which are not trivial to work with. But if the math for the
+  ///       // values falls out from other calculations on the sprites then the values could
+  ///       // possibly be generated directly from the sprite update code.
+  ///       final RSTransform transform = RSTransform.fromComponents(
+  ///         rotation: sprite.rotation,
+  ///         scale: 1.0,
+  ///         // Center of the sprite relative to its rect
+  ///         anchorX: 5.0,
+  ///         anchorY: 5.0,
+  ///         // Location at which to draw the center of the sprite
+  ///         translateX: sprite.centerX,
+  ///         translateY: sprite.centerY,
+  ///       );
+  ///       transformList[i * 4 + 0] = transform.scos;
+  ///       transformList[i * 4 + 1] = transform.ssin;
+  ///       transformList[i * 4 + 2] = transform.tx;
+  ///       transformList[i * 4 + 2] = transform.ty;
+  ///
+  ///       // This example computes the color value directly, but one could also compute
+  ///       // an actual Color object and use its Color.value getter for the same result.
+  ///       // Since we are using BlendMode.srcIn, only the alpha component matters for
+  ///       // these colors which makes this a simple shift operation.
+  ///       colorList[i] = sprite.alpha << 24;
+  ///     }
+  ///     Paint paint = Paint();
+  ///     canvas.drawAtlas(spriteAtlas, transformList, rectList, colorList, BlendMode.srcIn, null, paint);
+  ///   }
+  ///
+  ///   ...
+  /// }
+  /// ```
   ///
   /// See also:
   ///
   ///  * [drawAtlas], which takes its arguments as objects rather than typed
   ///    data lists.
   void drawRawAtlas(
-    Image/*!*/ atlas,
-    Float32List/*!*/ rstTransforms,
-    Float32List/*!*/ rects,
-    Int32List/*!*/ colors,
-    BlendMode/*!*/ blendMode,
-    Rect/*?*/ cullRect,
-    Paint/*!*/ paint,
+    Image atlas,
+    Float32List rstTransforms,
+    Float32List rects,
+    Int32List? colors,
+    BlendMode? blendMode,
+    Rect? cullRect,
+    Paint paint,
   );
 
   /// Draws a shadow for a [Path] representing the given material elevation.
@@ -580,10 +816,10 @@ abstract class Canvas {
   ///
   /// The arguments must not be null.
   void drawShadow(
-    Path/*!*/ path,
-    Color/*!*/ color,
-    double/*!*/ elevation,
-    bool/*!*/ transparentOccluder,
+    Path path,
+    Color color,
+    double elevation,
+    bool transparentOccluder,
   );
 }
 
@@ -603,7 +839,7 @@ abstract class Picture {
   ///
   /// Although the image is returned synchronously, the picture is actually
   /// rasterized the first time the image is drawn and then cached.
-  Future<Image/*!*/>/*!*/ toImage(int/*!*/ width, int/*!*/ height);
+  Future<Image> toImage(int width, int height);
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -613,7 +849,7 @@ abstract class Picture {
   ///
   /// The actual size of this picture may be larger, particularly if it contains
   /// references to image or other large objects.
-  int/*!*/ get approximateBytesUsed;
+  int get approximateBytesUsed;
 }
 
 /// Determines the winding rule that decides how the interior of a [Path] is

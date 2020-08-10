@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
+// @dart = 2.10
 
 part of dart.ui;
 
@@ -24,7 +24,7 @@ class CallbackHandle {
   int toRawHandle() => _handle;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (runtimeType != other.runtimeType)
       return false;
     return other is CallbackHandle

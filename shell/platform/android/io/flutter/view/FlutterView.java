@@ -169,7 +169,7 @@ public class FlutterView extends SurfaceView
 
     dartExecutor = mNativeView.getDartExecutor();
     flutterRenderer = new FlutterRenderer(mNativeView.getFlutterJNI());
-    mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().nativeGetIsSoftwareRenderingEnabled();
+    mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().getIsSoftwareRenderingEnabled();
     mMetrics = new ViewportMetrics();
     mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
     setFocusable(true);
@@ -232,7 +232,9 @@ public class FlutterView extends SurfaceView
     }
     mLocalizationPlugin = new LocalizationPlugin(context, localizationChannel);
     androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
-    androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
+    androidTouchProcessor =
+        new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ false);
+    platformViewsController.attachToFlutterRenderer(flutterRenderer);
     mNativeView
         .getPluginRegistry()
         .getPlatformViewsController()

@@ -2,36 +2,38 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
-class SkPictureRecorder implements ui.PictureRecorder {
-  ui.Rect _cullRect;
-  js.JsObject _recorder;
-  SkCanvas _recordingCanvas;
+class CkPictureRecorder implements ui.PictureRecorder {
+  ui.Rect? _cullRect;
+  SkPictureRecorder? _skRecorder;
+  CkCanvas? _recordingCanvas;
 
-  SkCanvas beginRecording(ui.Rect bounds) {
+  CkCanvas beginRecording(ui.Rect bounds) {
     _cullRect = bounds;
-    _recorder = js.JsObject(canvasKit['SkPictureRecorder']);
-    final js.JsObject skRect = js.JsObject(canvasKit['LTRBRect'],
-        <double>[bounds.left, bounds.top, bounds.right, bounds.bottom]);
-    final js.JsObject/*!*/ skCanvas =
-        _recorder.callMethod('beginRecording', <js.JsObject>[skRect]);
-    _recordingCanvas = SkCanvas(skCanvas);
-    return _recordingCanvas;
+    final SkPictureRecorder recorder = _skRecorder = SkPictureRecorder();
+    final SkRect skRect = toSkRect(bounds);
+    final SkCanvas skCanvas = recorder.beginRecording(skRect);
+    return _recordingCanvas = CkCanvas(skCanvas);
   }
 
-  SkCanvas get recordingCanvas => _recordingCanvas;
+  CkCanvas? get recordingCanvas => _recordingCanvas;
 
   @override
   ui.Picture endRecording() {
-    final js.JsObject skPicture =
-        _recorder.callMethod('finishRecordingAsPicture');
-    _recorder.callMethod('delete');
-    _recorder = null;
-    return SkPicture(skPicture, _cullRect);
+    final SkPictureRecorder? recorder = _skRecorder;
+
+    if (recorder == null) {
+      throw StateError('PictureRecorder is not recording');
+    }
+
+    final SkPicture skPicture = recorder.finishRecordingAsPicture();
+    recorder.delete();
+    _skRecorder = null;
+    return CkPicture(skPicture, _cullRect);
   }
 
   @override
-  bool get isRecording => _recorder != null;
+  bool get isRecording => _skRecorder != null;
 }

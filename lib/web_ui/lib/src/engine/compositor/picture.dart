@@ -2,26 +2,36 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
-class SkPicture implements ui.Picture {
-  final js.JsObject skPicture;
-  final ui.Rect cullRect;
+class CkPicture implements ui.Picture {
+  final SkiaObject<SkPicture> skiaObject;
+  final ui.Rect? cullRect;
 
-  SkPicture(this.skPicture, this.cullRect);
+  CkPicture(SkPicture picture, this.cullRect)
+      : skiaObject = SkPictureSkiaObject(picture);
 
   @override
   int get approximateBytesUsed => 0;
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    skiaObject.delete();
   }
 
   @override
   Future<ui.Image> toImage(int width, int height) {
-    // TODO: implement toImage
-    return null;
+    throw UnsupportedError(
+        'Picture.toImage not yet implemented for CanvasKit and HTML');
+  }
+}
+
+class SkPictureSkiaObject extends OneShotSkiaObject<SkPicture> {
+  SkPictureSkiaObject(SkPicture picture) : super(picture);
+
+  @override
+  void delete() {
+    rawSkiaObject.delete();
   }
 }

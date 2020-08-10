@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
+
+import 'line_breaker_test_data.dart';
 
 void main() {
   group('nextLineBreak', () {
@@ -159,6 +161,106 @@ void main() {
         Line('foo', LineBreakType.endOfText),
       ]);
     });
+
+    test('trailing spaces and new lines', () {
+      expect(
+        findBreaks('foo bar  '),
+        <LineBreakResult>[
+          LineBreakResult(4, 4, 3, LineBreakType.opportunity),
+          LineBreakResult(9, 9, 7, LineBreakType.endOfText),
+        ],
+      );
+
+      expect(
+        findBreaks('foo  \nbar\nbaz   \n'),
+        <LineBreakResult>[
+          LineBreakResult(6, 5, 3, LineBreakType.mandatory),
+          LineBreakResult(10, 9, 9, LineBreakType.mandatory),
+          LineBreakResult(17, 16, 13, LineBreakType.mandatory),
+          LineBreakResult(17, 17, 17, LineBreakType.endOfText),
+        ],
+      );
+    });
+
+    test('leading spaces', () {
+      expect(
+        findBreaks(' foo'),
+        <LineBreakResult>[
+          LineBreakResult(1, 1, 0, LineBreakType.opportunity),
+          LineBreakResult(4, 4, 4, LineBreakType.endOfText),
+        ],
+      );
+
+      expect(
+        findBreaks('   foo'),
+        <LineBreakResult>[
+          LineBreakResult(3, 3, 0, LineBreakType.opportunity),
+          LineBreakResult(6, 6, 6, LineBreakType.endOfText),
+        ],
+      );
+
+      expect(
+        findBreaks('  foo   bar'),
+        <LineBreakResult>[
+          LineBreakResult(2, 2, 0, LineBreakType.opportunity),
+          LineBreakResult(8, 8, 5, LineBreakType.opportunity),
+          LineBreakResult(11, 11, 11, LineBreakType.endOfText),
+        ],
+      );
+
+      expect(
+        findBreaks('  \n   foo'),
+        <LineBreakResult>[
+          LineBreakResult(3, 2, 0, LineBreakType.mandatory),
+          LineBreakResult(6, 6, 3, LineBreakType.opportunity),
+          LineBreakResult(9, 9, 9, LineBreakType.endOfText),
+        ],
+      );
+    });
+
+    test('comprehensive test', () {
+      for (int t = 0; t < data.length; t++) {
+        final TestCase testCase = data[t];
+        final String text = testCase.toText();
+
+        int lastLineBreak = 0;
+        int surrogateCount = 0;
+        // `s` is the index in the `testCase.signs` list.
+        for (int s = 0; s < testCase.signs.length; s++) {
+          // `i` is the index in the `text`.
+          final int i = s + surrogateCount;
+          if (s < testCase.chars.length && testCase.chars[s].isSurrogatePair) {
+            surrogateCount++;
+          }
+
+          final Sign sign = testCase.signs[s];
+          final LineBreakResult result = nextLineBreak(text, lastLineBreak);
+          if (sign.isBreakOpportunity) {
+            // The line break should've been found at index `i`.
+            expect(
+              result.index,
+              i,
+              reason: 'Failed at test case number $t:\n'
+                  '${testCase.toString()}\n'
+                  '"$text"\n'
+                  '\nExpected line break at {$lastLineBreak - $i} but found line break at {$lastLineBreak - ${result.index}}.',
+            );
+            lastLineBreak = i;
+          } else {
+            // This isn't a line break opportunity so the line break should be
+            // somewhere after index `i`.
+            expect(
+              result.index,
+              greaterThan(i),
+              reason: 'Failed at test case number $t:\n'
+                  '${testCase.toString()}\n'
+                  '"$text"\n'
+                  '\nUnexpected line break found at {$lastLineBreak - $i}.',
+            );
+          }
+        }
+      }
+    });
   });
 }
 
@@ -173,8 +275,8 @@ class Line {
   int get hashCode => hashValues(text, breakType);
 
   @override
-  bool operator ==(dynamic other) {
-    return other is Line && text == other.text && breakType == other.breakType;
+  bool operator ==(Object other) {
+    return other is Line && other.text == text && other.breakType == breakType;
   }
 
   String get escapedText {
@@ -197,14 +299,22 @@ class Line {
 List<Line> split(String text) {
   final List<Line> lines = <Line>[];
 
-  int i = 0;
-  LineBreakType breakType;
-  while (breakType != LineBreakType.endOfText) {
-    final LineBreakResult result = nextLineBreak(text, i);
-    lines.add(Line(text.substring(i, result.index), result.type));
-
-    i = result.index;
-    breakType = result.type;
+  int lastIndex = 0;
+  for (LineBreakResult brk in findBreaks(text)) {
+    lines.add(Line(text.substring(lastIndex, brk.index), brk.type));
+    lastIndex = brk.index;
   }
   return lines;
+}
+
+List<LineBreakResult> findBreaks(String text) {
+  final List<LineBreakResult> breaks = <LineBreakResult>[];
+
+  LineBreakResult brk = nextLineBreak(text, 0);
+  breaks.add(brk);
+  while (brk.type != LineBreakType.endOfText) {
+    brk = nextLineBreak(text, brk.index);
+    breaks.add(brk);
+  }
+  return breaks;
 }

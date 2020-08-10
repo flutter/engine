@@ -7,7 +7,7 @@
 
 #include <EGL/egl.h>
 
-#include <glib-object.h>
+#include <gtk/gtk.h>
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
 
@@ -35,15 +35,84 @@ G_DECLARE_DERIVABLE_TYPE(FlRenderer, fl_renderer, FL, RENDERER, GObject)
 struct _FlRendererClass {
   GObjectClass parent_class;
 
-  // Virtual method called when Flutter has set up EGL and is ready for the
-  // renderer to start.
-  gboolean (*start)(FlRenderer* renderer, GError** error);
+  // Virtual method called to get the visual that matches the given ID.
+  GdkVisual* (*get_visual)(FlRenderer* renderer,
+                           GdkScreen* screen,
+                           EGLint visual_id);
 
-  // Virtual method called when flutter needs a surface to render to.
-  EGLSurface (*create_surface)(FlRenderer* renderer,
-                               EGLDisplay display,
-                               EGLConfig config);
+  /**
+   * Virtual method called after a GDK window has been created.
+   * This is called once. Does not need to be implemented.
+   */
+  void (*set_window)(FlRenderer* renderer, GdkWindow* window);
+
+  /**
+   * Virtual method to create a new EGL display.
+   */
+  EGLDisplay (*create_display)(FlRenderer* renderer);
+
+  /**
+   * Virtual method called when Flutter needs surfaces to render to.
+   * @renderer: an #FlRenderer.
+   * @display: display to create surfaces on.
+   * @visible: (out): the visible surface that is created.
+   * @resource: (out): the resource surface that is created.
+   * @error: (allow-none): #GError location to store the error occurring, or
+   * %NULL to ignore.
+   *
+   * Returns: %TRUE if both surfaces were created, %FALSE if there was an error.
+   */
+  gboolean (*create_surfaces)(FlRenderer* renderer,
+                              EGLDisplay display,
+                              EGLConfig config,
+                              EGLSurface* visible,
+                              EGLSurface* resource,
+                              GError** error);
+
+  /**
+   * Virtual method called when the EGL window needs to be resized.
+   * Does not need to be implemented.
+   */
+  void (*set_geometry)(FlRenderer* renderer,
+                       GdkRectangle* geometry,
+                       gint scale);
 };
+
+/**
+ * fl_renderer_setup:
+ * @renderer: an #FlRenderer.
+ * @error: (allow-none): #GError location to store the error occurring, or %NULL
+ * to ignore.
+ *
+ * Set up the renderer.
+ *
+ * Returns: %TRUE if successfully setup.
+ */
+gboolean fl_renderer_setup(FlRenderer* renderer, GError** error);
+
+/**
+ * fl_renderer_get_visual:
+ * @renderer: an #FlRenderer.
+ * @screen: the screen being rendered on.
+ * @error: (allow-none): #GError location to store the error occurring, or %NULL
+ * to ignore.
+ *
+ * Gets the visual required to render on.
+ *
+ * Returns: a #GdkVisual.
+ */
+GdkVisual* fl_renderer_get_visual(FlRenderer* renderer,
+                                  GdkScreen* screen,
+                                  GError** error);
+
+/**
+ * fl_renderer_set_window:
+ * @renderer: an #FlRenderer.
+ * @window: the GDK Window this renderer will render to.
+ *
+ * Set the window this renderer will use.
+ */
+void fl_renderer_set_window(FlRenderer* renderer, GdkWindow* window);
 
 /**
  * fl_renderer_start:
@@ -51,11 +120,21 @@ struct _FlRendererClass {
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
  *
- * Start the renderer. EGL must be set up before this call.
+ * Start the renderer.
  *
  * Returns: %TRUE if successfully started.
  */
-gboolean fl_renderer_start(FlRenderer* self, GError** error);
+gboolean fl_renderer_start(FlRenderer* renderer, GError** error);
+
+/**
+ * fl_renderer_set_geometry:
+ * @renderer: an #FlRenderer.
+ * @geometry: New size and position (unscaled) of the EGL window.
+ * @scale: Scale of the window.
+ */
+void fl_renderer_set_geometry(FlRenderer* renderer,
+                              GdkRectangle* geometry,
+                              gint scale);
 
 /**
  * fl_renderer_get_proc_address:

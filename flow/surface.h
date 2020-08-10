@@ -7,8 +7,8 @@
 
 #include <memory>
 
-#include "flutter/flow/compositor_context.h"
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/gl_context_switch.h"
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/macros.h"
 
@@ -27,7 +27,7 @@ class Surface {
 
   virtual SkMatrix GetRootTransformation() const = 0;
 
-  virtual GrContext* GetContext() = 0;
+  virtual GrDirectContext* GetContext() = 0;
 
   virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
 

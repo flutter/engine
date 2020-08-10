@@ -4,9 +4,13 @@ web_shard_template: &WEB_SHARD_TEMPLATE
   only_if: "changesInclude('.cirrus.yml', 'DEPS', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
   environment:
     # As of March 2020, the Web shards needed 16G of RAM and 4 CPUs to run all framework tests with goldens without flaking.
+    # The tests are encountering a flake in Chrome. Increasing the number of shards to decrease race conditions.
+    # Shard number kept at 8 for the engine since 12 shards exhausted the Cirrus limits.
+    # https://github.com/flutter/flutter/issues/62510
+    WEB_SHARD_COUNT: 8
     CPU: 4
     MEMORY: 16G
-    WEB_SHARD_COUNT: 4
+    CHROME_NO_SANDBOX: true
   compile_host_script: |
     cd $ENGINE_PATH/src
     ./flutter/tools/gn --unoptimized --full-dart-sdk
@@ -69,14 +73,6 @@ task:
         dart bin/parse_and_send.dart ../../../out/host_release/fml_benchmarks.json
         dart bin/parse_and_send.dart ../../../out/host_release/shell_benchmarks.json
         dart bin/parse_and_send.dart ../../../out/host_release/ui_benchmarks.json
-    - name: build_and_test_linux_release
-      compile_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/tools/gn --runtime-mode=release
-        ninja -C out/host_release
-      test_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/testing/run_tests.sh host_release
 
     # The following test depends on Flutter framework repo. It may fail if the
     # framework repo is currently broken.
@@ -116,27 +112,22 @@ task:
     - name: web_tests-2-linux
       << : *WEB_SHARD_TEMPLATE
 
-    - name: web_tests-3_last-linux # last Web shard must end with _last
+    - name: web_tests-3-linux
       << : *WEB_SHARD_TEMPLATE
 
-    - name: web_engine_analysis
-      compile_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/tools/gn --unoptimized --full-dart-sdk
-        ninja -C out/host_debug_unopt
-      script:
-        - cd $ENGINE_PATH/src/flutter/lib/web_ui
-        - $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        - $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dartanalyzer --fatal-warnings --fatal-hints dev/ lib/ test/ tool/
+    - name: web_tests-4-linux
+      << : *WEB_SHARD_TEMPLATE
 
-    - name: format_and_dart_test
-      format_script: |
-        cd $ENGINE_PATH/src/flutter
-        ./ci/format.sh
+    - name: web_tests-5-linux
+      << : *WEB_SHARD_TEMPLATE
+
+    - name: web_tests-6-linux
+      << : *WEB_SHARD_TEMPLATE
+
+    - name: web_tests-7_last-linux # last Web shard must end with _last
+      << : *WEB_SHARD_TEMPLATE
+
+    - name: build_test
       build_script: |
         cd $ENGINE_PATH/src/flutter
         ./ci/build.sh
-    - name: lint_test
-      lint_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/ci/lint.sh

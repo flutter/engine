@@ -4,7 +4,7 @@
 
 // TODO(dnfield): Remove unused_import ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
-// @dart = 2.9
+// @dart = 2.10
 
 part of dart.ui;
 
@@ -86,22 +86,6 @@ void _updateLocales(List<String> locales) {
   }
   window._locales = newLocales;
   _invoke(window.onLocaleChanged, window._onLocaleChangedZone);
-}
-
-@pragma('vm:entry-point')
-// ignore: unused_element
-void _updatePlatformResolvedLocale(List<String> localeData) {
-  if (localeData.length != 4) {
-    return;
-  }
-  final String countryCode = localeData[1];
-  final String scriptCode = localeData[2];
-
-  window._platformResolvedLocale = Locale.fromSubtags(
-    languageCode: localeData[0],
-    countryCode: countryCode.isEmpty ? null : countryCode,
-    scriptCode: scriptCode.isEmpty ? null : scriptCode,
-  );
 }
 
 @pragma('vm:entry-point')
@@ -216,7 +200,7 @@ void _reportTimings(List<int> timings) {
   assert(timings.length % FramePhase.values.length == 0);
   final List<FrameTiming> frameTimings = <FrameTiming>[];
   for (int i = 0; i < timings.length; i += FramePhase.values.length) {
-    frameTimings.add(FrameTiming(timings.sublist(i, i + FramePhase.values.length)));
+    frameTimings.add(FrameTiming._(timings.sublist(i, i + FramePhase.values.length)));
   }
   _invoke1(window.onReportTimings, window._onReportTimingsZone, frameTimings);
 }
@@ -254,7 +238,7 @@ void _runMainZoned(Function startMainIsolateFunction,
   }, null);
 }
 
-void _reportUnhandledException(String error, String stackTrace) native 'Window_reportUnhandledException';
+void _reportUnhandledException(String error, String stackTrace) native 'PlatformConfiguration_reportUnhandledException';
 
 /// Invokes [callback] inside the given [zone].
 void _invoke(void callback()?, Zone zone) {
@@ -303,9 +287,9 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3)?, Zone zone, A1 arg
 // If this value changes, update the encoding code in the following files:
 //
 //  * pointer_data.cc
-//  * pointers.dart
+//  * pointer.dart
 //  * AndroidTouchProcessor.java
-const int _kPointerDataFieldCount = 28;
+const int _kPointerDataFieldCount = 29;
 
 PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
@@ -316,6 +300,7 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   for (int i = 0; i < length; ++i) {
     int offset = i * _kPointerDataFieldCount;
     data.add(PointerData(
+      embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
       change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],

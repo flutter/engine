@@ -1,7 +1,10 @@
 package io.flutter.embedding.android;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -12,6 +15,8 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.media.Image;
+import android.media.ImageReader;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
@@ -368,6 +373,76 @@ public class FlutterViewTest {
     // Left padding is zero because the rotation is 270deg
     assertEquals(0, viewportMetricsCaptor.getValue().paddingLeft);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
+  }
+
+  @Test
+  public void flutterImageView_acquiresImageAndInvalidates() {
+    final ImageReader mockReader = mock(ImageReader.class);
+    when(mockReader.getMaxImages()).thenReturn(2);
+
+    final FlutterImageView imageView =
+        spy(
+            new FlutterImageView(
+                RuntimeEnvironment.application,
+                mockReader,
+                FlutterImageView.SurfaceKind.background));
+
+    final FlutterJNI jni = mock(FlutterJNI.class);
+    imageView.attachToRenderer(new FlutterRenderer(jni));
+
+    final Image mockImage = mock(Image.class);
+    when(mockReader.acquireLatestImage()).thenReturn(mockImage);
+
+    assertTrue(imageView.acquireLatestImage());
+    verify(mockReader, times(1)).acquireLatestImage();
+    verify(imageView, times(1)).invalidate();
+  }
+
+  @Test
+  public void flutterImageView_acquireLatestImageReturnsFalse() {
+    final ImageReader mockReader = mock(ImageReader.class);
+    when(mockReader.getMaxImages()).thenReturn(2);
+
+    final FlutterImageView imageView =
+        spy(
+            new FlutterImageView(
+                RuntimeEnvironment.application,
+                mockReader,
+                FlutterImageView.SurfaceKind.background));
+
+    assertFalse(imageView.acquireLatestImage());
+
+    final FlutterJNI jni = mock(FlutterJNI.class);
+    imageView.attachToRenderer(new FlutterRenderer(jni));
+
+    when(mockReader.acquireLatestImage()).thenReturn(null);
+    assertFalse(imageView.acquireLatestImage());
+  }
+
+  @Test
+  public void flutterImageView_acquiresMaxImagesAtMost() {
+    final ImageReader mockReader = mock(ImageReader.class);
+    when(mockReader.getMaxImages()).thenReturn(2);
+
+    final Image mockImage = mock(Image.class);
+    when(mockReader.acquireLatestImage()).thenReturn(mockImage);
+
+    final FlutterImageView imageView =
+        spy(
+            new FlutterImageView(
+                RuntimeEnvironment.application,
+                mockReader,
+                FlutterImageView.SurfaceKind.background));
+
+    final FlutterJNI jni = mock(FlutterJNI.class);
+    imageView.attachToRenderer(new FlutterRenderer(jni));
+
+    doNothing().when(imageView).invalidate();
+    assertTrue(imageView.acquireLatestImage());
+    assertTrue(imageView.acquireLatestImage());
+    assertTrue(imageView.acquireLatestImage());
+
+    verify(mockReader, times(2)).acquireLatestImage();
   }
 
   /*

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
+// @dart = 2.10
 
 part of dart.ui;
 
@@ -56,7 +56,7 @@ enum PointerDeviceKind {
   unknown
 }
 
-/// The kind of [PointerDeviceKind.signal].
+/// The kind of pointer signal event.
 enum PointerSignalKind {
   /// The event is not associated with a pointer signal.
   none,
@@ -72,6 +72,7 @@ enum PointerSignalKind {
 class PointerData {
   /// Creates an object that represents the state of a pointer.
   const PointerData({
+    this.embedderId = 0,
     this.timeStamp = Duration.zero,
     this.change = PointerChange.cancel,
     this.kind = PointerDeviceKind.touch,
@@ -101,6 +102,13 @@ class PointerData {
     this.scrollDeltaX = 0.0,
     this.scrollDeltaY = 0.0,
   });
+
+  /// Unique identifier that ties the [PointerEvent] to embedder event created it.
+  ///
+  /// No two pointer events can have the same [embedderId]. This is different from
+  /// [pointerIdentifier] - used for hit-testing, whereas [embedderId] is used to
+  /// identify the platform event.
+  final int embedderId;
 
   /// Time of event dispatch, relative to an arbitrary timeline.
   final Duration timeStamp;
@@ -263,6 +271,7 @@ class PointerData {
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
     return '$runtimeType('
+             'embedderId: $embedderId, '
              'timeStamp: $timeStamp, '
              'change: $change, '
              'kind: $kind, '

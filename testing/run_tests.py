@@ -131,15 +131,17 @@ def RunCCTests(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
 
-  # https://github.com/flutter/flutter/issues/36295
   if not IsWindows():
+    # https://github.com/flutter/flutter/issues/36295
     RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags)
+    # https://github.com/google/googletest/issues/2490
+    RunEngineExecutable(build_dir, 'android_external_view_embedder_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'jni_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'platform_view_android_delegate_unittests', filter, shuffle_flags)
 
   RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags)
 
   RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags)
-
-  RunEngineExecutable(build_dir, 'android_external_view_embedder_unittests', filter, shuffle_flags)
 
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
@@ -184,7 +186,7 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
     dart,
     frontend_server,
     '--enable-experiment=non-nullable',
-    '--no-null-safety',
+    '--no-sound-null-safety',
     '--sdk-root',
     flutter_patched_sdk,
     '--incremental',
