@@ -42,9 +42,9 @@ class SkiaFontCollection {
     }
     final List<_RegisteredFont?> loadedFonts =
         await Future.wait(_unloadedFonts);
-    for (_RegisteredFont? x in loadedFonts) {
-      if (x != null) {
-        _registeredFonts.add(x);
+    for (_RegisteredFont? font in loadedFonts) {
+      if (font != null) {
+        _registeredFonts.add(font);
       }
     }
     _unloadedFonts.clear();
