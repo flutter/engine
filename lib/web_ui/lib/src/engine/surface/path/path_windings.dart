@@ -145,7 +145,8 @@ class PathWinding {
     }
 
     _QuadRoots quadRoots = _QuadRoots();
-    final int n = quadRoots.findRoots(startY - 2 * y1 + endY, 2 * (y1 - startY), endY - y);
+    final int n = quadRoots.findRoots(
+        startY - 2 * y1 + endY, 2 * (y1 - startY), endY - y);
     assert(n <= 1);
     double xt;
     if (0 == n) {
@@ -446,8 +447,9 @@ class PathIterator {
       return pathRef._fVerbs[_verbIndex];
     }
     if (_needClose && _segmentState == SPathSegmentState.kAfterPrimitive) {
-      return (_lastPointX != _moveToX || _lastPointY != _moveToY) ?
-      SPath.kLineVerb : SPath.kCloseVerb;
+      return (_lastPointX != _moveToX || _lastPointY != _moveToY)
+          ? SPath.kLineVerb
+          : SPath.kCloseVerb;
     }
     return SPath.kDoneVerb;
   }
