@@ -34,7 +34,7 @@ class SPath {
 
   static const int kLineSegmentMask = SPathSegmentMask.kLine_SkPathSegmentMask;
   static const int kQuadSegmentMask = SPathSegmentMask.kQuad_SkPathSegmentMask;
-  static const int knConicSegmentMask =
+  static const int kConicSegmentMask =
       SPathSegmentMask.kConic_SkPathSegmentMask;
   static const int kCubicSegmentMask =
       SPathSegmentMask.kCubic_SkPathSegmentMask;
