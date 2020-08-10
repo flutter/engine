@@ -19,6 +19,7 @@ RasterThreadMerger::RasterThreadMerger(fml::TaskQueueId platform_queue_id,
       lease_term_(kLeaseNotSet) {
   is_merged_ = task_queues_->Owns(platform_queue_id_, gpu_queue_id_);
   if (is_merged_) {
+    // lease_term_ must be > 0 if the threads are merged.
     lease_term_ = 1;
   }
 }
