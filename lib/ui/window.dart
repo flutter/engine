@@ -1052,7 +1052,7 @@ class Window {
   KeyDataCallback? get onKeyData => _onKeyData;
   KeyDataCallback? _onKeyData;
   Zone _onKeyDataZone = Zone.root;
-  set onKeyDataPacket(KeyDataCallback? callback) {
+  set onKeyData(KeyDataCallback? callback) {
     _onKeyData = callback;
     _onKeyDataZone = Zone.current;
   }

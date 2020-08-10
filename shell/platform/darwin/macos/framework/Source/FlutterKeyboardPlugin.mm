@@ -45,10 +45,12 @@
       .character_size = 0,
   };
   FlutterLogicalKeyEvent logical_events[] = {logicalEvent};
+  const uint8_t logical_characters_data[] = {};
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
       .logical_event_count = 1,
       .logical_events = logical_events,
+      .logical_characters_data = logical_characters_data,
       .timestamp = 1,
       .kind = event.type == NSEventTypeKeyDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp,
       .key = [[keyCodeToPhysicalKey objectForKey:@(event.keyCode)] intValue],

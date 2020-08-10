@@ -1379,25 +1379,25 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
 
   auto packet = std::make_unique<flutter::KeyDataPacket>(logical_event_count, total_character_size);
 
+  current = logical_events;
+  for (size_t i = 0; i < logical_event_count; ++i) {
+    flutter::LogicalKeyData logical_key;
+
+    logical_key.character_size = SAFE_ACCESS(current, character_size, 0);
+    logical_key.change = ToKeyChange(SAFE_ACCESS(current, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel));
+    logical_key.key = SAFE_ACCESS(current, key, 0);
+
+    packet->SetLogicalData(logical_key, i);
+    current = reinterpret_cast<const FlutterLogicalKeyEvent*>(
+        reinterpret_cast<const uint8_t*>(current) + current->struct_size);
+  }
+
   flutter::PhysicalKeyData physical_key;
   physical_key.Clear();
   physical_key.timestamp = SAFE_ACCESS(event, timestamp, 0);
   physical_key.change = ToKeyChange(SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel));
   physical_key.key = SAFE_ACCESS(event, key, 0);
   packet->SetPhysicalData(physical_key);
-
-  current = logical_events;
-  for (size_t i = 0; i < logical_event_count; ++i) {
-    flutter::LogicalKeyData logical_key;
-
-    logical_key.change = ToKeyChange(SAFE_ACCESS(current, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel));
-    logical_key.key = SAFE_ACCESS(current, key, 0);
-    logical_key.character_size = SAFE_ACCESS(current, character_size, 0);
-
-    packet->SetLogicalData(logical_key, i);
-    current = reinterpret_cast<const FlutterLogicalKeyEvent*>(
-        reinterpret_cast<const uint8_t*>(current) + current->struct_size);
-  }
 
   packet->SetCharacters(logical_characters_data);
 

@@ -345,41 +345,43 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
 
 // If this value changes, update the encoding code in the following files:
 //
-//  * key_data.cc
+//  * key_data.h
 //  * key.dart
 const int _kPhysicalKeyDataFieldCount = 3;
 const int _kLogicalKeyDataFieldCount = 3;
 
 List<int> _getLogicalCharacterLengths(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
-  const int kBytesPerPhysicalData = _kPhysicalKeyDataFieldCount * kStride;
-  const int kBytesPerLogicalData = _kLogicalKeyDataFieldCount * kStride;
 
   final List<int> lengths = <int>[];
-  int current = kBytesPerPhysicalData;
-  int sumLengths = 0;
+  int current = 0;
+  int sumLengths = _kPhysicalKeyDataFieldCount * kStride;
   while (current + sumLengths < packet.lengthInBytes) {
     lengths.add(packet.getInt64(current, _kFakeHostEndian));
     sumLengths += lengths.last;
-    current += kBytesPerLogicalData;
+    current += _kLogicalKeyDataFieldCount * kStride;
   }
   assert(current + sumLengths == packet.lengthInBytes);
   return lengths;
 }
 
+// KeyData packet structure:
+// | LogicalData 1 | LogicalData 2 | ... |
+// | Physical Data |
+// | CharData |
+// where LogicalData starts with its character data length.
 KeyData _unpackKeyData(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
-  const int kBytesPerPhysicalData = _kPhysicalKeyDataFieldCount * kStride;
-  const int kBytesPerLogicalData = _kLogicalKeyDataFieldCount * kStride;
 
   final List<int> charLengths = _getLogicalCharacterLengths(packet);
   final int logicalCount = charLengths.length;
-  int currentCharOffset = kBytesPerPhysicalData + kBytesPerLogicalData * logicalCount;
+  int currentCharOffset = (_kPhysicalKeyDataFieldCount + _kLogicalKeyDataFieldCount  * logicalCount) * kStride;
 
   final List<LogicalKeyData> logicalKeyDataList = <LogicalKeyData>[];
   for (int i = 0; i < logicalCount; ++i) {
-    int offset = _kPhysicalKeyDataFieldCount + i * _kLogicalKeyDataFieldCount + 1; // Add 1 to skip the first field.
-    final String char = utf8.decoder.convert(
+    // Initialize offset with +1 to skip the first field, character_data_length.
+    int offset = i * _kLogicalKeyDataFieldCount + 1;
+    final String char = charLengths[i] == 0 ? '' : utf8.decoder.convert(
         ByteData.view(packet.buffer, currentCharOffset, charLengths[i]).buffer.asUint8List());
     currentCharOffset += charLengths[i];
     logicalKeyDataList.add(LogicalKeyData(
@@ -387,11 +389,11 @@ KeyData _unpackKeyData(ByteData packet) {
       key: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       character: char,
     ));
-    assert(offset == (i + 1) * _kPointerDataFieldCount);
+    assert(offset == (i + 1) * _kLogicalKeyDataFieldCount);
   }
   assert(currentCharOffset == packet.lengthInBytes);
 
-  int offset = 0;
+  int offset = logicalCount * _kLogicalKeyDataFieldCount;
   final KeyData keyData = KeyData(
     timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
     change: KeyChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],

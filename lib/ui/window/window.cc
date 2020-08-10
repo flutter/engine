@@ -48,7 +48,7 @@ void Window::DispatchKeyDataPacket(const KeyDataPacket& packet) {
     return;
   }
   tonic::LogIfError(tonic::DartInvokeField(
-      library_.value(), "_dispatchKeyDataPacket", {data_handle}));
+      library_.value(), "_dispatchKeyData", {data_handle}));
 }
 
 void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
