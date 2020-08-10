@@ -455,6 +455,19 @@ abstract class Window {
   ///    observe when this value changes.
   Size get physicalSize;
 
+  /// The physical depth is the maximum elevation that the Window allows.
+  ///
+  /// Physical layers drawn at or above this elevation will have their elevation
+  /// clamped to this value. This can happen if the physical layer itself has
+  /// an elevation larger than available depth, or if some ancestor of the layer
+  /// causes it to have a cumulative elevation that is larger than the available
+  /// depth.
+  ///
+  /// The default value is [double.maxFinite], which is used for platforms that
+  /// do not specify a maximum elevation. This property is currently on expected
+  /// to be set to a non-default value on Fuchsia.
+  double get physicalDepth;
+
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but over which the operating system
   /// will likely place system UI, such as the keyboard, that fully obscures
@@ -992,6 +1005,11 @@ class IsolateNameServer {
 ///
 /// [FrameTiming] records a timestamp of each phase for performance analysis.
 enum FramePhase {
+  /// The timestamp of the vsync signal given by the operating system.
+  ///
+  /// See also [FrameTiming.vsyncOverhead].
+  vsyncStart,
+
   /// When the UI thread starts building a frame.
   ///
   /// See also [FrameTiming.buildDuration].
@@ -1024,14 +1042,57 @@ enum FramePhase {
 class FrameTiming {
   /// Construct [FrameTiming] with raw timestamps in microseconds.
   ///
+  /// This constructor is used for unit test only. Real [FrameTiming]s should
+  /// be retrieved from [Window.onReportTimings].
+  factory FrameTiming({
+    required int vsyncStart,
+    required int buildStart,
+    required int buildFinish,
+    required int rasterStart,
+    required int rasterFinish,
+  }) {
+    return FrameTiming._(<int>[
+      vsyncStart,
+      buildStart,
+      buildFinish,
+      rasterStart,
+      rasterFinish
+    ]);
+  }
+
+  /// Construct [FrameTiming] with raw timestamps in microseconds.
+  ///
   /// List [timestamps] must have the same number of elements as
   /// [FramePhase.values].
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
   /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
-  FrameTiming(List<int> timestamps)
-      : assert(timestamps.length == FramePhase.values.length),
-        _timestamps = timestamps;
+  FrameTiming._(List<int> timestamps)
+      : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
+
+  /// Construct [FrameTiming] with given timestamp in micrseconds.
+  ///
+  /// This constructor is used for unit test only. Real [FrameTiming]s should
+  /// be retrieved from [Window.onReportTimings].
+  ///
+  /// TODO(CareF): This is part of #20229. Remove back to default constructor
+  /// after #20229 lands and corresponding framwork PRs land.
+  factory FrameTiming.fromTimeStamps({
+    int? vsyncStart,
+    required int buildStart,
+    required int buildFinish,
+    required int rasterStart,
+    required int rasterFinish
+  }) {
+    return FrameTiming._(<int>[
+      // This is for temporarily backward compatiblilty.
+      vsyncStart ?? buildStart,
+      buildStart,
+      buildFinish,
+      rasterStart,
+      rasterFinish
+    ]);
+  }
 
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
   /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
@@ -1067,16 +1128,20 @@ class FrameTiming {
       _rawDuration(FramePhase.rasterFinish) -
       _rawDuration(FramePhase.rasterStart);
 
-  /// The timespan between build start and raster finish.
+  /// The duration between receiving the vsync signal and starting building the
+  /// frame.
+  Duration get vsyncOverhead => _rawDuration(FramePhase.buildStart) - _rawDuration(FramePhase.vsyncStart);
+
+  /// The timespan between vsync start and raster finish.
   ///
   /// To achieve the lowest latency on an X fps display, this should not exceed
   /// 1000/X milliseconds.
   /// {@macro dart.ui.FrameTiming.fps_milliseconds}
   ///
-  /// See also [buildDuration] and [rasterDuration].
+  /// See also [vsyncOverhead], [buildDuration] and [rasterDuration].
   Duration get totalSpan =>
       _rawDuration(FramePhase.rasterFinish) -
-      _rawDuration(FramePhase.buildStart);
+      _rawDuration(FramePhase.vsyncStart);
 
   final List<int> _timestamps; // in microseconds
 
@@ -1084,7 +1149,7 @@ class FrameTiming {
 
   @override
   String toString() {
-    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, totalSpan: ${_formatMS(totalSpan)})';
+    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, vsyncOverhead: ${_formatMS(vsyncOverhead)}, totalSpan: ${_formatMS(totalSpan)})';
   }
 }
 
