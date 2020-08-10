@@ -438,7 +438,16 @@ class PathIterator {
         pathRef.points[_pointIndex - 2], pathRef.points[_pointIndex - 1]);
   }
 
-  int peek() => pathRef._fVerbs[_verbIndex];
+  int peek() {
+    if (_verbIndex < pathRef.countVerbs()) {
+      return pathRef._fVerbs[_verbIndex];
+    }
+    if (_needClose && _segmentState == SPathSegmentState.kAfterPrimitive) {
+      return (_lastPointX != _moveToX || _lastPointY != _moveToY) ?
+      SPath.kLineVerb : SPath.kCloseVerb;
+    }
+    return SPath.kDoeVerb;
+  }
 
   // Returns next verb and reads associated points into [outPts].
   int next(Float32List outPts) {
