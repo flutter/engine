@@ -85,6 +85,12 @@ public class PlatformPlugin {
         public void setClipboardData(@NonNull String text) {
           PlatformPlugin.this.setClipboardData(text);
         }
+
+        @Override
+        public boolean clipboardHasStrings() {
+          CharSequence data = PlatformPlugin.this.getClipboardData(PlatformChannel.ClipboardContentFormat.PLAIN_TEXT);
+          return data != null && data.length() > 0;
+        }
       };
 
   public PlatformPlugin(Activity activity, PlatformChannel platformChannel) {

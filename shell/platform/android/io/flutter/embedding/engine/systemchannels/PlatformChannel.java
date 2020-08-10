@@ -155,6 +155,14 @@ public class PlatformChannel {
                   result.success(null);
                   break;
                 }
+              case "Clipboard.hasStrings":
+                {
+                  boolean hasStrings = platformMessageHandler.clipboardHasStrings();
+                  JSONObject response = new JSONObject();
+                  response.put("value", hasStrings);
+                  result.success(response);
+                  break;
+                }
               default:
                 result.notImplemented();
                 break;
@@ -426,6 +434,11 @@ public class PlatformChannel {
      * {@code text}.
      */
     void setClipboardData(@NonNull String text);
+
+    /** The Flutter application would like to know if the clipboard currently contains a string
+     *  that can be pasted.
+     */
+    boolean clipboardHasStrings();
   }
 
   /** Types of sounds the Android OS can play on behalf of an application. */
