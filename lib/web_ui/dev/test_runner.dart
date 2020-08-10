@@ -4,11 +4,13 @@
 
 // @dart = 2.6
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
+import 'package:quiver/iterables.dart';
 import 'package:test_core/src/runner/hack_register_platform.dart'
     as hack; // ignore: implementation_imports
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
@@ -37,6 +39,9 @@ enum TestTypesRequested {
   /// For running both unit and integration tests.
   all,
 }
+
+/// How many isolates does the test build is distributed.
+const int numberOfIsolates = 8;
 
 class TestCommand extends Command<bool> with ArgUtils {
   TestCommand() {
@@ -241,11 +246,12 @@ class TestCommand extends Command<bool> with ArgUtils {
     }
 
     if (htmlTargets.isNotEmpty) {
-      await _buildTests(targets: htmlTargets, forCanvasKit: false);
+      await _buildTestsInParallel(targets: htmlTargets, forCanvasKit: false);
     }
 
     if (canvasKitTargets.isNotEmpty) {
-      await _buildTests(targets: canvasKitTargets, forCanvasKit: true);
+      await _buildTestsInParallel(
+          targets: canvasKitTargets, forCanvasKit: true);
     }
     stopwatch.stop();
     print('The build took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
@@ -448,56 +454,101 @@ class TestCommand extends Command<bool> with ArgUtils {
     timestampFile.writeAsStringSync(timestamp);
   }
 
-  /// Builds the specific test [targets].
-  ///
-  /// [targets] must not be null.
-  ///
-  /// Uses `dart2js` for building the tests.
-  ///
-  /// When building for CanvasKit we have to use extra argument
-  /// `DFLUTTER_WEB_USE_SKIA=true`.
-  Future<void> _buildTests(
+  Future<void> _buildTestsInParallel(
       {List<FilePath> targets, bool forCanvasKit = false}) async {
-    print('Building ${targets.length} targets for HTML');
-
-    for (FilePath file in targets) {
-      final targetFileName = file.relativeToWebUi
-          .replaceFirst('.dart', '.dart.browser_test.dart.js');
-      final String targetPath = path.join('build', targetFileName);
-      print('target path: $targetPath current file: ${file.relativeToWebUi}');
-
-      final io.Directory directoryToTarget = io.Directory(path.join(
-          environment.webUiBuildDir.path, path.dirname(file.relativeToWebUi)));
-
-      if (!directoryToTarget.existsSync()) {
-        directoryToTarget.createSync(recursive: true);
-      }
-
-      List<String> arguments = <String>[
-        '--no-minify',
-        '--disable-inlining',
-        '--enable-asserts',
-        '--enable-experiment=non-nullable',
-        '--no-sound-null-safety',
-        if (forCanvasKit) '-DFLUTTER_WEB_USE_SKIA=true',
-        '-O2',
-        '-o',
-        '${targetPath}', // target path
-        '${file.relativeToWebUi}', // current path
-      ];
-
-      final int exitCode = await runProcess(
-        environment.dart2jsExecutable,
-        arguments,
-        workingDirectory: environment.webUiRootDir.path,
-        // environment.
-      );
-
-      if (exitCode != 0) {
-        throw ToolException(
-            'Failed to compile tests. Dart2js exited with exit code $exitCode');
-      }
+    final double numberOfTargetsPerIsolate = targets.length / numberOfIsolates;
+    Iterable<List<FilePath>> targetsPerIsolate =
+        partition(targets, numberOfTargetsPerIsolate.ceil());
+    final List<Completer<void>> completers = List.empty(growable: true);
+    int i = 1;
+    for (final List<FilePath> t in targetsPerIsolate) {
+      final Completer<void> completer = new Completer();
+      print('INFO: Isolate no $i will start');
+      _buildTestsInIsolates(completer,
+          input: TestBuildIsolateInput(t, forCanvasKit: forCanvasKit),
+          forCanvasKit: forCanvasKit);
+      completers.add(completer);
+      i++;
     }
+    await Future.wait(completers.map((e) => e.future));
+  }
+
+  void _buildTestsInIsolates(Completer completer,
+      {TestBuildIsolateInput input, bool forCanvasKit = false}) async {
+    final ReceivePort receivePort = new ReceivePort();
+    final Isolate isolate = await Isolate.spawn(continuesBuilding, receivePort.sendPort);
+
+    receivePort.listen((dynamic message) async {
+      if (message is SendPort) {
+        // Record isolate send port.
+        final SendPort sendPort = message;
+        sendPort.send(input);
+      }
+      if (message is String) {
+        if (message != 'pass') {
+          throw ToolException('Failed to compile tests with error $message');
+        }
+        receivePort.close();
+      }
+    }, onDone: () {
+      completer.complete();
+      isolate.kill(priority: Isolate.immediate);
+    });
+  }
+
+  /// The main method for building the test files.
+  ///
+  /// This method runs inside the isolates.
+  ///
+  /// There are [numberOfIsolates] running in parallel.
+  static void continuesBuilding(SendPort sendPort) async {
+    final ReceivePort receivePort = new ReceivePort();
+    sendPort.send(receivePort.sendPort);
+    await receivePort.listen((dynamic message) async {
+      final TestBuildIsolateInput isolateInput =
+          message as TestBuildIsolateInput;
+      final List<FilePath> targets = isolateInput.targets;
+
+      for (FilePath file in targets) {
+        final targetFileName = file.relativeToWebUi
+            .replaceFirst('.dart', '.dart.browser_test.dart.js');
+        final String targetPath = path.join('build', targetFileName);
+
+        final io.Directory directoryToTarget = io.Directory(path.join(
+            environment.webUiBuildDir.path,
+            path.dirname(file.relativeToWebUi)));
+
+        if (!directoryToTarget.existsSync()) {
+          directoryToTarget.createSync(recursive: true);
+        }
+
+        List<String> arguments = <String>[
+          '--no-minify',
+          '--disable-inlining',
+          '--enable-asserts',
+          '--enable-experiment=non-nullable',
+          '--no-sound-null-safety',
+          if (isolateInput.forCanvasKit) '-DFLUTTER_WEB_USE_SKIA=true',
+          '-O2',
+          '-o',
+          '${targetPath}',
+          '${file}',
+        ];
+
+        final int exitCode = await runProcess(
+          environment.dart2jsExecutable,
+          arguments,
+          workingDirectory: environment.webUiRootDir.path,
+        );
+
+        if (exitCode != 0) {
+          print('>>> Exception finish of isolate $exitCode.'
+              'target failed: ${file.relativeToWebUi}');
+          sendPort.send('failure');
+        }
+      }
+      sendPort.send('pass');
+    });
   }
 
   /// Runs a batch of tests.
@@ -567,4 +618,17 @@ void _copyTestFontsIntoWebUi() {
         path.join(environment.webUiRootDir.path, 'lib', 'assets', fontFile);
     sourceTtf.copySync(destinationTtfPath);
   }
+}
+
+/// This objest is used as an input message to the isolates that builds the
+/// test files.
+class TestBuildIsolateInput {
+  /// List of targets to build.
+  final List<FilePath> targets;
+  /// Whether these tests should be build for CanvasKit.
+  ///
+  /// `-DFLUTTER_WEB_USE_SKIA=true` is passed to dart2js for CanvasKit.
+  final bool forCanvasKit;
+
+  TestBuildIsolateInput(this.targets, {this.forCanvasKit = false});
 }
