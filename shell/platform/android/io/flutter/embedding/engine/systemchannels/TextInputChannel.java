@@ -114,6 +114,22 @@ public class TextInputChannel {
               textInputMethodHandler.clearClient();
               result.success(null);
               break;
+            case "TextInput.sendAppPrivateCommand":
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final String action = arguments.getString("action");
+                final String data = arguments.getString("data");
+                Bundle bundle = null;
+                if (data != null && !data.isEmpty()) {
+                  bundle = new Bundle();
+                  bundle.putString("data", data);
+                }
+                textInputMethodHandler.sendAppPrivateCommand(action, bundle);
+                result.success(null);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
+              break;
             case "TextInput.finishAutofillContext":
               textInputMethodHandler.finishAutofillContext((boolean) args);
               result.success(null);
@@ -362,6 +378,17 @@ public class TextInputChannel {
 
     // TODO(mattcarroll): javadoc
     void clearClient();
+
+    /**
+     * Sends client app private command to the current text input client(input method). The app
+     * private command result will be informed through {@code performPrivateCommand}.
+     *
+     * @param action Name of the command to be performed. This must be a scoped name. i.e. prefixed
+     *     with a package name you own, so that different developers will not create conflicting
+     *     commands.
+     * @param data Any data to include with the command.
+     */
+    void sendAppPrivateCommand(String action, Bundle data);
   }
 
   /** A text editing configuration. */
