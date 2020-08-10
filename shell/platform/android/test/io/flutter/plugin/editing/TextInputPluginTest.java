@@ -3,6 +3,7 @@ package io.flutter.plugin.editing;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
+import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.util.SparseIntArray;
 import android.view.KeyEvent;
@@ -39,6 +41,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -51,7 +54,7 @@ import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowBuild;
 import org.robolectric.shadows.ShadowInputMethodManager;
 
-@Config(manifest = Config.NONE, shadows = TextInputPluginTest.TestImm.class, sdk = 27)
+@Config(manifest = Config.NONE, shadows = TextInputPluginTest.TestImm.class)
 @RunWith(RobolectricTestRunner.class)
 public class TextInputPluginTest {
   // Verifies the method and arguments for a captured method call.
@@ -67,6 +70,14 @@ public class TextInputPluginTest {
         assertEquals(expectedArgs[i], args.get(i).toString());
       }
     }
+  }
+
+  private static void sendToBinaryMessageHandler(
+      BinaryMessenger.BinaryMessageHandler binaryMessageHandler, String method, Object args) {
+    MethodCall methodCall = new MethodCall(method, args);
+    ByteBuffer encodedMethodCall = JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall);
+    binaryMessageHandler.onMessage(
+        (ByteBuffer) encodedMethodCall.flip(), mock(BinaryMessenger.BinaryReply.class));
   }
 
   @Test
@@ -370,6 +381,52 @@ public class TextInputPluginTest {
   }
 
   @Test
+  public void inputConnection_finishComposingTextUpdatesIMM() throws JSONException {
+    ShadowBuild.setManufacturer("samsung");
+    InputMethodSubtype inputMethodSubtype =
+        new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
+    Settings.Secure.putString(
+        RuntimeEnvironment.application.getContentResolver(),
+        Settings.Secure.DEFAULT_INPUT_METHOD,
+        "com.sec.android.inputmethod/.SamsungKeypad");
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+    FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
+    View testView = new View(RuntimeEnvironment.application);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
+            null,
+            null,
+            null,
+            null));
+    // There's a pending restart since we initialized the text input client. Flush that now.
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0));
+    InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
+
+    connection.finishComposingText();
+
+    if (Build.VERSION.SDK_INT >= 21) {
+      CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
+      builder.setComposingText(-1, "");
+      CursorAnchorInfo anchorInfo = builder.build();
+      assertEquals(testImm.getLastCursorAnchorInfo(), anchorInfo);
+    }
+  }
+
+  @Test
   public void autofill_onProvideVirtualViewStructure() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
 
@@ -433,8 +490,11 @@ public class TextInputPluginTest {
 
     verify(children[0]).setAutofillId(any(), eq("1".hashCode()));
     verify(children[0]).setAutofillHints(aryEq(new String[] {"HINT1"}));
+    verify(children[0]).setDimens(anyInt(), anyInt(), anyInt(), anyInt(), geq(0), geq(0));
+
     verify(children[1]).setAutofillId(any(), eq("2".hashCode()));
     verify(children[1]).setAutofillHints(aryEq(new String[] {"HINT2", "EXTRA"}));
+    verify(children[1]).setDimens(anyInt(), anyInt(), anyInt(), anyInt(), geq(0), geq(0));
   }
 
   @Test
@@ -477,6 +537,103 @@ public class TextInputPluginTest {
 
     verify(children[0]).setAutofillId(any(), eq("1".hashCode()));
     verify(children[0]).setAutofillHints(aryEq(new String[] {"HINT1"}));
+    // Verifies that the child has a non-zero size.
+    verify(children[0]).setDimens(anyInt(), anyInt(), anyInt(), anyInt(), geq(0), geq(0));
+  }
+
+  @Test
+  public void respondsToInputChannelMessages() {
+    ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
+        ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
+    DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
+    TextInputChannel.TextInputMethodHandler mockHandler =
+        mock(TextInputChannel.TextInputMethodHandler.class);
+    TextInputChannel textInputChannel = new TextInputChannel(mockBinaryMessenger);
+
+    textInputChannel.setTextInputMethodHandler(mockHandler);
+
+    verify(mockBinaryMessenger, times(1))
+        .setMessageHandler(any(String.class), binaryMessageHandlerCaptor.capture());
+
+    BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
+        binaryMessageHandlerCaptor.getValue();
+
+    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.requestAutofill", null);
+    verify(mockHandler, times(1)).requestAutofill();
+
+    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.finishAutofillContext", true);
+    verify(mockHandler, times(1)).finishAutofillContext(true);
+
+    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.finishAutofillContext", false);
+    verify(mockHandler, times(1)).finishAutofillContext(false);
+  }
+
+  @Test
+  public void sendAppPrivateCommand_dataIsEmpty() throws JSONException {
+    ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
+        ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
+    DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
+    TextInputChannel textInputChannel = new TextInputChannel(mockBinaryMessenger);
+
+    EventHandler mockEventHandler = mock(EventHandler.class);
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setEventHandler(mockEventHandler);
+
+    View testView = new View(RuntimeEnvironment.application);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+
+    verify(mockBinaryMessenger, times(1))
+        .setMessageHandler(any(String.class), binaryMessageHandlerCaptor.capture());
+
+    JSONObject arguments = new JSONObject();
+    arguments.put("action", "actionCommand");
+    arguments.put("data", "");
+
+    BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
+        binaryMessageHandlerCaptor.getValue();
+    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.sendAppPrivateCommand", arguments);
+    verify(mockEventHandler, times(1))
+        .sendAppPrivateCommand(any(View.class), eq("actionCommand"), eq(null));
+  }
+
+  @Test
+  public void sendAppPrivateCommand_hasData() throws JSONException {
+    ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
+        ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
+    DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
+    TextInputChannel textInputChannel = new TextInputChannel(mockBinaryMessenger);
+
+    EventHandler mockEventHandler = mock(EventHandler.class);
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setEventHandler(mockEventHandler);
+
+    View testView = new View(RuntimeEnvironment.application);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+
+    verify(mockBinaryMessenger, times(1))
+        .setMessageHandler(any(String.class), binaryMessageHandlerCaptor.capture());
+
+    JSONObject arguments = new JSONObject();
+    arguments.put("action", "actionCommand");
+    arguments.put("data", "actionData");
+
+    ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
+    BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
+        binaryMessageHandlerCaptor.getValue();
+    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.sendAppPrivateCommand", arguments);
+    verify(mockEventHandler, times(1))
+        .sendAppPrivateCommand(any(View.class), eq("actionCommand"), bundleCaptor.capture());
+    assertEquals("actionData", bundleCaptor.getValue().getCharSequence("data"));
+  }
+
+  interface EventHandler {
+    void sendAppPrivateCommand(View view, String action, Bundle data);
   }
 
   @Implements(InputMethodManager.class)
@@ -486,6 +643,7 @@ public class TextInputPluginTest {
     private CursorAnchorInfo cursorAnchorInfo;
     private ArrayList<Integer> selectionUpdateValues;
     private boolean trackSelection = false;
+    private EventHandler handler;
 
     public TestImm() {
       selectionUpdateValues = new ArrayList<Integer>();
@@ -508,6 +666,15 @@ public class TextInputPluginTest {
 
     public int getRestartCount(View view) {
       return restartCounter.get(view.hashCode(), /*defaultValue=*/ 0);
+    }
+
+    public void setEventHandler(EventHandler eventHandler) {
+      handler = eventHandler;
+    }
+
+    @Implementation
+    public void sendAppPrivateCommand(View view, String action, Bundle data) {
+      handler.sendAppPrivateCommand(view, action, data);
     }
 
     @Implementation

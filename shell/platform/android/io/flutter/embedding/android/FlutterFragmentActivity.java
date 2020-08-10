@@ -101,8 +101,7 @@ public class FlutterFragmentActivity extends FragmentActivity
      *
      * <p>{@code return new NewEngineIntentBuilder(MyFlutterActivity.class); }
      */
-    protected NewEngineIntentBuilder(
-        @NonNull Class<? extends FlutterFragmentActivity> activityClass) {
+    public NewEngineIntentBuilder(@NonNull Class<? extends FlutterFragmentActivity> activityClass) {
       this.activityClass = activityClass;
     }
 
@@ -177,13 +176,13 @@ public class FlutterFragmentActivity extends FragmentActivity
      * {@code FlutterFragmentActivity}.
      *
      * <p>Subclasses of {@code FlutterFragmentActivity} should provide their own static version of
-     * {@link #withNewEngine()}, which returns an instance of {@code CachedEngineIntentBuilder}
+     * {@link #withCachedEngine()}, which returns an instance of {@code CachedEngineIntentBuilder}
      * constructed with a {@code Class} reference to the {@code FlutterFragmentActivity} subclass,
      * e.g.:
      *
      * <p>{@code return new CachedEngineIntentBuilder(MyFlutterActivity.class, engineId); }
      */
-    protected CachedEngineIntentBuilder(
+    public CachedEngineIntentBuilder(
         @NonNull Class<? extends FlutterFragmentActivity> activityClass, @NonNull String engineId) {
       this.activityClass = activityClass;
       this.cachedEngineId = engineId;
@@ -398,10 +397,9 @@ public class FlutterFragmentActivity extends FragmentActivity
    */
   @NonNull
   protected FlutterFragment createFlutterFragment() {
-    BackgroundMode backgroundMode = getBackgroundMode();
-    RenderMode renderMode =
-        backgroundMode == BackgroundMode.opaque ? RenderMode.surface : RenderMode.texture;
-    TransparencyMode transparencyMode =
+    final BackgroundMode backgroundMode = getBackgroundMode();
+    final RenderMode renderMode = getRenderMode();
+    final TransparencyMode transparencyMode =
         backgroundMode == BackgroundMode.opaque
             ? TransparencyMode.opaque
             : TransparencyMode.transparent;
@@ -689,6 +687,19 @@ public class FlutterFragmentActivity extends FragmentActivity
     } else {
       return BackgroundMode.opaque;
     }
+  }
+
+  /**
+   * Returns the desired {@link RenderMode} for the {@link FlutterView} displayed in this {@code
+   * FlutterFragmentActivity}.
+   *
+   * <p>That is, {@link RenderMode#surface} if {@link FlutterFragmentActivity#getBackgroundMode()}
+   * is {@link BackgroundMode.opaque} or {@link RenderMode#texture} otherwise.
+   */
+  @NonNull
+  protected RenderMode getRenderMode() {
+    final BackgroundMode backgroundMode = getBackgroundMode();
+    return backgroundMode == BackgroundMode.opaque ? RenderMode.surface : RenderMode.texture;
   }
 
   /**

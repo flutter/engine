@@ -11,15 +11,17 @@ import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.graphics.Rect;
 import android.os.Build;
-import android.os.LocaleList;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.PointerIcon;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.autofill.AutofillValue;
@@ -37,13 +39,11 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.localization.LocalizationPlugin;
+import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -73,13 +73,15 @@ import java.util.Set;
  * See <a>https://source.android.com/devices/graphics/arch-tv#surface_or_texture</a> for more
  * information comparing {@link android.view.SurfaceView} and {@link android.view.TextureView}.
  */
-public class FlutterView extends FrameLayout {
+public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseCursorViewDelegate {
   private static final String TAG = "FlutterView";
 
   // Internal view hierarchy references.
   @Nullable private FlutterSurfaceView flutterSurfaceView;
   @Nullable private FlutterTextureView flutterTextureView;
+  @Nullable private FlutterImageView flutterImageView;
   @Nullable private RenderSurface renderSurface;
+  @Nullable private RenderSurface previousRenderSurface;
   private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners = new HashSet<>();
   private boolean isFlutterUiDisplayed;
 
@@ -95,7 +97,9 @@ public class FlutterView extends FrameLayout {
   //
   // These components essentially add some additional behavioral logic on top of
   // existing, stateless system channels, e.g., KeyEventChannel, TextInputChannel, etc.
+  @Nullable private MouseCursorPlugin mouseCursorPlugin;
   @Nullable private TextInputPlugin textInputPlugin;
+  @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private AndroidKeyProcessor androidKeyProcessor;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
   @Nullable private AccessibilityBridge accessibilityBridge;
@@ -153,7 +157,8 @@ public class FlutterView extends FrameLayout {
 
   /**
    * Deprecated - use {@link #FlutterView(Context, FlutterSurfaceView)} or {@link
-   * #FlutterView(Context, FlutterTextureView)} instead.
+   * #FlutterView(Context, FlutterTextureView)} or {@link #FlutterView(Context, FlutterImageView)}
+   * instead.
    */
   @Deprecated
   public FlutterView(@NonNull Context context, @NonNull RenderMode renderMode) {
@@ -162,9 +167,12 @@ public class FlutterView extends FrameLayout {
     if (renderMode == RenderMode.surface) {
       flutterSurfaceView = new FlutterSurfaceView(context);
       renderSurface = flutterSurfaceView;
-    } else {
+    } else if (renderMode == RenderMode.texture) {
       flutterTextureView = new FlutterTextureView(context);
       renderSurface = flutterTextureView;
+    } else {
+      throw new IllegalArgumentException(
+          String.format("RenderMode not supported with this constructor: %s", renderMode));
     }
 
     init();
@@ -215,6 +223,18 @@ public class FlutterView extends FrameLayout {
   }
 
   /**
+   * Constructs a {@code FlutterView} programmatically, without any XML attributes, uses the given
+   * {@link FlutterImageView} to render the Flutter UI.
+   *
+   * <p>{@code FlutterView} requires an {@code Activity} instead of a generic {@code Context} to be
+   * compatible with {@link PlatformViewsController}.
+   */
+  @TargetApi(19)
+  public FlutterView(@NonNull Context context, @NonNull FlutterImageView flutterImageView) {
+    this(context, null, flutterImageView);
+  }
+
+  /**
    * Constructs a {@code FlutterView} in an XML-inflation-compliant manner.
    *
    * <p>{@code FlutterView} requires an {@code Activity} instead of a generic {@code Context} to be
@@ -241,9 +261,12 @@ public class FlutterView extends FrameLayout {
       flutterSurfaceView =
           new FlutterSurfaceView(context, transparencyMode == TransparencyMode.transparent);
       renderSurface = flutterSurfaceView;
-    } else {
+    } else if (renderMode == RenderMode.texture) {
       flutterTextureView = new FlutterTextureView(context);
       renderSurface = flutterTextureView;
+    } else {
+      throw new IllegalArgumentException(
+          String.format("RenderMode not supported with this constructor: %s", renderMode));
     }
 
     init();
@@ -273,15 +296,31 @@ public class FlutterView extends FrameLayout {
     init();
   }
 
+  @TargetApi(19)
+  private FlutterView(
+      @NonNull Context context,
+      @Nullable AttributeSet attrs,
+      @NonNull FlutterImageView flutterImageView) {
+    super(context, attrs);
+
+    this.flutterImageView = flutterImageView;
+    this.renderSurface = flutterImageView;
+
+    init();
+  }
+
   private void init() {
     Log.v(TAG, "Initializing FlutterView");
 
     if (flutterSurfaceView != null) {
       Log.v(TAG, "Internally using a FlutterSurfaceView.");
       addView(flutterSurfaceView);
-    } else {
+    } else if (flutterTextureView != null) {
       Log.v(TAG, "Internally using a FlutterTextureView.");
       addView(flutterTextureView);
+    } else {
+      Log.v(TAG, "Internally using a FlutterImageView.");
+      addView(flutterImageView);
     }
 
     // FlutterView needs to be focusable so that the InputMethodManager can interact with it.
@@ -349,7 +388,7 @@ public class FlutterView extends FrameLayout {
     // again (e.g. in onStart).
     if (flutterEngine != null) {
       Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
-      sendLocalesToFlutter(newConfig);
+      localizationPlugin.sendLocalesToFlutter(newConfig);
       sendUserSettingsToFlutter();
     }
   }
@@ -381,6 +420,71 @@ public class FlutterView extends FrameLayout {
     sendViewportMetricsToFlutter();
   }
 
+  // TODO(garyq): Add support for notch cutout API: https://github.com/flutter/flutter/issues/56592
+  // Decide if we want to zero the padding of the sides. When in Landscape orientation,
+  // android may decide to place the software navigation bars on the side. When the nav
+  // bar is hidden, the reported insets should be removed to prevent extra useless space
+  // on the sides.
+  private enum ZeroSides {
+    NONE,
+    LEFT,
+    RIGHT,
+    BOTH
+  }
+
+  private ZeroSides calculateShouldZeroSides() {
+    // We get both orientation and rotation because rotation is all 4
+    // rotations relative to default rotation while orientation is portrait
+    // or landscape. By combining both, we can obtain a more precise measure
+    // of the rotation.
+    Context context = getContext();
+    int orientation = context.getResources().getConfiguration().orientation;
+    int rotation =
+        ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
+            .getDefaultDisplay()
+            .getRotation();
+
+    if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+      if (rotation == Surface.ROTATION_90) {
+        return ZeroSides.RIGHT;
+      } else if (rotation == Surface.ROTATION_270) {
+        // In android API >= 23, the nav bar always appears on the "bottom" (USB) side.
+        return Build.VERSION.SDK_INT >= 23 ? ZeroSides.LEFT : ZeroSides.RIGHT;
+      }
+      // Ambiguous orientation due to landscape left/right default. Zero both sides.
+      else if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
+        return ZeroSides.BOTH;
+      }
+    }
+    // Square orientation deprecated in API 16, we will not check for it and return false
+    // to be safe and not remove any unique padding for the devices that do use it.
+    return ZeroSides.NONE;
+  }
+
+  // TODO(garyq): Use new Android R getInsets API
+  // TODO(garyq): The keyboard detection may interact strangely with
+  //   https://github.com/flutter/flutter/issues/22061
+
+  // Uses inset heights and screen heights as a heuristic to determine if the insets should
+  // be padded. When the on-screen keyboard is detected, we want to include the full inset
+  // but when the inset is just the hidden nav bar, we want to provide a zero inset so the space
+  // can be used.
+  @TargetApi(20)
+  @RequiresApi(20)
+  private int guessBottomKeyboardInset(WindowInsets insets) {
+    int screenHeight = getRootView().getHeight();
+    // Magic number due to this being a heuristic. This should be replaced, but we have not
+    // found a clean way to do it yet (Sept. 2018)
+    final double keyboardHeightRatioHeuristic = 0.18;
+    if (insets.getSystemWindowInsetBottom() < screenHeight * keyboardHeightRatioHeuristic) {
+      // Is not a keyboard, so return zero as inset.
+      return 0;
+    } else {
+      // Is a keyboard, so return the full inset.
+      return insets.getSystemWindowInsetBottom();
+    }
+  }
+
   /**
    * Invoked when Android's desired window insets change, i.e., padding.
    *
@@ -402,16 +506,35 @@ public class FlutterView extends FrameLayout {
   public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
+    boolean statusBarHidden = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
+    boolean navigationBarHidden =
+        (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) != 0;
+    // We zero the left and/or right sides to prevent the padding the
+    // navigation bar would have caused.
+    ZeroSides zeroSides = ZeroSides.NONE;
+    if (navigationBarHidden) {
+      zeroSides = calculateShouldZeroSides();
+    }
+
     // Status bar (top) and left/right system insets should partially obscure the content (padding).
-    viewportMetrics.paddingTop = insets.getSystemWindowInsetTop();
-    viewportMetrics.paddingRight = insets.getSystemWindowInsetRight();
+    viewportMetrics.paddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
+    viewportMetrics.paddingRight =
+        zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
+            ? 0
+            : insets.getSystemWindowInsetRight();
     viewportMetrics.paddingBottom = 0;
-    viewportMetrics.paddingLeft = insets.getSystemWindowInsetLeft();
+    viewportMetrics.paddingLeft =
+        zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
+            ? 0
+            : insets.getSystemWindowInsetLeft();
 
     // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
     viewportMetrics.viewInsetTop = 0;
     viewportMetrics.viewInsetRight = 0;
-    viewportMetrics.viewInsetBottom = insets.getSystemWindowInsetBottom();
+    viewportMetrics.viewInsetBottom =
+        navigationBarHidden
+            ? guessBottomKeyboardInset(insets)
+            : insets.getSystemWindowInsetBottom();
     viewportMetrics.viewInsetLeft = 0;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -670,6 +793,16 @@ public class FlutterView extends FrameLayout {
   }
   // -------- End: Accessibility ---------
 
+  // -------- Start: Mouse -------
+  @Override
+  @TargetApi(Build.VERSION_CODES.N)
+  @RequiresApi(Build.VERSION_CODES.N)
+  @NonNull
+  public PointerIcon getSystemPointerIcon(int type) {
+    return PointerIcon.getSystemIcon(getContext(), type);
+  }
+  // -------- End: Mouse ---------
+
   /**
    * Connects this {@code FlutterView} to the given {@link FlutterEngine}.
    *
@@ -708,14 +841,19 @@ public class FlutterView extends FrameLayout {
 
     // Initialize various components that know how to process Android View I/O
     // in a way that Flutter understands.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      mouseCursorPlugin = new MouseCursorPlugin(this, this.flutterEngine.getMouseCursorChannel());
+    }
     textInputPlugin =
         new TextInputPlugin(
             this,
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
+    localizationPlugin = this.flutterEngine.getLocalizationPlugin();
     androidKeyProcessor =
         new AndroidKeyProcessor(this.flutterEngine.getKeyEventChannel(), textInputPlugin);
-    androidTouchProcessor = new AndroidTouchProcessor(this.flutterEngine.getRenderer());
+    androidTouchProcessor =
+        new AndroidTouchProcessor(this.flutterEngine.getRenderer(), /*trackMotionEvents=*/ false);
     accessibilityBridge =
         new AccessibilityBridge(
             this,
@@ -731,6 +869,9 @@ public class FlutterView extends FrameLayout {
     // Connect AccessibilityBridge to the PlatformViewsController within the FlutterEngine.
     // This allows platform Views to hook into Flutter's overall accessibility system.
     this.flutterEngine.getPlatformViewsController().attachAccessibilityBridge(accessibilityBridge);
+    this.flutterEngine
+        .getPlatformViewsController()
+        .attachToFlutterRenderer(this.flutterEngine.getRenderer());
 
     // Inform the Android framework that it should retrieve a new InputConnection
     // now that an engine is attached.
@@ -739,7 +880,7 @@ public class FlutterView extends FrameLayout {
 
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();
-    sendLocalesToFlutter(getResources().getConfiguration());
+    localizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
 
     flutterEngine.getPlatformViewsController().attachToView(this);
@@ -795,6 +936,10 @@ public class FlutterView extends FrameLayout {
     textInputPlugin.getInputMethodManager().restartInput(this);
     textInputPlugin.destroy();
 
+    if (mouseCursorPlugin != null) {
+      mouseCursorPlugin.destroy();
+    }
+
     // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
     FlutterRenderer flutterRenderer = flutterEngine.getRenderer();
     isFlutterUiDisplayed = false;
@@ -802,7 +947,102 @@ public class FlutterView extends FrameLayout {
     flutterRenderer.stopRenderingToSurface();
     flutterRenderer.setSemanticsEnabled(false);
     renderSurface.detachFromRenderer();
+
+    flutterImageView = null;
+    previousRenderSurface = null;
     flutterEngine = null;
+  }
+
+  @VisibleForTesting
+  @NonNull
+  public FlutterImageView createImageView() {
+    return new FlutterImageView(
+        getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
+  }
+
+  /**
+   * Converts the current render surface to a {@link FlutterImageView} if it's not one already.
+   * Otherwise, it resizes the {@link FlutterImageView} based on the current view size.
+   */
+  public void convertToImageView() {
+    renderSurface.pause();
+
+    if (flutterImageView == null) {
+      flutterImageView = createImageView();
+      addView(flutterImageView);
+    } else {
+      flutterImageView.resizeIfNeeded(getWidth(), getHeight());
+    }
+
+    previousRenderSurface = renderSurface;
+    renderSurface = flutterImageView;
+    if (flutterEngine != null) {
+      renderSurface.attachToRenderer(flutterEngine.getRenderer());
+    }
+  }
+
+  /**
+   * If the surface is rendered by a {@link FlutterImageView}, then calling this method will stop
+   * rendering to a {@link FlutterImageView}, and render on the previous surface instead.
+   *
+   * @param onDone a callback called when Flutter UI is rendered on the previous surface. Use this
+   *     callback to perform cleanups. For example, destroy overlay surfaces.
+   */
+  public void revertImageView(@NonNull Runnable onDone) {
+    if (flutterImageView == null) {
+      Log.v(TAG, "Tried to revert the image view, but no image view is used.");
+      return;
+    }
+    if (previousRenderSurface == null) {
+      Log.v(TAG, "Tried to revert the image view, but no previous surface was used.");
+      return;
+    }
+    renderSurface = previousRenderSurface;
+    previousRenderSurface = null;
+    if (flutterEngine == null) {
+      flutterImageView.detachFromRenderer();
+      onDone.run();
+      return;
+    }
+    final FlutterRenderer renderer = flutterEngine.getRenderer();
+    if (renderer == null) {
+      flutterImageView.detachFromRenderer();
+      onDone.run();
+      return;
+    }
+    // Start rendering on the previous surface.
+    // This surface is typically `FlutterSurfaceView` or `FlutterTextureView`.
+    renderSurface.attachToRenderer(renderer);
+
+    // Install a Flutter UI listener to wait until the first frame is rendered
+    // in the new surface to call the `onDone` callback.
+    renderer.addIsDisplayingFlutterUiListener(
+        new FlutterUiDisplayListener() {
+          @Override
+          public void onFlutterUiDisplayed() {
+            renderer.removeIsDisplayingFlutterUiListener(this);
+            onDone.run();
+            flutterImageView.detachFromRenderer();
+          }
+
+          @Override
+          public void onFlutterUiNoLongerDisplayed() {
+            // no-op
+          }
+        });
+  }
+
+  public void attachOverlaySurfaceToRender(FlutterImageView view) {
+    if (flutterEngine != null) {
+      view.attachToRenderer(flutterEngine.getRenderer());
+    }
+  }
+
+  public boolean acquireLatestImageViewFrame() {
+    if (flutterImageView != null) {
+      return flutterImageView.acquireLatestImage();
+    }
+    return false;
   }
 
   /** Returns true if this {@code FlutterView} is currently attached to a {@link FlutterEngine}. */
@@ -823,7 +1063,7 @@ public class FlutterView extends FrameLayout {
   }
 
   /**
-   * Adds a {@link FlutterEngineAttachmentListener}, which is notifed whenever this {@code
+   * Adds a {@link FlutterEngineAttachmentListener}, which is notified whenever this {@code
    * FlutterView} attached to/detaches from a {@link FlutterEngine}.
    */
   @VisibleForTesting
@@ -840,42 +1080,6 @@ public class FlutterView extends FrameLayout {
   public void removeFlutterEngineAttachmentListener(
       @NonNull FlutterEngineAttachmentListener listener) {
     flutterEngineAttachmentListeners.remove(listener);
-  }
-
-  /**
-   * Send the current {@link Locale} configuration to Flutter.
-   *
-   * <p>FlutterEngine must be non-null when this method is invoked.
-   */
-  @SuppressWarnings("deprecation")
-  private void sendLocalesToFlutter(@NonNull Configuration config) {
-    List<Locale> locales = new ArrayList<>();
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        locales.add(locale);
-      }
-    } else {
-      locales.add(config.locale);
-    }
-
-    List<Locale.LanguageRange> languageRanges = new ArrayList<>();
-    Locale platformResolvedLocale = null;
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
-      }
-      // TODO(garyq) implement a real locale resolution.
-      platformResolvedLocale =
-          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
-    }
-
-    flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
   }
 
   /**
@@ -954,7 +1158,16 @@ public class FlutterView extends FrameLayout {
      * android.graphics.SurfaceTexture} are required, developers should strongly prefer the {@link
      * RenderMode#surface} render mode.
      */
-    texture
+    texture,
+    /**
+     * {@code RenderMode}, which paints Paints a Flutter UI provided by an {@link
+     * android.media.ImageReader} onto a {@link android.graphics.Canvas}. This mode is not as
+     * performant as {@link RenderMode#surface}, but a {@code FlutterView} in this mode can handle
+     * full interactivity with a {@link io.flutter.plugin.platform.PlatformView}. Unless {@link
+     * io.flutter.plugin.platform.PlatformView}s are required developers should strongly prefer the
+     * {@link RenderMode#surface} render mode.
+     */
+    image
   }
 
   /**

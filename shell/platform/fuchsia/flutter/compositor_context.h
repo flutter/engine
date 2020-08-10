@@ -35,6 +35,12 @@ class CompositorContext final : public flutter::CompositorContext {
                                float height_change_factor);
 
   void OnWireframeEnabled(bool enabled);
+  void OnCreateView(int64_t view_id, bool hit_testable, bool focusable);
+  void OnDestroyView(int64_t view_id);
+
+  flutter::ExternalViewEmbedder* GetViewEmbedder() {
+    return &session_connection_.scene_update_context();
+  }
 
  private:
   const std::string debug_label_;
@@ -43,7 +49,7 @@ class CompositorContext final : public flutter::CompositorContext {
 
   // |flutter::CompositorContext|
   std::unique_ptr<ScopedFrame> AcquireFrame(
-      GrContext* gr_context,
+      GrDirectContext* gr_context,
       SkCanvas* canvas,
       flutter::ExternalViewEmbedder* view_embedder,
       const SkMatrix& root_surface_transformation,

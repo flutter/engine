@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:ui/src/engine.dart';
@@ -41,7 +42,7 @@ void main() async {
   void _paintShadowBounds(SurfacePath path, double elevation) {
     final Rect shadowBounds =
         computePenumbraBounds(path.getBounds(), elevation);
-    final EnginePictureRecorder recorder = PictureRecorder();
+    final EnginePictureRecorder recorder = EnginePictureRecorder();
     final RecordingCanvas canvas = recorder.beginRecording(Rect.largest);
     canvas.drawRect(
       shadowBounds,
@@ -69,7 +70,7 @@ void main() async {
     builder.pop(); // offset
   }
 
-  void _paintBitmapCanvasShadow(double elevation, Offset offset) {
+  void _paintBitmapCanvasShadow(double elevation, Offset offset, bool transparentOccluder) {
     final SurfacePath path = SurfacePath()
       ..addRect(const Rect.fromLTRB(0, 0, 20, 20));
     builder.pushOffset(offset.dx, offset.dy);
@@ -82,7 +83,7 @@ void main() async {
       path,
       _kShadowColor,
       elevation,
-      false,
+      transparentOccluder,
     );
     builder.addPicture(Offset.zero, recorder.endRecording());
     _paintShapeOutline();
@@ -136,12 +137,16 @@ void main() async {
       }
 
       for (int i = 0; i < 10; i++) {
-        _paintBitmapCanvasShadow(i.toDouble(), Offset(50.0 * i, 60));
+        _paintBitmapCanvasShadow(i.toDouble(), Offset(50.0 * i, 60), false);
+      }
+
+      for (int i = 0; i < 10; i++) {
+        _paintBitmapCanvasShadow(i.toDouble(), Offset(50.0 * i, 120), true);
       }
 
       for (int i = 0; i < 10; i++) {
         _paintBitmapCanvasComplexPathShadow(
-            i.toDouble(), Offset(50.0 * i, 120));
+            i.toDouble(), Offset(50.0 * i, 180));
       }
 
       builder.pop();

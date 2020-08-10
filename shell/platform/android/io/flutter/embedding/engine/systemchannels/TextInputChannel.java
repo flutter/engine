@@ -1,6 +1,7 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.os.Build;
+import android.os.Bundle;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
@@ -75,6 +76,10 @@ public class TextInputChannel {
                 result.error("error", exception.getMessage(), null);
               }
               break;
+            case "TextInput.requestAutofill":
+              textInputMethodHandler.requestAutofill();
+              result.success(null);
+              break;
             case "TextInput.setPlatformViewClient":
               final int id = (int) args;
               textInputMethodHandler.setPlatformViewClient(id);
@@ -106,6 +111,26 @@ public class TextInputChannel {
               break;
             case "TextInput.clearClient":
               textInputMethodHandler.clearClient();
+              result.success(null);
+              break;
+            case "TextInput.sendAppPrivateCommand":
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final String action = arguments.getString("action");
+                final String data = arguments.getString("data");
+                Bundle bundle = null;
+                if (data != null && !data.isEmpty()) {
+                  bundle = new Bundle();
+                  bundle.putString("data", data);
+                }
+                textInputMethodHandler.sendAppPrivateCommand(action, bundle);
+                result.success(null);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
+              break;
+            case "TextInput.finishAutofillContext":
+              textInputMethodHandler.finishAutofillContext((boolean) args);
               result.success(null);
               break;
             default:
@@ -280,6 +305,18 @@ public class TextInputChannel {
      */
     void requestAutofill();
 
+    /**
+     * Requests that the {@link AutofillManager} cancel or commit the current autofill context.
+     *
+     * <p>The method calls {@link android.view.autofill.AutofillManager#commit()} when {@code
+     * shouldSave} is true, and calls {@link android.view.autofill.AutofillManager#cancel()}
+     * otherwise.
+     *
+     * @param shouldSave whether the active autofill service should save the current user input for
+     *     future use.
+     */
+    void finishAutofillContext(boolean shouldSave);
+
     // TODO(mattcarroll): javadoc
     void setClient(int textInputClientId, @NonNull Configuration configuration);
 
@@ -308,6 +345,17 @@ public class TextInputChannel {
 
     // TODO(mattcarroll): javadoc
     void clearClient();
+
+    /**
+     * Sends client app private command to the current text input client(input method). The app
+     * private command result will be informed through {@code performPrivateCommand}.
+     *
+     * @param action Name of the command to be performed. This must be a scoped name. i.e. prefixed
+     *     with a package name you own, so that different developers will not create conflicting
+     *     commands.
+     * @param data Any data to include with the command.
+     */
+    void sendAppPrivateCommand(String action, Bundle data);
   }
 
   /** A text editing configuration. */
@@ -540,6 +588,8 @@ public class TextInputChannel {
   public enum TextInputType {
     TEXT("TextInputType.text"),
     DATETIME("TextInputType.datetime"),
+    NAME("TextInputType.name"),
+    POSTAL_ADDRESS("TextInputType.address"),
     NUMBER("TextInputType.number"),
     PHONE("TextInputType.phone"),
     MULTILINE("TextInputType.multiline"),

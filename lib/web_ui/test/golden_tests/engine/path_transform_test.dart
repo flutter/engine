@@ -20,7 +20,7 @@ void main() async {
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
-      bool write = false}) async {
+      double maxDiffRatePercent = null}) async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
     rc.endRecording();
     rc.apply(engineCanvas, screenRect);
@@ -30,7 +30,7 @@ void main() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      await matchGoldenFile('$fileName.png', region: region);
+      await matchGoldenFile('$fileName.png', region: region, maxDiffRatePercent: maxDiffRatePercent);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -61,7 +61,7 @@ void main() async {
     final Matrix4 testMatrixTranslateRotate =
         Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, 20);
     transformedPath.addPath(path, Offset.zero,
-        matrix4: testMatrixTranslateRotate.storage);
+        matrix4: testMatrixTranslateRotate.toFloat64());
     rc.drawPath(
         transformedPath,
         Paint()
@@ -86,7 +86,7 @@ void main() async {
     final Matrix4 testMatrixTranslateRotate =
         Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, 20);
     transformedPath.addPath(path, Offset.zero,
-        matrix4: testMatrixTranslateRotate.storage);
+        matrix4: testMatrixTranslateRotate.toFloat64());
     rc.drawPath(
         transformedPath,
         Paint()
@@ -112,7 +112,7 @@ void main() async {
     final Matrix4 testMatrixTranslateRotate =
         Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, -80);
     transformedPath.addPath(path, Offset.zero,
-        matrix4: testMatrixTranslateRotate.storage);
+        matrix4: testMatrixTranslateRotate.toFloat64());
     rc.drawPath(
         transformedPath,
         Paint()
@@ -149,7 +149,7 @@ void main() async {
     final Matrix4 testMatrixTranslateRotate =
         Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, -80);
     transformedPath.addPath(path, Offset.zero,
-        matrix4: testMatrixTranslateRotate.storage);
+        matrix4: testMatrixTranslateRotate.toFloat64());
     rc.drawPath(
         transformedPath,
         Paint()
@@ -183,14 +183,15 @@ void main() async {
     final Matrix4 testMatrixTranslateRotate =
         Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, 10);
     transformedPath.addPath(path, Offset.zero,
-        matrix4: testMatrixTranslateRotate.storage);
+        matrix4: testMatrixTranslateRotate.toFloat64());
     rc.drawPath(
         transformedPath,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await _checkScreenshot(rc, 'path_transform_with_arc');
+    await _checkScreenshot(rc, 'path_transform_with_arc',
+        maxDiffRatePercent: 1.4);
   });
 
   test('Should draw transformed rrect.', () async {
@@ -211,7 +212,7 @@ void main() async {
     final Matrix4 testMatrixTranslateRotate =
         Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, -80);
     transformedPath.addPath(path, Offset.zero,
-        matrix4: testMatrixTranslateRotate.storage);
+        matrix4: testMatrixTranslateRotate.toFloat64());
     rc.drawPath(
         transformedPath,
         Paint()

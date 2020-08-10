@@ -5,6 +5,7 @@
 #include "compositor_context.h"
 
 #include "flutter/flow/layers/layer_tree.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter_runner {
 
@@ -12,13 +13,14 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
  public:
   ScopedFrame(flutter::CompositorContext& context,
               const SkMatrix& root_surface_transformation,
+              flutter::ExternalViewEmbedder* view_embedder,
               bool instrumentation_enabled,
               SessionConnection& session_connection)
       : flutter::CompositorContext::ScopedFrame(
             context,
             session_connection.vulkan_surface_producer()->gr_context(),
             nullptr,
-            nullptr,
+            view_embedder,
             root_surface_transformation,
             instrumentation_enabled,
             true,
@@ -94,11 +96,24 @@ void CompositorContext::OnWireframeEnabled(bool enabled) {
   session_connection_.set_enable_wireframe(enabled);
 }
 
-CompositorContext::~CompositorContext() = default;
+void CompositorContext::OnCreateView(int64_t view_id,
+                                     bool hit_testable,
+                                     bool focusable) {
+  session_connection_.scene_update_context().CreateView(view_id, hit_testable,
+                                                        focusable);
+}
+
+void CompositorContext::OnDestroyView(int64_t view_id) {
+  session_connection_.scene_update_context().DestroyView(view_id);
+}
+
+CompositorContext::~CompositorContext() {
+  OnGrContextDestroyed();
+}
 
 std::unique_ptr<flutter::CompositorContext::ScopedFrame>
 CompositorContext::AcquireFrame(
-    GrContext* gr_context,
+    GrDirectContext* gr_context,
     SkCanvas* canvas,
     flutter::ExternalViewEmbedder* view_embedder,
     const SkMatrix& root_surface_transformation,
@@ -111,8 +126,9 @@ CompositorContext::AcquireFrame(
   return std::make_unique<flutter_runner::ScopedFrame>(
       *this,                        //
       root_surface_transformation,  //
-      instrumentation_enabled,      //
-      session_connection_           //
+      view_embedder,
+      instrumentation_enabled,  //
+      session_connection_       //
   );
 }
 

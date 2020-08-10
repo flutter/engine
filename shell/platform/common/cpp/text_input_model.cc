@@ -1,32 +1,13 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include "flutter/shell/platform/common/cpp/text_input_model.h"
 
 #include <algorithm>
 #include <codecvt>
 #include <locale>
-
-// TODO(awdavies): Need to fix this regarding issue #47.
-static constexpr char kComposingBaseKey[] = "composingBase";
-
-static constexpr char kComposingExtentKey[] = "composingExtent";
-
-static constexpr char kSelectionAffinityKey[] = "selectionAffinity";
-static constexpr char kAffinityDownstream[] = "TextAffinity.downstream";
-
-static constexpr char kSelectionBaseKey[] = "selectionBase";
-static constexpr char kSelectionExtentKey[] = "selectionExtent";
-
-static constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
-
-static constexpr char kTextKey[] = "text";
-
-// Input client configuration keys.
-static constexpr char kTextInputAction[] = "inputAction";
-static constexpr char kTextInputType[] = "inputType";
-static constexpr char kTextInputTypeName[] = "name";
 
 #if defined(_MSC_VER)
 // TODO(naifu): This temporary code is to solve link error.(VS2015/2017)
@@ -49,39 +30,15 @@ bool IsTrailingSurrogate(char32_t code_point) {
 
 }  // namespace
 
-TextInputModel::TextInputModel(int client_id, const rapidjson::Value& config)
-    : client_id_(client_id),
-      selection_base_(text_.begin()),
-      selection_extent_(text_.begin()) {
-  // TODO: Improve error handling during refactoring; this is just minimal
-  // checking to avoid asserts since RapidJSON is stricter than jsoncpp.
-  if (config.IsObject()) {
-    auto input_action = config.FindMember(kTextInputAction);
-    if (input_action != config.MemberEnd() && input_action->value.IsString()) {
-      input_action_ = input_action->value.GetString();
-    }
-    auto input_type_info = config.FindMember(kTextInputType);
-    if (input_type_info != config.MemberEnd() &&
-        input_type_info->value.IsObject()) {
-      auto input_type = input_type_info->value.FindMember(kTextInputTypeName);
-      if (input_type != input_type_info->value.MemberEnd() &&
-          input_type->value.IsString()) {
-        input_type_ = input_type->value.GetString();
-      }
-    }
-  }
-}
+TextInputModel::TextInputModel()
+    : selection_base_(text_.begin()), selection_extent_(text_.begin()) {}
 
 TextInputModel::~TextInputModel() = default;
 
 bool TextInputModel::SetEditingState(size_t selection_base,
                                      size_t selection_extent,
                                      const std::string& text) {
-  if (selection_base > selection_extent) {
-    return false;
-  }
-  // Only checks extent since it is implicitly greater-than-or-equal-to base.
-  if (selection_extent > text.size()) {
+  if (selection_base > text.size() || selection_extent > text.size()) {
     return false;
   }
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
@@ -93,8 +50,7 @@ bool TextInputModel::SetEditingState(size_t selection_base,
 }
 
 void TextInputModel::DeleteSelected() {
-  selection_base_ = text_.erase(selection_base_, selection_extent_);
-  // Moves extent back to base, so that it is a single cursor placement again.
+  selection_base_ = text_.erase(selection_start(), selection_end());
   selection_extent_ = selection_base_;
 }
 
@@ -119,6 +75,12 @@ void TextInputModel::AddText(const std::u16string& text) {
   selection_extent_ = text_.insert(selection_extent_, text.begin(), text.end());
   selection_extent_ += text.length();
   selection_base_ = selection_extent_;
+}
+
+void TextInputModel::AddText(const std::string& text) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      utf16_converter;
+  AddText(utf16_converter.from_bytes(text));
 }
 
 bool TextInputModel::Backspace() {
@@ -149,20 +111,71 @@ bool TextInputModel::Delete() {
   return false;
 }
 
-void TextInputModel::MoveCursorToBeginning() {
-  selection_base_ = text_.begin();
-  selection_extent_ = text_.begin();
+bool TextInputModel::DeleteSurrounding(int offset_from_cursor, int count) {
+  auto start = selection_extent_;
+  if (offset_from_cursor < 0) {
+    for (int i = 0; i < -offset_from_cursor; i++) {
+      // If requested start is before the available text then reduce the
+      // number of characters to delete.
+      if (start == text_.begin()) {
+        count = i;
+        break;
+      }
+      start -= IsTrailingSurrogate(*(start - 1)) ? 2 : 1;
+    }
+  } else {
+    for (int i = 0; i < offset_from_cursor && start != text_.end(); i++) {
+      start += IsLeadingSurrogate(*start) ? 2 : 1;
+    }
+  }
+
+  auto end = start;
+  for (int i = 0; i < count && end != text_.end(); i++) {
+    end += IsLeadingSurrogate(*start) ? 2 : 1;
+  }
+
+  if (start == end) {
+    return false;
+  }
+
+  auto new_base = text_.erase(start, end);
+
+  // Cursor moves only if deleted area is before it.
+  if (offset_from_cursor <= 0) {
+    selection_base_ = new_base;
+  }
+
+  // Clear selection.
+  selection_extent_ = selection_base_;
+
+  return true;
 }
 
-void TextInputModel::MoveCursorToEnd() {
+bool TextInputModel::MoveCursorToBeginning() {
+  if (selection_base_ == text_.begin() && selection_extent_ == text_.begin())
+    return false;
+
+  selection_base_ = text_.begin();
+  selection_extent_ = text_.begin();
+
+  return true;
+}
+
+bool TextInputModel::MoveCursorToEnd() {
+  if (selection_base_ == text_.end() && selection_extent_ == text_.end())
+    return false;
+
   selection_base_ = text_.end();
   selection_extent_ = text_.end();
+
+  return true;
 }
 
 bool TextInputModel::MoveCursorForward() {
   // If about to move set to the end of the highlight (when not selecting).
   if (selection_base_ != selection_extent_) {
-    selection_base_ = selection_extent_;
+    selection_base_ = selection_end();
+    selection_extent_ = selection_base_;
     return true;
   }
   // If not at the end, move the extent forward.
@@ -179,6 +192,7 @@ bool TextInputModel::MoveCursorBack() {
   // If about to move set to the beginning of the highlight
   // (when not selecting).
   if (selection_base_ != selection_extent_) {
+    selection_base_ = selection_start();
     selection_extent_ = selection_base_;
     return true;
   }
@@ -192,34 +206,19 @@ bool TextInputModel::MoveCursorBack() {
   return false;
 }
 
-std::unique_ptr<rapidjson::Document> TextInputModel::GetState() const {
-  // TODO(stuartmorgan): Move client_id out up to the plugin so that this
-  // function just returns the editing state.
-  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
-  auto& allocator = args->GetAllocator();
-  args->PushBack(client_id_, allocator);
-
-  rapidjson::Value editing_state(rapidjson::kObjectType);
-  // TODO(awdavies): Most of these are hard-coded for now.
-  editing_state.AddMember(kComposingBaseKey, -1, allocator);
-  editing_state.AddMember(kComposingExtentKey, -1, allocator);
-  editing_state.AddMember(kSelectionAffinityKey, kAffinityDownstream,
-                          allocator);
-  editing_state.AddMember(kSelectionBaseKey,
-                          static_cast<int>(selection_base_ - text_.begin()),
-                          allocator);
-  editing_state.AddMember(kSelectionExtentKey,
-                          static_cast<int>(selection_extent_ - text_.begin()),
-                          allocator);
-  editing_state.AddMember(kSelectionIsDirectionalKey, false, allocator);
+std::string TextInputModel::GetText() const {
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
       utf8_converter;
-  editing_state.AddMember(
-      kTextKey,
-      rapidjson::Value(utf8_converter.to_bytes(text_), allocator).Move(),
-      allocator);
-  args->PushBack(editing_state, allocator);
-  return args;
+  return utf8_converter.to_bytes(text_);
+}
+
+int TextInputModel::GetCursorOffset() const {
+  // Measure the length of the current text up to the cursor.
+  // There is probably a much more efficient way of doing this.
+  auto leading_text = text_.substr(0, selection_extent_ - text_.begin());
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      utf8_converter;
+  return utf8_converter.to_bytes(leading_text).size();
 }
 
 }  // namespace flutter

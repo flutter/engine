@@ -4,6 +4,7 @@
 
 #include <memory>
 
+#include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
@@ -15,6 +16,7 @@
 #include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/switches.h"
+#include "flutter/shell/version/version.h"
 #include "flutter/testing/testing.h"
 #include "include/core/SkPicture.h"
 
@@ -97,12 +99,17 @@ TEST_F(ShellTest, CacheSkSLWorks) {
   firstFrameLatch.Wait();
   WaitForIO(shell.get());
 
+// Shader precompilation from SKSL is not implemented on the Skia Vulkan
+// backend so don't run the second half of this test on Vulkan. This can get
+// removed if SKSL precompilation is implemented in the Skia Vulkan backend.
+#if !defined(SHELL_ENABLE_VULKAN)
   // To check that all shaders are precompiled, verify that no new skp is dumped
   // due to shader compilations.
   int old_skp_count = skp_count;
   skp_count = 0;
   fml::VisitFilesRecursively(dir.fd(), skp_visitor);
   ASSERT_EQ(skp_count, old_skp_count);
+#endif  // !defined(SHELL_ENABLE_VULKAN)
 
   // Remove all files generated
   fml::FileVisitor remove_visitor = [&remove_visitor](
@@ -130,12 +137,12 @@ static void CheckTextSkData(sk_sp<SkData> data, const std::string& expected) {
   ASSERT_EQ(data_string, expected);
 }
 
-void ResetAssetPath() {
-  PersistentCache::UpdateAssetPath("some_path_that_does_not_exist");
+static void ResetAssetManager() {
+  PersistentCache::SetAssetManager(nullptr);
   ASSERT_EQ(PersistentCache::GetCacheForProcess()->LoadSkSLs().size(), 0u);
 }
 
-void CheckTwoSkSLsAreLoaded() {
+static void CheckTwoSkSLsAreLoaded() {
   auto shaders = PersistentCache::GetCacheForProcess()->LoadSkSLs();
   ASSERT_EQ(shaders.size(), 2u);
 }
@@ -145,56 +152,44 @@ TEST_F(ShellTest, CanLoadSkSLsFromAsset) {
   fml::LogSettings warning_only = {fml::LOG_WARNING};
   fml::ScopedSetLogSettings scoped_set_log_settings(warning_only);
 
-  // Create an empty shell to test its service protocol handlers.
-  auto empty_settings = CreateSettingsForFixture();
-  auto empty_config = RunConfiguration::InferFromSettings(empty_settings);
-  std::unique_ptr<Shell> empty_shell = CreateShell(empty_settings);
+  // The SkSL key is Base32 encoded. "IE" is the encoding of "A" and "II" is the
+  // encoding of "B".
+  //
+  // The SkSL data is Base64 encoded. "eA==" is the encoding of "x" and "eQ=="
+  // is the encoding of "y".
+  const std::string kTestJson =
+      "{\n"
+      "  \"data\": {\n"
+      "    \"IE\": \"eA==\",\n"
+      "    \"II\": \"eQ==\"\n"
+      "  }\n"
+      "}\n";
 
   // Temp dir for the asset.
   fml::ScopedTemporaryDirectory asset_dir;
-  fml::UniqueFD sksl_asset_dir =
-      fml::OpenDirectory(asset_dir.fd(), PersistentCache::kSkSLSubdirName, true,
-                         fml::FilePermission::kReadWrite);
 
-  // The SkSL filenames are Base32 encoded strings. "IE" is the encoding of "A"
-  // and "II" is the encoding of "B".
-  const std::string kFileNames[2] = {"IE", "II"};
-  const std::string kFileData[2] = {"x", "y"};
+  auto data = std::make_unique<fml::DataMapping>(
+      std::vector<uint8_t>{kTestJson.begin(), kTestJson.end()});
+  fml::WriteAtomically(asset_dir.fd(), PersistentCache::kAssetFileName, *data);
 
-  // Prepare 2 SkSL files in the asset directory.
-  for (int i = 0; i < 2; i += 1) {
-    auto data = std::make_unique<fml::DataMapping>(
-        std::vector<uint8_t>{kFileData[i].begin(), kFileData[i].end()});
-    fml::WriteAtomically(sksl_asset_dir, kFileNames[i].c_str(), *data);
-  }
-
-  // 1st, test that RunConfiguration::InferFromSettings sets the path.
-  ResetAssetPath();
+  // 1st, test that RunConfiguration::InferFromSettings sets the asset manager.
+  ResetAssetManager();
   auto settings = CreateSettingsForFixture();
   settings.assets_path = asset_dir.path();
   RunConfiguration::InferFromSettings(settings);
   CheckTwoSkSLsAreLoaded();
 
-  // 2nd, test that Shell::OnServiceProtocolSetAssetBundlePath sets the path.
-  ResetAssetPath();
-  ServiceProtocol::Handler::ServiceProtocolMap params;
-  rapidjson::Document document;
-  params["assetDirectory"] = asset_dir.path();
-  OnServiceProtocol(
-      empty_shell.get(), ShellTest::ServiceProtocolEnum::kSetAssetBundlePath,
-      empty_shell->GetTaskRunners().GetUITaskRunner(), params, document);
+  // 2nd, test that the RunConfiguration constructor sets the asset manager.
+  // (Android is directly calling that constructor without InferFromSettings.)
+  ResetAssetManager();
+  auto asset_manager = std::make_shared<AssetManager>();
+  RunConfiguration config(nullptr, asset_manager);
+  asset_manager->PushBack(
+      std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
+          asset_dir.path().c_str(), false, fml::FilePermission::kRead)));
   CheckTwoSkSLsAreLoaded();
 
-  // 3rd, test that Shell::OnServiceProtocolRunInView sets the path.
-  ResetAssetPath();
-  params["assetDirectory"] = asset_dir.path();
-  params["mainScript"] = "no_such_script.dart";
-  OnServiceProtocol(
-      empty_shell.get(), ShellTest::ServiceProtocolEnum::kSetAssetBundlePath,
-      empty_shell->GetTaskRunners().GetUITaskRunner(), params, document);
-  CheckTwoSkSLsAreLoaded();
-
-  // 4th, test the content of the SkSLs in the asset.
+  // 3rd, test the content of the SkSLs in the asset.
   {
     auto shaders = PersistentCache::GetCacheForProcess()->LoadSkSLs();
     ASSERT_EQ(shaders.size(), 2u);
@@ -212,10 +207,69 @@ TEST_F(ShellTest, CanLoadSkSLsFromAsset) {
   }
 
   // Cleanup.
-  DestroyShell(std::move(empty_shell));
-  fml::UnlinkFile(sksl_asset_dir, kFileNames[0].c_str());
-  fml::UnlinkFile(sksl_asset_dir, kFileNames[1].c_str());
-  fml::UnlinkDirectory(asset_dir.fd(), PersistentCache::kSkSLSubdirName);
+  fml::UnlinkFile(asset_dir.fd(), PersistentCache::kAssetFileName);
+}
+
+TEST_F(ShellTest, CanRemoveOldPersistentCache) {
+  fml::ScopedTemporaryDirectory base_dir;
+  ASSERT_TRUE(base_dir.fd().is_valid());
+
+  fml::CreateDirectory(base_dir.fd(),
+                       {"flutter_engine", GetFlutterEngineVersion(), "skia"},
+                       fml::FilePermission::kReadWrite);
+
+  constexpr char kOldEngineVersion[] = "old";
+  auto old_created = fml::CreateDirectory(
+      base_dir.fd(), {"flutter_engine", kOldEngineVersion, "skia"},
+      fml::FilePermission::kReadWrite);
+  ASSERT_TRUE(old_created.is_valid());
+
+  PersistentCache::SetCacheDirectoryPath(base_dir.path());
+  PersistentCache::ResetCacheForProcess();
+
+  auto engine_dir = fml::OpenDirectoryReadOnly(base_dir.fd(), "flutter_engine");
+  auto current_dir =
+      fml::OpenDirectoryReadOnly(engine_dir, GetFlutterEngineVersion());
+  auto old_dir = fml::OpenDirectoryReadOnly(engine_dir, kOldEngineVersion);
+
+  ASSERT_TRUE(engine_dir.is_valid());
+  ASSERT_TRUE(current_dir.is_valid());
+  ASSERT_FALSE(old_dir.is_valid());
+
+  // Cleanup
+  fml::RemoveFilesInDirectory(base_dir.fd());
+}
+
+TEST_F(ShellTest, CanPurgePersistentCache) {
+  fml::ScopedTemporaryDirectory base_dir;
+  ASSERT_TRUE(base_dir.fd().is_valid());
+  auto cache_dir = fml::CreateDirectory(
+      base_dir.fd(),
+      {"flutter_engine", GetFlutterEngineVersion(), "skia", GetSkiaVersion()},
+      fml::FilePermission::kReadWrite);
+  PersistentCache::SetCacheDirectoryPath(base_dir.path());
+  PersistentCache::ResetCacheForProcess();
+
+  // Generate a dummy persistent cache.
+  fml::DataMapping test_data(std::string("test"));
+  ASSERT_TRUE(fml::WriteAtomically(cache_dir, "test", test_data));
+  auto file = fml::OpenFileReadOnly(cache_dir, "test");
+  ASSERT_TRUE(file.is_valid());
+
+  // Run engine with purge_persistent_cache to remove the dummy cache.
+  auto settings = CreateSettingsForFixture();
+  settings.purge_persistent_cache = true;
+  auto config = RunConfiguration::InferFromSettings(settings);
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  RunEngine(shell.get(), std::move(config));
+
+  // Verify that the dummy is purged.
+  file = fml::OpenFileReadOnly(cache_dir, "test");
+  ASSERT_FALSE(file.is_valid());
+
+  // Cleanup
+  fml::RemoveFilesInDirectory(base_dir.fd());
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing

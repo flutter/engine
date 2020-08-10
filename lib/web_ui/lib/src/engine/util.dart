@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 /// Generic callback signature, used by [_futurize].
@@ -12,7 +12,7 @@ typedef Callback<T> = void Function(T result);
 ///
 /// Return value should be null on success, and a string error message on
 /// failure.
-typedef Callbacker<T> = String Function(Callback<T> callback);
+typedef Callbacker<T> = String? Function(Callback<T> callback);
 
 /// Converts a method that receives a value-returning callback to a method that
 /// returns a Future.
@@ -37,7 +37,7 @@ typedef Callbacker<T> = String Function(Callback<T> callback);
 /// ```
 Future<T> futurize<T>(Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
-  final String error = callbacker((T t) {
+  final String? error = callbacker((T t) {
     if (t == null) {
       completer.completeError(Exception('operation failed'));
     } else {
@@ -58,7 +58,7 @@ String matrix4ToCssTransform(Matrix4 matrix) {
 /// Applies a transform to the [element].
 ///
 /// See [float64ListToCssTransform] for details on how the CSS value is chosen.
-void setElementTransform(html.Element element, Float64List matrix4) {
+void setElementTransform(html.Element element, Float32List matrix4) {
   element.style
     ..transformOrigin = '0 0 0'
     ..transform = float64ListToCssTransform(matrix4);
@@ -73,7 +73,7 @@ void setElementTransform(html.Element element, Float64List matrix4) {
 /// See also:
 ///  * https://github.com/flutter/flutter/issues/32274
 ///  * https://bugs.chromium.org/p/chromium/issues/detail?id=1040222
-String float64ListToCssTransform(Float64List matrix) {
+String float64ListToCssTransform(Float32List matrix) {
   assert(matrix.length == 16);
   final TransformKind transformKind = transformKindOf(matrix);
   if (transformKind == TransformKind.transform2d) {
@@ -82,7 +82,7 @@ String float64ListToCssTransform(Float64List matrix) {
     return float64ListToCssTransform3d(matrix);
   } else {
     assert(transformKind == TransformKind.identity);
-    return null;
+    return 'none';
   }
 }
 
@@ -105,9 +105,9 @@ enum TransformKind {
 }
 
 /// Detects the kind of transform the [matrix] performs.
-TransformKind transformKindOf(Float64List matrix) {
+TransformKind transformKindOf(Float32List matrix) {
   assert(matrix.length == 16);
-  final Float64List m = matrix;
+  final Float32List m = matrix;
 
   // If matrix contains scaling, rotation, z translation or
   // perspective transform, it is not considered simple.
@@ -152,7 +152,7 @@ TransformKind transformKindOf(Float64List matrix) {
 }
 
 /// Returns `true` is the [matrix] describes an identity transformation.
-bool isIdentityFloat64ListTransform(Float64List matrix) {
+bool isIdentityFloat32ListTransform(Float32List matrix) {
   assert(matrix.length == 16);
   return transformKindOf(matrix) == TransformKind.identity;
 }
@@ -164,15 +164,15 @@ bool isIdentityFloat64ListTransform(Float64List matrix) {
 /// permitted. However, it is inefficient to construct a matrix for an identity
 /// transform. Consider removing the CSS `transform` property from elements
 /// that apply identity transform.
-String float64ListToCssTransform2d(Float64List matrix) {
+String float64ListToCssTransform2d(Float32List matrix) {
   assert (transformKindOf(matrix) != TransformKind.complex);
   return 'matrix(${matrix[0]},${matrix[1]},${matrix[4]},${matrix[5]},${matrix[12]},${matrix[13]})';
 }
 
 /// Converts [matrix] to a 3D CSS transform value.
-String float64ListToCssTransform3d(Float64List matrix) {
+String float64ListToCssTransform3d(Float32List matrix) {
   assert(matrix.length == 16);
-  final Float64List m = matrix;
+  final Float32List m = matrix;
   if (m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[2] == 0.0 &&
@@ -203,7 +203,7 @@ bool get assertionsEnabled {
   return k;
 }
 
-final Float64List _tempRectData = Float64List(4);
+final Float32List _tempRectData = Float32List(4);
 
 /// Transforms a [ui.Rect] given the effective [transform].
 ///
@@ -228,14 +228,14 @@ ui.Rect transformRect(Matrix4 transform, ui.Rect rect) {
 ///
 /// WARNING: do not use this outside [transformLTRB]. Sharing this variable in
 /// other contexts will lead to bugs.
-final Float64List _tempPointData = Float64List(16);
-final Matrix4 _tempPointMatrix = Matrix4.fromFloat64List(_tempPointData);
+final Float32List _tempPointData = Float32List(16);
+final Matrix4 _tempPointMatrix = Matrix4.fromFloat32List(_tempPointData);
 
 /// Transforms a rectangle given the effective [transform].
 ///
 /// This is the same as [transformRect], except that the rect is specified
 /// in terms of left, top, right, and bottom edge offsets.
-void transformLTRB(Matrix4 transform, Float64List ltrb) {
+void transformLTRB(Matrix4 transform, Float32List ltrb) {
   // Construct a matrix where each row represents a vector pointing at
   // one of the four corners of the (left, top, right, bottom) rectangle.
   // Using the row-major order allows us to multiply the matrix in-place
@@ -243,14 +243,14 @@ void transformLTRB(Matrix4 transform, Float64List ltrb) {
   // library has a convenience function `multiplyTranspose` that performs
   // the multiplication without copying. This way we compute the positions
   // of all four points in a single matrix-by-matrix multiplication at the
-  // cost of one `Matrix4` instance and one `Float64List` instance.
+  // cost of one `Matrix4` instance and one `Float32List` instance.
   //
   // The rejected alternative was to use `Vector3` for each point and
   // multiply by the current transform. However, that would cost us four
-  // `Vector3` instances, four `Float64List` instances, and four
+  // `Vector3` instances, four `Float32List` instances, and four
   // matrix-by-vector multiplications.
   //
-  // `Float64List` initializes the array with zeros, so we do not have to
+  // `Float32List` initializes the array with zeros, so we do not have to
   // fill in every single element.
 
   // Row 0: top-left
@@ -319,19 +319,34 @@ String _pathToSvgClipPath(ui.Path path,
   sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
 
   sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
-  pathToSvg(path, sb, offsetX: offsetX, offsetY: offsetY);
+  pathToSvg(path as SurfacePath, sb, offsetX: offsetX, offsetY: offsetY);
   sb.write('"></path></clipPath></defs></svg');
   return sb.toString();
 }
 
 /// Converts color to a css compatible attribute value.
-String colorToCssString(ui.Color color) {
+String? colorToCssString(ui.Color? color) {
   if (color == null) {
     return null;
   }
   final int value = color.value;
   if ((0xff000000 & value) == 0xff000000) {
-    return _colorToCssStringRgbOnly(color);
+    final String hexValue = (value & 0xFFFFFF).toRadixString(16);
+    final int hexValueLength = hexValue.length;
+    switch (hexValueLength) {
+      case 1:
+        return '#00000$hexValue';
+      case 2:
+        return '#0000$hexValue';
+      case 3:
+        return '#000$hexValue';
+      case 4:
+        return '#00$hexValue';
+      case 5:
+        return '#0$hexValue';
+      default:
+        return '#$hexValue';
+    }
   } else {
     final double alpha = ((value >> 24) & 0xFF) / 255.0;
     final StringBuffer sb = StringBuffer();
@@ -346,16 +361,6 @@ String colorToCssString(ui.Color color) {
     sb.write(')');
     return sb.toString();
   }
-}
-
-/// Returns the CSS value of this color without the alpha component.
-///
-/// This is useful when painting shadows as on the Web shadow opacity combines
-/// with the paint opacity.
-String _colorToCssStringRgbOnly(ui.Color color) {
-  final int value = color.value;
-  final String paddedValue = '00000${value.toRadixString(16)}';
-  return '#${paddedValue.substring(paddedValue.length - 6)}';
 }
 
 /// Converts color components to a CSS compatible attribute value.
@@ -408,27 +413,42 @@ const Set<String> _genericFontFamilies = <String>{
 
 /// A default fallback font family in case an unloaded font has been requested.
 ///
-/// For iOS, default to Helvetica, where it should be available, otherwise
-/// default to Arial.
-final String _fallbackFontFamily =
-    operatingSystem == OperatingSystem.iOs ? 'Helvetica' : 'Arial';
+/// -apple-system targets San Francisco in Safari (on Mac OS X and iOS),
+/// and it targets Neue Helvetica and Lucida Grande on older versions of
+/// Mac OS X. It properly selects between San Francisco Text and
+/// San Francisco Display depending on the text’s size.
+///
+/// For iOS, default to -apple-system, where it should be available, otherwise
+/// default to Arial. BlinkMacSystemFont is used for Chrome on iOS.
+final String _fallbackFontFamily = _isMacOrIOS ?
+    '-apple-system, BlinkMacSystemFont' : 'Arial';
+
+bool get _isMacOrIOS => operatingSystem == OperatingSystem.iOs ||
+    operatingSystem == OperatingSystem.macOs;
 
 /// Create a font-family string appropriate for CSS.
 ///
 /// If the given [fontFamily] is a generic font-family, then just return it.
 /// Otherwise, wrap the family name in quotes and add a fallback font family.
-String canonicalizeFontFamily(String fontFamily) {
+String? canonicalizeFontFamily(String? fontFamily) {
   if (_genericFontFamilies.contains(fontFamily)) {
     return fontFamily;
+  }
+  if (_isMacOrIOS) {
+    // Unlike Safari, Chrome on iOS does not correctly fallback to cupertino
+    // on sans-serif.
+    // Map to San Francisco Text/Display fonts, use -apple-system,
+    // BlinkMacSystemFont.
+    if (fontFamily == '.SF Pro Text' || fontFamily == '.SF Pro Display' ||
+        fontFamily == '.SF UI Text' || fontFamily == '.SF UI Display') {
+      return _fallbackFontFamily;
+    }
   }
   return '"$fontFamily", $_fallbackFontFamily, sans-serif';
 }
 
 /// Converts a list of [Offset] to a typed array of floats.
 Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
-  if (offsetList == null) {
-    return null;
-  }
   final int length = offsetList.length;
   final floatList = Float32List(length * 2);
   for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
@@ -448,19 +468,62 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 ///
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
-void applyWebkitClipFix(html.Element containerElement) {
+void applyWebkitClipFix(html.Element? containerElement) {
   if (browserEngine == BrowserEngine.webkit) {
-    containerElement.style.zIndex = '0';
+    containerElement!.style.zIndex = '0';
   }
 }
 
-final ByteData _fontChangeMessage = JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
+final ByteData? _fontChangeMessage = JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
+
+// Font load callbacks will typically arrive in sequence, we want to prevent
+// sendFontChangeMessage of causing multiple synchronous rebuilds.
+// This flag ensures we properly schedule a single call to framework.
+bool _fontChangeScheduled = false;
 
 FutureOr<void> sendFontChangeMessage() async {
   if (window._onPlatformMessage != null)
-    window.invokeOnPlatformMessage(
-      'flutter/system',
-      _fontChangeMessage,
-      (_) {},
-    );
+    if (!_fontChangeScheduled) {
+      _fontChangeScheduled = true;
+      // Batch updates into next animationframe.
+      html.window.requestAnimationFrame((num _) {
+        _fontChangeScheduled = false;
+        window.invokeOnPlatformMessage(
+          'flutter/system',
+          _fontChangeMessage,
+              (_) {},
+        );
+      });
+    }
+}
+
+// Stores matrix in a form that allows zero allocation transforms.
+class _FastMatrix64 {
+  final Float64List matrix;
+  double transformedX = 0, transformedY = 0;
+  _FastMatrix64(this.matrix);
+
+  void transform(double x, double y) {
+    transformedX = matrix[12] + (matrix[0] * x) + (matrix[4] * y);
+    transformedY = matrix[13] + (matrix[1] * x) + (matrix[5] * y);
+  }
+}
+
+/// Roughly the inverse of [ui.Shadow.convertRadiusToSigma].
+///
+/// This does not inverse [ui.Shadow.convertRadiusToSigma] exactly, because on
+/// the Web the difference between sigma and blur radius is different from
+/// Flutter mobile.
+double convertSigmaToRadius(double sigma) {
+  return sigma * 2.0;
+}
+
+/// Used to check for null values that are non-nullable.
+///
+/// This is useful when some external API (e.g. HTML DOM) disagrees with
+/// Dart type declarations (e.g. `dart:html`). Where `dart:html` may believe
+/// something to be non-null, it may actually be null (e.g. old browsers do
+/// not implement a feature, such as clipboard).
+bool isUnsoundNull(dynamic object) {
+  return object == null;
 }

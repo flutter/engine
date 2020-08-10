@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 /// How far is the light source from the surface of the UI.
@@ -81,8 +81,8 @@ ui.Rect computePenumbraBounds(ui.Rect shape, double elevation) {
 @immutable
 class SurfaceShadowData {
   const SurfaceShadowData({
-    @required this.blurWidth,
-    @required this.offset,
+    required this.blurWidth,
+    required this.offset,
   });
 
   /// The length in pixels of the shadow.
@@ -106,7 +106,7 @@ class SurfaceShadowData {
 /// (cannot) use Skia's shadow API directly. However, this algorithms is
 /// consistent with [computePenumbraBounds] used by [RecordingCanvas] during
 /// bounds estimation.
-SurfaceShadowData computeShadow(ui.Rect shape, double elevation) {
+SurfaceShadowData? computeShadow(ui.Rect shape, double elevation) {
   if (elevation == 0.0) {
     return null;
   }
@@ -128,14 +128,29 @@ SurfaceShadowData computeShadow(ui.Rect shape, double elevation) {
 
 /// Applies a CSS shadow to the [shape].
 void applyCssShadow(
-    html.Element element, ui.Rect shape, double elevation, ui.Color color) {
-  final SurfaceShadowData shadow = computeShadow(shape, elevation);
+    html.Element? element, ui.Rect shape, double elevation, ui.Color color) {
+  final SurfaceShadowData? shadow = computeShadow(shape, elevation);
   if (shadow == null) {
-    element.style.boxShadow = 'none';
+    element!.style.boxShadow = 'none';
   } else {
-    // Multiply by 0.4 to make shadows less aggressive (https://github.com/flutter/flutter/issues/52734)
-    final double alpha = 0.4 * color.alpha / 255;
-    element.style.boxShadow = '${shadow.offset.dx}px ${shadow.offset.dy}px '
-        '${shadow.blurWidth}px 0px rgba(${color.red}, ${color.green}, ${color.blue}, $alpha)';
+    color = toShadowColor(color);
+    element!.style.boxShadow = '${shadow.offset.dx}px ${shadow.offset.dy}px '
+        '${shadow.blurWidth}px 0px rgba(${color.red}, ${color.green}, ${color.blue}, ${color.alpha / 255})';
   }
+}
+
+/// Converts a shadow color specified by the framework to the color that should
+/// actually be applied when rendering the shadow.
+///
+/// Flutter shadows look softer than the color specified by the developer. For
+/// example, it is common to get a solid black for a shadow and see a very soft
+/// shadow. This function softens the color by reducing its alpha by a constant
+/// factor.
+ui.Color toShadowColor(ui.Color color) {
+  // Reduce alpha to make shadows less aggressive:
+  //
+  // - https://github.com/flutter/flutter/issues/52734
+  // - https://github.com/flutter/gallery/issues/118
+  final int reducedAlpha = (0.3 * color.alpha).round();
+  return ui.Color((reducedAlpha & 0xff) << 24 | (color.value & 0x00ffffff));
 }

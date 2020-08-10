@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <stdint.h>
 
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -21,10 +22,17 @@ namespace flutter {
 
 class FrameTiming {
  public:
-  enum Phase { kBuildStart, kBuildFinish, kRasterStart, kRasterFinish, kCount };
+  enum Phase {
+    kVsyncStart,
+    kBuildStart,
+    kBuildFinish,
+    kRasterStart,
+    kRasterFinish,
+    kCount
+  };
 
-  static constexpr Phase kPhases[kCount] = {kBuildStart, kBuildFinish,
-                                            kRasterStart, kRasterFinish};
+  static constexpr Phase kPhases[kCount] = {
+      kVsyncStart, kBuildStart, kBuildFinish, kRasterStart, kRasterFinish};
 
   fml::TimePoint Get(Phase phase) const { return data_[phase]; }
   fml::TimePoint Set(Phase phase, fml::TimePoint value) {
@@ -91,11 +99,12 @@ struct Settings {
   bool enable_checked_mode = false;
   bool start_paused = false;
   bool trace_skia = false;
-  std::string trace_whitelist;
+  std::string trace_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
   bool dump_skp_on_shader_compilation = false;
   bool cache_sksl = false;
+  bool purge_persistent_cache = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
@@ -206,6 +215,20 @@ struct Settings {
   /// See also:
   /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
   int64_t old_gen_heap_size = -1;
+
+  /// A timestamp representing when the engine started. The value is based
+  /// on the clock used by the Dart timeline APIs. This timestamp is used
+  /// to log a timeline event that tracks the latency of engine startup.
+  std::chrono::microseconds engine_start_timestamp = {};
+
+  /// Whether the application claims that it uses the android embedded view for
+  /// platform views.
+  ///
+  /// A `true` value will result the raster task runner always run on the
+  /// platform thread.
+  // TODO(cyanlaz): Remove this when dynamic thread merging is done.
+  // https://github.com/flutter/flutter/issues/59930
+  bool use_embedded_view = false;
 
   std::string ToString() const;
 };

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -13,10 +14,57 @@ import 'package:test/test.dart';
 
 typedef CanvasCallback = void Function(Canvas canvas);
 
+Future<Image> createImage(int width, int height) {
+  final Completer<Image> completer = Completer<Image>();
+  decodeImageFromPixels(
+    Uint8List.fromList(List<int>.generate(
+      width * height * 4,
+      (int pixel) => pixel % 255,
+    )),
+    width,
+    height,
+    PixelFormat.rgba8888,
+    (Image image) {
+      completer.complete(image);
+    },
+  );
+
+  return completer.future;
+}
+
 void testCanvas(CanvasCallback callback) {
   try {
     callback(Canvas(PictureRecorder(), const Rect.fromLTRB(0.0, 0.0, 0.0, 0.0)));
   } catch (error) { } // ignore: empty_catches
+}
+
+void expectAssertion(Function callback) {
+  bool assertsEnabled = false;
+  assert(() {
+    assertsEnabled = true;
+    return true;
+  }());
+  if (assertsEnabled) {
+    bool threw = false;
+    try {
+      callback();
+    } catch (e) {
+      expect(e is AssertionError, true);
+      threw = true;
+    }
+    expect(threw, true);
+  }
+}
+
+void expectArgumentError(Function callback) {
+  bool threw = false;
+  try {
+    callback();
+  } catch (e) {
+    expect(e is ArgumentError, true);
+    threw = true;
+  }
+  expect(threw, true);
 }
 
 void testNoCrashes() {
@@ -198,4 +246,142 @@ void main() {
         await fuzzyGoldenImageCompare(image, 'canvas_test_dithered_gradient.png');
     expect(areEqual, true);
   }, skip: !Platform.isLinux); // https://github.com/flutter/flutter/issues/53784
+
+  test('Null values allowed for drawAtlas methods', () async {
+    final Image image = await createImage(100, 100);
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect rect = Rect.fromLTWH(0, 0, 100, 100);
+    final RSTransform transform = RSTransform(1, 0, 0, 0);
+    const Color color = Color(0);
+    final Paint paint = Paint();
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, null, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[], null, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], null, null, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, null, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), null, null, rect, paint);
+
+    expectAssertion(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, null));
+    expectAssertion(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], null, rect, paint));
+    expectAssertion(() => canvas.drawAtlas(image, <RSTransform>[transform], null, <Color>[color], BlendMode.src, rect, paint));
+    expectAssertion(() => canvas.drawAtlas(image, null, <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
+    expectAssertion(() => canvas.drawAtlas(null, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
+  });
+
+  test('Data lengths must match for drawAtlas methods', () async {
+    final Image image = await createImage(100, 100);
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect rect = Rect.fromLTWH(0, 0, 100, 100);
+    final RSTransform transform = RSTransform(1, 0, 0, 0);
+    const Color color = Color(0);
+    final Paint paint = Paint();
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform, transform], <Rect>[rect, rect], <Color>[color, color], BlendMode.src, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[], null, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], null, null, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(4), Float32List(4), Int32List(1), BlendMode.src, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(4), Float32List(4), null, null, rect, paint);
+
+    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[], <Color>[color], BlendMode.src, rect, paint));
+    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
+    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color, color], BlendMode.src, rect, paint));
+    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect, rect], <Color>[color], BlendMode.src, rect, paint));
+    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform, transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
+    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(3), Float32List(3), null, null, rect, paint));
+    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(0), null, null, rect, paint));
+    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(0), Float32List(4), null, null, rect, paint));
+    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(4), Int32List(2), BlendMode.src, rect, paint));
+  });
+
+  test('Image size reflected in picture size for image*, drawAtlas, and drawPicture methods', () async {
+    final Image image = await createImage(100, 100);
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect rect = Rect.fromLTWH(0, 0, 100, 100);
+    canvas.drawImage(image, Offset.zero, Paint());
+    canvas.drawImageRect(image, rect, rect, Paint());
+    canvas.drawImageNine(image, rect, rect, Paint());
+    canvas.drawAtlas(image, <RSTransform>[], <Rect>[], <Color>[], BlendMode.src, rect, Paint());
+    final Picture picture = recorder.endRecording();
+
+    // Some of the numbers here appear to utilize sharing/reuse of common items,
+    // e.g. of the Paint() or same `Rect` usage, etc.
+    // The raw utilization of a 100x100 picture here should be 53333:
+    // 100 * 100 * 4 * (4/3) = 53333.333333....
+    // To avoid platform specific idiosyncrasies and brittleness against changes
+    // to Skia, we just assert this is _at least_ 4x the image size.
+    const int minimumExpected = 53333 * 4;
+    expect(picture.approximateBytesUsed, greaterThan(minimumExpected));
+
+    final PictureRecorder recorder2 = PictureRecorder();
+    final Canvas canvas2 = Canvas(recorder2);
+    canvas2.drawPicture(picture);
+    final Picture picture2 = recorder2.endRecording();
+
+    expect(picture2.approximateBytesUsed, greaterThan(minimumExpected));
+  });
+
+  test('Vertex buffer size reflected in picture size for drawVertices', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+
+    const int uint16max = 65535;
+
+    final Int32List colors = Int32List(uint16max);
+    final Float32List coords = Float32List(uint16max * 2);
+    final Uint16List indices = Uint16List(uint16max);
+    final Float32List positions = Float32List(uint16max * 2);
+    colors[0] = const Color(0xFFFF0000).value;
+    colors[1] = const Color(0xFF00FF00).value;
+    colors[2] = const Color(0xFF0000FF).value;
+    colors[3] = const Color(0xFF00FFFF).value;
+    indices[1] = indices[3] = 1;
+    indices[2] = indices[5] = 3;
+    indices[4] = 2;
+    positions[2] = positions[4] = positions[5] = positions[7] = 250.0;
+
+    final Vertices vertices = Vertices.raw(
+      VertexMode.triangles,
+      positions,
+      textureCoordinates: coords,
+      colors: colors,
+      indices: indices,
+    );
+    canvas.drawVertices(vertices, BlendMode.src, Paint());
+    final Picture picture = recorder.endRecording();
+
+
+    const int minimumExpected = uint16max * 4;
+    expect(picture.approximateBytesUsed, greaterThan(minimumExpected));
+
+    final PictureRecorder recorder2 = PictureRecorder();
+    final Canvas canvas2 = Canvas(recorder2);
+    canvas2.drawPicture(picture);
+    final Picture picture2 = recorder2.endRecording();
+
+    expect(picture2.approximateBytesUsed, greaterThan(minimumExpected));
+  });
+
+  test('Path reflected in picture size for drawPath, clipPath, and drawShadow', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    final Path path = Path();
+    for (int i = 0; i < 10000; i++) {
+      path.lineTo(5, 9);
+      path.lineTo(i.toDouble(), i.toDouble());
+    }
+    path.close();
+    canvas.drawPath(path, Paint());
+    canvas.drawShadow(path, const Color(0xFF000000), 5.0, false);
+    canvas.clipPath(path);
+    final Picture picture = recorder.endRecording();
+
+    // Slightly fuzzy here to allow for platform specific differences
+    // Measurement on macOS: 541078
+    expect(picture.approximateBytesUsed, greaterThan(530000));
+  });
 }

@@ -4,7 +4,7 @@
 
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
@@ -14,6 +14,10 @@ FLUTTER_ASSERT_ARC
 
 @interface FlutterEngine ()
 - (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI;
+@end
+
+@interface FlutterEngine (TestLowMemory)
+- (void)notifyLowMemory;
 @end
 
 extern NSNotificationName const FlutterViewControllerWillDealloc;
@@ -54,10 +58,44 @@ typedef enum UIAccessibilityContrast : NSInteger {
 #endif
 
 @interface FlutterViewController (Tests)
+- (void)surfaceUpdated:(BOOL)appeared;
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences;
 @end
 
 @implementation FlutterViewControllerTest
+
+- (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
+  id engine = OCMClassMock([FlutterEngine class]);
+  id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([engine lifecycleChannel]).andReturn(lifecycleChannel);
+  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  id viewControllerMock = OCMPartialMock(viewControllerA);
+  OCMStub([viewControllerMock surfaceUpdated:NO]);
+  OCMStub([engine viewController]).andReturn(viewControllerB);
+  [viewControllerA viewDidDisappear:NO];
+  OCMReject([lifecycleChannel sendMessage:@"AppLifecycleState.paused"]);
+  OCMReject([viewControllerMock surfaceUpdated:[OCMArg any]]);
+}
+
+- (void)testViewDidDisappearDoesPauseEngineWhenIsTheViewController {
+  id engine = OCMClassMock([FlutterEngine class]);
+  id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([engine lifecycleChannel]).andReturn(lifecycleChannel);
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  id viewControllerMock = OCMPartialMock(viewController);
+  OCMStub([viewControllerMock surfaceUpdated:NO]);
+  OCMStub([engine viewController]).andReturn(viewController);
+  [viewController viewDidDisappear:NO];
+  OCMVerify([lifecycleChannel sendMessage:@"AppLifecycleState.paused"]);
+  OCMVerify([viewControllerMock surfaceUpdated:NO]);
+}
 
 - (void)testBinaryMessenger {
   id engine = OCMClassMock([FlutterEngine class]);
@@ -493,6 +531,20 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerHideHomeIndicator
                                                       object:nil];
   XCTAssertTrue(realVC.prefersHomeIndicatorAutoHidden, @"");
+}
+
+- (void)testNotifyLowMemory {
+  id engine = OCMClassMock([FlutterEngine class]);
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  OCMStub([engine viewController]).andReturn(viewController);
+  id viewControllerMock = OCMPartialMock(viewController);
+  OCMStub([viewControllerMock surfaceUpdated:NO]);
+
+  [viewController beginAppearanceTransition:NO animated:NO];
+  [viewController endAppearanceTransition];
+  OCMVerify([engine notifyLowMemory]);
 }
 
 @end

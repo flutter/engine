@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_application.h"
+#include "vulkan_application.h"
 
 #include <utility>
 #include <vector>
 
-#include "flutter/vulkan/vulkan_device.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
-#include "flutter/vulkan/vulkan_utilities.h"
+#include "vulkan_device.h"
+#include "vulkan_proc_table.h"
+#include "vulkan_utilities.h"
 
 namespace vulkan {
 
 VulkanApplication::VulkanApplication(
-    VulkanProcTable& p_vk,
+    VulkanProcTable& p_vk,  // NOLINT
     const std::string& application_name,
     std::vector<std::string> enabled_extensions,
     uint32_t application_version,

@@ -406,12 +406,31 @@ void main() async {
     expect(
       paragraph.getBoxesForRange(1, 2).single,
       const TextBox.fromLTRBD(
-        10,
+        970,
         0,
-        20,
+        980,
         10,
         TextDirection.rtl,
       ),
+    );
+  });
+
+  testEachMeasurement('getBoxesForRange returns a box for rich text', () {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+      textDirection: TextDirection.ltr,
+    ));
+    builder.addText('abcd');
+    builder.pushStyle(TextStyle(fontWeight: FontWeight.bold));
+    builder.addText('xyz');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 1000));
+    expect(
+      paragraph.getBoxesForRange(1, 2).single,
+      const TextBox.fromLTRBD(0, 0, 0, 10, TextDirection.ltr),
     );
   });
 
@@ -778,6 +797,46 @@ void main() async {
       <TextBox>[
         TextBox.fromLTRBD(0.0, 0.0, 40.0, 10.0, TextDirection.ltr),
         TextBox.fromLTRBD(0.0, 10.0, 70.0, 20.0, TextDirection.ltr),
+      ],
+    );
+  });
+
+  testEachMeasurement('getBoxesForRange includes trailing spaces', () {
+    const String text = 'abcd abcde  ';
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+    ));
+    builder.addText(text);
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+    expect(
+      paragraph.getBoxesForRange(0, text.length),
+      <TextBox>[
+        TextBox.fromLTRBD(0.0, 0.0, 120.0, 10.0, TextDirection.ltr),
+      ],
+    );
+  });
+
+  testEachMeasurement('getBoxesForRange multi-line includes trailing spaces', () {
+    const String text = 'abcd\nabcde  \nabc';
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+    ));
+    builder.addText(text);
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+    expect(
+      paragraph.getBoxesForRange(0, text.length),
+      <TextBox>[
+        TextBox.fromLTRBD(0.0, 0.0, 40.0, 10.0, TextDirection.ltr),
+        TextBox.fromLTRBD(0.0, 10.0, 70.0, 20.0, TextDirection.ltr),
+        TextBox.fromLTRBD(0.0, 20.0, 30.0, 30.0, TextDirection.ltr),
       ],
     );
   });

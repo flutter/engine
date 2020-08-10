@@ -25,7 +25,6 @@
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/ptrace_ios.h"
-#include "flutter/runtime/start_up.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/skia/include/core/SkExecutor.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -129,13 +128,15 @@ bool DartFileModifiedCallback(const char* source_url, int64_t since_ms) {
 
   const char* path = source_url + kFileUriPrefixLength;
   struct stat info;
-  if (stat(path, &info) < 0)
+  if (stat(path, &info) < 0) {
     return true;
+  }
 
   // If st_mtime is zero, it's more likely that the file system doesn't support
   // mtime than that the file was actually modified in the 1970s.
-  if (!info.st_mtime)
+  if (!info.st_mtime) {
     return true;
+  }
 
   // It's very unclear what time bases we're with here. The Dart API doesn't
   // document the time base for since_ms. Reading the code, the value varies by
@@ -383,8 +384,9 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   PushBackAll(&args, kDartTraceStreamsArgs, fml::size(kDartTraceStreamsArgs));
 #endif
 
-  for (size_t i = 0; i < settings_.dart_flags.size(); i++)
+  for (size_t i = 0; i < settings_.dart_flags.size(); i++) {
     args.push_back(settings_.dart_flags[i].c_str());
+  }
 
   char* flags_error = Dart_SetVMFlags(args.size(), args.data());
   if (flags_error) {
@@ -426,14 +428,15 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     // the very first frame gives us a good idea about Flutter's startup time.
     // Use a duration event so about:tracing will consider this event when
     // deciding the earliest event to use as time 0.
-    if (engine_main_enter_ts != 0) {
-      Dart_TimelineEvent("FlutterEngineMainEnter",  // label
-                         engine_main_enter_ts,      // timestamp0
-                         Dart_TimelineGetMicros(),  // timestamp1_or_async_id
-                         Dart_Timeline_Event_Duration,  // event type
-                         0,                             // argument_count
-                         nullptr,                       // argument_names
-                         nullptr                        // argument_values
+    if (settings_.engine_start_timestamp.count()) {
+      Dart_TimelineEvent(
+          "FlutterEngineMainEnter",                  // label
+          settings_.engine_start_timestamp.count(),  // timestamp0
+          Dart_TimelineGetMicros(),                  // timestamp1_or_async_id
+          Dart_Timeline_Event_Duration,              // event type
+          0,                                         // argument_count
+          nullptr,                                   // argument_names
+          nullptr                                    // argument_values
       );
     }
   }

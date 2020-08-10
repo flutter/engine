@@ -94,7 +94,7 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void transform(Float64List matrix4) {
+  void transform(Float32List matrix4) {
     _called('transform', arguments: matrix4);
   }
 
@@ -234,13 +234,11 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawPoints(PointMode pointMode, Float32List points, double strokeWidth,
-      Color color) {
+  void drawPoints(PointMode pointMode, Float32List points, SurfacePaintData paint) {
     _called('drawPoints', arguments: <String, dynamic>{
       'pointMode': pointMode,
       'points': points,
-      'strokeWidth': strokeWidth,
-      'color': color,
+      'paint': paint,
     });
   }
 

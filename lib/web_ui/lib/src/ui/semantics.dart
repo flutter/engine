@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of ui;
 
 /// The possible actions that can be conveyed from the operating system
 /// accessibility APIs to a semantics node.
 class SemanticsAction {
-  const SemanticsAction._(this.index);
+  const SemanticsAction._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -267,7 +267,8 @@ class SemanticsAction {
       case _kMoveCursorBackwardByWordIndex:
         return 'SemanticsAction.moveCursorBackwardByWord';
     }
-    return null;
+    assert(false, 'Unhandled index: $index');
+    return '';
   }
 }
 
@@ -297,7 +298,7 @@ class SemanticsFlag {
   static const int _kIsFocusableIndex = 1 << 21;
   static const int _kIsLinkIndex = 1 << 22;
 
-  const SemanticsFlag._(this.index);
+  const SemanticsFlag._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
   /// The numerical value for this flag.
   ///
@@ -601,7 +602,8 @@ class SemanticsFlag {
       case _kIsReadOnlyIndex:
         return 'SemanticsFlag.isReadOnly';
     }
-    return null;
+    assert(false, 'Unhandled index: $index');
+    return '';
   }
 }
 
@@ -665,32 +667,32 @@ class SemanticsUpdateBuilder {
   /// The `transform` is a matrix that maps this node's coordinate system into
   /// its parent's coordinate system.
   void updateNode({
-    int id,
-    int flags,
-    int actions,
-    int maxValueLength,
-    int currentValueLength,
-    int textSelectionBase,
-    int textSelectionExtent,
-    int platformViewId,
-    int scrollChildren,
-    int scrollIndex,
-    double scrollPosition,
-    double scrollExtentMax,
-    double scrollExtentMin,
-    double elevation,
-    double thickness,
-    Rect rect,
-    String label,
-    String hint,
-    String value,
-    String increasedValue,
-    String decreasedValue,
-    TextDirection textDirection,
-    Float64List transform,
-    Int32List childrenInTraversalOrder,
-    Int32List childrenInHitTestOrder,
-    Int32List additionalActions,
+    required int id,
+    required int flags,
+    required int actions,
+    required int maxValueLength,
+    required int currentValueLength,
+    required int textSelectionBase,
+    required int textSelectionExtent,
+    required int platformViewId,
+    required int scrollChildren,
+    required int scrollIndex,
+    required double scrollPosition,
+    required double scrollExtentMax,
+    required double scrollExtentMin,
+    required double elevation,
+    required double thickness,
+    required Rect rect,
+    required String label,
+    required String hint,
+    required String value,
+    required String increasedValue,
+    required String decreasedValue,
+    TextDirection? textDirection,
+    required Float64List transform,
+    required Int32List childrenInTraversalOrder,
+    required Int32List childrenInHitTestOrder,
+    required Int32List additionalActions,
   }) {
     if (transform.length != 16)
       throw ArgumentError('transform argument must have 16 entries.');
@@ -714,7 +716,7 @@ class SemanticsUpdateBuilder {
       increasedValue: increasedValue,
       decreasedValue: decreasedValue,
       textDirection: textDirection,
-      transform: transform,
+      transform: engine.toMatrix32(transform),
       elevation: elevation,
       thickness: thickness,
       childrenInTraversalOrder: childrenInTraversalOrder,
@@ -725,7 +727,7 @@ class SemanticsUpdateBuilder {
   }
 
   void updateCustomAction(
-      {int id, String label, String hint, int overrideId = -1}) {
+      {required int id, String? label, String? hint, int overrideId = -1}) {
     // TODO(yjbanov): implement.
   }
 
@@ -752,7 +754,7 @@ abstract class SemanticsUpdate {
   /// or extended directly.
   ///
   /// To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
-  factory SemanticsUpdate._({List<engine.SemanticsNodeUpdate> nodeUpdates}) =
+  factory SemanticsUpdate._({List<engine.SemanticsNodeUpdate>? nodeUpdates}) =
       engine.SemanticsUpdate;
 
   /// Releases the resources used by this semantics update.

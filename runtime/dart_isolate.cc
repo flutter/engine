@@ -43,7 +43,7 @@ class DartErrorString {
   }
   char** error() { return &str_; }
   const char* str() const { return str_; }
-  operator bool() const { return str_ != nullptr; }
+  explicit operator bool() const { return str_ != nullptr; }
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(DartErrorString);
@@ -56,7 +56,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     const Settings& settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     TaskRunners task_runners,
-    std::unique_ptr<Window> window,
+    std::unique_ptr<PlatformConfiguration> platform_configuration,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::WeakPtr<IOManager> io_manager,
     fml::RefPtr<SkiaUnrefQueue> unref_queue,
@@ -111,7 +111,8 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   std::shared_ptr<DartIsolate>* root_isolate_data =
       static_cast<std::shared_ptr<DartIsolate>*>(Dart_IsolateData(vm_isolate));
 
-  (*root_isolate_data)->SetWindow(std::move(window));
+  (*root_isolate_data)
+      ->SetPlatformConfiguration(std::move(platform_configuration));
 
   return (*root_isolate_data)->GetWeakIsolatePtr();
 }
@@ -136,8 +137,8 @@ DartIsolate::DartIsolate(const Settings& settings,
                   advisory_script_entrypoint,
                   settings.log_tag,
                   settings.unhandled_exception_callback,
-                  DartVMRef::GetIsolateNameServer()),
-      is_root_isolate_(is_root_isolate),
+                  DartVMRef::GetIsolateNameServer(),
+                  is_root_isolate),
       disable_http_(settings.disable_http) {
   phase_ = Phase::Uninitialized;
 }
@@ -264,7 +265,7 @@ bool DartIsolate::LoadLibraries() {
 
   DartIO::InitForIsolate(disable_http_);
 
-  DartUI::InitForIsolate(IsRootIsolate());
+  DartUI::InitForIsolate();
 
   const bool is_service_isolate = Dart_IsServiceIsolate(isolate());
 
@@ -383,7 +384,7 @@ bool DartIsolate::LoadKernel(std::shared_ptr<const fml::Mapping> mapping,
   if (GetIsolateGroupData().GetChildIsolatePreparer() == nullptr) {
     GetIsolateGroupData().SetChildIsolatePreparer(
         [buffers = kernel_buffers_](DartIsolate* isolate) {
-          for (unsigned long i = 0; i < buffers.size(); i++) {
+          for (uint64_t i = 0; i < buffers.size(); i++) {
             bool last_piece = i + 1 == buffers.size();
             const std::shared_ptr<const fml::Mapping>& buffer = buffers.at(i);
             if (!isolate->PrepareForRunningFromKernel(buffer, last_piece)) {
@@ -597,7 +598,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           vm_data->GetSettings(),         // settings
           vm_data->GetIsolateSnapshot(),  // isolate snapshot
           null_task_runners,              // task runners
-          nullptr,                        // window
+          nullptr,                        // platform_configuration
           {},                             // snapshot delegate
           {},                             // IO Manager
           {},                             // Skia unref queue
@@ -674,6 +675,10 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
     );
   }
 
+  if (!parent_isolate_data) {
+    return nullptr;
+  }
+
   DartIsolateGroupData& parent_group_data =
       (*parent_isolate_data)->GetIsolateGroupData();
 
@@ -688,7 +693,8 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
               parent_group_data.GetIsolateShutdownCallback())));
 
   TaskRunners null_task_runners(advisory_script_uri,
-                                /* platform= */ nullptr, /* raster= */ nullptr,
+                                /* platform= */ nullptr,
+                                /* raster= */ nullptr,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 
@@ -730,7 +736,8 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
           Dart_CurrentIsolateGroupData());
 
   TaskRunners null_task_runners((*isolate_group_data)->GetAdvisoryScriptURI(),
-                                /* platform= */ nullptr, /* raster= */ nullptr,
+                                /* platform= */ nullptr,
+                                /* raster= */ nullptr,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 

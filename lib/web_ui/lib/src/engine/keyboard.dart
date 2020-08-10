@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 /// After a keydown is received, this is the duration we wait for a repeat event
@@ -22,8 +22,8 @@ class Keyboard {
   }
 
   /// The [Keyboard] singleton.
-  static Keyboard get instance => _instance;
-  static Keyboard _instance;
+  static Keyboard? get instance => _instance;
+  static Keyboard? _instance;
 
   /// A mapping of [KeyboardEvent.code] to [Timer].
   ///
@@ -31,8 +31,8 @@ class Keyboard {
   /// if no repeat events were received.
   final Map<String, Timer> _keydownTimers = <String, Timer>{};
 
-  html.EventListener _keydownListener;
-  html.EventListener _keyupListener;
+  html.EventListener? _keydownListener;
+  html.EventListener? _keyupListener;
 
   Keyboard._() {
     _keydownListener = (html.Event event) {
@@ -58,7 +58,7 @@ class Keyboard {
     html.window.removeEventListener('keyup', _keyupListener);
 
     for (final String key in _keydownTimers.keys) {
-      _keydownTimers[key].cancel();
+      _keydownTimers[key]!.cancel();
     }
     _keydownTimers.clear();
 
@@ -74,7 +74,13 @@ class Keyboard {
   /// Initializing with `0x0` which means no meta keys are pressed.
   int _lastMetaState = 0x0;
 
-  void _handleHtmlEvent(html.KeyboardEvent event) {
+  void _handleHtmlEvent(html.Event event) {
+    if (event is! html.KeyboardEvent) {
+      return;
+    }
+
+    final html.KeyboardEvent keyboardEvent = event;
+
     if (window._onPlatformMessage == null) {
       return;
     }
@@ -83,7 +89,7 @@ class Keyboard {
       event.preventDefault();
     }
 
-    final String timerKey = event.code;
+    final String timerKey = keyboardEvent.code!;
 
     // Don't synthesize a keyup event for modifier keys because the browser always
     // sends a keyup event for those.
@@ -111,8 +117,8 @@ class Keyboard {
     final Map<String, dynamic> eventData = <String, dynamic>{
       'type': event.type,
       'keymap': 'web',
-      'code': event.code,
-      'key': event.key,
+      'code': keyboardEvent.code,
+      'key': keyboardEvent.key,
       'metaState': _lastMetaState,
     };
 
@@ -175,8 +181,8 @@ int _getMetaState(html.KeyboardEvent event) {
 /// Modifier keys are shift, alt, ctrl and meta/cmd/win. These are the keys used
 /// to perform keyboard shortcuts (e.g. `cmd+c`, `cmd+l`).
 bool _isModifierKey(html.KeyboardEvent event) {
-  final String key = event.key;
+  final String key = event.key!;
   return key == 'Meta' || key == 'Shift' || key == 'Alt' || key == 'Control';
 }
 
-void _noopCallback(ByteData data) {}
+void _noopCallback(ByteData? data) {}

@@ -13,7 +13,7 @@ namespace flutter {
 // OpacityLayer is very costly due to the saveLayer call. If there's no child,
 // having the OpacityLayer or not has the same effect. In debug_unopt build,
 // |Preroll| will assert if there are no children.
-class OpacityLayer : public ContainerLayer {
+class OpacityLayer : public MergedContainerLayer {
  public:
   // An offset is provided here because OpacityLayer.addToScene method in the
   // Flutter framework can take an optional offset argument.
@@ -27,19 +27,15 @@ class OpacityLayer : public ContainerLayer {
   // the propagation as repainting the OpacityLayer is expensive.
   OpacityLayer(SkAlpha alpha, const SkPoint& offset);
 
-  void Add(std::shared_ptr<Layer> layer) override;
-
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
 
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
+#endif
 
  private:
-  ContainerLayer* GetChildContainer() const;
-
   SkAlpha alpha_;
   SkPoint offset_;
   SkRRect frameRRect_;

@@ -34,12 +34,15 @@ std::string SanitizeURIEscapedCharacters(const std::string& str) {
   result.reserve(str.size());
   for (std::string::size_type i = 0; i < str.size(); ++i) {
     if (str[i] == '%') {
-      if (i > str.size() - 3 || !isxdigit(str[i + 1]) || !isxdigit(str[i + 2]))
+      if (i > str.size() - 3 || !isxdigit(str[i + 1]) ||
+          !isxdigit(str[i + 2])) {
         return "";
+      }
       const std::string hex = str.substr(i + 1, 2);
       const unsigned char c = strtoul(hex.c_str(), nullptr, 16);
-      if (!c)
+      if (!c) {
         return "";
+      }
       result += c;
       i += 2;
     } else {

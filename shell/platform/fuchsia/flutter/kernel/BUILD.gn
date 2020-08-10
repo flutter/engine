@@ -20,6 +20,9 @@ compile_platform("kernel_platform_files") {
   ]
 
   args = [
+    "--enable-experiment=non-nullable",
+    "--nnbd-weak",
+
     # TODO(dartbug.com/36342): enable bytecode for core libraries when performance of bytecode
     # pipeline is on par with default pipeline and continuously tracked.
     # "--bytecode",
@@ -39,9 +42,7 @@ template("core_snapshot") {
   }
 
   compiled_action(target_name) {
-    deps = [
-      ":kernel_platform_files",
-    ]
+    deps = [ ":kernel_platform_files" ]
 
     platform_dill =
         "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill"

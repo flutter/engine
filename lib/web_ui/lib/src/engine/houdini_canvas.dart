@@ -7,7 +7,8 @@
 // - avoid producing DOM-based clips if there is no text
 // - evaluate using stylesheets for static CSS properties
 // - evaluate reusing houdini canvases
-// @dart = 2.6
+
+// @dart = 2.10
 part of engine;
 
 /// A canvas that renders to a combination of HTML DOM and CSS Custom Paint API.
@@ -22,7 +23,7 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
   /// where this canvas paints.
   ///
   /// Painting outside the bounds of this rectangle is cropped.
-  final ui.Rect bounds;
+  final ui.Rect? bounds;
 
   HoudiniCanvas(this.bounds) {
     // TODO(yjbanov): would it be faster to specify static values in a
@@ -31,8 +32,8 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
       ..position = 'absolute'
       ..top = '0'
       ..left = '0'
-      ..width = '${bounds.size.width}px'
-      ..height = '${bounds.size.height}px'
+      ..width = '${bounds!.size.width}px'
+      ..height = '${bounds!.size.height}px'
       ..backgroundImage = 'paint(flt)';
   }
 
@@ -206,7 +207,7 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaintData paint) {
     // TODO(yjbanov): implement src rectangle
-    final HtmlImage htmlImage = image;
+    final HtmlImage htmlImage = image as HtmlImage;
     final html.Element imageBox = html.Element.tag('flt-img');
     final String cssTransform = matrix4ToCssTransform(
         transformWithOffset(currentTransform, ui.Offset(dst.left, dst.top)));
@@ -225,7 +226,7 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
     final html.Element paragraphElement =
-        _drawParagraphElement(paragraph, offset, transform: currentTransform);
+        _drawParagraphElement(paragraph as EngineParagraph, offset, transform: currentTransform);
     currentElement.append(paragraphElement);
   }
 
@@ -236,8 +237,7 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
   }
 
   @override
-  void drawPoints(ui.PointMode pointMode, Float32List points,
-      double strokeWidth, ui.Color color) {
+  void drawPoints(ui.PointMode pointMode, Float32List points, SurfacePaintData paint) {
     // TODO(flutter_web): implement.
   }
 
@@ -247,8 +247,8 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
 
 class _SaveElementStackEntry {
   _SaveElementStackEntry({
-    @required this.savedElement,
-    @required this.transform,
+    required this.savedElement,
+    required this.transform,
   });
 
   final html.Element savedElement;
@@ -354,7 +354,7 @@ mixin SaveElementStackTracking on EngineCanvas {
     // DO NOT USE Matrix4.skew(sx, sy)! It treats sx and sy values as radians,
     // but in our case they are transform matrix values.
     final Matrix4 skewMatrix = Matrix4.identity();
-    final Float64List storage = skewMatrix.storage;
+    final Float32List storage = skewMatrix.storage;
     storage[1] = sy;
     storage[4] = sx;
     _currentTransform.multiply(skewMatrix);
@@ -364,7 +364,7 @@ mixin SaveElementStackTracking on EngineCanvas {
   ///
   /// Classes that override this method must call `super.transform()`.
   @override
-  void transform(Float64List matrix4) {
-    _currentTransform.multiply(Matrix4.fromFloat64List(matrix4));
+  void transform(Float32List matrix4) {
+    _currentTransform.multiply(Matrix4.fromFloat32List(matrix4));
   }
 }

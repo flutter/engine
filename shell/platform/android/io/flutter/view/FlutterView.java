@@ -17,19 +17,20 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
-import android.os.LocaleList;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.PointerIcon;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.autofill.AutofillValue;
@@ -48,6 +49,7 @@ import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
@@ -56,13 +58,13 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.localization.LocalizationPlugin;
+import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -71,7 +73,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>Deprecation: {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
  * this class. See https://flutter.dev/go/android-project-migration for more migration details.
  */
-public class FlutterView extends SurfaceView implements BinaryMessenger, TextureRegistry {
+public class FlutterView extends SurfaceView
+    implements BinaryMessenger, TextureRegistry, MouseCursorPlugin.MouseCursorViewDelegate {
   /**
    * Interface for those objects that maintain and expose a reference to a {@code FlutterView} (such
    * as a full-screen Flutter activity).
@@ -119,6 +122,8 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
   private final SystemChannel systemChannel;
   private final InputMethodManager mImm;
   private final TextInputPlugin mTextInputPlugin;
+  private final LocalizationPlugin mLocalizationPlugin;
+  private final MouseCursorPlugin mMouseCursorPlugin;
   private final AndroidKeyProcessor androidKeyProcessor;
   private final AndroidTouchProcessor androidTouchProcessor;
   private AccessibilityBridge mAccessibilityNodeProvider;
@@ -164,7 +169,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
     dartExecutor = mNativeView.getDartExecutor();
     flutterRenderer = new FlutterRenderer(mNativeView.getFlutterJNI());
-    mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().nativeGetIsSoftwareRenderingEnabled();
+    mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().getIsSoftwareRenderingEnabled();
     mMetrics = new ViewportMetrics();
     mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
     setFocusable(true);
@@ -220,15 +225,24 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         mNativeView.getPluginRegistry().getPlatformViewsController();
     mTextInputPlugin =
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      mMouseCursorPlugin = new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
+    } else {
+      mMouseCursorPlugin = null;
+    }
+    mLocalizationPlugin = new LocalizationPlugin(context, localizationChannel);
     androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
-    androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
+    androidTouchProcessor =
+        new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ false);
+    platformViewsController.attachToFlutterRenderer(flutterRenderer);
     mNativeView
         .getPluginRegistry()
         .getPlatformViewsController()
         .attachTextInputPlugin(mTextInputPlugin);
+    mNativeView.getFlutterJNI().setLocalizationPlugin(mLocalizationPlugin);
 
     // Send initial platform information to Dart
-    sendLocalesToDart(getResources().getConfiguration());
+    mLocalizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendUserPlatformSettingsToDart();
   }
 
@@ -309,6 +323,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
   }
 
   public void onMemoryPressure() {
+    mNativeView.getFlutterJNI().notifyLowMemoryWarning();
     systemChannel.sendMemoryPressureWarning();
   }
 
@@ -392,41 +407,10 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         .send();
   }
 
-  @SuppressWarnings("deprecation")
-  private void sendLocalesToDart(Configuration config) {
-    List<Locale> locales = new ArrayList<>();
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        locales.add(locale);
-      }
-    } else {
-      locales.add(config.locale);
-    }
-
-    List<Locale.LanguageRange> languageRanges = new ArrayList<>();
-    Locale platformResolvedLocale = null;
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
-      }
-      // TODO(garyq) implement a real locale resolution.
-      platformResolvedLocale =
-          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
-    }
-
-    localizationChannel.sendLocales(locales, platformResolvedLocale);
-  }
-
   @Override
   protected void onConfigurationChanged(Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
-    sendLocalesToDart(newConfig);
+    mLocalizationPlugin.sendLocalesToFlutter(newConfig);
     sendUserPlatformSettingsToDart();
   }
 
@@ -535,21 +519,24 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
   // android may decide to place the software navigation bars on the side. When the nav
   // bar is hidden, the reported insets should be removed to prevent extra useless space
   // on the sides.
-  enum ZeroSides {
+  private enum ZeroSides {
     NONE,
     LEFT,
     RIGHT,
     BOTH
   }
 
-  ZeroSides calculateShouldZeroSides() {
+  private ZeroSides calculateShouldZeroSides() {
     // We get both orientation and rotation because rotation is all 4
     // rotations relative to default rotation while orientation is portrait
     // or landscape. By combining both, we can obtain a more precise measure
     // of the rotation.
-    Activity activity = (Activity) getContext();
-    int orientation = activity.getResources().getConfiguration().orientation;
-    int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+    Context context = getContext();
+    int orientation = context.getResources().getConfiguration().orientation;
+    int rotation =
+        ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
+            .getDefaultDisplay()
+            .getRotation();
 
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
       if (rotation == Surface.ROTATION_90) {
@@ -568,7 +555,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     return ZeroSides.NONE;
   }
 
-  // TODO(garyq): Use clean ways to detect keyboard instead of heuristics if possible
+  // TODO(garyq): Use new Android R getInsets API
   // TODO(garyq): The keyboard detection may interact strangely with
   //   https://github.com/flutter/flutter/issues/22061
 
@@ -578,7 +565,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
   // can be used.
   @TargetApi(20)
   @RequiresApi(20)
-  int calculateBottomKeyboardInset(WindowInsets insets) {
+  private int guessBottomKeyboardInset(WindowInsets insets) {
     int screenHeight = getRootView().getHeight();
     // Magic number due to this being a heuristic. This should be replaced, but we have not
     // found a clean way to do it yet (Sept. 2018)
@@ -632,7 +619,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     // the navbar padding should always be provided.
     mMetrics.physicalViewInsetBottom =
         navigationBarHidden
-            ? calculateBottomKeyboardInset(insets)
+            ? guessBottomKeyboardInset(insets)
             : insets.getSystemWindowInsetBottom();
     mMetrics.physicalViewInsetLeft = 0;
 
@@ -787,6 +774,14 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
       // tree.
       return null;
     }
+  }
+
+  @Override
+  @TargetApi(Build.VERSION_CODES.N)
+  @RequiresApi(Build.VERSION_CODES.N)
+  @NonNull
+  public PointerIcon getSystemPointerIcon(int type) {
+    return PointerIcon.getSystemIcon(getContext(), type);
   }
 
   @Override

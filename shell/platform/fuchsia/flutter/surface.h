@@ -4,10 +4,9 @@
 
 #pragma once
 
-#include "compositor_context.h"
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/common/surface.h"
 
 namespace flutter_runner {
 
@@ -16,13 +15,15 @@ namespace flutter_runner {
 // raster thread.
 class Surface final : public flutter::Surface {
  public:
-  Surface(std::string debug_label);
+  Surface(std::string debug_label,
+          flutter::ExternalViewEmbedder* view_embedder);
 
   ~Surface() override;
 
  private:
   const bool valid_ = CanConnectToDisplay();
   const std::string debug_label_;
+  flutter::ExternalViewEmbedder* view_embedder_;
 
   // |flutter::Surface|
   bool IsValid() override;
@@ -32,10 +33,13 @@ class Surface final : public flutter::Surface {
       const SkISize& size) override;
 
   // |flutter::Surface|
-  GrContext* GetContext() override;
+  GrDirectContext* GetContext() override;
 
   // |flutter::Surface|
   SkMatrix GetRootTransformation() const override;
+
+  // |flutter::Surface|
+  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   static bool CanConnectToDisplay();
 

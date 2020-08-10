@@ -10,8 +10,8 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 
 namespace flutter {
 
@@ -99,14 +99,16 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
 
 void PlatformViewIOS::attachView() {
   FML_DCHECK(owner_controller_);
+  FML_DCHECK(owner_controller_.get().isViewLoaded)
+      << "FlutterViewController's view should be loaded "
+         "before attaching to PlatformViewIOS.";
   ios_surface_ =
       [static_cast<FlutterView*>(owner_controller_.get().view) createSurface:ios_context_];
   FML_DCHECK(ios_surface_ != nullptr);
 
   if (accessibility_bridge_) {
-    accessibility_bridge_.reset(
-        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                [owner_controller_.get() platformViewsController]));
+    accessibility_bridge_.reset(new AccessibilityBridge(
+        owner_controller_.get(), this, [owner_controller_.get() platformViewsController]));
   }
 }
 
@@ -135,7 +137,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 }
 
 // |PlatformView|
-sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
+sk_sp<GrDirectContext> PlatformViewIOS::CreateResourceContext() const {
   return ios_context_->CreateResourceContext();
 }
 
@@ -147,9 +149,8 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
     return;
   }
   if (enabled && !accessibility_bridge_) {
-    accessibility_bridge_.reset(
-        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                [owner_controller_.get() platformViewsController]));
+    accessibility_bridge_.reset(new AccessibilityBridge(
+        owner_controller_.get(), this, [owner_controller_.get() platformViewsController]));
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
   } else {
@@ -188,12 +189,37 @@ void PlatformViewIOS::OnPreEngineRestart() const {
   [owner_controller_.get() platformViewsController]->Reset();
 }
 
-fml::scoped_nsprotocol<FlutterTextInputPlugin*> PlatformViewIOS::GetTextInputPlugin() const {
-  return text_input_plugin_;
-}
+std::unique_ptr<std::vector<std::string>> PlatformViewIOS::ComputePlatformResolvedLocales(
+    const std::vector<std::string>& supported_locale_data) {
+  size_t localeDataLength = 3;
+  NSMutableArray<NSString*>* supported_locale_identifiers =
+      [NSMutableArray arrayWithCapacity:supported_locale_data.size() / localeDataLength];
+  for (size_t i = 0; i < supported_locale_data.size(); i += localeDataLength) {
+    NSDictionary<NSString*, NSString*>* dict = @{
+      NSLocaleLanguageCode : [NSString stringWithUTF8String:supported_locale_data[i].c_str()],
+      NSLocaleCountryCode : [NSString stringWithUTF8String:supported_locale_data[i + 1].c_str()],
+      NSLocaleScriptCode : [NSString stringWithUTF8String:supported_locale_data[i + 2].c_str()]
+    };
+    [supported_locale_identifiers addObject:[NSLocale localeIdentifierFromComponents:dict]];
+  }
+  NSArray<NSString*>* result =
+      [NSBundle preferredLocalizationsFromArray:supported_locale_identifiers];
 
-void PlatformViewIOS::SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin) {
-  text_input_plugin_ = plugin;
+  // Output format should be either empty or 3 strings for language, country, and script.
+  std::unique_ptr<std::vector<std::string>> out = std::make_unique<std::vector<std::string>>();
+
+  if (result != nullptr && [result count] > 0) {
+    if (@available(ios 10.0, *)) {
+      NSLocale* locale = [NSLocale localeWithLocaleIdentifier:[result firstObject]];
+      NSString* languageCode = [locale languageCode];
+      out->emplace_back(languageCode == nullptr ? "" : languageCode.UTF8String);
+      NSString* countryCode = [locale countryCode];
+      out->emplace_back(countryCode == nullptr ? "" : countryCode.UTF8String);
+      NSString* scriptCode = [locale scriptCode];
+      out->emplace_back(scriptCode == nullptr ? "" : scriptCode.UTF8String);
+    }
+  }
+  return out;
 }
 
 PlatformViewIOS::ScopedObserver::ScopedObserver() : observer_(nil) {}

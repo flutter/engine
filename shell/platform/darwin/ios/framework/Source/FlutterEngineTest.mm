@@ -9,10 +9,10 @@
 
 FLUTTER_ASSERT_ARC
 
-@interface FlutteEngineTest : XCTestCase
+@interface FlutterEngineTest : XCTestCase
 @end
 
-@implementation FlutteEngineTest
+@implementation FlutterEngineTest
 
 - (void)setUp {
 }
@@ -24,6 +24,17 @@ FLUTTER_ASSERT_ARC
   id project = OCMClassMock([FlutterDartProject class]);
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   XCTAssertNotNil(engine);
+}
+
+- (void)testDeallocated {
+  __weak FlutterEngine* weakEngine = nil;
+  {
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
+    weakEngine = engine;
+    [engine run];
+    XCTAssertNotNil(weakEngine);
+  }
+  XCTAssertNil(weakEngine);
 }
 
 - (void)testSendMessageBeforeRun {
@@ -45,6 +56,14 @@ FLUTTER_ASSERT_ARC
             binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply){
 
             }]);
+}
+
+- (void)testNilSetMessageHandlerBeforeRun {
+  id project = OCMClassMock([FlutterDartProject class]);
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+  XCTAssertNotNil(engine);
+  XCTAssertNoThrow([engine.binaryMessenger setMessageHandlerOnChannel:@"foo"
+                                                 binaryMessageHandler:nil]);
 }
 
 - (void)testNotifyPluginOfDealloc {

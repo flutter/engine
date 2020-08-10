@@ -37,7 +37,7 @@ extern NSNotificationName const FlutterSemanticsUpdateNotification;
  *
  * A FlutterViewController can be initialized either with an already-running `FlutterEngine` via the
  * `initWithEngine:` initializer, or it can be initialized with a `FlutterDartProject` that will be
- * used to implicitly spin up a new `FlutterEngine`. Creating a `FlutterEngine before showing a
+ * used to implicitly spin up a new `FlutterEngine`. Creating a `FlutterEngine` before showing a
  * FlutterViewController can be used to pre-initialize the Dart VM and to prepare the isolate in
  * order to reduce the latency to the first rendered frame. See
  * https://flutter.dev/docs/development/add-to-app/performance for more details on loading
@@ -77,6 +77,14 @@ FLUTTER_EXPORT
 - (instancetype)initWithProject:(nullable FlutterDartProject*)project
                         nibName:(nullable NSString*)nibName
                          bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Initializer that is called from loading a FlutterViewController from a XIB.
+ *
+ * See also:
+ * https://developer.apple.com/documentation/foundation/nscoding/1416145-initwithcoder?language=objc
+ */
+- (instancetype)initWithCoder:(NSCoder*)aDecoder NS_DESIGNATED_INITIALIZER;
 
 /**
  * Registers a callback that will be invoked when the Flutter view has been rendered.
@@ -193,6 +201,17 @@ FLUTTER_EXPORT
  * This is just a convenient way to get the |FlutterEngine|'s binary messenger.
  */
 @property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
+
+/**
+ * If the `FlutterViewController` creates a `FlutterEngine`, this property
+ * determines if that `FlutterEngine` has `allowHeadlessExecution` set.
+ *
+ * The intention is that this is used with the XIB.  Otherwise, a
+ * `FlutterEngine` can just be sent to the init methods.
+ *
+ * See also: `-[FlutterEngine initWithName:project:allowHeadlessExecution:]`
+ */
+@property(nonatomic, readonly) BOOL engineAllowHeadlessExecution;
 
 @end
 

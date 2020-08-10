@@ -2,13 +2,15 @@
 
 set -e
 
+TESTING_DIR=$(dirname "$0")
+pushd $TESTING_DIR
+
 FLUTTER_ENGINE=ios_debug_sim_unopt
 
 if [ $# -eq 1 ]; then
   FLUTTER_ENGINE=$1
 fi
 
-pushd $PWD
 cd ../../../..
 
 if [ ! -d "out/$FLUTTER_ENGINE" ]; then
@@ -19,4 +21,4 @@ fi
 
 autoninja -C out/$FLUTTER_ENGINE ios_test_flutter
 popd
-./run_tests.sh $FLUTTER_ENGINE
+$TESTING_DIR/run_tests.sh $FLUTTER_ENGINE

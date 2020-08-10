@@ -16,7 +16,7 @@
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "flutter/lib/ui/window/window.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/runtime/dart_snapshot.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/dart_state.h"
@@ -192,7 +192,7 @@ class DartIsolate : public UIDartState {
       const Settings& settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       TaskRunners task_runners,
-      std::unique_ptr<Window> window,
+      std::unique_ptr<PlatformConfiguration> platform_configuration,
       fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::WeakPtr<IOManager> io_manager,
       fml::RefPtr<SkiaUnrefQueue> skia_unref_queue,
@@ -381,9 +381,6 @@ class DartIsolate : public UIDartState {
   ///
   fml::RefPtr<fml::TaskRunner> GetMessageHandlingTaskRunner() const;
 
-  // Root isolate of the VM application
-  bool IsRootIsolate() const { return is_root_isolate_; }
-
  private:
   class AutoFireClosure {
    public:
@@ -401,7 +398,6 @@ class DartIsolate : public UIDartState {
   std::vector<std::shared_ptr<const fml::Mapping>> kernel_buffers_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
-  const bool is_root_isolate_;
   const bool disable_http_;
 
   DartIsolate(const Settings& settings,

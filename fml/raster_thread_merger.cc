@@ -28,18 +28,22 @@ void RasterThreadMerger::MergeWithLease(size_t lease_term) {
   }
 }
 
-bool RasterThreadMerger::IsOnRasterizingThread() {
-  const auto current_queue_id = MessageLoop::GetCurrentTaskQueueId();
+bool RasterThreadMerger::IsOnPlatformThread() const {
+  return MessageLoop::GetCurrentTaskQueueId() == platform_queue_id_;
+}
+
+bool RasterThreadMerger::IsOnRasterizingThread() const {
   if (is_merged_) {
-    return current_queue_id == platform_queue_id_;
+    return IsOnPlatformThread();
   } else {
-    return current_queue_id == gpu_queue_id_;
+    return !IsOnPlatformThread();
   }
 }
 
 void RasterThreadMerger::ExtendLeaseTo(size_t lease_term) {
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
-  if (lease_term_ != kLeaseNotSet && (int)lease_term > lease_term_) {
+  if (lease_term_ != kLeaseNotSet &&
+      static_cast<int>(lease_term) > lease_term_) {
     lease_term_ = lease_term;
   }
 }

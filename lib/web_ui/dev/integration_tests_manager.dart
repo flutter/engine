@@ -2,49 +2,37 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
+
 import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
-import 'package:web_driver_installer/chrome_driver_installer.dart';
 
 import 'chrome_installer.dart';
+import 'driver_manager.dart';
 import 'environment.dart';
 import 'exceptions.dart';
+import 'common.dart';
 import 'utils.dart';
+
+const String _unsupportedConfigurationWarning = 'WARNING: integration tests '
+    'are only supported on Chrome, Firefox and on Safari (running on macOS)';
 
 class IntegrationTestsManager {
   final String _browser;
 
-  /// Installation directory for browser's driver.
-  ///
-  /// Always re-install since driver can change frequently.
-  /// It usually changes with each the browser version changes.
-  /// A better solution would be installing the browser and the driver at the
-  /// same time.
-  // TODO(nurhan): https://github.com/flutter/flutter/issues/53179.
-  final io.Directory _browserDriverDir;
-
-  /// This is the parent directory for all drivers.
-  ///
-  /// This directory is saved to [temporaryDirectories] and deleted before
-  /// tests shutdown.
-  final io.Directory _drivers;
-
   final bool _useSystemFlutter;
 
+  final DriverManager _driverManager;
+
   IntegrationTestsManager(this._browser, this._useSystemFlutter)
-      : this._browserDriverDir = io.Directory(pathlib.join(
-            environment.webUiDartToolDir.path, 'drivers', _browser)),
-        this._drivers = io.Directory(
-            pathlib.join(environment.webUiDartToolDir.path, 'drivers'));
+      : _driverManager = DriverManager.chooseDriver(_browser);
 
   Future<bool> runTests() async {
-    if (_browser != 'chrome') {
-      print('WARNING: integration tests are only supported on chrome for now');
-      return false;
-    } else {
-      await prepareDriver();
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/52987
+    if (validateIfTestsShouldRun()) {
+      await _driverManager.prepareDriver();
       return await _runTests();
+    } else {
+      return false;
     }
   }
 
@@ -65,7 +53,7 @@ class IntegrationTestsManager {
   Future<void> _cloneFlutterRepo() async {
     // Delete directory if exists.
     if (environment.engineDartToolDir.existsSync()) {
-      environment.engineDartToolDir.deleteSync();
+      environment.engineDartToolDir.deleteSync(recursive: true);
     }
     environment.engineDartToolDir.createSync();
 
@@ -86,32 +74,6 @@ class IntegrationTestsManager {
   Future<void> _enableWeb(String workingDirectory) async {
     await runFlutter(workingDirectory, <String>['config', '--enable-web'],
         useSystemFlutter: _useSystemFlutter);
-  }
-
-  void _runDriver() async {
-    startProcess('./chromedriver/chromedriver', ['--port=4444'],
-        workingDirectory: io.Directory.current.path);
-    print('INFO: Driver started');
-  }
-
-  void prepareDriver() async {
-    if (_browserDriverDir.existsSync()) {
-      _browserDriverDir.deleteSync(recursive: true);
-    }
-
-    _browserDriverDir.createSync(recursive: true);
-    temporaryDirectories.add(_drivers);
-
-    io.Directory temp = io.Directory.current;
-    io.Directory.current = _browserDriverDir;
-
-    // TODO(nurhan): https://github.com/flutter/flutter/issues/53179
-    final String chromeDriverVersion = await queryChromeDriverVersion();
-    ChromeDriverInstaller chromeDriverInstaller =
-        ChromeDriverInstaller.withVersion(chromeDriverVersion);
-    await chromeDriverInstaller.install(alwaysInstall: true);
-    await _runDriver();
-    io.Directory.current = temp;
   }
 
   /// Runs all the web tests under e2e_tests/web.
@@ -152,7 +114,9 @@ class IntegrationTestsManager {
         .whereType<io.File>()
         .toList();
 
-    final List<String> e2eTestsToRun = List<String>();
+    final List<String> e2eTestsToRun = <String>[];
+    final List<String> blockedTests =
+        blockedTestsListsMap[getBlockedTestsListMapKey(_browser)] ?? <String>[];
 
     // The following loops over the contents of the directory and saves an
     // expected driver file name for each e2e test assuming any dart file
@@ -162,7 +126,13 @@ class IntegrationTestsManager {
     for (io.File f in entities) {
       final String basename = pathlib.basename(f.path);
       if (!basename.contains('_test.dart') && basename.endsWith('.dart')) {
-        e2eTestsToRun.add(basename);
+        // Do not add the basename if it is in the `blockedTests`.
+        if (!blockedTests.contains(basename)) {
+          e2eTestsToRun.add(basename);
+        } else {
+          print('INFO: Test $basename is skipped since it is blocked for '
+              '${getBlockedTestsListMapKey(_browser)}');
+        }
       }
     }
 
@@ -191,28 +161,19 @@ class IntegrationTestsManager {
       io.Directory directory, String testName) async {
     final String executable =
         _useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
+    final IntegrationArguments arguments =
+        IntegrationArguments.fromBrowser(_browser);
     final int exitCode = await runProcess(
       executable,
-      <String>[
-        'drive',
-        '--target=test_driver/${testName}',
-        '-d',
-        'web-server',
-        '--profile',
-        '--browser-name=$_browser',
-        '--local-engine=host_debug_unopt',
-      ],
+      arguments.getTestArguments(testName, 'profile'),
       workingDirectory: directory.path,
     );
 
     if (exitCode != 0) {
-      final String statementToRun = 'flutter drive '
-          '--target=test_driver/${testName} -d web-server --profile '
-          '--browser-name=$_browser --local-engine=host_debug_unopt';
       io.stderr
           .writeln('ERROR: Failed to run test. Exited with exit code $exitCode'
-              '. Statement to run $testName locally use the following '
-              'command:\n\n$statementToRun');
+              '. To run $testName locally use the following command:'
+              '\n\n${arguments.getCommandToRun(testName, 'profile')}');
       return false;
     } else {
       return true;
@@ -231,7 +192,7 @@ class IntegrationTestsManager {
     // Whether the project has the pubspec.yaml file.
     bool pubSpecFound = false;
     // The test directory 'test_driver'.
-    io.Directory testDirectory = null;
+    io.Directory testDirectory;
 
     for (io.FileSystemEntity e in entities) {
       // The tests should be under this directories.
@@ -320,4 +281,154 @@ class IntegrationTestsManager {
           'further instructions');
     }
   }
+
+  /// Validate the given `browser`, `platform` combination is suitable for
+  /// integration tests to run.
+  bool validateIfTestsShouldRun() {
+    // Chrome tests should run at all Platforms (Linux, macOS, Windows).
+    // They can also run successfully on CI and local.
+    if (_browser == 'chrome') {
+      return true;
+    } else if (_browser == 'firefox' &&
+        (io.Platform.isLinux || io.Platform.isMacOS)) {
+      return true;
+    } else if (_browser == 'safari' && io.Platform.isMacOS && !isLuci) {
+      return true;
+    } else {
+      io.stderr.writeln(_unsupportedConfigurationWarning);
+      return false;
+    }
+  }
 }
+
+/// Interface for collecting arguments to give `flutter drive` to run the
+/// integration tests.
+abstract class IntegrationArguments {
+  IntegrationArguments();
+
+  factory IntegrationArguments.fromBrowser(String browser) {
+    if (browser == 'chrome') {
+      return ChromeIntegrationArguments();
+    } else if (browser == 'firefox') {
+      return FirefoxIntegrationArguments();
+    } else if (browser == 'safari' && io.Platform.isMacOS) {
+      return SafariIntegrationArguments();
+    } else {
+      throw StateError(_unsupportedConfigurationWarning);
+    }
+  }
+
+  List<String> getTestArguments(String testName, String mode);
+
+  String getCommandToRun(String testName, String mode);
+}
+
+/// Arguments to give `flutter drive` to run the integration tests on Chrome.
+class ChromeIntegrationArguments extends IntegrationArguments {
+  List<String> getTestArguments(String testName, String mode) {
+    return <String>[
+      'drive',
+      '--target=test_driver/${testName}',
+      '-d',
+      'web-server',
+      '--$mode',
+      '--browser-name=chrome',
+      if (isLuci) '--chrome-binary=${preinstalledChromeExecutable()}',
+      if (isLuci) '--headless',
+      '--local-engine=host_debug_unopt',
+    ];
+  }
+
+  String getCommandToRun(String testName, String mode) {
+    String statementToRun = 'flutter drive '
+        '--target=test_driver/${testName} -d web-server --profile '
+        '--browser-name=chrome --local-engine=host_debug_unopt';
+    if (isLuci) {
+      statementToRun = '$statementToRun --chrome-binary='
+          '${preinstalledChromeExecutable()}';
+    }
+    return statementToRun;
+  }
+}
+
+/// Arguments to give `flutter drive` to run the integration tests on Firefox.
+class FirefoxIntegrationArguments extends IntegrationArguments {
+  List<String> getTestArguments(String testName, String mode) {
+    return <String>[
+      'drive',
+      '--target=test_driver/${testName}',
+      '-d',
+      'web-server',
+      '--$mode',
+      '--browser-name=firefox',
+      '--headless',
+      '--local-engine=host_debug_unopt',
+    ];
+  }
+
+  String getCommandToRun(String testName, String mode) =>
+      'flutter ${getTestArguments(testName, mode).join(' ')}';
+}
+
+/// Arguments to give `flutter drive` to run the integration tests on Safari.
+class SafariIntegrationArguments extends IntegrationArguments {
+  SafariIntegrationArguments();
+
+  List<String> getTestArguments(String testName, String mode) {
+    return <String>[
+      'drive',
+      '--target=test_driver/${testName}',
+      '-d',
+      'web-server',
+      '--$mode',
+      '--browser-name=safari',
+      '--local-engine=host_debug_unopt',
+    ];
+  }
+
+  String getCommandToRun(String testName, String mode) =>
+      'flutter ${getTestArguments(testName, mode).join(' ')}';
+}
+
+/// Prepares a key for the [blackList] map.
+///
+/// Uses the browser name and the operating system name.
+String getBlockedTestsListMapKey(String browser) =>
+    '${browser}-${io.Platform.operatingSystem}';
+
+/// Tests that should be skipped run for a specific platform-browser
+/// combination.
+///
+/// These tests might be failing or might have been implemented for a specific
+/// configuration.
+///
+/// For example when adding a tests only intended for mobile browsers, it should
+/// be added to [blockedTests] for `chrome-linux`, `safari-macos` and
+/// `chrome-macos`. It will work on `chrome-android`, `safari-ios`.
+///
+/// Note that integration tests are only running on chrome for now.
+const Map<String, List<String>> blockedTestsListsMap = <String, List<String>>{
+  'chrome-linux': [
+    'target_platform_android_e2e.dart',
+    'target_platform_ios_e2e.dart',
+    'target_platform_macos_e2e.dart',
+  ],
+  'chrome-macos': [
+    'target_platform_ios_e2e.dart',
+    'target_platform_android_e2e.dart',
+  ],
+  'safari-macos': [
+    'target_platform_ios_e2e.dart',
+    'target_platform_android_e2e.dart',
+    'image_loading_e2e.dart',
+  ],
+  'firefox-linux': [
+    'target_platform_android_e2e.dart',
+    'target_platform_ios_e2e.dart',
+    'target_platform_macos_e2e.dart',
+  ],
+  'firefox-macos': [
+    'target_platform_android_e2e.dart',
+    'target_platform_ios_e2e.dart',
+  ],
+};

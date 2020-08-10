@@ -27,8 +27,9 @@ class FilePath {
       path.relative(_absolutePath, from: environment.webUiRootDir.path);
 
   @override
-  bool operator ==(dynamic other) {
-    return other is FilePath && _absolutePath == other._absolutePath;
+  bool operator ==(Object other) {
+    return other is FilePath
+        && other._absolutePath == _absolutePath;
   }
 
   @override
@@ -41,6 +42,7 @@ Future<int> runProcess(
   List<String> arguments, {
   String workingDirectory,
   bool mustSucceed: false,
+  Map<String, String> environment = const <String, String>{},
 }) async {
   final io.Process process = await io.Process.start(
     executable,
@@ -50,6 +52,7 @@ Future<int> runProcess(
     // the process is not able to get Dart from path.
     runInShell: io.Platform.isWindows,
     mode: io.ProcessStartMode.inheritStdio,
+    environment: environment,
   );
   final int exitCode = await process.exitCode;
   if (mustSucceed && exitCode != 0) {
@@ -65,7 +68,7 @@ Future<int> runProcess(
 }
 
 /// Runs [executable]. Do not follow the exit code or the output.
-void startProcess(
+Future<void> startProcess(
   String executable,
   List<String> arguments, {
   String workingDirectory,
@@ -217,7 +220,7 @@ void cleanup() async {
     }
   }
 
-  cleanupCallbacks.forEach((element) {
-    element.call();
-  });
+  for (final AsyncCallback callback in cleanupCallbacks) {
+    await callback();
+  }
 }

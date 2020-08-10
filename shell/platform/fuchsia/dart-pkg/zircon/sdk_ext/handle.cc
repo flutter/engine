@@ -151,6 +151,7 @@ void Handle::ScheduleCallback(tonic::DartPersistentValue callback,
 
 #define FOR_EACH_BINDING(V) \
   V(Handle, handle)         \
+  V(Handle, koid)           \
   V(Handle, is_valid)       \
   V(Handle, Close)          \
   V(Handle, AsyncWait)      \
@@ -163,7 +164,7 @@ void Handle::ScheduleCallback(tonic::DartPersistentValue callback,
   DART_REGISTER_NATIVE_STATIC(CLASS, METHOD),
 
 FOR_EACH_STATIC_BINDING(DART_NATIVE_CALLBACK_STATIC)
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
+FOR_EACH_BINDING(DART_NATIVE_NO_UI_CHECK_CALLBACK)
 
 void Handle::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({FOR_EACH_STATIC_BINDING(DART_REGISTER_NATIVE_STATIC_)

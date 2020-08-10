@@ -2,27 +2,52 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
 
-#include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+#import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 #pragma GCC diagnostic error "-Wundeclared-selector"
 
 FLUTTER_ASSERT_NOT_ARC
 
 namespace flutter {
+namespace {
 
-AccessibilityBridge::AccessibilityBridge(UIView* view,
+class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
+ public:
+  bool IsFlutterViewControllerPresentingModalViewController(
+      FlutterViewController* view_controller) override {
+    if (view_controller) {
+      return view_controller.isPresentingViewController;
+    } else {
+      return false;
+    }
+  }
+
+  void PostAccessibilityNotification(UIAccessibilityNotifications notification,
+                                     id argument) override {
+    UIAccessibilityPostNotification(notification, argument);
+  }
+};
+}  // namespace
+
+AccessibilityBridge::AccessibilityBridge(FlutterViewController* view_controller,
                                          PlatformViewIOS* platform_view,
-                                         FlutterPlatformViewsController* platform_views_controller)
-    : view_(view),
+                                         FlutterPlatformViewsController* platform_views_controller,
+                                         std::unique_ptr<IosDelegate> ios_delegate)
+    : view_controller_(view_controller),
       platform_view_(platform_view),
       platform_views_controller_(platform_views_controller),
+      last_focused_semantics_object_id_(0),
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
-      previous_routes_({}) {
+      previous_routes_({}),
+      ios_delegate_(ios_delegate ? std::move(ios_delegate)
+                                 : std::make_unique<DefaultIosDelegate>()) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->GetOwnerViewController().get().engine.binaryMessenger
@@ -33,18 +58,24 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
+  [accessibility_channel_.get() setMessageHandler:nil];
   clearState();
-  view_.accessibilityElements = nil;
+  view_controller_.view.accessibilityElements = nil;
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
-  return [platform_view_->GetTextInputPlugin() textInputView];
+  return [[platform_view_->GetOwnerViewController().get().engine textInputPlugin] textInputView];
+}
+
+void AccessibilityBridge::AccessibilityFocusDidChange(int32_t id) {
+  last_focused_semantics_object_id_ = id;
 }
 
 void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
                                           flutter::CustomAccessibilityActionUpdates actions) {
   BOOL layoutChanged = NO;
   BOOL scrollOccured = NO;
+  BOOL needsAnnouncement = NO;
   for (const auto& entry : actions) {
     const flutter::CustomAccessibilityAction& action = entry.second;
     actions_[action.id] = action;
@@ -54,6 +85,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     SemanticsObject* object = GetOrCreateObject(node.id, nodes);
     layoutChanged = layoutChanged || [object nodeWillCauseLayoutChange:&node];
     scrollOccured = scrollOccured || [object nodeWillCauseScroll:&node];
+    needsAnnouncement = [object nodeShouldTriggerAnnouncement:&node];
     [object setSemanticsNode:&node];
     NSUInteger newChildCount = node.childrenInTraversalOrder.size();
     NSMutableArray* newChildren =
@@ -76,9 +108,9 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
         NSString* label = @(action.label.data());
         SEL selector = @selector(onCustomAccessibilityAction:);
         FlutterCustomAccessibilityAction* customAction =
-            [[FlutterCustomAccessibilityAction alloc] initWithName:label
-                                                            target:object
-                                                          selector:selector];
+            [[[FlutterCustomAccessibilityAction alloc] initWithName:label
+                                                             target:object
+                                                           selector:selector] autorelease];
         customAction.uid = action_id;
         [accessibilityCustomActions addObject:customAction];
       }
@@ -88,11 +120,31 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     if (object.node.IsPlatformViewNode()) {
       FlutterPlatformViewsController* controller = GetPlatformViewsController();
       if (controller) {
-        object.platformViewSemanticsContainer =
-            [[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object];
+        object.platformViewSemanticsContainer = [[[FlutterPlatformViewSemanticsContainer alloc]
+            initWithSemanticsObject:object] autorelease];
       }
     } else if (object.platformViewSemanticsContainer) {
-      [object.platformViewSemanticsContainer release];
+      object.platformViewSemanticsContainer = nil;
+    }
+    if (needsAnnouncement) {
+      // Try to be more polite - iOS 11+ supports
+      // UIAccessibilitySpeechAttributeQueueAnnouncement which should avoid
+      // interrupting system notifications or other elements.
+      // Expectation: roughly match the behavior of polite announcements on
+      // Android.
+      NSString* announcement =
+          [[[NSString alloc] initWithUTF8String:object.node.label.c_str()] autorelease];
+      if (@available(iOS 11.0, *)) {
+        UIAccessibilityPostNotification(
+            UIAccessibilityAnnouncementNotification,
+            [[[NSAttributedString alloc]
+                initWithString:announcement
+                    attributes:@{
+                      UIAccessibilitySpeechAttributeQueueAnnouncement : @YES
+                    }] autorelease]);
+      } else {
+        UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, announcement);
+      }
     }
   }
 
@@ -102,8 +154,8 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   SemanticsObject* lastAdded = nil;
 
   if (root) {
-    if (!view_.accessibilityElements) {
-      view_.accessibilityElements = @[ [root accessibilityContainer] ];
+    if (!view_controller_.view.accessibilityElements) {
+      view_controller_.view.accessibilityElements = @[ [root accessibilityContainer] ];
     }
     NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
     [root collectRoutes:newRoutes];
@@ -126,7 +178,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
       previous_routes_.push_back([route uid]);
     }
   } else {
-    view_.accessibilityElements = nil;
+    view_controller_.view.accessibilityElements = nil;
   }
 
   NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
@@ -136,15 +188,21 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
   if (routeChanged) {
-    NSString* routeName = [lastAdded routeName];
-    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, routeName);
+    if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {
+      ios_delegate_->PostAccessibilityNotification(UIAccessibilityScreenChangedNotification,
+                                                   [lastAdded routeFocusObject]);
+    }
   } else if (layoutChanged) {
-    // TODO(goderbauer): figure out which node to focus next.
-    UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, nil);
+    // Tries to refocus the previous focused semantics object to avoid random jumps.
+    ios_delegate_->PostAccessibilityNotification(
+        UIAccessibilityLayoutChangedNotification,
+        [objects_.get() objectForKey:@(last_focused_semantics_object_id_)]);
   }
   if (scrollOccured) {
-    // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
-    UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
+    // Tries to refocus the previous focused semantics object to avoid random jumps.
+    ios_delegate_->PostAccessibilityNotification(
+        UIAccessibilityPageScrolledNotification,
+        [objects_.get() objectForKey:@(last_focused_semantics_object_id_)]);
   }
 }
 
@@ -178,11 +236,10 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
     return [[[TextInputSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
              node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
-    SemanticsObject* delegateObject = [[FlutterSemanticsObject alloc] initWithBridge:weak_ptr
-                                                                                 uid:node.id];
+    SemanticsObject* delegateObject =
+        [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
     return (SemanticsObject*)[[[FlutterSwitchSemanticsObject alloc]
         initWithSemanticsObject:delegateObject] autorelease];
-    [delegateObject release];
   } else {
     return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   }
@@ -233,7 +290,7 @@ void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEven
   NSString* type = annotatedEvent[@"type"];
   if ([type isEqualToString:@"announce"]) {
     NSString* message = annotatedEvent[@"data"][@"message"];
-    UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, message);
+    ios_delegate_->PostAccessibilityNotification(UIAccessibilityAnnouncementNotification, message);
   }
 }
 

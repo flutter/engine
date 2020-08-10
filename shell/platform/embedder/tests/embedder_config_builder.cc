@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
 
+#include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
@@ -75,12 +76,21 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   // to do this manually.
   AddCommandLineArgument("embedder_unittest");
 
-  if (preference == InitializationPreference::kInitialize) {
+  if (preference != InitializationPreference::kNoInitialize) {
     SetAssetsPath();
-    SetSnapshots();
     SetIsolateCreateCallbackHook();
     SetSemanticsCallbackHooks();
+    SetLocalizationCallbackHooks();
     AddCommandLineArgument("--disable-observatory");
+
+    if (preference == InitializationPreference::kSnapshotsInitialize ||
+        preference == InitializationPreference::kMultiAOTInitialize) {
+      SetSnapshots();
+    }
+    if (preference == InitializationPreference::kAOTDataInitialize ||
+        preference == InitializationPreference::kMultiAOTInitialize) {
+      SetAOTDataElf();
+    }
   }
 }
 
@@ -132,6 +142,10 @@ void EmbedderConfigBuilder::SetSnapshots() {
   }
 }
 
+void EmbedderConfigBuilder::SetAOTDataElf() {
+  project_args_.aot_data = context_.GetAOTData();
+}
+
 void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
   project_args_.root_isolate_create_callback =
       EmbedderTestContext::GetIsolateCreateCallbackHook();
@@ -142,6 +156,11 @@ void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
       EmbedderTestContext::GetUpdateSemanticsNodeCallbackHook();
   project_args_.update_semantics_custom_action_callback =
       EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook();
+}
+
+void EmbedderConfigBuilder::SetLocalizationCallbackHooks() {
+  project_args_.compute_platform_resolved_locale_callback =
+      EmbedderTestContext::GetComputePlatformResolvedLocaleCallbackHook();
 }
 
 void EmbedderConfigBuilder::SetDartEntrypoint(std::string entrypoint) {

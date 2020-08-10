@@ -44,7 +44,7 @@ Paragraph::Paragraph(std::unique_ptr<txt::Paragraph> paragraph)
 
 Paragraph::~Paragraph() = default;
 
-size_t Paragraph::GetAllocationSize() {
+size_t Paragraph::GetAllocationSize() const {
   // We don't have an accurate accounting of the paragraph's memory consumption,
   // so return a fixed size to indicate that its impact is more than the size
   // of the Paragraph class.
@@ -89,8 +89,9 @@ void Paragraph::layout(double width) {
 
 void Paragraph::paint(Canvas* canvas, double x, double y) {
   SkCanvas* sk_canvas = canvas->canvas();
-  if (!sk_canvas)
+  if (!sk_canvas) {
     return;
+  }
   m_paragraph->Paint(sk_canvas, x, y);
 }
 
@@ -102,8 +103,8 @@ static tonic::Float32List EncodeTextBoxes(
   // text direction index.
   tonic::Float32List result(
       Dart_NewTypedData(Dart_TypedData_kFloat32, boxes.size() * 5));
-  unsigned long position = 0;
-  for (unsigned long i = 0; i < boxes.size(); i++) {
+  uint64_t position = 0;
+  for (uint64_t i = 0; i < boxes.size(); i++) {
     const txt::Paragraph::TextBox& box = boxes[i];
     result[position++] = box.rect.fLeft;
     result[position++] = box.rect.fTop;
@@ -172,8 +173,8 @@ tonic::Float64List Paragraph::computeLineMetrics() {
   // properties
   tonic::Float64List result(
       Dart_NewTypedData(Dart_TypedData_kFloat64, metrics.size() * 9));
-  unsigned long position = 0;
-  for (unsigned long i = 0; i < metrics.size(); i++) {
+  uint64_t position = 0;
+  for (uint64_t i = 0; i < metrics.size(); i++) {
     const txt::LineMetrics& line = metrics[i];
     result[position++] = static_cast<double>(line.hard_break);
     result[position++] = line.ascent;

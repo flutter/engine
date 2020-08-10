@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 /// Mixin used by surfaces that clip their contents using an overflowing DOM
@@ -12,8 +12,8 @@ mixin _DomClip on PersistedContainerSurface {
   /// [rootElement] is used to compensate for the coordinate system shift
   /// introduced by the [rootElement] translation.
   @override
-  html.Element get childContainer => _childContainer;
-  html.Element _childContainer;
+  html.Element? get childContainer => _childContainer;
+  html.Element? _childContainer;
 
   @override
   void adoptElements(_DomClip oldSurface) {
@@ -28,7 +28,9 @@ mixin _DomClip on PersistedContainerSurface {
     if (!debugShowClipLayers) {
       // Hide overflow in production mode. When debugging we want to see the
       // clipped picture in full.
-      element.style.overflow = 'hidden';
+      element.style
+        ..overflow = 'hidden'
+        ..zIndex = '0';
     } else {
       // Display the outline of the clipping region. When debugShowClipLayers is
       // `true` we don't hide clip overflow (see above). This outline helps
@@ -40,8 +42,9 @@ mixin _DomClip on PersistedContainerSurface {
       // This creates an additional interior element. Count it too.
       _surfaceStatsFor(this).allocatedDomNodeCount++;
     }
-    _childContainer.style.position = 'absolute';
-    element.append(_childContainer);
+    _childContainer!.style.position = 'absolute';
+
+    element.append(_childContainer!);
     return element;
   }
 
@@ -60,13 +63,13 @@ mixin _DomClip on PersistedContainerSurface {
 class PersistedClipRect extends PersistedContainerSurface
     with _DomClip
     implements ui.ClipRectEngineLayer {
-  PersistedClipRect(PersistedClipRect oldLayer, this.rect) : super(oldLayer);
+  PersistedClipRect(PersistedClipRect? oldLayer, this.rect) : super(oldLayer);
 
   final ui.Rect rect;
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent._transform;
+    _transform = parent!._transform;
     _localClipBounds = rect;
     _localTransformInverse = null;
     _projectedClip = null;
@@ -79,7 +82,7 @@ class PersistedClipRect extends PersistedContainerSurface
 
   @override
   void apply() {
-    rootElement.style
+    rootElement!.style
       ..left = '${rect.left}px'
       ..top = '${rect.top}px'
       ..width = '${rect.right - rect.left}px'
@@ -88,7 +91,7 @@ class PersistedClipRect extends PersistedContainerSurface
     // Translate the child container in the opposite direction to compensate for
     // the shift in the coordinate system introduced by the translation of the
     // rootElement. Clipping in Flutter has no effect on the coordinate system.
-    childContainer.style
+    childContainer!.style
       ..left = '${-rect.left}px'
       ..top = '${-rect.top}px';
   }
@@ -109,16 +112,16 @@ class PersistedClipRect extends PersistedContainerSurface
 class PersistedClipRRect extends PersistedContainerSurface
     with _DomClip
     implements ui.ClipRRectEngineLayer {
-  PersistedClipRRect(ui.EngineLayer oldLayer, this.rrect, this.clipBehavior)
-      : super(oldLayer);
+  PersistedClipRRect(ui.EngineLayer? oldLayer, this.rrect, this.clipBehavior)
+      : super(oldLayer as PersistedSurface?);
 
   final ui.RRect rrect;
   // TODO(yjbanov): can this be controlled in the browser?
-  final ui.Clip clipBehavior;
+  final ui.Clip? clipBehavior;
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent._transform;
+    _transform = parent!._transform;
     _localClipBounds = rrect.outerRect;
     _localTransformInverse = null;
     _projectedClip = null;
@@ -131,7 +134,7 @@ class PersistedClipRRect extends PersistedContainerSurface
 
   @override
   void apply() {
-    rootElement.style
+    rootElement!.style
       ..left = '${rrect.left}px'
       ..top = '${rrect.top}px'
       ..width = '${rrect.width}px'
@@ -144,7 +147,7 @@ class PersistedClipRRect extends PersistedContainerSurface
     // Translate the child container in the opposite direction to compensate for
     // the shift in the coordinate system introduced by the translation of the
     // rootElement. Clipping in Flutter has no effect on the coordinate system.
-    childContainer.style
+    childContainer!.style
       ..left = '${-rrect.left}px'
       ..top = '${-rrect.top}px';
   }
@@ -164,7 +167,7 @@ class PersistedClipRRect extends PersistedContainerSurface
 class PersistedPhysicalShape extends PersistedContainerSurface
     with _DomClip
     implements ui.PhysicalShapeEngineLayer {
-  PersistedPhysicalShape(PersistedPhysicalShape oldLayer, this.path,
+  PersistedPhysicalShape(PersistedPhysicalShape? oldLayer, this.path,
       this.elevation, int color, int shadowColor, this.clipBehavior)
       : color = ui.Color(color),
         shadowColor = ui.Color(shadowColor),
@@ -177,17 +180,17 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   final ui.Color color;
   final ui.Color shadowColor;
   final ui.Clip clipBehavior;
-  html.Element _clipElement;
+  html.Element? _clipElement;
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent._transform;
+    _transform = parent!._transform;
 
-    final ui.RRect roundRect = path.webOnlyPathAsRoundedRect;
+    final ui.RRect? roundRect = path.webOnlyPathAsRoundedRect;
     if (roundRect != null) {
       _localClipBounds = roundRect.outerRect;
     } else {
-      final ui.Rect rect = path.webOnlyPathAsRect;
+      final ui.Rect? rect = path.webOnlyPathAsRect;
       if (rect != null) {
         _localClipBounds = rect;
       } else {
@@ -199,7 +202,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   }
 
   void _applyColor() {
-    rootElement.style.backgroundColor = colorToCssString(color);
+    rootElement!.style.backgroundColor = colorToCssString(color);
   }
 
   void _applyShadow() {
@@ -219,24 +222,21 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   }
 
   void _applyShape() {
-    if (path == null) {
-      return;
-    }
     // Handle special case of round rect physical shape mapping to
     // rounded div.
-    final ui.RRect roundRect = path.webOnlyPathAsRoundedRect;
+    final ui.RRect? roundRect = path.webOnlyPathAsRoundedRect;
     if (roundRect != null) {
       final String borderRadius =
           '${roundRect.tlRadiusX}px ${roundRect.trRadiusX}px '
           '${roundRect.brRadiusX}px ${roundRect.blRadiusX}px';
-      final html.CssStyleDeclaration style = rootElement.style;
+      final html.CssStyleDeclaration style = rootElement!.style;
       style
         ..left = '${roundRect.left}px'
         ..top = '${roundRect.top}px'
         ..width = '${roundRect.width}px'
         ..height = '${roundRect.height}px'
         ..borderRadius = borderRadius;
-      childContainer.style
+      childContainer!.style
         ..left = '${-roundRect.left}px'
         ..top = '${-roundRect.top}px';
       if (clipBehavior != ui.Clip.none) {
@@ -244,16 +244,16 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       }
       return;
     } else {
-      final ui.Rect rect = path.webOnlyPathAsRect;
+      final ui.Rect? rect = path.webOnlyPathAsRect;
       if (rect != null) {
-        final html.CssStyleDeclaration style = rootElement.style;
+        final html.CssStyleDeclaration style = rootElement!.style;
         style
           ..left = '${rect.left}px'
           ..top = '${rect.top}px'
           ..width = '${rect.width}px'
           ..height = '${rect.height}px'
           ..borderRadius = '';
-        childContainer.style
+        childContainer!.style
           ..left = '${-rect.left}px'
           ..top = '${-rect.top}px';
         if (clipBehavior != ui.Clip.none) {
@@ -261,22 +261,22 @@ class PersistedPhysicalShape extends PersistedContainerSurface
         }
         return;
       } else {
-        final Ellipse ellipse = path.webOnlyPathAsCircle;
-        if (ellipse != null) {
-          final double rx = ellipse.radiusX;
-          final double ry = ellipse.radiusY;
+        final ui.Rect? ovalRect = path.webOnlyPathAsCircle;
+        if (ovalRect != null) {
+          final double rx = ovalRect.width / 2.0;
+          final double ry = ovalRect.height / 2.0;
           final String borderRadius =
               rx == ry ? '${rx}px ' : '${rx}px ${ry}px ';
-          final html.CssStyleDeclaration style = rootElement.style;
-          final double left = ellipse.x - rx;
-          final double top = ellipse.y - ry;
+          final html.CssStyleDeclaration style = rootElement!.style;
+          final double left = ovalRect.left;
+          final double top = ovalRect.top;
           style
             ..left = '${left}px'
             ..top = '${top}px'
             ..width = '${rx * 2}px'
             ..height = '${ry * 2}px'
             ..borderRadius = borderRadius;
-          childContainer.style
+          childContainer!.style
             ..left = '${-left}px'
             ..top = '${-top}px';
           if (clipBehavior != ui.Clip.none) {
@@ -295,12 +295,12 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     assert(_clipElement == null);
     _clipElement =
         html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
-    domRenderer.append(rootElement, _clipElement);
+    domRenderer.append(rootElement!, _clipElement!);
     domRenderer.setElementStyle(
-        rootElement, 'clip-path', 'url(#svgClip$_clipIdCounter)');
+        rootElement!, 'clip-path', 'url(#svgClip$_clipIdCounter)');
     domRenderer.setElementStyle(
-        rootElement, '-webkit-clip-path', 'url(#svgClip$_clipIdCounter)');
-    final html.CssStyleDeclaration rootElementStyle = rootElement.style;
+        rootElement!, '-webkit-clip-path', 'url(#svgClip$_clipIdCounter)');
+    final html.CssStyleDeclaration rootElementStyle = rootElement!.style;
     rootElementStyle
       ..overflow = ''
       ..left = '${pathBounds.left}px'
@@ -308,7 +308,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       ..width = '${pathBounds.width}px'
       ..height = '${pathBounds.height}px'
       ..borderRadius = '';
-    childContainer.style
+    childContainer!.style
       ..left = '-${pathBounds.left}px'
       ..top = '-${pathBounds.top}px';
   }
@@ -327,8 +327,8 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       oldSurface._clipElement?.remove();
       // Reset style on prior element since we may have switched between
       // rect/rrect and arbitrary path.
-      domRenderer.setElementStyle(rootElement, 'clip-path', '');
-      domRenderer.setElementStyle(rootElement, '-webkit-clip-path', '');
+      domRenderer.setElementStyle(rootElement!, 'clip-path', '');
+      domRenderer.setElementStyle(rootElement!, '-webkit-clip-path', '');
       _applyShape();
     } else {
       _clipElement = oldSurface._clipElement;
@@ -341,12 +341,12 @@ class PersistedPhysicalShape extends PersistedContainerSurface
 class PersistedClipPath extends PersistedContainerSurface
     implements ui.ClipPathEngineLayer {
   PersistedClipPath(
-      PersistedClipPath oldLayer, this.clipPath, this.clipBehavior)
+      PersistedClipPath? oldLayer, this.clipPath, this.clipBehavior)
       : super(oldLayer);
 
   final ui.Path clipPath;
   final ui.Clip clipBehavior;
-  html.Element _clipElement;
+  html.Element? _clipElement;
 
   @override
   html.Element createElement() {
@@ -361,20 +361,11 @@ class PersistedClipPath extends PersistedContainerSurface
 
   @override
   void apply() {
-    if (clipPath == null) {
-      if (_clipElement != null) {
-        domRenderer.setElementStyle(childContainer, 'clip-path', '');
-        domRenderer.setElementStyle(childContainer, '-webkit-clip-path', '');
-        _clipElement.remove();
-        _clipElement = null;
-      }
-      return;
-    }
     _clipElement?.remove();
-    final String svgClipPath = createSvgClipDef(childContainer, clipPath);
+    final String svgClipPath = createSvgClipDef(childContainer as html.HtmlElement, clipPath);
     _clipElement =
         html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
-    domRenderer.append(childContainer, _clipElement);
+    domRenderer.append(childContainer!, _clipElement!);
   }
 
   @override

@@ -4,9 +4,13 @@ web_shard_template: &WEB_SHARD_TEMPLATE
   only_if: "changesInclude('.cirrus.yml', 'DEPS', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
   environment:
     # As of March 2020, the Web shards needed 16G of RAM and 4 CPUs to run all framework tests with goldens without flaking.
+    # The tests are encountering a flake in Chrome. Increasing the number of shards to decrease race conditions.
+    # Shard number kept at 8 for the engine since 12 shards exhausted the Cirrus limits.
+    # https://github.com/flutter/flutter/issues/62510
+    WEB_SHARD_COUNT: 8
     CPU: 4
     MEMORY: 16G
-    WEB_SHARD_COUNT: 4
+    CHROME_NO_SANDBOX: true
   compile_host_script: |
     cd $ENGINE_PATH/src
     ./flutter/tools/gn --unoptimized --full-dart-sdk
@@ -62,19 +66,13 @@ task:
         ./txt_benchmarks --benchmark_format=json > txt_benchmarks.json
         ./fml_benchmarks --benchmark_format=json > fml_benchmarks.json
         ./shell_benchmarks --benchmark_format=json > shell_benchmarks.json
+        ./ui_benchmarks --benchmark_format=json > ui_benchmarks.json
         cd $ENGINE_PATH/src/flutter/testing/benchmark
         pub get
         dart bin/parse_and_send.dart ../../../out/host_release/txt_benchmarks.json
         dart bin/parse_and_send.dart ../../../out/host_release/fml_benchmarks.json
         dart bin/parse_and_send.dart ../../../out/host_release/shell_benchmarks.json
-    - name: build_and_test_linux_release
-      compile_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/tools/gn --runtime-mode=release
-        ninja -C out/host_release
-      test_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/testing/run_tests.sh host_release
+        dart bin/parse_and_send.dart ../../../out/host_release/ui_benchmarks.json
 
     # The following test depends on Flutter framework repo. It may fail if the
     # framework repo is currently broken.
@@ -86,17 +84,6 @@ task:
       test_host_script: |
         cd $ENGINE_PATH/src
         ./flutter/testing/run_tests.sh host_debug_unopt
-      test_web_engine_script: |
-        cd $ENGINE_PATH/src/flutter/web_sdk/web_engine_tester
-        $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        cd $ENGINE_PATH/src/flutter/lib/web_ui
-        $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        export FELT="$ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dart dev/felt.dart"
-        $FELT check-licenses
-        CHROME_NO_SANDBOX=true $FELT test
-      always:
-        web_engine_test_artifacts:
-          path: test_results/*
       fetch_framework_script: |
         mkdir -p $FRAMEWORK_PATH
         cd $FRAMEWORK_PATH
@@ -125,35 +112,22 @@ task:
     - name: web_tests-2-linux
       << : *WEB_SHARD_TEMPLATE
 
-    - name: web_tests-3_last-linux # last Web shard must end with _last
+    - name: web_tests-3-linux
       << : *WEB_SHARD_TEMPLATE
 
-    - name: web_engine_analysis
-      compile_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/tools/gn --unoptimized --full-dart-sdk
-        ninja -C out/host_debug_unopt
-      script:
-        - cd $ENGINE_PATH/src/flutter/lib/web_ui
-        - $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        - $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dartanalyzer --fatal-warnings --fatal-hints dev/ lib/ test/ tool/
+    - name: web_tests-4-linux
+      << : *WEB_SHARD_TEMPLATE
 
-    - name: build_and_test_web_linux_firefox
-      compile_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/tools/gn --unoptimized --full-dart-sdk
-        ninja -C out/host_debug_unopt
-      test_web_engine_firefox_script: |
-        cd $ENGINE_PATH/src/flutter/web_sdk/web_engine_tester
-        $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        cd $ENGINE_PATH/src/flutter/lib/web_ui
-        $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        export FELT="$ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dart dev/felt.dart"
-        $FELT test --browser=firefox
-    - name: format_and_dart_test
-      format_script: |
-        cd $ENGINE_PATH/src/flutter
-        ./ci/format.sh
+    - name: web_tests-5-linux
+      << : *WEB_SHARD_TEMPLATE
+
+    - name: web_tests-6-linux
+      << : *WEB_SHARD_TEMPLATE
+
+    - name: web_tests-7_last-linux # last Web shard must end with _last
+      << : *WEB_SHARD_TEMPLATE
+
+    - name: build_test
       build_script: |
         cd $ENGINE_PATH/src/flutter
         ./ci/build.sh

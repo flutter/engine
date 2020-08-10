@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/common/shell_test_platform_view_vulkan.h"
+#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/vulkan/vulkan_utilities.h"
 
 namespace flutter {
@@ -105,10 +106,18 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
     return false;
   }
 
-  sk_sp<GrContext> context = GrContext::MakeVulkan(backend_context);
+  GrContextOptions options;
+  if (PersistentCache::cache_sksl()) {
+    options.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kSkSL;
+  }
+  PersistentCache::MarkStrategySet();
+  options.fPersistentCache = PersistentCache::GetCacheForProcess();
+
+  sk_sp<GrDirectContext> context =
+      GrDirectContext::MakeVulkan(backend_context, options);
 
   if (context == nullptr) {
-    FML_DLOG(ERROR) << "Failed to create GrContext";
+    FML_DLOG(ERROR) << "Failed to create GrDirectContext";
     return false;
   }
 
@@ -171,7 +180,7 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
                                         std::move(callback));
 }
 
-GrContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {
+GrDirectContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {
   return context_.get();
 }
 

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 // TODO(mdebbar): add other strategies.
@@ -73,10 +73,13 @@ class HashLocationStrategy extends LocationStrategy {
     // and if it is empty then it will stay empty
     String path = _platformLocation.hash ?? '';
     assert(path.isEmpty || path.startsWith('#'));
-    // Dart will complain if a call to substring is
-    // executed with a position value that exceeds the
-    // length of string.
-    return path.isEmpty ? path : path.substring(1);
+
+    // We don't want to return an empty string as a path. Instead we default to "/".
+    if (path.isEmpty || path == '#') {
+      return '/';
+    }
+    // At this point, we know [path] starts with "#" and isn't empty.
+    return path.substring(1);
   }
 
   @override
@@ -112,7 +115,7 @@ class HashLocationStrategy extends LocationStrategy {
   /// `history.back` transition.
   Future<void> _waitForPopState() {
     final Completer<void> completer = Completer<void>();
-    ui.VoidCallback unsubscribe;
+    late ui.VoidCallback unsubscribe;
     unsubscribe = onPopState((_) {
       unsubscribe();
       completer.complete();
@@ -138,7 +141,7 @@ abstract class PlatformLocation {
 
   String get pathname;
   String get search;
-  String get hash;
+  String? get hash;
 
   void pushState(dynamic state, String title, String url);
   void replaceState(dynamic state, String title, String url);
@@ -173,10 +176,10 @@ class BrowserPlatformLocation extends PlatformLocation {
   }
 
   @override
-  String get pathname => _location.pathname;
+  String get pathname => _location.pathname!;
 
   @override
-  String get search => _location.search;
+  String get search => _location.search!;
 
   @override
   String get hash => _location.hash;
