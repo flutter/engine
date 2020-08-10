@@ -48,8 +48,10 @@ class CustomEncodableValue {
   operator std::any &() { return value_; }
   operator const std::any &() const { return value_; }
 
+#if __has_feature(cxx_rtti)
   // Passthrough to std::any's type().
   const std::type_info& type() const noexcept { return value_.type(); }
+#endif
 
   // This operator exists only to provide a stable ordering for use as a
   // std::map key, to satisfy the compiler requirements for EncodableValue.
