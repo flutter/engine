@@ -379,7 +379,7 @@ class PathIterator {
 
   /// Maximum buffer size required for points in [next] calls.
   static const int kMaxBufferSize = 8;
-  
+
   /// Returns true if first contour on path is closed.
   bool isClosedContour() {
     if (_verbCount == 0 || _verbIndex == _verbCount) {
