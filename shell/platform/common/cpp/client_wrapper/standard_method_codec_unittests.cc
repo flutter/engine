@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/method_result_functions.h"
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_method_codec.h"
+#include "flutter/shell/platform/common/cpp/client_wrapper/testing/test_codec_extensions.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
@@ -158,71 +159,9 @@ TEST(StandardMethodCodec, HandlesErrorEnvelopesWithDetails) {
   EXPECT_TRUE(decoded_successfully);
 }
 
-namespace {
-
-// A representation of a point, for custom type testing.
-class Point {
- public:
-  Point(int x, int y) : x_(x), y_(y) {}
-  ~Point() = default;
-
-  int x() const { return x_; }
-  int y() const { return y_; }
-
-  bool operator==(const Point& other) const {
-    return x_ == other.x_ && y_ == other.y_;
-  }
-
- private:
-  int x_;
-  int y_;
-};
-
-// Codec extension for Point.
-class TestCodecSerializer : public StandardCodecSerializer {
- public:
-  TestCodecSerializer() = default;
-  virtual ~TestCodecSerializer() = default;
-
-  static const TestCodecSerializer& GetInstance() {
-    static TestCodecSerializer sInstance;
-    return sInstance;
-  }
-
-  // |StandardCodecSerializer|
-  EncodableValue ReadValueOfType(uint8_t type,
-                                 ByteStreamReader* stream) const override {
-    if (type == kPointType) {
-      int32_t x = stream->ReadInt32();
-      int32_t y = stream->ReadInt32();
-      return CustomEncodableValue(Point(x, y));
-    }
-    return StandardCodecSerializer::ReadValueOfType(type, stream);
-  }
-
-  // |StandardCodecSerializer|
-  void WriteValue(const EncodableValue& value,
-                  ByteStreamWriter* stream) const override {
-    auto custom_value = std::get_if<CustomEncodableValue>(&value);
-    if (!custom_value) {
-      StandardCodecSerializer::WriteValue(value, stream);
-      return;
-    }
-    stream->WriteByte(kPointType);
-    const Point& point = std::any_cast<Point>(*custom_value);
-    stream->WriteInt32(point.x());
-    stream->WriteInt32(point.y());
-  }
-
- private:
-  static constexpr uint8_t kPointType = 128;
-};
-
-}  // namespace
-
 TEST(StandardMethodCodec, HandlesCustomTypeArguments) {
-  const StandardMethodCodec& codec =
-      StandardMethodCodec::GetInstance(&TestCodecSerializer::GetInstance());
+  const StandardMethodCodec& codec = StandardMethodCodec::GetInstance(
+      &PointExtensionSerializer::GetInstance());
   Point point(7, 9);
   MethodCall<EncodableValue> call(
       "hello", std::make_unique<EncodableValue>(CustomEncodableValue(point)));

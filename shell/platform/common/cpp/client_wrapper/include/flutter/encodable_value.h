@@ -39,6 +39,14 @@ static_assert(sizeof(double) == 8, "EncodableValue requires a 64-bit double");
 // std::any. For example:
 //   const MyType& my_type_value =
 //        std::any_cast<MyType>(std::get<CustomEncodableValue>(value));
+//
+// If RTTI is enabled, different extension types can be checked with type():
+//   if (custom_value->type() == typeid(SomeData)) { ... }
+// Clients that wish to disable RTTI would need to decide on another approach
+// for distinguishing types (e.g., in StandardCodecExtension::WriteValueOfType)
+// if multiple custom types are needed. For instance, wrapping all of the
+// extension types in an EncodableValue-style variant, and only ever storing
+// that variant in CustomEncodableValue.
 class CustomEncodableValue {
  public:
   explicit CustomEncodableValue(const std::any& value) : value_(value) {}

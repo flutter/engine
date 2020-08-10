@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_message_codec.h"
+#include "flutter/shell/platform/common/cpp/client_wrapper/testing/test_codec_extensions.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
@@ -181,100 +182,6 @@ TEST(StandardMessageCodec, CanEncodeAndDecodeFloat64Array) {
   CheckEncodeDecode(value, bytes);
 }
 
-namespace {
-
-// A representation of a point, for custom type testing.
-class Point {
- public:
-  Point(int x, int y) : x_(x), y_(y) {}
-  ~Point() = default;
-
-  int x() const { return x_; }
-  int y() const { return y_; }
-
-  bool operator==(const Point& other) const {
-    return x_ == other.x_ && y_ == other.y_;
-  }
-
- private:
-  int x_;
-  int y_;
-};
-
-// A typed binary data object with extra fields, for custom type testing.
-class SomeData {
- public:
-  SomeData(const std::string label, const std::vector<uint8_t>& data)
-      : label_(label), data_(data) {}
-  ~SomeData() = default;
-
-  const std::string& label() const { return label_; }
-  const std::vector<uint8_t>& data() const { return data_; }
-
- private:
-  std::string label_;
-  std::vector<uint8_t> data_;
-};
-
-// Codec extension for EncodablePoint.
-class TestCodecSerializer : public StandardCodecSerializer {
- public:
-  TestCodecSerializer() = default;
-  virtual ~TestCodecSerializer() = default;
-
-  static const TestCodecSerializer& GetInstance() {
-    static TestCodecSerializer sInstance;
-    return sInstance;
-  }
-
-  // |TestCodecSerializer|
-  EncodableValue ReadValueOfType(uint8_t type,
-                                 ByteStreamReader* stream) const override {
-    if (type == kPointType) {
-      int32_t x = stream->ReadInt32();
-      int32_t y = stream->ReadInt32();
-      return CustomEncodableValue(Point(x, y));
-    } else if (type == kSomeDataType) {
-      size_t size = ReadSize(stream);
-      std::vector<uint8_t> data;
-      data.resize(size);
-      stream->ReadBytes(data.data(), size);
-      EncodableValue label = ReadValue(stream);
-      return CustomEncodableValue(SomeData(std::get<std::string>(label), data));
-    }
-    return StandardCodecSerializer::ReadValueOfType(type, stream);
-  }
-
-  // |TestCodecSerializer|
-  void WriteValue(const EncodableValue& value,
-                  ByteStreamWriter* stream) const override {
-    auto custom_value = std::get_if<CustomEncodableValue>(&value);
-    if (!custom_value) {
-      StandardCodecSerializer::WriteValue(value, stream);
-      return;
-    }
-    if (custom_value->type() == typeid(Point)) {
-      stream->WriteByte(kPointType);
-      const Point& point = std::any_cast<Point>(*custom_value);
-      stream->WriteInt32(point.x());
-      stream->WriteInt32(point.y());
-    } else if (custom_value->type() == typeid(SomeData)) {
-      stream->WriteByte(kSomeDataType);
-      const SomeData& some_data = std::any_cast<SomeData>(*custom_value);
-      size_t data_size = some_data.data().size();
-      WriteSize(data_size, stream);
-      stream->WriteBytes(some_data.data().data(), data_size);
-      WriteValue(EncodableValue(some_data.label()), stream);
-    }
-  }
-
- private:
-  static constexpr uint8_t kPointType = 128;
-  static constexpr uint8_t kSomeDataType = 129;
-};
-
-}  // namespace
-
 TEST(StandardMessageCodec, CanEncodeAndDecodeSimpleCustomType) {
   std::vector<uint8_t> bytes = {0x80, 0x09, 0x00, 0x00, 0x00,
                                 0x10, 0x00, 0x00, 0x00};
@@ -286,7 +193,7 @@ TEST(StandardMessageCodec, CanEncodeAndDecodeSimpleCustomType) {
     return a_point == b_point;
   };
   CheckEncodeDecode(CustomEncodableValue(Point(9, 16)), bytes,
-                    &TestCodecSerializer::GetInstance(), point_comparator);
+                    &PointExtensionSerializer::GetInstance(), point_comparator);
 }
 
 TEST(StandardMessageCodec, CanEncodeAndDecodeVariableLengthCustomType) {
@@ -306,7 +213,7 @@ TEST(StandardMessageCodec, CanEncodeAndDecodeVariableLengthCustomType) {
   };
   CheckEncodeDecode(CustomEncodableValue(
                         SomeData("test", {0x00, 0x01, 0x02, 0x03, 0x04, 0x05})),
-                    bytes, &TestCodecSerializer::GetInstance(),
+                    bytes, &SomeDataExtensionSerializer::GetInstance(),
                     some_data_comparator);
 }
 
