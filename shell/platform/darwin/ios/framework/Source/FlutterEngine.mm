@@ -582,9 +582,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint {
-  return [self runWithEntrypoint:entrypoint
-                      libraryURI:nil
-                    initialRoute:FlutterDefaultInitialRoute];
+  return [self runWithEntrypoint:entrypoint libraryURI:nil initialRoute:FlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint initialRoute:(NSString*)initialRoute {
