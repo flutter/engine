@@ -572,28 +572,28 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (BOOL)run {
   return [self runWithEntrypoint:FlutterDefaultDartEntrypoint
                       libraryURI:nil
-                withInitialRoute:FlutterDefaultInitialRoute];
+                    initialRoute:FlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   return [self runWithEntrypoint:entrypoint
                       libraryURI:libraryURI
-                withInitialRoute:FlutterDefaultInitialRoute];
+                    initialRoute:FlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint {
   return [self runWithEntrypoint:entrypoint
                       libraryURI:nil
-                withInitialRoute:FlutterDefaultInitialRoute];
+                    initialRoute:FlutterDefaultInitialRoute];
 }
 
-- (BOOL)runWithEntrypoint:(NSString*)entrypoint withInitialRoute:(NSString*)initialRoute {
-  return [self runWithEntrypoint:entrypoint libraryURI:nil withInitialRoute:initialRoute];
+- (BOOL)runWithEntrypoint:(NSString*)entrypoint initialRoute:(NSString*)initialRoute {
+  return [self runWithEntrypoint:entrypoint libraryURI:nil initialRoute:initialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint
                libraryURI:(NSString*)libraryURI
-         withInitialRoute:(NSString*)initialRoute {
+             initialRoute:(NSString*)initialRoute {
   if ([self createShell:entrypoint libraryURI:libraryURI initialRoute:initialRoute]) {
     [self launchEngine:entrypoint libraryURI:libraryURI];
   }

@@ -80,14 +80,14 @@ FLUTTER_ASSERT_ARC
   OCMVerify([plugin detachFromEngineForRegistrar:[OCMArg any]]);
 }
 
-- (void)testRunningWithInitialRouteSendsNavigationMessage {
+- (void)testRunningInitialRouteSendsNavigationMessage {
   id mockBinaryMessenger = OCMClassMock([FlutterBinaryMessengerRelay class]);
 
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine setBinaryMessenger:mockBinaryMessenger];
 
   // Run with an initial route.
-  [engine runWithEntrypoint:FlutterDefaultDartEntrypoint withInitialRoute:@"test"];
+  [engine runWithEntrypoint:FlutterDefaultDartEntrypoint initialRoute:@"test"];
 
   // Now check that an encoded method call has been made on the binary messenger to set the
   // initial route to "test".

@@ -116,7 +116,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
                          bundle:(NSBundle*)nibBundle {
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
-    [self sharedSetupWithProject:project withInitialRoute:nil];
+    [self sharedSetupWithProject:project initialRoute:nil];
   }
 
   return self;
@@ -128,7 +128,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
                          bundle:(NSBundle*)nibBundle {
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
-    [self sharedSetupWithProject:project withInitialRoute:initialRoute];
+    [self sharedSetupWithProject:project initialRoute:initialRoute];
   }
 
   return self;
@@ -146,7 +146,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)awakeFromNib {
   [super awakeFromNib];
   if (!_engine.get()) {
-    [self sharedSetupWithProject:nil withInitialRoute:nil];
+    [self sharedSetupWithProject:nil initialRoute:nil];
   }
 }
 
@@ -155,7 +155,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
-              withInitialRoute:(nullable NSString*)initialRoute {
+                  initialRoute:(nullable NSString*)initialRoute {
   _viewOpaque = YES;
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
   _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"

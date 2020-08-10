@@ -1064,7 +1064,7 @@ class Window {
   ///
   /// ## iOS
   ///
-  /// On iOS, the initial route can be set on the `withInitialRoute`
+  /// On iOS, the initial route can be set on the `initialRoute`
   /// parameter of the [FlutterViewController](/objcdoc/Classes/FlutterViewController.html)'s
   /// initializer.
   ///
