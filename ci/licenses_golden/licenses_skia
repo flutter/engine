@@ -1,4 +1,4 @@
-Signature: 614d87aaba160d03b6dcea26c866af10
+Signature: c6a58613cccaa73c4730d47fcfdc4ffb
 
 UNUSED LICENSES:
 
@@ -1453,11 +1453,17 @@ FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/ports/SkTLS_pthread.cpp
 FILE: ../../../third_party/skia/src/ports/SkTLS_win.cpp
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_fp.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_geom.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_geom.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_pipeline.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_pipeline.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.c.inc
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
 FILE: ../../../third_party/skia/src/sksl/sksl_fp_raw.sksl
@@ -3817,6 +3823,8 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSectionAndParameterHelper.h
 FILE: ../../../third_party/skia/src/sksl/SkSLString.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLString.h
 FILE: ../../../third_party/skia/src/sksl/SkSLStringStream.h
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_fp.c.inc
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_fp.sksl
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLEnum.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSetting.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwitchCase.h
@@ -5295,7 +5303,6 @@ FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.h
 FILE: ../../../third_party/skia/src/core/SkM44.cpp
 FILE: ../../../third_party/skia/src/core/SkMarkerStack.cpp
 FILE: ../../../third_party/skia/src/core/SkMarkerStack.h
-FILE: ../../../third_party/skia/src/core/SkPathView.h
 FILE: ../../../third_party/skia/src/core/SkVerticesPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.h
@@ -5315,9 +5322,6 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrHighContrastFilterEf
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrHighContrastFilterEffect.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathAtlasMgr.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathAtlasMgr.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathShapeData.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathShapeData.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.h
