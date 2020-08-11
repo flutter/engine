@@ -45,6 +45,10 @@ source_set("txt") {
     defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
   }
 
+  if (is_linux || is_android || is_fuchsia) {
+    defines += [ "HAVE_PTHREADS" ]
+  }
+
   sources = [
     "src/log/log.cc",
     "src/log/log.h",
