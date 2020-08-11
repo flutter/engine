@@ -19,8 +19,8 @@ if [ ! -d "out/$FLUTTER_ENGINE" ]; then
   echo "You must GN to generate out/$FLUTTER_ENGINE"
   echo "Example: "
   echo "  ./flutter/tools/gn --ios --simulator --unoptimized"
-  echo "  ./flutter/tools/gn --simulator --unoptimized"
-  echo "to create out/ios_debug_sim_unopt and out/host_debug_sim_unopt."
+  echo "  ./flutter/tools/gn --unoptimized"
+  echo "to create out/ios_debug_sim_unopt and out/host_debug_unopt."
   exit 1
 fi
 
@@ -28,6 +28,6 @@ autoninja -C out/$FLUTTER_ENGINE
 
 popd
 
-./compile_ios_jit.sh ../../../out/"${FLUTTER_ENGINE/ios_/host_}" ../../../out/$FLUTTER_ENGINE/clang_x64
+./compile_ios_jit.sh ../../../out/host_debug_unopt ../../../out/$FLUTTER_ENGINE/clang_x64
 
 ./run_ios_tests.sh $FLUTTER_ENGINE
