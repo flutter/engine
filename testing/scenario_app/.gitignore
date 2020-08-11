@@ -1,6 +1,8 @@
 .packages
 pubspec.lock   # This only has local dependencies in it.
 build/
+gradle-home/.cache
+!.vpython
 
 ios/Scenarios/*.framework/
 android/app/libs/flutter.jar
