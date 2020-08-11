@@ -10,7 +10,7 @@ executable("font-subset") {
 
   defines = []
   if (is_linux || is_android || is_fuchsia) {
-    defines += [ "HAVE_PTHREADS" ]
+    defines += [ "HAVE_PTHREAD" ]
   }
 
   deps = [ "//third_party/harfbuzz" ]

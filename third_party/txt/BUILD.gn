@@ -46,7 +46,7 @@ source_set("txt") {
   }
 
   if (is_linux || is_android || is_fuchsia) {
-    defines += [ "HAVE_PTHREADS" ]
+    defines += [ "HAVE_PTHREAD" ]
   }
 
   sources = [
