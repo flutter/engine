@@ -8,11 +8,6 @@ executable("font-subset") {
     "main.cc",
   ]
 
-  defines = []
-  if (is_linux || is_android || is_fuchsia) {
-    defines += [ "HAVE_PTHREAD" ]
-  }
-
   deps = [ "//third_party/harfbuzz" ]
 
   libs = []
