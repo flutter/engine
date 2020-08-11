@@ -55,6 +55,11 @@ void loadScenario(Map<String, dynamic> scenario) {
   final String scenarioName = scenario['name'] as String;
   assert(_scenarios[scenarioName] != null);
   _currentScenarioParams = scenario;
+
+  if (_currentScenarioInstance != null) {
+    _currentScenarioInstance.unmount();
+  }
+
   _currentScenarioInstance = _scenarios[scenario['name']]();
   window.scheduleFrame();
   print('Loading scenario $scenarioName');

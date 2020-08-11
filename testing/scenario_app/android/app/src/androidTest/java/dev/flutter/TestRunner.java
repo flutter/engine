@@ -12,12 +12,14 @@ public class TestRunner extends AndroidJUnitRunner {
   @Override
   public void onCreate(Bundle arguments) {
     ScreenshotUtil.onCreate(this, arguments);
+    // ScreenshotRunner.onCreate(this, arguments);
     super.onCreate(arguments);
   }
 
   @Override
   public void finish(int resultCode, Bundle results) {
     ScreenshotUtil.onDestroy();
+    // ScreenshotRunner.onDestroy();
     super.finish(resultCode, results);
   }
 }
