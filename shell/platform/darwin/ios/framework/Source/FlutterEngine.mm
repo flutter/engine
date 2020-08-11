@@ -509,12 +509,19 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                       _threadHost.ui_thread->GetTaskRunner(),          // ui
                                       _threadHost.io_thread->GetTaskRunner()           // io
     );
-    // Create the shell. This is a blocking operation.
+    // Create the shell. This is a asynchronous operation.
     _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
                                     std::move(platformData),  // platform data
                                     std::move(settings),      // settings
                                     on_create_platform_view,  // platform view creation
-                                    on_create_rasterizer      // rasterizer creation
+                                    on_create_rasterizer,      // rasterizer creation
+                                    [self, entrypoint = entrypoint](bool initialized) {
+                                        if (initialized) {
+                                          [self postInitialized];
+                                        } else {
+                                          FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: " << entrypoint.UTF8String;
+                                        }
+                                    }
     );
   } else {
     flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
@@ -523,19 +530,26 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                       _threadHost.ui_thread->GetTaskRunner(),          // ui
                                       _threadHost.io_thread->GetTaskRunner()           // io
     );
-    // Create the shell. This is a blocking operation.
+    // Create the shell. This is a asynchronous operation.
     _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
                                     std::move(platformData),  // platform data
                                     std::move(settings),      // settings
                                     on_create_platform_view,  // platform view creation
-                                    on_create_rasterizer      // rasterizer creation
+                                    on_create_rasterizer,      // rasterizer creation
+                                    [self, entrypoint = entrypoint](bool initialized) {
+                                        if (initialized) {
+                                          [self postInitialized];
+                                        } else {
+                                          FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: " << entrypoint.UTF8String;
+                                        }
+                                    }
     );
   }
 
-  if (_shell == nullptr) {
-    FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
-                   << entrypoint.UTF8String;
-  } else {
+  return _shell != nullptr;
+}
+
+- (void)postInitialized {
     [self setupChannels];
     [self onLocaleUpdated:nil];
     if (!_platformViewsController) {
@@ -547,9 +561,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     if (profilerEnabled) {
       [self startProfiler:threadLabel];
     }
-  }
-
-  return _shell != nullptr;
 }
 
 - (BOOL)run {

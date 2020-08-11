@@ -96,6 +96,8 @@ class Shell final : public PlatformView::Delegate,
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
 
+  using InitedCallback = std::function<void(bool)>;
+
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
   ///             callbacks to create the various shell subcomponents will be
@@ -164,7 +166,8 @@ class Shell final : public PlatformView::Delegate,
       const PlatformData platform_data,
       Settings settings,
       CreateCallback<PlatformView> on_create_platform_view,
-      CreateCallback<Rasterizer> on_create_rasterizer);
+      CreateCallback<Rasterizer> on_create_rasterizer,
+      const InitedCallback on_create_inited = nullptr);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
@@ -208,7 +211,7 @@ class Shell final : public PlatformView::Delegate,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const CreateCallback<PlatformView>& on_create_platform_view,
       const CreateCallback<Rasterizer>& on_create_rasterizer,
-      DartVMRef vm);
+      DartVMRef vm, const InitedCallback& on_create_inited = nullptr);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the shell. This is a synchronous operation and
@@ -255,7 +258,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @return     A weak pointer to the rasterizer.
   ///
-  fml::TaskRunnerAffineWeakPtr<Rasterizer> GetRasterizer() const;
+  fml::TaskRunnerAffineWeakPtr<Rasterizer> GetRasterizer();
 
   //------------------------------------------------------------------------------
   /// @brief      Engines may only be accessed on the UI thread. This method is
@@ -391,6 +394,8 @@ class Shell final : public PlatformView::Delegate,
                      >
       service_protocol_handlers_;
   bool is_setup_ = false;
+  std::promise<bool> initialized_promise_;
+  std::future<bool> initialized_future_;
   uint64_t next_pointer_flow_id_ = 0;
 
   bool first_frame_rasterized_ = false;
@@ -430,12 +435,17 @@ class Shell final : public PlatformView::Delegate,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const Shell::CreateCallback<PlatformView>& on_create_platform_view,
-      const Shell::CreateCallback<Rasterizer>& on_create_rasterizer);
+      const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
+      const InitedCallback& on_create_inited = nullptr);
 
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,
              std::unique_ptr<Rasterizer> rasterizer,
              std::unique_ptr<ShellIOManager> io_manager);
+
+  void ensureInitialized();
+
+  void ensureSetupped();
 
   void ReportTimings();
 
