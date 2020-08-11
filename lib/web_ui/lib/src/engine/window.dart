@@ -607,18 +607,15 @@ class EngineWindow extends ui.Window {
 
       case 'flutter/navigation':
         const MethodCodec codec = JSONMethodCodec();
-        final MethodCall decoded = codec.decodeMethodCall(data);
-        final Map<String, dynamic>? message = decoded.arguments;
+        final MethodCall decoded = _decodeMethodCallWithFallback(
+          data,
+          codec,
+          fallbackCodec: StandardMethodCodec()
+        );
+        final Map<dynamic, dynamic>? message = decoded.arguments;
         switch (decoded.method) {
           case 'routeUpdated':
-          case 'routePushed':
-          case 'routeReplaced':
             _browserHistory.setRouteName(message!['routeName']);
-            _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
-            break;
-          case 'routePopped':
-            _browserHistory.setRouteName(message!['previousRouteName']);
             _replyToPlatformMessage(
                 callback, codec.encodeSuccessEnvelope(true));
             break;
@@ -643,6 +640,22 @@ class EngineWindow extends ui.Window {
     // implemented. Look at [MethodChannel.invokeMethod] to see how [null] is
     // handled.
     // callback(null);
+  }
+
+  MethodCall _decodeMethodCallWithFallback(
+    ByteData? data,
+    MethodCodec codec, {
+    MethodCodec? fallbackCodec,
+  }) {
+    if (fallbackCodec == null)
+      return codec.decodeMethodCall(data);
+    MethodCall decoded;
+    try {
+      decoded = codec.decodeMethodCall(data);
+    } on FormatException {
+      decoded = fallbackCodec!.decodeMethodCall(data);
+    }
+    return decoded;
   }
 
   int _getHapticFeedbackDuration(String? type) {
