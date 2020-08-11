@@ -482,7 +482,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (UIView*)splashScreenFromXib:(NSString*)name {
-  NSArray* objects = [[NSBundle mainBundle] loadNibNamed:name owner:self options:nil];
+  NSArray* objects = nil;
+  @try {
+    objects = [[NSBundle mainBundle] loadNibNamed:name owner:self options:nil];
+  } @catch (NSException* exception) {
+    return nil;
+  }
   if ([objects count] != 0) {
     UIView* view = [objects objectAtIndex:0];
     return view;
