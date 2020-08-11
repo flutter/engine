@@ -1,4 +1,4 @@
-Signature: 1cbd9ba9c5b8d6409ac5c2f40f0591a4
+Signature: 3ad075b5ecfd74d67d69ad69d905b48a
 
 UNUSED LICENSES:
 
@@ -8156,8 +8156,6 @@ FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/SoundSplayTr
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/sound_splay_tree.dart
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart2/SoundSplayTreeSieve.dart
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart2/sound_splay_tree.dart
-FILE: ../../../third_party/dart/runtime/bin/abi_version.h
-FILE: ../../../third_party/dart/runtime/bin/abi_version_in.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.h
 FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension.cc
@@ -8362,7 +8360,7 @@ FILE: ../../../third_party/dart/runtime/bin/exe_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/exe_utils.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos_test.cc
-FILE: ../../../third_party/dart/runtime/include/dart_api_dl.cc
+FILE: ../../../third_party/dart/runtime/include/dart_api_dl.c
 FILE: ../../../third_party/dart/runtime/include/dart_api_dl.h
 FILE: ../../../third_party/dart/runtime/include/dart_version.h
 FILE: ../../../third_party/dart/runtime/include/internal/dart_api_dl_impl.h
@@ -8943,7 +8941,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/cli.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/debugger.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/sample_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/allocation_profile/allocation_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/app/analytics.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/cli/command.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/debugger/debugger.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/debugger/debugger_location.dart

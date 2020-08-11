@@ -43,7 +43,8 @@ class CanvasKit {
   external SkFontSlantEnum get FontSlant;
   external SkAnimatedImage MakeAnimatedImageFromEncoded(Uint8List imageData);
   external SkShaderNamespace get SkShader;
-  external SkMaskFilter MakeBlurMaskFilter(SkBlurStyle blurStyle, double sigma, bool respectCTM);
+  external SkMaskFilter MakeBlurMaskFilter(
+      SkBlurStyle blurStyle, double sigma, bool respectCTM);
   external SkColorFilterNamespace get SkColorFilter;
   external SkImageFilterNamespace get SkImageFilter;
   external SkPath MakePathFromOp(SkPath path1, SkPath path2, SkPathOp pathOp);
@@ -57,7 +58,8 @@ class CanvasKit {
     Uint16List? indices,
   );
   external SkParagraphBuilderNamespace get ParagraphBuilder;
-  external SkParagraphStyle ParagraphStyle(SkParagraphStyleProperties properties);
+  external SkParagraphStyle ParagraphStyle(
+      SkParagraphStyleProperties properties);
   external SkTextStyle TextStyle(SkTextStyleProperties properties);
 
   // Text decoration enum is embedded in the CanvasKit object itself.
@@ -68,7 +70,9 @@ class CanvasKit {
   // End of text decoration enum.
 
   external SkFontMgrNamespace get SkFontMgr;
-  external int GetWebGLContext(html.CanvasElement canvas, SkWebGLContextOptions options);
+  external TypefaceFontProviderNamespace get TypefaceFontProvider;
+  external int GetWebGLContext(
+      html.CanvasElement canvas, SkWebGLContextOptions options);
   external SkGrContext MakeGrContext(int glContext);
   external SkSurface MakeOnScreenGLSurface(
     SkGrContext grContext,
@@ -111,6 +115,8 @@ class SkColorSpace {}
 class SkWebGLContextOptions {
   external factory SkWebGLContextOptions({
     required int anitalias,
+    // WebGL version: 1 or 2.
+    required int majorVersion,
   });
 }
 
@@ -569,7 +575,6 @@ SkStrokeJoin toSkStrokeJoin(ui.StrokeJoin strokeJoin) {
   return _skStrokeJoins[strokeJoin.index];
 }
 
-
 @JS()
 class SkFilterQualityEnum {
   external SkFilterQuality get None;
@@ -593,7 +598,6 @@ final List<SkFilterQuality> _skFilterQualitys = <SkFilterQuality>[
 SkFilterQuality toSkFilterQuality(ui.FilterQuality filterQuality) {
   return _skFilterQualitys[filterQuality.index];
 }
-
 
 @JS()
 class SkTileModeEnum {
@@ -620,6 +624,7 @@ SkTileMode toSkTileMode(ui.TileMode mode) {
 @JS()
 class SkAnimatedImage {
   external int getFrameCount();
+
   /// Returns duration in milliseconds.
   external int getRepetitionCount();
   external int decodeNextFrame();
@@ -638,7 +643,11 @@ class SkImage {
   external void delete();
   external int width();
   external int height();
-  external SkShader makeShader(SkTileMode tileModeX, SkTileMode tileModeY);
+  external SkShader makeShader(
+    SkTileMode tileModeX,
+    SkTileMode tileModeY,
+    Float32List? matrix, // 3x3 matrix
+  );
 }
 
 @JS()
@@ -672,11 +681,23 @@ class SkShaderNamespace {
     Float32List? matrix, // 3x3 matrix
     int flags,
   );
+
+  external SkShader MakeSweepGradient(
+    double cx,
+    double cy,
+    List<Float32List> colors,
+    Float32List colorStops,
+    SkTileMode tileMode,
+    Float32List? matrix, // 3x3 matrix
+    int flags,
+    double startAngle,
+    double endAngle,
+  );
 }
 
 @JS()
 class SkShader {
-
+  external void delete();
 }
 
 // This needs to be bound to top-level because SkPaint is initialized
@@ -873,6 +894,7 @@ Float32List _populateSkColor(SkFloat32List skColor, ui.Color color) {
 Float32List toSharedSkColor1(ui.Color color) {
   return _populateSkColor(_sharedSkColor1, color);
 }
+
 final SkFloat32List _sharedSkColor1 = mallocFloat32List(4);
 
 /// Unpacks the [color] into CanvasKit-compatible representation stored
@@ -883,6 +905,7 @@ final SkFloat32List _sharedSkColor1 = mallocFloat32List(4);
 Float32List toSharedSkColor2(ui.Color color) {
   return _populateSkColor(_sharedSkColor2, color);
 }
+
 final SkFloat32List _sharedSkColor2 = mallocFloat32List(4);
 
 /// Unpacks the [color] into CanvasKit-compatible representation stored
@@ -893,6 +916,7 @@ final SkFloat32List _sharedSkColor2 = mallocFloat32List(4);
 Float32List toSharedSkColor3(ui.Color color) {
   return _populateSkColor(_sharedSkColor3, color);
 }
+
 final SkFloat32List _sharedSkColor3 = mallocFloat32List(4);
 
 Uint32List toSkIntColorList(List<ui.Color> colors) {
@@ -967,11 +991,20 @@ class SkPath {
   external void addRect(
     SkRect rect,
   );
-  external void arcTo(
+  external void arcToOval(
     SkRect oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
     bool forceMoveTo,
+  );
+  external void arcToRotated(
+    double radiusX,
+    double radiusY,
+    double rotation,
+    bool useSmallArc,
+    bool counterClockWise,
+    double x,
+    double y,
   );
   external void close();
   external void conicTo(
@@ -1048,21 +1081,6 @@ class SkPath {
     double pers0,
     double pers1,
     double pers2,
-  );
-}
-
-/// A different view on [SkPath] used to overload [SkPath.arcTo].
-// TODO(yjbanov): this is a hack to get around https://github.com/flutter/flutter/issues/61305
-@JS()
-class SkPathArcToPointOverload {
-  external void arcTo(
-    double radiusX,
-    double radiusY,
-    double rotation,
-    bool useSmallArc,
-    bool counterClockWise,
-    double x,
-    double y,
   );
 }
 
@@ -1392,20 +1410,26 @@ class SkParagraphBuilderNamespace {
     SkParagraphStyle paragraphStyle,
     SkFontMgr? fontManager,
   );
+
+  external SkParagraphBuilder MakeFromFontProvider(
+    SkParagraphStyle paragraphStyle,
+    TypefaceFontProvider? fontManager,
+  );
 }
 
 @JS()
 class SkParagraphBuilder {
   external void addText(String text);
   external void pushStyle(SkTextStyle textStyle);
+  external void pushPaintStyle(
+      SkTextStyle textStyle, SkPaint foreground, SkPaint background);
   external void pop();
   external SkParagraph build();
   external void delete();
 }
 
 @JS()
-class SkParagraphStyle {
-}
+class SkParagraphStyle {}
 
 @JS()
 @anonymous
@@ -1433,9 +1457,7 @@ class SkParagraphStyleProperties {
 }
 
 @JS()
-class SkTextStyle {
-
-}
+class SkTextStyle {}
 
 @JS()
 @anonymous
@@ -1481,6 +1503,12 @@ class SkFontMgr {
   external void delete();
 }
 
+@JS('window.flutter_canvas_kit.TypefaceFontProvider')
+class TypefaceFontProvider extends SkFontMgr {
+  external TypefaceFontProvider();
+  external void registerFont(Uint8List font, String family);
+}
+
 @JS()
 class SkParagraph {
   external double getAlphabeticBaseline();
@@ -1519,7 +1547,7 @@ class SkTextRange {
 }
 
 @JS()
-class SkVertices { }
+class SkVertices {}
 
 @JS()
 @anonymous
@@ -1537,3 +1565,79 @@ class SkFontMgrNamespace {
   // TODO(yjbanov): can this be made non-null? It returns null in our unit-tests right now.
   external SkFontMgr? FromData(List<Uint8List> fonts);
 }
+
+@JS()
+class TypefaceFontProviderNamespace {
+  external TypefaceFontProvider Make();
+}
+
+Timer? _skObjectCollector;
+List<SkDeletable> _skObjectDeleteQueue = <SkDeletable>[];
+
+final SkObjectFinalizationRegistry<SkDeletable> skObjectFinalizationRegistry = SkObjectFinalizationRegistry<SkDeletable>(js.allowInterop((SkDeletable deletable) {
+  _skObjectDeleteQueue.add(deletable);
+  _skObjectCollector ??= _scheduleSkObjectCollection();
+}));
+
+/// Schedules an asap timer to delete garbage-collected Skia objects.
+///
+/// We use a timer for the following reasons:
+///
+///  - Deleting the object immediately may lead to dangling pointer as the Skia
+///    object may still be used by a function in the current frame. For example,
+///    a `CkPaint` + `SkPaint` pair may be created by the framework, passed to
+///    the engine, and the `CkPaint` dropped immediately. Because GC can kick in
+///    any time, including in the middle of the event, we may delete `SkPaint`
+///    prematurely.
+///  - A microtask, while solves the problem above, would prevent the event from
+///    yielding to the graphics system to render the frame on the screen if there
+///    is a large number of objects to delete, causing jank.
+Timer _scheduleSkObjectCollection() => Timer(Duration.zero, () {
+  html.window.performance.mark('SkObject collection-start');
+  final int length = _skObjectDeleteQueue.length;
+  for (int i = 0; i < length; i++) {
+    _skObjectDeleteQueue[i].delete();
+  }
+  _skObjectDeleteQueue = <SkDeletable>[];
+
+  // Null out the timer so we can schedule a new one next time objects are
+  // scheduled for deletion.
+  _skObjectCollector = null;
+  html.window.performance.mark('SkObject collection-end');
+  html.window.performance.measure('SkObject collection', 'SkObject collection-start', 'SkObject collection-end');
+});
+
+typedef SkObjectFinalizer<T> = void Function(T key);
+
+/// Any Skia object that has a `delete` method.
+@JS()
+class SkDeletable {
+  /// Deletes the C++ side object.
+  external void delete();
+}
+
+/// Attaches a weakly referenced object to another object and calls a finalizer
+/// with the latter when weakly referenced object is garbage collected.
+///
+/// We use this to delete Skia objects when their "Ck" wrapper is garbage
+/// collected.
+///
+/// Example sequence of events:
+///
+/// 1. A (CkPaint, SkPaint) pair created.
+/// 2. The paint is used to paint some picture.
+/// 3. CkPaint is dropped by the app.
+/// 4. GC decides to perform a GC cycle and collects CkPaint.
+/// 5. The finalizer function is called with the SkPaint as the sole argument.
+/// 6. We call `delete` on SkPaint.
+@JS('window.FinalizationRegistry')
+class SkObjectFinalizationRegistry<T> {
+  external SkObjectFinalizationRegistry(SkObjectFinalizer<T> finalizer);
+  external void register(Object ckObject, Object skObject);
+}
+
+@JS('window.FinalizationRegistry')
+external Object? get _finalizationRegistryConstructor;
+
+/// Whether the current browser supports `FinalizationRegistry`.
+bool browserSupportsFinalizationRegistry = _finalizationRegistryConstructor != null;
