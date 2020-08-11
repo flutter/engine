@@ -27,7 +27,7 @@ abstract class Scenario {
   ///
   /// See [Window.onDrawFrame] for more details.
   void onDrawFrame() {
-    Future.delayed(const Duration(seconds: 1), () {
+    Future<void>.delayed(const Duration(seconds: 1), () {
       if (_didScheduleScreenshot) {
         window.sendPlatformMessage('take_screenshot', null, null);
       } else {

@@ -45,7 +45,7 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
 
 Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};
 
-Scenario _currentScenarioInstance = null;
+Scenario _currentScenarioInstance;
 
 /// Loads an scenario.
 /// The map must contain a `name` entry, which equals to the name of the scenario.
