@@ -99,16 +99,23 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 @implementation FlutterError
 + (instancetype)errorWithCode:(NSString*)code message:(NSString*)message details:(id)details {
   return [[[FlutterError alloc] initWithCode:code message:message details:details
-      stacktrace:nil] autorelease];
+                                  stacktrace:nil] autorelease];
 }
 
-+ (instancetype)errorWithStacktrace:(NSString*)code message:(NSString*)message details:(id)details
-    stacktrace:(NSString*)stacktrace {
-  return [[[FlutterError alloc] initWithCode:code message:message details:details stacktrace:stacktrace] autorelease];
++ (instancetype)errorWithCode:(NSString*)code
+                            message:(NSString*)message
+                            details:(id)details
+                         stacktrace:(NSString*)stacktrace {
+  return [[[FlutterError alloc] initWithCode:code
+                                     message:message
+                                     details:details
+                                  stacktrace:stacktrace] autorelease];
 }
 
-- (instancetype)initWithCode:(NSString*)code message:(NSString*)message details:(id)details
-    stacktrace:(NSString*) stacktrace {
+- (instancetype)initWithCode:(NSString*)code
+                     message:(NSString*)message
+                     details:(id)details
+                  stacktrace:(NSString*)stacktrace {
   NSAssert(code, @"Code cannot be nil");
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
@@ -252,20 +259,21 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
     FlutterMethodCall* call = [codec decodeMethodCall:message];
     @try {
-    handler(call, ^(id result) {
-      if (result == FlutterMethodNotImplemented)
-        callback(nil);
-      else if ([result isKindOfClass:[FlutterError class]])
-        callback([codec encodeErrorEnvelope:(FlutterError*)result]);
-      else
-        callback([codec encodeSuccessEnvelope:result]);
-    });
-    } @catch (NSException *exception) {
-      NSString * stacktrace = [[exception.callStackSymbols valueForKey:@"description"] componentsJoinedByString:@"\n"];
-      callback([codec encodeErrorEnvelope:[FlutterError errorWithStacktrace:exception.name
-      message:exception.reason
-      details:nil
-      stacktrace:stacktrace]]);
+      handler(call, ^(id result) {
+        if (result == FlutterMethodNotImplemented)
+          callback(nil);
+        else if ([result isKindOfClass:[FlutterError class]])
+          callback([codec encodeErrorEnvelope:(FlutterError*)result]);
+        else
+          callback([codec encodeSuccessEnvelope:result]);
+      });
+    } @catch (NSException* exception) {
+      NSString* stacktrace =
+          [[exception.callStackSymbols valueForKey:@"description"] componentsJoinedByString:@"\n"];
+      callback([codec encodeErrorEnvelope:[FlutterError errorWithCode:exception.name
+                                                                    message:exception.reason
+                                                                    details:nil
+                                                                 stacktrace:stacktrace]]);
     }
   };
   _connection = [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];

@@ -250,7 +250,9 @@ public class MethodChannel {
             });
       } catch (RuntimeException e) {
         Log.e(TAG + name, "Failed to handle method call", e);
-        reply.reply(codec.encodeErrorEnvelopeWithStacktrace("error", e.getMessage(), null, getStackTrace(e)));
+        reply.reply(
+            codec.encodeErrorEnvelopeWithStacktrace(
+                "error", e.getMessage(), null, getStackTrace(e)));
       }
     }
 

@@ -255,11 +255,10 @@ FLUTTER_EXPORT
                       message:(NSString* _Nullable)message
                       details:(id _Nullable)details;
 
-+ (instancetype)errorWithStacktrace:(NSString*)code
-                      message:(NSString* _Nullable)message
-                      details:(id _Nullable)details
-                      stacktrace:(NSString*
-                          _Nullable)stacktrace;
++ (instancetype)errorWithCode:(NSString*)code
+                            message:(NSString* _Nullable)message
+                            details:(id _Nullable)details
+                         stacktrace:(NSString* _Nullable)stacktrace;
 /**
  The error code.
  */
@@ -278,8 +277,7 @@ FLUTTER_EXPORT
 /**
   The error stacktrace.
  */
-@property(readonly, nonatomic, nullable)
-    NSString* stacktrace;
+@property(readonly, nonatomic, nullable) NSString* stacktrace;
 
 @end
 

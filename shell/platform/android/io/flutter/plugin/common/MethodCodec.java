@@ -66,7 +66,8 @@ public interface MethodCodec {
    * @return a {@link ByteBuffer} containing the encoding between position 0 and the current
    *     position.
    */
-  ByteBuffer encodeErrorEnvelopeWithStacktrace(String errorCode, String errorMessage, Object errorDetails, String errorStacktrace);
+  ByteBuffer encodeErrorEnvelopeWithStacktrace(
+      String errorCode, String errorMessage, Object errorDetails, String errorStacktrace);
 
   /**
    * Decodes a result envelope from binary.
