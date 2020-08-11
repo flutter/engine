@@ -27,14 +27,12 @@ abstract class Scenario {
   ///
   /// See [Window.onDrawFrame] for more details.
   void onDrawFrame() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (_didScheduleScreenshot) {
-        window.sendPlatformMessage('take_screenshot', null, null);
-      } else {
-        _didScheduleScreenshot = true;
-        window.scheduleFrame();
-      }
-    });
+    if (_didScheduleScreenshot) {
+      window.sendPlatformMessage('take_screenshot', null, null);
+    } else {
+      _didScheduleScreenshot = true;
+      window.scheduleFrame();
+    }
   }
 
   /// Called when the current scenario has been unmount due to a

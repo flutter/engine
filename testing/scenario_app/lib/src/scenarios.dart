@@ -43,11 +43,9 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
   'text_semantics_focus': () => SendTextFocusScemantics(window),
 };
 
-Map<String, dynamic> _currentScenarioParams = <String, dynamic>{
-  'name': 'animated_color_square',
-};
+Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};
 
-Scenario _currentScenarioInstance = _scenarios[_currentScenarioParams['name']]();
+Scenario _currentScenarioInstance = null;
 
 /// Loads an scenario.
 /// The map must contain a `name` entry, which equals to the name of the scenario.
