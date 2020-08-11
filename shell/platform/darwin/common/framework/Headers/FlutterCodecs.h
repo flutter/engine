@@ -256,9 +256,9 @@ FLUTTER_EXPORT
                       details:(id _Nullable)details;
 
 + (instancetype)errorWithCode:(NSString*)code
-                            message:(NSString* _Nullable)message
-                            details:(id _Nullable)details
-                         stacktrace:(NSString* _Nullable)stacktrace;
+                      message:(NSString* _Nullable)message
+                      details:(id _Nullable)details
+                   stacktrace:(NSString* _Nullable)stacktrace;
 /**
  The error code.
  */

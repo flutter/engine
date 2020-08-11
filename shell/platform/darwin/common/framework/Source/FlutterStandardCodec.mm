@@ -142,9 +142,9 @@
       NSAssert(message == nil || [message isKindOfClass:[NSString class]],
                @"Invalid standard envelope");
       result = [FlutterError errorWithCode:code
-                                         message:message
-                                         details:details
-                                      stacktrace:stacktrace];
+                                   message:message
+                                   details:details
+                                stacktrace:stacktrace];
     } break;
   }
   return result;

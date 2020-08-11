@@ -103,9 +103,9 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 }
 
 + (instancetype)errorWithCode:(NSString*)code
-                            message:(NSString*)message
-                            details:(id)details
-                         stacktrace:(NSString*)stacktrace {
+                      message:(NSString*)message
+                      details:(id)details
+                   stacktrace:(NSString*)stacktrace {
   return [[[FlutterError alloc] initWithCode:code
                                      message:message
                                      details:details
@@ -271,9 +271,9 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
       NSString* stacktrace =
           [[exception.callStackSymbols valueForKey:@"description"] componentsJoinedByString:@"\n"];
       callback([codec encodeErrorEnvelope:[FlutterError errorWithCode:exception.name
-                                                                    message:exception.reason
-                                                                    details:nil
-                                                                 stacktrace:stacktrace]]);
+                                                              message:exception.reason
+                                                              details:nil
+                                                           stacktrace:stacktrace]]);
     }
   };
   _connection = [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
