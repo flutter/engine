@@ -1,4 +1,4 @@
-Signature: 3ad075b5ecfd74d67d69ad69d905b48a
+Signature: c732998af886e8999c8b59fdef4c6652
 
 UNUSED LICENSES:
 
@@ -66,6 +66,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
+
 ====================================================================================================
 ORIGIN: ../../../third_party/harfbuzz/src/ms-use/COPYING
 TYPE: LicenseType.mit
@@ -91,7 +92,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
-+====================================================================================================
+====================================================================================================
 
 ====================================================================================================
 ORIGIN: ../../../third_party/pkg/when/LICENSE
@@ -14103,7 +14104,6 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-layout.h
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-layout.h
-FILE: ../../../third_party/harfbuzz/src/main.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2007,2008,2009  Red Hat, Inc.
 
@@ -23081,4 +23081,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 360
+Total license count: 367
