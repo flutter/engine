@@ -89,22 +89,20 @@ class Surface {
     _addedToScene = true;
   }
 
+  ui.Size? _currentSize;
+
   void _createOrUpdateSurfaces(ui.Size size) {
     if (size.isEmpty) {
       throw CanvasKitError('Cannot create surfaces of empty size.');
     }
 
-    final CkSurface? currentSurface = _surface;
-    if (currentSurface != null) {
-      final bool isSameSize = size.width == currentSurface.width() &&
-          size.height == currentSurface.height();
-      if (isSameSize) {
-        // The existing surface is still reusable.
-        return;
-      }
+    if (size == _currentSize) {
+      // The existing surface is still reusable.
+      return;
     }
 
-    currentSurface?.dispose();
+    _currentSize = size;
+    _surface?.dispose();
     _surface = null;
     htmlElement?.remove();
     htmlElement = null;
