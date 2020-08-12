@@ -2,15 +2,29 @@ package io.flutter.plugin.platform;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
+import android.content.res.AssetManager;
 import android.content.ClipboardManager;
 import android.view.View;
 import android.view.Window;
+import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
+import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Matchers;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -37,22 +51,24 @@ public class PlatformPluginTest {
   }
 
   @Test
-  public void platformPlugin_hasStrings() {
-    View fakeDecorView = mock(View.class);
-    Window fakeWindow = mock(Window.class);
-    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
-    Activity fakeActivity = mock(Activity.class);
-    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
-    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
-    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+  public void platformPlugin_hasStringsMessage() {
+    MethodChannel rawChannel = mock(MethodChannel.class);
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
+    PlatformChannel fakePlatformChannel = new PlatformChannel(dartExecutor);
+    PlatformChannel.PlatformMessageHandler mockMessageHandler = mock(PlatformChannel.PlatformMessageHandler.class);
+    fakePlatformChannel.setPlatformMessageHandler(mockMessageHandler);
+    Boolean returnValue = true;
+    when(mockMessageHandler.clipboardHasStrings()).thenReturn(returnValue);
+    MethodCall methodCall = new MethodCall("Clipboard.hasStrings", null);
+    MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
+    fakePlatformChannel.parsingMethodCallHandler.onMethodCall(methodCall, mockResult);
 
-    ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
-    clipboardManager.setText("iamastring");
-
-    // TODO(justinmc): Can't do this because mPlatformMessageHandler is private.
-    // How can I send a message to the platform plugin?
-    //boolean hasStrings = platformPlugin.mPlatformMessageHandler.clipboardHasStrings();
-    //assertTrue(hasStrings);
+    JSONObject expected = new JSONObject();
+    try {
+      expected.put("value", returnValue);
+    } catch (JSONException e) {
+    }
+    verify(mockResult).success(Matchers.refEq(expected));
   }
 }
