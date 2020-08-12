@@ -32,7 +32,7 @@ class RasterThreadMerger
   // unless an |ExtendLeaseTo| gets called.
   void MergeWithLease(size_t lease_term);
 
-  // Unmerge the threads now, resets the lease term to 0.
+  // Un-merges the threads now, and resets the lease term to 0.
   //
   // Must be executed on the raster task runner.
   void UnMergeNow();
@@ -43,9 +43,9 @@ class RasterThreadMerger
   // splitting the raster and platform threads. Reduces the lease term by 1.
   RasterThreadStatus DecrementLease();
 
-  bool IsMerged() const;
+  bool IsMerged();
 
-  // Wait until the threads are merged.
+  // Waits until the threads are merged.
   //
   // Must run on the platform task runner.
   void WaitUntilMerged();
@@ -56,7 +56,7 @@ class RasterThreadMerger
   // Returns true if the current thread owns rasterizing.
   // When the threads are merged, platform thread owns rasterizing.
   // When un-merged, raster thread owns rasterizing.
-  bool IsOnRasterizingThread() const;
+  bool IsOnRasterizingThread();
 
   // Returns true if the current thread is the platform thread.
   bool IsOnPlatformThread() const;
@@ -67,9 +67,8 @@ class RasterThreadMerger
   fml::TaskQueueId gpu_queue_id_;
   fml::RefPtr<fml::MessageLoopTaskQueues> task_queues_;
   std::atomic_int lease_term_;
-  std::atomic_bool is_merged_;
   std::condition_variable merged_condition_;
-  std::mutex merged_mutex_;
+  std::mutex lease_term_mutex_;
 
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(RasterThreadMerger);
   FML_FRIEND_MAKE_REF_COUNTED(RasterThreadMerger);
