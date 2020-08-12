@@ -248,7 +248,9 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _buildTestsInParallel(targets: htmlTargets, forCanvasKit: false);
     }
 
-    if (canvasKitTargets.isNotEmpty) {
+    // Currently iOS Safari tests are running on simulator, which does not
+    // support canvaskit backend.
+    if (canvasKitTargets.isNotEmpty && !isSafariOnIOS) {
       await _buildTestsInParallel(
           targets: canvasKitTargets, forCanvasKit: true);
     }
@@ -286,6 +288,9 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   /// Whether [browser] is set to "safari".
   bool get isSafariOnMacOS => browser == 'safari' && io.Platform.isMacOS;
+
+  /// Whether [browser] is  "safari" running on "iOS".
+  bool get isSafariOnIOS => browser == 'ios-safari' && io.Platform.isIOS;
 
   /// Use system flutter instead of cloning the repository.
   ///
