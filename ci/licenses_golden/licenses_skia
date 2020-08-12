@@ -1,4 +1,4 @@
-Signature: 65e1c2403cc8680a44796bf8982df88d
+Signature: 6623e4531557cb08596f760686221727
 
 UNUSED LICENSES:
 
@@ -5274,6 +5274,7 @@ FILE: ../../../third_party/skia/modules/skottie/src/effects/BrightnessContrastEf
 FILE: ../../../third_party/skia/modules/skottie/src/effects/CornerPinEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/GlowStyles.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/ShadowStyles.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/AudioLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Ellipse.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/FillStroke.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Gradient.cpp
