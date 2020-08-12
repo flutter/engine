@@ -4,14 +4,12 @@
 
 // @dart = 2.6
 import 'dart:async';
-import 'dart:isolate';
 import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:pool/pool.dart';
-import 'package:quiver/iterables.dart';
 import 'package:test_core/src/runner/hack_register_platform.dart'
     as hack; // ignore: implementation_imports
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
