@@ -188,9 +188,8 @@ DEF_SWITCH(DisallowInsecureConnections,
 DEF_SWITCH(DomainNetworkPolicy,
            "domain-network-policy",
            "JSON encoded network policy per domain. This overrides the "
-           "PreventInsecureSocketConnections "
-           "switch. Embedder can specify whether to allow or disallow "
-           "insecure connections at a domain level.")
+           "DisallowInsecureConnections switch. Embedder can specify whether "
+           "to allow or disallow insecure connections at a domain level.")
 DEF_SWITCH(
     ForceMultithreading,
     "force-multithreading",
