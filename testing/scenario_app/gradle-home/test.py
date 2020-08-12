@@ -2,4 +2,8 @@
 
 from PIL import Image, ImageChops, ImageDraw
 
-print 'Imported PIL'
+import os
+import sys
+
+print(sys.executable)
+print('EXECUTABLE ' + os.__file__)
