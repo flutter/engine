@@ -270,7 +270,7 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
     } @catch (NSException* exception) {
       NSString* stacktrace =
           [[exception.callStackSymbols valueForKey:@"description"] componentsJoinedByString:@"\n"];
-      callback([codec encodeErrorEnvelope:[FlutterError errorWithCode:exception.name
+      callback([codec encodeErrorEnvelopeWithStacktrace:[FlutterError errorWithCode:exception.name
                                                               message:exception.reason
                                                               details:nil
                                                            stacktrace:stacktrace]]);

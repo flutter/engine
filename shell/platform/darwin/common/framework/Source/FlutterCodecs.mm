@@ -132,6 +132,15 @@
   ]];
 }
 
+- (NSData*)encodeErrorEnvelopeWithStacktrace:(FlutterError*)error {
+  return [[FlutterJSONMessageCodec sharedInstance] encode:@[
+    error.code,
+    [self wrapNil:error.message],
+    [self wrapNil:error.details],
+    [self wrapNil:error.stacktrace],
+  ]];
+}
+
 - (FlutterMethodCall*)decodeMethodCall:(NSData*)message {
   NSDictionary* dictionary = [[FlutterJSONMessageCodec sharedInstance] decode:message];
   id method = dictionary[@"method"];

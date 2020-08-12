@@ -431,6 +431,15 @@ FLUTTER_EXPORT
 - (NSData*)encodeErrorEnvelope:(FlutterError*)error;
 
 /**
+ * Encodes the specified error result into binary.
+ *
+ * @param error The error object. The error details value must be supported
+ *   by this codec.
+ * @return The binary encoding.
+ */
+- (NSData*)encodeErrorEnvelopeWithStacktrace:(FlutterError*)error;
+
+/**
  * Deccodes the specified result envelope from binary.
  *
  * @param envelope The error object.
