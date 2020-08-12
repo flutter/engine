@@ -122,3 +122,10 @@ else
 
   $DART_SDK_DIR/bin/dart --packages="$WEB_UI_DIR/.packages" "$SNAPSHOT_PATH" $@
 fi
+
+# Finally run the web_engine_analysis.sh to warn the developers against
+# analysis issues.
+# This would show the analysis errors during development time, and will save
+# LUCI resources.
+echo "Running analysis checks."
+web_engine_analysis.sh
