@@ -271,9 +271,9 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
       NSString* stacktrace =
           [[exception.callStackSymbols valueForKey:@"description"] componentsJoinedByString:@"\n"];
       callback([codec encodeErrorEnvelopeWithStacktrace:[FlutterError errorWithCode:exception.name
-                                                              message:exception.reason
-                                                              details:nil
-                                                           stacktrace:stacktrace]]);
+                                                                            message:exception.reason
+                                                                            details:nil
+                                                                         stacktrace:stacktrace]]);
     }
   };
   _connection = [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];

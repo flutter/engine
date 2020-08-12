@@ -240,11 +240,12 @@ TEST(FlutterStandardCodec, HandlesErrorEnvelopes) {
 TEST(FlutterStandardCodec, encodeErrorEnvelopesWithStacktrace) {
   FlutterStandardReaderWriter* readerWriter =
       [[[FlutterStandardReaderWriter alloc] init] autorelease];
-  FlutterStandardMethodCodec* codec = [FlutterStandardMethodCodec codecWithReaderWriter:readerWriter];
+  FlutterStandardMethodCodec* codec =
+      [FlutterStandardMethodCodec codecWithReaderWriter:readerWriter];
   FlutterError* error = [FlutterError errorWithCode:@"errorCode"
                                             message:@"something failed"
                                             details:nil
-                                            stacktrace:@"errorStacktrace"];
+                                         stacktrace:@"errorStacktrace"];
   NSData* encoded = [codec encodeErrorEnvelopeWithStacktrace:error];
   FlutterStandardReader* reader = [readerWriter readerWithData:encoded];
   [reader readByte];

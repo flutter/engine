@@ -15,9 +15,6 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import io.flutter.plugin.common.StandardMessageCodec;
-import io.flutter.plugin.common.StandardMethodCodec;
-
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class StandardMethodCodecTest {
@@ -98,7 +95,8 @@ public class StandardMethodCodecTest {
   public void encodeErrorEnvelopeWithStacktraceTest() {
     final Exception e = new IllegalArgumentException("foo");
     final ByteBuffer buffer =
-        StandardMethodCodec.INSTANCE.encodeErrorEnvelopeWithStacktrace("code", e.getMessage(), e, "error stacktrace");
+        StandardMethodCodec.INSTANCE.encodeErrorEnvelopeWithStacktrace(
+            "code", e.getMessage(), e, "error stacktrace");
     assertNotNull(buffer);
     buffer.flip();
     buffer.order(ByteOrder.nativeOrder());
@@ -107,12 +105,12 @@ public class StandardMethodCodecTest {
     final Object message = StandardMessageCodec.INSTANCE.readValue(buffer);
     final Object details = StandardMessageCodec.INSTANCE.readValue(buffer);
     final Object stacktrace = StandardMessageCodec.INSTANCE.readValue(buffer);
-    assertEquals("code", (String)code);
-    assertEquals("foo", (String)message);
+    assertEquals("code", (String) code);
+    assertEquals("foo", (String) message);
     String stack = (String) details;
     assertTrue(
         stack.contains(
             "at io.flutter.plugin.common.StandardMethodCodecTest.encodeErrorEnvelopeWithStacktraceTest(StandardMethodCodecTest.java:"));
-    assertEquals("error stacktrace", (String)stacktrace);
+    assertEquals("error stacktrace", (String) stacktrace);
   }
 }
