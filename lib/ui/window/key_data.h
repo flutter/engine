@@ -33,6 +33,7 @@ struct alignas(8) LogicalKeyData {
 
 // This structure is unpacked by hooks.dart.
 struct alignas(8) PhysicalKeyData {
+  // Timestamp in microseconds from an arbitrary and consistant start point
   int64_t timestamp;
   KeyChange change;
   int64_t key;

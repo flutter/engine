@@ -15,8 +15,14 @@
  */
 @interface FlutterKeyboardPlugin : NSObject
 
-- (instancetype)initWithViewController:(FlutterViewController*)viewController;
+- (nonnull instancetype)initWithViewController:(nonnull FlutterViewController*)viewController;
 
-- (void)dispatchEvent:(NSEvent*)event;
+/**
+ * Handles the method call that activates a system cursor.
+ *
+ * Returns a FlutterError if the arguments can not be recognized. Otherwise
+ * returns nil.
+ */
+- (void)dispatchEvent:(nonnull NSEvent*)event;
 
 @end

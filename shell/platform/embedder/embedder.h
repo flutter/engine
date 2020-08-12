@@ -477,7 +477,7 @@ typedef struct {
   // Logical event kind.
   FlutterKeyEventKind kind;
   // Logical key changed.
-  int32_t key;
+  uint64_t key;
   // Corresponding character. Only available for down/sync event. Not null-ended.
   size_t character_size;
 } FlutterLogicalKeyEvent;
@@ -489,12 +489,12 @@ typedef struct {
   size_t logical_event_count;
   const FlutterLogicalKeyEvent* logical_events;
   const uint8_t* logical_characters_data;
-  // Timestamp. Maybe 0 (sync or cancel).
-  size_t timestamp;
+  // Timestamp in microseconds. Maybe 0 (sync or cancel).
+  double timestamp;
   // Physical event kind.
   FlutterKeyEventKind kind;
   // Physical key changed.
-  int32_t key;
+  uint64_t key;
 } FlutterKeyEvent;
 
 

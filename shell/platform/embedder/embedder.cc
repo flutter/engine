@@ -1394,7 +1394,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
 
   flutter::PhysicalKeyData physical_key;
   physical_key.Clear();
-  physical_key.timestamp = SAFE_ACCESS(event, timestamp, 0);
+  physical_key.timestamp = (int64_t)SAFE_ACCESS(event, timestamp, 0);
   physical_key.change = ToKeyChange(SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel));
   physical_key.key = SAFE_ACCESS(event, key, 0);
   packet->SetPhysicalData(physical_key);
