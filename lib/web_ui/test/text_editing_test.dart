@@ -29,22 +29,14 @@ String lastInputAction;
 
 final InputConfiguration singlelineConfig = InputConfiguration(
   inputType: EngineInputType.text,
-  obscureText: false,
-  inputAction: 'TextInputAction.done',
-  autocorrect: true,
-  textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
-      'TextCapitalization.none'),
 );
 final Map<String, dynamic> flutterSinglelineConfig =
     createFlutterConfig('text');
 
 final InputConfiguration multilineConfig = InputConfiguration(
-    inputType: EngineInputType.multiline,
-    obscureText: false,
-    inputAction: 'TextInputAction.newline',
-    autocorrect: true,
-    textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
-        'TextCapitalization.none'));
+  inputType: EngineInputType.multiline,
+  inputAction: 'TextInputAction.newline',
+);
 final Map<String, dynamic> flutterMultilineConfig =
     createFlutterConfig('multiline');
 
@@ -110,14 +102,23 @@ void main() {
       expect(document.activeElement, document.body);
     });
 
+    test('Respects read-only config', () {
+      final InputConfiguration config = InputConfiguration(readOnly: true);
+      editingElement.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(document.getElementsByTagName('input'), hasLength(1));
+      final InputElement input = document.getElementsByTagName('input')[0];
+      expect(editingElement.domElement, input);
+      expect(input.getAttribute('readonly'), 'readonly');
+
+      editingElement.disable();
+    });
+
     test('Knows how to create password fields', () {
-      final InputConfiguration config = InputConfiguration(
-          inputType: EngineInputType.text,
-          inputAction: 'TextInputAction.done',
-          obscureText: true,
-          autocorrect: true,
-          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
-              'TextCapitalization.none'));
+      final InputConfiguration config = InputConfiguration(obscureText: true);
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -132,13 +133,7 @@ void main() {
     });
 
     test('Knows to turn autocorrect off', () {
-      final InputConfiguration config = InputConfiguration(
-          inputType: EngineInputType.text,
-          inputAction: 'TextInputAction.done',
-          obscureText: false,
-          autocorrect: false,
-          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
-              'TextCapitalization.none'));
+      final InputConfiguration config = InputConfiguration(autocorrect: false);
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -153,13 +148,7 @@ void main() {
     });
 
     test('Knows to turn autocorrect on', () {
-      final InputConfiguration config = InputConfiguration(
-          inputType: EngineInputType.text,
-          inputAction: 'TextInputAction.done',
-          obscureText: false,
-          autocorrect: true,
-          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
-              'TextCapitalization.none'));
+      final InputConfiguration config = InputConfiguration(autocorrect: true);
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -293,13 +282,7 @@ void main() {
     });
 
     test('Triggers input action', () {
-      final InputConfiguration config = InputConfiguration(
-          inputType: EngineInputType.text,
-          obscureText: false,
-          inputAction: 'TextInputAction.done',
-          autocorrect: true,
-          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
-              'TextCapitalization.none'));
+      final InputConfiguration config = InputConfiguration(inputAction: 'TextInputAction.done');
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -321,12 +304,9 @@ void main() {
 
     test('Does not trigger input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
-          inputType: EngineInputType.multiline,
-          obscureText: false,
-          inputAction: 'TextInputAction.done',
-          autocorrect: true,
-          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
-              'TextCapitalization.none'));
+        inputType: EngineInputType.multiline,
+        inputAction: 'TextInputAction.done',
+      );
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -1688,7 +1668,8 @@ void main() {
       // Autofill value is applied to the element.
       expect(firstElement.name,
           BrowserAutofillHints.instance.flutterToEngine('password'));
-      expect(firstElement.id, BrowserAutofillHints.instance.flutterToEngine('password'));
+      expect(firstElement.id,
+          BrowserAutofillHints.instance.flutterToEngine('password'));
       expect(firstElement.type, 'password');
       if (browserEngine == BrowserEngine.firefox) {
         expect(firstElement.name,
@@ -1716,7 +1697,6 @@ void main() {
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
               createAutofillInfo('username', 'field1'), fields);
-
 
       expect(autofillForm.formIdentifier, 'aabbcc*jjkkll*zzyyxx');
     });
