@@ -696,6 +696,7 @@ bool Rasterizer::EnsureThreadsAreMerged() {
                                       thread_merger->MergeWithLease(10);
                                     });
   raster_thread_merger_->WaitUntilMerged();
+  FML_DCHECK(raster_thread_merger_->IsMerged());
   return true;
 }
 

@@ -27,7 +27,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   // returns the new `post_preroll_result`.
   void UpdatePostPrerollResult(PostPrerollResult post_preroll_result);
 
-  // Update the post preroll result to PostPrerollResult::kResubmitFrame for
+  // Updates the post preroll result to `PostPrerollResult::kResubmitFrame` for
   // only the next frame.
   void SetResubmitOnce();
 

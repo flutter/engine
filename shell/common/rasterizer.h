@@ -432,12 +432,12 @@ class Rasterizer final : public SnapshotDelegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Makes sure the raster task runner and the platform task runner
-  /// are merged
+  ///             are merged.
   ///
   /// @attention  If raster and platform task runners are not the same or not
-  /// merged. This method
-  ///             will try to merge the task runners and might block the current
-  ///             thread and wait until the 2 task runners are merged.
+  ///             merged. This method will try to merge the task runners and
+  ///             might block the current thread and wait until the 2 task
+  ///             runners are merged.
   ///
   /// @return     `true` if raster and platform task runners are the same.
   ///             `true` if/when raster and platform task runners are merged.
