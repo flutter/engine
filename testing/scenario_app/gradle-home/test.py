@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
-from PIL import Image, ImageChops, ImageDraw
+from PIP import Image, ImageChops, ImageDraw
 
 print 'Imported PIL'
