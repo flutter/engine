@@ -517,12 +517,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                     on_create_rasterizer,      // rasterizer creation
                                     [self, entrypoint = entrypoint,
                                         profilerEnabled = profilerEnabled,
-                                        threadLabel = threadLabel](bool initialized) {
+                                        threadLabel = [threadLabel copy]](bool initialized) {
                                         if (initialized) {
-                                          [self postInitialized];
-                                          if (profilerEnabled) {
-                                             [self startProfiler:threadLabel];
-                                           }
+                                          [self postInitialized:profilerEnabled threadLabel:threadLabel];
                                         } else {
                                           FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: " << entrypoint.UTF8String;
                                         }
@@ -542,13 +539,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                     on_create_platform_view,  // platform view creation
                                     on_create_rasterizer,      // rasterizer creation
                                     [self, entrypoint = entrypoint,
-                                        profilerEnabled = profilerEnabled,
-                                        threadLabel = threadLabel](bool initialized) {
+                                        profilerEnabled,
+                                        threadLabel = [threadLabel copy]](bool initialized) {
                                         if (initialized) {
-                                          [self postInitialized];
-                                           if (profilerEnabled) {
-                                             [self startProfiler:threadLabel];
-                                           }
+                                          [self postInitialized:profilerEnabled threadLabel:threadLabel];
                                         } else {
                                           FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: " << entrypoint.UTF8String;
                                         }
@@ -559,7 +553,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return _shell != nullptr;
 }
 
-- (void)postInitialized {
+- (void)postInitialized:(BOOL)profilerEnabled threadLabel:(NSString*)threadLabel {
     [self setupChannels];
     [self onLocaleUpdated:nil];
     if (!_platformViewsController) {
@@ -568,6 +562,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
     [self maybeSetupPlatformViewChannels];
     _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
+    if (profilerEnabled) {
+      [self startProfiler:threadLabel];
+    }
 }
 
 - (BOOL)run {
