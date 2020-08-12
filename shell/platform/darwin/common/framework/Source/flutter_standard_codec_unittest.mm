@@ -236,3 +236,23 @@ TEST(FlutterStandardCodec, HandlesErrorEnvelopes) {
   id decoded = [codec decodeEnvelope:encoded];
   ASSERT_TRUE([decoded isEqual:error]);
 }
+
+TEST(FlutterStandardCodec, encodeErrorEnvelopesWithStacktrace) {
+  FlutterStandardReaderWriter* readerWriter =
+      [[[FlutterStandardReaderWriter alloc] init] autorelease];
+  FlutterStandardMethodCodec* codec = [FlutterStandardMethodCodec codecWithReaderWriter:readerWriter];
+  FlutterError* error = [FlutterError errorWithCode:@"errorCode"
+                                            message:@"something failed"
+                                            details:nil
+                                            stacktrace:@"errorStacktrace"];
+  NSData* encoded = [codec encodeErrorEnvelopeWithStacktrace:error];
+  FlutterStandardReader* reader = [readerWriter readerWithData:encoded];
+  [reader readByte];
+  id code = [reader readValue];
+  id message = [reader readValue];
+  [reader readValue];
+  id stacktrace = [reader readValue];
+  ASSERT_TRUE([code isEqual:@"errorCode"]);
+  ASSERT_TRUE([message isEqual:@"something failed"]);
+  ASSERT_TRUE([stacktrace isEqual:@"errorStacktrace"]);
+}
