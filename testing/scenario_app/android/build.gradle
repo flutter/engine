@@ -33,3 +33,10 @@ subprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+task py {
+    project.exec {
+      executable = "python"
+      args "../gradle-home/test.py"
+    }
+}
