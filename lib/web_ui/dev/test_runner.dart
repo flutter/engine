@@ -314,9 +314,6 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Whether [browser] is set to "safari".
   bool get isSafariOnMacOS => browser == 'safari' && io.Platform.isMacOS;
 
-  /// Whether [browser] is  "safari" running on "iOS".
-  bool get isSafariOnIOS => browser == 'ios-safari' && io.Platform.isIOS;
-
   /// Use system flutter instead of cloning the repository.
   ///
   /// Read the flag help for more details. Uses PATH to locate flutter.
