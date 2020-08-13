@@ -218,7 +218,7 @@ public class ScreenshotUtil {
               }
             }
 
-            bmOut = Bitmap.createScaledBitmap(bmOut, width/3, height/3, false);
+            bmOut = Bitmap.createScaledBitmap(bmOut, width / 3, height / 3, false);
 
             final String screenshotName = String.format("%s__%s", testClass, testName);
             // Write bitmap to the album.
