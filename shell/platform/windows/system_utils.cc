@@ -35,8 +35,7 @@ std::vector<std::wstring> GetPreferredLanguages() {
   }
 
   // Get the list of null-separated languages.
-  std::wstring buffer;
-  buffer.reserve(buffer_size);
+  std::wstring buffer(buffer_size, '\0');
   if (!::GetThreadPreferredUILanguages(flags, &count, buffer.data(),
                                        &buffer_size)) {
     return languages;
