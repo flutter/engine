@@ -40,8 +40,13 @@ class ChromeDriverManager extends DriverManager {
     final String preferredChromeDriverVersion =
         _configuration['preferred_version']['chrome'] as String;
     print('preferred_version $preferredChromeDriverVersion');
-    _browserDriverDirWithVersion = io.Directory(
-        pathlib.join(_browserDriverDir.path, preferredChromeDriverVersion));
+    _browserDriverDirWithVersion =io.Directory(pathlib.join(
+            environment.webUiDartToolDir.path,
+            'drivers',
+            browser,
+            preferredChromeDriverVersion,
+            '${browser}driver-${io.Platform.operatingSystem.toString()}'));
+    print('new location ${_browserDriverDirWithVersion.path}');
   }
 
   @override
