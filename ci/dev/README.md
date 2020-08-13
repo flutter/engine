@@ -8,7 +8,7 @@ supported luci try/prod builders for engine. It follows format:
 {
     "builders":[
         {
-            "name":"xxx",
+            "name":"yyy",
             "repo":"engine",
             "enabled":true
         }
