@@ -144,7 +144,8 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
   if (settings.old_gen_heap_size <= 0) {
-    settings.old_gen_heap_size = std::round([NSProcessInfo processInfo].physicalMemory / 2);
+    settings.old_gen_heap_size =
+        std::round([NSProcessInfo processInfo].physicalMemory / 2 / 1000000);
   }
   return settings;
 }
