@@ -1705,14 +1705,14 @@ class SkImageInfo {
     SkColorSpace colorSpace,
     SkColorType colorType,
   });
-  external SkAlphaType alphaType();
-  external SkColorSpace colorSpace();
-  external SkColorType colorType();
-  external int height();
-  external bool isEmpty();
-  external bool isOpaque();
-  external SkRect bounds();
-  external int width();
+  external SkAlphaType get alphaType;
+  external SkColorSpace get colorSpace;
+  external SkColorType get colorType;
+  external int get height;
+  external bool get isEmpty;
+  external bool get isOpaque;
+  external SkRect get bounds;
+  external int get width;
   external SkImageInfo makeAlphaType(SkAlphaType alphaType);
   external SkImageInfo makeColorSpace(SkColorSpace colorSpace);
   external SkImageInfo makeColorType(SkColorType colorType);
