@@ -81,6 +81,7 @@ class CkAnimatedImage implements ui.Image {
       final SkImageInfo imageInfo = SkImageInfo(
         alphaType: canvasKit.AlphaType.Premul,
         colorType: canvasKit.ColorType.RGBA_8888,
+        colorSpace: SkColorSpaceSRGB,
         width: width,
         height: height,
       );
@@ -128,6 +129,7 @@ class CkImage implements ui.Image {
       final SkImageInfo imageInfo = SkImageInfo(
         alphaType: canvasKit.AlphaType.Premul,
         colorType: canvasKit.ColorType.RGBA_8888,
+        colorSpace: SkColorSpaceSRGB,
         width: width,
         height: height,
       );
