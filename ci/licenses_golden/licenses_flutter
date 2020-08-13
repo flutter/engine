@@ -419,7 +419,6 @@ FILE: ../../../flutter/lib/ui/window/viewport_metrics.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.h
 FILE: ../../../flutter/lib/ui/window/window.cc
 FILE: ../../../flutter/lib/ui/window/window.h
-FILE: ../../../flutter/lib/web_ui/lib/assets/houdini_painter.js
 FILE: ../../../flutter/lib/web_ui/lib/src/engine.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/alarm_clock.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/assets.dart
@@ -451,6 +450,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/picture_recorder.dar
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/platform_message.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/raster_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/rasterizer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/skia_object_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/text.dart
@@ -462,7 +462,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/frame_reference.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/history.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/houdini_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html_image_codec.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/mouse_cursor.dart
@@ -489,7 +488,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/buffers.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codec.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codecs.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/serialization.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/shadow.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/backdrop_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/canvas.dart
@@ -514,6 +512,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/recording_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/render_vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/scene.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/scene_builder.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/surface_stats.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/transform.dart
@@ -730,6 +729,8 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/Flutte
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartExecutor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/ApplicationInfoLoader.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/FlutterApplicationInfo.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/FlutterLoader.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/ResourceExtractor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/mutatorsstack/FlutterMutatorView.java
