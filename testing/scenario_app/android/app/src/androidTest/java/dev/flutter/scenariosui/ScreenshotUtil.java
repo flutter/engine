@@ -6,8 +6,8 @@ package dev.flutter.scenariosui;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -191,25 +191,31 @@ public class ScreenshotUtil {
             int pixel;
             int bitOffset = 16;
             // scan through all pixels
-            for(int x = 0; x < width; ++x) {
-             for(int y = 0; y < height; ++y) {
-              // get pixel color
-              pixel = bitmap.getPixel(x, y + statusBarHeight);
-              R = Color.red(pixel);
-              G = Color.green(pixel);
-              B = Color.blue(pixel);
+            for (int x = 0; x < width; ++x) {
+              for (int y = 0; y < height; ++y) {
+                // get pixel color
+                pixel = bitmap.getPixel(x, y + statusBarHeight);
+                R = Color.red(pixel);
+                G = Color.green(pixel);
+                B = Color.blue(pixel);
 
-              // round-off color offset
-              R = ((R + (bitOffset / 2)) - ((R + (bitOffset / 2)) % bitOffset) - 1);
-              if(R < 0) { R = 0; }
-              G = ((G + (bitOffset / 2)) - ((G + (bitOffset / 2)) % bitOffset) - 1);
-              if(G < 0) { G = 0; }
-              B = ((B + (bitOffset / 2)) - ((B + (bitOffset / 2)) % bitOffset) - 1);
-              if(B < 0) { B = 0; }
+                // round-off color offset
+                R = ((R + (bitOffset / 2)) - ((R + (bitOffset / 2)) % bitOffset) - 1);
+                if (R < 0) {
+                  R = 0;
+                }
+                G = ((G + (bitOffset / 2)) - ((G + (bitOffset / 2)) % bitOffset) - 1);
+                if (G < 0) {
+                  G = 0;
+                }
+                B = ((B + (bitOffset / 2)) - ((B + (bitOffset / 2)) % bitOffset) - 1);
+                if (B < 0) {
+                  B = 0;
+                }
 
-              // set pixel color to output bitmap
-              bmOut.setPixel(x, y, Color.argb(255, R, G, B));
-             }
+                // set pixel color to output bitmap
+                bmOut.setPixel(x, y, Color.argb(255, R, G, B));
+              }
             }
 
             final String screenshotName = String.format("%s__%s", testClass, testName);
