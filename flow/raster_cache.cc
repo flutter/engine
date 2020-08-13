@@ -302,8 +302,8 @@ void RasterCache::TraceStatsToTimeline() const {
   constexpr double kMegaBytes = (1 << 20);
   FML_TRACE_COUNTER("flutter", "RasterCache", reinterpret_cast<int64_t>(this),
                     "LayerCount", layer_cache_.size(), "LayerMBytes",
-                    EstimateLayerCacheByteSize() / kMegaBytes,
-                    "PictureCount", picture_cache_.size(), "PictureMBytes",
+                    EstimateLayerCacheByteSize() / kMegaBytes, "PictureCount",
+                    picture_cache_.size(), "PictureMBytes",
                     EstimatePictureCacheByteSize() / kMegaBytes);
 
 #endif  // !FLUTTER_RELEASE
