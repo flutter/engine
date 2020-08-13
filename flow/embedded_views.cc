@@ -60,4 +60,8 @@ const std::vector<std::shared_ptr<Mutator>>::const_iterator MutatorsStack::End()
   return vector_.end();
 };
 
+bool ExternalViewEmbedder::SupportDynamicThreadMerging() {
+  return false;
+}
+
 }  // namespace flutter

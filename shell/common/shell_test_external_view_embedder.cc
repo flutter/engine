@@ -53,4 +53,8 @@ SkCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
   return nullptr;
 }
 
+bool ShellTestExternalViewEmbedder::SupportDynamicThreadMerging() {
+  return true;
+}
+
 }  // namespace flutter

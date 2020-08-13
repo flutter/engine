@@ -310,6 +310,8 @@ class ExternalViewEmbedder {
       bool should_resubmit_frame,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
 
+  virtual bool SupportDynamicThreadMerging();
+
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 
 };  // ExternalViewEmbedder
