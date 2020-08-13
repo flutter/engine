@@ -1,8 +1,8 @@
 package io.flutter.plugin.platform;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,22 +14,19 @@ import android.view.Window;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
-import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import java.util.HashMap;
-import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowClipboardManager;
 
-@Config(manifest = Config.NONE)
+@Config(manifest = Config.NONE, shadows = ShadowClipboardManager.class)
 @RunWith(RobolectricTestRunner.class)
 public class PlatformPluginTest {
   @Config(sdk = 16)
@@ -70,5 +67,24 @@ public class PlatformPluginTest {
     } catch (JSONException e) {
     }
     verify(mockResult).success(Matchers.refEq(expected));
+  }
+
+  @Test
+  public void platformPlugin_hasStrings() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    ClipboardManager clipboardManager =
+        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+    clipboardManager.setText("iamastring");
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    clipboardManager.setText("");
+    assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
   }
 }

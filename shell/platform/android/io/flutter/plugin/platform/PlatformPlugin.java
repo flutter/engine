@@ -30,7 +30,8 @@ public class PlatformPlugin {
   private PlatformChannel.SystemChromeStyle currentTheme;
   private int mEnabledOverlays;
 
-  private final PlatformChannel.PlatformMessageHandler mPlatformMessageHandler =
+  @VisibleForTesting
+  final PlatformChannel.PlatformMessageHandler mPlatformMessageHandler =
       new PlatformChannel.PlatformMessageHandler() {
         @Override
         public void playSystemSound(@NonNull PlatformChannel.SoundType soundType) {
