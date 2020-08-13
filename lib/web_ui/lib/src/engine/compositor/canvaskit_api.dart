@@ -1698,20 +1698,6 @@ class SkData {
 @JS()
 @anonymous
 class SkImageInfo {
-  external SkAlphaType get AlphaType;
-  external int get BitsPerPixel;
-  external int get BytesPerPixel;
-  external int get BytesSize;
-  external int get BytesSize64;
-  external SkColorSpace get ColorSpace;
-  external SkColorType get ColorType;
-  external int get Height;
-  external bool get IsEmpty;
-  external bool get IsOpaque;
-  external SkRect get Rect;
-  external int get RowBytes;
-  external int get RowBytes64;
-  external int get Width;
   external factory SkImageInfo({
     required int width,
     required int height,
@@ -1719,8 +1705,16 @@ class SkImageInfo {
     SkColorSpace colorSpace,
     SkColorType colorType,
   });
-  external SkImageInfo WithAlphaType(SkAlphaType alphaType);
-  external SkImageInfo WithColorSpace(SkColorSpace colorSpace);
-  external SkImageInfo WithColorType(SkColorType colorType);
-  external SkImageInfo WithSize(int width, int height);
+  external SkAlphaType get alphaType();
+  external SkColorSpace get colorSpace();
+  external SkColorType get colorType();
+  external int get height();
+  external bool get isEmpty();
+  external bool get isOpaque();
+  external SkRect get bounds();
+  external int get width();
+  external SkImageInfo makehAlphaType(SkAlphaType alphaType);
+  external SkImageInfo makeColorSpace(SkColorSpace colorSpace);
+  external SkImageInfo makeColorType(SkColorType colorType);
+  external SkImageInfo makeWH(int width, int height);
 }
