@@ -5,7 +5,6 @@
 // @dart = 2.10
 part of ui;
 
-/// Linearly interpolate between two numbers.
 double? lerpDouble(num? a, num? b, double t) {
   if (a == null && b == null) {
     return null;
@@ -22,8 +21,6 @@ double _lerpDouble(double a, double b, double t) {
 double _lerpInt(int a, int b, double t) {
   return a + (b - a) * t;
 }
-
-/// Same as [num.clamp] but specialized for [int].
 int _clampInt(int value, int min, int max) {
   assert(min <= max);
   if (value < min) {
