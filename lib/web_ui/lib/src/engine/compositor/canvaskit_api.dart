@@ -1713,7 +1713,7 @@ class SkImageInfo {
   external bool get isOpaque();
   external SkRect get bounds();
   external int get width();
-  external SkImageInfo makehAlphaType(SkAlphaType alphaType);
+  external SkImageInfo makeAlphaType(SkAlphaType alphaType);
   external SkImageInfo makeColorSpace(SkColorSpace colorSpace);
   external SkImageInfo makeColorType(SkColorType colorType);
   external SkImageInfo makeWH(int width, int height);
