@@ -20,7 +20,29 @@ import 'utils.dart';
 ///
 /// This manager can be used for both macOS and Linux.
 class ChromeDriverManager extends DriverManager {
-  ChromeDriverManager(String browser) : super(browser);
+
+  /// Directory which contains the preferred version of Chrome.
+  ///
+  /// On LUCI we are using the CIPD packages to control Chrome binaries we use.
+  /// There will be multiple CIPD packages loaded at the same time. Yaml file
+  /// `driver_version.yaml` contains the version number we want to use.
+  ///
+  /// Local integration tests are still using the system Chrome. This should be
+  /// fixed in issue: https://github.com/flutter/flutter/issues/53179.
+  ///
+  /// Initialized to the current first to avoid the `Non-nullable` error.
+  io.Directory _browserDriverDirWithVersion = io.Directory.current;
+
+  ChromeDriverManager(String browser) : super(browser) {
+    final io.File lockFile = io.File(pathlib.join(
+        environment.webUiRootDir.path, 'dev', 'driver_version.yaml'));
+    YamlMap _configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
+    final String preferredChromeDriverVersion =
+        _configuration['preferred_version']['chrome'] as String;
+    print('preferred_version $preferredChromeDriverVersion');
+    _browserDriverDirWithVersion = io.Directory(
+        pathlib.join(_browserDriverDir.path, preferredChromeDriverVersion));
+  }
 
   @override
   Future<void> _installDriver() async {
@@ -50,17 +72,19 @@ class ChromeDriverManager extends DriverManager {
   /// Driver should already exist on LUCI as a CIPD package.
   @override
   Future<void> _verifyDriverForLUCI() {
-    if (!_browserDriverDir.existsSync()) {
+    if (!_browserDriverDirWithVersion.existsSync()) {
       throw StateError('Failed to locate Chrome driver on LUCI on path:'
-          '${_browserDriverDir.path}');
+          '${_browserDriverDirWithVersion.path}');
     }
     return Future<void>.value();
   }
 
   @override
-  Future<void> _startDriver(String driverPath) async {
+  Future<void> _startDriver() async {
     await startProcess('./chromedriver/chromedriver', ['--port=4444'],
-        workingDirectory: driverPath);
+        workingDirectory: isLuci
+            ? _browserDriverDirWithVersion.path
+            : _browserDriverDir.path);
     print('INFO: Driver started');
   }
 }
@@ -106,9 +130,9 @@ class FirefoxDriverManager extends DriverManager {
   }
 
   @override
-  Future<void> _startDriver(String driverPath) async {
+  Future<void> _startDriver() async {
     await startProcess('./firefoxdriver/geckodriver', ['--port=4444'],
-        workingDirectory: driverPath);
+        workingDirectory: _browserDriverDir.path);
     print('INFO: Driver started');
   }
 
@@ -144,7 +168,7 @@ class SafariDriverManager extends DriverManager {
   }
 
   @override
-  Future<void> _startDriver(String driverPath) async {
+  Future<void> _startDriver() async {
     final SafariDriverRunner safariDriverRunner = SafariDriverRunner();
 
     final io.Process process =
@@ -184,7 +208,7 @@ abstract class DriverManager {
     } else {
       await _verifyDriverForLUCI();
     }
-    await _startDriver(_browserDriverDir.path);
+    await _startDriver();
   }
 
   /// Always re-install since driver can change frequently.
@@ -198,7 +222,7 @@ abstract class DriverManager {
   Future<void> _verifyDriverForLUCI();
 
   @protected
-  Future<void> _startDriver(String driverPath);
+  Future<void> _startDriver();
 
   static DriverManager chooseDriver(String browser) {
     if (browser == 'chrome') {

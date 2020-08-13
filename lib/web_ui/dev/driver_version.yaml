@@ -1,4 +1,10 @@
-
+## Version to be picked by this PR. The LUCI will have multiple cipd packages
+## insalled in the recipe at the same time.
+## This mapping will be used to switch between them.
+preferred_version:
+  ## Make sure the major version of the binary in `browser_driver.yaml` is the
+  ## same for Chrome.
+  chrome: '84'
 ## Map for driver versions to use for each browser version.
 ## See: https://chromedriver.chromium.org/downloads
 chrome:
