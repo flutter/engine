@@ -77,43 +77,18 @@ class Rasterizer final : public SnapshotDelegate,
     /// Target time for the latest frame. See also `Shell::OnAnimatorBeginFrame`
     /// for when this time gets updated.
     virtual fml::TimePoint GetLatestFrameTargetTime() const = 0;
+
+    /// Task runners used by the shell.
+    virtual const TaskRunners& GetTaskRunners() const = 0;
+
+    /// Accessor for the shell's GPU sync switch, which determines whether GPU
+    /// operations are allowed on the current thread.
+    ///
+    /// For example, on some platforms when the application is backgrounded it
+    /// is critical that GPU operations are not processed.
+    virtual std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
+        const = 0;
   };
-
-  // TODO(dnfield): remove once embedders have caught up.
-  class DummyDelegate : public Delegate {
-    void OnFrameRasterized(const FrameTiming&) override {}
-    void OnCompositorFrameEnd(size_t freed_hint) override {}
-
-    fml::Milliseconds GetFrameBudget() override {
-      return fml::kDefaultFrameBudget;
-    }
-    // Returning a time in the past so we don't add additional trace
-    // events when exceeding the frame budget for other embedders.
-    fml::TimePoint GetLatestFrameTargetTime() const override {
-      return fml::TimePoint::FromEpochDelta(fml::TimeDelta::Zero());
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
-  ///             be created on the GPU task runner. Rasterizers are currently
-  ///             only created by the shell. Usually, the shell also sets itself
-  ///             up as the rasterizer delegate. But, this constructor sets up a
-  ///             dummy rasterizer delegate.
-  ///
-  //  TODO(chinmaygarde): The rasterizer does not use the task runners for
-  //  anything other than thread checks. Remove the same as an argument.
-  ///
-  /// @param[in]  task_runners        The task runners used by the shell.
-  /// @param[in]  compositor_context  The compositor context used to hold all
-  ///                                 the GPU state used by the rasterizer.
-  /// @param[in]  is_gpu_disabled_sync_switch
-  ///    A `SyncSwitch` for handling disabling of the GPU (typically happens
-  ///    when an app is backgrounded)
-  ///
-  Rasterizer(TaskRunners task_runners,
-             std::unique_ptr<flutter::CompositorContext> compositor_context,
-             std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
@@ -121,18 +96,9 @@ class Rasterizer final : public SnapshotDelegate,
   ///             only created by the shell (which also sets itself up as the
   ///             rasterizer delegate).
   ///
-  //  TODO(chinmaygarde): The rasterizer does not use the task runners for
-  //  anything other than thread checks. Remove the same as an argument.
-  ///
   /// @param[in]  delegate            The rasterizer delegate.
-  /// @param[in]  task_runners        The task runners used by the shell.
-  /// @param[in]  is_gpu_disabled_sync_switch
-  ///    A `SyncSwitch` for handling disabling of the GPU (typically happens
-  ///    when an app is backgrounded)
   ///
-  Rasterizer(Delegate& delegate,
-             TaskRunners task_runners,
-             std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch);
+  Rasterizer(Delegate& delegate);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
@@ -140,21 +106,12 @@ class Rasterizer final : public SnapshotDelegate,
   ///             only created by the shell (which also sets itself up as the
   ///             rasterizer delegate).
   ///
-  //  TODO(chinmaygarde): The rasterizer does not use the task runners for
-  //  anything other than thread checks. Remove the same as an argument.
-  ///
   /// @param[in]  delegate            The rasterizer delegate.
-  /// @param[in]  task_runners        The task runners used by the shell.
   /// @param[in]  compositor_context  The compositor context used to hold all
   ///                                 the GPU state used by the rasterizer.
-  /// @param[in]  is_gpu_disabled_sync_switch
-  ///    A `SyncSwitch` for handling disabling of the GPU (typically happens
-  ///    when an app is backgrounded)
   ///
   Rasterizer(Delegate& delegate,
-             TaskRunners task_runners,
-             std::unique_ptr<flutter::CompositorContext> compositor_context,
-             std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch);
+             std::unique_ptr<flutter::CompositorContext> compositor_context);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the GPU task
@@ -437,7 +394,6 @@ class Rasterizer final : public SnapshotDelegate,
 
  private:
   Delegate& delegate_;
-  TaskRunners task_runners_;
   std::unique_ptr<Surface> surface_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   // This is the last successfully rasterized layer tree.
@@ -451,7 +407,6 @@ class Rasterizer final : public SnapshotDelegate,
   std::optional<size_t> max_cache_bytes_;
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
-  std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
