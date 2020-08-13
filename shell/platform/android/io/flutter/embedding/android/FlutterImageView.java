@@ -183,9 +183,13 @@ public class FlutterImageView extends View implements RenderSurface {
     //
     // To avoid exceptions, check if a new image can be acquired.
     if (pendingImages < imageReader.getMaxImages()) {
-      nextImage = imageReader.acquireLatestImage();
-      if (nextImage != null) {
-        pendingImages++;
+      try {
+        nextImage = imageReader.acquireLatestImage();
+        if (nextImage != null) {
+          pendingImages++;
+        }
+      } catch (IllegalStateException exception) {
+        // just bypass
       }
     }
     invalidate();
