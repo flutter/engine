@@ -107,18 +107,51 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         @Override
         public void createAndroidViewForPlatformView(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
-          // API level 19 is required for android.graphics.ImageReader.
+          // API level 19 is required for `android.graphics.ImageReader`.
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT);
-          platformViewRequests.put(request.viewId, request);
+
+          if (request == null) {
+            throw new IllegalStateException(
+                "Platform view hasn't been initialized from the platform view channel.");
+          }
+
+          if (!validateDirection(request.direction)) {
+            throw new IllegalStateException(
+                "Trying to create a view with unknown direction value: "
+                    + request.direction
+                    + "(view id: "
+                    + viewId
+                    + ")");
+          }
+
+          final PlatformViewFactory factory = registry.getFactory(request.viewType);
+          if (factory == null) {
+            throw new IllegalStateException(
+                "Trying to create a platform view of unregistered type: " + request.viewType);
+          }
+
+          final Object createParams = null;
+          if (request.params != null) {
+            createParams = factory.getCreateArgsCodec().decodeMessage(request.params);
+          }
+
+          final PlatformView platformView = factory.create(context, viewId, createParams);
+          final View view = platformView.getView();
+
+          if (view == null) {
+            throw new IllegalStateException(
+                "PlatformView#getView() returned null, but an Android view reference was expected.");
+          }
+          if (view.getParent() != null) {
+            throw new IllegalStateException(
+                "The Android view returned from PlatformView#getView() was already added to a parent view.");
+          }
+          platformViews.put(viewId, view);
         }
 
         @Override
         public void disposeAndroidViewForPlatformView(int viewId) {
           // Hybrid view.
-          if (platformViewRequests.get(viewId) != null) {
-            platformViewRequests.remove(viewId);
-          }
-
           final View platformView = platformViews.get(viewId);
           if (platformView != null) {
             final FlutterMutatorView mutatorView = mutatorViews.get(viewId);
@@ -651,50 +684,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   @VisibleForTesting
   void initializePlatformViewIfNeeded(int viewId) {
-    if (platformViews.get(viewId) != null) {
-      return;
-    }
-
-    PlatformViewsChannel.PlatformViewCreationRequest request = platformViewRequests.get(viewId);
-    if (request == null) {
+    final View view = platformViews.get(viewId);
+    if (view == null) {
       throw new IllegalStateException(
           "Platform view hasn't been initialized from the platform view channel.");
     }
-
-    if (!validateDirection(request.direction)) {
-      throw new IllegalStateException(
-          "Trying to create a view with unknown direction value: "
-              + request.direction
-              + "(view id: "
-              + viewId
-              + ")");
+    if (mutatorViews.get(viewId) != null) {
+      return;
     }
-
-    PlatformViewFactory factory = registry.getFactory(request.viewType);
-    if (factory == null) {
-      throw new IllegalStateException(
-          "Trying to create a platform view of unregistered type: " + request.viewType);
-    }
-
-    Object createParams = null;
-    if (request.params != null) {
-      createParams = factory.getCreateArgsCodec().decodeMessage(request.params);
-    }
-
-    PlatformView platformView = factory.create(context, viewId, createParams);
-    View view = platformView.getView();
-
-    if (view == null) {
-      throw new IllegalStateException(
-          "PlatformView#getView() returned null, but an Android view reference was expected.");
-    }
-    if (view.getParent() != null) {
-      throw new IllegalStateException(
-          "The Android view returned from PlatformView#getView() was already added to a parent view.");
-    }
-    platformViews.put(viewId, view);
-
-    FlutterMutatorView mutatorView =
+    final FlutterMutatorView mutatorView =
         new FlutterMutatorView(
             context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
     mutatorViews.put(viewId, mutatorView);
