@@ -25,23 +25,18 @@ namespace flutter {
 // used within this interval.
 static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
-Rasterizer::Rasterizer(
-    Delegate& delegate,
-    std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch)
+Rasterizer::Rasterizer(Delegate& delegate)
     : Rasterizer(delegate,
                  std::make_unique<flutter::CompositorContext>(
-                     delegate.GetFrameBudget()),
-                 is_gpu_disabled_sync_switch) {}
+                     delegate.GetFrameBudget())) {}
 
 Rasterizer::Rasterizer(
     Delegate& delegate,
-    std::unique_ptr<flutter::CompositorContext> compositor_context,
-    std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch)
+    std::unique_ptr<flutter::CompositorContext> compositor_context)
     : delegate_(delegate),
       compositor_context_(std::move(compositor_context)),
       user_override_resource_cache_bytes_(false),
-      weak_factory_(this),
-      is_gpu_disabled_sync_switch_(is_gpu_disabled_sync_switch) {
+      weak_factory_(this) {
   FML_DCHECK(compositor_context_);
 }
 
@@ -214,7 +209,7 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
     sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
     result = DrawSnapshot(surface, draw_callback);
   } else {
-    is_gpu_disabled_sync_switch_->Execute(
+    delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
             .SetIfTrue([&] {
               sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
