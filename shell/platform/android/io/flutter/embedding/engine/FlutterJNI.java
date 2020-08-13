@@ -112,7 +112,7 @@ public class FlutterJNI {
       @NonNull String appStoragePath,
       @NonNull String engineCachesPath,
       long initTimeMillis,
-      long oldGenHeapSizeBytes);
+      long oldGenHeapSizeMegaBytes);
 
   /**
    * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
