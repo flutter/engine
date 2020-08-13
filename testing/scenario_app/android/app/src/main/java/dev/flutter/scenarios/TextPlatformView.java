@@ -19,6 +19,8 @@ public class TextPlatformView implements PlatformView {
     textView.setTextSize(72);
     textView.setBackgroundColor(Color.rgb(255, 255, 255));
     textView.setText(params);
+    // Disable anti aliasing to avoid flakiness. 
+    textView.getPaint().setAntiAlias(false);
   }
 
   @Override
