@@ -143,6 +143,9 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
       make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
+  if (settings.old_gen_heap_size <= 0) {
+    settings.old_gen_heap_size = std::round([NSProcessInfo processInfo].physicalMemory / 2);
+  }
   return settings;
 }
 
