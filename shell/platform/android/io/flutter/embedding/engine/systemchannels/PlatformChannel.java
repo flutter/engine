@@ -30,7 +30,7 @@ public class PlatformChannel {
   @Nullable private PlatformMessageHandler platformMessageHandler;
 
   @NonNull @VisibleForTesting
-  public final MethodChannel.MethodCallHandler parsingMethodCallHandler =
+  final MethodChannel.MethodCallHandler parsingMethodCallHandler =
       new MethodChannel.MethodCallHandler() {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
