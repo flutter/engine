@@ -1425,8 +1425,8 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);
   std::string expected_json =
-      "{\"type\":\"EstimateRasterCacheMemory\",\"layer_bytes\":40000,\"picture_"
-      "bytes\":400}";
+      "{\"type\":\"EstimateRasterCacheMemory\",\"layerBytes\":40000,\"picture"
+      "Bytes\":400}";
   std::string actual_json = buffer.GetString();
   ASSERT_EQ(actual_json, expected_json);
 

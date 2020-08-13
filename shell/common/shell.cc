@@ -1437,10 +1437,10 @@ bool Shell::OnServiceProtocolEstimateRasterCacheMemory(
   response->SetObject();
   response->AddMember("type", "EstimateRasterCacheMemory",
                       response->GetAllocator());
-  response->AddMember<uint64_t>("layer_bytes",
+  response->AddMember<uint64_t>("layerBytes",
                                 raster_cache.EstimateLayerCacheByteSize(),
                                 response->GetAllocator());
-  response->AddMember<uint64_t>("picture_bytes",
+  response->AddMember<uint64_t>("pictureBytes",
                                 raster_cache.EstimatePictureCacheByteSize(),
                                 response->GetAllocator());
   return true;

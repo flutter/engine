@@ -299,11 +299,12 @@ void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
 
 void RasterCache::TraceStatsToTimeline() const {
 #if !FLUTTER_RELEASE
+  constexpr double kBytesToMegaBytes = 1e-6;
   FML_TRACE_COUNTER("flutter", "RasterCache", reinterpret_cast<int64_t>(this),
                     "LayerCount", layer_cache_.size(), "LayerMBytes",
-                    EstimateLayerCacheByteSize() * 1e-6, "PictureCount",
-                    picture_cache_.size(), "PictureMBytes",
-                    EstimatePictureCacheByteSize() * 1e-6);
+                    EstimateLayerCacheByteSize() * kBytesToMegaBytes,
+                    "PictureCount", picture_cache_.size(), "PictureMBytes",
+                    EstimatePictureCacheByteSize() * kBytesToMegaBytes);
 
 #endif  // !FLUTTER_RELEASE
 }
