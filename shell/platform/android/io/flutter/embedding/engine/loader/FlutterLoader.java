@@ -244,13 +244,17 @@ public class FlutterLoader {
         }
       }
 
+      ActivityManager activityManager = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
+      long oldGenHeapSizeBytes = activityManager.getLargeMemoryClass();
+
       FlutterJNI.nativeInit(
           applicationContext,
           shellArgs.toArray(new String[0]),
           kernelPath,
           result.appStoragePath,
           result.engineCachesPath,
-          initTimeMillis);
+          initTimeMillis,
+          oldGenHeapSizeBytes);
 
       initialized = true;
     } catch (Exception e) {
