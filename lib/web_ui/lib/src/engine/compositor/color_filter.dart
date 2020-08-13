@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// A [ui.ColorFilter] backed by Skia's [CkColorFilter].
-class CkColorFilter extends ResurrectableSkiaObject<SkColorFilter> {
+class CkColorFilter extends ManagedSkiaObject<SkColorFilter> {
   final EngineColorFilter _engineFilter;
 
   CkColorFilter.mode(EngineColorFilter filter) : _engineFilter = filter;
@@ -23,7 +23,7 @@ class CkColorFilter extends ResurrectableSkiaObject<SkColorFilter> {
     SkColorFilter skColorFilter;
     switch (_engineFilter._type) {
       case EngineColorFilter._TypeMode:
-        skColorFilter = canvasKitJs.SkColorFilter.MakeBlend(
+        skColorFilter = canvasKit.SkColorFilter.MakeBlend(
           toSharedSkColor1(_engineFilter._color!),
           toSkBlendMode(_engineFilter._blendMode!),
         );
@@ -34,13 +34,13 @@ class CkColorFilter extends ResurrectableSkiaObject<SkColorFilter> {
         for (int i = 0; i < 20; i++) {
           colorMatrix[i] = matrix[i];
         }
-        skColorFilter = canvasKitJs.SkColorFilter.MakeMatrix(colorMatrix);
+        skColorFilter = canvasKit.SkColorFilter.MakeMatrix(colorMatrix);
         break;
       case EngineColorFilter._TypeLinearToSrgbGamma:
-        skColorFilter = canvasKitJs.SkColorFilter.MakeLinearToSRGBGamma();
+        skColorFilter = canvasKit.SkColorFilter.MakeLinearToSRGBGamma();
         break;
       case EngineColorFilter._TypeSrgbToLinearGamma:
-        skColorFilter = canvasKitJs.SkColorFilter.MakeSRGBToLinearGamma();
+        skColorFilter = canvasKit.SkColorFilter.MakeSRGBToLinearGamma();
         break;
       default:
         throw StateError(
@@ -48,9 +48,6 @@ class CkColorFilter extends ResurrectableSkiaObject<SkColorFilter> {
     }
     return skColorFilter;
   }
-
-  @override
-  js.JsObject get legacySkiaObject => _jsObjectWrapper.wrapSkColorFilter(skiaObject);
 
   @override
   SkColorFilter createDefault() {

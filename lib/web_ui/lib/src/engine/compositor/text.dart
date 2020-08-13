@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 class CkParagraphStyle implements ui.ParagraphStyle {
@@ -19,17 +20,17 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     String? ellipsis,
     ui.Locale? locale,
   }) : skParagraphStyle = toSkParagraphStyle(
-    textAlign,
-    textDirection,
-    maxLines,
-    fontFamily,
-    fontSize,
-    height,
-    textHeightBehavior,
-    fontWeight,
-    fontStyle,
-    ellipsis,
-  ) {
+          textAlign,
+          textDirection,
+          maxLines,
+          fontFamily,
+          fontSize,
+          height,
+          textHeightBehavior,
+          fontWeight,
+          fontStyle,
+          ellipsis,
+        ) {
     assert(skParagraphStyle != null);
     _textDirection = textDirection ?? ui.TextDirection.ltr;
     _fontFamily = fontFamily;
@@ -57,9 +58,6 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     if (fontFamily == null ||
         !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
       fontFamily = 'Roboto';
-    }
-    if (skiaFontCollection.fontFamilyOverrides.containsKey(fontFamily)) {
-      fontFamily = skiaFontCollection.fontFamilyOverrides[fontFamily]!;
     }
     skTextStyle.fontFamilies = [fontFamily];
 
@@ -107,12 +105,14 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     properties.textStyle =
         toSkTextStyleProperties(fontFamily, fontSize, fontWeight, fontStyle);
 
-    return canvasKitJs.ParagraphStyle(properties);
+    return canvasKit.ParagraphStyle(properties);
   }
 }
 
 class CkTextStyle implements ui.TextStyle {
   SkTextStyle skTextStyle;
+  CkPaint? background;
+  CkPaint? foreground;
 
   factory CkTextStyle({
     ui.Color? color,
@@ -146,15 +146,15 @@ class CkTextStyle implements ui.TextStyle {
     }
 
     if (decoration != null) {
-      int decorationValue = canvasKitJs.NoDecoration;
+      int decorationValue = canvasKit.NoDecoration;
       if (decoration.contains(ui.TextDecoration.underline)) {
-        decorationValue |= canvasKitJs.UnderlineDecoration;
+        decorationValue |= canvasKit.UnderlineDecoration;
       }
       if (decoration.contains(ui.TextDecoration.overline)) {
-        decorationValue |= canvasKitJs.OverlineDecoration;
+        decorationValue |= canvasKit.OverlineDecoration;
       }
       if (decoration.contains(ui.TextDecoration.lineThrough)) {
-        decorationValue |= canvasKitJs.LineThroughDecoration;
+        decorationValue |= canvasKit.LineThroughDecoration;
       }
       properties.decoration = decorationValue;
     }
@@ -172,9 +172,6 @@ class CkTextStyle implements ui.TextStyle {
       fontFamily = 'Roboto';
     }
 
-    if (skiaFontCollection.fontFamilyOverrides.containsKey(fontFamily)) {
-      fontFamily = skiaFontCollection.fontFamilyOverrides[fontFamily]!;
-    }
     List<String> fontFamilies = <String>[fontFamily];
     if (fontFamilyFallback != null &&
         !fontFamilyFallback.every((font) => fontFamily == font)) {
@@ -201,14 +198,14 @@ class CkTextStyle implements ui.TextStyle {
     //   - locale
     //   - shadows
     //   - fontFeatures
-    return CkTextStyle._(canvasKitJs.TextStyle(properties));
+    return CkTextStyle._(
+        canvasKit.TextStyle(properties), foreground, background);
   }
 
-  CkTextStyle._(this.skTextStyle);
+  CkTextStyle._(this.skTextStyle, this.foreground, this.background);
 }
 
-SkFontStyle toSkFontStyle(
-    ui.FontWeight? fontWeight, ui.FontStyle? fontStyle) {
+SkFontStyle toSkFontStyle(ui.FontWeight? fontWeight, ui.FontStyle? fontStyle) {
   final style = SkFontStyle();
   if (fontWeight != null) {
     style.weight = toSkFontWeight(fontWeight);
@@ -219,7 +216,8 @@ SkFontStyle toSkFontStyle(
   return style;
 }
 
-class CkParagraph extends ResurrectableSkiaObject<SkParagraph> implements ui.Paragraph {
+class CkParagraph extends ManagedSkiaObject<SkParagraph>
+    implements ui.Paragraph {
   CkParagraph(
       this._initialParagraph, this._paragraphStyle, this._paragraphCommands);
 
@@ -281,14 +279,10 @@ class CkParagraph extends ResurrectableSkiaObject<SkParagraph> implements ui.Par
   }
 
   @override
-  js.JsObject get legacySkiaObject => _jsObjectWrapper.wrapSkParagraph(skiaObject);
-
-  @override
   bool get isResurrectionExpensive => true;
 
   @override
-  double get alphabeticBaseline =>
-      skiaObject.getAlphabeticBaseline();
+  double get alphabeticBaseline => skiaObject.getAlphabeticBaseline();
 
   @override
   bool get didExceedMaxLines => skiaObject.didExceedMaxLines();
@@ -297,8 +291,7 @@ class CkParagraph extends ResurrectableSkiaObject<SkParagraph> implements ui.Par
   double get height => skiaObject.getHeight();
 
   @override
-  double get ideographicBaseline =>
-      skiaObject.getIdeographicBaseline();
+  double get ideographicBaseline => skiaObject.getIdeographicBaseline();
 
   @override
   double get longestLine => skiaObject.getLongestLine();
@@ -416,9 +409,9 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   CkParagraphBuilder(ui.ParagraphStyle style)
       : _commands = <_ParagraphCommand>[],
         _style = style as CkParagraphStyle,
-        _paragraphBuilder = canvasKitJs.ParagraphBuilder.Make(
+        _paragraphBuilder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
           style.skParagraphStyle,
-          skiaFontCollection.skFontMgr,
+          skiaFontCollection.fontProvider,
         );
 
   // TODO(hterkelsen): Implement placeholders.
@@ -470,7 +463,14 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   void pushStyle(ui.TextStyle style) {
     final CkTextStyle skStyle = style as CkTextStyle;
     _commands.add(_ParagraphCommand.pushStyle(skStyle));
-    _paragraphBuilder.pushStyle(skStyle.skTextStyle);
+    if (skStyle.foreground != null || skStyle.background != null) {
+      final SkPaint foreground = skStyle.foreground?.skiaObject ?? SkPaint();
+      final SkPaint background = skStyle.background?.skiaObject ?? SkPaint();
+      _paragraphBuilder.pushPaintStyle(
+          skStyle.skTextStyle, foreground, background);
+    } else {
+      _paragraphBuilder.pushStyle(skStyle.skTextStyle);
+    }
   }
 }
 

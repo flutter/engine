@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// The implementation of [ui.Paint] used by the CanvasKit backend.
 ///
 /// This class is backed by a Skia object that must be explicitly
 /// deleted to avoid a memory leak. This is done by extending [SkiaObject].
-class CkPaint extends ResurrectableSkiaObject<SkPaint> implements ui.Paint {
+class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
   CkPaint();
 
   static const ui.Color _defaultPaintColor = ui.Color(0xFF000000);
@@ -116,17 +117,17 @@ class CkPaint extends ResurrectableSkiaObject<SkPaint> implements ui.Paint {
   bool _invertColors = false;
 
   @override
-  ui.Shader? get shader => _shader as ui.Shader?;
+  ui.Shader? get shader => _shader;
   @override
   set shader(ui.Shader? value) {
     if (_shader == value) {
       return;
     }
-    _shader = value as EngineShader?;
-    skiaObject.setShader(_shader?.createSkiaShader());
+    _shader = value as CkShader?;
+    skiaObject.setShader(_shader?.skiaObject);
   }
 
-  EngineShader? _shader;
+  CkShader? _shader;
 
   @override
   ui.MaskFilter? get maskFilter => _maskFilter;
@@ -221,7 +222,7 @@ class CkPaint extends ResurrectableSkiaObject<SkPaint> implements ui.Paint {
     paint.setStrokeWidth(_strokeWidth);
     paint.setAntiAlias(_isAntiAlias);
     paint.setColorInt(_color.value);
-    paint.setShader(_shader?.createSkiaShader());
+    paint.setShader(_shader?.skiaObject);
     paint.setMaskFilter(_ckMaskFilter?.skiaObject);
     paint.setColorFilter(_ckColorFilter?.skiaObject);
     paint.setImageFilter(_imageFilter?.skiaObject);
@@ -233,7 +234,4 @@ class CkPaint extends ResurrectableSkiaObject<SkPaint> implements ui.Paint {
   void delete() {
     rawSkiaObject?.delete();
   }
-
-  @override
-  js.JsObject get legacySkiaObject => _jsObjectWrapper.wrapSkPaint(skiaObject);
 }

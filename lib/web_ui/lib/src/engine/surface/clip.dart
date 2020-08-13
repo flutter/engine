@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// Mixin used by surfaces that clip their contents using an overflowing DOM
@@ -324,6 +325,8 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     }
     if (oldSurface.path != path) {
       oldSurface._clipElement?.remove();
+      // Reset style on prior element since we may have switched between
+      // rect/rrect and arbitrary path.
       domRenderer.setElementStyle(rootElement!, 'clip-path', '');
       domRenderer.setElementStyle(rootElement!, '-webkit-clip-path', '');
       _applyShape();

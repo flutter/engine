@@ -96,7 +96,8 @@ class MockDelegate : public PlatformView::Delegate {
 
 class MockIosDelegate : public AccessibilityBridge::IosDelegate {
  public:
-  bool IsFlutterViewControllerPresentingModalViewController(UIView* view) override {
+  bool IsFlutterViewControllerPresentingModalViewController(
+      FlutterViewController* view_controller) override {
     return result_IsFlutterViewControllerPresentingModalViewController_;
   };
 
@@ -157,9 +158,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*task_runners=*/runners);
   id mockFlutterView = OCMClassMock([FlutterView class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
   OCMExpect([mockFlutterView setAccessibilityElements:[OCMArg isNil]]);
   auto bridge =
-      std::make_unique<flutter::AccessibilityBridge>(/*view=*/mockFlutterView,
+      std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
                                                      /*platform_view=*/platform_view.get(),
                                                      /*platform_views_controller=*/nil);
   flutter::SemanticsNodeUpdates nodes;
@@ -181,10 +184,12 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*task_runners=*/runners);
   id mockFlutterView = OCMClassMock([FlutterView class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
   std::string label = "some label";
 
   __block auto bridge =
-      std::make_unique<flutter::AccessibilityBridge>(/*view=*/mockFlutterView,
+      std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
                                                      /*platform_view=*/platform_view.get(),
                                                      /*platform_views_controller=*/nil);
 
@@ -224,6 +229,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
         /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
         /*task_runners=*/runners);
     id mockFlutterView = OCMClassMock([FlutterView class]);
+    id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+    OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
     std::string label = "some label";
 
     auto flutterPlatformViewsController =
@@ -243,7 +250,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
         result);
 
     auto bridge = std::make_unique<flutter::AccessibilityBridge>(
-        /*view=*/mockFlutterView,
+        /*view_controller=*/mockFlutterViewController,
         /*platform_view=*/platform_view.get(),
         /*platform_views_controller=*/flutterPlatformViewsController.get());
 
@@ -274,7 +281,64 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*task_runners=*/runners);
   id mockFlutterView = OCMClassMock([FlutterView class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
   std::string label = "some label";
+
+  NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
+      [[[NSMutableArray alloc] init] autorelease];
+  auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
+  ios_delegate->on_PostAccessibilityNotification_ =
+      [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
+        [accessibility_notifications addObject:@{
+          @"notification" : @(notification),
+          @"argument" : argument ? argument : [NSNull null],
+        }];
+      };
+  __block auto bridge =
+      std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
+                                                     /*platform_view=*/platform_view.get(),
+                                                     /*platform_views_controller=*/nil,
+                                                     /*ios_delegate=*/std::move(ios_delegate));
+
+  flutter::CustomAccessibilityActionUpdates actions;
+  flutter::SemanticsNodeUpdates nodes;
+
+  flutter::SemanticsNode route_node;
+  route_node.id = 1;
+  route_node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kScopesRoute) |
+                     static_cast<int32_t>(flutter::SemanticsFlags::kNamesRoute);
+  route_node.label = "route";
+  nodes[route_node.id] = route_node;
+  flutter::SemanticsNode root_node;
+  root_node.id = kRootNodeId;
+  root_node.label = label;
+  root_node.childrenInTraversalOrder = {1};
+  root_node.childrenInHitTestOrder = {1};
+  nodes[root_node.id] = root_node;
+  bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+
+  XCTAssertEqual([accessibility_notifications count], 1ul);
+  SemanticsObject* focusObject = accessibility_notifications[0][@"argument"];
+  XCTAssertEqual([focusObject uid], 1);
+  XCTAssertEqualObjects([focusObject accessibilityLabel], @"route");
+  XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
+                 UIAccessibilityScreenChangedNotification);
+}
+
+- (void)testAnnouncesLayoutChangeWithNilIfLastFocusIsRemoved {
+  flutter::MockDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*task_runners=*/runners);
+  id mockFlutterView = OCMClassMock([FlutterView class]);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
       [[[NSMutableArray alloc] init] autorelease];
@@ -293,27 +357,174 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                                                      /*ios_delegate=*/std::move(ios_delegate));
 
   flutter::CustomAccessibilityActionUpdates actions;
-  flutter::SemanticsNodeUpdates nodes;
+  flutter::SemanticsNodeUpdates first_update;
 
   flutter::SemanticsNode route_node;
   route_node.id = 1;
-  route_node.label = label;
-  route_node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kScopesRoute) |
-                     static_cast<int32_t>(flutter::SemanticsFlags::kNamesRoute);
   route_node.label = "route";
-  nodes[route_node.id] = route_node;
+  first_update[route_node.id] = route_node;
   flutter::SemanticsNode root_node;
   root_node.id = kRootNodeId;
-  root_node.label = label;
+  root_node.label = "root";
   root_node.childrenInTraversalOrder = {1};
   root_node.childrenInHitTestOrder = {1};
-  nodes[root_node.id] = root_node;
-  bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+  first_update[root_node.id] = root_node;
+  bridge->UpdateSemantics(/*nodes=*/first_update, /*actions=*/actions);
 
-  XCTAssertEqual([accessibility_notifications count], 1ul);
-  XCTAssertEqualObjects(accessibility_notifications[0][@"argument"], @"route");
+  XCTAssertEqual([accessibility_notifications count], 0ul);
+  // Simulates the focusing on the node 1.
+  bridge->AccessibilityFocusDidChange(1);
+
+  flutter::SemanticsNodeUpdates second_update;
+  // Simulates the removal of the node 1
+  flutter::SemanticsNode new_root_node;
+  new_root_node.id = kRootNodeId;
+  new_root_node.label = "root";
+  second_update[root_node.id] = new_root_node;
+  bridge->UpdateSemantics(/*nodes=*/second_update, /*actions=*/actions);
+  NSNull* focusObject = accessibility_notifications[0][@"argument"];
+  // The node 1 was removed, so the bridge will set the focus object to nil.
+  XCTAssertEqual(focusObject, [NSNull null]);
   XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
-                 UIAccessibilityScreenChangedNotification);
+                 UIAccessibilityLayoutChangedNotification);
+}
+
+- (void)testAnnouncesLayoutChangeWithLastFocused {
+  flutter::MockDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*task_runners=*/runners);
+  id mockFlutterView = OCMClassMock([FlutterView class]);
+
+  NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
+      [[[NSMutableArray alloc] init] autorelease];
+  auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
+  ios_delegate->on_PostAccessibilityNotification_ =
+      [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
+        [accessibility_notifications addObject:@{
+          @"notification" : @(notification),
+          @"argument" : argument ? argument : [NSNull null],
+        }];
+      };
+  __block auto bridge =
+      std::make_unique<flutter::AccessibilityBridge>(/*view=*/mockFlutterView,
+                                                     /*platform_view=*/platform_view.get(),
+                                                     /*platform_views_controller=*/nil,
+                                                     /*ios_delegate=*/std::move(ios_delegate));
+
+  flutter::CustomAccessibilityActionUpdates actions;
+  flutter::SemanticsNodeUpdates first_update;
+
+  flutter::SemanticsNode node_one;
+  node_one.id = 1;
+  node_one.label = "route1";
+  first_update[node_one.id] = node_one;
+  flutter::SemanticsNode node_two;
+  node_two.id = 2;
+  node_two.label = "route2";
+  first_update[node_two.id] = node_two;
+  flutter::SemanticsNode root_node;
+  root_node.id = kRootNodeId;
+  root_node.label = "root";
+  root_node.childrenInTraversalOrder = {1, 2};
+  root_node.childrenInHitTestOrder = {1, 2};
+  first_update[root_node.id] = root_node;
+  bridge->UpdateSemantics(/*nodes=*/first_update, /*actions=*/actions);
+
+  XCTAssertEqual([accessibility_notifications count], 0ul);
+  // Simulates the focusing on the node 1.
+  bridge->AccessibilityFocusDidChange(1);
+
+  flutter::SemanticsNodeUpdates second_update;
+  // Simulates the removal of the node 2.
+  flutter::SemanticsNode new_root_node;
+  new_root_node.id = kRootNodeId;
+  new_root_node.label = "root";
+  new_root_node.childrenInTraversalOrder = {1};
+  new_root_node.childrenInHitTestOrder = {1};
+  second_update[root_node.id] = new_root_node;
+  bridge->UpdateSemantics(/*nodes=*/second_update, /*actions=*/actions);
+  SemanticsObject* focusObject = accessibility_notifications[0][@"argument"];
+  // Since we have focused on the node 1 right before the layout changed, the bridge should refocus
+  // the node 1.
+  XCTAssertEqual([focusObject uid], 1);
+  XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
+                 UIAccessibilityLayoutChangedNotification);
+}
+
+- (void)testAnnouncesScrollChangeWithLastFocused {
+  flutter::MockDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*task_runners=*/runners);
+  id mockFlutterView = OCMClassMock([FlutterView class]);
+
+  NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
+      [[[NSMutableArray alloc] init] autorelease];
+  auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
+  ios_delegate->on_PostAccessibilityNotification_ =
+      [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
+        [accessibility_notifications addObject:@{
+          @"notification" : @(notification),
+          @"argument" : argument ? argument : [NSNull null],
+        }];
+      };
+  __block auto bridge =
+      std::make_unique<flutter::AccessibilityBridge>(/*view=*/mockFlutterView,
+                                                     /*platform_view=*/platform_view.get(),
+                                                     /*platform_views_controller=*/nil,
+                                                     /*ios_delegate=*/std::move(ios_delegate));
+
+  flutter::CustomAccessibilityActionUpdates actions;
+  flutter::SemanticsNodeUpdates first_update;
+
+  flutter::SemanticsNode node_one;
+  node_one.id = 1;
+  node_one.label = "route1";
+  node_one.scrollPosition = 0.0;
+  first_update[node_one.id] = node_one;
+  flutter::SemanticsNode root_node;
+  root_node.id = kRootNodeId;
+  root_node.label = "root";
+  root_node.childrenInTraversalOrder = {1};
+  root_node.childrenInHitTestOrder = {1};
+  first_update[root_node.id] = root_node;
+  bridge->UpdateSemantics(/*nodes=*/first_update, /*actions=*/actions);
+
+  // The first update will trigger a scroll announcement, but we are not interested in it.
+  [accessibility_notifications removeAllObjects];
+
+  // Simulates the focusing on the node 1.
+  bridge->AccessibilityFocusDidChange(1);
+
+  flutter::SemanticsNodeUpdates second_update;
+  // Simulates the scrolling on the node 1.
+  flutter::SemanticsNode new_node_one;
+  new_node_one.id = 1;
+  new_node_one.label = "route1";
+  new_node_one.scrollPosition = 1.0;
+  second_update[new_node_one.id] = new_node_one;
+  bridge->UpdateSemantics(/*nodes=*/second_update, /*actions=*/actions);
+  SemanticsObject* focusObject = accessibility_notifications[0][@"argument"];
+  // Since we have focused on the node 1 right before the scrolling, the bridge should refocus the
+  // node 1.
+  XCTAssertEqual([focusObject uid], 1);
+  XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
+                 UIAccessibilityPageScrolledNotification);
 }
 
 - (void)testAnnouncesIgnoresRouteChangesWhenModal {
@@ -329,6 +540,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*task_runners=*/runners);
   id mockFlutterView = OCMClassMock([FlutterView class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
   std::string label = "some label";
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
@@ -343,7 +556,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       };
   ios_delegate->result_IsFlutterViewControllerPresentingModalViewController_ = true;
   __block auto bridge =
-      std::make_unique<flutter::AccessibilityBridge>(/*view=*/mockFlutterView,
+      std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
                                                      /*platform_view=*/platform_view.get(),
                                                      /*platform_views_controller=*/nil,
                                                      /*ios_delegate=*/std::move(ios_delegate));

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// A description of a color filter to apply when drawing a shape or compositing
@@ -168,9 +168,5 @@ class EngineColorFilter implements ui.ColorFilter {
       default:
         return 'Unknown ColorFilter type. This is an error. If you\'re seeing this, please file an issue at https://github.com/flutter/flutter/issues/new.';
     }
-  }
-
-  List<dynamic> webOnlySerializeToCssPaint() {
-    throw UnsupportedError('ColorFilter for CSS paint not yet supported');
   }
 }

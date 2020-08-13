@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// Stores the path verbs, points and conic weights.
@@ -366,7 +367,7 @@ class PathRef {
     } else {
       _conicWeights!.setAll(0, ref._conicWeights!);
     }
-    assert(verbCount == 0 || _fVerbs[0] != 0);
+    assert(verbCount == 0 || _fVerbs[0] == ref._fVerbs[0]);
     fBoundsIsDirty = ref.fBoundsIsDirty;
     if (!fBoundsIsDirty) {
       fBounds = ref.fBounds;

@@ -16,8 +16,10 @@
 #include "flutter/lib/ui/painting/frame_info.h"
 #include "flutter/lib/ui/painting/gradient.h"
 #include "flutter/lib/ui/painting/image.h"
+#include "flutter/lib/ui/painting/image_descriptor.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/image_shader.h"
+#include "flutter/lib/ui/painting/immutable_buffer.h"
 #include "flutter/lib/ui/painting/path.h"
 #include "flutter/lib/ui/painting/path_measure.h"
 #include "flutter/lib/ui/painting/picture.h"
@@ -28,7 +30,7 @@
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_builder.h"
-#include "flutter/lib/ui/window/window.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/logging/dart_error.h"
 
@@ -69,8 +71,10 @@ void DartUI::InitForGlobal() {
     EngineLayer::RegisterNatives(g_natives);
     FontCollection::RegisterNatives(g_natives);
     FrameInfo::RegisterNatives(g_natives);
+    ImageDescriptor::RegisterNatives(g_natives);
     ImageFilter::RegisterNatives(g_natives);
     ImageShader::RegisterNatives(g_natives);
+    ImmutableBuffer::RegisterNatives(g_natives);
     IsolateNameServerNatives::RegisterNatives(g_natives);
     Paragraph::RegisterNatives(g_natives);
     ParagraphBuilder::RegisterNatives(g_natives);
@@ -81,7 +85,7 @@ void DartUI::InitForGlobal() {
     SemanticsUpdate::RegisterNatives(g_natives);
     SemanticsUpdateBuilder::RegisterNatives(g_natives);
     Vertices::RegisterNatives(g_natives);
-    Window::RegisterNatives(g_natives);
+    PlatformConfiguration::RegisterNatives(g_natives);
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
     SceneHost::RegisterNatives(g_natives);
 #endif

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// A complex, one-dimensional subset of a plane.
@@ -589,25 +590,26 @@ class SurfacePath implements ui.Path {
         ++conicCount;
       }
     }
+
     // Any points we generate based on unit vectors cos/sinStart , cos/sinStop
     // we rotate to start vector, scale by rect.width/2 rect.height/2 and
     // then translate to center point.
     final double scaleX = rect.width / 2;
-    final double scaleY =
-        dir == SPathDirection.kCCW ? -rect.height / 2 : rect.height / 2;
+    final bool ccw = dir == SPathDirection.kCCW;
+    final double scaleY = rect.height / 2;
     final double centerX = rect.center.dx;
     final double centerY = rect.center.dy;
     for (Conic conic in conics) {
       double x = conic.p0x;
-      double y = conic.p0y;
+      double y = ccw ? -conic.p0y : conic.p0y;
       conic.p0x = (cosStart * x - sinStart * y) * scaleX + centerX;
       conic.p0y = (cosStart * y + sinStart * x) * scaleY + centerY;
       x = conic.p1x;
-      y = conic.p1y;
+      y = ccw ? -conic.p1y : conic.p1y;
       conic.p1x = (cosStart * x - sinStart * y) * scaleX + centerX;
       conic.p1y = (cosStart * y + sinStart * x) * scaleY + centerY;
       x = conic.p2x;
-      y = conic.p2y;
+      y = ccw ? -conic.p2y : conic.p2y;
       conic.p2x = (cosStart * x - sinStart * y) * scaleX + centerX;
       conic.p2y = (cosStart * y + sinStart * x) * scaleY + centerY;
     }
@@ -1539,12 +1541,6 @@ class SurfacePath implements ui.Path {
   /// a persistent div.
   ui.Rect? get webOnlyPathAsCircle =>
       pathRef.isOval == -1 ? null : pathRef.getBounds();
-
-  /// Serializes this path to a value that's sent to a CSS custom painter for
-  /// painting.
-  List<dynamic> webOnlySerializeToCssPaint() {
-    throw UnimplementedError();
-  }
 
   /// Returns if Path is empty.
   /// Empty Path may have FillType but has no points, verbs or weights.

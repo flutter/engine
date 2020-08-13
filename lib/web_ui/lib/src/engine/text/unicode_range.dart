@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 const int _kChar_0 = 48;
@@ -107,37 +107,59 @@ int? getCodePoint(String text, int index) {
 /// has. The properties are then used to decide word boundaries, line break
 /// opportunities, etc.
 class UnicodePropertyLookup<P> {
-  const UnicodePropertyLookup(this.ranges);
+  UnicodePropertyLookup(this.ranges, this.defaultProperty);
 
   /// Creates a [UnicodePropertyLookup] from packed line break data.
   factory UnicodePropertyLookup.fromPackedData(
     String packedData,
     int singleRangesCount,
     List<P> propertyEnumValues,
+    P defaultProperty,
   ) {
     return UnicodePropertyLookup<P>(
       _unpackProperties<P>(packedData, singleRangesCount, propertyEnumValues),
+      defaultProperty,
     );
   }
 
+  /// The list of unicode ranges and their associated properties.
   final List<UnicodeRange<P>> ranges;
+
+  /// The default property to use when a character doesn't belong in any
+  /// known range.
+  final P defaultProperty;
+
+  /// Cache for lookup results.
+  final Map<int, P> _cache = <int, P>{};
 
   /// Take a [text] and an [index], and returns the property of the character
   /// located at that [index].
   ///
   /// If the [index] is out of range, null will be returned.
-  P? find(String text, int index) {
+  P find(String text, int index) {
     final int? codePoint = getCodePoint(text, index);
-    return codePoint == null ? null : findForChar(codePoint);
+    return codePoint == null ? defaultProperty : findForChar(codePoint);
   }
 
   /// Takes one character as an integer code unit and returns its property.
   ///
-  /// If a property can't be found for the given character, null will be
-  /// returned.
-  P? findForChar(int char) {
+  /// If a property can't be found for the given character, then the default
+  /// property will be returned.
+  P findForChar(int? char) {
+    if (char == null) {
+      return defaultProperty;
+    }
+
+    final P? cacheHit = _cache[char];
+    if (cacheHit != null) {
+      return cacheHit;
+    }
+
     final int rangeIndex = _binarySearch(char);
-    return rangeIndex == -1 ? null : ranges[rangeIndex].property;
+    final P result = rangeIndex == -1 ? defaultProperty : ranges[rangeIndex].property;
+    // Cache the result.
+    _cache[char] = result;
+    return result;
   }
 
   int _binarySearch(int value) {

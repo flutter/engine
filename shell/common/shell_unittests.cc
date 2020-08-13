@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
@@ -31,9 +32,13 @@
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "flutter/shell/version/version.h"
 #include "flutter/testing/testing.h"
-#include "rapidjson/writer.h"
+#include "third_party/rapidjson/include/rapidjson/writer.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/tonic/converter/dart_converter.h"
+
+#ifdef SHELL_ENABLE_VULKAN
+#include "flutter/vulkan/vulkan_application.h"  // nogncheck
+#endif
 
 namespace flutter {
 namespace testing {
@@ -576,16 +581,16 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
   DestroyShell(std::move(shell));
 
   fml::TimePoint finish = fml::TimePoint::Now();
-  fml::TimeDelta ellapsed = finish - start;
+  fml::TimeDelta elapsed = finish - start;
 
 #if FLUTTER_RELEASE
   // Our batch time is 1000ms. Hopefully the 800ms limit is relaxed enough to
   // make it not too flaky.
-  ASSERT_TRUE(ellapsed >= fml::TimeDelta::FromMilliseconds(800));
+  ASSERT_TRUE(elapsed >= fml::TimeDelta::FromMilliseconds(800));
 #else
   // Our batch time is 100ms. Hopefully the 500ms limit is relaxed enough to
   // make it not too flaky.
-  ASSERT_TRUE(ellapsed <= fml::TimeDelta::FromMilliseconds(500));
+  ASSERT_TRUE(elapsed <= fml::TimeDelta::FromMilliseconds(500));
 #endif
 }
 
@@ -684,7 +689,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get(), {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_FALSE(result.ok());
@@ -797,13 +802,19 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
 
+  // The Vulkan and GL backends set different default values for the resource
+  // cache size.
+#ifdef SHELL_ENABLE_VULKAN
+  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
+            vulkan::kGrCacheMaxByteSize);
+#else
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(24 * (1 << 20)));
+#endif
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -822,8 +833,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 800, 400, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400});
       });
   PumpOneFrame(shell.get());
 
@@ -841,8 +851,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -870,8 +879,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -945,7 +953,7 @@ class MockTexture : public Texture {
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
-             GrContext* context,
+             GrDirectContext* context,
              SkFilterQuality filter_quality) override {}
 
   void OnGrContextCreated() override {}
@@ -1236,15 +1244,17 @@ TEST_F(ShellTest, CanDecompressImageFromAsset) {
 }
 
 TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
-  // Create 2 dummpy SkSL cache file IE (base32 encoding of A), II (base32
-  // encoding of B) with content x and y.
-  fml::ScopedTemporaryDirectory temp_dir;
-  PersistentCache::SetCacheDirectoryPath(temp_dir.path());
+  fml::ScopedTemporaryDirectory base_dir;
+  ASSERT_TRUE(base_dir.fd().is_valid());
+  PersistentCache::SetCacheDirectoryPath(base_dir.path());
   PersistentCache::ResetCacheForProcess();
-  std::vector<std::string> components = {"flutter_engine",
-                                         GetFlutterEngineVersion(), "skia",
-                                         GetSkiaVersion(), "sksl"};
-  auto sksl_dir = fml::CreateDirectory(temp_dir.fd(), components,
+
+  // Create 2 dummy SkSL cache file IE (base32 encoding of A), II (base32
+  // encoding of B) with content x and y.
+  std::vector<std::string> components = {
+      "flutter_engine", GetFlutterEngineVersion(), "skia", GetSkiaVersion(),
+      PersistentCache::kSkSLSubdirName};
+  auto sksl_dir = fml::CreateDirectory(base_dir.fd(), components,
                                        fml::FilePermission::kReadWrite);
   const std::string x = "x";
   const std::string y = "y";
@@ -1261,7 +1271,7 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
   rapidjson::Document document;
   OnServiceProtocol(shell.get(), ServiceProtocolEnum::kGetSkSLs,
                     shell->GetTaskRunners().GetIOTaskRunner(), empty_params,
-                    document);
+                    &document);
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);
@@ -1275,9 +1285,6 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
                           (expected_json2 == buffer.GetString());
   ASSERT_TRUE(json_is_expected) << buffer.GetString() << " is not equal to "
                                 << expected_json1 << " or " << expected_json2;
-
-  // Cleanup files
-  fml::RemoveFilesInDirectory(temp_dir.fd());
 }
 
 TEST_F(ShellTest, RasterizerScreenshot) {

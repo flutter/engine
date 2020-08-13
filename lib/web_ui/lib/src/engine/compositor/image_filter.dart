@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// The CanvasKit implementation of [ui.ImageFilter].
 ///
 /// Currently only supports `blur`.
-class CkImageFilter extends ResurrectableSkiaObject<SkImageFilter> implements ui.ImageFilter {
+class CkImageFilter extends ManagedSkiaObject<SkImageFilter> implements ui.ImageFilter {
   CkImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0})
       : _sigmaX = sigmaX,
         _sigmaY = sigmaY;
@@ -26,14 +27,11 @@ class CkImageFilter extends ResurrectableSkiaObject<SkImageFilter> implements ui
     rawSkiaObject?.delete();
   }
 
-  @override
-  js.JsObject get legacySkiaObject => _jsObjectWrapper.wrapSkImageFilter(skiaObject);
-
   SkImageFilter _initSkiaObject() {
-    return canvasKitJs.SkImageFilter.MakeBlur(
+    return canvasKit.SkImageFilter.MakeBlur(
       _sigmaX,
       _sigmaY,
-      canvasKitJs.TileMode.Clamp,
+      canvasKit.TileMode.Clamp,
       null,
     );
   }

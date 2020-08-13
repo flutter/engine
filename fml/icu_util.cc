@@ -19,11 +19,12 @@ namespace icu {
 
 class ICUContext {
  public:
-  ICUContext(const std::string& icu_data_path) : valid_(false) {
+  explicit ICUContext(const std::string& icu_data_path) : valid_(false) {
     valid_ = SetupMapping(icu_data_path) && SetupICU();
   }
 
-  ICUContext(std::unique_ptr<Mapping> mapping) : mapping_(std::move(mapping)) {
+  explicit ICUContext(std::unique_ptr<Mapping> mapping)
+      : mapping_(std::move(mapping)) {
     valid_ = SetupICU();
   }
 

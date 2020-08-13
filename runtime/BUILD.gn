@@ -10,9 +10,7 @@ source_set("test_font") {
     "test_font_data.cc",
     "test_font_data.h",
   ]
-  deps = [
-    "//third_party/skia",
-  ]
+  deps = [ "//third_party/skia" ]
   public_configs = [ "//flutter:config" ]
   defines = []
   if (flutter_runtime_mode == "debug" || current_toolchain == host_toolchain) {
@@ -55,6 +53,8 @@ source_set_maybe_fuchsia_legacy("runtime") {
     "dart_vm_lifecycle.h",
     "embedder_resources.cc",
     "embedder_resources.h",
+    "platform_data.cc",
+    "platform_data.h",
     "ptrace_ios.cc",
     "ptrace_ios.h",
     "runtime_controller.cc",
@@ -65,13 +65,9 @@ source_set_maybe_fuchsia_legacy("runtime") {
     "service_protocol.h",
     "skia_concurrent_executor.cc",
     "skia_concurrent_executor.h",
-    "window_data.cc",
-    "window_data.h",
   ]
 
-  public_deps = [
-    "//third_party/rapidjson",
-  ]
+  public_deps = [ "//third_party/rapidjson" ]
 
   public_configs = [ "//flutter:config" ]
 
@@ -142,25 +138,19 @@ if (enable_unittests) {
     executable("runtime_unittests") {
       testonly = true
 
-      deps = [
-        ":runtime_unittests_common_fuchsia_legacy",
-      ]
+      deps = [ ":runtime_unittests_common_fuchsia_legacy" ]
     }
 
     executable("runtime_unittests_next") {
       testonly = true
 
-      deps = [
-        ":runtime_unittests_common",
-      ]
+      deps = [ ":runtime_unittests_common" ]
     }
   } else {
     executable("runtime_unittests") {
       testonly = true
 
-      deps = [
-        ":runtime_unittests_common",
-      ]
+      deps = [ ":runtime_unittests_common" ]
     }
   }
 }

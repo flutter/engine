@@ -8,6 +8,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.InputType;
@@ -83,6 +84,18 @@ public class TextInputPlugin {
           }
 
           @Override
+          public void finishAutofillContext(boolean shouldSave) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null) {
+              return;
+            }
+            if (shouldSave) {
+              afm.commit();
+            } else {
+              afm.cancel();
+            }
+          }
+
+          @Override
           public void setClient(
               int textInputClientId, TextInputChannel.Configuration configuration) {
             setTextInputClient(textInputClientId, configuration);
@@ -106,6 +119,11 @@ public class TextInputPlugin {
           @Override
           public void clearClient() {
             clearTextInputClient();
+          }
+
+          @Override
+          public void sendAppPrivateCommand(String action, Bundle data) {
+            sendTextInputAppPrivateCommand(action, data);
           }
         });
 
@@ -289,6 +307,10 @@ public class TextInputPlugin {
       mImm.restartInput(mView);
       mRestartInputPending = false;
     }
+  }
+
+  public void sendTextInputAppPrivateCommand(String action, Bundle data) {
+    mImm.sendAppPrivateCommand(mView, action, data);
   }
 
   private void showTextInput(View view) {

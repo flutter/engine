@@ -72,14 +72,14 @@ SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
 }
 
 // |ExternalViewEmbedder|
-bool AndroidExternalViewEmbedder::SubmitFrame(
-    GrContext* context,
+void AndroidExternalViewEmbedder::SubmitFrame(
+    GrDirectContext* context,
     std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
 
   if (should_run_rasterizer_on_platform_thread_) {
     // Don't submit the current frame if the frame will be resubmitted.
-    return true;
+    return;
   }
 
   std::unordered_map<int64_t, std::list<SkRect>> overlay_layers;
@@ -181,12 +181,11 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
       }
     }
   }
-  return true;
 }
 
 // |ExternalViewEmbedder|
 std::unique_ptr<SurfaceFrame>
-AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrContext* context,
+AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
                                                    int64_t view_id,
                                                    sk_sp<SkPicture> picture,
                                                    const SkRect& rect) {
@@ -258,7 +257,7 @@ void AndroidExternalViewEmbedder::Reset() {
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::BeginFrame(
     SkISize frame_size,
-    GrContext* context,
+    GrDirectContext* context,
     double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   Reset();

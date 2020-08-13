@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
@@ -145,7 +146,7 @@ struct KeyboardState {
 - (void)sendInitialSettings;
 
 /**
- * Responsds to updates in the user settings and passes this data to the engine.
+ * Responds to updates in the user settings and passes this data to the engine.
  */
 - (void)onSettingsChanged:(NSNotification*)notification;
 
@@ -153,6 +154,12 @@ struct KeyboardState {
  * Handles messages received from the Flutter engine on the _*Channel channels.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+
+/**
+ * Plays a system sound. |soundType| specifies which system sound to play. Valid
+ * values can be found in the SystemSoundType enum in the services SDK package.
+ */
+- (void)playSystemSound:(NSString*)soundType;
 
 /**
  * Reads the data from the clipboard. |format| specifies the media type of the
@@ -296,6 +303,7 @@ static void CommonInit(FlutterViewController* controller) {
   }
   // Send the initial user settings such as brightness and text scale factor
   // to the engine.
+  // TODO(stuartmorgan): Move this logic to FlutterEngine.
   [self sendInitialSettings];
   return YES;
 }
@@ -489,6 +497,9 @@ static void CommonInit(FlutterViewController* controller) {
   if ([call.method isEqualToString:@"SystemNavigator.pop"]) {
     [NSApp terminate:self];
     result(nil);
+  } else if ([call.method isEqualToString:@"SystemSound.play"]) {
+    [self playSystemSound:call.arguments];
+    result(nil);
   } else if ([call.method isEqualToString:@"Clipboard.getData"]) {
     result([self getClipboardData:call.arguments]);
   } else if ([call.method isEqualToString:@"Clipboard.setData"]) {
@@ -496,6 +507,12 @@ static void CommonInit(FlutterViewController* controller) {
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
+  }
+}
+
+- (void)playSystemSound:(NSString*)soundType {
+  if ([soundType isEqualToString:@"SystemSoundType.alert"]) {
+    NSBeep();
   }
 }
 

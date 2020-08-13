@@ -2,27 +2,54 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
-/// Instantiates a [ui.Codec] backed by an `SkImage` from Skia.
+/// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 void skiaInstantiateImageCodec(Uint8List list, Callback<ui.Codec> callback,
     [int? width, int? height, int? format, int? rowBytes]) {
-  final SkAnimatedImage skAnimatedImage = canvasKitJs.MakeAnimatedImageFromEncoded(list);
+  final SkAnimatedImage skAnimatedImage =
+      canvasKit.MakeAnimatedImageFromEncoded(list);
   final CkAnimatedImage animatedImage = CkAnimatedImage(skAnimatedImage);
   final CkAnimatedImageCodec codec = CkAnimatedImageCodec(animatedImage);
   callback(codec);
+}
+
+/// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia after requesting from URI.
+void skiaInstantiateWebImageCodec(String src, Callback<ui.Codec> callback,
+    WebOnlyImageCodecChunkCallback? chunkCallback) {
+  chunkCallback?.call(0, 100);
+  //TODO: Switch to using MakeImageFromCanvasImageSource when animated images are supported.
+  html.HttpRequest.request(
+    src,
+    responseType: "arraybuffer",
+  ).then((html.HttpRequest response) {
+    chunkCallback?.call(100, 100);
+    final Uint8List list =
+        new Uint8List.view((response.response as ByteBuffer));
+    final SkAnimatedImage skAnimatedImage =
+        canvasKit.MakeAnimatedImageFromEncoded(list);
+    final CkAnimatedImage animatedImage = CkAnimatedImage(skAnimatedImage);
+    final CkAnimatedImageCodec codec = CkAnimatedImageCodec(animatedImage);
+    callback(codec);
+  });
 }
 
 /// A wrapper for `SkAnimatedImage`.
 class CkAnimatedImage implements ui.Image {
   final SkAnimatedImage _skAnimatedImage;
 
-  CkAnimatedImage(this._skAnimatedImage);
+  // Use a box because `SkImage` may be deleted either due to this object
+  // being garbage-collected, or by an explicit call to [delete].
+  late final SkiaObjectBox box;
+
+  CkAnimatedImage(this._skAnimatedImage) {
+    box = SkiaObjectBox(this, _skAnimatedImage as SkDeletable);
+  }
 
   @override
   void dispose() {
-    _skAnimatedImage.delete();
+    box.delete();
   }
 
   int get frameCount => _skAnimatedImage.getFrameCount();
@@ -55,13 +82,18 @@ class CkAnimatedImage implements ui.Image {
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image {
   final SkImage skImage;
-  late final js.JsObject legacyJsObject = _jsObjectWrapper.wrapSkImage(skImage);
 
-  CkImage(this.skImage);
+  // Use a box because `SkImage` may be deleted either due to this object
+  // being garbage-collected, or by an explicit call to [delete].
+  late final SkiaObjectBox box;
+
+  CkImage(this.skImage) {
+    box = SkiaObjectBox(this, skImage as SkDeletable);
+  }
 
   @override
   void dispose() {
-    skImage.delete();
+    box.delete();
   }
 
   @override
@@ -79,26 +111,25 @@ class CkImage implements ui.Image {
 
 /// A [Codec] that wraps an `SkAnimatedImage`.
 class CkAnimatedImageCodec implements ui.Codec {
-  CkAnimatedImage? animatedImage;
+  CkAnimatedImage animatedImage;
 
   CkAnimatedImageCodec(this.animatedImage);
 
   @override
   void dispose() {
-    animatedImage!.dispose();
-    animatedImage = null;
+    animatedImage.dispose();
   }
 
   @override
-  int get frameCount => animatedImage!.frameCount;
+  int get frameCount => animatedImage.frameCount;
 
   @override
-  int get repetitionCount => animatedImage!.repetitionCount;
+  int get repetitionCount => animatedImage.repetitionCount;
 
   @override
   Future<ui.FrameInfo> getNextFrame() {
-    final Duration duration = animatedImage!.decodeNextFrame();
-    final CkImage image = animatedImage!.currentFrameAsImage;
+    final Duration duration = animatedImage.decodeNextFrame();
+    final CkImage image = animatedImage.currentFrameAsImage;
     return Future<ui.FrameInfo>.value(AnimatedImageFrameInfo(duration, image));
   }
 }

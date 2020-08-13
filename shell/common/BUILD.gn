@@ -30,9 +30,7 @@ template("dart_embedder_resources") {
     }
 
     output = invoker.output
-    outputs = [
-      output,
-    ]
+    outputs = [ output ]
 
     inputs = [ script ] + invoker.inputs
 
@@ -82,6 +80,8 @@ source_set_maybe_fuchsia_legacy("common") {
     "rasterizer.h",
     "run_configuration.cc",
     "run_configuration.h",
+    "serialization_callbacks.cc",
+    "serialization_callbacks.h",
     "shell.cc",
     "shell.h",
     "shell_io_manager.cc",
@@ -158,6 +158,14 @@ if (enable_unittests) {
     test_enable_metal = false
   }
 
+  config("test_enable_gl_config") {
+    defines = [ "SHELL_ENABLE_GL" ]
+  }
+
+  config("test_enable_vulkan_config") {
+    defines = [ "SHELL_ENABLE_VULKAN" ]
+  }
+
   shell_gpu_configuration("shell_unittests_gpu_configuration") {
     enable_software = test_enable_software
     enable_vulkan = test_enable_vulkan
@@ -172,9 +180,7 @@ if (enable_unittests) {
   }
 
   shell_host_executable("shell_benchmarks") {
-    sources = [
-      "shell_benchmarks.cc",
-    ]
+    sources = [ "shell_benchmarks.cc" ]
 
     deps = [
       ":shell_unittests_fixtures",
@@ -210,7 +216,7 @@ if (enable_unittests) {
       "//third_party/skia",
     ]
 
-    defines = []
+    public_configs = []
 
     # SwiftShader only supports x86/x64_64
     if (target_cpu == "x86" || target_cpu == "x64") {
@@ -220,9 +226,9 @@ if (enable_unittests) {
           "shell_test_platform_view_gl.h",
         ]
 
-        public_deps += [ "//flutter/testing:opengl" ]
+        public_configs += [ ":test_enable_gl_config" ]
 
-        defines += [ "SHELL_ENABLE_GL" ]
+        public_deps += [ "//flutter/testing:opengl" ]
       }
     }
 
@@ -232,12 +238,12 @@ if (enable_unittests) {
         "shell_test_platform_view_vulkan.h",
       ]
 
+      public_configs += [ ":test_enable_vulkan_config" ]
+
       public_deps += [
         "//flutter/testing:vulkan",
         "//flutter/vulkan",
       ]
-
-      defines += [ "SHELL_ENABLE_VULKAN" ]
     }
 
     public_deps_legacy_and_next = [
@@ -260,15 +266,18 @@ if (enable_unittests) {
     sources = [
       "animator_unittests.cc",
       "canvas_spy_unittests.cc",
+      "engine_unittests.cc",
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",
       "shell_unittests.cc",
+      "skp_shader_warmup_unittests.cc",
     ]
 
     deps = [
       "//flutter/assets",
       "//flutter/shell/version",
+      "//third_party/googletest:gmock",
     ]
 
     public_deps_legacy_and_next = [ ":shell_test_fixture_sources" ]

@@ -2,7 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
+
+const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
+
+const String _placeholderClass = 'paragraph-placeholder';
 
 class EngineLineMetrics implements ui.LineMetrics {
   EngineLineMetrics({
@@ -18,7 +23,8 @@ class EngineLineMetrics implements ui.LineMetrics {
   })  : displayText = null,
         startIndex = -1,
         endIndex = -1,
-        endIndexWithoutNewlines = -1;
+        endIndexWithoutNewlines = -1,
+        widthWithTrailingSpaces = width;
 
   EngineLineMetrics.withText(
     String this.displayText, {
@@ -27,6 +33,7 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.endIndexWithoutNewlines,
     required this.hardBreak,
     required this.width,
+    required this.widthWithTrailingSpaces,
     required this.left,
     required this.lineNumber,
   })  : assert(displayText != null), // ignore: unnecessary_null_comparison
@@ -76,6 +83,18 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   @override
   final double width;
+
+  /// The full width of the line including all trailing space but not new lines.
+  ///
+  /// The difference between [width] and [widthWithTrailingSpaces] is that
+  /// [widthWithTrailingSpaces] includes trailing spaces in the width
+  /// calculation while [width] doesn't.
+  ///
+  /// For alignment purposes for example, the [width] property is the right one
+  /// to use because trailing spaces shouldn't affect the centering of text.
+  /// But for placing cursors in text fields, we do care about trailing
+  /// spaces so [widthWithTrailingSpaces] is more suitable.
+  final double widthWithTrailingSpaces;
 
   @override
   final double left;
@@ -157,6 +176,7 @@ class EngineParagraph implements ui.Paragraph {
     required ui.TextAlign textAlign,
     required ui.TextDirection textDirection,
     required ui.Paint? background,
+    required this.placeholderCount,
   })  : assert((plainText == null && paint == null) ||
             (plainText != null && paint != null)),
         _paragraphElement = paragraphElement,
@@ -174,6 +194,8 @@ class EngineParagraph implements ui.Paragraph {
   final ui.TextAlign _textAlign;
   final ui.TextDirection _textDirection;
   final SurfacePaint? _background;
+
+  final int placeholderCount;
 
   @visibleForTesting
   String? get plainText => _plainText;
@@ -315,7 +337,8 @@ class EngineParagraph implements ui.Paragraph {
 
   @override
   List<ui.TextBox> getBoxesForPlaceholders() {
-    return const <ui.TextBox>[];
+    assert(_isLaidOut);
+    return _measurementResult!.placeholderBoxes;
   }
 
   /// Returns `true` if this paragraph can be directly painted to the canvas.
@@ -450,7 +473,7 @@ class EngineParagraph implements ui.Paragraph {
     return ui.TextBox.fromLTRBD(
       line.left + widthBeforeBox,
       top,
-      line.left + line.width - widthAfterBox,
+      line.left + line.widthWithTrailingSpaces - widthAfterBox,
       top + _lineHeight,
       _textDirection,
     );
@@ -465,6 +488,7 @@ class EngineParagraph implements ui.Paragraph {
       textAlign: _textAlign,
       textDirection: _textDirection,
       background: _background,
+      placeholderCount: placeholderCount,
     );
   }
 
@@ -1041,11 +1065,11 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   int get placeholderCount => _placeholderCount;
-  late int _placeholderCount;
+  int _placeholderCount = 0;
 
   @override
   List<double> get placeholderScales => _placeholderScales;
-  List<double> _placeholderScales = <double>[];
+  final List<double> _placeholderScales = <double>[];
 
   @override
   void addPlaceholder(
@@ -1056,8 +1080,20 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
     double? baselineOffset,
     ui.TextBaseline? baseline,
   }) {
-    // TODO(garyq): Implement stub_ui version of this.
-    throw UnimplementedError();
+    // Require a baseline to be specified if using a baseline-based alignment.
+    assert((alignment == ui.PlaceholderAlignment.aboveBaseline ||
+            alignment == ui.PlaceholderAlignment.belowBaseline ||
+            alignment == ui.PlaceholderAlignment.baseline) ? baseline != null : true);
+
+    _placeholderCount++;
+    _placeholderScales.add(scale);
+    _ops.add(ParagraphPlaceholder(
+      width * scale,
+      height * scale,
+      alignment,
+      baselineOffset: (baselineOffset ?? height) * scale,
+      baseline: baseline ?? ui.TextBaseline.alphabetic,
+    ));
   }
 
   // TODO(yjbanov): do we need to do this?
@@ -1109,15 +1145,15 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
   /// paragraph. Plain text is more efficient to lay out and measure than rich
   /// text.
   EngineParagraph? _tryBuildPlainText() {
-    ui.Color? color;
+    ui.Color color = _defaultTextColor;
     ui.TextDecoration? decoration;
     ui.Color? decorationColor;
     ui.TextDecorationStyle? decorationStyle;
     ui.FontWeight? fontWeight = _paragraphStyle._fontWeight;
     ui.FontStyle? fontStyle = _paragraphStyle._fontStyle;
     ui.TextBaseline? textBaseline;
-    String? fontFamily = _paragraphStyle._fontFamily;
-    double? fontSize = _paragraphStyle._fontSize;
+    String fontFamily = _paragraphStyle._fontFamily ?? DomRenderer.defaultFontFamily;
+    double fontSize = _paragraphStyle._fontSize ?? DomRenderer.defaultFontSize;
     final ui.TextAlign textAlign = _paragraphStyle._effectiveTextAlign;
     final ui.TextDirection textDirection = _paragraphStyle._effectiveTextDirection;
     double? letterSpacing;
@@ -1137,7 +1173,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
     while (i < _ops.length && _ops[i] is EngineTextStyle) {
       final EngineTextStyle style = _ops[i];
       if (style._color != null) {
-        color = style._color;
+        color = style._color!;
       }
       if (style._decoration != null) {
         decoration = style._decoration;
@@ -1159,7 +1195,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       }
       fontFamily = style._fontFamily;
       if (style._fontSize != null) {
-        fontSize = style._fontSize;
+        fontSize = style._fontSize!;
       }
       if (style._letterSpacing != null) {
         letterSpacing = style._letterSpacing;
@@ -1209,9 +1245,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       paint = foreground;
     } else {
       paint = ui.Paint();
-      if (color != null) {
-        paint.color = color;
-      }
+      paint.color = color;
     }
 
     if (i >= _ops.length) {
@@ -1238,6 +1272,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
         textAlign: textAlign,
         textDirection: textDirection,
         background: cumulativeStyle._background,
+        placeholderCount: placeholderCount,
       );
     }
 
@@ -1292,6 +1327,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       textAlign: textAlign,
       textDirection: textDirection,
       background: cumulativeStyle._background,
+      placeholderCount: placeholderCount,
     );
   }
 
@@ -1300,6 +1336,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
     final List<dynamic> elementStack = <dynamic>[];
     dynamic currentElement() =>
         elementStack.isNotEmpty ? elementStack.last : _paragraphElement;
+
     for (int i = 0; i < _ops.length; i++) {
       final dynamic op = _ops[i];
       if (op is EngineTextStyle) {
@@ -1312,6 +1349,11 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
         elementStack.add(span);
       } else if (op is String) {
         domRenderer.appendText(currentElement(), op);
+      } else if (op is ParagraphPlaceholder) {
+        domRenderer.append(
+          currentElement(),
+          _createPlaceholderElement(placeholder: op),
+        );
       } else if (identical(op, _paragraphBuilderPop)) {
         elementStack.removeLast();
       } else {
@@ -1335,8 +1377,40 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       textAlign: _paragraphStyle._effectiveTextAlign,
       textDirection: _paragraphStyle._effectiveTextDirection,
       background: null,
+      placeholderCount: placeholderCount,
     );
   }
+}
+
+/// Holds information for a placeholder in a paragraph.
+///
+/// [width], [height] and [baselineOffset] are expected to be already scaled.
+class ParagraphPlaceholder {
+  ParagraphPlaceholder(
+    this.width,
+    this.height,
+    this.alignment, {
+    required this.baselineOffset,
+    required this.baseline,
+  });
+
+  /// The scaled width of the placeholder.
+  final double width;
+
+  /// The scaled height of the placeholder.
+  final double height;
+
+  /// Specifies how the placeholder rectangle will be vertically aligned with
+  /// the surrounding text.
+  final ui.PlaceholderAlignment alignment;
+
+  /// When the [alignment] value is [ui.PlaceholderAlignment.baseline], the
+  /// [baselineOffset] indicates the distance from the baseline to the top of
+  /// the placeholder rectangle.
+  final double baselineOffset;
+
+  /// Dictates whether to use alphabetic or ideographic baseline.
+  final ui.TextBaseline baseline;
 }
 
 /// Converts [fontWeight] to its CSS equivalent value.
@@ -1553,6 +1627,52 @@ void _applyTextStyleToElement({
   }
 }
 
+html.Element _createPlaceholderElement({
+  required ParagraphPlaceholder placeholder,
+}) {
+  final html.Element element = domRenderer.createElement('span');
+  element.className = _placeholderClass;
+  final html.CssStyleDeclaration style = element.style;
+  style
+    ..display = 'inline-block'
+    ..width = '${placeholder.width}px'
+    ..height = '${placeholder.height}px'
+    ..verticalAlign = _placeholderAlignmentToCssVerticalAlign(placeholder);
+
+  return element;
+}
+
+String _placeholderAlignmentToCssVerticalAlign(
+  ParagraphPlaceholder placeholder,
+) {
+  // For more details about the vertical-align CSS property, see:
+  // - https://developer.mozilla.org/en-US/docs/Web/CSS/vertical-align
+  switch (placeholder.alignment) {
+    case ui.PlaceholderAlignment.top:
+      return 'top';
+
+    case ui.PlaceholderAlignment.middle:
+      return 'middle';
+
+    case ui.PlaceholderAlignment.bottom:
+      return 'bottom';
+
+    case ui.PlaceholderAlignment.aboveBaseline:
+      return 'baseline';
+
+    case ui.PlaceholderAlignment.belowBaseline:
+      return '-${placeholder.height}px';
+
+    case ui.PlaceholderAlignment.baseline:
+      // In CSS, the placeholder is already placed above the baseline. But
+      // Flutter's `baselineOffset` assumes the placeholder is placed below the
+      // baseline. That's why we need to subtract the placeholder's height from
+      // `baselineOffset`.
+      final double offset = placeholder.baselineOffset - placeholder.height;
+      return '${offset}px';
+  }
+}
+
 String _shadowListToCss(List<ui.Shadow> shadows) {
   if (shadows.isEmpty) {
     return '';
@@ -1688,7 +1808,6 @@ String? textAlignToCssValue(ui.TextAlign? align, ui.TextDirection textDirection)
         case ui.TextDirection.rtl:
           return 'left';
       }
-      break;
     default: // including ui.TextAlign.start
       switch (textDirection) {
         case ui.TextDirection.ltr:
@@ -1696,7 +1815,6 @@ String? textAlignToCssValue(ui.TextAlign? align, ui.TextDirection textDirection)
         case ui.TextDirection.rtl:
           return 'right';
       }
-      break;
   }
 }
 

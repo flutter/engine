@@ -10,6 +10,7 @@ import argparse
 import errno
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -166,13 +167,31 @@ def CopyIcuDepsToBucket(src, dst):
   deps_bucket_path = os.path.join(_bucket_directory, dst)
   FindFileAndCopyTo('icudtl.dat', source_root, deps_bucket_path)
 
-def BuildBucket(runtime_mode, arch, product):
-  out_dir = 'fuchsia_%s_%s/' % (runtime_mode, arch)
-  bucket_dir = 'flutter/%s/%s/' % (arch, runtime_mode)
+def BuildBucket(runtime_mode, arch, optimized, product):
+  unopt = "_unopt" if not optimized else ""
+  out_dir = 'fuchsia_%s%s_%s/' % (runtime_mode, unopt, arch)
+  bucket_dir = 'flutter/%s/%s%s/' % (arch, runtime_mode, unopt)
   deps_dir = 'flutter/%s/deps/' % (arch)
   CopyToBucket(out_dir, bucket_dir, product)
   CopyVulkanDepsToBucket(out_dir, deps_dir, arch)
   CopyIcuDepsToBucket(out_dir, deps_dir)
+
+
+def CheckCIPDPackageExists(package_name, tag):
+  '''Check to see if the current package/tag combo has been published'''
+  command = [
+    'cipd',
+    'search',
+    package_name,
+    '-tag',
+    tag,
+  ]
+  stdout = subprocess.check_output(command)
+  match = re.search(r'No matching instances\.', stdout)
+  if match:
+    return False
+  else:
+    return True
 
 
 def ProcessCIPDPackage(upload, engine_version):
@@ -181,11 +200,16 @@ def ProcessCIPDPackage(upload, engine_version):
   cipd_yaml = os.path.join(_script_dir, 'fuchsia.cipd.yaml')
   CopyFiles(cipd_yaml, os.path.join(_bucket_directory, 'fuchsia.cipd.yaml'))
 
-  if upload and IsLinux():
+  tag = 'git_revision:%s' % engine_version
+  already_exists = CheckCIPDPackageExists('flutter/fuchsia', tag)
+  if already_exists:
+    print('CIPD package flutter/fuchsia tag %s already exists!' % tag)
+
+  if upload and IsLinux() and not already_exists:
     command = [
         'cipd', 'create', '-pkg-def', 'fuchsia.cipd.yaml', '-ref', 'latest',
         '-tag',
-        'git_revision:%s' % engine_version
+        tag,
     ]
   else:
     command = [
@@ -221,16 +245,9 @@ def GetRunnerTarget(runner_type, product, aot):
   target += 'runner'
   return base + target
 
-
-def GetTargetsToBuild(product=False, additional_targets=[]):
-  targets_to_build = [
-      'flutter/shell/platform/fuchsia:fuchsia',
-  ] + additional_targets
-  return targets_to_build
-
-
-def BuildTarget(runtime_mode, arch, product, enable_lto, additional_targets=[]):
-  out_dir = 'fuchsia_%s_%s' % (runtime_mode, arch)
+def BuildTarget(runtime_mode, arch, optimized, enable_lto, asan, additional_targets=[]):
+  unopt = "_unopt" if not optimized else ""
+  out_dir = 'fuchsia_%s%s_%s' % (runtime_mode, unopt, arch)
   flags = [
       '--fuchsia',
       '--fuchsia-cpu',
@@ -239,11 +256,16 @@ def BuildTarget(runtime_mode, arch, product, enable_lto, additional_targets=[]):
       runtime_mode,
   ]
 
+  if not optimized:
+    flags.append('--unoptimized')
+
   if not enable_lto:
     flags.append('--no-lto')
+  if asan:
+    flags.append('--asan')
 
   RunGN(out_dir, flags)
-  BuildNinjaTargets(out_dir, GetTargetsToBuild(product))
+  BuildNinjaTargets(out_dir, [ 'flutter' ] + additional_targets)
 
   return
 
@@ -263,6 +285,12 @@ def main():
       help='Specifies the flutter engine SHA.')
 
   parser.add_argument(
+      '--unoptimized',
+      action='store_true',
+      default=False,
+      help='If set, disables compiler optimization for the build.')
+
+  parser.add_argument(
       '--runtime-mode',
       type=str,
       choices=['debug', 'profile', 'release', 'all'],
@@ -270,6 +298,12 @@ def main():
 
   parser.add_argument(
       '--archs', type=str, choices=['x64', 'arm64', 'all'], default='all')
+
+  parser.add_argument(
+      '--asan',
+      action='store_true',
+      default=False,
+      help='If set, enables address sanitization (including leak sanitization) for the build.')
 
   parser.add_argument(
       '--no-lto',
@@ -297,6 +331,7 @@ def main():
   runtime_modes = ['debug', 'profile', 'release']
   product_modes = [False, False, True]
 
+  optimized = not args.unoptimized
   enable_lto = not args.no_lto
 
   for arch in archs:
@@ -305,9 +340,8 @@ def main():
       product = product_modes[i]
       if build_mode == 'all' or runtime_mode == build_mode:
         if not args.skip_build:
-          BuildTarget(runtime_mode, arch, product, enable_lto,
-                      args.targets.split(","))
-        BuildBucket(runtime_mode, arch, product)
+          BuildTarget(runtime_mode, arch, optimized, enable_lto, args.asan, args.targets.split(","))
+        BuildBucket(runtime_mode, arch, optimized, product)
 
   if args.upload:
     if args.engine_version is None:

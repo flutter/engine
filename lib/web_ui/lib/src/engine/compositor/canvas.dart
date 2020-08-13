@@ -2,9 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
-/// A Dart wrapper around Skia's SKCanvas.
+/// A Dart wrapper around Skia's [SkCanvas].
+///
+/// This is intentionally not memory-managing the underlying [SkCanvas]. See
+/// the docs on [SkCanvas], which explain the reason.
 class CkCanvas {
   final SkCanvas skCanvas;
 
@@ -16,7 +20,7 @@ class CkCanvas {
     skCanvas.clear(toSharedSkColor1(color));
   }
 
-  static final SkClipOp _clipOpIntersect = canvasKitJs.ClipOp.Intersect;
+  static final SkClipOp _clipOpIntersect = canvasKit.ClipOp.Intersect;
 
   void clipPath(ui.Path path, bool doAntiAlias) {
     final CkPath ckPath = path as CkPath;
@@ -158,7 +162,7 @@ class CkCanvas {
 
   void drawParagraph(CkParagraph paragraph, ui.Offset offset) {
     skCanvas.drawParagraph(
-      _jsObjectWrapper.unwrapSkParagraph(paragraph.legacySkiaObject),
+      paragraph.skiaObject,
       offset.dx,
       offset.dy,
     );
@@ -169,7 +173,7 @@ class CkCanvas {
   }
 
   void drawPicture(CkPicture picture) {
-    skCanvas.drawPicture(picture._skPicture);
+    skCanvas.drawPicture(picture.skiaObject.skiaObject);
   }
 
   void drawPoints(CkPaint paint, ui.PointMode pointMode,
@@ -202,7 +206,7 @@ class CkCanvas {
       ui.Vertices vertices, ui.BlendMode blendMode, CkPaint paint) {
     CkVertices skVertices = vertices as CkVertices;
     skCanvas.drawVertices(
-      skVertices.skVertices,
+      skVertices.skiaObject,
       toSkBlendMode(blendMode),
       paint.skiaObject,
     );
@@ -232,12 +236,12 @@ class CkCanvas {
   }
 
   void saveLayerWithoutBounds(CkPaint paint) {
-    final SkCanvasSaveLayerWithoutBoundsOverride override = _jsObjectWrapper.castToSkCanvasSaveLayerWithoutBoundsOverride(skCanvas);
+    final SkCanvasSaveLayerWithoutBoundsOverload override = skCanvas as SkCanvasSaveLayerWithoutBoundsOverload;
     override.saveLayer(paint.skiaObject);
   }
 
   void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter) {
-    final SkCanvasSaveLayerWithFilterOverride override = _jsObjectWrapper.castToSkCanvasSaveLayerWithFilterOverride(skCanvas);
+    final SkCanvasSaveLayerWithFilterOverload override = skCanvas as SkCanvasSaveLayerWithFilterOverload;
     final CkImageFilter skImageFilter = filter as CkImageFilter;
     return override.saveLayer(
       null,

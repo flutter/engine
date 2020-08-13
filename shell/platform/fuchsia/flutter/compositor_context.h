@@ -42,6 +42,10 @@ class CompositorContext final : public flutter::CompositorContext {
     return &session_connection_.scene_update_context();
   }
 
+  GrDirectContext* GetGrContext() {
+    return session_connection_.vulkan_surface_producer()->gr_context();
+  }
+
  private:
   const std::string debug_label_;
   scenic::ViewRefPair view_ref_pair_;
@@ -49,7 +53,7 @@ class CompositorContext final : public flutter::CompositorContext {
 
   // |flutter::CompositorContext|
   std::unique_ptr<ScopedFrame> AcquireFrame(
-      GrContext* gr_context,
+      GrDirectContext* gr_context,
       SkCanvas* canvas,
       flutter::ExternalViewEmbedder* view_embedder,
       const SkMatrix& root_surface_transformation,

@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include "flutter/shell/common/rasterizer.h"
 
@@ -9,6 +10,7 @@
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/persistent_cache.h"
+#include "flutter/shell/common/serialization_callbacks.h"
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -98,15 +100,17 @@ void Rasterizer::Teardown() {
 
 void Rasterizer::NotifyLowMemoryWarning() const {
   if (!surface_) {
-    FML_DLOG(INFO) << "Rasterizer::PurgeCaches called with no surface.";
+    FML_DLOG(INFO)
+        << "Rasterizer::NotifyLowMemoryWarning called with no surface.";
     return;
   }
   auto context = surface_->GetContext();
   if (!context) {
-    FML_DLOG(INFO) << "Rasterizer::PurgeCaches called with no GrContext.";
+    FML_DLOG(INFO)
+        << "Rasterizer::NotifyLowMemoryWarning called with no GrContext.";
     return;
   }
-  context->freeGpuResources();
+  context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
 flutter::TextureRegistry* Rasterizer::GetTextureRegistry() {
@@ -293,6 +297,7 @@ RasterStatus Rasterizer::DoDraw(
 #if !defined(OS_FUCHSIA)
   const fml::TimePoint frame_target_time = layer_tree->target_time();
 #endif
+  timing.Set(FrameTiming::kVsyncStart, layer_tree->vsync_start());
   timing.Set(FrameTiming::kBuildStart, layer_tree->build_start());
   timing.Set(FrameTiming::kBuildFinish, layer_tree->build_finish());
   timing.Set(FrameTiming::kRasterStart, fml::TimePoint::Now());
@@ -452,10 +457,6 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   return RasterStatus::kFailed;
 }
 
-static sk_sp<SkData> SerializeTypeface(SkTypeface* typeface, void* ctx) {
-  return typeface->serialize(SkTypeface::SerializeBehavior::kDoIncludeData);
-}
-
 static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context) {
@@ -467,21 +468,35 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  // TODO(arbreng: fxb/55805) Our ScopedFrame implementation doesnt do the
+  // right thing here so initialize the base class directly. This wont be
+  // needed after we move to using the embedder API on Fuchsia.
+  auto frame = std::make_unique<flutter::CompositorContext::ScopedFrame>(
+      compositor_context, nullptr, recorder.getRecordingCanvas(), nullptr,
+      root_surface_transformation, false, true, nullptr);
+#else
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
   // https://github.com/flutter/flutter/issues/23435
   auto frame = compositor_context.AcquireFrame(
       nullptr, recorder.getRecordingCanvas(), nullptr,
       root_surface_transformation, false, true, nullptr);
+#endif  // defined(LEGACY_FUCHSIA_EMBEDDER)
 
   frame->Raster(*tree, true);
 
+#if defined(OS_FUCHSIA)
   SkSerialProcs procs = {0};
-  procs.fTypefaceProc = SerializeTypeface;
+  procs.fImageProc = SerializeImageWithoutData;
+#else
+  SkSerialProcs procs = {0};
+  procs.fTypefaceProc = SerializeTypefaceWithData;
+#endif
 
   return recorder.finishRecordingAsPicture()->serialize(&procs);
 }
 
-static sk_sp<SkSurface> CreateSnapshotSurface(GrContext* surface_context,
+static sk_sp<SkSurface> CreateSnapshotSurface(GrDirectContext* surface_context,
                                               const SkISize& size) {
   const auto image_info = SkImageInfo::MakeN32Premul(
       size.width(), size.height(), SkColorSpace::MakeSRGB());
@@ -502,7 +517,7 @@ static sk_sp<SkSurface> CreateSnapshotSurface(GrContext* surface_context,
 sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context,
-    GrContext* surface_context,
+    GrDirectContext* surface_context,
     bool compressed) {
   // Attempt to create a snapshot surface depending on whether we have access to
   // a valid GPU rendering context.
@@ -582,7 +597,8 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
 
   sk_sp<SkData> data = nullptr;
 
-  GrContext* surface_context = surface_ ? surface_->GetContext() : nullptr;
+  GrDirectContext* surface_context =
+      surface_ ? surface_->GetContext() : nullptr;
 
   switch (type) {
     case ScreenshotType::SkiaPicture:
@@ -641,7 +657,7 @@ void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
     return;
   }
 
-  GrContext* context = surface_->GetContext();
+  GrDirectContext* context = surface_->GetContext();
   if (context) {
     int max_resources;
     context->getResourceCacheLimits(&max_resources, nullptr);
@@ -653,7 +669,7 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
   if (!surface_) {
     return std::nullopt;
   }
-  GrContext* context = surface_->GetContext();
+  GrDirectContext* context = surface_->GetContext();
   if (context) {
     size_t max_bytes;
     context->getResourceCacheLimits(nullptr, &max_bytes);

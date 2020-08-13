@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
+// @dart = 2.10
 part of dart.ui;
 
 /// Signature of callbacks that have no arguments and return no data.
@@ -47,6 +47,11 @@ typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 ///
 /// [FrameTiming] records a timestamp of each phase for performance analysis.
 enum FramePhase {
+  /// The timestamp of the vsync signal given by the operating system.
+  ///
+  /// See also [FrameTiming.vsyncOverhead].
+  vsyncStart,
+
   /// When the UI thread starts building a frame.
   ///
   /// See also [FrameTiming.buildDuration].
@@ -84,12 +89,32 @@ enum FramePhase {
 class FrameTiming {
   /// Construct [FrameTiming] with raw timestamps in microseconds.
   ///
+  /// This constructor is used for unit test only. Real [FrameTiming]s should
+  /// be retrieved from [Window.onReportTimings].
+  factory FrameTiming({
+    required int vsyncStart,
+    required int buildStart,
+    required int buildFinish,
+    required int rasterStart,
+    required int rasterFinish,
+  }) {
+    return FrameTiming._(<int>[
+      vsyncStart,
+      buildStart,
+      buildFinish,
+      rasterStart,
+      rasterFinish
+    ]);
+  }
+
+  /// Construct [FrameTiming] with raw timestamps in microseconds.
+  ///
   /// List [timestamps] must have the same number of elements as
   /// [FramePhase.values].
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
   /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
-  FrameTiming(List<int> timestamps)
+  FrameTiming._(List<int> timestamps)
       : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
 
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
@@ -121,14 +146,18 @@ class FrameTiming {
   /// {@macro dart.ui.FrameTiming.fps_milliseconds}
   Duration get rasterDuration => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.rasterStart);
 
-  /// The timespan between build start and raster finish.
+  /// The duration between receiving the vsync signal and starting building the
+  /// frame.
+  Duration get vsyncOverhead => _rawDuration(FramePhase.buildStart) - _rawDuration(FramePhase.vsyncStart);
+
+  /// The timespan between vsync start and raster finish.
   ///
   /// To achieve the lowest latency on an X fps display, this should not exceed
   /// 1000/X milliseconds.
   /// {@macro dart.ui.FrameTiming.fps_milliseconds}
   ///
-  /// See also [buildDuration] and [rasterDuration].
-  Duration get totalSpan => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.buildStart);
+  /// See also [vsyncOverhead], [buildDuration] and [rasterDuration].
+  Duration get totalSpan => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.vsyncStart);
 
   final List<int> _timestamps;  // in microseconds
 
@@ -136,7 +165,7 @@ class FrameTiming {
 
   @override
   String toString() {
-    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, totalSpan: ${_formatMS(totalSpan)})';
+    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, vsyncOverhead: ${_formatMS(vsyncOverhead)}, totalSpan: ${_formatMS(totalSpan)})';
   }
 }
 
@@ -716,10 +745,11 @@ class Window {
   /// This value is calculated by taking
   /// `max(0.0, Window.viewPadding - Window.viewInsets)`. This will treat a
   /// system IME that increases the bottom inset as consuming that much of the
-  /// bottom padding. For example, on an iPhone X, [Window.padding.bottom] is
-  /// the same as [Window.viewPadding.bottom] when the soft keyboard is not
-  /// drawn (to account for the bottom soft button area), but will be `0.0` when
-  /// the soft keyboard is visible.
+  /// bottom padding. For example, on an iPhone X, [EdgeInsets.bottom] of
+  /// [Window.padding] is the same as [EdgeInsets.bottom] of
+  /// [Window.viewPadding] when the soft keyboard is not drawn (to account for
+  /// the bottom soft button area), but will be `0.0` when the soft keyboard is
+  /// visible.
   ///
   /// When this changes, [onMetricsChanged] is called.
   ///
@@ -822,7 +852,7 @@ class Window {
     }
     return null;
   }
-  List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) native 'Window_computePlatformResolvedLocale';
+  List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) native 'PlatformConfiguration_computePlatformResolvedLocale';
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -1000,7 +1030,7 @@ class Window {
   }
 
   late _SetNeedsReportTimingsFunc _setNeedsReportTimings;
-  void _nativeSetNeedsReportTimings(bool value) native 'Window_setNeedsReportTimings';
+  void _nativeSetNeedsReportTimings(bool value) native 'PlatformConfiguration_setNeedsReportTimings';
 
   /// A callback that is invoked when pointer data is available.
   ///
@@ -1050,7 +1080,7 @@ class Window {
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
   String get defaultRouteName => _defaultRouteName();
-  String _defaultRouteName() native 'Window_defaultRouteName';
+  String _defaultRouteName() native 'PlatformConfiguration_defaultRouteName';
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame]
   /// and [onDrawFrame] callbacks be invoked.
@@ -1059,7 +1089,7 @@ class Window {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
-  void scheduleFrame() native 'Window_scheduleFrame';
+  void scheduleFrame() native 'PlatformConfiguration_scheduleFrame';
 
   /// Updates the application's rendering on the GPU with the newly provided
   /// [Scene]. This function must be called within the scope of the
@@ -1085,7 +1115,7 @@ class Window {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  void render(Scene scene) native 'Window_render';
+  void render(Scene scene) native 'PlatformConfiguration_render';
 
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.
@@ -1125,7 +1155,7 @@ class Window {
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
-  // The zero value matches the default value in `window_data.h`.
+  // The zero value matches the default value in `platform_data.h`.
   AccessibilityFeatures _accessibilityFeatures = const AccessibilityFeatures._(0);
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
@@ -1147,7 +1177,7 @@ class Window {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) native 'Window_updateSemantics';
+  void updateSemantics(SemanticsUpdate update) native 'PlatformConfiguration_updateSemantics';
 
   /// Set the debug name associated with this window's root isolate.
   ///
@@ -1157,7 +1187,7 @@ class Window {
   /// This can be combined with flutter tools `--isolate-filter` flag to debug
   /// specific root isolates. For example: `flutter attach --isolate-filter=[name]`.
   /// Note that this does not rename any child isolates of the root.
-  void setIsolateDebugName(String name) native 'Window_setIsolateDebugName';
+  void setIsolateDebugName(String name) native 'PlatformConfiguration_setIsolateDebugName';
 
   /// Sends a message to a platform-specific plugin.
   ///
@@ -1178,7 +1208,7 @@ class Window {
   }
   String? _sendPlatformMessage(String name,
                               PlatformMessageResponseCallback? callback,
-                              ByteData? data) native 'Window_sendPlatformMessage';
+                              ByteData? data) native 'PlatformConfiguration_sendPlatformMessage';
 
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.
@@ -1203,7 +1233,7 @@ class Window {
 
   /// Called by [_dispatchPlatformMessage].
   void _respondToPlatformMessage(int responseId, ByteData? data)
-      native 'Window_respondToPlatformMessage';
+      native 'PlatformConfiguration_respondToPlatformMessage';
 
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
@@ -1229,7 +1259,7 @@ class Window {
   ///
   /// For asynchronous communication between the embedder and isolate, a
   /// platform channel may be used.
-  ByteData? getPersistentIsolateData() native 'Window_getPersistentIsolateData';
+  ByteData? getPersistentIsolateData() native 'PlatformConfiguration_getPersistentIsolateData';
 }
 
 /// Additional accessibility features that may be enabled by the platform.

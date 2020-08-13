@@ -282,20 +282,21 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return YES;
 }
 
-- (NSString*)routeName {
-  // Returns the first non-null and non-empty semantic label of a child
-  // with an NamesRoute flag. Otherwise returns nil.
+- (SemanticsObject*)routeFocusObject {
+  // Returns the first SemanticObject in this branch that has
+  // the NamesRoute flag with a non-nil semantic label. Otherwise
+  // returns nil.
   if ([self node].HasFlag(flutter::SemanticsFlags::kNamesRoute)) {
     NSString* newName = [self accessibilityLabel];
     if (newName != nil && [newName length] > 0) {
-      return newName;
+      return self;
     }
   }
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      NSString* newName = [child routeName];
-      if (newName != nil && [newName length] > 0) {
-        return newName;
+      SemanticsObject* focusObject = [child routeFocusObject];
+      if (focusObject != nil) {
+        return focusObject;
       }
     }
   }
@@ -452,6 +453,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (void)accessibilityElementDidBecomeFocused {
   if (![self isAccessibilityBridgeAlive])
     return;
+  [self bridge]->AccessibilityFocusDidChange([self uid]);
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsHidden) ||
       [self node].HasFlag(flutter::SemanticsFlags::kIsHeader)) {
     [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);

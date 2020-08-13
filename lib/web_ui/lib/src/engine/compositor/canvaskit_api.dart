@@ -6,164 +6,19 @@
 ///
 /// Prefer keeping the originl CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
+
+// @dart = 2.10
 part of engine;
 
-final js.JsObject _jsWindow = js.JsObject.fromBrowserObject(html.window);
+/// Entrypoint into the CanvasKit API.
+late CanvasKit canvasKit;
 
-/// This and [_jsObjectWrapper] below are used to convert `@JS`-backed
-/// objects to [js.JsObject]s. To do that we use `@JS` to pass the object
-/// to JavaScript (see [JsObjectWrapper]), then use this variable (which
-/// uses `dart:js`) to read the value back, causing it to be wrapped in
-/// [js.JsObject].
+/// Sets the [CanvasKit] object on `window` so we can use `@JS()` to bind to
+/// static APIs.
 ///
-// TODO(yjbanov): this is a temporary hack until we fully migrate to @JS.
-final js.JsObject _jsObjectWrapperLegacy = js.JsObject(js.context['Object']);
-
-@JS('window.flutter_js_object_wrapper')
-external JsObjectWrapper get _jsObjectWrapper;
-
-@visibleForTesting
-JsObjectWrapper get debugJsObjectWrapper => _jsObjectWrapper;
-
-void initializeCanvasKitBindings(js.JsObject canvasKit) {
-  // Because JsObject cannot be cast to a @JS type, we stash CanvasKit into
-  // a global and use the [canvasKitJs] getter to access it.
-  _jsWindow['flutter_canvas_kit'] = canvasKit;
-  _jsWindow['flutter_js_object_wrapper'] = _jsObjectWrapperLegacy;
-}
-
-@JS()
-class JsObjectWrapper {
-  external set skPaint(SkPaint? paint);
-  external set skMaskFilter(SkMaskFilter? filter);
-  external set skColorFilter(SkColorFilter? filter);
-  external set skImageFilter(SkImageFilter? filter);
-  external set skPath(SkPath? path);
-  external set skImage(SkImage? image);
-  external SkCanvas? get skCanvas;
-  external set skCanvas(SkCanvas? canvas);
-  external SkPicture? get skPicture;
-  external set skPicture(SkPicture? picture);
-  external SkParagraph? get skParagraph;
-  external set skParagraph(SkParagraph? paragraph);
-}
-
-/// Reads [JsObjectWrapper.skPath] as [SkPathArcToPointOverload].
-@JS('window.flutter_js_object_wrapper.skPath')
-external SkPathArcToPointOverload get _skPathArcToPointOverload;
-
-/// Reads [JsObjectWrapper.skCanvas] as [SkCanvasSaveLayerWithoutBoundsOverride].
-@JS('window.flutter_js_object_wrapper.skCanvas')
-external SkCanvasSaveLayerWithoutBoundsOverride get _skCanvasSaveLayerWithoutBoundsOverride;
-
-/// Reads [JsObjectWrapper.skCanvas] as [SkCanvasSaveLayerWithFilterOverride].
-@JS('window.flutter_js_object_wrapper.skCanvas')
-external SkCanvasSaveLayerWithFilterOverride get _skCanvasSaveLayerWithFilterOverride;
-
-/// Specific methods that wrap `@JS`-backed objects into a [js.JsObject]
-/// for use with legacy `dart:js` API.
-extension JsObjectWrappers on JsObjectWrapper {
-  js.JsObject wrapSkPaint(SkPaint paint) {
-    _jsObjectWrapper.skPaint = paint;
-    js.JsObject wrapped = _jsObjectWrapperLegacy['skPaint'];
-    _jsObjectWrapper.skPaint = null;
-    return wrapped;
-  }
-
-  js.JsObject wrapSkMaskFilter(SkMaskFilter filter) {
-    _jsObjectWrapper.skMaskFilter = filter;
-    js.JsObject wrapped = _jsObjectWrapperLegacy['skMaskFilter'];
-    _jsObjectWrapper.skMaskFilter = null;
-    return wrapped;
-  }
-
-  js.JsObject wrapSkColorFilter(SkColorFilter filter) {
-    _jsObjectWrapper.skColorFilter = filter;
-    js.JsObject wrapped = _jsObjectWrapperLegacy['skColorFilter'];
-    _jsObjectWrapper.skColorFilter = null;
-    return wrapped;
-  }
-
-  js.JsObject wrapSkImageFilter(SkImageFilter filter) {
-    _jsObjectWrapper.skImageFilter = filter;
-    js.JsObject wrapped = _jsObjectWrapperLegacy['skImageFilter'];
-    _jsObjectWrapper.skImageFilter = null;
-    return wrapped;
-  }
-
-  js.JsObject wrapSkPath(SkPath path) {
-    _jsObjectWrapper.skPath = path;
-    js.JsObject wrapped = _jsObjectWrapperLegacy['skPath'];
-    _jsObjectWrapper.skPath = null;
-    return wrapped;
-  }
-
-  js.JsObject wrapSkImage(SkImage image) {
-    _jsObjectWrapper.skImage = image;
-    js.JsObject wrapped = _jsObjectWrapperLegacy['skImage'];
-    _jsObjectWrapper.skImage = null;
-    return wrapped;
-  }
-
-  js.JsObject wrapSkPicture(SkPicture picture) {
-    _jsObjectWrapper.skPicture = picture;
-    js.JsObject wrapped = _jsObjectWrapperLegacy['skPicture'];
-    _jsObjectWrapper.skPicture = null;
-    return wrapped;
-  }
-
-  SkPicture unwrapSkPicture(js.JsObject wrapped) {
-    _jsObjectWrapperLegacy['skPicture'] = wrapped;
-    final SkPicture unwrapped = _jsObjectWrapper.skPicture!;
-    _jsObjectWrapper.skPicture = null;
-    return unwrapped;
-  }
-
-  js.JsObject wrapSkParagraph(SkParagraph paragraph) {
-    _jsObjectWrapper.skParagraph = paragraph;
-    js.JsObject wrapped = _jsObjectWrapperLegacy['skParagraph'];
-    _jsObjectWrapper.skParagraph = null;
-    return wrapped;
-  }
-
-  SkParagraph unwrapSkParagraph(js.JsObject wrapped) {
-    _jsObjectWrapperLegacy['skParagraph'] = wrapped;
-    final SkParagraph unwrapped = _jsObjectWrapper.skParagraph!;
-    _jsObjectWrapper.skParagraph = null;
-    return unwrapped;
-  }
-
-  SkCanvas unwrapSkCanvas(js.JsObject wrapped) {
-    _jsObjectWrapperLegacy['skCanvas'] = wrapped;
-    final SkCanvas unwrapped = _jsObjectWrapper.skCanvas!;
-    _jsObjectWrapper.skCanvas = null;
-    return unwrapped;
-  }
-
-  SkPathArcToPointOverload castToSkPathArcToPointOverload(SkPath path) {
-    _jsObjectWrapper.skPath = path;
-    final SkPathArcToPointOverload overload = _skPathArcToPointOverload;
-    _jsObjectWrapper.skPath = null;
-    return overload;
-  }
-
-  SkCanvasSaveLayerWithoutBoundsOverride castToSkCanvasSaveLayerWithoutBoundsOverride(SkCanvas canvas) {
-    _jsObjectWrapper.skCanvas = canvas;
-    final SkCanvasSaveLayerWithoutBoundsOverride overload = _skCanvasSaveLayerWithoutBoundsOverride;
-    _jsObjectWrapper.skCanvas = null;
-    return overload;
-  }
-
-  SkCanvasSaveLayerWithFilterOverride castToSkCanvasSaveLayerWithFilterOverride(SkCanvas canvas) {
-    _jsObjectWrapper.skCanvas = canvas;
-    final SkCanvasSaveLayerWithFilterOverride overload = _skCanvasSaveLayerWithFilterOverride;
-    _jsObjectWrapper.skCanvas = null;
-    return overload;
-  }
-}
-
+/// See, e.g. [SkPaint].
 @JS('window.flutter_canvas_kit')
-external CanvasKit get canvasKitJs;
+external set windowFlutterCanvasKit(CanvasKit value);
 
 @JS()
 class CanvasKit {
@@ -188,7 +43,8 @@ class CanvasKit {
   external SkFontSlantEnum get FontSlant;
   external SkAnimatedImage MakeAnimatedImageFromEncoded(Uint8List imageData);
   external SkShaderNamespace get SkShader;
-  external SkMaskFilter MakeBlurMaskFilter(SkBlurStyle blurStyle, double sigma, bool respectCTM);
+  external SkMaskFilter MakeBlurMaskFilter(
+      SkBlurStyle blurStyle, double sigma, bool respectCTM);
   external SkColorFilterNamespace get SkColorFilter;
   external SkImageFilterNamespace get SkImageFilter;
   external SkPath MakePathFromOp(SkPath path1, SkPath path2, SkPathOp pathOp);
@@ -202,7 +58,8 @@ class CanvasKit {
     Uint16List? indices,
   );
   external SkParagraphBuilderNamespace get ParagraphBuilder;
-  external SkParagraphStyle ParagraphStyle(SkParagraphStyleProperties properties);
+  external SkParagraphStyle ParagraphStyle(
+      SkParagraphStyleProperties properties);
   external SkTextStyle TextStyle(SkTextStyleProperties properties);
 
   // Text decoration enum is embedded in the CanvasKit object itself.
@@ -213,6 +70,70 @@ class CanvasKit {
   // End of text decoration enum.
 
   external SkFontMgrNamespace get SkFontMgr;
+  external TypefaceFontProviderNamespace get TypefaceFontProvider;
+  external int GetWebGLContext(
+      html.CanvasElement canvas, SkWebGLContextOptions options);
+  external SkGrContext MakeGrContext(int glContext);
+  external SkSurface MakeOnScreenGLSurface(
+    SkGrContext grContext,
+    double width,
+    double height,
+    SkColorSpace colorSpace,
+  );
+  external SkSurface MakeSWCanvasSurface(html.CanvasElement canvas);
+  external void setCurrentContext(int glContext);
+}
+
+@JS('window.CanvasKitInit')
+external CanvasKitInitPromise CanvasKitInit(CanvasKitInitOptions options);
+
+typedef LocateFileCallback = String Function(String file, String unusedBase);
+
+@JS()
+@anonymous
+class CanvasKitInitOptions {
+  external factory CanvasKitInitOptions({
+    required LocateFileCallback locateFile,
+  });
+}
+
+typedef CanvasKitInitCallback = void Function(CanvasKit canvasKit);
+
+@JS()
+class CanvasKitInitPromise {
+  external void then(CanvasKitInitCallback callback);
+}
+
+@JS('window.flutter_canvas_kit.SkColorSpace.SRGB')
+external SkColorSpace get SkColorSpaceSRGB;
+
+@JS()
+class SkColorSpace {}
+
+@JS()
+@anonymous
+class SkWebGLContextOptions {
+  external factory SkWebGLContextOptions({
+    required int anitalias,
+    // WebGL version: 1 or 2.
+    required int majorVersion,
+  });
+}
+
+@JS()
+class SkSurface {
+  external SkCanvas getCanvas();
+  external void flush();
+  external int width();
+  external int height();
+  external void dispose();
+}
+
+@JS()
+class SkGrContext {
+  external void setResourceCacheLimitBytes(int limit);
+  external void releaseResourcesAndAbandonContext();
+  external void delete();
 }
 
 @JS()
@@ -227,8 +148,8 @@ class SkFontSlant {
 }
 
 final List<SkFontSlant> _skFontSlants = <SkFontSlant>[
-  canvasKitJs.FontSlant.Upright,
-  canvasKitJs.FontSlant.Italic,
+  canvasKit.FontSlant.Upright,
+  canvasKit.FontSlant.Italic,
 ];
 
 SkFontSlant toSkFontSlant(ui.FontStyle style) {
@@ -254,15 +175,15 @@ class SkFontWeight {
 }
 
 final List<SkFontWeight> _skFontWeights = <SkFontWeight>[
-  canvasKitJs.FontWeight.Thin,
-  canvasKitJs.FontWeight.ExtraLight,
-  canvasKitJs.FontWeight.Light,
-  canvasKitJs.FontWeight.Normal,
-  canvasKitJs.FontWeight.Medium,
-  canvasKitJs.FontWeight.SemiBold,
-  canvasKitJs.FontWeight.Bold,
-  canvasKitJs.FontWeight.ExtraBold,
-  canvasKitJs.FontWeight.ExtraBlack,
+  canvasKit.FontWeight.Thin,
+  canvasKit.FontWeight.ExtraLight,
+  canvasKit.FontWeight.Light,
+  canvasKit.FontWeight.Normal,
+  canvasKit.FontWeight.Medium,
+  canvasKit.FontWeight.SemiBold,
+  canvasKit.FontWeight.Bold,
+  canvasKit.FontWeight.ExtraBold,
+  canvasKit.FontWeight.ExtraBlack,
 ];
 
 SkFontWeight toSkFontWeight(ui.FontWeight weight) {
@@ -281,8 +202,8 @@ class SkAffinity {
 }
 
 final List<SkAffinity> _skAffinitys = <SkAffinity>[
-  canvasKitJs.Affinity.Upstream,
-  canvasKitJs.Affinity.Downstream,
+  canvasKit.Affinity.Upstream,
+  canvasKit.Affinity.Downstream,
 ];
 
 SkAffinity toSkAffinity(ui.TextAffinity affinity) {
@@ -303,8 +224,8 @@ class SkTextDirection {
 // Flutter enumerates text directions as RTL, LTR, while CanvasKit
 // enumerates them LTR, RTL.
 final List<SkTextDirection> _skTextDirections = <SkTextDirection>[
-  canvasKitJs.TextDirection.RTL,
-  canvasKitJs.TextDirection.LTR,
+  canvasKit.TextDirection.RTL,
+  canvasKit.TextDirection.LTR,
 ];
 
 SkTextDirection toSkTextDirection(ui.TextDirection direction) {
@@ -327,12 +248,12 @@ class SkTextAlign {
 }
 
 final List<SkTextAlign> _skTextAligns = <SkTextAlign>[
-  canvasKitJs.TextAlign.Left,
-  canvasKitJs.TextAlign.Right,
-  canvasKitJs.TextAlign.Center,
-  canvasKitJs.TextAlign.Justify,
-  canvasKitJs.TextAlign.Start,
-  canvasKitJs.TextAlign.End,
+  canvasKit.TextAlign.Left,
+  canvasKit.TextAlign.Right,
+  canvasKit.TextAlign.Center,
+  canvasKit.TextAlign.Justify,
+  canvasKit.TextAlign.Start,
+  canvasKit.TextAlign.End,
 ];
 
 SkTextAlign toSkTextAlign(ui.TextAlign align) {
@@ -352,8 +273,8 @@ class SkRectHeightStyle {
 }
 
 final List<SkRectHeightStyle> _skRectHeightStyles = <SkRectHeightStyle>[
-  canvasKitJs.RectHeightStyle.Tight,
-  canvasKitJs.RectHeightStyle.Max,
+  canvasKit.RectHeightStyle.Tight,
+  canvasKit.RectHeightStyle.Max,
 ];
 
 SkRectHeightStyle toSkRectHeightStyle(ui.BoxHeightStyle style) {
@@ -373,8 +294,8 @@ class SkRectWidthStyle {
 }
 
 final List<SkRectWidthStyle> _skRectWidthStyles = <SkRectWidthStyle>[
-  canvasKitJs.RectWidthStyle.Tight,
-  canvasKitJs.RectWidthStyle.Max,
+  canvasKit.RectWidthStyle.Tight,
+  canvasKit.RectWidthStyle.Max,
 ];
 
 SkRectWidthStyle toSkRectWidthStyle(ui.BoxWidthStyle style) {
@@ -395,9 +316,9 @@ class SkVertexMode {
 }
 
 final List<SkVertexMode> _skVertexModes = <SkVertexMode>[
-  canvasKitJs.VertexMode.Triangles,
-  canvasKitJs.VertexMode.TrianglesStrip,
-  canvasKitJs.VertexMode.TriangleFan,
+  canvasKit.VertexMode.Triangles,
+  canvasKit.VertexMode.TrianglesStrip,
+  canvasKit.VertexMode.TriangleFan,
 ];
 
 SkVertexMode toSkVertexMode(ui.VertexMode mode) {
@@ -417,9 +338,9 @@ class SkPointMode {
 }
 
 final List<SkPointMode> _skPointModes = <SkPointMode>[
-  canvasKitJs.PointMode.Points,
-  canvasKitJs.PointMode.Lines,
-  canvasKitJs.PointMode.Polygon,
+  canvasKit.PointMode.Points,
+  canvasKit.PointMode.Lines,
+  canvasKit.PointMode.Polygon,
 ];
 
 SkPointMode toSkPointMode(ui.PointMode mode) {
@@ -438,8 +359,8 @@ class SkClipOp {
 }
 
 final List<SkClipOp> _skClipOps = <SkClipOp>[
-  canvasKitJs.ClipOp.Difference,
-  canvasKitJs.ClipOp.Intersect,
+  canvasKit.ClipOp.Difference,
+  canvasKit.ClipOp.Intersect,
 ];
 
 SkClipOp toSkClipOp(ui.ClipOp clipOp) {
@@ -458,8 +379,8 @@ class SkFillType {
 }
 
 final List<SkFillType> _skFillTypes = <SkFillType>[
-  canvasKitJs.FillType.Winding,
-  canvasKitJs.FillType.EvenOdd,
+  canvasKit.FillType.Winding,
+  canvasKit.FillType.EvenOdd,
 ];
 
 SkFillType toSkFillType(ui.PathFillType fillType) {
@@ -481,11 +402,11 @@ class SkPathOp {
 }
 
 final List<SkPathOp> _skPathOps = <SkPathOp>[
-  canvasKitJs.PathOp.Difference,
-  canvasKitJs.PathOp.Intersect,
-  canvasKitJs.PathOp.Union,
-  canvasKitJs.PathOp.XOR,
-  canvasKitJs.PathOp.ReverseDifference,
+  canvasKit.PathOp.Difference,
+  canvasKit.PathOp.Intersect,
+  canvasKit.PathOp.Union,
+  canvasKit.PathOp.XOR,
+  canvasKit.PathOp.ReverseDifference,
 ];
 
 SkPathOp toSkPathOp(ui.PathOperation pathOp) {
@@ -506,10 +427,10 @@ class SkBlurStyle {
 }
 
 final List<SkBlurStyle> _skBlurStyles = <SkBlurStyle>[
-  canvasKitJs.BlurStyle.Normal,
-  canvasKitJs.BlurStyle.Solid,
-  canvasKitJs.BlurStyle.Outer,
-  canvasKitJs.BlurStyle.Inner,
+  canvasKit.BlurStyle.Normal,
+  canvasKit.BlurStyle.Solid,
+  canvasKit.BlurStyle.Outer,
+  canvasKit.BlurStyle.Inner,
 ];
 
 SkBlurStyle toSkBlurStyle(ui.BlurStyle style) {
@@ -529,9 +450,9 @@ class SkStrokeCap {
 }
 
 final List<SkStrokeCap> _skStrokeCaps = <SkStrokeCap>[
-  canvasKitJs.StrokeCap.Butt,
-  canvasKitJs.StrokeCap.Round,
-  canvasKitJs.StrokeCap.Square,
+  canvasKit.StrokeCap.Butt,
+  canvasKit.StrokeCap.Round,
+  canvasKit.StrokeCap.Square,
 ];
 
 SkStrokeCap toSkStrokeCap(ui.StrokeCap strokeCap) {
@@ -550,8 +471,8 @@ class SkPaintStyle {
 }
 
 final List<SkPaintStyle> _skPaintStyles = <SkPaintStyle>[
-  canvasKitJs.PaintStyle.Fill,
-  canvasKitJs.PaintStyle.Stroke,
+  canvasKit.PaintStyle.Fill,
+  canvasKit.PaintStyle.Stroke,
 ];
 
 SkPaintStyle toSkPaintStyle(ui.PaintingStyle paintStyle) {
@@ -597,35 +518,35 @@ class SkBlendMode {
 }
 
 final List<SkBlendMode> _skBlendModes = <SkBlendMode>[
-  canvasKitJs.BlendMode.Clear,
-  canvasKitJs.BlendMode.Src,
-  canvasKitJs.BlendMode.Dst,
-  canvasKitJs.BlendMode.SrcOver,
-  canvasKitJs.BlendMode.DstOver,
-  canvasKitJs.BlendMode.SrcIn,
-  canvasKitJs.BlendMode.DstIn,
-  canvasKitJs.BlendMode.SrcOut,
-  canvasKitJs.BlendMode.DstOut,
-  canvasKitJs.BlendMode.SrcATop,
-  canvasKitJs.BlendMode.DstATop,
-  canvasKitJs.BlendMode.Xor,
-  canvasKitJs.BlendMode.Plus,
-  canvasKitJs.BlendMode.Modulate,
-  canvasKitJs.BlendMode.Screen,
-  canvasKitJs.BlendMode.Overlay,
-  canvasKitJs.BlendMode.Darken,
-  canvasKitJs.BlendMode.Lighten,
-  canvasKitJs.BlendMode.ColorDodge,
-  canvasKitJs.BlendMode.ColorBurn,
-  canvasKitJs.BlendMode.HardLight,
-  canvasKitJs.BlendMode.SoftLight,
-  canvasKitJs.BlendMode.Difference,
-  canvasKitJs.BlendMode.Exclusion,
-  canvasKitJs.BlendMode.Multiply,
-  canvasKitJs.BlendMode.Hue,
-  canvasKitJs.BlendMode.Saturation,
-  canvasKitJs.BlendMode.Color,
-  canvasKitJs.BlendMode.Luminosity,
+  canvasKit.BlendMode.Clear,
+  canvasKit.BlendMode.Src,
+  canvasKit.BlendMode.Dst,
+  canvasKit.BlendMode.SrcOver,
+  canvasKit.BlendMode.DstOver,
+  canvasKit.BlendMode.SrcIn,
+  canvasKit.BlendMode.DstIn,
+  canvasKit.BlendMode.SrcOut,
+  canvasKit.BlendMode.DstOut,
+  canvasKit.BlendMode.SrcATop,
+  canvasKit.BlendMode.DstATop,
+  canvasKit.BlendMode.Xor,
+  canvasKit.BlendMode.Plus,
+  canvasKit.BlendMode.Modulate,
+  canvasKit.BlendMode.Screen,
+  canvasKit.BlendMode.Overlay,
+  canvasKit.BlendMode.Darken,
+  canvasKit.BlendMode.Lighten,
+  canvasKit.BlendMode.ColorDodge,
+  canvasKit.BlendMode.ColorBurn,
+  canvasKit.BlendMode.HardLight,
+  canvasKit.BlendMode.SoftLight,
+  canvasKit.BlendMode.Difference,
+  canvasKit.BlendMode.Exclusion,
+  canvasKit.BlendMode.Multiply,
+  canvasKit.BlendMode.Hue,
+  canvasKit.BlendMode.Saturation,
+  canvasKit.BlendMode.Color,
+  canvasKit.BlendMode.Luminosity,
 ];
 
 SkBlendMode toSkBlendMode(ui.BlendMode blendMode) {
@@ -645,15 +566,14 @@ class SkStrokeJoin {
 }
 
 final List<SkStrokeJoin> _skStrokeJoins = <SkStrokeJoin>[
-  canvasKitJs.StrokeJoin.Miter,
-  canvasKitJs.StrokeJoin.Round,
-  canvasKitJs.StrokeJoin.Bevel,
+  canvasKit.StrokeJoin.Miter,
+  canvasKit.StrokeJoin.Round,
+  canvasKit.StrokeJoin.Bevel,
 ];
 
 SkStrokeJoin toSkStrokeJoin(ui.StrokeJoin strokeJoin) {
   return _skStrokeJoins[strokeJoin.index];
 }
-
 
 @JS()
 class SkFilterQualityEnum {
@@ -669,16 +589,15 @@ class SkFilterQuality {
 }
 
 final List<SkFilterQuality> _skFilterQualitys = <SkFilterQuality>[
-  canvasKitJs.FilterQuality.None,
-  canvasKitJs.FilterQuality.Low,
-  canvasKitJs.FilterQuality.Medium,
-  canvasKitJs.FilterQuality.High,
+  canvasKit.FilterQuality.None,
+  canvasKit.FilterQuality.Low,
+  canvasKit.FilterQuality.Medium,
+  canvasKit.FilterQuality.High,
 ];
 
 SkFilterQuality toSkFilterQuality(ui.FilterQuality filterQuality) {
   return _skFilterQualitys[filterQuality.index];
 }
-
 
 @JS()
 class SkTileModeEnum {
@@ -693,9 +612,9 @@ class SkTileMode {
 }
 
 final List<SkTileMode> _skTileModes = <SkTileMode>[
-  canvasKitJs.TileMode.Clamp,
-  canvasKitJs.TileMode.Repeat,
-  canvasKitJs.TileMode.Mirror,
+  canvasKit.TileMode.Clamp,
+  canvasKit.TileMode.Repeat,
+  canvasKit.TileMode.Mirror,
 ];
 
 SkTileMode toSkTileMode(ui.TileMode mode) {
@@ -705,6 +624,7 @@ SkTileMode toSkTileMode(ui.TileMode mode) {
 @JS()
 class SkAnimatedImage {
   external int getFrameCount();
+
   /// Returns duration in milliseconds.
   external int getRepetitionCount();
   external int decodeNextFrame();
@@ -723,7 +643,11 @@ class SkImage {
   external void delete();
   external int width();
   external int height();
-  external SkShader makeShader(SkTileMode tileModeX, SkTileMode tileModeY);
+  external SkShader makeShader(
+    SkTileMode tileModeX,
+    SkTileMode tileModeY,
+    Float32List? matrix, // 3x3 matrix
+  );
 }
 
 @JS()
@@ -757,11 +681,23 @@ class SkShaderNamespace {
     Float32List? matrix, // 3x3 matrix
     int flags,
   );
+
+  external SkShader MakeSweepGradient(
+    double cx,
+    double cy,
+    List<Float32List> colors,
+    Float32List colorStops,
+    SkTileMode tileMode,
+    Float32List? matrix, // 3x3 matrix
+    int flags,
+    double startAngle,
+    double endAngle,
+  );
 }
 
 @JS()
 class SkShader {
-
+  external void delete();
 }
 
 // This needs to be bound to top-level because SkPaint is initialized
@@ -828,6 +764,13 @@ class SkImageFilterNamespace {
 class SkImageFilter {
   external void delete();
 }
+
+// Mappings from SkMatrix-index to input-index.
+const List<int> _skMatrixIndexToMatrix4Index = <int>[
+  0, 4, 12, // Row 1
+  1, 5, 13, // Row 2
+  3, 7, 15, // Row 3
+];
 
 /// Converts a 4x4 Flutter matrix (represented as a [Float32List]) to an
 /// SkMatrix, which is a 3x3 transform matrix.
@@ -951,6 +894,7 @@ Float32List _populateSkColor(SkFloat32List skColor, ui.Color color) {
 Float32List toSharedSkColor1(ui.Color color) {
   return _populateSkColor(_sharedSkColor1, color);
 }
+
 final SkFloat32List _sharedSkColor1 = mallocFloat32List(4);
 
 /// Unpacks the [color] into CanvasKit-compatible representation stored
@@ -961,6 +905,7 @@ final SkFloat32List _sharedSkColor1 = mallocFloat32List(4);
 Float32List toSharedSkColor2(ui.Color color) {
   return _populateSkColor(_sharedSkColor2, color);
 }
+
 final SkFloat32List _sharedSkColor2 = mallocFloat32List(4);
 
 /// Unpacks the [color] into CanvasKit-compatible representation stored
@@ -971,6 +916,7 @@ final SkFloat32List _sharedSkColor2 = mallocFloat32List(4);
 Float32List toSharedSkColor3(ui.Color color) {
   return _populateSkColor(_sharedSkColor3, color);
 }
+
 final SkFloat32List _sharedSkColor3 = mallocFloat32List(4);
 
 Uint32List toSkIntColorList(List<ui.Color> colors) {
@@ -1045,11 +991,20 @@ class SkPath {
   external void addRect(
     SkRect rect,
   );
-  external void arcTo(
+  external void arcToOval(
     SkRect oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
     bool forceMoveTo,
+  );
+  external void arcToRotated(
+    double radiusX,
+    double radiusY,
+    double rotation,
+    bool useSmallArc,
+    bool counterClockWise,
+    double x,
+    double y,
   );
   external void close();
   external void conicTo(
@@ -1126,21 +1081,6 @@ class SkPath {
     double pers0,
     double pers1,
     double pers2,
-  );
-}
-
-/// A different view on [SkPath] used to overload [SkPath.arcTo].
-// TODO(yjbanov): this is a hack to get around https://github.com/flutter/flutter/issues/61305
-@JS()
-class SkPathArcToPointOverload {
-  external void arcTo(
-    double radiusX,
-    double radiusY,
-    double rotation,
-    bool useSmallArc,
-    bool counterClockWise,
-    double x,
-    double y,
   );
 }
 
@@ -1306,6 +1246,11 @@ class SkPictureRecorder {
   external void delete();
 }
 
+/// We do not use the `delete` method (which may be removed in the future anyway).
+///
+/// By Skia coding convention raw pointers should always be treated as
+/// "borrowed", i.e. their memory is managed by other objects. In the case of
+/// [SkCanvas] it is managed by [SkPictureRecorder].
 @JS()
 class SkCanvas {
   external void clear(Float32List color);
@@ -1445,12 +1390,12 @@ class SkCanvas {
 }
 
 @JS()
-class SkCanvasSaveLayerWithoutBoundsOverride {
+class SkCanvasSaveLayerWithoutBoundsOverload {
   external void saveLayer(SkPaint paint);
 }
 
 @JS()
-class SkCanvasSaveLayerWithFilterOverride {
+class SkCanvasSaveLayerWithFilterOverload {
   external void saveLayer(
     SkPaint? paint,
     SkImageFilter? imageFilter,
@@ -1470,20 +1415,26 @@ class SkParagraphBuilderNamespace {
     SkParagraphStyle paragraphStyle,
     SkFontMgr? fontManager,
   );
+
+  external SkParagraphBuilder MakeFromFontProvider(
+    SkParagraphStyle paragraphStyle,
+    TypefaceFontProvider? fontManager,
+  );
 }
 
 @JS()
 class SkParagraphBuilder {
   external void addText(String text);
   external void pushStyle(SkTextStyle textStyle);
+  external void pushPaintStyle(
+      SkTextStyle textStyle, SkPaint foreground, SkPaint background);
   external void pop();
   external SkParagraph build();
   external void delete();
 }
 
 @JS()
-class SkParagraphStyle {
-}
+class SkParagraphStyle {}
 
 @JS()
 @anonymous
@@ -1511,9 +1462,7 @@ class SkParagraphStyleProperties {
 }
 
 @JS()
-class SkTextStyle {
-
-}
+class SkTextStyle {}
 
 @JS()
 @anonymous
@@ -1555,7 +1504,14 @@ class SkFontStyle {
 
 @JS()
 class SkFontMgr {
+  external String? getFamilyName(int fontId);
+  external void delete();
+}
 
+@JS('window.flutter_canvas_kit.TypefaceFontProvider')
+class TypefaceFontProvider extends SkFontMgr {
+  external TypefaceFontProvider();
+  external void registerFont(Uint8List font, String family);
 }
 
 @JS()
@@ -1596,7 +1552,9 @@ class SkTextRange {
 }
 
 @JS()
-class SkVertices { }
+class SkVertices {
+  external void delete();
+}
 
 @JS()
 @anonymous
@@ -1614,3 +1572,79 @@ class SkFontMgrNamespace {
   // TODO(yjbanov): can this be made non-null? It returns null in our unit-tests right now.
   external SkFontMgr? FromData(List<Uint8List> fonts);
 }
+
+@JS()
+class TypefaceFontProviderNamespace {
+  external TypefaceFontProvider Make();
+}
+
+Timer? _skObjectCollector;
+List<SkDeletable> _skObjectDeleteQueue = <SkDeletable>[];
+
+final SkObjectFinalizationRegistry<SkDeletable> skObjectFinalizationRegistry = SkObjectFinalizationRegistry<SkDeletable>(js.allowInterop((SkDeletable deletable) {
+  _skObjectDeleteQueue.add(deletable);
+  _skObjectCollector ??= _scheduleSkObjectCollection();
+}));
+
+/// Schedules an asap timer to delete garbage-collected Skia objects.
+///
+/// We use a timer for the following reasons:
+///
+///  - Deleting the object immediately may lead to dangling pointer as the Skia
+///    object may still be used by a function in the current frame. For example,
+///    a `CkPaint` + `SkPaint` pair may be created by the framework, passed to
+///    the engine, and the `CkPaint` dropped immediately. Because GC can kick in
+///    any time, including in the middle of the event, we may delete `SkPaint`
+///    prematurely.
+///  - A microtask, while solves the problem above, would prevent the event from
+///    yielding to the graphics system to render the frame on the screen if there
+///    is a large number of objects to delete, causing jank.
+Timer _scheduleSkObjectCollection() => Timer(Duration.zero, () {
+  html.window.performance.mark('SkObject collection-start');
+  final int length = _skObjectDeleteQueue.length;
+  for (int i = 0; i < length; i++) {
+    _skObjectDeleteQueue[i].delete();
+  }
+  _skObjectDeleteQueue = <SkDeletable>[];
+
+  // Null out the timer so we can schedule a new one next time objects are
+  // scheduled for deletion.
+  _skObjectCollector = null;
+  html.window.performance.mark('SkObject collection-end');
+  html.window.performance.measure('SkObject collection', 'SkObject collection-start', 'SkObject collection-end');
+});
+
+typedef SkObjectFinalizer<T> = void Function(T key);
+
+/// Any Skia object that has a `delete` method.
+@JS()
+class SkDeletable {
+  /// Deletes the C++ side object.
+  external void delete();
+}
+
+/// Attaches a weakly referenced object to another object and calls a finalizer
+/// with the latter when weakly referenced object is garbage collected.
+///
+/// We use this to delete Skia objects when their "Ck" wrapper is garbage
+/// collected.
+///
+/// Example sequence of events:
+///
+/// 1. A (CkPaint, SkPaint) pair created.
+/// 2. The paint is used to paint some picture.
+/// 3. CkPaint is dropped by the app.
+/// 4. GC decides to perform a GC cycle and collects CkPaint.
+/// 5. The finalizer function is called with the SkPaint as the sole argument.
+/// 6. We call `delete` on SkPaint.
+@JS('window.FinalizationRegistry')
+class SkObjectFinalizationRegistry<T> {
+  external SkObjectFinalizationRegistry(SkObjectFinalizer<T> finalizer);
+  external void register(Object ckObject, Object skObject);
+}
+
+@JS('window.FinalizationRegistry')
+external Object? get _finalizationRegistryConstructor;
+
+/// Whether the current browser supports `FinalizationRegistry`.
+bool browserSupportsFinalizationRegistry = _finalizationRegistryConstructor != null;

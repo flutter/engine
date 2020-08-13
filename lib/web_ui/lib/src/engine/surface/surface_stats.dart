@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// Surfaces that were retained this frame.
@@ -236,7 +237,7 @@ void _debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
     elementReuseCount += stats.reuseElementCount;
     totalAllocatedDomNodeCount += stats.allocatedDomNodeCount;
 
-    if (surface is PersistedStandardPicture) {
+    if (surface is PersistedPicture) {
       pictureCount += 1;
       paintCount += stats.paintCount;
 

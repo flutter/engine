@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// Enable this to print every command applied by a canvas.
@@ -58,7 +58,7 @@ class RecordingCanvas {
   /// method for more details.
   ui.Rect? get pictureBounds {
     assert(
-      _debugRecordingEnded,
+      _recordingEnded,
       'Picture bounds not available yet. Call [endRecording] before accessing picture bounds.',
     );
     return _pictureBounds;
@@ -101,9 +101,14 @@ class RecordingCanvas {
   bool get didDraw => _didDraw;
   bool _didDraw = false;
 
-  /// When assertions are enabled used to ensure that [endRecording] is called
-  /// before calling [apply] or [pictureBounds].
-  bool _debugRecordingEnded = false;
+  /// Used to ensure that [endRecording] is called before calling [apply] or
+  /// [pictureBounds].
+  ///
+  /// When [PaintingContext] is used by [ClipContext], the painter may
+  /// end a recording and start a new one and cause [ClipContext] to call
+  /// restore on a new canvas before prior save calls, [_recordingEnded]
+  /// prevents transforms removals in that case.
+  bool _recordingEnded = false;
 
   /// Stops recording drawing commands and computes paint bounds.
   ///
@@ -114,9 +119,7 @@ class RecordingCanvas {
   /// directly it is up to you to call this method explicitly.
   void endRecording() {
     _pictureBounds = _paintBounds.computeBounds();
-    if (assertionsEnabled) {
-      _debugRecordingEnded = true;
-    }
+    _recordingEnded = true;
   }
 
   /// Applies the recorded commands onto an [engineCanvas].
@@ -126,7 +129,7 @@ class RecordingCanvas {
   /// not applied to the [engineCanvas]. A command must have a non-zero
   /// intersection with the clip in order to be applied.
   void apply(EngineCanvas? engineCanvas, ui.Rect? clipRect) {
-    assert(_debugRecordingEnded);
+    assert(_recordingEnded);
     if (_debugDumpPaintCommands) {
       final StringBuffer debugBuf = StringBuffer();
       int skips = 0;
@@ -199,14 +202,14 @@ class RecordingCanvas {
   }
 
   void save() {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _paintBounds.saveTransformsAndClip();
     _commands.add(const PaintSave());
     _saveCount++;
   }
 
   void saveLayerWithoutBounds(SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     // TODO(het): Implement this correctly using another canvas.
     _commands.add(const PaintSave());
@@ -215,7 +218,7 @@ class RecordingCanvas {
   }
 
   void saveLayer(ui.Rect bounds, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     // TODO(het): Implement this correctly using another canvas.
     _commands.add(const PaintSave());
@@ -224,8 +227,9 @@ class RecordingCanvas {
   }
 
   void restore() {
-    assert(!_debugRecordingEnded);
-    _paintBounds.restoreTransformsAndClip();
+    if (!_recordingEnded) {
+      _paintBounds.restoreTransformsAndClip();
+    }
     if (_commands.isNotEmpty && _commands.last is PaintSave) {
       // A restore followed a save without any drawing operations in between.
       // This means that the save didn't have any effect on drawing operations
@@ -239,38 +243,38 @@ class RecordingCanvas {
   }
 
   void translate(double dx, double dy) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _paintBounds.translate(dx, dy);
     _commands.add(PaintTranslate(dx, dy));
   }
 
   void scale(double sx, double sy) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _paintBounds.scale(sx, sy);
     _commands.add(PaintScale(sx, sy));
   }
 
   void rotate(double radians) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _paintBounds.rotateZ(radians);
     _commands.add(PaintRotate(radians));
   }
 
   void transform(Float32List matrix4) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _paintBounds.transform(matrix4);
     _commands.add(PaintTransform(matrix4));
   }
 
   void skew(double sx, double sy) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _paintBounds.skew(sx, sy);
     _commands.add(PaintSkew(sx, sy));
   }
 
   void clipRect(ui.Rect rect) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     final PaintClipRect command = PaintClipRect(rect);
     _paintBounds.clipRect(rect, command);
     _hasArbitraryPaint = true;
@@ -278,7 +282,7 @@ class RecordingCanvas {
   }
 
   void clipRRect(ui.RRect rrect) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     final PaintClipRRect command = PaintClipRRect(rrect);
     _paintBounds.clipRect(rrect.outerRect, command);
     _hasArbitraryPaint = true;
@@ -286,7 +290,7 @@ class RecordingCanvas {
   }
 
   void clipPath(ui.Path path, {bool doAntiAlias = true}) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     final PaintClipPath command = PaintClipPath(path as SurfacePath);
     _paintBounds.clipRect(path.getBounds(), command);
     _hasArbitraryPaint = true;
@@ -294,14 +298,14 @@ class RecordingCanvas {
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     final PaintDrawColor command = PaintDrawColor(color, blendMode);
     _commands.add(command);
     _paintBounds.grow(_paintBounds.maxPaintBounds, command);
   }
 
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     final double paintSpread = math.max(_getPaintSpread(paint), 1.0);
     final PaintDrawLine command = PaintDrawLine(p1, p2, paint.paintData);
     // TODO(yjbanov): This can be optimized. Currently we create a box around
@@ -324,7 +328,7 @@ class RecordingCanvas {
   }
 
   void drawPaint(SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawPaint command = PaintDrawPaint(paint.paintData);
@@ -333,7 +337,7 @@ class RecordingCanvas {
   }
 
   void drawRect(ui.Rect rect, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     if (paint.shader != null) {
       _hasArbitraryPaint = true;
     }
@@ -349,7 +353,7 @@ class RecordingCanvas {
   }
 
   void drawRRect(ui.RRect rrect, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     if (paint.shader != null || !rrect.webOnlyUniformRadii) {
       _hasArbitraryPaint = true;
     }
@@ -365,7 +369,7 @@ class RecordingCanvas {
   }
 
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     // Check the inner bounds are contained within the outer bounds
     // see: https://cs.chromium.org/chromium/src/third_party/skia/src/core/SkCanvas.cpp?l=1787-1789
     ui.Rect innerRect = inner.outerRect;
@@ -418,7 +422,7 @@ class RecordingCanvas {
   }
 
   void drawOval(ui.Rect rect, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
@@ -432,7 +436,7 @@ class RecordingCanvas {
   }
 
   void drawCircle(ui.Offset c, double radius, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
@@ -449,7 +453,7 @@ class RecordingCanvas {
   }
 
   void drawPath(ui.Path path, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     if (paint.shader == null) {
       // For Rect/RoundedRect paths use drawRect/drawRRect code paths for
       // DomCanvas optimization.
@@ -484,7 +488,7 @@ class RecordingCanvas {
   }
 
   void drawImage(ui.Image image, ui.Offset offset, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double left = offset.dx;
@@ -496,7 +500,7 @@ class RecordingCanvas {
 
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawImageRect command = PaintDrawImageRect(image, src, dst, paint.paintData);
@@ -505,7 +509,7 @@ class RecordingCanvas {
   }
 
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     final EngineParagraph engineParagraph = paragraph as EngineParagraph;
     if (!engineParagraph._isLaidOut) {
       // Ignore non-laid out paragraphs. This matches Flutter's behavior.
@@ -531,7 +535,7 @@ class RecordingCanvas {
 
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final ui.Rect shadowRect =
@@ -543,7 +547,7 @@ class RecordingCanvas {
 
   void drawVertices(
       SurfaceVertices vertices, ui.BlendMode blendMode, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawVertices command = PaintDrawVertices(vertices, blendMode, paint.paintData);
@@ -553,7 +557,7 @@ class RecordingCanvas {
 
   void drawRawPoints(
       ui.PointMode pointMode, Float32List points, SurfacePaint paint) {
-    assert(!_debugRecordingEnded);
+    assert(!_recordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawPoints command = PaintDrawPoints(pointMode, points, paint.paintData);
@@ -604,8 +608,6 @@ abstract class PaintCommand {
   const PaintCommand();
 
   void apply(EngineCanvas? canvas);
-
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands);
 }
 
 /// A [PaintCommand] that affect pixels on the screen (unlike, for example, the
@@ -661,11 +663,6 @@ class PaintSave extends PaintCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(const <int>[1]);
-  }
 }
 
 class PaintRestore extends PaintCommand {
@@ -683,11 +680,6 @@ class PaintRestore extends PaintCommand {
     } else {
       return super.toString();
     }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(const <int>[2]);
   }
 }
 
@@ -710,11 +702,6 @@ class PaintTranslate extends PaintCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<num>[3, dx, dy]);
-  }
 }
 
 class PaintScale extends PaintCommand {
@@ -736,11 +723,6 @@ class PaintScale extends PaintCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<num>[4, sx, sy]);
-  }
 }
 
 class PaintRotate extends PaintCommand {
@@ -761,11 +743,6 @@ class PaintRotate extends PaintCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<num>[5, radians]);
-  }
 }
 
 class PaintTransform extends PaintCommand {
@@ -785,11 +762,6 @@ class PaintTransform extends PaintCommand {
     } else {
       return super.toString();
     }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[6]..addAll(matrix4));
   }
 }
 
@@ -812,11 +784,6 @@ class PaintSkew extends PaintCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<num>[7, sx, sy]);
-  }
 }
 
 class PaintClipRect extends DrawCommand {
@@ -836,11 +803,6 @@ class PaintClipRect extends DrawCommand {
     } else {
       return super.toString();
     }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[8, _serializeRectToCssPaint(rect)]);
   }
 }
 
@@ -862,14 +824,6 @@ class PaintClipRRect extends DrawCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[
-      9,
-      _serializeRRectToCssPaint(rrect),
-    ]);
-  }
 }
 
 class PaintClipPath extends DrawCommand {
@@ -889,11 +843,6 @@ class PaintClipPath extends DrawCommand {
     } else {
       return super.toString();
     }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[10, path.webOnlySerializeToCssPaint()]);
   }
 }
 
@@ -915,12 +864,6 @@ class PaintDrawColor extends DrawCommand {
     } else {
       return super.toString();
     }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands
-        .add(<dynamic>[11, colorToCssString(color), blendMode.index]);
   }
 }
 
@@ -944,18 +887,6 @@ class PaintDrawLine extends DrawCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[
-      12,
-      p1.dx,
-      p1.dy,
-      p2.dx,
-      p2.dy,
-      _serializePaintToCssPaint(paint)
-    ]);
-  }
 }
 
 class PaintDrawPaint extends DrawCommand {
@@ -975,11 +906,6 @@ class PaintDrawPaint extends DrawCommand {
     } else {
       return super.toString();
     }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[13, _serializePaintToCssPaint(paint)]);
   }
 }
 
@@ -1002,11 +928,6 @@ class PaintDrawVertices extends DrawCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    throw UnimplementedError();
-  }
 }
 
 class PaintDrawPoints extends DrawCommand {
@@ -1027,11 +948,6 @@ class PaintDrawPoints extends DrawCommand {
     } else {
       return super.toString();
     }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    throw UnimplementedError();
   }
 }
 
@@ -1054,15 +970,6 @@ class PaintDrawRect extends DrawCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[
-      14,
-      _serializeRectToCssPaint(rect),
-      _serializePaintToCssPaint(paint)
-    ]);
-  }
 }
 
 class PaintDrawRRect extends DrawCommand {
@@ -1083,15 +990,6 @@ class PaintDrawRRect extends DrawCommand {
     } else {
       return super.toString();
     }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[
-      15,
-      _serializeRRectToCssPaint(rrect),
-      _serializePaintToCssPaint(paint),
-    ]);
   }
 }
 
@@ -1121,16 +1019,6 @@ class PaintDrawDRRect extends DrawCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[
-      16,
-      _serializeRRectToCssPaint(outer),
-      _serializeRRectToCssPaint(inner),
-      _serializePaintToCssPaint(paint),
-    ]);
-  }
 }
 
 class PaintDrawOval extends DrawCommand {
@@ -1151,15 +1039,6 @@ class PaintDrawOval extends DrawCommand {
     } else {
       return super.toString();
     }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[
-      17,
-      _serializeRectToCssPaint(rect),
-      _serializePaintToCssPaint(paint),
-    ]);
   }
 }
 
@@ -1183,17 +1062,6 @@ class PaintDrawCircle extends DrawCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[
-      18,
-      c.dx,
-      c.dy,
-      radius,
-      _serializePaintToCssPaint(paint),
-    ]);
-  }
 }
 
 class PaintDrawPath extends DrawCommand {
@@ -1214,15 +1082,6 @@ class PaintDrawPath extends DrawCommand {
     } else {
       return super.toString();
     }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[
-      19,
-      path.webOnlySerializeToCssPaint(),
-      _serializePaintToCssPaint(paint),
-    ]);
   }
 }
 
@@ -1248,22 +1107,6 @@ class PaintDrawShadow extends DrawCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    serializedCommands.add(<dynamic>[
-      20,
-      path.webOnlySerializeToCssPaint(),
-      <dynamic>[
-        color.alpha,
-        color.red,
-        color.green,
-        color.blue,
-      ],
-      elevation,
-      transparentOccluder,
-    ]);
-  }
 }
 
 class PaintDrawImage extends DrawCommand {
@@ -1284,13 +1127,6 @@ class PaintDrawImage extends DrawCommand {
       return 'drawImage($image, $offset, $paint)';
     } else {
       return super.toString();
-    }
-  }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    if (assertionsEnabled) {
-      throw UnsupportedError('drawImage not serializable');
     }
   }
 }
@@ -1316,13 +1152,6 @@ class PaintDrawImageRect extends DrawCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    if (assertionsEnabled) {
-      throw UnsupportedError('drawImageRect not serializable');
-    }
-  }
 }
 
 class PaintDrawParagraph extends DrawCommand {
@@ -1344,55 +1173,6 @@ class PaintDrawParagraph extends DrawCommand {
       return super.toString();
     }
   }
-
-  @override
-  void serializeToCssPaint(List<List<dynamic>> serializedCommands) {
-    if (assertionsEnabled) {
-      throw UnsupportedError('drawParagraph not serializable');
-    }
-  }
-}
-
-List<dynamic> _serializePaintToCssPaint(SurfacePaintData paint) {
-  final EngineGradient? engineShader = paint.shader as EngineGradient?;
-  return <dynamic>[
-    paint.blendMode?.index,
-    paint.style?.index,
-    paint.strokeWidth,
-    paint.strokeCap?.index,
-    paint.isAntiAlias,
-    colorToCssString(paint.color),
-    engineShader?.webOnlySerializeToCssPaint(),
-    paint.maskFilter?.webOnlySerializeToCssPaint(),
-    paint.filterQuality?.index,
-    paint.colorFilter?.webOnlySerializeToCssPaint(),
-  ];
-}
-
-List<dynamic> _serializeRectToCssPaint(ui.Rect rect) {
-  return <dynamic>[
-    rect.left,
-    rect.top,
-    rect.right,
-    rect.bottom,
-  ];
-}
-
-List<dynamic> _serializeRRectToCssPaint(ui.RRect rrect) {
-  return <dynamic>[
-    rrect.left,
-    rrect.top,
-    rrect.right,
-    rrect.bottom,
-    rrect.tlRadiusX,
-    rrect.tlRadiusY,
-    rrect.trRadiusX,
-    rrect.trRadiusY,
-    rrect.brRadiusX,
-    rrect.brRadiusY,
-    rrect.blRadiusX,
-    rrect.blRadiusY,
-  ];
 }
 
 class Subpath {
@@ -1417,14 +1197,6 @@ class Subpath {
     return result;
   }
 
-  List<dynamic> serializeToCssPaint() {
-    final List<dynamic> serialization = <dynamic>[];
-    for (int i = 0; i < commands.length; i++) {
-      serialization.add(commands[i].serializeToCssPaint());
-    }
-    return serialization;
-  }
-
   @override
   String toString() {
     if (assertionsEnabled) {
@@ -1435,25 +1207,10 @@ class Subpath {
   }
 }
 
-/// ! Houdini implementation relies on indices here. Keep in sync.
-class PathCommandTypes {
-  static const int moveTo = 0;
-  static const int lineTo = 1;
-  static const int ellipse = 2;
-  static const int close = 3;
-  static const int quadraticCurveTo = 4;
-  static const int bezierCurveTo = 5;
-  static const int rect = 6;
-  static const int rRect = 7;
-}
-
 abstract class PathCommand {
-  final int type;
-  const PathCommand(this.type);
+  const PathCommand();
 
   PathCommand shifted(ui.Offset offset);
-
-  List<dynamic> serializeToCssPaint();
 
   /// Transform the command and add to targetPath.
   void transform(Float32List matrix4, SurfacePath targetPath);
@@ -1468,16 +1225,11 @@ class MoveTo extends PathCommand {
   final double x;
   final double y;
 
-  const MoveTo(this.x, this.y) : super(PathCommandTypes.moveTo);
+  const MoveTo(this.x, this.y);
 
   @override
   MoveTo shifted(ui.Offset offset) {
     return MoveTo(x + offset.dx, y + offset.dy);
-  }
-
-  @override
-  List<dynamic> serializeToCssPaint() {
-    return <dynamic>[1, x, y];
   }
 
   @override
@@ -1500,16 +1252,11 @@ class LineTo extends PathCommand {
   final double x;
   final double y;
 
-  const LineTo(this.x, this.y) : super(PathCommandTypes.lineTo);
+  const LineTo(this.x, this.y);
 
   @override
   LineTo shifted(ui.Offset offset) {
     return LineTo(x + offset.dx, y + offset.dy);
-  }
-
-  @override
-  List<dynamic> serializeToCssPaint() {
-    return <dynamic>[2, x, y];
   }
 
   @override
@@ -1539,28 +1286,12 @@ class Ellipse extends PathCommand {
   final bool anticlockwise;
 
   const Ellipse(this.x, this.y, this.radiusX, this.radiusY, this.rotation,
-      this.startAngle, this.endAngle, this.anticlockwise)
-      : super(PathCommandTypes.ellipse);
+      this.startAngle, this.endAngle, this.anticlockwise);
 
   @override
   Ellipse shifted(ui.Offset offset) {
     return Ellipse(x + offset.dx, y + offset.dy, radiusX, radiusY, rotation,
         startAngle, endAngle, anticlockwise);
-  }
-
-  @override
-  List<dynamic> serializeToCssPaint() {
-    return <dynamic>[
-      3,
-      x,
-      y,
-      radiusX,
-      radiusY,
-      rotation,
-      startAngle,
-      endAngle,
-      anticlockwise,
-    ];
   }
 
   @override
@@ -1682,18 +1413,12 @@ class QuadraticCurveTo extends PathCommand {
   final double x2;
   final double y2;
 
-  const QuadraticCurveTo(this.x1, this.y1, this.x2, this.y2)
-      : super(PathCommandTypes.quadraticCurveTo);
+  const QuadraticCurveTo(this.x1, this.y1, this.x2, this.y2);
 
   @override
   QuadraticCurveTo shifted(ui.Offset offset) {
     return QuadraticCurveTo(
         x1 + offset.dx, y1 + offset.dy, x2 + offset.dx, y2 + offset.dy);
-  }
-
-  @override
-  List<dynamic> serializeToCssPaint() {
-    return <dynamic>[4, x1, y1, x2, y2];
   }
 
   @override
@@ -1730,18 +1455,12 @@ class BezierCurveTo extends PathCommand {
   final double x3;
   final double y3;
 
-  const BezierCurveTo(this.x1, this.y1, this.x2, this.y2, this.x3, this.y3)
-      : super(PathCommandTypes.bezierCurveTo);
+  const BezierCurveTo(this.x1, this.y1, this.x2, this.y2, this.x3, this.y3);
 
   @override
   BezierCurveTo shifted(ui.Offset offset) {
     return BezierCurveTo(x1 + offset.dx, y1 + offset.dy, x2 + offset.dx,
         y2 + offset.dy, x3 + offset.dx, y3 + offset.dy);
-  }
-
-  @override
-  List<dynamic> serializeToCssPaint() {
-    return <dynamic>[5, x1, y1, x2, y2, x3, y3];
   }
 
   @override
@@ -1778,8 +1497,7 @@ class RectCommand extends PathCommand {
   final double width;
   final double height;
 
-  const RectCommand(this.x, this.y, this.width, this.height)
-      : super(PathCommandTypes.rect);
+  const RectCommand(this.x, this.y, this.width, this.height);
 
   @override
   RectCommand shifted(ui.Offset offset) {
@@ -1821,11 +1539,6 @@ class RectCommand extends PathCommand {
   }
 
   @override
-  List<dynamic> serializeToCssPaint() {
-    return <dynamic>[6, x, y, width, height];
-  }
-
-  @override
   String toString() {
     if (assertionsEnabled) {
       return 'Rect($x, $y, $width, $height)';
@@ -1838,16 +1551,11 @@ class RectCommand extends PathCommand {
 class RRectCommand extends PathCommand {
   final ui.RRect rrect;
 
-  const RRectCommand(this.rrect) : super(PathCommandTypes.rRect);
+  const RRectCommand(this.rrect);
 
   @override
   RRectCommand shifted(ui.Offset offset) {
     return RRectCommand(rrect.shift(offset));
-  }
-
-  @override
-  List<dynamic> serializeToCssPaint() {
-    return <dynamic>[7, _serializeRRectToCssPaint(rrect)];
   }
 
   @override
@@ -1868,16 +1576,9 @@ class RRectCommand extends PathCommand {
 }
 
 class CloseCommand extends PathCommand {
-  const CloseCommand() : super(PathCommandTypes.close);
-
   @override
   CloseCommand shifted(ui.Offset offset) {
     return this;
-  }
-
-  @override
-  List<dynamic> serializeToCssPaint() {
-    return <dynamic>[8];
   }
 
   @override

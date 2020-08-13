@@ -2,12 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// Renders an RRect using path primitives.
 abstract class _RRectRenderer {
-  // TODO(mdebbar): Backport the overlapping corners fix to houdini_painter.js
   // To draw the rounded rectangle, perform the following steps:
   //   0. Ensure border radius don't overlap
   //   1. Flip left,right top,bottom since web doesn't support flipped

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// Mask used to keep track of types of verbs used in a path segment.
@@ -14,12 +15,12 @@ class SPathSegmentMask {
 
 /// Types of path operations.
 class SPathVerb {
-  static const int kMove = 1; // 1 point
-  static const int kLine = 2; // 2 points
-  static const int kQuad = 3; // 3 points
-  static const int kConic = 4; // 3 points + 1 weight
-  static const int kCubic = 5; // 4 points
-  static const int kClose = 6; // 0 points
+  static const int kMove = 0; // 1 point
+  static const int kLine = 1; // 2 points
+  static const int kQuad = 2; // 3 points
+  static const int kConic = 3; // 3 points + 1 weight
+  static const int kCubic = 4; // 4 points
+  static const int kClose = 5; // 0 points
 }
 
 class SPath {

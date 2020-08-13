@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include <algorithm>
 #include <iomanip>
@@ -241,8 +242,11 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     }
   }
 
-  settings.disable_http =
-      command_line.HasOption(FlagForSwitch(Switch::DisableHttp));
+  settings.may_insecurely_connect_to_all_domains = !command_line.HasOption(
+      FlagForSwitch(Switch::DisallowInsecureConnections));
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::DomainNetworkPolicy),
+                              &settings.domain_network_policy);
 
   // Disable need for authentication codes for VM service communication, if
   // specified.
@@ -392,6 +396,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.cache_sksl =
       command_line.HasOption(FlagForSwitch(Switch::CacheSkSL));
+
+  settings.purge_persistent_cache =
+      command_line.HasOption(FlagForSwitch(Switch::PurgePersistentCache));
 
   return settings;
 }

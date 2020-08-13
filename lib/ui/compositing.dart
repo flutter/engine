@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
+// @dart = 2.10
 
 part of dart.ui;
 
@@ -605,7 +605,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Therefore, when implementing a subclass of the [Layer] concept defined in
   /// the rendering layer of Flutter's framework, once this is called, there's
-  /// no need to call [addToScene] for its children layers.
+  /// no need to call [Layer.addToScene] for its children layers.
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   void addRetained(EngineLayer retainedLayer) {
@@ -699,12 +699,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// texture just before resizing the Android view and un-freezes it when it is
   /// certain that a frame with the new size is ready.
   void addTexture(
-    int/*!*/ textureId, {
-    Offset/*!*/ offset = Offset.zero,
-    double/*!*/ width = 0.0,
-    double/*!*/ height = 0.0,
-    bool/*!*/ freeze = false,
-    FilterQuality/*!*/ filterQuality = FilterQuality.low,
+    int textureId, {
+    Offset offset = Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
+    bool freeze = false,
+    FilterQuality filterQuality = FilterQuality.low,
   }) {
     assert(offset != null, 'Offset argument was null'); // ignore: unnecessary_null_comparison
     _addTexture(offset.dx, offset.dy, width, height, textureId, freeze, filterQuality.index);

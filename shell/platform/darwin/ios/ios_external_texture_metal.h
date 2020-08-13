@@ -33,12 +33,13 @@ class IOSExternalTextureMetal final : public Texture {
   std::atomic_bool texture_frame_available_;
   fml::CFRef<CVPixelBufferRef> last_pixel_buffer_;
   sk_sp<SkImage> external_image_;
+  OSType pixel_format_ = 0;
 
   // |Texture|
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
-             GrContext* context,
+             GrDirectContext* context,
              SkFilterQuality filter_quality) override;
 
   // |Texture|
@@ -54,7 +55,11 @@ class IOSExternalTextureMetal final : public Texture {
   void OnTextureUnregistered() override;
 
   sk_sp<SkImage> WrapExternalPixelBuffer(fml::CFRef<CVPixelBufferRef> pixel_buffer,
-                                         GrContext* context) const;
+                                         GrDirectContext* context) const;
+  sk_sp<SkImage> WrapRGBAExternalPixelBuffer(fml::CFRef<CVPixelBufferRef> pixel_buffer,
+                                             GrDirectContext* context) const;
+  sk_sp<SkImage> WrapNV12ExternalPixelBuffer(fml::CFRef<CVPixelBufferRef> pixel_buffer,
+                                             GrDirectContext* context) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSExternalTextureMetal);
 };
