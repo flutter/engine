@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.res.AssetManager;
 import android.content.ClipboardManager;
+import android.content.Context;
 import android.view.View;
 import android.view.Window;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -71,16 +72,18 @@ public class PlatformPluginTest {
 
   @Test
   public void platformPlugin_hasStrings() {
+    ClipboardManager clipboardManager =
+        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+
     View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
     when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
     Activity fakeActivity = mock(Activity.class);
     when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    when(fakeActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
-    ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
     clipboardManager.setText("iamastring");
     assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
