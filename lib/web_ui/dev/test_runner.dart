@@ -250,10 +250,35 @@ class TestCommand extends Command<bool> with ArgUtils {
 
     // Currently iOS Safari tests are running on simulator, which does not
     // support canvaskit backend.
-    if (canvasKitTargets.isNotEmpty && !isSafariOnIOS) {
+    if (canvasKitTargets.isNotEmpty) {
       await _buildTestsInParallel(
           targets: canvasKitTargets, forCanvasKit: true);
     }
+
+    // Copy image files under build directory.
+    // A side effect is this file copies all the images btween, even only one target
+    // test is asked to run.
+    final List<io.FileSystemEntity> contents =
+        environment.webUiTestDir.listSync(recursive: true);
+    for (final io.FileSystemEntity entity in contents) {
+      if (entity is io.File) {
+        final String basename = path.basename(entity.path);
+        if (basename.contains('.png')) {
+          final String directoryPath = path.relative(path.dirname(entity.path),
+              from: environment.webUiRootDir.path);
+          final io.Directory directory = io.Directory(
+              path.join(environment.webUiBuildDir.path, directoryPath));
+          if (!directory.existsSync()) {
+            directory.createSync(recursive: true);
+          }
+          final String pathRelativeToWebUi = path.relative(entity.absolute.path,
+              from: environment.webUiRootDir.path);
+          entity.copySync(
+              path.join(environment.webUiBuildDir.path, pathRelativeToWebUi));
+        }
+      }
+    }
+
     stopwatch.stop();
     print('The build took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
   }
@@ -461,7 +486,8 @@ class TestCommand extends Command<bool> with ArgUtils {
   Future<void> _buildTestsInParallel(
       {List<FilePath> targets, bool forCanvasKit = false}) async {
     final List<TestBuildInput> buildInputs = targets
-        .map((FilePath f) => TestBuildInput(f, forCanvasKit: forCanvasKit)).toList();
+        .map((FilePath f) => TestBuildInput(f, forCanvasKit: forCanvasKit))
+        .toList();
 
     final results = _pool.forEach(
       buildInputs,
