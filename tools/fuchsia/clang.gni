@@ -5,7 +5,7 @@
 declare_args() {
   # The default clang toolchain provided by the prebuilt. This variable is
   # additionally consumed by the Go toolchain.
-  clang_base = rebase_path("//fuchsia/toolchain/$host_os/lib")
+  clang_base = rebase_path("//fuchsia/toolchain/$host_os")
 }
 
 if (current_cpu == "arm64") {
@@ -15,18 +15,3 @@ if (current_cpu == "arm64") {
 } else {
   assert(false, "CPU not supported")
 }
-
-if (is_fuchsia) {
-  clang_target = "${clang_cpu}-fuchsia"
-} else if (is_linux) {
-  clang_target = "${clang_cpu}-linux-gnu"
-} else if (is_mac) {
-  clang_target = "${clang_cpu}-apple-darwin"
-} else {
-  assert(false, "OS not supported")
-}
-
-clang_manifest = rebase_path("$clang_base/${clang_target}.manifest")
-clang_manifest_json = exec_script("//flutter/tools/fuchsia/parse_manifest.py",
-                                  [ "--input=${clang_manifest}" ],
-                                  "json")

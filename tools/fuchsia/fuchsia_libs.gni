@@ -47,18 +47,15 @@ common_libs = [
   # This is a hack, and we can migrate to a better way soon.
   {
     name = "libc++.so.2"
-    path = rebase_path(
-            "$clang_base/${clang_manifest_json.md5_33bfe15b05ada4ed326fbc33adb39b95}")
+    path = rebase_path("$clang_base/lib/$clang_cpu-unknown-fuchsia/c++")
   },
   {
     name = "libc++abi.so.1"
-    path = rebase_path(
-            "$clang_base/${clang_manifest_json.md5_916c01a85e3353f124776599819ecb1c}")
+    path = rebase_path("$clang_base/lib/$clang_cpu-unknown-fuchsia/c++")
   },
   {
     name = "libunwind.so.1"
-    path = rebase_path(
-            "$clang_base/${clang_manifest_json.md5_beb70f40d525448b39ea87d9f5811e56}")
+    path = rebase_path("$clang_base/lib/$clang_cpu-unknown-fuchsia/c++")
   },
 ]
 

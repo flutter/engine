@@ -510,7 +510,10 @@ deps = {
   },
 
    # Get the SDK from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/core at the 'latest' tag
-   # Get the toolchain from https://chrome-infra-packages.appspot.com/p/fuchsia/clang at the 'goma' tag
+   # Get the toolchain from https://chrome-infra-packages.appspot.com/p/fuchsia/third_party/clang at the 'integration' tag
+   # This is update by the following autorollers:
+   # Mac: https://autoroll.skia.org/r/fuchsia-mac-toolchain-flutter-engine
+   # Linux: https://autoroll.skia.org/r/fuchsia-linux-toolchain-flutter-engine
 
    'src/fuchsia/sdk/mac': {
      'packages': [
@@ -525,8 +528,8 @@ deps = {
    'src/fuchsia/toolchain/mac': {
      'packages': [
        {
-        'package': 'fuchsia/clang/mac-amd64',
-        'version': 'OzTZOKkICT0yD82Dbx0jvVn5hN5eOSi6ByVTDseE7i0C'
+        'package': 'fuchsia/third_party/clang/mac-amd64',
+        'version': 'hr7o2cD0tpLLUtC2ifLXCvi3nlGL2dyErXFuxbSpjEcC'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -545,8 +548,8 @@ deps = {
    'src/fuchsia/toolchain/linux': {
      'packages': [
        {
-        'package': 'fuchsia/clang/linux-amd64',
-        'version': 'OT6p30bQQhyCzRSy7xPsSbZ88J3PWOnneenkMZ0j7kIC'
+        'package': 'fuchsia/third_party/clang/linux-amd64',
+        'version': 'E7w1U9ii_0fi-8y4UowsFj1PB7_vwZiiqhesG6a_sygC'
        }
      ],
      'condition': 'host_os == "linux"',

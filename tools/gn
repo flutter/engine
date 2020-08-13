@@ -433,7 +433,7 @@ def main(argv):
     try:
       contents = subprocess.check_output(compile_cmd_gen_cmd, cwd=SRC_ROOT)
     except subprocess.CalledProcessError as exc:
-      print "Failed to run ninja: ", exc.returncode, exc.output
+      print "Failed to run ninja when attempting to create the compile_commands.json manifest: ", exc.returncode, exc.output
       sys.exit(1)
     compile_commands = open('%s/out/compile_commands.json' % SRC_ROOT, 'w+')
     compile_commands.write(contents)
