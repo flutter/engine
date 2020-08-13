@@ -38,7 +38,8 @@ namespace flutter {
 /// and the on-screen render surface. The compositor context has all the GPU
 /// state necessary to render frames to the render surface.
 ///
-class Rasterizer final : public SnapshotDelegate, public CompositorContext::Delegate {
+class Rasterizer final : public SnapshotDelegate,
+                         public CompositorContext::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Used to forward events from the rasterizer to interested

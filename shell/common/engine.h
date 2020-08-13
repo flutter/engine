@@ -465,7 +465,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   void BeginFrame(fml::TimePoint frame_time);
 
-
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that native bytes might be freed if a
   ///             garbage collection ran now.

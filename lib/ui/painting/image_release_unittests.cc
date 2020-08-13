@@ -90,7 +90,6 @@ TEST_F(ShellTest, ImageReleasedAfterFrame) {
       });
   latch.Wait();
 
-
   EXPECT_TRUE(current_picture->unique());
   current_picture.reset();
   EXPECT_TRUE(current_image->unique());

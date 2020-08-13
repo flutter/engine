@@ -35,7 +35,8 @@ TEST_F(PictureLayerTest, PaintBeforePreollDies) {
   const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   auto mock_picture = SkPicture::MakePlaceholder(picture_bounds);
   auto layer = std::make_shared<PictureLayer>(
-      layer_offset, SkiaGPUObject(mock_picture, unref_queue()), false, false, 0);
+      layer_offset, SkiaGPUObject(mock_picture, unref_queue()), false, false,
+      0);
 
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -47,7 +48,8 @@ TEST_F(PictureLayerTest, PaintingEmptyLayerDies) {
   const SkRect picture_bounds = SkRect::MakeEmpty();
   auto mock_picture = SkPicture::MakePlaceholder(picture_bounds);
   auto layer = std::make_shared<PictureLayer>(
-      layer_offset, SkiaGPUObject(mock_picture, unref_queue()), false, false, 0);
+      layer_offset, SkiaGPUObject(mock_picture, unref_queue()), false, false,
+      0);
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
@@ -75,7 +77,8 @@ TEST_F(PictureLayerTest, SimplePicture) {
   const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   auto mock_picture = SkPicture::MakePlaceholder(picture_bounds);
   auto layer = std::make_shared<PictureLayer>(
-      layer_offset, SkiaGPUObject(mock_picture, unref_queue()), false, false, 1000);
+      layer_offset, SkiaGPUObject(mock_picture, unref_queue()), false, false,
+      1000);
 
   EXPECT_EQ(layer->external_size(), 1000ul);
 
