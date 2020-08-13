@@ -156,7 +156,7 @@ void IOSSurface::EndFrame(bool should_resubmit_frame,
 }
 
 // |ExternalViewEmbedder|
-bool IOSSurface::SupportDynamicThreadMerging() {
+bool IOSSurface::SupportsDynamicThreadMerging() {
   return true;
 }
 

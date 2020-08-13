@@ -53,7 +53,7 @@ SkCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
   return nullptr;
 }
 
-bool ShellTestExternalViewEmbedder::SupportDynamicThreadMerging() {
+bool ShellTestExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return support_thread_merging_;
 }
 

@@ -89,7 +89,7 @@ class IOSSurface : public ExternalViewEmbedder {
                 fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  bool SupportDynamicThreadMerging() override;
+  bool SupportsDynamicThreadMerging() override;
 
  public:
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurface);

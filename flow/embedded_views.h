@@ -268,7 +268,7 @@ class ExternalViewEmbedder {
 
   // Indicates the begining of a frame.
   //
-  // The `raster_thread_merger` will be null if |SupportDynamicThreadMerging|
+  // The `raster_thread_merger` will be null if |SupportsDynamicThreadMerging|
   // returns false.
   virtual void BeginFrame(
       SkISize frame_size,
@@ -311,7 +311,7 @@ class ExternalViewEmbedder {
   // still has some task running, there could be two frames being rendered
   // concurrently, which causes undefined behaviors.
   //
-  // The `raster_thread_merger` will be null if |SupportDynamicThreadMerging|
+  // The `raster_thread_merger` will be null if |SupportsDynamicThreadMerging|
   // returns false.
   virtual void EndFrame(
       bool should_resubmit_frame,
@@ -322,7 +322,7 @@ class ExternalViewEmbedder {
   // Returning `true` results a |RasterThreadMerger| instance to be created.
   // * See also |BegineFrame| and |EndFrame| for getting the
   // |RasterThreadMerger| instance.
-  virtual bool SupportDynamicThreadMerging();
+  virtual bool SupportsDynamicThreadMerging();
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

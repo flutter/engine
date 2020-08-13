@@ -66,7 +66,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   SkCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
-  bool SupportDynamicThreadMerging() override;
+  bool SupportsDynamicThreadMerging() override;
 
   const EndFrameCallBack end_frame_call_back_;
   const PostPrerollResult post_preroll_result_;
