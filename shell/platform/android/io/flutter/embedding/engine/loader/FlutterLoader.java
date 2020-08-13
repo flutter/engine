@@ -245,7 +245,7 @@ public class FlutterLoader {
       }
 
       ActivityManager activityManager = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
-      long oldGenHeapSizeBytes = activityManager.getLargeMemoryClass();
+      long oldGenHeapSizeBytes = activityManager.getLargeMemoryClass() * 1000000;
 
       FlutterJNI.nativeInit(
           applicationContext,
