@@ -45,7 +45,7 @@ void ShellTestExternalViewEmbedder::SubmitFrame(
 void ShellTestExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  end_frame_call_back_(should_resubmit_frame);
+  end_frame_call_back_(should_resubmit_frame, raster_thread_merger);
 }
 
 // |ExternalViewEmbedder|
@@ -54,7 +54,7 @@ SkCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
 }
 
 bool ShellTestExternalViewEmbedder::SupportDynamicThreadMerging() {
-  return true;
+  return support_thread_merging_;
 }
 
 }  // namespace flutter
