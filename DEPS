@@ -105,7 +105,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'b8d98f419b4c32eb1d575557d2c46e8c755ceac7',
+  'src': 'https://github.com/garyqian/buildroot.git' + '@' + '5c728e8691edf262d4355c2c900bc1f9631e2451',
 
    # Fuchsia compatibility
    #
@@ -425,7 +425,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/sdk/build-tools/${{platform}}',
-        'version': 'version:29.0.1'
+        'version': 'version:30.0.1'
        }
      ],
      'condition': 'download_android_deps',
@@ -436,7 +436,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/sdk/platform-tools/${{platform}}',
-        'version': 'version:29.0.2'
+        'version': 'version:30.0.4'
        }
      ],
      'condition': 'download_android_deps',
@@ -447,7 +447,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/sdk/platforms',
-        'version': 'version:29r1'
+        'version': 'version:30r2'
        }
      ],
      'condition': 'download_android_deps',
