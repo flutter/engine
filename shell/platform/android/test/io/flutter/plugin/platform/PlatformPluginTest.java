@@ -1,15 +1,15 @@
 package io.flutter.plugin.platform;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
-import android.content.res.AssetManager;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.view.View;
 import android.view.Window;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -54,7 +54,8 @@ public class PlatformPluginTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     PlatformChannel fakePlatformChannel = new PlatformChannel(dartExecutor);
-    PlatformChannel.PlatformMessageHandler mockMessageHandler = mock(PlatformChannel.PlatformMessageHandler.class);
+    PlatformChannel.PlatformMessageHandler mockMessageHandler =
+        mock(PlatformChannel.PlatformMessageHandler.class);
     fakePlatformChannel.setPlatformMessageHandler(mockMessageHandler);
     Boolean returnValue = true;
     when(mockMessageHandler.clipboardHasStrings()).thenReturn(returnValue);

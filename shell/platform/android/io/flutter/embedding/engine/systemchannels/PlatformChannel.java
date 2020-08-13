@@ -435,8 +435,9 @@ public class PlatformChannel {
      */
     void setClipboardData(@NonNull String text);
 
-    /** The Flutter application would like to know if the clipboard currently contains a string
-     *  that can be pasted.
+    /**
+     * The Flutter application would like to know if the clipboard currently contains a string that
+     * can be pasted.
      */
     boolean clipboardHasStrings();
   }
