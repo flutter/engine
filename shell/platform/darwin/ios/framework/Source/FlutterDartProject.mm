@@ -31,7 +31,8 @@ static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 //   if (appTransportSecurity == nil) {
 //     return @"";
 //   }
-//   // https://developer.apple.com/documentation/bundleresources/information_property_list/nsapptransportsecurity/nsexceptiondomains
+//   //
+//   https://developer.apple.com/documentation/bundleresources/information_property_list/nsapptransportsecurity/nsexceptiondomains
 //   NSDictionary* exceptionDomains = [appTransportSecurity objectForKey:@"NSExceptionDomains"];
 //   if (exceptionDomains == nil) {
 //     return @"";
