@@ -70,6 +70,8 @@ class RasterThreadMerger
   std::condition_variable merged_condition_;
   std::mutex lease_term_mutex_;
 
+  bool IsMergedUnSafe();
+
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(RasterThreadMerger);
   FML_FRIEND_MAKE_REF_COUNTED(RasterThreadMerger);
   FML_DISALLOW_COPY_AND_ASSIGN(RasterThreadMerger);

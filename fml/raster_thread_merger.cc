@@ -23,7 +23,7 @@ RasterThreadMerger::RasterThreadMerger(fml::TaskQueueId platform_queue_id,
 void RasterThreadMerger::MergeWithLease(size_t lease_term) {
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   std::scoped_lock lock(lease_term_mutex_);
-  if (lease_term_ <= 0) {
+  if (!IsMergedUnSafe()) {
     bool success = task_queues_->Merge(platform_queue_id_, gpu_queue_id_);
     FML_CHECK(success) << "Unable to merge the raster and platform threads.";
     lease_term_ = lease_term;
@@ -43,7 +43,7 @@ bool RasterThreadMerger::IsOnPlatformThread() const {
 }
 
 bool RasterThreadMerger::IsOnRasterizingThread() {
-  if (lease_term_ > 0) {
+  if (IsMergedUnSafe()) {
     return IsOnPlatformThread();
   } else {
     return !IsOnPlatformThread();
@@ -52,7 +52,7 @@ bool RasterThreadMerger::IsOnRasterizingThread() {
 
 void RasterThreadMerger::ExtendLeaseTo(size_t lease_term) {
   std::scoped_lock lock(lease_term_mutex_);
-  FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
+  FML_DCHECK(IsMergedUnSafe()) << "lease_term should be positive.";
   if (lease_term_ != kLeaseNotSet &&
       static_cast<int>(lease_term) > lease_term_) {
     lease_term_ = lease_term;
@@ -61,18 +61,22 @@ void RasterThreadMerger::ExtendLeaseTo(size_t lease_term) {
 
 bool RasterThreadMerger::IsMerged() {
   std::scoped_lock lock(lease_term_mutex_);
+  return IsMergedUnSafe();
+}\
+
+bool RasterThreadMerger::IsMergedUnSafe() {
   return lease_term_ > 0;
 }
 
 void RasterThreadMerger::WaitUntilMerged() {
   FML_CHECK(IsOnPlatformThread());
   std::unique_lock<std::mutex> lock(lease_term_mutex_);
-  merged_condition_.wait(lock, [&] { return lease_term_ > 0; });
+  merged_condition_.wait(lock, [&] { return IsMergedUnSafe(); });
 }
 
 RasterThreadStatus RasterThreadMerger::DecrementLease() {
   std::unique_lock<std::mutex> lock(lease_term_mutex_);
-  if (lease_term_ <= 0) {
+  if (!IsMergedUnSafe()) {
     return RasterThreadStatus::kRemainsUnmerged;
   }
 
