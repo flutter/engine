@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -518,7 +519,7 @@ public class PlatformViewsControllerTest {
 
   @Implements(FlutterJNI.class)
   public static class ShadowFlutterJNI {
-    private static Map<Integer, ByteBuffer> replies = new HashMap<>();
+    private static SparseArray<ByteBuffer> replies = new SparseArray<>();
 
     public ShadowFlutterJNI() {}
 
@@ -569,7 +570,7 @@ public class PlatformViewsControllerTest {
       replies.put(responseId, message);
     }
 
-    public static Map<Integer, ByteBuffer> getResponses() {
+    public static SparseArray<ByteBuffer> getResponses() {
       return replies;
     }
   }
