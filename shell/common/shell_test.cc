@@ -205,6 +205,9 @@ void ShellTest::OnServiceProtocol(
           case ServiceProtocolEnum::kGetSkSLs:
             shell->OnServiceProtocolGetSkSLs(params, response);
             break;
+          case ServiceProtocolEnum::kEstimateRasterCacheMemory:
+            shell->OnServiceProtocolEstimateRasterCacheMemory(params, response);
+            break;
           case ServiceProtocolEnum::kSetAssetBundlePath:
             shell->OnServiceProtocolSetAssetBundlePath(params, response);
             break;
