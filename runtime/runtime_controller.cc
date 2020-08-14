@@ -241,6 +241,8 @@ bool RuntimeController::NotifyIdle(int64_t deadline, size_t freed_hint) {
 
   tonic::DartState::Scope scope(root_isolate);
 
+  // Dart will use the freed hint at the next idle notification. Make sure to
+  // Update it with our latest value before calling NotifyIdle.
   Dart_HintFreed(freed_hint);
   Dart_NotifyIdle(deadline);
 

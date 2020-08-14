@@ -71,6 +71,9 @@ Future<void> encodeImageProducesExternalUint8List() async {
     _validateExternal(result);
   });
 }
+void _encodeImage(Image i, int format, void Function(Uint8List result))
+  native 'EncodeImage';
+void _validateExternal(Uint8List result) native 'ValidateExternal';
 
 @pragma('vm:entry-point')
 Future<void> pumpImage() async {
@@ -126,9 +129,5 @@ Future<void> pumpImage() async {
   window.onBeginFrame = renderImage;
   window.scheduleFrame();
 }
-
 void _captureImageAndPicture(Image image, Picture picture) native 'CaptureImageAndPicture';
 Future<void> _done() native 'Done';
-void _encodeImage(Image i, int format, void Function(Uint8List result))
-  native 'EncodeImage';
-void _validateExternal(Uint8List result) native 'ValidateExternal';

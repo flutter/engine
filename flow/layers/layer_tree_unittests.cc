@@ -37,10 +37,12 @@ class LayerTreeTest : public CanvasTest, public CompositorContext::Delegate {
   CompositorContext::ScopedFrame& frame() { return *scoped_frame_.get(); }
   const SkMatrix& root_transform() { return root_transform_; }
 
+  // |CompositorContext::Delegate|
   void OnCompositorEndFrame(size_t freed_hint) override {
     last_freed_hint_ = freed_hint;
   }
 
+  // |CompositorContext::Delegate|
   fml::Milliseconds GetFrameBudget() override {
     return fml::kDefaultFrameBudget;
   }

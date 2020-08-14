@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
@@ -17,27 +16,30 @@
 namespace flutter {
 namespace testing {
 
-template <class T>
-T* GetNativePeer(Dart_NativeArguments args, int index) {
-  auto handle = Dart_GetNativeArgument(args, index);
-  intptr_t peer = 0;
-  EXPECT_FALSE(Dart_IsError(Dart_GetNativeInstanceField(
-      handle, tonic::DartWrappable::kPeerIndex, &peer)));
-  return reinterpret_cast<T*>(peer);
-}
+class ImageReleaseTest : public ShellTest {
+ public:
+  template <class T>
+  T* GetNativePeer(Dart_NativeArguments args, int index) {
+    auto handle = Dart_GetNativeArgument(args, index);
+    intptr_t peer = 0;
+    EXPECT_FALSE(Dart_IsError(Dart_GetNativeInstanceField(
+        handle, tonic::DartWrappable::kPeerIndex, &peer)));
+    return reinterpret_cast<T*>(peer);
+  }
 
-TEST_F(ShellTest, ImageReleasedAfterFrame) {
   fml::AutoResetWaitableEvent message_latch;
+  sk_sp<SkImage> current_image_;
+  sk_sp<SkPicture> current_picture_;
+};
 
-  sk_sp<SkImage> current_image;
-  sk_sp<SkPicture> current_picture;
+TEST_F(ImageReleaseTest, ImageReleasedAfterFrame) {
   auto nativeCaptureImageAndPicture = [&](Dart_NativeArguments args) {
     CanvasImage* image = GetNativePeer<CanvasImage>(args, 0);
     Picture* picture = GetNativePeer<Picture>(args, 1);
     ASSERT_FALSE(image->image()->unique());
     ASSERT_FALSE(picture->picture()->unique());
-    current_image = image->image();
-    current_picture = picture->picture();
+    current_image_ = image->image();
+    current_picture_ = picture->picture();
   };
 
   auto nativeDone = [&](Dart_NativeArguments args) { message_latch.Signal(); };
@@ -72,26 +74,25 @@ TEST_F(ShellTest, ImageReleasedAfterFrame) {
 
   message_latch.Wait();
 
-  ASSERT_TRUE(current_picture);
-  ASSERT_TRUE(current_image);
+  ASSERT_TRUE(current_picture_);
+  ASSERT_TRUE(current_image_);
 
   // AOT modes are fast enough that we get here before the task runner has
   // had a chance to drain. Make sure that if the picture or image are not
   // already unique, at least one idle notification has a chance to process
   // after rasterization has occurred.
-  if (!current_picture->unique() || !current_image->unique()) {
-    fml::AutoResetWaitableEvent latch;
-    task_runner->PostTask([&latch, engine = shell->GetEngine()]() {
+  if (!current_picture_->unique() || !current_image_->unique()) {
+    task_runner->PostTask([&, engine = shell->GetEngine()]() {
       ASSERT_TRUE(engine);
       engine->NotifyIdle(Dart_TimelineGetMicros() + 10000);
-      latch.Signal();
+      message_latch.Signal();
     });
-    latch.Wait();
+    message_latch.Wait();
   }
 
-  EXPECT_TRUE(current_picture->unique());
-  current_picture.reset();
-  EXPECT_TRUE(current_image->unique());
+  EXPECT_TRUE(current_picture_->unique());
+  current_picture_.reset();
+  EXPECT_TRUE(current_image_->unique());
 
   shell->GetPlatformView()->NotifyDestroyed();
   DestroyShell(std::move(shell), std::move(task_runners));
