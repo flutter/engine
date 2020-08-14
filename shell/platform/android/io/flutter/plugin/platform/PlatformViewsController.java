@@ -109,11 +109,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // API level 19 is required for `android.graphics.ImageReader`.
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT);
 
-          if (request == null) {
-            throw new IllegalStateException(
-                "Platform view hasn't been initialized from the platform view channel.");
-          }
-
           if (!validateDirection(request.direction)) {
             throw new IllegalStateException(
                 "Trying to create a view with unknown direction value: "
