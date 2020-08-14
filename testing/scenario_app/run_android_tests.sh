@@ -9,7 +9,7 @@ set -e
 
 cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd
 
-GRADLE_USER_HOME=$(pwd)/gradle-home/.cache
+GRADLE_USER_HOME=$(pwd)/android/gradle-home/.cache
 
 pushd android
 
