@@ -79,7 +79,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // it is associated with(e.g if a platform view creates other views in the same virtual display.
   private final HashMap<Context, View> contextToPlatformView;
 
-  private final SparseArray<PlatformViewsChannel.PlatformViewCreationRequest> platformViewRequests;
   private final SparseArray<View> platformViews;
   private final SparseArray<FlutterMutatorView> mutatorViews;
 
@@ -410,7 +409,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     currentFrameUsedOverlayLayerIds = new HashSet<>();
     currentFrameUsedPlatformViewIds = new HashSet<>();
 
-    platformViewRequests = new SparseArray<>();
     platformViews = new SparseArray<>();
     mutatorViews = new SparseArray<>();
 
