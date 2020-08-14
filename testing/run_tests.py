@@ -370,7 +370,6 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
   ios_out_dir = os.path.join(out_dir, ios_variant)
   EnsureIosTestsAreBuilt(ios_out_dir)
 
-  pretty = "cat" if subprocess.call(["which", "xcpretty"]) else "xcpretty"
   ios_unit_test_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'ios', 'IosUnitTests')
 
   command = [
@@ -379,8 +378,7 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
     '-scheme IosUnitTests '
     "-destination platform='iOS Simulator,name=iPhone 8' "
     'test '
-    'FLUTTER_ENGINE=' + ios_variant +
-    ' | ' + pretty
+    'FLUTTER_ENGINE=' + ios_variant
   ]
   RunCmd(command, cwd=ios_unit_test_dir, shell=True)
 
