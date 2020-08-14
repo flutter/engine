@@ -3,16 +3,7 @@
 // found in the LICENSE file.
 
 #import <Cocoa/Cocoa.h>
-
-/**
- * Listener for view resizing.
- */
-@protocol FlutterViewReshapeListener <NSObject>
-/**
- * Called when the view's backing store changes size.
- */
-- (void)viewDidReshape:(nonnull NSView*)view;
-@end
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterWindowController.h"
 
 /**
  * View capable of acting as a rendering target and input source for the Flutter

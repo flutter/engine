@@ -194,6 +194,9 @@ struct KeyboardState {
 
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
+
+  // Handler for window size changes.
+  FlutterWindowController* _windowController;
 }
 
 @dynamic view;
@@ -255,6 +258,11 @@ static void CommonInit(FlutterViewController* controller) {
     [self launchEngine];
   }
   [self listenForMetaModifiedKeyUpEvents];
+}
+
+- (void)viewDidAppear {
+  [super viewDidAppear];
+  _windowController = [[FlutterWindowController alloc] initWithView:self.view reshapeListener:self];
 }
 
 - (void)viewWillDisappear {

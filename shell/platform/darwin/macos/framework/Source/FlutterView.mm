@@ -39,11 +39,6 @@
   return YES;
 }
 
-- (void)reshape {
-  [super reshape];
-  [_reshapeListener viewDidReshape:self];
-}
-
 - (BOOL)acceptsFirstResponder {
   return YES;
 }
