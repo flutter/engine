@@ -73,6 +73,7 @@ executable("client_wrapper_unittests") {
     ":client_wrapper",
     ":client_wrapper_fixtures",
     ":client_wrapper_library_stubs",
+
     # Build the legacy version as well as a sanity check.
     ":client_wrapper_unittests_legacy_encodable_value",
     "//flutter/testing",
@@ -92,11 +93,13 @@ executable("client_wrapper_unittests_legacy_encodable_value") {
 
   sources = [
     "encodable_value_unittests.cc",
+    "standard_message_codec_unittests.cc",
+    "testing/test_codec_extensions.h",
   ]
 
   deps = [
-    ":client_wrapper_legacy_encodable_value",
     ":client_wrapper_fixtures",
+    ":client_wrapper_legacy_encodable_value",
     ":client_wrapper_library_stubs",
     "//flutter/testing",
 
@@ -106,5 +109,8 @@ executable("client_wrapper_unittests_legacy_encodable_value") {
     "//third_party/dart/runtime:libdart_jit",
   ]
 
-  defines = [ "FLUTTER_DESKTOP_LIBRARY", "USE_LEGACY_ENCODABLE_VALUE" ]
+  defines = [
+    "FLUTTER_DESKTOP_LIBRARY",
+    "USE_LEGACY_ENCODABLE_VALUE",
+  ]
 }
