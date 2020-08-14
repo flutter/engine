@@ -28,28 +28,25 @@ abstract class Path {
   void relativeLineTo(double dx, double dy);
   void quadraticBezierTo(double x1, double y1, double x2, double y2);
   void relativeQuadraticBezierTo(double x1, double y1, double x2, double y2);
-  void cubicTo(
-      double x1, double y1, double x2, double y2, double x3, double y3);
-  void relativeCubicTo(
-      double x1, double y1, double x2, double y2, double x3, double y3);
+  void cubicTo(double x1, double y1, double x2, double y2, double x3, double y3);
+  void relativeCubicTo(double x1, double y1, double x2, double y2, double x3, double y3);
   void conicTo(double x1, double y1, double x2, double y2, double w);
   void relativeConicTo(double x1, double y1, double x2, double y2, double w);
-  void arcTo(
-      Rect rect, double startAngle, double sweepAngle, bool forceMoveTo);
+  void arcTo(Rect rect, double startAngle, double sweepAngle, bool forceMoveTo);
   void arcToPoint(
-      Offset arcEnd, {
-        Radius radius = Radius.zero,
-        double rotation = 0.0,
-        bool largeArc = false,
-        bool clockwise = true,
-      });
+    Offset arcEnd, {
+    Radius radius = Radius.zero,
+    double rotation = 0.0,
+    bool largeArc = false,
+    bool clockwise = true,
+  });
   void relativeArcToPoint(
-      Offset arcEndDelta, {
-        Radius radius = Radius.zero,
-        double rotation = 0.0,
-        bool largeArc = false,
-        bool clockwise = true,
-      });
+    Offset arcEndDelta, {
+    Radius radius = Radius.zero,
+    double rotation = 0.0,
+    bool largeArc = false,
+    bool clockwise = true,
+  });
   void addRect(Rect rect);
   void addOval(Rect oval);
   void addArc(Rect oval, double startAngle, double sweepAngle);
@@ -72,5 +69,6 @@ abstract class Path {
     }
     throw UnimplementedError();
   }
+
   PathMetrics computeMetrics({bool forceClosed = false});
 }

@@ -7,18 +7,11 @@
 part of ui;
 
 typedef VoidCallback = void Function();
-
 typedef FrameCallback = void Function(Duration duration);
-
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
-
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
-
-typedef SemanticsActionCallback = void Function(
-    int id, SemanticsAction action, ByteData? args);
-
+typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
-
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
 
@@ -30,17 +23,18 @@ enum AppLifecycleState {
 }
 
 abstract class WindowPadding {
-  const factory WindowPadding._(
-      {required double left,
-      required double top,
-      required double right,
-      required double bottom}) = engine.WindowPadding;
+  const factory WindowPadding._({
+    required double left,
+    required double top,
+    required double right,
+    required double bottom,
+  }) = engine.WindowPadding;
+
   double get left;
   double get top;
   double get right;
   double get bottom;
-  static const WindowPadding zero =
-      WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+  static const WindowPadding zero = WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
   @override
   String toString() {
@@ -223,6 +217,7 @@ abstract class Window {
     // TODO(garyq): Implement on web.
     return null;
   }
+
   VoidCallback? get onLocaleChanged;
   set onLocaleChanged(VoidCallback? callback);
   void scheduleFrame();
@@ -235,8 +230,7 @@ abstract class Window {
   PointerDataPacketCallback? get onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback);
   String get defaultRouteName;
-  bool get semanticsEnabled =>
-      engine.EngineSemanticsOwner.instance.semanticsEnabled;
+  bool get semanticsEnabled => engine.EngineSemanticsOwner.instance.semanticsEnabled;
   VoidCallback? get onSemanticsEnabledChanged;
   set onSemanticsEnabledChanged(VoidCallback? callback);
   SemanticsActionCallback? get onSemanticsAction;
@@ -248,6 +242,7 @@ abstract class Window {
   void updateSemantics(SemanticsUpdate update) {
     engine.EngineSemanticsOwner.instance.updateSemantics(update);
   }
+
   void sendPlatformMessage(
     String name,
     ByteData? data,
@@ -401,21 +396,16 @@ class FrameTiming {
     ]);
   }
   FrameTiming._(List<int> timestamps)
-      : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
+      : assert(timestamps.length == FramePhase.values.length),
+        _timestamps = timestamps;
+
   int timestampInMicroseconds(FramePhase phase) => _timestamps[phase.index];
 
-  Duration _rawDuration(FramePhase phase) =>
-      Duration(microseconds: _timestamps[phase.index]);
-  Duration get buildDuration =>
-      _rawDuration(FramePhase.buildFinish) -
-      _rawDuration(FramePhase.buildStart);
-  Duration get rasterDuration =>
-      _rawDuration(FramePhase.rasterFinish) -
-      _rawDuration(FramePhase.rasterStart);
+  Duration _rawDuration(FramePhase phase) => Duration(microseconds: _timestamps[phase.index]);
+  Duration get buildDuration => _rawDuration(FramePhase.buildFinish) - _rawDuration(FramePhase.buildStart);
+  Duration get rasterDuration => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.rasterStart);
   Duration get vsyncOverhead => _rawDuration(FramePhase.buildStart) - _rawDuration(FramePhase.vsyncStart);
-  Duration get totalSpan =>
-      _rawDuration(FramePhase.rasterFinish) -
-      _rawDuration(FramePhase.vsyncStart);
+  Duration get totalSpan => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.vsyncStart);
 
   final List<int> _timestamps; // in microseconds
 

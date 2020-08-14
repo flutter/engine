@@ -21,6 +21,7 @@ double _lerpDouble(double a, double b, double t) {
 double _lerpInt(int a, int b, double t) {
   return a + (b - a) * t;
 }
+
 int _clampInt(int value, int min, int max) {
   assert(min <= max);
   if (value < min) {

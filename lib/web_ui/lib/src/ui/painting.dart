@@ -7,17 +7,14 @@ part of ui;
 
 // ignore: unused_element, Used in Shader assert.
 bool _offsetIsValid(Offset offset) {
-  assert(offset != null,
-      'Offset argument was null.'); // ignore: unnecessary_null_comparison
-  assert(!offset.dx.isNaN && !offset.dy.isNaN,
-      'Offset argument contained a NaN value.');
+  assert(offset != null, 'Offset argument was null.'); // ignore: unnecessary_null_comparison
+  assert(!offset.dx.isNaN && !offset.dy.isNaN, 'Offset argument contained a NaN value.');
   return true;
 }
 
 // ignore: unused_element, Used in Shader assert.
 bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4 != null,
-      'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
+  assert(matrix4 != null, 'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
 }
@@ -25,12 +22,10 @@ bool _matrix4IsValid(Float32List matrix4) {
 void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   if (colorStops == null) {
     if (colors.length != 2)
-      throw ArgumentError(
-          '"colors" must have length 2 if "colorStops" is omitted.');
+      throw ArgumentError('"colors" must have length 2 if "colorStops" is omitted.');
   } else {
     if (colors.length != colorStops.length)
-      throw ArgumentError(
-          '"colors" and "colorStops" arguments must have equal length.');
+      throw ArgumentError('"colors" and "colorStops" arguments must have equal length.');
   }
 }
 
@@ -61,16 +56,20 @@ class Color {
   Color withAlpha(int a) {
     return Color.fromARGB(a, red, green, blue);
   }
+
   Color withOpacity(double opacity) {
     assert(opacity >= 0.0 && opacity <= 1.0);
     return withAlpha((255.0 * opacity).round());
   }
+
   Color withRed(int r) {
     return Color.fromARGB(alpha, r, green, blue);
   }
+
   Color withGreen(int g) {
     return Color.fromARGB(alpha, red, g, blue);
   }
+
   Color withBlue(int b) {
     return Color.fromARGB(alpha, red, green, b);
   }
@@ -82,6 +81,7 @@ class Color {
     }
     return math.pow((component + 0.055) / 1.055, 2.4) as double;
   }
+
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
     final double R = _linearizeColorComponent(red / 0xFF);
@@ -89,6 +89,7 @@ class Color {
     final double B = _linearizeColorComponent(blue / 0xFF);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
+
   static Color? lerp(Color? a, Color? b, double t) {
     assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
@@ -110,6 +111,7 @@ class Color {
       }
     }
   }
+
   static Color alphaBlend(Color foreground, Color background) {
     final int alpha = foreground.alpha;
     if (alpha == 0x00) {
@@ -139,6 +141,7 @@ class Color {
       );
     }
   }
+
   static int getAlphaFromOpacity(double opacity) {
     assert(opacity != null); // ignore: unnecessary_null_comparison
     return (opacity.clamp(0.0, 1.0) * 255).round();
@@ -227,8 +230,7 @@ enum Clip {
 }
 
 abstract class Paint {
-  factory Paint() =>
-      engine.experimentalUseSkia ? engine.CkPaint() : engine.SurfacePaint();
+  factory Paint() => engine.experimentalUseSkia ? engine.CkPaint() : engine.SurfacePaint();
   static bool enableDithering = false;
   BlendMode get blendMode;
   set blendMode(BlendMode value);
@@ -292,22 +294,19 @@ abstract class Gradient extends Shader {
     _validateColorStops(colors, colorStops);
     // If focal is null or focal radius is null, this should be treated as a regular radial gradient
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
-    final Float32List? matrix32 =
-        matrix4 != null ? engine.toMatrix32(matrix4) : null;
+    final Float32List? matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
       return engine.experimentalUseSkia
-        ? engine.CkGradientRadial(
-          center, radius, colors, colorStops, tileMode, matrix32)
-        : engine.GradientRadial(
-          center, radius, colors, colorStops, tileMode, matrix32);
+          ? engine.CkGradientRadial(center, radius, colors, colorStops, tileMode, matrix32)
+          : engine.GradientRadial(center, radius, colors, colorStops, tileMode, matrix32);
     } else {
       assert(center != Offset.zero ||
           focal != Offset.zero); // will result in exception(s) in Skia side
       return engine.experimentalUseSkia
-        ? engine.CkGradientConical(focal, focalRadius, center, radius, colors,
-          colorStops, tileMode, matrix32)
-        : engine.GradientConical(focal, focalRadius, center, radius, colors,
-          colorStops, tileMode, matrix32);
+          ? engine.CkGradientConical(
+              focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32)
+          : engine.GradientConical(
+              focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32);
     }
   }
   factory Gradient.sweep(
@@ -328,8 +327,7 @@ abstract class Gradient extends Shader {
 abstract class Image {
   int get width;
   int get height;
-  Future<ByteData?> toByteData(
-      {ImageByteFormat format = ImageByteFormat.rawRgba});
+  Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba});
   void dispose();
 
   @override
@@ -337,14 +335,10 @@ abstract class Image {
 }
 
 abstract class ColorFilter {
-  const factory ColorFilter.mode(Color color, BlendMode blendMode) =
-      engine.EngineColorFilter.mode;
-  const factory ColorFilter.matrix(List<double> matrix) =
-      engine.EngineColorFilter.matrix;
-  const factory ColorFilter.linearToSrgbGamma() =
-      engine.EngineColorFilter.linearToSrgbGamma;
-  const factory ColorFilter.srgbToLinearGamma() =
-      engine.EngineColorFilter.srgbToLinearGamma;
+  const factory ColorFilter.mode(Color color, BlendMode blendMode) = engine.EngineColorFilter.mode;
+  const factory ColorFilter.matrix(List<double> matrix) = engine.EngineColorFilter.matrix;
+  const factory ColorFilter.linearToSrgbGamma() = engine.EngineColorFilter.linearToSrgbGamma;
+  const factory ColorFilter.srgbToLinearGamma() = engine.EngineColorFilter.srgbToLinearGamma;
 }
 
 // These enum values must be kept in sync with SkBlurStyle.
@@ -370,9 +364,9 @@ class MaskFilter {
 
   @override
   bool operator ==(Object other) {
-    return other is MaskFilter &&
-        other._style == _style &&
-        other._sigma == _sigma;
+    return other is MaskFilter
+        && other._style == _style
+        && other._sigma == _sigma;
   }
 
   @override
@@ -399,11 +393,9 @@ class ImageFilter {
     return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
   }
 
-  ImageFilter.matrix(Float64List matrix4,
-      {FilterQuality filterQuality = FilterQuality.low}) {
+  ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
     // TODO(flutter_web): add implementation.
-    throw UnimplementedError(
-        'ImageFilter.matrix not implemented for web platform.');
+    throw UnimplementedError('ImageFilter.matrix not implemented for web platform.');
     //    if (matrix4.length != 16)
     //      throw ArgumentError('"matrix4" must have 16 entries.');
   }
@@ -436,6 +428,7 @@ class Codec {
   Future<FrameInfo> getNextFrame() {
     return engine.futurize<FrameInfo>(_getNextFrame);
   }
+
   String? _getNextFrame(engine.Callback<FrameInfo> callback) => null;
   void dispose() {}
 }
@@ -465,8 +458,7 @@ String? _instantiateImageCodec(
     } else {
       assert(height != null);
       assert(format != null);
-      engine.skiaInstantiateImageCodec(
-          list, callback, width, height, format!.index, rowBytes);
+      engine.skiaInstantiateImageCodec(list, callback, width, height, format!.index, rowBytes);
     }
     return null;
   }
@@ -482,24 +474,24 @@ Future<Codec?> webOnlyInstantiateImageCodecFromUrl(Uri uri,
 }
 
 String? _instantiateImageCodecFromUrl(
-    Uri uri,
-    engine.WebOnlyImageCodecChunkCallback? chunkCallback,
-    engine.Callback<Codec> callback) {
+  Uri uri,
+  engine.WebOnlyImageCodecChunkCallback? chunkCallback,
+  engine.Callback<Codec> callback,
+) {
   if (engine.experimentalUseSkia) {
-    engine.skiaInstantiateWebImageCodec(
-        uri.toString(), callback, chunkCallback);
+    engine.skiaInstantiateWebImageCodec(uri.toString(), callback, chunkCallback);
     return null;
   } else {
     callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
     return null;
   }
 }
+
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);
 }
 
-Future<void> _decodeImageFromListAsync(
-    Uint8List list, ImageDecoderCallback callback) async {
+Future<void> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback callback) async {
   final Codec codec = await instantiateImageCodec(list);
   final FrameInfo frameInfo = await codec.getNextFrame();
   callback(frameInfo.image);
@@ -516,8 +508,7 @@ void decodeImageFromPixels(
   int? targetHeight,
   bool allowUpscaling = true,
 }) {
-  final Future<Codec> codecFuture =
-      _futurize((engine.Callback<Codec> callback) {
+  final Future<Codec> codecFuture = _futurize((engine.Callback<Codec> callback) {
     return _instantiateImageCodec(
       pixels,
       callback,
@@ -553,12 +544,14 @@ class Shadow {
   static double convertRadiusToSigma(double radius) {
     return radius * 0.57735 + 0.5;
   }
+
   double get blurSigma => convertRadiusToSigma(blurRadius);
   Paint toPaint() {
     return Paint()
       ..color = color
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, blurSigma);
   }
+
   Shadow scale(double factor) {
     return Shadow(
       color: color,
@@ -566,6 +559,7 @@ class Shadow {
       blurRadius: blurRadius * factor,
     );
   }
+
   static Shadow? lerp(Shadow? a, Shadow? b, double t) {
     assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
@@ -586,6 +580,7 @@ class Shadow {
       }
     }
   }
+
   static List<Shadow>? lerpList(List<Shadow>? a, List<Shadow>? b, double t) {
     assert(t != null); // ignore: unnecessary_null_comparison
     if (a == null && b == null) {
@@ -624,8 +619,7 @@ class Shadow {
 }
 
 class ImageShader extends Shader {
-  factory ImageShader(
-      Image image, TileMode tmx, TileMode tmy, Float64List matrix4) {
+  factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4) {
     if (engine.experimentalUseSkia) {
       return engine.CkImageShader(image, tmx, tmy, matrix4);
     }
@@ -657,6 +651,7 @@ class ImageDescriptor {
     descriptor._data = buffer._list;
     return descriptor;
   }
+
   // Not async because there's no expensive work to do here.
   ImageDescriptor.raw(
     ImmutableBuffer buffer, {
@@ -678,13 +673,13 @@ class ImageDescriptor {
   final PixelFormat? _format;
 
   Never _throw(String parameter) {
-    throw UnsupportedError(
-        'ImageDescriptor.$parameter is not supported on web.');
+    throw UnsupportedError('ImageDescriptor.$parameter is not supported on web.');
   }
+
   int get width => _width ?? _throw('width');
   int get height => _height ?? _throw('height');
-  int get bytesPerPixel => throw UnsupportedError(
-      'ImageDescriptor.bytesPerPixel is not supported on web.');
+  int get bytesPerPixel =>
+      throw UnsupportedError('ImageDescriptor.bytesPerPixel is not supported on web.');
   void dispose() => _data = null;
   Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) {
     if (_data == null) {

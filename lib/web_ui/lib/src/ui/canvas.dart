@@ -31,14 +31,20 @@ class Vertices {
     List<int>? indices,
   }) {
     if (engine.experimentalUseSkia) {
-      return engine.CkVertices(mode, positions,
-          textureCoordinates: textureCoordinates,
-          colors: colors,
-          indices: indices);
-    }
-    return engine.SurfaceVertices(mode, positions,
+      return engine.CkVertices(
+        mode,
+        positions,
+        textureCoordinates: textureCoordinates,
         colors: colors,
-        indices: indices);
+        indices: indices,
+      );
+    }
+    return engine.SurfaceVertices(
+      mode,
+      positions,
+      colors: colors,
+      indices: indices,
+    );
   }
   factory Vertices.raw(
     VertexMode mode,
@@ -48,14 +54,20 @@ class Vertices {
     Uint16List? indices,
   }) {
     if (engine.experimentalUseSkia) {
-      return engine.CkVertices.raw(mode, positions,
-          textureCoordinates: textureCoordinates,
-          colors: colors,
-          indices: indices);
-    }
-    return engine.SurfaceVertices.raw(mode, positions,
+      return engine.CkVertices.raw(
+        mode,
+        positions,
+        textureCoordinates: textureCoordinates,
         colors: colors,
-        indices: indices);
+        indices: indices,
+      );
+    }
+    return engine.SurfaceVertices.raw(
+      mode,
+      positions,
+      colors: colors,
+      indices: indices,
+    );
   }
 }
 
@@ -88,8 +100,7 @@ abstract class Canvas {
   void rotate(double radians);
   void skew(double sx, double sy);
   void transform(Float64List matrix4);
-  void clipRect(Rect rect,
-      {ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true});
+  void clipRect(Rect rect, {ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true});
   void clipRRect(RRect rrect, {bool doAntiAlias = true});
   void clipPath(Path path, {bool doAntiAlias = true});
   void drawColor(Color color, BlendMode blendMode);
@@ -100,8 +111,7 @@ abstract class Canvas {
   void drawDRRect(RRect outer, RRect inner, Paint paint);
   void drawOval(Rect rect, Paint paint);
   void drawCircle(Offset c, double radius, Paint paint);
-  void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter,
-      Paint paint);
+  void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter, Paint paint);
   void drawPath(Path path, Paint paint);
   void drawImage(Image image, Offset offset, Paint paint);
   void drawImageRect(Image image, Rect src, Rect dst, Paint paint);

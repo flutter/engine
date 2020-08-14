@@ -16,8 +16,7 @@ class _StoredMessage {
 class _RingBuffer<T> {
   final collection.ListQueue<T> _queue;
 
-  _RingBuffer(this._capacity)
-    : _queue = collection.ListQueue<T>(_capacity);
+  _RingBuffer(this._capacity) : _queue = collection.ListQueue<T>(_capacity);
   int get length => _queue.length;
   int _capacity;
   int get capacity => _capacity;
@@ -26,6 +25,7 @@ class _RingBuffer<T> {
   set dropItemCallback(Function(T) callback) {
     _dropItemCallback = callback;
   }
+
   bool push(T val) {
     if (_capacity <= 0) {
       return true;
@@ -35,9 +35,11 @@ class _RingBuffer<T> {
       return overflowCount > 0;
     }
   }
+
   T? pop() {
     return _queue.isEmpty ? null : _queue.removeFirst();
   }
+
   int _dropOverflowItems(int lengthLimit) {
     int result = 0;
     while (_queue.length > lengthLimit) {
@@ -47,6 +49,7 @@ class _RingBuffer<T> {
     }
     return result;
   }
+
   int resize(int newSize) {
     _capacity = newSize;
     return _dropOverflowItems(newSize);
@@ -60,7 +63,7 @@ class ChannelBuffers {
 
   static const String kControlChannelName = 'dev.flutter/channel-buffers';
   final Map<String, _RingBuffer<_StoredMessage>?> _messages =
-    <String, _RingBuffer<_StoredMessage>?>{};
+      <String, _RingBuffer<_StoredMessage>?>{};
 
   _RingBuffer<_StoredMessage> _makeRingBuffer(int size) {
     final _RingBuffer<_StoredMessage> result = _RingBuffer<_StoredMessage>(size);
@@ -71,6 +74,7 @@ class ChannelBuffers {
   void _onDropItem(_StoredMessage message) {
     message.callback(null);
   }
+
   bool push(String channel, ByteData? data, PlatformMessageResponseCallback callback) {
     _RingBuffer<_StoredMessage>? queue = _messages[channel];
     if (queue == null) {
@@ -89,6 +93,7 @@ class ChannelBuffers {
     }
     return didOverflow;
   }
+
   _StoredMessage? _pop(String channel) {
     final _RingBuffer<_StoredMessage>? queue = _messages[channel];
     final _StoredMessage? result = queue?.pop();
@@ -99,6 +104,7 @@ class ChannelBuffers {
     final _RingBuffer<_StoredMessage>? queue = _messages[channel];
     return (queue == null) ? true : queue.isEmpty;
   }
+
   void _resize(String channel, int newSize) {
     _RingBuffer<_StoredMessage>? queue = _messages[channel];
     if (queue == null) {
@@ -111,6 +117,7 @@ class ChannelBuffers {
       }
     }
   }
+
   Future<void> drain(String channel, DrainChannelCallback callback) async {
     while (!_isEmpty(channel)) {
       final _StoredMessage message = _pop(channel)!;
@@ -123,6 +130,7 @@ class ChannelBuffers {
     final Uint8List list = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     return utf8.decode(list);
   }
+
   void handleMessage(ByteData data) {
     final List<String> command = _getString(data).split('\r');
     if (command.length == /*arity=*/2 + 1 && command[0] == 'resize') {
@@ -132,4 +140,5 @@ class ChannelBuffers {
     }
   }
 }
+
 final ChannelBuffers channelBuffers = ChannelBuffers();

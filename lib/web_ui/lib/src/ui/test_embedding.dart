@@ -9,14 +9,13 @@ part of ui;
 
 Future<void>? _testPlatformInitializedFuture;
 
-Future<dynamic> ensureTestPlatformInitializedThenRunTest(
-    dynamic Function() body) {
+Future<dynamic> ensureTestPlatformInitializedThenRunTest(dynamic Function() body) {
   if (_testPlatformInitializedFuture == null) {
     debugEmulateFlutterTesterEnvironment = true;
 
     // Initializing the platform will ensure that the test font is loaded.
-    _testPlatformInitializedFuture = webOnlyInitializePlatform(
-        assetManager: engine.WebOnlyMockAssetManager());
+    _testPlatformInitializedFuture =
+        webOnlyInitializePlatform(assetManager: engine.WebOnlyMockAssetManager());
   }
   return _testPlatformInitializedFuture!.then<dynamic>((_) => body());
 }

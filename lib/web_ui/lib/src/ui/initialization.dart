@@ -65,7 +65,6 @@ Future<void> webOnlySetAssetManager(engine.AssetManager assetManager) async {
     _fontCollection!.clear();
   }
 
-
   if (_assetManager != null) {
     if (engine.experimentalUseSkia) {
       await engine.skiaFontCollection.registerFonts(_assetManager!);
@@ -78,15 +77,14 @@ Future<void> webOnlySetAssetManager(engine.AssetManager assetManager) async {
     _fontCollection!.debugRegisterTestFonts();
   }
 }
-bool get debugEmulateFlutterTesterEnvironment =>
-    _debugEmulateFlutterTesterEnvironment;
+
+bool get debugEmulateFlutterTesterEnvironment => _debugEmulateFlutterTesterEnvironment;
 
 set debugEmulateFlutterTesterEnvironment(bool value) {
   _debugEmulateFlutterTesterEnvironment = value;
   if (_debugEmulateFlutterTesterEnvironment) {
     const Size logicalSize = Size(800.0, 600.0);
-    engine.window.webOnlyDebugPhysicalSizeOverride =
-        logicalSize * window.devicePixelRatio;
+    engine.window.webOnlyDebugPhysicalSizeOverride = logicalSize * window.devicePixelRatio;
   }
 }
 

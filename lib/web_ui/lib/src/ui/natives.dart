@@ -19,10 +19,12 @@ class _Logger {
   static void _printString(String? s) {
     print(s);
   }
+
   static void _printDebugString(String? s) {
     html.window.console.error(s!);
   }
 }
+
 List<int> saveCompilationTrace() {
   throw UnimplementedError();
 }

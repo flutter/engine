@@ -148,6 +148,7 @@ class TextDecoration {
   bool contains(TextDecoration other) {
     return (_mask | other._mask) == _mask;
   }
+
   static const TextDecoration none = TextDecoration._(0x0);
   static const TextDecoration underline = TextDecoration._(0x1);
   static const TextDecoration overline = TextDecoration._(0x2);
@@ -209,7 +210,7 @@ class TextHeightBehavior {
   @override
   bool operator ==(Object other) {
     if (other.runtimeType != runtimeType)
-      return false;
+     return false;
     return other is TextHeightBehavior
         && other.applyHeightToFirstAscent == applyHeightToFirstAscent
         && other.applyHeightToLastDescent == applyHeightToLastDescent;
@@ -256,47 +257,47 @@ abstract class TextStyle {
   }) {
     if (engine.experimentalUseSkia) {
       return engine.CkTextStyle(
-          color: color,
-          decoration: decoration,
-          decorationColor: decorationColor,
-          decorationStyle: decorationStyle,
-          decorationThickness: decorationThickness,
-          fontWeight: fontWeight,
-          fontStyle: fontStyle,
-          textBaseline: textBaseline,
-          fontFamily: fontFamily,
-          fontFamilyFallback: fontFamilyFallback,
-          fontSize: fontSize,
-          letterSpacing: letterSpacing,
-          wordSpacing: wordSpacing,
-          height: height,
-          locale: locale,
-          background: background as engine.CkPaint?,
-          foreground: foreground as engine.CkPaint?,
-          shadows: shadows,
-          fontFeatures: fontFeatures,
+        color: color,
+        decoration: decoration,
+        decorationColor: decorationColor,
+        decorationStyle: decorationStyle,
+        decorationThickness: decorationThickness,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        textBaseline: textBaseline,
+        fontFamily: fontFamily,
+        fontFamilyFallback: fontFamilyFallback,
+        fontSize: fontSize,
+        letterSpacing: letterSpacing,
+        wordSpacing: wordSpacing,
+        height: height,
+        locale: locale,
+        background: background as engine.CkPaint?,
+        foreground: foreground as engine.CkPaint?,
+        shadows: shadows,
+        fontFeatures: fontFeatures,
       );
     } else {
       return engine.EngineTextStyle(
-          color: color,
-          decoration: decoration,
-          decorationColor: decorationColor,
-          decorationStyle: decorationStyle,
-          decorationThickness: decorationThickness,
-          fontWeight: fontWeight,
-          fontStyle: fontStyle,
-          textBaseline: textBaseline,
-          fontFamily: fontFamily,
-          fontFamilyFallback: fontFamilyFallback,
-          fontSize: fontSize,
-          letterSpacing: letterSpacing,
-          wordSpacing: wordSpacing,
-          height: height,
-          locale: locale,
-          background: background,
-          foreground: foreground,
-          shadows: shadows,
-          fontFeatures: fontFeatures,
+        color: color,
+        decoration: decoration,
+        decorationColor: decorationColor,
+        decorationStyle: decorationStyle,
+        decorationThickness: decorationThickness,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        textBaseline: textBaseline,
+        fontFamily: fontFamily,
+        fontFamilyFallback: fontFamilyFallback,
+        fontSize: fontSize,
+        letterSpacing: letterSpacing,
+        wordSpacing: wordSpacing,
+        height: height,
+        locale: locale,
+        background: background,
+        foreground: foreground,
+        shadows: shadows,
+        fontFeatures: fontFeatures,
       );
     }
   }
@@ -388,6 +389,7 @@ class TextBox {
   double get start {
     return (direction == TextDirection.ltr) ? left : right;
   }
+
   double get end {
     return (direction == TextDirection.ltr) ? right : left;
   }
@@ -470,10 +472,12 @@ class TextRange {
     assert(isNormalized);
     return text.substring(0, start);
   }
+
   String textAfter(String text) {
     assert(isNormalized);
     return text.substring(end);
   }
+
   String textInside(String text) {
     assert(isNormalized);
     return text.substring(start, end);
@@ -607,7 +611,7 @@ abstract class ParagraphBuilder {
 Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   if (engine.experimentalUseSkia) {
     return engine.skiaFontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
-        (_) => engine.sendFontChangeMessage()
+      (_) => engine.sendFontChangeMessage()
     );
   } else {
     return _fontCollection!.loadFontFromList(list, fontFamily: fontFamily!).then(
