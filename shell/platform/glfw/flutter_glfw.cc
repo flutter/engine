@@ -185,7 +185,7 @@ static FlutterDesktopMessage ConvertToDesktopMessage(
 static double GetScreenCoordinatesPerInch() {
   auto* primary_monitor = glfwGetPrimaryMonitor();
   if (primary_monitor == nullptr) {
-    return kDpPerInch; 
+    return kDpPerInch;
   }
   auto* primary_monitor_mode = glfwGetVideoMode(primary_monitor);
   int primary_monitor_width_mm;
