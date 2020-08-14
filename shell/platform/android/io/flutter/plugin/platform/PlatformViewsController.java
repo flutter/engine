@@ -120,7 +120,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                 "Trying to create a view with unknown direction value: "
                     + request.direction
                     + "(view id: "
-                    + viewId
+                    + request.viewId
                     + ")");
           }
 
@@ -130,14 +130,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                 "Trying to create a platform view of unregistered type: " + request.viewType);
           }
 
-          final Object createParams = null;
+          Object createParams = null;
           if (request.params != null) {
             createParams = factory.getCreateArgsCodec().decodeMessage(request.params);
           }
 
-          final PlatformView platformView = factory.create(context, viewId, createParams);
+          final PlatformView platformView = factory.create(context, request.viewId, createParams);
           final View view = platformView.getView();
-
           if (view == null) {
             throw new IllegalStateException(
                 "PlatformView#getView() returned null, but an Android view reference was expected.");
@@ -146,7 +145,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             throw new IllegalStateException(
                 "The Android view returned from PlatformView#getView() was already added to a parent view.");
           }
-          platformViews.put(viewId, view);
+          platformViews.put(request.viewId, view);
         }
 
         @Override
