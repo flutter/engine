@@ -102,7 +102,9 @@ Future<void> pumpImage() async {
     final Scene scene = builder.build();
     window.render(scene);
     scene.dispose();
-    window.onBeginFrame = (Duration duration) => _done();
+    window.onBeginFrame = (Duration duration) {
+      window.onDrawFrame = _done;
+    };
     window.scheduleFrame();
   };
 
