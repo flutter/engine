@@ -372,6 +372,10 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
 
   ios_unit_test_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'ios', 'IosUnitTests')
 
+  # Avoid using xcpretty unless the following can be addressed:
+  # - Make sure all relevant failure output is printed on a failure.
+  # - Make sure that a failing exit code is set for CI.
+  # See https://github.com/flutter/flutter/issues/63742
   command = [
     'xcodebuild '
     '-sdk iphonesimulator '
