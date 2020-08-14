@@ -23,7 +23,7 @@ class LayerTreeTest : public CanvasTest, public CompositorContext::Delegate {
  public:
   LayerTreeTest()
       : layer_tree_(SkISize::Make(64, 64), 100.0f, 1.0f),
-        compositor_context_(*this, fml::kDefaultFrameBudget),
+        compositor_context_(*this),
         root_transform_(SkMatrix::Translate(1.0f, 1.0f)),
         scoped_frame_(compositor_context_.AcquireFrame(nullptr,
                                                        &mock_canvas(),
@@ -39,6 +39,10 @@ class LayerTreeTest : public CanvasTest, public CompositorContext::Delegate {
 
   void OnCompositorEndFrame(size_t freed_hint) override {
     last_freed_hint_ = freed_hint;
+  }
+
+  fml::Milliseconds GetFrameBudget() override {
+    return fml::kDefaultFrameBudget;
   }
 
   size_t last_freed_hint() { return last_freed_hint_; }

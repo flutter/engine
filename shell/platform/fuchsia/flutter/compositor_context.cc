@@ -65,13 +65,15 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
 };
 
 CompositorContext::CompositorContext(
+    flutter::CompositorContext::Delegate& delegate,
     std::string debug_label,
     fuchsia::ui::views::ViewToken view_token,
     scenic::ViewRefPair view_ref_pair,
     fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
     fml::closure session_error_callback,
     zx_handle_t vsync_event_handle)
-    : debug_label_(std::move(debug_label)),
+    : flutter::CompositorContext(delegate),
+      debug_label_(std::move(debug_label)),
       session_connection_(
           debug_label_,
           std::move(view_token),

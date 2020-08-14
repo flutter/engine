@@ -1200,7 +1200,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
   }
 }
 
-void Shell::OnCompositorFrameEnd(size_t freed_hint) {
+void Shell::OnCompositorEndFrame(size_t freed_hint) {
   if (engine_) {
     engine_->HintFreed(freed_hint);
   }

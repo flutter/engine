@@ -9,9 +9,10 @@
 
 namespace flutter {
 
-CompositorContext::CompositorContext(Delegate& delegate,
-                                     fml::Milliseconds frame_budget)
-    : delegate_(delegate), raster_time_(frame_budget), ui_time_(frame_budget) {}
+CompositorContext::CompositorContext(Delegate& delegate)
+    : delegate_(delegate),
+      raster_time_(delegate.GetFrameBudget()),
+      ui_time_(delegate.GetFrameBudget()) {}
 
 CompositorContext::~CompositorContext() = default;
 

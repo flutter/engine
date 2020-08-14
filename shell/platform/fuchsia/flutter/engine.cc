@@ -221,6 +221,7 @@ Engine::Engine(Delegate& delegate,
           TRACE_DURATION("flutter", "CreateCompositorContext");
           compositor_context =
               std::make_unique<flutter_runner::CompositorContext>(
+                  shell,
                   thread_label,           // debug label
                   std::move(view_token),  // scenic view we attach our tree to
                   std::move(view_ref_pair),  // scenic view ref/view ref control

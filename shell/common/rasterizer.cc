@@ -27,9 +27,7 @@ static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
 Rasterizer::Rasterizer(Delegate& delegate)
     : Rasterizer(delegate,
-                 std::make_unique<flutter::CompositorContext>(
-                     *this,
-                     delegate.GetFrameBudget())) {}
+                 std::make_unique<flutter::CompositorContext>(delegate)) {}
 
 Rasterizer::Rasterizer(
     Delegate& delegate,
@@ -262,10 +260,6 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
                               [image = std::move(image)](SkCanvas* canvas) {
                                 canvas->drawImage(image, 0, 0);
                               });
-}
-
-void Rasterizer::OnCompositorEndFrame(size_t freed_hint) {
-  delegate_.OnCompositorFrameEnd(freed_hint);
 }
 
 RasterStatus Rasterizer::DoDraw(

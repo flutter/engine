@@ -21,7 +21,8 @@ namespace flutter_runner {
 // Fuchsia.
 class CompositorContext final : public flutter::CompositorContext {
  public:
-  CompositorContext(std::string debug_label,
+  CompositorContext(CompositorContext::Delegate& delegate,
+                    std::string debug_label,
                     fuchsia::ui::views::ViewToken view_token,
                     scenic::ViewRefPair view_ref_pair,
                     fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,

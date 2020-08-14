@@ -39,7 +39,11 @@ class CompositorContext {
  public:
   class Delegate {
    public:
+    /// Called at the end of a frame with approximately how many bytes mightbe
+    /// freed if a GC ran now.
     virtual void OnCompositorEndFrame(size_t freed_hint) = 0;
+    /// Time limit for a smooth frame. See `Engine::GetDisplayRefreshRate`.
+    virtual fml::Milliseconds GetFrameBudget() = 0;
   };
 
   class ScopedFrame {
@@ -88,8 +92,7 @@ class CompositorContext {
     FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
 
-  CompositorContext(Delegate& delegate,
-                    fml::Milliseconds frame_budget = fml::kDefaultFrameBudget);
+  explicit CompositorContext(Delegate& delegate);
 
   virtual ~CompositorContext();
 

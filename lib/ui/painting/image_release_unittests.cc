@@ -43,11 +43,12 @@ TEST_F(ShellTest, ImageReleasedAfterFrame) {
   auto nativeDone = [&](Dart_NativeArguments args) { message_latch.Signal(); };
 
   Settings settings = CreateSettingsForFixture();
+  auto task_runner = CreateNewThread();
   TaskRunners task_runners("test",                  // label
                            GetCurrentTaskRunner(),  // platform
-                           CreateNewThread(),       // raster
-                           CreateNewThread(),       // ui
-                           CreateNewThread()        // io
+                           task_runner,             // raster
+                           task_runner,             // ui
+                           task_runner              // io
   );
 
   AddNativeCallback("CaptureImageAndPicture",
@@ -74,22 +75,19 @@ TEST_F(ShellTest, ImageReleasedAfterFrame) {
   ASSERT_TRUE(current_picture);
   ASSERT_TRUE(current_image);
 
-  ASSERT_FALSE(current_picture->unique());
-  ASSERT_FALSE(current_image->unique());
-
-  // Drain the raster task runner to get to the end of the frame.
-  fml::AutoResetWaitableEvent latch;
-  task_runners.GetRasterTaskRunner()->PostTask([&latch]() { latch.Signal(); });
-  latch.Wait();
-
-  // Tell the engine we're idle.
-  task_runners.GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->GetEngine()]() {
-        ASSERT_TRUE(engine);
-        engine->NotifyIdle(Dart_TimelineGetMicros() + 10000);
-        latch.Signal();
-      });
-  latch.Wait();
+  // AOT modes are fast enough that we get here before the task runner has
+  // had a chance to drain. Make sure that if the picture or image are not
+  // already unique, at least one idle notification has a chance to process
+  // after rasterization has occurred.
+  if (!current_picture->unique() || !current_image->unique()) {
+    fml::AutoResetWaitableEvent latch;
+    task_runner->PostTask([&latch, engine = shell->GetEngine()]() {
+      ASSERT_TRUE(engine);
+      engine->NotifyIdle(Dart_TimelineGetMicros() + 10000);
+      latch.Signal();
+    });
+    latch.Wait();
+  }
 
   EXPECT_TRUE(current_picture->unique());
   current_picture.reset();
