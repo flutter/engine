@@ -173,6 +173,14 @@ struct KeyboardState {
  */
 - (void)setClipboardData:(NSDictionary*)data;
 
+/**
+ * Returns true iff the clipboard contains nonempty string data.
+ *
+ * See also:
+ *   * https://developer.apple.com/documentation/uikit/uipasteboard/1829416-hasstrings
+ */
+- (NSDictionary*)clipboardHasStrings;
+
 @end
 
 #pragma mark - FlutterViewController implementation.
@@ -505,6 +513,8 @@ static void CommonInit(FlutterViewController* controller) {
   } else if ([call.method isEqualToString:@"Clipboard.setData"]) {
     [self setClipboardData:call.arguments];
     result(nil);
+  } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
+    result([self clipboardHasStrings]);
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -527,11 +537,22 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)setClipboardData:(NSDictionary*)data {
   NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
-  NSString* text = data[@"text"];
+  NSString *text = data[@"text"];
   if (text && ![text isEqual:[NSNull null]]) {
     [pasteboard clearContents];
     [pasteboard setString:text forType:NSPasteboardTypeString];
   }
+}
+
+- (NSDictionary*)clipboardHasStrings {
+  NSDictionary* data = [self getClipboardData:[NSString stringWithFormat:@"%s", kTextPlainFormat]];
+  NSString* string = data[@"text"];
+  BOOL hasStrings = string.length > 0;
+  return @{@"value" : @(hasStrings)};
+  /*
+  UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
+  return @{@"value" : @(pasteboard.hasStrings)};
+  */
 }
 
 #pragma mark - FlutterViewReshapeListener
