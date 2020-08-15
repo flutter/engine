@@ -101,7 +101,10 @@ test_fixtures("flutter_desktop_darwin_fixtures") {
 executable("flutter_desktop_darwin_unittests") {
   testonly = true
 
-  sources = [ "framework/Source/FlutterEngineUnittests.mm" ]
+  sources = [
+    "framework/Source/FlutterEngineUnittests.mm",
+    "framework/Source/FlutterViewControllerTest.mm"
+  ]
 
   cflags_objcc = [ "-fobjc-arc" ]
 
