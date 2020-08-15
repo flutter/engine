@@ -561,7 +561,7 @@ TEST(AndroidExternalViewEmbedder, SupportsDynamicThreadMerging) {
 
   auto embedder =
       std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
-  ASSERT_TRUE(embedder->SupportDynamicThreadMerging(), true);
+  ASSERT_TRUE(embedder->SupportsDynamicThreadMerging());
 }
 
 }  // namespace testing
