@@ -147,9 +147,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       case TestTypesRequested.integration:
         return runIntegrationTests();
       case TestTypesRequested.all:
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/53322
-        // TODO(nurhan): Expand browser matrix for felt integration tests.
-        if (runAllTests && (isChrome || isSafariOnMacOS || isFirefox)) {
+        if (runAllTests && isIntegrationTestsAvailable) {
           bool unitTestResult = await runUnitTests();
           bool integrationTestResult = await runIntegrationTests();
           if (integrationTestResult != unitTestResult) {
@@ -255,29 +253,27 @@ class TestCommand extends Command<bool> with ArgUtils {
           targets: canvasKitTargets, forCanvasKit: true);
     }
 
-    // Copy image files under build directory.
-    // A side effect is this file copies all the images btween, even only one target
-    // test is asked to run.
+    // Copy image files from test/ to build/test/.
+    // A side effect is this file copies all the images even when only one
+    // target test is asked to run.
     final List<io.FileSystemEntity> contents =
         environment.webUiTestDir.listSync(recursive: true);
-    for (final io.FileSystemEntity entity in contents) {
-      if (entity is io.File) {
-        final String basename = path.basename(entity.path);
-        if (basename.contains('.png')) {
-          final String directoryPath = path.relative(path.dirname(entity.path),
-              from: environment.webUiRootDir.path);
-          final io.Directory directory = io.Directory(
-              path.join(environment.webUiBuildDir.path, directoryPath));
-          if (!directory.existsSync()) {
-            directory.createSync(recursive: true);
-          }
-          final String pathRelativeToWebUi = path.relative(entity.absolute.path,
-              from: environment.webUiRootDir.path);
-          entity.copySync(
-              path.join(environment.webUiBuildDir.path, pathRelativeToWebUi));
+    contents.whereType<io.File>().forEach((final io.File entity) {
+      final String basename = path.basename(entity.path);
+      if (basename.contains('.png')) {
+        final String directoryPath = path.relative(path.dirname(entity.path),
+            from: environment.webUiRootDir.path);
+        final io.Directory directory = io.Directory(
+            path.join(environment.webUiBuildDir.path, directoryPath));
+        if (!directory.existsSync()) {
+          directory.createSync(recursive: true);
         }
+        final String pathRelativeToWebUi = path.relative(entity.absolute.path,
+            from: environment.webUiRootDir.path);
+        entity.copySync(
+            path.join(environment.webUiBuildDir.path, pathRelativeToWebUi));
       }
-    }
+    });
 
     stopwatch.stop();
     print('The build took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
@@ -313,6 +309,41 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   /// Whether [browser] is set to "safari".
   bool get isSafariOnMacOS => browser == 'safari' && io.Platform.isMacOS;
+
+  /// Due to efficiancy constraints, Chrome integration tests only run on
+  /// Linux on LUCI.
+  ///
+  /// They run on all platforms for local.
+  bool get isChromeIntegrationTestAvailable =>
+      (isChrome && isLuci && io.Platform.isLinux) || (isChrome && !isLuci);
+
+  /// Due to efficiancy constraints, Firefox integration tests only run on
+  /// Linux on LUCI.
+  ///
+  /// For now Firefox integration tests only run on Linux and Mac on local.
+  ///
+  // TODO: https://github.com/flutter/flutter/issues/63710
+  bool get isFirefoxIntegrationTestAvailable =>
+      (isFirefox && isLuci && io.Platform.isLinux) ||
+      (isFirefox && !isLuci && !io.Platform.isWindows);
+
+  /// Latest versions of Safari Desktop are only available on MacOS.
+  ///
+  /// Integration testing on LUCI is not supported at the moment.
+  // TODO: https://github.com/flutter/flutter/issues/63710
+  bool get isSafariIntegrationTestAvailable =>
+      (isSafariOnMacOS && isLuci && io.Platform.isLinux) ||
+      (isSafariOnMacOS && !isLuci && !io.Platform.isWindows);
+
+  /// Due to various factors integration tests might be missing on a given,
+  /// platform and given environment.
+  /// See: [isChromeIntegrationTestAvailable]
+  /// See: [isSafariIntegrationTestAvailable]
+  /// See: [isFirefoxIntegrationTestAvailable]
+  bool get isIntegrationTestsAvailable =>
+      isChrome && isChromeIntegrationTestAvailable ||
+      isFirefox && isFirefoxIntegrationTestAvailable ||
+      isSafariOnMacOS && isSafariIntegrationTestAvailable;
 
   /// Use system flutter instead of cloning the repository.
   ///
@@ -540,7 +571,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      print('ERROR: Failed to compile test ${input.target}. '
+      io.stderr.writeln('ERROR: Failed to compile test ${input.target}. '
           'Dart2js exited with exit code $exitCode');
       return false;
     } else {
