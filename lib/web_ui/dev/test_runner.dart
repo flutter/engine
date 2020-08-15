@@ -322,7 +322,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   ///
   /// For now Firefox integration tests only run on Linux and Mac on local.
   ///
-  // TODO: https://github.com/flutter/flutter/issues/63710
+  // TODO: https://github.com/flutter/flutter/issues/63832
   bool get isFirefoxIntegrationTestAvailable =>
       (isFirefox && isLuci && io.Platform.isLinux) ||
       (isFirefox && !isLuci && !io.Platform.isWindows);

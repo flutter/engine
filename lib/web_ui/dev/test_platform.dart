@@ -34,7 +34,6 @@ import 'package:test_core/src/runner/environment.dart'; // ignore: implementatio
 
 import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
 import 'package:test_core/src/runner/configuration.dart'; // ignore: implementation_imports
-import 'package:test_core/src/runner/load_exception.dart'; // ignore: implementation_imports
 import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
 
