@@ -63,6 +63,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   bool MakeResourceCurrent();
   bool SwapBuffers();
 
+  // Send initial bounds to embedder.  Must occur after engine has initialized.
   void SendInitialBounds();
 
   // |WindowBindingHandlerDelegate|

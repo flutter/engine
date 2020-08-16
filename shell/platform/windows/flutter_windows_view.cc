@@ -10,14 +10,15 @@ namespace flutter {
 
 FlutterWindowsView::FlutterWindowsView(
     std::unique_ptr<WindowBindingHandler> window_binding) {
-  // Take the binding handler, and give it a pointer back to self.
+  // Capture window_binding, create a WindowsRenderTarget from it
+  // and use to initialie a AngleSurfaceManager instance.
   binding_handler_ = std::move(window_binding);
   render_target_ = std::make_unique<WindowsRenderTarget>(
       binding_handler_->GetRenderTarget());
-
   surface_manager_ =
       std::make_unique<AngleSurfaceManager>(render_target_.get());
 
+  // Give the binding handler a pointer back to self.
   binding_handler_->SetView(this);
 }
 
@@ -130,7 +131,6 @@ void FlutterWindowsView::SendWindowMetrics(size_t width,
 }
 
 void FlutterWindowsView::SendInitialBounds() {
-  // Initial bounds must be sent after engine has initialized
   PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
 
   SendWindowMetrics(bounds.width, bounds.height,

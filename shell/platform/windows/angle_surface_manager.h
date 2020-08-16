@@ -23,22 +23,20 @@ namespace flutter {
 // destroy surfaces
 class AngleSurfaceManager {
  public:
-  AngleSurfaceManager(WindowsRenderTarget*);
+  // Create a new surface manager retaining reference to the passed-in target
+  // for the lifetime of the manager.  Target is used to get os backing view to
+  // bind the surface to during surface creation and resize.
+  AngleSurfaceManager(WindowsRenderTarget* target);
   ~AngleSurfaceManager();
 
   // Disallow copy/move.
   AngleSurfaceManager(const AngleSurfaceManager&) = delete;
   AngleSurfaceManager& operator=(const AngleSurfaceManager&) = delete;
 
-  // Creates an EGLSurface wrapper and backing DirectX 11 SwapChain
-  // asociated with window, in the appropriate format for display.
-  bool CreateSurface(EGLint width, EGLint height);
-
   // Resizes backing surface from current size to newly requested size
   // based on width and height for the specific case when width and height do
-  // not match current surface dimensions.  Returns a value indicating if a
-  // resize was actually performed successfully
-  bool ResizeSurface(EGLint width, EGLint height);
+  // not match current surface dimensions.
+  void ResizeSurface(EGLint width, EGLint height);
 
   // queries EGL for the dimensions of surface in physical
   // pixels returning width and height as out params.

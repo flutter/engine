@@ -170,10 +170,6 @@ void AngleSurfaceManager::CleanUp() {
   }
 }
 
-bool AngleSurfaceManager::CreateSurface(EGLint width, EGLint height) {
-  return CreateSurface(current_render_target_, width, height);
-}
-
 bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
                                         EGLint width,
                                         EGLint height) {
@@ -203,15 +199,18 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
   return true;
 }
 
-bool AngleSurfaceManager::ResizeSurface(EGLint width, EGLint height) {
+void AngleSurfaceManager::ResizeSurface(EGLint width, EGLint height) {
   EGLint existing_width, existing_height;
   GetSurfaceDimensions(&existing_width, &existing_height);
   if (width != existing_width || height != existing_height) {
-    // This resize approach could be further optimized if Angle exposed a public entrypoint for SwapChain11::reset or SwapChain11::resize
+    // This resize approach could be further optimized if Angle exposed a public
+    // entrypoint for SwapChain11::reset or SwapChain11::resize.
     DestroySurface();
-    return CreateSurface(width, height);
+    if (!CreateSurface(current_render_target_, width, height)) {
+      std::cerr << "AngleSurfaceManager::ResizeSurface failed to create surface"
+                << std::endl;
+    }
   }
-  return false;
 }
 
 void AngleSurfaceManager::GetSurfaceDimensions(EGLint* width, EGLint* height) {
