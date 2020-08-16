@@ -1,4 +1,3 @@
-
 # This file is automatically processed to create .DEPS.git which is the file
 # that gclient uses under git.
 #
