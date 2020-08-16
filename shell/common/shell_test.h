@@ -82,6 +82,7 @@ class ShellTest : public FixtureTest {
 
   enum ServiceProtocolEnum {
     kGetSkSLs,
+    kEstimateRasterCacheMemory,
     kSetAssetBundlePath,
     kRunInView,
   };

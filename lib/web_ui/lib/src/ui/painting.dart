@@ -1097,8 +1097,9 @@ abstract class Gradient extends Shader {
     List<double>? colorStops,
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
-  ]) =>
-      engine.GradientLinear(from, to, colors, colorStops, tileMode, matrix4);
+  ]) => engine.experimentalUseSkia
+    ? engine.CkGradientLinear(from, to, colors, colorStops, tileMode, matrix4)
+    : engine.GradientLinear(from, to, colors, colorStops, tileMode, matrix4);
 
   /// Creates a radial gradient centered at `center` that ends at `radius`
   /// distance from the center.
@@ -1145,12 +1146,18 @@ abstract class Gradient extends Shader {
     final Float32List? matrix32 =
         matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
-      return engine.GradientRadial(
+      return engine.experimentalUseSkia
+        ? engine.CkGradientRadial(
+          center, radius, colors, colorStops, tileMode, matrix32)
+        : engine.GradientRadial(
           center, radius, colors, colorStops, tileMode, matrix32);
     } else {
       assert(center != Offset.zero ||
           focal != Offset.zero); // will result in exception(s) in Skia side
-      return engine.GradientConical(focal, focalRadius, center, radius, colors,
+      return engine.experimentalUseSkia
+        ? engine.CkGradientConical(focal, focalRadius, center, radius, colors,
+          colorStops, tileMode, matrix32)
+        : engine.GradientConical(focal, focalRadius, center, radius, colors,
           colorStops, tileMode, matrix32);
     }
   }
@@ -1189,8 +1196,10 @@ abstract class Gradient extends Shader {
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
     Float64List? matrix4,
-  ]) =>
-      engine.GradientSweep(center, colors, colorStops, tileMode, startAngle,
+  ]) => engine.experimentalUseSkia
+    ? engine.CkGradientSweep(center, colors, colorStops, tileMode, startAngle,
+          endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null)
+    : engine.GradientSweep(center, colors, colorStops, tileMode, startAngle,
           endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null);
 }
 
@@ -1314,10 +1323,6 @@ abstract class ColorFilter {
   /// to the RGB channels.
   const factory ColorFilter.srgbToLinearGamma() =
       engine.EngineColorFilter.srgbToLinearGamma;
-
-  List<dynamic> webOnlySerializeToCssPaint() {
-    throw UnsupportedError('ColorFilter for CSS paint not yet supported');
-  }
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
@@ -1392,10 +1397,6 @@ class MaskFilter {
 
   @override
   int get hashCode => hashValues(_style, _sigma);
-
-  List<dynamic> webOnlySerializeToCssPaint() {
-    return <dynamic>[_style.index, _sigma];
-  }
 
   @override
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
@@ -1850,7 +1851,7 @@ class ImageShader extends Shader {
   factory ImageShader(
       Image image, TileMode tmx, TileMode tmy, Float64List matrix4) {
     if (engine.experimentalUseSkia) {
-      return engine.EngineImageShader(image, tmx, tmy, matrix4);
+      return engine.CkImageShader(image, tmx, tmy, matrix4);
     }
     throw UnsupportedError('ImageShader not implemented for web platform.');
   }

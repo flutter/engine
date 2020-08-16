@@ -62,7 +62,7 @@ void RasterThreadMerger::ExtendLeaseTo(size_t lease_term) {
 bool RasterThreadMerger::IsMerged() {
   std::scoped_lock lock(lease_term_mutex_);
   return IsMergedUnSafe();
-}\
+}
 
 bool RasterThreadMerger::IsMergedUnSafe() {
   return lease_term_ > 0;

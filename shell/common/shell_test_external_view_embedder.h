@@ -19,7 +19,8 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
       std::function<void(bool, fml::RefPtr<fml::RasterThreadMerger>)>;
 
   ShellTestExternalViewEmbedder(const EndFrameCallBack& end_frame_call_back,
-                                PostPrerollResult post_preroll_result);
+                                PostPrerollResult post_preroll_result,
+                                bool support_thread_merging);
 
   ~ShellTestExternalViewEmbedder() = default;
 
@@ -69,9 +70,14 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override;
 
+  // |ExternalViewEmbedder|
+  bool SupportsDynamicThreadMerging() override;
+
   const EndFrameCallBack end_frame_call_back_;
   PostPrerollResult post_preroll_result_;
   bool resubmit_once_;
+
+  bool support_thread_merging_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestExternalViewEmbedder);
 };

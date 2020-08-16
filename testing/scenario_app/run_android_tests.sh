@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -7,16 +7,12 @@
 
 set -e
 
-FLUTTER_ENGINE=android_profile_unopt_arm64
-
-if [ $# -eq 1 ]; then
-  FLUTTER_ENGINE=$1
-fi
-
 cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd
+
+GRADLE_USER_HOME=$(pwd)/android/gradle-home/.cache
 
 pushd android
 
-set -o pipefail && ./gradlew app:verifyDebugAndroidTestScreenshotTest
+set -o pipefail && ./gradlew app:verifyDebugAndroidTestScreenshotTest --gradle-user-home "$GRADLE_USER_HOME"
 
 popd
