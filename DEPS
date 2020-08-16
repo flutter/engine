@@ -1,3 +1,4 @@
+
 # This file is automatically processed to create .DEPS.git which is the file
 # that gclient uses under git.
 #
@@ -105,7 +106,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'daaa47b0272463e5ec7e3b142201b0d5a330a35d',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'a6c0959d1ac8cdfe6f9ff87892bc4905a73699fe',
 
    # Fuchsia compatibility
    #
