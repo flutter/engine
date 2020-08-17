@@ -223,11 +223,12 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
     }
   }
 
-  std::sort(skia_typefaces.begin(), skia_typefaces.end(),
-            [](const sk_sp<SkTypeface>& a, const sk_sp<SkTypeface>& b) {
-              SkFontStyle a_style = a->fontStyle();
-              SkFontStyle b_style = b->fontStyle();
-              return (a_style.width() != b_style.width())
+  std::sort(
+      skia_typefaces.begin(), skia_typefaces.end(),
+      [](const sk_sp<SkTypeface>& a, const sk_sp<SkTypeface>& b) {
+        SkFontStyle a_style = a->fontStyle();
+        SkFontStyle b_style = b->fontStyle();
+        return (a_style.width() != b_style.width())
                    // If a family name query is so generic it ends up bringing
                    // in fonts of multiple widths (e.g. condensed, expanded),
                    // opt to be conservative and select the most standard width.
@@ -239,7 +240,7 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
                    : (a_style.weight() != b_style.weight())
                          ? a_style.weight() < b_style.weight()
                          : a_style.slant() < b_style.slant();
-            });
+      });
 
   std::vector<minikin::Font> minikin_fonts;
   for (const sk_sp<SkTypeface>& skia_typeface : skia_typefaces) {
