@@ -219,11 +219,11 @@ class ChromeInstaller {
       // Read the Zip file from disk.
       final bytes = downloadedFile.readAsBytesSync();
 
-      final dynamic archive = ZipDecoder().decodeBytes(bytes);
+      final Archive archive = ZipDecoder().decodeBytes(bytes);
 
       // Extract the contents of the Zip archive to disk.
-      for (final file in archive) {
-        final dynamic filename = file.name;
+      for (final ArchiveFile file in archive) {
+        final String filename = file.name;
         if (file.isFile) {
           final data = file.content as List<int>;
           io.File(path.join(versionDir.path, filename))
