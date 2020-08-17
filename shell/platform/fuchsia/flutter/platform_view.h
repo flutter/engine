@@ -26,6 +26,7 @@ using OnEnableWireframe = fit::function<void(bool)>;
 using OnCreateView = fit::function<void(int64_t, bool, bool)>;
 using OnDestroyView = fit::function<void(int64_t)>;
 using OnGetViewEmbedder = fit::function<flutter::ExternalViewEmbedder*()>;
+using OnGetGrContext = fit::function<GrDirectContext*()>;
 
 // The per engine component residing on the platform thread is responsible for
 // all platform specific integrations.
@@ -47,11 +48,13 @@ class PlatformView final : public flutter::PlatformView,
                    parent_environment_service_provider,
                fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
                    session_listener_request,
+               fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
                fit::closure on_session_listener_error_callback,
                OnEnableWireframe wireframe_enabled_callback,
                OnCreateView on_create_view_callback,
                OnDestroyView on_destroy_view_callback,
                OnGetViewEmbedder on_get_view_embedder_callback,
+               OnGetGrContext on_get_gr_context_callback,
                zx_handle_t vsync_event_handle,
                FlutterRunnerProductConfiguration product_config);
 
@@ -73,6 +76,7 @@ class PlatformView final : public flutter::PlatformView,
   // TODO(MI4-2490): remove once ViewRefControl is passed to Scenic and kept
   // alive there
   const fuchsia::ui::views::ViewRef view_ref_;
+  fuchsia::ui::views::FocuserPtr focuser_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
 
   fidl::Binding<fuchsia::ui::scenic::SessionListener> session_listener_binding_;
@@ -81,6 +85,7 @@ class PlatformView final : public flutter::PlatformView,
   OnCreateView on_create_view_callback_;
   OnDestroyView on_destroy_view_callback_;
   OnGetViewEmbedder on_get_view_embedder_callback_;
+  OnGetGrContext on_get_gr_context_callback_;
 
   int current_text_input_client_ = 0;
   fidl::Binding<fuchsia::ui::input::InputMethodEditorClient> ime_client_;

@@ -88,7 +88,9 @@ Engine::Engine(Delegate& delegate,
   fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session;
   fidl::InterfaceHandle<fuchsia::ui::scenic::SessionListener> session_listener;
   auto session_listener_request = session_listener.NewRequest();
-  scenic->CreateSession(session.NewRequest(), session_listener.Bind());
+  fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser;
+  scenic->CreateSession2(session.NewRequest(), session_listener.Bind(),
+                         focuser.NewRequest());
 
   // Make clones of the `ViewRef` before sending it down to Scenic.
   fuchsia::ui::views::ViewRef platform_view_ref, isolate_view_ref;
@@ -150,6 +152,9 @@ Engine::Engine(Delegate& delegate,
   OnGetViewEmbedder on_get_view_embedder_callback =
       std::bind(&Engine::GetViewEmbedder, this);
 
+  OnGetGrContext on_get_gr_context_callback =
+      std::bind(&Engine::GetGrContext, this);
+
   // SessionListener has a OnScenicError method; invoke this callback on the
   // platform thread when that happens. The Session itself should also be
   // disconnected when this happens, and it will also attempt to terminate.
@@ -171,6 +176,7 @@ Engine::Engine(Delegate& delegate,
            parent_environment_service_provider =
                std::move(parent_environment_service_provider),
            session_listener_request = std::move(session_listener_request),
+           focuser = std::move(focuser),
            on_session_listener_error_callback =
                std::move(on_session_listener_error_callback),
            on_enable_wireframe_callback =
@@ -179,6 +185,7 @@ Engine::Engine(Delegate& delegate,
            on_destroy_view_callback = std::move(on_destroy_view_callback),
            on_get_view_embedder_callback =
                std::move(on_get_view_embedder_callback),
+           on_get_gr_context_callback = std::move(on_get_gr_context_callback),
            vsync_handle = vsync_event_.get(),
            product_config = product_config](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
@@ -189,11 +196,13 @@ Engine::Engine(Delegate& delegate,
                 std::move(runner_services),
                 std::move(parent_environment_service_provider),  // services
                 std::move(session_listener_request),  // session listener
+                std::move(focuser),
                 std::move(on_session_listener_error_callback),
                 std::move(on_enable_wireframe_callback),
                 std::move(on_create_view_callback),
                 std::move(on_destroy_view_callback),
                 std::move(on_get_view_embedder_callback),
+                std::move(on_get_gr_context_callback),
                 vsync_handle,  // vsync handle
                 product_config);
           });
@@ -211,9 +220,7 @@ Engine::Engine(Delegate& delegate,
                 scene_update_context_.value());
 
         return std::make_unique<flutter::Rasterizer>(
-            /*task_runners=*/shell.GetTaskRunners(),
-            /*compositor_context=*/std::move(compositor_context),
-            /*is_gpu_disabled_sync_switch=*/shell.GetIsGpuDisabledSyncSwitch());
+            shell, std::move(compositor_context));
       });
 
   settings.root_isolate_create_callback =
@@ -501,6 +508,14 @@ flutter::ExternalViewEmbedder* Engine::GetViewEmbedder() {
   }
 
   return &scene_update_context_.value();
+}
+
+GrDirectContext* Engine::GetGrContext() {
+  // GetGrContext should be called only after rasterizer is created.
+  FML_DCHECK(shell_);
+  FML_DCHECK(shell_->GetRasterizer());
+
+  return surface_producer_->gr_context();
 }
 
 #if !defined(DART_PRODUCT)

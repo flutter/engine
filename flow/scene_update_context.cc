@@ -151,7 +151,11 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode& entity_node,
 
     // Enqueue a paint task for these layers, to apply a texture to the whole
     // shape.
-    paint_tasks_.emplace_back(PaintTask{.paint_bounds = paint_bounds,
+    //
+    // The task uses the |shape_bounds| as its rendering bounds instead of the
+    // |paint_bounds|.  If the paint_bounds is large than the shape_bounds it
+    // will be clipped.
+    paint_tasks_.emplace_back(PaintTask{.paint_bounds = shape_bounds,
                                         .scale_x = top_scale_x_,
                                         .scale_y = top_scale_y_,
                                         .background_color = color,

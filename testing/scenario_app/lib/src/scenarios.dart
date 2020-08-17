@@ -6,6 +6,7 @@
 import 'dart:ui';
 
 import 'animated_color_square.dart';
+import 'initial_route_reply.dart';
 import 'locale_initialization.dart';
 import 'platform_view.dart';
 import 'poppable_screen.dart';
@@ -41,13 +42,12 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
   'platform_view_gesture_reject_after_touches_ended': () => PlatformViewForTouchIOSScenario(window, 'platform view touch', id: _viewId++, accept: false, rejectUntilTouchesEnded: true),
   'tap_status_bar': () => TouchesScenario(window),
   'text_semantics_focus': () => SendTextFocusScemantics(window),
+  'initial_route_reply': () => InitialRouteReply(window),
 };
 
-Map<String, dynamic> _currentScenarioParams = <String, dynamic>{
-  'name': 'animated_color_square',
-};
+Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};
 
-Scenario _currentScenarioInstance = _scenarios[_currentScenarioParams['name']]();
+Scenario _currentScenarioInstance;
 
 /// Loads an scenario.
 /// The map must contain a `name` entry, which equals to the name of the scenario.
@@ -55,6 +55,11 @@ void loadScenario(Map<String, dynamic> scenario) {
   final String scenarioName = scenario['name'] as String;
   assert(_scenarios[scenarioName] != null);
   _currentScenarioParams = scenario;
+
+  if (_currentScenarioInstance != null) {
+    _currentScenarioInstance.unmount();
+  }
+
   _currentScenarioInstance = _scenarios[scenario['name']]();
   window.scheduleFrame();
   print('Loading scenario $scenarioName');
