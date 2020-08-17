@@ -141,7 +141,7 @@ public class AccessibilityBridgeTest {
     when(mockRootView.getContext()).thenReturn(context);
     when(context.getPackageName()).thenReturn("test");
     AccessibilityBridge accessibilityBridge =
-            setUpBridge(mockRootView, mockManager, mockViewEmbedder);
+        setUpBridge(mockRootView, mockManager, mockViewEmbedder);
     ViewParent mockParent = mock(ViewParent.class);
     when(mockRootView.getParent()).thenReturn(mockParent);
     when(mockManager.isEnabled()).thenReturn(true);
@@ -157,15 +157,14 @@ public class AccessibilityBridgeTest {
     accessibilityBridge.updateSemantics(testSemanticsUpdate.buffer, testSemanticsUpdate.strings);
 
     ArgumentCaptor<AccessibilityEvent> eventCaptor =
-            ArgumentCaptor.forClass(AccessibilityEvent.class);
+        ArgumentCaptor.forClass(AccessibilityEvent.class);
     verify(mockParent, times(2))
-            .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
+        .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
     AccessibilityEvent event = eventCaptor.getAllValues().get(0);
     assertEquals(event.getEventType(), AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     List<CharSequence> sentences = event.getText();
     assertEquals(sentences.size(), 1);
     assertEquals(sentences.get(0).toString(), " ");
-
   }
 
   @Test
