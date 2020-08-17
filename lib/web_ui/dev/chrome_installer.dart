@@ -213,6 +213,11 @@ class ChromeInstaller {
 
     /// Windows LUCI bots does not have a `unzip`. Instead we are
     /// using `archive` pub package.
+    ///
+    /// We didn't use `archieve` on Mac/Linux since the new files have
+    /// permission issues. For now we are not able change file permissions
+    /// from dart.
+    /// See: https://github.com/dart-lang/sdk/issues/15078.
     if (io.Platform.isWindows) {
       final Stopwatch stopwatch = Stopwatch()..start();
 
