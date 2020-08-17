@@ -259,20 +259,17 @@ class TestCommand extends Command<bool> with ArgUtils {
     final List<io.FileSystemEntity> contents =
         environment.webUiTestDir.listSync(recursive: true);
     contents.whereType<io.File>().forEach((final io.File entity) {
-      final String basename = path.basename(entity.path);
-      if (basename.contains('.png')) {
-        final String directoryPath = path.relative(path.dirname(entity.path),
-            from: environment.webUiRootDir.path);
-        final io.Directory directory = io.Directory(
-            path.join(environment.webUiBuildDir.path, directoryPath));
-        if (!directory.existsSync()) {
-          directory.createSync(recursive: true);
-        }
-        final String pathRelativeToWebUi = path.relative(entity.absolute.path,
-            from: environment.webUiRootDir.path);
-        entity.copySync(
-            path.join(environment.webUiBuildDir.path, pathRelativeToWebUi));
+      final String directoryPath = path.relative(path.dirname(entity.path),
+          from: environment.webUiRootDir.path);
+      final io.Directory directory = io.Directory(
+          path.join(environment.webUiBuildDir.path, directoryPath));
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
       }
+      final String pathRelativeToWebUi = path.relative(entity.absolute.path,
+          from: environment.webUiRootDir.path);
+      entity.copySync(
+          path.join(environment.webUiBuildDir.path, pathRelativeToWebUi));
     });
 
     stopwatch.stop();
@@ -310,8 +307,8 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Whether [browser] is set to "safari".
   bool get isSafariOnMacOS => browser == 'safari' && io.Platform.isMacOS;
 
-  /// Due to efficiancy constraints, Chrome integration tests only run on
-  /// Linux on LUCI.
+  /// Due to lack of resources Chrome integration tests only run on Linux on
+  /// LUCI.
   ///
   /// They run on all platforms for local.
   bool get isChromeIntegrationTestAvailable =>
@@ -327,23 +324,21 @@ class TestCommand extends Command<bool> with ArgUtils {
       (isFirefox && isLuci && io.Platform.isLinux) ||
       (isFirefox && !isLuci && !io.Platform.isWindows);
 
-  /// Latest versions of Safari Desktop are only available on MacOS.
+  /// Latest versions of Safari Desktop are only available on macOS.
   ///
   /// Integration testing on LUCI is not supported at the moment.
   // TODO: https://github.com/flutter/flutter/issues/63710
-  bool get isSafariIntegrationTestAvailable =>
-      (isSafariOnMacOS && isLuci && io.Platform.isLinux) ||
-      (isSafariOnMacOS && !isLuci && !io.Platform.isWindows);
+  bool get isSafariIntegrationTestAvailable => isSafariOnMacOS && !isLuci;
 
-  /// Due to various factors integration tests might be missing on a given,
+  /// Due to various factors integration tests might be missing on a given
   /// platform and given environment.
   /// See: [isChromeIntegrationTestAvailable]
   /// See: [isSafariIntegrationTestAvailable]
   /// See: [isFirefoxIntegrationTestAvailable]
   bool get isIntegrationTestsAvailable =>
-      isChrome && isChromeIntegrationTestAvailable ||
-      isFirefox && isFirefoxIntegrationTestAvailable ||
-      isSafariOnMacOS && isSafariIntegrationTestAvailable;
+      isChromeIntegrationTestAvailable ||
+      isFirefoxIntegrationTestAvailable ||
+      isSafariIntegrationTestAvailable;
 
   /// Use system flutter instead of cloning the repository.
   ///
@@ -534,18 +529,18 @@ class TestCommand extends Command<bool> with ArgUtils {
   ///
   /// [targets] must not be null.
   ///
-  /// Uses `dart2js` for building the tests.
+  /// Uses `dart2js` for building the test.
   ///
   /// When building for CanvasKit we have to use extra argument
   /// `DFLUTTER_WEB_USE_SKIA=true`.
   Future<bool> _buildTest(TestBuildInput input) async {
-    final targetFileName = input.target.relativeToWebUi
-        .replaceFirst('.dart', '.dart.browser_test.dart.js');
+    final targetFileName =
+        '${input.path.relativeToWebUi}.browser_test.dart.js';
     final String targetPath = path.join('build', targetFileName);
 
     final io.Directory directoryToTarget = io.Directory(path.join(
         environment.webUiBuildDir.path,
-        path.dirname(input.target.relativeToWebUi)));
+        path.dirname(input.path.relativeToWebUi)));
 
     if (!directoryToTarget.existsSync()) {
       directoryToTarget.createSync(recursive: true);
@@ -560,8 +555,8 @@ class TestCommand extends Command<bool> with ArgUtils {
       if (input.forCanvasKit) '-DFLUTTER_WEB_USE_SKIA=true',
       '-O2',
       '-o',
-      '${targetPath}', // target path.
-      '${input.target.relativeToWebUi}', // current path.
+      targetPath, // target path.
+      '${input.path.relativeToWebUi}', // current path.
     ];
 
     final int exitCode = await runProcess(
@@ -571,7 +566,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      io.stderr.writeln('ERROR: Failed to compile test ${input.target}. '
+      io.stderr.writeln('ERROR: Failed to compile test ${input.path}. '
           'Dart2js exited with exit code $exitCode');
       return false;
     } else {
@@ -648,16 +643,15 @@ void _copyTestFontsIntoWebUi() {
   }
 }
 
-/// This objest is used as an input message to the PoolResources that are
-/// building the tests.
+/// Used as an input message to the PoolResources that are building a test.
 class TestBuildInput {
-  /// Target to build.
-  final FilePath target;
+  /// Test to build.
+  final FilePath path;
 
   /// Whether these tests should be build for CanvasKit.
   ///
   /// `-DFLUTTER_WEB_USE_SKIA=true` is passed to dart2js for CanvasKit.
   final bool forCanvasKit;
 
-  TestBuildInput(this.target, {this.forCanvasKit = false});
+  TestBuildInput(this.path, {this.forCanvasKit = false});
 }

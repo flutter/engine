@@ -806,7 +806,7 @@ class BrowserManager {
         final String pathToTest = p.dirname(path);
 
         final String mapPath = p.join(env.environment.webUiRootDir.path,
-            'build', '$pathToTest', '$sourceMapFileName');
+            'build', pathToTest, sourceMapFileName);
 
         PackageConfig packageConfig =
             await loadPackageConfigUri(await Isolate.packageConfig);
