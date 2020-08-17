@@ -3,13 +3,8 @@ chrome:
   # systems, so we specify per-OS build number.
   # Note: 741412 binary is for Chrome Version 82. Driver for Chrome version 83
   # is not working with chrome.binary option.
-<<<<<<< HEAD
-  Linux: 741412
-  Mac: 735194
-=======
   Linux: 768968
-  Mac: 768968
->>>>>>> 09b932905... update chrome version, should be merged after recipe changes
+  Mac: 768985
   Win: 768975
 firefox:
   version: '72.0'
