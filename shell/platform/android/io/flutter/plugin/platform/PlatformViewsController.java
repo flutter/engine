@@ -79,12 +79,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // it is associated with(e.g if a platform view creates other views in the same virtual display.
   private final HashMap<Context, View> contextToPlatformView;
 
-  // The view returned by `PlatformView#getView()`.
+  // The views returned by `PlatformView#getView()`.
   //
   // This only applies to hybrid composition.
   private final SparseArray<View> platformViews;
 
-  // The platform view parent that is appended to `FlutterView`.
+  // The platform view parents that are appended to `FlutterView`.
   // If an entry in `platformViews` doesn't have an entry in this array, the platform view isn't
   // in the view hierarchy.
   //
