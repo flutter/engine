@@ -52,7 +52,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   void DestroyRenderSurface();
 
   // Return the currently configured WindowsRenderTarget.
-  WindowsRenderTarget* GetRenderTarget();
+  WindowsRenderTarget* GetRenderTarget() const;
 
   // Returns the engine backing this view.
   FlutterWindowsEngine* GetEngine();

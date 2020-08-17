@@ -23,20 +23,30 @@ namespace flutter {
 // destroy surfaces
 class AngleSurfaceManager {
  public:
-  // Create a new surface manager retaining reference to the passed-in target
-  // for the lifetime of the manager.  Target is used to get os backing view to
-  // bind the surface to during surface creation and resize.
-  AngleSurfaceManager(WindowsRenderTarget* target);
+  // Creates a new surface manager retaining reference to the passed-in target
+  // for the lifetime of the manager.
+  AngleSurfaceManager();
   ~AngleSurfaceManager();
 
   // Disallow copy/move.
   AngleSurfaceManager(const AngleSurfaceManager&) = delete;
   AngleSurfaceManager& operator=(const AngleSurfaceManager&) = delete;
 
+  // Creates an EGLSurface wrapper and backing DirectX 11 SwapChain
+  // asociated with window, in the appropriate format for display.
+  // Target represents the visual entity to bind to.  Width and
+  // height represent dimensions surface is created at.
+  bool CreateSurface(WindowsRenderTarget* render_target,
+                     EGLint width,
+                     EGLint height);
+
   // Resizes backing surface from current size to newly requested size
   // based on width and height for the specific case when width and height do
-  // not match current surface dimensions.
-  void ResizeSurface(EGLint width, EGLint height);
+  // not match current surface dimensions.  Target represents the visual entity
+  // to bind to.
+  void ResizeSurface(WindowsRenderTarget* render_target,
+                     EGLint width,
+                     EGLint height);
 
   // queries EGL for the dimensions of surface in physical
   // pixels returning width and height as out params.
@@ -84,18 +94,6 @@ class AngleSurfaceManager {
 
   // Current render_surface that engine will draw into.
   EGLSurface render_surface_ = EGL_NO_SURFACE;
-
-  // Non-owning pointer to the WindowsRenderTarget currently associated with
-  // this manager.
-  WindowsRenderTarget* current_render_target_;
-
-  // Creates an EGLSurface wrapper and backing DirectX 11 SwapChain
-  // asociated with window, in the appropriate format for display.
-  // Target represents the visual entity to bind to.  Width and
-  // height represent dimensions surface is created at.
-  bool CreateSurface(WindowsRenderTarget* render_target,
-                     EGLint width,
-                     EGLint height);
 };
 
 }  // namespace flutter
