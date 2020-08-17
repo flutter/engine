@@ -232,9 +232,14 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
                    // If a family name query is so generic it ends up bringing
                    // in fonts of multiple widths (e.g. condensed, expanded),
                    // opt to be conservative and select the most standard width.
-
+                   //
                    // If a specific width is desired, it should be be narrowed
                    // down via the family name.
+                   //
+                   // The font weights are also sorted lightest to heaviest
+                   // but Flutter APIs have the weight specified to narrow it
+                   // down later. The width ordering here is more consequential
+                   // since TextStyle doesn't have letter width APIs.
                    ? std::abs(a_style.width() - SkFontStyle::kNormal_Width) <
                          std::abs(b_style.width() - SkFontStyle::kNormal_Width)
                    : (a_style.weight() != b_style.weight())
