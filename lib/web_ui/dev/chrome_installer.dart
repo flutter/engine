@@ -199,7 +199,7 @@ class ChromeInstaller {
       versionDir.createSync(recursive: true);
     }
 
-    print('starting chrome download');
+    print('INFO: Starting Chrome download.');
 
     final String url = PlatformBinding.instance.getChromeDownloadUrl(version);
     final StreamedResponse download = await client.send(Request(
@@ -211,12 +211,9 @@ class ChromeInstaller {
         io.File(path.join(versionDir.path, 'chrome.zip'));
     await download.stream.pipe(downloadedFile.openWrite());
 
-    print('File downloaded for chrome :${downloadedFile.path}');
-
     /// Windows LUCI bots does not have a `unzip`. Instead we are
     /// using `archive` pub package.
     if (io.Platform.isWindows) {
-      print('stopwatch started');
       final Stopwatch stopwatch = Stopwatch()..start();
 
       // Read the Zip file from disk.
@@ -239,7 +236,7 @@ class ChromeInstaller {
       }
 
       stopwatch.stop();
-      print('The unzip took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
+      print('INFO: The unzip took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
     } else {
       final io.ProcessResult unzipResult =
           await io.Process.run('unzip', <String>[
@@ -255,7 +252,7 @@ class ChromeInstaller {
       }
     }
 
-    //downloadedFile.deleteSync();
+    downloadedFile.deleteSync();
   }
 
   void close() {
