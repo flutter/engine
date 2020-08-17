@@ -79,6 +79,9 @@ class CanvasKit {
   external int get LineThroughDecoration;
   // End of text decoration enum.
 
+  external SkTextDecorationStyleEnum get DecorationStyle;
+  external SkTextBaselineEnum get TextBaseline;
+
   external SkFontMgrNamespace get SkFontMgr;
   external TypefaceFontProviderNamespace get TypefaceFontProvider;
   external int GetWebGLContext(
@@ -1530,6 +1533,53 @@ class SkParagraphStyleProperties {
 class SkTextStyle {}
 
 @JS()
+class SkTextDecorationStyleEnum {
+  external SkTextDecorationStyle get Solid;
+  external SkTextDecorationStyle get Double;
+  external SkTextDecorationStyle get Dotted;
+  external SkTextDecorationStyle get Dashed;
+  external SkTextDecorationStyle get Wavy;
+}
+
+@JS()
+class SkTextDecorationStyle {
+  external int get value;
+}
+
+final List<SkTextDecorationStyle> _skTextDecorationStyles =
+    <SkTextDecorationStyle>[
+  canvasKit.DecorationStyle.Solid,
+  canvasKit.DecorationStyle.Double,
+  canvasKit.DecorationStyle.Dotted,
+  canvasKit.DecorationStyle.Dashed,
+  canvasKit.DecorationStyle.Wavy,
+];
+
+SkTextDecorationStyle toSkTextDecorationStyle(ui.TextDecorationStyle style) {
+  return _skTextDecorationStyles[style.index];
+}
+
+@JS()
+class SkTextBaselineEnum {
+  external SkTextBaseline get Alphabetic;
+  external SkTextBaseline get Ideographic;
+}
+
+@JS()
+class SkTextBaseline {
+  external int get value;
+}
+
+final List<SkTextBaseline> _skTextBaselines = <SkTextBaseline>[
+  canvasKit.TextBaseline.Alphabetic,
+  canvasKit.TextBaseline.Ideographic,
+];
+
+SkTextBaseline toSkTextBaseline(ui.TextBaseline baseline) {
+  return _skTextBaselines[baseline.index];
+}
+
+@JS()
 @anonymous
 class SkTextStyleProperties {
   external Float32List? get backgroundColor;
@@ -1547,14 +1597,38 @@ class SkTextStyleProperties {
   external double? get decorationThickness;
   external set decorationThickness(double? value);
 
+  external Float32List? get decorationColor;
+  external set decorationColor(Float32List? value);
+
+  external SkTextDecorationStyle? get decorationStyle;
+  external set decorationStyle(SkTextDecorationStyle? value);
+
+  external SkTextBaseline? get textBaseline;
+  external set textBaseline(SkTextBaseline? value);
+
   external double? get fontSize;
   external set fontSize(double? value);
+
+  external double? get letterSpacing;
+  external set letterSpacing(double? value);
+
+  external double? get wordSpacing;
+  external set wordSpacing(double? value);
+
+  external double? get heightMultiplier;
+  external set heightMultiplier(double? value);
+
+  external String? get locale;
+  external set locale(String? value);
 
   external List<String>? get fontFamilies;
   external set fontFamilies(List<String>? value);
 
   external SkFontStyle? get fontStyle;
   external set fontStyle(SkFontStyle? value);
+
+  external List<SkTextShadow>? get shadows;
+  external set shadows(List<SkTextShadow>? value);
 }
 
 @JS()
@@ -1565,6 +1639,19 @@ class SkFontStyle {
 
   external SkFontSlant? get slant;
   external set slant(SkFontSlant? value);
+}
+
+@JS()
+@anonymous
+class SkTextShadow {
+  external Float32List? get color;
+  external set color(Float32List? value);
+
+  external Float32List? get offset;
+  external set offset(Float32List? value);
+
+  external double? get blurRadius;
+  external set blurRadius(double? value);
 }
 
 @JS()

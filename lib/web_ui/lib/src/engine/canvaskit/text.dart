@@ -162,8 +162,36 @@ class CkTextStyle implements ui.TextStyle {
       properties.decorationThickness = decorationThickness;
     }
 
+    if (decorationColor != null) {
+      properties.decorationColor = makeFreshSkColor(decorationColor);
+    }
+
+    if (decorationStyle != null) {
+      properties.decorationStyle = toSkTextDecorationStyle(decorationStyle);
+    }
+
+    if (textBaseline != null) {
+      properties.textBaseline = toSkTextBaseline(textBaseline);
+    }
+
     if (fontSize != null) {
       properties.fontSize = fontSize;
+    }
+
+    if (letterSpacing != null) {
+      properties.letterSpacing = letterSpacing;
+    }
+
+    if (wordSpacing != null) {
+      properties.wordSpacing = wordSpacing;
+    }
+
+    if (height != null) {
+      properties.heightMultiplier = height;
+    }
+
+    if (locale != null) {
+      properties.locale = locale.toLanguageTag();
     }
 
     if (fontFamily == null ||
@@ -187,14 +215,19 @@ class CkTextStyle implements ui.TextStyle {
       properties.foregroundColor = makeFreshSkColor(foreground.color);
     }
 
+    if (shadows != null) {
+      var ckShadows = <SkTextShadow>[];
+      for (var shadow in shadows) {
+        var ckShadow = SkTextShadow();
+        ckShadow.color = makeFreshSkColor(shadow.color);
+        ckShadow.offset = toSkPoint(shadow.offset);
+        ckShadow.blurRadius = shadow.blurRadius;
+        ckShadows.add(ckShadow);
+      }
+      properties.shadows = ckShadows;
+    }
+
     // TODO(hterkelsen): Add support for
-    //   - decorationColor
-    //   - decorationStyle
-    //   - textBaseline
-    //   - letterSpacing
-    //   - wordSpacing
-    //   - height
-    //   - locale
     //   - shadows
     //   - fontFeatures
     return CkTextStyle._(
