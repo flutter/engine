@@ -59,7 +59,7 @@ IF %orTempValue%==0 (
 CALL :installdeps
 IF %1==test (%DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* --browser=chrome) ELSE ( %DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* )
 
-EXIT /B 0
+EXIT /B %ERRORLEVEL%
 
 :installdeps
 ECHO "Running \`pub get\` in 'engine/src/flutter/web_sdk/web_engine_tester'"
