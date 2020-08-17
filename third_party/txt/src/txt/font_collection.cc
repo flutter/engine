@@ -227,7 +227,16 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
             [](const sk_sp<SkTypeface>& a, const sk_sp<SkTypeface>& b) {
               SkFontStyle a_style = a->fontStyle();
               SkFontStyle b_style = b->fontStyle();
-              return (a_style.weight() != b_style.weight())
+              return (a_style.width() != b_style.width())
+                   // If a family name query is so generic it ends up bringing
+                   // in fonts of multiple widths (e.g. condensed, expanded),
+                   // opt to be conservative and select the most standard width.
+
+                   // If a specific width is desired, it should be be narrowed
+                   // down via the family name.
+                   ? std::abs(a_style.width() - SkFontStyle::kNormal_Width) <
+                         std::abs(b_style.width() - SkFontStyle::kNormal_Width)
+                   : (a_style.weight() != b_style.weight())
                          ? a_style.weight() < b_style.weight()
                          : a_style.slant() < b_style.slant();
             });
