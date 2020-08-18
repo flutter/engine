@@ -4,7 +4,7 @@
 
 #import <XCTest/XCTest.h>
 
-static const NSInteger kSecondsToWaitForPlatformView = 30;
+static const NSInteger kSecondsToWaitForPlatformView = 60 * 60;
 
 @interface PlatformViewGestureRecognizerTests : XCTestCase
 
