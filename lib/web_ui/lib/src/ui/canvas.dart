@@ -76,7 +76,7 @@ class Vertices {
     List<Color>? colors,
     List<int>? indices,
   }) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkVertices(mode, positions,
           textureCoordinates: textureCoordinates,
           colors: colors,
@@ -112,7 +112,7 @@ class Vertices {
     Int32List? colors,
     Uint16List? indices,
   }) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkVertices.raw(mode, positions,
           textureCoordinates: textureCoordinates,
           colors: colors,
@@ -133,7 +133,7 @@ abstract class PictureRecorder {
   /// [Canvas] and begin recording, pass this [PictureRecorder] to the
   /// [Canvas] constructor.
   factory PictureRecorder() {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkPictureRecorder();
     } else {
       return engine.EnginePictureRecorder();
@@ -176,7 +176,7 @@ abstract class PictureRecorder {
 /// managed by the [save], [saveLayer], and [restore] methods.
 abstract class Canvas {
   factory Canvas(PictureRecorder recorder, [Rect? cullRect]) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CanvasKitCanvas(recorder, cullRect);
     } else {
       return engine.SurfaceCanvas(recorder as engine.EnginePictureRecorder, cullRect);

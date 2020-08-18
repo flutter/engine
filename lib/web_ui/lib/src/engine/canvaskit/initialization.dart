@@ -5,9 +5,52 @@
 // @dart = 2.10
 part of engine;
 
-/// EXPERIMENTAL: Enable the Skia-based rendering backend.
-const bool experimentalUseSkia =
+/// Whether the CanvasKit renderer should always be used.
+// TODO(yjbanov): rename to "FLUTTER_WEB_USE_CANVASKIT_RENDERER"
+const bool forceCanvasKitRenderer =
     bool.fromEnvironment('FLUTTER_WEB_USE_SKIA', defaultValue: false);
+
+/// Whether the HTML renderer should always be used.
+const bool forceHtmlRenderer =
+    bool.fromEnvironment('FLUTTER_WEB_FORCE_HTML_RENDERER', defaultValue: false);
+
+/// Whether the CanvasKit renderer should be used as detected dynamically based
+/// on the current browser/OS combination.
+bool? _shouldUseCanvasKit;
+
+/// Whether the CanvasKit renderer should be used.
+@pragma('dart2js:tryInline')
+bool get useCanvasKit => forceCanvasKitRenderer || !forceHtmlRenderer && (_shouldUseCanvasKit ??= detectShouldUseCanvasKit());
+
+/// Detects whether the CanvasKit renderer should be used.
+///
+/// We prefer CanvasKit on desktop browsers that have sufficient support for
+/// WebGL and WebAssembly. Otherwise, we prefer the HTML renderer (e.g. IE11,
+/// mobile browsers). Preference for HTML renderer on mobile browsers is due to
+/// bandwidth constraints, as CanvasKit requires an extra 2MB in download.
+@pragma('dart2js:noInline')
+bool detectShouldUseCanvasKit() {
+  // This is mostly to filter our IE11 and old Edge, which do not have the
+  // necessary features to run CanvasKit.
+  final bool isSupportedBrowserEngine =
+      browserEngine == BrowserEngine.blink ||
+      browserEngine == BrowserEngine.firefox ||
+      browserEngine == BrowserEngine.webkit ||
+      browserEngine == BrowserEngine.unknown;
+
+  if (!isSupportedBrowserEngine) {
+    return false;
+  }
+
+  // Mobile operating system, although capable of running CanvasKit, tend to be
+  // used on-the-go, with spotty Internet connections. Because as of this writing
+  // CanvasKit requires an extra 2MB of download size, the "auto" mode prefers
+  // the HTML renderer.
+  final bool isMobile =
+      operatingSystem == OperatingSystem.android ||
+      operatingSystem == OperatingSystem.iOs;
+  return !isMobile;
+}
 
 // If set to true, forces CPU-only rendering (i.e. no WebGL).
 const bool canvasKitForceCpuOnly =

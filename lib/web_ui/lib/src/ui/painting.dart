@@ -904,7 +904,7 @@ abstract class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
   factory Paint() =>
-      engine.experimentalUseSkia ? engine.CkPaint() : engine.SurfacePaint();
+      engine.useCanvasKit ? engine.CkPaint() : engine.SurfacePaint();
 
   /// Whether to dither the output when drawing images.
   ///
@@ -1097,7 +1097,7 @@ abstract class Gradient extends Shader {
     List<double>? colorStops,
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
-  ]) => engine.experimentalUseSkia
+  ]) => engine.useCanvasKit
     ? engine.CkGradientLinear(from, to, colors, colorStops, tileMode, matrix4)
     : engine.GradientLinear(from, to, colors, colorStops, tileMode, matrix4);
 
@@ -1146,7 +1146,7 @@ abstract class Gradient extends Shader {
     final Float32List? matrix32 =
         matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
-      return engine.experimentalUseSkia
+      return engine.useCanvasKit
         ? engine.CkGradientRadial(
           center, radius, colors, colorStops, tileMode, matrix32)
         : engine.GradientRadial(
@@ -1154,7 +1154,7 @@ abstract class Gradient extends Shader {
     } else {
       assert(center != Offset.zero ||
           focal != Offset.zero); // will result in exception(s) in Skia side
-      return engine.experimentalUseSkia
+      return engine.useCanvasKit
         ? engine.CkGradientConical(focal, focalRadius, center, radius, colors,
           colorStops, tileMode, matrix32)
         : engine.GradientConical(focal, focalRadius, center, radius, colors,
@@ -1196,7 +1196,7 @@ abstract class Gradient extends Shader {
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
     Float64List? matrix4,
-  ]) => engine.experimentalUseSkia
+  ]) => engine.useCanvasKit
     ? engine.CkGradientSweep(center, colors, colorStops, tileMode, startAngle,
           endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null)
     : engine.GradientSweep(center, colors, colorStops, tileMode, startAngle,
@@ -1441,7 +1441,7 @@ enum FilterQuality {
 class ImageFilter {
   /// Creates an image filter that applies a Gaussian blur.
   factory ImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0}) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
     }
     return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
@@ -1591,7 +1591,7 @@ String? _instantiateImageCodec(
   int? rowBytes,
   PixelFormat? format,
 }) {
-  if (engine.experimentalUseSkia) {
+  if (engine.useCanvasKit) {
     if (width == null) {
       engine.skiaInstantiateImageCodec(list, callback);
     } else {
@@ -1617,7 +1617,7 @@ String? _instantiateImageCodecFromUrl(
     Uri uri,
     engine.WebOnlyImageCodecChunkCallback? chunkCallback,
     engine.Callback<Codec> callback) {
-  if (engine.experimentalUseSkia) {
+  if (engine.useCanvasKit) {
     engine.skiaInstantiateWebImageCodec(
         uri.toString(), callback, chunkCallback);
     return null;
@@ -1850,7 +1850,7 @@ class ImageShader extends Shader {
   /// be null.
   factory ImageShader(
       Image image, TileMode tmx, TileMode tmy, Float64List matrix4) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkImageShader(image, tmx, tmy, matrix4);
     }
     throw UnsupportedError('ImageShader not implemented for web platform.');

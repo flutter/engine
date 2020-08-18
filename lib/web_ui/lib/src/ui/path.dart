@@ -25,7 +25,7 @@ part of ui;
 abstract class Path {
   /// Create a new empty [Path] object.
   factory Path() {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkPath();
     } else {
       return engine.SurfacePath();
@@ -37,7 +37,7 @@ abstract class Path {
   /// This copy is fast and does not require additional memory unless either
   /// the `source` path or the path returned by this constructor are modified.
   factory Path.from(Path source) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkPath.from(source as engine.CkPath);
     } else {
       return engine.SurfacePath.from(source as engine.SurfacePath);
@@ -271,7 +271,7 @@ abstract class Path {
   static Path combine(PathOperation operation, Path path1, Path path2) {
     assert(path1 != null); // ignore: unnecessary_null_comparison
     assert(path2 != null); // ignore: unnecessary_null_comparison
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkPath.combine(operation, path1, path2);
     }
     throw UnimplementedError();

@@ -30,13 +30,13 @@ Future<void> _initializePlatform({
 
   // This needs to be after `webOnlyInitializeEngine` because that is where the
   // canvaskit script is added to the page.
-  if (engine.experimentalUseSkia) {
+  if (engine.useCanvasKit) {
     await engine.initializeCanvasKit();
   }
 
   assetManager ??= const engine.AssetManager();
   await webOnlySetAssetManager(assetManager);
-  if (engine.experimentalUseSkia) {
+  if (engine.useCanvasKit) {
     await engine.skiaFontCollection.ensureFontsLoaded();
   } else {
     await _fontCollection!.ensureFontsLoaded();
@@ -64,7 +64,7 @@ Future<void> webOnlySetAssetManager(engine.AssetManager assetManager) async {
 
   _assetManager = assetManager;
 
-  if (engine.experimentalUseSkia) {
+  if (engine.useCanvasKit) {
     engine.ensureSkiaFontCollectionInitialized();
   } else {
     _fontCollection ??= engine.FontCollection();
@@ -73,14 +73,14 @@ Future<void> webOnlySetAssetManager(engine.AssetManager assetManager) async {
 
 
   if (_assetManager != null) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       await engine.skiaFontCollection.registerFonts(_assetManager!);
     } else {
       await _fontCollection!.registerFonts(_assetManager!);
     }
   }
 
-  if (debugEmulateFlutterTesterEnvironment && !engine.experimentalUseSkia) {
+  if (debugEmulateFlutterTesterEnvironment && !engine.useCanvasKit) {
     _fontCollection!.debugRegisterTestFonts();
   }
 }
