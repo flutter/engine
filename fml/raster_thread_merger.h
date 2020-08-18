@@ -30,17 +30,29 @@ class RasterThreadMerger
   // When the caller merges with a lease term of say 2. The threads
   // are going to remain merged until 2 invocations of |DecreaseLease|,
   // unless an |ExtendLeaseTo| gets called.
+  //
+  // If the task queues are the same, we consider them statically merged.
+  // When task queues are statically merged this method becomes no-op.
   void MergeWithLease(size_t lease_term);
 
   // Un-merges the threads now, and resets the lease term to 0.
   //
   // Must be executed on the raster task runner.
+  //
+  // If the task queues are the same, we consider them statically merged.
+  // When task queues are statically merged, we never unmerge them and
+  // this method becomes no-op.
   void UnMergeNow();
 
+  // If the task queues are the same, we consider them statically merged.
+  // When task queues are statically merged this method becomes no-op.
   void ExtendLeaseTo(size_t lease_term);
 
   // Returns |RasterThreadStatus::kUnmergedNow| if this call resulted in
   // splitting the raster and platform threads. Reduces the lease term by 1.
+  //
+  // If the task queues are the same, we consider them statically merged.
+  // When task queues are statically merged this method becomes no-op.
   RasterThreadStatus DecrementLease();
 
   bool IsMerged();
@@ -71,6 +83,9 @@ class RasterThreadMerger
   std::mutex lease_term_mutex_;
 
   bool IsMergedUnSafe();
+  // The platform_queue_id and gpu_queue_id are exactly the same.
+  // We consider the threads are always merged and cannot be unmerged.
+  bool TaskQueuesAreSame();
 
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(RasterThreadMerger);
   FML_FRIEND_MAKE_REF_COUNTED(RasterThreadMerger);

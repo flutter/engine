@@ -62,11 +62,7 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   // TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
   // support for raster thread merger for Fuchsia.
   if (surface_->GetExternalViewEmbedder() &&
-      surface_->GetExternalViewEmbedder()->SupportsDynamicThreadMerging() &&
-      // Don't create raster_thread_merger if platform and raster task runners
-      // are the same.
-      delegate_.GetTaskRunners().GetRasterTaskRunner() !=
-          delegate_.GetTaskRunners().GetPlatformTaskRunner()) {
+      surface_->GetExternalViewEmbedder()->SupportsDynamicThreadMerging()) {
     const auto platform_id =
         delegate_.GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId();
     const auto gpu_id =
@@ -668,11 +664,6 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
 }
 
 bool Rasterizer::EnsureThreadsAreMerged() {
-  // If threads are merged statically, always return true.
-  if (delegate_.GetTaskRunners().GetRasterTaskRunner() ==
-      delegate_.GetTaskRunners().GetPlatformTaskRunner()) {
-    return true;
-  }
   if (surface_ == nullptr || raster_thread_merger_.get() == nullptr) {
     return false;
   }

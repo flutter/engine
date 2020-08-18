@@ -262,55 +262,42 @@ TEST(RasterThreadMerger, WaitUntilMerged) {
   thread_raster.join();
 }
 
-TEST(RasterThreadMerger, WaitUntilMergedReturnsIfAlreadyMerged) {
-  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger;
-
-  fml::AutoResetWaitableEvent thread_merged_latch;
-  fml::MessageLoop* loop_platform = nullptr;
-  fml::AutoResetWaitableEvent latch_platform;
-  fml::AutoResetWaitableEvent term_platform;
-  fml::AutoResetWaitableEvent latch_wait_until_merged;
-  std::thread thread_platform([&]() {
+TEST(RasterThreadMerger, HandleTaskQueuesAreTheSame) {
+  fml::MessageLoop* loop1 = nullptr;
+  fml::AutoResetWaitableEvent latch1;
+  fml::AutoResetWaitableEvent term1;
+  std::thread thread1([&loop1, &latch1, &term1]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
-    loop_platform = &fml::MessageLoop::GetCurrent();
-    latch_platform.Signal();
-    thread_merged_latch.Wait();
-    raster_thread_merger->WaitUntilMerged();
-    latch_wait_until_merged.Signal();
-    term_platform.Wait();
+    loop1 = &fml::MessageLoop::GetCurrent();
+    latch1.Signal();
+    term1.Wait();
   });
 
+  latch1.Wait();
+
+  fml::TaskQueueId qid1 = loop1->GetTaskRunner()->GetTaskQueueId();
+  fml::TaskQueueId qid2 = qid1;
+  const auto raster_thread_merger_ =
+      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+  // Statically merged.
+  ASSERT_TRUE(raster_thread_merger_->IsMerged());
+
+  // Test decrement lease and unmerge are both no-ops.
+  // The task queues should be always merged.
   const int kNumFramesMerged = 5;
-  fml::MessageLoop* loop_raster = nullptr;
-  fml::AutoResetWaitableEvent term_raster;
-  std::thread thread_raster([&]() {
-    fml::MessageLoop::EnsureInitializedForCurrentThread();
-    loop_raster = &fml::MessageLoop::GetCurrent();
-    latch_platform.Wait();
-    fml::TaskQueueId qid_platform =
-        loop_platform->GetTaskRunner()->GetTaskQueueId();
-    fml::TaskQueueId qid_raster =
-        loop_raster->GetTaskRunner()->GetTaskQueueId();
-    raster_thread_merger =
-        fml::MakeRefCounted<fml::RasterThreadMerger>(qid_platform, qid_raster);
-    ASSERT_FALSE(raster_thread_merger->IsMerged());
-    raster_thread_merger->MergeWithLease(kNumFramesMerged);
-    thread_merged_latch.Signal();
-    term_raster.Wait();
-  });
-
-  latch_wait_until_merged.Wait();
-  ASSERT_TRUE(raster_thread_merger->IsMerged());
+  raster_thread_merger_->MergeWithLease(kNumFramesMerged);
 
   for (int i = 0; i < kNumFramesMerged; i++) {
-    ASSERT_TRUE(raster_thread_merger->IsMerged());
-    raster_thread_merger->DecrementLease();
+    ASSERT_TRUE(raster_thread_merger_->IsMerged());
+    raster_thread_merger_->DecrementLease();
   }
 
-  ASSERT_FALSE(raster_thread_merger->IsMerged());
+  ASSERT_TRUE(raster_thread_merger_->IsMerged());
 
-  term_platform.Signal();
-  term_raster.Signal();
-  thread_platform.join();
-  thread_raster.join();
+  // Wait until merged should also return immediately.
+  raster_thread_merger_->WaitUntilMerged();
+  ASSERT_TRUE(raster_thread_merger_->IsMerged());
+
+  term1.Signal();
+  thread1.join();
 }
