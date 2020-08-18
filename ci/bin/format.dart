@@ -6,13 +6,18 @@
 //
 // Run with --help for usage.
 
+// TODO(gspencergoog): Support clang formatting on Windows.
+// TODO(gspencergoog): Support Java formatting on Windows.
+// TODO(gspencergoog): Convert to null safety.
+
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:isolate/isolate.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
-import 'package:process/process.dart';
 import 'package:process_runner/process_runner.dart';
+import 'package:process/process.dart';
 
 class FormattingException implements Exception {
   FormattingException(this.message, [this.result]);
@@ -78,7 +83,13 @@ String formatCheckToName(FormatCheck check) {
 }
 
 List<String> formatCheckNames() {
-  return FormatCheck.values
+  List<FormatCheck> allowed;
+  if (!Platform.isWindows) {
+    allowed = FormatCheck.values;
+  } else {
+    allowed = <FormatCheck>[FormatCheck.gn, FormatCheck.whitespace];
+  }
+  return allowed
       .map<String>((FormatCheck check) => check.toString().replaceFirst('$FormatCheck.', ''))
       .toList();
 }
@@ -643,6 +654,14 @@ class GnFormatChecker extends FormatChecker {
   }
 }
 
+@immutable
+class _GrepResult {
+  const _GrepResult(this.file, this.hits, this.lineNumbers);
+  final File file;
+  final List<String> hits;
+  final List<int> lineNumbers;
+}
+
 /// Checks for trailing whitspace in Dart files.
 class WhitespaceFormatChecker extends FormatChecker {
   WhitespaceFormatChecker({
@@ -663,31 +682,52 @@ class WhitespaceFormatChecker extends FormatChecker {
 
   @override
   Future<bool> checkFormatting() async {
-    final List<String> failures = await _getWhitespaceFailures();
+    final List<File> failures = await _getWhitespaceFailures();
     return failures.isEmpty;
   }
 
+  static final RegExp trailingWsRegEx = RegExp(r'[ \t]+$', multiLine: true);
+
   @override
   Future<bool> fixFormatting() async {
-    final List<String> failures = await _getWhitespaceFailures();
+    final List<File> failures = await _getWhitespaceFailures();
     if (failures.isNotEmpty) {
-      final RegExp fileRegEx = RegExp(r'(?<file>[^:]+):');
-      final RegExp trailingWsRegEx = RegExp(r'[ \t]+$', multiLine: true);
-      for (String hit in failures) {
-        final RegExpMatch match = fileRegEx.firstMatch(hit);
-        if (match != null) {
-          final File file = File(path.join(repoDir.path, match.namedGroup('file')));
-          stderr.writeln('Fixing $file');
-          String contents = file.readAsStringSync();
-          contents = contents.replaceAll(trailingWsRegEx, '');
-          file.writeAsStringSync(contents);
-        }
+      for (File file in failures) {
+        stderr.writeln('Fixing $file');
+        String contents = file.readAsStringSync();
+        contents = contents.replaceAll(trailingWsRegEx, '');
+        file.writeAsStringSync(contents);
       }
     }
     return true;
   }
 
-  Future<List<String>> _getWhitespaceFailures() async {
+  static Future<_GrepResult> _hasTrailingWhitespace(File file) async {
+    final List<String> hits = <String>[];
+    final List<int> lineNumbers = <int>[];
+    int lineNumber = 0;
+    for (final String line in file.readAsLinesSync()) {
+      if (trailingWsRegEx.hasMatch(line)) {
+        hits.add(line);
+        lineNumbers.add(lineNumber);
+      }
+      lineNumber++;
+    }
+    if (hits.isEmpty) {
+      return null;
+    }
+    return _GrepResult(file, hits, lineNumbers);
+  }
+
+  Stream<_GrepResult> _whereHasTrailingWhitespace(Iterable<File> files) async* {
+    final LoadBalancer pool =
+        await LoadBalancer.create(Platform.numberOfProcessors, IsolateRunner.spawn);
+    for (final File file in files) {
+      yield await pool.run<_GrepResult, File>(_hasTrailingWhitespace, file);
+    }
+  }
+
+  Future<List<File>> _getWhitespaceFailures() async {
     final List<String> files = await getFileList(<String>[
       '*.c',
       '*.cc',
@@ -708,33 +748,47 @@ class WhitespaceFormatChecker extends FormatChecker {
     ]);
     if (files.isEmpty) {
       message('No files that differ, skipping whitespace check.');
-      return <String>[];
+      return <File>[];
     }
-    message('Checking for trailing whitespace on ${files.length} Dart '
+    message('Checking for trailing whitespace on ${files.length} source '
         'file${files.length > 1 ? 's' : ''}...');
-    final ProcessPool grepPool = ProcessPool(
-      processRunner: _processRunner,
-      printReport: namedReport('whitespace grep'),
-    );
-    final List<WorkerJob> jobs = files.map<WorkerJob>((String file) {
-      return WorkerJob(
-        <String>['grep', '--line-number', '--with-filename', r'[[:blank:]]\+$', file],
-        failOk: true,
-      );
-    }).toList();
-    final List<WorkerJob> completedJobs = await grepPool.runToCompletion(jobs);
+
+    final ProcessPoolProgressReporter reporter = namedReport('whitespace');
+    final List<_GrepResult> found = <_GrepResult>[];
+    final int total = files.length;
+    int completed = 0;
+    int inProgress = Platform.numberOfProcessors;
+    int pending = total;
+    int failed = 0;
+    await for (final _GrepResult result in _whereHasTrailingWhitespace(
+      files.map<File>(
+        (String file) => File(
+          path.join(repoDir.absolute.path, file),
+        ),
+      ),
+    )) {
+      if (result == null) {
+        completed++;
+      } else {
+        failed++;
+        found.add(result);
+      }
+      pending--;
+      inProgress = pending < Platform.numberOfProcessors ? pending : Platform.numberOfProcessors;
+      reporter(total, completed, inProgress, pending, failed);
+    }
     reportDone();
-    final List<String> found = completedJobs
-        .map<String>((WorkerJob job) => job.result.stdout)
-        .where((String output) => output.isNotEmpty)
-        .toList();
     if (found.isNotEmpty) {
       error('Whitespace check failed. The following files have trailing spaces:');
-      found.forEach(message);
+      for (final _GrepResult result in found) {
+        for (int i = 0; i < result.hits.length; ++i) {
+          message('  ${result.file.path}:${result.lineNumbers[i]}:${result.hits[i]}');
+        }
+      }
     } else {
       message('No trailing whitespace found.');
     }
-    return found;
+    return found.map<File>((_GrepResult result) => result.file).toList();
   }
 }
 
@@ -791,7 +845,8 @@ Future<int> main(List<String> arguments) async {
       allowed: formatCheckNames(),
       defaultsTo: formatCheckNames(),
       help: 'Specifies which checks will be performed. Defaults to all checks. '
-          'May be specified more than once to perform multiple types of checks.');
+          'May be specified more than once to perform multiple types of checks. '
+          'On Windows, only whitespace and gn checks are currently supported.');
   parser.addFlag('verbose', help: 'Print verbose output.', defaultsTo: verbose);
 
   ArgResults options;
