@@ -93,8 +93,19 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
 
   if (SAFE_ACCESS(open_gl_config, make_current, nullptr) == nullptr ||
       SAFE_ACCESS(open_gl_config, clear_current, nullptr) == nullptr ||
-      SAFE_ACCESS(open_gl_config, present, nullptr) == nullptr ||
-      SAFE_ACCESS(open_gl_config, fbo_callback, nullptr) == nullptr) {
+      SAFE_ACCESS(open_gl_config, present, nullptr) == nullptr) {
+    return false;
+  }
+
+  bool fbo_callback_exists =
+      SAFE_ACCESS(open_gl_config, fbo_callback, nullptr) != nullptr;
+  bool fbo_with_frame_info_callback_exists =
+      SAFE_ACCESS(open_gl_config, fbo_with_frame_info_callback, nullptr) !=
+      nullptr;
+  // only one of these callbacks must exist.
+  if (fbo_callback_exists == fbo_with_frame_info_callback_exists) {
+    LOG_EMBEDDER_ERROR(kInternalInconsistency,
+                       "OpenGL fbo callback configuration was invalid.");
     return false;
   }
 
@@ -168,8 +179,18 @@ InferOpenGLPlatformViewCreationCallback(
     return ptr(user_data);
   };
 
-  auto gl_fbo_callback = [ptr = config->open_gl.fbo_callback,
-                          user_data]() -> intptr_t { return ptr(user_data); };
+  auto gl_fbo_callback =
+      [fbo_callback = config->open_gl.fbo_callback,
+       fbo_with_frame_info_callback =
+           config->open_gl.fbo_with_frame_info_callback,
+       user_data](flutter::GLFrameInfo frame_info) -> intptr_t {
+    if (fbo_callback) {
+      return fbo_callback(user_data);
+    } else {
+      return fbo_with_frame_info_callback(
+          user_data, {.width = frame_info.width, .height = frame_info.height});
+    }
+  };
 
   const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
   std::function<bool()> gl_make_resource_current_callback = nullptr;

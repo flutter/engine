@@ -79,6 +79,8 @@ class EmbedderTestContext {
 
   size_t GetSoftwareSurfacePresentCount() const;
 
+  std::vector<FlutterFrameInfo> GetGLFBOFrameInfos();
+
  private:
   // This allows the builder to access the hooks.
   friend class EmbedderConfigBuilder;
@@ -101,6 +103,7 @@ class EmbedderTestContext {
   std::unique_ptr<EmbedderTestCompositor> compositor_;
   NextSceneCallback next_scene_callback_;
   SkMatrix root_surface_transformation_;
+  std::vector<FlutterFrameInfo> gl_surface_fbo_frame_infos_;
   size_t gl_surface_present_count_ = 0;
   size_t software_surface_present_count_ = 0;
 
@@ -133,7 +136,7 @@ class EmbedderTestContext {
 
   bool GLPresent();
 
-  uint32_t GLGetFramebuffer();
+  uint32_t GLGetFramebuffer(FlutterFrameInfo frame_info);
 
   bool GLMakeResourceCurrent();
 

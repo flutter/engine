@@ -307,11 +307,25 @@ typedef bool (*TextureFrameCallback)(void* /* user data */,
 typedef void (*VsyncCallback)(void* /* user data */, intptr_t /* baton */);
 
 typedef struct {
+  /// The width of the surface that will be backed by the fbo.
+  uint32_t width;
+  /// The height of the surface that will be backed by the fbo.
+  uint32_t height;
+} FlutterFrameInfo;
+
+typedef uint32_t (*FBOWithFrameInfoCallBack)(void* /* user data */,
+                                             FlutterFrameInfo /* frame info*/);
+
+typedef struct {
   /// The size of this struct. Must be sizeof(FlutterOpenGLRendererConfig).
   size_t struct_size;
   BoolCallback make_current;
   BoolCallback clear_current;
   BoolCallback present;
+  /// This is an optional callback. Exactly one of
+  /// `fbo_with_frame_info_callback` or `fbo_callback` must be provided. The
+  /// return value indicates the id of the frame buffer object that flutter will
+  /// obtain the gl surface from.
   UIntCallback fbo_callback;
   /// This is an optional callback. Flutter will ask the emebdder to create a GL
   /// context current on a background thread. If the embedder is able to do so,
@@ -342,6 +356,13 @@ typedef struct {
   /// that external texture details can be supplied to the engine for subsequent
   /// composition.
   TextureFrameCallback gl_external_texture_frame_callback;
+  /// This is an optional callback. Exactly one of
+  /// `fbo_with_frame_info_callback` or `fbo_callback` must provided. The
+  /// return value indicates the id of the frame buffer object (fbo) that
+  /// flutter will obtain the gl surface from. When using this variant, the
+  /// embedder is passed a `FlutterFrameInfo` struct that indicates the
+  /// properties of the surface that flutter will acquire from the returned fbo.
+  FBOWithFrameInfoCallBack fbo_with_frame_info_callback;
 } FlutterOpenGLRendererConfig;
 
 typedef struct {

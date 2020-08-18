@@ -35,8 +35,12 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   opengl_renderer_config_.present = [](void* context) -> bool {
     return reinterpret_cast<EmbedderTestContext*>(context)->GLPresent();
   };
-  opengl_renderer_config_.fbo_callback = [](void* context) -> uint32_t {
-    return reinterpret_cast<EmbedderTestContext*>(context)->GLGetFramebuffer();
+  opengl_renderer_config_.fbo_with_frame_info_callback =
+      [](void* context, FlutterFrameInfo frame_info) -> uint32_t {
+    return reinterpret_cast<EmbedderTestContext*>(context)->GLGetFramebuffer({
+        .width = frame_info.width,
+        .height = frame_info.height,
+    });
   };
   opengl_renderer_config_.make_resource_current = [](void* context) -> bool {
     return reinterpret_cast<EmbedderTestContext*>(context)
