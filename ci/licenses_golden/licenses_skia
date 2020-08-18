@@ -1,4 +1,4 @@
-Signature: c3d70b07735a5ba1b905541a5b4085fc
+Signature: 158f73ea67a956b2cd388c29c55ca261
 
 UNUSED LICENSES:
 
@@ -3894,6 +3894,7 @@ FILE: ../../../third_party/skia/gm/crbug_224618.cpp
 FILE: ../../../third_party/skia/gm/encode_color_types.cpp
 FILE: ../../../third_party/skia/gm/userfont.cpp
 FILE: ../../../third_party/skia/gm/ycbcrimage.cpp
+FILE: ../../../third_party/skia/include/core/SkYUVASpec.h
 FILE: ../../../third_party/skia/include/gpu/GrBackendSurfaceMutableState.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypes.h
@@ -3910,6 +3911,7 @@ FILE: ../../../third_party/skia/src/core/SkIDChangeListener.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixProvider.h
 FILE: ../../../third_party/skia/src/core/SkRuntimeEffectPriv.h
 FILE: ../../../third_party/skia/src/core/SkVM_fwd.h
+FILE: ../../../third_party/skia/src/core/SkYUVASpec.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendSemaphore.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendSurfaceMutableStateImpl.h
 FILE: ../../../third_party/skia/src/gpu/GrBackendUtils.h
