@@ -22,7 +22,7 @@ SET repo_dir=%SRC_DIR%\flutter
 SET ci_dir=%repo_dir%\flutter\ci
 SET dart_sdk_path=%SRC_DIR%\third_party\dart\tools\sdks\dart-sdk
 SET dart=%dart_sdk_path%\bin\dart.exe
-SET pub=%dart_sdk_path%\bin\pub.exe
+SET pub=%dart_sdk_path%\bin\pub.bat
 
 cd "%ci_dir%"
 

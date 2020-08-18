@@ -30,8 +30,9 @@ function follow_links() (
 
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
-DART="${SRC_DIR}/third_party/dart/tools/sdks/dart-sdk/bin/dart"
-PUB="${SRC_DIR}/third_party/dart/tools/sdks/dart-sdk/bin/pub"
+DART_SDK_DIR="${SRC_DIR}/third_party/dart/tools/sdks/dart-sdk"
+DART="${DART_SDK_DIR}/bin/dart"
+PUB="${DART_SDK_DIR}/bin/pub"
 
 cd "$SCRIPT_DIR"
 "$PUB" get && "$DART" \
