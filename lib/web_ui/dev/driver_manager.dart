@@ -20,18 +20,15 @@ import 'utils.dart';
 ///
 /// This manager can be used for both macOS and Linux.
 class ChromeDriverManager extends DriverManager {
-
   /// Directory which contains the preferred version of Chrome.
   ///
   /// On LUCI we are using the CIPD packages to control Chrome binaries we use.
   /// There will be multiple CIPD packages loaded at the same time. Yaml file
   /// `driver_version.yaml` contains the version number we want to use.
   ///
-  /// Local integration tests are still using the system Chrome. This should be
-  /// fixed in issue: https://github.com/flutter/flutter/issues/53179.
-  ///
-  /// Initialized to the current first to avoid the `Non-nullable` error.
-  io.Directory _browserDriverDirWithVersion = io.Directory.current;
+  /// TODO: https://github.com/flutter/flutter/issues/53179. Local integration
+  /// tests are still using the system Chrome.
+  late final io.Directory _browserDriverDirWithVersion;
 
   ChromeDriverManager(String browser) : super(browser) {
     final io.File lockFile = io.File(pathlib.join(
@@ -39,14 +36,14 @@ class ChromeDriverManager extends DriverManager {
     YamlMap _configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
     final String preferredChromeDriverVersion =
         _configuration['preferred_version']['chrome'] as String;
-    print('preferred_version $preferredChromeDriverVersion');
-    _browserDriverDirWithVersion =io.Directory(pathlib.join(
-            environment.webUiDartToolDir.path,
-            'drivers',
-            browser,
-            preferredChromeDriverVersion,
-            '${browser}driver-${io.Platform.operatingSystem.toString()}'));
-    print('new location ${_browserDriverDirWithVersion.path}');
+    print('INFO: Preferred major version for Chrome '
+        '$preferredChromeDriverVersion');
+    _browserDriverDirWithVersion = io.Directory(pathlib.join(
+        environment.webUiDartToolDir.path,
+        'drivers',
+        browser,
+        preferredChromeDriverVersion,
+        '${browser}driver-${io.Platform.operatingSystem.toString()}'));
   }
 
   @override
