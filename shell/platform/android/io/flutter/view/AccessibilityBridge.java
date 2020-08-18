@@ -1551,7 +1551,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (routeName == null) {
       // The routeName will be null when there is no semantics node that represnets namesRoute in
       // the scopeRoute. The TYPE_WINDOW_STATE_CHANGED only works the route name is not null and not
-      // empty. Gives it a while space will make it focus the first semantics node without
+      // empty. Gives it a whitespace will make it focus the first semantics node without
       // pronouncing any word.
       //
       // The other way to trigger a focus change is to send a TYPE_VIEW_FOCUSED to the
