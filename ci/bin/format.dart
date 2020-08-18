@@ -344,6 +344,7 @@ class ClangFormatChecker extends FormatChecker {
     const List<String> clangFiletypes = <String>[
       '*.c',
       '*.cc',
+      '*.cxx',
       '*.cpp',
       '*.h',
       '*.m',
@@ -687,7 +688,24 @@ class WhitespaceFormatChecker extends FormatChecker {
   }
 
   Future<List<String>> _getWhitespaceFailures() async {
-    final List<String> files = await getFileList(<String>['*.dart']);
+    final List<String> files = await getFileList(<String>[
+      '*.c',
+      '*.cc',
+      '*.cpp',
+      '*.cxx',
+      '*.dart',
+      '*.gn',
+      '*.gni',
+      '*.gradle',
+      '*.h',
+      '*.java',
+      '*.json',
+      '*.m',
+      '*.mm',
+      '*.py',
+      '*.sh',
+      '*.yaml',
+    ]);
     if (files.isEmpty) {
       message('No files that differ, skipping whitespace check.');
       return <String>[];
