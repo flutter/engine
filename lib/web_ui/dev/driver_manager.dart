@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:io' as io;
 
 import 'package:meta/meta.dart';
@@ -38,7 +39,7 @@ class ChromeDriverManager extends DriverManager {
         loadYaml(lockFile.readAsStringSync()) as YamlMap;
     final String requiredChromeDriverVersion =
         _configuration['required_driver_version']['chrome'] as String;
-    print('INFO: Major version for Chrome $requiredChromeDriverVersion');
+    print('INFO: Major version for Chrome Driver $requiredChromeDriverVersion');
     _browserDriverDirWithVersion = io.Directory(pathlib.join(
         environment.webUiDartToolDir.path,
         'drivers',
