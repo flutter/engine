@@ -28,7 +28,9 @@ class ChromeDriverManager extends DriverManager {
   ///
   /// TODO: https://github.com/flutter/flutter/issues/53179. Local integration
   /// tests are still using the system Chrome.
-  late final io.Directory _browserDriverDirWithVersion;
+  ///
+  /// Initialized to the current first to avoid the `Non-nullable` error.
+  io.Directory _browserDriverDirWithVersion = io.Directory.current;
 
   ChromeDriverManager(String browser) : super(browser) {
     final io.File lockFile = io.File(pathlib.join(
@@ -48,15 +50,15 @@ class ChromeDriverManager extends DriverManager {
 
   @override
   Future<void> _installDriver() async {
-    if (_browserDriverDir.existsSync()) {
-      _browserDriverDir.deleteSync(recursive: true);
+    if (_browserDriverDirWithVersion.existsSync()) {
+      _browserDriverDirWithVersion.deleteSync(recursive: true);
     }
 
-    _browserDriverDir.createSync(recursive: true);
+    _browserDriverDirWithVersion.createSync(recursive: true);
     temporaryDirectories.add(_drivers);
 
     final io.Directory temp = io.Directory.current;
-    io.Directory.current = _browserDriverDir;
+    io.Directory.current = _browserDriverDirWithVersion;
 
     try {
       // TODO(nurhan): https://github.com/flutter/flutter/issues/53179
@@ -84,9 +86,7 @@ class ChromeDriverManager extends DriverManager {
   @override
   Future<void> _startDriver() async {
     await startProcess('./chromedriver/chromedriver', ['--port=4444'],
-        workingDirectory: isLuci
-            ? _browserDriverDirWithVersion.path
-            : _browserDriverDir.path);
+        workingDirectory: _browserDriverDirWithVersion.path);
     print('INFO: Driver started');
   }
 }
