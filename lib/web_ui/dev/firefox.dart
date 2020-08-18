@@ -88,10 +88,10 @@ user_pref("dom.max_script_run_time", 0);
         temporaryProfileDirectory.deleteSync(recursive: true);
       }));
 
-      return process;
+      return BrowserProcess(process, url.toString());
     }, remoteDebuggerCompleter.future);
   }
 
-  Firefox._(Future<Process> startBrowser(), this.remoteDebuggerUrl)
+  Firefox._(Future<BrowserProcess> startBrowser(), this.remoteDebuggerUrl)
       : super(startBrowser);
 }

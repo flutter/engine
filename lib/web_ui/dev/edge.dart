@@ -46,9 +46,9 @@ class Edge extends Browser {
       var process =
           await Process.start(installation.executable, ['$pathToOpen','-k']);
 
-      return process;
+      return BrowserProcess(process, pathToOpen);
     });
   }
 
-  Edge._(Future<Process> startBrowser()) : super(startBrowser);
+  Edge._(Future<BrowserProcess> startBrowser()) : super(startBrowser);
 }
