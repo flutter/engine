@@ -31,6 +31,11 @@ void main() {
 
   final StaticConstInitializer staticConstMap = StaticConstInitializer();
   staticConstMap.useOne(1);
+
+  const ExtendsTarget extendsTarget = ExtendsTarget('11', 11, null);
+  extendsTarget.hit();
+  const ImplementsTarget implementsTarget = ImplementsTarget('12', 12, null);
+  implementsTarget.hit();
 }
 
 class IgnoreMe {

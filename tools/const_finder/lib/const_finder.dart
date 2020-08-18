@@ -33,8 +33,14 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   final List<Map<String, dynamic>> nonConstantLocations;
 
   bool _matches(Class node) {
-    return node.enclosingLibrary.importUri.toString() == classLibraryUri &&
-      node.name == className;
+    if (node == null) {
+      return false;
+    }
+    final bool exactMatch = node.name == className
+        && node.enclosingLibrary.importUri.toString() == classLibraryUri;
+    return exactMatch
+        || _matches(node.superclass)
+        || node.implementedTypes.any((Supertype implementedType) => _matches(implementedType.classNode));
   }
 
   // Avoid visiting the same constant more than once.
