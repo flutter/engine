@@ -94,8 +94,16 @@ List<String> formatCheckNames() {
       .toList();
 }
 
-Future<String> _runGit(List<String> args, ProcessRunner processRunner) async {
-  return (await processRunner.runProcess(<String>['git', ...args])).stdout;
+Future<String> _runGit(
+  List<String> args,
+  ProcessRunner processRunner, {
+  bool failOk = false,
+}) async {
+  final ProcessRunnerResult result = await processRunner.runProcess(
+    <String>['git', ...args],
+    failOk: failOk,
+  );
+  return result.stdout;
 }
 
 typedef MessageCallback = Function(String message, {MessageType type});
@@ -797,9 +805,12 @@ Future<String> _getDiffBaseRevision(ProcessManager processManager, Directory rep
     defaultWorkingDirectory: repoDir,
     processManager: processManager ?? const LocalProcessManager(),
   );
-  final String upstreamUrl =
-      await _runGit(<String>['remote', 'get-url', 'upstream'], processRunner);
   String upstream = 'upstream';
+  final String upstreamUrl = await _runGit(
+    <String>['remote', 'get-url', upstream],
+    processRunner,
+    failOk: true,
+  );
   if (upstreamUrl.isEmpty) {
     upstream = 'origin';
   }
