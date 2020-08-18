@@ -20,31 +20,30 @@ import 'utils.dart';
 ///
 /// This manager can be used for both macOS and Linux.
 class ChromeDriverManager extends DriverManager {
-  /// Directory which contains the preferred version of Chrome.
+  /// Directory which contains the Chrome's major version.
   ///
   /// On LUCI we are using the CIPD packages to control Chrome binaries we use.
   /// There will be multiple CIPD packages loaded at the same time. Yaml file
   /// `driver_version.yaml` contains the version number we want to use.
   ///
-  /// TODO: https://github.com/flutter/flutter/issues/53179. Local integration
-  /// tests are still using the system Chrome.
-  ///
   /// Initialized to the current first to avoid the `Non-nullable` error.
-  io.Directory _browserDriverDirWithVersion = io.Directory.current;
+  // TODO: https://github.com/flutter/flutter/issues/53179. Local integration
+  // tests are still using the system Chrome.
+  io.Directory _browserDriverDirWithVersion;
 
   ChromeDriverManager(String browser) : super(browser) {
     final io.File lockFile = io.File(pathlib.join(
-        environment.webUiRootDir.path, 'dev', 'driver_version.yaml'));
-    YamlMap _configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
-    final String preferredChromeDriverVersion =
-        _configuration['preferred_version']['chrome'] as String;
-    print('INFO: Preferred major version for Chrome '
-        '$preferredChromeDriverVersion');
+        environment.webUiRootDir.path, 'dev', 'browser_lock.yaml'));
+    final YamlMap _configuration =
+        loadYaml(lockFile.readAsStringSync()) as YamlMap;
+    final String requiredChromeDriverVersion =
+        _configuration['required_driver_version']['chrome'] as String;
+    print('INFO: Major version for Chrome $requiredChromeDriverVersion');
     _browserDriverDirWithVersion = io.Directory(pathlib.join(
         environment.webUiDartToolDir.path,
         'drivers',
         browser,
-        preferredChromeDriverVersion,
+        requiredChromeDriverVersion,
         '${browser}driver-${io.Platform.operatingSystem.toString()}'));
   }
 

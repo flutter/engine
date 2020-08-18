@@ -164,7 +164,7 @@ Since the engine code and infra recipes do not live in the same repository there
 1. Dowload the binaries for the new browser/driver for each operaing system (macOS, linux, windows).
 2. Create CIPD packages for these packages. (More documentation is available for Googlers.)
 3. Add the new browser version to the recipe. Do not remove the old one. This recipe will apply to all PRs as soon as it is merged. However, not all PRs will have the up to date code for a while.
-4. Update the version in this repo. Change `preferred_version` section for drivers in `driver_version.yaml`. Change `browser_lock.yaml` file for browsers.
+4. Update the version in this repo. Do this by changing the related fields in `browser_lock.yaml` file.
 5. After a few days don't forget to remove the old version from the LUCI recipe.
 
 Note that for LUCI builders, both unit and integration tests are using the same browser.
