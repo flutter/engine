@@ -25,7 +25,10 @@ namespace flutter {
 ///
 class AndroidEGLSurface {
  public:
-  AndroidEGLSurface(EGLSurface surface, EGLDisplay display, EGLContext context);
+  AndroidEGLSurface(EGLSurface surface,
+                    EGLDisplay display,
+                    EGLContext context,
+                    fml::RefPtr<AndroidEnvironmentGL> environment);
   ~AndroidEGLSurface();
 
   //----------------------------------------------------------------------------
@@ -41,7 +44,9 @@ class AndroidEGLSurface {
   ///
   /// @return     Whether the surface was made current.
   ///
-  bool MakeCurrent();
+  std::unique_ptr<GLContextResult> MakeCurrent();
+
+  bool ResourceMakeCurrent();
 
   //----------------------------------------------------------------------------
   /// @brief      This only applies to on-screen surfaces such as those created
@@ -60,6 +65,7 @@ class AndroidEGLSurface {
   const EGLSurface surface_;
   const EGLDisplay display_;
   const EGLContext context_;
+  fml::RefPtr<AndroidEnvironmentGL> environment_;
 };
 
 //------------------------------------------------------------------------------

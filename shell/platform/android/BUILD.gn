@@ -35,6 +35,8 @@ shared_library("flutter_shell_native") {
     "android_surface_gl.h",
     "android_surface_software.cc",
     "android_surface_software.h",
+    "android_switchable_gl_context.cc",
+    "android_switchable_gl_context.h",
     "apk_asset_provider.cc",
     "apk_asset_provider.h",
     "flutter_main.cc",

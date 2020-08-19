@@ -114,7 +114,7 @@ AndroidShellHolder::AndroidShellHolder(
     // https://github.com/flutter/flutter/issues/59930
     flutter::TaskRunners task_runners(thread_label,     // label
                                       platform_runner,  // platform
-                                      platform_runner,  // raster
+                                      gpu_runner,       // raster
                                       ui_runner,        // ui
                                       io_runner         // io
     );

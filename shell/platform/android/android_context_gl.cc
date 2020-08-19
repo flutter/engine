@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/android_context_gl.h"
+#include "flutter/shell/platform/android/android_switchable_gl_context.h"
 
 #include <EGL/eglext.h>
 
@@ -105,10 +106,15 @@ static bool TeardownContext(EGLDisplay display, EGLContext context) {
   return true;
 }
 
-AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
-                                     EGLDisplay display,
-                                     EGLContext context)
-    : surface_(surface), display_(display), context_(context) {}
+AndroidEGLSurface::AndroidEGLSurface(
+    EGLSurface surface,
+    EGLDisplay display,
+    EGLContext context,
+    fml::RefPtr<AndroidEnvironmentGL> environment)
+    : surface_(surface),
+      display_(display),
+      context_(context),
+      environment_(environment) {}
 
 AndroidEGLSurface::~AndroidEGLSurface() {
   auto result = eglDestroySurface(display_, surface_);
@@ -119,7 +125,24 @@ bool AndroidEGLSurface::IsValid() const {
   return surface_ != EGL_NO_SURFACE;
 }
 
-bool AndroidEGLSurface::MakeCurrent() {
+std::unique_ptr<GLContextResult> AndroidEGLSurface::MakeCurrent() {
+  auto context_switch = std::make_unique<GLContextSwitch>(
+      std::make_unique<AndroidSwitchableGLContext>(context_, surface_, display_,
+                                                   environment_));
+  if (!context_switch->GetResult()) {
+    FML_LOG(ERROR) << "Could not make the context current";
+    LogLastEGLError();
+  }
+  return std::move(context_switch);
+  // EGLBoolean result = eglMakeCurrent(display_, surface_, surface_, context_);
+  // if (result != EGL_TRUE) {
+  //   FML_LOG(ERROR) << "Could not make the context current";
+  //   LogLastEGLError();
+  // }
+  // return std::make_unique<GLContextDefaultResult>(result == EGL_TRUE);
+}
+
+bool AndroidEGLSurface::ResourceMakeCurrent() {
   if (eglMakeCurrent(display_, surface_, surface_, context_) != EGL_TRUE) {
     FML_LOG(ERROR) << "Could not make the context current";
     LogLastEGLError();
@@ -211,7 +234,8 @@ std::unique_ptr<AndroidEGLSurface> AndroidContextGL::CreateOnscreenSurface(
   EGLSurface surface = eglCreateWindowSurface(
       display, config_, reinterpret_cast<EGLNativeWindowType>(window->handle()),
       attribs);
-  return std::make_unique<AndroidEGLSurface>(surface, display, context_);
+  return std::make_unique<AndroidEGLSurface>(surface, display, context_,
+                                             environment_);
 }
 
 std::unique_ptr<AndroidEGLSurface> AndroidContextGL::CreateOffscreenSurface()
@@ -224,7 +248,7 @@ std::unique_ptr<AndroidEGLSurface> AndroidContextGL::CreateOffscreenSurface()
 
   EGLSurface surface = eglCreatePbufferSurface(display, config_, attribs);
   return std::make_unique<AndroidEGLSurface>(surface, display,
-                                             resource_context_);
+                                             resource_context_, environment_);
 }
 
 fml::RefPtr<AndroidEnvironmentGL> AndroidContextGL::Environment() const {
