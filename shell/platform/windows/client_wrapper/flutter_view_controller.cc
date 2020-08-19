@@ -37,7 +37,7 @@ std::optional<LRESULT> FlutterViewController::HandleTopLevelWindowProc(
   LRESULT result;
   bool handled = FlutterDesktopViewControllerHandleTopLevelWindowProc(
       controller_, hwnd, message, wparam, lparam, &result);
-  return handled ? result : std::nullopt;
+  return handled ? result : std::optional<LRESULT>(std::nullopt);
 }
 
 std::chrono::nanoseconds FlutterViewController::ProcessMessages() {
