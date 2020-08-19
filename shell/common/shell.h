@@ -12,6 +12,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
+#include "flutter/flow/compositor_context.h"
 #include "flutter/flow/surface.h"
 #include "flutter/flow/texture.h"
 #include "flutter/fml/closure.h"
@@ -248,7 +249,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @return     The task runners current in use by the shell.
   ///
-  const TaskRunners& GetTaskRunners() const;
+  const TaskRunners& GetTaskRunners() const override;
 
   //----------------------------------------------------------------------------
   /// @brief      Rasterizers may only be accessed on the GPU task runner.
@@ -352,7 +353,7 @@ class Shell final : public PlatformView::Delegate,
 
   //----------------------------------------------------------------------------
   /// @brief     Accessor for the disable GPU SyncSwitch
-  std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const;
+  std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const override;
 
   //----------------------------------------------------------------------------
   /// @brief      Get a pointer to the Dart VM used by this running shell
@@ -528,10 +529,14 @@ class Shell final : public PlatformView::Delegate,
   void OnFrameRasterized(const FrameTiming&) override;
 
   // |Rasterizer::Delegate|
-  fml::Milliseconds GetFrameBudget() override;
+  fml::TimePoint GetLatestFrameTargetTime() const override;
 
   // |Rasterizer::Delegate|
-  fml::TimePoint GetLatestFrameTargetTime() const override;
+  // |CompositorContext::Delegate|
+  fml::Milliseconds GetFrameBudget() override;
+
+  // |CompositorContext::Delegate|
+  void OnCompositorEndFrame(size_t freed_hint) override;
 
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
@@ -581,6 +586,11 @@ class Shell final : public PlatformView::Delegate,
   //
   // The returned SkSLs are base64 encoded. Decode before storing them to files.
   bool OnServiceProtocolGetSkSLs(
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document* response);
+
+  // Service protocol handler
+  bool OnServiceProtocolEstimateRasterCacheMemory(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
 

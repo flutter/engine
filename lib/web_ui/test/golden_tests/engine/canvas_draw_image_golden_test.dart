@@ -7,15 +7,20 @@ import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:js_util' as js_util;
 
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
-import 'package:test/test.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
 import 'scuba.dart';
 
-void main() async {
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() async {
   const double screenWidth = 600.0;
   const double screenHeight = 800.0;
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
@@ -373,6 +378,28 @@ void main() async {
       // Scuba screenshot.
       sceneElement.remove();
     }
+  });
+
+  // Regression test for https://github.com/flutter/flutter/issues/61691
+  //
+  // The bug in bitmap_canvas.dart was that when we transformed and clipped
+  // the image we did not apply `transform-origin: 0 0 0` to the clipping
+  // element which resulted in an undesirable offset.
+  test('Paints clipped and transformed image', () async {
+    final Rect region = const Rect.fromLTRB(0, 0, 60, 70);
+    final RecordingCanvas canvas = RecordingCanvas(region);
+    canvas.translate(10, 10);
+    canvas.transform(Matrix4.rotationZ(0.4).storage);
+    canvas.clipPath(Path()
+      ..moveTo(10, 10)
+      ..lineTo(50, 10)
+      ..lineTo(50, 30)
+      ..lineTo(10, 30)
+      ..close()
+    );
+    canvas.drawImage(createNineSliceImage(), Offset.zero, Paint());
+    await _checkScreenshot(canvas, 'draw_clipped_and_transformed_image', region: region,
+        maxDiffRatePercent: 1.0);
   });
 }
 
