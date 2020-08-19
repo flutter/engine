@@ -33,7 +33,7 @@ class ImageReleaseTest : public ShellTest {
 };
 
 TEST_F(ImageReleaseTest, ImageReleasedAfterFrame) {
-  auto nativeCaptureImageAndPicture = [&](Dart_NativeArguments args) {
+  auto native_capture_image_and_picture = [&](Dart_NativeArguments args) {
     CanvasImage* image = GetNativePeer<CanvasImage>(args, 0);
     Picture* picture = GetNativePeer<Picture>(args, 1);
     ASSERT_FALSE(image->image()->unique());
@@ -42,7 +42,9 @@ TEST_F(ImageReleaseTest, ImageReleasedAfterFrame) {
     current_picture_ = picture->picture();
   };
 
-  auto nativeDone = [&](Dart_NativeArguments args) { message_latch.Signal(); };
+  auto native_on_begin_frame_done = [&](Dart_NativeArguments args) {
+    message_latch.Signal();
+  };
 
   Settings settings = CreateSettingsForFixture();
   auto task_runner = CreateNewThread();
@@ -54,8 +56,9 @@ TEST_F(ImageReleaseTest, ImageReleasedAfterFrame) {
   );
 
   AddNativeCallback("CaptureImageAndPicture",
-                    CREATE_NATIVE_ENTRY(nativeCaptureImageAndPicture));
-  AddNativeCallback("Done", CREATE_NATIVE_ENTRY(nativeDone));
+                    CREATE_NATIVE_ENTRY(native_capture_image_and_picture));
+  AddNativeCallback("OnBeginFrameDone",
+                    CREATE_NATIVE_ENTRY(native_on_begin_frame_done));
 
   std::unique_ptr<Shell> shell = CreateShell(std::move(settings), task_runners);
 

@@ -15,10 +15,6 @@
 namespace flutter {
 namespace testing {
 
-class CompositorDelegate : public CompositorContext::Delegate {
- public:
-};
-
 class LayerTreeTest : public CanvasTest, public CompositorContext::Delegate {
  public:
   LayerTreeTest()

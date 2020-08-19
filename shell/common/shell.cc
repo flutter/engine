@@ -625,7 +625,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // a synchronous fashion.
   fml::AutoResetWaitableEvent latch;
   auto raster_task =
-      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
+      fml::MakeCopyable([& waiting_for_first_frame = waiting_for_first_frame_,
                          rasterizer = rasterizer_->GetWeakPtr(),  //
                          surface = std::move(surface),            //
                          &latch]() mutable {
@@ -990,7 +990,7 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
   }
 
   task_runners_.GetRasterTaskRunner()->PostTask(
-      [&waiting_for_first_frame = waiting_for_first_frame_,
+      [& waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
        pipeline = std::move(pipeline)]() {
@@ -1206,9 +1206,12 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
 }
 
 void Shell::OnCompositorEndFrame(size_t freed_hint) {
-  if (engine_) {
-    engine_->HintFreed(freed_hint);
-  }
+  task_runners_.GetUITaskRunner()->PostTask(
+      [engine = engine_->GetWeakPtr(), freed_hint = freed_hint]() {
+        if (engine) {
+          engine->HintFreed(freed_hint);
+        }
+      });
 }
 
 fml::Milliseconds Shell::GetFrameBudget() {
@@ -1525,7 +1528,7 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
   bool success = waiting_for_first_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [&waiting_for_first_frame = waiting_for_first_frame_] {
+      [& waiting_for_first_frame = waiting_for_first_frame_] {
         return !waiting_for_first_frame.load();
       });
   if (success) {

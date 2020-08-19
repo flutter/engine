@@ -103,7 +103,7 @@ Future<void> pumpImage() async {
     window.render(scene);
     scene.dispose();
     window.onBeginFrame = (Duration duration) {
-      window.onDrawFrame = _done;
+      window.onDrawFrame = _onBeginFrameDone;
     };
     window.scheduleFrame();
   };
@@ -132,4 +132,4 @@ Future<void> pumpImage() async {
   window.scheduleFrame();
 }
 void _captureImageAndPicture(Image image, Picture picture) native 'CaptureImageAndPicture';
-Future<void> _done() native 'Done';
+Future<void> _onBeginFrameDone() native 'OnBeginFrameDone';
