@@ -202,6 +202,35 @@ std::shared_ptr<minikin::FontFamily> FontCollection::FindFontFamilyInManagers(
   return nullptr;
 }
 
+void FontCollection::SortSkTypefaces(
+    std::vector<sk_sp<SkTypeface>> sk_typefaces) {
+  std::sort(sk_typefaces.begin(), sk_typefaces.end(),
+            [](const sk_sp<SkTypeface>& a, const sk_sp<SkTypeface>& b) {
+              SkFontStyle a_style = a->fontStyle();
+              SkFontStyle b_style = b->fontStyle();
+
+              if (a_style.width() != b_style.width()) {
+                // If a family name query is so generic it ends up bringing in
+                // fonts of multiple widths (e.g. condensed, expanded), opt to
+                // be conservative and select the most standard width.
+                //
+                // If a specific width is desired, it should be be narrowed down
+                // via the family name.
+                //
+                // The font weights are also sorted lightest to heaviest but
+                // Flutter APIs have the weight specified to narrow it down
+                // later. The width ordering here is more consequential since
+                // TextStyle doesn't have letter width APIs.
+                return std::abs(a_style.width() - SkFontStyle::kNormal_Width) <
+                       std::abs(b_style.width() - SkFontStyle::kNormal_Width);
+              } else {
+                return (a_style.weight() != b_style.weight())
+                           ? a_style.weight() < b_style.weight()
+                           : a_style.slant() < b_style.slant();
+              }
+            });
+}
+
 std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
     const sk_sp<SkFontMgr>& manager,
     const std::string& family_name) {
@@ -223,29 +252,7 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
     }
   }
 
-  std::sort(
-      skia_typefaces.begin(), skia_typefaces.end(),
-      [](const sk_sp<SkTypeface>& a, const sk_sp<SkTypeface>& b) {
-        SkFontStyle a_style = a->fontStyle();
-        SkFontStyle b_style = b->fontStyle();
-        return (a_style.width() != b_style.width())
-                   // If a family name query is so generic it ends up bringing
-                   // in fonts of multiple widths (e.g. condensed, expanded),
-                   // opt to be conservative and select the most standard width.
-                   //
-                   // If a specific width is desired, it should be be narrowed
-                   // down via the family name.
-                   //
-                   // The font weights are also sorted lightest to heaviest
-                   // but Flutter APIs have the weight specified to narrow it
-                   // down later. The width ordering here is more consequential
-                   // since TextStyle doesn't have letter width APIs.
-                   ? std::abs(a_style.width() - SkFontStyle::kNormal_Width) <
-                         std::abs(b_style.width() - SkFontStyle::kNormal_Width)
-                   : (a_style.weight() != b_style.weight())
-                         ? a_style.weight() < b_style.weight()
-                         : a_style.slant() < b_style.slant();
-      });
+  SortSkTypefaces(skia_typefaces);
 
   std::vector<minikin::Font> minikin_fonts;
   for (const sk_sp<SkTypeface>& skia_typeface : skia_typefaces) {
