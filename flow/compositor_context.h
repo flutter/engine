@@ -41,7 +41,10 @@ class CompositorContext {
    public:
     /// Called at the end of a frame with approximately how many bytes mightbe
     /// freed if a GC ran now.
+    ///
+    /// This method is called from the raster task runner.
     virtual void OnCompositorEndFrame(size_t freed_hint) = 0;
+
     /// Time limit for a smooth frame. See `Engine::GetDisplayRefreshRate`.
     virtual fml::Milliseconds GetFrameBudget() = 0;
   };
