@@ -13,11 +13,11 @@ class _ConstVisitor extends RecursiveVisitor<void> {
     this.classLibraryUri,
     this.className,
   )  : assert(kernelFilePath != null),
-        assert(classLibraryUri != null),
-        assert(className != null),
-        _visitedInstances = <String>{},
-        constantInstances = <Map<String, dynamic>>[],
-        nonConstantLocations = <Map<String, dynamic>>[];
+       assert(classLibraryUri != null),
+       assert(className != null),
+       _visitedInstances = <String>{},
+       constantInstances = <Map<String, dynamic>>[],
+       nonConstantLocations = <Map<String, dynamic>>[];
 
   /// The path to the file to open.
   final String kernelFilePath;
@@ -35,11 +35,10 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   // A cache of previously evaluated classes.
   static Map<Class, bool> _classHeirarchyCache = <Class, bool>{};
   bool _matches(Class node) {
-    if (node == null) {
-      return false;
-    }
-    if (_classHeirarchyCache[node] == true) {
-      return true;
+    assert(node != null);
+    final bool result = _classHeirarchyCache[node];
+    if (result != null) {
+      return result;
     }
     final bool exactMatch = node.name == className
         && node.enclosingLibrary.importUri.toString() == classLibraryUri;
