@@ -185,7 +185,7 @@ InferOpenGLPlatformViewCreationCallback(
     if (fbo_callback) {
       return fbo_callback(user_data);
     } else {
-      FlutterFrameInfo frame_info;
+      FlutterFrameInfo frame_info = {};
       frame_info.struct_size = sizeof(FlutterFrameInfo);
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
       return fbo_with_frame_info_callback(user_data, &frame_info);

@@ -331,8 +331,9 @@ typedef struct {
   FlutterUIntSize size;
 } FlutterFrameInfo;
 
-typedef uint32_t (*UIntFrameInfoCallback)(void* /* user data */,
-                                          FlutterFrameInfo* /* frame info */);
+typedef uint32_t (*UIntFrameInfoCallback)(
+    void* /* user data */,
+    const FlutterFrameInfo* /* frame info */);
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterOpenGLRendererConfig).
