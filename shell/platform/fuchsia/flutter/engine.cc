@@ -110,6 +110,10 @@ Engine::Engine(Delegate& delegate,
       std::bind(&Engine::OnCreateView, this, std::placeholders::_1,
                 std::placeholders::_2, std::placeholders::_3);
 
+  flutter_runner::OnUpdateView on_update_view_callback =
+      std::bind(&Engine::OnUpdateView, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3);
+
   flutter_runner::OnDestroyView on_destroy_view_callback =
       std::bind(&Engine::OnDestroyView, this, std::placeholders::_1);
 
@@ -154,6 +158,7 @@ Engine::Engine(Delegate& delegate,
            on_enable_wireframe_callback =
                std::move(on_enable_wireframe_callback),
            on_create_view_callback = std::move(on_create_view_callback),
+           on_update_view_callback = std::move(on_update_view_callback),
            on_destroy_view_callback = std::move(on_destroy_view_callback),
            on_get_view_embedder_callback =
                std::move(on_get_view_embedder_callback),
@@ -174,6 +179,7 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_session_size_change_hint_callback),
                 std::move(on_enable_wireframe_callback),
                 std::move(on_create_view_callback),
+                std::move(on_update_view_callback),
                 std::move(on_destroy_view_callback),
                 std::move(on_get_view_embedder_callback),
                 std::move(on_get_gr_context_callback),
@@ -540,6 +546,23 @@ void Engine::OnCreateView(int64_t view_id, bool hit_testable, bool focusable) {
               reinterpret_cast<flutter_runner::CompositorContext*>(
                   rasterizer->compositor_context());
           compositor_context->OnCreateView(view_id, hit_testable, focusable);
+        }
+      });
+}
+
+void Engine::OnUpdateView(int64_t view_id, bool hit_testable, bool focusable) {
+  if (!shell_) {
+    return;
+  }
+
+  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+      [rasterizer = shell_->GetRasterizer(), view_id, hit_testable,
+       focusable]() {
+        if (rasterizer) {
+          auto compositor_context =
+              reinterpret_cast<flutter_runner::CompositorContext*>(
+                  rasterizer->compositor_context());
+          compositor_context->OnUpdateView(view_id, hit_testable, focusable);
         }
       });
 }

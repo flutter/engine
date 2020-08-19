@@ -79,6 +79,8 @@ class Engine final {
 
   void OnCreateView(int64_t view_id, bool hit_testable, bool focusable);
 
+  void OnUpdateView(int64_t view_id, bool hit_testable, bool focusable);
+
   void OnDestroyView(int64_t view_id);
 
   flutter::ExternalViewEmbedder* GetViewEmbedder();

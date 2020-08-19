@@ -103,6 +103,13 @@ void CompositorContext::OnCreateView(int64_t view_id,
                                                         focusable);
 }
 
+void CompositorContext::OnUpdateView(int64_t view_id,
+                                     bool hit_testable,
+                                     bool focusable) {
+  session_connection_.scene_update_context().UpdateView(view_id, hit_testable,
+                                                        focusable);
+}
+
 void CompositorContext::OnDestroyView(int64_t view_id) {
   session_connection_.scene_update_context().DestroyView(view_id);
 }
