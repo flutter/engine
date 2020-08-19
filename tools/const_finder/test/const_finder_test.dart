@@ -78,6 +78,21 @@ void _checkConsts() {
       'nonConstantLocations': <dynamic>[],
     }),
   );
+
+  final ConstFinder finder2 = ConstFinder(
+    kernelFilePath: constsDill,
+    classLibraryUri: 'package:const_finder_fixtures/target.dart',
+    className: 'MixedInTarget',
+  );
+  expect<String>(
+    jsonEncode(finder2.findInstances()),
+    jsonEncode(<String, dynamic>{
+      'constantInstances': <Map<String, dynamic>>[
+        <String, dynamic>{'val': '13'},
+      ],
+      'nonConstantLocations': <dynamic>[],
+    }),
+  );
 }
 
 void _checkNonConsts() {

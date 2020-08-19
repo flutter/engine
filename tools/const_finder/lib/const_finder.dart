@@ -32,15 +32,20 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   final List<Map<String, dynamic>> constantInstances;
   final List<Map<String, dynamic>> nonConstantLocations;
 
+  // A cache of previously evaluated classes.
+  static Map<Class, bool> _classHeirarchyCache = <Class, bool>{};
   bool _matches(Class node) {
     if (node == null) {
       return false;
     }
+    if (_classHeirarchyCache[node] == true) {
+      return true;
+    }
     final bool exactMatch = node.name == className
         && node.enclosingLibrary.importUri.toString() == classLibraryUri;
-    return exactMatch
-        || _matches(node.superclass)
-        || node.implementedTypes.any((Supertype implementedType) => _matches(implementedType.classNode));
+    _classHeirarchyCache[node] = exactMatch
+        || node.supers.any((Supertype supertype) => _matches(supertype.classNode));
+    return _classHeirarchyCache[node];
   }
 
   // Avoid visiting the same constant more than once.

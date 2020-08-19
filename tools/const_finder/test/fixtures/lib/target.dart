@@ -34,3 +34,18 @@ class ImplementsTarget implements Target {
     print('ImplementsTarget - $stringValue $intValue');
   }
 }
+
+mixin MixableTarget {
+  String get val;
+
+  void hit() {
+    print(val);
+  }
+}
+
+class MixedInTarget with MixableTarget {
+  const MixedInTarget(this.val);
+
+  @override
+  final String val;
+}

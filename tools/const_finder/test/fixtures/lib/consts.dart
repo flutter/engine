@@ -36,6 +36,9 @@ void main() {
   extendsTarget.hit();
   const ImplementsTarget implementsTarget = ImplementsTarget('12', 12, null);
   implementsTarget.hit();
+
+  const MixedInTarget mixedInTraget = MixedInTarget('13');
+  mixedInTraget.hit();
 }
 
 class IgnoreMe {
