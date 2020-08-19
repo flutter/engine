@@ -83,6 +83,23 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
   return controller->view_wrapper.get();
 }
 
+bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
+    FlutterDesktopViewControllerRef controller,
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam,
+    LRESULT* result) {
+  std::optional<LRESULT> delegate_result =
+      controller->view->GetEngine()
+          ->window_proc_delegate_manager()
+          ->OnTopLevelWindowProc(hwnd, message, wparam, lparam);
+  if (delegate_result) {
+    *result = *delegate_result;
+  }
+  return delegate_result.has_value();
+}
+
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
     const FlutterDesktopEngineProperties& engine_properties) {
   flutter::FlutterProjectBundle project(engine_properties);
@@ -119,6 +136,11 @@ FlutterDesktopPluginRegistrarRef FlutterDesktopEngineGetPluginRegistrar(
   return EngineFromHandle(engine)->GetRegistrar();
 }
 
+FlutterDesktopMessengerRef FlutterDesktopEngineGetMessenger(
+    FlutterDesktopEngineRef engine) {
+  return EngineFromHandle(engine)->messenger();
+}
+
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view_ref) {
   return std::get<HWND>(*view_ref->view->GetRenderTarget());
 }
@@ -126,6 +148,21 @@ HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view_ref) {
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar) {
   return registrar->view.get();
+}
+
+void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopWindowProcCallback delegate,
+    void* user_data) {
+  registrar->engine->window_proc_delegate_manager()
+      ->RegisterTopLevelWindowProcDelegate(delegate, user_data);
+}
+
+void FlutterDesktopPluginRegistrarUnregisterTopLevelWindowProcDelegate(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopWindowProcCallback delegate) {
+  registrar->engine->window_proc_delegate_manager()
+      ->UnregisterTopLevelWindowProcDelegate(delegate);
 }
 
 UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
@@ -151,7 +188,7 @@ void FlutterDesktopResyncOutputStreams() {
 
 FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
     FlutterDesktopPluginRegistrarRef registrar) {
-  return registrar->messenger.get();
+  return registrar->engine->messenger();
 }
 
 void FlutterDesktopRegistrarSetDestructionHandler(

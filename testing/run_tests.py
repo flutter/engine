@@ -345,7 +345,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
 
   embedding_deps_dir = os.path.join(buildroot_dir, 'third_party', 'android_embedding_dependencies', 'lib')
   classpath = map(str, [
-    os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-29', 'android.jar'),
+    os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-30', 'android.jar'),
     os.path.join(embedding_deps_dir, '*'), # Wildcard for all jars in the directory
     os.path.join(android_out_dir, 'flutter.jar'),
     os.path.join(android_out_dir, 'robolectric_tests.jar')
@@ -370,17 +370,19 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
   ios_out_dir = os.path.join(out_dir, ios_variant)
   EnsureIosTestsAreBuilt(ios_out_dir)
 
-  pretty = "cat" if subprocess.call(["which", "xcpretty"]) else "xcpretty"
   ios_unit_test_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'ios', 'IosUnitTests')
 
+  # Avoid using xcpretty unless the following can be addressed:
+  # - Make sure all relevant failure output is printed on a failure.
+  # - Make sure that a failing exit code is set for CI.
+  # See https://github.com/flutter/flutter/issues/63742
   command = [
     'xcodebuild '
     '-sdk iphonesimulator '
     '-scheme IosUnitTests '
     "-destination platform='iOS Simulator,name=iPhone 8' "
     'test '
-    'FLUTTER_ENGINE=' + ios_variant +
-    ' | ' + pretty
+    'FLUTTER_ENGINE=' + ios_variant
   ]
   RunCmd(command, cwd=ios_unit_test_dir, shell=True)
 
