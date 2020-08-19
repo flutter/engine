@@ -337,7 +337,7 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrDirectContext> context,
   alloc.fOffset = 0;
   alloc.fSize = memory_reqs.size;
   alloc.fFlags = 0;
-   
+
   GrVkImageInfo image_info;
   image_info.fImage = vulkan_image_.vk_image;
   image_info.fAlloc = alloc;
