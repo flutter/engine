@@ -27,9 +27,23 @@ class ImageReleaseTest : public ShellTest {
     return reinterpret_cast<T*>(peer);
   }
 
-  fml::AutoResetWaitableEvent message_latch;
-  sk_sp<SkImage> current_image_;
+  // Used to wait on Dart callbacks or Shell task runner flushing
+  fml::AutoResetWaitableEvent message_latch_;
+  // Used to wait for the finalization of the picture Dart_Handle
+  fml::AutoResetWaitableEvent picture_finalizer_latch_;
+  static void picture_finalizer(void* isolate_callback_data, void* peer) {
+    auto latch = reinterpret_cast<fml::AutoResetWaitableEvent*>(peer);
+    latch->Signal();
+  }
+  // Used to wait for the finalization of the image Dart_Handle
+  fml::AutoResetWaitableEvent image_finalizer_latch_;
+  static void image_finalizer(void* isolate_callback_data, void* peer) {
+    auto latch = reinterpret_cast<fml::AutoResetWaitableEvent*>(peer);
+    latch->Signal();
+  }
+
   sk_sp<SkPicture> current_picture_;
+  sk_sp<SkImage> current_image_;
 };
 
 TEST_F(ImageReleaseTest, ImageReleasedAfterFrame) {
@@ -40,10 +54,16 @@ TEST_F(ImageReleaseTest, ImageReleasedAfterFrame) {
     ASSERT_FALSE(picture->picture()->unique());
     current_image_ = image->image();
     current_picture_ = picture->picture();
+    Dart_NewFinalizableHandle(
+        Dart_HandleFromWeakPersistent(picture->dart_wrapper()),
+        &picture_finalizer_latch_, 0, &picture_finalizer);
+    Dart_NewFinalizableHandle(
+        Dart_HandleFromWeakPersistent(image->dart_wrapper()),
+        &image_finalizer_latch_, 0, &image_finalizer);
   };
 
   auto native_on_begin_frame_done = [&](Dart_NativeArguments args) {
-    message_latch.Signal();
+    message_latch_.Signal();
   };
 
   Settings settings = CreateSettingsForFixture();
@@ -75,27 +95,26 @@ TEST_F(ImageReleaseTest, ImageReleasedAfterFrame) {
     ASSERT_EQ(result, Engine::RunStatus::Success);
   });
 
-  message_latch.Wait();
+  message_latch_.Wait();
 
   ASSERT_TRUE(current_picture_);
   ASSERT_TRUE(current_image_);
 
-  // AOT modes are fast enough that we get here before the task runner has
-  // had a chance to drain. Make sure that if the picture or image are not
-  // already unique, at least one idle notification has a chance to process
-  // after rasterization has occurred.
-  if (!current_picture_->unique() || !current_image_->unique()) {
-    task_runner->PostTask([&, engine = shell->GetEngine()]() {
-      ASSERT_TRUE(engine);
-      engine->NotifyIdle(Dart_TimelineGetMicros() + 10000);
-      message_latch.Signal();
-    });
-    message_latch.Wait();
-  }
+  // Make sure we get at least one good sized NotifyIdle here.
+  task_runner->PostTask([&, engine = shell->GetEngine()]() {
+    ASSERT_TRUE(engine);
+    engine->NotifyIdle(Dart_TimelineGetMicros() + 10000000);
+    message_latch_.Signal();
+  });
+  message_latch_.Wait();
+  picture_finalizer_latch_.Wait();
 
   EXPECT_TRUE(current_picture_->unique());
   current_picture_.reset();
+
+  image_finalizer_latch_.Wait();
   EXPECT_TRUE(current_image_->unique());
+  current_image_.reset();
 
   shell->GetPlatformView()->NotifyDestroyed();
   DestroyShell(std::move(shell), std::move(task_runners));
