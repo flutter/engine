@@ -60,6 +60,8 @@ class FlutterWindowsEngine {
 
   FLUTTER_API_SYMBOL(FlutterEngine) engine() { return engine_; }
 
+  FlutterDesktopMessengerRef messenger() { return messenger_.get(); }
+
   Win32TaskRunner* task_runner() { return task_runner_.get(); }
 
   // Callback passed to Flutter engine for notifying window of platform
@@ -67,6 +69,12 @@ class FlutterWindowsEngine {
   void HandlePlatformMessage(const FlutterPlatformMessage*);
 
  private:
+  // Sends system settings (e.g., locale) to the engine.
+  //
+  // Should be called just after the engine is run, and after any relevant
+  // system changes.
+  void SendSystemSettings();
+
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
 
@@ -80,6 +88,9 @@ class FlutterWindowsEngine {
 
   // Task runner for tasks posted from the engine.
   std::unique_ptr<Win32TaskRunner> task_runner_;
+
+  // The plugin messenger handle given to API clients.
+  std::unique_ptr<FlutterDesktopMessenger> messenger_;
 
   // Message dispatch manager for messages from engine_.
   std::unique_ptr<IncomingMessageDispatcher> message_dispatcher_;
