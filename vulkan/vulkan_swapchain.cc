@@ -222,7 +222,7 @@ sk_sp<SkSurface> VulkanSwapchain::CreateSkiaSurface(
     return nullptr;
   }
 
-  const GrVkImageInfo image_info;
+  GrVkImageInfo image_info;
   image_info.fImage = image;
   image_info.fImageTiling = VK_IMAGE_TILING_OPTIMAL;
   image_info.fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
