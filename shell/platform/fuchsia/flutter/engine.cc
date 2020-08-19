@@ -7,6 +7,8 @@
 #include <lib/async/cpp/task.h>
 #include <zircon/status.h>
 
+#include "../runtime/dart/utils/files.h"
+#include "compositor_context.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -14,14 +16,11 @@
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
-#include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
-
-#include "../runtime/dart/utils/files.h"
-#include "compositor_context.h"
 #include "flutter_runner_product_configuration.h"
 #include "fuchsia_intl.h"
 #include "platform_view.h"
 #include "task_runner_adapter.h"
+#include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
 #include "thread.h"
 
 namespace flutter_runner {
@@ -147,12 +146,11 @@ Engine::Engine(Delegate& delegate,
                 std::placeholders::_2, std::placeholders::_3);
 
   OnUpdateView on_update_view_callback =
-      std::bind(&Engine::CreateView, this, std::placeholders::_1,
+      std::bind(&Engine::UpdateView, this, std::placeholders::_1,
                 std::placeholders::_2, std::placeholders::_3);
 
   OnDestroyView on_destroy_view_callback =
       std::bind(&Engine::DestroyView, this, std::placeholders::_1);
-
 
   OnGetViewEmbedder on_get_view_embedder_callback =
       std::bind(&Engine::GetViewEmbedder, this);
@@ -499,7 +497,7 @@ void Engine::CreateView(int64_t view_id, bool hit_testable, bool focusable) {
         scene_update_context_->CreateView(view_id, hit_testable, focusable);
       });
 }
-  
+
 void Engine::UpdateView(int64_t view_id, bool hit_testable, bool focusable) {
   if (!shell_ || !scene_update_context_) {
     return;
