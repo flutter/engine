@@ -656,20 +656,6 @@ class Window {
   Size get physicalSize => _physicalSize;
   Size _physicalSize = Size.zero;
 
-  /// The physical depth is the maximum elevation that the Window allows.
-  ///
-  /// Physical layers drawn at or above this elevation will have their elevation
-  /// clamped to this value. This can happen if the physical layer itself has
-  /// an elevation larger than available depth, or if some ancestor of the layer
-  /// causes it to have a cumulative elevation that is larger than the available
-  /// depth.
-  ///
-  /// The default value is [double.maxFinite], which is used for platforms that
-  /// do not specify a maximum elevation. This property is currently on expected
-  /// to be set to a non-default value on Fuchsia.
-  double get physicalDepth => _physicalDepth;
-  double _physicalDepth = double.maxFinite;
-
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but over which the operating system
   /// will likely place system UI, such as the keyboard, that fully obscures
@@ -1056,23 +1042,19 @@ class Window {
   ///
   /// ## Android
   ///
-  /// On Android, calling
-  /// [`FlutterView.setInitialRoute`](/javadoc/io/flutter/view/FlutterView.html#setInitialRoute-java.lang.String-)
-  /// will set this value. The value must be set sufficiently early, i.e. before
-  /// the [runApp] call is executed in Dart, for this to have any effect on the
-  /// framework. The `createFlutterView` method in your `FlutterActivity`
-  /// subclass is a suitable time to set the value. The application's
-  /// `AndroidManifest.xml` file must also be updated to have a suitable
-  /// [`<intent-filter>`](https://developer.android.com/guide/topics/manifest/intent-filter-element.html).
+  /// On Android, the initial route can be set on the [initialRoute](/javadoc/io/flutter/embedding/android/FlutterActivity.NewEngineIntentBuilder.html#initialRoute-java.lang.String-)
+  /// method of the [FlutterActivity](/javadoc/io/flutter/embedding/android/FlutterActivity.html)'s
+  /// intent builder.
+  ///
+  /// On a standalone engine, see https://flutter.dev/docs/development/add-to-app/android/add-flutter-screen#initial-route-with-a-cached-engine.
   ///
   /// ## iOS
   ///
-  /// On iOS, calling
-  /// [`FlutterViewController.setInitialRoute`](/objcdoc/Classes/FlutterViewController.html#/c:objc%28cs%29FlutterViewController%28im%29setInitialRoute:)
-  /// will set this value. The value must be set sufficiently early, i.e. before
-  /// the [runApp] call is executed in Dart, for this to have any effect on the
-  /// framework. The `application:didFinishLaunchingWithOptions:` method is a
-  /// suitable time to set this value.
+  /// On iOS, the initial route can be set on the `initialRoute`
+  /// parameter of the [FlutterViewController](/objcdoc/Classes/FlutterViewController.html)'s
+  /// initializer.
+  ///
+  /// On a standalone engine, see https://flutter.dev/docs/development/add-to-app/ios/add-flutter-screen#route.
   ///
   /// See also:
   ///

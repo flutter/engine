@@ -129,7 +129,6 @@ void ShellTest::PumpOneFrame(Shell* shell,
         auto layer_tree = std::make_unique<LayerTree>(
             SkISize::Make(viewport_metrics.physical_width,
                           viewport_metrics.physical_height),
-            static_cast<float>(viewport_metrics.physical_depth),
             static_cast<float>(viewport_metrics.device_pixel_ratio));
         SkMatrix identity;
         identity.setIdentity();
@@ -185,6 +184,9 @@ void ShellTest::OnServiceProtocol(
         switch (some_protocol) {
           case ServiceProtocolEnum::kGetSkSLs:
             shell->OnServiceProtocolGetSkSLs(params, response);
+            break;
+          case ServiceProtocolEnum::kEstimateRasterCacheMemory:
+            shell->OnServiceProtocolEstimateRasterCacheMemory(params, response);
             break;
           case ServiceProtocolEnum::kSetAssetBundlePath:
             shell->OnServiceProtocolSetAssetBundlePath(params, response);
@@ -268,10 +270,7 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
             ShellTestPlatformView::BackendType::kDefaultBackend,
             shell_test_external_view_embedder);
       },
-      [](Shell& shell) {
-        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners(),
-                                            shell.GetIsGpuDisabledSyncSwitch());
-      });
+      [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
 }
 void ShellTest::DestroyShell(std::unique_ptr<Shell> shell) {
   DestroyShell(std::move(shell), GetTaskRunnersForFixture());
