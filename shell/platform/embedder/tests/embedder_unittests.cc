@@ -4391,9 +4391,20 @@ TEST_F(EmbedderTest, FrameInfoContainsValidWidthAndHeight) {
 
   for (FlutterFrameInfo frame_info : context.GetGLFBOFrameInfos()) {
     // width and height are rotated by 90 deg
-    ASSERT_EQ(frame_info.width, event.height);
-    ASSERT_EQ(frame_info.height, event.width);
+    ASSERT_EQ(frame_info.size.width, event.height);
+    ASSERT_EQ(frame_info.size.height, event.width);
   }
+}
+
+TEST_F(EmbedderTest, MustNotRunWithBothFBOCallbacksSet) {
+  auto& context = GetEmbedderContext();
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
+  builder.SetOpenGLFBOCallBack();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_FALSE(engine.is_valid());
 }
 
 }  // namespace testing

@@ -191,9 +191,6 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
     return true;
   }
 
-  GLFrameInfo frame_info = {.width = static_cast<uint32_t>(size.width()),
-                            .height = static_cast<uint32_t>(size.height())};
-
   // We need to do some updates.
   TRACE_EVENT0("flutter", "UpdateSurfacesSize");
 
@@ -207,6 +204,8 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
 
   sk_sp<SkSurface> onscreen_surface;
 
+  GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
+                            static_cast<uint32_t>(size.height())};
   onscreen_surface =
       WrapOnscreenSurface(context_.get(),  // GL context
                           size,            // root surface size
@@ -290,9 +289,8 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     auto current_size =
         SkISize::Make(onscreen_surface_->width(), onscreen_surface_->height());
 
-    GLFrameInfo frame_info = {
-        .width = static_cast<uint32_t>(current_size.width()),
-        .height = static_cast<uint32_t>(current_size.height())};
+    GLFrameInfo frame_info = {static_cast<uint32_t>(current_size.width()),
+                              static_cast<uint32_t>(current_size.height())};
 
     // The FBO has changed, ask the delegate for the new FBO and do a surface
     // re-wrap.

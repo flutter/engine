@@ -79,6 +79,7 @@ class EmbedderTestContext {
 
   size_t GetSoftwareSurfacePresentCount() const;
 
+  // Returns the frame information for all the frames that were rendered.
   std::vector<FlutterFrameInfo> GetGLFBOFrameInfos();
 
  private:

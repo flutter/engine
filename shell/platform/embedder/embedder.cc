@@ -104,8 +104,6 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
       nullptr;
   // only one of these callbacks must exist.
   if (fbo_callback_exists == fbo_with_frame_info_callback_exists) {
-    LOG_EMBEDDER_ERROR(kInternalInconsistency,
-                       "OpenGL fbo callback configuration was invalid.");
     return false;
   }
 
@@ -183,12 +181,14 @@ InferOpenGLPlatformViewCreationCallback(
       [fbo_callback = config->open_gl.fbo_callback,
        fbo_with_frame_info_callback =
            config->open_gl.fbo_with_frame_info_callback,
-       user_data](flutter::GLFrameInfo frame_info) -> intptr_t {
+       user_data](flutter::GLFrameInfo gl_frame_info) -> intptr_t {
     if (fbo_callback) {
       return fbo_callback(user_data);
     } else {
-      return fbo_with_frame_info_callback(
-          user_data, {.width = frame_info.width, .height = frame_info.height});
+      FlutterFrameInfo frame_info;
+      frame_info.struct_size = sizeof(FlutterFrameInfo);
+      frame_info.size = {gl_frame_info.width, gl_frame_info.height};
+      return fbo_with_frame_info_callback(user_data, &frame_info);
     }
   };
 

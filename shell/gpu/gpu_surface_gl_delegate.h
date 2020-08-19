@@ -14,6 +14,8 @@
 
 namespace flutter {
 
+// A structure to represent the frame information which is passed to the
+// embedder when requesting a frame buffer object.
 struct GLFrameInfo {
   uint32_t width;
   uint32_t height;
