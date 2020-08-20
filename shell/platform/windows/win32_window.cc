@@ -196,8 +196,13 @@ Win32Window::MessageHandler(HWND hwnd,
                             static_cast<double>(yPos), button_pressed);
         break;
       case WM_MOUSEWHEEL:
-        window->OnScroll(
-            0.0, -(static_cast<short>(HIWORD(wparam)) / (double)WHEEL_DELTA));
+        window->OnScroll(0.0, -(static_cast<short>(HIWORD(wparam)) /
+                                static_cast<double>(WHEEL_DELTA)));
+        break;
+      case WM_MOUSEHWHEEL:
+        window->OnScroll((static_cast<short>(HIWORD(wparam)) /
+                          static_cast<double>(WHEEL_DELTA)),
+                         0.0);
         break;
       case WM_UNICHAR: {
         // Tell third-pary app, we can support Unicode.
