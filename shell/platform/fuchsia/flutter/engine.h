@@ -83,9 +83,9 @@ class Engine final {
   void Terminate();
 
   void DebugWireframeSettingsChanged(bool enabled);
-  void CreateView(int64_t view_id, bool hit_testable, bool focusable);
-  void UpdateView(int64_t view_id, bool hit_testable, bool focusable);
+  void CreateView(int64_t view_id);
   void DestroyView(int64_t view_id);
+  void SetViewProperties(int64_t view_id, bool hit_testable, bool focusable);
 
   flutter::ExternalViewEmbedder* GetViewEmbedder();
 

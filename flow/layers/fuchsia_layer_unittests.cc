@@ -21,7 +21,7 @@
 #include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
-#include "flutter/flow/view_holder.h"
+#include "flutter/flow/scene_update_context.h"
 #include "flutter/fml/platform/fuchsia/message_loop_fuchsia.h"
 #include "flutter/fml/task_runner.h"
 
@@ -311,20 +311,6 @@ std::unique_ptr<TestContext> InitTest() {
   return context;
 }
 
-zx_koid_t GetChildLayerId() {
-  static zx_koid_t sChildLayerId = 17324;
-  return sChildLayerId++;
-}
-
-class AutoDestroyChildLayerId {
- public:
-  AutoDestroyChildLayerId(zx_koid_t id) : id_(id) {}
-  ~AutoDestroyChildLayerId() { ViewHolder::Destroy(id_); }
-
- private:
-  zx_koid_t id_;
-};
-
 // Create a hierarchy with PhysicalShapeLayers and ChildSceneLayers, and
 // inspect the commands sent to Scenic.
 //
@@ -358,17 +344,12 @@ TEST_F(FuchsiaLayerTest, DISABLED_PhysicalShapeLayersAndChildSceneLayers) {
   root->Add(physical_shape1);
 
   // Child #2: ChildSceneLayer.
-  const zx_koid_t kChildLayerId1 = GetChildLayerId();
-  auto [unused_view_token1, unused_view_holder_token1] =
-      scenic::ViewTokenPair::New();
-  ViewHolder::Create(kChildLayerId1, test_context->task_runner,
-                     std::move(unused_view_holder_token1),
-                     /*bind_callback=*/[](scenic::ResourceId id) {});
-  // Will destroy only when we go out of scope (i.e. end of the test).
-  AutoDestroyChildLayerId auto_destroy1(kChildLayerId1);
+  auto [unused_view_token1, view_holder_token1] = scenic::ViewTokenPair::New();
+  const int64_t kChildLayerId1 = view_holder_token1.value.release();
   auto child_view1 = std::make_shared<ChildSceneLayer>(
       kChildLayerId1, SkPoint::Make(1, 1), SkSize::Make(10, 10),
       /*hit_testable=*/false);
+  test_context->scene_update_context->CreateView(kChildLayerId1);
   root->Add(child_view1);
 
   // Child #3: PhysicalShapeLayer
@@ -386,17 +367,12 @@ TEST_F(FuchsiaLayerTest, DISABLED_PhysicalShapeLayersAndChildSceneLayers) {
   physical_shape2->Add(physical_shape3);
 
   // Child #4: ChildSceneLayer
-  const zx_koid_t kChildLayerId2 = GetChildLayerId();
-  auto [unused_view_token2, unused_view_holder_token2] =
-      scenic::ViewTokenPair::New();
-  ViewHolder::Create(kChildLayerId2, test_context->task_runner,
-                     std::move(unused_view_holder_token2),
-                     /*bind_callback=*/[](scenic::ResourceId id) {});
-  // Will destroy only when we go out of scope (i.e. end of the test).
-  AutoDestroyChildLayerId auto_destroy2(kChildLayerId2);
+  auto [unused_view_token2, view_holder_token2] = scenic::ViewTokenPair::New();
+  const int64_t kChildLayerId2 = view_holder_token2.value.release();
   auto child_view2 = std::make_shared<ChildSceneLayer>(
       kChildLayerId2, SkPoint::Make(1, 1), SkSize::Make(10, 10),
       /*hit_testable=*/false);
+  test_context->scene_update_context->CreateView(kChildLayerId2);
   root->Add(child_view2);
 
   // Child #5: PhysicalShapeLayer
@@ -452,7 +428,6 @@ TEST_F(FuchsiaLayerTest, DISABLED_PhysicalShapeLayersAndChildSceneLayers) {
   //
   expected.push_back(scenic::NewCreateEntityNodeCmd(/*id=*/3));
   expected.push_back(scenic::NewCreateOpacityNodeCmdHACK(/*id=*/4));
-  auto [view_token1, view_holder_token1] = scenic::ViewTokenPair::New();
   expected.push_back(scenic::NewCreateViewHolderCmd(
       /*id=*/5, std::move(view_holder_token1), ""));
   expected.push_back(scenic::NewAddChildCmd(/*id=*/4, /*child_id=*/3));
@@ -507,7 +482,6 @@ TEST_F(FuchsiaLayerTest, DISABLED_PhysicalShapeLayersAndChildSceneLayers) {
   //
   expected.push_back(scenic::NewCreateEntityNodeCmd(/*id=*/12));
   expected.push_back(scenic::NewCreateOpacityNodeCmdHACK(/*id=*/13));
-  auto [view_token2, view_holder_token2] = scenic::ViewTokenPair::New();
   expected.push_back(scenic::NewCreateViewHolderCmd(
       /*id=*/14, std::move(view_holder_token2), ""));
   expected.push_back(scenic::NewAddChildCmd(/*id=*/13, /*child_id=*/12));
@@ -567,6 +541,10 @@ TEST_F(FuchsiaLayerTest, DISABLED_PhysicalShapeLayersAndChildSceneLayers) {
 
   // Ensure we saw enough commands.
   EXPECT_EQ(72u, test_context->mock_session.num_enqueued_commands());
+
+  // Clean up after ourselves.
+  test_context->scene_update_context->DestroyView(kChildLayerId2);
+  test_context->scene_update_context->DestroyView(kChildLayerId1);
 }
 
 // Create a hierarchy with OpacityLayers, TransformLayer, PhysicalShapeLayers
@@ -601,18 +579,12 @@ TEST_F(FuchsiaLayerTest, DISABLED_OpacityAndTransformLayer) {
   opacity_layer2->Add(transform_layer);
 
   // TransformLayer Child #1: ChildSceneLayer.
-  const zx_koid_t kChildLayerId1 = GetChildLayerId();
-  auto [unused_view_token1, unused_view_holder_token1] =
-      scenic::ViewTokenPair::New();
-
-  ViewHolder::Create(kChildLayerId1, test_context->task_runner,
-                     std::move(unused_view_holder_token1),
-                     /*bind_callback=*/[](scenic::ResourceId id) {});
-  // Will destroy only when we go out of scope (i.e. end of the test).
-  AutoDestroyChildLayerId auto_destroy1(kChildLayerId1);
+  auto [unused_view_token1, view_holder_token1] = scenic::ViewTokenPair::New();
+  const int64_t kChildLayerId1 = view_holder_token1.value.release();
   auto child_view1 = std::make_shared<ChildSceneLayer>(
       kChildLayerId1, SkPoint::Make(1, 1), SkSize::Make(10, 10),
       /*hit_testable=*/false);
+  test_context->scene_update_context->CreateView(kChildLayerId1);
   transform_layer->Add(child_view1);
 
   // TransformLayer Child #2: PhysicalShapeLayer.
@@ -675,7 +647,6 @@ TEST_F(FuchsiaLayerTest, DISABLED_OpacityAndTransformLayer) {
   //
   expected.push_back(scenic::NewCreateEntityNodeCmd(/*id=*/4));
   expected.push_back(scenic::NewCreateOpacityNodeCmdHACK(/*id=*/5));
-  auto [view_token1, view_holder_token1] = scenic::ViewTokenPair::New();
   expected.push_back(scenic::NewCreateViewHolderCmd(
       /*id=*/6, std::move(view_holder_token1), ""));
   expected.push_back(scenic::NewAddChildCmd(/*id=*/5, /*child_id=*/4));
@@ -749,6 +720,9 @@ TEST_F(FuchsiaLayerTest, DISABLED_OpacityAndTransformLayer) {
 
   // Ensure we saw enough commands.
   EXPECT_EQ(46u, test_context->mock_session.num_enqueued_commands());
+
+  // Clean up after ourselves.
+  test_context->scene_update_context->DestroyView(kChildLayerId1);
 }
 
 }  // namespace testing

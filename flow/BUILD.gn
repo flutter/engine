@@ -84,8 +84,6 @@ source_set("flow") {
       "layers/child_scene_layer.h",
       "scene_update_context.cc",
       "scene_update_context.h",
-      "view_holder.cc",
-      "view_holder.h",
     ]
 
     public_deps = [

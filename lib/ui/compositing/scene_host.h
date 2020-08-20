@@ -8,13 +8,13 @@
 #include <lib/ui/scenic/cpp/id.h>
 #include <stdint.h>
 #include <zircon/types.h>
-#include "third_party/tonic/dart_library_natives.h"
-#include "third_party/tonic/dart_persistent_value.h"
 
 #include "dart-pkg/zircon/sdk_ext/handle.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/dart_wrapper.h"
+#include "flutter/third_party/tonic/dart_library_natives.h"
+#include "flutter/third_party/tonic/dart_persistent_value.h"
 
 namespace flutter {
 
@@ -35,7 +35,7 @@ class SceneHost : public RefCountedDartWrappable<SceneHost> {
 
   ~SceneHost() override;
 
-  zx_koid_t id() const { return koid_; }
+  int64_t id() const { return handle_; }
 
   // These are visible to Dart.
   void dispose();
@@ -58,7 +58,8 @@ class SceneHost : public RefCountedDartWrappable<SceneHost> {
   tonic::DartPersistentValue view_disconnected_callback_;
   tonic::DartPersistentValue view_state_changed_callback_;
   std::string isolate_service_id_;
-  zx_koid_t koid_ = ZX_KOID_INVALID;
+  scenic::ResourceId resource_id_;
+  int64_t handle_ = 0;
 };
 
 }  // namespace flutter

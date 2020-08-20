@@ -5,21 +5,27 @@
 #ifndef FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 #define FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 
+#include <fuchsia/ui/gfx/cpp/fidl.h>
 #include <fuchsia/ui/views/cpp/fidl.h>
+#include <lib/ui/scenic/cpp/id.h>
 #include <lib/ui/scenic/cpp/resources.h>
 #include <lib/ui/scenic/cpp/session.h>
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 
-#include <cfloat>
 #include <memory>
-#include <set>
+#include <optional>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
+#include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkColor.h"
+#include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkRect.h"
-#include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
@@ -117,11 +123,15 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     std::vector<Layer*> layers;
   };
 
+  // This returns the engine's SceneUpdateContext instance if called on the
+  // raster thread.
+  static SceneUpdateContext* GetCurrent();
+
   SceneUpdateContext(std::string debug_label,
                      fuchsia::ui::views::ViewToken view_token,
                      scenic::ViewRefPair view_ref_pair,
                      SessionWrapper& session);
-  ~SceneUpdateContext() = default;
+  ~SceneUpdateContext();
 
   scenic::ContainerNode& root_node() { return root_node_; }
 
@@ -139,42 +149,53 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   void Reset();
 
   // |ExternalViewEmbedder|
+  // Minimal overrides to allow proper use of the |PlatformViewLayer|.
   SkCanvas* GetRootCanvas() override { return nullptr; }
-
-  // |ExternalViewEmbedder|
   void CancelFrame() override {}
-
-  // |ExternalViewEmbedder|
   void BeginFrame(
       SkISize frame_size,
       GrDirectContext* context,
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
-
-  // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<EmbeddedViewParams> params) override {}
-
-  // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override {
     return std::vector<SkCanvas*>();
   }
+  SkCanvas* CompositeEmbeddedView(int view_id) override { return nullptr; }
 
-  // |ExternalViewEmbedder|
-  virtual SkCanvas* CompositeEmbeddedView(int view_id) override {
-    return nullptr;
-  }
-
-  void CreateView(int64_t view_id, bool hit_testable, bool focusable);
-  void UpdateView(int64_t view_id, bool hit_testable, bool focusable);
+  // View manipulation.
+  // |SetViewProperties| doesn't manipulate the view directly -- it sets
+  // prending properties for the next |UpdateView| call.
+  scenic::ResourceId CreateView(int64_t view_id);
   void DestroyView(int64_t view_id);
-  void UpdateView(int64_t view_id,
-                  const SkPoint& offset,
-                  const SkSize& size,
-                  std::optional<bool> override_hit_testable = std::nullopt);
+  void UpdateView(int64_t view_id);
+  void SetViewProperties(int64_t view_id,
+                         std::optional<SkPoint> offset,
+                         std::optional<SkSize> size,
+                         std::optional<float> opacity,
+                         std::optional<bool> hit_testable,
+                         std::optional<bool> focusable);
 
  private:
+  struct ViewHolder {
+    scenic::OpacityNodeHACK opacity_node;
+    scenic::EntityNode entity_node;
+    scenic::ViewHolder view_holder;
+
+    SkPoint offset = SkPoint::Make(0.f, 0.f);
+    SkSize size = SkSize::MakeEmpty();
+    float opacity = 1.0f;
+    bool focusable = true;
+    bool hit_testable = true;
+
+    bool pending_opacity = false;
+    bool pending_offset = false;
+    bool pending_hit_testable = false;
+    bool pending_view_properties = false;
+  };
+
   void CreateFrame(scenic::EntityNode& entity_node,
                    const SkRRect& rrect,
                    SkColor color,
@@ -186,6 +207,8 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
 
   scenic::View root_view_;
   scenic::EntityNode root_node_;
+
+  std::unordered_map<int64_t, ViewHolder> view_holders_;
 
   std::vector<PaintTask> paint_tasks_;
 

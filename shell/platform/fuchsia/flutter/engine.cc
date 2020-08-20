@@ -142,15 +142,14 @@ Engine::Engine(Delegate& delegate,
       &Engine::DebugWireframeSettingsChanged, this, std::placeholders::_1);
 
   OnCreateView on_create_view_callback =
-      std::bind(&Engine::CreateView, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3);
-
-  OnUpdateView on_update_view_callback =
-      std::bind(&Engine::UpdateView, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3);
+      std::bind(&Engine::CreateView, this, std::placeholders::_1);
 
   OnDestroyView on_destroy_view_callback =
       std::bind(&Engine::DestroyView, this, std::placeholders::_1);
+
+  OnSetViewProperties on_set_view_properties_callback =
+      std::bind(&Engine::SetViewProperties, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3);
 
   OnGetViewEmbedder on_get_view_embedder_callback =
       std::bind(&Engine::GetViewEmbedder, this);
@@ -185,8 +184,9 @@ Engine::Engine(Delegate& delegate,
            on_enable_wireframe_callback =
                std::move(on_enable_wireframe_callback),
            on_create_view_callback = std::move(on_create_view_callback),
-           on_update_view_callback = std::move(on_update_view_callback),
            on_destroy_view_callback = std::move(on_destroy_view_callback),
+           on_set_view_properties_callback =
+               std::move(on_set_view_properties_callback),
            on_get_view_embedder_callback =
                std::move(on_get_view_embedder_callback),
            on_get_gr_context_callback = std::move(on_get_gr_context_callback),
@@ -204,8 +204,8 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_session_listener_error_callback),
                 std::move(on_enable_wireframe_callback),
                 std::move(on_create_view_callback),
-                std::move(on_update_view_callback),
                 std::move(on_destroy_view_callback),
+                std::move(on_set_view_properties_callback),
                 std::move(on_get_view_embedder_callback),
                 std::move(on_get_gr_context_callback),
                 vsync_handle,  // vsync handle
@@ -487,26 +487,13 @@ void Engine::DebugWireframeSettingsChanged(bool enabled) {
       [this, enabled]() { scene_update_context_->EnableWireframe(enabled); });
 }
 
-void Engine::CreateView(int64_t view_id, bool hit_testable, bool focusable) {
+void Engine::CreateView(int64_t view_id) {
   if (!shell_ || !scene_update_context_) {
     return;
   }
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [this, view_id, hit_testable, focusable]() {
-        scene_update_context_->CreateView(view_id, hit_testable, focusable);
-      });
-}
-
-void Engine::UpdateView(int64_t view_id, bool hit_testable, bool focusable) {
-  if (!shell_ || !scene_update_context_) {
-    return;
-  }
-
-  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [this, view_id, hit_testable, focusable]() {
-        scene_update_context_->UpdateView(view_id, hit_testable, focusable);
-      });
+      [this, view_id]() { scene_update_context_->CreateView(view_id); });
 }
 
 void Engine::DestroyView(int64_t view_id) {
@@ -516,6 +503,21 @@ void Engine::DestroyView(int64_t view_id) {
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
       [this, view_id]() { scene_update_context_->DestroyView(view_id); });
+}
+
+void Engine::SetViewProperties(int64_t view_id,
+                               bool hit_testable,
+                               bool focusable) {
+  if (!shell_ || !scene_update_context_) {
+    return;
+  }
+
+  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+      [this, view_id, hit_testable, focusable]() {
+        scene_update_context_->SetViewProperties(view_id, std::nullopt,
+                                                 std::nullopt, std::nullopt,
+                                                 hit_testable, focusable);
+      });
 }
 
 flutter::ExternalViewEmbedder* Engine::GetViewEmbedder() {

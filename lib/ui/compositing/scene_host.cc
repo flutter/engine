@@ -5,38 +5,39 @@
 #include "flutter/lib/ui/compositing/scene_host.h"
 
 #include <lib/ui/scenic/cpp/view_token_pair.h>
-#include <lib/zx/eventpair.h>
-#include "third_party/tonic/dart_args.h"
-#include "third_party/tonic/dart_binding_macros.h"
-#include "third_party/tonic/logging/dart_invoke.h"
 
-#include "flutter/flow/view_holder.h"
+#include "flutter/flow/scene_update_context.h"
 #include "flutter/fml/thread_local.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/third_party/tonic/dart_args.h"
+#include "flutter/third_party/tonic/dart_binding_macros.h"
+#include "flutter/third_party/tonic/logging/dart_invoke.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
 namespace {
 
 struct SceneHostBindingKey {
   std::string isolate_service_id;
-  zx_koid_t koid;
+  scenic::ResourceId resource_id;
 
-  SceneHostBindingKey(const zx_koid_t koid,
+  SceneHostBindingKey(const scenic::ResourceId resource_id,
                       const std::string isolate_service_id) {
-    this->koid = koid;
+    this->resource_id = resource_id;
     this->isolate_service_id = isolate_service_id;
   }
 
   bool operator==(const SceneHostBindingKey& other) const {
-    return isolate_service_id == other.isolate_service_id && koid == other.koid;
+    return isolate_service_id == other.isolate_service_id &&
+           resource_id == other.resource_id;
   }
 };
 
 struct SceneHostBindingKeyHasher {
   std::size_t operator()(const SceneHostBindingKey& key) const {
-    std::size_t koid_hash = std::hash<zx_koid_t>()(key.koid);
+    std::size_t resource_id_hash =
+        std::hash<scenic::ResourceId>()(key.resource_id);
     std::size_t isolate_hash = std::hash<std::string>()(key.isolate_service_id);
-    return koid_hash ^ isolate_hash;
+    return resource_id_hash ^ isolate_hash;
   }
 };
 
@@ -101,13 +102,6 @@ void InvokeDartFunction(const tonic::DartPersistentValue& function, T& arg) {
   tonic::DartInvoke(dart_handle, {tonic::ToDart(arg)});
 }
 
-zx_koid_t GetKoid(zx_handle_t handle) {
-  zx_info_handle_basic_t info;
-  zx_status_t status = zx_object_get_info(handle, ZX_INFO_HANDLE_BASIC, &info,
-                                          sizeof(info), nullptr, nullptr);
-  return status == ZX_OK ? info.koid : ZX_KOID_INVALID;
-}
-
 }  // namespace
 
 namespace flutter {
@@ -165,7 +159,7 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderToken,
                      Dart_Handle viewStateChangedCallback)
     : raster_task_runner_(
           UIDartState::Current()->GetTaskRunners().GetRasterTaskRunner()),
-      koid_(GetKoid(viewHolderToken->handle())) {
+      handle_(viewHolderToken->handle()) {
   auto dart_state = UIDartState::Current();
   isolate_service_id_ = Dart_IsolateServiceId(Dart_CurrentIsolate());
 
@@ -180,34 +174,44 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderToken,
     view_state_changed_callback_.Set(dart_state, viewStateChangedCallback);
   }
 
-  // This callback will be posted as a task  when the |scenic::ViewHolder|
-  // resource is created and given an id by the raster thread.
-  auto bind_callback = [scene_host = this,
-                        isolate_service_id =
-                            isolate_service_id_](scenic::ResourceId id) {
-    const auto key = SceneHostBindingKey(id, isolate_service_id);
-    scene_host_bindings.emplace(std::make_pair(key, scene_host));
-  };
-
+  // Keep the |SceneHost| alive with an extra ref; the logic in the destructor
+  // is paired with this logic and must not run until afterwards.
+  //
   // Pass the raw handle to the raster thread; destroying a
   // |zircon::dart::Handle| on that thread can cause a race condition.
   raster_task_runner_->PostTask(
-      [id = koid_,
+      [keep_this_alive = Ref(this), view_id = viewHolderToken->ReleaseHandle(),
        ui_task_runner =
-           UIDartState::Current()->GetTaskRunners().GetUITaskRunner(),
-       raw_handle = viewHolderToken->ReleaseHandle(), bind_callback]() {
-        flutter::ViewHolder::Create(
-            id, std::move(ui_task_runner),
-            scenic::ToViewHolderToken(zx::eventpair(raw_handle)),
-            std::move(bind_callback));
+           UIDartState::Current()->GetTaskRunners().GetUITaskRunner()]() {
+        auto* scene_update_context = SceneUpdateContext::GetCurrent();
+        FML_DCHECK(scene_update_context);
+
+        // Create the View, then inform the originating |SceneHost| of its ID
+        // for event processing purposes.
+        auto resource_id = scene_update_context->CreateView(view_id);
+        ui_task_runner->PostTask(
+            [keep_this_alive = std::move(keep_this_alive), resource_id]() {
+              keep_this_alive->resource_id_ = resource_id;
+              scene_host_bindings.emplace(std::make_pair(
+                  SceneHostBindingKey(keep_this_alive->resource_id_,
+                                      keep_this_alive->isolate_service_id_),
+                  keep_this_alive.get()));
+            });
       });
 }
 
 SceneHost::~SceneHost() {
-  scene_host_bindings.erase(SceneHostBindingKey(koid_, isolate_service_id_));
+  FML_DCHECK(resource_id_ != 0);
 
-  raster_task_runner_->PostTask(
-      [id = koid_]() { flutter::ViewHolder::Destroy(id); });
+  scene_host_bindings.erase(
+      SceneHostBindingKey(resource_id_, isolate_service_id_));
+
+  raster_task_runner_->PostTask([view_id = handle_]() {
+    auto* scene_update_context = SceneUpdateContext::GetCurrent();
+    FML_DCHECK(scene_update_context);
+
+    scene_update_context->DestroyView(view_id);
+  });
 }
 
 void SceneHost::dispose() {
@@ -221,15 +225,15 @@ void SceneHost::setProperties(double width,
                               double insetBottom,
                               double insetLeft,
                               bool focusable) {
-  raster_task_runner_->PostTask([id = koid_, width, height, insetTop,
-                                 insetRight, insetBottom, insetLeft,
-                                 focusable]() {
-    auto* view_holder = flutter::ViewHolder::FromId(id);
-    FML_DCHECK(view_holder);
+  raster_task_runner_->PostTask(
+      [view_id = handle_, width, height, focusable]() {
+        auto* scene_update_context = SceneUpdateContext::GetCurrent();
+        FML_DCHECK(scene_update_context);
 
-    view_holder->SetProperties(width, height, insetTop, insetRight, insetBottom,
-                               insetLeft, focusable);
-  });
+        scene_update_context->SetViewProperties(
+            view_id, std::nullopt, SkSize::Make(width, height), std::nullopt,
+            std::nullopt, focusable);
+      });
 }
 
 }  // namespace flutter

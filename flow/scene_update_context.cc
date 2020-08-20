@@ -9,12 +9,14 @@
 
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/matrix_decomposition.h"
-#include "flutter/flow/view_holder.h"
+#include "flutter/fml/thread_local.h"
 #include "flutter/fml/trace_event.h"
 #include "include/core/SkColor.h"
 
 namespace flutter {
 namespace {
+
+FML_THREAD_LOCAL SceneUpdateContext* tls_scene_update_context;
 
 void SetEntityNodeClipPlanes(scenic::EntityNode& entity_node,
                              const SkRect& bounds) {
@@ -65,6 +67,10 @@ void SetMaterialColor(scenic::Material& material,
 
 }  // namespace
 
+SceneUpdateContext* SceneUpdateContext::GetCurrent() {
+  return tls_scene_update_context;
+}
+
 SceneUpdateContext::SceneUpdateContext(std::string debug_label,
                                        fuchsia::ui::views::ViewToken view_token,
                                        scenic::ViewRefPair view_ref_pair,
@@ -80,6 +86,14 @@ SceneUpdateContext::SceneUpdateContext(std::string debug_label,
   root_node_.SetEventMask(fuchsia::ui::gfx::kMetricsEventMask);
 
   session_.Present();
+
+  FML_DCHECK(tls_scene_update_context == nullptr);
+  tls_scene_update_context = this;
+}
+
+SceneUpdateContext::~SceneUpdateContext() {
+  FML_DCHECK(tls_scene_update_context == this);
+  tls_scene_update_context = nullptr;
 }
 
 std::vector<SceneUpdateContext::PaintTask> SceneUpdateContext::GetPaintTasks() {
@@ -164,55 +178,120 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode& entity_node,
   }
 }
 
-void SceneUpdateContext::UpdateView(int64_t view_id,
-                                    const SkPoint& offset,
-                                    const SkSize& size,
-                                    std::optional<bool> override_hit_testable) {
-  auto* view_holder = ViewHolder::FromId(view_id);
-  FML_DCHECK(view_holder);
+scenic::ResourceId SceneUpdateContext::CreateView(int64_t view_id) {
+  FML_DCHECK(view_holders_.find(view_id) == view_holders_.end());
 
-  if (size.width() > 0.f && size.height() > 0.f) {
-    view_holder->SetProperties(size.width(), size.height(), 0, 0, 0, 0,
-                               view_holder->focusable());
+  ViewHolder new_view = {
+      .opacity_node = scenic::OpacityNodeHACK(session_.get()),
+      .entity_node = scenic::EntityNode(session_.get()),
+      .view_holder = scenic::ViewHolder(
+          session_.get(),
+          scenic::ToViewHolderToken(zx::eventpair((zx_handle_t)view_id)),
+          "Flutter::PlatformView"),
+  };
+  scenic::ResourceId view_holder_id = new_view.view_holder.id();
+
+  new_view.opacity_node.SetLabel("flutter::PlatformView::OpacityMutator");
+  new_view.entity_node.SetLabel("flutter::PlatformView::TransformMutator");
+  new_view.opacity_node.AddChild(new_view.entity_node);
+  new_view.entity_node.Attach(new_view.view_holder);
+  new_view.entity_node.SetTranslation(0.f, 0.f,
+                                      -kScenicZElevationBetweenLayers);
+
+  view_holders_.emplace(std::make_pair(view_id, std::move(new_view)));
+
+  return view_holder_id;
+}
+
+void SceneUpdateContext::DestroyView(int64_t view_id) {
+  size_t erased = view_holders_.erase(view_id);
+  FML_DCHECK(erased == 1);
+}
+
+void SceneUpdateContext::UpdateView(int64_t view_id) {
+  auto found = view_holders_.find(view_id);
+  FML_DCHECK(found != view_holders_.end());
+  auto& view_holder = found->second;
+
+  // Set opacity.
+  if (view_holder.pending_opacity) {
+    view_holder.opacity_node.SetOpacity(view_holder.opacity);
+    view_holder.pending_opacity = false;
   }
 
-  bool hit_testable = override_hit_testable.has_value()
-                          ? *override_hit_testable
-                          : view_holder->hit_testable();
-  view_holder->UpdateScene(session_.get(), top_entity_->embedder_node(), offset,
-                           size, SkScalarRoundToInt(alphaf() * 255),
-                           hit_testable);
+  // Set offset.
+  if (view_holder.pending_offset) {
+    view_holder.entity_node.SetTranslation(view_holder.offset.fX,
+                                           view_holder.offset.fY,
+                                           -kScenicZElevationBetweenLayers);
+    view_holder.pending_offset = false;
+  }
+
+  // Set HitTestBehavior.
+  if (view_holder.pending_hit_testable) {
+    view_holder.entity_node.SetHitTestBehavior(
+        view_holder.hit_testable
+            ? fuchsia::ui::gfx::HitTestBehavior::kDefault
+            : fuchsia::ui::gfx::HitTestBehavior::kSuppress);
+    view_holder.pending_hit_testable = false;
+  }
+
+  // Set size and focusable.
+  //
+  // Scenic rejects `SetViewProperties` calls with a zero size.
+  if (view_holder.pending_view_properties && !view_holder.size.isEmpty()) {
+    view_holder.view_holder.SetViewProperties({
+        .bounding_box =
+            {
+                .min = {.x = 0.f, .y = 0.f, .z = -1000.f},
+                .max = {.x = view_holder.size.width(),
+                        .y = view_holder.size.height(),
+                        .z = 0.f},
+            },
+        .inset_from_min = {.x = 0.f, .y = 0.f, .z = 0.f},
+        .inset_from_max = {.x = 0.f, .y = 0.f, .z = 0.f},
+        .focus_change = view_holder.focusable,
+    });
+    view_holder.pending_view_properties = false;
+  }
+
+  // Re-attach the ViewHolder at the new place in the scene graph.
+  top_entity_->embedder_node().AddChild(view_holder.opacity_node);
 
   // Assume embedded views are 10 "layers" wide.
   next_elevation_ += 10 * kScenicZElevationBetweenLayers;
 }
 
-void SceneUpdateContext::CreateView(int64_t view_id,
-                                    bool hit_testable,
-                                    bool focusable) {
-  zx_handle_t handle = (zx_handle_t)view_id;
-  flutter::ViewHolder::Create(handle, nullptr,
-                              scenic::ToViewHolderToken(zx::eventpair(handle)),
-                              nullptr);
-  auto* view_holder = ViewHolder::FromId(view_id);
-  FML_DCHECK(view_holder);
+void SceneUpdateContext::SetViewProperties(int64_t view_id,
+                                           std::optional<SkPoint> offset,
+                                           std::optional<SkSize> size,
+                                           std::optional<float> opacity,
+                                           std::optional<bool> hit_testable,
+                                           std::optional<bool> focusable) {
+  auto found = view_holders_.find(view_id);
+  FML_DCHECK(found != view_holders_.end());
+  auto& view_holder = found->second;
 
-  view_holder->set_hit_testable(hit_testable);
-  view_holder->set_focusable(focusable);
-}
-
-void SceneUpdateContext::UpdateView(int64_t view_id,
-                                    bool hit_testable,
-                                    bool focusable) {
-  auto* view_holder = ViewHolder::FromId(view_id);
-  FML_DCHECK(view_holder);
-
-  view_holder->set_hit_testable(hit_testable);
-  view_holder->set_focusable(focusable);
-}
-
-void SceneUpdateContext::DestroyView(int64_t view_id) {
-  ViewHolder::Destroy(view_id);
+  if (offset.has_value()) {
+    view_holder.offset = *offset;
+    view_holder.pending_offset = true;
+  }
+  if (size.has_value()) {
+    view_holder.size = *size;
+    view_holder.pending_view_properties = true;
+  }
+  if (opacity.has_value()) {
+    view_holder.opacity = *opacity;
+    view_holder.pending_opacity = true;
+  }
+  if (hit_testable.has_value()) {
+    view_holder.hit_testable = *hit_testable;
+    view_holder.pending_hit_testable = true;
+  }
+  if (focusable.has_value()) {
+    view_holder.focusable = *focusable;
+    view_holder.pending_view_properties = true;
+  }
 }
 
 SceneUpdateContext::Entity::Entity(SceneUpdateContext& context)

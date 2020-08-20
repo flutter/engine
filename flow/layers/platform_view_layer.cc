@@ -50,7 +50,10 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
 void PlatformViewLayer::UpdateScene(SceneUpdateContext& context) {
   TRACE_EVENT0("flutter", "PlatformViewLayer::UpdateScene");
   FML_DCHECK(needs_system_composite());
-  context.UpdateView(view_id_, offset_, size_);
+
+  context.SetViewProperties(view_id_, offset_, size_, std::nullopt,
+                            std::nullopt, std::nullopt);
+  context.UpdateView(view_id_);
 }
 #endif
 

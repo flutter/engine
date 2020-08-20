@@ -58,8 +58,8 @@ PlatformView::PlatformView(
     fit::closure session_listener_error_callback,
     OnEnableWireframe wireframe_enabled_callback,
     OnCreateView on_create_view_callback,
-    OnUpdateView on_update_view_callback,
     OnDestroyView on_destroy_view_callback,
+    OnSetViewProperties on_set_view_properties_callback,
     OnGetViewEmbedder on_get_view_embedder_callback,
     OnGetGrContext on_get_gr_context_callback,
     zx_handle_t vsync_event_handle,
@@ -73,8 +73,9 @@ PlatformView::PlatformView(
           std::move(session_listener_error_callback)),
       wireframe_enabled_callback_(std::move(wireframe_enabled_callback)),
       on_create_view_callback_(std::move(on_create_view_callback)),
-      on_update_view_callback_(std::move(on_update_view_callback)),
       on_destroy_view_callback_(std::move(on_destroy_view_callback)),
+      on_set_view_properties_callback_(
+          std::move(on_set_view_properties_callback)),
       on_get_view_embedder_callback_(std::move(on_get_view_embedder_callback)),
       on_get_gr_context_callback_(std::move(on_get_gr_context_callback)),
       ime_client_(this),
@@ -755,9 +756,10 @@ void PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
       return;
     }
 
-    on_create_view_callback_(view_id->value.GetUint64(),
-                             hit_testable->value.GetBool(),
-                             focusable->value.GetBool());
+    on_create_view_callback_(view_id->value.GetUint64());
+    on_set_view_properties_callback_(view_id->value.GetUint64(),
+                                     hit_testable->value.GetBool(),
+                                     focusable->value.GetBool());
     // The client is waiting for view creation. Send an empty response back
     // to signal the view was created.
     if (message->response().get()) {
@@ -790,9 +792,9 @@ void PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
       return;
     }
 
-    on_update_view_callback_(view_id->value.GetUint64(),
-                             hit_testable->value.GetBool(),
-                             focusable->value.GetBool());
+    on_set_view_properties_callback_(view_id->value.GetUint64(),
+                                     hit_testable->value.GetBool(),
+                                     focusable->value.GetBool());
   } else if (method->value == "View.dispose") {
     auto args_it = root.FindMember("args");
     if (args_it == root.MemberEnd() || !args_it->value.IsObject()) {
