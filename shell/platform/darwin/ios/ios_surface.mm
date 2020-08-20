@@ -13,15 +13,6 @@
 
 namespace flutter {
 
-// The name of the Info.plist flag to enable the embedded iOS views preview.
-constexpr const char* kEmbeddedViewsPreview = "io.flutter.embedded_views_preview";
-
-bool IsIosEmbeddedViewsPreviewEnabled() {
-  static bool preview_enabled =
-      [[[NSBundle mainBundle] objectForInfoDictionaryKey:@(kEmbeddedViewsPreview)] boolValue];
-  return preview_enabled;
-}
-
 std::unique_ptr<IOSSurface> IOSSurface::Create(
     std::shared_ptr<IOSContext> context,
     fml::scoped_nsobject<CALayer> layer,
@@ -76,11 +67,7 @@ SkCanvas* IOSSurface::GetRootCanvas() {
 }
 
 ExternalViewEmbedder* IOSSurface::GetExternalViewEmbedderIfEnabled() {
-  if (IsIosEmbeddedViewsPreviewEnabled()) {
-    return this;
-  } else {
-    return nullptr;
-  }
+  return this;
 }
 
 // |ExternalViewEmbedder|
