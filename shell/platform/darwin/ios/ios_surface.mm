@@ -66,10 +66,6 @@ SkCanvas* IOSSurface::GetRootCanvas() {
   return nullptr;
 }
 
-ExternalViewEmbedder* IOSSurface::GetExternalViewEmbedderIfEnabled() {
-  return this;
-}
-
 // |ExternalViewEmbedder|
 void IOSSurface::CancelFrame() {
   TRACE_EVENT0("flutter", "IOSSurface::CancelFrame");
