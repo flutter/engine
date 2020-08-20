@@ -95,6 +95,9 @@ class EmbedderTestContext {
   ///
   void SetGLGetFBOCallback(GLGetFBOCallback callback);
 
+  // Returns the fbo ids inorder of their presentation.
+  std::vector<uint32_t> GetPresentedFBOs();
+
  private:
   // This allows the builder to access the hooks.
   friend class EmbedderConfigBuilder;
@@ -121,6 +124,7 @@ class EmbedderTestContext {
   size_t software_surface_present_count_ = 0;
   std::mutex gl_get_fbo_callback_mutex_;
   GLGetFBOCallback gl_get_fbo_callback_;
+  std::vector<uint32_t> presented_fbos_;
 
   static VoidCallback GetIsolateCreateCallbackHook();
 
@@ -149,7 +153,7 @@ class EmbedderTestContext {
 
   bool GLClearCurrent();
 
-  bool GLPresent();
+  bool GLPresent(uint32_t fbo_id);
 
   uint32_t GLGetFramebuffer(FlutterFrameInfo frame_info);
 

@@ -27,7 +27,7 @@ class TestGLSurface {
 
   bool Present();
 
-  uint32_t GetFramebuffer() const;
+  uint32_t GetFramebuffer(uint32_t width, uint32_t height) const;
 
   bool MakeResourceCurrent();
 

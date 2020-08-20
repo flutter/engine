@@ -185,9 +185,10 @@ bool EmbedderTestContext::GLClearCurrent() {
   return gl_surface_->ClearCurrent();
 }
 
-bool EmbedderTestContext::GLPresent() {
+bool EmbedderTestContext::GLPresent(uint32_t fbo_id) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
   gl_surface_present_count_++;
+  presented_fbos_.push_back(fbo_id);
 
   FireRootSurfacePresentCallbackIfPresent(
       [&]() { return gl_surface_->GetRasterSurfaceSnapshot(); });
@@ -217,7 +218,8 @@ uint32_t EmbedderTestContext::GLGetFramebuffer(FlutterFrameInfo frame_info) {
     callback(frame_info);
   }
 
-  return gl_surface_->GetFramebuffer();
+  const auto size = frame_info.size;
+  return gl_surface_->GetFramebuffer(size.width, size.height);
 }
 
 bool EmbedderTestContext::GLMakeResourceCurrent() {

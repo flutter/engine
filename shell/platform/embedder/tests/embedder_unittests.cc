@@ -4406,5 +4406,16 @@ TEST_F(EmbedderTest, MustNotRunWithBothFBOCallbacksSet) {
   ASSERT_FALSE(engine.is_valid());
 }
 
+TEST_F(EmbedderTest, MustNotRunWithBothPresentCallbacksSet) {
+  auto& context = GetEmbedderContext();
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
+  builder.SetOpenGLPresentCallBack();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_FALSE(engine.is_valid());
+}
+
 }  // namespace testing
 }  // namespace flutter
