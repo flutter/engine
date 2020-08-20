@@ -22,8 +22,11 @@ static constexpr char kHideMethod[] = "TextInput.hide";
 static constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
 static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
+static constexpr char kMultilineInputType[] = "TextInputType.multiline";
 
 static constexpr char kInputActionKey[] = "inputAction";
+static constexpr char kTextInputType[] = "inputType";
+static constexpr char kTextInputTypeName[] = "name";
 static constexpr char kTextKey[] = "text";
 static constexpr char kSelectionBaseKey[] = "selectionBase";
 static constexpr char kSelectionExtentKey[] = "selectionExtent";
@@ -46,6 +49,9 @@ struct _FlTextInputPlugin {
 
   // Input action to perform when enter pressed.
   gchar* input_action;
+
+  // Input action to perform when enter pressed.
+  gboolean input_multiline;
 
   // Input method.
   GtkIMContext* im_context;
@@ -173,6 +179,17 @@ static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
       fl_value_lookup_string(config_value, kInputActionKey);
   if (fl_value_get_type(input_action_value) == FL_VALUE_TYPE_STRING) {
     self->input_action = g_strdup(fl_value_get_string(input_action_value));
+  }
+
+  FlValue* input_type_value =
+      fl_value_lookup(config_value, fl_value_new_string(kTextInputType));
+  if (fl_value_get_type(input_type_value) == FL_VALUE_TYPE_MAP) {
+    FlValue* input_type_name = fl_value_lookup(
+        input_type_value, fl_value_new_string(kTextInputTypeName));
+    if (fl_value_equal(input_type_name,
+                       fl_value_new_string(kMultilineInputType))) {
+      self->input_multiline = TRUE;
+    }
   }
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
@@ -325,6 +342,9 @@ gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
       case GDK_KEY_Return:
       case GDK_KEY_KP_Enter:
       case GDK_KEY_ISO_Enter:
+        if (self->input_multiline == TRUE) {
+          self->text_model->AddCodePoint('\n');
+        }
         perform_action(self);
         break;
       case GDK_KEY_Home:
