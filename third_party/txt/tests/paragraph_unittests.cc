@@ -1478,6 +1478,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderLongestLine)) {
   auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
+  std::cout << paragraph->longest_line_ << GetTestCanvasWidth();
   ASSERT_DOUBLE_EQ(paragraph->width_, GetTestCanvasWidth());
   ASSERT_TRUE(paragraph->longest_line_ < GetTestCanvasWidth());
   ASSERT_TRUE(paragraph->longest_line_ >= 50);
