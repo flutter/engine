@@ -344,6 +344,7 @@ gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
       case GDK_KEY_ISO_Enter:
         if (self->input_multiline == TRUE) {
           self->text_model->AddCodePoint('\n');
+          update_editing_state(self);
         }
         perform_action(self);
         break;
