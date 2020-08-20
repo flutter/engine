@@ -24,7 +24,7 @@ class EventSink {
   void Success(const T* event) { SuccessInternal(event); }
 
   // Consumes a successful event
-  void Success(const T& event) { SuccessInternal&(event); }
+  void Success(const T& event) { SuccessInternal(&event); }
 
   // Consumes a successful event.
   void Success() { SuccessInternal(nullptr); }
