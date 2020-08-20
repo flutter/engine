@@ -234,8 +234,11 @@ class TestCommand extends Command<bool> with ArgUtils {
     final List<FilePath> canvasKitTargets = <FilePath>[];
     final String canvasKitTestDirectory =
         path.join(environment.webUiTestDir.path, 'canvaskit');
+    final String goldenTestDirectory =
+        path.join(environment.webUiTestDir.path, 'golden_tests');
     for (FilePath target in allTargets) {
-      if (path.isWithin(canvasKitTestDirectory, target.absolute)) {
+      if (path.isWithin(canvasKitTestDirectory, target.absolute) ||
+          path.isWithin(goldenTestDirectory, target.absolute)) {
         canvasKitTargets.add(target);
       } else {
         htmlTargets.add(target);
@@ -514,6 +517,8 @@ class TestCommand extends Command<bool> with ArgUtils {
         .map((FilePath f) => TestBuildInput(f, forCanvasKit: forCanvasKit))
         .toList();
 
+    print('INFO: building test for canvaskit :$forCanvasKit');
+
     final results = _pool.forEach(
       buildInputs,
       _buildTest,
@@ -534,8 +539,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// When building for CanvasKit we have to use extra argument
   /// `DFLUTTER_WEB_USE_SKIA=true`.
   Future<bool> _buildTest(TestBuildInput input) async {
-    final targetFileName =
-        '${input.path.relativeToWebUi}.browser_test.dart.js';
+    final targetFileName = '${input.path.relativeToWebUi}.browser_test.dart.js';
     final String targetPath = path.join('build', targetFileName);
 
     final io.Directory directoryToTarget = io.Directory(path.join(
