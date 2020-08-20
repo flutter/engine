@@ -1062,7 +1062,9 @@ void ParagraphTxt::Layout(double width) {
         }
 
         if (!run.is_ghost()) {
+          FML_LOG(INFO) << "min_left_ = min(" << min_left_ << ", " << blob_x_pos_start << ")";
           min_left_ = std::min(min_left_, blob_x_pos_start);
+          FML_LOG(INFO) << "max_right_ = max(" << max_right_ << ", " << blob_x_pos_end << ")";
           max_right_ = std::max(max_right_, blob_x_pos_end);
         }
       }  // for each in glyph_blobs
