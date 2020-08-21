@@ -199,22 +199,22 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     }
   } else if (layoutChanged) {
     // Tries to refocus the previous focused semantics object to avoid random jumps.
-    SemanticsObject* nextToFocus = [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
+    SemanticsObject* nextToFocus =
+        [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
     if (!nextToFocus)
       nextToFocus = first_focusable_;
-    ios_delegate_->PostAccessibilityNotification(
-        UIAccessibilityLayoutChangedNotification,
-        nextToFocus);
+    ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification,
+                                                 nextToFocus);
   } else if (scrollOccured) {
     // TODO(chunhtai): figure out what string to use for notification. At this
     // point, it is guarantee the previous focused object is still in the tree
     // so that we don't need to worry about focus lost. (e.g. "Screen 0 of 3")
-    SemanticsObject* nextToFocus = [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
+    SemanticsObject* nextToFocus =
+        [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
     if (!nextToFocus)
       nextToFocus = first_focusable_;
-    ios_delegate_->PostAccessibilityNotification(
-        UIAccessibilityPageScrolledNotification,
-        nextToFocus);
+    ios_delegate_->PostAccessibilityNotification(UIAccessibilityPageScrolledNotification,
+                                                 nextToFocus);
   }
 }
 
