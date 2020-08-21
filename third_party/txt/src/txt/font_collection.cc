@@ -203,7 +203,7 @@ std::shared_ptr<minikin::FontFamily> FontCollection::FindFontFamilyInManagers(
 }
 
 void FontCollection::SortSkTypefaces(
-    std::vector<sk_sp<SkTypeface>> sk_typefaces) {
+    std::vector<sk_sp<SkTypeface>>& sk_typefaces) {
   std::sort(sk_typefaces.begin(), sk_typefaces.end(),
             [](const sk_sp<SkTypeface>& a, const sk_sp<SkTypeface>& b) {
               SkFontStyle a_style = a->fontStyle();

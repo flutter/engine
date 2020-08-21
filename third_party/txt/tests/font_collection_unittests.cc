@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-#include "flutter/fml/command_line.h"
 #include "flutter/fml/logging.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "third_party/skia/src/core/SkAdvancedTypefaceMetrics.h"
-#include "third_party/skia/src/core/SkScalerContext.h"
+#include "third_party/skia/include/utils/SkCustomTypeface.h"
 #include "txt/font_collection.h"
 #include "txt_test_utils.h"
 
@@ -29,90 +27,86 @@ namespace txt {
 // the FRIEND_TEST macro.
 class FontCollectionTest : public ::testing::Test {};
 
-class MockSkTypeface : public SkTypeface {
-  public:
-  MockSkTypeface();
-  MOCK_CONST_METHOD1(onMakeClone, sk_sp<SkTypeface>(const SkFontArguments&));
-  MOCK_CONST_METHOD2(onCreateScalerContext,
-                     SkScalerContext*(const SkScalerContextEffects&,
-                                      const SkDescriptor*));
-  MOCK_CONST_METHOD1(onFilterRec, void(SkScalerContextRec*));
-  MOCK_CONST_METHOD0(onGetAdvancedMetrics,
-                     std::unique_ptr<SkAdvancedTypefaceMetrics>());
-  MOCK_CONST_METHOD1(getPostScriptGlyphNames, void(SkString*));
-  MOCK_CONST_METHOD1(getGlyphToUnicodeMap, void(SkUnichar* dstArray));
-  MOCK_CONST_METHOD1(onOpenStream,
-                     std::unique_ptr<SkStreamAsset>(int* ttcIndex));
-  MOCK_CONST_METHOD2(
-      onGetVariationDesignPosition,
-      int(SkFontArguments::VariationPosition::Coordinate coordinates[],
-          int coordinateCount));
-  MOCK_CONST_METHOD2(onGetVariationDesignParameters,
-                     int(SkFontParameters::Variation::Axis parameters[],
-                         int parameterCount));
-  MOCK_CONST_METHOD2(onGetFontDescriptor,
-                     void(SkFontDescriptor*, bool* isLocal));
-  MOCK_CONST_METHOD3(onCharsToGlyphs,
-                     void(const SkUnichar* chars,
-                          int count,
-                          SkGlyphID glyphs[]));
-  MOCK_CONST_METHOD0(onCountGlyphs, int());
-  MOCK_CONST_METHOD0(onGetUPEM, int());
-  MOCK_CONST_METHOD3(onGetKerningPairAdjustments,
-                     bool(const SkGlyphID glyphs[],
-                          int count,
-                          int32_t adjustments[]));
-  MOCK_CONST_METHOD1(onGetFamilyName, void(SkString* familyName));
-  MOCK_CONST_METHOD0(onCreateFamilyNameIterator, SkTypeface::LocalizedStrings*());
-  MOCK_CONST_METHOD1(onGetTableTags, int(SkFontTableTag tags[]));
-  MOCK_CONST_METHOD4(
-      onGetTableData,
-      size_t(SkFontTableTag, size_t offset, size_t length, void* data));
-  MOCK_CONST_METHOD1(onCopyTableData, sk_sp<SkData>(SkFontTableTag));
-  MOCK_CONST_METHOD1(onComputeBounds, bool(SkRect*));
-  MOCK_CONST_METHOD0(onGetCTFontRef, void*());
-};
+namespace {
+// This function does some boilerplate to fill a builder with enough real
+// font-like data. Otherwise, detach won't actually build an SkTypeface.
+void PopulateUserTypeface(SkCustomTypefaceBuilder* builder) {
+  constexpr float upem = 200;
+
+  {
+      SkFontMetrics metrics;
+      metrics.fFlags = 0;
+      metrics.fTop = -200;
+      metrics.fAscent = -150;
+      metrics.fDescent = 50;
+      metrics.fBottom = -75;
+      metrics.fLeading = 10;
+      metrics.fAvgCharWidth = 150;
+      metrics.fMaxCharWidth = 300;
+      metrics.fXMin = -20;
+      metrics.fXMax = 290;
+      metrics.fXHeight = -100;
+      metrics.fCapHeight = 0;
+      metrics.fUnderlineThickness = 5;
+      metrics.fUnderlinePosition = 2;
+      metrics.fStrikeoutThickness = 5;
+      metrics.fStrikeoutPosition = -50;
+      builder->setMetrics(metrics, 1.0f/upem);
+    }
+
+    const SkMatrix scale = SkMatrix::Scale(1.0f/upem, 1.0f/upem);
+    for (SkGlyphID index = 0; index <= 67; ++index) {
+      SkScalar width;
+      width = 100;
+      SkPath path;
+      path.addCircle(50, -50, 75);
+
+      builder->setGlyph(index, width/upem, path.makeTransform(scale));
+    }
+}
+}
 
 TEST(FontCollectionTest, CheckSkTypefacesSorting) {
-  MockSkTypeface mockTypeface1;
+  // We have to make a real SkTypeface here. Not all the structs from the
+  // SkTypeface headers are fully declared to be able to gmock.
+  // SkCustomTypefaceBuilder is the simplest way to get a simple SkTypeface.
+  SkCustomTypefaceBuilder typefaceBuilder1;
+  typefaceBuilder1.setFontStyle(SkFontStyle(SkFontStyle::kThin_Weight, SkFontStyle::kExpanded_Width,
+                  SkFontStyle::kItalic_Slant));
+  // For the purpose of this test, we need to fill this to make the SkTypeface
+  // build but it doesn't matter. We only care about the SkFontStyle.
+  PopulateUserTypeface(&typefaceBuilder1);
+  sk_sp<SkTypeface> typeface1{typefaceBuilder1.detach()};
 
-  sk_sp<SkTypeface> typeface1{SkTypeface::MakeFromName(
-      "Arial",
-      SkFontStyle(SkFontStyle::kThin_Weight, SkFontStyle::kExpanded_Width,
-                  SkFontStyle::kItalic_Slant))};
-  sk_sp<SkTypeface> typeface2{SkTypeface::MakeFromName(
-      "Arial",
-      SkFontStyle(SkFontStyle::kLight_Weight, SkFontStyle::kNormal_Width,
-                  SkFontStyle::kUpright_Slant))};
-  sk_sp<SkTypeface> typeface3{SkTypeface::MakeFromName(
-      "Arial",
-      SkFontStyle(SkFontStyle::kNormal_Weight, SkFontStyle::kNormal_Width,
-                  SkFontStyle::kUpright_Slant))};
-  std::vector<sk_sp<SkTypeface>> candidateTypefaces{typeface1, typeface2,
+  SkCustomTypefaceBuilder typefaceBuilder2;
+  typefaceBuilder2.setFontStyle(SkFontStyle(SkFontStyle::kLight_Weight, SkFontStyle::kNormal_Width,
+                   SkFontStyle::kUpright_Slant));
+  PopulateUserTypeface(&typefaceBuilder2);
+  sk_sp<SkTypeface> typeface2{typefaceBuilder2.detach()};
+
+  SkCustomTypefaceBuilder typefaceBuilder3;
+  typefaceBuilder3.setFontStyle(SkFontStyle(SkFontStyle::kNormal_Weight, SkFontStyle::kNormal_Width,
+                  SkFontStyle::kUpright_Slant));
+  PopulateUserTypeface(&typefaceBuilder3);
+  sk_sp<SkTypeface> typeface3{typefaceBuilder3.detach()};
+
+  std::vector<sk_sp<SkTypeface>> candidateTypefaces = {typeface1, typeface2,
                                                     typeface3};
-
-  ASSERT_EQ(candidateTypefaces[0]->fontStyle().weight(),
-            SkFontStyle::kThin_Weight);
-  ASSERT_EQ(candidateTypefaces[0]->fontStyle().width(),
-            SkFontStyle::kExpanded_Width);
-
-  ASSERT_EQ(candidateTypefaces[1]->fontStyle().weight(),
-            SkFontStyle::kLight_Weight);
-  ASSERT_EQ(candidateTypefaces[1]->fontStyle().width(),
-            SkFontStyle::kNormal_Width);
-
-  ASSERT_EQ(candidateTypefaces[2]->fontStyle().weight(),
-            SkFontStyle::kNormal_Weight);
-  ASSERT_EQ(candidateTypefaces[2]->fontStyle().width(),
-            SkFontStyle::kNormal_Width);
 
   // This sorts the vector in-place.
   txt::FontCollection::SortSkTypefaces(candidateTypefaces);
-  ASSERT_EQ(candidateTypefaces[0].get(), typeface1.get());
-  ASSERT_EQ(candidateTypefaces[1].get(), typeface2.get());
 
-  // ASSERT_EQ(candidateTypefaces[0]->fontStyle().weight(),
-  // SkFontStyle::kLight_Weight);
+  // The second one is first because it's both the most normal width font
+  // with the lightest weight.
+  ASSERT_EQ(candidateTypefaces[0].get(), typeface2.get());
+  // Then the most normal width font with normal weight.
+  ASSERT_EQ(candidateTypefaces[1].get(), typeface3.get());
+  // Then a less normal (expanded) width font.
+  ASSERT_EQ(candidateTypefaces[2].get(), typeface1.get());
+
+  // Double check.
+  ASSERT_EQ(candidateTypefaces[0]->fontStyle().weight(),
+            SkFontStyle::kLight_Weight);
   ASSERT_EQ(candidateTypefaces[0]->fontStyle().width(),
             SkFontStyle::kNormal_Width);
 
