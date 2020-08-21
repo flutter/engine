@@ -550,7 +550,7 @@ void push_frames_over_and_over() {
     builder.pushOffset(0.0, 0.0);
     builder.addPicture(Offset(0.0, 0.0), CreateColoredBox(Color.fromARGB(255, 128, 128, 128), Size(1024.0, 600.0)));
     builder.pushOpacity(128);
-    builder.addPlatformView(42, width: 1024.0, height: 540.0);
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
     builder.pop();
     builder.pop();
     window.render(builder.build());
