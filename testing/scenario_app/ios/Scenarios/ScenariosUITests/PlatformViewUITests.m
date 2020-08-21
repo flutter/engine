@@ -11,8 +11,7 @@
 @implementation PlatformViewUITests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  GoldenTestManager* manager =
-      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view"];
+  GoldenTestManager* manager = [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view"];
   return [super initWithManager:manager invocation:invocation];
 }
 

@@ -19,8 +19,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @implementation GoldenPlatformViewTests
 
-- (instancetype)initWithManager:(GoldenTestManager*)manager
-                     invocation:(NSInvocation*)invocation {
+- (instancetype)initWithManager:(GoldenTestManager*)manager invocation:(NSInvocation*)invocation {
   self = [super initWithInvocation:invocation];
   _manager = manager;
   return self;

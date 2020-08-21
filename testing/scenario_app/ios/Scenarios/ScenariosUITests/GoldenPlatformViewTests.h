@@ -20,8 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, strong) XCUIApplication* application;
 
 // Initialize with a `GoldenTestManager`.
-- (instancetype)initWithManager:(GoldenTestManager*)manager
-                     invocation:(NSInvocation*)invocation;
+- (instancetype)initWithManager:(GoldenTestManager*)manager invocation:(NSInvocation*)invocation;
 
 // Take a sceenshot of the test app and check it has the same pixels with goldenImage inside the
 // `GoldenTestManager`.
