@@ -25,7 +25,7 @@
   self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
 
   NSDictionary<NSString*, NSString*>* launchArgsMap = @{
-    // The Platform view golden test args should match `PlatformViewGoldenTestManager`.
+    // The golden test args should match `GoldenTestManager`.
     @"--locale-initialization" : @"locale_initialization",
     @"--platform-view" : @"platform_view",
     @"--platform-view-no-overlay-intersection" : @"platform_view_no_overlay_intersection",
@@ -48,7 +48,8 @@
     @"--gesture-reject-eager" : @"platform_view_gesture_reject_eager",
     @"--gesture-accept" : @"platform_view_gesture_accept",
     @"--tap-status-bar" : @"tap_status_bar",
-    @"--text-semantics-focus" : @"text_semantics_focus"
+    @"--text-semantics-focus" : @"text_semantics_focus",
+    @"--bogus-font-text" : @"bogus_font_text"
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap

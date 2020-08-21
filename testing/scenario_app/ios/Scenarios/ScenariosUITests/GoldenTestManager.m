@@ -2,17 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "PlatformViewGoldenTestManager.h"
-
+#import "GoldenTestManager.h"
 #import <XCTest/XCTest.h>
 
-@interface PlatformViewGoldenTestManager ()
+@interface GoldenTestManager ()
 
 @property(readwrite, strong, nonatomic) GoldenImage* goldenImage;
 
 @end
 
-@implementation PlatformViewGoldenTestManager
+@implementation GoldenTestManager
 
 NSDictionary* launchArgsMap;
 
@@ -34,6 +33,7 @@ NSDictionary* launchArgsMap;
         @"--platform-view-transform" : @"platform_view_transform",
         @"--platform-view-opacity" : @"platform_view_opacity",
         @"--platform-view-rotate" : @"platform_view_rotate",
+        @"--bogus-font-text" : @"bogus_font_text",
       };
     });
     _identifier = launchArgsMap[launchArg];
@@ -42,6 +42,31 @@ NSDictionary* launchArgsMap;
     _launchArg = launchArg;
   }
   return self;
+}
+
+- (void)checkGoldenForTest:(XCTestCase*)test {
+  XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
+  if (!_goldenImage.image) {
+    XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];
+    attachment.name = @"new_golden";
+    attachment.lifetime = XCTAttachmentLifetimeKeepAlways;
+    [test addAttachment:attachment];
+    XCTFail(@"This test will fail - no golden named %@ found. Follow the steps in the "
+            @"README to add a new golden.",
+            _goldenImage.goldenName);
+  }
+
+  if (![_goldenImage compareGoldenToImage:screenshot.image]) {
+    XCTAttachment* screenshotAttachment;
+    screenshotAttachment = [XCTAttachment attachmentWithImage:screenshot.image];
+    screenshotAttachment.name = _goldenImage.goldenName;
+    screenshotAttachment.lifetime = XCTAttachmentLifetimeKeepAlways;
+    [test addAttachment:screenshotAttachment];
+
+    XCTFail(@"Goldens to not match. Follow the steps in the "
+            @"README to update golden named %@ if needed.",
+            _goldenImage.goldenName);
+  }
 }
 
 @end
