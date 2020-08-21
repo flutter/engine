@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.editing;
 
+import android.util.Log;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
@@ -24,6 +25,10 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
+import android.view.WindowInsets;
+import android.view.WindowInsetsAnimationController;
+import android.view.WindowInsetsAnimationControlListener;
+import android.view.animation.LinearInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -70,12 +75,14 @@ public class TextInputPlugin {
         new TextInputChannel.TextInputMethodHandler() {
           @Override
           public void show() {
+            controlTextInputWindowInsetsAnimation();
             showTextInput(mView);
           }
 
           @Override
           public void hide() {
-            hideTextInput(mView);
+            controlTextInputWindowInsetsAnimation();
+            // hideTextInput(mView);
           }
 
           @Override
@@ -125,6 +132,16 @@ public class TextInputPlugin {
           public void sendAppPrivateCommand(String action, Bundle data) {
             sendTextInputAppPrivateCommand(action, data);
           }
+
+          @Override
+          public void setWindowInsetsAnimation(
+              // long durationMillis, 
+              // Interpolator interpolator, 
+              // CancellationSignal cancellationSignal, 
+              // WindowInsetsAnimationControlListener listener
+            ) {
+            controlTextInputWindowInsetsAnimation();
+          }
         });
 
     textInputChannel.requestExistingInputState();
@@ -132,6 +149,39 @@ public class TextInputPlugin {
     this.platformViewsController = platformViewsController;
     this.platformViewsController.attachTextInputPlugin(this);
     restartAlwaysRequired = isRestartAlwaysRequired();
+  }
+
+  private class CustomWindowInsetsAnimationControlListener implements WindowInsetsAnimationControlListener {
+    CustomWindowInsetsAnimationControlListener() {}
+
+    public void onCancelled(WindowInsetsAnimationController controller) {
+
+    }
+
+    public void onFinished(WindowInsetsAnimationController controller) {
+
+    }
+
+    public void onReady(WindowInsetsAnimationController controller, int types) {
+
+    }
+  }
+  private void controlTextInputWindowInsetsAnimation(
+      // int types, 
+      // long durationMillis, 
+      // Interpolator interpolator, 
+      // CancellationSignal cancellationSignal, 
+      // WindowInsetsAnimationControlListener listener
+    ) {
+    Log.e("flutter", "IN THE WINDOW WindowInsetsAnimationController !!!!!!!!!0");
+    mView.getWindowInsetsController().controlWindowInsetsAnimation(
+      // WindowInsets.Type.IME,
+      4,
+      -1,// duration.
+      new LinearInterpolator(),
+      null,
+      new CustomWindowInsetsAnimationControlListener()
+    );
   }
 
   @NonNull

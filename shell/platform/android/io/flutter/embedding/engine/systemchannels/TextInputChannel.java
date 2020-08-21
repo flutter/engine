@@ -134,6 +134,11 @@ public class TextInputChannel {
               textInputMethodHandler.finishAutofillContext((boolean) args);
               result.success(null);
               break;
+
+            case "TextInput.setWindowInsetsAnimation":
+              textInputMethodHandler.setWindowInsetsAnimation();
+              result.success(null);
+              break;
             default:
               result.notImplemented();
               break;
@@ -389,6 +394,8 @@ public class TextInputChannel {
      * @param data Any data to include with the command.
      */
     void sendAppPrivateCommand(String action, Bundle data);
+
+    void setWindowInsetsAnimation();
   }
 
   /** A text editing configuration. */
