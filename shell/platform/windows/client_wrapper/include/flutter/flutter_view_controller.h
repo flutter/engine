@@ -5,13 +5,14 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_VIEW_CONTROLLER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_VIEW_CONTROLLER_H_
 
+#include <Windows.h>
 #include <flutter_windows.h>
 
-#include <chrono>
-#include <string>
-#include <vector>
+#include <memory>
+#include <optional>
 
 #include "dart_project.h"
+#include "flutter_engine.h"
 #include "flutter_view.h"
 #include "plugin_registrar.h"
 #include "plugin_registry.h"
@@ -33,36 +34,41 @@ class FlutterViewController : public PluginRegistry {
                                  int height,
                                  const DartProject& project);
 
-  // DEPRECATED. Will be removed soon; use the version above.
-  explicit FlutterViewController(const std::string& icu_data_path,
-                                 int width,
-                                 int height,
-                                 const std::string& assets_path,
-                                 const std::vector<std::string>& arguments);
-
   virtual ~FlutterViewController();
 
   // Prevent copying.
   FlutterViewController(FlutterViewController const&) = delete;
   FlutterViewController& operator=(FlutterViewController const&) = delete;
 
+  // Returns the engine running Flutter content in this view.
+  FlutterEngine* engine() { return engine_.get(); }
+
+  // Returns the view managed by this controller.
   FlutterView* view() { return view_.get(); }
 
-  // Processes any pending events in the Flutter engine, and returns the
-  // nanosecond delay until the next scheduled event (or  max, if none).
+  // Allows the Flutter engine and any interested plugins an opportunity to
+  // handle the given message.
   //
-  // This should be called on every run of the application-level runloop, and
-  // a wait for native events in the runloop should never be longer than the
-  // last return value from this function.
+  // If a result is returned, then the message was handled in such a way that
+  // further handling should not be done.
+  std::optional<LRESULT> HandleTopLevelWindowProc(HWND hwnd,
+                                                  UINT message,
+                                                  WPARAM wparam,
+                                                  LPARAM lparam);
+
+  // DEPRECATED. Call engine()->ProcessMessages() instead.
   std::chrono::nanoseconds ProcessMessages();
 
-  // flutter::PluginRegistry:
+  // DEPRECATED. Call engine()->GetRegistrarForPlugin() instead.
   FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
       const std::string& plugin_name) override;
 
  private:
   // Handle for interacting with the C API's view controller, if any.
   FlutterDesktopViewControllerRef controller_ = nullptr;
+
+  // The backing engine
+  std::unique_ptr<FlutterEngine> engine_;
 
   // The owned FlutterView.
   std::unique_ptr<FlutterView> view_;

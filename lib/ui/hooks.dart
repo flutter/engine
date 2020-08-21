@@ -14,7 +14,6 @@ void _updateWindowMetrics(
   double devicePixelRatio,
   double width,
   double height,
-  double depth,
   double viewPaddingTop,
   double viewPaddingRight,
   double viewPaddingBottom,
@@ -31,7 +30,6 @@ void _updateWindowMetrics(
   window
     .._devicePixelRatio = devicePixelRatio
     .._physicalSize = Size(width, height)
-    .._physicalDepth = depth
     .._viewPadding = WindowPadding._(
         top: viewPaddingTop,
         right: viewPaddingRight,
@@ -200,7 +198,7 @@ void _reportTimings(List<int> timings) {
   assert(timings.length % FramePhase.values.length == 0);
   final List<FrameTiming> frameTimings = <FrameTiming>[];
   for (int i = 0; i < timings.length; i += FramePhase.values.length) {
-    frameTimings.add(FrameTiming(timings.sublist(i, i + FramePhase.values.length)));
+    frameTimings.add(FrameTiming._(timings.sublist(i, i + FramePhase.values.length)));
   }
   _invoke1(window.onReportTimings, window._onReportTimingsZone, frameTimings);
 }
@@ -238,7 +236,7 @@ void _runMainZoned(Function startMainIsolateFunction,
   }, null);
 }
 
-void _reportUnhandledException(String error, String stackTrace) native 'Window_reportUnhandledException';
+void _reportUnhandledException(String error, String stackTrace) native 'PlatformConfiguration_reportUnhandledException';
 
 /// Invokes [callback] inside the given [zone].
 void _invoke(void callback()?, Zone zone) {

@@ -365,6 +365,12 @@ Application::Application(
   // Controls whether category "skia" trace events are enabled.
   settings_.trace_skia = true;
 
+  settings_.verbose_logging = true;
+
+  settings_.advisory_script_uri = debug_label_;
+
+  settings_.advisory_script_entrypoint = debug_label_;
+
   settings_.icu_data_path = "";
 
   settings_.assets_dir = application_assets_directory_.get();
@@ -391,6 +397,10 @@ Application::Application(
 
   settings_.task_observer_remove = std::bind(
       &CurrentMessageLoopRemoveAfterTaskObserver, std::placeholders::_1);
+
+  // TODO(FL-117): Re-enable causal async stack traces when this issue is
+  // addressed.
+  settings_.dart_flags = {"--no_causal_async_stacks"};
 
   // Disable code collection as it interferes with JIT code warmup
   // by decreasing usage counters and flushing code which is still useful.
