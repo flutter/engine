@@ -33,7 +33,6 @@ class BogusFontText extends Scenario {
           ..pop();
     final Paragraph paragraph = paragraphBuilder.build();
 
-    // Fill half the screen.
     paragraph.layout(ParagraphConstraints(width: _screenWidth));
 
     canvas.drawParagraph(paragraph, const Offset(50, 80));
