@@ -3,12 +3,14 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_renderer_headless.h"
+#include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
 
 #include <gmodule.h>
@@ -27,6 +29,7 @@ struct _FlEngine {
   FlDartProject* project;
   FlRenderer* renderer;
   FlBinaryMessenger* binary_messenger;
+  FlTextureRegistrar* texture_registrar;
   FlutterEngineAOTData aot_data;
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
 
@@ -210,6 +213,20 @@ static bool fl_engine_gl_make_resource_current(void* user_data) {
   return result;
 }
 
+static bool fl_engine_gl_external_texture_frame_callback(
+    void* user_data,
+    int64_t texture_id,
+    size_t width,
+    size_t height,
+    FlutterOpenGLTexture* texture) {
+  FlEngine* self = static_cast<FlEngine*>(user_data);
+  if (!self->texture_registrar) {
+    return false;
+  }
+  return fl_texture_registrar_populate_texture(
+      self->texture_registrar, texture_id, width, height, texture);
+}
+
 // Called by the engine to determine if it is on the GTK thread.
 static bool fl_engine_runs_task_on_current_thread(void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
@@ -268,7 +285,8 @@ static FlPluginRegistrar* fl_engine_get_registrar_for_plugin(
     const gchar* name) {
   FlEngine* self = FL_ENGINE(registry);
 
-  return fl_plugin_registrar_new(nullptr, self->binary_messenger);
+  return fl_plugin_registrar_new(nullptr, self->binary_messenger,
+                                 self->texture_registrar);
 }
 
 static void fl_engine_plugin_registry_iface_init(
@@ -291,6 +309,7 @@ static void fl_engine_dispose(GObject* object) {
 
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
+  g_clear_object(&self->texture_registrar);
   g_clear_object(&self->binary_messenger);
 
   if (self->platform_message_handler_destroy_notify) {
@@ -310,6 +329,7 @@ static void fl_engine_class_init(FlEngineClass* klass) {
 static void fl_engine_init(FlEngine* self) {
   self->thread = g_thread_self();
 
+  self->texture_registrar = fl_texture_registrar_new(self);
   self->binary_messenger = fl_binary_messenger_new(self);
 }
 
@@ -340,6 +360,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   config.open_gl.fbo_callback = fl_engine_gl_get_fbo;
   config.open_gl.present = fl_engine_gl_present;
   config.open_gl.make_resource_current = fl_engine_gl_make_resource_current;
+  config.open_gl.gl_external_texture_frame_callback =
+      fl_engine_gl_external_texture_frame_callback;
 
   FlutterTaskRunnerDescription platform_task_runner = {};
   platform_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
@@ -571,8 +593,31 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   FlutterEngineSendPointerEvent(self->engine, &fl_event, 1);
 }
 
+bool fl_engine_mark_texture_frame_available(FlEngine* self,
+                                            int64_t texture_id) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), false);
+  return !FlutterEngineMarkExternalTextureFrameAvailable(self->engine,
+                                                         texture_id);
+}
+
+bool fl_engine_register_external_texture(FlEngine* self, int64_t texture_id) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), false);
+  return !FlutterEngineRegisterExternalTexture(self->engine, texture_id);
+}
+
+void fl_engine_unregister_external_texture(FlEngine* self, int64_t texture_id) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+  FlutterEngineUnregisterExternalTexture(self->engine, texture_id);
+}
+
 G_MODULE_EXPORT FlBinaryMessenger* fl_engine_get_binary_messenger(
     FlEngine* self) {
   g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
   return self->binary_messenger;
+}
+
+G_MODULE_EXPORT FlTextureRegistrar* fl_engine_get_texture_registrar(
+    FlEngine* self) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
+  return self->texture_registrar;
 }

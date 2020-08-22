@@ -175,6 +175,41 @@ GBytes* fl_engine_send_platform_message_finish(FlEngine* engine,
                                                GAsyncResult* result,
                                                GError** error);
 
+/**
+ * fl_engine_mark_texture_frame_available:
+ * @engine: an #FlEngine.
+ * @texture_id: an int64_t.
+ *
+ * Tells the Flutter engine that a new texture frame is available for the given
+ * texture.
+ *
+ * Returns: true on success.
+ */
+bool fl_engine_mark_texture_frame_available(FlEngine* engine,
+                                            int64_t texture_id);
+
+/**
+ * fl_engine_register_external_texture:
+ * @engine: an #FlEngine.
+ * @texture_id: an int64_t.
+ *
+ * Tells the Flutter engine that a new external texture is available.
+ *
+ * Returns: true on success.
+ */
+bool fl_engine_register_external_texture(FlEngine* engine, int64_t texture_id);
+
+/**
+ * fl_engine_unregister_external_texture:
+ * @engine: an #FlEngine.
+ * @texture_id: an int64_t.
+ *
+ * Tells the Flutter engine that an existing external texture is not available
+ * anymore.
+ */
+void fl_engine_unregister_external_texture(FlEngine* engine,
+                                           int64_t texture_id);
+
 G_END_DECLS
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_ENGINE_PRIVATE_H_

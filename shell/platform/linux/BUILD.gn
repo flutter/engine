@@ -59,6 +59,7 @@ _public_headers = [
   "public/flutter_linux/fl_standard_message_codec.h",
   "public/flutter_linux/fl_standard_method_codec.h",
   "public/flutter_linux/fl_string_codec.h",
+  "public/flutter_linux/fl_texture_registrar.h",
   "public/flutter_linux/fl_value.h",
   "public/flutter_linux/fl_view.h",
   "public/flutter_linux/flutter_linux.h",
@@ -80,6 +81,7 @@ source_set("flutter_linux_sources") {
     "fl_binary_messenger.cc",
     "fl_dart_project.cc",
     "fl_engine.cc",
+    "fl_external_texture_gl.cc",
     "fl_json_message_codec.cc",
     "fl_json_method_codec.cc",
     "fl_key_event_plugin.cc",
@@ -99,6 +101,7 @@ source_set("flutter_linux_sources") {
     "fl_standard_method_codec.cc",
     "fl_string_codec.cc",
     "fl_text_input_plugin.cc",
+    "fl_texture_registrar.cc",
     "fl_value.cc",
     "fl_view.cc",
   ]

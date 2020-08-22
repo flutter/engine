@@ -39,6 +39,17 @@ FlBinaryMessenger* fl_plugin_registrar_get_messenger(
     FlPluginRegistrar* registrar);
 
 /**
+ * fl_plugin_registrar_get_texture_registrar:
+ * @registrar: an #FlPluginRegistrar.
+ *
+ * Gets the texture registrar this plugin can communicate with.
+ *
+ * Returns: an #FlTextureRegistrar.
+ */
+FlTextureRegistrar* fl_plugin_registrar_get_texture_registrar(
+    FlPluginRegistrar* registrar);
+
+/**
  * fl_plugin_registrar_get_view:
  * @registrar: an #FlPluginRegistrar.
  *

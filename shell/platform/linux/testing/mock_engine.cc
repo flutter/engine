@@ -389,3 +389,21 @@ FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
                                                size_t locales_count) {
   return kSuccess;
 }
+
+FlutterEngineResult FlutterEngineRegisterExternalTexture(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    int64_t texture_identifier) {
+  return kSuccess;
+}
+
+FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    int64_t texture_identifier) {
+  return kSuccess;
+}
+
+FlutterEngineResult FlutterEngineUnregisterExternalTexture(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    int64_t texture_identifier) {
+  return kSuccess;
+}
