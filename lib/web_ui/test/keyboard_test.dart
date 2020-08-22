@@ -406,7 +406,7 @@ void testMain() {
     );
 
     testFakeAsync(
-      'do not synthesize keyup when we receive repeat events under meta affect',
+      'do not synthesize keyup when we receive repeat events',
       (FakeAsync async) {
         Keyboard.initialize();
 
@@ -457,7 +457,6 @@ void testMain() {
             key: 'i',
             code: 'KeyI',
             repeat: true,
-            isMetaPressed: true,
           );
         }
 
@@ -469,23 +468,10 @@ void testMain() {
             'keymap': 'web',
             'key': 'i',
             'code': 'KeyI',
-            'metaState': 0x08,
+            'metaState': 0x0,
           });
         }
         messages.clear();
-
-        // When repeat events stop for a long-enough period of time, a keyup
-        // should be synthesized.
-        async.elapse(Duration(seconds: 3));
-        expect(messages, <Map<String, dynamic>>[
-          <String, dynamic>{
-            'type': 'keyup',
-            'keymap': 'web',
-            'key': 'i',
-            'code': 'KeyI',
-            'metaState': 0x08,
-          }
-        ]);
 
         Keyboard.instance.dispose();
       },

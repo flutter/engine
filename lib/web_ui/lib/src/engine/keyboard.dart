@@ -91,9 +91,8 @@ class Keyboard {
 
     final String timerKey = keyboardEvent.code!;
 
-    // Don't synthesize a keyup event for modifier keys, or keys not affected by modifiers,
-    // because the browser always sends a keyup event for those.
-    if (!_isModifierKey(event) && _isAffectedByModifiers(event)) {
+    // Don't handle synthesizing a keyup event for modifier keys
+    if (!_isModifierKey(event)) {
       // When the user enters a browser/system shortcut (e.g. `cmd+alt+i`) the
       // browser doesn't send a keyup for it. This puts the framework in a
       // corrupt state because it thinks the key was never released.
@@ -103,7 +102,10 @@ class Keyboard {
       // event within a specific duration ([_keydownCancelDuration]) we assume
       // the user has released the key and we synthesize a keyup event.
       _keydownTimers[timerKey]?.cancel();
-      if (event.type == 'keydown') {
+
+      // Only keys affected by modifiers, require synthesizing
+      // because the browser always sends a keyup event otherwise
+      if (event.type == 'keydown' && _isAffectedByModifiers(event)) {
         _keydownTimers[timerKey] = Timer(_keydownCancelDuration, () {
           _keydownTimers.remove(timerKey);
           _synthesizeKeyup(event);
