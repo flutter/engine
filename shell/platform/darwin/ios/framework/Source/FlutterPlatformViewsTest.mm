@@ -7,7 +7,9 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "third_party/ocmock/Source/OCMock/OCMock.h"
 
@@ -506,6 +508,18 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     }
   }
   flutterPlatformViewsController->Reset();
+}
+
+- (void)testViewFlutterViewControllerIsSetForPlatformView {
+  id engine = OCMClassMock([FlutterEngine class]);
+  id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([engine lifecycleChannel]).andReturn(lifecycleChannel);
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
+  OCMStub([engine platformViewsController]).andReturn(flutterPlatformViewsController.get());
+
+  FlutterViewController* viewController =
+      [[[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil] autorelease];
+  OCMVerify(flutterPlatformViewsController->SetFlutterViewController(viewController));
 }
 
 - (int)alphaOfPoint:(CGPoint)point onView:(UIView*)view {

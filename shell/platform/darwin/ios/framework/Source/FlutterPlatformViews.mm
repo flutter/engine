@@ -105,6 +105,11 @@ void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
 void FlutterPlatformViewsController::SetFlutterViewController(
     UIViewController* flutter_view_controller) {
   flutter_view_controller_.reset([flutter_view_controller retain]);
+  for (int64_t viewId : intercepting_views_to_update_vc_) {
+    FlutterTouchInterceptingView* touched_intercepting_view = touch_interceptors_[viewId];
+    [touched_intercepting_view setFlutterViewController:flutter_view_controller];
+  }
+  intercepting_views_to_update_vc_.clear();
 }
 
 void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult& result) {
@@ -172,6 +177,19 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
       [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
   [clipping_view addSubview:touch_interceptor];
   root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
+  if (flutter_view_controller_.get() == nil) {
+    // If `flutter_view_controller_` is not available, record all the
+    // |FlutterTouchInterceptingView|s that haven't gotten the `flutter_view_controller_`.
+    //
+    // On the next |FlutterPlatformViewsController::SetFlutterViewController| call, views in
+    // `intercepting_views_to_update_vc_` will get the latest `flutter_view_controller_`.
+    //
+    // It is ok to create |FlutterTouchInterceptingView|s before setting the
+    // `flutter_view_controller_`, because these |FlutterTouchInterceptingView|s are decendants of a
+    // |FlutterView|, which is the `view` of the `flutter_view_controller_`. These
+    // |FlutterTouchInterceptingView|s will not be added to the view Hierarchy.
+    intercepting_views_to_update_vc_.insert(viewId);
+  }
 
   result(nil);
 }
@@ -426,6 +444,7 @@ void FlutterPlatformViewsController::Reset() {
   current_composition_params_.clear();
   clip_count_.clear();
   views_to_recomposite_.clear();
+  intercepting_views_to_update_vc_.clear();
   layer_pool_->RecycleLayers();
 }
 
@@ -662,6 +681,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
     views_to_recomposite_.erase(viewId);
+    intercepting_views_to_update_vc_.erase(viewId);
   }
   views_to_dispose_.clear();
 }
@@ -702,10 +722,12 @@ void FlutterPlatformViewsController::DisposeViews() {
 @interface ForwardingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
 - (instancetype)initWithTarget:(id)target
          flutterViewController:(UIViewController*)flutterViewController;
+- (void)setFlutterViewController:(UIViewController*)controllerOrNil;
 @end
 
 @implementation FlutterTouchInterceptingView {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
+  fml::scoped_nsobject<ForwardingGestureRecognizer> _forwardingRecognizer;
   FlutterPlatformViewGestureRecognizersBlockingPolicy _blockingPolicy;
 }
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
@@ -728,12 +750,17 @@ void FlutterPlatformViewsController::DisposeViews() {
               initWithTarget:self
                       action:nil
         forwardingRecognizer:forwardingRecognizer]);
+    _forwardingRecognizer.reset(forwardingRecognizer);
     _blockingPolicy = blockingPolicy;
 
     [self addGestureRecognizer:_delayingRecognizer.get()];
     [self addGestureRecognizer:forwardingRecognizer];
   }
   return self;
+}
+
+- (void)setFlutterViewController:(UIViewController*)controllerOrNil {
+  [_forwardingRecognizer.get() setFlutterViewController:controllerOrNil];
 }
 
 - (void)releaseGesture {
@@ -853,6 +880,10 @@ void FlutterPlatformViewsController::DisposeViews() {
     _currentTouchPointersCount = 0;
   }
   return self;
+}
+
+- (void)setFlutterViewController:(UIViewController*)controllerOrNil {
+  _flutterViewController = controllerOrNil;
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {

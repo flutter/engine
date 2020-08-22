@@ -54,6 +54,10 @@
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy;
 
+// Can be used to set the |FlutterViewController| if it wasn't available when
+// initlizing this object.
+- (void)setFlutterViewController:(UIViewController*)controllerOrNil;
+
 // Stop delaying any active touch sequence (and let it arrive the embedded view).
 - (void)releaseGesture;
 
@@ -250,6 +254,12 @@ class FlutterPlatformViewsController {
 
   // Only compoiste platform views in this set.
   std::unordered_set<int64_t> views_to_recomposite_;
+
+  // Sometimes, the `flutter_view_controller_` is not available yet when creating the
+  // |FlutterInterceptingView|. This is a record of those |FlutterInterceptingView|s and we will set
+  // the `flutter_view_controller_` later in a |SetViewController| call when the
+  // `flutter_view_controller_` is available.
+  std::unordered_set<int64_t> intercepting_views_to_update_vc_;
 
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>

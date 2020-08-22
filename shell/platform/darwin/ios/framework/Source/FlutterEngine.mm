@@ -419,6 +419,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)maybeSetupPlatformViewChannels {
+  if ([self platformViewsController] != nullptr) {
+    [self platformViewsController]->SetFlutterViewController([self viewController]);
+  }
   if (_shell && self.shell.IsSetup()) {
     FlutterPlatformPlugin* platformPlugin = _platformPlugin.get();
     [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
