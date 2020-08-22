@@ -105,11 +105,10 @@ void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
 void FlutterPlatformViewsController::SetFlutterViewController(
     UIViewController* flutter_view_controller) {
   flutter_view_controller_.reset([flutter_view_controller retain]);
-  for (int64_t viewId : intercepting_views_to_update_vc_) {
-    FlutterTouchInterceptingView* touched_intercepting_view = touch_interceptors_[viewId];
-    [touched_intercepting_view setFlutterViewController:flutter_view_controller];
-  }
-  intercepting_views_to_update_vc_.clear();
+}
+
+UIViewController* FlutterPlatformViewsController::getFlutterViewController() {
+  return flutter_view_controller_.get();
 }
 
 void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult& result) {
@@ -166,7 +165,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
 
   FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
                   initWithEmbeddedView:embedded_view.view
-                 flutterViewController:flutter_view_controller_.get()
+               platformViewsController:GetWeakPtr()
       gestureRecognizersBlockingPolicy:gesture_recognizers_blocking_policies[viewType]]
       autorelease];
 
@@ -177,19 +176,6 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
       [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
   [clipping_view addSubview:touch_interceptor];
   root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
-  if (flutter_view_controller_.get() == nil) {
-    // If `flutter_view_controller_` is not available, record all the
-    // |FlutterTouchInterceptingView|s that haven't gotten the `flutter_view_controller_`.
-    //
-    // On the next |FlutterPlatformViewsController::SetFlutterViewController| call, views in
-    // `intercepting_views_to_update_vc_` will get the latest `flutter_view_controller_`.
-    //
-    // It is ok to create |FlutterTouchInterceptingView|s before setting the
-    // `flutter_view_controller_`, because these |FlutterTouchInterceptingView|s are decendants of a
-    // |FlutterView|, which is the `view` of the `flutter_view_controller_`. These
-    // |FlutterTouchInterceptingView|s will not be added to the view Hierarchy.
-    intercepting_views_to_update_vc_.insert(viewId);
-  }
 
   result(nil);
 }
@@ -444,7 +430,6 @@ void FlutterPlatformViewsController::Reset() {
   current_composition_params_.clear();
   clip_count_.clear();
   views_to_recomposite_.clear();
-  intercepting_views_to_update_vc_.clear();
   layer_pool_->RecycleLayers();
 }
 
@@ -681,7 +666,6 @@ void FlutterPlatformViewsController::DisposeViews() {
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
     views_to_recomposite_.erase(viewId);
-    intercepting_views_to_update_vc_.erase(viewId);
   }
   views_to_dispose_.clear();
 }
@@ -721,17 +705,17 @@ void FlutterPlatformViewsController::DisposeViews() {
 // directly to the FlutterView.
 @interface ForwardingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
 - (instancetype)initWithTarget:(id)target
-         flutterViewController:(UIViewController*)flutterViewController;
-- (void)setFlutterViewController:(UIViewController*)controllerOrNil;
+       platformViewsController:
+           (fml::WeakPtr<flutter::FlutterPlatformViewsController>)platformViewsController;
 @end
 
 @implementation FlutterTouchInterceptingView {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
-  fml::scoped_nsobject<ForwardingGestureRecognizer> _forwardingRecognizer;
   FlutterPlatformViewGestureRecognizersBlockingPolicy _blockingPolicy;
 }
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
-               flutterViewController:(UIViewController*)flutterViewController
+             platformViewsController:
+                 (fml::WeakPtr<flutter::FlutterPlatformViewsController>)platformViewsController
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy {
   self = [super initWithFrame:embeddedView.frame];
@@ -742,25 +726,20 @@ void FlutterPlatformViewsController::DisposeViews() {
 
     [self addSubview:embeddedView];
 
-    ForwardingGestureRecognizer* forwardingRecognizer =
-        [[[ForwardingGestureRecognizer alloc] initWithTarget:self
-                                       flutterViewController:flutterViewController] autorelease];
+    ForwardingGestureRecognizer* forwardingRecognizer = [[[ForwardingGestureRecognizer alloc]
+                 initWithTarget:self
+        platformViewsController:std::move(platformViewsController)] autorelease];
 
     _delayingRecognizer.reset([[DelayingGestureRecognizer alloc]
               initWithTarget:self
                       action:nil
         forwardingRecognizer:forwardingRecognizer]);
-    _forwardingRecognizer.reset(forwardingRecognizer);
     _blockingPolicy = blockingPolicy;
 
     [self addGestureRecognizer:_delayingRecognizer.get()];
     [self addGestureRecognizer:forwardingRecognizer];
   }
   return self;
-}
-
-- (void)setFlutterViewController:(UIViewController*)controllerOrNil {
-  [_forwardingRecognizer.get() setFlutterViewController:controllerOrNil];
 }
 
 - (void)releaseGesture {
@@ -860,43 +839,42 @@ void FlutterPlatformViewsController::DisposeViews() {
 @end
 
 @implementation ForwardingGestureRecognizer {
-  // We can't dispatch events to the framework without this back pointer.
-  // This is a weak reference, the ForwardingGestureRecognizer is owned by the
-  // FlutterTouchInterceptingView which is strong referenced only by the FlutterView,
-  // which is strongly referenced by the FlutterViewController.
-  // So this is safe as when FlutterView is deallocated the reference to ForwardingGestureRecognizer
-  // will go away.
-  UIViewController* _flutterViewController;
+  // Weak reference to FlutterPlatformViewsController. The FlutterPlatformViewsController has
+  // a reference to the FlutterViewController, where we can dispatch pointer events to.
+  //
+  // The lifecycle of FlutterPlatformViewsController is bind to FlutterEngine, which should always
+  // outlives the FlutterViewController. And ForwardingGestureRecognizer is owned by a subview of
+  // FlutterView, so the ForwardingGestureRecognizer never out lives FlutterViewController.
+  // Therefore, `_platformViewsController` should never be nullptr.
+  fml::WeakPtr<flutter::FlutterPlatformViewsController> _platformViewsController;
   // Counting the pointers that has started in one touch sequence.
   NSInteger _currentTouchPointersCount;
 }
 
 - (instancetype)initWithTarget:(id)target
-         flutterViewController:(UIViewController*)flutterViewController {
+       platformViewsController:
+           (fml::WeakPtr<flutter::FlutterPlatformViewsController>)platformViewsController {
   self = [super initWithTarget:target action:nil];
   if (self) {
     self.delegate = self;
-    _flutterViewController = flutterViewController;
+    FML_DCHECK(platformViewsController.get() != nullptr);
+    _platformViewsController = std::move(platformViewsController);
     _currentTouchPointersCount = 0;
   }
   return self;
 }
 
-- (void)setFlutterViewController:(UIViewController*)controllerOrNil {
-  _flutterViewController = controllerOrNil;
-}
-
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterViewController touchesBegan:touches withEvent:event];
+  [_platformViewsController.get()->getFlutterViewController() touchesBegan:touches withEvent:event];
   _currentTouchPointersCount += touches.count;
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterViewController touchesMoved:touches withEvent:event];
+  [_platformViewsController.get()->getFlutterViewController() touchesMoved:touches withEvent:event];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterViewController touchesEnded:touches withEvent:event];
+  [_platformViewsController.get()->getFlutterViewController() touchesEnded:touches withEvent:event];
   _currentTouchPointersCount -= touches.count;
   // Touches in one touch sequence are sent to the touchesEnded method separately if different
   // fingers stop touching the screen at different time. So one touchesEnded method triggering does
@@ -908,7 +886,8 @@ void FlutterPlatformViewsController::DisposeViews() {
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterViewController touchesCancelled:touches withEvent:event];
+  [_platformViewsController.get()->getFlutterViewController() touchesCancelled:touches
+                                                                     withEvent:event];
   _currentTouchPointersCount = 0;
   self.state = UIGestureRecognizerStateFailed;
 }
