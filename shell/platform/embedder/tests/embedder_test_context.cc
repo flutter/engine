@@ -30,7 +30,9 @@ EmbedderTestContext::EmbedderTestContext(std::string assets_path)
       });
 }
 
-EmbedderTestContext::~EmbedderTestContext() = default;
+EmbedderTestContext::~EmbedderTestContext() {
+  SetGLGetFBOCallback(nullptr);
+}
 
 void EmbedderTestContext::SetupAOTMappingsIfNecessary() {
   if (!DartVM::IsRunningPrecompiledCode()) {
