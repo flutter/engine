@@ -249,16 +249,10 @@ FLUTTER_EXPORT
  * @param code An error code string for programmatic use.
  * @param message A human-readable error message.
  * @param details Custom error details.
- * @param stacktrace Native stacktrace for the error.
  */
 + (instancetype)errorWithCode:(NSString*)code
                       message:(NSString* _Nullable)message
                       details:(id _Nullable)details;
-
-+ (instancetype)errorWithCode:(NSString*)code
-                      message:(NSString* _Nullable)message
-                      details:(id _Nullable)details
-                   stacktrace:(NSString* _Nullable)stacktrace;
 /**
  The error code.
  */
@@ -273,12 +267,6 @@ FLUTTER_EXPORT
  The error details.
  */
 @property(readonly, nonatomic, nullable) id details;
-
-/**
-  The error stacktrace.
- */
-@property(readonly, nonatomic, nullable) NSString* stacktrace;
-
 @end
 
 /**
@@ -429,15 +417,6 @@ FLUTTER_EXPORT
  * @return The binary encoding.
  */
 - (NSData*)encodeErrorEnvelope:(FlutterError*)error;
-
-/**
- * Encodes the specified error result into binary.
- *
- * @param error The error object. The error details value must be supported
- *   by this codec.
- * @return The binary encoding.
- */
-- (NSData*)encodeErrorEnvelopeWithStacktrace:(FlutterError*)error;
 
 /**
  * Deccodes the specified result envelope from binary.

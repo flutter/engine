@@ -112,17 +112,6 @@
   return data;
 }
 
-- (NSData*)encodeErrorEnvelopeWithStacktrace:(FlutterError*)error {
-  NSMutableData* data = [NSMutableData dataWithCapacity:32];
-  FlutterStandardWriter* writer = [_readerWriter writerWithData:data];
-  [writer writeByte:1];
-  [writer writeValue:error.code];
-  [writer writeValue:error.message];
-  [writer writeValue:error.details];
-  [writer writeValue:error.stacktrace];
-  return data;
-}
-
 - (FlutterMethodCall*)decodeMethodCall:(NSData*)message {
   FlutterStandardReader* reader = [_readerWriter readerWithData:message];
   id value1 = [reader readValue];
