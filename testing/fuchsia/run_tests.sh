@@ -50,11 +50,11 @@ reboot() {
        --timeout-seconds $ssh_timeout_seconds \
        --identity-file $pkey
 
-  echo "$(date) START:REBOOT ------------------------------------------"
+  echo "$(date) START:REBOOT ----------------------------------------"
   # note: this will set an exit code of 255, which we can ignore.
   ./fuchsia_ctl -d $device_name ssh -c "dm reboot-recovery" \
       --identity-file $pkey || true
-  echo "$(date) END:REBOOT --------------------------------------------"
+  echo "$(date) END:REBOOT ------------------------------------------"
 }
 
 trap reboot EXIT
@@ -103,7 +103,7 @@ echo "$(date) DONE:txt_tests ----------------------------------------"
 # once it passes on Fuchsia.
 # TODO(https://github.com/flutter/flutter/issues/58211): Re-enable MessageLoop
 # test once it passes on Fuchsia.
-echo "$(date) START:fml_tests ----------------------------------------"
+echo "$(date) START:fml_tests ---------------------------------------"
 ./fuchsia_ctl -d $device_name test \
     -f fml_tests-0.far  \
     -t fml_tests \
@@ -121,13 +121,6 @@ echo "$(date) START:flow_tests --------------------------------------"
    --identity-file $pkey \
    --timeout-seconds $test_timeout_seconds \
    --packages-directory packages
-
-./fuchsia_ctl -d $device_name test \
-   -f flow_tests_next-0.far  \
-   -t flow_tests_next \
-   --identity-file $pkey \
-   --timeout-seconds $test_timeout_seconds \
-   --packages-directory packages
 echo "$(date) DONE:flow_tests ---------------------------------------"
 
 
@@ -135,13 +128,6 @@ echo "$(date) START:runtime_tests -----------------------------------"
 ./fuchsia_ctl -d $device_name test \
     -f runtime_tests-0.far  \
     -t runtime_tests \
-    --identity-file $pkey \
-    --timeout-seconds $test_timeout_seconds \
-    --packages-directory packages
-
-./fuchsia_ctl -d $device_name test \
-    -f runtime_tests_next-0.far  \
-    -t runtime_tests_next \
     --identity-file $pkey \
     --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
@@ -154,31 +140,12 @@ echo "$(date) START:ui_tests ----------------------------------------"
    --identity-file $pkey \
    --timeout-seconds $test_timeout_seconds \
    --packages-directory packages
-
-./fuchsia_ctl -d $device_name test \
-   -f ui_tests_next-0.far  \
-   -t ui_tests_next \
-   --identity-file $pkey \
-   --timeout-seconds $test_timeout_seconds \
-   --packages-directory packages
 echo "$(date) DONE:ui_tests -----------------------------------------"
 
-# TODO(https://github.com/flutter/flutter/issues/53399): Re-enable
-# OnServiceProtocolGetSkSLsWorks, CanLoadSkSLsFromAsset, and
-# CanRemoveOldPersistentCache once they pass on Fuchsia.
 echo "$(date) START:shell_tests -------------------------------------"
 ./fuchsia_ctl -d $device_name test \
     -f shell_tests-0.far  \
     -t shell_tests \
-    -a "--gtest_filter=-ShellTest.CacheSkSLWorks:ShellTest.SetResourceCacheSize*:ShellTest.OnServiceProtocolGetSkSLsWorks:ShellTest.CanLoadSkSLsFromAsset:ShellTest.CanRemoveOldPersistentCache" \
-    --identity-file $pkey \
-    --timeout-seconds $test_timeout_seconds \
-    --packages-directory packages
-
-./fuchsia_ctl -d $device_name test \
-    -f shell_tests_next-0.far  \
-    -t shell_tests_next \
-    -a "--gtest_filter=-ShellTest.CacheSkSLWorks:ShellTest.SetResourceCacheSize*:ShellTest.OnServiceProtocolGetSkSLsWorks:ShellTest.CanLoadSkSLsFromAsset:ShellTest.CanRemoveOldPersistentCache" \
     --identity-file $pkey \
     --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
@@ -194,13 +161,14 @@ echo "$(date) START:flutter_runner_tests ----------------------------"
     --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
 
-./fuchsia_ctl -d $device_name test \
-    -f flutter_aot_runner-0.far    \
-    -f flutter_runner_scenic_tests-0.far  \
-    -t flutter_runner_scenic_tests \
-    --identity-file $pkey \
-    --timeout-seconds $test_timeout_seconds \
-    --packages-directory packages
+# TODO(https://github.com/flutter/flutter/issues/61768): De-flake and re-enable
+# ./fuchsia_ctl -d $device_name test \
+#     -f flutter_aot_runner-0.far    \
+#     -f flutter_runner_scenic_tests-0.far  \
+#     -t flutter_runner_scenic_tests \
+#     --identity-file $pkey \
+#     --timeout-seconds $test_timeout_seconds \
+#     --packages-directory packages
 
 ./fuchsia_ctl -d $device_name test \
     -f flutter_aot_runner-0.far    \

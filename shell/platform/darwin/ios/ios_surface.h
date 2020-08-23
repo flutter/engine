@@ -34,8 +34,6 @@ class IOSSurface : public ExternalViewEmbedder {
 
   std::shared_ptr<IOSContext> GetContext() const;
 
-  ExternalViewEmbedder* GetExternalViewEmbedderIfEnabled();
-
   virtual bool IsValid() const = 0;
 
   virtual void UpdateStorageSizeIfNecessary() = 0;
@@ -87,6 +85,9 @@ class IOSSurface : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   void EndFrame(bool should_resubmit_frame,
                 fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+
+  // |ExternalViewEmbedder|
+  bool SupportsDynamicThreadMerging() override;
 
  public:
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurface);

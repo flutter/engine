@@ -43,7 +43,7 @@ constexpr char kFontChange[] = "fontsChange";
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
     TaskRunners task_runners,
-    const WindowData window_data,
+    const PlatformData platform_data,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
@@ -134,7 +134,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
       fml::MakeCopyable([&engine_promise,                                 //
                          shell = shell.get(),                             //
                          &dispatcher_maker,                               //
-                         &window_data,                                    //
+                         &platform_data,                                  //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          vsync_waiter = std::move(vsync_waiter),          //
                          &weak_io_manager_future,                         //
@@ -155,7 +155,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
             *shell->GetDartVM(),            //
             std::move(isolate_snapshot),    //
             task_runners,                   //
-            window_data,                    //
+            platform_data,                  //
             shell->GetSettings(),           //
             std::move(animator),            //
             weak_io_manager_future.get(),   //
@@ -242,17 +242,17 @@ std::unique_ptr<Shell> Shell::Create(
     Settings settings,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer) {
-  return Shell::Create(std::move(task_runners),                //
-                       WindowData{/* default window data */},  //
-                       std::move(settings),                    //
-                       std::move(on_create_platform_view),     //
-                       std::move(on_create_rasterizer)         //
+  return Shell::Create(std::move(task_runners),                    //
+                       PlatformData{/* default platform data */},  //
+                       std::move(settings),                        //
+                       std::move(on_create_platform_view),         //
+                       std::move(on_create_rasterizer)             //
   );
 }
 
 std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
-    const WindowData window_data,
+    const PlatformData platform_data,
     Settings settings,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
@@ -267,7 +267,7 @@ std::unique_ptr<Shell> Shell::Create(
   auto vm_data = vm->GetVMData();
 
   return Shell::Create(std::move(task_runners),        //
-                       std::move(window_data),         //
+                       std::move(platform_data),       //
                        std::move(settings),            //
                        vm_data->GetIsolateSnapshot(),  // isolate snapshot
                        on_create_platform_view,        //
@@ -278,7 +278,7 @@ std::unique_ptr<Shell> Shell::Create(
 
 std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
-    const WindowData window_data,
+    const PlatformData platform_data,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
@@ -302,7 +302,7 @@ std::unique_ptr<Shell> Shell::Create(
                          vm = std::move(vm),                              //
                          &shell,                                          //
                          task_runners = std::move(task_runners),          //
-                         window_data,                                     //
+                         platform_data,                                   //
                          settings,                                        //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          on_create_platform_view,                         //
@@ -310,7 +310,7 @@ std::unique_ptr<Shell> Shell::Create(
   ]() mutable {
         shell = CreateShellOnPlatformThread(std::move(vm),
                                             std::move(task_runners),      //
-                                            window_data,                  //
+                                            platform_data,                //
                                             settings,                     //
                                             std::move(isolate_snapshot),  //
                                             on_create_platform_view,      //
@@ -375,6 +375,11 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
       task_runners_.GetIOTaskRunner(),
       std::bind(&Shell::OnServiceProtocolGetSkSLs, this, std::placeholders::_1,
                 std::placeholders::_2)};
+  service_protocol_handlers_
+      [ServiceProtocol::kEstimateRasterCacheMemoryExtensionName] = {
+          task_runners_.GetRasterTaskRunner(),
+          std::bind(&Shell::OnServiceProtocolEstimateRasterCacheMemory, this,
+                    std::placeholders::_1, std::placeholders::_2)};
 }
 
 Shell::~Shell() {
@@ -731,47 +736,21 @@ void Shell::OnPlatformViewDestroyed() {
     fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
   };
 
-  // The normal flow executed by this method is that the platform thread is
-  // starting the sequence and waiting on the latch. Later the UI thread posts
-  // raster_task to the raster thread triggers signaling the latch(on the IO
-  // thread). If the raster and the platform threads are the same this results
-  // in a deadlock as the raster_task will never be posted to the plaform/raster
-  // thread that is blocked on a latch.  To avoid the described deadlock, if the
-  // raster and the platform threads are the same, should_post_raster_task will
-  // be false, and then instead of posting a task to the raster thread, the ui
-  // thread just signals the latch and the platform/raster thread follows with
-  // executing raster_task.
-  bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
-                                 task_runners_.GetPlatformTaskRunner();
-
-  auto ui_task = [engine = engine_->GetWeakPtr(),
-                  raster_task_runner = task_runners_.GetRasterTaskRunner(),
-                  raster_task, should_post_raster_task, &latch]() {
+  auto ui_task = [engine = engine_->GetWeakPtr(), &latch]() {
     if (engine) {
       engine->OnOutputSurfaceDestroyed();
     }
-    // Step 1: Next, tell the raster thread that its rasterizer should suspend
-    // access to the underlying surface.
-    if (should_post_raster_task) {
-      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
-    } else {
-      // See comment on should_post_raster_task, in this case we just unblock
-      // the platform thread.
-      latch.Signal();
-    }
+    latch.Signal();
   };
 
   // Step 0: Post a task onto the UI thread to tell the engine that its output
   // surface is about to go away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
   latch.Wait();
-  if (!should_post_raster_task) {
-    // See comment on should_post_raster_task, in this case the raster_task
-    // wasn't executed, and we just run it here as the platform thread
-    // is the raster thread.
-    raster_task();
-    latch.Wait();
-  }
+  rasterizer_->EnsureThreadsAreMerged();
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
+                                    raster_task);
+  latch.Wait();
 }
 
 // |PlatformView::Delegate|
@@ -1200,6 +1179,16 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
   }
 }
 
+void Shell::OnCompositorEndFrame(size_t freed_hint) {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  task_runners_.GetUITaskRunner()->PostTask(
+      [engine = weak_engine_, freed_hint = freed_hint]() {
+        if (engine) {
+          engine->HintFreed(freed_hint);
+        }
+      });
+}
+
 fml::Milliseconds Shell::GetFrameBudget() {
   if (display_refresh_rate_ > 0) {
     return fml::RefreshRateToFrameBudget(display_refresh_rate_.load());
@@ -1230,7 +1219,7 @@ fml::RefPtr<fml::TaskRunner> Shell::GetServiceProtocolHandlerTaskRunner(
 bool Shell::HandleServiceProtocolMessage(
     std::string_view method,  // one if the extension names specified above.
     const ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   auto found = service_protocol_handlers_.find(method);
   if (found != service_protocol_handlers_.end()) {
     return found->second.second(params, response);
@@ -1247,44 +1236,44 @@ ServiceProtocol::Handler::Description Shell::GetServiceProtocolDescription()
   };
 }
 
-static void ServiceProtocolParameterError(rapidjson::Document& response,
+static void ServiceProtocolParameterError(rapidjson::Document* response,
                                           std::string error_details) {
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
+  auto& allocator = response->GetAllocator();
+  response->SetObject();
   const int64_t kInvalidParams = -32602;
-  response.AddMember("code", kInvalidParams, allocator);
-  response.AddMember("message", "Invalid params", allocator);
+  response->AddMember("code", kInvalidParams, allocator);
+  response->AddMember("message", "Invalid params", allocator);
   {
     rapidjson::Value details(rapidjson::kObjectType);
     details.AddMember("details", error_details, allocator);
-    response.AddMember("data", details, allocator);
+    response->AddMember("data", details, allocator);
   }
 }
 
-static void ServiceProtocolFailureError(rapidjson::Document& response,
+static void ServiceProtocolFailureError(rapidjson::Document* response,
                                         std::string message) {
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
+  auto& allocator = response->GetAllocator();
+  response->SetObject();
   const int64_t kJsonServerError = -32000;
-  response.AddMember("code", kJsonServerError, allocator);
-  response.AddMember("message", message, allocator);
+  response->AddMember("code", kJsonServerError, allocator);
+  response->AddMember("message", message, allocator);
 }
 
 // Service protocol handler
 bool Shell::OnServiceProtocolScreenshot(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   auto screenshot = rasterizer_->ScreenshotLastLayerTree(
       Rasterizer::ScreenshotType::CompressedImage, true);
   if (screenshot.data) {
-    response.SetObject();
-    auto& allocator = response.GetAllocator();
-    response.AddMember("type", "Screenshot", allocator);
+    response->SetObject();
+    auto& allocator = response->GetAllocator();
+    response->AddMember("type", "Screenshot", allocator);
     rapidjson::Value image;
     image.SetString(static_cast<const char*>(screenshot.data->data()),
                     screenshot.data->size(), allocator);
-    response.AddMember("screenshot", image, allocator);
+    response->AddMember("screenshot", image, allocator);
     return true;
   }
   ServiceProtocolFailureError(response, "Could not capture image screenshot.");
@@ -1294,18 +1283,18 @@ bool Shell::OnServiceProtocolScreenshot(
 // Service protocol handler
 bool Shell::OnServiceProtocolScreenshotSKP(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   auto screenshot = rasterizer_->ScreenshotLastLayerTree(
       Rasterizer::ScreenshotType::SkiaPicture, true);
   if (screenshot.data) {
-    response.SetObject();
-    auto& allocator = response.GetAllocator();
-    response.AddMember("type", "ScreenshotSkp", allocator);
+    response->SetObject();
+    auto& allocator = response->GetAllocator();
+    response->AddMember("type", "ScreenshotSkp", allocator);
     rapidjson::Value skp;
     skp.SetString(static_cast<const char*>(screenshot.data->data()),
                   screenshot.data->size(), allocator);
-    response.AddMember("skp", skp, allocator);
+    response->AddMember("skp", skp, allocator);
     return true;
   }
   ServiceProtocolFailureError(response, "Could not capture SKP screenshot.");
@@ -1315,7 +1304,7 @@ bool Shell::OnServiceProtocolScreenshotSKP(
 // Service protocol handler
 bool Shell::OnServiceProtocolRunInView(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (params.count("mainScript") == 0) {
@@ -1351,14 +1340,14 @@ bool Shell::OnServiceProtocolRunInView(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
           asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
 
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
+  auto& allocator = response->GetAllocator();
+  response->SetObject();
   if (engine_->Restart(std::move(configuration))) {
-    response.AddMember("type", "Success", allocator);
+    response->AddMember("type", "Success", allocator);
     auto new_description = GetServiceProtocolDescription();
     rapidjson::Value view(rapidjson::kObjectType);
     new_description.Write(this, view, allocator);
-    response.AddMember("view", view, allocator);
+    response->AddMember("view", view, allocator);
     return true;
   } else {
     FML_DLOG(ERROR) << "Could not run configuration in engine.";
@@ -1374,7 +1363,7 @@ bool Shell::OnServiceProtocolRunInView(
 // Service protocol handler
 bool Shell::OnServiceProtocolFlushUIThreadTasks(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   // This API should not be invoked by production code.
   // It can potentially starve the service isolate if the main isolate pauses
@@ -1382,28 +1371,28 @@ bool Shell::OnServiceProtocolFlushUIThreadTasks(
   //
   // It should be invoked from the VM Service and and blocks it until UI thread
   // tasks are processed.
-  response.SetObject();
-  response.AddMember("type", "Success", response.GetAllocator());
+  response->SetObject();
+  response->AddMember("type", "Success", response->GetAllocator());
   return true;
 }
 
 bool Shell::OnServiceProtocolGetDisplayRefreshRate(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-  response.SetObject();
-  response.AddMember("type", "DisplayRefreshRate", response.GetAllocator());
-  response.AddMember("fps", engine_->GetDisplayRefreshRate(),
-                     response.GetAllocator());
+  response->SetObject();
+  response->AddMember("type", "DisplayRefreshRate", response->GetAllocator());
+  response->AddMember("fps", engine_->GetDisplayRefreshRate(),
+                      response->GetAllocator());
   return true;
 }
 
 bool Shell::OnServiceProtocolGetSkSLs(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetIOTaskRunner()->RunsTasksOnCurrentThread());
-  response.SetObject();
-  response.AddMember("type", "GetSkSLs", response.GetAllocator());
+  response->SetObject();
+  response->AddMember("type", "GetSkSLs", response->GetAllocator());
 
   rapidjson::Value shaders_json(rapidjson::kObjectType);
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
@@ -1415,19 +1404,36 @@ bool Shell::OnServiceProtocolGetSkSLs(
     char* b64_char = static_cast<char*>(b64_data->writable_data());
     SkBase64::Encode(sksl.second->data(), sksl.second->size(), b64_char);
     b64_char[b64_size] = 0;  // make it null terminated for printing
-    rapidjson::Value shader_value(b64_char, response.GetAllocator());
+    rapidjson::Value shader_value(b64_char, response->GetAllocator());
     rapidjson::Value shader_key(PersistentCache::SkKeyToFilePath(*sksl.first),
-                                response.GetAllocator());
-    shaders_json.AddMember(shader_key, shader_value, response.GetAllocator());
+                                response->GetAllocator());
+    shaders_json.AddMember(shader_key, shader_value, response->GetAllocator());
   }
-  response.AddMember("SkSLs", shaders_json, response.GetAllocator());
+  response->AddMember("SkSLs", shaders_json, response->GetAllocator());
+  return true;
+}
+
+bool Shell::OnServiceProtocolEstimateRasterCacheMemory(
+    const ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document* response) {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  const auto& raster_cache = rasterizer_->compositor_context()->raster_cache();
+  response->SetObject();
+  response->AddMember("type", "EstimateRasterCacheMemory",
+                      response->GetAllocator());
+  response->AddMember<uint64_t>("layerBytes",
+                                raster_cache.EstimateLayerCacheByteSize(),
+                                response->GetAllocator());
+  response->AddMember<uint64_t>("pictureBytes",
+                                raster_cache.EstimatePictureCacheByteSize(),
+                                response->GetAllocator());
   return true;
 }
 
 // Service protocol handler
 bool Shell::OnServiceProtocolSetAssetBundlePath(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
+    rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (params.count("assetDirectory") == 0) {
@@ -1436,8 +1442,8 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
     return false;
   }
 
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
+  auto& allocator = response->GetAllocator();
+  response->SetObject();
 
   auto asset_manager = std::make_shared<AssetManager>();
 
@@ -1446,11 +1452,11 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
                          fml::FilePermission::kRead)));
 
   if (engine_->UpdateAssetManager(std::move(asset_manager))) {
-    response.AddMember("type", "Success", allocator);
+    response->AddMember("type", "Success", allocator);
     auto new_description = GetServiceProtocolDescription();
     rapidjson::Value view(rapidjson::kObjectType);
     new_description.Write(this, view, allocator);
-    response.AddMember("view", view, allocator);
+    response->AddMember("view", view, allocator);
     return true;
   } else {
     FML_DLOG(ERROR) << "Could not update asset directory.";

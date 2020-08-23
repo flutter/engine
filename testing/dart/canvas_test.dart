@@ -38,6 +38,35 @@ void testCanvas(CanvasCallback callback) {
   } catch (error) { } // ignore: empty_catches
 }
 
+void expectAssertion(Function callback) {
+  bool assertsEnabled = false;
+  assert(() {
+    assertsEnabled = true;
+    return true;
+  }());
+  if (assertsEnabled) {
+    bool threw = false;
+    try {
+      callback();
+    } catch (e) {
+      expect(e is AssertionError, true);
+      threw = true;
+    }
+    expect(threw, true);
+  }
+}
+
+void expectArgumentError(Function callback) {
+  bool threw = false;
+  try {
+    callback();
+  } catch (e) {
+    expect(e is ArgumentError, true);
+    threw = true;
+  }
+  expect(threw, true);
+}
+
 void testNoCrashes() {
   test('canvas APIs should not crash', () async {
     final Paint paint = Paint();
@@ -218,32 +247,54 @@ void main() {
     expect(areEqual, true);
   }, skip: !Platform.isLinux); // https://github.com/flutter/flutter/issues/53784
 
-  test('Image size reflected in picture size for image*, drawAtlas, and drawPicture methods', () async {
+  test('Null values allowed for drawAtlas methods', () async {
     final Image image = await createImage(100, 100);
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect rect = Rect.fromLTWH(0, 0, 100, 100);
-    canvas.drawImage(image, Offset.zero, Paint());
-    canvas.drawImageRect(image, rect, rect, Paint());
-    canvas.drawImageNine(image, rect, rect, Paint());
-    canvas.drawAtlas(image, <RSTransform>[], <Rect>[], <Color>[], BlendMode.src, rect, Paint());
-    final Picture picture = recorder.endRecording();
+    final RSTransform transform = RSTransform(1, 0, 0, 0);
+    const Color color = Color(0);
+    final Paint paint = Paint();
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, null, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[], null, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], null, null, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, null, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), null, null, rect, paint);
 
-    // Some of the numbers here appear to utilize sharing/reuse of common items,
-    // e.g. of the Paint() or same `Rect` usage, etc.
-    // The raw utilization of a 100x100 picture here should be 53333:
-    // 100 * 100 * 4 * (4/3) = 53333.333333....
-    // To avoid platform specific idiosyncrasies and brittleness against changes
-    // to Skia, we just assert this is _at least_ 4x the image size.
-    const int minimumExpected = 53333 * 4;
-    expect(picture.approximateBytesUsed, greaterThan(minimumExpected));
+    expectAssertion(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, null));
+    expectAssertion(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], null, rect, paint));
+    expectAssertion(() => canvas.drawAtlas(image, <RSTransform>[transform], null, <Color>[color], BlendMode.src, rect, paint));
+    expectAssertion(() => canvas.drawAtlas(image, null, <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
+    expectAssertion(() => canvas.drawAtlas(null, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
+  });
 
-    final PictureRecorder recorder2 = PictureRecorder();
-    final Canvas canvas2 = Canvas(recorder2);
-    canvas2.drawPicture(picture);
-    final Picture picture2 = recorder2.endRecording();
+  test('Data lengths must match for drawAtlas methods', () async {
+    final Image image = await createImage(100, 100);
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    const Rect rect = Rect.fromLTWH(0, 0, 100, 100);
+    final RSTransform transform = RSTransform(1, 0, 0, 0);
+    const Color color = Color(0);
+    final Paint paint = Paint();
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform, transform], <Rect>[rect, rect], <Color>[color, color], BlendMode.src, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[], null, rect, paint);
+    canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], null, null, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(4), Float32List(4), Int32List(1), BlendMode.src, rect, paint);
+    canvas.drawRawAtlas(image, Float32List(4), Float32List(4), null, null, rect, paint);
 
-    expect(picture2.approximateBytesUsed, greaterThan(minimumExpected));
+    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[], <Color>[color], BlendMode.src, rect, paint));
+    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
+    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color, color], BlendMode.src, rect, paint));
+    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect, rect], <Color>[color], BlendMode.src, rect, paint));
+    expectArgumentError(() => canvas.drawAtlas(image, <RSTransform>[transform, transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
+    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(3), Float32List(3), null, null, rect, paint));
+    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(0), null, null, rect, paint));
+    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(0), Float32List(4), null, null, rect, paint));
+    expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(4), Int32List(2), BlendMode.src, rect, paint));
   });
 
   test('Vertex buffer size reflected in picture size for drawVertices', () async {

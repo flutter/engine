@@ -249,6 +249,20 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   };
 
   //----------------------------------------------------------------------------
+  /// @brief      Creates an instance of the engine with a supplied
+  ///             `RuntimeController`.  Use the other constructor except for
+  ///             tests.
+  ///
+  Engine(Delegate& delegate,
+         const PointerDataDispatcherMaker& dispatcher_maker,
+         std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
+         TaskRunners task_runners,
+         Settings settings,
+         std::unique_ptr<Animator> animator,
+         fml::WeakPtr<IOManager> io_manager,
+         std::unique_ptr<RuntimeController> runtime_controller);
+
+  //----------------------------------------------------------------------------
   /// @brief      Creates an instance of the engine. This is done by the Shell
   ///             on the UI task runner.
   ///
@@ -295,7 +309,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          TaskRunners task_runners,
-         const WindowData window_data,
+         const PlatformData platform_data,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
@@ -421,7 +435,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             one frame interval from this point, the Flutter application
   ///             will jank.
   ///
-  ///             If an root isolate is running, this method calls the
+  ///             If a root isolate is running, this method calls the
   ///             `::_beginFrame` method in `hooks.dart`. If a root isolate is
   ///             not running, this call does nothing.
   ///
@@ -450,6 +464,14 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                         physics simulations, etc..
   ///
   void BeginFrame(fml::TimePoint frame_time);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that native bytes might be freed if a
+  ///             garbage collection ran now.
+  ///
+  /// @param[in]  size  The number of bytes freed.
+  ///
+  void HintFreed(size_t size);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the UI task runner is not expected to
@@ -701,9 +723,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has expressed an opinion
-  ///             about where the accessibility tree should be generated or not.
-  ///             This call originates in the platform view and is forwarded to
-  ///             the engine here on the UI task runner by the shell.
+  ///             about whether the accessibility tree should be generated or
+  ///             not. This call originates in the platform view and is
+  ///             forwarded to the engine here on the UI task runner by the
+  ///             shell.
   ///
   /// @param[in]  enabled  Whether the accessibility tree is enabled or
   ///                      disabled.
@@ -755,6 +778,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   const std::string& GetLastEntrypointLibrary() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Getter for the initial route.  This can be set with a platform
+  ///             message.
+  ///
+  const std::string& InitialRoute() const { return initial_route_; }
+
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;
@@ -776,6 +805,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   FontCollection font_collection_;
   ImageDecoder image_decoder_;
   TaskRunners task_runners_;
+  size_t hint_freed_bytes_since_last_idle_ = 0;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|

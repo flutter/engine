@@ -140,8 +140,7 @@ int RunTester(const flutter::Settings& settings,
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
-    return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners(),
-                                        shell.GetIsGpuDisabledSyncSwitch());
+    return std::make_unique<Rasterizer>(shell);
   };
 
   auto shell = Shell::Create(task_runners,             //
@@ -235,10 +234,10 @@ int RunTester(const flutter::Settings& settings,
                      }
                    });
 
-  flutter::ViewportMetrics metrics;
+  flutter::ViewportMetrics metrics{};
   metrics.device_pixel_ratio = 3.0;
-  metrics.physical_width = 2400;   // 800 at 3x resolution
-  metrics.physical_height = 1800;  // 600 at 3x resolution
+  metrics.physical_width = 2400.0;   // 800 at 3x resolution.
+  metrics.physical_height = 1800.0;  // 600 at 3x resolution.
   shell->GetPlatformView()->SetViewportMetrics(metrics);
 
   // Run the message loop and wait for the script to do its thing.

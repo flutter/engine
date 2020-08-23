@@ -8,14 +8,21 @@
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
+
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide window;
 
-import 'package:test/test.dart';
+
 
 import '../../matchers.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   setUpAll(() async {
     await webOnlyInitializeEngine();
   });
@@ -56,7 +63,8 @@ void main() {
       testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
         return sceneBuilder.pushClipRRect(
             RRect.fromLTRBR(10, 20, 30, 40, const Radius.circular(3)),
-            oldLayer: oldLayer);
+            oldLayer: oldLayer,
+            clipBehavior: Clip.none);
       }, () {
         return '''
 <s>

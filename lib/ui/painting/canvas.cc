@@ -11,6 +11,7 @@
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/window.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -326,7 +327,6 @@ void Canvas::drawImage(const CanvasImage* image,
         ToDart("Canvas.drawImage called with non-genuine Image."));
     return;
   }
-  external_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImage(image->image(), x, y, paint.paint());
 }
 
@@ -351,7 +351,6 @@ void Canvas::drawImageRect(const CanvasImage* image,
   }
   SkRect src = SkRect::MakeLTRB(src_left, src_top, src_right, src_bottom);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
-  external_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImageRect(image->image(), src, dst, paint.paint(),
                          SkCanvas::kFast_SrcRectConstraint);
 }
@@ -380,7 +379,6 @@ void Canvas::drawImageNine(const CanvasImage* image,
   SkIRect icenter;
   center.round(&icenter);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
-  external_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImageNine(image->image(), icenter, dst, paint.paint());
 }
 
@@ -474,18 +472,21 @@ void Canvas::drawShadow(const CanvasPath* path,
         ToDart("Canvas.drawShader called with non-genuine Path."));
     return;
   }
-  SkScalar dpr =
-      UIDartState::Current()->window()->viewport_metrics().device_pixel_ratio;
+  SkScalar dpr = UIDartState::Current()
+                     ->platform_configuration()
+                     ->window()
+                     ->viewport_metrics()
+                     .device_pixel_ratio;
   external_allocation_size_ += path->path().approximateBytesUsed();
   flutter::PhysicalShapeLayer::DrawShadow(canvas_, path->path(), color,
                                           elevation, transparentOccluder, dpr);
 }
 
 void Canvas::Invalidate() {
+  canvas_ = nullptr;
   if (dart_wrapper()) {
     ClearDartWrapper();
   }
-  canvas_ = nullptr;
 }
 
 }  // namespace flutter
