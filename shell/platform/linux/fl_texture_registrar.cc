@@ -70,8 +70,9 @@ bool fl_texture_registrar_populate_texture(
     FlutterOpenGLTexture* opengl_texture) {
   FlExternalTextureGl* texture = FL_EXTERNAL_TEXTURE_GL(g_hash_table_lookup(
       self->textures, reinterpret_cast<gconstpointer>(texture_id)));
-  if (texture == nullptr)
+  if (texture == nullptr) {
     return false;
+  }
   return fl_external_texture_gl_populate_texture(texture, width, height,
                                                  opengl_texture);
 }

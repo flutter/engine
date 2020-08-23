@@ -58,8 +58,9 @@ bool fl_external_texture_gl_populate_texture(
     FlutterOpenGLTexture* opengl_texture) {
   size_t real_width = width, real_height = height;
   if (!fl_external_texture_gl_copy_pixel_buffer(self, &real_width,
-                                                &real_height))
+                                                &real_height)) {
     return false;
+  }
 
   opengl_texture->target = GL_TEXTURE_2D;
   opengl_texture->name = self->gl_texture_id;
@@ -93,13 +94,15 @@ bool fl_external_texture_gl_copy_pixel_buffer(FlExternalTextureGl* self,
                                               size_t* height) {
   const FlPixelBuffer* pixel_buffer =
       self->callback(*width, *height, self->user_data);
-  if (!pixel_buffer || !pixel_buffer->buffer)
+  if (!pixel_buffer || !pixel_buffer->buffer) {
     return false;
+  }
   *width = pixel_buffer->width;
   *height = pixel_buffer->height;
 
-  if (!self->gl.valid)
+  if (!self->gl.valid) {
     fl_external_texture_gl_load_funcs(self);
+  }
   if (self->gl_texture_id == 0) {
     self->gl.genTextures(1, &self->gl_texture_id);
     self->gl.bindTexture(GL_TEXTURE_2D, self->gl_texture_id);
