@@ -50,6 +50,8 @@ class ShellTest : public FixtureTest {
 
   static void PlatformViewNotifyCreated(
       Shell* shell);  // This creates the surface
+  static void PlatformViewNotifyDestroyed(
+      Shell* shell);  // This destroys the surface
   static void RunEngine(Shell* shell, RunConfiguration configuration);
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
@@ -57,6 +59,7 @@ class ShellTest : public FixtureTest {
   /// the `will_draw_new_frame` to true.
   static void VSyncFlush(Shell* shell, bool& will_draw_new_frame);
 
+  static void SetViewportMetrics(Shell* shell, double width, double height);
   /// Given the root layer, this callback builds the layer tree to be rasterized
   /// in PumpOneFrame.
   using LayerTreeBuilder =

@@ -103,16 +103,16 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
         }
       });
 
-  // Set up the structure of the state/handle objects; engine and view
-  // paramaters will be filled in later.
+  // Set up the legacy structs backing the API handles.
   messenger_ = std::make_unique<FlutterDesktopMessenger>();
+  messenger_->engine = this;
+  plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
+  plugin_registrar_->engine = this;
+
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_.get());
-  messenger_->dispatcher = message_dispatcher_.get();
-
-  plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
-  plugin_registrar_->messenger = messenger_.get();
-  plugin_registrar_->view = std::make_unique<FlutterDesktopView>();
+  window_proc_delegate_manager_ =
+      std::make_unique<Win32WindowProcDelegateManager>();
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -190,7 +190,6 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     return false;
   }
 
-  plugin_registrar_->messenger->engine = engine_;
   SendSystemSettings();
 
   return true;
@@ -198,8 +197,8 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
 
 bool FlutterWindowsEngine::Stop() {
   if (engine_) {
-    if (plugin_registrar_ && plugin_registrar_->destruction_handler) {
-      plugin_registrar_->destruction_handler(plugin_registrar_.get());
+    if (plugin_registrar_destruction_callback_) {
+      plugin_registrar_destruction_callback_(plugin_registrar_.get());
     }
     FlutterEngineResult result = FlutterEngineShutdown(engine_);
     engine_ = nullptr;
@@ -210,12 +209,16 @@ bool FlutterWindowsEngine::Stop() {
 
 void FlutterWindowsEngine::SetView(FlutterWindowsView* view) {
   view_ = view;
-  plugin_registrar_->view->view = view;
 }
 
 // Returns the currently configured Plugin Registrar.
 FlutterDesktopPluginRegistrarRef FlutterWindowsEngine::GetRegistrar() {
   return plugin_registrar_.get();
+}
+
+void FlutterWindowsEngine::SetPluginRegistrarDestructionCallback(
+    FlutterDesktopOnRegistrarDestroyed callback) {
+  plugin_registrar_destruction_callback_ = callback;
 }
 
 void FlutterWindowsEngine::HandlePlatformMessage(

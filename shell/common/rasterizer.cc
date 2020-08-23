@@ -27,8 +27,7 @@ static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
 Rasterizer::Rasterizer(Delegate& delegate)
     : Rasterizer(delegate,
-                 std::make_unique<flutter::CompositorContext>(
-                     delegate.GetFrameBudget())) {}
+                 std::make_unique<flutter::CompositorContext>(delegate)) {}
 
 Rasterizer::Rasterizer(
     Delegate& delegate,
@@ -77,6 +76,10 @@ void Rasterizer::Teardown() {
   compositor_context_->OnGrContextDestroyed();
   surface_.reset();
   last_layer_tree_.reset();
+  if (raster_thread_merger_.get() != nullptr &&
+      raster_thread_merger_.get()->IsMerged()) {
+    raster_thread_merger_->UnMergeNow();
+  }
 }
 
 void Rasterizer::NotifyLowMemoryWarning() const {
@@ -657,6 +660,24 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
     return max_bytes;
   }
   return std::nullopt;
+}
+
+bool Rasterizer::EnsureThreadsAreMerged() {
+  if (surface_ == nullptr || raster_thread_merger_.get() == nullptr) {
+    return false;
+  }
+  fml::TaskRunner::RunNowOrPostTask(
+      delegate_.GetTaskRunners().GetRasterTaskRunner(),
+      [weak_this = weak_factory_.GetWeakPtr(),
+       thread_merger = raster_thread_merger_]() {
+        if (weak_this->surface_ == nullptr) {
+          return;
+        }
+        thread_merger->MergeWithLease(10);
+      });
+  raster_thread_merger_->WaitUntilMerged();
+  FML_DCHECK(raster_thread_merger_->IsMerged());
+  return true;
 }
 
 Rasterizer::Screenshot::Screenshot() {}

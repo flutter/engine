@@ -50,7 +50,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///             are made on the GPU task runner. Any delegate must ensure that
   ///             they can handle the threading implications.
   ///
-  class Delegate {
+  class Delegate : public CompositorContext::Delegate {
    public:
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that a frame has been rendered. The
@@ -388,6 +388,22 @@ class Rasterizer final : public SnapshotDelegate {
   /// @return     The size of Skia's resource cache, if available.
   ///
   std::optional<size_t> GetResourceCacheMaxBytes() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Makes sure the raster task runner and the platform task runner
+  ///             are merged.
+  ///
+  /// @attention  If raster and platform task runners are not the same or not
+  ///             merged, this method will try to merge the task runners,
+  ///             blocking the current thread until the 2 task runners are
+  ///             merged.
+  ///
+  /// @return     `true` if raster and platform task runners are the same.
+  ///             `true` if/when raster and platform task runners are merged.
+  ///             `false` if the surface or the |RasterThreadMerger| has not
+  ///             been initialized.
+  ///
+  bool EnsureThreadsAreMerged();
 
  private:
   Delegate& delegate_;
