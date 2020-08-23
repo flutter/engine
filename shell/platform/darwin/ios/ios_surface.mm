@@ -13,15 +13,6 @@
 
 namespace flutter {
 
-// The name of the Info.plist flag to enable the embedded iOS views preview.
-constexpr const char* kEmbeddedViewsPreview = "io.flutter.embedded_views_preview";
-
-bool IsIosEmbeddedViewsPreviewEnabled() {
-  static bool preview_enabled =
-      [[[NSBundle mainBundle] objectForInfoDictionaryKey:@(kEmbeddedViewsPreview)] boolValue];
-  return preview_enabled;
-}
-
 std::unique_ptr<IOSSurface> IOSSurface::Create(
     std::shared_ptr<IOSContext> context,
     fml::scoped_nsobject<CALayer> layer,
@@ -73,14 +64,6 @@ SkCanvas* IOSSurface::GetRootCanvas() {
   // On iOS, the root surface is created from the on-screen render target. Only the surfaces for the
   // various overlays are controlled by this class.
   return nullptr;
-}
-
-ExternalViewEmbedder* IOSSurface::GetExternalViewEmbedderIfEnabled() {
-  if (IsIosEmbeddedViewsPreviewEnabled()) {
-    return this;
-  } else {
-    return nullptr;
-  }
 }
 
 // |ExternalViewEmbedder|
@@ -153,6 +136,11 @@ void IOSSurface::EndFrame(bool should_resubmit_frame,
   TRACE_EVENT0("flutter", "IOSSurface::EndFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   return platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger);
+}
+
+// |ExternalViewEmbedder|
+bool IOSSurface::SupportsDynamicThreadMerging() {
+  return true;
 }
 
 }  // namespace flutter

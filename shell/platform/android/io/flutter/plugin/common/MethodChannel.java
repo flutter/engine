@@ -11,6 +11,9 @@ import androidx.annotation.UiThread;
 import io.flutter.BuildConfig;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.ByteBuffer;
 
 /**
@@ -90,7 +93,7 @@ public class MethodChannel {
    * @param callback a {@link Result} callback for the invocation result, or null.
    */
   @UiThread
-  public void invokeMethod(String method, @Nullable Object arguments, Result callback) {
+  public void invokeMethod(String method, @Nullable Object arguments, @Nullable Result callback) {
     messenger.send(
         name,
         codec.encodeMethodCall(new MethodCall(method, arguments)),
@@ -247,8 +250,16 @@ public class MethodChannel {
             });
       } catch (RuntimeException e) {
         Log.e(TAG + name, "Failed to handle method call", e);
-        reply.reply(codec.encodeErrorEnvelope("error", e.getMessage(), null));
+        reply.reply(
+            codec.encodeErrorEnvelopeWithStacktrace(
+                "error", e.getMessage(), null, getStackTrace(e)));
       }
+    }
+
+    private String getStackTrace(Exception e) {
+      Writer result = new StringWriter();
+      e.printStackTrace(new PrintWriter(result));
+      return result.toString();
     }
   }
 }

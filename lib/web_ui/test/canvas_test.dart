@@ -6,11 +6,16 @@
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'mock_engine_canvas.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   setUpAll(() {
     WebExperiments.ensureInitialized();
   });
@@ -26,7 +31,6 @@ void main() {
       test(description, () {
         testFn(BitmapCanvas(canvasSize));
         testFn(DomCanvas());
-        testFn(HoudiniCanvas(canvasSize));
         testFn(mockCanvas = MockEngineCanvas());
         if (whenDone != null) {
           whenDone();
