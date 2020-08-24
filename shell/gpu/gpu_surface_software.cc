@@ -57,8 +57,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
   canvas->resetMatrix();
 
   SurfaceFrame::SubmitCallback on_submit =
-      [self = weak_factory_.GetTaskRunnerAffineWeakPtr()](
-          const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
+      [self = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
+                                          SkCanvas* canvas) -> bool {
     // If the surface itself went away, there is nothing more to do.
     if (!self || !self->IsValid() || canvas == nullptr) {
       return false;
@@ -82,7 +82,7 @@ SkMatrix GPUSurfaceSoftware::GetRootTransformation() const {
 }
 
 // |Surface|
-GrContext* GPUSurfaceSoftware::GetContext() {
+GrDirectContext* GPUSurfaceSoftware::GetContext() {
   // There is no GrContext associated with a software surface.
   return nullptr;
 }

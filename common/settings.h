@@ -22,10 +22,17 @@ namespace flutter {
 
 class FrameTiming {
  public:
-  enum Phase { kBuildStart, kBuildFinish, kRasterStart, kRasterFinish, kCount };
+  enum Phase {
+    kVsyncStart,
+    kBuildStart,
+    kBuildFinish,
+    kRasterStart,
+    kRasterFinish,
+    kCount
+  };
 
-  static constexpr Phase kPhases[kCount] = {kBuildStart, kBuildFinish,
-                                            kRasterStart, kRasterFinish};
+  static constexpr Phase kPhases[kCount] = {
+      kVsyncStart, kBuildStart, kBuildFinish, kRasterStart, kRasterFinish};
 
   fml::TimePoint Get(Phase phase) const { return data_[phase]; }
   fml::TimePoint Set(Phase phase, fml::TimePoint value) {
@@ -92,17 +99,20 @@ struct Settings {
   bool enable_checked_mode = false;
   bool start_paused = false;
   bool trace_skia = false;
-  std::string trace_whitelist;
+  std::string trace_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
   bool dump_skp_on_shader_compilation = false;
   bool cache_sksl = false;
+  bool purge_persistent_cache = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
 
-  // Used to signal the embedder whether HTTP connections are disabled.
-  bool disable_http = false;
+  // Whether embedder only allows secure connections.
+  bool may_insecurely_connect_to_all_domains = true;
+  // JSON-formatted domain network policy.
+  std::string domain_network_policy;
 
   // Used as the script URI in debug messages. Does not affect how the Dart code
   // is executed.

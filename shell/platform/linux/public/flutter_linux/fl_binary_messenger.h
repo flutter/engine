@@ -14,39 +14,62 @@
 
 G_BEGIN_DECLS
 
+/**
+ * FlBinaryMessengerError:
+ * @FL_BINARY_MESSENGER_ERROR_ALREADY_RESPONDED: unable to send response, this
+ * message has already been responded to.
+ *
+ * Errors for #FlBinaryMessenger objects to set on failures.
+ */
+#define FL_BINARY_MESSENGER_ERROR fl_binary_messenger_codec_error_quark()
+
+typedef enum {
+  FL_BINARY_MESSENGER_ERROR_ALREADY_RESPONDED,
+} FlBinaryMessengerError;
+
+GQuark fl_binary_messenger_codec_error_quark(void) G_GNUC_CONST;
+
 G_DECLARE_FINAL_TYPE(FlBinaryMessenger,
                      fl_binary_messenger,
                      FL,
                      BINARY_MESSENGER,
                      GObject)
 
+G_DECLARE_FINAL_TYPE(FlBinaryMessengerResponseHandle,
+                     fl_binary_messenger_response_handle,
+                     FL,
+                     BINARY_MESSENGER_RESPONSE_HANDLE,
+                     GObject)
+
 /**
  * FlBinaryMessenger:
  *
  * #FlBinaryMessenger is an object that allows sending and receiving of platform
- * messages with a #FlEngine.
+ * messages with an #FlEngine.
  */
 
 /**
  * FlBinaryMessengerResponseHandle:
  *
- * A handle used to respond to platform messages.
+ * #FlBinaryMessengerResponseHandle is an object used to send responses with.
  */
-typedef struct _FlBinaryMessengerResponseHandle FlBinaryMessengerResponseHandle;
 
 /**
- * FlBinaryMessengerCallback:
- * @messenger: a #FlBinaryMessenger
- * @channel: channel message received on
- * @message: message content received from Dart
- * @response_handle: (transfer full): a handle to respond to the message with
- * @user_data: (closure): data provided when registering this callback
+ * FlBinaryMessengerMessageHandler:
+ * @messenger: an #FlBinaryMessenger.
+ * @channel: channel message received on.
+ * @message: message content received from Dart.
+ * @response_handle: a handle to respond to the message with.
+ * @user_data: (closure): data provided when registering this handler.
  *
- * Function called when platform messages are received. The receiver must
- * respond to the message to avoid leaking the handle, see the documentation on
- * the code that generated the callback as to which function to call.
+ * Function called when platform messages are received. Call
+ * fl_binary_messenger_send_response() to respond to this message. If the
+ * response is not occurring in this callback take a reference to
+ * @response_handle and release that once it has been responded to. Failing to
+ * respond before the last reference to @response_handle is dropped is a
+ * programming error.
  */
-typedef void (*FlBinaryMessengerCallback)(
+typedef void (*FlBinaryMessengerMessageHandler)(
     FlBinaryMessenger* messenger,
     const gchar* channel,
     GBytes* message,
@@ -55,32 +78,38 @@ typedef void (*FlBinaryMessengerCallback)(
 
 /**
  * fl_binary_messenger_set_platform_message_handler:
- * @binary_messenger: a #FlBinaryMessenger
- * @channel: channel to listen on
- * @callback: function to call when a message is received on this channel
- * @user_data: (closure): user data to pass to @callback
+ * @binary_messenger: an #FlBinaryMessenger.
+ * @channel: channel to listen on.
+ * @handler: (allow-none): function to call when a message is received on this
+ * channel or %NULL to disable a handler
+ * @user_data: (closure): user data to pass to @handler.
+ * @destroy_notify: (allow-none): a function which gets called to free
+ * @user_data, or %NULL.
  *
- * Set the function called when a platform message is received on the given
- * channel. Call fl_binary_messenger_send_response() when the message is
- * handled. Ownership of #FlBinaryMessengerResponseHandle is transferred to the
- * caller, and the call must be responded to to avoid memory leaks.
+ * Sets the function called when a platform message is received on the given
+ * channel. See #FlBinaryMessengerMessageHandler for details on how to respond
+ * to messages.
+ *
+ * The handler is removed if the channel is closed or is replaced by another
+ * handler, set @destroy_notify if you want to detect this.
  */
 void fl_binary_messenger_set_message_handler_on_channel(
     FlBinaryMessenger* messenger,
     const gchar* channel,
-    FlBinaryMessengerCallback callback,
-    gpointer user_data);
+    FlBinaryMessengerMessageHandler handler,
+    gpointer user_data,
+    GDestroyNotify destroy_notify);
 
 /**
  * fl_binary_messenger_send_response:
- * @binary_messenger: a #FlBinaryMessenger
- * @response_handle: (transfer full): handle that was provided in a
- * #FlBinaryMessengerCallback
- * @response: (allow-none): response to send or %NULL for an empty response
+ * @binary_messenger: an #FlBinaryMessenger.
+ * @response_handle: handle that was provided in a
+ * #FlBinaryMessengerMessageHandler.
+ * @response: (allow-none): response to send or %NULL for an empty response.
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
- * to ignore
+ * to ignore.
  *
- * Respond to a platform message.
+ * Responds to a platform message.
  *
  * Returns: %TRUE on success.
  */
@@ -92,15 +121,15 @@ gboolean fl_binary_messenger_send_response(
 
 /**
  * fl_binary_messenger_send_on_channel:
- * @binary_messenger: a #FlBinaryMessenger
- * @channel: channel to send to
- * @message: (allow-none): message buffer to send or %NULL for an empty message
- * @cancellable: (allow-none): a #GCancellable or %NULL
+ * @binary_messenger: an #FlBinaryMessenger.
+ * @channel: channel to send to.
+ * @message: (allow-none): message buffer to send or %NULL for an empty message.
+ * @cancellable: (allow-none): a #GCancellable or %NULL.
  * @callback: (scope async): a #GAsyncReadyCallback to call when the request is
- * satisfied
- * @user_data: (closure): user data to pass to @callback
+ * satisfied.
+ * @user_data: (closure): user data to pass to @callback.
  *
- * Asynchronously send a platform message.
+ * Asynchronously sends a platform message.
  */
 void fl_binary_messenger_send_on_channel(FlBinaryMessenger* messenger,
                                          const gchar* channel,
@@ -111,14 +140,14 @@ void fl_binary_messenger_send_on_channel(FlBinaryMessenger* messenger,
 
 /**
  * fl_binary_messenger_send_on_channel_finish:
- * @binary_messenger: a #FlBinaryMessenger
- * @result: a #GAsyncResult
+ * @binary_messenger: an #FlBinaryMessenger.
+ * @result: a #GAsyncResult.
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
  *
- * Complete request started with fl_binary_messenger_send_on_channel().
+ * Completes request started with fl_binary_messenger_send_on_channel().
  *
- * Returns: message response on success or %NULL on error.
+ * Returns: (transfer full): message response on success or %NULL on error.
  */
 GBytes* fl_binary_messenger_send_on_channel_finish(FlBinaryMessenger* messenger,
                                                    GAsyncResult* result,

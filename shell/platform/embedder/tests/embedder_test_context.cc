@@ -30,7 +30,9 @@ EmbedderTestContext::EmbedderTestContext(std::string assets_path)
       });
 }
 
-EmbedderTestContext::~EmbedderTestContext() = default;
+EmbedderTestContext::~EmbedderTestContext() {
+  SetGLGetFBOCallback(nullptr);
+}
 
 void EmbedderTestContext::SetupAOTMappingsIfNecessary() {
   if (!DartVM::IsRunningPrecompiledCode()) {
@@ -160,6 +162,14 @@ EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook() {
   };
 }
 
+FlutterComputePlatformResolvedLocaleCallback
+EmbedderTestContext::GetComputePlatformResolvedLocaleCallbackHook() {
+  return [](const FlutterLocale** supported_locales,
+            size_t length) -> const FlutterLocale* {
+    return supported_locales[0];
+  };
+}
+
 void EmbedderTestContext::SetupOpenGLSurface(SkISize surface_size) {
   FML_CHECK(!gl_surface_);
   gl_surface_ = std::make_unique<TestGLSurface>(surface_size);
@@ -189,8 +199,24 @@ bool EmbedderTestContext::GLPresent() {
   return true;
 }
 
-uint32_t EmbedderTestContext::GLGetFramebuffer() {
+void EmbedderTestContext::SetGLGetFBOCallback(GLGetFBOCallback callback) {
+  std::scoped_lock lock(gl_get_fbo_callback_mutex_);
+  gl_get_fbo_callback_ = callback;
+}
+
+uint32_t EmbedderTestContext::GLGetFramebuffer(FlutterFrameInfo frame_info) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
+
+  GLGetFBOCallback callback;
+  {
+    std::scoped_lock lock(gl_get_fbo_callback_mutex_);
+    callback = gl_get_fbo_callback_;
+  }
+
+  if (callback) {
+    callback(frame_info);
+  }
+
   return gl_surface_->GetFramebuffer();
 }
 

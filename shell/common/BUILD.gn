@@ -2,27 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/testing/testing.gni")
-import("//flutter/vulkan/config.gni")
-
-if (is_fuchsia) {
-  import("//build/fuchsia/sdk.gni")
-  import("//flutter/tools/fuchsia/fuchsia_archive.gni")
-}
-
-config("vulkan_config") {
-  if (is_fuchsia) {
-    include_dirs = [ "$fuchsia_sdk_root/vulkan/include" ]
-  } else {
-    include_dirs = [ "//third_party/vulkan/src" ]
-  }
-
-  if (is_fuchsia) {
-    defines = [ "VK_USE_PLATFORM_FUCHSIA=1" ]
-  }
-}
 
 # Template to generate a dart embedder resource.cc file.
 # Required invoker inputs:
@@ -47,9 +30,7 @@ template("dart_embedder_resources") {
     }
 
     output = invoker.output
-    outputs = [
-      output,
-    ]
+    outputs = [ output ]
 
     inputs = [ script ] + invoker.inputs
 
@@ -97,18 +78,16 @@ source_set("common") {
     "pointer_data_dispatcher.h",
     "rasterizer.cc",
     "rasterizer.h",
-    "renderer_context_manager.cc",
-    "renderer_context_manager.h",
     "run_configuration.cc",
     "run_configuration.h",
+    "serialization_callbacks.cc",
+    "serialization_callbacks.h",
     "shell.cc",
     "shell.h",
     "shell_io_manager.cc",
     "shell_io_manager.h",
     "skia_event_tracer_impl.cc",
     "skia_event_tracer_impl.h",
-    "surface.cc",
-    "surface.h",
     "switches.cc",
     "switches.h",
     "thread_host.cc",
@@ -117,6 +96,15 @@ source_set("common") {
     "vsync_waiter.h",
     "vsync_waiter_fallback.cc",
     "vsync_waiter_fallback.h",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+
+  public_deps = [
+    "//flutter/shell/version",
+    "//flutter/third_party/tonic",
+    "//flutter/third_party/txt",
+    "//third_party/rapidjson",
   ]
 
   deps = [
@@ -130,15 +118,6 @@ source_set("common") {
     "//third_party/dart/runtime:dart_api",
     "//third_party/skia",
   ]
-
-  public_deps = [
-    "//flutter/shell/version",
-    "//flutter/third_party/tonic",
-    "//flutter/third_party/txt",
-    "//third_party/rapidjson",
-  ]
-
-  public_configs = [ "//flutter:config" ]
 }
 
 template("shell_host_executable") {
@@ -153,12 +132,8 @@ template("shell_host_executable") {
 
     deps += [
       ":common",
-      "//flutter/fml",
       "//flutter/lib/snapshot",
-      "//flutter/runtime",
       "//flutter/runtime:libdart",
-      "//flutter/third_party/tonic",
-      "//third_party/skia",
     ]
 
     public_configs = [ "//flutter:export_dynamic_symbols" ]
@@ -171,6 +146,14 @@ if (enable_unittests) {
     test_enable_gl = !is_fuchsia
     test_enable_software = true
     test_enable_metal = false
+  }
+
+  config("test_enable_gl_config") {
+    defines = [ "SHELL_ENABLE_GL" ]
+  }
+
+  config("test_enable_vulkan_config") {
+    defines = [ "SHELL_ENABLE_VULKAN" ]
   }
 
   shell_gpu_configuration("shell_unittests_gpu_configuration") {
@@ -186,43 +169,52 @@ if (enable_unittests) {
     fixtures = [ "fixtures/shelltest_screenshot.png" ]
   }
 
-  shell_host_executable("shell_unittests") {
+  shell_host_executable("shell_benchmarks") {
+    sources = [ "shell_benchmarks.cc" ]
+
+    deps = [
+      ":shell_unittests_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/flow",
+      "//flutter/testing:dart",
+      "//flutter/testing:testing_lib",
+    ]
+  }
+
+  source_set("shell_test_fixture_sources") {
+    testonly = true
+
     sources = [
-      "animator_unittests.cc",
-      "canvas_spy_unittests.cc",
-      "input_events_unittests.cc",
-      "persistent_cache_unittests.cc",
-      "pipeline_unittests.cc",
-      "renderer_context_manager_unittests.cc",
-      "renderer_context_test.cc",
-      "renderer_context_test.h",
       "shell_test.cc",
       "shell_test.h",
       "shell_test_external_view_embedder.cc",
       "shell_test_external_view_embedder.h",
       "shell_test_platform_view.cc",
       "shell_test_platform_view.h",
-      "shell_unittests.cc",
       "vsync_waiters_test.cc",
       "vsync_waiters_test.h",
     ]
 
+    public_deps = [
+      "//flutter/flow",
+      "//flutter/fml/dart",
+      "//flutter/runtime",
+      "//flutter/shell/common",
+      "//flutter/testing",
+    ]
+
     deps = [
-      ":shell_unittests_fixtures",
       ":shell_unittests_gpu_configuration",
       "//flutter/assets",
       "//flutter/common",
-      "//flutter/flow",
-      "//flutter/fml/dart",
-      "//flutter/lib/ui:ui",
-      "//flutter/shell",
-      "//flutter/testing",
+      "//flutter/lib/ui",
       "//flutter/testing:dart",
+      "//flutter/testing:fixture_test",
+      "//third_party/rapidjson",
+      "//third_party/skia",
     ]
 
-    if (!defined(defines)) {
-      defines = []
-    }
+    public_configs = []
 
     # SwiftShader only supports x86/x64_64
     if (target_cpu == "x86" || target_cpu == "x64") {
@@ -232,67 +224,44 @@ if (enable_unittests) {
           "shell_test_platform_view_gl.h",
         ]
 
-        deps += [ "//flutter/testing:opengl" ]
+        public_configs += [ ":test_enable_gl_config" ]
 
-        defines += [ "SHELL_ENABLE_GL" ]
+        public_deps += [ "//flutter/testing:opengl" ]
       }
+    }
 
-      if (test_enable_vulkan) {
-        sources += [
-          "shell_test_platform_view_vulkan.cc",
-          "shell_test_platform_view_vulkan.h",
-        ]
+    if (test_enable_vulkan) {
+      sources += [
+        "shell_test_platform_view_vulkan.cc",
+        "shell_test_platform_view_vulkan.h",
+      ]
 
-        deps += [
-          "//flutter/testing:vulkan",
-          "//flutter/vulkan",
-        ]
+      public_configs += [ ":test_enable_vulkan_config" ]
 
-        defines += [ "SHELL_ENABLE_VULKAN" ]
-      }
+      public_deps += [ "//flutter/vulkan" ]
     }
   }
 
-  if (is_fuchsia) {
-    fuchsia_test_archive("shell_tests") {
-      deps = [
-        ":shell_unittests",
-        ":shell_unittests_fixtures",
-      ]
+  shell_host_executable("shell_unittests") {
+    testonly = true
 
-      binary = "shell_unittests"
-
-      # TODO(gw280): https://github.com/flutter/flutter/issues/50294
-      # Right now we need to manually specify all the fixtures that are
-      # declared in the test_fixtures() call above.
-      resources = [
-        {
-          path = "$target_gen_dir/assets/kernel_blob.bin"
-          dest = "assets/kernel_blob.bin"
-        },
-        {
-          path = "$target_gen_dir/assets/shelltest_screenshot.png"
-          dest = "assets/shelltest_screenshot.png"
-        },
-      ]
-
-      if (test_enable_vulkan) {
-        libraries = vulkan_validation_libs
-        resources += vulkan_icds
-      }
-    }
-  }
-
-  shell_host_executable("shell_benchmarks") {
     sources = [
-      "shell_benchmarks.cc",
+      "animator_unittests.cc",
+      "canvas_spy_unittests.cc",
+      "engine_unittests.cc",
+      "input_events_unittests.cc",
+      "persistent_cache_unittests.cc",
+      "pipeline_unittests.cc",
+      "shell_unittests.cc",
+      "skp_shader_warmup_unittests.cc",
     ]
 
     deps = [
+      ":shell_test_fixture_sources",
       ":shell_unittests_fixtures",
-      "//flutter/benchmarking",
-      "//flutter/testing:dart",
-      "//flutter/testing:testing_lib",
+      "//flutter/assets",
+      "//flutter/shell/version",
+      "//third_party/googletest:gmock",
     ]
   }
 }

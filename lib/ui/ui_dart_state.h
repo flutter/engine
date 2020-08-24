@@ -20,14 +20,14 @@
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "third_party/dart/runtime/include/dart_api.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/tonic/dart_microtask_queue.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/dart_state.h"
 
 namespace flutter {
 class FontSelector;
-class Window;
+class PlatformConfiguration;
 
 class UIDartState : public tonic::DartState {
  public:
@@ -44,7 +44,9 @@ class UIDartState : public tonic::DartState {
 
   const std::string& logger_prefix() const { return logger_prefix_; }
 
-  Window* window() const { return window_.get(); }
+  PlatformConfiguration* platform_configuration() const {
+    return platform_configuration_.get();
+  }
 
   const TaskRunners& GetTaskRunners() const;
 
@@ -58,7 +60,7 @@ class UIDartState : public tonic::DartState {
 
   fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
-  fml::WeakPtr<GrContext> GetResourceContext() const;
+  fml::WeakPtr<GrDirectContext> GetResourceContext() const;
 
   fml::WeakPtr<ImageDecoder> GetImageDecoder() const;
 
@@ -97,7 +99,8 @@ class UIDartState : public tonic::DartState {
 
   ~UIDartState() override;
 
-  void SetWindow(std::unique_ptr<Window> window);
+  void SetPlatformConfiguration(
+      std::unique_ptr<PlatformConfiguration> platform_configuration);
 
   const std::string& GetAdvisoryScriptURI() const;
 
@@ -119,7 +122,7 @@ class UIDartState : public tonic::DartState {
   Dart_Port main_port_ = ILLEGAL_PORT;
   const bool is_root_isolate_;
   std::string debug_name_;
-  std::unique_ptr<Window> window_;
+  std::unique_ptr<PlatformConfiguration> platform_configuration_;
   tonic::DartMicrotaskQueue microtask_queue_;
   UnhandledExceptionCallback unhandled_exception_callback_;
   const std::shared_ptr<IsolateNameServer> isolate_name_server_;

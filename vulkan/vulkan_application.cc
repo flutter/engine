@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_application.h"
+#include "vulkan_application.h"
 
 #include <utility>
 #include <vector>
 
-#include "flutter/vulkan/vulkan_device.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
-#include "flutter/vulkan/vulkan_utilities.h"
+#include "vulkan_device.h"
+#include "vulkan_proc_table.h"
+#include "vulkan_utilities.h"
 
 namespace vulkan {
 
 VulkanApplication::VulkanApplication(
-    VulkanProcTable& p_vk,
+    VulkanProcTable& p_vk,  // NOLINT
     const std::string& application_name,
     std::vector<std::string> enabled_extensions,
     uint32_t application_version,
@@ -107,15 +107,15 @@ VulkanApplication::VulkanApplication(
   }
 
   instance_ = {instance, [this](VkInstance i) {
-                 FML_LOG(INFO) << "Destroying Vulkan instance";
+                 FML_DLOG(INFO) << "Destroying Vulkan instance";
                  vk.DestroyInstance(i, nullptr);
                }};
 
   if (enable_instance_debugging) {
     auto debug_report = std::make_unique<VulkanDebugReport>(vk, instance_);
     if (!debug_report->IsValid()) {
-      FML_LOG(INFO) << "Vulkan debugging was enabled but could not be setup "
-                       "for this instance.";
+      FML_DLOG(INFO) << "Vulkan debugging was enabled but could not be setup "
+                        "for this instance.";
     } else {
       debug_report_ = std::move(debug_report);
       FML_DLOG(INFO) << "Debug reporting is enabled.";

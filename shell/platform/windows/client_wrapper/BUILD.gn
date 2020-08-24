@@ -7,19 +7,25 @@ import("//flutter/testing/testing.gni")
 
 _wrapper_includes = [
   "include/flutter/dart_project.h",
+  "include/flutter/flutter_engine.h",
   "include/flutter/flutter_view_controller.h",
   "include/flutter/flutter_view.h",
   "include/flutter/plugin_registrar_windows.h",
 ]
 
-_wrapper_sources = [ "flutter_view_controller.cc" ]
+_wrapper_sources = [
+  "flutter_engine.cc",
+  "flutter_view_controller.cc",
+]
 
 # This code will be merged into .../common/cpp/client_wrapper for client use,
 # so uses header paths that assume the merged state. Include the header
-# header directory of the core wrapper files so these includes will work.
+# directories of the core wrapper files so these includes will work.
 config("relative_core_wrapper_headers") {
-  include_dirs =
-      [ "//flutter/shell/platform/common/cpp/client_wrapper/include/flutter" ]
+  include_dirs = [
+    "//flutter/shell/platform/common/cpp/client_wrapper",
+    "//flutter/shell/platform/common/cpp/client_wrapper/include/flutter",
+  ]
 }
 
 # Windows client wrapper build for internal use by the shell implementation.
@@ -57,9 +63,7 @@ source_set("client_wrapper_library_stubs_windows") {
 
   defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
 
-  public_deps = [
-    "//flutter/shell/platform/windows:flutter_windows_headers",
-  ]
+  public_deps = [ "//flutter/shell/platform/windows:flutter_windows_headers" ]
 }
 
 test_fixtures("client_wrapper_windows_fixtures") {
@@ -71,10 +75,14 @@ executable("client_wrapper_windows_unittests") {
 
   sources = [
     "dart_project_unittests.cc",
+    "flutter_engine_unittests.cc",
     "flutter_view_controller_unittests.cc",
     "flutter_view_unittests.cc",
     "plugin_registrar_windows_unittests.cc",
   ]
+
+  # Set embedder.h to export, not import, since the stubs are locally defined.
+  defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
 
   deps = [
     ":client_wrapper_library_stubs_windows",

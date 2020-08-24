@@ -12,7 +12,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.Choreographer;
 import androidx.annotation.NonNull;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
@@ -20,11 +19,14 @@ import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.BinaryCodec;
-import io.flutter.plugin.common.StringCodec;
+import io.flutter.plugin.common.JSONMethodCodec;
+import io.flutter.plugin.common.MethodChannel;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TextPlatformViewActivity extends TestableFlutterActivity {
@@ -68,6 +70,7 @@ public class TextPlatformViewActivity extends TestableFlutterActivity {
 
   @Override
   public void configureFlutterEngine(FlutterEngine flutterEngine) {
+    super.configureFlutterEngine(flutterEngine);
     flutterEngine
         .getPlatformViewsController()
         .getRegistry()
@@ -80,25 +83,12 @@ public class TextPlatformViewActivity extends TestableFlutterActivity {
     if (!launchIntent.hasExtra("scenario")) {
       return;
     }
-    BasicMessageChannel<String> channel =
-        new BasicMessageChannel<>(
-            getFlutterEngine().getDartExecutor(), "set_scenario", StringCodec.INSTANCE);
-    channel.send(launchIntent.getStringExtra("scenario"));
-    notifyFlutterRenderedAfterVsync();
-  }
-
-  private void notifyFlutterRenderedAfterVsync() {
-    // Wait 1s after the next frame, so the Android texture are rendered.
-    Choreographer.getInstance()
-        .postFrameCallbackDelayed(
-            new Choreographer.FrameCallback() {
-              @Override
-              public void doFrame(long frameTimeNanos) {
-                reportFullyDrawn();
-                notifyFlutterRendered();
-              }
-            },
-            1000L);
+    MethodChannel channel =
+        new MethodChannel(getFlutterEngine().getDartExecutor(), "driver", JSONMethodCodec.INSTANCE);
+    Map<String, Object> test = new HashMap<>(2);
+    test.put("name", launchIntent.getStringExtra("scenario"));
+    test.put("use_android_view", launchIntent.getBooleanExtra("use_android_view", false));
+    channel.invokeMethod("set_scenario", test);
   }
 
   private void writeTimelineData(Uri logFile) {

@@ -129,11 +129,14 @@ DEF_SWITCH(TraceSkia,
            "Trace Skia calls. This is useful when debugging the GPU threed."
            "By default, Skia tracing is not enabled to reduce the number of "
            "traced events")
+DEF_SWITCH(TraceWhitelist,
+           "trace-whitelist",
+           "(deprecated) Use --trace-allowlist instead.")
 DEF_SWITCH(
-    TraceWhitelist,
-    "trace-whitelist",
+    TraceAllowlist,
+    "trace-allowlist",
     "Filters out all trace events except those that are specified in this "
-    "comma separated list of whitelisted prefixes.")
+    "comma separated list of allowed prefixes.")
 DEF_SWITCH(DumpSkpOnShaderCompilation,
            "dump-skp-on-shader-compilation",
            "Automatically dump the skp that triggers new shader compilations. "
@@ -145,6 +148,10 @@ DEF_SWITCH(CacheSkSL,
            "should only be used during development phases. The generated SkSLs "
            "can later be used in the release build for shader precompilation "
            "at launch in order to eliminate the shader-compile jank.")
+DEF_SWITCH(PurgePersistentCache,
+           "purge-persistent-cache",
+           "Remove all existing persistent cache. This is mainly for debugging "
+           "purposes such as reproducing the shader compilation jank.")
 DEF_SWITCH(
     TraceSystrace,
     "trace-systrace",
@@ -174,18 +181,22 @@ DEF_SWITCH(DisableDartAsserts,
            "disabled. This flag may be specified if the user wishes to run "
            "with assertions disabled in the debug product mode (i.e. with JIT "
            "or DBC).")
-DEF_SWITCH(DisableHttp,
-           "disable-http",
-           "Dart VM has a master switch that can be set to disable insecure "
-           "HTTP and WebSocket protocols. Localhost or loopback addresses are "
-           "exempted. This flag can be specified if the embedder wants this "
-           "for a particular platform.")
+DEF_SWITCH(DisallowInsecureConnections,
+           "disallow-insecure-connections",
+           "By default, dart:io allows all socket connections. If this switch "
+           "is set, all insecure connections are rejected.")
+DEF_SWITCH(DomainNetworkPolicy,
+           "domain-network-policy",
+           "JSON encoded network policy per domain. This overrides the "
+           "DisallowInsecureConnections switch. Embedder can specify whether "
+           "to allow or disallow insecure connections at a domain level.")
 DEF_SWITCH(
     ForceMultithreading,
     "force-multithreading",
     "Uses separate threads for the platform, UI, GPU and IO task runners. "
     "By default, a single thread is used for all task runners. Only available "
     "in the flutter_tester.")
+
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

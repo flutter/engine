@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 class Matrix4 {
@@ -13,7 +13,7 @@ class Matrix4 {
 
   /// Returns a matrix that is the inverse of [other] if [other] is invertible,
   /// otherwise `null`.
-  static Matrix4 tryInvert(Matrix4 other) {
+  static Matrix4? tryInvert(Matrix4 other) {
     final Matrix4 r = Matrix4.zero();
     final double determinant = r.copyInverse(other);
     if (determinant == 0.0) {
@@ -243,7 +243,7 @@ class Matrix4 {
   }
 
   /// Scale this matrix by a [Vector3], [Vector4], or x,y,z
-  void scale(double x, [double y, double z]) {
+  void scale(double x, [double? y, double? z]) {
     final double sx = x;
     final double sy = y ?? x;
     final double sz = z ?? x;
@@ -268,7 +268,7 @@ class Matrix4 {
 
   /// Create a copy of [this] scaled by a [Vector3], [Vector4] or [x],[y], and
   /// [z].
-  Matrix4 scaled(double x, [double y, double z]) => clone()..scale(x, y, z);
+  Matrix4 scaled(double x, [double? y, double? z]) => clone()..scale(x, y, z);
 
   /// Zeros [this].
   void setZero() {
@@ -373,7 +373,9 @@ class Matrix4 {
       return scaled(arg);
     }
     if (arg is Vector3) {
-      return transformed3(arg);
+      final Vector3 copy = arg.clone();
+      transform3(copy.storage);
+      return copy;
     }
     if (arg is Matrix4) {
       return multiplied(arg);
@@ -961,7 +963,7 @@ class Matrix4 {
 
   /// Rotate a copy of [arg] of type [Vector3] using the rotation defined by
   /// [this]. If a [out] parameter is supplied, the copy is stored in [out].
-  Vector3 rotated3(Vector3 arg, [Vector3 out]) {
+  Vector3 rotated3(Vector3 arg, [Vector3? out]) {
     if (out == null) {
       out = Vector3.copy(arg);
     } else {
@@ -970,38 +972,38 @@ class Matrix4 {
     return rotate3(out);
   }
 
-  /// Transform [arg] of type [Vector3] using the transformation defined by
-  /// [this].
-  Vector3 transform3(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    final double x = (_m4storage[0] * argStorage[0]) +
-        (_m4storage[4] * argStorage[1]) +
-        (_m4storage[8] * argStorage[2]) +
+  /// Transforms a 3-component vector in-place.
+  void transform3(Float32List vector) {
+    final double x = (_m4storage[0] * vector[0]) +
+        (_m4storage[4] * vector[1]) +
+        (_m4storage[8] * vector[2]) +
         _m4storage[12];
-    final double y = (_m4storage[1] * argStorage[0]) +
-        (_m4storage[5] * argStorage[1]) +
-        (_m4storage[9] * argStorage[2]) +
+    final double y = (_m4storage[1] * vector[0]) +
+        (_m4storage[5] * vector[1]) +
+        (_m4storage[9] * vector[2]) +
         _m4storage[13];
-    final double z = (_m4storage[2] * argStorage[0]) +
-        (_m4storage[6] * argStorage[1]) +
-        (_m4storage[10] * argStorage[2]) +
+    final double z = (_m4storage[2] * vector[0]) +
+        (_m4storage[6] * vector[1]) +
+        (_m4storage[10] * vector[2]) +
         _m4storage[14];
-    argStorage[0] = x;
-    argStorage[1] = y;
-    argStorage[2] = z;
-    return arg;
+    vector[0] = x;
+    vector[1] = y;
+    vector[2] = z;
   }
 
-  /// Transform a copy of [arg] of type [Vector3] using the transformation
-  /// defined by [this]. If a [out] parameter is supplied, the copy is stored in
-  /// [out].
-  Vector3 transformed3(Vector3 arg, [Vector3 out]) {
-    if (out == null) {
-      out = Vector3.copy(arg);
-    } else {
-      out.setFrom(arg);
-    }
-    return transform3(out);
+  /// Transforms a 2-component vector in-place.
+  ///
+  /// This transformation forgets the final Z component. If you need the
+  /// Z component, see [transform3].
+  void transform2(Float32List vector) {
+    double x = vector[0];
+    double y = vector[1];
+    vector[0] = (_m4storage[0] * x) +
+        (_m4storage[4] * y) +
+        _m4storage[12];
+    vector[1] = (_m4storage[1] * x) +
+        (_m4storage[5] * y) +
+        _m4storage[13];
   }
 
   /// Copies [this] into [array] starting at [offset].
@@ -1056,6 +1058,22 @@ class Matrix4 {
   /// convenient.
   Float64List toFloat64() {
     return Float64List.fromList(_m4storage);
+  }
+
+  @override
+  String toString() {
+    if (assertionsEnabled) {
+      String fmt(int index) {
+        return storage[index].toStringAsFixed(2);
+      }
+
+      return '[${fmt(0)}, ${fmt(4)}, ${fmt(8)}, ${fmt(12)}]\n'
+             '[${fmt(1)}, ${fmt(5)}, ${fmt(9)}, ${fmt(13)}]\n'
+             '[${fmt(2)}, ${fmt(6)}, ${fmt(10)}, ${fmt(14)}]\n'
+             '[${fmt(3)}, ${fmt(7)}, ${fmt(11)}, ${fmt(15)}]';
+    } else {
+      return super.toString();
+    }
   }
 }
 
@@ -1114,7 +1132,7 @@ class Vector3 {
 
   /// Generate random vector in the range (0, 0, 0) to (1, 1, 1). You can
   /// optionally pass your own random number generator.
-  factory Vector3.random([math.Random rng]) {
+  factory Vector3.random([math.Random? rng]) {
     rng ??= math.Random();
     return Vector3(rng.nextDouble(), rng.nextDouble(), rng.nextDouble());
   }

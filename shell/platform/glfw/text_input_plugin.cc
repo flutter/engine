@@ -21,9 +21,16 @@ static constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
 static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
 
+static constexpr char kTextInputAction[] = "inputAction";
+static constexpr char kTextInputType[] = "inputType";
+static constexpr char kTextInputTypeName[] = "name";
+static constexpr char kComposingBaseKey[] = "composingBase";
+static constexpr char kComposingExtentKey[] = "composingExtent";
+static constexpr char kSelectionAffinityKey[] = "selectionAffinity";
+static constexpr char kAffinityDownstream[] = "TextAffinity.downstream";
 static constexpr char kSelectionBaseKey[] = "selectionBase";
 static constexpr char kSelectionExtentKey[] = "selectionExtent";
-
+static constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
 static constexpr char kTextKey[] = "text";
 
 static constexpr char kChannelName[] = "flutter/textinput";
@@ -133,8 +140,25 @@ void TextInputPlugin::HandleMethodCall(
       result->Error(kBadArgumentError,
                     "Could not set client, missing arguments.");
     }
-    int client_id = client_id_json.GetInt();
-    active_model_ = std::make_unique<TextInputModel>(client_id, client_config);
+    client_id_ = client_id_json.GetInt();
+    input_action_ = "";
+    auto input_action_json = client_config.FindMember(kTextInputAction);
+    if (input_action_json != client_config.MemberEnd() &&
+        input_action_json->value.IsString()) {
+      input_action_ = input_action_json->value.GetString();
+    }
+    input_type_ = "";
+    auto input_type_info_json = client_config.FindMember(kTextInputType);
+    if (input_type_info_json != client_config.MemberEnd() &&
+        input_type_info_json->value.IsObject()) {
+      auto input_type_json =
+          input_type_info_json->value.FindMember(kTextInputTypeName);
+      if (input_type_json != input_type_info_json->value.MemberEnd() &&
+          input_type_json->value.IsString()) {
+        input_type_ = input_type_json->value.GetString();
+      }
+    }
+    active_model_ = std::make_unique<TextInputModel>();
   } else if (method.compare(kSetEditingStateMethod) == 0) {
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {
       result->Error(kBadArgumentError, "Method invoked without args");
@@ -163,9 +187,13 @@ void TextInputPlugin::HandleMethodCall(
                     "Selection base/extent values invalid.");
       return;
     }
-    active_model_->SetEditingState(selection_base->value.GetInt(),
-                                   selection_extent->value.GetInt(),
-                                   text->value.GetString());
+    // Flutter uses -1/-1 for invalid; translate that to 0/0 for the model.
+    int base = selection_base->value.GetInt();
+    int extent = selection_extent->value.GetInt();
+    if (base == -1 && extent == -1) {
+      base = extent = 0;
+    }
+    active_model_->SetEditingState(base, extent, text->value.GetString());
   } else {
     result->NotImplemented();
     return;
@@ -176,19 +204,35 @@ void TextInputPlugin::HandleMethodCall(
 }
 
 void TextInputPlugin::SendStateUpdate(const TextInputModel& model) {
-  channel_->InvokeMethod(kUpdateEditingStateMethod, model.GetState());
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
+  auto& allocator = args->GetAllocator();
+  args->PushBack(client_id_, allocator);
+
+  rapidjson::Value editing_state(rapidjson::kObjectType);
+  editing_state.AddMember(kComposingBaseKey, -1, allocator);
+  editing_state.AddMember(kComposingExtentKey, -1, allocator);
+  editing_state.AddMember(kSelectionAffinityKey, kAffinityDownstream,
+                          allocator);
+  editing_state.AddMember(kSelectionBaseKey, model.selection_base(), allocator);
+  editing_state.AddMember(kSelectionExtentKey, model.selection_extent(),
+                          allocator);
+  editing_state.AddMember(kSelectionIsDirectionalKey, false, allocator);
+  editing_state.AddMember(
+      kTextKey, rapidjson::Value(model.GetText(), allocator).Move(), allocator);
+  args->PushBack(editing_state, allocator);
+
+  channel_->InvokeMethod(kUpdateEditingStateMethod, std::move(args));
 }
 
 void TextInputPlugin::EnterPressed(TextInputModel* model) {
-  if (model->input_type() == kMultilineInputType) {
+  if (input_type_ == kMultilineInputType) {
     model->AddCodePoint('\n');
     SendStateUpdate(*model);
   }
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = args->GetAllocator();
-  args->PushBack(model->client_id(), allocator);
-  args->PushBack(rapidjson::Value(model->input_action(), allocator).Move(),
-                 allocator);
+  args->PushBack(client_id_, allocator);
+  args->PushBack(rapidjson::Value(input_action_, allocator).Move(), allocator);
 
   channel_->InvokeMethod(kPerformActionMethod, std::move(args));
 }

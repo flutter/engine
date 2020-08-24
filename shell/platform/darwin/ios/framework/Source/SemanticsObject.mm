@@ -103,50 +103,6 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 @end
 
-/**
- * Represents a semantics object that has children and hence has to be presented to the OS as a
- * UIAccessibilityContainer.
- *
- * The SemanticsObject class cannot implement the UIAccessibilityContainer protocol because an
- * object that returns YES for isAccessibilityElement cannot also implement
- * UIAccessibilityContainer.
- *
- * With the help of SemanticsObjectContainer, the hierarchy of semantic objects received from
- * the framework, such as:
- *
- * SemanticsObject1
- *     SemanticsObject2
- *         SemanticsObject3
- *         SemanticsObject4
- *
- * is translated into the following hierarchy, which is understood by iOS:
- *
- * SemanticsObjectContainer1
- *     SemanticsObject1
- *     SemanticsObjectContainer2
- *         SemanticsObject2
- *         SemanticsObject3
- *         SemanticsObject4
- *
- * From Flutter's view of the world (the first tree seen above), we construct iOS's view of the
- * world (second tree) as follows: We replace each SemanticsObjects that has children with a
- * SemanticsObjectContainer, which has the original SemanticsObject and its children as children.
- *
- * SemanticsObjects have semantic information attached to them which is interpreted by
- * VoiceOver (they return YES for isAccessibilityElement). The SemanticsObjectContainers are just
- * there for structure and they don't provide any semantic information to VoiceOver (they return
- * NO for isAccessibilityElement).
- */
-@interface SemanticsObjectContainer : UIAccessibilityElement
-- (instancetype)init __attribute__((unavailable("Use initWithSemanticsObject instead")));
-- (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
-                                 bridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
-    NS_DESIGNATED_INITIALIZER;
-
-@property(nonatomic, weak) SemanticsObject* semanticsObject;
-
-@end
-
 @interface SemanticsObject ()
 /** Should only be called in conjunction with setting child/parent relationship. */
 - (void)privateSetParent:(SemanticsObject*)parent;
@@ -222,6 +178,25 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (BOOL)nodeWillCauseScroll:(const flutter::SemanticsNode*)node {
   return !isnan([self node].scrollPosition) && !isnan(node->scrollPosition) &&
          [self node].scrollPosition != node->scrollPosition;
+}
+
+/**
+ * Whether calling `setSemanticsNode:` with `node` should trigger an
+ * announcement.
+ */
+- (BOOL)nodeShouldTriggerAnnouncement:(const flutter::SemanticsNode*)node {
+  // The node dropped the live region flag, if it ever had one.
+  if (!node || !node->HasFlag(flutter::SemanticsFlags::kIsLiveRegion)) {
+    return NO;
+  }
+
+  // The node has gained a new live region flag, always announce.
+  if (![self node].HasFlag(flutter::SemanticsFlags::kIsLiveRegion)) {
+    return YES;
+  }
+
+  // The label has updated, and the new node has a live region flag.
+  return [self node].label != node->label;
 }
 
 - (BOOL)hasChildren {
@@ -307,20 +282,21 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return YES;
 }
 
-- (NSString*)routeName {
-  // Returns the first non-null and non-empty semantic label of a child
-  // with an NamesRoute flag. Otherwise returns nil.
+- (SemanticsObject*)routeFocusObject {
+  // Returns the first SemanticObject in this branch that has
+  // the NamesRoute flag with a non-nil semantic label. Otherwise
+  // returns nil.
   if ([self node].HasFlag(flutter::SemanticsFlags::kNamesRoute)) {
     NSString* newName = [self accessibilityLabel];
     if (newName != nil && [newName length] > 0) {
-      return newName;
+      return self;
     }
   }
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      NSString* newName = [child routeName];
-      if (newName != nil && [newName length] > 0) {
-        return newName;
+      SemanticsObject* focusObject = [child routeFocusObject];
+      if (focusObject != nil) {
+        return focusObject;
       }
     }
   }
@@ -403,6 +379,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 #pragma mark - UIAccessibilityElement protocol
 
+- (void)setAccessibilityContainer:(id)container {
+  // Explicit noop.  The containers are calculated lazily in `accessibilityContainer`.
+  // See also: https://github.com/flutter/flutter/issues/54366
+}
+
 - (id)accessibilityContainer {
   if ([self hasChildren] || [self uid] == kRootNodeId) {
     if (_container == nil)
@@ -472,7 +453,9 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (void)accessibilityElementDidBecomeFocused {
   if (![self isAccessibilityBridgeAlive])
     return;
-  if ([self node].HasFlag(flutter::SemanticsFlags::kIsHidden)) {
+  [self bridge]->AccessibilityFocusDidChange([self uid]);
+  if ([self node].HasFlag(flutter::SemanticsFlags::kIsHidden) ||
+      [self node].HasFlag(flutter::SemanticsFlags::kIsHeader)) {
     [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
   }
   if ([self node].HasAction(flutter::SemanticsAction::kDidGainAccessibilityFocus)) {
@@ -552,10 +535,12 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 @end
 
-@implementation FlutterPlatformViewSemanticsContainer {
-  SemanticsObject* _semanticsObject;
-  UIView* _platformView;
-}
+@interface FlutterPlatformViewSemanticsContainer ()
+@property(nonatomic, assign) SemanticsObject* semanticsObject;
+@property(nonatomic, strong) UIView* platformView;
+@end
+
+@implementation FlutterPlatformViewSemanticsContainer
 
 // Method declared as unavailable in the interface
 - (instancetype)init {
@@ -575,11 +560,20 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     flutter::FlutterPlatformViewsController* controller =
         object.bridge->GetPlatformViewsController();
     if (controller) {
-      _platformView = [controller->GetPlatformViewByID(object.node.platformViewId) view];
+      _platformView = [[controller->GetPlatformViewByID(object.node.platformViewId) view] retain];
     }
-    self.accessibilityElements = @[ _semanticsObject, _platformView ];
   }
   return self;
+}
+
+- (void)dealloc {
+  [_platformView release];
+  _platformView = nil;
+  [super dealloc];
+}
+
+- (NSArray*)accessibilityElements {
+  return @[ _semanticsObject, _platformView ];
 }
 
 - (CGRect)accessibilityFrame {

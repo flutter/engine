@@ -8,6 +8,7 @@
 #include <future>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -79,6 +80,21 @@ class EmbedderTestContext {
 
   size_t GetSoftwareSurfacePresentCount() const;
 
+  using GLGetFBOCallback = std::function<void(FlutterFrameInfo frame_info)>;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Sets a callback that will be invoked (on the raster task
+  ///             runner) when the engine asks the embedder for a new FBO ID at
+  ///             the updated size.
+  ///
+  /// @attention  The callback will be invoked on the raster task runner. The
+  ///             callback can be set on the tests host thread.
+  ///
+  /// @param[in]  callback  The callback to set. The previous callback will be
+  ///                       un-registered.
+  ///
+  void SetGLGetFBOCallback(GLGetFBOCallback callback);
+
  private:
   // This allows the builder to access the hooks.
   friend class EmbedderConfigBuilder;
@@ -103,6 +119,8 @@ class EmbedderTestContext {
   SkMatrix root_surface_transformation_;
   size_t gl_surface_present_count_ = 0;
   size_t software_surface_present_count_ = 0;
+  std::mutex gl_get_fbo_callback_mutex_;
+  GLGetFBOCallback gl_get_fbo_callback_;
 
   static VoidCallback GetIsolateCreateCallbackHook();
 
@@ -111,6 +129,9 @@ class EmbedderTestContext {
 
   static FlutterUpdateSemanticsCustomActionCallback
   GetUpdateSemanticsCustomActionCallbackHook();
+
+  static FlutterComputePlatformResolvedLocaleCallback
+  GetComputePlatformResolvedLocaleCallbackHook();
 
   void SetupAOTMappingsIfNecessary();
 
@@ -130,7 +151,7 @@ class EmbedderTestContext {
 
   bool GLPresent();
 
-  uint32_t GLGetFramebuffer();
+  uint32_t GLGetFramebuffer(FlutterFrameInfo frame_info);
 
   bool GLMakeResourceCurrent();
 

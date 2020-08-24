@@ -12,9 +12,7 @@ executable("testing") {
     "//flutter:export_dynamic_symbols",
   ]
 
-  sources = [
-    "tester_main.cc",
-  ]
+  sources = [ "tester_main.cc" ]
 
   deps = [
     "//flutter/assets",
@@ -27,8 +25,4 @@ executable("testing") {
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
   ]
-
-  if (is_fuchsia) {
-    deps += [ "$fuchsia_sdk_root/pkg:scenic_cpp" ]
-  }
 }

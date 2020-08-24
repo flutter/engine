@@ -1,17 +1,13 @@
 #!/bin/sh
 FLUTTER_ENGINE=ios_debug_sim_unopt
 
+TESTING_DIR=$(dirname "$0")
+pushd $TESTING_DIR
+
 if [ $# -eq 1 ]; then
   FLUTTER_ENGINE=$1
 fi
 
-PRETTY="cat"
-if which xcpretty; then
-  PRETTY="xcpretty"
-fi
+../../run_tests.py --variant $FLUTTER_ENGINE --type objc --ios-variant $FLUTTER_ENGINE
 
-set -o pipefail && xcodebuild -sdk iphonesimulator \
-  -scheme IosUnitTests \
-  -destination 'platform=iOS Simulator,name=iPhone 8,OS=13.0' \
-  test \
-  FLUTTER_ENGINE=$FLUTTER_ENGINE | $PRETTY
+popd

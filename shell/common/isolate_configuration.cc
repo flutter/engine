@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include "flutter/shell/common/isolate_configuration.h"
 
@@ -179,7 +180,8 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
     std::unique_ptr<fml::Mapping> kernel_list =
         asset_manager->GetAsMapping(settings.application_kernel_list_asset);
     if (!kernel_list) {
-      FML_LOG(ERROR) << "Failed to load: " << settings.application_kernel_asset;
+      FML_LOG(ERROR) << "Failed to load: "
+                     << settings.application_kernel_list_asset;
       return nullptr;
     }
     auto kernel_pieces_paths = ParseKernelListPaths(std::move(kernel_list));

@@ -12,19 +12,13 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 
-#if (FLUTTER_RELEASE && !defined(OS_FUCHSIA))
-#define TIMELINE_ENABLED 0
-#else
-#define TIMELINE_ENABLED 1
-#endif
-
 namespace fml {
 namespace tracing {
 
-#if TIMELINE_ENABLED
+#if FLUTTER_TIMELINE_ENABLED
 
 namespace {
-AsciiTrie gWhitelist;
+AsciiTrie gAllowlist;
 
 inline void FlutterTimelineEvent(const char* label,
                                  int64_t timestamp0,
@@ -33,15 +27,15 @@ inline void FlutterTimelineEvent(const char* label,
                                  intptr_t argument_count,
                                  const char** argument_names,
                                  const char** argument_values) {
-  if (gWhitelist.Query(label)) {
+  if (gAllowlist.Query(label)) {
     Dart_TimelineEvent(label, timestamp0, timestamp1_or_async_id, type,
                        argument_count, argument_names, argument_values);
   }
 }
 }  // namespace
 
-void TraceSetWhitelist(const std::vector<std::string>& whitelist) {
-  gWhitelist.Fill(whitelist);
+void TraceSetAllowlist(const std::vector<std::string>& allowlist) {
+  gAllowlist.Fill(allowlist);
 }
 
 size_t TraceNonce() {
@@ -290,9 +284,9 @@ void TraceEventFlowEnd0(TraceArg category_group, TraceArg name, TraceIDArg id) {
   );
 }
 
-#else  // TIMELINE_ENABLED
+#else  // FLUTTER_TIMELINE_ENABLED
 
-void TraceSetWhitelist(const std::vector<std::string>& whitelist) {}
+void TraceSetAllowlist(const std::vector<std::string>& allowlist) {}
 
 size_t TraceNonce() {
   return 0;
@@ -379,7 +373,7 @@ void TraceEventFlowStep0(TraceArg category_group,
 void TraceEventFlowEnd0(TraceArg category_group, TraceArg name, TraceIDArg id) {
 }
 
-#endif  // TIMELINE_ENABLED
+#endif  // FLUTTER_TIMELINE_ENABLED
 
 }  // namespace tracing
 }  // namespace fml

@@ -16,9 +16,8 @@ source_set("logging") {
 
   deps = [
     "../common",
+    "../converter",
   ]
 
-  public_deps = [
-    "//third_party/dart/runtime:dart_api",
-  ]
+  public_deps = [ "//third_party/dart/runtime:dart_api" ]
 }

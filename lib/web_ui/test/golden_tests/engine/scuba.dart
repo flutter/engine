@@ -91,7 +91,7 @@ typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 
 /// Runs the given test [body] with each type of canvas.
 void testEachCanvas(String description, CanvasTest body,
-    {double maxDiffRate, bool bSkipHoudini = false}) {
+    {double maxDiffRate}) {
   const ui.Rect bounds = ui.Rect.fromLTWH(0, 0, 600, 800);
   test('$description (bitmap)', () {
     try {
@@ -116,21 +116,13 @@ void testEachCanvas(String description, CanvasTest body,
   test('$description (dom)', () {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
+      WebExperiments.instance.useCanvasText = false;
       return body(DomCanvas());
     } finally {
+      WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
   });
-  if (!bSkipHoudini) {
-    test('$description (houdini)', () {
-      try {
-        TextMeasurementService.initialize(rulerCacheCapacity: 2);
-        return body(HoudiniCanvas(bounds));
-      } finally {
-        TextMeasurementService.clearCache();
-      }
-    });
-  }
 }
 
 final ui.TextStyle _defaultTextStyle = ui.TextStyle(

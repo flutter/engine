@@ -33,7 +33,7 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Android oddities.
 }
 
-std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrContext* gr_context) {
+std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrDirectContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }
@@ -124,7 +124,7 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
 
 // |GPUSurfaceSoftwareDelegate|
 ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
-  return GetExternalViewEmbedderIfEnabled();
+  return this;
 }
 
 }  // namespace flutter

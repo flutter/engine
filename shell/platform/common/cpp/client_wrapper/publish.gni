@@ -44,25 +44,19 @@ template("publish_client_wrapper") {
     ]
 
     sources = invoker.public
-    outputs = [
-      "$publish_dir_root/include/$namespace/{{source_file_part}}",
-    ]
+    outputs = [ "$publish_dir_root/include/$namespace/{{source_file_part}}" ]
   }
 
   copy("${template_target_name}_publish_sources") {
     visibility = [ ":$template_target_name" ]
 
     sources = invoker.sources
-    outputs = [
-      "$publish_dir_root/{{source_file_part}}",
-    ]
+    outputs = [ "$publish_dir_root/{{source_file_part}}" ]
 
     # GN on Windows appears to do #include checks even for copy
     # targets, so add the dependency to the headers to satisfy
     # the check.
-    deps = [
-      ":${template_target_name}_publish_includes",
-    ]
+    deps = [ ":${template_target_name}_publish_includes" ]
   }
 }
 
@@ -77,7 +71,9 @@ template("publish_client_wrapper_core") {
                              "visibility",
                            ])
     public = core_cpp_client_wrapper_includes
-    sources = core_cpp_client_wrapper_sources + [ _wrapper_readme ]
+    sources = core_cpp_client_wrapper_sources +
+              core_cpp_client_wrapper_internal_headers + [ _wrapper_readme ] +
+              temporary_shim_files
   }
 }
 
@@ -103,8 +99,6 @@ template("publish_client_wrapper_extension") {
                              "sources",
                              "directory_suffix",
                            ])
-    public_deps = [
-      ":$core_target_name",
-    ]
+    public_deps = [ ":$core_target_name" ]
   }
 }

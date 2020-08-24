@@ -46,6 +46,8 @@ public class FlutterShellArgs {
       "--dump-skp-on-shader-compilation";
   public static final String ARG_KEY_CACHE_SKSL = "cache-sksl";
   public static final String ARG_CACHE_SKSL = "--cache-sksl";
+  public static final String ARG_KEY_PURGE_PERSISTENT_CACHE = "purge-persistent-cache";
+  public static final String ARG_PURGE_PERSISTENT_CACHE = "--purge-persistent-cache";
   public static final String ARG_KEY_VERBOSE_LOGGING = "verbose-logging";
   public static final String ARG_VERBOSE_LOGGING = "--verbose-logging";
   public static final String ARG_KEY_OBSERVATORY_PORT = "observatory-port";
@@ -102,14 +104,16 @@ public class FlutterShellArgs {
     if (intent.getBooleanExtra(ARG_KEY_CACHE_SKSL, false)) {
       args.add(ARG_CACHE_SKSL);
     }
+    if (intent.getBooleanExtra(ARG_KEY_PURGE_PERSISTENT_CACHE, false)) {
+      args.add(ARG_PURGE_PERSISTENT_CACHE);
+    }
     if (intent.getBooleanExtra(ARG_KEY_VERBOSE_LOGGING, false)) {
       args.add(ARG_VERBOSE_LOGGING);
     }
 
     // NOTE: all flags provided with this argument are subject to filtering
-    // based on a whitelist in shell/common/switches.cc. If any flag provided
-    // is not present in the whitelist, the process will immediately
-    // terminate.
+    // based on a a list of allowed flags in shell/common/switches.cc. If any
+    // flag provided is not allowed, the process will immediately terminate.
     if (intent.hasExtra(ARG_KEY_DART_FLAGS)) {
       args.add(ARG_DART_FLAGS + "=" + intent.getStringExtra(ARG_KEY_DART_FLAGS));
     }

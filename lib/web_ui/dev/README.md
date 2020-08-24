@@ -41,9 +41,7 @@ felt build [-w] -j 100
 
 If you are a Google employee, you can use an internal instance of Goma to parallelize your builds. Because Goma compiles code on remote servers, this option is effective even on low-powered laptops.
 
-By default, when compiling Dart code to JavaScript, we use 4 `dart2js` workers.
-If you need to increase or reduce the number of workers, set the `BUILD_MAX_WORKERS_PER_TASK`
-environment variable to the desired number.
+By default, when compiling Dart code to JavaScript, we use 8 `dart2js` workers.
 
 ## Running web engine tests
 
@@ -83,10 +81,32 @@ For Chrome and Firefox, the tests run on a version locked on the [browser_lock.y
 felt test --browser=firefox --firefox-version=70.0.1
 ```
 
-To run tests on Safari use the following command. It works on MacOS devices and it uses the Safari installed on the OS. Currently there is no option for using another Safari version.
+To run tests on Safari use the following command. It works on macOS devices and it uses the Safari installed on the OS. Currently there is no option for using another Safari version.
 
 ```
 felt test --browser=safari
+```
+
+One can also use Safari running in iOS Simulator for running unit tests. There are few prerequisite steps:
+
+1. Please make sure that you installed Xcode.
+
+2. The default version used in the tests are in browser_lock.yaml file. Install the ios version to use for simulators: Xcode > Preferences > Components
+
+3. run `xcrun simctl list devices`. If the simulator you want is not installed use step 4.
+
+4. Use felt to create a simulator:
+
+```
+felt create_simulator --type='iOS' --version='13.1' --device='iPhone.11.Pro'
+```
+
+To run tests on ios-safari use the one of the following commands:
+
+```
+felt test --browser=ios-safari
+felt test --browser=ios-safari --version='13.1' --device='iPhone.11.Pro'
+felt test --browser=ios-safari test/alarm_clock_test.dart
 ```
 
 To run tests on Windows Edge use the following command. It works on Windows devices and it uses the Edge installed on the OS.
@@ -120,6 +140,7 @@ flutter/goldens updating the screenshots. Then update this file pointing to
 the new revision.
 
 ## Developing the `felt` tool
+
 If you are making changes in the `felt` tool itself, you need to be aware of Dart snapshots. We create a Dart snapshot of the `felt` tool to make the startup faster.
 
 To make sure you are running the `felt` tool with your changes included, you would need to stop using the snapshot. This can be achived through the environment variable `FELT_USE_SNAPSHOT`:
@@ -135,3 +156,22 @@ FELT_USE_SNAPSHOT=0 felt <command>
 ```
 
 _**Note**: if `FELT_USE_SNAPSHOT` is omitted or has any value other than "false" or "0", the snapshot mode will be enabled._
+
+## Upgrade Browser Version
+
+Since the engine code and infra recipes do not live in the same repository there are few steps to follow in order to upgrade a browser's version. For now these instructins are most relevant to Chrome.
+
+1. Dowload the binaries for the new browser/driver for each operaing system (macOS, linux, windows).
+2. Create CIPD packages for these packages. (More documentation is available for Googlers. go/cipd-flutter-web)
+3. Add the new browser version to the recipe. Do not remove the old one. This recipe will apply to all PRs as soon as it is merged. However, not all PRs will have the up to date code for a while.
+4. Update the version in this repo. Do this by changing the related fields in `browser_lock.yaml` file.
+5. After a few days don't forget to remove the old version from the LUCI recipe.
+
+Note that for LUCI builders, both unit and integration tests are using the same browser.
+
+Some useful links:
+
+1. For Chrome downloads [link](https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html)
+2. Browser and driver CIPD [packages](https://chrome-infra-packages.appspot.com/p/flutter_internal) (Note: Access rights are restricted for these packages.)
+3. LUCI web [recipe](https://flutter.googlesource.com/recipes/+/refs/heads/master/recipes/web_engine.py)
+4. More general reading on CIPD packages [link](https://chromium.googlesource.com/chromium/src.git/+/master/docs/cipd.md#What-is-CIPD)

@@ -27,6 +27,8 @@ public class PlatformTextureUiTests {
   @Before
   public void setUp() {
     intent = new Intent(Intent.ACTION_MAIN);
+    // Render a texture.
+    intent.putExtra("use_android_view", false);
   }
 
   @Test

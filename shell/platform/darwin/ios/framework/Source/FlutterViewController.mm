@@ -39,6 +39,7 @@ NSNotificationName const FlutterViewControllerShowHomeIndicator =
 @interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
+@property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 @end
 
 // The following conditional compilation defines an API 13 concept on earlier API targets so that
@@ -110,22 +111,24 @@ typedef enum UIAccessibilityContrast : NSInteger {
   return self;
 }
 
-- (instancetype)initWithProject:(nullable FlutterDartProject*)project
-                        nibName:(nullable NSString*)nibName
-                         bundle:(nullable NSBundle*)nibBundle {
+- (instancetype)initWithProject:(FlutterDartProject*)project
+                        nibName:(NSString*)nibName
+                         bundle:(NSBundle*)nibBundle {
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
-    _viewOpaque = YES;
-    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
-                                              project:project
-                               allowHeadlessExecution:NO]);
-    _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
-    [_engine.get() createShell:nil libraryURI:nil];
-    _engineNeedsLaunch = YES;
-    _ongoingTouches = [[NSMutableSet alloc] init];
-    [self loadDefaultSplashScreenView];
-    [self performCommonViewControllerInitialization];
+    [self sharedSetupWithProject:project initialRoute:nil];
+  }
+
+  return self;
+}
+
+- (instancetype)initWithProject:(FlutterDartProject*)project
+                   initialRoute:(NSString*)initialRoute
+                        nibName:(NSString*)nibName
+                         bundle:(NSBundle*)nibBundle {
+  self = [super initWithNibName:nibName bundle:nibBundle];
+  if (self) {
+    [self sharedSetupWithProject:project initialRoute:initialRoute];
   }
 
   return self;
@@ -136,11 +139,34 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
-  return [self initWithProject:nil nibName:nil bundle:nil];
+  self = [super initWithCoder:aDecoder];
+  return self;
+}
+
+- (void)awakeFromNib {
+  [super awakeFromNib];
+  if (!_engine.get()) {
+    [self sharedSetupWithProject:nil initialRoute:nil];
+  }
 }
 
 - (instancetype)init {
   return [self initWithProject:nil nibName:nil bundle:nil];
+}
+
+- (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
+                  initialRoute:(nullable NSString*)initialRoute {
+  _viewOpaque = YES;
+  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+  _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
+                                            project:project
+                             allowHeadlessExecution:self.engineAllowHeadlessExecution]);
+  _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+  [_engine.get() createShell:nil libraryURI:nil initialRoute:initialRoute];
+  _engineNeedsLaunch = YES;
+  _ongoingTouches = [[NSMutableSet alloc] init];
+  [self loadDefaultSplashScreenView];
+  [self performCommonViewControllerInitialization];
 }
 
 - (BOOL)isViewOpaque {
@@ -456,7 +482,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (UIView*)splashScreenFromXib:(NSString*)name {
-  NSArray* objects = [[NSBundle mainBundle] loadNibNamed:name owner:self options:nil];
+  NSArray* objects = nil;
+  @try {
+    objects = [[NSBundle mainBundle] loadNibNamed:name owner:self options:nil];
+  } @catch (NSException* exception) {
+    return nil;
+  }
   if ([objects count] != 0) {
     UIView* view = [objects objectAtIndex:0];
     return view;
@@ -552,9 +583,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
-  [self surfaceUpdated:NO];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
-  [self flushOngoingTouches];
+  if ([_engine.get() viewController] == self) {
+    [self surfaceUpdated:NO];
+    [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+    [self flushOngoingTouches];
+    [_engine.get() notifyLowMemory];
+  }
 
   [super viewDidDisappear:animated];
 }
@@ -845,9 +879,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self updateViewportPadding];
   [self updateViewportMetrics];
 
+  // There is no guarantee that UIKit will layout subviews when the application is active. Creating
+  // the surface when inactive will cause GPU accesses from the background. Only wait for the first
+  // frame to render when the application is actually active.
+  bool applicationIsActive =
+      [UIApplication sharedApplication].applicationState == UIApplicationStateActive;
+
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
-  if (firstViewBoundsUpdate) {
+  if (firstViewBoundsUpdate && applicationIsActive) {
     [self surfaceUpdated:YES];
 
     flutter::Shell& shell = [_engine.get() shell];
@@ -1194,10 +1234,16 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_engine.get().binaryMessenger sendOnChannel:channel message:message binaryReply:callback];
 }
 
-- (void)setMessageHandlerOnChannel:(NSString*)channel
-              binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
+- (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(NSString*)channel
+                                          binaryMessageHandler:
+                                              (FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel must not be null");
-  [_engine.get().binaryMessenger setMessageHandlerOnChannel:channel binaryMessageHandler:handler];
+  return [_engine.get().binaryMessenger setMessageHandlerOnChannel:channel
+                                              binaryMessageHandler:handler];
+}
+
+- (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
+  [_engine.get().binaryMessenger cleanupConnection:connection];
 }
 
 #pragma mark - FlutterTextureRegistry
@@ -1238,6 +1284,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
   return [_engine.get() valuePublishedByPlugin:pluginKey];
+}
+
+- (void)presentViewController:(UIViewController*)viewControllerToPresent
+                     animated:(BOOL)flag
+                   completion:(void (^)(void))completion {
+  self.isPresentingViewControllerAnimating = YES;
+  [super presentViewController:viewControllerToPresent
+                      animated:flag
+                    completion:^{
+                      self.isPresentingViewControllerAnimating = NO;
+                      if (completion) {
+                        completion();
+                      }
+                    }];
+}
+
+- (BOOL)isPresentingViewController {
+  return self.presentedViewController != nil || self.isPresentingViewControllerAnimating;
 }
 
 @end

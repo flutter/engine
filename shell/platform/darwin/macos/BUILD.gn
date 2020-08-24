@@ -11,9 +11,7 @@ import("//flutter/shell/platform/glfw/config.gni")
 import("//flutter/testing/testing.gni")
 
 group("macos") {
-  deps = [
-    ":flutter_framework",
-  ]
+  deps = [ ":flutter_framework" ]
   if (build_glfw_shell) {
     deps += [
       ":flutter_macos_glfw",
@@ -54,6 +52,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterExternalTextureGL.h",
     "framework/Source/FlutterExternalTextureGL.mm",
+    "framework/Source/FlutterMouseCursorPlugin.h",
+    "framework/Source/FlutterMouseCursorPlugin.mm",
     "framework/Source/FlutterTextInputModel.h",
     "framework/Source/FlutterTextInputModel.mm",
     "framework/Source/FlutterTextInputPlugin.h",
@@ -68,7 +68,7 @@ source_set("flutter_framework_source") {
 
   deps = [
     "//flutter/shell/platform/darwin/common:framework_shared",
-    "//flutter/shell/platform/embedder:embedder_with_symbol_prefix",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -89,9 +89,7 @@ shared_library("flutter_framework_dylib") {
 
   ldflags = [ "-Wl,-install_name,@rpath/$_flutter_framework_filename/$_framework_binary_subpath" ]
 
-  deps = [
-    ":flutter_framework_source",
-  ]
+  deps = [ ":flutter_framework_source" ]
 }
 
 test_fixtures("flutter_desktop_darwin_fixtures") {
@@ -103,9 +101,7 @@ test_fixtures("flutter_desktop_darwin_fixtures") {
 executable("flutter_desktop_darwin_unittests") {
   testonly = true
 
-  sources = [
-    "framework/Source/FlutterEngineUnittests.mm",
-  ]
+  sources = [ "framework/Source/FlutterEngineUnittests.mm" ]
 
   cflags_objcc = [ "-fobjc-arc" ]
 
@@ -113,7 +109,7 @@ executable("flutter_desktop_darwin_unittests") {
     ":flutter_desktop_darwin_fixtures",
     ":flutter_framework_source",
     "//flutter/shell/platform/darwin/common:framework_shared",
-    "//flutter/shell/platform/embedder:embedder_with_symbol_prefix",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/testing",
     "//flutter/testing:dart",
     "//flutter/testing:skia",
@@ -124,36 +120,22 @@ executable("flutter_desktop_darwin_unittests") {
 copy("copy_dylib") {
   visibility = [ ":*" ]
 
-  sources = [
-    "$root_out_dir/lib$_flutter_framework_name.dylib",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/$_framework_binary_subpath",
-  ]
+  sources = [ "$root_out_dir/lib$_flutter_framework_name.dylib" ]
+  outputs = [ "$_flutter_framework_dir/$_framework_binary_subpath" ]
 
-  deps = [
-    ":flutter_framework_dylib",
-  ]
+  deps = [ ":flutter_framework_dylib" ]
 }
 
 copy("copy_framework_info_plist") {
   visibility = [ ":*" ]
-  sources = [
-    "framework/Info.plist",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/Versions/A/Resources/Info.plist",
-  ]
+  sources = [ "framework/Info.plist" ]
+  outputs = [ "$_flutter_framework_dir/Versions/A/Resources/Info.plist" ]
 }
 
 copy("copy_framework_module_map") {
   visibility = [ ":*" ]
-  sources = [
-    "framework/module.modulemap",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/Versions/A/Modules/module.modulemap",
-  ]
+  sources = [ "framework/module.modulemap" ]
+  outputs = [ "$_flutter_framework_dir/Versions/A/Modules/module.modulemap" ]
 }
 
 action("copy_framework_headers") {
@@ -175,30 +157,21 @@ action("copy_framework_headers") {
 
 copy("copy_framework_icu") {
   visibility = [ ":*" ]
-  sources = [
-    "//third_party/icu/flutter/icudtl.dat",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/Versions/A/Resources/{{source_file_part}}",
-  ]
+  sources = [ "//third_party/icu/flutter/icudtl.dat" ]
+  outputs =
+      [ "$_flutter_framework_dir/Versions/A/Resources/{{source_file_part}}" ]
 }
 
 copy("copy_license") {
   visibility = [ ":*" ]
-  sources = [
-    "//LICENSE",
-  ]
-  outputs = [
-    "$root_out_dir/LICENSE",
-  ]
+  sources = [ "//LICENSE" ]
+  outputs = [ "$root_out_dir/LICENSE" ]
 }
 
 action("_generate_symlinks") {
   visibility = [ ":*" ]
   script = "//build/config/mac/package_framework.py"
-  outputs = [
-    "$root_build_dir/$_flutter_framework_name.stamp",
-  ]
+  outputs = [ "$root_build_dir/$_flutter_framework_name.stamp" ]
   args = [
     "--framework",
     "$_flutter_framework_filename",
@@ -224,12 +197,8 @@ action("_generate_symlinks") {
 
 copy("copy_framework_podspec") {
   visibility = [ ":*" ]
-  sources = [
-    "framework/FlutterMacOS.podspec",
-  ]
-  outputs = [
-    "$root_out_dir/FlutterMacOS.podspec",
-  ]
+  sources = [ "framework/FlutterMacOS.podspec" ]
+  outputs = [ "$root_out_dir/FlutterMacOS.podspec" ]
 }
 
 group("flutter_framework") {
@@ -241,9 +210,7 @@ group("flutter_framework") {
 
 if (build_glfw_shell) {
   shared_library("flutter_macos_glfw") {
-    deps = [
-      "//flutter/shell/platform/glfw:flutter_glfw",
-    ]
+    deps = [ "//flutter/shell/platform/glfw:flutter_glfw" ]
 
     public_configs = [ "//flutter:config" ]
   }

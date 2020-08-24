@@ -44,8 +44,9 @@ PointerDataDispatcherMaker ShellTestPlatformViewGL::GetDispatcherMaker() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool ShellTestPlatformViewGL::GLContextMakeCurrent() {
-  return gl_surface_.MakeCurrent();
+std::unique_ptr<GLContextResult>
+ShellTestPlatformViewGL::GLContextMakeCurrent() {
+  return std::make_unique<GLContextDefaultResult>(gl_surface_.MakeCurrent());
 }
 
 // |GPUSurfaceGLDelegate|
@@ -59,7 +60,7 @@ bool ShellTestPlatformViewGL::GLContextPresent() {
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t ShellTestPlatformViewGL::GLContextFBO() const {
+intptr_t ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
   return gl_surface_.GetFramebuffer();
 }
 

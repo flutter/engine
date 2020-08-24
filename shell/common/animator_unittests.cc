@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
@@ -46,9 +47,9 @@ TEST_F(ShellTest, VSyncTargetTime) {
   };
 
   // create a shell with a constant firing vsync waiter.
-  fml::AutoResetWaitableEvent shell_creation;
-
   auto platform_task = std::async(std::launch::async, [&]() {
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+
     shell = Shell::Create(
         task_runners, settings,
         [vsync_clock, &create_vsync_waiter](Shell& shell) {
@@ -57,9 +58,7 @@ TEST_F(ShellTest, VSyncTargetTime) {
               std::move(create_vsync_waiter),
               ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
         },
-        [](Shell& shell) {
-          return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
-        });
+        [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
     ASSERT_TRUE(DartVMRef::IsInstanceRunning());
 
     auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -67,10 +66,8 @@ TEST_F(ShellTest, VSyncTargetTime) {
     configuration.SetEntrypoint("onBeginFrameMain");
 
     RunEngine(shell.get(), std::move(configuration));
-    shell_creation.Signal();
   });
-
-  shell_creation.Wait();
+  platform_task.wait();
 
   // schedule a frame to trigger window.onBeginFrame
   fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetUITaskRunner(),

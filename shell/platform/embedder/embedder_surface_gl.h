@@ -19,7 +19,7 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
     std::function<bool(void)> gl_make_current_callback;           // required
     std::function<bool(void)> gl_clear_current_callback;          // required
     std::function<bool(void)> gl_present_callback;                // required
-    std::function<intptr_t(void)> gl_fbo_callback;                // required
+    std::function<intptr_t(GLFrameInfo)> gl_fbo_callback;         // required
     std::function<bool(void)> gl_make_resource_current_callback;  // optional
     std::function<SkMatrix(void)>
         gl_surface_transformation_callback;              // optional
@@ -47,10 +47,10 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
   // |EmbedderSurface|
-  sk_sp<GrContext> CreateResourceContext() const override;
+  sk_sp<GrDirectContext> CreateResourceContext() const override;
 
   // |GPUSurfaceGLDelegate|
-  bool GLContextMakeCurrent() override;
+  std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
 
   // |GPUSurfaceGLDelegate|
   bool GLContextClearCurrent() override;
@@ -59,7 +59,7 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   bool GLContextPresent() override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO() const override;
+  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
   bool GLContextFBOResetAfterPresent() const override;

@@ -27,8 +27,9 @@ class FilePath {
       path.relative(_absolutePath, from: environment.webUiRootDir.path);
 
   @override
-  bool operator ==(dynamic other) {
-    return other is FilePath && _absolutePath == other._absolutePath;
+  bool operator ==(Object other) {
+    return other is FilePath
+        && other._absolutePath == _absolutePath;
   }
 
   @override
@@ -67,7 +68,7 @@ Future<int> runProcess(
 }
 
 /// Runs [executable]. Do not follow the exit code or the output.
-void startProcess(
+Future<void> startProcess(
   String executable,
   List<String> arguments, {
   String workingDirectory,
@@ -219,7 +220,7 @@ void cleanup() async {
     }
   }
 
-  cleanupCallbacks.forEach((element) {
-    element.call();
-  });
+  for (final AsyncCallback callback in cleanupCallbacks) {
+    await callback();
+  }
 }

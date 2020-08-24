@@ -435,6 +435,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           touchExplorationStateChangeListener);
     }
     contentResolver.unregisterContentObserver(animationScaleObserver);
+    accessibilityChannel.setAccessibilityMessageHandler(null);
   }
 
   /** Returns true if the Android OS currently has accessibility enabled, false otherwise. */
@@ -1547,6 +1548,17 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     AccessibilityEvent event =
         obtainAccessibilityEvent(route.id, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     String routeName = route.getRouteName();
+    if (routeName == null) {
+      // The routeName will be null when there is no semantics node that represnets namesRoute in
+      // the scopeRoute. The TYPE_WINDOW_STATE_CHANGED only works the route name is not null and not
+      // empty. Gives it a whitespace will make it focus the first semantics node without
+      // pronouncing any word.
+      //
+      // The other way to trigger a focus change is to send a TYPE_VIEW_FOCUSED to the
+      // rootAccessibilityView. However, it is less predictable which semantics node it will focus
+      // next.
+      routeName = " ";
+    }
     event.getText().add(routeName);
     sendAccessibilityEvent(event);
   }

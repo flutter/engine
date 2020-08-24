@@ -16,6 +16,7 @@
 #include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/switches.h"
+#include "flutter/shell/version/version.h"
 #include "flutter/testing/testing.h"
 #include "include/core/SkPicture.h"
 
@@ -98,12 +99,17 @@ TEST_F(ShellTest, CacheSkSLWorks) {
   firstFrameLatch.Wait();
   WaitForIO(shell.get());
 
+// Shader precompilation from SKSL is not implemented on the Skia Vulkan
+// backend so don't run the second half of this test on Vulkan. This can get
+// removed if SKSL precompilation is implemented in the Skia Vulkan backend.
+#if !defined(SHELL_ENABLE_VULKAN)
   // To check that all shaders are precompiled, verify that no new skp is dumped
   // due to shader compilations.
   int old_skp_count = skp_count;
   skp_count = 0;
   fml::VisitFilesRecursively(dir.fd(), skp_visitor);
   ASSERT_EQ(skp_count, old_skp_count);
+#endif  // !defined(SHELL_ENABLE_VULKAN)
 
   // Remove all files generated
   fml::FileVisitor remove_visitor = [&remove_visitor](
@@ -202,6 +208,68 @@ TEST_F(ShellTest, CanLoadSkSLsFromAsset) {
 
   // Cleanup.
   fml::UnlinkFile(asset_dir.fd(), PersistentCache::kAssetFileName);
+}
+
+TEST_F(ShellTest, CanRemoveOldPersistentCache) {
+  fml::ScopedTemporaryDirectory base_dir;
+  ASSERT_TRUE(base_dir.fd().is_valid());
+
+  fml::CreateDirectory(base_dir.fd(),
+                       {"flutter_engine", GetFlutterEngineVersion(), "skia"},
+                       fml::FilePermission::kReadWrite);
+
+  constexpr char kOldEngineVersion[] = "old";
+  auto old_created = fml::CreateDirectory(
+      base_dir.fd(), {"flutter_engine", kOldEngineVersion, "skia"},
+      fml::FilePermission::kReadWrite);
+  ASSERT_TRUE(old_created.is_valid());
+
+  PersistentCache::SetCacheDirectoryPath(base_dir.path());
+  PersistentCache::ResetCacheForProcess();
+
+  auto engine_dir = fml::OpenDirectoryReadOnly(base_dir.fd(), "flutter_engine");
+  auto current_dir =
+      fml::OpenDirectoryReadOnly(engine_dir, GetFlutterEngineVersion());
+  auto old_dir = fml::OpenDirectoryReadOnly(engine_dir, kOldEngineVersion);
+
+  ASSERT_TRUE(engine_dir.is_valid());
+  ASSERT_TRUE(current_dir.is_valid());
+  ASSERT_FALSE(old_dir.is_valid());
+
+  // Cleanup
+  fml::RemoveFilesInDirectory(base_dir.fd());
+}
+
+TEST_F(ShellTest, CanPurgePersistentCache) {
+  fml::ScopedTemporaryDirectory base_dir;
+  ASSERT_TRUE(base_dir.fd().is_valid());
+  auto cache_dir = fml::CreateDirectory(
+      base_dir.fd(),
+      {"flutter_engine", GetFlutterEngineVersion(), "skia", GetSkiaVersion()},
+      fml::FilePermission::kReadWrite);
+  PersistentCache::SetCacheDirectoryPath(base_dir.path());
+  PersistentCache::ResetCacheForProcess();
+
+  // Generate a dummy persistent cache.
+  fml::DataMapping test_data(std::string("test"));
+  ASSERT_TRUE(fml::WriteAtomically(cache_dir, "test", test_data));
+  auto file = fml::OpenFileReadOnly(cache_dir, "test");
+  ASSERT_TRUE(file.is_valid());
+
+  // Run engine with purge_persistent_cache to remove the dummy cache.
+  auto settings = CreateSettingsForFixture();
+  settings.purge_persistent_cache = true;
+  auto config = RunConfiguration::InferFromSettings(settings);
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  RunEngine(shell.get(), std::move(config));
+
+  // Verify that the dummy is purged.
+  file = fml::OpenFileReadOnly(cache_dir, "test");
+  ASSERT_FALSE(file.is_valid());
+
+  // Cleanup
+  fml::RemoveFilesInDirectory(base_dir.fd());
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing

@@ -20,17 +20,17 @@
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiters_test.h"
 #include "flutter/testing/elf_loader.h"
+#include "flutter/testing/fixture_test.h"
 #include "flutter/testing/test_dart_native_resolver.h"
-#include "flutter/testing/thread_test.h"
 
 namespace flutter {
 namespace testing {
 
-class ShellTest : public ThreadTest {
+class ShellTest : public FixtureTest {
  public:
   ShellTest();
 
-  Settings CreateSettingsForFixture();
+  Settings CreateSettingsForFixture() override;
   std::unique_ptr<Shell> CreateShell(Settings settings,
                                      bool simulate_vsync = false);
   std::unique_ptr<Shell> CreateShell(
@@ -48,10 +48,10 @@ class ShellTest : public ThreadTest {
   void SendEnginePlatformMessage(Shell* shell,
                                  fml::RefPtr<PlatformMessage> message);
 
-  void AddNativeCallback(std::string name, Dart_NativeFunction callback);
-
   static void PlatformViewNotifyCreated(
       Shell* shell);  // This creates the surface
+  static void PlatformViewNotifyDestroyed(
+      Shell* shell);  // This destroys the surface
   static void RunEngine(Shell* shell, RunConfiguration configuration);
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
@@ -59,6 +59,7 @@ class ShellTest : public ThreadTest {
   /// the `will_draw_new_frame` to true.
   static void VSyncFlush(Shell* shell, bool& will_draw_new_frame);
 
+  static void SetViewportMetrics(Shell* shell, double width, double height);
   /// Given the root layer, this callback builds the layer tree to be rasterized
   /// in PumpOneFrame.
   using LayerTreeBuilder =
@@ -82,6 +83,7 @@ class ShellTest : public ThreadTest {
 
   enum ServiceProtocolEnum {
     kGetSkSLs,
+    kEstimateRasterCacheMemory,
     kSetAssetBundlePath,
     kRunInView,
   };
@@ -94,7 +96,7 @@ class ShellTest : public ThreadTest {
       ServiceProtocolEnum some_protocol,
       fml::RefPtr<fml::TaskRunner> task_runner,
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
+      rapidjson::Document* response);
 
   std::shared_ptr<txt::FontCollection> GetFontCollection(Shell* shell);
 
@@ -104,12 +106,7 @@ class ShellTest : public ThreadTest {
   static int UnreportedTimingsCount(Shell* shell);
 
  private:
-  void SetSnapshotsAndAssets(Settings& settings);
-
-  std::shared_ptr<TestDartNativeResolver> native_resolver_;
   ThreadHost thread_host_;
-  fml::UniqueFD assets_dir_;
-  ELFAOTSymbols aot_symbols_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTest);
 };

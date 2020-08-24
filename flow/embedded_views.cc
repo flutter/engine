@@ -6,12 +6,10 @@
 
 namespace flutter {
 
-bool ExternalViewEmbedder::SubmitFrame(GrContext* context,
-                                       SkCanvas* background_canvas) {
-  return false;
+void ExternalViewEmbedder::SubmitFrame(GrDirectContext* context,
+                                       std::unique_ptr<SurfaceFrame> frame) {
+  frame->Submit();
 };
-
-void ExternalViewEmbedder::FinishFrame(){};
 
 void MutatorsStack::PushClipRect(const SkRect& rect) {
   std::shared_ptr<Mutator> element = std::make_shared<Mutator>(rect);
@@ -51,5 +49,19 @@ const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator
 MutatorsStack::Bottom() const {
   return vector_.rbegin();
 };
+
+const std::vector<std::shared_ptr<Mutator>>::const_iterator
+MutatorsStack::Begin() const {
+  return vector_.begin();
+};
+
+const std::vector<std::shared_ptr<Mutator>>::const_iterator MutatorsStack::End()
+    const {
+  return vector_.end();
+};
+
+bool ExternalViewEmbedder::SupportsDynamicThreadMerging() {
+  return false;
+}
 
 }  // namespace flutter

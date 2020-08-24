@@ -38,7 +38,9 @@ TEST(WeakPtrTest, MoveConstruction) {
   WeakPtrFactory<int> factory(&data);
   WeakPtr<int> ptr = factory.GetWeakPtr();
   WeakPtr<int> ptr2(std::move(ptr));
-  EXPECT_EQ(nullptr, ptr.get());
+  // The clang linter flags the method called on the moved-from reference, but
+  // this is testing the move implementation, so it is marked NOLINT.
+  EXPECT_EQ(nullptr, ptr.get());  // NOLINT
   EXPECT_EQ(&data, ptr2.get());
 }
 
@@ -60,7 +62,9 @@ TEST(WeakPtrTest, MoveAssignment) {
   WeakPtr<int> ptr2;
   EXPECT_EQ(nullptr, ptr2.get());
   ptr2 = std::move(ptr);
-  EXPECT_EQ(nullptr, ptr.get());
+  // The clang linter flags the method called on the moved-from reference, but
+  // this is testing the move implementation, so it is marked NOLINT.
+  EXPECT_EQ(nullptr, ptr.get());  // NOLINT
   EXPECT_EQ(&data, ptr2.get());
 }
 
@@ -188,13 +192,13 @@ TEST(TaskRunnerAffineWeakPtrTest, ShouldNotCrashIfRunningOnTheSameTaskRunner) {
                        &loop2_task_start_latch]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     int data = 0;
-    WeakPtrFactory<int> factory(&data);
+    TaskRunnerAffineWeakPtrFactory<int> factory(&data);
     loop2 = &fml::MessageLoop::GetCurrent();
 
     loop2->GetTaskRunner()->PostTask([&]() {
       latch2.Signal();
       loop2_task_start_latch.Wait();
-      TaskRunnerAffineWeakPtr<int> ptr = factory.GetTaskRunnerAffineWeakPtr();
+      TaskRunnerAffineWeakPtr<int> ptr = factory.GetWeakPtr();
       EXPECT_EQ(*ptr, data);
       loop2_task_finish_latch.Signal();
     });

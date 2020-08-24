@@ -3,6 +3,7 @@ package io.flutter.plugin.editing;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import android.content.ClipboardManager;
 import android.content.res.AssetManager;
+import android.os.Bundle;
 import android.text.Editable;
 import android.text.Emoji;
 import android.text.InputType;
@@ -26,17 +28,39 @@ import android.view.inputmethod.ExtractedText;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.JSONMethodCodec;
+import io.flutter.plugin.common.MethodCall;
 import io.flutter.util.FakeKeyEvent;
+import java.nio.ByteBuffer;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowClipboardManager;
 
-@Config(manifest = Config.NONE, sdk = 27, shadows = ShadowClipboardManager.class)
+@Config(manifest = Config.NONE, shadows = ShadowClipboardManager.class)
 @RunWith(RobolectricTestRunner.class)
 public class InputConnectionAdaptorTest {
+  // Verifies the method and arguments for a captured method call.
+  private void verifyMethodCall(ByteBuffer buffer, String methodName, String[] expectedArgs)
+      throws JSONException {
+    buffer.rewind();
+    MethodCall methodCall = JSONMethodCodec.INSTANCE.decodeMethodCall(buffer);
+    assertEquals(methodName, methodCall.method);
+    if (expectedArgs != null) {
+      JSONArray args = methodCall.arguments();
+      assertEquals(expectedArgs.length, args.length());
+      for (int i = 0; i < args.length(); i++) {
+        assertEquals(expectedArgs[i], args.get(i).toString());
+      }
+    }
+  }
+
   @Test
   public void inputConnectionAdaptor_ReceivesEnter() throws NullPointerException {
     View testView = new View(RuntimeEnvironment.application);
@@ -126,6 +150,294 @@ public class InputConnectionAdaptorTest {
   }
 
   @Test
+  public void testPerformPrivateCommand_dataIsNull() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+    adaptor.performPrivateCommand("actionCommand", null);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {"0", "{\"action\":\"actionCommand\"}"});
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsByteArray() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    byte[] buffer = new byte[] {'a', 'b', 'c', 'd'};
+    bundle.putByteArray("keyboard_layout", buffer);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {
+          "0", "{\"data\":{\"keyboard_layout\":[97,98,99,100]},\"action\":\"actionCommand\"}"
+        });
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsByte() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    byte b = 3;
+    bundle.putByte("keyboard_layout", b);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {"0", "{\"data\":{\"keyboard_layout\":3},\"action\":\"actionCommand\"}"});
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsCharArray() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    char[] buffer = new char[] {'a', 'b', 'c', 'd'};
+    bundle.putCharArray("keyboard_layout", buffer);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {
+          "0",
+          "{\"data\":{\"keyboard_layout\":[\"a\",\"b\",\"c\",\"d\"]},\"action\":\"actionCommand\"}"
+        });
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsChar() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    char b = 'a';
+    bundle.putChar("keyboard_layout", b);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {"0", "{\"data\":{\"keyboard_layout\":\"a\"},\"action\":\"actionCommand\"}"});
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsCharSequenceArray() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    CharSequence charSequence1 = new StringBuffer("abc");
+    CharSequence charSequence2 = new StringBuffer("efg");
+    CharSequence[] value = {charSequence1, charSequence2};
+    bundle.putCharSequenceArray("keyboard_layout", value);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {
+          "0", "{\"data\":{\"keyboard_layout\":[\"abc\",\"efg\"]},\"action\":\"actionCommand\"}"
+        });
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsCharSequence() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    CharSequence charSequence = new StringBuffer("abc");
+    bundle.putCharSequence("keyboard_layout", charSequence);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {
+          "0", "{\"data\":{\"keyboard_layout\":\"abc\"},\"action\":\"actionCommand\"}"
+        });
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsFloat() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    float value = 0.5f;
+    bundle.putFloat("keyboard_layout", value);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {"0", "{\"data\":{\"keyboard_layout\":0.5},\"action\":\"actionCommand\"}"});
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsFloatArray() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    float[] value = {0.5f, 0.6f};
+    bundle.putFloatArray("keyboard_layout", value);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {
+          "0", "{\"data\":{\"keyboard_layout\":[0.5,0.6]},\"action\":\"actionCommand\"}"
+        });
+  }
+
+  @Test
   public void testSendKeyEvent_shiftKeyUpCancelsSelection() {
     int selStart = 5;
     int selEnd = 10;
@@ -152,6 +464,148 @@ public class InputConnectionAdaptorTest {
     assertTrue(didConsume);
     assertEquals(selStart - 1, Selection.getSelectionStart(editable));
     assertEquals(selStart - 1, Selection.getSelectionEnd(editable));
+  }
+
+  @Test
+  public void testSendKeyEvent_leftKeyMovesCaretLeftComplexEmoji() {
+    int selStart = 75;
+    Editable editable = sampleEditable(selStart, selStart, SAMPLE_EMOJI_TEXT);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT);
+    boolean didConsume;
+
+    // Normal Character
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 74);
+
+    // Non-Spacing Mark
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 73);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 72);
+
+    // Keycap
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 69);
+
+    // Keycap with invalid base
+    adaptor.setSelection(68, 68);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 66);
+    adaptor.setSelection(67, 67);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 66);
+
+    // Zero Width Joiner
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 55);
+
+    // Zero Width Joiner with invalid base
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 53);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 52);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 51);
+
+    // ----- Start Emoji Tag Sequence with invalid base testing ----
+    // Delete base tag
+    adaptor.setSelection(39, 39);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 37);
+
+    // Delete the sequence
+    adaptor.setSelection(49, 49);
+    for (int i = 0; i < 6; i++) {
+      didConsume = adaptor.sendKeyEvent(downKeyDown);
+      assertTrue(didConsume);
+    }
+    assertEquals(Selection.getSelectionStart(editable), 37);
+    // ----- End Emoji Tag Sequence with invalid base testing ----
+
+    // Emoji Tag Sequence
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 23);
+
+    // Variation Selector with invalid base
+    adaptor.setSelection(22, 22);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 21);
+    adaptor.setSelection(22, 22);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 21);
+
+    // Variation Selector
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 19);
+
+    // Emoji Modifier
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 16);
+
+    // Emoji Modifier with invalid base
+    adaptor.setSelection(14, 14);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 13);
+    adaptor.setSelection(14, 14);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 13);
+
+    // Line Feed
+    adaptor.setSelection(12, 12);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 11);
+
+    // Carriage Return
+    adaptor.setSelection(12, 12);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 11);
+
+    // Carriage Return and Line Feed
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 9);
+
+    // Regional Indicator Symbol odd
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 7);
+
+    // Regional Indicator Symbol even
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 3);
+
+    // Simple Emoji
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 1);
+
+    // First CodePoint
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 0);
   }
 
   @Test
@@ -197,6 +651,179 @@ public class InputConnectionAdaptorTest {
     assertTrue(didConsume);
     assertEquals(selStart + 1, Selection.getSelectionStart(editable));
     assertEquals(selStart + 1, Selection.getSelectionEnd(editable));
+  }
+
+  @Test
+  public void testSendKeyEvent_rightKeyMovesCaretRightComplexRegion() {
+    int selStart = 0;
+    // Seven region indicator characters. The first six should be considered as
+    // three region indicators, and the final seventh character should be
+    // considered to be on its own because it has no partner.
+    String SAMPLE_REGION_TEXT = "🇷🇷🇷🇷🇷🇷🇷";
+    Editable editable = sampleEditable(selStart, selStart, SAMPLE_REGION_TEXT);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
+    boolean didConsume;
+
+    // The cursor moves over two region indicators at a time.
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 4);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 8);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 12);
+
+    // When there is only one region indicator left with no pair, the cursor
+    // moves over that single region indicator.
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 14);
+
+    // If the cursor is placed in the middle of a region indicator pair, it
+    // moves over only the second half of the pair.
+    adaptor.setSelection(6, 6);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 8);
+  }
+
+  @Test
+  public void testSendKeyEvent_rightKeyMovesCaretRightComplexEmoji() {
+    int selStart = 0;
+    Editable editable = sampleEditable(selStart, selStart, SAMPLE_EMOJI_TEXT);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
+    boolean didConsume;
+
+    // First CodePoint
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 1);
+
+    // Simple Emoji
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 3);
+
+    // Regional Indicator Symbol even
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 7);
+
+    // Regional Indicator Symbol odd
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 9);
+
+    // Carriage Return
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 10);
+
+    // Line Feed and Carriage Return
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 12);
+
+    // Line Feed
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 13);
+
+    // Modified Emoji
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 16);
+
+    // Emoji Modifier
+    adaptor.setSelection(14, 14);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 16);
+
+    // Emoji Modifier with invalid base
+    adaptor.setSelection(18, 18);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 19);
+
+    // Variation Selector
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 21);
+
+    // Variation Selector with invalid base
+    adaptor.setSelection(22, 22);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 23);
+
+    // Emoji Tag Sequence
+    for (int i = 0; i < 7; i++) {
+      didConsume = adaptor.sendKeyEvent(downKeyDown);
+      assertTrue(didConsume);
+      assertEquals(Selection.getSelectionStart(editable), 25 + 2 * i);
+    }
+    assertEquals(Selection.getSelectionStart(editable), 37);
+
+    // ----- Start Emoji Tag Sequence with invalid base testing ----
+    // Pass the sequence
+    adaptor.setSelection(39, 39);
+    for (int i = 0; i < 6; i++) {
+      didConsume = adaptor.sendKeyEvent(downKeyDown);
+      assertTrue(didConsume);
+      assertEquals(Selection.getSelectionStart(editable), 41 + 2 * i);
+    }
+    assertEquals(Selection.getSelectionStart(editable), 51);
+    // ----- End Emoji Tag Sequence with invalid base testing ----
+
+    // Zero Width Joiner with invalid base
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 52);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 53);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 55);
+
+    // Zero Width Joiner
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 66);
+
+    // Keycap with invalid base
+    adaptor.setSelection(67, 67);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 68);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 69);
+
+    // Keycap
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 72);
+
+    // Non-Spacing Mark
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 73);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 74);
+
+    // Normal Character
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 75);
   }
 
   @Test
