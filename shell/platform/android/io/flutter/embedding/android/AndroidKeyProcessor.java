@@ -263,7 +263,7 @@ public class AndroidKeyProcessor {
         // Turn on dispatchingKeyEvent so that we don't dispatch to ourselves and
         // send it to the framework again.
         dispatchingKeyEvent = true;
-        view.dispatchKeyEvent(event);
+        view.getRootView().dispatchKeyEvent(event);
         dispatchingKeyEvent = false;
       }
     }

@@ -60,6 +60,16 @@ public class AndroidKeyProcessorTest {
     FlutterEngine flutterEngine = mockFlutterEngine();
     KeyEventChannel fakeKeyEventChannel = flutterEngine.getKeyEventChannel();
     View fakeView = mock(View.class);
+    View fakeRootView = mock(View.class);
+    when(fakeView.getRootView())
+        .then(
+            new Answer<View>() {
+              @Override
+              public View answer(InvocationOnMock invocation) throws Throwable {
+                return fakeRootView;
+              }
+            });
+
     ArgumentCaptor<KeyEventChannel.EventResponseHandler> handlerCaptor =
         ArgumentCaptor.forClass(KeyEventChannel.EventResponseHandler.class);
     verify(fakeKeyEventChannel).setEventResponseHandler(handlerCaptor.capture());
@@ -93,12 +103,23 @@ public class AndroidKeyProcessorTest {
     verify(fakeView, times(1)).dispatchKeyEvent(fakeKeyEvent);
     assertEquals(false, dispatchResult[0]);
     verify(fakeKeyEventChannel, times(0)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
+    verify(fakeRootView, times(1)).dispatchKeyEvent(fakeKeyEvent);
   }
 
   public void synthesizesEventsWhenKeyUpNotHandled() {
     FlutterEngine flutterEngine = mockFlutterEngine();
     KeyEventChannel fakeKeyEventChannel = flutterEngine.getKeyEventChannel();
     View fakeView = mock(View.class);
+    View fakeRootView = mock(View.class);
+    when(fakeView.getRootView())
+        .then(
+            new Answer<View>() {
+              @Override
+              public View answer(InvocationOnMock invocation) throws Throwable {
+                return fakeRootView;
+              }
+            });
+
     ArgumentCaptor<KeyEventChannel.EventResponseHandler> handlerCaptor =
         ArgumentCaptor.forClass(KeyEventChannel.EventResponseHandler.class);
     verify(fakeKeyEventChannel).setEventResponseHandler(handlerCaptor.capture());
@@ -132,6 +153,7 @@ public class AndroidKeyProcessorTest {
     verify(fakeView, times(1)).dispatchKeyEvent(fakeKeyEvent);
     assertEquals(false, dispatchResult[0]);
     verify(fakeKeyEventChannel, times(0)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
+    verify(fakeRootView, times(1)).dispatchKeyEvent(fakeKeyEvent);
   }
 
   @NonNull
