@@ -1,4 +1,4 @@
-Signature: d16dc7316665760eb781fc7746bb2713
+Signature: 0d1cf114700ac392c09ef344dac508e5
 
 UNUSED LICENSES:
 
@@ -3976,6 +3976,7 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDeviceSpaceEffect.cp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDeviceSpaceEffect.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.cpp
 FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.h
+FILE: ../../../third_party/skia/src/gpu/gl/webgl/GrGLMakeNativeInterface_webgl.cpp
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLUniformHandler.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkManagedResource.h
 FILE: ../../../third_party/skia/src/image/SkRescaleAndReadPixels.cpp
