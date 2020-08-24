@@ -77,15 +77,14 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
  private:
   SemanticsObject* GetOrCreateObject(int32_t id, flutter::SemanticsNodeUpdates& updates);
-  void UpdateFirstFocusable(SemanticsObject* object);
-  void WalkAndProccessTree(SemanticsObject* object);
+  SemanticsObject* FindFirstFocusable(SemanticsObject* object);
+  void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
+                                        NSMutableArray<NSNumber*>* doomed_uids);
   void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
 
   FlutterViewController* view_controller_;
   PlatformViewIOS* platform_view_;
   FlutterPlatformViewsController* platform_views_controller_;
-  SemanticsObject* first_focusable_;
-  NSMutableArray<NSNumber*>* doomed_uids_;
   int32_t last_focused_semantics_object_id_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
