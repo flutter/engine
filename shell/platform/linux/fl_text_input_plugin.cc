@@ -22,11 +22,10 @@ static constexpr char kHideMethod[] = "TextInput.hide";
 static constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
 static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
-static constexpr char kMultilineInputType[] = "TextInputType.multiline";
 
 static constexpr char kInputActionKey[] = "inputAction";
-static constexpr char kTextInputType[] = "inputType";
-static constexpr char kTextInputTypeName[] = "name";
+static constexpr char kTextInputTypeKey[] = "inputType";
+static constexpr char kTextInputTypeNameKey[] = "name";
 static constexpr char kTextKey[] = "text";
 static constexpr char kSelectionBaseKey[] = "selectionBase";
 static constexpr char kSelectionExtentKey[] = "selectionExtent";
@@ -36,6 +35,7 @@ static constexpr char kComposingBaseKey[] = "composingBase";
 static constexpr char kComposingExtentKey[] = "composingExtent";
 
 static constexpr char kTextAffinityDownstream[] = "TextAffinity.downstream";
+static constexpr char kMultilineInputType[] = "TextInputType.multiline";
 
 static constexpr int64_t kClientIdUnset = -1;
 
@@ -50,7 +50,7 @@ struct _FlTextInputPlugin {
   // Input action to perform when enter pressed.
   gchar* input_action;
 
-  // Input action to perform when enter pressed.
+  // Send newline when multi-line and enter is pressed.
   gboolean input_multiline;
 
   // Input method.
@@ -181,11 +181,13 @@ static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
     self->input_action = g_strdup(fl_value_get_string(input_action_value));
   }
 
+  // clear multiline state and set again only if this current field is multiline
+  self->input_multiline = FALSE;
   FlValue* input_type_value =
-      fl_value_lookup(config_value, fl_value_new_string(kTextInputType));
+      fl_value_lookup(config_value, fl_value_new_string(kTextInputTypeKey));
   if (fl_value_get_type(input_type_value) == FL_VALUE_TYPE_MAP) {
     FlValue* input_type_name = fl_value_lookup(
-        input_type_value, fl_value_new_string(kTextInputTypeName));
+        input_type_value, fl_value_new_string(kTextInputTypeNameKey));
     if (fl_value_equal(input_type_name,
                        fl_value_new_string(kMultilineInputType))) {
       self->input_multiline = TRUE;
@@ -286,6 +288,7 @@ static void fl_text_input_plugin_class_init(FlTextInputPluginClass* klass) {
 static void fl_text_input_plugin_init(FlTextInputPlugin* self) {
   self->client_id = kClientIdUnset;
   self->im_context = gtk_im_multicontext_new();
+  self->input_multiline = FALSE;
   g_signal_connect_object(self->im_context, "commit", G_CALLBACK(im_commit_cb),
                           self, G_CONNECT_SWAPPED);
   g_signal_connect_object(self->im_context, "retrieve-surrounding",
@@ -324,6 +327,8 @@ gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
     return TRUE;
   }
 
+  // perform action
+  gboolean do_action = FALSE;
   // Handle navigation keys.
   gboolean changed = FALSE;
   if (event->type == GDK_KEY_PRESS) {
@@ -344,9 +349,9 @@ gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
       case GDK_KEY_ISO_Enter:
         if (self->input_multiline == TRUE) {
           self->text_model->AddCodePoint('\n');
-          update_editing_state(self);
+          changed = TRUE;
         }
-        perform_action(self);
+        do_action = TRUE;
         break;
       case GDK_KEY_Home:
       case GDK_KEY_KP_Home:
@@ -365,6 +370,9 @@ gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
 
   if (changed) {
     update_editing_state(self);
+  }
+  if (do_action) {
+    perform_action(self);
   }
 
   return FALSE;
