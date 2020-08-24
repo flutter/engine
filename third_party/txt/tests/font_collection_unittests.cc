@@ -29,7 +29,7 @@ class FontCollectionTest : public ::testing::Test {};
 namespace {
 // This function does some boilerplate to fill a builder with enough real
 // font-like data. Otherwise, detach won't actually build an SkTypeface.
-void PopulateUserTypeface(SkCustomTypefaceBuilder* builder) {
+void PopulateUserTypefaceBoilerplate(SkCustomTypefaceBuilder* builder) {
   constexpr float upem = 200;
 
   {
@@ -75,25 +75,32 @@ TEST(FontCollectionTest, CheckSkTypefacesSorting) {
                                             SkFontStyle::kItalic_Slant));
   // For the purpose of this test, we need to fill this to make the SkTypeface
   // build but it doesn't matter. We only care about the SkFontStyle.
-  PopulateUserTypeface(&typefaceBuilder1);
+  PopulateUserTypefaceBoilerplate(&typefaceBuilder1);
   sk_sp<SkTypeface> typeface1{typefaceBuilder1.detach()};
 
   SkCustomTypefaceBuilder typefaceBuilder2;
   typefaceBuilder2.setFontStyle(SkFontStyle(SkFontStyle::kLight_Weight,
                                             SkFontStyle::kNormal_Width,
                                             SkFontStyle::kUpright_Slant));
-  PopulateUserTypeface(&typefaceBuilder2);
+  PopulateUserTypefaceBoilerplate(&typefaceBuilder2);
   sk_sp<SkTypeface> typeface2{typefaceBuilder2.detach()};
 
   SkCustomTypefaceBuilder typefaceBuilder3;
   typefaceBuilder3.setFontStyle(SkFontStyle(SkFontStyle::kNormal_Weight,
                                             SkFontStyle::kNormal_Width,
                                             SkFontStyle::kUpright_Slant));
-  PopulateUserTypeface(&typefaceBuilder3);
+  PopulateUserTypefaceBoilerplate(&typefaceBuilder3);
   sk_sp<SkTypeface> typeface3{typefaceBuilder3.detach()};
 
+  SkCustomTypefaceBuilder typefaceBuilder4;
+  typefaceBuilder4.setFontStyle(SkFontStyle(SkFontStyle::kThin_Weight,
+                                            SkFontStyle::kCondensed_Width,
+                                            SkFontStyle::kUpright_Slant));
+  PopulateUserTypefaceBoilerplate(&typefaceBuilder4);
+  sk_sp<SkTypeface> typeface4{typefaceBuilder4.detach()};
+
   std::vector<sk_sp<SkTypeface>> candidateTypefaces = {typeface1, typeface2,
-                                                       typeface3};
+                                                       typeface3, typeface4};
 
   // This sorts the vector in-place.
   txt::FontCollection::SortSkTypefaces(candidateTypefaces);
@@ -103,8 +110,11 @@ TEST(FontCollectionTest, CheckSkTypefacesSorting) {
   ASSERT_EQ(candidateTypefaces[0].get(), typeface2.get());
   // Then the most normal width font with normal weight.
   ASSERT_EQ(candidateTypefaces[1].get(), typeface3.get());
-  // Then a less normal (expanded) width font.
-  ASSERT_EQ(candidateTypefaces[2].get(), typeface1.get());
+  // Then a less normal (condensed) width font.
+  ASSERT_EQ(candidateTypefaces[2].get(), typeface4.get());
+  // All things equal, 4 came before 1 because we arbitrarily chose to make the
+  // narrower font come first.
+  ASSERT_EQ(candidateTypefaces[3].get(), typeface1.get());
 
   // Double check.
   ASSERT_EQ(candidateTypefaces[0]->fontStyle().weight(),
@@ -120,6 +130,11 @@ TEST(FontCollectionTest, CheckSkTypefacesSorting) {
   ASSERT_EQ(candidateTypefaces[2]->fontStyle().weight(),
             SkFontStyle::kThin_Weight);
   ASSERT_EQ(candidateTypefaces[2]->fontStyle().width(),
+            SkFontStyle::kCondensed_Width);
+
+  ASSERT_EQ(candidateTypefaces[3]->fontStyle().weight(),
+            SkFontStyle::kThin_Weight);
+  ASSERT_EQ(candidateTypefaces[3]->fontStyle().width(),
             SkFontStyle::kExpanded_Width);
 }
 
