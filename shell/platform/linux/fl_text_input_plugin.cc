@@ -181,7 +181,7 @@ static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
     self->input_action = g_strdup(fl_value_get_string(input_action_value));
   }
 
-  // clear multiline state and set again only if this current field is multiline
+  // Clear the multiline flag, then set it only if the field is multiline.
   self->input_multiline = FALSE;
   FlValue* input_type_value =
       fl_value_lookup(config_value, fl_value_new_string(kTextInputTypeKey));
@@ -327,7 +327,7 @@ gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
     return TRUE;
   }
 
-  // perform action
+  // Handle the enter/return key.
   gboolean do_action = FALSE;
   // Handle navigation keys.
   gboolean changed = FALSE;
