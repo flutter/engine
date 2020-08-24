@@ -88,7 +88,7 @@ class EmbedderTestContext {
   ///             the updated size.
   ///
   /// @attention  The callback will be invoked on the raster task runner. The
-  ///             callback can be set tests host thread.
+  ///             callback can be set on the tests host thread.
   ///
   /// @param[in]  callback  The callback to set. The previous callback will be
   ///                       un-registered.
