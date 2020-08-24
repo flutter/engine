@@ -594,8 +594,8 @@ class EngineParagraph implements ui.Paragraph {
     }
 
     final int start =
-        WordBreaker.prevBreakIndex(_plainText, textPosition.offset);
-    final int end = WordBreaker.nextBreakIndex(_plainText, textPosition.offset);
+        WordBreaker.prevBreakIndex(_plainText!, textPosition.offset + 1);
+    final int end = WordBreaker.nextBreakIndex(_plainText!, textPosition.offset);
     return ui.TextRange(start: start, end: end);
   }
 

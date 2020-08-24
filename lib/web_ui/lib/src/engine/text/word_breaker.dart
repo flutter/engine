@@ -16,38 +16,28 @@ enum _FindBreakDirection {
 /// [WordBreaker] exposes static methods to identify word boundaries.
 abstract class WordBreaker {
   /// It starts from [index] and tries to find the next word boundary in [text].
-  static int nextBreakIndex(String? text, int index) =>
+  static int nextBreakIndex(String text, int index) =>
       _findBreakIndex(_FindBreakDirection.forward, text, index);
 
   /// It starts from [index] and tries to find the previous word boundary in
   /// [text].
-  static int prevBreakIndex(String? text, int index) =>
+  static int prevBreakIndex(String text, int index) =>
       _findBreakIndex(_FindBreakDirection.backward, text, index);
 
   static int _findBreakIndex(
     _FindBreakDirection direction,
-    String? text,
+    String text,
     int index,
   ) {
-    int step, min, max;
-    if (direction == _FindBreakDirection.forward) {
-      step = 1;
-      min = 0;
-      max = text!.length - 1;
-    } else {
-      step = -1;
-      min = 1;
-      max = text!.length;
-    }
-
+    final int step = direction == _FindBreakDirection.forward ? 1 : -1;
     int i = index;
-    while (i >= min && i <= max) {
+    while (i >= 0 && i <= text.length) {
       i += step;
       if (_isBreak(text, i)) {
         break;
       }
     }
-    return i;
+    return i.clamp(0, text.length) as int;
   }
 
   /// Find out if there's a word break between [index - 1] and [index].
