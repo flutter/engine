@@ -11,9 +11,9 @@ wasm_lib("canvaskit") {
   export_name = "CanvasKitInit"
 
   sources = skia_core_sources + [
-    # "$_canvaskit_path/paragraph_bindings.cpp",
-    "$_canvaskit_path/canvaskit_bindings.cpp",
-  ]
+              # "$_canvaskit_path/paragraph_bindings.cpp",
+              "$_canvaskit_path/canvaskit_bindings.cpp",
+            ]
 
   configs = [ "//build/config/compiler:rtti" ]
 
@@ -31,9 +31,7 @@ wasm_lib("canvaskit") {
     "$_canvaskit_path/postamble.js",
   ]
 
-  post_js = [
-    "$_canvaskit_path/ready.js",
-  ]
+  post_js = [ "$_canvaskit_path/ready.js" ]
 
   defines = [
     "EMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0",
@@ -73,7 +71,5 @@ wasm_lib("canvaskit") {
 }
 
 group("wasm") {
-  public_deps = [
-    ":canvaskit",
-  ]
+  public_deps = [ ":canvaskit" ]
 }
