@@ -202,8 +202,8 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     SemanticsObject* nextToFocus =
         [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
     if (!nextToFocus && root) {
-        nextToFocus = FindFirstFocusable(root);
-      }
+      nextToFocus = FindFirstFocusable(root);
+    }
     ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification,
                                                  nextToFocus);
   } else if (scrollOccured) {
@@ -213,8 +213,8 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     SemanticsObject* nextToFocus =
         [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
     if (!nextToFocus && root) {
-        nextToFocus = FindFirstFocusable(root);
-      }
+      nextToFocus = FindFirstFocusable(root);
+    }
     ios_delegate_->PostAccessibilityNotification(UIAccessibilityPageScrolledNotification,
                                                  nextToFocus);
   }
