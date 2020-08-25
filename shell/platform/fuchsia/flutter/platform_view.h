@@ -7,6 +7,7 @@
 
 #include <fuchsia/ui/input/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
+#include <lib/fidl/cpp/binding.h>
 #include <lib/fit/function.h>
 
 #include <map>
@@ -15,10 +16,12 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
-#include "lib/fidl/cpp/binding.h"
-#include "lib/ui/scenic/cpp/id.h"
-#include "surface.h"
+
+#include "accessibility_bridge.h"
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+#include <lib/ui/scenic/cpp/id.h>  // nogncheck
+#endif
 
 namespace flutter_runner {
 
@@ -131,9 +134,11 @@ class PlatformView final : public flutter::PlatformView,
   void OnScenicError(std::string error) override;
   void OnScenicEvent(std::vector<fuchsia::ui::scenic::Event> events) override;
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   void OnChildViewConnected(scenic::ResourceId view_holder_id);
   void OnChildViewDisconnected(scenic::ResourceId view_holder_id);
   void OnChildViewStateChanged(scenic::ResourceId view_holder_id, bool state);
+#endif
 
   bool OnHandlePointerEvent(const fuchsia::ui::input::PointerEvent& pointer);
 

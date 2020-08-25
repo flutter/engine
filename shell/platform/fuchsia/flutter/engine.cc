@@ -8,7 +8,6 @@
 #include <zircon/status.h>
 
 #include "../runtime/dart/utils/files.h"
-#include "compositor_context.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -16,12 +15,19 @@
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
+#include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
+
 #include "flutter_runner_product_configuration.h"
+#include "fuchsia_external_view_embedder.h"
 #include "fuchsia_intl.h"
 #include "platform_view.h"
+#include "surface.h"
 #include "task_runner_adapter.h"
-#include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
 #include "thread.h"
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+#include "compositor_context.h"  // nogncheck
+#endif
 
 namespace flutter_runner {
 namespace {
@@ -65,6 +71,9 @@ Engine::Engine(Delegate& delegate,
                FlutterRunnerProductConfiguration product_config)
     : delegate_(delegate),
       thread_label_(std::move(thread_label)),
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+      use_legacy_renderer_(product_config.use_legacy_renderer()),
+#endif
       weak_factory_(this) {
   if (zx::event::create(0, &vsync_event_) != ZX_OK) {
     FML_DLOG(ERROR) << "Could not create the vsync event.";
@@ -124,9 +133,16 @@ Engine::Engine(Delegate& delegate,
             thread_label_, std::move(session),
             std::move(session_error_callback), [](auto) {}, vsync_handle);
         surface_producer_.emplace(session_connection_->get());
-        scene_update_context_.emplace(thread_label_, std::move(view_token),
-                                      std::move(view_ref_pair),
-                                      session_connection_.value());
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+        if (use_legacy_renderer_) {
+          legacy_external_view_embedder_.emplace(
+              thread_label_, std::move(view_token), std::move(view_ref_pair),
+              session_connection_.value());
+        } else
+#endif
+        {
+          external_view_embedder_.emplace();
+        }
       }));
 
   // Grab the parent environment services. The platform view may want to
@@ -207,20 +223,29 @@ Engine::Engine(Delegate& delegate,
           });
 
   // Setup the callback that will instantiate the rasterizer.
-  flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
-      fml::MakeCopyable([this](flutter::Shell& shell) mutable {
-        FML_DCHECK(session_connection_);
-        FML_DCHECK(surface_producer_);
-        FML_DCHECK(scene_update_context_);
+  flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer;
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  on_create_rasterizer = [this](flutter::Shell& shell) {
+    if (use_legacy_renderer_) {
+      FML_DCHECK(session_connection_);
+      FML_DCHECK(surface_producer_);
+      FML_DCHECK(legacy_external_view_embedder_);
 
-        std::unique_ptr<flutter_runner::CompositorContext> compositor_context =
-            std::make_unique<flutter_runner::CompositorContext>(
-                session_connection_.value(), surface_producer_.value(),
-                scene_update_context_.value());
-
-        return std::make_unique<flutter::Rasterizer>(
-            shell, std::move(compositor_context));
-      });
+      auto compositor_context =
+          std::make_unique<flutter_runner::CompositorContext>(
+              session_connection_.value(), surface_producer_.value(),
+              legacy_external_view_embedder_.value());
+      return std::make_unique<flutter::Rasterizer>(
+          shell, std::move(compositor_context));
+    } else {
+      return std::make_unique<flutter::Rasterizer>(shell);
+    }
+  };
+#else
+  on_create_rasterizer = [](flutter::Shell& shell) {
+    return std::make_unique<flutter::Rasterizer>(shell);
+  };
+#endif
 
   settings.root_isolate_create_callback =
       std::bind(&Engine::OnMainIsolateStart, this);
@@ -473,49 +498,135 @@ void Engine::Terminate() {
 }
 
 void Engine::DebugWireframeSettingsChanged(bool enabled) {
-  if (!shell_ || !scene_update_context_) {
+  if (!shell_) {
     return;
   }
 
-  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [this, enabled]() { scene_update_context_->EnableWireframe(enabled); });
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  if (use_legacy_renderer_) {
+    if (!legacy_external_view_embedder_) {
+      return;
+    }
+
+    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, enabled]() {
+      legacy_external_view_embedder_->EnableWireframe(enabled);
+    });
+  } else
+#endif
+  {
+    if (!external_view_embedder_) {
+      return;
+    }
+
+    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, enabled]() {
+      external_view_embedder_->EnableWireframe(enabled);
+    });
+  }
 }
 
 void Engine::CreateView(int64_t view_id, bool hit_testable, bool focusable) {
-  if (!shell_ || !scene_update_context_) {
+  if (!shell_) {
     return;
   }
 
-  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [this, view_id, hit_testable, focusable]() {
-        scene_update_context_->CreateView(view_id, hit_testable, focusable);
-      });
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  if (use_legacy_renderer_) {
+    if (!legacy_external_view_embedder_) {
+      return;
+    }
+
+    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+        [this, view_id, hit_testable, focusable]() {
+          legacy_external_view_embedder_->CreateView(view_id, hit_testable,
+                                                     focusable);
+        });
+  } else
+#endif
+  {
+    if (!external_view_embedder_) {
+      return;
+    }
+
+    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+        [this, view_id, hit_testable, focusable]() {
+          external_view_embedder_->CreateView(view_id, hit_testable, focusable);
+        });
+  }
 }
 
 void Engine::UpdateView(int64_t view_id, bool hit_testable, bool focusable) {
-  if (!shell_ || !scene_update_context_) {
+  if (!shell_) {
     return;
   }
 
-  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [this, view_id, hit_testable, focusable]() {
-        scene_update_context_->UpdateView(view_id, hit_testable, focusable);
-      });
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  if (use_legacy_renderer_) {
+    if (!legacy_external_view_embedder_) {
+      return;
+    }
+
+    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+        [this, view_id, hit_testable, focusable]() {
+          legacy_external_view_embedder_->UpdateView(view_id, hit_testable,
+                                                     focusable);
+        });
+  } else
+#endif
+  {
+    if (!external_view_embedder_) {
+      return;
+    }
+
+    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+        [this, view_id, hit_testable, focusable]() {
+          external_view_embedder_->UpdateView(view_id, hit_testable, focusable);
+        });
+  }
 }
 
 void Engine::DestroyView(int64_t view_id) {
-  if (!shell_ || !scene_update_context_) {
+  if (!shell_) {
     return;
   }
 
-  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [this, view_id]() { scene_update_context_->DestroyView(view_id); });
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  if (use_legacy_renderer_) {
+    if (!legacy_external_view_embedder_) {
+      return;
+    }
+
+    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, view_id]() {
+      legacy_external_view_embedder_->DestroyView(view_id);
+    });
+  } else
+#endif
+  {
+    if (!external_view_embedder_) {
+      return;
+    }
+
+    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+        [this, view_id]() { external_view_embedder_->DestroyView(view_id); });
+  }
 }
 
 std::unique_ptr<flutter::Surface> Engine::CreateSurface() {
-  FML_DCHECK(scene_update_context_.has_value());
-  return std::make_unique<Surface>(thread_label_,
-                                   &scene_update_context_.value(),
+  flutter::ExternalViewEmbedder* external_view_embedder = nullptr;
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  if (use_legacy_renderer_) {
+    FML_DCHECK(legacy_external_view_embedder_.has_value());
+    external_view_embedder = &legacy_external_view_embedder_.value();
+
+  } else
+#endif
+  {
+    FML_DCHECK(external_view_embedder_.has_value());
+    external_view_embedder = &external_view_embedder_.value();
+  }
+  FML_DCHECK(external_view_embedder);
+
+  return std::make_unique<Surface>(thread_label_, external_view_embedder,
                                    surface_producer_->gr_context());
 }
 
