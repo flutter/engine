@@ -87,9 +87,7 @@ class Engine final {
   void UpdateView(int64_t view_id, bool hit_testable, bool focusable);
   void DestroyView(int64_t view_id);
 
-  flutter::ExternalViewEmbedder* GetViewEmbedder();
-
-  GrDirectContext* GetGrContext();
+  std::unique_ptr<flutter::Surface> CreateSurface();
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };

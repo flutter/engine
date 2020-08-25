@@ -26,8 +26,7 @@ using OnEnableWireframe = fit::function<void(bool)>;
 using OnCreateView = fit::function<void(int64_t, bool, bool)>;
 using OnUpdateView = fit::function<void(int64_t, bool, bool)>;
 using OnDestroyView = fit::function<void(int64_t)>;
-using OnGetViewEmbedder = fit::function<flutter::ExternalViewEmbedder*()>;
-using OnGetGrContext = fit::function<GrDirectContext*()>;
+using OnCreateSurface = fit::function<std::unique_ptr<flutter::Surface>()>;
 
 // The per engine component residing on the platform thread is responsible for
 // all platform specific integrations.
@@ -55,8 +54,7 @@ class PlatformView final : public flutter::PlatformView,
                OnCreateView on_create_view_callback,
                OnUpdateView on_update_view_callback,
                OnDestroyView on_destroy_view_callback,
-               OnGetViewEmbedder on_get_view_embedder_callback,
-               OnGetGrContext on_get_gr_context_callback,
+               OnCreateSurface on_create_surface_callback,
                fml::TimeDelta vsync_offset,
                zx_handle_t vsync_event_handle);
 
@@ -87,8 +85,7 @@ class PlatformView final : public flutter::PlatformView,
   OnCreateView on_create_view_callback_;
   OnUpdateView on_update_view_callback_;
   OnDestroyView on_destroy_view_callback_;
-  OnGetViewEmbedder on_get_view_embedder_callback_;
-  OnGetGrContext on_get_gr_context_callback_;
+  OnCreateSurface on_create_surface_callback_;
 
   int current_text_input_client_ = 0;
   fidl::Binding<fuchsia::ui::input::InputMethodEditorClient> ime_client_;

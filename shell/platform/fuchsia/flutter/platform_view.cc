@@ -59,8 +59,7 @@ PlatformView::PlatformView(
     OnCreateView on_create_view_callback,
     OnUpdateView on_update_view_callback,
     OnDestroyView on_destroy_view_callback,
-    OnGetViewEmbedder on_get_view_embedder_callback,
-    OnGetGrContext on_get_gr_context_callback,
+    OnCreateSurface on_create_surface_callback,
     fml::TimeDelta vsync_offset,
     zx_handle_t vsync_event_handle)
     : flutter::PlatformView(delegate, std::move(task_runners)),
@@ -74,8 +73,7 @@ PlatformView::PlatformView(
       on_create_view_callback_(std::move(on_create_view_callback)),
       on_update_view_callback_(std::move(on_update_view_callback)),
       on_destroy_view_callback_(std::move(on_destroy_view_callback)),
-      on_get_view_embedder_callback_(std::move(on_get_view_embedder_callback)),
-      on_get_gr_context_callback_(std::move(on_get_gr_context_callback)),
+      on_create_surface_callback_(std::move(on_create_surface_callback)),
       ime_client_(this),
       vsync_offset_(std::move(vsync_offset)),
       vsync_event_handle_(vsync_event_handle) {
@@ -517,15 +515,7 @@ std::unique_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
 
 // |flutter::PlatformView|
 std::unique_ptr<flutter::Surface> PlatformView::CreateRenderingSurface() {
-  // This platform does not repeatly lose and gain a surface connection. So the
-  // surface is setup once during platform view setup and returned to the
-  // shell on the initial (and only) |NotifyCreated| call.
-  auto view_embedder = on_get_view_embedder_callback_
-                           ? on_get_view_embedder_callback_()
-                           : nullptr;
-  auto gr_context =
-      on_get_gr_context_callback_ ? on_get_gr_context_callback_() : nullptr;
-  return std::make_unique<Surface>(debug_label_, view_embedder, gr_context);
+  return on_create_surface_callback_ ? on_create_surface_callback_() : nullptr;
 }
 
 // |flutter::PlatformView|

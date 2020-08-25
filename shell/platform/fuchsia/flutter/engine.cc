@@ -152,11 +152,8 @@ Engine::Engine(Delegate& delegate,
   OnDestroyView on_destroy_view_callback =
       std::bind(&Engine::DestroyView, this, std::placeholders::_1);
 
-  OnGetViewEmbedder on_get_view_embedder_callback =
-      std::bind(&Engine::GetViewEmbedder, this);
-
-  OnGetGrContext on_get_gr_context_callback =
-      std::bind(&Engine::GetGrContext, this);
+  OnCreateSurface on_create_surface_callback =
+      std::bind(&Engine::CreateSurface, this);
 
   // SessionListener has a OnScenicError method; invoke this callback on the
   // platform thread when that happens. The Session itself should also be
@@ -187,9 +184,7 @@ Engine::Engine(Delegate& delegate,
            on_create_view_callback = std::move(on_create_view_callback),
            on_update_view_callback = std::move(on_update_view_callback),
            on_destroy_view_callback = std::move(on_destroy_view_callback),
-           on_get_view_embedder_callback =
-               std::move(on_get_view_embedder_callback),
-           on_get_gr_context_callback = std::move(on_get_gr_context_callback),
+           on_create_surface_callback = std::move(on_create_surface_callback),
            vsync_offset = product_config.get_vsync_offset(),
            vsync_handle = vsync_event_.get()](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
@@ -206,8 +201,7 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_create_view_callback),
                 std::move(on_update_view_callback),
                 std::move(on_destroy_view_callback),
-                std::move(on_get_view_embedder_callback),
-                std::move(on_get_gr_context_callback),
+                std::move(on_create_surface_callback),
                 std::move(vsync_offset),  // vsync offset
                 vsync_handle);
           });
@@ -518,20 +512,11 @@ void Engine::DestroyView(int64_t view_id) {
       [this, view_id]() { scene_update_context_->DestroyView(view_id); });
 }
 
-flutter::ExternalViewEmbedder* Engine::GetViewEmbedder() {
-  if (!scene_update_context_) {
-    return nullptr;
-  }
-
-  return &scene_update_context_.value();
-}
-
-GrDirectContext* Engine::GetGrContext() {
-  // GetGrContext should be called only after rasterizer is created.
-  FML_DCHECK(shell_);
-  FML_DCHECK(shell_->GetRasterizer());
-
-  return surface_producer_->gr_context();
+std::unique_ptr<flutter::Surface> Engine::CreateSurface() {
+  FML_DCHECK(scene_update_context_.has_value());
+  return std::make_unique<Surface>(thread_label_,
+                                   &scene_update_context_.value(),
+                                   surface_producer_->gr_context());
 }
 
 #if !defined(DART_PRODUCT)
