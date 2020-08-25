@@ -316,9 +316,18 @@ public class FlutterLoader {
     return resourceExtractor;
   }
 
+  private String flutterAssetsDir() {
+    // TODO(64458): Return default until we can fix initialization sequence.
+    // When fixed, flutterApplicationInfo should not be null.
+    if (flutterApplicationInfo == null) {
+      return FlutterApplicationInfo.DEFAULT_FLUTTER_ASSETS_DIR;
+    }
+    return flutterApplicationInfo.flutterAssetsDir;
+  }
+
   @NonNull
   public String findAppBundlePath() {
-    return flutterApplicationInfo.flutterAssetsDir;
+    return flutterAssetsDir();
   }
 
   /**
@@ -349,7 +358,7 @@ public class FlutterLoader {
 
   @NonNull
   private String fullAssetPathFrom(@NonNull String filePath) {
-    return flutterApplicationInfo.flutterAssetsDir + File.separator + filePath;
+    return flutterAssetsDir() + File.separator + filePath;
   }
 
   public static class Settings {

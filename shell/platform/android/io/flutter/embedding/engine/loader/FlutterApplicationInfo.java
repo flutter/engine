@@ -9,7 +9,7 @@ public final class FlutterApplicationInfo {
   private static final String DEFAULT_AOT_SHARED_LIBRARY_NAME = "libapp.so";
   private static final String DEFAULT_VM_SNAPSHOT_DATA = "vm_snapshot_data";
   private static final String DEFAULT_ISOLATE_SNAPSHOT_DATA = "isolate_snapshot_data";
-  private static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
+  static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
 
   final String aotSharedLibraryName;
   final String vmSnapshotData;
