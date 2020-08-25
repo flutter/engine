@@ -162,18 +162,18 @@ TEST_F(PlatformViewTests, ChangesAccessibilitySettings) {
       std::move(view_ref),                    // view_ref
       std::move(task_runners),                // task_runners
       services_provider.service_directory(),  // runner_services
-      nullptr,  // parent_environment_service_provider_handle
-      nullptr,  // session_listener_request
-      nullptr,  // focuser,
-      nullptr,  // on_session_listener_error_callback
-      nullptr,  // on_enable_wireframe_callback,
-      nullptr,  // on_create_view_callback,
-      nullptr,  // on_update_view_callback,
-      nullptr,  // on_destroy_view_callback,
-      nullptr,  // on_get_view_embedder_callback,
-      nullptr,  // on_get_gr_context_callback,
-      0u,       // vsync_event_handle
-      {}        // product_config
+      nullptr,                 // parent_environment_service_provider_handle
+      nullptr,                 // session_listener_request
+      nullptr,                 // focuser,
+      nullptr,                 // on_session_listener_error_callback
+      nullptr,                 // on_enable_wireframe_callback,
+      nullptr,                 // on_create_view_callback,
+      nullptr,                 // on_update_view_callback,
+      nullptr,                 // on_destroy_view_callback,
+      nullptr,                 // on_get_view_embedder_callback,
+      nullptr,                 // on_get_gr_context_callback,
+      fml::TimeDelta::Zero(),  // vsync_offset
+      ZX_HANDLE_INVALID        // vsync_event_handle
   );
 
   RunLoopUntilIdle();
@@ -229,8 +229,8 @@ TEST_F(PlatformViewTests, EnableWireframeTest) {
       nullptr,                  // on_destroy_view_callback,
       nullptr,                  // on_get_view_embedder_callback,
       nullptr,                  // on_get_gr_context_callback,
-      0u,                       // vsync_event_handle
-      {}                        // product_config
+      fml::TimeDelta::Zero(),   // vsync_offset
+      ZX_HANDLE_INVALID         // vsync_event_handle
   );
 
   // Cast platform_view to its base view so we can have access to the public
@@ -287,18 +287,18 @@ TEST_F(PlatformViewTests, CreateViewTest) {
       std::move(view_ref),                    // view_refs
       std::move(task_runners),                // task_runners
       services_provider.service_directory(),  // runner_services
-      nullptr,             // parent_environment_service_provider_handle
-      nullptr,             // session_listener_request
-      nullptr,             // focuser,
-      nullptr,             // on_session_listener_error_callback
-      nullptr,             // on_enable_wireframe_callback,
-      CreateViewCallback,  // on_create_view_callback,
-      nullptr,             // on_update_view_callback,
-      nullptr,             // on_destroy_view_callback,
-      nullptr,             // on_get_view_embedder_callback,
-      nullptr,             // on_get_gr_context_callback,
-      0u,                  // vsync_event_handle
-      {}                   // product_config
+      nullptr,                 // parent_environment_service_provider_handle
+      nullptr,                 // session_listener_request
+      nullptr,                 // focuser,
+      nullptr,                 // on_session_listener_error_callback
+      nullptr,                 // on_enable_wireframe_callback,
+      CreateViewCallback,      // on_create_view_callback,
+      nullptr,                 // on_update_view_callback,
+      nullptr,                 // on_destroy_view_callback,
+      nullptr,                 // on_get_view_embedder_callback,
+      nullptr,                 // on_get_gr_context_callback,
+      fml::TimeDelta::Zero(),  // vsync_offset
+      ZX_HANDLE_INVALID        // vsync_event_handle
   );
 
   // Cast platform_view to its base view so we can have access to the public
@@ -357,18 +357,18 @@ TEST_F(PlatformViewTests, UpdateViewTest) {
       std::move(view_ref),                    // view_refs
       std::move(task_runners),                // task_runners
       services_provider.service_directory(),  // runner_services
-      nullptr,             // parent_environment_service_provider_handle
-      nullptr,             // session_listener_request
-      nullptr,             // focuser,
-      nullptr,             // on_session_listener_error_callback
-      nullptr,             // on_enable_wireframe_callback,
-      nullptr,             // on_create_view_callback,
-      UpdateViewCallback,  // on_update_view_callback,
-      nullptr,             // on_destroy_view_callback,
-      nullptr,             // on_get_view_embedder_callback,
-      nullptr,             // on_get_gr_context_callback,
-      0u,                  // vsync_event_handle
-      {}                   // product_config
+      nullptr,                 // parent_environment_service_provider_handle
+      nullptr,                 // session_listener_request
+      nullptr,                 // focuser,
+      nullptr,                 // on_session_listener_error_callback
+      nullptr,                 // on_enable_wireframe_callback,
+      nullptr,                 // on_create_view_callback,
+      UpdateViewCallback,      // on_update_view_callback,
+      nullptr,                 // on_destroy_view_callback,
+      nullptr,                 // on_get_view_embedder_callback,
+      nullptr,                 // on_get_gr_context_callback,
+      fml::TimeDelta::Zero(),  // vsync_offset
+      ZX_HANDLE_INVALID        // vsync_event_handle
   );
 
   // Cast platform_view to its base view so we can have access to the public
@@ -427,18 +427,18 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
       std::move(view_ref),                    // view_refs
       std::move(task_runners),                // task_runners
       services_provider.service_directory(),  // runner_services
-      nullptr,              // parent_environment_service_provider_handle
-      nullptr,              // session_listener_request
-      nullptr,              // focuser,
-      nullptr,              // on_session_listener_error_callback
-      nullptr,              // on_enable_wireframe_callback,
-      nullptr,              // on_create_view_callback,
-      nullptr,              // on_update_view_callback,
-      DestroyViewCallback,  // on_destroy_view_callback,
-      nullptr,              // on_get_view_embedder_callback,
-      nullptr,              // on_get_gr_context_callback,
-      0u,                   // vsync_event_handle
-      {}                    // product_config
+      nullptr,                 // parent_environment_service_provider_handle
+      nullptr,                 // session_listener_request
+      nullptr,                 // focuser,
+      nullptr,                 // on_session_listener_error_callback
+      nullptr,                 // on_enable_wireframe_callback,
+      nullptr,                 // on_create_view_callback,
+      nullptr,                 // on_update_view_callback,
+      DestroyViewCallback,     // on_destroy_view_callback,
+      nullptr,                 // on_get_view_embedder_callback,
+      nullptr,                 // on_get_gr_context_callback,
+      fml::TimeDelta::Zero(),  // vsync_offset
+      ZX_HANDLE_INVALID        // vsync_event_handle
   );
 
   // Cast platform_view to its base view so we can have access to the public
@@ -501,8 +501,8 @@ TEST_F(PlatformViewTests, RequestFocusTest) {
       nullptr,                    // on_destroy_view_callback,
       nullptr,                    // on_get_gr_context_callback,
       nullptr,                    // on_get_view_embedder_callback,
-      0u,                         // vsync_event_handle
-      {}                          // product_config
+      fml::TimeDelta::Zero(),     // vsync_offset
+      ZX_HANDLE_INVALID           // vsync_event_handle
   );
 
   // Cast platform_view to its base view so we can have access to the public
@@ -572,8 +572,8 @@ TEST_F(PlatformViewTests, GetViewEmbedderTest) {
       nullptr,                  // on_destroy_view_callback,
       GetViewEmbedderCallback,  // on_get_view_embedder_callback,
       nullptr,                  // on_get_gr_context_callback,
-      0u,                       // vsync_event_handle
-      {}                        // product_config
+      fml::TimeDelta::Zero(),   // vsync_offset
+      ZX_HANDLE_INVALID         // vsync_event_handle
   );
 
   RunLoopUntilIdle();
@@ -617,18 +617,18 @@ TEST_F(PlatformViewTests, GetGrContextTest) {
       std::move(view_ref),                    // view_refs
       std::move(task_runners),                // task_runners
       services_provider.service_directory(),  // runner_services
-      nullptr,               // parent_environment_service_provider_handle
-      nullptr,               // session_listener_request
-      nullptr,               // focuser
-      nullptr,               // on_session_listener_error_callback
-      nullptr,               // on_enable_wireframe_callback,
-      nullptr,               // on_create_view_callback,
-      nullptr,               // on_update_view_callback,
-      nullptr,               // on_destroy_view_callback,
-      nullptr,               // on_get_view_embedder_callback,
-      GetGrContextCallback,  // on_get_gr_context_callback,
-      0u,                    // vsync_event_handle
-      {}                     // product_config
+      nullptr,                 // parent_environment_service_provider_handle
+      nullptr,                 // session_listener_request
+      nullptr,                 // focuser
+      nullptr,                 // on_session_listener_error_callback
+      nullptr,                 // on_enable_wireframe_callback,
+      nullptr,                 // on_create_view_callback,
+      nullptr,                 // on_update_view_callback,
+      nullptr,                 // on_destroy_view_callback,
+      nullptr,                 // on_get_view_embedder_callback,
+      GetGrContextCallback,    // on_get_gr_context_callback,
+      fml::TimeDelta::Zero(),  // vsync_offset
+      ZX_HANDLE_INVALID        // vsync_event_handle
   );
 
   RunLoopUntilIdle();

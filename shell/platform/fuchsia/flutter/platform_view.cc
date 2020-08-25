@@ -13,7 +13,6 @@
 #include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/window/pointer_data.h"
 #include "flutter/lib/ui/window/window.h"
-#include "flutter_runner_product_configuration.h"
 #include "logging.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
@@ -62,8 +61,8 @@ PlatformView::PlatformView(
     OnDestroyView on_destroy_view_callback,
     OnGetViewEmbedder on_get_view_embedder_callback,
     OnGetGrContext on_get_gr_context_callback,
-    zx_handle_t vsync_event_handle,
-    FlutterRunnerProductConfiguration product_config)
+    fml::TimeDelta vsync_offset,
+    zx_handle_t vsync_event_handle)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
       view_ref_(std::move(view_ref)),
@@ -78,8 +77,8 @@ PlatformView::PlatformView(
       on_get_view_embedder_callback_(std::move(on_get_view_embedder_callback)),
       on_get_gr_context_callback_(std::move(on_get_gr_context_callback)),
       ime_client_(this),
-      vsync_event_handle_(vsync_event_handle),
-      product_config_(product_config) {
+      vsync_offset_(std::move(vsync_offset)),
+      vsync_event_handle_(vsync_event_handle) {
   // Register all error handlers.
   SetInterfaceErrorHandler(session_listener_binding_, "SessionListener");
   SetInterfaceErrorHandler(ime_, "Input Method Editor");
@@ -513,8 +512,7 @@ void PlatformView::DeactivateIme() {
 // |flutter::PlatformView|
 std::unique_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
   return std::make_unique<flutter_runner::VsyncWaiter>(
-      debug_label_, vsync_event_handle_, task_runners_,
-      product_config_.get_vsync_offset());
+      debug_label_, vsync_event_handle_, task_runners_, vsync_offset_);
 }
 
 // |flutter::PlatformView|

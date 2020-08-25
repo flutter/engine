@@ -190,8 +190,8 @@ Engine::Engine(Delegate& delegate,
            on_get_view_embedder_callback =
                std::move(on_get_view_embedder_callback),
            on_get_gr_context_callback = std::move(on_get_gr_context_callback),
-           vsync_handle = vsync_event_.get(),
-           product_config = product_config](flutter::Shell& shell) mutable {
+           vsync_offset = product_config.get_vsync_offset(),
+           vsync_handle = vsync_event_.get()](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
                 shell,                   // delegate
                 debug_label,             // debug label
@@ -208,8 +208,8 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_destroy_view_callback),
                 std::move(on_get_view_embedder_callback),
                 std::move(on_get_gr_context_callback),
-                vsync_handle,  // vsync handle
-                product_config);
+                std::move(vsync_offset),  // vsync offset
+                vsync_handle);
           });
 
   // Setup the callback that will instantiate the rasterizer.
