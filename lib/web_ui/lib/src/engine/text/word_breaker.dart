@@ -5,12 +5,13 @@
 // @dart = 2.10
 part of engine;
 
-enum _FindBreakDirection {
-  /// Indicates to find the word break by looking forward.
-  forward,
+class _FindBreakDirection {
+  static const _FindBreakDirection forward = _FindBreakDirection(step: 1);
+  static const _FindBreakDirection backward = _FindBreakDirection(step: -1);
 
-  /// Indicates to find the word break by looking backward.
-  backward,
+  const _FindBreakDirection({required this.step});
+
+  final int step;
 }
 
 /// [WordBreaker] exposes static methods to identify word boundaries.
@@ -29,15 +30,14 @@ abstract class WordBreaker {
     String text,
     int index,
   ) {
-    final int step = direction == _FindBreakDirection.forward ? 1 : -1;
     int i = index;
     while (i >= 0 && i <= text.length) {
-      i += step;
+      i += direction.step;
       if (_isBreak(text, i)) {
         break;
       }
     }
-    return i.clamp(0, text.length) as int;
+    return clampInt(i, 0, text.length);
   }
 
   /// Find out if there's a word break between [index - 1] and [index].
