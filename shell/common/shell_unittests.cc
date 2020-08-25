@@ -637,8 +637,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
 
@@ -706,8 +705,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
 
@@ -773,8 +771,7 @@ TEST_F(ShellTest,
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -822,8 +819,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -888,8 +884,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
