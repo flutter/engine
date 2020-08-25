@@ -141,7 +141,9 @@ Engine::Engine(Delegate& delegate,
         } else
 #endif
         {
-          external_view_embedder_.emplace();
+          external_view_embedder_.emplace(
+              thread_label_, std::move(view_token), std::move(view_ref_pair),
+              session_connection_.value(), surface_producer_.value());
         }
       }));
 
@@ -498,116 +500,78 @@ void Engine::Terminate() {
 }
 
 void Engine::DebugWireframeSettingsChanged(bool enabled) {
-  if (!shell_) {
-    return;
-  }
+  FML_CHECK(shell_);
 
+  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, enabled]() {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-  if (use_legacy_renderer_) {
-    if (!legacy_external_view_embedder_) {
-      return;
-    }
-
-    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, enabled]() {
+    if (use_legacy_renderer_) {
+      FML_CHECK(legacy_external_view_embedder_);
       legacy_external_view_embedder_->EnableWireframe(enabled);
-    });
-  } else
+    } else
 #endif
-  {
-    if (!external_view_embedder_) {
-      return;
-    }
-
-    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, enabled]() {
+    {
+      FML_CHECK(external_view_embedder_);
       external_view_embedder_->EnableWireframe(enabled);
-    });
-  }
+    }
+  });
 }
 
 void Engine::CreateView(int64_t view_id, bool hit_testable, bool focusable) {
-  if (!shell_) {
-    return;
-  }
+  FML_CHECK(shell_);
 
+  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+      [this, view_id, hit_testable, focusable]() {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-  if (use_legacy_renderer_) {
-    if (!legacy_external_view_embedder_) {
-      return;
-    }
-
-    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-        [this, view_id, hit_testable, focusable]() {
+        if (use_legacy_renderer_) {
+          FML_CHECK(legacy_external_view_embedder_);
           legacy_external_view_embedder_->CreateView(view_id, hit_testable,
                                                      focusable);
-        });
-  } else
+        } else
 #endif
-  {
-    if (!external_view_embedder_) {
-      return;
-    }
-
-    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-        [this, view_id, hit_testable, focusable]() {
-          external_view_embedder_->CreateView(view_id, hit_testable, focusable);
-        });
-  }
+        {
+          FML_CHECK(external_view_embedder_);
+          external_view_embedder_->CreateView(view_id);
+          external_view_embedder_->SetViewProperties(view_id, hit_testable,
+                                                     focusable);
+        }
+      });
 }
 
 void Engine::UpdateView(int64_t view_id, bool hit_testable, bool focusable) {
-  if (!shell_) {
-    return;
-  }
+  FML_CHECK(shell_);
 
+  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+      [this, view_id, hit_testable, focusable]() {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-  if (use_legacy_renderer_) {
-    if (!legacy_external_view_embedder_) {
-      return;
-    }
-
-    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-        [this, view_id, hit_testable, focusable]() {
+        if (use_legacy_renderer_) {
+          FML_CHECK(legacy_external_view_embedder_);
           legacy_external_view_embedder_->UpdateView(view_id, hit_testable,
                                                      focusable);
-        });
-  } else
+        } else
 #endif
-  {
-    if (!external_view_embedder_) {
-      return;
-    }
-
-    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-        [this, view_id, hit_testable, focusable]() {
-          external_view_embedder_->UpdateView(view_id, hit_testable, focusable);
-        });
-  }
+        {
+          FML_CHECK(external_view_embedder_);
+          external_view_embedder_->SetViewProperties(view_id, hit_testable,
+                                                     focusable);
+        }
+      });
 }
 
 void Engine::DestroyView(int64_t view_id) {
-  if (!shell_) {
-    return;
-  }
+  FML_CHECK(shell_);
 
+  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, view_id]() {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-  if (use_legacy_renderer_) {
-    if (!legacy_external_view_embedder_) {
-      return;
-    }
-
-    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, view_id]() {
+    if (use_legacy_renderer_) {
+      FML_CHECK(legacy_external_view_embedder_);
       legacy_external_view_embedder_->DestroyView(view_id);
-    });
-  } else
+    } else
 #endif
-  {
-    if (!external_view_embedder_) {
-      return;
+    {
+      FML_CHECK(external_view_embedder_);
+      external_view_embedder_->DestroyView(view_id);
     }
-
-    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-        [this, view_id]() { external_view_embedder_->DestroyView(view_id); });
-  }
+  });
 }
 
 std::unique_ptr<flutter::Surface> Engine::CreateSurface() {
@@ -615,16 +579,15 @@ std::unique_ptr<flutter::Surface> Engine::CreateSurface() {
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   if (use_legacy_renderer_) {
-    FML_DCHECK(legacy_external_view_embedder_.has_value());
+    FML_CHECK(legacy_external_view_embedder_);
     external_view_embedder = &legacy_external_view_embedder_.value();
-
   } else
 #endif
   {
-    FML_DCHECK(external_view_embedder_.has_value());
+    FML_CHECK(external_view_embedder_);
     external_view_embedder = &external_view_embedder_.value();
   }
-  FML_DCHECK(external_view_embedder);
+  FML_CHECK(external_view_embedder);
 
   return std::make_unique<Surface>(thread_label_, external_view_embedder,
                                    surface_producer_->gr_context());
