@@ -391,8 +391,7 @@ class Rasterizer final : public SnapshotDelegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Enables the thread merger if the external view embedder
-  /// supports
-  ///             dynamic thread merging.
+  ///             supports dynamic thread merging.
   ///
   /// @attention  This method is thread-safe. When the thread merger is enabled,
   ///             the raster task queue can run in the platform thread at any
@@ -404,13 +403,11 @@ class Rasterizer final : public SnapshotDelegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Disables the thread merger if the external view embedder
-  /// supports
-  ///             dynamic thread merging.
+  ///             supports dynamic thread merging.
   ///
   /// @attention  This method is thread-safe. When the thread merger is
-  /// disabled,
-  ///             the raster task queue will continue to run in the same thread
-  ///             until |EnableThreadMergerIfNeeded| is called.
+  ///             disabled, the raster task queue will continue to run in the
+  ///             same thread until |EnableThreadMergerIfNeeded| is called.
   ///
   /// @see        `ExternalViewEmbedder`
   ///
