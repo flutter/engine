@@ -132,7 +132,8 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
     }
     TaskQueueId thisTaskQueueOwner = task_queue_->GetOwner(queue_id_);
     if (thisTaskQueueOwner != lastTaskQueueOwner) {
-      // Threads are merged during last invocation(), drop all the remaining tasks on this thread.
+      // Threads are merged during last invocation(), drop all the remaining
+      // tasks on this thread.
       return;
     }
     lastTaskQueueOwner = thisTaskQueueOwner;

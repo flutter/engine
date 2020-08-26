@@ -833,7 +833,7 @@ void Shell::OnPlatformViewSetSemanticsEnabled(bool enabled) {
           engine->SetSemanticsEnabled(enabled);
         }
       });
-}\
+}
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewSetAccessibilityFeatures(int32_t flags) {
@@ -982,7 +982,6 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
 // |Animator::Delegate|
 void Shell::OnAnimatorDrawLastLayerTree() {
   FML_DCHECK(is_setup_);
-  FML_DLOG(ERROR) << "PostTask DrawLastLayerTree";
   task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr()]() {
         if (rasterizer) {
