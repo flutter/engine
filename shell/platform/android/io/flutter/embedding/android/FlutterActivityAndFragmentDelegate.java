@@ -24,6 +24,7 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import java.util.Arrays;
@@ -366,10 +367,15 @@ import java.util.Arrays;
       flutterEngine.getNavigationChannel().setInitialRoute(host.getInitialRoute());
     }
 
+    String appBundlePathOverride = host.getAppBundlePath();
+    if (appBundlePathOverride == null || appBundlePathOverride.isBlank()) {
+      appBundlePathOverride = FlutterLoader.getInstance().findAppBundlePath();
+    }
+
     // Configure the Dart entrypoint and execute it.
     DartExecutor.DartEntrypoint entrypoint =
         new DartExecutor.DartEntrypoint(
-            host.getAppBundlePath(), host.getDartEntrypointFunctionName());
+            appBundlePathOverride, host.getDartEntrypointFunctionName());
     flutterEngine.getDartExecutor().executeDartEntrypoint(entrypoint);
   }
 
