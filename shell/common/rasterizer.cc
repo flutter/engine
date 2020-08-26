@@ -82,7 +82,7 @@ void Rasterizer::Teardown() {
   }
 }
 
-void Rasterizer::NotifyLowMemoryWarning() const {
+void Rasterizer::NotifyLowMemoryWarning() {
   if (!surface_) {
     FML_DLOG(INFO)
         << "Rasterizer::NotifyLowMemoryWarning called with no surface.";
@@ -109,6 +109,7 @@ void Rasterizer::DrawLastLayerTree() {
   if (!last_layer_tree_ || !surface_) {
     return;
   }
+  FML_DLOG(ERROR) << "DrawLastLayerTree";
   DrawToSurface(*last_layer_tree_);
 }
 
@@ -143,10 +144,11 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
   }
 
+  //std::unique_lock<std::mutex> lock(surface_mutex_);
   if (surface_ != nullptr) {
     surface_->ClearRenderContext();
   }
-
+  //lock.unlock();
   // Merging the thread as we know the next `Draw` should be run on the platform
   // thread.
   if (surface_ != nullptr && surface_->GetExternalViewEmbedder() != nullptr) {
@@ -276,10 +278,12 @@ RasterStatus Rasterizer::DoDraw(
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
-
+  //std::unique_lock<std::mutex> lock(surface_mutex_);
   if (!layer_tree || !surface_) {
     return RasterStatus::kFailed;
   }
+  //lock.unlock();
+
 
   FrameTiming timing;
 #if !defined(OS_FUCHSIA)
@@ -372,6 +376,9 @@ RasterStatus Rasterizer::DoDraw(
 }
 
 RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
+  FML_DLOG(ERROR) << "DrawToSurface START";
+  FML_DLOG(ERROR) << pthread_self();
+  // std::unique_lock<std::mutex> lock(surface_mutex_);
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
@@ -397,6 +404,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
 
   if (frame == nullptr) {
+    FML_DLOG(ERROR) << "DrawToSurface END no frame";
     return RasterStatus::kFailed;
   }
 
@@ -422,6 +430,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   if (compositor_frame) {
     RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
     if (raster_status == RasterStatus::kFailed) {
+      FML_DLOG(ERROR) << "DrawToSurface END kFailed";
       return raster_status;
     }
     if (external_view_embedder != nullptr) {
@@ -438,10 +447,11 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
       surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
     }
+    FML_DLOG(ERROR) << "DrawToSurface END PerformDeferredSkiaCleanup";
 
     return raster_status;
   }
-
+  FML_DLOG(ERROR) << "DrawToSurface END last";
   return RasterStatus::kFailed;
 }
 
@@ -667,6 +677,7 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
 }
 
 bool Rasterizer::EnsureThreadsAreMerged() {
+  FML_DLOG(ERROR) << "EnsureThreadsAreMerged START";
   if (surface_ == nullptr || raster_thread_merger_.get() == nullptr) {
     return false;
   }
@@ -674,13 +685,15 @@ bool Rasterizer::EnsureThreadsAreMerged() {
       delegate_.GetTaskRunners().GetRasterTaskRunner(),
       [weak_this = weak_factory_.GetWeakPtr(),
        thread_merger = raster_thread_merger_]() {
-        if (weak_this->surface_ == nullptr) {
-          return;
-        }
+        FML_DLOG(ERROR) << "EnsureThreadsAreMerged thread_merger->MergeWithLease(10)";
+        FML_DLOG(ERROR) << pthread_self();
         thread_merger->MergeWithLease(10);
       });
+  FML_DLOG(ERROR) << "EnsureThreadsAreMerged WaitUntilMerged Start";
   raster_thread_merger_->WaitUntilMerged();
+  FML_DLOG(ERROR) << "EnsureThreadsAreMerged WaitUntilMerged End";
   FML_DCHECK(raster_thread_merger_->IsMerged());
+  FML_DLOG(ERROR) << "raster_thread_merger_->IsMerged()";
   return true;
 }
 
@@ -694,3 +707,4 @@ Rasterizer::Screenshot::Screenshot(const Screenshot& other) = default;
 Rasterizer::Screenshot::~Screenshot() = default;
 
 }  // namespace flutter
+

@@ -284,11 +284,13 @@ void Engine::OnOutputSurfaceCreated() {
   have_surface_ = true;
   StartAnimatorIfPossible();
   ScheduleFrame();
+  FML_DLOG(ERROR) << "ANIMATOR STARTED";
 }
 
 void Engine::OnOutputSurfaceDestroyed() {
   have_surface_ = false;
   StopAnimator();
+  FML_DLOG(ERROR) << "ANIMATOR STOPPED";
 }
 
 void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {

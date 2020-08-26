@@ -201,6 +201,7 @@ bool Animator::CanReuseLastLayerTree() {
 }
 
 void Animator::DrawLastLayerTree() {
+  FML_DLOG(ERROR) << "Animator::DrawLastLayerTree";
   pending_frame_semaphore_.Signal();
   delegate_.OnAnimatorDrawLastLayerTree();
 }

@@ -712,17 +712,19 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
   };
 
   PumpOneFrame(shell.get(), 100, 100, builder);
+  FML_DLOG(ERROR) << "first frame done";
   // Pump one frame and threads aren't merged
   end_frame_latch.Wait();
+  FML_DLOG(ERROR) << "end_frame_latch";
   ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
       shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
       shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
-
   // Pump a frame with `PostPrerollResult::kResubmitFrame` to start merging
   // threads
   external_view_embedder->SetResubmitOnce();
-  PumpOneFrame(shell.get(), 100, 100, builder);
 
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  FML_DLOG(ERROR) << "second frame done";
   // Now destroy the platform view immediately.
   // Two things can happen here:
   // 1. Threads haven't merged. 2. Threads has already merged.

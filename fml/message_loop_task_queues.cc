@@ -248,6 +248,11 @@ bool MessageLoopTaskQueues::Owns(TaskQueueId owner,
   return subsumed == queue_entries_.at(owner)->owner_of;
 }
 
+ TaskQueueId MessageLoopTaskQueues::GetOwner(TaskQueueId subsumed) const {
+   std::lock_guard guard(queue_mutex_);
+   return queue_entries_.at(subsumed)->subsumed_by;
+ }
+
 // Subsumed queues will never have pending tasks.
 // Owning queues will consider both their and their subsumed tasks.
 bool MessageLoopTaskQueues::HasPendingTasksUnlocked(

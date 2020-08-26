@@ -122,7 +122,7 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
   std::vector<fml::closure> invocations;
 
   task_queue_->GetTasksToRunNow(queue_id_, type, invocations);
-
+  TaskQueueId lastTaskQueueOwner = task_queue_->GetOwner(queue_id_);
   for (const auto& invocation : invocations) {
     invocation();
     std::vector<fml::closure> observers =
@@ -130,6 +130,12 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
     for (const auto& observer : observers) {
       observer();
     }
+    TaskQueueId thisTaskQueueOwner = task_queue_->GetOwner(queue_id_);
+    if (thisTaskQueueOwner != lastTaskQueueOwner) {
+      // Threads are merged during last invocation(), drop all the remaining tasks on this thread.
+      return;
+    }
+    lastTaskQueueOwner = thisTaskQueueOwner;
   }
 }
 

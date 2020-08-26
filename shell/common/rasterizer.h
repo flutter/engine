@@ -6,6 +6,7 @@
 #define SHELL_COMMON_RASTERIZER_H_
 
 #include <memory>
+#include <mutex>
 #include <optional>
 
 #include "flutter/common/settings.h"
@@ -149,7 +150,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///             Currently, the Skia context associated with onscreen rendering
   ///             is told to free GPU resources.
   ///
-  void NotifyLowMemoryWarning() const;
+  void NotifyLowMemoryWarning();
 
   //----------------------------------------------------------------------------
   /// @brief      Gets a weak pointer to the rasterizer. The rasterizer may only
@@ -420,7 +421,7 @@ class Rasterizer final : public SnapshotDelegate {
   std::optional<size_t> max_cache_bytes_;
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
-
+  
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
                                     SkISize picture_size) override;
