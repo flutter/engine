@@ -380,7 +380,7 @@ public class FlutterViewTest {
 
   @Test
   @TargetApi(30)
-  @Config(sdk = R)
+  @Config(sdk = 30)
   public void systemInsetGetInsetsFullscreen() {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
