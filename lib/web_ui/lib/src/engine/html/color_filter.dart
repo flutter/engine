@@ -8,10 +8,12 @@ part of engine;
 /// A surface that applies an [ColorFilter] to its children.
 class PersistedColorFilter extends PersistedContainerSurface
     implements ui.ColorFilterEngineLayer {
-  PersistedColorFilter(PersistedColorFilter? oldLayer, this.filter) : super(oldLayer);
+  PersistedColorFilter(PersistedColorFilter? oldLayer, this.filter)
+      : super(oldLayer);
 
   @override
   html.Element? get childContainer => _childContainer;
+
   /// The dedicated child container element that's separate from the
   /// [rootElement] is used to compensate for the coordinate system shift
   /// introduced by the [rootElement] translation.
@@ -40,7 +42,9 @@ class PersistedColorFilter extends PersistedContainerSurface
   @override
   html.Element createElement() {
     html.Element element = defaultCreateElement('flt-color-filter');
-    _childContainer = html.Element.tag('flt-filter-interior');
+    html.Element container = html.Element.tag('flt-filter-interior');
+    container.style.position = 'absolute';
+    _childContainer = container;
     element.append(_childContainer!);
     return element;
   }
@@ -57,7 +61,8 @@ class PersistedColorFilter extends PersistedContainerSurface
       return;
     }
     if (engineValue._blendMode == null) {
-      rootElement!.style.backgroundColor = colorToCssString(engineValue._color!);
+      rootElement!.style.backgroundColor =
+          colorToCssString(engineValue._color!);
       childContainer?.style.visibility = 'visible';
       return;
     }
@@ -86,8 +91,8 @@ class PersistedColorFilter extends PersistedContainerSurface
       }
 
       // Use SVG filter for blend mode.
-      String? svgFilter = svgFilterFromBlendMode(filterColor,
-          colorFilterBlendMode);
+      String? svgFilter =
+          svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
       if (svgFilter != null) {
         _filterElement =
             html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
@@ -113,8 +118,8 @@ class PersistedColorFilter extends PersistedContainerSurface
   }
 }
 
-String? svgFilterFromBlendMode(ui.Color? filterColor,
-    ui.BlendMode colorFilterBlendMode) {
+String? svgFilterFromBlendMode(
+    ui.Color? filterColor, ui.BlendMode colorFilterBlendMode) {
   String? svgFilter;
   switch (colorFilterBlendMode) {
     case ui.BlendMode.srcIn:
@@ -128,18 +133,18 @@ String? svgFilterFromBlendMode(ui.Color? filterColor,
       svgFilter = _xorColorFilterToSvg(filterColor);
       break;
     case ui.BlendMode.plus:
-    // Porter duff source + destination.
+      // Porter duff source + destination.
       svgFilter = _compositeColorFilterToSvg(filterColor, 0, 1, 1, 0);
       break;
     case ui.BlendMode.modulate:
-    // Porter duff source * destination but preserves alpha.
+      // Porter duff source * destination but preserves alpha.
       svgFilter = _modulateColorFilterToSvg(filterColor!);
       break;
     case ui.BlendMode.overlay:
-    // Since overlay is the same as hard-light by swapping layers,
-    // pass hard-light blend function.
-      svgFilter = _blendColorFilterToSvg(filterColor, 'hard-light',
-          swapLayers: true);
+      // Since overlay is the same as hard-light by swapping layers,
+      // pass hard-light blend function.
+      svgFilter =
+          _blendColorFilterToSvg(filterColor, 'hard-light', swapLayers: true);
       break;
     // Several of the filters below (although supported) do not render the
     // same (close but not exact) as native flutter when used as blend mode
@@ -169,8 +174,8 @@ String? svgFilterFromBlendMode(ui.Color? filterColor,
     case ui.BlendMode.softLight:
     case ui.BlendMode.difference:
     case ui.BlendMode.exclusion:
-      svgFilter = _blendColorFilterToSvg(filterColor,
-          _stringForBlendMode(colorFilterBlendMode));
+      svgFilter = _blendColorFilterToSvg(
+          filterColor, _stringForBlendMode(colorFilterBlendMode));
       break;
     default:
       break;
@@ -236,7 +241,8 @@ String _xorColorFilterToSvg(ui.Color? color) {
 
 // The source image and color are composited using :
 // result = k1 *in*in2 + k2*in + k3*in2 + k4.
-String _compositeColorFilterToSvg(ui.Color? color, double k1, double k2, double k3 , double k4) {
+String _compositeColorFilterToSvg(
+    ui.Color? color, double k1, double k2, double k3, double k4) {
   _filterIdCounter += 1;
   return '<svg width="0" height="0">'
       '<filter id="_fcf$_filterIdCounter" '
@@ -275,10 +281,10 @@ String _blendColorFilterToSvg(ui.Color? color, String? feBlend,
     {bool swapLayers = false}) {
   _filterIdCounter += 1;
   return '<svg width="0" height="0">'
-      '<filter id="_fcf$_filterIdCounter" filterUnits="objectBoundingBox" '
-      'x="0%" y="0%" width="100%" height="100%">'
-      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
-      '</feFlood>' +
+          '<filter id="_fcf$_filterIdCounter" filterUnits="objectBoundingBox" '
+          'x="0%" y="0%" width="100%" height="100%">'
+          '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+          '</feFlood>' +
       (swapLayers
           ? '<feBlend in="SourceGraphic" in2="flood" mode="$feBlend"/>'
           : '<feBlend in="flood" in2="SourceGraphic" mode="$feBlend"/>') +

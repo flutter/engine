@@ -576,7 +576,7 @@ class BitmapCanvas extends EngineCanvas {
     String? svgFilter = svgFilterFromBlendMode(filterColor,
         colorFilterBlendMode);
     final html.Element filterElement =
-      html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+        html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
     rootElement.append(filterElement);
     _children.add(filterElement);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
