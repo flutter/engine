@@ -145,7 +145,7 @@ public class FlutterEngineTest {
     FlutterInjector.reset();
     FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
     FlutterInjector.setInstance(
-      new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
+        new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
     Context mockContext = mock(Context.class);
 
     new FlutterEngine(mockContext, null, flutterJNI);
