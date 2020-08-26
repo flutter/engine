@@ -55,7 +55,7 @@ public final class FlutterInjector {
   // This whole class is here to enable testing so to test the thing that lets you test, some degree
   // of hack is needed.
   @VisibleForTesting
-  /* Package default */ static void reset() {
+  public static void reset() {
     accessed = false;
     instance = null;
   }
