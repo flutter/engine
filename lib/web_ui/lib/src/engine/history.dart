@@ -32,7 +32,7 @@ bool _isFlutterEntry(dynamic state) {
   return state is Map && state[_kFlutterTag] == true;
 }
 
-/// A abstract class that provides API for [EngineWindow] to delegate its
+/// An abstract class that provides the API for [EngineWindow] to delegate its
 /// navigating events.
 ///
 /// Subclasses will have access to [BrowserHistory.locationStrategy] to
@@ -41,10 +41,11 @@ bool _isFlutterEntry(dynamic state) {
 ///
 /// See also:
 ///
-///  * [SingleEntryBrowserHistory]: creates a single fake browser history entry
-///    and delegates all browser navigating events to the flutter framework.
-///  * [MultiEntriesBrowserHistory]: which creates a set of states that
-///    represents the records of navigating events happened in the framework.
+///  * [SingleEntryBrowserHistory]: whic creates a single fake browser history
+///    entry and delegates all browser navigating events to the flutter
+///    framework.
+///  * [MultiEntriesBrowserHistory]: which creates a set of states that records
+///    the navigating events happened in the framework.
 abstract class BrowserHistory {
   ui.VoidCallback? _unsubscribe;
 
@@ -127,7 +128,7 @@ abstract class BrowserHistory {
   }
 }
 
-/// A browser history class to creates a set of browser history entries to
+/// A browser history class that creates a set of browser history entries to
 /// support browser backward and forward button natively.
 ///
 /// This class creates a browser history entry every time the framework reports
