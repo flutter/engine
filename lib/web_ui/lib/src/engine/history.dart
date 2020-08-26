@@ -9,7 +9,14 @@ const MethodCall _popRouteMethodCall = MethodCall('popRoute');
 const String _kFlutterTag = 'flutter';
 const String _kOriginTag = 'origin';
 
-Map<String, bool> _originState = <String, bool>{_kOriginTag: true};
+Map<String, dynamic> _wrapOriginState(dynamic state) {
+  return <String, dynamic>{_kOriginTag: true, 'state': state};
+}
+dynamic _unWrapOriginState(dynamic state) {
+  assert(_isOriginEntry(state));
+  final Map<dynamic, dynamic> originState = state as Map<dynamic, dynamic>;
+  return originState['state'];
+}
 Map<String, bool> _flutterState = <String, bool>{_kFlutterTag: true};
 
 /// The origin entry is the history entry that the Flutter app landed on. It's
@@ -151,7 +158,6 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
   @override
   void setRouteName(String? routeName, {dynamic? state}) {
-    print('setRouteName ${routeName}');
     if (locationStrategy != null && routeName != null) {
       _updateHistoryCount();
       _flutterHistoryCount += 1;
@@ -218,6 +224,8 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 ///
 /// There should only be one global instance of this class.
 class SingleEntryBrowserHistory extends BrowserHistory {
+  dynamic get _currentState => html.window.history.state;
+
   @override
   void setRouteName(String? routeName, {dynamic? state}) {
     if (locationStrategy != null) {
@@ -280,7 +288,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
   /// [_isOriginEntry] inside [_popStateListener].
   void _setupOriginEntry(LocationStrategy strategy) {
     assert(strategy != null); // ignore: unnecessary_null_comparison
-    strategy.replaceState(_originState, 'origin', '');
+    strategy.replaceState(_wrapOriginState(_currentState), 'origin', '');
   }
 
   /// This method is used manipulate the Flutter Entry which is always the
@@ -318,7 +326,9 @@ class SingleEntryBrowserHistory extends BrowserHistory {
     if (locationStrategy != null) {
       // We need to remove the flutter entry that we pushed in setup.
       await locationStrategy!.back();
-      locationStrategy!.replaceState(null, 'flutter', currentPath);
+      // Restores original state.
+      print('_currentState ${_currentState}, currentPath ${currentPath}');
+      locationStrategy!.replaceState(_unWrapOriginState(_currentState), 'flutter', currentPath);
     }
   }
 }

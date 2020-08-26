@@ -30,7 +30,7 @@ abstract class LocationStrategy {
   String prepareExternalUrl(String internalUrl);
 
   /// Push a new history entry.
-  void pushState(dynamic? state, String title, String url);
+  void pushState(dynamic state, String title, String url);
 
   /// Replace the currently active history entry.
   void replaceState(dynamic state, String title, String url);
@@ -94,7 +94,7 @@ class HashLocationStrategy extends LocationStrategy {
   }
 
   @override
-  void pushState(dynamic? state, String title, String url) {
+  void pushState(dynamic state, String title, String url) {
     _platformLocation.pushState(state, title, prepareExternalUrl(url));
   }
 
@@ -186,19 +186,16 @@ class BrowserPlatformLocation extends PlatformLocation {
 
   @override
   void pushState(dynamic state, String title, String url) {
-    print('pushState ${url} state $state');
     _history.pushState(state, title, url);
   }
 
   @override
   void replaceState(dynamic state, String title, String url) {
-    print('replaceState ${url} state $state');
     _history.replaceState(state, title, url);
   }
 
   @override
   void back(int count) {
-    print('back $count');
     _history.go(-count);
   }
 }
