@@ -119,16 +119,12 @@ void MessageLoopImpl::DoTerminate() {
 
 void MessageLoopImpl::FlushTasks(FlushType type) {
   TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
-  std::vector<fml::closure> invocations;
 
-  task_queue_->GetTasksToRunNow(queue_id_, type, invocations);
-  TaskQueueId initial_task_queue_owner = task_queue_->GetOwner(queue_id_);
-  for (const auto& invocation : invocations) {
-    TaskQueueId task_queue_owner = task_queue_->GetOwner(queue_id_);
-    if (initial_task_queue_owner == _kUnmerged &&
-        task_queue_owner != _kUnmerged) {
-      task_queue_->RegisterTask(queue_id_, invocation, fml::TimePoint::Now());
-      continue;
+  fml::closure invocation;
+  for(;;) {
+    fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_);
+    if (!invocation) {
+      break;
     }
     invocation();
     std::vector<fml::closure> observers =
@@ -137,6 +133,19 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
       observer();
     }
   }
+
+  // std::vector<fml::closure> invocations;
+
+  // task_queue_->GetTasksToRunNow(queue_id_, type, invocations);
+
+  // for (const auto& invocation : invocations) {
+  //   invocation();
+  //   std::vector<fml::closure> observers =
+  //       task_queue_->GetObserversToNotify(queue_id_);
+  //   for (const auto& observer : observers) {
+  //     observer();
+  //   }
+  // }
 }
 
 void MessageLoopImpl::RunExpiredTasksNow() {
