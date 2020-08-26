@@ -22,14 +22,13 @@ RasterThreadMerger::RasterThreadMerger(fml::TaskQueueId platform_queue_id,
 }
 
 void RasterThreadMerger::MergeWithLease(size_t lease_term) {
+  FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   if (TaskQueuesAreSame()) {
     return;
   }
-  if (!IsEnabled()) {
+  if (!IsEnabledUnSafe()) {
     return;
   }
-
-  FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   std::scoped_lock lock(lease_term_mutex_);
   if (!IsMergedUnSafe()) {
     bool success = task_queues_->Merge(platform_queue_id_, gpu_queue_id_);
@@ -40,14 +39,13 @@ void RasterThreadMerger::MergeWithLease(size_t lease_term) {
 }
 
 void RasterThreadMerger::UnMergeNow() {
+  std::scoped_lock lock(lease_term_mutex_);
   if (TaskQueuesAreSame()) {
     return;
   }
-  if (!IsEnabled()) {
+  if (!IsEnabledUnSafe()) {
     return;
   }
-
-  std::scoped_lock lock(lease_term_mutex_);
   lease_term_ = 0;
   bool success = task_queues_->Unmerge(platform_queue_id_);
   FML_CHECK(success) << "Unable to un-merge the raster and platform threads.";
@@ -57,7 +55,7 @@ bool RasterThreadMerger::IsOnPlatformThread() const {
   return MessageLoop::GetCurrentTaskQueueId() == platform_queue_id_;
 }
 
-bool RasterThreadMerger::IsOnRasterizingThread() {
+bool RasterThreadMerger::IsOnRasterizingThread() const {
   if (IsMergedUnSafe()) {
     return IsOnPlatformThread();
   } else {
@@ -77,7 +75,7 @@ void RasterThreadMerger::ExtendLeaseTo(size_t lease_term) {
   }
 }
 
-bool RasterThreadMerger::IsMerged() {
+bool RasterThreadMerger::IsMerged() const {
   std::scoped_lock lock(lease_term_mutex_);
   return IsMergedUnSafe();
 }
@@ -94,14 +92,18 @@ void RasterThreadMerger::Disable() {
 
 bool RasterThreadMerger::IsEnabled() const {
   std::scoped_lock lock(lease_term_mutex_);
+  return IsEnabledUnSafe();
+}
+
+bool RasterThreadMerger::IsEnabledUnSafe() const {
   return enabled_;
 }
 
-bool RasterThreadMerger::IsMergedUnSafe() {
+bool RasterThreadMerger::IsMergedUnSafe() const {
   return lease_term_ > 0 || TaskQueuesAreSame();
 }
 
-bool RasterThreadMerger::TaskQueuesAreSame() {
+bool RasterThreadMerger::TaskQueuesAreSame() const {
   return platform_queue_id_ == gpu_queue_id_;
 }
 

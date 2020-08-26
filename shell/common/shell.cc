@@ -619,6 +619,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  // Enables the thread merger which may be used by the external view embedder.
+  rasterizer_->EnabledThreadMergerIfNeeded();
+
   // Note:
   // This is a synchronous operation because certain platforms depend on
   // setup/suspension of all activities that may be interacting with the GPU in
@@ -708,6 +711,14 @@ void Shell::OnPlatformViewDestroyed() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  // Prevent any request to merge the raster and platform threads while the
+  // platform view is destroyed.
+  //
+  // This prevents a dead lock where the platform thread is blocked waiting for
+  // the latch, but the latch is never released because the raster queue is all
+  // the sudden running on the platform thread.
+  rasterizer_->DisableThreadMergerIfNeeded();
+
   // Note:
   // This is a synchronous operation because certain platforms depend on
   // setup/suspension of all activities that may be interacting with the GPU in
@@ -747,7 +758,6 @@ void Shell::OnPlatformViewDestroyed() {
   // surface is about to go away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
   latch.Wait();
-  rasterizer_->EnsureThreadsAreMerged();
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
                                     raster_task);
   latch.Wait();

@@ -77,9 +77,17 @@ void Rasterizer::Teardown() {
   compositor_context_->OnGrContextDestroyed();
   surface_.reset();
   last_layer_tree_.reset();
-  if (raster_thread_merger_.get() != nullptr &&
-      raster_thread_merger_.get()->IsMerged()) {
-    raster_thread_merger_->UnMergeNow();
+}
+
+void Rasterizer::EnableThreadMergerIfNeeded() {
+  if (raster_thread_merger_) {
+    raster_thread_merger_->Enable();
+  }
+}
+
+void Rasterizer::DisableThreadMergerIfNeeded() {
+  if (raster_thread_merger_) {
+    raster_thread_merger_->Disable();
   }
 }
 
@@ -146,7 +154,8 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
 
   // Merging the thread as we know the next `Draw` should be run on the platform
   // thread.
-  if (surface_ != nullptr && surface_->GetExternalViewEmbedder() != nullptr) {
+  if (surface_ != nullptr && surface_->GetExternalViewEmbedder() != nullptr)
+  {
     auto should_resubmit_frame = raster_status == RasterStatus::kResubmit;
     surface_->GetExternalViewEmbedder()->EndFrame(should_resubmit_frame,
                                                   raster_thread_merger_);
@@ -377,7 +386,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   // for instrumentation.
   compositor_context_->ui_time().SetLapTime(layer_tree.build_time());
 
-  auto* external_view_embedder = surface_->GetExternalViewEmbedder();
+  flutter::ExternalViewEmbedder* external_view_embedder = nullptr;
 
   SkCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder != nullptr) {
@@ -661,24 +670,6 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
     return max_bytes;
   }
   return std::nullopt;
-}
-
-bool Rasterizer::EnsureThreadsAreMerged() {
-  if (surface_ == nullptr || raster_thread_merger_.get() == nullptr) {
-    return false;
-  }
-  fml::TaskRunner::RunNowOrPostTask(
-      delegate_.GetTaskRunners().GetRasterTaskRunner(),
-      [weak_this = weak_factory_.GetWeakPtr(),
-       thread_merger = raster_thread_merger_]() {
-        if (weak_this->surface_ == nullptr) {
-          return;
-        }
-        thread_merger->MergeWithLease(10);
-      });
-  raster_thread_merger_->WaitUntilMerged();
-  FML_DCHECK(raster_thread_merger_->IsMerged());
-  return true;
 }
 
 Rasterizer::Screenshot::Screenshot() {}

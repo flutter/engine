@@ -55,7 +55,7 @@ class RasterThreadMerger
   // When task queues are statically merged this method becomes no-op.
   RasterThreadStatus DecrementLease();
 
-  bool IsMerged();
+  bool IsMerged() const;
 
   // Waits until the threads are merged.
   //
@@ -68,7 +68,7 @@ class RasterThreadMerger
   // Returns true if the current thread owns rasterizing.
   // When the threads are merged, platform thread owns rasterizing.
   // When un-merged, raster thread owns rasterizing.
-  bool IsOnRasterizingThread();
+  bool IsOnRasterizingThread() const;
 
   // Returns true if the current thread is the platform thread.
   bool IsOnPlatformThread() const;
@@ -95,10 +95,13 @@ class RasterThreadMerger
   std::mutex lease_term_mutex_;
   bool enabled_;
 
-  bool IsMergedUnSafe();
+  bool IsMergedUnSafe() const;
+
+  bool IsEnabledUnSafe() const;
+
   // The platform_queue_id and gpu_queue_id are exactly the same.
   // We consider the threads are always merged and cannot be unmerged.
-  bool TaskQueuesAreSame();
+  bool TaskQueuesAreSame() const;
 
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(RasterThreadMerger);
   FML_FRIEND_MAKE_REF_COUNTED(RasterThreadMerger);
