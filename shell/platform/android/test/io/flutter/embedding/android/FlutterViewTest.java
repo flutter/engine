@@ -414,7 +414,7 @@ public class FlutterViewTest {
     when(windowInsets.getSystemWindowInsetBottom()).thenReturn(-1);
     when(windowInsets.getSystemWindowInsetLeft()).thenReturn(-1);
     when(windowInsets.getSystemWindowInsetRight()).thenReturn(-1);
-    when(windowInsets.getInsets()).thenReturn(insets);
+    when(windowInsets.getInsets(any())).thenReturn(insets);
 
     flutterView.onApplyWindowInsets(windowInsets);
 
