@@ -461,7 +461,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     return ZeroSides.NONE;
   }
 
-  // TODO(garyq): Use new Android R getInsets API
   // TODO(garyq): The keyboard detection may interact strangely with
   //   https://github.com/flutter/flutter/issues/22061
 
@@ -469,6 +468,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   // be padded. When the on-screen keyboard is detected, we want to include the full inset
   // but when the inset is just the hidden nav bar, we want to provide a zero inset so the space
   // can be used.
+  //
+  // This method is replaced by Android API 30 (R/11) getInsets() method which can take the
+  // android.view.WindowInsets.Type.ime() flag to find the keyboard inset.
   @TargetApi(20)
   @RequiresApi(20)
   private int guessBottomKeyboardInset(WindowInsets insets) {
@@ -506,16 +508,16 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
-    boolean statusBarHidden = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
-    boolean navigationBarHidden =
-          (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) != 0;
+    boolean statusBarVisible = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
+    boolean navigationBarVisible =
+          (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       int mask = 0;
-      if (!navigationBarHidden) {
+      if (navigationBarVisible) {
         mask = mask | android.view.WindowInsets.Type.navigationBars();
       }
-      if (!statusBarHidden) {
+      if (statusBarVisible) {
         mask = mask | android.view.WindowInsets.Type.statusBars();
       }
       mask = mask | android.view.WindowInsets.Type.ime();
@@ -535,12 +537,12 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       // We zero the left and/or right sides to prevent the padding the
       // navigation bar would have caused.
       ZeroSides zeroSides = ZeroSides.NONE;
-      if (navigationBarHidden) {
+      if (!navigationBarVisible) {
         zeroSides = calculateShouldZeroSides();
       }
 
       // Status bar (top) and left/right system insets should partially obscure the content (padding).
-      viewportMetrics.paddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
+      viewportMetrics.paddingTop = statusBarVisible ? insets.getSystemWindowInsetTop() : 0;
       viewportMetrics.paddingRight =
           zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
               ? 0
@@ -556,8 +558,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       viewportMetrics.viewInsetRight = 0;
       viewportMetrics.viewInsetBottom =
           navigationBarHidden
-              ? guessBottomKeyboardInset(insets)
-              : insets.getSystemWindowInsetBottom();
+              ? insets.getSystemWindowInsetBottom();
+              : guessBottomKeyboardInset(insets)
       viewportMetrics.viewInsetLeft = 0;
     }
 
