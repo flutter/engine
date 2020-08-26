@@ -4,6 +4,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -48,7 +49,7 @@ import org.robolectric.shadows.ShadowDisplay;
 
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
-@TargetApi(28)
+@TargetApi(30)
 public class FlutterViewTest {
   @Mock FlutterJNI mockFlutterJni;
   @Mock FlutterLoader mockFlutterLoader;
@@ -404,18 +405,14 @@ public class FlutterViewTest {
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
 
-    Insets insets = mock(Insets.class);
-    when(insets.top).thenReturn(100);
-    when(insets.bottom).thenReturn(100);
-    when(insets.left).thenReturn(100);
-    when(insets.right).thenReturn(100);
+    Insets insets = Insets.of(100, 100, 100, 100);
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
     when(windowInsets.getSystemWindowInsetTop()).thenReturn(-1);
     when(windowInsets.getSystemWindowInsetBottom()).thenReturn(-1);
     when(windowInsets.getSystemWindowInsetLeft()).thenReturn(-1);
     when(windowInsets.getSystemWindowInsetRight()).thenReturn(-1);
-    when(windowInsets.getInsets(any())).thenReturn(insets);
+    when(windowInsets.getInsets(anyInt())).thenReturn(insets);
 
     flutterView.onApplyWindowInsets(windowInsets);
 
