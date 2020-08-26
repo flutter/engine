@@ -368,7 +368,7 @@ import java.util.Arrays;
     }
 
     String appBundlePathOverride = host.getAppBundlePath();
-    if (appBundlePathOverride == null || appBundlePathOverride.isBlank()) {
+    if (appBundlePathOverride == null || appBundlePathOverride.isEmpty()) {
       appBundlePathOverride = FlutterLoader.getInstance().findAppBundlePath();
     }
 

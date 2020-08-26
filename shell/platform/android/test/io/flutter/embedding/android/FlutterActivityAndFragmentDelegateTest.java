@@ -307,6 +307,30 @@ public class FlutterActivityAndFragmentDelegateTest {
     verify(mockFlutterEngine.getDartExecutor(), times(1)).executeDartEntrypoint(eq(dartEntrypoint));
   }
 
+  @Test
+  public void itUsesDefaultFlutterLoaderAppBundlePathWhenUnspecified() {
+    // ---- Test setup ----
+    // Set Dart entrypoint parameters on fake host.
+    when(mockHost.getAppBundlePath()).thenReturn(null);
+    when(mockHost.getDartEntrypointFunctionName()).thenReturn("myEntrypoint");
+
+    // Create the DartEntrypoint that we expect to be executed.
+    DartExecutor.DartEntrypoint dartEntrypoint =
+        new DartExecutor.DartEntrypoint("flutter_assets", "myEntrypoint");
+
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // Dart is executed in onStart().
+    delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null);
+    delegate.onStart();
+
+    // Verify that the host's Dart entrypoint was used.
+    verify(mockFlutterEngine.getDartExecutor(), times(1)).executeDartEntrypoint(eq(dartEntrypoint));
+  }
+
   // "Attaching" to the surrounding Activity refers to Flutter being able to control
   // system chrome and other Activity-level details. If Flutter is not attached to the
   // surrounding Activity, it cannot control those details. This includes plugins.
