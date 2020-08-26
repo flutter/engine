@@ -573,57 +573,10 @@ class BitmapCanvas extends EngineCanvas {
       ui.Color? filterColor, ui.BlendMode colorFilterBlendMode,
       SurfacePaintData paint) {
     // For srcIn blendMode, we use an svg filter to apply to image element.
-    String? svgFilter;
-    switch (colorFilterBlendMode) {
-      case ui.BlendMode.srcIn:
-      case ui.BlendMode.srcATop:
-        svgFilter = _srcInColorFilterToSvg(filterColor);
-        break;
-      case ui.BlendMode.srcOut:
-        svgFilter = _srcOutColorFilterToSvg(filterColor);
-        break;
-      case ui.BlendMode.xor:
-        svgFilter = _xorColorFilterToSvg(filterColor);
-        break;
-      case ui.BlendMode.plus:
-        // Porter duff source + destination.
-        svgFilter = _compositeColorFilterToSvg(filterColor, 0, 1, 1, 0);
-        break;
-      case ui.BlendMode.modulate:
-        // Porter duff source * destination but preserves alpha.
-        svgFilter = _modulateColorFilterToSvg(filterColor!);
-        break;
-      case ui.BlendMode.overlay:
-        // Since overlay is the same as hard-light by swapping layers,
-        // pass hard-light blend function.
-        svgFilter = _blendColorFilterToSvg(filterColor, 'hard-light',
-            swapLayers: true);
-        break;
-      // Several of the filters below (although supported) do not render the
-      // same (close but not exact) as native flutter when used as blend mode
-      // for a background-image with a background color. They only look
-      // identical when feBlend is used within an svg filter definition.
-      //
-      // Saturation filter uses destination when source is transparent.
-      // cMax = math.max(r, math.max(b, g));
-      // cMin = math.min(r, math.min(b, g));
-      // delta = cMax - cMin;
-      // lightness = (cMax + cMin) / 2.0;
-      // saturation = delta / (1.0 - (2 * lightness - 1.0).abs());
-      case ui.BlendMode.saturation:
-      case ui.BlendMode.colorDodge:
-      case ui.BlendMode.colorBurn:
-      case ui.BlendMode.hue:
-      case ui.BlendMode.color:
-      case ui.BlendMode.luminosity:
-        svgFilter = _blendColorFilterToSvg(filterColor,
-            _stringForBlendMode(colorFilterBlendMode));
-        break;
-      default:
-        break;
-    }
+    String? svgFilter = svgFilterFromBlendMode(filterColor,
+        colorFilterBlendMode);
     final html.Element filterElement =
-    html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+      html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
     rootElement.append(filterElement);
     _children.add(filterElement);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
