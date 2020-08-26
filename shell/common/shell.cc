@@ -982,6 +982,7 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
 // |Animator::Delegate|
 void Shell::OnAnimatorDrawLastLayerTree() {
   FML_DCHECK(is_setup_);
+
   task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr()]() {
         if (rasterizer) {

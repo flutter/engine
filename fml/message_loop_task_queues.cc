@@ -87,6 +87,50 @@ bool MessageLoopTaskQueues::HasPendingTasks(TaskQueueId queue_id) const {
   return HasPendingTasksUnlocked(queue_id);
 }
 
+void MessageLoopTaskQueues::RunExpiredTasksNow(TaskQueueId queue_id,
+                        FlushType type,
+                        std::function<bool(fml::closure)> invocation_callback) {
+      FML_DLOG(ERROR) << "RunExpiredTasksNow";
+
+  if (!HasPendingTasksUnlocked(queue_id)) {
+    return;
+  }
+  std::vector<DelayedTask> popped_tasks;
+  TaskQueueId top_queue = _kUnmerged;
+  const auto now = fml::TimePoint::Now();
+  while (HasPendingTasksUnlocked(queue_id)) {
+    const auto& top = PeekNextTaskUnlocked(queue_id, top_queue);
+    if (top.GetTargetTime() > now) {
+      break;
+    }
+    // invocations.emplace_back(top.GetTask());
+    popped_tasks.emplace_back(top);
+    queue_entries_.at(top_queue)->delayed_tasks.pop();
+
+    if (type == FlushType::kSingle) {
+      break;
+    }
+  }
+
+  if (!HasPendingTasksUnlocked(queue_id)) {
+    WakeUpUnlocked(queue_id, fml::TimePoint::Max());
+  } else {
+    WakeUpUnlocked(queue_id, GetNextWakeTimeUnlocked(queue_id));
+  }
+  size_t start_index_to_return = 0;
+  for (const auto& task : popped_tasks) {
+    if (!invocation_callback(task.GetTask())) {
+      FML_DLOG(ERROR) << "NOT INVOKED";
+      break;
+    }
+    ++start_index_to_return;
+    FML_DLOG(ERROR) << "INVOKED";
+  }
+  for (size_t i = start_index_to_return; i<popped_tasks.size(); i ++) {
+    queue_entries_.at(GetOwner(queue_id))->delayed_tasks.push(popped_tasks.at(i));
+  }
+}
+
 void MessageLoopTaskQueues::GetTasksToRunNow(
     TaskQueueId queue_id,
     FlushType type,
@@ -97,7 +141,6 @@ void MessageLoopTaskQueues::GetTasksToRunNow(
   }
 
   const auto now = fml::TimePoint::Now();
-
   while (HasPendingTasksUnlocked(queue_id)) {
     TaskQueueId top_queue = _kUnmerged;
     const auto& top = PeekNextTaskUnlocked(queue_id, top_queue);
@@ -106,6 +149,7 @@ void MessageLoopTaskQueues::GetTasksToRunNow(
     }
     invocations.emplace_back(top.GetTask());
     queue_entries_.at(top_queue)->delayed_tasks.pop();
+
     if (type == FlushType::kSingle) {
       break;
     }
@@ -249,7 +293,6 @@ bool MessageLoopTaskQueues::Owns(TaskQueueId owner,
 }
 
 TaskQueueId MessageLoopTaskQueues::GetOwner(TaskQueueId subsumed) const {
-  std::lock_guard guard(queue_mutex_);
   return queue_entries_.at(subsumed)->subsumed_by;
 }
 

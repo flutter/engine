@@ -109,7 +109,6 @@ void Rasterizer::DrawLastLayerTree() {
   if (!last_layer_tree_ || !surface_) {
     return;
   }
-  FML_DLOG(ERROR) << "DrawLastLayerTree";
   DrawToSurface(*last_layer_tree_);
 }
 
@@ -147,6 +146,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   if (surface_ != nullptr) {
     surface_->ClearRenderContext();
   }
+
   // Merging the thread as we know the next `Draw` should be run on the platform
   // thread.
   if (surface_ != nullptr && surface_->GetExternalViewEmbedder() != nullptr) {
@@ -276,6 +276,7 @@ RasterStatus Rasterizer::DoDraw(
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
+
   if (!layer_tree || !surface_) {
     return RasterStatus::kFailed;
   }
@@ -440,6 +441,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
 
     return raster_status;
   }
+
   return RasterStatus::kFailed;
 }
 
