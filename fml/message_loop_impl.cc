@@ -121,7 +121,7 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
   TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
 
   fml::closure invocation;
-  for(;;) {
+  for (;;) {
     fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_);
     if (!invocation) {
       break;
