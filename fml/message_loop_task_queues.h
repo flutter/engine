@@ -87,10 +87,6 @@ class MessageLoopTaskQueues
                         FlushType type,
                         std::vector<fml::closure>& invocations);
 
-  void RunExpiredTasksNow(TaskQueueId queue_id,
-                        FlushType type,
-                        std::function<bool(fml::closure)> invocation_callback);
-
   size_t GetNumPendingTasks(TaskQueueId queue_id) const;
 
   // Observers methods.

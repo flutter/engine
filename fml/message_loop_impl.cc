@@ -125,12 +125,14 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
   TaskQueueId initial_task_queue_owner = task_queue_->GetOwner(queue_id_);
   for (const auto& invocation : invocations) {
     TaskQueueId task_queue_owner = task_queue_->GetOwner(queue_id_);
-    if (initial_task_queue_owner == _kUnmerged && task_queue_owner != _kUnmerged) {
+    if (initial_task_queue_owner == _kUnmerged &&
+        task_queue_owner != _kUnmerged) {
       task_queue_->RegisterTask(queue_id_, invocation, fml::TimePoint::Now());
       continue;
     }
     invocation();
-    std::vector<fml::closure> observers =	task_queue_->GetObserversToNotify(queue_id_);
+    std::vector<fml::closure> observers =
+        task_queue_->GetObserversToNotify(queue_id_);
     for (const auto& observer : observers) {
       observer();
     }
