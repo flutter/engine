@@ -1636,6 +1636,10 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
 
   Settings settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
   ServiceProtocol::Handler::ServiceProtocolMap empty_params;
   rapidjson::Document document;
   OnServiceProtocol(shell.get(), ServiceProtocolEnum::kGetSkSLs,
