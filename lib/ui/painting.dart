@@ -3245,6 +3245,19 @@ class ImageShader extends Shader {
   void _initWithImage(Image image, int tmx, int tmy, Float64List matrix4) native 'ImageShader_initWithImage';
 }
 
+// A shader (as used by [Paint.shader]) that runs provided SKSL code.
+// TODO: this will eventually take in the byte format rather than a string.
+class FragmentShader extends Shader {
+  @pragma('vm:entry-point')
+  FragmentShader(String src) : super._() {
+    _constructor();
+    _initWithSource(src);
+  }
+
+  void _constructor() native 'FragmentShader_constructor';
+  void _initWithSource(String source) native 'FragmentShader_initWithSource';
+}
+
 /// Defines how a list of points is interpreted when drawing a set of triangles.
 ///
 /// Used by [Canvas.drawVertices].
