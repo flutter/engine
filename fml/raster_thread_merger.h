@@ -55,7 +55,7 @@ class RasterThreadMerger
   // When task queues are statically merged this method becomes no-op.
   RasterThreadStatus DecrementLease();
 
-  bool IsMerged() const;
+  bool IsMerged();
 
   // Waits until the threads are merged.
   //
@@ -83,7 +83,7 @@ class RasterThreadMerger
   // Whether the thread merger is enabled. By default, the thread merger is
   // enabled. If false, calls to |MergeWithLease| or |UnMergeNow| results in a
   // noop.
-  bool IsEnabled() const;
+  bool IsEnabled();
 
  private:
   static const int kLeaseNotSet;

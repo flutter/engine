@@ -620,7 +620,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   // Enables the thread merger which may be used by the external view embedder.
-  rasterizer_->EnabledThreadMergerIfNeeded();
+  rasterizer_->EnableThreadMergerIfNeeded();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on
