@@ -83,7 +83,7 @@ class MessageLoopTaskQueues
 
   bool HasPendingTasks(TaskQueueId queue_id) const;
 
-  fml::closure GetNextTaskToRun(TaskQueueId queue_id);
+  fml::closure GetNextTaskToRun(TaskQueueId queue_id, fml::TimePoint from_time);
 
   void GetTasksToRunNow(TaskQueueId queue_id,
                         FlushType type,
