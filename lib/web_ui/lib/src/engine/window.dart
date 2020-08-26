@@ -159,7 +159,6 @@ class EngineWindow extends ui.Window {
     if (useRouter == _browserHistory is MultiEntriesBrowserHistory) {
       return;
     }
-    // We need to reinitialize the browser history as well as setting up
     final LocationStrategy strategy = _browserHistory.locationStrategy!;
     await _browserHistory.setLocationStrategy(null);
     _browserHistory = useRouter ? MultiEntriesBrowserHistory() : SingleEntryBrowserHistory();

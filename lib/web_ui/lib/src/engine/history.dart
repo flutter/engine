@@ -12,7 +12,7 @@ const String _kOriginTag = 'origin';
 Map<String, dynamic> _wrapOriginState(dynamic state) {
   return <String, dynamic>{_kOriginTag: true, 'state': state};
 }
-dynamic _unWrapOriginState(dynamic state) {
+dynamic _unwrapOriginState(dynamic state) {
   assert(_isOriginEntry(state));
   final Map<dynamic, dynamic> originState = state as Map<dynamic, dynamic>;
   return originState['state'];
@@ -41,7 +41,7 @@ bool _isFlutterEntry(dynamic state) {
 ///
 /// See also:
 ///
-///  * [SingleEntryBrowserHistory]: whic creates a single fake browser history
+///  * [SingleEntryBrowserHistory]: which creates a single fake browser history
 ///    entry and delegates all browser navigating events to the flutter
 ///    framework.
 ///  * [MultiEntriesBrowserHistory]: which creates a set of states that records
@@ -49,7 +49,7 @@ bool _isFlutterEntry(dynamic state) {
 abstract class BrowserHistory {
   ui.VoidCallback? _unsubscribe;
 
-  /// The strategy to interact with browser history.
+  /// The strategy to interact with html browser history.
   LocationStrategy? get locationStrategy => _locationStrategy;
   LocationStrategy? _locationStrategy;
   /// Updates the strategy.
@@ -91,10 +91,10 @@ abstract class BrowserHistory {
   /// Update the url with the given [routeName] and [state].
   void setRouteName(String? routeName, {dynamic? state});
 
-  /// A callback method to handle browser backward or forward button.
+  /// A callback method to handle browser backward or forward buttons.
   ///
-  /// Subclasses should send appropriate system messages to the framework to
-  /// update the flutter applications accordingly.
+  /// Subclasses should send appropriate system messages to update the flutter
+  /// applications accordingly.
   @protected
   void onPopState(covariant html.PopStateEvent event);
 
@@ -329,7 +329,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       await locationStrategy!.back();
       // Restores original state.
       print('_currentState ${_currentState}, currentPath ${currentPath}');
-      locationStrategy!.replaceState(_unWrapOriginState(_currentState), 'flutter', currentPath);
+      locationStrategy!.replaceState(_unwrapOriginState(_currentState), 'flutter', currentPath);
     }
   }
 }
