@@ -73,6 +73,18 @@ class RasterThreadMerger
   // Returns true if the current thread is the platform thread.
   bool IsOnPlatformThread() const;
 
+  // Enables the thread merger.
+  void Enable();
+
+  // Disables the thread merger. Once disabled, any call to
+  // |MergeWithLease| or |UnMergeNow| results in a noop.
+  void Disable();
+
+  // Whether the thread merger is enabled. By default, the thread merger is
+  // enabled. If false, calls to |MergeWithLease| or |UnMergeNow| results in a
+  // noop.
+  bool IsEnabled() const;
+
  private:
   static const int kLeaseNotSet;
   fml::TaskQueueId platform_queue_id_;
@@ -81,6 +93,7 @@ class RasterThreadMerger
   std::atomic_int lease_term_;
   std::condition_variable merged_condition_;
   std::mutex lease_term_mutex_;
+  bool enabled_;
 
   bool IsMergedUnSafe();
   // The platform_queue_id and gpu_queue_id are exactly the same.
