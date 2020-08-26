@@ -40,3 +40,16 @@ int _clampInt(int value, int min, int max) {
     return value;
   }
 }
+
+/// Linearly interpolate between two `Duration`s.
+Duration? lerpDuration(Duration? a, Duration? b, double t) {
+  if (a == null && b == null) 
+    return null;
+
+  a ??= Duration.zero;
+  b ??= Duration.zero;
+
+  return Duration(
+    microseconds: _lerpInt(a.inMicroseconds, b.inMicroseconds, t).round(),
+  );
+}
