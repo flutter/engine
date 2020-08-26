@@ -390,7 +390,8 @@ class Rasterizer final : public SnapshotDelegate {
   std::optional<size_t> GetResourceCacheMaxBytes() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Enables the thread merger if the external embedder supports
+  /// @brief      Enables the thread merger if the external view embedder
+  /// supports
   ///             dynamic thread merging.
   ///
   /// @attention  This method is thread-safe. When the thread merger is enabled,
@@ -402,7 +403,8 @@ class Rasterizer final : public SnapshotDelegate {
   void EnableThreadMergerIfNeeded();
 
   //----------------------------------------------------------------------------
-  /// @brief      Disables the thread merger if the external embedder supports
+  /// @brief      Disables the thread merger if the external view embedder
+  /// supports
   ///             dynamic thread merging.
   ///
   /// @attention  This method is thread-safe. When the thread merger is
