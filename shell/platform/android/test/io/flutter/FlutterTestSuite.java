@@ -53,6 +53,7 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
   FlutterEngineTest.class,
   FlutterFragmentActivityTest.class,
   FlutterFragmentTest.class,
+  FlutterInjectorTest.class,
   FlutterJNITest.class,
   FlutterLaunchTests.class,
   FlutterRendererTest.class,

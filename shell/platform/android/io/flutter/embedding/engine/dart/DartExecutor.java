@@ -8,12 +8,12 @@ import android.content.res.AssetManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StringCodec;
 import io.flutter.view.FlutterCallbackInformation;
-import io.flutter.view.FlutterMain;
 import java.nio.ByteBuffer;
 
 /**
@@ -252,7 +252,8 @@ public class DartExecutor implements BinaryMessenger {
   public static class DartEntrypoint {
     @NonNull
     public static DartEntrypoint createDefault() {
-      return new DartEntrypoint(FlutterMain.findAppBundlePath(), "main");
+      return new DartEntrypoint(
+          FlutterInjector.instance().flutterLoader().findAppBundlePath(), "main");
     }
 
     /** The path within the AssetManager where the app will look for assets. */
