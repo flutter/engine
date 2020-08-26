@@ -75,13 +75,13 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
 
 void Rasterizer::Teardown() {
   compositor_context_->OnGrContextDestroyed();
-  FML_DLOG(ERROR) << "surface.reset start";
+  // FML_DLOG(ERROR) << "surface.reset start";
   surface_.reset();
-  FML_DLOG(ERROR) << "surface.reset end";
-  FML_DLOG(ERROR) << "last_layer_tree_.reset start";
+  // FML_DLOG(ERROR) << "surface.reset end";
+  // FML_DLOG(ERROR) << "last_layer_tree_.reset start";
   last_layer_tree_.reset();
-  FML_DLOG(ERROR) << "last_layer_tree_.reset end";
-  FML_DLOG(ERROR) << "raster_thread_merger_.reset start";
+  // FML_DLOG(ERROR) << "last_layer_tree_.reset end";
+  // FML_DLOG(ERROR) << "raster_thread_merger_.reset start";
   if (raster_thread_merger_.get() != nullptr &&
       raster_thread_merger_.get()->IsMerged()) {
     raster_thread_merger_->UnMergeNow();
