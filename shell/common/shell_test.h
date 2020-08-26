@@ -63,6 +63,8 @@ class ShellTest : public FixtureTest {
   /// in PumpOneFrame.
   using LayerTreeBuilder =
       std::function<void(std::shared_ptr<ContainerLayer> root)>;
+
+  static void SetViewportMetrics(Shell* shell, double width, double height);
   static void PumpOneFrame(Shell* shell,
                            double width = 1,
                            double height = 1,
