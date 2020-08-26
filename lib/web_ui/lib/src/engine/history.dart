@@ -6,25 +6,209 @@
 part of engine;
 
 const MethodCall _popRouteMethodCall = MethodCall('popRoute');
+const String _kFlutterTag = 'flutter';
+const String _kOriginTag = 'origin';
 
-Map<String, bool> _originState = <String, bool>{'origin': true};
-Map<String, bool> _flutterState = <String, bool>{'flutter': true};
+Map<String, bool> _originState = <String, bool>{_kOriginTag: true};
+Map<String, bool> _flutterState = <String, bool>{_kFlutterTag: true};
 
 /// The origin entry is the history entry that the Flutter app landed on. It's
 /// created by the browser when the user navigates to the url of the app.
 bool _isOriginEntry(dynamic state) {
-  return state is Map && state['origin'] == true;
+  return state is Map && state[_kOriginTag] == true;
 }
 
 /// The flutter entry is a history entry that we maintain on top of the origin
 /// entry. It allows us to catch popstate events when the user hits the back
 /// button.
 bool _isFlutterEntry(dynamic state) {
-  return state is Map && state['flutter'] == true;
+  return state is Map && state[_kFlutterTag] == true;
 }
 
-/// The [BrowserHistory] class is responsible for integrating Flutter Web apps
-/// with the browser history so that the back button works as expected.
+/// A abstract class that provides API for [EngineWindow] to delegate its
+/// navigating events.
+///
+/// Subclasses will have access to [BrowserHistory.locationStrategy] to
+/// interact with the html browser history and should come up with their own
+/// ways to manage the states in the browser history.
+///
+/// See also:
+///
+///  * [SingleEntryBrowserHistory]: creates a single fake browser history entry
+///    and delegates all browser navigating events to the flutter framework.
+///  * [MultiEntriesBrowserHistory]: which creates a set of states that
+///    represents the records of navigating events happened in the framework.
+abstract class BrowserHistory {
+  ui.VoidCallback? _unsubscribe;
+
+  /// The strategy to interact with browser history.
+  LocationStrategy? get locationStrategy => _locationStrategy;
+  LocationStrategy? _locationStrategy;
+  /// Updates the strategy.
+  ///
+  /// This method will also remove any previous modifications to the html
+  /// browser history and start anew.
+  Future<void> setLocationStrategy(LocationStrategy? strategy) async {
+    if (strategy != _locationStrategy) {
+      await _tearoffStrategy(_locationStrategy);
+      _locationStrategy = strategy;
+      await _setupStrategy(_locationStrategy);
+    }
+  }
+
+  /// Exit this application and return to the previous page.
+  Future<void> exit() {
+    if (_locationStrategy != null) {
+      _tearoffStrategy(_locationStrategy);
+      // Now the history should be in the original state, back one more time to
+      // exit the application.
+      final Future<void> backFuture = _locationStrategy!.back();
+      _locationStrategy = null;
+      return backFuture;
+    }
+    return Future<void>.value();
+  }
+
+  /// This method does the same thing as the browser back button.
+  Future<void> back() {
+    if (locationStrategy != null) {
+      return locationStrategy!.back();
+    }
+    return Future<void>.value();
+  }
+
+  /// The path of the current location of the user's browser.
+  String get currentPath => locationStrategy?.path ?? '/';
+
+  /// Update the url with the given [routeName] and [state].
+  void setRouteName(String? routeName, {dynamic? state});
+
+  /// A callback method to handle browser backward or forward button.
+  ///
+  /// Subclasses should send appropriate system messages to the framework to
+  /// update the flutter applications accordingly.
+  @protected
+  void onPopState(covariant html.PopStateEvent event);
+
+  /// Sets up any prerequisites to use this browser history class.
+  @protected
+  Future<void> setup() => Future<void>.value();
+
+  /// Restore any modifications to the html browser history during the lifetime
+  /// of this class.
+  @protected
+  Future<void> tearDown() => Future<void>.value();
+
+  Future<void> _setupStrategy(LocationStrategy? strategy) async {
+    if (strategy == null) {
+      return;
+    }
+    _unsubscribe = strategy.onPopState(onPopState as dynamic Function(html.Event));
+    await setup();
+  }
+
+  Future<void> _tearoffStrategy(LocationStrategy? strategy) async {
+    if (strategy == null) {
+      return;
+    }
+
+    assert(_unsubscribe != null);
+    _unsubscribe!();
+    _unsubscribe = null;
+
+    await tearDown();
+  }
+}
+
+/// A browser history class to creates a set of browser history entries to
+/// support browser backward and forward button natively.
+///
+/// This class creates a browser history entry every time the framework reports
+/// route changes so that users can use the backward and forward buttons to
+/// navigate within the application.
+class MultiEntriesBrowserHistory extends BrowserHistory {
+  int _flutterHistoryCount = 0;
+  dynamic get _currentState => html.window.history.state;
+
+  dynamic _tagWithSerialCount(dynamic originialState, int count) {
+    return <dynamic, dynamic> {
+      'serialCount': count,
+      'state': originialState,
+    };
+  }
+
+  bool _hasSerialCount(dynamic state) {
+    return state is Map && state['serialCount'] != null;
+  }
+
+  void _updateHistoryCount() {
+    if (_hasSerialCount(_currentState)) {
+      _flutterHistoryCount = _currentState['serialCount'];
+    } else {
+      _flutterHistoryCount = 0;
+    }
+  }
+
+  @override
+  void setRouteName(String? routeName, {dynamic? state}) {
+    print('setRouteName ${routeName}');
+    if (locationStrategy != null && routeName != null) {
+      _updateHistoryCount();
+      _flutterHistoryCount += 1;
+      locationStrategy!.pushState(_tagWithSerialCount(state, _flutterHistoryCount), 'flutter', routeName!);
+    }
+  }
+
+  @override
+  void onPopState(covariant html.PopStateEvent event) {
+    if ((_hasSerialCount(event.state)) &&
+        window._onPlatformMessage != null) {
+      _flutterHistoryCount = event.state['serialCount'];
+      window.invokeOnPlatformMessage(
+        'flutter/navigation',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall('pushRouteInformation', <dynamic, dynamic>{
+            'location': currentPath,
+            'state': event.state,
+          })
+        ),
+        (_) {},
+      );
+    }
+  }
+
+  @override
+  Future<void> setup() {
+    _flutterHistoryCount = 0;
+    if (locationStrategy != null) {
+      locationStrategy!.replaceState(
+        _tagWithSerialCount(_currentState, _flutterHistoryCount),
+        'flutter',
+        currentPath
+      );
+    }
+    return Future<void>.value();
+  }
+
+  @override
+  Future<void> tearDown() async {
+    if (_hasSerialCount(_currentState)) {
+      if (_currentState['serialCount'] > 0) {
+        final int currentFlutterStateSerialCount = _currentState['serialCount'] as int;
+        await locationStrategy!.back(count: currentFlutterStateSerialCount);
+      }
+      // Unwrap state.
+      locationStrategy!.replaceState(
+        _currentState['state'],
+        'flutter',
+        currentPath,
+      );
+    }
+  }
+}
+
+/// The [SingleEntryBrowserHistory] class is responsible for integrating Flutter
+/// Web apps with the browser history so that the back button works as expected.
 ///
 /// It does that by always keeping a single entry (conventionally called the
 /// "flutter" entry) at the top of the browser history. That way, the browser's
@@ -33,68 +217,18 @@ bool _isFlutterEntry(dynamic state) {
 /// are no more app routes to be popped).
 ///
 /// There should only be one global instance of this class.
-class BrowserHistory {
-  LocationStrategy? _locationStrategy;
-  ui.VoidCallback? _unsubscribe;
-
-  /// Changing the location strategy will unsubscribe from the old strategy's
-  /// event listeners, and subscribe to the new one.
-  ///
-  /// If the given [strategy] is the same as the existing one, nothing will
-  /// happen.
-  ///
-  /// If the given strategy is null, it will render this [BrowserHistory]
-  /// instance inactive.
-  set locationStrategy(LocationStrategy? strategy) {
-    if (strategy != _locationStrategy) {
-      _tearoffStrategy(_locationStrategy);
-      _locationStrategy = strategy;
-      _setupStrategy(_locationStrategy);
+class SingleEntryBrowserHistory extends BrowserHistory {
+  @override
+  void setRouteName(String? routeName, {dynamic? state}) {
+    if (locationStrategy != null) {
+      _setupFlutterEntry(locationStrategy!, replace: true, path: routeName);
     }
-  }
-
-  /// Returns the currently active location strategy.
-  @visibleForTesting
-  LocationStrategy? get locationStrategy => _locationStrategy;
-
-  /// The path of the current location of the user's browser.
-  String get currentPath => _locationStrategy?.path ?? '/';
-
-  /// Update the url with the given [routeName].
-  void setRouteName(String? routeName) {
-    if (_locationStrategy != null) {
-      _setupFlutterEntry(_locationStrategy!, replace: true, path: routeName);
-    }
-  }
-
-  /// This method does the same thing as the browser back button.
-  Future<void> back() {
-    if (_locationStrategy != null) {
-      return _locationStrategy!.back();
-    }
-    return Future<void>.value();
-  }
-
-  /// This method exits the app and goes to whatever website was active before.
-  Future<void> exit() {
-    if (_locationStrategy != null) {
-      _tearoffStrategy(_locationStrategy);
-      // After tearing off the location strategy, we should be on the "origin"
-      // entry. So we need to go back one more time to exit the app.
-      final Future<void> backFuture = _locationStrategy!.back();
-      _locationStrategy = null;
-      return backFuture;
-    }
-    return Future<void>.value();
   }
 
   String? _userProvidedRouteName;
-  void _popStateListener(covariant html.PopStateEvent event) {
+  @override
+  void onPopState(covariant html.PopStateEvent event) {
     if (_isOriginEntry(event.state)) {
-      // If we find ourselves in the origin entry, it means that the user
-      // clicked the back button.
-
-      // 1. Re-push the flutter entry to keep it always at the top of history.
       _setupFlutterEntry(_locationStrategy!);
 
       // 2. Send a 'popRoute' platform message so the app can handle it accordingly.
@@ -165,35 +299,26 @@ class BrowserHistory {
     }
   }
 
-  void _setupStrategy(LocationStrategy? strategy) {
-    if (strategy == null) {
-      return;
-    }
-
-    final String path = currentPath;
+  @override
+  Future<void> setup() {
     if (_isFlutterEntry(html.window.history.state)) {
       // This could happen if the user, for example, refreshes the page. They
       // will land directly on the "flutter" entry, so there's no need to setup
       // the "origin" and "flutter" entries, we can safely assume they are
       // already setup.
     } else {
-      _setupOriginEntry(strategy);
-      _setupFlutterEntry(strategy, replace: false, path: path);
+      _setupOriginEntry(locationStrategy!);
+      _setupFlutterEntry(locationStrategy!, replace: false, path: currentPath);
     }
-    _unsubscribe = strategy.onPopState(_popStateListener as dynamic Function(html.Event));
+    return Future<void>.value();
   }
 
-  void _tearoffStrategy(LocationStrategy? strategy) {
-    if (strategy == null) {
-      return;
+  @override
+  Future<void> tearDown() async {
+    if (locationStrategy != null) {
+      // We need to remove the flutter entry that we pushed in setup.
+      await locationStrategy!.back();
+      locationStrategy!.replaceState(null, 'flutter', currentPath);
     }
-
-    assert(_unsubscribe != null);
-    _unsubscribe!();
-    _unsubscribe = null;
-
-    // Remove the "flutter" entry and go back to the "origin" entry so that the
-    // next location strategy can start from the right spot.
-    strategy.back();
   }
 }

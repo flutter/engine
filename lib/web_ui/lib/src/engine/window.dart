@@ -153,7 +153,18 @@ class EngineWindow extends ui.Window {
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
-  final BrowserHistory _browserHistory = BrowserHistory();
+  BrowserHistory _browserHistory = SingleEntryBrowserHistory();
+
+  Future<void> _updateBrowserHistory({bool useRouter = false}) async {
+    if (useRouter == _browserHistory is MultiEntriesBrowserHistory) {
+      return;
+    }
+    // We need to reinitialize the browser history as well as setting up
+    final LocationStrategy strategy = _browserHistory.locationStrategy!;
+    await _browserHistory.setLocationStrategy(null);
+    _browserHistory = useRouter ? MultiEntriesBrowserHistory() : SingleEntryBrowserHistory();
+    await _browserHistory.setLocationStrategy(strategy);
+  }
 
   /// Simulates clicking the browser's back button.
   Future<void> webOnlyBack() => _browserHistory.back();
@@ -181,7 +192,7 @@ class EngineWindow extends ui.Window {
   ///
   /// By setting this to null, the browser history will be disabled.
   set locationStrategy(LocationStrategy? strategy) {
-    _browserHistory.locationStrategy = strategy;
+    _browserHistory.setLocationStrategy(strategy);
   }
 
   /// Returns the currently active location strategy.
@@ -608,16 +619,21 @@ class EngineWindow extends ui.Window {
         final Map<String, dynamic>? message = decoded.arguments;
         switch (decoded.method) {
           case 'routeUpdated':
-          case 'routePushed':
-          case 'routeReplaced':
-            _browserHistory.setRouteName(message!['routeName']);
-            _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
+            _updateBrowserHistory(useRouter: false).then((void data) {
+              _browserHistory.setRouteName(message!['routeName']);
+              _replyToPlatformMessage(
+                  callback, codec.encodeSuccessEnvelope(true));
+            });
             break;
-          case 'routePopped':
-            _browserHistory.setRouteName(message!['previousRouteName']);
-            _replyToPlatformMessage(
+          case 'routeInformationUpdated':
+            _updateBrowserHistory(useRouter: true).then((void data) {
+              _browserHistory.setRouteName(
+                message!['location'],
+                state: message!['state'],
+              );
+              _replyToPlatformMessage(
                 callback, codec.encodeSuccessEnvelope(true));
+            });
             break;
         }
         // As soon as Flutter starts taking control of the app navigation, we

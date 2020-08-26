@@ -100,7 +100,7 @@ class TestLocationStrategy extends LocationStrategy {
   }
 
   @override
-  Future<void> back() {
+  Future<void> back({int count = 1}) {
     assert(withinAppHistory);
     // Browsers don't move back in history immediately. They do it at the next
     // event loop. So let's simulate that.
