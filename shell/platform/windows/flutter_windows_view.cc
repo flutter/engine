@@ -120,11 +120,12 @@ void FlutterWindowsView::OnText(const std::u16string& text) {
   SendText(text);
 }
 
-void FlutterWindowsView::OnKey(int key,
+bool FlutterWindowsView::OnKey(int key,
                                int scancode,
                                int action,
-                               char32_t character) {
-  SendKey(key, scancode, action, character);
+                               char32_t character,
+                               bool extended) {
+  return SendKey(key, scancode, action, character, extended);
 }
 
 void FlutterWindowsView::OnScroll(double x,
@@ -215,13 +216,19 @@ void FlutterWindowsView::SendText(const std::u16string& text) {
   }
 }
 
-void FlutterWindowsView::SendKey(int key,
+bool FlutterWindowsView::SendKey(int key,
                                  int scancode,
                                  int action,
-                                 char32_t character) {
+                                 char32_t character,
+                                 bool extended) {
   for (const auto& handler : keyboard_hook_handlers_) {
-    handler->KeyboardHook(this, key, scancode, action, character);
+    if (handler->KeyboardHook(this, key, scancode, action, character,
+                              extended)) {
+      // key event was handled, so don't send to other handlers.
+      return true;
+    }
   }
+  return false;
 }
 
 void FlutterWindowsView::SendScroll(double x,

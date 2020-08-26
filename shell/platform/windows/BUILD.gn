@@ -167,6 +167,7 @@ if (target_os == "winuwp") {
       "flutter_project_bundle_unittests.cc",
       "flutter_windows_engine_unittests.cc",
       "flutter_windows_texture_registrar_unittests.cc",
+      "key_event_handler_unittests.cc",
       "string_conversion_unittests.cc",
       "system_utils_unittests.cc",
       "testing/engine_embedder_api_modifier.h",
