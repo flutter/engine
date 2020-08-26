@@ -438,7 +438,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // or landscape. By combining both, we can obtain a more precise measure
     // of the rotation.
     Context context = getContext();
-    context.getDisplay();
     int orientation = context.getResources().getConfiguration().orientation;
     int rotation =
         ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
@@ -511,28 +510,18 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     boolean navigationBarHidden =
           (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) != 0;
 
-    Log.e("flutter", "Hidden statuys: " + statusBarHidden + " " + navigationBarHidden);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || true) {
-      // This API does not seem to be working yet in the preview 4 of API 30.
-      int mask = android.view.WindowInsets.Type.statusBars() |
-                 android.view.WindowInsets.Type.navigationBars() |
-                 android.view.WindowInsets.Type.captionBar() |
-                 android.view.WindowInsets.Type.ime() |
-                 // android.view.WindowInsets.Type.windowDecor() |
-                 android.view.WindowInsets.Type.systemGestures() |
-                 android.view.WindowInsets.Type.mandatorySystemGestures() |
-                 android.view.WindowInsets.Type.tappableElement() |
-                 android.view.WindowInsets.Type.displayCutout();
-      // int mask = 0xFFFF;
-      if (navigationBarHidden) {
-        mask = mask & ~android.view.WindowInsets.Type.navigationBars();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      int mask = 0;
+      if (!navigationBarHidden) {
+        mask = mask | android.view.WindowInsets.Type.navigationBars();
       }
-      if (statusBarHidden) {
-        mask = mask & ~android.view.WindowInsets.Type.statusBars();
+      if (!statusBarHidden) {
+        mask = mask | android.view.WindowInsets.Type.statusBars();
       }
+      mask = mask | android.view.WindowInsets.Type.ime();
+
 
       Insets finalInsets = insets.getInsets(mask);
-      Log.e("flutter", "INSETS: " + finalInsets + " " + Build.VERSION.SDK_INT);
       viewportMetrics.paddingTop = finalInsets.top;
       viewportMetrics.paddingRight = finalInsets.right;
       viewportMetrics.paddingBottom = 0;
@@ -543,7 +532,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       viewportMetrics.viewInsetBottom = finalInsets.bottom;
       viewportMetrics.viewInsetLeft = 0;
     } else {
-
       // We zero the left and/or right sides to prevent the padding the
       // navigation bar would have caused.
       ZeroSides zeroSides = ZeroSides.NONE;
