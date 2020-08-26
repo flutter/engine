@@ -143,7 +143,7 @@ abstract class PlatformLocation {
   String get search;
   String? get hash;
 
-  void pushState(dynamic? state, String title, String url);
+  void pushState(dynamic state, String title, String url);
   void replaceState(dynamic state, String title, String url);
   void back(int count);
 }
