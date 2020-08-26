@@ -1,4 +1,4 @@
-Signature: 32d616305601ae67cf09fdd86152190f
+Signature: 2bee7dd78acda43697c2c48833ff623d
 
 UNUSED LICENSES:
 
@@ -3372,7 +3372,6 @@ FILE: ../../../third_party/skia/src/gpu/GrDriverBugWorkarounds.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFPArgs.h
 FILE: ../../../third_party/skia/src/gpu/GrProxyProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrProxyProvider.h
-FILE: ../../../third_party/skia/src/gpu/GrRenderTargetProxyPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceProviderPriv.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCClipPath.cpp
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCClipPath.h

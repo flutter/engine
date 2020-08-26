@@ -27,7 +27,8 @@ static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
 Rasterizer::Rasterizer(Delegate& delegate)
     : Rasterizer(delegate,
-                 std::make_unique<flutter::CompositorContext>(delegate)) {}
+                 std::make_unique<flutter::CompositorContext>(
+                     delegate.GetFrameBudget())) {}
 
 Rasterizer::Rasterizer(
     Delegate& delegate,
@@ -147,10 +148,6 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
     }
   } else if (raster_status == RasterStatus::kEnqueuePipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
-  }
-
-  if (surface_ != nullptr) {
-    surface_->ClearRenderContext();
   }
 
   // Merging the thread as we know the next `Draw` should be run on the platform
