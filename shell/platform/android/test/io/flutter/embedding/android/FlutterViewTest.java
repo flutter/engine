@@ -19,6 +19,7 @@ import android.content.res.Resources;
 import android.graphics.Insets;
 import android.media.Image;
 import android.media.ImageReader;
+import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
@@ -378,6 +379,8 @@ public class FlutterViewTest {
   }
 
   @Test
+  @TargetApi(30)
+  @Config(sdk = R)
   public void systemInsetGetInsetsFullscreen() {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
@@ -412,7 +415,9 @@ public class FlutterViewTest {
     when(windowInsets.getSystemWindowInsetBottom()).thenReturn(-1);
     when(windowInsets.getSystemWindowInsetLeft()).thenReturn(-1);
     when(windowInsets.getSystemWindowInsetRight()).thenReturn(-1);
+    // if (Build.VERSION.SDK_INT >= 30) {
     when(windowInsets.getInsets(anyInt())).thenReturn(insets);
+    // }
 
     flutterView.onApplyWindowInsets(windowInsets);
 

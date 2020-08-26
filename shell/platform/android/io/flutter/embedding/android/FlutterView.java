@@ -10,7 +10,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.graphics.Rect;
-import android.os.Build;
+// import android.os.Build;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.SparseArray;
