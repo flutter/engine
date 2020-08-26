@@ -136,9 +136,8 @@ class EmbedderTestContext {
   SkMatrix root_surface_transformation_;
   size_t gl_surface_present_count_ = 0;
   size_t software_surface_present_count_ = 0;
-  std::mutex gl_get_fbo_callback_mutex_;
+  std::mutex gl_callback_mutex_;
   GLGetFBOCallback gl_get_fbo_callback_;
-  std::mutex gl_present_callback_mutex_;
   GLPresentCallback gl_present_callback_;
 
   static VoidCallback GetIsolateCreateCallbackHook();

@@ -191,7 +191,7 @@ bool EmbedderTestContext::GLPresent(uint32_t fbo_id) {
 
   GLPresentCallback callback;
   {
-    std::scoped_lock lock(gl_present_callback_mutex_);
+    std::scoped_lock lock(gl_callback_mutex_);
     callback = gl_present_callback_;
   }
 
@@ -210,12 +210,12 @@ bool EmbedderTestContext::GLPresent(uint32_t fbo_id) {
 }
 
 void EmbedderTestContext::SetGLGetFBOCallback(GLGetFBOCallback callback) {
-  std::scoped_lock lock(gl_get_fbo_callback_mutex_);
+  std::scoped_lock lock(gl_callback_mutex_);
   gl_get_fbo_callback_ = callback;
 }
 
 void EmbedderTestContext::SetGLPresentCallback(GLPresentCallback callback) {
-  std::scoped_lock lock(gl_present_callback_mutex_);
+  std::scoped_lock lock(gl_callback_mutex_);
   gl_present_callback_ = callback;
 }
 
@@ -224,7 +224,7 @@ uint32_t EmbedderTestContext::GLGetFramebuffer(FlutterFrameInfo frame_info) {
 
   GLGetFBOCallback callback;
   {
-    std::scoped_lock lock(gl_get_fbo_callback_mutex_);
+    std::scoped_lock lock(gl_callback_mutex_);
     callback = gl_get_fbo_callback_;
   }
 
