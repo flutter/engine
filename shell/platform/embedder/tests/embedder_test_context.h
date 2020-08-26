@@ -95,6 +95,8 @@ class EmbedderTestContext {
   ///
   void SetGLGetFBOCallback(GLGetFBOCallback callback);
 
+  uint32_t GetWindowFBOId() const;
+
   using GLPresentCallback = std::function<void(uint32_t fbo_id)>;
 
   //----------------------------------------------------------------------------

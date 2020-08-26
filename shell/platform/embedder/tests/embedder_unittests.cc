@@ -4448,12 +4448,13 @@ TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
                               /* Nothing to do. */
                             }));
 
-  context.SetGLPresentCallback([&frame_latch](uint32_t fbo_id) {
-    // this must be the window FBO id.
-    ASSERT_EQ(fbo_id, 0u);
+  const uint32_t window_fbo_id = context.GetWindowFBOId();
+  context.SetGLPresentCallback(
+      [window_fbo_id = window_fbo_id, &frame_latch](uint32_t fbo_id) {
+        ASSERT_EQ(fbo_id, window_fbo_id);
 
-    frame_latch.CountDown();
-  });
+        frame_latch.CountDown();
+      });
 
   frame_latch.Wait();
 }

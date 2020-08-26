@@ -221,8 +221,7 @@ bool TestGLSurface::Present() {
 }
 
 uint32_t TestGLSurface::GetFramebuffer(uint32_t width, uint32_t height) const {
-  // Return FBO0
-  return 0;
+  return GetWindowFBOId();
 }
 
 bool TestGLSurface::MakeResourceCurrent() {
@@ -362,6 +361,10 @@ sk_sp<SkImage> TestGLSurface::GetRasterSurfaceSnapshot() {
   }
 
   return host_snapshot;
+}
+
+uint32_t TestGLSurface::GetWindowFBOId() const {
+  return 0u;
 }
 
 }  // namespace testing

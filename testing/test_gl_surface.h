@@ -41,6 +41,8 @@ class TestGLSurface {
 
   sk_sp<SkImage> GetRasterSurfaceSnapshot();
 
+  uint32_t GetWindowFBOId() const;
+
  private:
   // Importing the EGL.h pulls in platform headers which are problematic
   // (especially X11 which #defineds types like Bool). Any TUs importing

@@ -311,5 +311,10 @@ void EmbedderTestContext::FireRootSurfacePresentCallbackIfPresent(
   callback(image_callback());
 }
 
+uint32_t EmbedderTestContext::GetWindowFBOId() const {
+  FML_CHECK(gl_surface_);
+  return gl_surface_->GetWindowFBOId();
+}
+
 }  // namespace testing
 }  // namespace flutter
