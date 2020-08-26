@@ -557,9 +557,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       viewportMetrics.viewInsetTop = 0;
       viewportMetrics.viewInsetRight = 0;
       viewportMetrics.viewInsetBottom =
-          navigationBarHidden
-              ? insets.getSystemWindowInsetBottom();
-              : guessBottomKeyboardInset(insets)
+          navigationBarVisible
+              ? insets.getSystemWindowInsetBottom()
+              : guessBottomKeyboardInset(insets);
       viewportMetrics.viewInsetLeft = 0;
     }
 
