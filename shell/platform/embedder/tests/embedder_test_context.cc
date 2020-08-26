@@ -188,7 +188,16 @@ bool EmbedderTestContext::GLClearCurrent() {
 bool EmbedderTestContext::GLPresent(uint32_t fbo_id) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
   gl_surface_present_count_++;
-  presented_fbos_.push_back(fbo_id);
+
+  GLPresentCallback callback;
+  {
+    std::scoped_lock lock(gl_present_callback_mutex_);
+    callback = gl_present_callback_;
+  }
+
+  if (callback) {
+    callback(fbo_id);
+  }
 
   FireRootSurfacePresentCallbackIfPresent(
       [&]() { return gl_surface_->GetRasterSurfaceSnapshot(); });
@@ -203,6 +212,11 @@ bool EmbedderTestContext::GLPresent(uint32_t fbo_id) {
 void EmbedderTestContext::SetGLGetFBOCallback(GLGetFBOCallback callback) {
   std::scoped_lock lock(gl_get_fbo_callback_mutex_);
   gl_get_fbo_callback_ = callback;
+}
+
+void EmbedderTestContext::SetGLPresentCallback(GLPresentCallback callback) {
+  std::scoped_lock lock(gl_present_callback_mutex_);
+  gl_present_callback_ = callback;
 }
 
 uint32_t EmbedderTestContext::GLGetFramebuffer(FlutterFrameInfo frame_info) {
