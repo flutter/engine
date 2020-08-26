@@ -133,7 +133,6 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
       observer();
     }
   }
-
 }
 
 void MessageLoopImpl::RunExpiredTasksNow() {
