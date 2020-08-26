@@ -83,6 +83,12 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrame) {
   ASSERT_TRUE(current_picture_);
   ASSERT_TRUE(current_image_);
 
+  message_latch_.Reset();
+
+  // flush the UI Task runner
+  task_runner->PostTask([&]() { message_latch_.Signal(); });
+  message_latch_.Wait();
+
   EXPECT_TRUE(current_picture_->unique());
   current_picture_.reset();
 
