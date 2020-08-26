@@ -385,7 +385,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   // for instrumentation.
   compositor_context_->ui_time().SetLapTime(layer_tree.build_time());
 
-  flutter::ExternalViewEmbedder* external_view_embedder = nullptr;
+  auto* external_view_embedder = surface_->GetExternalViewEmbedder();
 
   SkCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder != nullptr) {
