@@ -41,7 +41,7 @@ fi
 
 # Wrapper function to pass common args to fuchsia_ctl.
 fuchsia_ctl() {
-  ./fuchsia_ctl -d $device_name $@
+  ./fuchsia_ctl -d $device_name "$@"
 }
 
 reboot() {
