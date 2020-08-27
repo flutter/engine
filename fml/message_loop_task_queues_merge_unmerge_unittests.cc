@@ -129,7 +129,7 @@ TEST(MessageLoopTaskQueueMergeUnmerge, MergeInvokesBothWakeables) {
 
   const auto now = fml::TimePoint::Now();
   for (;;) {
-    fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_1, now);
+    fml::closure invocation = task_queue->GetNextTaskToRun(queue_id_1, now);
     if (!invocation) {
       break;
     }
@@ -166,7 +166,7 @@ TEST(MessageLoopTaskQueueMergeUnmerge,
 
   const auto now = fml::TimePoint::Now();
   for (;;) {
-    fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_1, now);
+    fml::closure invocation = task_queue->GetNextTaskToRun(queue_id_1, now);
     if (!invocation) {
       break;
     }
@@ -174,9 +174,8 @@ TEST(MessageLoopTaskQueueMergeUnmerge,
 
   latch_1.Wait();
 
-  const auto now = fml::TimePoint::Now();
   for (;;) {
-    fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_2, now);
+    fml::closure invocation = task_queue->GetNextTaskToRun(queue_id_2, now);
     if (!invocation) {
       break;
     }
@@ -205,7 +204,7 @@ TEST(MessageLoopTaskQueueMergeUnmerge, GetTasksToRunNowBlocksMerge) {
   std::thread tasks_to_run_now_thread([&]() {
     const auto now = fml::TimePoint::Now();
     for (;;) {
-      fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_2, now);
+      fml::closure invocation = task_queue->GetNextTaskToRun(queue_id_1, now);
       if (!invocation) {
         break;
       }
@@ -250,35 +249,31 @@ TEST(MessageLoopTaskQueueMergeUnmerge,
       new TestWakeable([&](fml::TimePoint wake_time) { latch.CountDown(); }));
 
   task_queue->RegisterTask(
-      queue_id_2, []() { task_queue->Merge(queue_id_1, queue_id_2); },
+      queue_id_2, [&]() { task_queue->Merge(queue_id_1, queue_id_2); },
       fml::TimePoint::Now());
 
   task_queue->RegisterTask(
-      queue_id_2,
-      []() {
-
-      },
-      fml::TimePoint::Now());
-
-  task_queue->Merge(queue_id_1, queue_id_2);
+      queue_id_2, []() {}, fml::TimePoint::Now());
 
   int count_queue_id_2 = 0;
   while (true) {
     fml::closure invocation =
-        task_queue_->GetNextTaskToRun(queue_id_2, fml::TimePoint::Now());
+        task_queue->GetNextTaskToRun(queue_id_2, fml::TimePoint::Now());
     if (!invocation) {
       break;
     }
+    invocation();
     count_queue_id_2++;
   }
 
   int count_queue_id_1 = 0;
   while (true) {
     fml::closure invocation =
-        task_queue_->GetNextTaskToRun(queue_id_1, fml::TimePoint::Now());
+        task_queue->GetNextTaskToRun(queue_id_1, fml::TimePoint::Now());
     if (!invocation) {
       break;
     }
+    invocation();
     count_queue_id_1++;
   }
 

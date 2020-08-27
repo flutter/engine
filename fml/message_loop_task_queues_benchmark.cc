@@ -43,7 +43,7 @@ static void BM_RegisterAndGetTasks(benchmark::State& state) {  // NOLINT
         int num_invocations = 0;
         for (;;) {
           fml::closure invocation =
-              task_queue_->GetNextTaskToRun(TaskQueueId(task_runner_id), now);
+              task_queue->GetNextTaskToRun(TaskQueueId(task_runner_id), now);
           if (!invocation) {
             break;
           }

@@ -69,12 +69,13 @@ TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
   task_queue->RegisterTask(
       queue_id, [&test_val]() { test_val = 2; }, fml::TimePoint::Now());
 
-  std::vector<fml::closure> invocations;
-  task_queue->GetTasksToRunNow(queue_id, fml::FlushType::kAll, invocations);
-
+  const auto now = fml::TimePoint::Now();
   int expected_value = 1;
-
-  for (auto& invocation : invocations) {
+  for (;;) {
+    fml::closure invocation = task_queue->GetNextTaskToRun(queue_id, now);
+    if (!invocation) {
+      break;
+    }
     invocation();
     ASSERT_TRUE(test_val == expected_value);
     expected_value++;
