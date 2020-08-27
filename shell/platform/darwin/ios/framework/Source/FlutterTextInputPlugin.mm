@@ -1147,6 +1147,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
+  [self resetAllClientIds];
   // Hide all input views from autofill, only make those in the new configuration visible
   // to autofill.
   [self changeInputViewsAutofillVisibility:NO];
@@ -1279,7 +1280,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // When clearText is YES, the text on the input fields will be set to empty before
 // they are removed from the view hierarchy, to avoid autofill save .
 - (void)cleanUpViewHierarchy:(BOOL)includeActiveView clearText:(BOOL)clearText {
-  for (UIView* view in textInputParentView.subviews) {
+  for (UIView* view in self.textInputParentView.subviews) {
     if ([view isKindOfClass:[FlutterTextInputView class]] &&
         (includeActiveView || view != _activeView)) {
       FlutterTextInputView* inputView = (FlutterTextInputView*)view;
@@ -1293,23 +1294,31 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   }
 }
 
-// Change the visibility of every FlutterTextInputView currently in the
-// view hierarchy. If the new visiblity is NO, also sets the clientID
-// to 0.
+// Changes the visibility of every FlutterTextInputView currently in the
+// view hierarchy.
 - (void)changeInputViewsAutofillVisibility:(BOOL)newVisibility {
-  for (UIView* view in textInputParentView.subviews) {
+  for (UIView* view in self.textInputParentView.subviews) {
     if ([view isKindOfClass:[FlutterTextInputView class]]) {
       FlutterTextInputView* inputView = (FlutterTextInputView*)view;
       inputView.isVisibleToAutofill = newVisibility;
-      if (!newVisibility) {
-        [inputView setTextInputClient:0];
-      }
+    }
+  }
+}
+
+// Resets the client id of every FlutterTextInputView in the view hierarchy
+// to 0. Called when a new text input connection will be established.
+- (void)resetAllClientIds {
+  for (UIView* view in self.textInputParentView.subviews) {
+    if ([view isKindOfClass:[FlutterTextInputView class]]) {
+      FlutterTextInputView* inputView = (FlutterTextInputView*)view;
+      [inputView setTextInputClient:0];
     }
   }
 }
 
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView {
-  UIView* parentView = textInputParentView if (inputView.parentView != parentView) {
+  UIView* parentView = self.textInputParentView;
+  if (inputView.superview != parentView) {
     [parentView addSubview:inputView];
   }
 }
