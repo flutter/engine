@@ -41,7 +41,7 @@
 
   std::unique_ptr<FlutterFrameBuffer> flutterFrameBuffer = std::move(_fbos[fbo]);
   FML_CHECK(flutterFrameBuffer);
-  _fbos.erase(fbo);
+  _fbos.erase(_fbos.find(fbo));
 
   glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0u);  // window FBO.

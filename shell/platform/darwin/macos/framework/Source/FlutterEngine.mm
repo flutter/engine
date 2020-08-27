@@ -232,7 +232,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .open_gl.struct_size = sizeof(FlutterOpenGLRendererConfig),
       .open_gl.make_current = (BoolCallback)OnMakeCurrent,
       .open_gl.clear_current = (BoolCallback)OnClearCurrent,
-      .open_gl.present = (BoolCallback)OnPresent,
+      .open_gl.present_with_info = (BoolPresentInfoCallback)OnPresent,
       .open_gl.fbo_with_frame_info_callback = (UIntFrameInfoCallback)OnFBO,
       .open_gl.make_resource_current = (BoolCallback)OnMakeResourceCurrent,
       .open_gl.gl_external_texture_frame_callback = (TextureFrameCallback)OnAcquireExternalTexture,
@@ -386,7 +386,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   if (!_mainOpenGLContext || !_renderTargetPool) {
     return false;
   }
-  return [_renderTargetPool presentFrameBuffer:presentInfo->fbo_id];
+  const uint32_t fboId = presentInfo->fbo_id;
+  NSLog(@"presenting fboId -- a: %u", fboId);
+  return [_renderTargetPool presentFrameBuffer:fboId];
 }
 
 - (uint32_t)engineCallbackOnFBOWithFrameInfo:(const FlutterFrameInfo*)frameInfo {
