@@ -194,7 +194,7 @@ class SurfacePath implements ui.Path {
   }
 
   void _injectMoveToIfNeeded() {
-    if (fLastMoveToIndex < 0) {
+    if (fLastMoveToIndex <= 0) {
       double x, y;
       if (pathRef.countPoints() == 0) {
         x = y = 0.0;
@@ -211,7 +211,7 @@ class SurfacePath implements ui.Path {
   /// point.
   @override
   void lineTo(double x, double y) {
-    if (fLastMoveToIndex < 0) {
+    if (fLastMoveToIndex <= 0) {
       _injectMoveToIfNeeded();
     }
     int pointIndex = pathRef.growForVerb(SPathVerb.kLine, 0);
@@ -1110,7 +1110,7 @@ class SurfacePath implements ui.Path {
                 lastPointY = pathRef.points[listIndex];
               }
               // don't add lineTo if it is degenerate.
-              if (fLastMoveToIndex < 0 ||
+              if (fLastMoveToIndex <= 0 ||
                   (previousPointCount != 0) ||
                   lastPointX != point0X ||
                   lastPointY != point0Y) {
