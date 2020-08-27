@@ -537,7 +537,7 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)setClipboardData:(NSDictionary*)data {
   NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
-  NSString *text = data[@"text"];
+  NSString* text = data[@"text"];
   if (text && ![text isEqual:[NSNull null]]) {
     [pasteboard clearContents];
     [pasteboard setString:text forType:NSPasteboardTypeString];
@@ -549,10 +549,6 @@ static void CommonInit(FlutterViewController* controller) {
   NSString* string = data[@"text"];
   BOOL hasStrings = string.length > 0;
   return @{@"value" : @(hasStrings)};
-  /*
-  UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
-  return @{@"value" : @(pasteboard.hasStrings)};
-  */
 }
 
 #pragma mark - FlutterViewReshapeListener
