@@ -24,7 +24,10 @@ class FlutterFrameBuffer {
     SetupOffscreenFrameBuffer();
   }
 
-  ~FlutterFrameBuffer() { Destroy(); }
+  ~FlutterFrameBuffer() {
+    FML_CHECK(glContext_);
+    Destroy();
+  }
 
   GLuint GetFBOId() const { return fbo_; }
 
@@ -40,16 +43,18 @@ class FlutterFrameBuffer {
 
     AllocateRenderBuffer();
 
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture_,
-                              0);
-    FML_CHECK(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT == GL_FRAMEBUFFER_COMPLETE_EXT));
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, kTextureTarget,
+                              texture_, 0);
+    const auto status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+    FML_CHECK(status == GL_FRAMEBUFFER_COMPLETE_EXT);
   }
 
   void AllocateRenderBuffer() {
-    glBindTexture(GL_TEXTURE_2D, texture_);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glGenTextures(1, &texture_);
+    glBindTexture(kTextureTarget, texture_);
+    glTexParameteri(kTextureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(kTextureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(kTextureTarget, 0, GL_RGBA8, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   }
 
   void Destroy() {
@@ -58,6 +63,7 @@ class FlutterFrameBuffer {
     glDeleteFramebuffersEXT(1, &fbo_);
   }
 
+  static constexpr GLenum kTextureTarget = GL_TEXTURE_2D;
   NSOpenGLContext* glContext_;
   const uint32_t width_;
   const uint32_t height_;

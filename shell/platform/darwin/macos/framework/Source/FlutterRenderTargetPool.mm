@@ -31,11 +31,24 @@
   auto fbo = std::make_unique<FlutterFrameBuffer>(_glContext, width, height);
   const uint32_t fboId = fbo->GetFBOId();
   _fbos[fboId] = std::move(fbo);
+  NSLog(@"got fbo %u", fboId);
   return fboId;
 }
 
 - (bool)presentFrameBuffer:(uint32_t)fbo {
-  // flush
+  NSLog(@"presenting %u", fbo);
+  [_glContext makeCurrentContext];
+
+  std::unique_ptr<FlutterFrameBuffer> flutterFrameBuffer = std::move(_fbos[fbo]);
+  FML_CHECK(flutterFrameBuffer);
+  _fbos.erase(fbo);
+
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0u);  // window FBO.
+  const auto width = flutterFrameBuffer->GetWidth();
+  const auto height = flutterFrameBuffer->GetHeight();
+  glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
   [_glContext flushBuffer];
   return true;
 }
