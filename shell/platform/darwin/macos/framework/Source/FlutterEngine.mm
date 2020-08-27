@@ -387,8 +387,12 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     return false;
   }
   const uint32_t fboId = presentInfo->fbo_id;
-  NSLog(@"presenting fboId -- a: %u", fboId);
-  return [_renderTargetPool presentFrameBuffer:fboId];
+  NSView* view = _viewController.view;
+  CGSize scaledSize = [view convertRectToBacking:view.bounds].size;
+  const uint32_t width = static_cast<uint32_t>(scaledSize.width);
+  const uint32_t height = static_cast<uint32_t>(scaledSize.height);
+
+  return [_renderTargetPool presentFrameBuffer:fboId windowWidth:width windowHeight:height];
 }
 
 - (uint32_t)engineCallbackOnFBOWithFrameInfo:(const FlutterFrameInfo*)frameInfo {
