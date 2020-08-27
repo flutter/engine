@@ -80,7 +80,7 @@ void Rasterizer::Teardown() {
   last_layer_tree_.reset();
   if (raster_thread_merger_.get() != nullptr &&
       raster_thread_merger_.get()->IsMerged()) {
-    raster_thread_merger_->Enable();
+    FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNow();
   }
 }

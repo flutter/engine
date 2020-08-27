@@ -628,11 +628,11 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
   ASSERT_TRUE(raster_thread_merger->IsEnabled());
 
   ValidateDestroyPlatformView(shell.get());
-  ASSERT_FALSE(raster_thread_merger->IsEnabled());
+  ASSERT_TRUE(raster_thread_merger->IsEnabled());
 
   // Validate the platform view can be recreated and destroyed again
   ValidateShell(shell.get());
-  ASSERT_FALSE(raster_thread_merger->IsEnabled());
+  ASSERT_TRUE(raster_thread_merger->IsEnabled());
 
   DestroyShell(std::move(shell));
 }

@@ -619,8 +619,15 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  // Prevent any request to merge the raster and platform threads while the
-  // platform view is created.
+  // Prevent any request to change the thread configuration for raster and
+  // platform queues while the platform view is being created.
+  //
+  // This prevents false positives such as this method starts assuming that the
+  // raster and platform queues have a given thread configuration, but then the
+  // configuration is changed by a task, and the asumption is not longer true.
+  //
+  // This incorrect assumption can lead to dead lock.
+  // See `should_post_raster_task` for more.
   rasterizer_->DisableThreadMergerIfNeeded();
 
   // Note:
@@ -716,12 +723,15 @@ void Shell::OnPlatformViewDestroyed() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  // Prevent any request to merge the raster and platform threads while the
-  // platform view is destroyed.
+  // Prevent any request to change the thread configuration for raster and
+  // platform queues while the platform view is being destroyed.
   //
-  // This prevents a dead lock where the platform thread is blocked waiting for
-  // the latch, but the latch is never released because the raster queue is all
-  // the sudden running on the platform thread.
+  // This prevents false positives such as this method starts assuming that the
+  // raster and platform queues have a given thread configuration, but then the
+  // configuration is changed by a task, and the asumption is not longer true.
+  //
+  // This incorrect assumption can lead to dead lock.
+  // See `should_post_raster_task` for more.
   rasterizer_->DisableThreadMergerIfNeeded();
 
   // Note:
@@ -746,6 +756,10 @@ void Shell::OnPlatformViewDestroyed() {
                       io_task_runner = task_runners_.GetIOTaskRunner(),
                       io_task]() {
     if (rasterizer) {
+      // Enables the thread merger which is required prior tearing down the
+      // rasterizer. If the raster and platform threads are merged, tearing down
+      // the rasterizer unmerges the threads.
+      rasterizer->EnableThreadMergerIfNeeded();
       rasterizer->Teardown();
     }
     // Step 2: Next, tell the IO thread to complete its remaining work.
