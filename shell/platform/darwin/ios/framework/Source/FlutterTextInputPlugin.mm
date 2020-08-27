@@ -1290,7 +1290,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       FlutterTextInputView* inputView = (FlutterTextInputView*)view;
       if (_autofillContext[inputView.autofillId] != view) {
         if (clearText) {
-          inputView.text.string = @"";
+          [inputView replaceRangeLocal:NSMakeRange(0, inputView.text.length) withText:@""];
         }
         [view removeFromSuperview];
       }

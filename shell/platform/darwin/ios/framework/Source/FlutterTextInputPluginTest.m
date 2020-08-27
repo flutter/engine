@@ -639,6 +639,47 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotEqual([inputView performSelector:@selector(font)], nil);
 }
 
+- (void)testClearAutofillContextClearsSelection {
+  NSMutableDictionary* regularField = self.mutableTemplateCopy;
+  NSDictionary* editingValue = @{
+    @"text" : @"REGULAR_TEXT_FIELD",
+    @"composingBase" : @0,
+    @"composingExtent" : @3,
+    @"selectionBase" : @1,
+    @"selectionExtent" : @4
+  };
+  [regularField setValue:@{
+    @"uniqueIdentifier" : @"field2",
+    @"hints" : @[ @"hint2" ],
+    @"editingValue" : editingValue,
+  }
+                  forKey:@"autofill"];
+  [regularField addEntriesFromDictionary:editingValue];
+  [self setClientId:123 configuration:regularField];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  XCTAssertEqual(self.installedInputViews.count, 1);
+
+  FlutterTextInputView* oldInputView = self.installedInputViews[0];
+  XCTAssert([oldInputView.text isEqualToString:@"REGULAR_TEXT_FIELD"]);
+  FlutterTextRange* selectionRange = (FlutterTextRange*)oldInputView.selectedTextRange;
+  XCTAssert(NSEqualRanges(selectionRange.range, NSMakeRange(1, 3)));
+
+  // Replace the original password field with new one. This should remove
+  // the old password field, but not immediately.
+  [self setClientId:124 configuration:self.mutablePasswordTemplateCopy];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+
+  XCTAssertEqual(self.installedInputViews.count, 2);
+
+  [textInputPlugin collectGarbageInputViews];
+  XCTAssertEqual(self.installedInputViews.count, 1);
+
+  // Verify the old input view is properly cleaned up.
+  XCTAssert([oldInputView.text isEqualToString:@""]);
+  selectionRange = (FlutterTextRange*)oldInputView.selectedTextRange;
+  XCTAssert(NSEqualRanges(selectionRange.range, NSMakeRange(0, 0)));
+}
+
 - (void)testGarbageInputViewsAreNotRemovedImmediately {
   // Add a password field that should autofill.
   [self setClientId:123 configuration:self.mutablePasswordTemplateCopy];
