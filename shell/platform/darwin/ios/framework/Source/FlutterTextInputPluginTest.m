@@ -639,4 +639,20 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotEqual([inputView performSelector:@selector(font)], nil);
 }
 
+- (void)testGarbageInputViewsAreNotRemovedImmediately {
+  // Add a password field that should autofill.
+  [self setClientId:123 configuration:self.mutablePasswordTemplateCopy];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+
+  XCTAssertEqual(self.installedInputViews.count, 1);
+  // Add an input field that doesn't autofill. This should remove the password
+  // field, but not immediately.
+  [self setClientId:124 configuration:self.mutableTemplateCopy];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+
+  XCTAssertEqual(self.installedInputViews.count, 2);
+
+  [self commitAutofillContextAndVerify];
+}
+
 @end
