@@ -46,23 +46,24 @@ fuchsia_ctl() {
 
 reboot() {
   fuchsia_ctl ssh \
-       -c "log_listener --dump_logs yes --file /tmp/log.txt" \
        --timeout-seconds $ssh_timeout_seconds \
-       --identity-file $pkey
+       --identity-file $pkey \
+       -c "log_listener --dump_logs yes --file /tmp/log.txt"
   # As we are not using recipes we don't have a way to know the location
   # to upload the log to isolated. We are saving the log to a file to avoid dart
   # hanging when running the process and then just using printing the content to
   # the console.
   fuchsia_ctl ssh \
-       -c "cat /tmp/log.txt" \
        --timeout-seconds $ssh_timeout_seconds \
-       --identity-file $pkey
+       --identity-file $pkey \
+       -c "cat /tmp/log.txt"
+
 
   echo "$(date) START:REBOOT ----------------------------------------"
   # note: this will set an exit code of 255, which we can ignore.
   fuchsia_ctl ssh \
-      -c "dm reboot-recovery" \
-      --identity-file $pkey || true
+      --identity-file $pkey \
+      -c "dm reboot-recovery" || true
   echo "$(date) END:REBOOT ------------------------------------------"
 }
 
