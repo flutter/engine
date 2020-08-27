@@ -1168,11 +1168,15 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       break;
   }
 
-  // Clean up views that should no longer be in the view hierarchy according to the
-  // updated autofill context.
-  [self cleanUpViewHierarchy:NO clearText:YES];
   [_activeView setTextInputClient:client];
   [_activeView reloadInputViews];
+
+  // Clean up views that should no longer be in the view hierarchy according to the
+  // updated autofill context. This is made the last step so we don't remove the
+  // fields too early (which seems to make the keyboard flicker). Existing input
+  // views are already made invisible to autofill.
+  // See: https://github.com/flutter/flutter/issues/64628.
+  [self cleanUpViewHierarchy:NO clearText:YES];
 }
 
 // Updates and shows an input field that is not password related and has no autofill
@@ -1285,6 +1289,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   }
 }
 
+// Change the visibility of every FlutterTextInputView currently in the
+// view hierarchy. If the new visiblity is NO, also sets the clientID
+// to 0.
 - (void)changeInputViewsAutofillVisibility:(BOOL)newVisibility {
   UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
   NSAssert(keyWindow != nullptr,
@@ -1295,6 +1302,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     if ([view isKindOfClass:[FlutterTextInputView class]]) {
       FlutterTextInputView* inputView = (FlutterTextInputView*)view;
       inputView.isVisibleToAutofill = newVisibility;
+      if (!newVisibility) {
+        [inputView setTextInputClient:0];
+      }
     }
   }
 }
