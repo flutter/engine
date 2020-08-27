@@ -164,10 +164,9 @@ TEST_F(ShellTest,
   auto shell = Shell::Create(
       std::move(task_runners), settings,
       [](Shell& shell) {
-        // This is unused in the platform view as we are not using the
-        simulated
-            // vsync mechanism. We should have better DI in the tests.
-            const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+        // This is unused in the platform view as we are not using the simulated
+        // vsync mechanism. We should have better DI in the tests.
+        const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
         return ShellTestPlatformView::Create(
             shell, shell.GetTaskRunners(), vsync_clock,
             [task_runners = shell.GetTaskRunners()]() {
@@ -608,7 +607,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
         raster_thread_merger = thread_merger;
         end_frame_latch.Signal();
       };
-  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+  auto external_view_embedder =
+  std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess, true);
   // Set resubmit once to trigger thread merging.
   external_view_embedder->SetResubmitOnce();
