@@ -17,7 +17,7 @@
 # This script also expects a private key available at:
 # "/etc/botanist/keys/id_rsa_infra".
 
-set -Ee
+set -Eex
 
 test_timeout_seconds=300
 
