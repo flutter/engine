@@ -771,7 +771,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     inputConfig.autofill?.applyToDomElement(domElement, focusedElement: true);
 
-    final String autocorrectValue = inputConfig.autocorrect! ? 'on' : 'off';
+    final String autocorrectValue = inputConfig.autocorrect ? 'on' : 'off';
     domElement.setAttribute('autocorrect', autocorrectValue);
 
     _setStaticStyleAttributes(domElement);
