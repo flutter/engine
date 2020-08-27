@@ -1282,7 +1282,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // Removes every installed input field, unless it's in the current autofill
 // context. May remove the active view too if includeActiveView is YES.
 // When clearText is YES, the text on the input fields will be set to empty before
-// they are removed from the view hierarchy, to avoid autofill save .
+// they are removed from the view hierarchy, to avoid triggering autofill save.
 - (void)cleanUpViewHierarchy:(BOOL)includeActiveView clearText:(BOOL)clearText {
   for (UIView* view in self.textInputParentView.subviews) {
     if ([view isKindOfClass:[FlutterTextInputView class]] &&
