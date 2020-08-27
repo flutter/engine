@@ -88,7 +88,28 @@ class PersistedColorFilter extends PersistedContainerSurface
           // Use svg filter srcIn instead.
           colorFilterBlendMode = ui.BlendMode.srcIn;
           break;
-        default:
+        case ui.BlendMode.dstOver:
+        case ui.BlendMode.srcIn:
+        case ui.BlendMode.srcATop:
+        case ui.BlendMode.dstATop:
+        case ui.BlendMode.xor:
+        case ui.BlendMode.plus:
+        case ui.BlendMode.modulate:
+        case ui.BlendMode.screen:
+        case ui.BlendMode.overlay:
+        case ui.BlendMode.darken:
+        case ui.BlendMode.lighten:
+        case ui.BlendMode.colorDodge:
+        case ui.BlendMode.colorBurn:
+        case ui.BlendMode.hardLight:
+        case ui.BlendMode.softLight:
+        case ui.BlendMode.difference:
+        case ui.BlendMode.exclusion:
+        case ui.BlendMode.multiply:
+        case ui.BlendMode.hue:
+        case ui.BlendMode.saturation:
+        case ui.BlendMode.color:
+        case ui.BlendMode.luminosity:
           break;
       }
 
@@ -179,7 +200,16 @@ String? svgFilterFromBlendMode(
       svgFilter = _blendColorFilterToSvg(
           filterColor, _stringForBlendMode(colorFilterBlendMode));
       break;
-    default:
+    case ui.BlendMode.src:
+    case ui.BlendMode.dst:
+    case ui.BlendMode.dstATop:
+    case ui.BlendMode.dstIn:
+    case ui.BlendMode.dstOut:
+    case ui.BlendMode.dstOver:
+    case ui.BlendMode.clear:
+    case ui.BlendMode.srcOver:
+      assert(false, 'Invalid svg filter request for blend-mode '
+          '$colorFilterBlendMode');
       break;
   }
   return svgFilter;
