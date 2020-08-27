@@ -1121,7 +1121,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (void)showTextInput {
   _activeView.textInputDelegate = _textInputDelegate;
-  [self addToKeyWindowIfNeeded:_activeView];
+  [self addToInputParentViewIfNeeded:_activeView];
   [_activeView becomeFirstResponder];
 }
 
@@ -1143,7 +1143,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   }
 
   [self cleanUpViewHierarchy:YES clearText:!saveEntries];
-  [self addToKeyWindowIfNeeded:_activeView];
+  [self addToInputParentViewIfNeeded:_activeView];
 }
 
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
@@ -1173,8 +1173,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
   // Clean up views that should no longer be in the view hierarchy according to the
   // updated autofill context. This is made the last step so we don't remove the
-  // fields too early (which seems to make the keyboard flicker). Existing input
-  // views are already made invisible to autofill.
+  // fields too early (which seems to make the keyboard flicker).
+  //
   // See: https://github.com/flutter/flutter/issues/64628.
   [self cleanUpViewHierarchy:NO clearText:YES];
 }
@@ -1192,7 +1192,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   }
 
   [_reusableInputView configureWithDictionary:configuration];
-  [self addToKeyWindowIfNeeded:_reusableInputView];
+  [self addToInputParentViewIfNeeded:_reusableInputView];
   _reusableInputView.textInputDelegate = _textInputDelegate;
 
   for (NSDictionary* field in configuration[kAssociatedAutofillFields]) {
@@ -1257,7 +1257,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     inputView =
         needsPasswordAutofill ? [FlutterSecureTextInputView alloc] : [FlutterTextInputView alloc];
     inputView = [[inputView init] autorelease];
-    [self addToKeyWindowIfNeeded:inputView];
+    [self addToInputParentViewIfNeeded:inputView];
   }
 
   inputView.textInputDelegate = _textInputDelegate;
@@ -1265,17 +1265,21 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return inputView;
 }
 
+// The UIView to add FlutterTextInputViews to.
+- (UIView*)textInputParentView {
+  UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
+  NSAssert(keyWindow != nullptr,
+           @"The application must have a key window since the keyboard client "
+           @"must be part of the responder chain to function");
+  return keyWindow;
+}
+
 // Removes every installed input field, unless it's in the current autofill
 // context. May remove the active view too if includeActiveView is YES.
 // When clearText is YES, the text on the input fields will be set to empty before
 // they are removed from the view hierarchy, to avoid autofill save .
 - (void)cleanUpViewHierarchy:(BOOL)includeActiveView clearText:(BOOL)clearText {
-  UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
-  NSAssert(keyWindow != nullptr,
-           @"The application must have a key window since the keyboard client "
-           @"must be part of the responder chain to function");
-
-  for (UIView* view in keyWindow.subviews) {
+  for (UIView* view in textInputParentView.subviews) {
     if ([view isKindOfClass:[FlutterTextInputView class]] &&
         (includeActiveView || view != _activeView)) {
       FlutterTextInputView* inputView = (FlutterTextInputView*)view;
@@ -1293,12 +1297,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // view hierarchy. If the new visiblity is NO, also sets the clientID
 // to 0.
 - (void)changeInputViewsAutofillVisibility:(BOOL)newVisibility {
-  UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
-  NSAssert(keyWindow != nullptr,
-           @"The application must have a key window since the keyboard client "
-           @"must be part of the responder chain to function");
-
-  for (UIView* view in keyWindow.subviews) {
+  for (UIView* view in textInputParentView.subviews) {
     if ([view isKindOfClass:[FlutterTextInputView class]]) {
       FlutterTextInputView* inputView = (FlutterTextInputView*)view;
       inputView.isVisibleToAutofill = newVisibility;
@@ -1309,14 +1308,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   }
 }
 
-- (void)addToKeyWindowIfNeeded:(FlutterTextInputView*)inputView {
-  UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
-  NSAssert(keyWindow != nullptr,
-           @"The application must have a key window since the keyboard client "
-           @"must be part of the responder chain to function");
-
-  if (inputView.window != keyWindow) {
-    [keyWindow addSubview:inputView];
+- (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView {
+  UIView* parentView = textInputParentView if (inputView.parentView != parentView) {
+    [parentView addSubview:inputView];
   }
 }
 
