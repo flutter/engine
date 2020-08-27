@@ -27,7 +27,7 @@
   return self;
 }
 
-- (uint32_t)getFrameBuffer:(uint32_t)width height:(uint32_t)height {
+- (uint32_t)getFrameBufferWithWidth:(uint32_t)width height:(uint32_t)height {
   auto fbo = std::make_unique<FlutterFrameBuffer>(_glContext, width, height);
   const uint32_t fboId = fbo->GetFBOId();
   _fbos[fboId] = std::move(fbo);

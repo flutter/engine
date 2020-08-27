@@ -78,7 +78,7 @@ class FlutterFrameBuffer {
 /**
  * Returns the FBO ID for the frame buffer that engine renders to.
  */
-- (uint32_t)getFrameBuffer:(uint32_t)width height:(uint32_t)height;
+- (uint32_t)getFrameBufferWithWidth:(uint32_t)width height:(uint32_t)height;
 
 /**
  * Blits the FBO to window and returns it to the render target pool.

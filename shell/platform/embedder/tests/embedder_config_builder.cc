@@ -120,7 +120,7 @@ void EmbedderConfigBuilder::SetOpenGLFBOCallBack() {
   renderer_config_.open_gl.fbo_callback = [](void* context) -> uint32_t {
     FlutterFrameInfo frame_info = {};
     // fbo_callback doesn't use the frame size information, only
-    // fbo_callback_with_frame_info does.
+    // fbo_with_frame_info_callback does.
     frame_info.struct_size = sizeof(FlutterFrameInfo);
     frame_info.size.width = 0;
     frame_info.size.height = 0;

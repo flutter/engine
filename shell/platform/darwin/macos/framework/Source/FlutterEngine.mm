@@ -53,6 +53,8 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
  */
 - (bool)engineCallbackOnPresent;
 
+- (uint32_t)engineCallbackOnFBOWithFrameInfo:(const FlutterFrameInfo*)frameInfo;
+
 /**
  * Makes the resource context the current context.
  */
@@ -139,9 +141,8 @@ static bool OnPresent(FlutterEngine* engine) {
   return [engine engineCallbackOnPresent];
 }
 
-static uint32_t OnFBO(FlutterEngine* engine) {
-  // There is currently no case where a different FBO is used, so no need to forward.
-  return 0;
+static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* frame_info) {
+  return [engine engineCallbackOnFBOWithFrameInfo:frame_info];
 }
 
 static bool OnMakeResourceCurrent(FlutterEngine* engine) {
@@ -232,9 +233,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .open_gl.make_current = (BoolCallback)OnMakeCurrent,
       .open_gl.clear_current = (BoolCallback)OnClearCurrent,
       .open_gl.present = (BoolCallback)OnPresent,
-      .open_gl.fbo_callback = (UIntCallback)OnFBO,
+      .open_gl.fbo_with_frame_info_callback = (UIntFrameInfoCallback)OnFBO,
       .open_gl.make_resource_current = (BoolCallback)OnMakeResourceCurrent,
       .open_gl.gl_external_texture_frame_callback = (TextureFrameCallback)OnAcquireExternalTexture,
+      .open_gl.fbo_reset_after_present = true,
   };
 
   // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
@@ -386,6 +388,15 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   }
   [_mainOpenGLContext flushBuffer];
   return true;
+}
+
+- (uint32_t)engineCallbackOnFBOWithFrameInfo:(const FlutterFrameInfo*)frameInfo {
+  if (!_renderTargetPool) {
+    NSLog(@"Invalid render target pool, will render to the window fbo");
+    return 0u;
+  }
+  const auto size = frameInfo->size;
+  return [_renderTargetPool getFrameBufferWithWidth:size.width height:size.height];
 }
 
 - (bool)engineCallbackOnMakeResourceCurrent {
