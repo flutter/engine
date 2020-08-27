@@ -692,8 +692,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
       shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
   ValidateDestroyPlatformView(shell.get());
 
-  // Ensure threads remain merged after platform view destroy
-  ASSERT_TRUE(fml::TaskRunnerChecker::RunsOnTheSameThread(
+  // Ensure threads are unmerged after platform view destroy
+  ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
       shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
       shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
 

@@ -78,6 +78,11 @@ void Rasterizer::Teardown() {
   compositor_context_->OnGrContextDestroyed();
   surface_.reset();
   last_layer_tree_.reset();
+  if (raster_thread_merger_.get() != nullptr &&
+      raster_thread_merger_.get()->IsMerged()) {
+    raster_thread_merger_->Enable();
+    raster_thread_merger_->UnMergeNow();
+  }
 }
 
 void Rasterizer::EnableThreadMergerIfNeeded() {
