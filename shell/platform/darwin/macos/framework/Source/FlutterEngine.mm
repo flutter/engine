@@ -10,6 +10,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderTargetPool.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
@@ -175,6 +176,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   // so that the view doesn't need to be accessed from a background thread.
   NSOpenGLContext* _mainOpenGLContext;
 
+  FlutterRenderTargetPool* _renderTargetPool;
+
   // A mapping of channel names to the registered handlers for those channels.
   NSMutableDictionary<NSString*, FlutterBinaryMessageHandler>* _messageHandlers;
 
@@ -287,6 +290,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 - (void)setViewController:(FlutterViewController*)controller {
   _viewController = controller;
   _mainOpenGLContext = controller.flutterView.openGLContext;
+  _renderTargetPool = [[FlutterRenderTargetPool alloc] initWithGLContext:_mainOpenGLContext];
   if (!controller && !_allowHeadlessExecution) {
     [self shutDownEngine];
     _resourceContext = nil;
