@@ -83,7 +83,7 @@ class FlutterFrameBuffer {
 /**
  * Blits the FBO to window and returns it to the render target pool.
  */
-- (void)presentFrameBuffer:(uint32_t)fbo;
+- (bool)presentFrameBuffer:(uint32_t)fbo;
 
 NS_ASSUME_NONNULL_END
 

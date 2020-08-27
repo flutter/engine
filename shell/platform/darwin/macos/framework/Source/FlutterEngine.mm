@@ -51,7 +51,7 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 /**
  * Called by the engine when the context's buffers should be swapped.
  */
-- (bool)engineCallbackOnPresent;
+- (bool)engineCallbackOnPresentWithPresentInfo:(const FlutterPresentInfo*)presentInfo;
 
 - (uint32_t)engineCallbackOnFBOWithFrameInfo:(const FlutterFrameInfo*)frameInfo;
 
@@ -137,8 +137,8 @@ static bool OnClearCurrent(FlutterEngine* engine) {
   return [engine engineCallbackOnClearCurrent];
 }
 
-static bool OnPresent(FlutterEngine* engine) {
-  return [engine engineCallbackOnPresent];
+static bool OnPresent(FlutterEngine* engine, const FlutterPresentInfo* presentInfo) {
+  return [engine engineCallbackOnPresentWithPresentInfo:presentInfo];
 }
 
 static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* frame_info) {
@@ -382,16 +382,16 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return true;
 }
 
-- (bool)engineCallbackOnPresent {
-  if (!_mainOpenGLContext) {
+- (bool)engineCallbackOnPresentWithPresentInfo:(const FlutterPresentInfo*)presentInfo {
+  if (!_mainOpenGLContext || !_renderTargetPool) {
     return false;
   }
-  [_mainOpenGLContext flushBuffer];
-  return true;
+  return [_renderTargetPool presentFrameBuffer:presentInfo->fbo_id];
 }
 
 - (uint32_t)engineCallbackOnFBOWithFrameInfo:(const FlutterFrameInfo*)frameInfo {
   if (!_renderTargetPool) {
+    // TODO (kaushikiska): should we fail here?
     NSLog(@"Invalid render target pool, will render to the window fbo");
     return 0u;
   }

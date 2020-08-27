@@ -34,8 +34,10 @@
   return fboId;
 }
 
-- (void)presentFrameBuffer:(uint32_t)fbo {
+- (bool)presentFrameBuffer:(uint32_t)fbo {
   // flush
+  [_glContext flushBuffer];
+  return true;
 }
 
 - (void)dealloc {
