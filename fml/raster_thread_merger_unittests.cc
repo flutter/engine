@@ -305,7 +305,7 @@ TEST(RasterThreadMerger, HandleTaskQueuesAreTheSame) {
   thread1.join();
 }
 
-TEST(RasterThreadMerger, FirstTaskMergesAndUnmergesThreads) {
+TEST(RasterThreadMerger, RunExpiredTasksWhileFirstTaskMergesThreads) {
   fml::MessageLoop* loop1 = nullptr;
   fml::AutoResetWaitableEvent latch1;
   std::thread thread1([&loop1, &latch1]() {
@@ -317,76 +317,96 @@ TEST(RasterThreadMerger, FirstTaskMergesAndUnmergesThreads) {
 
   fml::MessageLoop* loop2 = nullptr;
   fml::AutoResetWaitableEvent latch2;
-  std::thread thread2([&loop2, &latch2]() {
+  std::thread thread2([&loop2, &loop1, &latch1, &latch2]() {
+    latch1.Wait();
+
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     loop2 = &fml::MessageLoop::GetCurrent();
-    loop2->GetTaskRunner()->PostTask([&]() { latch2.Signal(); });
-    loop2->Run();
+    fml::TaskQueueId qid1 = loop1->GetTaskRunner()->GetTaskQueueId();
+    fml::TaskQueueId qid2 = loop2->GetTaskRunner()->GetTaskQueueId();
+    fml::CountDownLatch post_merge(2);
+    const auto raster_thread_merger_ =
+        fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+    loop2->GetTaskRunner()->PostTask([&]() {
+      ASSERT_TRUE(raster_thread_merger_->IsOnRasterizingThread());
+      ASSERT_FALSE(raster_thread_merger_->IsOnPlatformThread());
+      ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid2);
+      raster_thread_merger_->MergeWithLease(1);
+      post_merge.CountDown();
+    });
+
+    loop2->GetTaskRunner()->PostTask([&]() {
+      ASSERT_TRUE(raster_thread_merger_->IsOnRasterizingThread());
+      ASSERT_TRUE(raster_thread_merger_->IsOnPlatformThread());
+      ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
+      raster_thread_merger_->DecrementLease();
+      post_merge.CountDown();
+    });
+
+    loop2->RunExpiredTasksNow();
+    post_merge.Wait();
+    latch2.Signal();
   });
 
-  latch1.Wait();
   latch2.Wait();
-
-  fml::TaskQueueId qid1 = loop1->GetTaskRunner()->GetTaskQueueId();
-  fml::TaskQueueId qid2 = loop2->GetTaskRunner()->GetTaskQueueId();
-  const auto raster_thread_merger_ =
-      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
-
-  fml::CountDownLatch pre_merge(2), post_merge(2), post_unmerge(2);
-
-  loop1->GetTaskRunner()->PostTask([&]() {
-    ASSERT_FALSE(raster_thread_merger_->IsOnRasterizingThread());
-    ASSERT_TRUE(raster_thread_merger_->IsOnPlatformThread());
-    ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
-    pre_merge.CountDown();
-  });
-
-  loop2->GetTaskRunner()->PostTask([&]() {
-    ASSERT_TRUE(raster_thread_merger_->IsOnRasterizingThread());
-    ASSERT_FALSE(raster_thread_merger_->IsOnPlatformThread());
-    ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid2);
-    pre_merge.CountDown();
-  });
-
-  pre_merge.Wait();
-
-  loop2->GetTaskRunner()->PostTask([&]() {
-    ASSERT_TRUE(raster_thread_merger_->IsOnRasterizingThread());
-    ASSERT_FALSE(raster_thread_merger_->IsOnPlatformThread());
-    ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid2);
-    raster_thread_merger_->MergeWithLease(1);
-    post_merge.CountDown();
-  });
-
-  loop2->GetTaskRunner()->PostTask([&]() {
-    ASSERT_TRUE(raster_thread_merger_->IsOnRasterizingThread());
-    ASSERT_TRUE(raster_thread_merger_->IsOnPlatformThread());
-    ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
-    post_merge.CountDown();
-  });
-
-  post_merge.Wait();
-
-  loop2->GetTaskRunner()->PostTask([&]() {
-    ASSERT_TRUE(raster_thread_merger_->IsOnRasterizingThread());
-    ASSERT_TRUE(raster_thread_merger_->IsOnPlatformThread());
-    ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
-    raster_thread_merger_->DecrementLease();
-    post_unmerge.CountDown();
-  });
-
-  loop2->GetTaskRunner()->PostTask([&]() {
-    ASSERT_TRUE(raster_thread_merger_->IsOnRasterizingThread());
-    ASSERT_FALSE(raster_thread_merger_->IsOnPlatformThread());
-    ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid2);
-    post_unmerge.CountDown();
-  });
-
-  post_unmerge.Wait();
-
   loop1->GetTaskRunner()->PostTask([&]() { loop1->Terminate(); });
 
-  loop2->GetTaskRunner()->PostTask([&]() { loop2->Terminate(); });
+  thread1.join();
+  thread2.join();
+}
+
+TEST(RasterThreadMerger, RunExpiredTasksWhileFirstTaskUnMergesThreads) {
+  fml::MessageLoop* loop1 = nullptr;
+  fml::AutoResetWaitableEvent latch1;
+  std::thread thread1([&loop1, &latch1]() {
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    loop1 = &fml::MessageLoop::GetCurrent();
+    loop1->GetTaskRunner()->PostTask([&]() { latch1.Signal(); });
+    loop1->Run();
+  });
+
+  fml::MessageLoop* loop2 = nullptr;
+  fml::AutoResetWaitableEvent latch2;
+  std::thread thread2([&loop2, &loop1, &latch1, &latch2]() {
+    latch1.Wait();
+
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    loop2 = &fml::MessageLoop::GetCurrent();
+    fml::TaskQueueId qid1 = loop1->GetTaskRunner()->GetTaskQueueId();
+    fml::TaskQueueId qid2 = loop2->GetTaskRunner()->GetTaskQueueId();
+    fml::CountDownLatch post_merge(2);
+
+    const auto raster_thread_merger_ =
+        fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+    loop2->GetTaskRunner()->PostTask([&]() {
+      raster_thread_merger_->MergeWithLease(1);
+      post_merge.CountDown();
+    });
+
+    loop2->RunExpiredTasksNow();
+
+    loop2->GetTaskRunner()->PostTask([&]() {
+      ASSERT_TRUE(raster_thread_merger_->IsOnRasterizingThread());
+      ASSERT_TRUE(raster_thread_merger_->IsOnPlatformThread());
+      ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
+      raster_thread_merger_->DecrementLease();
+      post_merge.CountDown();
+    });
+
+    loop2->GetTaskRunner()->PostTask([&]() {
+      ASSERT_TRUE(raster_thread_merger_->IsOnRasterizingThread());
+      ASSERT_FALSE(raster_thread_merger_->IsOnPlatformThread());
+      ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid2);
+      post_merge.CountDown();
+    });
+
+    loop2->RunExpiredTasksNow();
+    post_merge.Wait();
+    latch2.Signal();
+  });
+
+  latch2.Wait();
+  loop1->GetTaskRunner()->PostTask([&]() { loop1->Terminate(); });
 
   thread1.join();
   thread2.join();
