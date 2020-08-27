@@ -334,14 +334,14 @@ void testMain() async {
   test('Should exclude painting outside simple clipRect', () async {
     // One clipped line.
     RecordingCanvas rc = RecordingCanvas(screenRect);
-    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100));
+    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.drawLine(const Offset(10, 11), const Offset(20, 21), testPaint);
     rc.endRecording();
     expect(rc.pictureBounds, Rect.zero);
 
     // Two clipped lines.
     rc = RecordingCanvas(screenRect);
-    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100));
+    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.drawLine(const Offset(10, 11), const Offset(20, 21), testPaint);
     rc.drawLine(const Offset(52, 53), const Offset(55, 56), testPaint);
     rc.endRecording();
@@ -353,14 +353,14 @@ void testMain() async {
 
   test('Should include intersection of clipRect and painting', () async {
     RecordingCanvas rc = RecordingCanvas(screenRect);
-    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100));
+    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.drawRect(const Rect.fromLTRB(20, 60, 120, 70), testPaint);
     rc.endRecording();
     expect(rc.pictureBounds, const Rect.fromLTRB(50, 60, 100, 70));
     await _checkScreenshot(rc, 'clip_rect_intersects_paint_left_to_right');
 
     rc = RecordingCanvas(screenRect);
-    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100));
+    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.drawRect(const Rect.fromLTRB(60, 20, 70, 200), testPaint);
     rc.endRecording();
     expect(rc.pictureBounds, const Rect.fromLTRB(60, 50, 70, 100));
@@ -369,9 +369,9 @@ void testMain() async {
 
   test('Should intersect rects for multiple clipRect calls', () async {
     final RecordingCanvas rc = RecordingCanvas(screenRect);
-    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100));
+    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.scale(2.0, 2.0);
-    rc.clipRect(const Rect.fromLTRB(30, 30, 45, 45));
+    rc.clipRect(const Rect.fromLTRB(30, 30, 45, 45), ClipOp.intersect);
     rc.drawRect(const Rect.fromLTRB(10, 30, 60, 35), testPaint);
     rc.endRecording();
 
@@ -406,7 +406,7 @@ void testMain() async {
     rc
       ..translate(0, 100)
       ..scale(1, -1)
-      ..clipRect(const Rect.fromLTRB(0, 0, 100, 50))
+      ..clipRect(const Rect.fromLTRB(0, 0, 100, 50), ClipOp.intersect)
       ..drawRect(const Rect.fromLTRB(0, 0, 100, 100), Paint());
     rc.endRecording();
 
@@ -421,7 +421,7 @@ void testMain() async {
     rc
       ..translate(50, 50)
       ..rotate(math.pi / 4.0)
-      ..clipRect(const Rect.fromLTWH(-20, -20, 40, 40))
+      ..clipRect(const Rect.fromLTWH(-20, -20, 40, 40), ClipOp.intersect)
       ..drawRect(const Rect.fromLTWH(-80, -80, 160, 160), Paint());
     rc.endRecording();
 

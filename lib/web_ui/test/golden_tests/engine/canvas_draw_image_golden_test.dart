@@ -203,7 +203,7 @@ void testMain() async {
     Image testImage = createTestImage();
     double testWidth = testImage.width.toDouble();
     double testHeight = testImage.height.toDouble();
-    rc.clipRect(Rect.fromLTRB(75, 75, 160, 160));
+    rc.clipRect(Rect.fromLTRB(75, 75, 160, 160), ClipOp.intersect);
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), new Paint());
     rc.drawCircle(
@@ -229,7 +229,7 @@ void testMain() async {
     rc.translate(100, 100);
     rc.rotate(math.pi / 4.0);
     rc.translate(-100, -100);
-    rc.clipRect(Rect.fromLTRB(75, 75, 160, 160));
+    rc.clipRect(Rect.fromLTRB(75, 75, 160, 160), ClipOp.intersect);
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), new Paint());
     rc.drawCircle(
@@ -256,7 +256,7 @@ void testMain() async {
     rc.rotate(-math.pi / 4.0);
     rc.save();
     rc.translate(-100, -100);
-    rc.clipRect(Rect.fromLTRB(75, 75, 160, 160));
+    rc.clipRect(Rect.fromLTRB(75, 75, 160, 160), ClipOp.intersect);
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), new Paint());
     rc.drawCircle(

@@ -123,7 +123,7 @@ void testMain() {
 
     // Inside the layer clip but clipped out by a canvas clip
     underTest.save();
-    underTest.clipRect(Rect.fromLTWH(0, 0, 10, 10));
+    underTest.clipRect(Rect.fromLTWH(0, 0, 10, 10), ClipOp.intersect);
     underTest.drawRect(Rect.fromLTWH(20.0, 20.0, 10.0, 10.0), Paint());
     underTest.restore();
 

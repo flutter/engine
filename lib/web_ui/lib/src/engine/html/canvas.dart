@@ -96,7 +96,7 @@ class SurfaceCanvas implements ui.Canvas {
   }
 
   void _clipRect(ui.Rect rect, ui.ClipOp clipOp, bool doAntiAlias) {
-    _canvas.clipRect(rect);
+    _canvas.clipRect(rect, clipOp);
   }
 
   @override
