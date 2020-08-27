@@ -22,14 +22,14 @@ RasterThreadMerger::RasterThreadMerger(fml::TaskQueueId platform_queue_id,
 }
 
 void RasterThreadMerger::MergeWithLease(size_t lease_term) {
-  FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
+  std::scoped_lock lock(lease_term_mutex_);
   if (TaskQueuesAreSame()) {
     return;
   }
   if (!IsEnabledUnSafe()) {
     return;
   }
-  std::scoped_lock lock(lease_term_mutex_);
+  FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   if (!IsMergedUnSafe()) {
     bool success = task_queues_->Merge(platform_queue_id_, gpu_queue_id_);
     FML_CHECK(success) << "Unable to merge the raster and platform threads.";

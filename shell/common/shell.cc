@@ -619,8 +619,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  // Enables the thread merger which may be used by the external view embedder.
-  rasterizer_->EnableThreadMergerIfNeeded();
+  // Prevent any request to merge the raster and platform threads while the
+  // platform view is created.
+  rasterizer_->DisableThreadMergerIfNeeded();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on
@@ -633,6 +634,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
                          surface = std::move(surface),            //
                          &latch]() mutable {
         if (rasterizer) {
+          // Enables the thread merger which may be used by the external view
+          // embedder.
+          rasterizer->EnableThreadMergerIfNeeded();
           rasterizer->Setup(std::move(surface));
         }
 
@@ -653,8 +657,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // then instead of posting a task to the raster thread, the ui thread just
   // signals the latch and the platform/raster thread follows with executing
   // raster_task.
-  bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
-                                 task_runners_.GetPlatformTaskRunner();
+  bool should_post_raster_task = !fml::TaskRunnerChecker::RunsOnTheSameThread(
+      task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
+      task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
 
   auto ui_task = [engine = engine_->GetWeakPtr(),                            //
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
