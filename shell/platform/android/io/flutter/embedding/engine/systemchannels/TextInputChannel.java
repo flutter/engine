@@ -135,9 +135,16 @@ public class TextInputChannel {
               result.success(null);
               break;
 
-            case "TextInput.setWindowInsetsAnimation":
-              textInputMethodHandler.setWindowInsetsAnimation();
-              result.success(null);
+            case "TextInput.setKeyboardInset":
+              textInputMethodHandler.setKeyboardInset();
+               try {
+                final JSONObject arguments = (JSONObject) args;
+                final int bottomInset = arguments.getInt("bottomInset");
+                textInputMethodHandler.sendAppPrivateCommand(bottomInset);
+                result.success(null);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
               break;
             default:
               result.notImplemented();
@@ -395,7 +402,7 @@ public class TextInputChannel {
      */
     void sendAppPrivateCommand(String action, Bundle data);
 
-    void setWindowInsetsAnimation();
+    void setKeyboardInset(int bottomInset);
   }
 
   /** A text editing configuration. */

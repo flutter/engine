@@ -7,6 +7,7 @@ package io.flutter.plugin.editing;
 import android.util.Log;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Insets;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
@@ -51,6 +52,7 @@ public class TextInputPlugin {
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
   private final boolean restartAlwaysRequired;
+  private CustomWindowInsetsAnimationControlListener mInsetsListener;
 
   // When true following calls to createInputConnection will return the cached lastInputConnection
   // if the input
@@ -75,14 +77,14 @@ public class TextInputPlugin {
         new TextInputChannel.TextInputMethodHandler() {
           @Override
           public void show() {
-            controlTextInputWindowInsetsAnimation();
+            controlTextInputWindowInsetsAnimation(150);
             showTextInput(mView);
           }
 
           @Override
           public void hide() {
-            controlTextInputWindowInsetsAnimation();
-            // hideTextInput(mView);
+            controlTextInputWindowInsetsAnimation(100);
+            hideTextInput(mView);
           }
 
           @Override
@@ -134,13 +136,8 @@ public class TextInputPlugin {
           }
 
           @Override
-          public void setWindowInsetsAnimation(
-              // long durationMillis, 
-              // Interpolator interpolator, 
-              // CancellationSignal cancellationSignal, 
-              // WindowInsetsAnimationControlListener listener
-            ) {
-            controlTextInputWindowInsetsAnimation();
+          public void setKeyboardInset(int bottomInset) {
+            controlTextInputWindowInsetsAnimation(bottomInset);
           }
         });
 
@@ -152,35 +149,43 @@ public class TextInputPlugin {
   }
 
   private class CustomWindowInsetsAnimationControlListener implements WindowInsetsAnimationControlListener {
-    CustomWindowInsetsAnimationControlListener() {}
+    private Insets targetInsets;
 
-    public void onCancelled(WindowInsetsAnimationController controller) {
-
+    CustomWindowInsetsAnimationControlListener() {
+      targetInsets = Insets.of(0, 0, 0, 0);
     }
 
-    public void onFinished(WindowInsetsAnimationController controller) {
-
+    CustomWindowInsetsAnimationControlListener(Insets insets) {
+      targetInsets = insets;
     }
+
+    void setInsets(Insets insets) {
+      targetInsets = insets;
+    }
+
+    public void onCancelled(WindowInsetsAnimationController controller) {}
+
+    public void onFinished(WindowInsetsAnimationController controller) {}
 
     public void onReady(WindowInsetsAnimationController controller, int types) {
-
+      controller.setInsetsAndAlpha(targetInsets, 1f, 1f);
     }
   }
-  private void controlTextInputWindowInsetsAnimation(
-      // int types, 
-      // long durationMillis, 
-      // Interpolator interpolator, 
-      // CancellationSignal cancellationSignal, 
-      // WindowInsetsAnimationControlListener listener
-    ) {
-    Log.e("flutter", "IN THE WINDOW WindowInsetsAnimationController !!!!!!!!!0");
+
+  private void controlTextInputWindowInsetsAnimation(int bottomInset) {
+    Log.e("flutter", "IN THE WINDOW WindowInsetsAnimationController !!!!!!!!!: " + bottomInset);
+    Insets targetInsets = Insets.of(0, 0, 0, bottomInset);
+    if (mInsetsListener == null) {
+      mInsetsListener = new CustomWindowInsetsAnimationControlListener(targetInsets);
+    } else {
+      mInsetsListener.setInsets(targetInsets);
+    }
     mView.getWindowInsetsController().controlWindowInsetsAnimation(
-      // WindowInsets.Type.IME,
-      4,
-      -1,// duration.
-      new LinearInterpolator(),
-      null,
-      new CustomWindowInsetsAnimationControlListener()
+      android.view.WindowInsets.Type.ime(),
+      -1,   // duration.
+      null, // interpolator
+      null, // cancellationSignal
+      mInsetsListener
     );
   }
 
