@@ -11,6 +11,9 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "gtest/gtest.h"
 
+namespace fml {
+namespace testing {
+
 class TestWakeable : public fml::Wakeable {
  public:
   using WakeUpCall = std::function<void(const fml::TimePoint)>;
@@ -278,3 +281,6 @@ TEST(MessageLoopTaskQueue, RegisterTaskWakesUpOwnerQueue) {
   ASSERT_EQ(time1, wakes[1]);
   ASSERT_EQ(time1, wakes[2]);
 }
+
+}  // namespace testing
+}  // namespace fml

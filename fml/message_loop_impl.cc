@@ -121,8 +121,9 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
   TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
 
   const auto now = fml::TimePoint::Now();
-  for (;;) {
-    fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_, now);
+  fml::closure invocation;
+  do {
+    invocation = task_queue_->GetNextTaskToRun(queue_id_, now);
     if (!invocation) {
       break;
     }
@@ -135,7 +136,7 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
     if (type == FlushType::kSingle) {
       break;
     }
-  }
+  } while (invocation);
 }
 
 void MessageLoopImpl::RunExpiredTasksNow() {
