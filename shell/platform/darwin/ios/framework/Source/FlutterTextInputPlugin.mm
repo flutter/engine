@@ -1172,12 +1172,16 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [_activeView setTextInputClient:client];
   [_activeView reloadInputViews];
 
-  // Clean up views that should no longer be in the view hierarchy according to the
-  // updated autofill context. This is made the last step so we don't remove the
-  // fields too early (which seems to make the keyboard flicker).
+  // Clean up views that no longer need to be in the view hierarchy, according to
+  // the current autofill context. The "garbage" input views are already made
+  // invisible to autofill and they can't `becomeFirstResponder`, we only remove
+  // them to free up resources and reduce the number of input views in the view
+  // hierarchy.
   //
+  // This is scheduled on the runloop and delayed by 0.1s so we don't remove the
+  // text fields immediately (which seems to make the keyboard flicker).
   // See: https://github.com/flutter/flutter/issues/64628.
-  [self cleanUpViewHierarchy:NO clearText:YES];
+  [self performSelector:@selector(collectGarbageInputViews) withObject:nil afterDelay:0.1];
 }
 
 // Updates and shows an input field that is not password related and has no autofill
@@ -1292,6 +1296,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       }
     }
   }
+}
+
+- (void)collectGarbageInputViews {
+  [self cleanUpViewHierarchy:NO clearText:YES];
 }
 
 // Changes the visibility of every FlutterTextInputView currently in the
