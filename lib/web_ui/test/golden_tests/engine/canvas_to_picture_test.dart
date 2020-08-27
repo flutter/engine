@@ -7,9 +7,14 @@ import 'dart:html' as html;
 
 import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
-void main() async {
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() async {
   final Rect region = Rect.fromLTWH(0, 0, 500, 500);
 
   setUp(() async {
