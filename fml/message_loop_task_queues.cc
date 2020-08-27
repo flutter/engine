@@ -110,37 +110,6 @@ fml::closure MessageLoopTaskQueues::GetNextTaskToRun(TaskQueueId queue_id,
   return invocation;
 }
 
-void MessageLoopTaskQueues::GetTasksToRunNow(
-    TaskQueueId queue_id,
-    FlushType type,
-    std::vector<fml::closure>& invocations) {
-  std::lock_guard guard(queue_mutex_);
-  if (!HasPendingTasksUnlocked(queue_id)) {
-    return;
-  }
-
-  const auto now = fml::TimePoint::Now();
-
-  while (HasPendingTasksUnlocked(queue_id)) {
-    TaskQueueId top_queue = _kUnmerged;
-    const auto& top = PeekNextTaskUnlocked(queue_id, top_queue);
-    if (top.GetTargetTime() > now) {
-      break;
-    }
-    invocations.emplace_back(top.GetTask());
-    queue_entries_.at(top_queue)->delayed_tasks.pop();
-    if (type == FlushType::kSingle) {
-      break;
-    }
-  }
-
-  if (!HasPendingTasksUnlocked(queue_id)) {
-    WakeUpUnlocked(queue_id, fml::TimePoint::Max());
-  } else {
-    WakeUpUnlocked(queue_id, GetNextWakeTimeUnlocked(queue_id));
-  }
-}
-
 void MessageLoopTaskQueues::WakeUpUnlocked(TaskQueueId queue_id,
                                            fml::TimePoint time) const {
   if (queue_entries_.at(queue_id)->wakeable) {

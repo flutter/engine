@@ -120,7 +120,6 @@ void MessageLoopImpl::DoTerminate() {
 void MessageLoopImpl::FlushTasks(FlushType type) {
   TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
 
-  fml::closure invocation;
   const auto now = fml::TimePoint::Now();
   for (;;) {
     fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_, now);
@@ -132,6 +131,9 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
         task_queue_->GetObserversToNotify(queue_id_);
     for (const auto& observer : observers) {
       observer();
+    }
+    if (type == FlushType::kSingle) {
+      break;
     }
   }
 }

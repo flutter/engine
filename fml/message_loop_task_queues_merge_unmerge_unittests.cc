@@ -127,8 +127,13 @@ TEST(MessageLoopTaskQueueMergeUnmerge, MergeInvokesBothWakeables) {
 
   task_queue->Merge(queue_id_1, queue_id_2);
 
-  std::vector<fml::closure> invocations;
-  task_queue->GetTasksToRunNow(queue_id_1, fml::FlushType::kAll, invocations);
+  const auto now = fml::TimePoint::Now();
+  for (;;) {
+    fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_1, now);
+    if (!invocation) {
+      break;
+    }
+  }
 
   latch.Wait();
 }
@@ -159,10 +164,24 @@ TEST(MessageLoopTaskQueueMergeUnmerge,
 
   std::vector<fml::closure> invocations;
 
-  task_queue->GetTasksToRunNow(queue_id_1, fml::FlushType::kAll, invocations);
+  const auto now = fml::TimePoint::Now();
+  for (;;) {
+    fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_1, now);
+    if (!invocation) {
+      break;
+    }
+  }
+
   latch_1.Wait();
 
-  task_queue->GetTasksToRunNow(queue_id_2, fml::FlushType::kAll, invocations);
+  const auto now = fml::TimePoint::Now();
+  for (;;) {
+    fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_2, now);
+    if (!invocation) {
+      break;
+    }
+  }
+
   latch_2.Wait();
 }
 
@@ -184,8 +203,13 @@ TEST(MessageLoopTaskQueueMergeUnmerge, GetTasksToRunNowBlocksMerge) {
                           }));
 
   std::thread tasks_to_run_now_thread([&]() {
-    std::vector<fml::closure> invocations;
-    task_queue->GetTasksToRunNow(queue_id_1, fml::FlushType::kAll, invocations);
+    const auto now = fml::TimePoint::Now();
+    for (;;) {
+      fml::closure invocation = task_queue_->GetNextTaskToRun(queue_id_2, now);
+      if (!invocation) {
+        break;
+      }
+    }
   });
 
   wake_up_start.Wait();
@@ -207,4 +231,59 @@ TEST(MessageLoopTaskQueueMergeUnmerge, GetTasksToRunNowBlocksMerge) {
 
   tasks_to_run_now_thread.join();
   merge_thread.join();
+}
+
+TEST(MessageLoopTaskQueueMergeUnmerge,
+     FollowingTasksSwitchQueueIfFirstTaskMergesThreads) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+
+  auto queue_id_1 = task_queue->CreateTaskQueue();
+  auto queue_id_2 = task_queue->CreateTaskQueue();
+
+  fml::CountDownLatch latch(2);
+
+  task_queue->SetWakeable(
+      queue_id_1,
+      new TestWakeable([&](fml::TimePoint wake_time) { latch.CountDown(); }));
+  task_queue->SetWakeable(
+      queue_id_2,
+      new TestWakeable([&](fml::TimePoint wake_time) { latch.CountDown(); }));
+
+  task_queue->RegisterTask(
+      queue_id_2, []() { task_queue->Merge(queue_id_1, queue_id_2); },
+      fml::TimePoint::Now());
+
+  task_queue->RegisterTask(
+      queue_id_2,
+      []() {
+
+      },
+      fml::TimePoint::Now());
+
+  task_queue->Merge(queue_id_1, queue_id_2);
+
+  int count_queue_id_2 = 0;
+  while (true) {
+    fml::closure invocation =
+        task_queue_->GetNextTaskToRun(queue_id_2, fml::TimePoint::Now());
+    if (!invocation) {
+      break;
+    }
+    count_queue_id_2++;
+  }
+
+  int count_queue_id_1 = 0;
+  while (true) {
+    fml::closure invocation =
+        task_queue_->GetNextTaskToRun(queue_id_1, fml::TimePoint::Now());
+    if (!invocation) {
+      break;
+    }
+    count_queue_id_1++;
+  }
+
+  ASSERT_EQ(count_queue_id_2, 1);
+  ASSERT_EQ(count_queue_id_1, 1);
+
+  latch.Wait();
 }

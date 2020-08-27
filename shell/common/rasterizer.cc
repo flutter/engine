@@ -669,19 +669,19 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
   return std::nullopt;
 }
 
-bool Rasterizer::EnsureThreadsAreMerged() {
+void Rasterizer::EnsureThreadsAreMerged() {
   if (surface_ == nullptr || raster_thread_merger_.get() == nullptr) {
-    return false;
+    return;
   }
+  const size_t ThreadMergeLeaseTermDefault = 10;
   fml::TaskRunner::RunNowOrPostTask(
       delegate_.GetTaskRunners().GetRasterTaskRunner(),
       [weak_this = weak_factory_.GetWeakPtr(),
        thread_merger = raster_thread_merger_]() {
-        thread_merger->MergeWithLease(10);
+        thread_merger->MergeWithLease(ThreadMergeLeaseTermDefault);
       });
   raster_thread_merger_->WaitUntilMerged();
   FML_DCHECK(raster_thread_merger_->IsMerged());
-  return true;
 }
 
 Rasterizer::Screenshot::Screenshot() {}
