@@ -122,8 +122,6 @@ class MessageLoopTaskQueues
   // Returns true if owner owns the subsumed task queue.
   bool Owns(TaskQueueId owner, TaskQueueId subsumed) const;
 
-  TaskQueueId GetOwner(TaskQueueId subsumed) const;
-
  private:
   class MergedQueuesRunner;
 

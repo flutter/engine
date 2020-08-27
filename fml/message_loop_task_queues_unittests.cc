@@ -278,21 +278,3 @@ TEST(MessageLoopTaskQueue, RegisterTaskWakesUpOwnerQueue) {
   ASSERT_EQ(time1, wakes[1]);
   ASSERT_EQ(time1, wakes[2]);
 }
-
-TEST(MessageLoopTaskQueue, GetOwner) {
-  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
-
-  auto queue_id_1 = task_queue->CreateTaskQueue();
-  auto queue_id_2 = task_queue->CreateTaskQueue();
-
-  ASSERT_NE(task_queue->GetOwner(queue_id_2), queue_id_1);
-
-  task_queue->Merge(queue_id_1, queue_id_2);
-
-  ASSERT_EQ(task_queue->GetOwner(queue_id_2), queue_id_1);
-  ASSERT_NE(task_queue->GetOwner(queue_id_1), queue_id_2);
-
-  task_queue->Unmerge(queue_id_1);
-
-  ASSERT_NE(task_queue->GetOwner(queue_id_2), queue_id_1);
-}
