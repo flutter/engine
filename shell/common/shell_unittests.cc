@@ -607,8 +607,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
         raster_thread_merger = thread_merger;
         end_frame_latch.Signal();
       };
-  auto external_view_embedder =
-  std::make_shared<ShellTestExternalViewEmbedder>(
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess, true);
   // Set resubmit once to trigger thread merging.
   external_view_embedder->SetResubmitOnce();
@@ -693,8 +692,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
       shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
   ValidateDestroyPlatformView(shell.get());
 
-  // Ensure threads are unmerged after platform view destroy
-  ASSERT_FALSE(fml::TaskRunnerChecker::RunsOnTheSameThread(
+  // Ensure threads remain merged after platform view destroy
+  ASSERT_TRUE(fml::TaskRunnerChecker::RunsOnTheSameThread(
       shell->GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId(),
       shell->GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId()));
 
