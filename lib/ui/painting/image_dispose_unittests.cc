@@ -30,6 +30,12 @@ class ImageDisposeTest : public ShellTest {
   // Used to wait on Dart callbacks or Shell task runner flushing
   fml::AutoResetWaitableEvent message_latch_;
 
+  fml::AutoResetWaitableEvent picture_finalizer_latch_;
+  static void picture_finalizer(void* isolate_callback_data, void* peer) {
+    auto latch = reinterpret_cast<fml::AutoResetWaitableEvent*>(peer);
+    latch->Signal();
+  }
+
   sk_sp<SkPicture> current_picture_;
   sk_sp<SkImage> current_image_;
 };
@@ -42,6 +48,10 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrame) {
     ASSERT_FALSE(picture->picture()->unique());
     current_image_ = image->image();
     current_picture_ = picture->picture();
+
+    Dart_NewFinalizableHandle(
+        Dart_HandleFromWeakPersistent(picture->dart_wrapper()),
+        &picture_finalizer_latch_, 0, &picture_finalizer);
   };
 
   auto native_on_begin_frame_done = [&](Dart_NativeArguments args) {
@@ -82,10 +92,19 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrame) {
   ASSERT_TRUE(current_picture_);
   ASSERT_TRUE(current_image_);
 
-  message_latch_.Reset();
+  // Make sure we hit at least one VSync flush, in case we're on a slower
+  // machine that effectively missed its VSync drawing this image.
+  bool will_draw_new_frame;
+  VSyncFlush(shell.get(), will_draw_new_frame);
 
-  // flush the UI Task runner
-  task_runner->PostTask([&]() { message_latch_.Signal(); });
+  picture_finalizer_latch_.Wait();
+
+  // Force a drain the SkiaUnrefQueue.
+  message_latch_.Reset();
+  task_runner->PostTask([&, io_manager = shell->GetIOManager()]() {
+    io_manager->GetSkiaUnrefQueue()->Drain();
+    message_latch_.Signal();
+  });
   message_latch_.Wait();
 
   EXPECT_TRUE(current_picture_->unique());
