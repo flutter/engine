@@ -88,6 +88,8 @@ class PersistedColorFilter extends PersistedContainerSurface
           // Use svg filter srcIn instead.
           colorFilterBlendMode = ui.BlendMode.srcIn;
           break;
+        default:
+          break;
       }
 
       // Use SVG filter for blend mode.
