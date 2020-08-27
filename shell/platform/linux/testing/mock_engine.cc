@@ -9,12 +9,19 @@
 #include "gtest/gtest.h"
 
 #include <string.h>
+#include <iterator>
+#include <unordered_map>
+
+struct _FlutterEngineTexture {
+  bool hasNewFrame;
+};
 
 struct _FlutterEngine {
   bool running;
   FlutterPlatformMessageCallback platform_message_callback;
   FlutterTaskRunnerPostTaskCallback platform_post_task_callback;
   void* user_data;
+  std::unordered_map<int64_t, _FlutterEngineTexture> textures;
 
   _FlutterEngine(FlutterPlatformMessageCallback platform_message_callback,
                  FlutterTaskRunnerPostTaskCallback platform_post_task_callback,
@@ -393,17 +400,26 @@ FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
 FlutterEngineResult FlutterEngineRegisterExternalTexture(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t texture_identifier) {
+  _FlutterEngineTexture texture;
+  texture.hasNewFrame = false;
+  engine->textures[texture_identifier] = texture;
   return kSuccess;
 }
 
 FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t texture_identifier) {
+  auto val = engine->textures.find(texture_identifier);
+  if (val == std::end(engine->textures)) {
+    return kInvalidArguments;
+  }
+  val->second.hasNewFrame = true;
   return kSuccess;
 }
 
 FlutterEngineResult FlutterEngineUnregisterExternalTexture(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t texture_identifier) {
+  engine->textures.erase(texture_identifier);
   return kSuccess;
 }

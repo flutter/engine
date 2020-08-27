@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_EXTERNAL_TEXURE_GL_H
 
 #include <glib-object.h>
+
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_texture_registrar.h"
 

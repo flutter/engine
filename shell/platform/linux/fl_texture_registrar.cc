@@ -3,12 +3,13 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_texture_registrar.h"
+
+#include <gmodule.h>
+
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_external_texture_gl.h"
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
-
-#include <gmodule.h>
 
 struct _FlTextureRegistrar {
   GObject parent_instance;

@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
-#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
@@ -596,13 +596,14 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
 bool fl_engine_mark_texture_frame_available(FlEngine* self,
                                             int64_t texture_id) {
   g_return_val_if_fail(FL_IS_ENGINE(self), false);
-  return !FlutterEngineMarkExternalTextureFrameAvailable(self->engine,
-                                                         texture_id);
+  return FlutterEngineMarkExternalTextureFrameAvailable(self->engine,
+                                                        texture_id) == kSuccess;
 }
 
 bool fl_engine_register_external_texture(FlEngine* self, int64_t texture_id) {
   g_return_val_if_fail(FL_IS_ENGINE(self), false);
-  return !FlutterEngineRegisterExternalTexture(self->engine, texture_id);
+  return FlutterEngineRegisterExternalTexture(self->engine, texture_id) ==
+         kSuccess;
 }
 
 void fl_engine_unregister_external_texture(FlEngine* self, int64_t texture_id) {
