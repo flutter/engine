@@ -21,9 +21,9 @@ part of engine;
 ///   3. if we encounter Move without a preceeding Close, and forceClose is true, goto #2
 ///   4. if we encounter Line | Quad | Cubic after Close, cons up a Move
 class SurfacePath implements ui.Path {
-  // Flag to require a moveTo if we begin with something else,
-  // for example empty path lineTo call will inject moveTo.
-  static const int kInitialLastMoveToIndexValue = -1;
+  // Initial valid of last move to index so we can detect if a move to
+  // needs to be inserted after contour closure. See [close].
+  static const int kInitialLastMoveToIndexValue = 0;
 
   PathRef pathRef;
   ui.PathFillType _fillType = ui.PathFillType.nonZero;
