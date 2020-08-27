@@ -71,6 +71,40 @@ void fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
   int64_t scan_code = event->hardware_keycode;
   int64_t unicodeScalarValues = gdk_keyval_to_unicode(event->keyval);
 
+  // Remove lock states from state mask.
+  guint state = event->state & ~(GDK_LOCK_MASK | GDK_MOD2_MASK);
+
+  // GTK keeps track of the state of the locks themselves, not the "down" state
+  // of the key. Flutter expects the "down" state of the modifier key, so we
+  // keep track of the down state here, and send it to the framework. This code
+  // has the flaw that if a key event is missed due to the app losing focus,
+  // then this state will still think the key is down when it isn't, but that is
+  // no worse than for other keys until we implement the sync/cancel events.
+  //
+  // This is necessary to do here instead of in the framework because Flutter
+  // does modifier key syncing in the framework, and will turn on/off these keys
+  // as being "pressed" whenever the lock is on, which breaks a lot of
+  // interactions.
+  //
+  // TODO(gspencergoog): get rid of this tracked state when we are tracking the
+  // state of all keys and sending sync/cancel events when focus is gained/lost.
+  static bool shift_lock_down = false;
+  static bool caps_lock_down = false;
+  static bool num_lock_down = false;
+  if (event->keyval == GDK_KEY_Num_Lock) {
+    num_lock_down = event->type == GDK_KEY_PRESS;
+  }
+  if (event->keyval == GDK_KEY_Caps_Lock) {
+    caps_lock_down = event->type == GDK_KEY_PRESS;
+  }
+  if (event->keyval == GDK_KEY_Shift_Lock) {
+    shift_lock_down = event->type == GDK_KEY_PRESS;
+  }
+  // Make the state match the actual pressed state of the lock keys, not the
+  // lock states themselves.
+  state |= (shift_lock_down || caps_lock_down) ? GDK_LOCK_MASK : 0x0;
+  state |= num_lock_down ? GDK_MOD2_MASK : 0x0;
+
   g_autoptr(FlValue) message = fl_value_new_map();
   fl_value_set_string_take(message, kTypeKey, fl_value_new_string(type));
   fl_value_set_string_take(message, kKeymapKey,
@@ -81,7 +115,7 @@ void fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
   fl_value_set_string_take(message, kKeyCodeKey,
                            fl_value_new_int(event->keyval));
   fl_value_set_string_take(message, kModifiersKey,
-                           fl_value_new_int(event->state));
+                           fl_value_new_int(state));
   if (unicodeScalarValues != 0) {
     fl_value_set_string_take(message, kUnicodeScalarValuesKey,
                              fl_value_new_int(unicodeScalarValues));
