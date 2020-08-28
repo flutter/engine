@@ -414,8 +414,9 @@ TEST(RasterThreadMerger, Disable) {
   {
     auto decrement_result = raster_thread_merger_->DecrementLease();
     ASSERT_EQ(fml::RasterThreadStatus::kUnmergedNow, decrement_result);
-    ASSERT_FALSE(raster_thread_merger_->IsMerged());
   }
+
+  ASSERT_FALSE(raster_thread_merger_->IsMerged());
 
   term1.Signal();
   term2.Signal();
