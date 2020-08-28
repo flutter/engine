@@ -4,8 +4,8 @@
 
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
 
-#include "gtest/gtest.h"
 #include <iostream>
+#include "gtest/gtest.h"
 
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
@@ -51,69 +51,77 @@ TEST(FlKeyEventPluginTest, SendKeyEvent) {
 
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
-  g_autoptr(FlKeyEventPlugin) plugin = fl_key_event_plugin_new(messenger, echo_response_cb, "test/echo");
+  g_autoptr(FlKeyEventPlugin) plugin =
+      fl_key_event_plugin_new(messenger, echo_response_cb, "test/echo");
 
   char string[] = "A";
   GdkEventKey key_event = GdkEventKey{
-    GDK_KEY_PRESS,                         // event type
-    nullptr,                               // window (not needed)
-    FALSE,                                 // event was sent explicitly
-    12345,                                 // time
-    0x0,                                   // modifier state
-    GDK_KEY_A,                             // key code
-    1,                                     // length of string representation
-    reinterpret_cast<gchar*>(&string[0]),  // string representation
-    0x04,                                  // scan code
-    0,                                     // keyboard group
-    0,                                     // is a modifier
+      GDK_KEY_PRESS,                         // event type
+      nullptr,                               // window (not needed)
+      FALSE,                                 // event was sent explicitly
+      12345,                                 // time
+      0x0,                                   // modifier state
+      GDK_KEY_A,                             // key code
+      1,                                     // length of string representation
+      reinterpret_cast<gchar*>(&string[0]),  // string representation
+      0x04,                                  // scan code
+      0,                                     // keyboard group
+      0,                                     // is a modifier
   };
 
-  expected_value = "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, modifiers: 0, unicodeScalarValues: 65}";
+  expected_value =
+      "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, "
+      "modifiers: 0, unicodeScalarValues: 65}";
   fl_key_event_plugin_send_key_event(plugin, &key_event, loop);
 
   // Blocks here until echo_response_cb is called.
   g_main_loop_run(loop);
 
   key_event = GdkEventKey{
-    GDK_KEY_RELEASE,                       // event type
-    nullptr,                               // window (not needed)
-    FALSE,                                 // event was sent explicitly
-    12345,                                 // time
-    0x0,                                   // modifier state
-    GDK_KEY_A,                             // key code
-    1,                                     // length of string representation
-    reinterpret_cast<gchar*>(&string[0]),  // string representation
-    0x04,                                  // scan code
-    0,                                     // keyboard group
-    0,                                     // is a modifier
+      GDK_KEY_RELEASE,                       // event type
+      nullptr,                               // window (not needed)
+      FALSE,                                 // event was sent explicitly
+      12345,                                 // time
+      0x0,                                   // modifier state
+      GDK_KEY_A,                             // key code
+      1,                                     // length of string representation
+      reinterpret_cast<gchar*>(&string[0]),  // string representation
+      0x04,                                  // scan code
+      0,                                     // keyboard group
+      0,                                     // is a modifier
   };
 
-  expected_value = "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, modifiers: 0, unicodeScalarValues: 65}";
+  expected_value =
+      "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, "
+      "modifiers: 0, unicodeScalarValues: 65}";
   fl_key_event_plugin_send_key_event(plugin, &key_event, loop);
 
   // Blocks here until echo_response_cb is called.
   g_main_loop_run(loop);
 }
 
-void test_lock_event(guint key_code, const char* down_expected, const char* up_expected) {
+void test_lock_event(guint key_code,
+                     const char* down_expected,
+                     const char* up_expected) {
   g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
 
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
-  g_autoptr(FlKeyEventPlugin) plugin = fl_key_event_plugin_new(messenger, echo_response_cb, "test/echo");
+  g_autoptr(FlKeyEventPlugin) plugin =
+      fl_key_event_plugin_new(messenger, echo_response_cb, "test/echo");
 
   GdkEventKey key_event = GdkEventKey{
-    GDK_KEY_PRESS, // event type
-    nullptr,       // window (not needed)
-    FALSE,         // event was sent explicitly
-    12345,         // time
-    0x10,          // modifier state
-    key_code,      // key code
-    1,             // length of string representation
-    nullptr,       // string representation
-    0x04,          // scan code
-    0,             // keyboard group
-    0,             // is a modifier
+      GDK_KEY_PRESS,  // event type
+      nullptr,        // window (not needed)
+      FALSE,          // event was sent explicitly
+      12345,          // time
+      0x10,           // modifier state
+      key_code,       // key code
+      1,              // length of string representation
+      nullptr,        // string representation
+      0x04,           // scan code
+      0,              // keyboard group
+      0,              // is a modifier
   };
 
   expected_value = down_expected;
@@ -133,27 +141,27 @@ void test_lock_event(guint key_code, const char* down_expected, const char* up_e
 
 // Test sending a "NumLock" keypress.
 TEST(FlKeyEventPluginTest, SendNumLockKeyEvent) {
-  test_lock_event(
-    GDK_KEY_Num_Lock,
-    "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65407, modifiers: 16}",
-    "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65407, modifiers: 0}"
-  );
+  test_lock_event(GDK_KEY_Num_Lock,
+                  "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, "
+                  "keyCode: 65407, modifiers: 16}",
+                  "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, "
+                  "keyCode: 65407, modifiers: 0}");
 }
 
 // Test sending a "CapsLock" keypress.
 TEST(FlKeyEventPluginTest, SendCapsLockKeyEvent) {
-  test_lock_event(
-    GDK_KEY_Caps_Lock,
-    "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65509, modifiers: 2}",
-    "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65509, modifiers: 0}"
-  );
+  test_lock_event(GDK_KEY_Caps_Lock,
+                  "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, "
+                  "keyCode: 65509, modifiers: 2}",
+                  "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, "
+                  "keyCode: 65509, modifiers: 0}");
 }
 
 // Test sending a "ShiftLock" keypress.
 TEST(FlKeyEventPluginTest, SendShiftLockKeyEvent) {
-  test_lock_event(
-    GDK_KEY_Shift_Lock,
-    "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65510, modifiers: 2}",
-    "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65510, modifiers: 0}"
-  );
+  test_lock_event(GDK_KEY_Shift_Lock,
+                  "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, "
+                  "keyCode: 65510, modifiers: 2}",
+                  "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, "
+                  "keyCode: 65510, modifiers: 0}");
 }

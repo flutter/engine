@@ -81,42 +81,53 @@ void fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
   int64_t scan_code = event->hardware_keycode;
   int64_t unicodeScalarValues = gdk_keyval_to_unicode(event->keyval);
 
-  // Remove lock states from state mask.
-  guint state = event->state & ~(GDK_LOCK_MASK | GDK_MOD2_MASK);
-
-  // GTK keeps track of the state of the locks themselves, not the "down" state
-  // of the key. Flutter expects the "down" state of the modifier key, so we
-  // keep track of the down state here, and send it to the framework. This code
-  // has the flaw that if a key event is missed due to the app losing focus,
-  // then this state will still think the key is down when it isn't, but that is
-  // no worse than for other keys until we implement the sync/cancel events.
+  // For most modifier keys, GTK keeps track of the "pressed" state of the
+  // modifier keys. Flutter uses this information to keep modifier keys from
+  // being "stuck" when a key-up event is lost because it happens after the app
+  // loses focus.
+  //
+  // For Lock keys (ShiftLock, CapsLock, NumLock), however, GTK keeps track of
+  // the state of the locks themselves, not the "pressed" state of the key.
+  //
+  // Since Flutter expects the "pressed" state of the modifier keys, the lock
+  // state for these keys is discarded here, and it is substituted for the
+  // pressed state of the key.
+  //
+  // This code has the flaw that if a key event is missed due to the app losing
+  // focus, then this state will still think the key is pressed when it isn't,
+  // but that is no worse than for "regular" keys until we implement the
+  // sync/cancel events on app focus changes.
   //
   // This is necessary to do here instead of in the framework because Flutter
   // does modifier key syncing in the framework, and will turn on/off these keys
   // as being "pressed" whenever the lock is on, which breaks a lot of
-  // interactions.
+  // interactions (for example, if shift-lock is on, tab traversal is broken).
   //
   // TODO(gspencergoog): get rid of this tracked state when we are tracking the
   // state of all keys and sending sync/cancel events when focus is gained/lost.
-  static bool shift_lock_down = false;
-  static bool caps_lock_down = false;
-  static bool num_lock_down = false;
+
+  // Remove lock states from state mask.
+  guint state = event->state & ~(GDK_LOCK_MASK | GDK_MOD2_MASK);
+
+  static bool shift_lock_pressed = false;
+  static bool caps_lock_pressed = false;
+  static bool num_lock_pressed = false;
   switch (event->keyval) {
     case GDK_KEY_Num_Lock:
-      num_lock_down = event->type == GDK_KEY_PRESS;
+      num_lock_pressed = event->type == GDK_KEY_PRESS;
       break;
     case GDK_KEY_Caps_Lock:
-      caps_lock_down = event->type == GDK_KEY_PRESS;
+      caps_lock_pressed = event->type == GDK_KEY_PRESS;
       break;
     case GDK_KEY_Shift_Lock:
-      shift_lock_down = event->type == GDK_KEY_PRESS;
+      shift_lock_pressed = event->type == GDK_KEY_PRESS;
       break;
   }
 
-  // Make the state match the actual pressed state of the lock keys, not the
-  // lock states themselves.
-  state |= (shift_lock_down || caps_lock_down) ? GDK_LOCK_MASK : 0x0;
-  state |= num_lock_down ? GDK_MOD2_MASK : 0x0;
+  // Add back in the state matching the actual pressed state of the lock keys,
+  // not the lock states.
+  state |= (shift_lock_pressed || caps_lock_pressed) ? GDK_LOCK_MASK : 0x0;
+  state |= num_lock_pressed ? GDK_MOD2_MASK : 0x0;
 
   g_autoptr(FlValue) message = fl_value_new_map();
   fl_value_set_string_take(message, kTypeKey, fl_value_new_string(type));
