@@ -27,8 +27,7 @@ void testMain() async {
 
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
-      { Rect region = const Rect.fromLTWH(0, 0, 500, 500) }) async {
-
+      {Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
 
     // Draws the estimated bounds so we can spot the bug in Scuba.
@@ -90,8 +89,8 @@ void testMain() async {
         testPaint);
     rc.endRecording();
     // The off by one is due to the minimum stroke width of 1.
-    expect(rc.pictureBounds,
-        const Rect.fromLTRB(49.0, 99.0, screenWidth, 141.0));
+    expect(
+        rc.pictureBounds, const Rect.fromLTRB(49.0, 99.0, screenWidth, 141.0));
     await _checkScreenshot(rc, 'draw_line_exceeding_limits');
   });
 
@@ -197,8 +196,11 @@ void testMain() async {
     rc.transform(matrix);
     rc.drawRect(const Rect.fromLTRB(10, 20, 30, 40), testPaint);
     rc.endRecording();
-    expect(rc.pictureBounds,
-        within(distance: 0.001, from: const Rect.fromLTRB(168.0, 283.6, 224.0, 368.4)));
+    expect(
+        rc.pictureBounds,
+        within(
+            distance: 0.001,
+            from: const Rect.fromLTRB(168.0, 283.6, 224.0, 368.4)));
     await _checkScreenshot(rc, 'complex_transform');
   });
 
@@ -268,16 +270,14 @@ void testMain() async {
     RecordingCanvas rc = RecordingCanvas(screenRect);
     rc.drawCircle(const Offset(20, 20), 10.0, testPaint);
     rc.endRecording();
-    expect(
-        rc.pictureBounds, const Rect.fromLTRB(10.0, 10.0, 30.0, 30.0));
+    expect(rc.pictureBounds, const Rect.fromLTRB(10.0, 10.0, 30.0, 30.0));
 
     // Paint bounds of a union of two circles.
     rc = RecordingCanvas(screenRect);
     rc.drawCircle(const Offset(20, 20), 10.0, testPaint);
     rc.drawCircle(const Offset(200, 300), 100.0, testPaint);
     rc.endRecording();
-    expect(
-        rc.pictureBounds, const Rect.fromLTRB(10.0, 10.0, 300.0, 400.0));
+    expect(rc.pictureBounds, const Rect.fromLTRB(10.0, 10.0, 300.0, 400.0));
     await _checkScreenshot(rc, 'draw_circle');
   });
 
@@ -285,8 +285,7 @@ void testMain() async {
     final RecordingCanvas rc = RecordingCanvas(screenRect);
     rc.drawImage(TestImage(), const Offset(50, 100), Paint());
     rc.endRecording();
-    expect(
-        rc.pictureBounds, const Rect.fromLTRB(50.0, 100.0, 70.0, 110.0));
+    expect(rc.pictureBounds, const Rect.fromLTRB(50.0, 100.0, 70.0, 110.0));
   });
 
   test('Computes paint bounds for draw image rect', () {
@@ -294,8 +293,7 @@ void testMain() async {
     rc.drawImageRect(TestImage(), const Rect.fromLTRB(1, 1, 20, 10),
         const Rect.fromLTRB(5, 6, 400, 500), Paint());
     rc.endRecording();
-    expect(
-        rc.pictureBounds, const Rect.fromLTRB(5.0, 6.0, 400.0, 500.0));
+    expect(rc.pictureBounds, const Rect.fromLTRB(5.0, 6.0, 400.0, 500.0));
   });
 
   test('Computes paint bounds for single-line draw paragraph', () async {
@@ -389,7 +387,8 @@ void testMain() async {
 
     expect(
       rc.pictureBounds,
-      within(distance: 0.05, from: const Rect.fromLTRB(17.9, 28.5, 103.5, 114.1)),
+      within(
+          distance: 0.05, from: const Rect.fromLTRB(17.9, 28.5, 103.5, 114.1)),
     );
     await _checkScreenshot(rc, 'path_with_shadow');
   });
@@ -410,8 +409,7 @@ void testMain() async {
       ..drawRect(const Rect.fromLTRB(0, 0, 100, 100), Paint());
     rc.endRecording();
 
-    expect(
-        rc.pictureBounds, const Rect.fromLTRB(0.0, 50.0, 100.0, 100.0));
+    expect(rc.pictureBounds, const Rect.fromLTRB(0.0, 50.0, 100.0, 100.0));
     await _checkScreenshot(rc, 'scale_negative');
   });
 
@@ -427,7 +425,10 @@ void testMain() async {
 
     expect(
       rc.pictureBounds,
-      within(distance: 0.001, from: Rect.fromCircle(center: const Offset(50, 50), radius: 20 * math.sqrt(2))),
+      within(
+          distance: 0.001,
+          from: Rect.fromCircle(
+              center: const Offset(50, 50), radius: 20 * math.sqrt(2))),
     );
     await _checkScreenshot(rc, 'clip_rect_rotated');
   });
@@ -655,12 +656,13 @@ void testMain() async {
   });
 }
 
-typedef PaintSpreadPainter = void Function(RecordingCanvas canvas, SurfacePaint paint);
+typedef PaintSpreadPainter = void Function(
+    RecordingCanvas canvas, SurfacePaint paint);
 
 const String _base64Encoded20x20TestImage = 'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUC'
     'AIAAAAC64paAAAACXBIWXMAAC4jAAAuIwF4pT92AAAA'
-  'B3RJTUUH5AMFFBksg4i3gQAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAj'
-  'SURBVDjLY2TAC/7jlWVioACMah4ZmhnxpyHG0QAb1UyZZgBjWAIm/clP0AAAAABJRU5ErkJggg==';
+    'B3RJTUUH5AMFFBksg4i3gQAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAj'
+    'SURBVDjLY2TAC/7jlWVioACMah4ZmhnxpyHG0QAb1UyZZgBjWAIm/clP0AAAAABJRU5ErkJggg==';
 
 HtmlImage _createRealTestImage() {
   return HtmlImage(
