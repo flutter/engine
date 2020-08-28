@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package test.io.flutter.embedding.engine;
 
 import static junit.framework.TestCase.assertEquals;
@@ -8,11 +12,13 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import androidx.annotation.NonNull;
+import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterApplicationInfo;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -22,25 +28,23 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class PluginComponentTest {
+  @Before
+  public void setUp() {
+    FlutterInjector.reset();
+  }
+
   @Test
   public void pluginsCanAccessFlutterAssetPaths() {
     // Setup test.
+    FlutterInjector.setInstance(new FlutterInjector.Builder().setShouldLoadNative(false).build());
     FlutterJNI flutterJNI = mock(FlutterJNI.class);
     when(flutterJNI.isAttached()).thenReturn(true);
-    FlutterApplicationInfo emptyInfo =
-        new FlutterApplicationInfo(null, null, null, null, null, null, false, false);
 
-    FlutterLoader realFlutterLoader = new FlutterLoader();
-    FlutterLoader spyFlutterLoader = spy(realFlutterLoader);
-
-    // Let the real startInitialization be called, but mock the rest so it doesn't try to load
-    // the real native library.
-    doNothing().when(spyFlutterLoader).loadNativeLibrary();
-    doNothing().when(spyFlutterLoader).ensureInitializationComplete(any(), any());
+    FlutterLoader flutterLoader = new FlutterLoader();
 
     // Execute behavior under test.
     FlutterEngine flutterEngine =
-        new FlutterEngine(RuntimeEnvironment.application, spyFlutterLoader, flutterJNI);
+        new FlutterEngine(RuntimeEnvironment.application, flutterLoader, flutterJNI);
 
     // As soon as our plugin is registered it will look up asset paths and store them
     // for our verification.
@@ -56,6 +60,7 @@ public class PluginComponentTest {
     assertEquals(
         "flutter_assets/packages/fakepackage/some/path/fake_asset.jpg",
         plugin.getAssetPathBasedOnSubpathAndPackage());
+    FlutterInjector.reset();
   }
 
   private static class PluginThatAccessesAssets implements FlutterPlugin {

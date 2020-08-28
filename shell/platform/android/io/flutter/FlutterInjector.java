@@ -8,7 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 
-/*
+/**
  * This class is a simple dependency injector for the relatively thin Android part of the Flutter engine.
  *
  * This simple solution is used facilitate testability without bringing in heavier app-development
@@ -20,7 +20,7 @@ public final class FlutterInjector {
   private static FlutterInjector instance;
   private static boolean accessed;
 
-  /*
+  /**
    * Use {@link FlutterInjector.Builder} to specify members to be injected via the static
    * {@code FlutterInjector}.
    *
@@ -37,7 +37,7 @@ public final class FlutterInjector {
     instance = injector;
   }
 
-  /*
+  /**
    * Retrieve the static instance of the {@code FlutterInjector} to use in your program.
    *
    * Once you access it, you can no longer change the values injected.
@@ -60,18 +60,32 @@ public final class FlutterInjector {
     instance = null;
   }
 
-  private FlutterInjector(@NonNull FlutterLoader flutterLoader) {
+  private FlutterInjector(boolean shouldLoadNative, @NonNull FlutterLoader flutterLoader) {
+    this.shouldLoadNative = shouldLoadNative;
     this.flutterLoader = flutterLoader;
   }
 
+  private boolean shouldLoadNative;
   private FlutterLoader flutterLoader;
 
+  /**
+   * Returns whether the Flutter Android engine embedding should load the native C++ engine.
+   *
+   * Useful for testing since JVM tests via Robolectric can't load native libraries.
+   */
+  public boolean shouldLoadNative() {
+    return shouldLoadNative;
+  }
+
+  /**
+   * Returns the {@link FlutterLoader} instance to use for the Flutter Android engine embedding.
+   */
   @NonNull
   public FlutterLoader flutterLoader() {
     return flutterLoader;
   }
 
-  /*
+  /**
    * Builder used to supply a custom FlutterInjector instance to
    * {@link FlutterInjector#setInstance(FlutterInjector)}.
    *
@@ -79,8 +93,21 @@ public final class FlutterInjector {
    */
   public static final class Builder {
 
+    private boolean shouldLoadNative = true;
+    /**
+     * Sets whether the Flutter Android engine embedding should load the native C++ engine.
+     *
+     * Useful for testing since JVM tests via Robolectric can't load native libraries.
+     *
+     * Defaults to true.
+     */
+    public Builder setShouldLoadNative(boolean shouldLoadNative) {
+      this.shouldLoadNative = shouldLoadNative;
+      return this;
+    }
+
     private FlutterLoader flutterLoader;
-    /*
+    /**
      * Sets a {@link FlutterLoader} override.
      *
      * A reasonable default will be used if unspecified.
@@ -96,10 +123,14 @@ public final class FlutterInjector {
       }
     }
 
+    /** Builds a {@link FlutterInjector} from the builder. Unspecified properties will have
+     * reasonable defaults.
+     */
     public FlutterInjector build() {
       fillDefaults();
 
-      return new FlutterInjector(flutterLoader);
+      System.out.println("should load native is " + shouldLoadNative);
+      return new FlutterInjector(shouldLoadNative, flutterLoader);
     }
   }
 }

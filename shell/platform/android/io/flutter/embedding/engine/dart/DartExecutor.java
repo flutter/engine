@@ -11,6 +11,7 @@ import androidx.annotation.UiThread;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StringCodec;
 import io.flutter.view.FlutterCallbackInformation;
@@ -250,10 +251,19 @@ public class DartExecutor implements BinaryMessenger {
    * that entrypoint and other assets required for Dart execution.
    */
   public static class DartEntrypoint {
+    /**
+     * Create a DartEntrypoint pointing to the default Flutter assets location with a default Dart
+     * entrypoint.
+     */
     @NonNull
     public static DartEntrypoint createDefault() {
+      FlutterLoader flutterLoader = FlutterInjector.instance().flutterLoader();
+
+      if (!flutterLoader.initialized()) {
+        throw new AssertionError("DartEntrypoints can only be created once a FlutterEngine is created.");
+      }
       return new DartEntrypoint(
-          FlutterInjector.instance().flutterLoader().findAppBundlePath(), "main");
+        flutterLoader.findAppBundlePath(), "main");
     }
 
     /** The path within the AssetManager where the app will look for assets. */

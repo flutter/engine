@@ -6,7 +6,10 @@ package io.flutter;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
+import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +36,7 @@ public class FlutterInjectorTest {
     // Implicitly builds when first accessed.
     FlutterInjector injector = FlutterInjector.instance();
     assertNotNull(injector.flutterLoader());
+    assertTrue(injector.shouldLoadNative());
   }
 
   @Test
@@ -41,12 +45,16 @@ public class FlutterInjectorTest {
         new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
     FlutterInjector injector = FlutterInjector.instance();
     assertEquals(injector.flutterLoader(), mockFlutterLoader);
+    assertTrue(injector.shouldLoadNative());
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test()
   public void cannotBeChangedOnceRead() {
     FlutterInjector.instance();
-    FlutterInjector.setInstance(
+
+    assertThrows(IllegalStateException.class, () -> {
+      FlutterInjector.setInstance(
         new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
+    });
   }
 }
