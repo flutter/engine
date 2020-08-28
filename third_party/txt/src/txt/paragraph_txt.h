@@ -235,6 +235,7 @@ class ParagraphTxt : public Paragraph {
           end_(e),
           direction_(d),
           style_(&st),
+          is_ghost_(false),
           placeholder_run_(&placeholder) {}
 
     size_t start() const { return start_; }

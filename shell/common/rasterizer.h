@@ -97,6 +97,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   Rasterizer(Delegate& delegate);
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
   ///             be created on the GPU task runner. Rasterizers are currently
@@ -109,6 +110,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   Rasterizer(Delegate& delegate,
              std::unique_ptr<flutter::CompositorContext> compositor_context);
+#endif
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the GPU task
@@ -388,6 +390,17 @@ class Rasterizer final : public SnapshotDelegate {
   /// @return     The size of Skia's resource cache, if available.
   ///
   std::optional<size_t> GetResourceCacheMaxBytes() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Makes sure the raster task runner and the platform task runner
+  ///             are merged.
+  ///
+  /// @attention  If raster and platform task runners are not the same or not
+  ///             merged, this method will try to merge the task runners,
+  ///             blocking the current thread until the 2 task runners are
+  ///             merged.
+  ///
+  void EnsureThreadsAreMerged();
 
  private:
   Delegate& delegate_;

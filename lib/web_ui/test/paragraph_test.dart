@@ -3,10 +3,11 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide window;
 
-import 'package:test/test.dart';
 
 void testEachMeasurement(String description, VoidCallback body, {bool skip}) {
   test('$description (dom measurement)', () async {
@@ -31,7 +32,11 @@ void testEachMeasurement(String description, VoidCallback body, {bool skip}) {
   }, skip: skip);
 }
 
-void main() async {
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() async {
   await webOnlyInitializeTestDomRenderer();
 
   // Ahem font uses a constant ideographic/alphabetic baseline ratio.
@@ -390,6 +395,42 @@ void main() async {
 
     TextMeasurementService.clearCache();
     WebExperiments.instance.useCanvasText = null;
+  });
+
+  test('getWordBoundary', () {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle())
+      ..addText('Lorem ipsum dolor');
+    final Paragraph paragraph = builder.build();
+
+    const TextRange loremRange = TextRange(start: 0, end: 5);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 0)), loremRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 1)), loremRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 2)), loremRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 3)), loremRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 4)), loremRange);
+
+    const TextRange firstSpace = TextRange(start: 5, end: 6);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 5)), firstSpace);
+
+    const TextRange ipsumRange = TextRange(start: 6, end: 11);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 6)), ipsumRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 7)), ipsumRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 8)), ipsumRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 9)), ipsumRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 10)), ipsumRange);
+
+    const TextRange secondSpace = TextRange(start: 11, end: 12);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 11)), secondSpace);
+
+    const TextRange dolorRange = TextRange(start: 12, end: 17);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 12)), dolorRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 13)), dolorRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 14)), dolorRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 15)), dolorRange);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 16)), dolorRange);
+
+    const TextRange endRange = TextRange(start: 17, end: 17);
+    expect(paragraph.getWordBoundary(TextPosition(offset: 17)), endRange);
   });
 
   testEachMeasurement('getBoxesForRange returns a box', () {
