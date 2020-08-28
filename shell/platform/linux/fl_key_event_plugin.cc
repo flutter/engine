@@ -23,7 +23,8 @@ static constexpr char kLinuxKeymap[] = "linux";
 struct _FlKeyEventPlugin {
   GObject parent_instance;
 
-  FlBasicMessageChannel* channel;
+  FlBasicMessageChannel* channel = nullptr;
+  GAsyncReadyCallback response_callback = nullptr;
 };
 
 G_DEFINE_TYPE(FlKeyEventPlugin, fl_key_event_plugin, G_TYPE_OBJECT)
@@ -42,31 +43,40 @@ static void fl_key_event_plugin_class_init(FlKeyEventPluginClass* klass) {
 
 static void fl_key_event_plugin_init(FlKeyEventPlugin* self) {}
 
-FlKeyEventPlugin* fl_key_event_plugin_new(FlBinaryMessenger* messenger) {
+FlKeyEventPlugin* fl_key_event_plugin_new(FlBinaryMessenger* messenger,
+                                          GAsyncReadyCallback response_callback,
+                                          const char* channel_name) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
   FlKeyEventPlugin* self = FL_KEY_EVENT_PLUGIN(
       g_object_new(fl_key_event_plugin_get_type(), nullptr));
 
   g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
-  self->channel = fl_basic_message_channel_new(messenger, kChannelName,
-                                               FL_MESSAGE_CODEC(codec));
+  self->channel = fl_basic_message_channel_new(
+      messenger, channel_name == nullptr ? kChannelName : channel_name,
+      FL_MESSAGE_CODEC(codec));
+  self->response_callback = response_callback;
 
   return self;
 }
 
 void fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
-                                        GdkEventKey* event) {
+                                        GdkEventKey* event,
+                                        gpointer user_data) {
   g_return_if_fail(FL_IS_KEY_EVENT_PLUGIN(self));
   g_return_if_fail(event != nullptr);
 
   const gchar* type;
-  if (event->type == GDK_KEY_PRESS)
-    type = kTypeValueDown;
-  else if (event->type == GDK_KEY_RELEASE)
-    type = kTypeValueUp;
-  else
-    return;
+  switch (event->type) {
+    case GDK_KEY_PRESS:
+      type = kTypeValueDown;
+      break;
+    case GDK_KEY_RELEASE:
+      type = kTypeValueUp;
+      break;
+    default:
+      return;
+  }
 
   int64_t scan_code = event->hardware_keycode;
   int64_t unicodeScalarValues = gdk_keyval_to_unicode(event->keyval);
@@ -91,15 +101,18 @@ void fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
   static bool shift_lock_down = false;
   static bool caps_lock_down = false;
   static bool num_lock_down = false;
-  if (event->keyval == GDK_KEY_Num_Lock) {
-    num_lock_down = event->type == GDK_KEY_PRESS;
+  switch (event->keyval) {
+    case GDK_KEY_Num_Lock:
+      num_lock_down = event->type == GDK_KEY_PRESS;
+      break;
+    case GDK_KEY_Caps_Lock:
+      caps_lock_down = event->type == GDK_KEY_PRESS;
+      break;
+    case GDK_KEY_Shift_Lock:
+      shift_lock_down = event->type == GDK_KEY_PRESS;
+      break;
   }
-  if (event->keyval == GDK_KEY_Caps_Lock) {
-    caps_lock_down = event->type == GDK_KEY_PRESS;
-  }
-  if (event->keyval == GDK_KEY_Shift_Lock) {
-    shift_lock_down = event->type == GDK_KEY_PRESS;
-  }
+
   // Make the state match the actual pressed state of the lock keys, not the
   // lock states themselves.
   state |= (shift_lock_down || caps_lock_down) ? GDK_LOCK_MASK : 0x0;
@@ -114,13 +127,12 @@ void fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
                            fl_value_new_string(kGtkToolkit));
   fl_value_set_string_take(message, kKeyCodeKey,
                            fl_value_new_int(event->keyval));
-  fl_value_set_string_take(message, kModifiersKey,
-                           fl_value_new_int(state));
+  fl_value_set_string_take(message, kModifiersKey, fl_value_new_int(state));
   if (unicodeScalarValues != 0) {
     fl_value_set_string_take(message, kUnicodeScalarValuesKey,
                              fl_value_new_int(unicodeScalarValues));
   }
 
-  fl_basic_message_channel_send(self->channel, message, nullptr, nullptr,
-                                nullptr);
+  fl_basic_message_channel_send(self->channel, message, nullptr,
+                                self->response_callback, user_data);
 }
