@@ -338,7 +338,9 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     } else {
       // Reuse clipElement from prior surface.
       _clipElement = oldSurface._clipElement;
-      domRenderer.append(rootElement!, _clipElement!);
+      if (_clipElement != null) {
+        domRenderer.append(rootElement!, _clipElement!);
+      }
       oldSurface._clipElement = null;
     }
   }
