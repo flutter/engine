@@ -124,7 +124,9 @@ RasterThreadStatus RasterThreadMerger::DecrementLease() {
   if (!IsMergedUnSafe()) {
     return RasterThreadStatus::kRemainsUnmerged;
   }
-
+  if (!IsEnabledUnSafe()) {
+    return RasterThreadStatus::kRemainsMerged;
+  }
   FML_DCHECK(lease_term_ > 0)
       << "lease_term should always be positive when merged.";
   lease_term_--;

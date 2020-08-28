@@ -332,6 +332,9 @@ TEST(RasterThreadMerger, Enable) {
       fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
 
   raster_thread_merger_->Disable();
+  raster_thread_merger_->MergeWithLease(1);
+  ASSERT_FALSE(raster_thread_merger_->IsMerged());
+
   raster_thread_merger_->Enable();
   ASSERT_FALSE(raster_thread_merger_->IsMerged());
 
@@ -390,9 +393,26 @@ TEST(RasterThreadMerger, Disable) {
   raster_thread_merger_->UnMergeNow();
   ASSERT_TRUE(raster_thread_merger_->IsMerged());
 
+  {
+    auto decrement_result = raster_thread_merger_->DecrementLease();
+    ASSERT_EQ(fml::RasterThreadStatus::kRemainsMerged, decrement_result);
+  }
+
+  ASSERT_TRUE(raster_thread_merger_->IsMerged());
+
   raster_thread_merger_->Enable();
   raster_thread_merger_->UnMergeNow();
   ASSERT_FALSE(raster_thread_merger_->IsMerged());
+
+  raster_thread_merger_->MergeWithLease(1);
+
+  ASSERT_TRUE(raster_thread_merger_->IsMerged());
+
+  {
+    auto decrement_result = raster_thread_merger_->DecrementLease();
+    ASSERT_EQ(fml::RasterThreadStatus::kUnmergedNow, decrement_result);
+    ASSERT_FALSE(raster_thread_merger_->IsMerged());
+  }
 
   term1.Signal();
   term2.Signal();
