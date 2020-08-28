@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.BuildConfig;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.util.PathUtils;
@@ -47,20 +48,16 @@ public class FlutterLoader {
    * <p>The returned instance loads Flutter native libraries in the standard way. A singleton object
    * is used instead of static methods to facilitate testing without actually running native library
    * linking.
+   *
+   * @deprecated Use the {@link io.flutter.FlutterInjector} instead.
    */
+  @Deprecated
   @NonNull
   public static FlutterLoader getInstance() {
     if (instance == null) {
       instance = new FlutterLoader();
     }
     return instance;
-  }
-
-  @NonNull
-  public static FlutterLoader getInstanceForTest(FlutterApplicationInfo flutterApplicationInfo) {
-    FlutterLoader loader = new FlutterLoader();
-    loader.flutterApplicationInfo = flutterApplicationInfo;
-    return loader;
   }
 
   private boolean initialized = false;
@@ -89,6 +86,12 @@ public class FlutterLoader {
    */
   public void startInitialization(@NonNull Context applicationContext) {
     startInitialization(applicationContext, new Settings());
+  }
+
+  @VisibleForTesting
+  public void loadNativeLibrary() {
+    // Let this be mockable.
+    System.loadLibrary("flutter");
   }
 
   /**
@@ -128,7 +131,7 @@ public class FlutterLoader {
           public InitResult call() {
             ResourceExtractor resourceExtractor = initResources(appContext);
 
-            System.loadLibrary("flutter");
+            loadNativeLibrary();
 
             // Prefetch the default font manager as soon as possible on a background thread.
             // It helps to reduce time cost of engine setup that blocks the platform thread.
