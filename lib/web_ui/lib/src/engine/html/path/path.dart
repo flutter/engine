@@ -173,8 +173,8 @@ class SurfacePath implements ui.Path {
   @override
   void moveTo(double x, double y) {
     // remember our index
-    fLastMoveToIndex = pathRef.countPoints() + 1;
     int pointIndex = pathRef.growForVerb(SPathVerb.kMove, 0);
+    fLastMoveToIndex = pointIndex + 1;
     pathRef.setPoint(pointIndex, x, y);
     _resetAfterEdit();
   }
@@ -381,6 +381,7 @@ class SurfacePath implements ui.Path {
     int finalDirection =
         _hasOnlyMoveTos() ? direction : SPathDirection.kUnknown;
     int pointIndex0 = pathRef.growForVerb(SPathVerb.kMove, 0);
+    fLastMoveToIndex = pointIndex0 + 1;
     int pointIndex1 = pathRef.growForVerb(SPathVerb.kLine, 0);
     int pointIndex2 = pathRef.growForVerb(SPathVerb.kLine, 0);
     int pointIndex3 = pathRef.growForVerb(SPathVerb.kLine, 0);
@@ -971,6 +972,7 @@ class SurfacePath implements ui.Path {
       return;
     }
     int pointIndex = pathRef.growForVerb(SPathVerb.kMove, 0);
+    fLastMoveToIndex = pointIndex + 1;
     pathRef.setPoint(pointIndex, points[0].dx, points[0].dy);
     pathRef.growForRepeatedVerb(SPathVerb.kLine, pointCount - 1);
     for (int i = 1; i < pointCount; i++) {
