@@ -1627,9 +1627,9 @@ class _PaintBounds {
   double _bottom = -double.maxFinite;
 
   // Stack of transforms.
-  List<Matrix4> _transforms = <Matrix4>[];
+  final List<Matrix4> _transforms = <Matrix4>[];
   // Stack of clip bounds.
-  List<ui.Rect?> _clipStack = <ui.Rect?>[];
+  final List<ui.Rect?> _clipStack = <ui.Rect?>[];
   bool _currentMatrixIsIdentity = true;
   Matrix4 _currentMatrix = Matrix4.identity();
   bool _clipRectInitialized = false;
