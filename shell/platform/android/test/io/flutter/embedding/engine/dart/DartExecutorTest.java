@@ -16,9 +16,7 @@ import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.loader.FlutterLoader;
-
 import java.nio.ByteBuffer;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,15 +68,19 @@ public class DartExecutorTest {
 
   @Test
   public void itThrowsWhenCreatingADefaultDartEntrypointWithAnUninitializedFlutterLoader() {
-    assertThrows(AssertionError.class, () -> {
-      DartEntrypoint.createDefault();
-    });
+    assertThrows(
+        AssertionError.class,
+        () -> {
+          DartEntrypoint.createDefault();
+        });
   }
 
   @Test
   public void itHasReasonableDefaultsWhenFlutterLoaderIsInitialized() {
     when(mockFlutterLoader.initialized()).thenReturn(true);
     when(mockFlutterLoader.findAppBundlePath()).thenReturn("my/custom/path");
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
     DartEntrypoint entrypoint = DartEntrypoint.createDefault();
     assertEquals(entrypoint.pathToBundle, "my/custom/path");
     assertEquals(entrypoint.dartEntrypointFunctionName, "main");

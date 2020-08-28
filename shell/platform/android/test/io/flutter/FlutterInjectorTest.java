@@ -9,7 +9,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,9 +51,11 @@ public class FlutterInjectorTest {
   public void cannotBeChangedOnceRead() {
     FlutterInjector.instance();
 
-    assertThrows(IllegalStateException.class, () -> {
-      FlutterInjector.setInstance(
-        new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
-    });
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          FlutterInjector.setInstance(
+              new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
+        });
   }
 }

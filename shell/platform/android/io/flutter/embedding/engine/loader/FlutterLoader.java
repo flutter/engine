@@ -14,7 +14,6 @@ import android.util.Log;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import io.flutter.BuildConfig;
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -295,9 +294,7 @@ public class FlutterLoader {
             });
   }
 
-  /**
-   * Returns whether the FlutterLoader has finished loading the native library.
-   */
+  /** Returns whether the FlutterLoader has finished loading the native library. */
   public boolean initialized() {
     return initialized;
   }

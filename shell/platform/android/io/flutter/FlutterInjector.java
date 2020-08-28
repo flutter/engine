@@ -9,11 +9,12 @@ import android.support.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 
 /**
- * This class is a simple dependency injector for the relatively thin Android part of the Flutter engine.
+ * This class is a simple dependency injector for the relatively thin Android part of the Flutter
+ * engine.
  *
- * This simple solution is used facilitate testability without bringing in heavier app-development
- * centric dependency injection frameworks such as Guice or Dagger2 or spreading construction
- * injection everywhere.
+ * <p>This simple solution is used facilitate testability without bringing in heavier
+ * app-development centric dependency injection frameworks such as Guice or Dagger2 or spreading
+ * construction injection everywhere.
  */
 public final class FlutterInjector {
 
@@ -21,10 +22,10 @@ public final class FlutterInjector {
   private static boolean accessed;
 
   /**
-   * Use {@link FlutterInjector.Builder} to specify members to be injected via the static
-   * {@code FlutterInjector}.
+   * Use {@link FlutterInjector.Builder} to specify members to be injected via the static {@code
+   * FlutterInjector}.
    *
-   * This can only be called at the beginning of the program before the {@link #instance()} is
+   * <p>This can only be called at the beginning of the program before the {@link #instance()} is
    * accessed.
    */
   public static void setInstance(@NonNull FlutterInjector injector) {
@@ -40,9 +41,9 @@ public final class FlutterInjector {
   /**
    * Retrieve the static instance of the {@code FlutterInjector} to use in your program.
    *
-   * Once you access it, you can no longer change the values injected.
+   * <p>Once you access it, you can no longer change the values injected.
    *
-   * If no override is provided for the injector, reasonable defaults are provided.
+   * <p>If no override is provided for the injector, reasonable defaults are provided.
    */
   public static FlutterInjector instance() {
     accessed = true;
@@ -71,25 +72,23 @@ public final class FlutterInjector {
   /**
    * Returns whether the Flutter Android engine embedding should load the native C++ engine.
    *
-   * Useful for testing since JVM tests via Robolectric can't load native libraries.
+   * <p>Useful for testing since JVM tests via Robolectric can't load native libraries.
    */
   public boolean shouldLoadNative() {
     return shouldLoadNative;
   }
 
-  /**
-   * Returns the {@link FlutterLoader} instance to use for the Flutter Android engine embedding.
-   */
+  /** Returns the {@link FlutterLoader} instance to use for the Flutter Android engine embedding. */
   @NonNull
   public FlutterLoader flutterLoader() {
     return flutterLoader;
   }
 
   /**
-   * Builder used to supply a custom FlutterInjector instance to
-   * {@link FlutterInjector#setInstance(FlutterInjector)}.
+   * Builder used to supply a custom FlutterInjector instance to {@link
+   * FlutterInjector#setInstance(FlutterInjector)}.
    *
-   * Non-overriden values have reasonable defaults.
+   * <p>Non-overriden values have reasonable defaults.
    */
   public static final class Builder {
 
@@ -97,9 +96,9 @@ public final class FlutterInjector {
     /**
      * Sets whether the Flutter Android engine embedding should load the native C++ engine.
      *
-     * Useful for testing since JVM tests via Robolectric can't load native libraries.
+     * <p>Useful for testing since JVM tests via Robolectric can't load native libraries.
      *
-     * Defaults to true.
+     * <p>Defaults to true.
      */
     public Builder setShouldLoadNative(boolean shouldLoadNative) {
       this.shouldLoadNative = shouldLoadNative;
@@ -110,7 +109,7 @@ public final class FlutterInjector {
     /**
      * Sets a {@link FlutterLoader} override.
      *
-     * A reasonable default will be used if unspecified.
+     * <p>A reasonable default will be used if unspecified.
      */
     public Builder setFlutterLoader(@NonNull FlutterLoader flutterLoader) {
       this.flutterLoader = flutterLoader;
@@ -123,7 +122,8 @@ public final class FlutterInjector {
       }
     }
 
-    /** Builds a {@link FlutterInjector} from the builder. Unspecified properties will have
+    /**
+     * Builds a {@link FlutterInjector} from the builder. Unspecified properties will have
      * reasonable defaults.
      */
     public FlutterInjector build() {

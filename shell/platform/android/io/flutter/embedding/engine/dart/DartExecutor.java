@@ -260,10 +260,10 @@ public class DartExecutor implements BinaryMessenger {
       FlutterLoader flutterLoader = FlutterInjector.instance().flutterLoader();
 
       if (!flutterLoader.initialized()) {
-        throw new AssertionError("DartEntrypoints can only be created once a FlutterEngine is created.");
+        throw new AssertionError(
+            "DartEntrypoints can only be created once a FlutterEngine is created.");
       }
-      return new DartEntrypoint(
-        flutterLoader.findAppBundlePath(), "main");
+      return new DartEntrypoint(flutterLoader.findAppBundlePath(), "main");
     }
 
     /** The path within the AssetManager where the app will look for assets. */

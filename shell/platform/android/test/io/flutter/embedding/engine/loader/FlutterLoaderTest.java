@@ -6,23 +6,8 @@ package io.flutter.embedding.engine.loader;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import android.content.res.AssetManager;
 import io.flutter.FlutterInjector;
-import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.embedding.engine.loader.FlutterLoader;
-
-import java.nio.ByteBuffer;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
