@@ -63,6 +63,7 @@ import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,9 +72,10 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Deprecated Android view containing a Flutter app.
  *
- * <p>Deprecation: {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
+ * @deprecated {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
  * this class. See https://flutter.dev/go/android-project-migration for more migration details.
  */
+@Deprecated
 public class FlutterView extends SurfaceView
     implements BinaryMessenger, TextureRegistry, MouseCursorPlugin.MouseCursorViewDelegate {
   /**
