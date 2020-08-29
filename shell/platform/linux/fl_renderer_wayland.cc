@@ -10,13 +10,10 @@
 #include <gdk/gdkwayland.h>
 #include <wayland-egl-core.h>
 
-static void fl_renderer_wayland_on_window_map(GtkWidget* widget,
-                                              FlRendererWayland* self);
-static void fl_renderer_wayland_on_window_unmap(GtkWidget* widget,
-                                                FlRendererWayland* self);
-
 struct _FlRendererWayland {
   FlRenderer parent_instance;
+  wl_registry* registry;
+  wl_subcompositor* subcompositor;
 
   struct {
     wl_subsurface* subsurface;
@@ -34,32 +31,20 @@ struct _FlRendererWayland {
   } resource;
 };
 
-static wl_registry* registry_global = nullptr;
-static wl_subcompositor* subcompositor_global = nullptr;
-
-// All globals in this array will be automatically bound in
-// registry_handle_global() if available.
-static struct {
-  void** global;
-  const wl_interface* interface;
-} globals[] = {{reinterpret_cast<void**>(&subcompositor_global),
-                &wl_subcompositor_interface}};
+G_DEFINE_TYPE(FlRendererWayland, fl_renderer_wayland, fl_renderer_get_type())
 
 // wl_registry.global callback.
-// Binds to all globals in the globals array.
-static void registry_handle_global(void*,
+static void registry_handle_global(void* data,
                                    wl_registry* registry,
                                    uint32_t id,
                                    const char* name,
                                    uint32_t max_version) {
-  for (unsigned i = 0; i < sizeof(globals) / sizeof(globals[0]); i++) {
-    const wl_interface* interface = globals[i].interface;
-    if (strcmp(name, interface->name) == 0) {
-      uint32_t version =
-          MIN(static_cast<uint32_t>(interface->version), max_version);
-      *globals[i].global = static_cast<wl_subcompositor*>(
-          wl_registry_bind(registry, id, interface, version));
-    }
+  FlRendererWayland* self = FL_RENDERER_WAYLAND(data);
+  if (strcmp(name, wl_subcompositor_interface.name) == 0) {
+    uint32_t version = MIN(
+        static_cast<uint32_t>(wl_subcompositor_interface.version), max_version);
+    self->subcompositor = static_cast<wl_subcompositor*>(
+        wl_registry_bind(registry, id, &wl_subcompositor_interface, version));
   }
 }
 
@@ -75,8 +60,8 @@ static const wl_registry_listener registry_listener = {
 // The first time this function is called, all Wayland globals are initialized
 // (which blocks for a round trip to the Wayland compositor).
 // Subsequent calls return immediately.
-static void lazy_initialize_wayland_globals() {
-  if (registry_global) {
+static void fl_renderer_wayland_lazy_init_wl(FlRendererWayland* self) {
+  if (self->registry) {
     return;
   }
 
@@ -85,12 +70,10 @@ static void lazy_initialize_wayland_globals() {
   g_return_if_fail(gdk_display);
 
   wl_display* display = gdk_wayland_display_get_wl_display(gdk_display);
-  registry_global = wl_display_get_registry(display);
-  wl_registry_add_listener(registry_global, &registry_listener, nullptr);
+  self->registry = wl_display_get_registry(display);
+  wl_registry_add_listener(self->registry, &registry_listener, self);
   wl_display_roundtrip(display);
 }
-
-G_DEFINE_TYPE(FlRendererWayland, fl_renderer_wayland, fl_renderer_get_type())
 
 // Returns the GTK widget at the top of the view's widget hierarchy.
 static GtkWidget* fl_renderer_wayland_get_toplevel_widget(
@@ -103,11 +86,8 @@ static GtkWidget* fl_renderer_wayland_get_toplevel_widget(
 static void fl_renderer_wayland_dispose(GObject* object) {
   FlRendererWayland* self = FL_RENDERER_WAYLAND(object);
 
-  GtkWidget* toplevel = fl_renderer_wayland_get_toplevel_widget(self);
-  g_signal_handlers_disconnect_by_func(
-      G_OBJECT(toplevel), (gpointer)fl_renderer_wayland_on_window_map, self);
-  g_signal_handlers_disconnect_by_func(
-      G_OBJECT(toplevel), (gpointer)fl_renderer_wayland_on_window_unmap, self);
+  g_clear_pointer(&self->registry, wl_registry_destroy);
+  g_clear_pointer(&self->subcompositor, wl_subcompositor_destroy);
 
   g_clear_pointer(&self->subsurface.subsurface, wl_subsurface_destroy);
   g_clear_pointer(&self->subsurface.egl_window, wl_egl_window_destroy);
@@ -127,8 +107,8 @@ static EGLDisplay fl_renderer_wayland_create_display(FlRenderer* /*renderer*/) {
   return eglGetDisplay(gdk_wayland_display_get_wl_display(gdk_display));
 }
 
-static void fl_renderer_wayland_on_window_map(GtkWidget* widget,
-                                              FlRendererWayland* self) {
+static void fl_renderer_wayland_on_window_map(FlRendererWayland* self,
+                                              GtkWidget* widget) {
   if (self->subsurface.subsurface) {
     g_error("fl_renderer_wayland_on_window_map: already has a subsurface");
     return;
@@ -140,8 +120,8 @@ static void fl_renderer_wayland_on_window_map(GtkWidget* widget,
   wl_compositor* compositor =
       gdk_wayland_display_get_wl_compositor(gdk_display);
 
-  lazy_initialize_wayland_globals();
-  if (!subcompositor_global) {
+  fl_renderer_wayland_lazy_init_wl(self);
+  if (!self->subcompositor) {
     g_error(
         "fl_renderer_wayland_on_window_map: could not bind to "
         "wl_subcompositor");
@@ -162,7 +142,7 @@ static void fl_renderer_wayland_on_window_map(GtkWidget* widget,
   }
 
   self->subsurface.subsurface = wl_subcompositor_get_subsurface(
-      subcompositor_global, self->subsurface.surface, toplevel_surface);
+      self->subcompositor, self->subsurface.surface, toplevel_surface);
   if (!self->subsurface.subsurface) {
     g_error("fl_renderer_wayland_on_window_map: could not create subsurface");
     return;
@@ -181,8 +161,8 @@ static void fl_renderer_wayland_on_window_map(GtkWidget* widget,
   wl_surface_commit(self->subsurface.surface);
 }
 
-static void fl_renderer_wayland_on_window_unmap(GtkWidget* widget,
-                                                FlRendererWayland* self) {
+static void fl_renderer_wayland_on_window_unmap(FlRendererWayland* self,
+                                                GtkWidget* widget) {
   g_clear_pointer(&self->subsurface.subsurface, wl_subsurface_destroy);
 }
 
@@ -264,12 +244,14 @@ static gboolean fl_renderer_wayland_create_surfaces(FlRenderer* renderer,
                 "Renderer does not have a widget");
     return FALSE;
   }
-  g_signal_connect(toplevel, "map",
-                   G_CALLBACK(fl_renderer_wayland_on_window_map), self);
-  g_signal_connect(toplevel, "unmap",
-                   G_CALLBACK(fl_renderer_wayland_on_window_unmap), self);
+  g_signal_connect_object(toplevel, "map",
+                          G_CALLBACK(fl_renderer_wayland_on_window_map), self,
+                          G_CONNECT_SWAPPED);
+  g_signal_connect_object(toplevel, "unmap",
+                          G_CALLBACK(fl_renderer_wayland_on_window_unmap), self,
+                          G_CONNECT_SWAPPED);
   if (gtk_widget_get_mapped(toplevel)) {
-    fl_renderer_wayland_on_window_map(toplevel, self);
+    fl_renderer_wayland_on_window_map(self, toplevel);
   }
 
   return TRUE;
