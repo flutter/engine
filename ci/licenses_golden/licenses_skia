@@ -1,4 +1,4 @@
-Signature: daf6475810f4d5d537971348a44d2fd1
+Signature: 5026cdd2246885cd6c41a55ea79c78c9
 
 UNUSED LICENSES:
 
@@ -3372,7 +3372,6 @@ FILE: ../../../third_party/skia/src/gpu/GrDriverBugWorkarounds.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFPArgs.h
 FILE: ../../../third_party/skia/src/gpu/GrProxyProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrProxyProvider.h
-FILE: ../../../third_party/skia/src/gpu/GrRenderTargetProxyPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceProviderPriv.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCClipPath.cpp
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCClipPath.h
@@ -3896,6 +3895,7 @@ FILE: ../../../third_party/skia/gm/encode_color_types.cpp
 FILE: ../../../third_party/skia/gm/userfont.cpp
 FILE: ../../../third_party/skia/gm/ycbcrimage.cpp
 FILE: ../../../third_party/skia/include/core/SkYUVAInfo.h
+FILE: ../../../third_party/skia/include/core/SkYUVAPixmaps.h
 FILE: ../../../third_party/skia/include/gpu/GrBackendSurfaceMutableState.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypes.h
@@ -3913,8 +3913,7 @@ FILE: ../../../third_party/skia/src/core/SkMatrixProvider.h
 FILE: ../../../third_party/skia/src/core/SkRuntimeEffectPriv.h
 FILE: ../../../third_party/skia/src/core/SkVM_fwd.h
 FILE: ../../../third_party/skia/src/core/SkYUVAInfo.cpp
-FILE: ../../../third_party/skia/src/core/SkYUVAInfoPriv.cpp
-FILE: ../../../third_party/skia/src/core/SkYUVAInfoPriv.h
+FILE: ../../../third_party/skia/src/core/SkYUVAPixmaps.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendSemaphore.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendSurfaceMutableStateImpl.h
 FILE: ../../../third_party/skia/src/gpu/GrBackendUtils.h
@@ -4116,6 +4115,7 @@ FILE: ../../../third_party/skia/samplecode/Sample3D.cpp
 FILE: ../../../third_party/skia/samplecode/SampleAudio.cpp
 FILE: ../../../third_party/skia/samplecode/SampleFitCubicToCircle.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSimpleStroker.cpp
+FILE: ../../../third_party/skia/samplecode/SampleTiming.cpp
 FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
 FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.h
@@ -4923,7 +4923,6 @@ FILE: ../../../third_party/skia/docs/examples/Path_dump_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_empty_constructor.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_equal_operator.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_getBounds.cpp
-FILE: ../../../third_party/skia/docs/examples/Path_getConvexity.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_getConvexityOrUnknown.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_getFillType.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_getGenerationID.cpp
@@ -4949,7 +4948,6 @@ FILE: ../../../third_party/skia/docs/examples/Path_lineTo.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_lineTo_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_moveTo.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_moveTo_2.cpp
-FILE: ../../../third_party/skia/docs/examples/Path_notequal_operator.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_offset.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_offset_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_quadTo.cpp
@@ -4965,7 +4963,6 @@ FILE: ../../../third_party/skia/docs/examples/Path_reset.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_reverseAddPath.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_rewind.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_serialize.cpp
-FILE: ../../../third_party/skia/docs/examples/Path_setConvexity.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_setFillType.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_setIsVolatile.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_setLastPt.cpp
