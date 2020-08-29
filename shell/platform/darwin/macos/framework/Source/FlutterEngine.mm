@@ -262,7 +262,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   const FlutterCustomTaskRunners custom_task_runners = {
       .struct_size = sizeof(FlutterCustomTaskRunners),
       .platform_task_runner = &cocoa_task_runner_description,
-      .render_task_runner = &cocoa_task_runner_description,
+      .render_task_runner = nullptr,
   };
   flutterArguments.custom_task_runners = &custom_task_runners;
 
