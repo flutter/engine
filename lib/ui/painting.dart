@@ -3221,6 +3221,27 @@ class Gradient extends Shader {
   }
 }
 
+// A shader (as used by [Paint.shader]) that runs provided SKSL code.
+// TODO(clocksmith): this will eventually take in the byte format rather than a string.
+class FragmentShader extends Shader {
+  @pragma('vm:entry-point')
+  FragmentShader(String source) : 
+    assert(source != null), // ignore: unnecessary_null_comparison
+    super._() {
+    _constructor();
+    _initWithSource(source);
+  }
+
+  void _constructor() native 'FragmentShader_constructor';
+  void _initWithSource(String source) native 'FragmentShader_initWithSource';
+
+  /// TODO(clocksmith): Public docs.
+  void setTime(double time) native 'FragmentShader_setTime';  
+
+  /// TODO(clocksmith): Public Docs. 
+  void setImage(Image image, TileMode tmx, TileMode tmy, Float64List matrix4) native 'FragmentShader_setImage';
+}
+
 /// A shader (as used by [Paint.shader]) that tiles an image.
 class ImageShader extends Shader {
   /// Creates an image-tiling shader. The first argument specifies the image to
