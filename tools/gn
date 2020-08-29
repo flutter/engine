@@ -85,6 +85,7 @@ def to_gn_args(args):
     gn_args['enable_bitcode'] = args.bitcode
 
     # Skia GN args.
+    gn_args['skia_enable_sksl_interpreter'] = True
     gn_args['skia_enable_flutter_defines'] = True # Enable Flutter API guards in Skia.
     gn_args['skia_use_dng_sdk'] = False    # RAW image handling.
     gn_args['skia_use_sfntly'] = False     # PDF handling dependency.
