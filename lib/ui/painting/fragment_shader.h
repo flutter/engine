@@ -53,9 +53,6 @@ class FragmentShader : public Shader {
   // created once and re-used.
   sk_sp<SkRuntimeEffect> runtime_effect_;
 
-  // TODO(clocksmith): Determine if this can be re-used when setting shader.
-  // If not, then it does not need to be a member variable and can be created
-  // on the stack each time it is needed.
   std::unique_ptr<SkRuntimeShaderBuilder> builder_;
 };
 

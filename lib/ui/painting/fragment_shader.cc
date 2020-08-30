@@ -61,6 +61,9 @@ void FragmentShader::initEffect(SkString sksl) {
 // After any uniforms/children are set on the builser, the shader is 
 // created and set.
 void FragmentShader::setShader() {
+  // This can be re-used after
+  // https://github.com/google/skia/commit/b6bd0d2094b6d81cd22eba60ea91e311fe536d27
+  // TODO(clocksmith): Only create one builder for the life of the FragmentShader.
   builder_ = std::make_unique<SkRuntimeShaderBuilder>(runtime_effect_);
 
   // Only update the time if the uniform is declared in the program.
