@@ -18,13 +18,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.Lifecycle;
+import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.app.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import java.util.Arrays;
@@ -369,7 +369,7 @@ import java.util.Arrays;
 
     String appBundlePathOverride = host.getAppBundlePath();
     if (appBundlePathOverride == null || appBundlePathOverride.isEmpty()) {
-      appBundlePathOverride = FlutterLoader.getInstance().findAppBundlePath();
+      appBundlePathOverride = FlutterInjector.instance().flutterLoader().findAppBundlePath();
     }
 
     // Configure the Dart entrypoint and execute it.
