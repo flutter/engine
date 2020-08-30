@@ -465,6 +465,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/history.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/backdrop_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/clip.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/debug_canvas_reuse_overlay.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/image_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/offset.dart
@@ -693,6 +694,7 @@ FILE: ../../../flutter/shell/platform/android/external_view_embedder/surface_poo
 FILE: ../../../flutter/shell/platform/android/external_view_embedder/surface_pool_unittests.cc
 FILE: ../../../flutter/shell/platform/android/flutter_main.cc
 FILE: ../../../flutter/shell/platform/android/flutter_main.h
+FILE: ../../../flutter/shell/platform/android/io/flutter/FlutterInjector.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/Log.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityDelegate.java
@@ -1161,6 +1163,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/flutter_runner_fakes.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/flutter_runner_product_configuration.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/flutter_runner_product_configuration.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl_unittest.cc

@@ -536,8 +536,7 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
 
@@ -586,8 +585,7 @@ TEST_F(ShellTest,
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
 
@@ -595,6 +593,46 @@ TEST_F(ShellTest,
   end_frame_latch.Wait();
 
   ASSERT_TRUE(end_frame_called);
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent end_frame_latch;
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger;
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> thread_merger) {
+        raster_thread_merger = thread_merger;
+        end_frame_latch.Signal();
+      };
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kSuccess, true);
+  // Set resubmit once to trigger thread merging.
+  external_view_embedder->SetResubmitOnce();
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  PumpOneFrame(shell.get());
+
+  end_frame_latch.Wait();
+  ASSERT_TRUE(raster_thread_merger->IsEnabled());
+
+  ValidateDestroyPlatformView(shell.get());
+  ASSERT_TRUE(raster_thread_merger->IsEnabled());
+
+  // Validate the platform view can be recreated and destroyed again
+  ValidateShell(shell.get());
+  ASSERT_TRUE(raster_thread_merger->IsEnabled());
 
   DestroyShell(std::move(shell));
 }
@@ -637,8 +675,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
 
@@ -667,14 +704,14 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
 }
 
 TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
-  const size_t ThreadMergingLease = 10;
+  const size_t kThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
         if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
-          raster_thread_merger->MergeWithLease(ThreadMergingLease);
+          raster_thread_merger->MergeWithLease(kThreadMergingLease);
         }
         end_frame_latch.Signal();
       };
@@ -706,8 +743,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
 
@@ -773,8 +809,7 @@ TEST_F(ShellTest,
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -822,8 +857,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -888,8 +922,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1460,8 +1493,7 @@ TEST_F(ShellTest, Screenshot) {
         this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
-        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false,
-        0);
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
     root->Add(picture_layer);
   };
 
@@ -1747,7 +1779,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   auto picture_layer = std::make_shared<PictureLayer>(
       SkPoint::Make(0, 0),
       flutter::SkiaGPUObject<SkPicture>({MakeSizedPicture(100, 100), queue}),
-      false, false, 0);
+      false, false);
   picture_layer->set_paint_bounds(SkRect::MakeWH(100, 100));
 
   // 2. Rasterize the picture and the picture layer in the raster cache.

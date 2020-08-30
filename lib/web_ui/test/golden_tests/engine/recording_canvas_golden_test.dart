@@ -27,7 +27,8 @@ void testMain() async {
 
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
-      { Rect region = const Rect.fromLTWH(0, 0, 500, 500) }) async {
+      { Rect region = const Rect.fromLTWH(0, 0, 500, 500),
+        bool write = false }) async {
 
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
 
@@ -50,7 +51,8 @@ void testMain() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      await matchGoldenFile('paint_bounds_for_$fileName.png', region: region);
+      await matchGoldenFile('paint_bounds_for_$fileName.png', region: region,
+        write: write);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -90,8 +92,8 @@ void testMain() async {
         testPaint);
     rc.endRecording();
     // The off by one is due to the minimum stroke width of 1.
-    expect(rc.pictureBounds,
-        const Rect.fromLTRB(49.0, 99.0, screenWidth, 141.0));
+    expect(
+        rc.pictureBounds, const Rect.fromLTRB(49.0, 99.0, screenWidth, 141.0));
     await _checkScreenshot(rc, 'draw_line_exceeding_limits');
   });
 
@@ -197,8 +199,11 @@ void testMain() async {
     rc.transform(matrix);
     rc.drawRect(const Rect.fromLTRB(10, 20, 30, 40), testPaint);
     rc.endRecording();
-    expect(rc.pictureBounds,
-        within(distance: 0.001, from: const Rect.fromLTRB(168.0, 283.6, 224.0, 368.4)));
+    expect(
+        rc.pictureBounds,
+        within(
+            distance: 0.001,
+            from: const Rect.fromLTRB(168.0, 283.6, 224.0, 368.4)));
     await _checkScreenshot(rc, 'complex_transform');
   });
 
@@ -268,16 +273,14 @@ void testMain() async {
     RecordingCanvas rc = RecordingCanvas(screenRect);
     rc.drawCircle(const Offset(20, 20), 10.0, testPaint);
     rc.endRecording();
-    expect(
-        rc.pictureBounds, const Rect.fromLTRB(10.0, 10.0, 30.0, 30.0));
+    expect(rc.pictureBounds, const Rect.fromLTRB(10.0, 10.0, 30.0, 30.0));
 
     // Paint bounds of a union of two circles.
     rc = RecordingCanvas(screenRect);
     rc.drawCircle(const Offset(20, 20), 10.0, testPaint);
     rc.drawCircle(const Offset(200, 300), 100.0, testPaint);
     rc.endRecording();
-    expect(
-        rc.pictureBounds, const Rect.fromLTRB(10.0, 10.0, 300.0, 400.0));
+    expect(rc.pictureBounds, const Rect.fromLTRB(10.0, 10.0, 300.0, 400.0));
     await _checkScreenshot(rc, 'draw_circle');
   });
 
@@ -285,8 +288,7 @@ void testMain() async {
     final RecordingCanvas rc = RecordingCanvas(screenRect);
     rc.drawImage(TestImage(), const Offset(50, 100), Paint());
     rc.endRecording();
-    expect(
-        rc.pictureBounds, const Rect.fromLTRB(50.0, 100.0, 70.0, 110.0));
+    expect(rc.pictureBounds, const Rect.fromLTRB(50.0, 100.0, 70.0, 110.0));
   });
 
   test('Computes paint bounds for draw image rect', () {
@@ -294,8 +296,7 @@ void testMain() async {
     rc.drawImageRect(TestImage(), const Rect.fromLTRB(1, 1, 20, 10),
         const Rect.fromLTRB(5, 6, 400, 500), Paint());
     rc.endRecording();
-    expect(
-        rc.pictureBounds, const Rect.fromLTRB(5.0, 6.0, 400.0, 500.0));
+    expect(rc.pictureBounds, const Rect.fromLTRB(5.0, 6.0, 400.0, 500.0));
   });
 
   test('Computes paint bounds for single-line draw paragraph', () async {
@@ -334,14 +335,14 @@ void testMain() async {
   test('Should exclude painting outside simple clipRect', () async {
     // One clipped line.
     RecordingCanvas rc = RecordingCanvas(screenRect);
-    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100));
+    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.drawLine(const Offset(10, 11), const Offset(20, 21), testPaint);
     rc.endRecording();
     expect(rc.pictureBounds, Rect.zero);
 
     // Two clipped lines.
     rc = RecordingCanvas(screenRect);
-    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100));
+    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.drawLine(const Offset(10, 11), const Offset(20, 21), testPaint);
     rc.drawLine(const Offset(52, 53), const Offset(55, 56), testPaint);
     rc.endRecording();
@@ -353,14 +354,14 @@ void testMain() async {
 
   test('Should include intersection of clipRect and painting', () async {
     RecordingCanvas rc = RecordingCanvas(screenRect);
-    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100));
+    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.drawRect(const Rect.fromLTRB(20, 60, 120, 70), testPaint);
     rc.endRecording();
     expect(rc.pictureBounds, const Rect.fromLTRB(50, 60, 100, 70));
     await _checkScreenshot(rc, 'clip_rect_intersects_paint_left_to_right');
 
     rc = RecordingCanvas(screenRect);
-    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100));
+    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.drawRect(const Rect.fromLTRB(60, 20, 70, 200), testPaint);
     rc.endRecording();
     expect(rc.pictureBounds, const Rect.fromLTRB(60, 50, 70, 100));
@@ -369,9 +370,9 @@ void testMain() async {
 
   test('Should intersect rects for multiple clipRect calls', () async {
     final RecordingCanvas rc = RecordingCanvas(screenRect);
-    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100));
+    rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.scale(2.0, 2.0);
-    rc.clipRect(const Rect.fromLTRB(30, 30, 45, 45));
+    rc.clipRect(const Rect.fromLTRB(30, 30, 45, 45), ClipOp.intersect);
     rc.drawRect(const Rect.fromLTRB(10, 30, 60, 35), testPaint);
     rc.endRecording();
 
@@ -389,7 +390,8 @@ void testMain() async {
 
     expect(
       rc.pictureBounds,
-      within(distance: 0.05, from: const Rect.fromLTRB(17.9, 28.5, 103.5, 114.1)),
+      within(
+          distance: 0.05, from: const Rect.fromLTRB(17.9, 28.5, 103.5, 114.1)),
     );
     await _checkScreenshot(rc, 'path_with_shadow');
   });
@@ -406,12 +408,11 @@ void testMain() async {
     rc
       ..translate(0, 100)
       ..scale(1, -1)
-      ..clipRect(const Rect.fromLTRB(0, 0, 100, 50))
+      ..clipRect(const Rect.fromLTRB(0, 0, 100, 50), ClipOp.intersect)
       ..drawRect(const Rect.fromLTRB(0, 0, 100, 100), Paint());
     rc.endRecording();
 
-    expect(
-        rc.pictureBounds, const Rect.fromLTRB(0.0, 50.0, 100.0, 100.0));
+    expect(rc.pictureBounds, const Rect.fromLTRB(0.0, 50.0, 100.0, 100.0));
     await _checkScreenshot(rc, 'scale_negative');
   });
 
@@ -421,13 +422,16 @@ void testMain() async {
     rc
       ..translate(50, 50)
       ..rotate(math.pi / 4.0)
-      ..clipRect(const Rect.fromLTWH(-20, -20, 40, 40))
+      ..clipRect(const Rect.fromLTWH(-20, -20, 40, 40), ClipOp.intersect)
       ..drawRect(const Rect.fromLTWH(-80, -80, 160, 160), Paint());
     rc.endRecording();
 
     expect(
       rc.pictureBounds,
-      within(distance: 0.001, from: Rect.fromCircle(center: const Offset(50, 50), radius: 20 * math.sqrt(2))),
+      within(
+          distance: 0.001,
+          from: Rect.fromCircle(
+              center: const Offset(50, 50), radius: 20 * math.sqrt(2))),
     );
     await _checkScreenshot(rc, 'clip_rect_rotated');
   });
@@ -496,6 +500,30 @@ void testMain() async {
     rc.restore();
     rc.endRecording();
     await _checkScreenshot(rc, 'path_with_line_and_roundrect');
+  });
+
+  // Regression test for https://github.com/flutter/flutter/issues/64371.
+  test('Should draw line following a polygon without closing path.', () async {
+    final RecordingCanvas rc =
+    RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
+    rc.save();
+    rc.translate(50.0, 100.0);
+    final Path path = Path();
+    // Draw a vertical small line (caret).
+    path.addPolygon(<Offset>[Offset(0, 10), Offset(20,5), Offset(50,10)],
+        false);
+    path.lineTo(60, 80);
+    path.lineTo(0, 80);
+    path.close();
+    rc.drawPath(
+        path,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0
+          ..color = const Color(0xFF404000));
+    rc.restore();
+    rc.endRecording();
+    await _checkScreenshot(rc, 'path_with_addpolygon');
   });
 
   test('should include paint spread in bounds estimates', () async {
@@ -655,12 +683,13 @@ void testMain() async {
   });
 }
 
-typedef PaintSpreadPainter = void Function(RecordingCanvas canvas, SurfacePaint paint);
+typedef PaintSpreadPainter = void Function(
+    RecordingCanvas canvas, SurfacePaint paint);
 
 const String _base64Encoded20x20TestImage = 'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUC'
     'AIAAAAC64paAAAACXBIWXMAAC4jAAAuIwF4pT92AAAA'
-  'B3RJTUUH5AMFFBksg4i3gQAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAj'
-  'SURBVDjLY2TAC/7jlWVioACMah4ZmhnxpyHG0QAb1UyZZgBjWAIm/clP0AAAAABJRU5ErkJggg==';
+    'B3RJTUUH5AMFFBksg4i3gQAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAj'
+    'SURBVDjLY2TAC/7jlWVioACMah4ZmhnxpyHG0QAb1UyZZgBjWAIm/clP0AAAAABJRU5ErkJggg==';
 
 HtmlImage _createRealTestImage() {
   return HtmlImage(

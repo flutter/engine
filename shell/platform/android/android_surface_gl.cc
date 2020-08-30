@@ -35,7 +35,11 @@ AndroidSurfaceGL::AndroidSurfaceGL(
 AndroidSurfaceGL::~AndroidSurfaceGL() = default;
 
 void AndroidSurfaceGL::TeardownOnScreenContext() {
+  // When the onscreen surface is destroyed, the context and the surface
+  // instance should be deleted. Issue:
+  // https://github.com/flutter/flutter/issues/64414
   android_context_->ClearCurrent();
+  onscreen_surface_ = nullptr;
 }
 
 bool AndroidSurfaceGL::IsValid() const {
@@ -109,7 +113,7 @@ bool AndroidSurfaceGL::GLContextClearCurrent() {
   return android_context_->ClearCurrent();
 }
 
-bool AndroidSurfaceGL::GLContextPresent() {
+bool AndroidSurfaceGL::GLContextPresent(uint32_t fbo_id) {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
   return onscreen_surface_->SwapBuffers();
