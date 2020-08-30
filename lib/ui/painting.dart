@@ -2846,7 +2846,7 @@ class ImageFilter {
         _filterQuality = null,
         _type = _kTypeBlur;
 
-  /// Creates an image filter that applies a matrix transformation.
+  /// Creates an image filter that applies a 2D matrix transformation.
   ///
   /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
@@ -2858,6 +2858,16 @@ class ImageFilter {
         _type = _kTypeMatrix {
     if (matrix4.length != 16)
       throw ArgumentError('"matrix4" must have 16 entries.');
+  }
+
+  /// Creates an image filter that applies a convolution.
+  ImageFilter.matrixConvolution(int kernelWidth, int kernelHeight, Float64List kernel)
+      : assert(kernel != null), // ignore: unnecessary_null_comparison
+        _data = Float64List.fromList(kernel), // TODO(panmari): Pass along kernel width/height.
+        _filterQuality = null,
+        _type = _kTypeMatrixConvolution {
+    if (kernel.length != kernelWidth * kernelHeight)
+      throw ArgumentError('"kernel" must have kernelWidth * kernelHeight entries.');
   }
 
   static Float64List _makeList(double a, double b) {
@@ -2875,6 +2885,7 @@ class ImageFilter {
   // The type of SkImageFilter class to create for Skia.
   static const int _kTypeBlur = 0;   // MakeBlurFilter
   static const int _kTypeMatrix = 1; // MakeMatrixFilterRowMajor255
+  static const int _kTypeMatrixConvolution = 2; // TODO(panmari): What goes here?
 
   @override
   bool operator ==(Object other) {
@@ -2892,6 +2903,8 @@ class ImageFilter {
         return _ImageFilter.blur(this);
       case _kTypeMatrix:
         return _ImageFilter.matrix(this);
+      case _kTypeMatrixConvolution:
+        return _ImageFilter.matrixConvolution(this);
       default:
         throw StateError('Unknown mode $_type for ImageFilter.');
     }
@@ -2907,6 +2920,8 @@ class ImageFilter {
         return 'ImageFilter.blur(${_data[0]}, ${_data[1]})';
       case _kTypeMatrix:
         return 'ImageFilter.matrix($_data, $_filterQuality)';
+      case _kTypeMatrixConvolution:
+        return 'ImageFilter.matrixConvolution($_data)';
       default:
         return 'Unknown ImageFilter type. This is an error. If you\'re seeing this, please file an issue at https://github.com/flutter/flutter/issues/new.';
     }
@@ -2943,6 +2958,16 @@ class _ImageFilter extends NativeFieldWrapperClass2 {
     _initMatrix(creator._data, creator._filterQuality!.index);
   }
   void _initMatrix(Float64List matrix4, int filterQuality) native 'ImageFilter_initMatrix';
+
+  _ImageFilter.matrixConvolution(this.creator)
+    : assert(creator != null), // ignore: unnecessary_null_comparison
+      assert(creator._type == ImageFilter._kTypeMatrixConvolution) {
+    if (creator._data.length != 9)
+      throw ArgumentError('"kernel" must have 9 entries.'); // TODO(panmari): Fix message.
+    _constructor();
+    _initMatrixConvolution(3, 3, creator._data);
+  }
+  void _initMatrixConvolution(int kernelWidth, int kernelHeight, Float64List kernel) native 'ImageFilter_initMatrixConvolution';
 
   /// The original Dart object that created the native wrapper, which retains
   /// the values used for the filter.
