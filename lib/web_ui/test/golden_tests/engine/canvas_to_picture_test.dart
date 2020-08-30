@@ -9,7 +9,6 @@ import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
 import 'package:test/test.dart';
 
-void main() async {
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
