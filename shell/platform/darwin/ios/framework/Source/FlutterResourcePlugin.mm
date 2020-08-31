@@ -8,7 +8,6 @@
 #include <Foundation/Foundation.h>
 #include <UIKit/UIKit.h>
 
-
 @implementation FlutterResourcePlugin
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
