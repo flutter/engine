@@ -146,6 +146,7 @@ def RunCCTests(build_dir, filter):
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
     RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():
