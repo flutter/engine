@@ -47,7 +47,7 @@ bool _isFlutterEntry(dynamic state) {
 ///  * [MultiEntriesBrowserHistory]: which creates a set of states that records
 ///    the navigating events happened in the framework.
 abstract class BrowserHistory {
-  ui.VoidCallback? _unsubscribe;
+  late ui.VoidCallback _unsubscribe;
 
   /// The strategy to interact with html browser history.
   LocationStrategy? get locationStrategy => _locationStrategy;
@@ -88,6 +88,9 @@ abstract class BrowserHistory {
   /// The path of the current location of the user's browser.
   String get currentPath => locationStrategy?.path ?? '/';
 
+  /// The state of the current location of the user's browser.
+  dynamic get currentState => locationStrategy?.state;
+
   /// Update the url with the given [routeName] and [state].
   void setRouteName(String? routeName, {dynamic? state});
 
@@ -119,10 +122,7 @@ abstract class BrowserHistory {
     if (strategy == null) {
       return;
     }
-
-    assert(_unsubscribe != null);
-    _unsubscribe!();
-    _unsubscribe = null;
+    _unsubscribe();
 
     await tearDown();
   }
@@ -131,12 +131,17 @@ abstract class BrowserHistory {
 /// A browser history class that creates a set of browser history entries to
 /// support browser backward and forward button natively.
 ///
-/// This class creates a browser history entry every time the framework reports
+/// This class pushes a browser history entry every time the framework reports
 /// route changes so that users can use the backward and forward buttons to
 /// navigate within the application.
 class MultiEntriesBrowserHistory extends BrowserHistory {
-  int _flutterHistoryCount = 0;
-  dynamic get _currentState => html.window.history.state;
+  int _lastSeenSerialCount = 0;
+  int get _getCurrentSerialCount {
+    if (_hasSerialCount(currentState)) {
+      return currentState['serialCount'] as int;
+    }
+    return 0;
+  }
 
   dynamic _tagWithSerialCount(dynamic originialState, int count) {
     return <dynamic, dynamic> {
@@ -149,28 +154,34 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     return state is Map && state['serialCount'] != null;
   }
 
-  void _updateHistoryCount() {
-    if (_hasSerialCount(_currentState)) {
-      _flutterHistoryCount = _currentState['serialCount'];
-    } else {
-      _flutterHistoryCount = 0;
-    }
-  }
-
   @override
   void setRouteName(String? routeName, {dynamic? state}) {
     if (locationStrategy != null && routeName != null) {
-      _updateHistoryCount();
-      _flutterHistoryCount += 1;
-      locationStrategy!.pushState(_tagWithSerialCount(state, _flutterHistoryCount), 'flutter', routeName!);
+      final int serialCount = _getCurrentSerialCount +1;
+      _lastSeenSerialCount = serialCount;
+      locationStrategy!.pushState(
+        _tagWithSerialCount(state, serialCount),
+        'flutter',
+        routeName!
+      );
     }
   }
 
   @override
   void onPopState(covariant html.PopStateEvent event) {
-    if ((_hasSerialCount(event.state)) &&
-        window._onPlatformMessage != null) {
-      _flutterHistoryCount = event.state['serialCount'];
+    assert(locationStrategy != null);
+    // May be a result of direct url access while the flutter application is
+    // already running.
+    if (!_hasSerialCount(event.state)) {
+      // In this case we assume this will be the next history entry from last
+      // seen entry.
+      locationStrategy!.replaceState(
+        _tagWithSerialCount(event.state, _lastSeenSerialCount + 1),
+        'flutter',
+        currentPath);
+    }
+    _lastSeenSerialCount = _getCurrentSerialCount;
+    if (window._onPlatformMessage != null) {
       window.invokeOnPlatformMessage(
         'flutter/navigation',
         const JSONMethodCodec().encodeMethodCall(
@@ -186,10 +197,9 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
   @override
   Future<void> setup() {
-    _flutterHistoryCount = 0;
-    if (locationStrategy != null) {
+    if (!_hasSerialCount(currentState)) {
       locationStrategy!.replaceState(
-        _tagWithSerialCount(_currentState, _flutterHistoryCount),
+        _tagWithSerialCount(currentState, 0),
         'flutter',
         currentPath
       );
@@ -199,14 +209,15 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
   @override
   Future<void> tearDown() async {
-    if (_hasSerialCount(_currentState)) {
-      if (_currentState['serialCount'] > 0) {
-        final int currentFlutterStateSerialCount = _currentState['serialCount'] as int;
-        await locationStrategy!.back(count: currentFlutterStateSerialCount);
+    // Restores the html browser history.
+    if (_hasSerialCount(currentState)) {
+      int backCount = _getCurrentSerialCount;
+      if (backCount > 0) {
+        await locationStrategy!.back(count: backCount);
       }
       // Unwrap state.
       locationStrategy!.replaceState(
-        _currentState['state'],
+        currentState['state'],
         'flutter',
         currentPath,
       );
@@ -310,6 +321,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
 
   @override
   Future<void> setup() {
+    final String path = currentPath;
     if (_isFlutterEntry(html.window.history.state)) {
       // This could happen if the user, for example, refreshes the page. They
       // will land directly on the "flutter" entry, so there's no need to setup
@@ -317,7 +329,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       // already setup.
     } else {
       _setupOriginEntry(locationStrategy!);
-      _setupFlutterEntry(locationStrategy!, replace: false, path: currentPath);
+      _setupFlutterEntry(locationStrategy!, replace: false, path: path);
     }
     return Future<void>.value();
   }
@@ -328,7 +340,6 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       // We need to remove the flutter entry that we pushed in setup.
       await locationStrategy!.back();
       // Restores original state.
-      print('_currentState ${_currentState}, currentPath ${currentPath}');
       locationStrategy!.replaceState(_unwrapOriginState(_currentState), 'flutter', currentPath);
     }
   }
