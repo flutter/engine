@@ -103,7 +103,7 @@ executable("flutter_desktop_darwin_unittests") {
 
   sources = [
     "framework/Source/FlutterEngineUnittests.mm",
-    "framework/Source/FlutterViewControllerTest.mm"
+    "framework/Source/FlutterViewControllerTest.mm",
   ]
 
   cflags_objcc = [ "-fobjc-arc" ]
