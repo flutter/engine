@@ -24,16 +24,56 @@
   if (@available(ios 13.0, *)) {
     NSString* systemImageName = args[@"name"];
     NSNumber* size = args[@"size"];
+    NSNumber* weight = args[@"weight"];
+
+    UIImageSymbolWeight symbolWeight;
+    if (weight != (id)[NSNull null]) {
+      switch ([weight intValue]) {
+        case 100:
+          symbolWeight = UIImageSymbolWeightUltraLight;
+          break;
+        case 200:
+          symbolWeight = UIImageSymbolWeightThin;
+          break;
+        case 300:
+          symbolWeight = UIImageSymbolWeightLight;
+          break;
+        case 400:
+          symbolWeight = UIImageSymbolWeightRegular;
+          break;
+        case 500:
+          symbolWeight = UIImageSymbolWeightMedium;
+          break;
+        case 600:
+          symbolWeight = UIImageSymbolWeightSemibold;
+          break;
+        case 700:
+          symbolWeight = UIImageSymbolWeightBold;
+          break;
+        case 800:
+          symbolWeight = UIImageSymbolWeightHeavy;
+          break;
+        case 900:
+          symbolWeight = UIImageSymbolWeightBlack;
+          break;
+      }
+    }
+
     UIImage* image;
 
     if (size == (id)[NSNull null]) {
       // If you ask without a size, it will by default return an optically 18pt icon with a 21pt
       // canvas.
       image = [UIImage systemImageNamed:systemImageName];
-    } else {
+    } else if (symbolWeight == UIImageSymbolWeightUnspecified) {
       image = [UIImage systemImageNamed:systemImageName
                       withConfiguration:[UIImageSymbolConfiguration
                                             configurationWithPointSize:[size intValue]]];
+    } else {
+      image = [UIImage
+           systemImageNamed:systemImageName
+          withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:[size intValue]
+                                                                            weight:symbolWeight]];
     }
     NSData* data = UIImagePNGRepresentation(image);
     if (data) {

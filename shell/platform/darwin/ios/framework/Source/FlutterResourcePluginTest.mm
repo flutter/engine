@@ -53,4 +53,25 @@ FLUTTER_ASSERT_ARC
   XCTAssertNil(nilResult);
 }
 
+- (void)testReturnsValidDataWhenAskingForWeight {
+  FlutterResourcePlugin* plugin = [[FlutterResourcePlugin alloc] init];
+
+  __block NSNumber* scale;
+  __block FlutterStandardTypedData* data;
+  FlutterResult result = ^(id result) {
+    scale = result[@"scale"];
+    data = result[@"data"];
+  };
+
+  // iOS 13 actually doesn't support weights besides regular. But it should still return real
+  // data.
+  FlutterMethodCall* methodCall = [FlutterMethodCall
+      methodCallWithMethodName:@"SystemImage.load"
+                     arguments:@{@"name" : @"doc", @"size" : @(32), @"weight" : @(500)}];
+  [plugin handleMethodCall:methodCall result:result];
+
+  XCTAssertTrue([@(2) isEqualToNumber:scale]);
+  XCTAssertTrue([data isKindOfClass:[FlutterStandardTypedData class]]);
+}
+
 @end
