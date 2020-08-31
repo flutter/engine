@@ -946,6 +946,9 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatfor
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegateTest.m
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterResourcePlugin.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterResourcePlugin.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterResourcePluginTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.mm

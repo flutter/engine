@@ -24,6 +24,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterResourcePlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/connection_collection.h"
@@ -69,6 +70,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   // Channels
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
   fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
+  fml::scoped_nsobject<FlutterResourcePlugin> _resourcePlugin;
   fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
@@ -77,6 +79,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _resourceChannel;
 
   int64_t _nextTextureId;
 
@@ -235,7 +238,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _viewController =
       viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
-  [self maybeSetupPlatformViewChannels];
+  [self maybeSetupChannelsHandler];
 
   if (viewController) {
     __block FlutterEngine* blockSelf = self;
@@ -327,6 +330,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return _settingsChannel.get();
 }
 
+- (FlutterMethodChannel*)resourceChannel {
+  return _resourceChannel.get();
+}
+
 - (NSURL*)observatoryUrl {
   return [_publisher.get() url];
 }
@@ -340,6 +347,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
+  _resourceChannel.reset();
 }
 
 - (void)startProfiler:(NSString*)threadLabel {
@@ -412,13 +420,20 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
+  _resourceChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/resource"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterStandardMethodCodec sharedInstance]]);
+
   _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
   _textInputPlugin.get().textInputDelegate = self;
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
+
+  _resourcePlugin.reset([[FlutterResourcePlugin alloc] init]);
 }
 
-- (void)maybeSetupPlatformViewChannels {
+- (void)maybeSetupChannelsHandler {
   if (_shell && self.shell.IsSetup()) {
     FlutterPlatformPlugin* platformPlugin = _platformPlugin.get();
     [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
@@ -436,6 +451,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     FlutterTextInputPlugin* textInputPlugin = _textInputPlugin.get();
     [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [textInputPlugin handleMethodCall:call result:result];
+    }];
+
+    FlutterResourcePlugin* resourcePlugin = _resourcePlugin.get();
+    [_resourceChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+      [resourcePlugin handleMethodCall:call result:result];
     }];
   }
 }
@@ -532,7 +552,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
     }
     _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
-    [self maybeSetupPlatformViewChannels];
+    [self maybeSetupChannelsHandler];
     _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
     if (profilerEnabled) {
       [self startProfiler:threadLabel];
