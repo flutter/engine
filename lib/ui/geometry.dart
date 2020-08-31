@@ -40,6 +40,12 @@ abstract class OffsetBase {
   ///    positive infinity.
   bool get isFinite => _dx.isFinite && _dy.isFinite;
 
+  /// The magnitude of the offset.
+  double get _distance => math.sqrt(_distanceSquared);
+
+  /// The square of the magnitude of te offset.
+  double get _distanceSquared => _dx * _dx + _dy * _dy;
+
   /// Less-than operator. Compares an [Offset] or [Size] to another [Offset] or
   /// [Size], and returns true if both the horizontal and vertical values of the
   /// left-hand-side operand are smaller than the horizontal and vertical values
@@ -146,12 +152,12 @@ class Offset extends OffsetBase {
   ///
   /// If you need this value to compare it to another [Offset]'s distance,
   /// consider using [distanceSquared] instead, since it is cheaper to compute.
-  double get distance => math.sqrt(dx * dx + dy * dy);
+  double get distance => _distance;
 
   /// The square of the magnitude of the offset.
   ///
   /// This is cheaper than computing the [distance] itself.
-  double get distanceSquared => dx * dx + dy * dy;
+  double get distanceSquared => _distanceSquared;
 
   /// The angle of this offset as radians clockwise from the positive x-axis, in
   /// the range -[pi] to [pi], assuming positive values of the x-axis go to the
@@ -387,6 +393,10 @@ class Size extends OffsetBase {
 
   /// The vertical extent of this size.
   double get height => _dy;
+
+  /// The diagonal of the [Size].
+  /// 
+  double get diagonal => _distance;
 
   /// The aspect ratio of this size.
   ///
