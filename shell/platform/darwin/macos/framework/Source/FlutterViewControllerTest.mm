@@ -23,7 +23,7 @@ TEST(FlutterViewControllerTest, MacOSTestTest) {
     calledSet = true;
   };
   FlutterMethodCall* methodCallSet =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setClipboardData"
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
                                         arguments:@{@"text" : @"some string"}];
   [viewController handleMethodCall:methodCallSet result:resultSet];
   ASSERT_TRUE(calledSet);
@@ -33,7 +33,8 @@ TEST(FlutterViewControllerTest, MacOSTestTest) {
   __block bool value;
   FlutterResult result = ^(id result) {
     called = true;
-    value = result[@"value"];
+    NSNumber *valueNumber = [result valueForKey:@"value"];
+    value = [valueNumber boolValue];
   };
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings"
@@ -41,6 +42,32 @@ TEST(FlutterViewControllerTest, MacOSTestTest) {
   [viewController handleMethodCall:methodCall result:result];
   ASSERT_TRUE(called);
   ASSERT_TRUE(value);
+
+  // Now call setData again to clear the pasteboard.
+  __block bool calledSetClear = false;
+  FlutterResult resultSetClear = ^(id result) {
+    calledSetClear = true;
+  };
+  FlutterMethodCall* methodCallSetClear =
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
+                                        arguments:@{@"text" : [NSNull null]}];
+  [viewController handleMethodCall:methodCallSetClear result:resultSetClear];
+  ASSERT_TRUE(calledSetClear);
+
+  // Call hasStrings and expect it to be false.
+  __block bool calledAfterClear = false;
+  __block bool valueAfterClear;
+  FlutterResult resultAfterClear = ^(id result) {
+    calledAfterClear = true;
+    NSNumber *valueNumber = [result valueForKey:@"value"];
+    valueAfterClear = [valueNumber boolValue];
+  };
+  FlutterMethodCall* methodCallAfterClear =
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings"
+                                        arguments:nil];
+  [viewController handleMethodCall:methodCallAfterClear result:resultAfterClear];
+  ASSERT_TRUE(calledAfterClear);
+  ASSERT_FALSE(valueAfterClear);
 }
 
 }  // flutter::testing

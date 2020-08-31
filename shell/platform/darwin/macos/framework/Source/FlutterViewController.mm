@@ -538,8 +538,8 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)setClipboardData:(NSDictionary*)data {
   NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
   NSString* text = data[@"text"];
+  [pasteboard clearContents];
   if (text && ![text isEqual:[NSNull null]]) {
-    [pasteboard clearContents];
     [pasteboard setString:text forType:NSPasteboardTypeString];
   }
 }
