@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 #include "flutter/testing/testing.h"
 
 namespace flutter::testing {
@@ -33,12 +33,11 @@ TEST(FlutterViewControllerTest, MacOSTestTest) {
   __block bool value;
   FlutterResult result = ^(id result) {
     called = true;
-    NSNumber *valueNumber = [result valueForKey:@"value"];
+    NSNumber* valueNumber = [result valueForKey:@"value"];
     value = [valueNumber boolValue];
   };
   FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings"
-                                        arguments:nil];
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
   [viewController handleMethodCall:methodCall result:result];
   ASSERT_TRUE(called);
   ASSERT_TRUE(value);
@@ -59,12 +58,11 @@ TEST(FlutterViewControllerTest, MacOSTestTest) {
   __block bool valueAfterClear;
   FlutterResult resultAfterClear = ^(id result) {
     calledAfterClear = true;
-    NSNumber *valueNumber = [result valueForKey:@"value"];
+    NSNumber* valueNumber = [result valueForKey:@"value"];
     valueAfterClear = [valueNumber boolValue];
   };
   FlutterMethodCall* methodCallAfterClear =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings"
-                                        arguments:nil];
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
   [viewController handleMethodCall:methodCallAfterClear result:resultAfterClear];
   ASSERT_TRUE(calledAfterClear);
   ASSERT_FALSE(valueAfterClear);
