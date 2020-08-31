@@ -292,10 +292,11 @@ void Canvas::drawImage(const CanvasImage* image,
                        const PaintData& paint_data) {
   if (!canvas_)
     return;
-  if (!image)
+  if (!image) {
     Dart_ThrowException(
         ToDart("Canvas.drawImage called with non-genuine Image."));
-  external_allocation_size_ += image->GetAllocationSize();
+    return;
+  }
   canvas_->drawImage(image->image(), x, y, paint.paint());
 }
 
@@ -317,7 +318,6 @@ void Canvas::drawImageRect(const CanvasImage* image,
         ToDart("Canvas.drawImageRect called with non-genuine Image."));
   SkRect src = SkRect::MakeLTRB(src_left, src_top, src_right, src_bottom);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
-  external_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImageRect(image->image(), src, dst, paint.paint(),
                          SkCanvas::kFast_SrcRectConstraint);
 }
@@ -343,7 +343,6 @@ void Canvas::drawImageNine(const CanvasImage* image,
   SkIRect icenter;
   center.round(&icenter);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
-  external_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImageNine(image->image(), icenter, dst, paint.paint());
 }
 
