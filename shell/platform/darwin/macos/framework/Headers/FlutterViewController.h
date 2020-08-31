@@ -53,4 +53,6 @@ FLUTTER_EXPORT
     NS_DESIGNATED_INITIALIZER;
 - (nonnull instancetype)initWithCoder:(nonnull NSCoder*)nibNameOrNil NS_DESIGNATED_INITIALIZER;
 
+- (void)handleMethodCall:(nonnull FlutterMethodCall*)call result:(nonnull FlutterResult)result;
+
 @end
