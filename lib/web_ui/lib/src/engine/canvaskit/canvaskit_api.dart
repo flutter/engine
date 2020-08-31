@@ -81,6 +81,7 @@ class CanvasKit {
 
   external SkTextDecorationStyleEnum get DecorationStyle;
   external SkTextBaselineEnum get TextBaseline;
+  external SkPlaceholderAlignmentEnum get PlaceholderAlignment;
 
   external SkFontMgrNamespace get SkFontMgr;
   external TypefaceFontProviderNamespace get TypefaceFontProvider;
@@ -1496,6 +1497,7 @@ class SkParagraphBuilder {
   external void pushPaintStyle(
       SkTextStyle textStyle, SkPaint foreground, SkPaint background);
   external void pop();
+  external void addPlaceholder(SkPlaceholderStyleProperties placeholderStyle);
   external SkParagraph build();
   external void delete();
 }
@@ -1527,6 +1529,9 @@ class SkParagraphStyleProperties {
 
   external SkTextStyleProperties? get textStyle;
   external set textStyle(SkTextStyleProperties? value);
+
+  external SkStrutStyleProperties? get strutStyle;
+  external set strutStyle(SkStrutStyleProperties? strutStyle);
 }
 
 @JS()
@@ -1580,6 +1585,36 @@ SkTextBaseline toSkTextBaseline(ui.TextBaseline baseline) {
 }
 
 @JS()
+class SkPlaceholderAlignmentEnum {
+  external SkPlaceholderAlignment get Baseline;
+  external SkPlaceholderAlignment get AboveBaseline;
+  external SkPlaceholderAlignment get BelowBaseline;
+  external SkPlaceholderAlignment get Top;
+  external SkPlaceholderAlignment get Bottom;
+  external SkPlaceholderAlignment get Middle;
+}
+
+@JS()
+class SkPlaceholderAlignment {
+  external int get value;
+}
+
+final List<SkPlaceholderAlignment> _skPlaceholderAlignments =
+    <SkPlaceholderAlignment>[
+  canvasKit.PlaceholderAlignment.Baseline,
+  canvasKit.PlaceholderAlignment.AboveBaseline,
+  canvasKit.PlaceholderAlignment.BelowBaseline,
+  canvasKit.PlaceholderAlignment.Top,
+  canvasKit.PlaceholderAlignment.Bottom,
+  canvasKit.PlaceholderAlignment.Middle,
+];
+
+SkPlaceholderAlignment toSkPlaceholderAlignment(
+    ui.PlaceholderAlignment alignment) {
+  return _skPlaceholderAlignments[alignment.index];
+}
+
+@JS()
 @anonymous
 class SkTextStyleProperties {
   external Float32List? get backgroundColor;
@@ -1629,6 +1664,53 @@ class SkTextStyleProperties {
 
   external List<SkTextShadow>? get shadows;
   external set shadows(List<SkTextShadow>? value);
+
+  external List<SkFontFeature>? get fontFeatures;
+  external set fontFeatures(List<SkFontFeature>? value);
+}
+
+@JS()
+@anonymous
+class SkStrutStyleProperties {
+  external List<String>? get fontFamilies;
+  external set fontFamilies(List<String>? value);
+
+  external SkFontStyle? get fontStyle;
+  external set fontStyle(SkFontStyle? value);
+
+  external double? get fontSize;
+  external set fontSize(double? value);
+
+  external double? get heightMultiplier;
+  external set heightMultiplier(double? value);
+
+  external double? get leading;
+  external set leading(double? value);
+
+  external bool? get strutEnabled;
+  external set strutEnabled(bool? value);
+
+  external bool? get forceStrutHeight;
+  external set forceStrutHeight(bool? value);
+}
+
+@JS()
+@anonymous
+class SkPlaceholderStyleProperties {
+  external double? get width;
+  external set width(double? value);
+
+  external double? get height;
+  external set height(double? value);
+
+  external SkPlaceholderAlignment? get alignment;
+  external set alignment(SkPlaceholderAlignment? value);
+
+  external double? get offset;
+  external set offset(double? value);
+
+  external SkTextBaseline? get baseline;
+  external set baseline(SkTextBaseline? value);
 }
 
 @JS()
@@ -1652,6 +1734,16 @@ class SkTextShadow {
 
   external double? get blurRadius;
   external set blurRadius(double? value);
+}
+
+@JS()
+@anonymous
+class SkFontFeature {
+  external String? get name;
+  external set name(String? value);
+
+  external int? get value;
+  external set value(int? value);
 }
 
 @JS()
@@ -1684,6 +1776,7 @@ class SkParagraph {
     SkRectHeightStyle heightStyle,
     SkRectWidthStyle widthStyle,
   );
+  external List<SkRect> getRectsForPlaceholders();
   external SkTextPosition getGlyphPositionAtCoordinate(
     double x,
     double y,
@@ -1736,7 +1829,9 @@ class TypefaceFontProviderNamespace {
 Timer? _skObjectCollector;
 List<SkDeletable> _skObjectDeleteQueue = <SkDeletable>[];
 
-final SkObjectFinalizationRegistry skObjectFinalizationRegistry = SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
+final SkObjectFinalizationRegistry<SkDeletable> skObjectFinalizationRegistry =
+    SkObjectFinalizationRegistry<SkDeletable>(
+        js.allowInterop((SkDeletable deletable) {
   _skObjectDeleteQueue.add(deletable);
   _skObjectCollector ??= _scheduleSkObjectCollection();
 }));
@@ -1755,19 +1850,22 @@ final SkObjectFinalizationRegistry skObjectFinalizationRegistry = SkObjectFinali
 ///    yielding to the graphics system to render the frame on the screen if there
 ///    is a large number of objects to delete, causing jank.
 Timer _scheduleSkObjectCollection() => Timer(Duration.zero, () {
-  html.window.performance.mark('SkObject collection-start');
-  final int length = _skObjectDeleteQueue.length;
-  for (int i = 0; i < length; i++) {
-    _skObjectDeleteQueue[i].delete();
-  }
-  _skObjectDeleteQueue = <SkDeletable>[];
+      html.window.performance.mark('SkObject collection-start');
+      final int length = _skObjectDeleteQueue.length;
+      for (int i = 0; i < length; i++) {
+        _skObjectDeleteQueue[i].delete();
+      }
+      _skObjectDeleteQueue = <SkDeletable>[];
 
-  // Null out the timer so we can schedule a new one next time objects are
-  // scheduled for deletion.
-  _skObjectCollector = null;
-  html.window.performance.mark('SkObject collection-end');
-  html.window.performance.measure('SkObject collection', 'SkObject collection-start', 'SkObject collection-end');
-});
+      // Null out the timer so we can schedule a new one next time objects are
+      // scheduled for deletion.
+      _skObjectCollector = null;
+      html.window.performance.mark('SkObject collection-end');
+      html.window.performance.measure('SkObject collection',
+          'SkObject collection-start', 'SkObject collection-end');
+    });
+
+typedef SkObjectFinalizer<T> = void Function(T key);
 
 /// Any Skia object that has a `delete` method.
 @JS()
@@ -1803,7 +1901,8 @@ class SkObjectFinalizationRegistry {
 external Object? get _finalizationRegistryConstructor;
 
 /// Whether the current browser supports `FinalizationRegistry`.
-bool browserSupportsFinalizationRegistry = _finalizationRegistryConstructor != null;
+bool browserSupportsFinalizationRegistry =
+    _finalizationRegistryConstructor != null;
 
 @JS()
 class SkData {
