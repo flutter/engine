@@ -64,6 +64,20 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
   return reinterpret_cast<FlutterDesktopViewRef>(1);
 }
 
+bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
+    FlutterDesktopViewControllerRef controller,
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam,
+    LRESULT* result) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->ViewControllerHandleTopLevelWindowProc(
+        hwnd, message, wparam, lparam, result);
+  }
+  return false;
+}
+
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
     const FlutterDesktopEngineProperties& engine_properties) {
   if (s_stub_implementation) {
@@ -101,6 +115,12 @@ FlutterDesktopPluginRegistrarRef FlutterDesktopEngineGetPluginRegistrar(
   return reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1);
 }
 
+FlutterDesktopMessengerRef FlutterDesktopEngineGetMessenger(
+    FlutterDesktopEngineRef engine) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopMessengerRef>(2);
+}
+
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef controller) {
   if (s_stub_implementation) {
     return s_stub_implementation->ViewGetHWND();
@@ -112,4 +132,24 @@ FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef controller) {
   // The stub ignores this, so just return an arbitrary non-zero value.
   return reinterpret_cast<FlutterDesktopViewRef>(1);
+}
+
+void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopWindowProcCallback delegate,
+    void* user_data) {
+  if (s_stub_implementation) {
+    return s_stub_implementation
+        ->PluginRegistrarRegisterTopLevelWindowProcDelegate(delegate,
+                                                            user_data);
+  }
+}
+
+void FlutterDesktopPluginRegistrarUnregisterTopLevelWindowProcDelegate(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopWindowProcCallback delegate) {
+  if (s_stub_implementation) {
+    return s_stub_implementation
+        ->PluginRegistrarUnregisterTopLevelWindowProcDelegate(delegate);
+  }
 }

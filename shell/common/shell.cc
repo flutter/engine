@@ -375,6 +375,11 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
       task_runners_.GetIOTaskRunner(),
       std::bind(&Shell::OnServiceProtocolGetSkSLs, this, std::placeholders::_1,
                 std::placeholders::_2)};
+  service_protocol_handlers_
+      [ServiceProtocol::kEstimateRasterCacheMemoryExtensionName] = {
+          task_runners_.GetRasterTaskRunner(),
+          std::bind(&Shell::OnServiceProtocolEstimateRasterCacheMemory, this,
+                    std::placeholders::_1, std::placeholders::_2)};
 }
 
 Shell::~Shell() {
@@ -395,13 +400,12 @@ Shell::~Shell() {
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetRasterTaskRunner(),
-      fml::MakeCopyable([rasterizer = std::move(rasterizer_),
-                         weak_factory_gpu = std::move(weak_factory_gpu_),
-                         &gpu_latch]() mutable {
-        rasterizer.reset();
-        weak_factory_gpu.reset();
-        gpu_latch.Signal();
-      }));
+      fml::MakeCopyable(
+          [this, rasterizer = std::move(rasterizer_), &gpu_latch]() mutable {
+            rasterizer.reset();
+            this->weak_factory_gpu_.reset();
+            gpu_latch.Signal();
+          }));
   gpu_latch.Wait();
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -614,26 +618,16 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  // Note:
-  // This is a synchronous operation because certain platforms depend on
-  // setup/suspension of all activities that may be interacting with the GPU in
-  // a synchronous fashion.
-  fml::AutoResetWaitableEvent latch;
-  auto raster_task =
-      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
-                         rasterizer = rasterizer_->GetWeakPtr(),  //
-                         surface = std::move(surface),            //
-                         &latch]() mutable {
-        if (rasterizer) {
-          rasterizer->Setup(std::move(surface));
-        }
-
-        waiting_for_first_frame.store(true);
-
-        // Step 3: All done. Signal the latch that the platform thread is
-        // waiting on.
-        latch.Signal();
-      });
+  // Prevent any request to change the thread configuration for raster and
+  // platform queues while the platform view is being created.
+  //
+  // This prevents false positives such as this method starts assuming that the
+  // raster and platform queues have a given thread configuration, but then the
+  // configuration is changed by a task, and the asumption is not longer true.
+  //
+  // This incorrect assumption can lead to dead lock.
+  // See `should_post_raster_task` for more.
+  rasterizer_->DisableThreadMergerIfNeeded();
 
   // The normal flow executed by this method is that the platform thread is
   // starting the sequence and waiting on the latch. Later the UI thread posts
@@ -645,8 +639,34 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // then instead of posting a task to the raster thread, the ui thread just
   // signals the latch and the platform/raster thread follows with executing
   // raster_task.
-  bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
-                                 task_runners_.GetPlatformTaskRunner();
+  const bool should_post_raster_task =
+      !fml::TaskRunnerChecker::RunsOnTheSameThread(
+          task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
+          task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
+
+  // Note:
+  // This is a synchronous operation because certain platforms depend on
+  // setup/suspension of all activities that may be interacting with the GPU in
+  // a synchronous fashion.
+  fml::AutoResetWaitableEvent latch;
+  auto raster_task =
+      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
+                         rasterizer = rasterizer_->GetWeakPtr(),  //
+                         surface = std::move(surface),            //
+                         &latch]() mutable {
+        if (rasterizer) {
+          // Enables the thread merger which may be used by the external view
+          // embedder.
+          rasterizer->EnableThreadMergerIfNeeded();
+          rasterizer->Setup(std::move(surface));
+        }
+
+        waiting_for_first_frame.store(true);
+
+        // Step 3: All done. Signal the latch that the platform thread is
+        // waiting on.
+        latch.Signal();
+      });
 
   auto ui_task = [engine = engine_->GetWeakPtr(),                            //
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
@@ -703,6 +723,32 @@ void Shell::OnPlatformViewDestroyed() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  // Prevent any request to change the thread configuration for raster and
+  // platform queues while the platform view is being destroyed.
+  //
+  // This prevents false positives such as this method starts assuming that the
+  // raster and platform queues have a given thread configuration, but then the
+  // configuration is changed by a task, and the asumption is not longer true.
+  //
+  // This incorrect assumption can lead to dead lock.
+  // See `should_post_raster_task` for more.
+  rasterizer_->DisableThreadMergerIfNeeded();
+
+  // The normal flow executed by this method is that the platform thread is
+  // starting the sequence and waiting on the latch. Later the UI thread posts
+  // raster_task to the raster thread triggers signaling the latch(on the IO
+  // thread). If the raster and the platform threads are the same this results
+  // in a deadlock as the raster_task will never be posted to the plaform/raster
+  // thread that is blocked on a latch.  To avoid the described deadlock, if the
+  // raster and the platform threads are the same, should_post_raster_task will
+  // be false, and then instead of posting a task to the raster thread, the ui
+  // thread just signals the latch and the platform/raster thread follows with
+  // executing raster_task.
+  const bool should_post_raster_task =
+      !fml::TaskRunnerChecker::RunsOnTheSameThread(
+          task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
+          task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
+
   // Note:
   // This is a synchronous operation because certain platforms depend on
   // setup/suspension of all activities that may be interacting with the GPU in
@@ -725,24 +771,15 @@ void Shell::OnPlatformViewDestroyed() {
                       io_task_runner = task_runners_.GetIOTaskRunner(),
                       io_task]() {
     if (rasterizer) {
+      // Enables the thread merger which is required prior tearing down the
+      // rasterizer. If the raster and platform threads are merged, tearing down
+      // the rasterizer unmerges the threads.
+      rasterizer->EnableThreadMergerIfNeeded();
       rasterizer->Teardown();
     }
     // Step 2: Next, tell the IO thread to complete its remaining work.
     fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
   };
-
-  // The normal flow executed by this method is that the platform thread is
-  // starting the sequence and waiting on the latch. Later the UI thread posts
-  // raster_task to the raster thread triggers signaling the latch(on the IO
-  // thread). If the raster and the platform threads are the same this results
-  // in a deadlock as the raster_task will never be posted to the plaform/raster
-  // thread that is blocked on a latch.  To avoid the described deadlock, if the
-  // raster and the platform threads are the same, should_post_raster_task will
-  // be false, and then instead of posting a task to the raster thread, the ui
-  // thread just signals the latch and the platform/raster thread follows with
-  // executing raster_task.
-  bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
-                                 task_runners_.GetPlatformTaskRunner();
 
   auto ui_task = [engine = engine_->GetWeakPtr(),
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),
@@ -750,8 +787,6 @@ void Shell::OnPlatformViewDestroyed() {
     if (engine) {
       engine->OnOutputSurfaceDestroyed();
     }
-    // Step 1: Next, tell the raster thread that its rasterizer should suspend
-    // access to the underlying surface.
     if (should_post_raster_task) {
       fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
     } else {
@@ -764,6 +799,7 @@ void Shell::OnPlatformViewDestroyed() {
   // Step 0: Post a task onto the UI thread to tell the engine that its output
   // surface is about to go away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
+
   latch.Wait();
   if (!should_post_raster_task) {
     // See comment on should_post_raster_task, in this case the raster_task
@@ -1421,6 +1457,23 @@ bool Shell::OnServiceProtocolGetSkSLs(
     shaders_json.AddMember(shader_key, shader_value, response->GetAllocator());
   }
   response->AddMember("SkSLs", shaders_json, response->GetAllocator());
+  return true;
+}
+
+bool Shell::OnServiceProtocolEstimateRasterCacheMemory(
+    const ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document* response) {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  const auto& raster_cache = rasterizer_->compositor_context()->raster_cache();
+  response->SetObject();
+  response->AddMember("type", "EstimateRasterCacheMemory",
+                      response->GetAllocator());
+  response->AddMember<uint64_t>("layerBytes",
+                                raster_cache.EstimateLayerCacheByteSize(),
+                                response->GetAllocator());
+  response->AddMember<uint64_t>("pictureBytes",
+                                raster_cache.EstimatePictureCacheByteSize(),
+                                response->GetAllocator());
   return true;
 }
 

@@ -180,20 +180,17 @@ class EngineAutofillForm {
     // Add a seperator between element identifiers.
     for (final String id in ids) {
       if (idBuffer.length > 0) {
-          idBuffer.write('*');
-        }
-     idBuffer.write(id);
+        idBuffer.write('*');
+      }
+      idBuffer.write(id);
     }
 
     final String formIdentifier = idBuffer.toString();
 
     // If a form with the same Autofill elements is already on the dom, remove
     // it from DOM.
-    if (formsOnTheDom[formIdentifier] != null) {
-      final html.FormElement form =
-          formsOnTheDom[formIdentifier] as html.FormElement;
-      form.remove();
-    }
+    html.FormElement? form = formsOnTheDom[formIdentifier];
+    form?.remove();
 
     // In order to submit the form when Framework sends a `TextInput.commit`
     // message, we add a submit button to the form.
@@ -243,7 +240,7 @@ class EngineAutofillForm {
           throw StateError(
               'Autofill would not work withuot Autofill value set');
         } else {
-          final AutofillInfo autofillInfo = items![key] as AutofillInfo;
+          final AutofillInfo autofillInfo = items![key]!;
           _handleChange(element, autofillInfo);
         }
       }));
@@ -490,11 +487,13 @@ class EditingState {
 /// This corresponds to Flutter's [TextInputConfiguration].
 class InputConfiguration {
   InputConfiguration({
-    required this.inputType,
-    required this.inputAction,
-    required this.obscureText,
-    required this.autocorrect,
-    required this.textCapitalization,
+    this.inputType = EngineInputType.text,
+    this.inputAction = 'TextInputAction.done',
+    this.obscureText = false,
+    this.readOnly = false,
+    this.autocorrect = true,
+    this.textCapitalization =
+        const TextCapitalizationConfig.defaultCapitalization(),
     this.autofill,
     this.autofillGroup,
   });
@@ -502,14 +501,17 @@ class InputConfiguration {
   InputConfiguration.fromFrameworkMessage(
       Map<String, dynamic> flutterInputConfiguration)
       : inputType = EngineInputType.fromName(
-            flutterInputConfiguration['inputType']['name'],
-            isDecimal:
-                flutterInputConfiguration['inputType']['decimal'] ?? false),
-        inputAction = flutterInputConfiguration['inputAction'],
-        obscureText = flutterInputConfiguration['obscureText'],
-        autocorrect = flutterInputConfiguration['autocorrect'],
+          flutterInputConfiguration['inputType']['name'],
+          isDecimal: flutterInputConfiguration['inputType']['decimal'] ?? false,
+        ),
+        inputAction =
+            flutterInputConfiguration['inputAction'] ?? 'TextInputAction.done',
+        obscureText = flutterInputConfiguration['obscureText'] ?? false,
+        readOnly = flutterInputConfiguration['readOnly'] ?? false,
+        autocorrect = flutterInputConfiguration['autocorrect'] ?? true,
         textCapitalization = TextCapitalizationConfig.fromInputConfiguration(
-            flutterInputConfiguration['textCapitalization']),
+          flutterInputConfiguration['textCapitalization'],
+        ),
         autofill = flutterInputConfiguration.containsKey('autofill')
             ? AutofillInfo.fromFrameworkMessage(
                 flutterInputConfiguration['autofill'])
@@ -522,7 +524,12 @@ class InputConfiguration {
   final EngineInputType inputType;
 
   /// The default action for the input field.
-  final String? inputAction;
+  final String inputAction;
+
+  /// Whether the text field can be edited or not.
+  ///
+  /// Defaults to false.
+  final bool readOnly;
 
   /// Whether to hide the text being edited.
   final bool? obscureText;
@@ -534,7 +541,7 @@ class InputConfiguration {
   ///
   /// For future manual tests, note that autocorrect is an attribute only
   /// supported by Safari.
-  final bool? autocorrect;
+  final bool autocorrect;
 
   final AutofillInfo? autofill;
 
@@ -604,10 +611,15 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
 
   @override
   void placeElement() {
-    super.placeElement();
     if (hasAutofillGroup) {
       _geometry?.applyToDomElement(focusedFormElement!);
       placeForm();
+      // Set the last editing state if it exists, this is critical for a
+      // users ongoing work to continue uninterrupted when there is an update to
+      // the transform.
+      if (_lastEditingState != null) {
+        _lastEditingState!.applyToDomElement(domElement);
+      }
       // On Chrome, when a form is focused, it opens an autofill menu
       // immediately.
       // Flutter framework sends `setEditableSizeAndTransform` for informing
@@ -617,7 +629,9 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       //  `setEditableSizeAndTransform` method is called and focus on the form
       // only after placing it to the correct position. Hence autofill menu
       // does not appear on top-left of the page.
+      // Refocus on the elements after applying the geometry.
       focusedFormElement!.focus();
+      domElement.focus();
     } else {
       _geometry?.applyToDomElement(domElement);
     }
@@ -653,6 +667,12 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
     _geometry?.applyToDomElement(domElement);
     if (hasAutofillGroup) {
       placeForm();
+      // Set the last editing state if it exists, this is critical for a
+      // users ongoing work to continue uninterrupted when there is an update to
+      // the transform.
+      if (_lastEditingState != null) {
+        _lastEditingState!.applyToDomElement(domElement);
+      }
       // On Safari Desktop, when a form is focused, it opens an autofill menu
       // immediately.
       // Flutter framework sends `setEditableSizeAndTransform` for informing
@@ -742,13 +762,16 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     this._inputConfiguration = inputConfig;
 
     _domElement = inputConfig.inputType.createDomElement();
+    if (inputConfig.readOnly) {
+      domElement.setAttribute('readonly', 'readonly');
+    }
     if (inputConfig.obscureText!) {
       domElement.setAttribute('type', 'password');
     }
 
     inputConfig.autofill?.applyToDomElement(domElement, focusedElement: true);
 
-    final String autocorrectValue = inputConfig.autocorrect! ? 'on' : 'off';
+    final String autocorrectValue = inputConfig.autocorrect ? 'on' : 'off';
     domElement.setAttribute('autocorrect', autocorrectValue);
 
     _setStaticStyleAttributes(domElement);
@@ -1223,6 +1246,12 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   void placeElement() {
     domElement.focus();
     _geometry?.applyToDomElement(domElement);
+    // Set the last editing state if it exists, this is critical for a
+    // users ongoing work to continue uninterrupted when there is an update to
+    // the transform.
+    if (_lastEditingState != null) {
+      _lastEditingState!.applyToDomElement(domElement);
+    }
   }
 }
 

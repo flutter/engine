@@ -5,33 +5,31 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_PLATFORM_VIEW_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_PLATFORM_VIEW_H_
 
-#include <fuchsia/ui/gfx/cpp/fidl.h>
 #include <fuchsia/ui/input/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
+#include <lib/fidl/cpp/binding.h>
 #include <lib/fit/function.h>
 
 #include <map>
 #include <set>
 
 #include "flutter/fml/macros.h"
-#include "flutter/lib/ui/window/viewport_metrics.h"
+#include "flutter/fml/time/time_delta.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
-#include "flutter_runner_product_configuration.h"
-#include "lib/fidl/cpp/binding.h"
-#include "lib/ui/scenic/cpp/id.h"
-#include "surface.h"
+
+#include "accessibility_bridge.h"
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+#include <lib/ui/scenic/cpp/id.h>  // nogncheck
+#endif
 
 namespace flutter_runner {
 
-using OnMetricsUpdate = fit::function<void(const fuchsia::ui::gfx::Metrics&)>;
-using OnSizeChangeHint =
-    fit::function<void(float width_change_factor, float height_change_factor)>;
 using OnEnableWireframe = fit::function<void(bool)>;
 using OnCreateView = fit::function<void(int64_t, bool, bool)>;
+using OnUpdateView = fit::function<void(int64_t, bool, bool)>;
 using OnDestroyView = fit::function<void(int64_t)>;
-using OnGetViewEmbedder = fit::function<flutter::ExternalViewEmbedder*()>;
-using OnGetGrContext = fit::function<GrDirectContext*()>;
+using OnCreateSurface = fit::function<std::unique_ptr<flutter::Surface>()>;
 
 // The per engine component residing on the platform thread is responsible for
 // all platform specific integrations.
@@ -55,25 +53,15 @@ class PlatformView final : public flutter::PlatformView,
                    session_listener_request,
                fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
                fit::closure on_session_listener_error_callback,
-               OnMetricsUpdate session_metrics_did_change_callback,
-               OnSizeChangeHint session_size_change_hint_callback,
                OnEnableWireframe wireframe_enabled_callback,
                OnCreateView on_create_view_callback,
+               OnUpdateView on_update_view_callback,
                OnDestroyView on_destroy_view_callback,
-               OnGetViewEmbedder on_get_view_embedder_callback,
-               OnGetGrContext on_get_gr_context_callback,
-               zx_handle_t vsync_event_handle,
-               FlutterRunnerProductConfiguration product_config);
-  PlatformView(flutter::PlatformView::Delegate& delegate,
-               std::string debug_label,
-               flutter::TaskRunners task_runners,
-               fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
-                   parent_environment_service_provider,
+               OnCreateSurface on_create_surface_callback,
+               fml::TimeDelta vsync_offset,
                zx_handle_t vsync_event_handle);
 
   ~PlatformView();
-
-  void UpdateViewportMetrics(const fuchsia::ui::gfx::Metrics& metrics);
 
   // |flutter::PlatformView|
   // |flutter_runner::AccessibilityBridge::Delegate|
@@ -96,13 +84,11 @@ class PlatformView final : public flutter::PlatformView,
 
   fidl::Binding<fuchsia::ui::scenic::SessionListener> session_listener_binding_;
   fit::closure session_listener_error_callback_;
-  OnMetricsUpdate metrics_changed_callback_;
-  OnSizeChangeHint size_change_hint_callback_;
   OnEnableWireframe wireframe_enabled_callback_;
   OnCreateView on_create_view_callback_;
+  OnUpdateView on_update_view_callback_;
   OnDestroyView on_destroy_view_callback_;
-  OnGetViewEmbedder on_get_view_embedder_callback_;
-  OnGetGrContext on_get_gr_context_callback_;
+  OnCreateSurface on_create_surface_callback_;
 
   int current_text_input_client_ = 0;
   fidl::Binding<fuchsia::ui::input::InputMethodEditorClient> ime_client_;
@@ -110,8 +96,7 @@ class PlatformView final : public flutter::PlatformView,
   fuchsia::ui::input::ImeServicePtr text_sync_service_;
 
   fuchsia::sys::ServiceProviderPtr parent_environment_service_provider_;
-  flutter::LogicalMetrics metrics_;
-  fuchsia::ui::gfx::Metrics scenic_metrics_;
+
   // last_text_state_ is the last state of the text input as reported by the IME
   // or initialized by Flutter. We set it to null if Flutter doesn't want any
   // input, since then there is no text input state at all.
@@ -127,17 +112,15 @@ class PlatformView final : public flutter::PlatformView,
   // such. Notifying via logs multiple times results in log-spam. See:
   // https://github.com/flutter/flutter/issues/55966
   std::set<std::string /* channel */> unregistered_channels_;
+
+  fml::TimeDelta vsync_offset_;
   zx_handle_t vsync_event_handle_ = 0;
 
-  FlutterRunnerProductConfiguration product_config_;
+  float view_width_ = 0.0f;        // Width in logical pixels.
+  float view_height_ = 0.0f;       // Height in logical pixels.
+  float view_pixel_ratio_ = 0.0f;  // Logical / physical pixel ratio.
 
   void RegisterPlatformMessageHandlers();
-
-  void FlushViewportMetrics();
-
-  // Called when the view's properties have changed.
-  void OnPropertiesChanged(
-      const fuchsia::ui::gfx::ViewProperties& view_properties);
 
   // |fuchsia::ui::input::InputMethodEditorClient|
   void DidUpdateState(
@@ -151,9 +134,11 @@ class PlatformView final : public flutter::PlatformView,
   void OnScenicError(std::string error) override;
   void OnScenicEvent(std::vector<fuchsia::ui::scenic::Event> events) override;
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   void OnChildViewConnected(scenic::ResourceId view_holder_id);
   void OnChildViewDisconnected(scenic::ResourceId view_holder_id);
   void OnChildViewStateChanged(scenic::ResourceId view_holder_id, bool state);
+#endif
 
   bool OnHandlePointerEvent(const fuchsia::ui::input::PointerEvent& pointer);
 

@@ -12,6 +12,8 @@ import 'package:image/image.dart' as dart_image;
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
+import 'test_util.dart';
+
 typedef CanvasCallback = void Function(Canvas canvas);
 
 Future<Image> createImage(int width, int height) {
@@ -36,35 +38,6 @@ void testCanvas(CanvasCallback callback) {
   try {
     callback(Canvas(PictureRecorder(), const Rect.fromLTRB(0.0, 0.0, 0.0, 0.0)));
   } catch (error) { } // ignore: empty_catches
-}
-
-void expectAssertion(Function callback) {
-  bool assertsEnabled = false;
-  assert(() {
-    assertsEnabled = true;
-    return true;
-  }());
-  if (assertsEnabled) {
-    bool threw = false;
-    try {
-      callback();
-    } catch (e) {
-      expect(e is AssertionError, true);
-      threw = true;
-    }
-    expect(threw, true);
-  }
-}
-
-void expectArgumentError(Function callback) {
-  bool threw = false;
-  try {
-    callback();
-  } catch (e) {
-    expect(e is ArgumentError, true);
-    threw = true;
-  }
-  expect(threw, true);
 }
 
 void testNoCrashes() {
@@ -295,34 +268,6 @@ void main() {
     expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(0), null, null, rect, paint));
     expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(0), Float32List(4), null, null, rect, paint));
     expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(4), Int32List(2), BlendMode.src, rect, paint));
-  });
-
-  test('Image size reflected in picture size for image*, drawAtlas, and drawPicture methods', () async {
-    final Image image = await createImage(100, 100);
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder);
-    const Rect rect = Rect.fromLTWH(0, 0, 100, 100);
-    canvas.drawImage(image, Offset.zero, Paint());
-    canvas.drawImageRect(image, rect, rect, Paint());
-    canvas.drawImageNine(image, rect, rect, Paint());
-    canvas.drawAtlas(image, <RSTransform>[], <Rect>[], <Color>[], BlendMode.src, rect, Paint());
-    final Picture picture = recorder.endRecording();
-
-    // Some of the numbers here appear to utilize sharing/reuse of common items,
-    // e.g. of the Paint() or same `Rect` usage, etc.
-    // The raw utilization of a 100x100 picture here should be 53333:
-    // 100 * 100 * 4 * (4/3) = 53333.333333....
-    // To avoid platform specific idiosyncrasies and brittleness against changes
-    // to Skia, we just assert this is _at least_ 4x the image size.
-    const int minimumExpected = 53333 * 4;
-    expect(picture.approximateBytesUsed, greaterThan(minimumExpected));
-
-    final PictureRecorder recorder2 = PictureRecorder();
-    final Canvas canvas2 = Canvas(recorder2);
-    canvas2.drawPicture(picture);
-    final Picture picture2 = recorder2.endRecording();
-
-    expect(picture2.approximateBytesUsed, greaterThan(minimumExpected));
   });
 
   test('Vertex buffer size reflected in picture size for drawVertices', () async {
