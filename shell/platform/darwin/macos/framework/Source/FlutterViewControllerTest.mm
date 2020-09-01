@@ -10,7 +10,7 @@
 
 namespace flutter::testing {
 
-TEST(FlutterViewControllerTest, MacOSTestTest) {
+TEST(FlutterViewControllerTest, HasStrings) {
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
