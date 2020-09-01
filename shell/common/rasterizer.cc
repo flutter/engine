@@ -470,7 +470,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
     }
 
-    // Clean the render context after submitting the frame.
+    // Clear the render context after submitting the frame.
     // This ensures that the GL context is released after drawing to the
     // surface.
     surface_->ClearRenderContext();
