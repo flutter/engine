@@ -510,6 +510,14 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      Insets systemGestureInsets = insets.getSystemGestureInsets();
+      viewportMetrics.systemGestureInsetTop = systemGestureInsets.top;
+      viewportMetrics.systemGestureInsetRight = systemGestureInsets.right;
+      viewportMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
+      viewportMetrics.systemGestureInsetLeft = systemGestureInsets.left;
+    }
+
     boolean statusBarVisible = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
     boolean navigationBarVisible =
         (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
@@ -537,16 +545,15 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       // TODO(garyq): Expose the full rects of the display cutout.
 
       // Take the max of the display cutout insets and ui element insets to merge them
-      DisplayCutout cutout = insets.getDisplayCutout();
+      DisplayCutout cutout = getDisplay().getCutout();
       if (cutout != null) {
         Insets waterfallInsets = cutout.getWaterfallInsets();
-
-        viewportMetrics.paddingTop = Math.max(Math.max(viewportMetrics.paddingTop, waterfallInsets.top), cutout.getSafeInsetTop());
-        viewportMetrics.paddingRight = Math.max(Math.max(viewportMetrics.paddingRight, waterfallInsets.right), cutout.getSafeInsetRight());
-        viewportMetrics.paddingBottom = Math.max(waterfallInsets.bottom, cutout.getSafeInsetBottom());
-        viewportMetrics.paddingLeft = Math.max(Math.max(viewportMetrics.paddingLeft, waterfallInsets.left), cutout.getSafeInsetLeft());
-
+        viewportMetrics.systemGestureInsetTop = Math.max(Math.max(viewportMetrics.systemGestureInsetTop, waterfallInsets.top), cutout.getSafeInsetTop());
+        viewportMetrics.systemGestureInsetRight = Math.max(Math.max(viewportMetrics.systemGestureInsetRight, waterfallInsets.right), cutout.getSafeInsetRight());
+        viewportMetrics.systemGestureInsetBottom = Math.max(Math.max(viewportMetrics.systemGestureInsetBottom, waterfallInsets.bottom), cutout.getSafeInsetBottom());
+        viewportMetrics.systemGestureInsetLeft = Math.max(Math.max(viewportMetrics.systemGestureInsetLeft, waterfallInsets.left), cutout.getSafeInsetLeft());
       }
+
     } else {
       // We zero the left and/or right sides to prevent the padding the
       // navigation bar would have caused.
@@ -578,13 +585,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       viewportMetrics.viewInsetLeft = 0;
     }
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      Insets systemGestureInsets = insets.getSystemGestureInsets();
-      viewportMetrics.systemGestureInsetTop = systemGestureInsets.top;
-      viewportMetrics.systemGestureInsetRight = systemGestureInsets.right;
-      viewportMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
-      viewportMetrics.systemGestureInsetLeft = systemGestureInsets.left;
-    }
 
     Log.v(
         TAG,
