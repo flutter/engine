@@ -77,6 +77,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
+  fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
 
   int64_t _nextTextureId;
 
@@ -326,6 +327,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterBasicMessageChannel*)settingsChannel {
   return _settingsChannel.get();
 }
+- (FlutterBasicMessageChannel*)keyEventChannel {
+  return _keyEventChannel.get();
+}
 
 - (NSURL*)observatoryUrl {
   return [_publisher.get() url];
@@ -340,6 +344,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
+  _keyEventChannel.reset();
 }
 
 - (void)startProfiler:(NSString*)threadLabel {
@@ -409,6 +414,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _settingsChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/settings"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterJSONMessageCodec sharedInstance]]);
+    
+  _keyEventChannel.reset([[FlutterBasicMessageChannel alloc]
+        initWithName:@"flutter/keyevent"
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
