@@ -186,6 +186,15 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     virtual void OnPreEngineRestart() = 0;
 
     //--------------------------------------------------------------------------
+    /// @brief      Notifies the shell that the root isolate is created.
+    ///             Currently, this information is to add to the service
+    ///             protocol list of available root isolates running in the VM
+    ///             and their names so that the appropriate isolate can be
+    ///             selected in the tools for debugging and instrumentation.
+    ///
+    virtual void OnRootIsolateCreated() = 0;
+
+    //--------------------------------------------------------------------------
     /// @brief      Notifies the shell of the name of the root isolate and its
     ///             port when that isolate is launched, restarted (in the
     ///             cold-restart scenario) or the application itself updates the
@@ -249,6 +258,20 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   };
 
   //----------------------------------------------------------------------------
+  /// @brief      Creates an instance of the engine with a supplied
+  ///             `RuntimeController`.  Use the other constructor except for
+  ///             tests.
+  ///
+  Engine(Delegate& delegate,
+         const PointerDataDispatcherMaker& dispatcher_maker,
+         std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
+         TaskRunners task_runners,
+         Settings settings,
+         std::unique_ptr<Animator> animator,
+         fml::WeakPtr<IOManager> io_manager,
+         std::unique_ptr<RuntimeController> runtime_controller);
+
+  //----------------------------------------------------------------------------
   /// @brief      Creates an instance of the engine. This is done by the Shell
   ///             on the UI task runner.
   ///
@@ -295,7 +318,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          TaskRunners task_runners,
-         const WindowData window_data,
+         const PlatformData platform_data,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
@@ -421,7 +444,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             one frame interval from this point, the Flutter application
   ///             will jank.
   ///
-  ///             If an root isolate is running, this method calls the
+  ///             If a root isolate is running, this method calls the
   ///             `::_beginFrame` method in `hooks.dart`. If a root isolate is
   ///             not running, this call does nothing.
   ///
@@ -701,9 +724,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has expressed an opinion
-  ///             about where the accessibility tree should be generated or not.
-  ///             This call originates in the platform view and is forwarded to
-  ///             the engine here on the UI task runner by the shell.
+  ///             about whether the accessibility tree should be generated or
+  ///             not. This call originates in the platform view and is
+  ///             forwarded to the engine here on the UI task runner by the
+  ///             shell.
   ///
   /// @param[in]  enabled  Whether the accessibility tree is enabled or
   ///                      disabled.
@@ -755,6 +779,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   const std::string& GetLastEntrypointLibrary() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Getter for the initial route.  This can be set with a platform
+  ///             message.
+  ///
+  const std::string& InitialRoute() const { return initial_route_; }
+
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;
@@ -790,6 +820,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   // |RuntimeDelegate|
   void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
+
+  // |RuntimeDelegate|
+  void OnRootIsolateCreated() override;
 
   // |RuntimeDelegate|
   void UpdateIsolateDescription(const std::string isolate_name,

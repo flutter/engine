@@ -73,8 +73,8 @@ class EngineWindow extends ui.Window {
       double windowInnerHeight;
       final html.VisualViewport? viewport = html.window.visualViewport;
       if (viewport != null) {
-        windowInnerWidth = viewport.width! * devicePixelRatio as double;
-        windowInnerHeight = viewport.height! * devicePixelRatio as double;
+        windowInnerWidth = viewport.width!.toDouble() * devicePixelRatio;
+        windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
       } else {
         windowInnerWidth = html.window.innerWidth! * devicePixelRatio;
         windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
@@ -90,7 +90,7 @@ class EngineWindow extends ui.Window {
     double windowInnerHeight;
     final html.VisualViewport? viewport = html.window.visualViewport;
     if (viewport != null) {
-      windowInnerHeight = viewport.height! * devicePixelRatio as double;
+      windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
     } else {
       windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
     }
@@ -117,20 +117,25 @@ class EngineWindow extends ui.Window {
     double height = 0;
     double width = 0;
     if (html.window.visualViewport != null) {
-      height = html.window.visualViewport!.height! * devicePixelRatio as double;
-      width = html.window.visualViewport!.width! * devicePixelRatio as double;
+      height = html.window.visualViewport!.height!.toDouble() * devicePixelRatio;
+      width = html.window.visualViewport!.width!.toDouble() * devicePixelRatio;
     } else {
       height = html.window.innerHeight! * devicePixelRatio;
       width = html.window.innerWidth! * devicePixelRatio;
     }
-    // First confirm both heught and width is effected.
-    if (_physicalSize!.height != height && _physicalSize!.width != width) {
-      // If prior to rotation height is bigger than width it should be the
-      // opposite after the rotation and vice versa.
-      if ((_physicalSize!.height > _physicalSize!.width && height < width) ||
-          (_physicalSize!.width > _physicalSize!.height && width < height)) {
-        // Rotation detected
-        return true;
+
+    // This method compares the new dimensions with the previous ones.
+    // Return false if the previous dimensions are not set.
+    if(_physicalSize != null) {
+      // First confirm both height and width are effected.
+      if (_physicalSize!.height != height && _physicalSize!.width != width) {
+        // If prior to rotation height is bigger than width it should be the
+        // opposite after the rotation and vice versa.
+        if ((_physicalSize!.height > _physicalSize!.width && height < width) ||
+            (_physicalSize!.width > _physicalSize!.height && width < height)) {
+          // Rotation detected
+          return true;
+        }
       }
     }
     return false;
@@ -145,9 +150,6 @@ class EngineWindow extends ui.Window {
 
   /// Overrides the value of [physicalSize] in tests.
   ui.Size? webOnlyDebugPhysicalSizeOverride;
-
-  @override
-  double get physicalDepth => double.maxFinite;
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.

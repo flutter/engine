@@ -50,6 +50,8 @@ class ShellTest : public FixtureTest {
 
   static void PlatformViewNotifyCreated(
       Shell* shell);  // This creates the surface
+  static void PlatformViewNotifyDestroyed(
+      Shell* shell);  // This destroys the surface
   static void RunEngine(Shell* shell, RunConfiguration configuration);
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
@@ -80,6 +82,7 @@ class ShellTest : public FixtureTest {
 
   enum ServiceProtocolEnum {
     kGetSkSLs,
+    kEstimateRasterCacheMemory,
     kSetAssetBundlePath,
     kRunInView,
   };
@@ -92,7 +95,7 @@ class ShellTest : public FixtureTest {
       ServiceProtocolEnum some_protocol,
       fml::RefPtr<fml::TaskRunner> task_runner,
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
+      rapidjson::Document* response);
 
   std::shared_ptr<txt::FontCollection> GetFontCollection(Shell* shell);
 

@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/flow/raster_cache.h"
 
@@ -160,16 +159,16 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
                                            canvas_size.height());
         internal_nodes_canvas.addCanvas(canvas);
         Layer::PaintContext paintContext = {
-            (SkCanvas*)&internal_nodes_canvas,  // internal_nodes_canvas
-            canvas,                             // leaf_nodes_canvas
-            context->gr_context,                // gr_context
-            nullptr,                            // view_embedder
+            /* internal_nodes_canvas= */ static_cast<SkCanvas*>(
+                &internal_nodes_canvas),
+            /* leaf_nodes_canvas= */ canvas,
+            /* gr_context= */ context->gr_context,
+            /* view_embedder= */ nullptr,
             context->raster_time,
             context->ui_time,
             context->texture_registry,
             context->has_platform_view ? nullptr : context->raster_cache,
             context->checkerboard_offscreen_layers,
-            context->frame_physical_depth,
             context->frame_device_pixel_ratio};
         if (layer->needs_painting()) {
           layer->Paint(paintContext);
@@ -233,7 +232,7 @@ bool RasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {
   entry.used_this_frame = true;
 
   if (entry.image) {
-    entry.image->draw(canvas);
+    entry.image->draw(canvas, nullptr);
     return true;
   }
 
@@ -299,35 +298,34 @@ void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
 
 void RasterCache::TraceStatsToTimeline() const {
 #if !FLUTTER_RELEASE
+  constexpr double kMegaBytes = (1 << 20);
+  FML_TRACE_COUNTER("flutter", "RasterCache", reinterpret_cast<int64_t>(this),
+                    "LayerCount", layer_cache_.size(), "LayerMBytes",
+                    EstimateLayerCacheByteSize() / kMegaBytes, "PictureCount",
+                    picture_cache_.size(), "PictureMBytes",
+                    EstimatePictureCacheByteSize() / kMegaBytes);
 
-  size_t layer_cache_count = 0;
+#endif  // !FLUTTER_RELEASE
+}
+
+size_t RasterCache::EstimateLayerCacheByteSize() const {
   size_t layer_cache_bytes = 0;
-  size_t picture_cache_count = 0;
-  size_t picture_cache_bytes = 0;
-
   for (const auto& item : layer_cache_) {
-    layer_cache_count++;
     if (item.second.image) {
       layer_cache_bytes += item.second.image->image_bytes();
     }
   }
+  return layer_cache_bytes;
+}
 
+size_t RasterCache::EstimatePictureCacheByteSize() const {
+  size_t picture_cache_bytes = 0;
   for (const auto& item : picture_cache_) {
-    picture_cache_count++;
     if (item.second.image) {
       picture_cache_bytes += item.second.image->image_bytes();
     }
   }
-
-  FML_TRACE_COUNTER("flutter", "RasterCache",
-                    reinterpret_cast<int64_t>(this),             //
-                    "LayerCount", layer_cache_count,             //
-                    "LayerMBytes", layer_cache_bytes * 1e-6,     //
-                    "PictureCount", picture_cache_count,         //
-                    "PictureMBytes", picture_cache_bytes * 1e-6  //
-  );
-
-#endif  // !FLUTTER_RELEASE
+  return picture_cache_bytes;
 }
 
 }  // namespace flutter

@@ -35,47 +35,60 @@ G_DECLARE_DERIVABLE_TYPE(FlRenderer, fl_renderer, FL, RENDERER, GObject)
 struct _FlRendererClass {
   GObjectClass parent_class;
 
-  // Virtual method called to get the visual that matches the given ID.
-  GdkVisual* (*get_visual)(FlRenderer* renderer,
-                           GdkScreen* screen,
-                           EGLint visual_id);
+  /**
+   * Virtual method called before creating a GdkWindow for the widget.
+   * Does not need to be implemented.
+   */
+  gboolean (*setup_window_attr)(FlRenderer* renderer,
+                                GtkWidget* widget,
+                                EGLDisplay egl_display,
+                                EGLConfig egl_config,
+                                GdkWindowAttr* window_attributes,
+                                gint* mask,
+                                GError** error);
 
-  // Virtual method called when Flutter needs a surface to render to.
-  EGLSurface (*create_surface)(FlRenderer* renderer,
-                               EGLDisplay display,
-                               EGLConfig config);
+  /**
+   * Virtual method called after a GDK window has been created.
+   * This is called once. Does not need to be implemented.
+   */
+  void (*set_window)(FlRenderer* renderer, GdkWindow* window);
+
+  /**
+   * Virtual method to create a new EGL display.
+   */
+  EGLDisplay (*create_display)(FlRenderer* renderer);
+
+  /**
+   * Virtual method called when Flutter needs surfaces to render to.
+   * @renderer: an #FlRenderer.
+   * @display: display to create surfaces on.
+   * @visible: (out): the visible surface that is created.
+   * @resource: (out): the resource surface that is created.
+   * @error: (allow-none): #GError location to store the error occurring, or
+   * %NULL to ignore.
+   *
+   * Returns: %TRUE if both surfaces were created, %FALSE if there was an error.
+   */
+  gboolean (*create_surfaces)(FlRenderer* renderer,
+                              EGLDisplay display,
+                              EGLConfig config,
+                              EGLSurface* visible,
+                              EGLSurface* resource,
+                              GError** error);
+
+  /**
+   * Virtual method called when the EGL window needs to be resized.
+   * Does not need to be implemented.
+   */
+  void (*set_geometry)(FlRenderer* renderer,
+                       GdkRectangle* geometry,
+                       gint scale);
 };
-
-/**
- * fl_renderer_setup:
- * @renderer: an #FlRenderer.
- * @error: (allow-none): #GError location to store the error occurring, or %NULL
- * to ignore.
- *
- * Set up the renderer.
- *
- * Returns: %TRUE if successfully setup.
- */
-gboolean fl_renderer_setup(FlRenderer* self, GError** error);
-
-/**
- * fl_renderer_get_visual:
- * @renderer: an #FlRenderer.
- * @screen: the screen being rendered on.
- * @error: (allow-none): #GError location to store the error occurring, or %NULL
- * to ignore.
- *
- * Gets the visual required to render on.
- *
- * Returns: a #GdkVisual.
- */
-GdkVisual* fl_renderer_get_visual(FlRenderer* self,
-                                  GdkScreen* screen,
-                                  GError** error);
 
 /**
  * fl_renderer_start:
  * @renderer: an #FlRenderer.
+ * @widget: the widget Flutter is renderering to.
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
  *
@@ -83,7 +96,19 @@ GdkVisual* fl_renderer_get_visual(FlRenderer* self,
  *
  * Returns: %TRUE if successfully started.
  */
-gboolean fl_renderer_start(FlRenderer* self, GError** error);
+gboolean fl_renderer_start(FlRenderer* renderer,
+                           GtkWidget* widget,
+                           GError** error);
+
+/**
+ * fl_renderer_set_geometry:
+ * @renderer: an #FlRenderer.
+ * @geometry: New size and position (unscaled) of the EGL window.
+ * @scale: Scale of the window.
+ */
+void fl_renderer_set_geometry(FlRenderer* renderer,
+                              GdkRectangle* geometry,
+                              gint scale);
 
 /**
  * fl_renderer_get_proc_address:

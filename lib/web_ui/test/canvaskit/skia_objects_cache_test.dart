@@ -5,6 +5,7 @@
 // @dart = 2.6
 
 import 'package:mockito/mockito.dart';
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/ui.dart' as ui;
@@ -13,6 +14,10 @@ import 'package:ui/src/engine.dart';
 import 'common.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   group('skia_objects_cache', () {
     _tests();
     // TODO: https://github.com/flutter/flutter/issues/60040
@@ -21,12 +26,22 @@ void main() {
 
 void _tests() {
   SkiaObjects.maximumCacheSize = 4;
+  bool originalBrowserSupportsFinalizationRegistry;
 
   setUpAll(() async {
     await ui.webOnlyInitializePlatform();
+
+    // Pretend the browser does not support FinalizationRegistry so we can test the
+    // resurrection logic.
+    originalBrowserSupportsFinalizationRegistry = browserSupportsFinalizationRegistry;
+    browserSupportsFinalizationRegistry = false;
   });
 
-  group(ResurrectableSkiaObject, () {
+  tearDownAll(() {
+    browserSupportsFinalizationRegistry = originalBrowserSupportsFinalizationRegistry;
+  });
+
+  group(ManagedSkiaObject, () {
     test('implements create, cache, delete, resurrect, delete lifecycle', () {
       int addPostFrameCallbackCount = 0;
 
@@ -152,7 +167,7 @@ class TestOneShotSkiaObject extends OneShotSkiaObject<SkPaint> {
   }
 }
 
-class TestSkiaObject extends ResurrectableSkiaObject<SkPaint> {
+class TestSkiaObject extends ManagedSkiaObject<SkPaint> {
   int createDefaultCount = 0;
   int resurrectCount = 0;
   int deleteCount = 0;

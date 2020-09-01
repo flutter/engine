@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/lib/ui/text/font_collection.h"
 
@@ -9,7 +8,7 @@
 
 #include "flutter/lib/ui/text/asset_manager_font_provider.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "flutter/lib/ui/window/window.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/runtime/test_font_data.h"
 #include "rapidjson/document.h"
 #include "rapidjson/rapidjson.h"
@@ -28,11 +27,13 @@ namespace flutter {
 
 namespace {
 
-void LoadFontFromList(tonic::Uint8List& font_data,
+void LoadFontFromList(tonic::Uint8List& font_data,  // NOLINT
                       Dart_Handle callback,
                       std::string family_name) {
-  FontCollection& font_collection =
-      UIDartState::Current()->window()->client()->GetFontCollection();
+  FontCollection& font_collection = UIDartState::Current()
+                                        ->platform_configuration()
+                                        ->client()
+                                        ->GetFontCollection();
   font_collection.LoadFontFromList(font_data.data(), font_data.num_elements(),
                                    family_name);
   font_data.Release();
@@ -122,7 +123,7 @@ void FontCollection::RegisterFonts(
         continue;
       }
 
-      // TODO: Handle weights and styles.
+      // TODO(chinmaygarde): Handle weights and styles.
       font_provider->RegisterAsset(family_name->value.GetString(),
                                    font_asset->value.GetString());
     }
