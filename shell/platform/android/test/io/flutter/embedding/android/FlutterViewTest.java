@@ -601,8 +601,8 @@ public class FlutterViewTest {
     imageView.acquireLatestImage();
     imageView.acquireLatestImage();
 
-    imageView.onDraw(mock(Canvas.class));
-    imageView.onDraw(mock(Canvas.class));
+    imageView.draw(mock(Canvas.class));
+    imageView.draw(mock(Canvas.class));
 
     // 1 image is closed and 1 is active.
     verify(mockImage, times(1)).close();
@@ -610,7 +610,7 @@ public class FlutterViewTest {
 
     // This call doesn't do anything because there isn't
     // an image in the queue.
-    imageView.onDraw(mock(Canvas.class));
+    imageView.draw(mock(Canvas.class));
     verify(mockImage, times(1)).close();
 
     // Aquire another image and push it to the queue.
@@ -618,7 +618,7 @@ public class FlutterViewTest {
     verify(mockReader, times(3)).acquireLatestImage();
 
     // Then, the second image is closed.
-    imageView.onDraw(mock(Canvas.class));
+    imageView.draw(mock(Canvas.class));
     verify(mockImage, times(2)).close();
   }
   /*

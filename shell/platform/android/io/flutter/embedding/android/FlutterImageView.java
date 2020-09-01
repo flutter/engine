@@ -73,6 +73,14 @@ public class FlutterImageView extends View implements RenderSurface {
     this(context, createImageReader(width, height), kind);
   }
 
+  public FlutterImageView(@NonNull Context context) {
+    this(context, 1, 1, SurfaceKind.background);
+  }
+
+  public FlutterImageView(@NonNull Context context, @NonNull AttributeSet attrs) {
+    this(context, 1, 1, SurfaceKind.background);
+  }
+
   @VisibleForTesting
   FlutterImageView(@NonNull Context context, @NonNull ImageReader imageReader, SurfaceKind kind) {
     super(context, null);
