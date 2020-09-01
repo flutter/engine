@@ -496,7 +496,6 @@ public class FlutterViewTest {
             ((WindowManager)
                     RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
                 .getDefaultDisplay());
-    // display.setRotation(0);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility()).thenReturn(0);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
@@ -529,20 +528,20 @@ public class FlutterViewTest {
 
     Insets waterfallInsets = Insets.of(200, 0, 200, 0);
     when(displayCutout.getWaterfallInsets()).thenReturn(waterfallInsets);
-    when(displatCutout.getSafeInsetTop()).thenReturn(150);
-    when(displatCutout.getSafeInsetBottom()).thenReturn(150);
-    when(displatCutout.getSafeInsetLeft()).thenReturn(150);
-    when(displatCutout.getSafeInsetRight()).thenReturn(150);
+    when(displayCutout.getSafeInsetTop()).thenReturn(150);
+    when(displayCutout.getSafeInsetBottom()).thenReturn(150);
+    when(displayCutout.getSafeInsetLeft()).thenReturn(150);
+    when(displayCutout.getSafeInsetRight()).thenReturn(150);
 
     flutterView.onApplyWindowInsets(windowInsets);
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(150, viewportMetricsCaptor.getValue().systemGestureInsetTop);
-    assertEquals(150, viewportMetricsCaptor.getValue().systemGestureInsetBottom);
-    assertEquals(200, viewportMetricsCaptor.getValue().systemGestureInsetLeft);
-    assertEquals(200, viewportMetricsCaptor.getValue().systemGestureInsetRight);
+    assertEquals(150, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(150, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(200, viewportMetricsCaptor.getValue().paddingLeft);
+    assertEquals(200, viewportMetricsCaptor.getValue().paddingRight);
 
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);
   }
 
   @Test

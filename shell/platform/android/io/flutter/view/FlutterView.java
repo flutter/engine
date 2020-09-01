@@ -589,7 +589,8 @@ public class FlutterView extends SurfaceView
   @RequiresApi(20)
   @SuppressLint({"InlinedApi", "NewApi"})
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    // getSystemGestureInsets() was introduced in API 29 and immediately deprecated in 30.
+    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
       Insets systemGestureInsets = insets.getSystemGestureInsets();
       mMetrics.systemGestureInsetTop = systemGestureInsets.top;
       mMetrics.systemGestureInsetRight = systemGestureInsets.right;
@@ -601,9 +602,8 @@ public class FlutterView extends SurfaceView
     boolean navigationBarVisible =
         (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
-
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      int mask = android.view.WindowInsets.Type.ime();
+      int mask = 0;
       if (navigationBarVisible) {
         mask = mask | android.view.WindowInsets.Type.navigationBars();
       }
@@ -611,29 +611,46 @@ public class FlutterView extends SurfaceView
         mask = mask | android.view.WindowInsets.Type.statusBars();
       }
       Insets uiInsets = insets.getInsets(mask);
-
       mMetrics.physicalPaddingTop = uiInsets.top;
       mMetrics.physicalPaddingRight = uiInsets.right;
-      mMetrics.physicalPaddingBottom = 0;
+      mMetrics.physicalPaddingBottom = uiInsets.bottom;
       mMetrics.physicalPaddingLeft = uiInsets.left;
 
-      mMetrics.physicalViewInsetTop = 0;
-      mMetrics.physicalViewInsetRight = 0;
-      mMetrics.physicalViewInsetBottom = uiInsets.bottom;
-      mMetrics.physicalViewInsetLeft = 0;
+      Insets imeInsets = insets.getInsets(android.view.WindowInsets.Type.ime());
+      mMetrics.physicalViewInsetTop = imeInsets.top;
+      mMetrics.physicalViewInsetRight = imeInsets.right;
+      mMetrics.physicalViewInsetBottom = imeInsets.bottom; // Typically, only bottom is non-zero
+      mMetrics.physicalViewInsetLeft = imeInsets.left;
+
+      Insets systemGestureInsets = insets.getInsets(android.view.WindowInsets.Type.systemGestures());
+      mMetrics.systemGestureInsetTop = systemGestureInsets.top;
+      mMetrics.systemGestureInsetRight = systemGestureInsets.right;
+      mMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
+      mMetrics.systemGestureInsetLeft = systemGestureInsets.left;
 
       // TODO(garyq): Expose the full rects of the display cutout.
 
-      // Take the max of the display cutout insets and existing insets to merge them
-      DisplayCutout cutout = insets.getCutout();
+      // Take the max of the display cutout insets and existing padding to merge them
+      DisplayCutout cutout = insets.getDisplayCutout();
       if (cutout != null) {
         Insets waterfallInsets = cutout.getWaterfallInsets();
-        mMetrics.systemGestureInsetTop = Math.max(Math.max(mMetrics.systemGestureInsetTop, waterfallInsets.top), cutout.getSafeInsetTop());
-        mMetrics.systemGestureInsetRight = Math.max(Math.max(mMetrics.systemGestureInsetRight, waterfallInsets.right), cutout.getSafeInsetRight());
-        mMetrics.systemGestureInsetBottom = Math.max(Math.max(mMetrics.systemGestureInsetBottom, waterfallInsets.bottom), cutout.getSafeInsetBottom());
-        mMetrics.systemGestureInsetLeft = Math.max(Math.max(mMetrics.systemGestureInsetLeft, waterfallInsets.left), cutout.getSafeInsetLeft());
+        mMetrics.physicalPaddingTop =
+            Math.max(
+                Math.max(mMetrics.physicalPaddingTop, waterfallInsets.top),
+                cutout.getSafeInsetTop());
+        mMetrics.physicalPaddingRight =
+            Math.max(
+                Math.max(mMetrics.physicalPaddingRight, waterfallInsets.right),
+                cutout.getSafeInsetRight());
+        mMetrics.physicalPaddingBottom =
+            Math.max(
+                Math.max(mMetrics.physicalPaddingBottom, waterfallInsets.bottom),
+                cutout.getSafeInsetBottom());
+        mMetrics.physicalPaddingLeft =
+            Math.max(
+                Math.max(mMetrics.physicalPaddingLeft, waterfallInsets.left),
+                cutout.getSafeInsetLeft());
       }
-
     } else {
       // We zero the left and/or right sides to prevent the padding the
       // navigation bar would have caused.
