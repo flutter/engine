@@ -13,8 +13,7 @@ import 'package:regular_integration_tests/platform_messages_main.dart' as app;
 import 'package:integration_test/integration_test.dart';
 
 void main() async {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized()
-      as IntegrationTestWidgetsFlutterBinding;
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('platform message for Clipboard.setData reply with future',
       (WidgetTester tester) async {

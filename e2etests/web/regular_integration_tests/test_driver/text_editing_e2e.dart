@@ -12,8 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:integration_test/integration_test.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized()
-      as IntegrationTestWidgetsFlutterBinding;
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Focused text field creates a native input element',
       (WidgetTester tester) async {

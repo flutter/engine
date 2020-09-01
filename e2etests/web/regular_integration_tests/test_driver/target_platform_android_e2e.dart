@@ -9,8 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:integration_test/integration_test.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized()
-      as IntegrationTestWidgetsFlutterBinding;
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Should detect android platform when running on android device',
           (WidgetTester tester) async {

@@ -8,8 +8,7 @@ import 'package:regular_integration_tests/profile_diagnostics_main.dart' as app;
 import 'package:integration_test/integration_test.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized()
-      as IntegrationTestWidgetsFlutterBinding;
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('App build method exception should form valid FlutterErrorDetails',
           (WidgetTester tester) async {

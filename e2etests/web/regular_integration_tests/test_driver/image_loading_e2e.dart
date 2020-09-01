@@ -9,8 +9,7 @@ import 'package:regular_integration_tests/image_loading_main.dart' as app;
 import 'package:integration_test/integration_test.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized()
-      as IntegrationTestWidgetsFlutterBinding;
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Image loads asset variant based on device pixel ratio',
           (WidgetTester tester) async {
