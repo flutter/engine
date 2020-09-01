@@ -81,7 +81,8 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   // TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
   // support for raster thread merger for Fuchsia.
   if (surface_->GetExternalViewEmbedder() &&
-      surface_->GetExternalViewEmbedder()->SupportsDynamicThreadMerging()) {
+      surface_->GetExternalViewEmbedder()->SupportsDynamicThreadMerging() &&
+      !raster_thread_merger_) {
     const auto platform_id =
         delegate_.GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId();
     const auto gpu_id =
@@ -99,7 +100,20 @@ void Rasterizer::Teardown() {
 
   if (raster_thread_merger_.get() != nullptr &&
       raster_thread_merger_.get()->IsMerged()) {
+    FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNow();
+  }
+}
+
+void Rasterizer::EnableThreadMergerIfNeeded() {
+  if (raster_thread_merger_) {
+    raster_thread_merger_->Enable();
+  }
+}
+
+void Rasterizer::DisableThreadMergerIfNeeded() {
+  if (raster_thread_merger_) {
+    raster_thread_merger_->Disable();
   }
 }
 
@@ -162,6 +176,10 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
     }
   } else if (raster_status == RasterStatus::kEnqueuePipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
+  }
+
+  if (surface_ != nullptr) {
+    surface_->ClearRenderContext();
   }
 
   // Merging the thread as we know the next `Draw` should be run on the platform
@@ -666,21 +684,6 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
     return max_bytes;
   }
   return std::nullopt;
-}
-
-void Rasterizer::EnsureThreadsAreMerged() {
-  if (surface_ == nullptr || raster_thread_merger_.get() == nullptr) {
-    return;
-  }
-  const size_t ThreadMergeLeaseTermDefault = 10;
-  fml::TaskRunner::RunNowOrPostTask(
-      delegate_.GetTaskRunners().GetRasterTaskRunner(),
-      [weak_this = weak_factory_.GetWeakPtr(),
-       thread_merger = raster_thread_merger_]() {
-        thread_merger->MergeWithLease(ThreadMergeLeaseTermDefault);
-      });
-  raster_thread_merger_->WaitUntilMerged();
-  FML_DCHECK(raster_thread_merger_->IsMerged());
 }
 
 Rasterizer::Screenshot::Screenshot() {}
