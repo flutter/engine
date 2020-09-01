@@ -148,7 +148,6 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine showAutocorrectionPromptRectForStart:0 end:1 withClient:0]);
 }
 
-
 - (void)testUpdateFirstRectForRange {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   [inputView
