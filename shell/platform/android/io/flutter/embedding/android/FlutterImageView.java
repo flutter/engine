@@ -14,6 +14,7 @@ import android.hardware.HardwareBuffer;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
+import android.util.AttributeSet;
 import android.view.Surface;
 import android.view.View;
 import androidx.annotation.NonNull;
@@ -82,7 +83,8 @@ public class FlutterImageView extends View implements RenderSurface {
   }
 
   @VisibleForTesting
-  FlutterImageView(@NonNull Context context, @NonNull ImageReader imageReader, SurfaceKind kind) {
+  /*package*/ FlutterImageView(
+      @NonNull Context context, @NonNull ImageReader imageReader, SurfaceKind kind) {
     super(context, null);
     this.imageReader = imageReader;
     this.kind = kind;
@@ -212,9 +214,7 @@ public class FlutterImageView extends View implements RenderSurface {
       return;
     }
     imageQueue.clear();
-    if (currentImage != null) {
-      currentImage = null;
-    }
+    currentImage = null;
     // Close all the resources associated with the image reader,
     // including the images.
     imageReader.close();
