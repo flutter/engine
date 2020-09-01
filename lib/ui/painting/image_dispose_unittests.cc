@@ -91,11 +91,13 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrame) {
   ASSERT_TRUE(current_picture_);
   ASSERT_TRUE(current_image_);
 
-  // Make sure we hit at least one VSync flush, in case we're on a slower
-  // machine that effectively missed its VSync drawing this image.
-  bool will_draw_new_frame;
-  VSyncFlush(shell.get(), will_draw_new_frame);
-
+  // Make sure we wait longer than the animator's notify idle.
+  // which is 51ms in animator.cc.
+  message_latch_.Reset();
+  task_runner->PostDelayedTask([&]() {
+    message_latch_.Signal();
+  }, fml::TimeDelta::FromMilliseconds(60));
+  message_latch_.Wait();
   picture_finalizer_latch_.Wait();
 
   // Force a drain the SkiaUnrefQueue.
