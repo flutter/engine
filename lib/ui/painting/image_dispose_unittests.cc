@@ -49,9 +49,8 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrame) {
     current_image_ = image->image();
     current_picture_ = picture->picture();
 
-    Dart_NewFinalizableHandle(
-        Dart_HandleFromWeakPersistent(picture->dart_wrapper()),
-        &picture_finalizer_latch_, 0, &picture_finalizer);
+    Dart_NewFinalizableHandle(Dart_GetNativeArgument(args, 1),
+                              &picture_finalizer_latch_, 0, &picture_finalizer);
   };
 
   auto native_on_begin_frame_done = [&](Dart_NativeArguments args) {
