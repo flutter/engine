@@ -44,7 +44,6 @@ import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
-import java.lang.Math;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -544,7 +543,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
       // TODO(garyq): Expose the full rects of the display cutout.
 
-      // Take the max of the display cutout insets and ui element insets to merge them
+      // Take the max of the display cutout insets and existing insets to merge them
       DisplayCutout cutout = getDisplay().getCutout();
       if (cutout != null) {
         Insets waterfallInsets = cutout.getWaterfallInsets();
