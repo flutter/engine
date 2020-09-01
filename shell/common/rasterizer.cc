@@ -550,13 +550,6 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
-  auto frame = compositor_context.ACQUIRE_FRAME(
-      surface_context, canvas, nullptr, root_surface_transformation, false,
-      true, nullptr);
-  canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true);
-  canvas->flush();
-
   // snapshot_surface->makeImageSnapshot needs the GL context to be set if the
   // render context is GL. frame->Raster() pops the gl context in platforms that
   // gl context switching are used. (For example, older iOS that uses GL) We
@@ -566,6 +559,14 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     FML_LOG(ERROR) << "Screenshot: unable to make image screenshot";
     return nullptr;
   }
+
+  auto frame = compositor_context.ACQUIRE_FRAME(
+      surface_context, canvas, nullptr, root_surface_transformation, false,
+      true, nullptr);
+  canvas->clear(SK_ColorTRANSPARENT);
+  frame->Raster(*tree, true);
+  canvas->flush();
+
   // Prepare an image from the surface, this image may potentially be on th GPU.
   auto potentially_gpu_snapshot = snapshot_surface->makeImageSnapshot();
   if (!potentially_gpu_snapshot) {
