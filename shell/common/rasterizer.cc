@@ -178,10 +178,6 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
   }
 
-  if (surface_ != nullptr) {
-    surface_->ClearRenderContext();
-  }
-
   // Merging the thread as we know the next `Draw` should be run on the platform
   // thread.
   if (surface_ != nullptr && surface_->GetExternalViewEmbedder() != nullptr) {
@@ -473,6 +469,11 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
       surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
     }
+
+    // Clean the render context after submitting the frame.
+    // This ensures that the GL context is released after drawing to the
+    // surface.
+    surface_->ClearRenderContext();
 
     return raster_status;
   }
