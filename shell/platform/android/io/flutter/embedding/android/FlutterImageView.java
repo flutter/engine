@@ -230,7 +230,6 @@ public class FlutterImageView extends View implements RenderSurface {
     if (!imageQueue.isEmpty()) {
       if (currentImage != null) {
         currentImage.close();
-        currentImage = null;
       }
       currentImage = imageQueue.poll();
       updateCurrentBitmap();
