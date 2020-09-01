@@ -544,7 +544,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       // TODO(garyq): Expose the full rects of the display cutout.
 
       // Take the max of the display cutout insets and existing insets to merge them
-      DisplayCutout cutout = getDisplay().getCutout();
+      DisplayCutout cutout = insets.getCutout();
       if (cutout != null) {
         Insets waterfallInsets = cutout.getWaterfallInsets();
         viewportMetrics.systemGestureInsetTop = Math.max(Math.max(viewportMetrics.systemGestureInsetTop, waterfallInsets.top), cutout.getSafeInsetTop());

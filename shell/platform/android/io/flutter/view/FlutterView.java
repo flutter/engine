@@ -625,7 +625,7 @@ public class FlutterView extends SurfaceView
       // TODO(garyq): Expose the full rects of the display cutout.
 
       // Take the max of the display cutout insets and existing insets to merge them
-      DisplayCutout cutout = getDisplay().getCutout();
+      DisplayCutout cutout = insets.getCutout();
       if (cutout != null) {
         Insets waterfallInsets = cutout.getWaterfallInsets();
         mMetrics.systemGestureInsetTop = Math.max(Math.max(mMetrics.systemGestureInsetTop, waterfallInsets.top), cutout.getSafeInsetTop());

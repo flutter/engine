@@ -483,6 +483,68 @@ public class FlutterViewTest {
     assertEquals(103, viewportMetricsCaptor.getValue().paddingRight);
   }
 
+  // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
+  // set to -1 values, so it is clear if the wrong algorithm is used.
+  @Test
+  @TargetApi(30)
+  @Config(sdk = 30)
+  public void systemInsetDisplayCutoutSimple() {
+    RuntimeEnvironment.setQualifiers("+land");
+    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    ShadowDisplay display =
+        Shadows.shadowOf(
+            ((WindowManager)
+                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay());
+    // display.setRotation(0);
+    assertEquals(0, flutterView.getSystemUiVisibility());
+    when(flutterView.getWindowSystemUiVisibility()).thenReturn(0);
+    when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
+
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets,
+    // the viewport metrics default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+
+    Insets insets = Insets.of(100, 100, 100, 100);
+    Insets systemGestureInsets = Insets.of(110, 110, 110, 110);
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    DisplayCutout displayCutout = mock(DisplayCutout.class);
+    when(windowInsets.getSystemWindowInsetTop()).thenReturn(-1);
+    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(-1);
+    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(-1);
+    when(windowInsets.getSystemWindowInsetRight()).thenReturn(-1);
+    when(windowInsets.getInsets(anyInt())).thenReturn(insets);
+    when(windowInsets.getSystemGestureInsets(anyInt())).thenReturn(systemGestureInsets);
+    when(windowInsets.getCutout()).thenReturn(displayCutout);
+
+    Insets waterfallInsets = Insets.of(200, 0, 200, 0);
+    when(displayCutout.getWaterfallInsets()).thenReturn(waterfallInsets);
+    when(displatCutout.getSafeInsetTop()).thenReturn(150);
+    when(displatCutout.getSafeInsetBottom()).thenReturn(150);
+    when(displatCutout.getSafeInsetLeft()).thenReturn(150);
+    when(displatCutout.getSafeInsetRight()).thenReturn(150);
+
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(150, viewportMetricsCaptor.getValue().systemGestureInsetTop);
+    assertEquals(150, viewportMetricsCaptor.getValue().systemGestureInsetBottom);
+    assertEquals(200, viewportMetricsCaptor.getValue().systemGestureInsetLeft);
+    assertEquals(200, viewportMetricsCaptor.getValue().systemGestureInsetRight);
+
+    assertEquals(100, viewportMetricsCaptor.getValue().paddingTop);
+  }
+
   @Test
   public void flutterImageView_acquiresImageAndInvalidates() {
     final ImageReader mockReader = mock(ImageReader.class);
