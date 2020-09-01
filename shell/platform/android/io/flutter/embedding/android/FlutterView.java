@@ -543,9 +543,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
         viewportMetrics.paddingTop = Math.max(Math.max(viewportMetrics.paddingTop, waterfallInsets.top), cutout.getSafeInsetTop());
         viewportMetrics.paddingRight = Math.max(Math.max(viewportMetrics.paddingRight, waterfallInsets.right), cutout.getSafeInsetRight());
+        viewportMetrics.paddingBottom = Math.max(waterfallInsets.bottom, cutout.getSafeInsetBottom());
         viewportMetrics.paddingLeft = Math.max(Math.max(viewportMetrics.paddingLeft, waterfallInsets.left), cutout.getSafeInsetLeft());
 
-        viewportMetrics.viewInsetBottom = Math.max(Math.max(viewportMetrics.viewInsetBottom, waterfallInsets.bottom), cutout.getSafeInsetBottom());
       }
     } else {
       // We zero the left and/or right sides to prevent the padding the
