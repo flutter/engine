@@ -14,6 +14,7 @@ import android.os.Build;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.SparseArray;
+import android.view.DisplayCutout;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.PointerIcon;
@@ -43,6 +44,7 @@ import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
+import java.lang.Math;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -513,25 +515,38 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      int mask = 0;
+      int mask = android.view.WindowInsets.Type.ime();
       if (navigationBarVisible) {
         mask = mask | android.view.WindowInsets.Type.navigationBars();
       }
       if (statusBarVisible) {
         mask = mask | android.view.WindowInsets.Type.statusBars();
       }
-      mask = mask | android.view.WindowInsets.Type.ime();
+      Insets uiInsets = insets.getInsets(mask);
 
-      Insets finalInsets = insets.getInsets(mask);
-      viewportMetrics.paddingTop = finalInsets.top;
-      viewportMetrics.paddingRight = finalInsets.right;
+      viewportMetrics.paddingTop = uiInsets.top;
+      viewportMetrics.paddingRight = uiInsets.right;
       viewportMetrics.paddingBottom = 0;
-      viewportMetrics.paddingLeft = finalInsets.left;
+      viewportMetrics.paddingLeft = uiInsets.left;
 
       viewportMetrics.viewInsetTop = 0;
       viewportMetrics.viewInsetRight = 0;
-      viewportMetrics.viewInsetBottom = finalInsets.bottom;
+      viewportMetrics.viewInsetBottom = uiInsets.bottom;
       viewportMetrics.viewInsetLeft = 0;
+
+      // TODO(garyq): Expose the full rects of the display cutout.
+
+      // Take the max of the display cutout insets and ui element insets to merge them
+      DisplayCutout cutout = insets.getDisplayCutout();
+      if (cutout != null) {
+        Insets waterfallInsets = cutout.getWaterfallInsets();
+
+        viewportMetrics.paddingTop = Math.max(Math.max(viewportMetrics.paddingTop, waterfallInsets.top), cutout.getSafeInsetTop());
+        viewportMetrics.paddingRight = Math.max(Math.max(viewportMetrics.paddingRight, waterfallInsets.right), cutout.getSafeInsetRight());
+        viewportMetrics.paddingLeft = Math.max(Math.max(viewportMetrics.paddingLeft, waterfallInsets.left), cutout.getSafeInsetLeft());
+
+        viewportMetrics.viewInsetBottom = Math.max(Math.max(viewportMetrics.viewInsetBottom, waterfallInsets.bottom), cutout.getSafeInsetBottom());
+      }
     } else {
       // We zero the left and/or right sides to prevent the padding the
       // navigation bar would have caused.
