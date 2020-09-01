@@ -113,7 +113,7 @@ bool AndroidSurfaceGL::GLContextClearCurrent() {
   return android_context_->ClearCurrent();
 }
 
-bool AndroidSurfaceGL::GLContextPresent() {
+bool AndroidSurfaceGL::GLContextPresent(uint32_t fbo_id) {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
   return onscreen_surface_->SwapBuffers();
@@ -127,9 +127,6 @@ intptr_t AndroidSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
 
 // |GPUSurfaceGLDelegate|
 ExternalViewEmbedder* AndroidSurfaceGL::GetExternalViewEmbedder() {
-  if (!AndroidShellHolder::use_embedded_view) {
-    return nullptr;
-  }
   return external_view_embedder_.get();
 }
 
