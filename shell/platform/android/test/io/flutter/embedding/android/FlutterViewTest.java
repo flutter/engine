@@ -12,6 +12,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -579,6 +580,7 @@ public class FlutterViewTest {
   }
 
   @Test
+  @SuppressLint("WrongCall") /*View#onDraw*/
   public void flutterImageView_onDrawClosesAllImages() {
     final ImageReader mockReader = mock(ImageReader.class);
     when(mockReader.getMaxImages()).thenReturn(2);
@@ -601,8 +603,8 @@ public class FlutterViewTest {
     imageView.acquireLatestImage();
     imageView.acquireLatestImage();
 
-    imageView.draw(mock(Canvas.class));
-    imageView.draw(mock(Canvas.class));
+    imageView.onDraw(mock(Canvas.class));
+    imageView.onDraw(mock(Canvas.class));
 
     // 1 image is closed and 1 is active.
     verify(mockImage, times(1)).close();
@@ -610,7 +612,7 @@ public class FlutterViewTest {
 
     // This call doesn't do anything because there isn't
     // an image in the queue.
-    imageView.draw(mock(Canvas.class));
+    imageView.onDraw(mock(Canvas.class));
     verify(mockImage, times(1)).close();
 
     // Aquire another image and push it to the queue.
@@ -618,9 +620,10 @@ public class FlutterViewTest {
     verify(mockReader, times(3)).acquireLatestImage();
 
     // Then, the second image is closed.
-    imageView.draw(mock(Canvas.class));
+    imageView.onDraw(mock(Canvas.class));
     verify(mockImage, times(2)).close();
   }
+
   /*
    * A custom shadow that reports fullscreen flag for system UI visibility
    */
