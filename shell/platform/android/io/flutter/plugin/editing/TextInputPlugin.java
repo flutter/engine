@@ -77,13 +77,13 @@ public class TextInputPlugin {
         new TextInputChannel.TextInputMethodHandler() {
           @Override
           public void show() {
-            controlTextInputWindowInsetsAnimation(150);
+            // controlTextInputWindowInsetsAnimation(150);
             showTextInput(mView);
           }
 
           @Override
           public void hide() {
-            controlTextInputWindowInsetsAnimation(100);
+            // controlTextInputWindowInsetsAnimation(100);
             hideTextInput(mView);
           }
 
@@ -149,18 +149,25 @@ public class TextInputPlugin {
   }
 
   private class CustomWindowInsetsAnimationControlListener implements WindowInsetsAnimationControlListener {
-    private Insets targetInsets;
+    private int offset;
+    int baseInset;
 
     CustomWindowInsetsAnimationControlListener() {
-      targetInsets = Insets.of(0, 0, 0, 0);
+      // targetInsets = Insets.of(0, 0, 0, 0);
     }
 
-    CustomWindowInsetsAnimationControlListener(Insets insets) {
-      targetInsets = insets;
+    void setOffset(int offset) {
+      this.offset = offset;
     }
 
-    void setInsets(Insets insets) {
-      targetInsets = insets;
+    void setBaseInset(int baseInset) {
+      this.baseInset = baseInset;
+    }
+
+    void computeBaseInset(View view) {
+      int mask = android.view.WindowInsets.Type.ime();
+      Insets finalInsets = view.getRootWindowInsets().getInsets(mask);
+      if (baseInset < finalInsets.bottom) setBaseInset(finalInsets.bottom);
     }
 
     public void onCancelled(WindowInsetsAnimationController controller) {}
@@ -168,18 +175,25 @@ public class TextInputPlugin {
     public void onFinished(WindowInsetsAnimationController controller) {}
 
     public void onReady(WindowInsetsAnimationController controller, int types) {
-      controller.setInsetsAndAlpha(targetInsets, 1f, 1f);
+      if (controller.isReady() && (controller.getTypes() & types) > 0) {
+        controller.setInsetsAndAlpha(Insets.of(0, 0, 0, baseInset + offset), 1f, 1f);
+      }
+      // controller.finish(true);
     }
   }
 
-  private void controlTextInputWindowInsetsAnimation(int bottomInset) {
-    Log.e("flutter", "IN THE WINDOW WindowInsetsAnimationController !!!!!!!!!: " + bottomInset);
-    Insets targetInsets = Insets.of(0, 0, 0, bottomInset);
-    if (mInsetsListener == null) {
-      mInsetsListener = new CustomWindowInsetsAnimationControlListener(targetInsets);
-    } else {
-      mInsetsListener.setInsets(targetInsets);
-    }
+  private void controlTextInputWindowInsetsAnimation(int offset) {
+    Log.e("flutter", "IN THE WINDOW WindowInsetsAnimationController !!!!!!!!!: " + offset + " " + mInsetsListener.baseInset);
+    // if (mInsetsListener == null) {
+    //   mInsetsListener = new CustomWindowInsetsAnimationControlListener();
+    //   mInsetsListener.setBaseInset(0);
+    //   mInsetsListener.setOffset(offset);
+    // } else {
+    //   mInsetsListener.setOffset(offset);
+    // }
+    setupInsetsListener();
+    mInsetsListener.setOffset(offset);
+    mInsetsListener.computeBaseInset(mView);
     mView.getWindowInsetsController().controlWindowInsetsAnimation(
       android.view.WindowInsets.Type.ime(),
       -1,   // duration.
@@ -187,6 +201,12 @@ public class TextInputPlugin {
       null, // cancellationSignal
       mInsetsListener
     );
+  }
+
+  private void setupInsetsListener() {
+    if (mInsetsListener == null) {
+      mInsetsListener = new CustomWindowInsetsAnimationControlListener();
+    }
   }
 
   @NonNull
@@ -371,6 +391,8 @@ public class TextInputPlugin {
   private void showTextInput(View view) {
     view.requestFocus();
     mImm.showSoftInput(view, 0);
+    setupInsetsListener();
+    mInsetsListener.computeBaseInset(mView);
   }
 
   private void hideTextInput(View view) {
@@ -382,6 +404,8 @@ public class TextInputPlugin {
     // field(by text field here I mean anything that keeps the keyboard open).
     // See: https://github.com/flutter/flutter/issues/34169
     mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
+    setupInsetsListener();
+    mInsetsListener.computeBaseInset(mView);
   }
 
   private void notifyViewEntered() {

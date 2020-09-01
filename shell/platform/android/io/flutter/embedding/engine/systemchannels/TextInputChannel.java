@@ -136,11 +136,10 @@ public class TextInputChannel {
               break;
 
             case "TextInput.setKeyboardInset":
-              textInputMethodHandler.setKeyboardInset();
                try {
                 final JSONObject arguments = (JSONObject) args;
                 final int bottomInset = arguments.getInt("bottomInset");
-                textInputMethodHandler.sendAppPrivateCommand(bottomInset);
+                textInputMethodHandler.setKeyboardInset(bottomInset);
                 result.success(null);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
