@@ -167,15 +167,22 @@ public class TextInputPlugin {
     void computeBaseInset(View view) {
       int mask = android.view.WindowInsets.Type.ime();
       Insets finalInsets = view.getRootWindowInsets().getInsets(mask);
+      Log.e("flutter", "CURRENT VIEW BOTTOM INSET: " + finalInsets.bottom);
       if (baseInset < finalInsets.bottom) setBaseInset(finalInsets.bottom);
     }
 
-    public void onCancelled(WindowInsetsAnimationController controller) {}
+    public void onCancelled(WindowInsetsAnimationController controller) {
+      Log.e("flutter", "  CANCELLED");
+    }
 
-    public void onFinished(WindowInsetsAnimationController controller) {}
+    public void onFinished(WindowInsetsAnimationController controller) {
+      Log.e("flutter", "  FINISHED");
+    }
 
     public void onReady(WindowInsetsAnimationController controller, int types) {
+      Log.e("flutter", "  READY");
       if (controller.isReady() && (controller.getTypes() & types) > 0) {
+        Log.e("flutter", "    READY SET " + offset + " " + baseInset);
         controller.setInsetsAndAlpha(Insets.of(0, 0, 0, baseInset + offset), 1f, 1f);
       }
       // controller.finish(true);
@@ -201,6 +208,10 @@ public class TextInputPlugin {
       null, // cancellationSignal
       mInsetsListener
     );
+    WindowInsets.Builder builder = new WindowInsets.Builder(mView.getRootWindowInsets());
+    builder.setInsets(android.view.WindowInsets.Type.ime(), Insets.of(0, 0, 0, mInsetsListener.baseInset + offset));
+
+    mView.dispatchApplyWindowInsets(builder.build());
   }
 
   private void setupInsetsListener() {
