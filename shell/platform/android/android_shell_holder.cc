@@ -107,7 +107,7 @@ AndroidShellHolder::AndroidShellHolder(
                                     ui_runner,        // ui
                                     io_runner         // io
   );
-  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([]() {
+  task_runners.GetRasterTaskRunner()->PostTask([]() {
     // Android describes -8 as "most important display threads, for
     // compositing the screen and retrieving input events". Conservatively
     // set the raster thread to slightly lower priority than it.
@@ -119,7 +119,7 @@ AndroidShellHolder::AndroidShellHolder(
       }
     }
   });
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask([]() {
+  task_runners.GetUITaskRunner()->PostTask([]() {
     if (::setpriority(PRIO_PROCESS, gettid(), -1) != 0) {
       FML_LOG(ERROR) << "Failed to set UI task runner priority";
     }
