@@ -542,7 +542,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       viewportMetrics.viewInsetBottom = imeInsets.bottom; // Typically, only bottom is non-zero
       viewportMetrics.viewInsetLeft = imeInsets.left;
 
-      Insets systemGestureInsets = insets.getInsets(android.view.WindowInsets.Type.systemGestures());
+      Insets systemGestureInsets =
+          insets.getInsets(android.view.WindowInsets.Type.systemGestures());
       viewportMetrics.systemGestureInsetTop = systemGestureInsets.top;
       viewportMetrics.systemGestureInsetRight = systemGestureInsets.right;
       viewportMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;

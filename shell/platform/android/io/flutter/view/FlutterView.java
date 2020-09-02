@@ -622,7 +622,8 @@ public class FlutterView extends SurfaceView
       mMetrics.physicalViewInsetBottom = imeInsets.bottom; // Typically, only bottom is non-zero
       mMetrics.physicalViewInsetLeft = imeInsets.left;
 
-      Insets systemGestureInsets = insets.getInsets(android.view.WindowInsets.Type.systemGestures());
+      Insets systemGestureInsets =
+          insets.getInsets(android.view.WindowInsets.Type.systemGestures());
       mMetrics.systemGestureInsetTop = systemGestureInsets.top;
       mMetrics.systemGestureInsetRight = systemGestureInsets.right;
       mMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
