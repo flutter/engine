@@ -22,6 +22,7 @@ import android.graphics.Insets;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
+import android.view.DisplayCutout;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
@@ -523,8 +524,8 @@ public class FlutterViewTest {
     when(windowInsets.getSystemWindowInsetLeft()).thenReturn(-1);
     when(windowInsets.getSystemWindowInsetRight()).thenReturn(-1);
     when(windowInsets.getInsets(anyInt())).thenReturn(insets);
-    when(windowInsets.getSystemGestureInsets(anyInt())).thenReturn(systemGestureInsets);
-    when(windowInsets.getCutout()).thenReturn(displayCutout);
+    when(windowInsets.getSystemGestureInsets()).thenReturn(systemGestureInsets);
+    when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
 
     Insets waterfallInsets = Insets.of(200, 0, 200, 0);
     when(displayCutout.getWaterfallInsets()).thenReturn(waterfallInsets);
