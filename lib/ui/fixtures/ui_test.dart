@@ -77,8 +77,8 @@ void _validateExternal(Uint8List result) native 'ValidateExternal';
 
 @pragma('vm:entry-point')
 Future<void> pumpImage() async {
-  const int width = 1000;
-  const int height = 1000;
+  const int width = 6000;
+  const int height = 6000;
   final Completer<Image> completer = Completer<Image>();
   decodeImageFromPixels(
     Uint8List.fromList(List<int>.filled(width * height * 4, 0xFF)),
