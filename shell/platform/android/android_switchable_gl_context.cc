@@ -37,6 +37,6 @@ bool AndroidSwitchableGLContext::RemoveCurrent() {
   result = eglMakeCurrent(environment_->Display(), EGL_NO_SURFACE,
                           EGL_NO_SURFACE, EGL_NO_CONTEXT);
   return result == EGL_TRUE;
-  return true;
 };
+
 }  // namespace flutter

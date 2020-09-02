@@ -32,9 +32,8 @@ class AndroidEGLSurface {
   ~AndroidEGLSurface();
 
   //----------------------------------------------------------------------------
-  /// @return     Whether the current `EGLSurface` reference is valid. That is,
-  /// if
-  ///             the surface doesn't point to `EGL_NO_SURFACE`.
+  /// @return     Whether the current `EGLSurface` reference is valid.
+  ///             That is, if the surface doesn't point to `EGL_NO_SURFACE`.
   ///
   bool IsValid() const;
 
@@ -42,7 +41,9 @@ class AndroidEGLSurface {
   /// @brief      Binds the EGLContext context to the current rendering thread
   ///             and to the draw and read surface.
   ///
-  /// @return     Whether the surface was made current.
+  /// @return     The GL context result. The GL context is clear once this
+  ///             object is deallocated. This ocurrs prior to making the
+  ///             GL context current on a different thread.
   ///
   std::unique_ptr<GLContextResult> MakeCurrent();
 
