@@ -136,15 +136,6 @@ std::unique_ptr<GLContextResult> AndroidEGLSurface::MakeCurrent() {
   return std::move(context_switch);
 }
 
-bool AndroidEGLSurface::ResourceMakeCurrent() {
-  if (eglMakeCurrent(display_, surface_, surface_, context_) != EGL_TRUE) {
-    FML_LOG(ERROR) << "Could not make the context current";
-    LogLastEGLError();
-    return false;
-  }
-  return true;
-}
-
 bool AndroidEGLSurface::SwapBuffers() {
   TRACE_EVENT0("flutter", "AndroidContextGL::SwapBuffers");
   return eglSwapBuffers(display_, surface_);

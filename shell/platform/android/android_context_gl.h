@@ -46,8 +46,6 @@ class AndroidEGLSurface {
   ///
   std::unique_ptr<GLContextResult> MakeCurrent();
 
-  bool ResourceMakeCurrent();
-
   //----------------------------------------------------------------------------
   /// @brief      This only applies to on-screen surfaces such as those created
   ///             by `AndroidContextGL::CreateOnscreenSurface`.
