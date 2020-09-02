@@ -65,6 +65,8 @@ class ShellTest : public FixtureTest {
       std::function<void(std::shared_ptr<ContainerLayer> root)>;
 
   static void SetViewportMetrics(Shell* shell, double width, double height);
+  static void NotifyIdle(Shell* shell, int64_t deadline);
+
   static void PumpOneFrame(Shell* shell,
                            double width = 1,
                            double height = 1,

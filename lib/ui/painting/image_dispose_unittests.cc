@@ -91,12 +91,12 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrame) {
   ASSERT_TRUE(current_picture_);
   ASSERT_TRUE(current_image_);
 
-  // Make sure we wait longer than the animator's notify idle.
-  // which is 51ms in animator.cc.
-  message_latch_.Reset();
-  task_runner->PostDelayedTask([&]() { message_latch_.Signal(); },
-                               fml::TimeDelta::FromMilliseconds(60));
-  message_latch_.Wait();
+  // Simulate a large notify idle, as the animator would do
+  // when it has no frames left.
+  // On slower machines, this is especially important - we capture that
+  // this happens normally in devicelab bnechmarks like large_image_changer.
+  NotifyIdle(shell.get(), Dart_TimelineGetMicros() + 100000);
+
   picture_finalizer_latch_.Wait();
 
   // Force a drain the SkiaUnrefQueue.
