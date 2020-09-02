@@ -113,6 +113,11 @@
 
   if (err != 0) {
     FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
+    if (@available(iOS 14.0, *)) {
+      FML_LOG(ERROR) << "Make sure the 'NSBonjourServices' key is set in your Info.plist for '"
+                     << registrationType << "'.  "
+                     << "(See also: https://developer.apple.com/news/?id=0oi77447)";
+    }
   } else {
     DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
   }
@@ -127,6 +132,11 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
                                            void* context) {
   if (errorCode == kDNSServiceErr_NoError) {
     FML_DLOG(INFO) << "FlutterObservatoryPublisher is ready!";
+  } else if (errorCode == kDNSServiceErr_PolicyDenied) {
+    FML_LOG(ERROR)
+        << "Could not register as server for FlutterObservatoryPublisher, permission "
+        << "denied. Check your 'Local Network' permissions for this app in the Privacy section of "
+        << "the system Settings.";
   } else {
     FML_LOG(ERROR) << "Could not register as server for FlutterObservatoryPublisher. Check your "
                       "network settings and relaunch the application.";
