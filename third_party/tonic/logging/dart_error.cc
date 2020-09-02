@@ -21,7 +21,7 @@ bool LogIfError(Dart_Handle handle) {
     const std::string stack_trace =
         tonic::StdStringFromDart(Dart_ToString(stack_trace_handle));
     tonic::Log("Dart Unhandled Exception: %s, stack trace: %s",
-        exception.c_str(), stack_trace.c_str());
+               exception.c_str(), stack_trace.c_str());
     return true;
   } else if (Dart_IsError(handle)) {
     tonic::Log("Dart Error: %s", Dart_GetError(handle));
