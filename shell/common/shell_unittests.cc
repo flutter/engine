@@ -597,6 +597,62 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
+TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
+  auto settings = CreateSettingsForFixture();
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger;
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> thread_merger) {
+        raster_thread_merger = thread_merger;
+      };
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kSuccess, true);
+  // Set resubmit once to trigger thread merging.
+  external_view_embedder->SetResubmitOnce();
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    SkPictureRecorder recorder;
+    SkCanvas* recording_canvas =
+        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
+    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
+                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+    auto sk_picture = recorder.finishRecordingAsPicture();
+    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+    auto picture_layer = std::make_shared<PictureLayer>(
+        SkPoint::Make(10, 10),
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
+    root->Add(picture_layer);
+  };
+
+  PumpOneFrame(shell.get(), 100, 100, builder);
+
+  auto result =
+      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  ASSERT_TRUE(result.ok());
+
+  ASSERT_TRUE(raster_thread_merger->IsEnabled());
+
+  ValidateDestroyPlatformView(shell.get());
+  ASSERT_TRUE(raster_thread_merger->IsEnabled());
+
+  // Validate the platform view can be recreated and destroyed again
+  ValidateShell(shell.get());
+  ASSERT_TRUE(raster_thread_merger->IsEnabled());
+
+  DestroyShell(std::move(shell));
+}
+
 TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
   const size_t ThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
@@ -664,14 +720,14 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
 }
 
 TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
-  const size_t ThreadMergingLease = 10;
+  const size_t kThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
         if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
-          raster_thread_merger->MergeWithLease(ThreadMergingLease);
+          raster_thread_merger->MergeWithLease(kThreadMergingLease);
         }
         end_frame_latch.Signal();
       };
@@ -960,14 +1016,7 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
 #else
   // Our batch time is 100ms. Hopefully the 500ms limit is relaxed enough to
   // make it not too flaky.
-  //
-  // TODO(https://github.com/flutter/flutter/issues/64087): Fuchsia uses a
-  // 2000ms timeout to handle slowdowns in FEMU.
-#if OS_FUCHSIA
-  ASSERT_TRUE(elapsed <= fml::TimeDelta::FromMilliseconds(2000));
-#else
   ASSERT_TRUE(elapsed <= fml::TimeDelta::FromMilliseconds(500));
-#endif
 #endif
 }
 

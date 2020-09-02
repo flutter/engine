@@ -10,16 +10,18 @@
 #include <sstream>
 
 #include "flutter/fml/logging.h"
-#include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/window/pointer_data.h"
 #include "flutter/lib/ui/window/window.h"
-#include "flutter_runner_product_configuration.h"
 #include "logging.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "runtime/dart/utils/inlines.h"
 #include "vsync_waiter.h"
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+#include "flutter/lib/ui/compositing/scene_host.h"
+#endif
 
 namespace flutter_runner {
 
@@ -58,11 +60,11 @@ PlatformView::PlatformView(
     fit::closure session_listener_error_callback,
     OnEnableWireframe wireframe_enabled_callback,
     OnCreateView on_create_view_callback,
+    OnUpdateView on_update_view_callback,
     OnDestroyView on_destroy_view_callback,
-    OnGetViewEmbedder on_get_view_embedder_callback,
-    OnGetGrContext on_get_gr_context_callback,
-    zx_handle_t vsync_event_handle,
-    FlutterRunnerProductConfiguration product_config)
+    OnCreateSurface on_create_surface_callback,
+    fml::TimeDelta vsync_offset,
+    zx_handle_t vsync_event_handle)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
       view_ref_(std::move(view_ref)),
@@ -72,12 +74,12 @@ PlatformView::PlatformView(
           std::move(session_listener_error_callback)),
       wireframe_enabled_callback_(std::move(wireframe_enabled_callback)),
       on_create_view_callback_(std::move(on_create_view_callback)),
+      on_update_view_callback_(std::move(on_update_view_callback)),
       on_destroy_view_callback_(std::move(on_destroy_view_callback)),
-      on_get_view_embedder_callback_(std::move(on_get_view_embedder_callback)),
-      on_get_gr_context_callback_(std::move(on_get_gr_context_callback)),
+      on_create_surface_callback_(std::move(on_create_surface_callback)),
       ime_client_(this),
-      vsync_event_handle_(vsync_event_handle),
-      product_config_(product_config) {
+      vsync_offset_(std::move(vsync_offset)),
+      vsync_event_handle_(vsync_event_handle) {
   // Register all error handlers.
   SetInterfaceErrorHandler(session_listener_binding_, "SessionListener");
   SetInterfaceErrorHandler(ime_, "Input Method Editor");
@@ -246,6 +248,7 @@ void PlatformView::OnScenicEvent(
             }
             break;
           }
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
           case fuchsia::ui::gfx::Event::Tag::kViewConnected:
             OnChildViewConnected(event.gfx().view_connected().view_holder_id);
             break;
@@ -258,6 +261,7 @@ void PlatformView::OnScenicEvent(
                 event.gfx().view_state_changed().view_holder_id,
                 event.gfx().view_state_changed().state.is_rendering);
             break;
+#endif
           case fuchsia::ui::gfx::Event::Tag::Invalid:
             FML_DCHECK(false) << "Flutter PlatformView::OnScenicEvent: Got "
                                  "an invalid GFX event.";
@@ -315,6 +319,7 @@ void PlatformView::OnScenicEvent(
   }
 }
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 void PlatformView::OnChildViewConnected(scenic::ResourceId view_holder_id) {
   task_runners_.GetUITaskRunner()->PostTask([view_holder_id]() {
     flutter::SceneHost::OnViewConnected(view_holder_id);
@@ -333,6 +338,7 @@ void PlatformView::OnChildViewStateChanged(scenic::ResourceId view_holder_id,
     flutter::SceneHost::OnViewStateChanged(view_holder_id, state);
   });
 }
+#endif
 
 static flutter::PointerData::Change GetChangeFromPointerEventPhase(
     fuchsia::ui::input::PointerEventPhase phase) {
@@ -511,21 +517,12 @@ void PlatformView::DeactivateIme() {
 // |flutter::PlatformView|
 std::unique_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
   return std::make_unique<flutter_runner::VsyncWaiter>(
-      debug_label_, vsync_event_handle_, task_runners_,
-      product_config_.get_vsync_offset());
+      debug_label_, vsync_event_handle_, task_runners_, vsync_offset_);
 }
 
 // |flutter::PlatformView|
 std::unique_ptr<flutter::Surface> PlatformView::CreateRenderingSurface() {
-  // This platform does not repeatly lose and gain a surface connection. So the
-  // surface is setup once during platform view setup and returned to the
-  // shell on the initial (and only) |NotifyCreated| call.
-  auto view_embedder = on_get_view_embedder_callback_
-                           ? on_get_view_embedder_callback_()
-                           : nullptr;
-  auto gr_context =
-      on_get_gr_context_callback_ ? on_get_gr_context_callback_() : nullptr;
-  return std::make_unique<Surface>(debug_label_, view_embedder, gr_context);
+  return on_create_surface_callback_ ? on_create_surface_callback_() : nullptr;
 }
 
 // |flutter::PlatformView|
@@ -762,6 +759,35 @@ void PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
       message->response()->Complete(
           std::make_unique<fml::NonOwnedMapping>((const uint8_t*)"[0]", 3u));
     }
+  } else if (method->value == "View.update") {
+    auto args_it = root.FindMember("args");
+    if (args_it == root.MemberEnd() || !args_it->value.IsObject()) {
+      FML_LOG(ERROR) << "No arguments found.";
+      return;
+    }
+    const auto& args = args_it->value;
+
+    auto view_id = args.FindMember("viewId");
+    if (!view_id->value.IsUint64()) {
+      FML_LOG(ERROR) << "Argument 'viewId' is not a int64";
+      return;
+    }
+
+    auto hit_testable = args.FindMember("hitTestable");
+    if (!hit_testable->value.IsBool()) {
+      FML_LOG(ERROR) << "Argument 'hitTestable' is not a bool";
+      return;
+    }
+
+    auto focusable = args.FindMember("focusable");
+    if (!focusable->value.IsBool()) {
+      FML_LOG(ERROR) << "Argument 'focusable' is not a bool";
+      return;
+    }
+
+    on_update_view_callback_(view_id->value.GetUint64(),
+                             hit_testable->value.GetBool(),
+                             focusable->value.GetBool());
   } else if (method->value == "View.dispose") {
     auto args_it = root.FindMember("args");
     if (args_it == root.MemberEnd() || !args_it->value.IsObject()) {
