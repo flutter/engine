@@ -134,12 +134,6 @@ std::unique_ptr<GLContextResult> AndroidEGLSurface::MakeCurrent() {
     LogLastEGLError();
   }
   return std::move(context_switch);
-  // EGLBoolean result = eglMakeCurrent(display_, surface_, surface_, context_);
-  // if (result != EGL_TRUE) {
-  //   FML_LOG(ERROR) << "Could not make the context current";
-  //   LogLastEGLError();
-  // }
-  // return std::make_unique<GLContextDefaultResult>(result == EGL_TRUE);
 }
 
 bool AndroidEGLSurface::ResourceMakeCurrent() {

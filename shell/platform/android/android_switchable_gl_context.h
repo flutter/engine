@@ -18,14 +18,16 @@ namespace flutter {
 
 class AndroidSwitchableGLContext final : public SwitchableGLContext {
  public:
-  AndroidSwitchableGLContext(EGLContext context, EGLSurface surface, EGLDisplay display, fml::RefPtr<AndroidEnvironmentGL> environment);
+  AndroidSwitchableGLContext(EGLContext context,
+                             EGLSurface surface,
+                             EGLDisplay display,
+                             fml::RefPtr<AndroidEnvironmentGL> environment);
 
   bool SetCurrent() override;
 
   bool RemoveCurrent() override;
 
  private:
-
   const EGLContext context_;
   EGLContext previous_context_;
   const EGLSurface surface_;

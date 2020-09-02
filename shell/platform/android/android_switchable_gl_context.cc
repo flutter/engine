@@ -6,14 +6,15 @@
 
 namespace flutter {
 
-AndroidSwitchableGLContext::AndroidSwitchableGLContext(EGLContext context,
-                                                       EGLSurface surface,
-                                                       EGLDisplay display,
-                                                       fml::RefPtr<AndroidEnvironmentGL> environment) :
-                                                       context_(context),
-                                                       surface_(surface),
-                                                       display_(display),
-                                                       environment_(environment){};
+AndroidSwitchableGLContext::AndroidSwitchableGLContext(
+    EGLContext context,
+    EGLSurface surface,
+    EGLDisplay display,
+    fml::RefPtr<AndroidEnvironmentGL> environment)
+    : context_(context),
+      surface_(surface),
+      display_(display),
+      environment_(environment){};
 
 bool AndroidSwitchableGLContext::SetCurrent() {
   FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker);
@@ -31,11 +32,11 @@ bool AndroidSwitchableGLContext::RemoveCurrent() {
   FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker);
   EGLBoolean result;
   if (previous_context_ == context_) {
-      result = eglMakeCurrent(display_, surface_, surface_, context_);
+    result = eglMakeCurrent(display_, surface_, surface_, context_);
   }
-  result = eglMakeCurrent(environment_->Display(), EGL_NO_SURFACE, EGL_NO_SURFACE,
-                     EGL_NO_CONTEXT);
+  result = eglMakeCurrent(environment_->Display(), EGL_NO_SURFACE,
+                          EGL_NO_SURFACE, EGL_NO_CONTEXT);
   return result == EGL_TRUE;
-    return true;
+  return true;
 };
-}
+}  // namespace flutter
