@@ -8,9 +8,14 @@ import 'dart:html' as html;
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   group('Surface', () {
     setUp(() {
       SurfaceSceneBuilder.debugForgetFrameScene();
@@ -353,6 +358,22 @@ void main() {
       expect(opacityLayer2.isActive, true);
       expect(
           opacityLayer2.rootElement, element); // adopts old surface's element
+    });
+
+    // Regression test for https://github.com/flutter/flutter/issues/60461
+    //
+    // During retained match many to many, build can be called on existing
+    // PersistedPhysicalShape multiple times when not matched.
+    test('Can call apply multiple times on existing PersistedPhysicalShape'
+        'when using arbitrary path',
+            () {
+      final SceneBuilder builder1 = SceneBuilder();
+      final Path path = Path();
+      path.addPolygon([Offset(50, 0), Offset(100, 80), Offset(20, 40)], true);
+      PersistedPhysicalShape shape = builder1.pushPhysicalShape(path: path,
+        color: Color(0xFF00FF00), elevation: 1);
+      builder1.build();
+      expect(() => shape.apply(), returnsNormally);
     });
   });
 }

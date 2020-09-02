@@ -229,9 +229,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                                                             : "127.0.0.1";
   }
 
-  settings.use_embedded_view =
-      command_line.HasOption(FlagForSwitch(Switch::UseEmbeddedView));
-
   // Set Observatory Port
   if (command_line.HasOption(FlagForSwitch(Switch::DeviceObservatoryPort))) {
     if (!GetSwitchValue(command_line, Switch::DeviceObservatoryPort,
@@ -242,8 +239,11 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     }
   }
 
-  settings.disable_http =
-      command_line.HasOption(FlagForSwitch(Switch::DisableHttp));
+  settings.may_insecurely_connect_to_all_domains = !command_line.HasOption(
+      FlagForSwitch(Switch::DisallowInsecureConnections));
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::DomainNetworkPolicy),
+                              &settings.domain_network_policy);
 
   // Disable need for authentication codes for VM service communication, if
   // specified.

@@ -308,6 +308,7 @@ static void CommonInit(FlutterViewController* controller) {
   }
   // Send the initial user settings such as brightness and text scale factor
   // to the engine.
+  // TODO(stuartmorgan): Move this logic to FlutterEngine.
   [self sendInitialSettings];
   return YES;
 }

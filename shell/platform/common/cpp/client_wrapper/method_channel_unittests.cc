@@ -67,11 +67,12 @@ TEST(MethodChannelTest, Registration) {
         // result.
         EXPECT_EQ(call.method_name(), method_name);
         EXPECT_NE(result, nullptr);
+        result->Success();
       });
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
   // Send a test message to trigger the handler test assertions.
-  MethodCall<EncodableValue> call(method_name, nullptr);
+  MethodCall<> call(method_name, nullptr);
   auto message = codec.EncodeMethodCall(call);
 
   messenger.last_message_handler()(
@@ -85,7 +86,7 @@ TEST(MethodChannelTest, Unregistration) {
   TestBinaryMessenger messenger;
   const std::string channel_name("some_channel");
   MethodChannel channel(&messenger, channel_name,
-                        &flutter::StandardMethodCodec::GetInstance());
+                        &StandardMethodCodec::GetInstance());
 
   channel.SetMethodCallHandler([](const auto& call, auto result) {});
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
@@ -100,7 +101,7 @@ TEST(MethodChannelTest, InvokeWithoutResponse) {
   TestBinaryMessenger messenger;
   const std::string channel_name("some_channel");
   MethodChannel channel(&messenger, channel_name,
-                        &flutter::StandardMethodCodec::GetInstance());
+                        &StandardMethodCodec::GetInstance());
 
   channel.InvokeMethod("foo", nullptr);
   EXPECT_TRUE(messenger.send_called());
@@ -111,11 +112,11 @@ TEST(MethodChannelTest, InvokeWithResponse) {
   TestBinaryMessenger messenger;
   const std::string channel_name("some_channel");
   MethodChannel channel(&messenger, channel_name,
-                        &flutter::StandardMethodCodec::GetInstance());
+                        &StandardMethodCodec::GetInstance());
 
   bool received_reply = false;
   const std::string reply = "bar";
-  auto result_handler = std::make_unique<MethodResultFunctions<EncodableValue>>(
+  auto result_handler = std::make_unique<MethodResultFunctions<>>(
       [&received_reply, reply](const EncodableValue* success_value) {
         received_reply = true;
         EXPECT_EQ(std::get<std::string>(*success_value), reply);
@@ -129,8 +130,7 @@ TEST(MethodChannelTest, InvokeWithResponse) {
   // Call the underlying reply handler to ensure it's processed correctly.
   EncodableValue reply_value(reply);
   std::unique_ptr<std::vector<uint8_t>> encoded_reply =
-      flutter::StandardMethodCodec::GetInstance().EncodeSuccessEnvelope(
-          &reply_value);
+      StandardMethodCodec::GetInstance().EncodeSuccessEnvelope(&reply_value);
   messenger.last_reply_handler()(encoded_reply->data(), encoded_reply->size());
   EXPECT_TRUE(received_reply);
 }
@@ -139,10 +139,10 @@ TEST(MethodChannelTest, InvokeNotImplemented) {
   TestBinaryMessenger messenger;
   const std::string channel_name("some_channel");
   MethodChannel channel(&messenger, channel_name,
-                        &flutter::StandardMethodCodec::GetInstance());
+                        &StandardMethodCodec::GetInstance());
 
   bool received_not_implemented = false;
-  auto result_handler = std::make_unique<MethodResultFunctions<EncodableValue>>(
+  auto result_handler = std::make_unique<MethodResultFunctions<>>(
       nullptr, nullptr,
       [&received_not_implemented]() { received_not_implemented = true; });
 

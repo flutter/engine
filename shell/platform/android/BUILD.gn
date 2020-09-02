@@ -117,6 +117,7 @@ embedding_sources_jar_filename = "$embedding_artifact_id-sources.jar"
 embedding_source_jar_path = "$root_out_dir/$embedding_sources_jar_filename"
 
 android_java_sources = [
+  "io/flutter/FlutterInjector.java",
   "io/flutter/Log.java",
   "io/flutter/app/FlutterActivity.java",
   "io/flutter/app/FlutterActivityDelegate.java",
@@ -153,6 +154,8 @@ android_java_sources = [
   "io/flutter/embedding/engine/dart/DartExecutor.java",
   "io/flutter/embedding/engine/dart/DartMessenger.java",
   "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
+  "io/flutter/embedding/engine/loader/ApplicationInfoLoader.java",
+  "io/flutter/embedding/engine/loader/FlutterApplicationInfo.java",
   "io/flutter/embedding/engine/loader/FlutterLoader.java",
   "io/flutter/embedding/engine/loader/ResourceExtractor.java",
   "io/flutter/embedding/engine/mutatorsstack/FlutterMutatorView.java",
@@ -174,6 +177,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/plugins/service/ServicePluginBinding.java",
   "io/flutter/embedding/engine/plugins/shim/ShimPluginRegistry.java",
   "io/flutter/embedding/engine/plugins/shim/ShimRegistrar.java",
+  "io/flutter/embedding/engine/plugins/util/GeneratedPluginRegister.java",
   "io/flutter/embedding/engine/renderer/FlutterRenderer.java",
   "io/flutter/embedding/engine/renderer/FlutterUiDisplayListener.java",
   "io/flutter/embedding/engine/renderer/RenderSurface.java",
@@ -413,8 +417,10 @@ action("robolectric_tests") {
   jar_path = "$root_out_dir/robolectric_tests.jar"
 
   sources = [
+    "test/io/flutter/FlutterInjectorTest.java",
     "test/io/flutter/FlutterTestSuite.java",
     "test/io/flutter/SmokeTest.java",
+    "test/io/flutter/embedding/android/AndroidKeyProcessorTest.java",
     "test/io/flutter/embedding/android/FlutterActivityAndFragmentDelegateTest.java",
     "test/io/flutter/embedding/android/FlutterActivityTest.java",
     "test/io/flutter/embedding/android/FlutterAndroidComponentTest.java",
@@ -430,8 +436,12 @@ action("robolectric_tests") {
     "test/io/flutter/embedding/engine/PluginComponentTest.java",
     "test/io/flutter/embedding/engine/RenderingComponentTest.java",
     "test/io/flutter/embedding/engine/dart/DartExecutorTest.java",
+    "test/io/flutter/embedding/engine/loader/ApplicationInfoLoaderTest.java",
+    "test/io/flutter/embedding/engine/loader/FlutterLoaderTest.java",
     "test/io/flutter/embedding/engine/plugins/shim/ShimPluginRegistryTest.java",
     "test/io/flutter/embedding/engine/renderer/FlutterRendererTest.java",
+    "test/io/flutter/embedding/engine/systemchannels/KeyEventChannelTest.java",
+    "test/io/flutter/embedding/engine/systemchannels/PlatformChannelTest.java",
     "test/io/flutter/embedding/engine/systemchannels/RestorationChannelTest.java",
     "test/io/flutter/external/FlutterLaunchTests.java",
     "test/io/flutter/plugin/common/StandardMessageCodecTest.java",
