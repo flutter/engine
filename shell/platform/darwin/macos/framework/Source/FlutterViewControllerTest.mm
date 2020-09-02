@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import "third_party/ocmock/Source/OCMock/OCMock.h"
 #include "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
@@ -16,6 +17,12 @@ TEST(FlutterViewControllerTest, HasStrings) {
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+
+  // Mock getPasteboard so that this test will work in environments without a
+  // real pasteboard.
+  // TODO(justinmc): Mock pasteboard, once OCMock works here.
+  id pasteboardMock = OCMClassMock([NSPasteboard class]);
+  OCMStub([pasteboardMock setString:[OCMArg any] forType:[OCMArg any]]);
 
   // First call setClipboardData to put a string on the pasteboard.
   __block bool calledSet = false;
