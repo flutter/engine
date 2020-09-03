@@ -132,10 +132,16 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
   uint8_t logical_characters_data[_max_character_size];
 
   if (physicalDown) {
-    // The physical key has been pressed, usually indicating multiple keyboards
-    // are pressing keys with the same physical key. Ignore the down event.
-    if ([_pressedKeys objectForKey:@(physicalKey)]) {
-      return;
+    if (_pressedKeys[@(physicalKey)]) {
+      if (event.isARepeat) {
+        // TODO
+        return;
+      } else {
+        // A non-repeated key has been pressed that has the exact physical key
+        // as a currently pressed one, usually indicating multiple keyboards are
+        // pressing keys with the same physical key. The down event is ignored.
+        return;
+      }
     }
     _pressedKeys[@(physicalKey)] = @(logicalKey);
     character_size = [event.characters lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
@@ -147,7 +153,9 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
     logical_event.key = logicalKey;
     logical_event.character_size = character_size;
   } else {
-    NSNumber* pressedLogicalKey = [_pressedKeys objectForKey:@(physicalKey)];
+    NSCAssert(!event.isARepeat,
+        @"Unexpected repeated Up event. Please report this to Flutter.", event.characters);
+    NSNumber* pressedLogicalKey = _pressedKeys[@(physicalKey)];
     character_size = 0;
     // The physical key has been released, usually indicating multiple keyboards
     // pressed keys with the same physical key. Ignore the up event.

@@ -380,7 +380,7 @@ KeyData _unpackKeyData(ByteData packet) {
     // Initialize offset with +1 to skip the first field, character_data_length.
     int offset = i * _kLogicalKeyDataFieldCount + 1;
     final String char = charLengths[i] == 0 ? '' : utf8.decoder.convert(
-        ByteData.view(packet.buffer, currentCharOffset, charLengths[i]).buffer.asUint8List());
+        packet.buffer.asUint8List(currentCharOffset, charLengths[i]));
     currentCharOffset += charLengths[i];
     logicalKeyDataList.add(LogicalKeyData(
       change: KeyChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],

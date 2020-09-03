@@ -27,6 +27,12 @@ class LogicalKeyData {
   final KeyChange change;
   final int key;
   final String? character;
+
+  @override
+  String toString() {
+    final String strCharacter = character == null || character.isEmpty ? '' : ', character: $character';
+    return 'LogicalKeyData(change: $change, key: $key$strCharacter)';
+  }
 }
 
 /// Information about the state of a pointer.
@@ -45,7 +51,7 @@ class KeyData {
   final List<LogicalKeyData> logicalEvents;
 
   @override
-  String toString() => 'KeyData(timeStamp: $timeStamp, change: $change, key: $key)';
+  String toString() => 'KeyData(timeStamp: $timeStamp, change: $change, key: $key, logicalEvents: $logicalEvents)';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
