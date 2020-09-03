@@ -323,6 +323,7 @@ class TestPlatformLocation extends PlatformLocation {
   String pathname;
   String search;
   String hash;
+  dynamic state;
 
   void onPopState(html.EventListener fn) {
     throw UnimplementedError();
@@ -348,7 +349,7 @@ class TestPlatformLocation extends PlatformLocation {
     throw UnimplementedError();
   }
 
-  void back() {
+  void back(int count) {
     throw UnimplementedError();
   }
 }
