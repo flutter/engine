@@ -115,7 +115,7 @@
     FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
     if (@available(iOS 14.0, *)) {
       FML_LOG(ERROR) << "Make sure the 'NSBonjourServices' key is set in your Info.plist for '"
-                     << registrationType << "' for the Debug configuration."
+                     << registrationType << "' for the Debug/Profile configurations."
                      << "(See also: https://developer.apple.com/news/?id=0oi77447)";
     }
   } else {
