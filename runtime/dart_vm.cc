@@ -330,7 +330,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
               fml::size(kDartWriteProtectCodeArgs));
 #else
   const bool tracing_result = EnableTracingIfNecessary(settings_);
-  // This check should only trip if the embedding made no attempts enable
+  // This check should only trip if the embedding made no attempts to enable
   // tracing. At this point, it is too late display user visible messages. Just
   // log and die.
   FML_CHECK(tracing_result)

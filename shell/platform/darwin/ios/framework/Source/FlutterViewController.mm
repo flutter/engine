@@ -339,8 +339,9 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
     messageLabel.autoresizingMask =
         UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     messageLabel.text =
-        @"Flutter application in debug mode can only be launched from Flutter tooling "
-        @"or Xcode. Use profile or release modes for launches from the home-screen.";
+        @"Flutter application in debug mode can only be launched from Flutter tooling, IDEs with "
+        @"Flutter plugins or Xcode. Use profile or release modes for launches from the "
+        @"home-screen.";
     [placeholder addSubview:messageLabel];
   }
 
