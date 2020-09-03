@@ -40,8 +40,7 @@ FLUTTER_EXPORT
 @property(nonatomic) FlutterMouseTrackingMode mouseTrackingMode;
 
 /**
- * This just returns the NSPasteboard. Using a property allows
- * this to be mocked in the tests.
+ * This just returns the NSPasteboard so that it can be mocked in the tests.
 */
 @property(nonatomic, readonly, nonnull) NSPasteboard* _pasteboard;
 
