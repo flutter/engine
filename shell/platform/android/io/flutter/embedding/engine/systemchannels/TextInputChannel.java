@@ -134,17 +134,6 @@ public class TextInputChannel {
               textInputMethodHandler.finishAutofillContext((boolean) args);
               result.success(null);
               break;
-
-            case "TextInput.setKeyboardInset":
-               try {
-                final JSONObject arguments = (JSONObject) args;
-                final int bottomInset = arguments.getInt("bottomInset");
-                textInputMethodHandler.setKeyboardInset(bottomInset);
-                result.success(null);
-              } catch (JSONException exception) {
-                result.error("error", exception.getMessage(), null);
-              }
-              break;
             default:
               result.notImplemented();
               break;
@@ -400,8 +389,6 @@ public class TextInputChannel {
      * @param data Any data to include with the command.
      */
     void sendAppPrivateCommand(String action, Bundle data);
-
-    void setKeyboardInset(int bottomInset);
   }
 
   /** A text editing configuration. */

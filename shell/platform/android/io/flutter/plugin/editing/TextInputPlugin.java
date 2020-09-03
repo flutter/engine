@@ -55,7 +55,6 @@ public class TextInputPlugin {
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
   private final boolean restartAlwaysRequired;
-  private CustomWindowInsetsAnimationControlListener mInsetsListener;
 
   // When true following calls to createInputConnection will return the cached lastInputConnection
   // if the input
@@ -100,13 +99,11 @@ public class TextInputPlugin {
         new TextInputChannel.TextInputMethodHandler() {
           @Override
           public void show() {
-            Log.e("flutter", "SHOWING KEYBOARD");
             showTextInput(mView);
           }
 
           @Override
           public void hide() {
-            Log.e("flutter", "HIDING KEYBOARD");
             hideTextInput(mView);
           }
 
@@ -157,11 +154,6 @@ public class TextInputPlugin {
           public void sendAppPrivateCommand(String action, Bundle data) {
             sendTextInputAppPrivateCommand(action, data);
           }
-
-          @Override
-          public void setKeyboardInset(int bottomInset) {
-            // controlTextInputWindowInsetsAnimation(bottomInset);
-          }
         });
 
     textInputChannel.requestExistingInputState();
@@ -169,47 +161,6 @@ public class TextInputPlugin {
     this.platformViewsController = platformViewsController;
     this.platformViewsController.attachTextInputPlugin(this);
     restartAlwaysRequired = isRestartAlwaysRequired();
-  }
-
-  private class CustomWindowInsetsAnimationControlListener implements WindowInsetsAnimationControlListener {
-    private int offset;
-    int baseInset;
-
-    CustomWindowInsetsAnimationControlListener() {
-      // targetInsets = Insets.of(0, 0, 0, 0);
-    }
-
-    void setOffset(int offset) {
-      this.offset = offset;
-    }
-
-    void setBaseInset(int baseInset) {
-      this.baseInset = baseInset;
-    }
-
-    void computeBaseInset(View view) {
-      int mask = android.view.WindowInsets.Type.ime();
-      Insets finalInsets = view.getRootWindowInsets().getInsets(mask);
-      Log.e("flutter", "CURRENT VIEW BOTTOM INSET: " + finalInsets.bottom);
-      if (baseInset < finalInsets.bottom) setBaseInset(finalInsets.bottom);
-    }
-
-    public void onCancelled(WindowInsetsAnimationController controller) {
-      Log.e("flutter", "  CANCELLED");
-    }
-
-    public void onFinished(WindowInsetsAnimationController controller) {
-      Log.e("flutter", "  FINISHED");
-    }
-
-    public void onReady(WindowInsetsAnimationController controller, int types) {
-      Log.e("flutter", "  READY");
-      if (controller.isReady() && (controller.getTypes() & types) > 0) {
-        Log.e("flutter", "    READY SET " + offset + " " + baseInset);
-        controller.setInsetsAndAlpha(Insets.of(0, 0, 0, baseInset + offset), 1f, 1f);
-      }
-      // controller.finish(true);
-    }
   }
 
   private class RootViewDeferringInsetsCallback extends WindowInsetsAnimation.Callback implements View.OnApplyWindowInsetsListener {
@@ -301,29 +252,6 @@ public class TextInputPlugin {
           view.dispatchApplyWindowInsets(lastWindowInsets);
         }
       }
-    }
-  }
-
-  private void controlTextInputWindowInsetsAnimation(int offset) {
-    setupInsetsListener();
-    mInsetsListener.setOffset(offset);
-    mInsetsListener.computeBaseInset(mView);
-    mView.getWindowInsetsController().controlWindowInsetsAnimation(
-      android.view.WindowInsets.Type.ime(),
-      -1,   // duration.
-      null, // interpolator
-      null, // cancellationSignal
-      mInsetsListener
-    );
-    WindowInsets.Builder builder = new WindowInsets.Builder(mView.getRootWindowInsets());
-    builder.setInsets(android.view.WindowInsets.Type.ime(), Insets.of(0, 0, 0, mInsetsListener.baseInset + offset));
-
-    mView.dispatchApplyWindowInsets(builder.build());
-  }
-
-  private void setupInsetsListener() {
-    if (mInsetsListener == null) {
-      mInsetsListener = new CustomWindowInsetsAnimationControlListener();
     }
   }
 
