@@ -4,7 +4,6 @@
 
 package io.flutter.plugin.editing;
 
-import android.util.Log;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Insets;
@@ -28,10 +27,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import android.view.WindowInsets;
 import android.view.WindowInsetsAnimation;
-import android.view.WindowInsetsAnimationController;
-import android.view.WindowInsetsAnimationControlListener;
-import android.view.WindowInsetsController;
-import android.view.animation.LinearInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -74,9 +69,6 @@ public class TextInputPlugin {
       afm = null;
     }
 
-    // boolean statusBarVisible = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
-    // boolean navigationBarVisible =
-    //     (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
     int mask = 0;
     if ((View.SYSTEM_UI_FLAG_HIDE_NAVIGATION & mView.getWindowSystemUiVisibility()) == 0) {
       mask = mask | WindowInsets.Type.navigationBars();
@@ -84,7 +76,6 @@ public class TextInputPlugin {
     if ((View.SYSTEM_UI_FLAG_FULLSCREEN & mView.getWindowSystemUiVisibility()) == 0) {
       mask = mask | WindowInsets.Type.statusBars();
     }
-    // mask = mask | WindowInsets.Type.systemGestures();
     RootViewDeferringInsetsCallback callback = new RootViewDeferringInsetsCallback(
       view,
       mask, // Persistent
@@ -172,20 +163,18 @@ public class TextInputPlugin {
     private boolean deferredInsets = false;
     private boolean started = false;
 
-    private View rootView;
-
     RootViewDeferringInsetsCallback(View view, int persistentInsetTypes, int deferredInsetTypes) {
       super(WindowInsetsAnimation.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE);
       this.persistentInsetTypes = persistentInsetTypes;
       this.deferredInsetTypes = deferredInsetTypes;
-      this.rootView = view;
+      this.view = view;
     }
 
     @Override
     public WindowInsets onApplyWindowInsets(View view, WindowInsets windowInsets) {
-      // Store the view and insets for us in onEnd() below
       this.view = view;
       if (!started) {
+        // Store the view and insets for us in onEnd() below
         lastWindowInsets = windowInsets;
       }
       if (deferredInsets) {
@@ -197,9 +186,6 @@ public class TextInputPlugin {
     @Override
     public void onPrepare(WindowInsetsAnimation animation) {
       if ((animation.getTypeMask() & deferredInsetTypes) != 0) {
-        // We defer the WindowInsets.Type.ime() insets if the IME is currently not visible.
-        // This results in only the WindowInsets.Type.systemBars() being applied, allowing
-        // the scrolling view to remain at it's larger size.
         deferredInsets = true;
       }
     }
@@ -232,7 +218,8 @@ public class TextInputPlugin {
       // Overlay the ime-only insets with the full insets.
       Insets newImeInsets = Insets.of(0, 0, 0, Math.max(insets.getInsets(deferredInsetTypes).bottom - insets.getInsets(persistentInsetTypes).bottom, 0));
       builder.setInsets(deferredInsetTypes, newImeInsets);
-      rootView.onApplyWindowInsets(builder.build());
+      // Directly call onApplyWindowInsets as we want to skip this class' version of this call.
+      view.onApplyWindowInsets(builder.build());
       return insets;
     }
 
@@ -240,7 +227,7 @@ public class TextInputPlugin {
     public void onEnd(WindowInsetsAnimation animation) {
       if (deferredInsets && (animation.getTypeMask() & deferredInsetTypes) != 0) {
         // If we deferred the IME insets and an IME animation has finished, we need to reset
-        // the flag
+        // the flags
         deferredInsets = false;
         started = false;
 
