@@ -34,8 +34,11 @@ import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import io.flutter.embedding.android.FlutterView;
+import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.loader.FlutterLoader;
+import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -50,6 +53,7 @@ import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -62,6 +66,9 @@ import org.robolectric.shadows.ShadowInputMethodManager;
 @Config(manifest = Config.NONE, shadows = TextInputPluginTest.TestImm.class)
 @RunWith(RobolectricTestRunner.class)
 public class TextInputPluginTest {
+  @Mock FlutterJNI mockFlutterJni;
+  @Mock FlutterLoader mockFlutterLoader;
+
   // Verifies the method and arguments for a captured method call.
   private void verifyMethodCall(ByteBuffer buffer, String methodName, String[] expectedArgs)
       throws JSONException {
@@ -655,7 +662,7 @@ public class TextInputPluginTest {
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
-    flutterView.attachToFlutterEngine(flutterEngine);
+    testView.attachToFlutterEngine(flutterEngine);
 
     WindowInsetsAnimation animation = mock(WindowInsetsAnimation.class);
     when(animation.getTypeMask()).thenReturn(WindowInsets.Type.ime());
