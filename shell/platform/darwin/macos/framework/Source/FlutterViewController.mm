@@ -177,7 +177,8 @@ struct KeyboardState {
  * Returns true iff the clipboard contains nonempty string data.
  *
  * See also:
- *   * https://developer.apple.com/documentation/uikit/uipasteboard/1829416-hasstrings
+ *   * https://developer.apple.com/documentation/uikit/uipasteboard/1829416-hasstrings,
+ *     which is the equivalent method that Flutter utilizes in iOS.
  */
 - (NSDictionary*)clipboardHasStrings;
 
