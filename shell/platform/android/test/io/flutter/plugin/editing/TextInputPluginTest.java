@@ -26,13 +26,13 @@ import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewStructure;
+import android.view.WindowInsets;
+import android.view.WindowInsetsAnimation;
 import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
-import android.view.WindowInsets;
-import android.view.WindowInsetsAnimation;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -640,7 +640,7 @@ public class TextInputPluginTest {
   @Test
   @TargetApi(30)
   @Config(sdk = 30)
-  public void ime_windowinsetssync() {
+  public void ime_windowInsetsSync() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
       return;
     }
@@ -649,7 +649,8 @@ public class TextInputPluginTest {
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
-    TextInputPlugin.ImeSyncDeferringInsetsCallback imeSyncCallback = textInputPlugin.getImeSyncCallback();
+    TextInputPlugin.ImeSyncDeferringInsetsCallback imeSyncCallback =
+        textInputPlugin.getImeSyncCallback();
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -724,7 +725,6 @@ public class TextInputPluginTest {
     assertEquals(10, viewportMetricsCaptor.getValue().paddingTop);
     assertEquals(200, viewportMetricsCaptor.getValue().viewInsetBottom);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
-
   }
 
   interface EventHandler {

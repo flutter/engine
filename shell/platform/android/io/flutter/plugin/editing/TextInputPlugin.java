@@ -80,15 +80,15 @@ public class TextInputPlugin {
       if ((View.SYSTEM_UI_FLAG_FULLSCREEN & mView.getWindowSystemUiVisibility()) == 0) {
         mask = mask | WindowInsets.Type.statusBars();
       }
-      imeSyncCallback = new ImeSyncDeferringInsetsCallback(
-        view,
-        mask, // Overlay
-        WindowInsets.Type.ime() // Deferred
-      );
+      imeSyncCallback =
+          new ImeSyncDeferringInsetsCallback(
+              view,
+              mask, // Overlay
+              WindowInsets.Type.ime() // Deferred
+              );
       view.setWindowInsetsAnimationCallback(imeSyncCallback);
       view.setOnApplyWindowInsetsListener(imeSyncCallback);
     }
-
 
     this.textInputChannel = textInputChannel;
     textInputChannel.setTextInputMethodHandler(
@@ -159,14 +159,16 @@ public class TextInputPlugin {
     restartAlwaysRequired = isRestartAlwaysRequired();
   }
 
-  // Loosely based off of https://github.com/android/user-interface-samples/blob/master/WindowInsetsAnimation/app/src/main/java/com/google/android/samples/insetsanimation/RootViewDeferringInsetsCallback.kt
+  // Loosely based off of
+  // https://github.com/android/user-interface-samples/blob/master/WindowInsetsAnimation/app/src/main/java/com/google/android/samples/insetsanimation/RootViewDeferringInsetsCallback.kt
   // When the IME is shown or hidden, it sends an onApplyWindowInsets call with the
   // final state of the IME. This defers the final call to allow the animation to
   // take place before re-calling onApplyWindowInsets after animation completion.
   @VisibleForTesting
   @TargetApi(30)
   @RequiresApi(30)
-  class ImeSyncDeferringInsetsCallback extends WindowInsetsAnimation.Callback implements View.OnApplyWindowInsetsListener {
+  class ImeSyncDeferringInsetsCallback extends WindowInsetsAnimation.Callback
+      implements View.OnApplyWindowInsetsListener {
     private int overlayInsetTypes;
     private int deferredInsetTypes;
 
@@ -203,7 +205,8 @@ public class TextInputPlugin {
     }
 
     @Override
-    public WindowInsetsAnimation.Bounds onStart(WindowInsetsAnimation animation, WindowInsetsAnimation.Bounds bounds) {
+    public WindowInsetsAnimation.Bounds onStart(
+        WindowInsetsAnimation animation, WindowInsetsAnimation.Bounds bounds) {
       if (deferredInsets && (animation.getTypeMask() & deferredInsetTypes) != 0) {
         started = true;
       }
@@ -215,7 +218,7 @@ public class TextInputPlugin {
       if (!deferredInsets) {
         return insets;
       }
-      boolean matching =  false;
+      boolean matching = false;
       for (WindowInsetsAnimation animation : runningAnimations) {
         if ((animation.getTypeMask() & deferredInsetTypes) != 0) {
           matching = true;
@@ -227,7 +230,15 @@ public class TextInputPlugin {
       }
       WindowInsets.Builder builder = new WindowInsets.Builder(lastWindowInsets);
       // Overlay the ime-only insets with the full insets.
-      Insets newImeInsets = Insets.of(0, 0, 0, Math.max(insets.getInsets(deferredInsetTypes).bottom - insets.getInsets(overlayInsetTypes).bottom, 0));
+      Insets newImeInsets =
+          Insets.of(
+              0,
+              0,
+              0,
+              Math.max(
+                  insets.getInsets(deferredInsetTypes).bottom
+                      - insets.getInsets(overlayInsetTypes).bottom,
+                  0));
       builder.setInsets(deferredInsetTypes, newImeInsets);
       // Directly call onApplyWindowInsets as we want to skip this class' version of this call.
       view.onApplyWindowInsets(builder.build());
