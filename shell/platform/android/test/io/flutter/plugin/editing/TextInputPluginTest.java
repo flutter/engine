@@ -15,8 +15,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.graphics.Insets;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -29,6 +31,8 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
+import android.view.WindowInsets;
+import android.view.WindowInsetsAnimation;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -39,6 +43,7 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -630,6 +635,96 @@ public class TextInputPluginTest {
     verify(mockEventHandler, times(1))
         .sendAppPrivateCommand(any(View.class), eq("actionCommand"), bundleCaptor.capture());
     assertEquals("actionData", bundleCaptor.getValue().getCharSequence("data"));
+  }
+
+  @Test
+  @TargetApi(30)
+  @Config(sdk = 30)
+  public void ime_windowinsetssync() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+      return;
+    }
+
+    FlutterView testView = new FlutterView(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    TextInputPlugin.ImeSyncDeferringInsetsCallback imeSyncCallback = textInputPlugin.getImeSyncCallback();
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+    flutterView.attachToFlutterEngine(flutterEngine);
+
+    WindowInsetsAnimation animation = mock(WindowInsetsAnimation.class);
+    when(animation.getTypeMask()).thenReturn(WindowInsets.Type.ime());
+
+    List<WindowInsetsAnimation> animationList = new ArrayList();
+    animationList.add(animation);
+
+    WindowInsets.Builder builder = new WindowInsets.Builder();
+    WindowInsets noneInsets = builder.build();
+
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 100));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(10, 10, 10, 40));
+    WindowInsets imeInsets0 = builder.build();
+
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 30));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(10, 10, 10, 40));
+    WindowInsets imeInsets1 = builder.build();
+
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 200));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(10, 10, 10, 0));
+    WindowInsets deferredInsets = builder.build();
+
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+
+    imeSyncCallback.onApplyWindowInsets(testView, deferredInsets);
+    imeSyncCallback.onApplyWindowInsets(testView, noneInsets);
+
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
+
+    imeSyncCallback.onPrepare(animation);
+    imeSyncCallback.onApplyWindowInsets(testView, deferredInsets);
+    imeSyncCallback.onStart(animation, null);
+
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    // No change, as deferredInset is stored to be passed in onEnd()
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
+
+    imeSyncCallback.onProgress(imeInsets0, animationList);
+
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(40, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(10, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(60, viewportMetricsCaptor.getValue().viewInsetBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
+
+    imeSyncCallback.onProgress(imeInsets1, animationList);
+
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(40, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(10, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom); // Cannot be negative
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
+
+    imeSyncCallback.onEnd(animation);
+
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    // Values should be of deferredInsets
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(10, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(200, viewportMetricsCaptor.getValue().viewInsetBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
+
   }
 
   interface EventHandler {

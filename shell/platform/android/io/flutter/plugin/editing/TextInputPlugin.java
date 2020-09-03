@@ -5,6 +5,7 @@
 package io.flutter.plugin.editing;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Insets;
 import android.graphics.Rect;
@@ -29,6 +30,7 @@ import android.view.WindowInsets;
 import android.view.WindowInsetsAnimation;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -50,6 +52,7 @@ public class TextInputPlugin {
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
   private final boolean restartAlwaysRequired;
+  private ImeSyncDeferringInsetsCallback imeSyncCallback;
 
   // When true following calls to createInputConnection will return the cached lastInputConnection
   // if the input
@@ -69,20 +72,22 @@ public class TextInputPlugin {
       afm = null;
     }
 
-    int mask = 0;
-    if ((View.SYSTEM_UI_FLAG_HIDE_NAVIGATION & mView.getWindowSystemUiVisibility()) == 0) {
-      mask = mask | WindowInsets.Type.navigationBars();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      int mask = 0;
+      if ((View.SYSTEM_UI_FLAG_HIDE_NAVIGATION & mView.getWindowSystemUiVisibility()) == 0) {
+        mask = mask | WindowInsets.Type.navigationBars();
+      }
+      if ((View.SYSTEM_UI_FLAG_FULLSCREEN & mView.getWindowSystemUiVisibility()) == 0) {
+        mask = mask | WindowInsets.Type.statusBars();
+      }
+      imeSyncCallback = new ImeSyncDeferringInsetsCallback(
+        view,
+        mask, // Overlay
+        WindowInsets.Type.ime() // Deferred
+      );
+      view.setWindowInsetsAnimationCallback(imeSyncCallback);
+      view.setOnApplyWindowInsetsListener(imeSyncCallback);
     }
-    if ((View.SYSTEM_UI_FLAG_FULLSCREEN & mView.getWindowSystemUiVisibility()) == 0) {
-      mask = mask | WindowInsets.Type.statusBars();
-    }
-    RootViewDeferringInsetsCallback callback = new RootViewDeferringInsetsCallback(
-      view,
-      mask, // Persistent
-      WindowInsets.Type.ime() // Deferred
-    );
-    view.setWindowInsetsAnimationCallback(callback);
-    view.setOnApplyWindowInsetsListener(callback);
 
 
     this.textInputChannel = textInputChannel;
@@ -154,8 +159,15 @@ public class TextInputPlugin {
     restartAlwaysRequired = isRestartAlwaysRequired();
   }
 
-  private class RootViewDeferringInsetsCallback extends WindowInsetsAnimation.Callback implements View.OnApplyWindowInsetsListener {
-    private int persistentInsetTypes;
+  // Loosely based off of https://github.com/android/user-interface-samples/blob/master/WindowInsetsAnimation/app/src/main/java/com/google/android/samples/insetsanimation/RootViewDeferringInsetsCallback.kt
+  // When the IME is shown or hidden, it sends an onApplyWindowInsets call with the
+  // final state of the IME. This defers the final call to allow the animation to
+  // take place before re-calling onApplyWindowInsets after animation completion.
+  @VisibleForTesting
+  @TargetApi(30)
+  @RequiresApi(30)
+  class ImeSyncDeferringInsetsCallback extends WindowInsetsAnimation.Callback implements View.OnApplyWindowInsetsListener {
+    private int overlayInsetTypes;
     private int deferredInsetTypes;
 
     private View view;
@@ -163,9 +175,9 @@ public class TextInputPlugin {
     private boolean deferredInsets = false;
     private boolean started = false;
 
-    RootViewDeferringInsetsCallback(View view, int persistentInsetTypes, int deferredInsetTypes) {
+    ImeSyncDeferringInsetsCallback(View view, int persistentInsetTypes, int deferredInsetTypes) {
       super(WindowInsetsAnimation.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE);
-      this.persistentInsetTypes = persistentInsetTypes;
+      this.overlayInsetTypes = overlayInsetTypes;
       this.deferredInsetTypes = deferredInsetTypes;
       this.view = view;
     }
@@ -214,9 +226,8 @@ public class TextInputPlugin {
         return insets;
       }
       WindowInsets.Builder builder = new WindowInsets.Builder(lastWindowInsets);
-      Insets persistentInsets = insets.getInsets(persistentInsetTypes);
       // Overlay the ime-only insets with the full insets.
-      Insets newImeInsets = Insets.of(0, 0, 0, Math.max(insets.getInsets(deferredInsetTypes).bottom - insets.getInsets(persistentInsetTypes).bottom, 0));
+      Insets newImeInsets = Insets.of(0, 0, 0, Math.max(insets.getInsets(deferredInsetTypes).bottom - insets.getInsets(overlayInsetTypes).bottom, 0));
       builder.setInsets(deferredInsetTypes, newImeInsets);
       // Directly call onApplyWindowInsets as we want to skip this class' version of this call.
       view.onApplyWindowInsets(builder.build());
@@ -250,6 +261,11 @@ public class TextInputPlugin {
   @VisibleForTesting
   Editable getEditable() {
     return mEditable;
+  }
+
+  @VisibleForTesting
+  ImeSyncDeferringInsetsCallback getImeSyncCallback() {
+    return imeSyncCallback;
   }
 
   /**
