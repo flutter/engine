@@ -108,6 +108,7 @@ void Rasterizer::Teardown() {
       raster_thread_merger_.get()->IsMerged()) {
     FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNow();
+    raster_thread_merger_->SetMergeUnmergeCallback(nullptr);
   }
 }
 
