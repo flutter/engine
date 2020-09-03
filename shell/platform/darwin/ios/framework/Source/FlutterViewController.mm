@@ -964,13 +964,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self updateViewportMetrics];
 }
 
-- (void)dispatchPresses:(NSSet<UIPress *> *)presses API_AVAILABLE(ios(9.0)) {
-  if (@available(iOS 9, *)) {
+- (void)dispatchPresses:(NSSet<UIPress*>*)presses API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      if (press.key == nil) { continue; }
+      if (press.key == nil) {
+        continue;
+      }
       NSMutableDictionary* keyMessage = [@{
         @"keymap" : @"ios",
-        @"type": @"unknown",
+        @"type" : @"unknown",
         @"keyCode" : @(press.key.keyCode),
         @"modifiers" : @(press.key.modifierFlags),
         @"characters" : press.key.characters,
@@ -988,25 +990,26 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 }
 
-- (void)pressesBegan:(NSSet<UIPress *> *)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+- (void)pressesBegan:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     [self dispatchPresses:presses];
   }
 }
 
-- (void)pressesChanged:(NSSet<UIPress *> *)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+- (void)pressesChanged:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     [self dispatchPresses:presses];
   }
 }
 
-- (void)pressesEnded:(NSSet<UIPress *> *)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+- (void)pressesEnded:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     [self dispatchPresses:presses];
   }
 }
 
-- (void)pressesCancelled:(NSSet<UIPress *> *)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+- (void)pressesCancelled:(NSSet<UIPress*>*)presses
+               withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     [self dispatchPresses:presses];
   }

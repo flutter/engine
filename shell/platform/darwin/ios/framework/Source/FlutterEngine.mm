@@ -416,9 +416,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
          initWithName:@"flutter/settings"
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
-    
+
   _keyEventChannel.reset([[FlutterBasicMessageChannel alloc]
-        initWithName:@"flutter/keyevent"
+         initWithName:@"flutter/keyevent"
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
