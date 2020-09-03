@@ -18,7 +18,7 @@ TEST(FlutterViewControllerTest, HasStrings) {
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
 
-  // Mock getPasteboard so that this test will work in environments without a
+  // Mock _pasteboard so that this test will work in environments without a
   // real pasteboard.
   id pasteboardMock = OCMClassMock([NSPasteboard class]);
   __block NSString* clipboardString = @"";
@@ -31,7 +31,7 @@ TEST(FlutterViewControllerTest, HasStrings) {
   };
   OCMExpect([pasteboardMock stringForType:[OCMArg any]]).andDo(stringForTypeMock);
   id viewControllerMock = OCMPartialMock(viewController);
-  OCMStub([viewControllerMock getPasteboard]).andReturn(pasteboardMock);
+  OCMStub([viewControllerMock _pasteboard]).andReturn(pasteboardMock);
 
   // First call setClipboardData to put a string on the pasteboard.
   __block bool calledSet = false;

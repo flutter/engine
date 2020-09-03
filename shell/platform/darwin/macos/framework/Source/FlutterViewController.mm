@@ -527,7 +527,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (NSDictionary*)getClipboardData:(NSString*)format {
-  NSPasteboard* pasteboard = [self getPasteboard];
+  NSPasteboard* pasteboard = [self _pasteboard];
   if ([format isEqualToString:@(kTextPlainFormat)]) {
     NSString* stringInPasteboard = [pasteboard stringForType:NSPasteboardTypeString];
     return stringInPasteboard == nil ? nil : @{@"text" : stringInPasteboard};
@@ -536,7 +536,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)setClipboardData:(NSDictionary*)data {
-  NSPasteboard* pasteboard = [self getPasteboard];
+  NSPasteboard* pasteboard = [self _pasteboard];
   NSString* text = data[@"text"];
   [pasteboard clearContents];
   if (text && ![text isEqual:[NSNull null]]) {
@@ -551,8 +551,7 @@ static void CommonInit(FlutterViewController* controller) {
   return @{@"value" : @(hasStrings)};
 }
 
-// This is a separate method to allow mocking the pasteboard in the tests.
-- (NSPasteboard*)getPasteboard {
+- (NSPasteboard*)_pasteboard {
   return [NSPasteboard generalPasteboard];
 }
 
