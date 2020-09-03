@@ -876,10 +876,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     _lastEditingState!.applyToDomElement(domElement);
   }
 
-  void setKeyboardInset(int bottomInset) {
-    print('DART:UI SETTING KEYBOARD INSET IN DEFAULTTEXTEDITINGSTRATEGY');
-  }
-
   void placeElement() {
     domElement.focus();
   }
@@ -1325,10 +1321,6 @@ class TextEditingChannel {
         cleanForms();
         break;
 
-      case 'TextInput.setKeyboardInset':
-        implementation.setKeyboardInset(call.arguments);
-        break;
-
       default:
         throw StateError(
             'Unsupported method call on the flutter/textinput channel: ${call.method}');
@@ -1516,11 +1508,6 @@ class HybridTextEditing {
     if (isEditing) {
       stopEditing();
     }
-  }
-
-  /// Responds to the 'TextInput.setKeyboardInset' message.
-  void setKeyboardInset(int bottomInset) {
-    editingElement!.setKeyboardInset(bottomInset);
   }
 
   /// A CSS class name used to identify all elements used for text editing.

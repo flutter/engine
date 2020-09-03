@@ -212,30 +212,6 @@ public class TextInputPlugin {
     }
   }
 
-  private class SyncWindowInsetsAnimationCallback extends WindowInsetsAnimation.Callback {
-    private View view;
-
-    public SyncWindowInsetsAnimationCallback(View view, int dispatchMode) {
-      super(dispatchMode);
-      this.view = view;
-    }
-
-    public WindowInsetsAnimation.Bounds onStart(WindowInsetsAnimation animation, WindowInsetsAnimation.Bounds bounds) {
-      Log.e("flutter", "STARTING");
-      return null;
-    }
-
-    public WindowInsets onProgress(WindowInsets insets, List<WindowInsetsAnimation> runningAnimations) {
-      view.dispatchApplyWindowInsets(insets);
-      return insets;
-    }
-
-    public void onEnd(WindowInsetsAnimation animation) {
-      Log.e("flutter", "ENDING");
-
-    }
-  }
-
   private class RootViewDeferringInsetsCallback extends WindowInsetsAnimation.Callback implements View.OnApplyWindowInsetsListener {
     private int persistentInsetTypes;
     private int deferredInsetTypes;
@@ -260,7 +236,6 @@ public class TextInputPlugin {
       this.view = view;
       if (!started) {
         lastWindowInsets = windowInsets;
-        Log.e("flutter", "Deferring: " + windowInsets.getInsets(deferredInsetTypes));
       }
       if (deferredInsets) {
         return WindowInsets.CONSUMED;
@@ -271,7 +246,6 @@ public class TextInputPlugin {
     @Override
     public void onPrepare(WindowInsetsAnimation animation) {
       if ((animation.getTypeMask() & deferredInsetTypes) != 0) {
-      Log.e("flutter", "PREPING");
         // We defer the WindowInsets.Type.ime() insets if the IME is currently not visible.
         // This results in only the WindowInsets.Type.systemBars() being applied, allowing
         // the scrolling view to remain at it's larger size.
@@ -281,7 +255,6 @@ public class TextInputPlugin {
 
     @Override
     public WindowInsetsAnimation.Bounds onStart(WindowInsetsAnimation animation, WindowInsetsAnimation.Bounds bounds) {
-      Log.e("flutter", "STARTING");
       if (deferredInsets && (animation.getTypeMask() & deferredInsetTypes) != 0) {
         started = true;
       }
@@ -307,18 +280,13 @@ public class TextInputPlugin {
       Insets persistentInsets = insets.getInsets(persistentInsetTypes);
       // Overlay the ime-only insets with the full insets.
       Insets newImeInsets = Insets.of(0, 0, 0, Math.max(insets.getInsets(deferredInsetTypes).bottom - insets.getInsets(persistentInsetTypes).bottom, 0));
-      // Insets newImeInsets = Insets.max(lastWindowInsets.getInsets(WindowInsets.Type.navigationBars()), Insets.of(0, 0, 0, Math.max(insets.getInsets(deferredInsetTypes).bottom, 0)));
-      Log.e("flutter", "Progress: " + persistentInsets + " " + persistentInsetTypes);
-      // builder.setInsets(WindowInsets.Type.navigationBars(), newImeInsets);
       builder.setInsets(deferredInsetTypes, newImeInsets);
       rootView.onApplyWindowInsets(builder.build());
-      // rootView.onApplyWindowInsets(insets);
       return insets;
     }
 
     @Override
     public void onEnd(WindowInsetsAnimation animation) {
-      Log.e("flutter", "ENDING");
       if (deferredInsets && (animation.getTypeMask() & deferredInsetTypes) != 0) {
         // If we deferred the IME insets and an IME animation has finished, we need to reset
         // the flag
@@ -337,14 +305,6 @@ public class TextInputPlugin {
   }
 
   private void controlTextInputWindowInsetsAnimation(int offset) {
-    Log.e("flutter", "IN THE WINDOW WindowInsetsAnimationController !!!!!!!!!: " + offset + " " + mInsetsListener.baseInset);
-    // if (mInsetsListener == null) {
-    //   mInsetsListener = new CustomWindowInsetsAnimationControlListener();
-    //   mInsetsListener.setBaseInset(0);
-    //   mInsetsListener.setOffset(offset);
-    // } else {
-    //   mInsetsListener.setOffset(offset);
-    // }
     setupInsetsListener();
     mInsetsListener.setOffset(offset);
     mInsetsListener.computeBaseInset(mView);
@@ -549,12 +509,6 @@ public class TextInputPlugin {
   private void showTextInput(View view) {
     view.requestFocus();
     mImm.showSoftInput(view, 0);
-    // view.requestApplyInsets();
-
-    // WindowInsetsController controller = mView.getWindowInsetsController();
-
-    // Show the keyboard (IME)
-    // controller.show(WindowInsets.Type.ime());
   }
 
   private void hideTextInput(View view) {
