@@ -90,6 +90,14 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
     raster_thread_merger_ =
         fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
   }
+  if (raster_thread_merger_) {
+    raster_thread_merger_->SetMergeUnmergeCallback([=]() {
+      // Clear the GL context after the thread configuration has changed.
+      if (surface_) {
+        surface_->ClearRenderContext();
+      }
+    });
+  }
 #endif
 }
 
@@ -102,6 +110,7 @@ void Rasterizer::Teardown() {
       raster_thread_merger_.get()->IsMerged()) {
     FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNow();
+    raster_thread_merger_->SetMergeUnmergeCallback(nullptr);
   }
 }
 
@@ -404,9 +413,7 @@ RasterStatus Rasterizer::DoDraw(
 
 RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
-  if (!surface_) {
-    return RasterStatus::kFailed;
-  }
+  FML_DCHECK(surface_);
 
   // There is no way for the compositor to know how long the layer tree
   // construction took. Fortunately, the layer tree does. Grab that time
@@ -471,11 +478,6 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
       surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
     }
-
-    // Clear the render context after submitting the frame.
-    // This ensures that the GL context is released after drawing to the
-    // surface.
-    surface_->ClearRenderContext();
 
     return raster_status;
   }

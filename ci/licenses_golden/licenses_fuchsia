@@ -1,4 +1,4 @@
-Signature: f5e12c9e1a40329fe47c2505195ce382
+Signature: cf05116bb43d1a92a6f54aa4363703fa
 
 UNUSED LICENSES:
 
@@ -1419,7 +1419,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysinfo/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/heap.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/secure_mem.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.provider/meta.json
