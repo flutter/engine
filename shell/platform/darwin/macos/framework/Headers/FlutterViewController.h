@@ -55,4 +55,6 @@ FLUTTER_EXPORT
 
 - (void)handleMethodCall:(nonnull FlutterMethodCall*)call result:(nonnull FlutterResult)result;
 
+- (nonnull NSPasteboard*)getPasteboard;
+
 @end

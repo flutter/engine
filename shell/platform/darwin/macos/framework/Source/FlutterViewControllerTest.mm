@@ -20,9 +20,18 @@ TEST(FlutterViewControllerTest, HasStrings) {
 
   // Mock getPasteboard so that this test will work in environments without a
   // real pasteboard.
-  // TODO(justinmc): Mock pasteboard, once OCMock works here.
   id pasteboardMock = OCMClassMock([NSPasteboard class]);
-  OCMStub([pasteboardMock setString:[OCMArg any] forType:[OCMArg any]]);
+  __block NSString* clipboardString = @"";
+  void (^setStringMock)(NSInvocation*) = ^(NSInvocation *invocation) {
+    [invocation getArgument:&clipboardString atIndex:2];
+  };
+  OCMStub([pasteboardMock setString:[OCMArg any] forType:[OCMArg any]]).andDo(setStringMock);
+  void (^stringForTypeMock)(NSInvocation*) = ^(NSInvocation *invocation) {
+   [invocation setReturnValue:&clipboardString];
+  };
+  OCMExpect([pasteboardMock stringForType:[OCMArg any]]).andDo(stringForTypeMock);
+  id viewControllerMock = OCMPartialMock(viewController);
+  OCMStub([viewControllerMock getPasteboard]).andReturn(pasteboardMock);
 
   // First call setClipboardData to put a string on the pasteboard.
   __block bool calledSet = false;
@@ -32,7 +41,7 @@ TEST(FlutterViewControllerTest, HasStrings) {
   FlutterMethodCall* methodCallSet =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
                                         arguments:@{@"text" : @"some string"}];
-  [viewController handleMethodCall:methodCallSet result:resultSet];
+  [viewControllerMock handleMethodCall:methodCallSet result:resultSet];
   ASSERT_TRUE(calledSet);
 
   // Call hasStrings and expect it to be true.
@@ -45,7 +54,7 @@ TEST(FlutterViewControllerTest, HasStrings) {
   };
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
-  [viewController handleMethodCall:methodCall result:result];
+  [viewControllerMock handleMethodCall:methodCall result:result];
   ASSERT_TRUE(called);
   ASSERT_TRUE(value);
 
@@ -57,7 +66,7 @@ TEST(FlutterViewControllerTest, HasStrings) {
   FlutterMethodCall* methodCallSetClear =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
                                         arguments:@{@"text" : [NSNull null]}];
-  [viewController handleMethodCall:methodCallSetClear result:resultSetClear];
+  [viewControllerMock handleMethodCall:methodCallSetClear result:resultSetClear];
   ASSERT_TRUE(calledSetClear);
 
   // Call hasStrings and expect it to be false.
@@ -70,7 +79,7 @@ TEST(FlutterViewControllerTest, HasStrings) {
   };
   FlutterMethodCall* methodCallAfterClear =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
-  [viewController handleMethodCall:methodCallAfterClear result:resultAfterClear];
+  [viewControllerMock handleMethodCall:methodCallAfterClear result:resultAfterClear];
   ASSERT_TRUE(calledAfterClear);
   ASSERT_FALSE(valueAfterClear);
 }
