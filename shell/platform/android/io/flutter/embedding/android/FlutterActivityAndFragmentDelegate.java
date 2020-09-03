@@ -347,10 +347,6 @@ import java.util.Arrays;
       return;
     }
 
-    if (!FlutterInjector.instance().flutterLoader().initialized()) {
-      throw new AssertionError("Flutter UI can only be started once the Flutter engine's running.");
-    }
-
     if (flutterEngine.getDartExecutor().isExecutingDart()) {
       // No warning is logged because this situation will happen on every config
       // change if the developer does not choose to retain the Fragment instance.
