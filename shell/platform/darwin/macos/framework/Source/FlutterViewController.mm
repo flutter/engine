@@ -180,7 +180,7 @@ struct KeyboardState {
  *   * https://developer.apple.com/documentation/uikit/uipasteboard/1829416-hasstrings,
  *     which is the equivalent method that Flutter utilizes in iOS.
  */
-- (NSDictionary*)clipboardHasStrings;
+- (BOOL)clipboardHasStrings;
 
 @end
 
@@ -515,7 +515,7 @@ static void CommonInit(FlutterViewController* controller) {
     [self setClipboardData:call.arguments];
     result(nil);
   } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
-    result([self clipboardHasStrings]);
+    result(@{@"value" : @([self clipboardHasStrings])});
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -545,11 +545,10 @@ static void CommonInit(FlutterViewController* controller) {
   }
 }
 
-- (NSDictionary*)clipboardHasStrings {
+- (BOOL)clipboardHasStrings {
   NSDictionary* data = [self getClipboardData:[NSString stringWithFormat:@"%s", kTextPlainFormat]];
   NSString* string = data[@"text"];
-  BOOL hasStrings = string.length > 0;
-  return @{@"value" : @(hasStrings)};
+  return string.length > 0;
 }
 
 - (NSPasteboard*)_pasteboard {
