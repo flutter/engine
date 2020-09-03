@@ -153,15 +153,14 @@ class EngineWindow extends ui.Window {
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
-  BrowserHistory _browserHistory = SingleEntryBrowserHistory();
+  BrowserHistory _browserHistory = MultiEntriesBrowserHistory();
 
-  Future<void> _updateBrowserHistory({bool useRouter = false}) async {
-    if (useRouter == _browserHistory is MultiEntriesBrowserHistory) {
+  Future<void> _useSingleEntryBrowserHistory() async {
+    if (_browserHistory is SingleEntryBrowserHistory)
       return;
-    }
     final LocationStrategy strategy = _browserHistory.locationStrategy!;
     await _browserHistory.setLocationStrategy(null);
-    _browserHistory = useRouter ? MultiEntriesBrowserHistory() : SingleEntryBrowserHistory();
+    _browserHistory = SingleEntryBrowserHistory();
     await _browserHistory.setLocationStrategy(strategy);
   }
 
@@ -618,21 +617,20 @@ class EngineWindow extends ui.Window {
         final Map<String, dynamic>? message = decoded.arguments;
         switch (decoded.method) {
           case 'routeUpdated':
-            _updateBrowserHistory(useRouter: false).then((void data) {
+            _useSingleEntryBrowserHistory().then((void data) {
               _browserHistory.setRouteName(message!['routeName']);
               _replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(true));
             });
             break;
           case 'routeInformationUpdated':
-            _updateBrowserHistory(useRouter: true).then((void data) {
-              _browserHistory.setRouteName(
-                message!['location'],
-                state: message!['state'],
-              );
-              _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
-            });
+            assert(_browserHistory is MultiEntriesBrowserHistory);
+            _browserHistory.setRouteName(
+              message!['location'],
+              state: message!['state'],
+            );
+            _replyToPlatformMessage(
+              callback, codec.encodeSuccessEnvelope(true));
             break;
         }
         // As soon as Flutter starts taking control of the app navigation, we

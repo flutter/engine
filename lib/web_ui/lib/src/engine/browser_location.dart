@@ -25,6 +25,9 @@ abstract class LocationStrategy {
   /// The active path in the browser history.
   String get path;
 
+  /// The state of the current browser history entry.
+  dynamic get state;
+
   /// Given a path that's internal to the app, create the external url that
   /// will be used in the browser.
   String prepareExternalUrl(String internalUrl);
@@ -81,6 +84,9 @@ class HashLocationStrategy extends LocationStrategy {
     // At this point, we know [path] starts with "#" and isn't empty.
     return path.substring(1);
   }
+
+  @override
+  dynamic get state => _platformLocation.state;
 
   @override
   String prepareExternalUrl(String internalUrl) {
@@ -142,6 +148,7 @@ abstract class PlatformLocation {
   String get pathname;
   String get search;
   String? get hash;
+  dynamic get state;
 
   void pushState(dynamic state, String title, String url);
   void replaceState(dynamic state, String title, String url);
@@ -183,6 +190,9 @@ class BrowserPlatformLocation extends PlatformLocation {
 
   @override
   String get hash => _location.hash;
+
+  @override
+  dynamic get state => _history.state;
 
   @override
   void pushState(dynamic state, String title, String url) {

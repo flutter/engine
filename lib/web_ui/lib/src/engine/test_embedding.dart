@@ -39,6 +39,9 @@ class TestLocationStrategy extends LocationStrategy {
   @override
   String get path => currentEntry.url;
 
+  @override
+  dynamic get state => currentEntry.state;
+
   int _currentEntryIndex;
   int get currentEntryIndex => _currentEntryIndex;
 
