@@ -537,6 +537,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       viewportMetrics.paddingLeft = uiInsets.left;
 
       Insets imeInsets = insets.getInsets(android.view.WindowInsets.Type.ime());
+      Log.e("flutter", "IME Insets: " + imeInsets);
       viewportMetrics.viewInsetTop = imeInsets.top;
       viewportMetrics.viewInsetRight = imeInsets.right;
       viewportMetrics.viewInsetBottom = imeInsets.bottom; // Typically, only bottom is non-zero

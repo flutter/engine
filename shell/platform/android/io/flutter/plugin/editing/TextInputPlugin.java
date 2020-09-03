@@ -27,6 +27,7 @@ import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import android.view.WindowInsets;
+import android.view.WindowInsetsAnimation;
 import android.view.WindowInsetsAnimationController;
 import android.view.WindowInsetsAnimationControlListener;
 import android.view.animation.LinearInterpolator;
@@ -36,6 +37,7 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.HashMap;
+import java.util.List;
 
 /** Android implementation of the text input plugin. */
 public class TextInputPlugin {
@@ -72,18 +74,27 @@ public class TextInputPlugin {
       afm = null;
     }
 
+    RootViewDeferringInsetsCallback callback = new RootViewDeferringInsetsCallback(
+      view,
+      WindowInsets.Type.systemBars(), // Persistent
+      WindowInsets.Type.ime() // Deferred
+    );
+    view.setWindowInsetsAnimationCallback(callback);
+    view.setOnApplyWindowInsetsListener(callback);
+
+
     this.textInputChannel = textInputChannel;
     textInputChannel.setTextInputMethodHandler(
         new TextInputChannel.TextInputMethodHandler() {
           @Override
           public void show() {
-            // controlTextInputWindowInsetsAnimation(150);
+            Log.e("flutter", "SHOWING KEYBOARD");
             showTextInput(mView);
           }
 
           @Override
           public void hide() {
-            // controlTextInputWindowInsetsAnimation(100);
+            Log.e("flutter", "HIDING KEYBOARD");
             hideTextInput(mView);
           }
 
@@ -137,7 +148,7 @@ public class TextInputPlugin {
 
           @Override
           public void setKeyboardInset(int bottomInset) {
-            controlTextInputWindowInsetsAnimation(bottomInset);
+            // controlTextInputWindowInsetsAnimation(bottomInset);
           }
         });
 
@@ -186,6 +197,129 @@ public class TextInputPlugin {
         controller.setInsetsAndAlpha(Insets.of(0, 0, 0, baseInset + offset), 1f, 1f);
       }
       // controller.finish(true);
+    }
+  }
+
+  private class SyncWindowInsetsAnimationCallback extends WindowInsetsAnimation.Callback {
+    private View view;
+
+    public SyncWindowInsetsAnimationCallback(View view, int dispatchMode) {
+      super(dispatchMode);
+      this.view = view;
+    }
+
+    public WindowInsetsAnimation.Bounds onStart(WindowInsetsAnimation animation, WindowInsetsAnimation.Bounds bounds) {
+      Log.e("flutter", "STARTING");
+      return null;
+    }
+
+    public WindowInsets onProgress(WindowInsets insets, List<WindowInsetsAnimation> runningAnimations) {
+      view.dispatchApplyWindowInsets(insets);
+      return insets;
+    }
+
+    public void onEnd(WindowInsetsAnimation animation) {
+      Log.e("flutter", "ENDING");
+
+    }
+  }
+
+  private class RootViewDeferringInsetsCallback extends WindowInsetsAnimation.Callback implements View.OnApplyWindowInsetsListener {
+    private int persistentInsetTypes;
+    private int deferredInsetTypes;
+
+    private View view;
+    private WindowInsets lastWindowInsets;
+    private boolean deferredInsets = false;
+    private boolean started = false;
+
+    private View rootView;
+
+    RootViewDeferringInsetsCallback(View view, int persistentInsetTypes, int deferredInsetTypes) {
+      super(WindowInsetsAnimation.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE);
+      this.persistentInsetTypes = persistentInsetTypes;
+      this.deferredInsetTypes = deferredInsetTypes;
+      this.rootView = view;
+    }
+
+    @Override
+    public WindowInsets onApplyWindowInsets(View view, WindowInsets windowInsets) {
+      // Store the view and insets for us in onEnd() below
+      this.view = view;
+      if (!started) {
+        lastWindowInsets = windowInsets;
+        Log.e("flutter", "Deferring: " + windowInsets.getInsets(deferredInsetTypes));
+      }
+
+      //   // When the deferred flag is enabled, we only use the systemBars() insets
+      // int types = persistentInsetTypes;
+      //   // Otherwise we handle the combination of the the systemBars() and ime() insets
+
+      if (deferredInsets) {
+        return WindowInsets.CONSUMED;
+      }
+      return view.onApplyWindowInsets(windowInsets);
+    }
+
+    @Override
+    public void onPrepare(WindowInsetsAnimation animation) {
+      if ((animation.getTypeMask() & deferredInsetTypes) != 0) {
+      Log.e("flutter", "PREPING");
+        // We defer the WindowInsets.Type.ime() insets if the IME is currently not visible.
+        // This results in only the WindowInsets.Type.systemBars() being applied, allowing
+        // the scrolling view to remain at it's larger size.
+        deferredInsets = true;
+      }
+    }
+
+    @Override
+    public WindowInsetsAnimation.Bounds onStart(WindowInsetsAnimation animation, WindowInsetsAnimation.Bounds bounds) {
+      Log.e("flutter", "STARTING");
+      if (deferredInsets && (animation.getTypeMask() & deferredInsetTypes) != 0) {
+        started = true;
+      }
+      return bounds;
+    }
+
+    @Override
+    public WindowInsets onProgress(WindowInsets insets, List<WindowInsetsAnimation> runningAnims) {
+      if (!deferredInsets) {
+        return insets;
+      }
+      boolean matching =  false;
+      for (WindowInsetsAnimation animation : runningAnims) {
+        if ((animation.getTypeMask() & deferredInsetTypes) != 0) {
+          matching = true;
+          continue;
+        }
+      }
+      if (!matching) {
+        return insets;
+      }
+      // WindowInsets.Builder builder = new WindowInsets.Builder(lastWindowInsets);
+      // builder.setInsets(deferredInsetTypes, insets.getInsets(deferredInsetTypes));
+      // rootView.onApplyWindowInsets(builder.build());
+      rootView.onApplyWindowInsets(insets);
+      return insets;
+    }
+
+    @Override
+    public void onEnd(WindowInsetsAnimation animation) {
+      Log.e("flutter", "ENDING");
+      if (deferredInsets && (animation.getTypeMask() & deferredInsetTypes) != 0) {
+        // If we deferred the IME insets and an IME animation has finished, we need to reset
+        // the flag
+        deferredInsets = false;
+        started = false;
+
+        // And finally dispatch the deferred insets to the view now.
+        // Ideally we would just call view.requestApplyInsets() and let the normal dispatch
+        // cycle happen, but this happens too late resulting in a visual flicker.
+        // Instead we manually dispatch the most recent WindowInsets to the view.
+        if (lastWindowInsets != null && view != null) {
+          view.dispatchApplyWindowInsets(lastWindowInsets);
+        }
+      }
     }
   }
 
@@ -402,8 +536,7 @@ public class TextInputPlugin {
   private void showTextInput(View view) {
     view.requestFocus();
     mImm.showSoftInput(view, 0);
-    setupInsetsListener();
-    mInsetsListener.computeBaseInset(mView);
+    view.requestApplyInsets();
   }
 
   private void hideTextInput(View view) {
@@ -415,8 +548,6 @@ public class TextInputPlugin {
     // field(by text field here I mean anything that keeps the keyboard open).
     // See: https://github.com/flutter/flutter/issues/34169
     mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
-    setupInsetsListener();
-    mInsetsListener.computeBaseInset(mView);
   }
 
   private void notifyViewEntered() {
