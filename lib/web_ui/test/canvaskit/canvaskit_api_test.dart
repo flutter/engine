@@ -5,6 +5,7 @@
 // @dart = 2.6
 import 'dart:typed_data';
 
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
@@ -14,6 +15,10 @@ import 'common.dart';
 import 'test_data.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   group('CanvasKit API', () {
     setUpAll(() async {
       await ui.webOnlyInitializePlatform();
@@ -1182,5 +1187,30 @@ void _canvasTests() {
       10,
       20,
     );
+  });
+
+  test('toImage.toByteData', () async {
+    final SkPictureRecorder otherRecorder = SkPictureRecorder();
+    final SkCanvas otherCanvas = otherRecorder.beginRecording(SkRect(
+      fLeft: 0,
+      fTop: 0,
+      fRight: 1,
+      fBottom: 1,
+    ));
+    otherCanvas.drawRect(
+      SkRect(
+        fLeft: 0,
+        fTop: 0,
+        fRight: 1,
+        fBottom: 1,
+      ),
+      SkPaint(),
+    );
+    final CkPicture picture = CkPicture(otherRecorder.finishRecordingAsPicture(), null);
+    final CkImage image = await picture.toImage(1, 1);
+    final ByteData rawData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    expect(rawData, isNotNull);
+    final ByteData pngData = await image.toByteData(format: ui.ImageByteFormat.png);
+    expect(pngData, isNotNull);
   });
 }

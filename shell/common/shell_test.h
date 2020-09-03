@@ -50,6 +50,8 @@ class ShellTest : public FixtureTest {
 
   static void PlatformViewNotifyCreated(
       Shell* shell);  // This creates the surface
+  static void PlatformViewNotifyDestroyed(
+      Shell* shell);  // This destroys the surface
   static void RunEngine(Shell* shell, RunConfiguration configuration);
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
@@ -61,6 +63,10 @@ class ShellTest : public FixtureTest {
   /// in PumpOneFrame.
   using LayerTreeBuilder =
       std::function<void(std::shared_ptr<ContainerLayer> root)>;
+
+  static void SetViewportMetrics(Shell* shell, double width, double height);
+  static void NotifyIdle(Shell* shell, int64_t deadline);
+
   static void PumpOneFrame(Shell* shell,
                            double width = 1,
                            double height = 1,

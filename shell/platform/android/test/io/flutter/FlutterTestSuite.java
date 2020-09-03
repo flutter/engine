@@ -4,6 +4,7 @@
 
 package io.flutter;
 
+import io.flutter.embedding.android.AndroidKeyProcessorTest;
 import io.flutter.embedding.android.FlutterActivityAndFragmentDelegateTest;
 import io.flutter.embedding.android.FlutterActivityTest;
 import io.flutter.embedding.android.FlutterAndroidComponentTest;
@@ -15,8 +16,11 @@ import io.flutter.embedding.engine.FlutterEnginePluginRegistryTest;
 import io.flutter.embedding.engine.FlutterJNITest;
 import io.flutter.embedding.engine.LocalizationPluginTest;
 import io.flutter.embedding.engine.RenderingComponentTest;
+import io.flutter.embedding.engine.loader.ApplicationInfoLoaderTest;
+import io.flutter.embedding.engine.loader.FlutterLoaderTest;
 import io.flutter.embedding.engine.plugins.shim.ShimPluginRegistryTest;
 import io.flutter.embedding.engine.renderer.FlutterRendererTest;
+import io.flutter.embedding.engine.systemchannels.KeyEventChannelTest;
 import io.flutter.embedding.engine.systemchannels.PlatformChannelTest;
 import io.flutter.embedding.engine.systemchannels.RestorationChannelTest;
 import io.flutter.external.FlutterLaunchTests;
@@ -40,6 +44,9 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
+  AccessibilityBridgeTest.class,
+  AndroidKeyProcessorTest.class,
+  ApplicationInfoLoaderTest.class,
   DartExecutorTest.class,
   FlutterActivityAndFragmentDelegateTest.class,
   FlutterActivityTest.class,
@@ -49,28 +56,31 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
   FlutterEngineTest.class,
   FlutterFragmentActivityTest.class,
   FlutterFragmentTest.class,
+  FlutterInjectorTest.class,
   FlutterJNITest.class,
   FlutterLaunchTests.class,
+  FlutterLoaderTest.class,
   FlutterShellArgsTest.class,
   FlutterRendererTest.class,
+  FlutterShellArgsTest.class,
   FlutterViewTest.class,
   InputConnectionAdaptorTest.class,
+  KeyEventChannelTest.class,
   LocalizationPluginTest.class,
+  MouseCursorPluginTest.class,
+  PlatformChannelTest.class,
   PlatformPluginTest.class,
   PlatformViewsControllerTest.class,
   PluginComponentTest.class,
   PreconditionsTest.class,
   RenderingComponentTest.class,
-  StandardMessageCodecTest.class,
-  StandardMethodCodecTest.class,
+  RestorationChannelTest.class,
   ShimPluginRegistryTest.class,
   SingleViewPresentationTest.class,
   SmokeTest.class,
+  StandardMessageCodecTest.class,
+  StandardMethodCodecTest.class,
   TextInputPluginTest.class,
-  MouseCursorPluginTest.class,
-  AccessibilityBridgeTest.class,
-  PlatformChannelTest.class,
-  RestorationChannelTest.class,
 })
 /** Runs all of the unit tests listed in the {@code @SuiteClasses} annotation. */
 public class FlutterTestSuite {}

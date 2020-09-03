@@ -306,12 +306,88 @@ typedef bool (*TextureFrameCallback)(void* /* user data */,
                                      FlutterOpenGLTexture* /* texture out */);
 typedef void (*VsyncCallback)(void* /* user data */, intptr_t /* baton */);
 
+/// A structure to represent the width and height.
+typedef struct {
+  double width;
+  double height;
+} FlutterSize;
+
+/// A structure to represent the width and height.
+///
+/// See: \ref FlutterSize when the value are not integers.
+typedef struct {
+  uint32_t width;
+  uint32_t height;
+} FlutterUIntSize;
+
+/// A structure to represent a rectangle.
+typedef struct {
+  double left;
+  double top;
+  double right;
+  double bottom;
+} FlutterRect;
+
+/// A structure to represent a 2D point.
+typedef struct {
+  double x;
+  double y;
+} FlutterPoint;
+
+/// A structure to represent a rounded rectangle.
+typedef struct {
+  FlutterRect rect;
+  FlutterSize upper_left_corner_radius;
+  FlutterSize upper_right_corner_radius;
+  FlutterSize lower_right_corner_radius;
+  FlutterSize lower_left_corner_radius;
+} FlutterRoundedRect;
+
+/// This information is passed to the embedder when requesting a frame buffer
+/// object.
+///
+/// See: \ref FlutterOpenGLRendererConfig.fbo_with_frame_info_callback.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterFrameInfo).
+  size_t struct_size;
+  /// The size of the surface that will be backed by the fbo.
+  FlutterUIntSize size;
+} FlutterFrameInfo;
+
+/// Callback for when a frame buffer object is requested.
+typedef uint32_t (*UIntFrameInfoCallback)(
+    void* /* user data */,
+    const FlutterFrameInfo* /* frame info */);
+
+/// This information is passed to the embedder when a surface is presented.
+///
+/// See: \ref FlutterOpenGLRendererConfig.present_with_info.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterFrameInfo).
+  size_t struct_size;
+  /// Id of the fbo backing the surface that was presented.
+  uint32_t fbo_id;
+} FlutterPresentInfo;
+
+/// Callback for when a surface is presented.
+typedef bool (*BoolPresentInfoCallback)(
+    void* /* user data */,
+    const FlutterPresentInfo* /* present info */);
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterOpenGLRendererConfig).
   size_t struct_size;
   BoolCallback make_current;
   BoolCallback clear_current;
+  /// Specifying one (and only one) of `present` or `present_with_info` is
+  /// required. Specifying both is an error and engine initialization will be
+  /// terminated. The return value indicates success of the present call.
   BoolCallback present;
+  /// Specifying one (and only one) of the `fbo_callback` or
+  /// `fbo_with_frame_info_callback` is required. Specifying both is an error
+  /// and engine intialization will be terminated. The return value indicates
+  /// the id of the frame buffer object that flutter will obtain the gl surface
+  /// from.
   UIntCallback fbo_callback;
   /// This is an optional callback. Flutter will ask the emebdder to create a GL
   /// context current on a background thread. If the embedder is able to do so,
@@ -342,6 +418,20 @@ typedef struct {
   /// that external texture details can be supplied to the engine for subsequent
   /// composition.
   TextureFrameCallback gl_external_texture_frame_callback;
+  /// Specifying one (and only one) of the `fbo_callback` or
+  /// `fbo_with_frame_info_callback` is required. Specifying both is an error
+  /// and engine intialization will be terminated. The return value indicates
+  /// the id of the frame buffer object (fbo) that flutter will obtain the gl
+  /// surface from. When using this variant, the embedder is passed a
+  /// `FlutterFrameInfo` struct that indicates the properties of the surface
+  /// that flutter will acquire from the returned fbo.
+  UIntFrameInfoCallback fbo_with_frame_info_callback;
+  /// Specifying one (and only one) of `present` or `present_with_info` is
+  /// required. Specifying both is an error and engine initialization will be
+  /// terminated. When using this variant, the embedder is passed a
+  /// `FlutterPresentInfo` struct that the embedder can use to release any
+  /// resources. The return value indicates success of the present call.
+  BoolPresentInfoCallback present_with_info;
 } FlutterOpenGLRendererConfig;
 
 typedef struct {
@@ -489,31 +579,6 @@ typedef void (*FlutterPlatformMessageCallback)(
 typedef void (*FlutterDataCallback)(const uint8_t* /* data */,
                                     size_t /* size */,
                                     void* /* user data */);
-
-typedef struct {
-  double left;
-  double top;
-  double right;
-  double bottom;
-} FlutterRect;
-
-typedef struct {
-  double x;
-  double y;
-} FlutterPoint;
-
-typedef struct {
-  double width;
-  double height;
-} FlutterSize;
-
-typedef struct {
-  FlutterRect rect;
-  FlutterSize upper_left_corner_radius;
-  FlutterSize upper_right_corner_radius;
-  FlutterSize lower_right_corner_radius;
-  FlutterSize lower_left_corner_radius;
-} FlutterRoundedRect;
 
 /// The identifier of the platform view. This identifier is specified by the
 /// application when a platform view is added to the scene via the

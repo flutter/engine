@@ -21,6 +21,7 @@ import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
+import android.view.DisplayCutout;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.PointerIcon;
@@ -231,7 +232,7 @@ public class FlutterView extends SurfaceView
       mMouseCursorPlugin = null;
     }
     mLocalizationPlugin = new LocalizationPlugin(context, localizationChannel);
-    androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
+    androidKeyProcessor = new AndroidKeyProcessor(this, keyEventChannel, mTextInputPlugin);
     androidTouchProcessor =
         new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ false);
     platformViewsController.attachToFlutterRenderer(flutterRenderer);
@@ -270,8 +271,7 @@ public class FlutterView extends SurfaceView
     if (!isAttached()) {
       return super.onKeyUp(keyCode, event);
     }
-    androidKeyProcessor.onKeyUp(event);
-    return super.onKeyUp(keyCode, event);
+    return androidKeyProcessor.onKeyUp(event) || super.onKeyUp(keyCode, event);
   }
 
   @Override
@@ -279,8 +279,7 @@ public class FlutterView extends SurfaceView
     if (!isAttached()) {
       return super.onKeyDown(keyCode, event);
     }
-    androidKeyProcessor.onKeyDown(event);
-    return super.onKeyDown(keyCode, event);
+    return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
   }
 
   public FlutterNativeView getFlutterNativeView() {
@@ -432,6 +431,7 @@ public class FlutterView extends SurfaceView
     if (!isAttached()) return;
 
     getHolder().removeCallback(mSurfaceCallback);
+    releaseAccessibilityNodeProvider();
 
     mNativeView.destroy();
     mNativeView = null;
@@ -589,47 +589,100 @@ public class FlutterView extends SurfaceView
   @RequiresApi(20)
   @SuppressLint({"InlinedApi", "NewApi"})
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
-    boolean statusBarHidden = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
-    boolean navigationBarHidden =
-        (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) != 0;
-
-    // We zero the left and/or right sides to prevent the padding the
-    // navigation bar would have caused.
-    ZeroSides zeroSides = ZeroSides.NONE;
-    if (navigationBarHidden) {
-      zeroSides = calculateShouldZeroSides();
-    }
-
-    // The padding on top should be removed when the statusbar is hidden.
-    mMetrics.physicalPaddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
-    mMetrics.physicalPaddingRight =
-        zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
-            ? 0
-            : insets.getSystemWindowInsetRight();
-    mMetrics.physicalPaddingBottom = 0;
-    mMetrics.physicalPaddingLeft =
-        zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
-            ? 0
-            : insets.getSystemWindowInsetLeft();
-
-    // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
-    mMetrics.physicalViewInsetTop = 0;
-    mMetrics.physicalViewInsetRight = 0;
-    // We perform hidden navbar and keyboard handling if the navbar is set to hidden. Otherwise,
-    // the navbar padding should always be provided.
-    mMetrics.physicalViewInsetBottom =
-        navigationBarHidden
-            ? guessBottomKeyboardInset(insets)
-            : insets.getSystemWindowInsetBottom();
-    mMetrics.physicalViewInsetLeft = 0;
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    // getSystemGestureInsets() was introduced in API 29 and immediately deprecated in 30.
+    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
       Insets systemGestureInsets = insets.getSystemGestureInsets();
       mMetrics.systemGestureInsetTop = systemGestureInsets.top;
       mMetrics.systemGestureInsetRight = systemGestureInsets.right;
       mMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
       mMetrics.systemGestureInsetLeft = systemGestureInsets.left;
     }
+
+    boolean statusBarVisible = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
+    boolean navigationBarVisible =
+        (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      int mask = 0;
+      if (navigationBarVisible) {
+        mask = mask | android.view.WindowInsets.Type.navigationBars();
+      }
+      if (statusBarVisible) {
+        mask = mask | android.view.WindowInsets.Type.statusBars();
+      }
+      Insets uiInsets = insets.getInsets(mask);
+      mMetrics.physicalPaddingTop = uiInsets.top;
+      mMetrics.physicalPaddingRight = uiInsets.right;
+      mMetrics.physicalPaddingBottom = uiInsets.bottom;
+      mMetrics.physicalPaddingLeft = uiInsets.left;
+
+      Insets imeInsets = insets.getInsets(android.view.WindowInsets.Type.ime());
+      mMetrics.physicalViewInsetTop = imeInsets.top;
+      mMetrics.physicalViewInsetRight = imeInsets.right;
+      mMetrics.physicalViewInsetBottom = imeInsets.bottom; // Typically, only bottom is non-zero
+      mMetrics.physicalViewInsetLeft = imeInsets.left;
+
+      Insets systemGestureInsets =
+          insets.getInsets(android.view.WindowInsets.Type.systemGestures());
+      mMetrics.systemGestureInsetTop = systemGestureInsets.top;
+      mMetrics.systemGestureInsetRight = systemGestureInsets.right;
+      mMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
+      mMetrics.systemGestureInsetLeft = systemGestureInsets.left;
+
+      // TODO(garyq): Expose the full rects of the display cutout.
+
+      // Take the max of the display cutout insets and existing padding to merge them
+      DisplayCutout cutout = insets.getDisplayCutout();
+      if (cutout != null) {
+        Insets waterfallInsets = cutout.getWaterfallInsets();
+        mMetrics.physicalPaddingTop =
+            Math.max(
+                Math.max(mMetrics.physicalPaddingTop, waterfallInsets.top),
+                cutout.getSafeInsetTop());
+        mMetrics.physicalPaddingRight =
+            Math.max(
+                Math.max(mMetrics.physicalPaddingRight, waterfallInsets.right),
+                cutout.getSafeInsetRight());
+        mMetrics.physicalPaddingBottom =
+            Math.max(
+                Math.max(mMetrics.physicalPaddingBottom, waterfallInsets.bottom),
+                cutout.getSafeInsetBottom());
+        mMetrics.physicalPaddingLeft =
+            Math.max(
+                Math.max(mMetrics.physicalPaddingLeft, waterfallInsets.left),
+                cutout.getSafeInsetLeft());
+      }
+    } else {
+      // We zero the left and/or right sides to prevent the padding the
+      // navigation bar would have caused.
+      ZeroSides zeroSides = ZeroSides.NONE;
+      if (!navigationBarVisible) {
+        zeroSides = calculateShouldZeroSides();
+      }
+
+      // Status bar (top) and left/right system insets should partially obscure the content
+      // (padding).
+      mMetrics.physicalPaddingTop = statusBarVisible ? insets.getSystemWindowInsetTop() : 0;
+      mMetrics.physicalPaddingRight =
+          zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
+              ? 0
+              : insets.getSystemWindowInsetRight();
+      mMetrics.physicalPaddingBottom = 0;
+      mMetrics.physicalPaddingLeft =
+          zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
+              ? 0
+              : insets.getSystemWindowInsetLeft();
+
+      // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
+      mMetrics.physicalViewInsetTop = 0;
+      mMetrics.physicalViewInsetRight = 0;
+      mMetrics.physicalViewInsetBottom =
+          navigationBarVisible
+              ? insets.getSystemWindowInsetBottom()
+              : guessBottomKeyboardInset(insets);
+      mMetrics.physicalViewInsetLeft = 0;
+    }
+
     updateViewportMetrics();
     return super.onApplyWindowInsets(insets);
   }
@@ -749,9 +802,7 @@ public class FlutterView extends SurfaceView
   @Override
   protected void onDetachedFromWindow() {
     super.onDetachedFromWindow();
-
-    mAccessibilityNodeProvider.release();
-    mAccessibilityNodeProvider = null;
+    releaseAccessibilityNodeProvider();
   }
 
   // TODO(mattcarroll): Confer with Ian as to why we need this method. Delete if possible, otherwise
@@ -773,6 +824,13 @@ public class FlutterView extends SurfaceView
       // the a11y
       // tree.
       return null;
+    }
+  }
+
+  private void releaseAccessibilityNodeProvider() {
+    if (mAccessibilityNodeProvider != null) {
+      mAccessibilityNodeProvider.release();
+      mAccessibilityNodeProvider = null;
     }
   }
 

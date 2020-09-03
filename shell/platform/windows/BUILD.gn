@@ -54,6 +54,8 @@ source_set("flutter_windows_source") {
     "keyboard_hook_handler.h",
     "string_conversion.cc",
     "string_conversion.h",
+    "system_utils.h",
+    "system_utils_win32.cc",
     "text_input_plugin.cc",
     "text_input_plugin.h",
     "win32_dpi_utils.cc",
@@ -66,6 +68,8 @@ source_set("flutter_windows_source") {
     "win32_task_runner.h",
     "win32_window.cc",
     "win32_window.h",
+    "win32_window_proc_delegate_manager.cc",
+    "win32_window_proc_delegate_manager.h",
     "window_binding_handler.h",
     "window_binding_handler_delegate.h",
     "window_state.h",
@@ -118,12 +122,14 @@ executable("flutter_windows_unittests") {
 
   sources = [
     "string_conversion_unittests.cc",
+    "system_utils_unittests.cc",
+    "testing/mock_win32_window.cc",
+    "testing/mock_win32_window.h",
     "testing/win32_flutter_window_test.cc",
     "testing/win32_flutter_window_test.h",
-    "testing/win32_window_test.cc",
-    "testing/win32_window_test.h",
     "win32_dpi_utils_unittests.cc",
     "win32_flutter_window_unittests.cc",
+    "win32_window_proc_delegate_manager_unittests.cc",
     "win32_window_unittests.cc",
   ]
 

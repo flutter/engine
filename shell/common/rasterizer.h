@@ -97,6 +97,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   Rasterizer(Delegate& delegate);
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
   ///             be created on the GPU task runner. Rasterizers are currently
@@ -109,6 +110,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   Rasterizer(Delegate& delegate,
              std::unique_ptr<flutter::CompositorContext> compositor_context);
+#endif
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the GPU task
@@ -389,6 +391,30 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   std::optional<size_t> GetResourceCacheMaxBytes() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Enables the thread merger if the external view embedder
+  ///             supports dynamic thread merging.
+  ///
+  /// @attention  This method is thread-safe. When the thread merger is enabled,
+  ///             the raster task queue can run in the platform thread at any
+  ///             time.
+  ///
+  /// @see        `ExternalViewEmbedder`
+  ///
+  void EnableThreadMergerIfNeeded();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Disables the thread merger if the external view embedder
+  ///             supports dynamic thread merging.
+  ///
+  /// @attention  This method is thread-safe. When the thread merger is
+  ///             disabled, the raster task queue will continue to run in the
+  ///             same thread until |EnableThreadMergerIfNeeded| is called.
+  ///
+  /// @see        `ExternalViewEmbedder`
+  ///
+  void DisableThreadMergerIfNeeded();
+
  private:
   Delegate& delegate_;
   std::unique_ptr<Surface> surface_;
@@ -402,8 +428,8 @@ class Rasterizer final : public SnapshotDelegate {
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
-  fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
+  fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
