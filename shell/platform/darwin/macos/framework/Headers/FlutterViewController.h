@@ -41,7 +41,7 @@ FLUTTER_EXPORT
 
 /**
  * This just returns the NSPasteboard so that it can be mocked in the tests.
-*/
+ */
 @property(nonatomic, readonly, nonnull) NSPasteboard* _pasteboard;
 
 /**

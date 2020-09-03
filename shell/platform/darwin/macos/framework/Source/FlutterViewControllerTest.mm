@@ -4,11 +4,11 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
-#import "third_party/ocmock/Source/OCMock/OCMock.h"
 #include "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #include "flutter/testing/testing.h"
+#import "third_party/ocmock/Source/OCMock/OCMock.h"
 
 namespace flutter::testing {
 
@@ -25,11 +25,12 @@ id mockViewController() {
   // real pasteboard.
   id pasteboardMock = OCMClassMock([NSPasteboard class]);
   __block NSString* clipboardString = @"";
-  OCMStub([pasteboardMock setString:[OCMArg any] forType:[OCMArg any]]).andDo(^(NSInvocation *invocation) {
-    [invocation getArgument:&clipboardString atIndex:2];
-  });
-  OCMExpect([pasteboardMock stringForType:[OCMArg any]]).andDo(^(NSInvocation *invocation) {
-   [invocation setReturnValue:&clipboardString];
+  OCMStub([pasteboardMock setString:[OCMArg any] forType:[OCMArg any]])
+      .andDo(^(NSInvocation* invocation) {
+        [invocation getArgument:&clipboardString atIndex:2];
+      });
+  OCMExpect([pasteboardMock stringForType:[OCMArg any]]).andDo(^(NSInvocation* invocation) {
+    [invocation setReturnValue:&clipboardString];
   });
   id viewControllerMock = OCMPartialMock(viewController);
   OCMStub([viewControllerMock _pasteboard]).andReturn(pasteboardMock);
