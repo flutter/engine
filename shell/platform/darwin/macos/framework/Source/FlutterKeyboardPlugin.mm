@@ -10,6 +10,13 @@
 #import "FlutterKeyboardPlugin.h"
 #import "KeyCodeMap_internal.h"
 
+// The number of bytes that should be able to fully store `event.characters`.
+//
+// `GetLogicalKeyForEvent` asserts `event.charactersIgnoringModifiers` to be
+// less than 2 int16s, which is 4 bytes. For `event.characters`, we assert it to
+// be double the amount, i.e. 8 bytes.
+static size_t _max_character_size = 8;
+
 static bool IsControlCharacter(NSUInteger length, NSString *label) {
   if (length > 1) {
     return false;
@@ -91,6 +98,14 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
  */
 @property(nonatomic, weak) FlutterViewController* flutterViewController;
 
+/**
+ * A map of presessd keys.
+ *
+ * The keys of the dictionary are physical keys, while the values are the logical keys
+ * on pressing.
+ */
+@property(nonatomic) NSMutableDictionary* pressedKeys;
+
 @end
 
 @implementation FlutterKeyboardPlugin
@@ -99,6 +114,7 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
   self = [super init];
   if (self != nil) {
     _flutterViewController = viewController;
+    _pressedKeys = [NSMutableDictionary dictionary];
   }
   return self;
 }
@@ -107,18 +123,47 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
   bool physicalDown = event.type == NSEventTypeKeyDown;
   uint64_t physicalKey = GetPhysicalKeyForEvent(event);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
-  // Logical event
-  FlutterLogicalKeyEvent logicalEvent = {
-      .struct_size = sizeof(FlutterLogicalKeyEvent),
-      .kind = physicalDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp,
-      .key = logicalKey,
-      .character_size = 0,
+
+  //=== Calculate logical events ===
+  FlutterLogicalKeyEvent logical_event = {
+    .struct_size = sizeof(FlutterLogicalKeyEvent),
   };
-  FlutterLogicalKeyEvent logical_events[] = {logicalEvent};
-  const uint8_t logical_characters_data[] = {};
+  size_t character_size;
+  uint8_t logical_characters_data[_max_character_size];
+
+  if (physicalDown) {
+    // The physical key has been pressed, usually indicating multiple keyboards
+    // are pressing keys with the same physical key. Ignore the down event.
+    if ([_pressedKeys objectForKey:@(physicalKey)]) {
+      return;
+    }
+    _pressedKeys[@(physicalKey)] = @(logicalKey);
+    character_size = [event.characters lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+    NSCAssert((character_size < _max_character_size),
+        @"Unexpected long key characters: |%@|. Please report this to Flutter.", event.characters);
+    memcpy(logical_characters_data, event.characters.UTF8String, character_size);
+
+    logical_event.kind = kFlutterKeyEventKindDown;
+    logical_event.key = logicalKey;
+    logical_event.character_size = character_size;
+  } else {
+    NSNumber* pressedLogicalKey = [_pressedKeys objectForKey:@(physicalKey)];
+    character_size = 0;
+    // The physical key has been released, usually indicating multiple keyboards
+    // pressed keys with the same physical key. Ignore the up event.
+    if (!pressedLogicalKey) {
+      return;
+    }
+    [_pressedKeys removeObjectForKey:@(physicalKey)];
+    logical_event.kind = kFlutterKeyEventKindUp;
+    logical_event.key = pressedLogicalKey.longLongValue;
+    logical_event.character_size = 0;
+  }
+
+  //=== Build physical event ===
+  FlutterLogicalKeyEvent logical_events[] = {logical_event};
   uint8_t logical_event_count = 1;
 
-  // Physical event
   // Timestamp in microseconds. The event.timestamp is in seconds with sub-ms precision.
   double timestamp = event.timestamp * 1000000.0;
 

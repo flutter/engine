@@ -38,6 +38,7 @@ static constexpr char kIsolateChannel[] = "flutter/isolate";
 Engine::Engine(
     Delegate& delegate,
     const PointerDataDispatcherMaker& dispatcher_maker,
+    const KeyDataDispatcherMaker& key_dispatcher_maker,
     std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
     TaskRunners task_runners,
     Settings settings,
@@ -71,6 +72,7 @@ Engine::Engine(Delegate& delegate,
                fml::WeakPtr<SnapshotDelegate> snapshot_delegate)
     : Engine(delegate,
              dispatcher_maker,
+             key_dispatcher_maker,
              vm.GetConcurrentWorkerTaskRunner(),
              task_runners,
              settings,

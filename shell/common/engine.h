@@ -256,6 +256,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate, Ke
   ///
   Engine(Delegate& delegate,
          const PointerDataDispatcherMaker& dispatcher_maker,
+         const KeyDataDispatcherMaker& key_dispatcher_maker,
          std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
          TaskRunners task_runners,
          Settings settings,
@@ -275,6 +276,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate, Ke
   ///                                engine to create the pointer data
   ///                                dispatcher. Similar to other engine
   ///                                resources, this dispatcher_maker and its
+  ///                                returned dispatcher is only safe to be
+  ///                                called from the UI thread.
+  /// @param      key_dispatcher_maker The callback provided by `PlatformView` for
+  ///                                engine to create the key data
+  ///                                dispatcher. Similar to other engine
+  ///                                resources, this key_dispatcher_maker and its
   ///                                returned dispatcher is only safe to be
   ///                                called from the UI thread.
   /// @param      vm                 An instance of the running Dart VM.
