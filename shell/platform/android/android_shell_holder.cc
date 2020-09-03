@@ -135,6 +135,7 @@ AndroidShellHolder::AndroidShellHolder(
 
   platform_view_ = weak_platform_view;
   FML_DCHECK(platform_view_);
+  is_valid_ = shell_ != nullptr;
 }
 
 AndroidShellHolder::~AndroidShellHolder() {
