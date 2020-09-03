@@ -81,13 +81,20 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   // TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
   // support for raster thread merger for Fuchsia.
   if (surface_->GetExternalViewEmbedder() &&
-      surface_->GetExternalViewEmbedder()->SupportsDynamicThreadMerging()) {
+      surface_->GetExternalViewEmbedder()->SupportsDynamicThreadMerging() &&
+      !raster_thread_merger_) {
     const auto platform_id =
         delegate_.GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId();
     const auto gpu_id =
         delegate_.GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId();
     raster_thread_merger_ =
         fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
+    raster_thread_merger_->SetMergeUnmergeCallback([=]() {
+      // Clear the GL context after the thread configuration has changed.
+      if (surface_) {
+        surface_->ClearRenderContext();
+      }
+    });
   }
 #endif
 }
@@ -99,7 +106,21 @@ void Rasterizer::Teardown() {
 
   if (raster_thread_merger_.get() != nullptr &&
       raster_thread_merger_.get()->IsMerged()) {
+    FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNow();
+    raster_thread_merger_->SetMergeUnmergeCallback(nullptr);
+  }
+}
+
+void Rasterizer::EnableThreadMergerIfNeeded() {
+  if (raster_thread_merger_) {
+    raster_thread_merger_->Enable();
+  }
+}
+
+void Rasterizer::DisableThreadMergerIfNeeded() {
+  if (raster_thread_merger_) {
+    raster_thread_merger_->Disable();
   }
 }
 
@@ -390,7 +411,9 @@ RasterStatus Rasterizer::DoDraw(
 
 RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
-  FML_DCHECK(surface_);
+  if (!surface_) {
+    return RasterStatus::kFailed;
+  }
 
   // There is no way for the compositor to know how long the layer tree
   // construction took. Fortunately, the layer tree does. Grab that time
@@ -531,13 +554,6 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
-  auto frame = compositor_context.ACQUIRE_FRAME(
-      surface_context, canvas, nullptr, root_surface_transformation, false,
-      true, nullptr);
-  canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true);
-  canvas->flush();
-
   // snapshot_surface->makeImageSnapshot needs the GL context to be set if the
   // render context is GL. frame->Raster() pops the gl context in platforms that
   // gl context switching are used. (For example, older iOS that uses GL) We
@@ -547,6 +563,14 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     FML_LOG(ERROR) << "Screenshot: unable to make image screenshot";
     return nullptr;
   }
+
+  auto frame = compositor_context.ACQUIRE_FRAME(
+      surface_context, canvas, nullptr, root_surface_transformation, false,
+      true, nullptr);
+  canvas->clear(SK_ColorTRANSPARENT);
+  frame->Raster(*tree, true);
+  canvas->flush();
+
   // Prepare an image from the surface, this image may potentially be on th GPU.
   auto potentially_gpu_snapshot = snapshot_surface->makeImageSnapshot();
   if (!potentially_gpu_snapshot) {
@@ -666,21 +690,6 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
     return max_bytes;
   }
   return std::nullopt;
-}
-
-void Rasterizer::EnsureThreadsAreMerged() {
-  if (surface_ == nullptr || raster_thread_merger_.get() == nullptr) {
-    return;
-  }
-  const size_t ThreadMergeLeaseTermDefault = 10;
-  fml::TaskRunner::RunNowOrPostTask(
-      delegate_.GetTaskRunners().GetRasterTaskRunner(),
-      [weak_this = weak_factory_.GetWeakPtr(),
-       thread_merger = raster_thread_merger_]() {
-        thread_merger->MergeWithLease(ThreadMergeLeaseTermDefault);
-      });
-  raster_thread_merger_->WaitUntilMerged();
-  FML_DCHECK(raster_thread_merger_->IsMerged());
 }
 
 Rasterizer::Screenshot::Screenshot() {}
