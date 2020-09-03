@@ -12,7 +12,9 @@
 
 namespace flutter::testing {
 
-TEST(FlutterViewControllerTest, HasStringsWhenPasteboardEmpty) {
+// Returns a mock FlutterViewController that is able to work in environments
+// without a real pasteboard.
+id mockViewController() {
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
@@ -31,6 +33,11 @@ TEST(FlutterViewControllerTest, HasStringsWhenPasteboardEmpty) {
   });
   id viewControllerMock = OCMPartialMock(viewController);
   OCMStub([viewControllerMock _pasteboard]).andReturn(pasteboardMock);
+  return viewControllerMock;
+}
+
+TEST(FlutterViewControllerTest, HasStringsWhenPasteboardEmpty) {
+  id viewControllerMock = mockViewController();
 
   // Call setData to make sure that the pasteboard is empty.
   __block bool calledSetClear = false;
@@ -59,24 +66,7 @@ TEST(FlutterViewControllerTest, HasStringsWhenPasteboardEmpty) {
 }
 
 TEST(FlutterViewControllerTest, HasStringsWhenPasteboardFull) {
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-
-  // Mock _pasteboard so that this test will work in environments without a
-  // real pasteboard.
-  id pasteboardMock = OCMClassMock([NSPasteboard class]);
-  __block NSString* clipboardString = @"";
-  OCMStub([pasteboardMock setString:[OCMArg any] forType:[OCMArg any]]).andDo(^(NSInvocation *invocation) {
-    [invocation getArgument:&clipboardString atIndex:2];
-  });
-  OCMExpect([pasteboardMock stringForType:[OCMArg any]]).andDo(^(NSInvocation *invocation) {
-   [invocation setReturnValue:&clipboardString];
-  });
-  id viewControllerMock = OCMPartialMock(viewController);
-  OCMStub([viewControllerMock _pasteboard]).andReturn(pasteboardMock);
+  id viewControllerMock = mockViewController();
 
   // Call setClipboardData to make sure there's a string on the pasteboard.
   __block bool calledSet = false;
