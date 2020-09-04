@@ -1355,12 +1355,12 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
 }
 
 inline flutter::KeyChange ToKeyChange(
-    FlutterKeyEventKind key_change) {
+    FlutterKeyEventKind key_change, bool repeated) {
   switch (key_change) {
     case kFlutterKeyEventKindUp:
       return flutter::KeyChange::kUp;
     case kFlutterKeyEventKindDown:
-      return flutter::KeyChange::kDown;
+      return repeated ? flutter::KeyChange::kRepeatedDown : flutter::KeyChange::kDown;
     case kFlutterKeyEventKindSync:
       return flutter::KeyChange::kSync;
     case kFlutterKeyEventKindCancel:
@@ -1405,7 +1405,9 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
     flutter::LogicalKeyData logical_key;
 
     logical_key.character_size = SAFE_ACCESS(current, character_size, 0);
-    logical_key.change = ToKeyChange(SAFE_ACCESS(current, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel));
+    logical_key.change = ToKeyChange(
+        SAFE_ACCESS(current, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel),
+        SAFE_ACCESS(current, repeated, false));
     logical_key.key = SAFE_ACCESS(current, key, 0);
 
     packet->SetLogicalData(logical_key, i);
@@ -1416,7 +1418,9 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   flutter::PhysicalKeyData physical_key;
   physical_key.Clear();
   physical_key.timestamp = (int64_t)SAFE_ACCESS(event, timestamp, 0);
-  physical_key.change = ToKeyChange(SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel));
+  physical_key.change = ToKeyChange(
+      SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel),
+      SAFE_ACCESS(event, repeated, false));
   physical_key.key = SAFE_ACCESS(event, key, 0);
   packet->SetPhysicalData(physical_key);
 

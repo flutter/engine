@@ -14,7 +14,9 @@ enum KeyChange {
 
   synchronize,
 
-  cancel
+  cancel,
+
+  repeatedDown,
 }
 
 class LogicalKeyData {
@@ -30,7 +32,7 @@ class LogicalKeyData {
 
   @override
   String toString() {
-    final String strCharacter = character == null || character.isEmpty ? '' : ', character: $character';
+    final String strCharacter = character?.isEmpty ?? true ? '' : ', character: $character';
     return 'LogicalKeyData(change: $change, key: $key$strCharacter)';
   }
 }

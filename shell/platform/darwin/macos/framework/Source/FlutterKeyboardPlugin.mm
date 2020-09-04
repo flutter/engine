@@ -99,12 +99,16 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
 @property(nonatomic, weak) FlutterViewController* flutterViewController;
 
 /**
- * A map of presessd keys.
+ * A map of presessd non-modifier keys.
  *
  * The keys of the dictionary are physical keys, while the values are the logical keys
  * on pressing.
+ *
+ * For modifier keys, see pressedModifiers.
  */
 @property(nonatomic) NSMutableDictionary* pressedKeys;
+
+@property(nonatomic) NSUInteger* pressedModifiers;
 
 @end
 
@@ -120,46 +124,91 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
 }
 
 - (void)dispatchEvent:(NSEvent*)event {
-  bool physicalDown = event.type == NSEventTypeKeyDown;
+  NSCAssert((event.type == NSEventTypeKeyDown || event.type == NSEventTypeKeyUp || event.type == NSFlagsChanged),
+      @"Unexpected key event type: |%@|.", [NSNumber numberWithInt:(int)event.type]);
+  if (event.type == NSFlagsChanged) {
+    NSCAssert(false, @"FlagsChanged");
+    // TODO
+    return;
+  }
+  bool physicalDown = event.type != NSEventTypeKeyUp;
   uint64_t physicalKey = GetPhysicalKeyForEvent(event);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
 
   //=== Calculate logical events ===
+  // The event corresponding to `event`.
   FlutterLogicalKeyEvent logical_event = {
+    .struct_size = sizeof(FlutterLogicalKeyEvent),
+  };
+  // A possible event to cancel the previous event, used to switch logical keys
+  // being pressed.
+  FlutterLogicalKeyEvent cancel_logical_event = {
     .struct_size = sizeof(FlutterLogicalKeyEvent),
   };
   size_t character_size;
   uint8_t logical_characters_data[_max_character_size];
+  // Whether this event is a repeated event with a different logical key, indicating
+  // events that update the logical key needs to be dispatched.
+  BOOL switchingLogical = NO;
 
   if (physicalDown) {
-    if (_pressedKeys[@(physicalKey)]) {
+    NSNumber* pressedLogicalKeyObj = _pressedKeys[@(physicalKey)];
+    uint64_t pressedLogicalKey = pressedLogicalKeyObj ? pressedLogicalKeyObj.longLongValue : 0;
+    character_size = [event.characters lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+    if (pressedLogicalKey) {
       if (event.isARepeat) {
-        // TODO
-        return;
+        if (pressedLogicalKey != logicalKey) {
+          // Switching logical keys
+          switchingLogical = YES;
+          cancel_logical_event.kind = kFlutterKeyEventKindCancel;
+          cancel_logical_event.key = logicalKey;
+          cancel_logical_event.character_size = 0;
+          cancel_logical_event.repeated = false;
+          logical_event.kind = kFlutterKeyEventKindSync;
+          logical_event.key = pressedLogicalKey;
+          logical_event.character_size = character_size;
+          logical_event.repeated = false;
+        } else {
+          // Regular repeated down event
+          logical_event.kind = kFlutterKeyEventKindDown;
+          logical_event.key = logicalKey;
+          logical_event.character_size = character_size;
+          logical_event.repeated = true;
+        }
       } else {
         // A non-repeated key has been pressed that has the exact physical key
         // as a currently pressed one, usually indicating multiple keyboards are
         // pressing keys with the same physical key. The down event is ignored.
         return;
       }
+    } else { // pressedLogicalKey is null
+      if (event.isARepeat) {
+        // A repeated key has been pressed that has no record of being pressed.
+        // This indicates multiple keyboards are pressing keys with the same
+        // physical key, and the first key has been released. Ignore the pressing state
+        // of the 2nd key.
+        return;
+      } else {
+        // New down event
+        logical_event.kind = kFlutterKeyEventKindDown;
+        logical_event.key = logicalKey;
+        logical_event.character_size = character_size;
+        logical_event.repeated = false;
+      }
     }
     _pressedKeys[@(physicalKey)] = @(logicalKey);
-    character_size = [event.characters lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
     NSCAssert((character_size < _max_character_size),
         @"Unexpected long key characters: |%@|. Please report this to Flutter.", event.characters);
     memcpy(logical_characters_data, event.characters.UTF8String, character_size);
 
-    logical_event.kind = kFlutterKeyEventKindDown;
-    logical_event.key = logicalKey;
-    logical_event.character_size = character_size;
-  } else {
+  } else { // Event type is KeyUp
     NSCAssert(!event.isARepeat,
         @"Unexpected repeated Up event. Please report this to Flutter.", event.characters);
     NSNumber* pressedLogicalKey = _pressedKeys[@(physicalKey)];
     character_size = 0;
-    // The physical key has been released, usually indicating multiple keyboards
-    // pressed keys with the same physical key. Ignore the up event.
     if (!pressedLogicalKey) {
+      // The physical key has been released before. It indicates multiple
+      // keyboards pressed keys with the same physical key. Ignore the up event.
       return;
     }
     [_pressedKeys removeObjectForKey:@(physicalKey)];
@@ -169,8 +218,12 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
   }
 
   //=== Build physical event ===
-  FlutterLogicalKeyEvent logical_events[] = {logical_event};
-  uint8_t logical_event_count = 1;
+  FlutterLogicalKeyEvent logical_events[2];
+  uint8_t logical_event_count = 0;
+  if (switchingLogical) {
+    logical_events[logical_event_count++] = cancel_logical_event;
+  }
+  logical_events[logical_event_count++] = logical_event;
 
   // Timestamp in microseconds. The event.timestamp is in seconds with sub-ms precision.
   double timestamp = event.timestamp * 1000000.0;
@@ -183,6 +236,7 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
       .timestamp = timestamp,
       .kind = physicalDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp,
       .key = physicalKey,
+      .repeated = (event.isARepeat != NO),
   };
   [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
 }

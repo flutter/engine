@@ -20,6 +20,7 @@ enum class KeyChange : int64_t {
   kDown,
   kSync,
   kCancel,
+  kRepeatedDown,
 };
 
 // This structure is unpacked by hooks.dart.

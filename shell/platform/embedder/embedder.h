@@ -570,6 +570,8 @@ typedef struct {
   uint64_t key;
   // Corresponding character. Only available for down/sync event. Not null-ended.
   size_t character_size;
+  // Whether the event is a repeated down event.
+  bool repeated;
 } FlutterLogicalKeyEvent;
 
 typedef struct {
@@ -585,6 +587,8 @@ typedef struct {
   FlutterKeyEventKind kind;
   // Physical key changed.
   uint64_t key;
+  // Whether the event is a repeated down event.
+  bool repeated;
 } FlutterKeyEvent;
 
 
