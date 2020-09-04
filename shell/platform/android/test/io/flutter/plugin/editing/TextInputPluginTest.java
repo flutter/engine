@@ -648,10 +648,6 @@ public class TextInputPluginTest {
   @TargetApi(30)
   @Config(sdk = 30)
   public void ime_windowInsetsSync() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-      return;
-    }
-
     FlutterView testView = new FlutterView(RuntimeEnvironment.application);
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
