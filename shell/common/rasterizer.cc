@@ -89,6 +89,8 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
         delegate_.GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId();
     raster_thread_merger_ =
         fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
+  }
+  if (raster_thread_merger_) {
     raster_thread_merger_->SetMergeUnmergeCallback([=]() {
       // Clear the GL context after the thread configuration has changed.
       if (surface_) {
@@ -411,9 +413,7 @@ RasterStatus Rasterizer::DoDraw(
 
 RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
-  if (!surface_) {
-    return RasterStatus::kFailed;
-  }
+  FML_DCHECK(surface_);
 
   // There is no way for the compositor to know how long the layer tree
   // construction took. Fortunately, the layer tree does. Grab that time
