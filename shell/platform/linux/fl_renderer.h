@@ -38,10 +38,21 @@ struct _FlRendererClass {
   /**
    * Virtual method called before creating a GdkWindow for the widget.
    * Does not need to be implemented.
+   * @renderer: an #FlRenderer.
+   * @widget: the widget being rendered on.
+   * @display: display to create surfaces on.
+   * @config: EGL configuration.
+   * @window_attributes: window attributes to modify.
+   * @mask: (out): the window mask to use.
+   * @error: (allow-none): #GError location to store the error occurring, or
+   * %NULL to ignore.
+   *
+   * Returns: %TRUE if the window is successfully set up.
    */
   gboolean (*setup_window_attr)(FlRenderer* renderer,
-                                EGLDisplay egl_display,
-                                EGLConfig egl_config,
+                                GtkWidget* widget,
+                                EGLDisplay display,
+                                EGLConfig config,
                                 GdkWindowAttr* window_attributes,
                                 gint* mask,
                                 GError** error);
@@ -54,7 +65,9 @@ struct _FlRendererClass {
   /**
    * Virtual method called when Flutter needs surfaces to render to.
    * @renderer: an #FlRenderer.
+   * @widget: the widget being rendered on.
    * @display: display to create surfaces on.
+   * @config: EGL configuration.
    * @visible: (out): the visible surface that is created.
    * @resource: (out): the resource surface that is created.
    * @error: (allow-none): #GError location to store the error occurring, or
@@ -63,6 +76,7 @@ struct _FlRendererClass {
    * Returns: %TRUE if both surfaces were created, %FALSE if there was an error.
    */
   gboolean (*create_surfaces)(FlRenderer* renderer,
+                              GtkWidget* widget,
                               EGLDisplay display,
                               EGLConfig config,
                               EGLSurface* visible,
@@ -81,7 +95,7 @@ struct _FlRendererClass {
 /**
  * fl_renderer_start:
  * @renderer: an #FlRenderer.
- * @view: the #FlView widget this renderer is using.
+ * @widget: the widget Flutter is renderering to.
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
  *
@@ -89,15 +103,9 @@ struct _FlRendererClass {
  *
  * Returns: %TRUE if successfully started.
  */
-gboolean fl_renderer_start(FlRenderer* renderer, FlView* view, GError** error);
-
-/**
- * fl_renderer_get_view:
- * @renderer: an #FlRenderer.
- *
- * Returns the #FlView that is using the renderer.
- */
-FlView* fl_renderer_get_view(FlRenderer* renderer);
+gboolean fl_renderer_start(FlRenderer* renderer,
+                           GtkWidget* widget,
+                           GError** error);
 
 /**
  * fl_renderer_set_geometry:

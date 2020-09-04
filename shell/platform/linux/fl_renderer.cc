@@ -10,8 +10,6 @@
 G_DEFINE_QUARK(fl_renderer_error_quark, fl_renderer_error)
 
 typedef struct {
-  FlView* view;
-
   EGLDisplay egl_display;
   EGLConfig egl_config;
   EGLSurface egl_surface;
@@ -125,8 +123,8 @@ static gboolean setup_gdk_window(FlRenderer* self,
 
   if (FL_RENDERER_GET_CLASS(self)->setup_window_attr) {
     if (!FL_RENDERER_GET_CLASS(self)->setup_window_attr(
-            self, priv->egl_display, priv->egl_config, &window_attributes,
-            &window_attributes_mask, error)) {
+            self, widget, priv->egl_display, priv->egl_config,
+            &window_attributes, &window_attributes_mask, error)) {
       return FALSE;
     }
   }
@@ -141,7 +139,9 @@ static gboolean setup_gdk_window(FlRenderer* self,
 }
 
 // Creates the EGL surfaces that Flutter will render to.
-static gboolean setup_egl_surfaces(FlRenderer* self, GError** error) {
+static gboolean setup_egl_surfaces(FlRenderer* self,
+                                   GtkWidget* widget,
+                                   GError** error) {
   FlRendererPrivate* priv =
       static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
 
@@ -153,7 +153,7 @@ static gboolean setup_egl_surfaces(FlRenderer* self, GError** error) {
   }
 
   if (!FL_RENDERER_GET_CLASS(self)->create_surfaces(
-          self, priv->egl_display, priv->egl_config, &priv->egl_surface,
+          self, widget, priv->egl_display, priv->egl_config, &priv->egl_surface,
           &priv->resource_surface, error)) {
     return FALSE;
   }
@@ -179,36 +179,24 @@ static gboolean setup_egl_surfaces(FlRenderer* self, GError** error) {
   return TRUE;
 }
 
-gboolean fl_renderer_start(FlRenderer* self, FlView* view, GError** error) {
-  FlRendererPrivate* priv =
-      static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
-
+gboolean fl_renderer_start(FlRenderer* self,
+                           GtkWidget* widget,
+                           GError** error) {
   g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
-
-  priv->view = view;
 
   if (!setup_egl_display(self, error)) {
     return FALSE;
   }
 
-  if (!setup_gdk_window(self, GTK_WIDGET(view), error)) {
+  if (!setup_gdk_window(self, widget, error)) {
     return FALSE;
   }
 
-  if (!setup_egl_surfaces(self, error)) {
+  if (!setup_egl_surfaces(self, widget, error)) {
     return FALSE;
   }
 
   return TRUE;
-}
-
-FlView* fl_renderer_get_view(FlRenderer* self) {
-  FlRendererPrivate* priv =
-      static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
-
-  g_return_val_if_fail(FL_IS_RENDERER(self), nullptr);
-
-  return priv->view;
 }
 
 void fl_renderer_set_geometry(FlRenderer* self,

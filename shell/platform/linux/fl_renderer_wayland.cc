@@ -75,13 +75,6 @@ static void fl_renderer_wayland_lazy_init_wl(FlRendererWayland* self) {
   wl_display_roundtrip(display);
 }
 
-// Returns the GTK widget at the top of the view's widget hierarchy.
-static GtkWidget* fl_renderer_wayland_get_toplevel_widget(
-    FlRendererWayland* self) {
-  FlRenderer* renderer = FL_RENDERER(self);
-  return gtk_widget_get_toplevel(GTK_WIDGET(fl_renderer_get_view(renderer)));
-}
-
 // Implements GObject::dispose.
 static void fl_renderer_wayland_dispose(GObject* object) {
   FlRendererWayland* self = FL_RENDERER_WAYLAND(object);
@@ -129,7 +122,7 @@ static void fl_renderer_wayland_on_window_map(FlRendererWayland* self,
   }
 
   GdkWaylandWindow* window = GDK_WAYLAND_WINDOW(
-      gtk_widget_get_window(fl_renderer_wayland_get_toplevel_widget(self)));
+      gtk_widget_get_window(gtk_widget_get_toplevel(widget)));
   if (!window) {
     g_error("fl_renderer_wayland_on_window_map: not a Wayland surface");
     return;
@@ -168,7 +161,8 @@ static void fl_renderer_wayland_on_window_unmap(FlRendererWayland* self,
 
 // Implements FlRenderer::create_surfaces.
 static gboolean fl_renderer_wayland_create_surfaces(FlRenderer* renderer,
-                                                    EGLDisplay egl_display,
+                                                    GtkWidget* widget,
+                                                    EGLDisplay display,
                                                     EGLConfig config,
                                                     EGLSurface* visible,
                                                     EGLSurface* resource,
@@ -225,20 +219,20 @@ static gboolean fl_renderer_wayland_create_surfaces(FlRenderer* renderer,
     return FALSE;
   }
 
-  *visible = eglCreateWindowSurface(egl_display, config,
+  *visible = eglCreateWindowSurface(display, config,
                                     self->subsurface.egl_window, nullptr);
-  *resource = eglCreateWindowSurface(egl_display, config,
-                                     self->resource.egl_window, nullptr);
+  *resource = eglCreateWindowSurface(display, config, self->resource.egl_window,
+                                     nullptr);
   if (*visible == EGL_NO_SURFACE || *resource == EGL_NO_SURFACE) {
     EGLint egl_error = eglGetError();  // must be before egl_config_to_string()
-    g_autofree gchar* config_string = egl_config_to_string(egl_display, config);
+    g_autofree gchar* config_string = egl_config_to_string(display, config);
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
                 "Failed to create EGL surfaces using configuration (%s): %s",
                 config_string, egl_error_to_string(egl_error));
     return FALSE;
   }
 
-  GtkWidget* toplevel = fl_renderer_wayland_get_toplevel_widget(self);
+  GtkWidget* toplevel = gtk_widget_get_toplevel(widget);
   if (!toplevel) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
                 "Renderer does not have a widget");

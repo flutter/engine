@@ -14,21 +14,20 @@ G_DEFINE_TYPE(FlRendererX11, fl_renderer_x11, fl_renderer_get_type())
 // Implements FlRenderer::setup_window_attr.
 static gboolean fl_renderer_x11_setup_window_attr(
     FlRenderer* renderer,
-    EGLDisplay egl_display,
-    EGLConfig egl_config,
+    GtkWidget* widget,
+    EGLDisplay display,
+    EGLConfig config,
     GdkWindowAttr* window_attributes,
     gint* mask,
     GError** error) {
   EGLint visual_id;
-  if (!eglGetConfigAttrib(egl_display, egl_config, EGL_NATIVE_VISUAL_ID,
-                          &visual_id)) {
+  if (!eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &visual_id)) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
                 "Failed to determine EGL configuration visual");
     return FALSE;
   }
 
-  GtkWidget* view_widget = GTK_WIDGET(fl_renderer_get_view(renderer));
-  GdkX11Screen* screen = GDK_X11_SCREEN(gtk_widget_get_screen(view_widget));
+  GdkX11Screen* screen = GDK_X11_SCREEN(gtk_widget_get_screen(widget));
   if (!screen) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
                 "View widget is not on an X11 screen");
@@ -58,13 +57,13 @@ static EGLDisplay fl_renderer_x11_create_display(FlRenderer* renderer) {
 
 // Implements FlRenderer::create_surfaces.
 static gboolean fl_renderer_x11_create_surfaces(FlRenderer* renderer,
+                                                GtkWidget* widget,
                                                 EGLDisplay display,
                                                 EGLConfig config,
                                                 EGLSurface* visible,
                                                 EGLSurface* resource,
                                                 GError** error) {
-  GdkWindow* window =
-      gtk_widget_get_window(GTK_WIDGET(fl_renderer_get_view(renderer)));
+  GdkWindow* window = gtk_widget_get_window(widget);
   if (!GDK_IS_X11_WINDOW(window)) {
     g_set_error(
         error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
