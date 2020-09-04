@@ -171,18 +171,42 @@ sk_sp<SkData> ParseBase64(const std::string& input) {
   return SkData::MakeWithCopy(decoder.getData(), decoder.getDataSize());
 }
 
+static sk_sp<SkData> LoadFile(const fml::UniqueFD& dir,
+                              const std::string& file_name) {
+  auto file = fml::OpenFileReadOnly(dir, file_name.c_str());
+  if (!file.is_valid()) {
+    return nullptr;
+  }
+  auto mapping = std::make_unique<fml::FileMapping>(file);
+  if (mapping->GetSize() == 0) {
+    return nullptr;
+  }
+  return SkData::MakeWithCopy(mapping->GetMapping(), mapping->GetSize());
+}
+
+static void PushSkSL(std::vector<PersistentCache::SkSLCache>& result,
+                     const fml::UniqueFD& directory,
+                     const std::string& filename) {
+  sk_sp<SkData> key = ParseBase32(filename);
+  sk_sp<SkData> data = LoadFile(directory, filename);
+  if (key != nullptr && data != nullptr) {
+    result.push_back({key, data});
+  } else {
+    FML_LOG(ERROR) << "Failed to load: " << filename;
+  }
+}
+
 std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
   TRACE_EVENT0("flutter", "PersistentCache::LoadSkSLs");
   std::vector<PersistentCache::SkSLCache> result;
-  fml::FileVisitor visitor = [&result](const fml::UniqueFD& directory,
-                                       const std::string& filename) {
-    sk_sp<SkData> key = ParseBase32(filename);
-    sk_sp<SkData> data = LoadFile(directory, filename);
-    if (key != nullptr && data != nullptr) {
-      result.push_back({key, data});
-    } else {
-      FML_LOG(ERROR) << "Failed to load: " << filename;
-    }
+
+  std::unordered_set<std::string> visited_filenames;
+  fml::FileVisitor visitor = [&result, &visited_filenames, this](
+                                 const fml::UniqueFD& directory,
+                                 const std::string& filename) {
+    sksl_filenames_.insert(filename);
+    visited_filenames.insert(filename);
+    PushSkSL(result, directory, filename);
     return true;
   };
 
@@ -191,6 +215,13 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
   // cache is invalid.
   if (IsValid()) {
     fml::VisitFiles(*sksl_cache_directory_, visitor);
+    // In case `rewinddir` doesn't work properly, load SkSLs from known
+    // sksl files manually (https://github.com/flutter/flutter/issues/65258).
+    for (const std::string& filename : sksl_filenames_) {
+      if (visited_filenames.count(filename) == 0) {
+        PushSkSL(result, *sksl_cache_directory_, filename);
+      }
+    }
   }
 
   std::unique_ptr<fml::Mapping> mapping = nullptr;
@@ -240,19 +271,6 @@ bool PersistentCache::IsValid() const {
   return cache_directory_ && cache_directory_->is_valid();
 }
 
-sk_sp<SkData> PersistentCache::LoadFile(const fml::UniqueFD& dir,
-                                        const std::string& file_name) {
-  auto file = fml::OpenFileReadOnly(dir, file_name.c_str());
-  if (!file.is_valid()) {
-    return nullptr;
-  }
-  auto mapping = std::make_unique<fml::FileMapping>(file);
-  if (mapping->GetSize() == 0) {
-    return nullptr;
-  }
-  return SkData::MakeWithCopy(mapping->GetMapping(), mapping->GetSize());
-}
-
 // |GrContextOptions::PersistentCache|
 sk_sp<SkData> PersistentCache::load(const SkData& key) {
   TRACE_EVENT0("flutter", "PersistentCacheLoad");
@@ -263,7 +281,7 @@ sk_sp<SkData> PersistentCache::load(const SkData& key) {
   if (file_name.size() == 0) {
     return nullptr;
   }
-  auto result = PersistentCache::LoadFile(*cache_directory_, file_name);
+  auto result = LoadFile(*cache_directory_, file_name);
   if (result != nullptr) {
     TRACE_EVENT0("flutter", "PersistentCacheLoadHit");
   }

@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <unordered_set>
 
 #include "flutter/assets/asset_manager.h"
 #include "flutter/fml/macros.h"
@@ -105,11 +106,12 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   mutable std::mutex worker_task_runners_mutex_;
   std::multiset<fml::RefPtr<fml::TaskRunner>> worker_task_runners_;
 
+  // Some iOS devices didn't `rewinddir` properly so we'll save the SkSL
+  // filenames visited to fix https://github.com/flutter/flutter/issues/65258.
+  std::unordered_set<std::string> sksl_filenames_;
+
   bool stored_new_shaders_ = false;
   bool is_dumping_skp_ = false;
-
-  static sk_sp<SkData> LoadFile(const fml::UniqueFD& dir,
-                                const std::string& filen_ame);
 
   bool IsValid() const;
 
