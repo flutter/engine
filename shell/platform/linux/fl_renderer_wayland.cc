@@ -121,16 +121,14 @@ static void fl_renderer_wayland_on_window_map(FlRendererWayland* self,
     return;
   }
 
-  GdkWaylandWindow* window = GDK_WAYLAND_WINDOW(
-      gtk_widget_get_window(gtk_widget_get_toplevel(widget)));
+  GdkWaylandWindow* window = GDK_WAYLAND_WINDOW(gtk_widget_get_window(widget));
   if (!window) {
-    g_error("fl_renderer_wayland_on_window_map: not a Wayland surface");
+    g_error("fl_renderer_wayland_on_window_map: not a Wayland window");
     return;
   }
   wl_surface* toplevel_surface = gdk_wayland_window_get_wl_surface(window);
   if (!toplevel_surface) {
-    g_error(
-        "fl_renderer_wayland_on_window_map: could not get toplevel wl_surface");
+    g_error("fl_renderer_wayland_on_window_map: could not get wl_surface");
     return;
   }
 
