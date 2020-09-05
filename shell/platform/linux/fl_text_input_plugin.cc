@@ -359,11 +359,11 @@ gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
         break;
       case GDK_KEY_Left:
       case GDK_KEY_KP_Left:
-        // Already handled inside Flutter.
+        changed = self->text_model->MoveCursorBack();
         break;
       case GDK_KEY_Right:
       case GDK_KEY_KP_Right:
-        // Already handled inside Flutter.
+        changed = self->text_model->MoveCursorForward();
         break;
     }
   }
