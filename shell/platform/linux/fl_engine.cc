@@ -593,17 +593,22 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   FlutterEngineSendPointerEvent(self->engine, &fl_event, 1);
 }
 
-bool fl_engine_mark_texture_frame_available(FlEngine* self,
-                                            int64_t texture_id) {
-  g_return_val_if_fail(FL_IS_ENGINE(self), false);
+gboolean fl_engine_mark_texture_frame_available(FlEngine* self,
+                                                int64_t texture_id) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
   return FlutterEngineMarkExternalTextureFrameAvailable(self->engine,
-                                                        texture_id) == kSuccess;
+                                                        texture_id) == kSuccess
+             ? TRUE
+             : FALSE;
 }
 
-bool fl_engine_register_external_texture(FlEngine* self, int64_t texture_id) {
-  g_return_val_if_fail(FL_IS_ENGINE(self), false);
+gboolean fl_engine_register_external_texture(FlEngine* self,
+                                             int64_t texture_id) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
   return FlutterEngineRegisterExternalTexture(self->engine, texture_id) ==
-         kSuccess;
+                 kSuccess
+             ? TRUE
+             : FALSE;
 }
 
 void fl_engine_unregister_external_texture(FlEngine* self, int64_t texture_id) {

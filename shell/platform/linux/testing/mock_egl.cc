@@ -1,8 +1,11 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include <EGL/egl.h>
+#include <GL/gl.h>
+#include <cstring>
 
 typedef struct {
   EGLint config_id;
@@ -255,11 +258,6 @@ EGLint eglGetError() {
   return error;
 }
 
-void (*eglGetProcAddress(const char* procname))(void) {
-  mock_error = EGL_SUCCESS;
-  return nullptr;
-}
-
 EGLBoolean eglInitialize(EGLDisplay dpy, EGLint* major, EGLint* minor) {
   if (!check_display(dpy))
     return EGL_FALSE;
@@ -318,4 +316,47 @@ EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
     return EGL_FALSE;
 
   return bool_success();
+}
+
+void fakeGlGenTextures(GLsizei n, GLuint* textures) {
+  for (int i = 0; i < n; i++) {
+    textures[i] = 99 + i;
+  }
+}
+void fakeGlBindTexture(GLenum target, GLuint texture) {}
+void fakeGlTexParameteri(GLenum target, GLenum pname, GLenum param) {}
+void fakeGlTexImage2D(GLenum target,
+                      GLint level,
+                      GLint internalformat,
+                      GLsizei width,
+                      GLsizei height,
+                      GLint border,
+                      GLenum format,
+                      GLenum type,
+                      const void* data) {}
+void fakeGlDeleteTextures(GLsizei n, const GLuint* textures) {}
+
+void (*eglGetProcAddress(const char* procname))(void) {
+  mock_error = EGL_SUCCESS;
+  if (strcmp(procname, "glGenTextures") == 0) {
+    return reinterpret_cast<__eglMustCastToProperFunctionPointerType>(
+        fakeGlGenTextures);
+  }
+  if (strcmp(procname, "glBindTexture") == 0) {
+    return reinterpret_cast<__eglMustCastToProperFunctionPointerType>(
+        fakeGlBindTexture);
+  }
+  if (strcmp(procname, "glTexParameteri") == 0) {
+    return reinterpret_cast<__eglMustCastToProperFunctionPointerType>(
+        fakeGlTexParameteri);
+  }
+  if (strcmp(procname, "glTexImage2D") == 0) {
+    return reinterpret_cast<__eglMustCastToProperFunctionPointerType>(
+        fakeGlTexImage2D);
+  }
+  if (strcmp(procname, "glDeleteTextures") == 0) {
+    return reinterpret_cast<__eglMustCastToProperFunctionPointerType>(
+        fakeGlDeleteTextures);
+  }
+  return nullptr;
 }

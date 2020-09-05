@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 
@@ -48,7 +49,6 @@ gchar* bytes_to_hex_string(GBytes* bytes) {
   return g_string_free(hex_string, FALSE);
 }
 
-// Creates a mock engine that responds to platform messages.
 FlEngine* make_mock_engine() {
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();

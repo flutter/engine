@@ -1,4 +1,4 @@
-// Copyright 2020 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -39,19 +39,20 @@ FlExternalTextureGl* fl_external_texture_gl_new(
 
 /**
  * fl_external_texture_gl_populate_texture:
- * @width: a size_t.
- * @height: a size_t.
+ * @external_texture: an #FlExternalTextureGl.
+ * @width: a size_t representing the width of the texture.
+ * @height: a size_t representing the height of the texture.
  * @opengl_texture: a FlutterOpenGLTexture*.
  *
  * Attempts to populate the specified |opengl_texture| with texture details
  * such as the name, width, height and the pixel format upon successfully
- * copying the buffer provided by |texture_callback_|. See
+ * copying the buffer provided by this texture's |texture_callback_|. See
  * |fl_external_texture_gl_copy_pixel_buffer|.
  *
- * Returns true on success or false if the pixel buffer could not be copied.
+ * Returns %TRUE on success or %FALSE if the pixel buffer could not be copied.
  */
-bool fl_external_texture_gl_populate_texture(
-    FlExternalTextureGl* self,
+gboolean fl_external_texture_gl_populate_texture(
+    FlExternalTextureGl* external_texture,
     size_t width,
     size_t height,
     FlutterOpenGLTexture* opengl_texture);
@@ -63,10 +64,12 @@ bool fl_external_texture_gl_populate_texture(
  *
  * Returns an int64_t, which is the unique id of this texture.
  */
-int64_t fl_external_texture_gl_texture_id(FlExternalTextureGl* self);
+int64_t fl_external_texture_gl_texture_id(
+    FlExternalTextureGl* external_texture);
 
 /**
  * fl_external_texture_gl_copy_pixel_buffer:
+ * @external_texture: an #FlExternalTextureGl.
  * @width: a size_t.
  * @height: a size_t.
  *
@@ -74,12 +77,13 @@ int64_t fl_external_texture_gl_texture_id(FlExternalTextureGl* self);
  * OpenGL. The |width| and |height| will be set to the actual bounds of the
  * copied pixel buffer.
  *
- * Returns true on success or false if the pixel buffer returned by
- * |texture_callback_| was invalid.
+ * Returns %TRUE on success or %TRUE if the pixel buffer returned by
+ * this texture's |texture_callback_| was invalid.
  */
-bool fl_external_texture_gl_copy_pixel_buffer(FlExternalTextureGl* self,
-                                              size_t* width,
-                                              size_t* height);
+gboolean fl_external_texture_gl_copy_pixel_buffer(
+    FlExternalTextureGl* external_texture,
+    size_t* width,
+    size_t* height);
 
 G_END_DECLS
 

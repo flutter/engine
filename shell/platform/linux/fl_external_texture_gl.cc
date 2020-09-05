@@ -1,4 +1,4 @@
-// Copyright 2020 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,7 +8,7 @@
 #include <GL/gl.h>
 #include <gmodule.h>
 
-struct {
+typedef struct {
   bool valid;
   void (*genTextures)(GLsizei n, GLuint* textures);
   void (*bindTexture)(GLenum target, GLuint texture);
@@ -23,9 +23,30 @@ struct {
                      GLenum type,
                      const void* data);
   void (*deleteTextures)(GLsizei n, const GLuint* textures);
-} gl;
+} glFuncs;
+
+static glFuncs* load_gl_funcs() {
+  static glFuncs funcs;
+  if (!funcs.valid) {
+    funcs.genTextures = reinterpret_cast<void (*)(GLsizei, GLuint*)>(
+        eglGetProcAddress("glGenTextures"));
+    funcs.bindTexture = reinterpret_cast<void (*)(GLenum, GLuint)>(
+        eglGetProcAddress("glBindTexture"));
+    funcs.texParameteri = reinterpret_cast<void (*)(GLenum, GLenum, GLenum)>(
+        eglGetProcAddress("glTexParameteri"));
+    funcs.texImage2D =
+        reinterpret_cast<void (*)(GLenum, GLint, GLint, GLsizei, GLsizei, GLint,
+                                  GLenum, GLenum, const void*)>(
+            eglGetProcAddress("glTexImage2D"));
+    funcs.deleteTextures = reinterpret_cast<void (*)(GLsizei, const GLuint*)>(
+        eglGetProcAddress("glDeleteTextures"));
+    funcs.valid = true;
+  }
+  return &funcs;
+}
 
 struct _FlExternalTextureGl {
+  GObject parent_instance;
   GLuint gl_texture_id;
   FlTextureCallback callback;
   void* user_data;
@@ -35,9 +56,8 @@ G_DEFINE_TYPE(FlExternalTextureGl, fl_external_texture_gl, G_TYPE_OBJECT)
 
 static void fl_external_texture_gl_dispose(GObject* object) {
   FlExternalTextureGl* self = FL_EXTERNAL_TEXTURE_GL(object);
-  if (gl.valid) {
-    gl.deleteTextures(1, &self->gl_texture_id);
-  }
+  glFuncs* gl = load_gl_funcs();
+  gl->deleteTextures(1, &self->gl_texture_id);
 
   G_OBJECT_CLASS(fl_external_texture_gl_parent_class)->dispose(object);
 }
@@ -49,14 +69,17 @@ static void fl_external_texture_gl_class_init(FlExternalTextureGlClass* klass) {
 static void fl_external_texture_gl_init(FlExternalTextureGl* self) {}
 
 int64_t fl_external_texture_gl_texture_id(FlExternalTextureGl* self) {
-  return reinterpret_cast<int64_t>(self);
+  g_return_val_if_fail(FL_IS_EXTERNAL_TEXTURE_GL(self), -1);
+  return self->gl_texture_id;
 }
 
-bool fl_external_texture_gl_populate_texture(
+gboolean fl_external_texture_gl_populate_texture(
     FlExternalTextureGl* self,
     size_t width,
     size_t height,
     FlutterOpenGLTexture* opengl_texture) {
+  g_return_val_if_fail(FL_IS_EXTERNAL_TEXTURE_GL(self), FALSE);
+
   size_t real_width = width, real_height = height;
   if (!fl_external_texture_gl_copy_pixel_buffer(self, &real_width,
                                                 &real_height)) {
@@ -71,53 +94,33 @@ bool fl_external_texture_gl_populate_texture(
   opengl_texture->width = real_width;
   opengl_texture->height = real_height;
 
-  return true;
+  return TRUE;
 }
 
-void fl_external_texture_gl_load_funcs(FlExternalTextureGl* self) {
-  gl.genTextures = reinterpret_cast<void (*)(GLsizei, GLuint*)>(
-      eglGetProcAddress("glGenTextures"));
-  gl.bindTexture = reinterpret_cast<void (*)(GLenum, GLuint)>(
-      eglGetProcAddress("glBindTexture"));
-  gl.texParameteri = reinterpret_cast<void (*)(GLenum, GLenum, GLenum)>(
-      eglGetProcAddress("glTexParameteri"));
-  gl.texImage2D =
-      reinterpret_cast<void (*)(GLenum, GLint, GLint, GLsizei, GLsizei, GLint,
-                                GLenum, GLenum, const void*)>(
-          eglGetProcAddress("glTexImage2D"));
-  gl.deleteTextures = reinterpret_cast<void (*)(GLsizei, const GLuint*)>(
-      eglGetProcAddress("glDeleteTextures"));
-  gl.valid = true;
-}
+gboolean fl_external_texture_gl_copy_pixel_buffer(FlExternalTextureGl* self,
+                                                  size_t* width,
+                                                  size_t* height) {
+  g_return_val_if_fail(FL_IS_EXTERNAL_TEXTURE_GL(self), FALSE);
 
-bool fl_external_texture_gl_copy_pixel_buffer(FlExternalTextureGl* self,
-                                              size_t* width,
-                                              size_t* height) {
-  const FlPixelBuffer* pixel_buffer =
-      self->callback(*width, *height, self->user_data);
-  if (!pixel_buffer || !pixel_buffer->buffer) {
-    return false;
+  const uint8_t* buffer;
+  if (self->callback(width, height, &buffer, self->user_data) != TRUE) {
+    return FALSE;
   }
-  *width = pixel_buffer->width;
-  *height = pixel_buffer->height;
 
-  if (!gl.valid) {
-    fl_external_texture_gl_load_funcs(self);
-  }
+  glFuncs* gl = load_gl_funcs();
   if (self->gl_texture_id == 0) {
-    gl.genTextures(1, &self->gl_texture_id);
-    gl.bindTexture(GL_TEXTURE_2D, self->gl_texture_id);
-    gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    gl->genTextures(1, &self->gl_texture_id);
+    gl->bindTexture(GL_TEXTURE_2D, self->gl_texture_id);
+    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   } else {
-    gl.bindTexture(GL_TEXTURE_2D, self->gl_texture_id);
+    gl->bindTexture(GL_TEXTURE_2D, self->gl_texture_id);
   }
-  gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pixel_buffer->width,
-                pixel_buffer->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                pixel_buffer->buffer);
-  return true;
+  gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, *width, *height, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, buffer);
+  return TRUE;
 }
 
 FlExternalTextureGl* fl_external_texture_gl_new(

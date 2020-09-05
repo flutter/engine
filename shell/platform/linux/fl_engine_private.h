@@ -178,31 +178,32 @@ GBytes* fl_engine_send_platform_message_finish(FlEngine* engine,
 /**
  * fl_engine_mark_texture_frame_available:
  * @engine: an #FlEngine.
- * @texture_id: an int64_t.
+ * @texture_id: the identifier of the texture whose frame has been updated.
  *
  * Tells the Flutter engine that a new texture frame is available for the given
  * texture.
  *
- * Returns: true on success.
+ * Returns: %TRUE on success.
  */
-bool fl_engine_mark_texture_frame_available(FlEngine* engine,
-                                            int64_t texture_id);
+gboolean fl_engine_mark_texture_frame_available(FlEngine* engine,
+                                                int64_t texture_id);
 
 /**
  * fl_engine_register_external_texture:
  * @engine: an #FlEngine.
- * @texture_id: an int64_t.
+ * @texture_id: the identifier of the texture that is available.
  *
  * Tells the Flutter engine that a new external texture is available.
  *
- * Returns: true on success.
+ * Returns: %TRUE on success.
  */
-bool fl_engine_register_external_texture(FlEngine* engine, int64_t texture_id);
+gboolean fl_engine_register_external_texture(FlEngine* engine,
+                                             int64_t texture_id);
 
 /**
  * fl_engine_unregister_external_texture:
  * @engine: an #FlEngine.
- * @texture_id: an int64_t.
+ * @texture_id: the identifier of the texture that is not available anymore.
  *
  * Tells the Flutter engine that an existing external texture is not available
  * anymore.

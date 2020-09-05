@@ -141,6 +141,7 @@ executable("flutter_linux_unittests") {
     "fl_binary_codec_test.cc",
     "fl_binary_messenger_test.cc",
     "fl_dart_project_test.cc",
+    "fl_external_texture_gl_test.cc",
     "fl_json_message_codec_test.cc",
     "fl_json_method_codec_test.cc",
     "fl_message_codec_test.cc",
