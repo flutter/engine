@@ -35,7 +35,8 @@ TEST(FlExternalTextureGlTest, TextureID) {
   size_t height = BUFFER_HEIGHT;
   EXPECT_EQ(fl_external_texture_gl_copy_pixel_buffer(texture, &width, &height),
             TRUE);
-  EXPECT_EQ(fl_external_texture_gl_texture_id(texture), 99);
+  EXPECT_EQ(fl_external_texture_gl_texture_id(texture),
+            reinterpret_cast<int64_t>(texture));
 #undef REAL_BUFFER_HEIGHT
 #undef REAL_BUFFER_WIDTH
 #undef BUFFER_HEIGHT

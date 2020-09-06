@@ -70,7 +70,7 @@ static void fl_external_texture_gl_init(FlExternalTextureGl* self) {}
 
 int64_t fl_external_texture_gl_texture_id(FlExternalTextureGl* self) {
   g_return_val_if_fail(FL_IS_EXTERNAL_TEXTURE_GL(self), -1);
-  return self->gl_texture_id;
+  return reinterpret_cast<int64_t>(self);
 }
 
 gboolean fl_external_texture_gl_populate_texture(
