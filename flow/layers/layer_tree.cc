@@ -30,7 +30,8 @@ void LayerTree::RecordBuildTime(fml::TimePoint vsync_start,
 }
 
 bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
-                        bool ignore_raster_cache) {
+                        bool ignore_raster_cache,
+                        const SkRect& cull_rect) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
 
   if (!root_layer_) {
@@ -49,7 +50,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.view_embedder(),
       stack,
       color_space,
-      kGiantRect,
+      cull_rect,
       false,
       frame.context().raster_time(),
       frame.context().ui_time(),
