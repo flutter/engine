@@ -20,7 +20,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   const bool parent_is_opaque = context->is_opaque;
   SkMatrix child_matrix = matrix;
-  child_matrix.postTranslate(offset_.fX, offset_.fY);
+  child_matrix.preTranslate(offset_.fX, offset_.fY);
 
   // Similar to what's done in TransformLayer::Preroll, we have to apply the
   // reverse transformation to the cull rect to properly cull child layers.
