@@ -29,9 +29,6 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
 
-  SkRect child_paint_bounds;
-  PrerollChildren(context, matrix, &child_paint_bounds);
-
   if (elevation_ == 0) {
     set_paint_bounds(path_.getBounds());
   } else {
@@ -45,6 +42,13 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   if (!context->cull_rect.intersects(paint_bounds())) {
     set_paint_bounds(SkRect::MakeEmpty());
   }
+
+  if (context->damage_context) {
+    context->damage_context->PushLayerEntry(this, compare, matrix, *context);
+  }
+
+  SkRect child_paint_bounds;
+  PrerollChildren(context, matrix, &child_paint_bounds);
 }
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
@@ -161,6 +165,14 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
       canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
       SkPoint3::Make(shadow_x, shadow_y, dpr * kLightHeight),
       dpr * kLightRadius, ambientColor, spotColor, flags);
+}
+
+bool PhysicalShapeLayer::compare(const Layer* l1, const Layer* l2) {
+  const auto* p1 = reinterpret_cast<const PhysicalShapeLayer*>(l1);
+  const auto* p2 = reinterpret_cast<const PhysicalShapeLayer*>(l2);
+  return p1->color_ == p2->color_ && p1->shadow_color_ == p2->shadow_color_ &&
+         p1->elevation_ == p2->elevation_ && p1->path_ == p2->path_ &&
+         p1->clip_behavior_ == p2->clip_behavior_;
 }
 
 }  // namespace flutter

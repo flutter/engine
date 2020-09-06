@@ -27,6 +27,8 @@ class PictureLayer : public Layer {
   void Paint(PaintContext& context) const override;
 
  private:
+  static bool compare(const Layer* l1, const Layer* l2);
+
   SkPoint offset_;
   // Even though pictures themselves are not GPU resources, they may reference
   // images that have a reference to a GPU resource.

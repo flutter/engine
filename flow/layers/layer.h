@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/flow/damage_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
@@ -47,6 +48,7 @@ struct PrerollContext {
   GrDirectContext* gr_context;
   ExternalViewEmbedder* view_embedder;
   MutatorsStack& mutators_stack;
+  DamageContext* damage_context;
   SkColorSpace* dst_color_space;
   SkRect cull_rect;
   bool surface_needs_readback;
@@ -71,7 +73,7 @@ struct PrerollContext {
 
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
-class Layer {
+class Layer : public std::enable_shared_from_this<Layer> {
  public:
   Layer();
   virtual ~Layer();

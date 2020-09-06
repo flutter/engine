@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "flutter/flow/damage_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
@@ -35,6 +36,17 @@ enum class RasterStatus {
   kFailed
 };
 
+struct FrameDamage {
+  // in: description for frame previously rasterized in target framebuffer
+  const DamageContext::FrameDescription* previous_frame_description;
+
+  // out: description for frame being rasterized
+  std::unique_ptr<DamageContext::FrameDescription> frame_description;
+
+  // out: area in framebuffer that has changed between frames
+  SkIRect damage_rect;
+};
+
 class CompositorContext {
  public:
   class ScopedFrame {
@@ -43,6 +55,7 @@ class CompositorContext {
                 GrDirectContext* gr_context,
                 SkCanvas* canvas,
                 ExternalViewEmbedder* view_embedder,
+                DamageContext* damage_context,
                 const SkMatrix& root_surface_transformation,
                 bool instrumentation_enabled,
                 bool surface_supports_readback,
@@ -53,6 +66,8 @@ class CompositorContext {
     SkCanvas* canvas() { return canvas_; }
 
     ExternalViewEmbedder* view_embedder() { return view_embedder_; }
+
+    DamageContext* damage_context() { return damage_context_; }
 
     CompositorContext& context() const { return context_; }
 
@@ -65,13 +80,15 @@ class CompositorContext {
     GrDirectContext* gr_context() const { return gr_context_; }
 
     virtual RasterStatus Raster(LayerTree& layer_tree,
-                                bool ignore_raster_cache);
+                                bool ignore_raster_cache,
+                                FrameDamage* frame_damage);
 
    private:
     CompositorContext& context_;
     GrDirectContext* gr_context_;
     SkCanvas* canvas_;
     ExternalViewEmbedder* view_embedder_;
+    DamageContext* damage_context_;
     const SkMatrix& root_surface_transformation_;
     const bool instrumentation_enabled_;
     const bool surface_supports_readback_;
@@ -110,6 +127,7 @@ class CompositorContext {
  private:
   RasterCache raster_cache_;
   TextureRegistry texture_registry_;
+  DamageContext damage_context_;
   Counter frame_count_;
   Stopwatch raster_time_;
   Stopwatch ui_time_;
