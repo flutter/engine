@@ -41,6 +41,10 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     set_paint_bounds(ComputeShadowBounds(path_.getBounds(), elevation_,
                                          context->frame_device_pixel_ratio));
   }
+
+  if (!context->cull_rect.intersects(paint_bounds())) {
+    set_paint_bounds(SkRect::MakeEmpty());
+  }
 }
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
