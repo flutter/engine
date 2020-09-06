@@ -29,7 +29,8 @@ class LayerTree {
   //   layer tree performs any operations that require readback
   //   from the root surface.
   bool Preroll(CompositorContext::ScopedFrame& frame,
-               bool ignore_raster_cache = false);
+               bool ignore_raster_cache = false,
+               const SkRect& cull_rect = kGiantRect);
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   void UpdateScene(SceneUpdateContext& context);
