@@ -57,6 +57,19 @@ TEST_F(PictureLayerTest, PaintingEmptyLayerDies) {
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(\\)");
 }
+
+TEST_F(PictureLayerTest, PaintOutsideCullRectDies) {
+  const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
+  const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  auto mock_picture = SkPicture::MakePlaceholder(picture_bounds);
+  auto layer = std::make_shared<PictureLayer>(
+      layer_offset, SkiaGPUObject(mock_picture, unref_queue()), false, false);
+
+  preroll_context()->cull_rect = SkRect::MakeEmpty();
+  layer->Preroll(preroll_context(), SkMatrix());
+  EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
+                            "needs_painting\\(\\)");
+}
 #endif
 
 TEST_F(PictureLayerTest, InvalidPictureDies) {

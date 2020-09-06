@@ -43,6 +43,22 @@ TEST_F(PhysicalShapeLayerTest, PaintBeforePreollDies) {
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(\\)");
 }
+
+TEST_F(PhysicalShapeLayerTest, PaintOutsideCullRectDies) {
+  SkPath child_path;
+  child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  auto mock_layer = std::make_shared<MockLayer>(child_path, SkPaint());
+  auto layer =
+      std::make_shared<PhysicalShapeLayer>(SK_ColorBLACK, SK_ColorBLACK,
+                                           0.0f,  // elevation
+                                           child_path, Clip::none);
+  layer->Add(mock_layer);
+
+  preroll_context()->cull_rect = SkRect::MakeEmpty();
+  layer->Preroll(preroll_context(), SkMatrix());
+  EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
+                            "needs_painting\\(\\)");
+}
 #endif
 
 TEST_F(PhysicalShapeLayerTest, NonEmptyLayer) {

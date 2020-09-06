@@ -39,7 +39,12 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
-  set_paint_bounds(bounds);
+
+  if (context->cull_rect.intersects(bounds)) {
+    set_paint_bounds(bounds);
+  } else {
+    set_paint_bounds(SkRect::MakeEmpty());
+  }
 }
 
 void PictureLayer::Paint(PaintContext& context) const {
