@@ -359,11 +359,23 @@ gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
         break;
       case GDK_KEY_Left:
       case GDK_KEY_KP_Left:
-        changed = self->text_model->MoveCursorBack();
+        if (event->state & GDK_SHIFT_MASK) {          
+          int selection_base = self->text_model->selection_base();
+          int selection_extent = self->text_model->selection_extent();
+          changed = self->text_model->SetEditingState(selection_base, selection_extent-1,  self->text_model->GetText());
+        } else {
+          changed = self->text_model->MoveCursorBack();
+        }        
         break;
       case GDK_KEY_Right:
-      case GDK_KEY_KP_Right:
-        changed = self->text_model->MoveCursorForward();
+      case GDK_KEY_KP_Right:       
+        if (event->state & GDK_SHIFT_MASK) {          
+          int selection_base = self->text_model->selection_base();
+          int selection_extent = self->text_model->selection_extent();
+          changed = self->text_model->SetEditingState(selection_base, selection_extent+1,  self->text_model->GetText());
+        } else {
+          changed = self->text_model->MoveCursorForward();
+        }    
         break;
     }
   }
