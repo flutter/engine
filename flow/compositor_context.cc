@@ -83,7 +83,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   if (frame_damage) {
     damage_context()->InitFrame(layer_tree.frame_size(),
                                 frame_damage->previous_frame_description);
-    layer_tree.Preroll(*this, false);
+    layer_tree.Preroll(*this, true);
     auto damage = damage_context()->FinishFrame();
     frame_damage->frame_description = std::move(damage.frame_description);
     damage.damage_rect.roundOut(&frame_damage->damage_rect);
