@@ -77,7 +77,7 @@ bool DamageContext::ApplyImageFilter(size_t from,
   for (size_t i = from; i < count; ++i) {
     auto& entry = layer_entries_[i];
     SkRect layer_bounds(entry.paint_bounds);
-    inverted.mapRect(layer_bounds);
+    inverted.mapRect(&layer_bounds);
     if (layer_bounds.intersects(bounds)) {
       // layer paint bounds after filter can not get bigger than union of
       // original paint bounds and filter bounds
