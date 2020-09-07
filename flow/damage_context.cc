@@ -98,7 +98,12 @@ bool DamageContext::ApplyImageFilter(size_t from,
 DamageContext::DamageResult DamageContext::FinishFrame() {
   DamageResult res;
   LayerEntrySet entries;
-  entries.insert(layer_entries_.begin(), layer_entries_.end());
+
+  for (size_t i = 0; i < layer_entries_.size(); ++i) {
+    auto& entry = layer_entries_[i];
+    entry.paint_order = i;
+    entries.insert(std::move(entry));
+  }
 
   if (!previous_frame_ ||
       previous_frame_->layer_tree_size != current_layer_tree_size_) {
@@ -110,11 +115,19 @@ DamageContext::DamageResult DamageContext::FinishFrame() {
     // modified in any way (fail the equality check in LayerEntry) and thus
     // contribute to damage area
 
+    // matching layer entries from previous frame and this frame; we still need
+    // to check for paint order to detect reordered layers
+    std::vector<const LayerEntry*> matching_previous;
+    std::vector<const LayerEntry*> matching_current;
+
     res.damage_rect = SkRect::MakeEmpty();
     for (const auto& l : entries) {
-      if (!res.damage_rect.contains(l.paint_bounds) &&
-          previous_frame_->entries.find(l) == previous_frame_->entries.end()) {
+      auto prev = previous_frame_->entries.find(l);
+      if (prev == previous_frame_->entries.end()) {
         res.damage_rect.join(l.paint_bounds);
+      } else {
+        matching_current.push_back(&l);
+        matching_previous.push_back(&*prev);
       }
     }
     for (const auto& l : previous_frame_->entries) {
@@ -122,6 +135,40 @@ DamageContext::DamageResult DamageContext::FinishFrame() {
           entries.find(l) == entries.end()) {
         res.damage_rect.join(l.paint_bounds);
       }
+    }
+
+    // determine which layers are reordered
+    auto comparator = [](const LayerEntry* l1, const LayerEntry* l2) {
+      return l1->paint_order < l2->paint_order;
+    };
+    std::sort(matching_previous.begin(), matching_previous.end(), comparator);
+    std::sort(matching_current.begin(), matching_current.end(), comparator);
+
+    // We have two sets of matching layer entries that possibly differ in paint
+    // order and we sorted them by paint order, i.e.
+    // B C D E
+    // ^-- prev
+    // C D B E
+    // ^-- cur
+    // 1. move cur until match with prev is found (B)
+    // all layers before cur that intersect with prev are reordered and will
+    // contribute to damage, as does prev
+    // 2. remove prev and cur (now both pointing at B)
+    // 3. repeat until empty
+    // (except we actually do it in reverse to not erase from beginning)
+    while (!matching_previous.empty()) {
+      auto prev = matching_previous.end() - 1;
+      auto cur = matching_current.end() - 1;
+
+      while (*(*prev) != *(*cur)) {
+        if ((*prev)->paint_bounds.intersects((*cur)->paint_bounds)) {
+          res.damage_rect.join((*prev)->paint_bounds);
+          res.damage_rect.join((*cur)->paint_bounds);
+        }
+        --cur;
+      }
+      matching_previous.erase(prev);
+      matching_current.erase(cur);
     }
   }
 

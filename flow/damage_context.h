@@ -52,8 +52,10 @@ class DamageContext {
     LayerComparator comparator;
 
     std::vector<std::shared_ptr<Mutator>> mutators;
+    int paint_order;
 
     bool operator==(const LayerEntry& e) const;
+    bool operator!=(const LayerEntry& e) const { return !(*this == e); }
 
     struct Hash {
       std::size_t operator()(const LayerEntry& e) const noexcept;
