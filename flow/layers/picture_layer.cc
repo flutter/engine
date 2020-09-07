@@ -72,27 +72,7 @@ void PictureLayer::Paint(PaintContext& context) const {
   picture()->playback(context.leaf_nodes_canvas);
 }
 
-#define USE_THOROUGH_COMPARE
-
-bool PictureLayer::compare(const Layer* l1, const Layer* l2) {
-  // Pictures are cached in flutter layers until repaint so
-  // identity comparison often works
-  const auto& pic1 = reinterpret_cast<const PictureLayer*>(l1)->picture_.get();
-  const auto& pic2 = reinterpret_cast<const PictureLayer*>(l2)->picture_.get();
-  if (pic1.get() == pic2.get()) {
-    return true;
-  }
-#ifdef USE_THOROUGH_COMPARE
-  auto op_cnt_1 = pic1->approximateOpCount();
-  auto op_cnt_2 = pic2->approximateOpCount();
-  if (op_cnt_1 != op_cnt_2 || pic1->cullRect() != pic2->cullRect()) {
-    return false;
-  }
-
-  if (op_cnt_1 > 10) {
-    return false;
-  }
-
+sk_sp<SkData> PictureLayer::SerializedPicture() const {
   SkSerialProcs procs = {
       nullptr,
       nullptr,
@@ -108,16 +88,42 @@ bool PictureLayer::compare(const Layer* l1, const Layer* l2) {
       nullptr,
   };
 
+  if (!cached_serialized_picture_) {
+    cached_serialized_picture_ = picture_.get()->serialize(&procs);
+  } else {
+  }
+  return cached_serialized_picture_;
+}
+
+#define USE_THOROUGH_COMPARE
+
+bool PictureLayer::compare(const Layer* l1, const Layer* l2) {
+  // Pictures are cached in flutter layers until repaint so
+  // identity comparison often works
+  const auto* pic_layer_1 = reinterpret_cast<const PictureLayer*>(l1);
+  const auto* pic_layer_2 = reinterpret_cast<const PictureLayer*>(l2);
+  const auto& pic1 = pic_layer_1->picture_.get();
+  const auto& pic2 = pic_layer_2->picture_.get();
+  if (pic1.get() == pic2.get()) {
+    return true;
+  }
+#ifdef USE_THOROUGH_COMPARE
+  auto op_cnt_1 = pic1->approximateOpCount();
+  auto op_cnt_2 = pic2->approximateOpCount();
+  if (op_cnt_1 != op_cnt_2 || pic1->cullRect() != pic2->cullRect()) {
+    return false;
+  }
+
+  if (op_cnt_1 > 10) {
+    return false;
+  }
+
   // TODO(knopp) we don't actually need the data; this could be done without
   // allocations by implementing stream that calculates SHA hash and
   // comparing those hashes
-  auto d1 = pic1->serialize(&procs);
-  auto d2 = pic2->serialize(&procs);
+  auto d1 = pic_layer_1->SerializedPicture();
+  auto d2 = pic_layer_2->SerializedPicture();
   auto res = d1->equals(d2.get());
-  // fprintf(stderr,
-  //         "Slow compare: res: %i, %i bytes vs  %i bytes (%i op vs %i op)\n",
-  //         res, int(d1->size()), int(d2->size()), pic1->approximateOpCount(),
-  //         pic2->approximateOpCount());
   return res;
 #else
   return false;

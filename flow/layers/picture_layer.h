@@ -36,6 +36,10 @@ class PictureLayer : public Layer {
   bool is_complex_ = false;
   bool will_change_ = false;
 
+  sk_sp<SkData> SerializedPicture() const;
+
+  mutable sk_sp<SkData> cached_serialized_picture_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(PictureLayer);
 };
 
