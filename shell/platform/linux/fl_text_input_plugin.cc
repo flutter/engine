@@ -338,7 +338,7 @@ gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
         break;
       case GDK_KEY_Delete:
       case GDK_KEY_KP_Delete:
-        // Already handled inside Flutter.
+       changed = self->text_model->Delete();
         break;
       case GDK_KEY_End:
       case GDK_KEY_KP_End:
