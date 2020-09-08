@@ -174,7 +174,6 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
       int index = [newRoutes count] - 1;
       lastAdded = [newRoutes objectAtIndex:index];
     }
-
     if (lastAdded != nil && [lastAdded uid] != previous_route_id_) {
       previous_route_id_ = [lastAdded uid];
       routeChanged = true;
@@ -206,7 +205,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   } else if (layoutChanged) {
     SemanticsObject* nextToFocus = nil;
     // This property will be -1 if the focus is outside of the flutter
-    // application. In this case, we should not try to refocus anything.
+    // application. In this case, we should not refocus anything.
     if (last_focused_semantics_object_id_ != -1) {
       // Tries to refocus the previous focused semantics object to avoid random jumps.
       nextToFocus = [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
