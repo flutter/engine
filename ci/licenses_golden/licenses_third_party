@@ -1,4 +1,4 @@
-Signature: a68684fe33cc6f9987196e5322506a33
+Signature: b4a9cf770d71569cd8a665a4adb88aea
 
 UNUSED LICENSES:
 
@@ -8476,7 +8476,6 @@ FILE: ../../../third_party/dart/samples/ffi/async/async_test.dart
 FILE: ../../../third_party/dart/samples/ffi/async/sample_async_callback.dart
 FILE: ../../../third_party/dart/samples/ffi/async/sample_native_port_call.dart
 FILE: ../../../third_party/dart/samples/ffi/sample_ffi_functions_callbacks_closures.dart
-FILE: ../../../third_party/dart/sdk/lib/_http/embedder_config.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_struct_patch.dart
