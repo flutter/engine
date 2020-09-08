@@ -116,10 +116,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     _dartProject.reset([project retain]);
 
   if (!EnableTracingIfNecessary([_dartProject.get() settings])) {
-    NSLog(@"Cannot create a FlutterEngine instance in debug mode without Flutter tooling or Xcode. "
-          @"To launch in debug mode, run flutter run from Flutter tools, run from an IDE with a "
-          @"Flutter IDE plugin or run the iOS project from Xcode. Profile and release mode apps "
-          @"can be launched from the home-screen.");
+    NSLog(
+        @"Cannot create a FlutterEngine instance in debug mode without Flutter tooling or "
+        @"Xcode.\n\nTo launch in debug mode in iOS 14+, run flutter run from Flutter tools, run "
+        @"from an IDE with a Flutter IDE plugin or run the iOS project from Xcode.\nAlternatively "
+        @"profile and release mode apps can be launched from the home screen.");
     [self release];
     return nil;
   }
