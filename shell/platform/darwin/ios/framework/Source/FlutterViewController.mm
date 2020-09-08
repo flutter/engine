@@ -967,7 +967,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)dispatchPresses:(NSSet<UIPress*>*)presses API_AVAILABLE(ios(13.4)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      if (press.key == nil) {
+      if (press.key == nil || press.phase == UIPressPhaseStationary ||
+          press.phase == UIPressPhaseChanged) {
         continue;
       }
       NSMutableDictionary* keyMessage = [@{
