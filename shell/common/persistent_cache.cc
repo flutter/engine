@@ -184,13 +184,13 @@ static sk_sp<SkData> LoadFile(const fml::UniqueFD& dir,
   return SkData::MakeWithCopy(mapping->GetMapping(), mapping->GetSize());
 }
 
-static void PushSkSL(std::vector<PersistentCache::SkSLCache>& result,
+static void PushSkSL(std::vector<PersistentCache::SkSLCache>* result,
                      const fml::UniqueFD& directory,
                      const std::string& filename) {
   sk_sp<SkData> key = ParseBase32(filename);
   sk_sp<SkData> data = LoadFile(directory, filename);
   if (key != nullptr && data != nullptr) {
-    result.push_back({key, data});
+    result->push_back({key, data});
   } else {
     FML_LOG(ERROR) << "Failed to load: " << filename;
   }
@@ -206,7 +206,7 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
                                  const std::string& filename) {
     sksl_filenames_.insert(filename);
     visited_filenames.insert(filename);
-    PushSkSL(result, directory, filename);
+    PushSkSL(&result, directory, filename);
     return true;
   };
 
@@ -219,7 +219,7 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
     // sksl files manually (https://github.com/flutter/flutter/issues/65258).
     for (const std::string& filename : sksl_filenames_) {
       if (visited_filenames.count(filename) == 0) {
-        PushSkSL(result, *sksl_cache_directory_, filename);
+        PushSkSL(&result, *sksl_cache_directory_, filename);
       }
     }
   }
