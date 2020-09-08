@@ -95,9 +95,27 @@ bool DamageContext::ApplyImageFilter(size_t from,
   return true;
 }
 
+void DamageArea::AddRect(const SkRect& rect) {
+  SkIRect irect;
+  rect.roundOut(&irect);
+  bounds_.join(irect);
+}
+
+void DamageArea::AddRect(const SkIRect& rect) {
+  bounds_.join(rect);
+}
+
+std::vector<SkIRect> DamageArea::GetRects() const {
+  std::vector<SkIRect> res;
+  res.push_back(bounds_);
+  return res;
+}
+
 DamageContext::DamageResult DamageContext::FinishFrame() {
   DamageResult res;
-  LayerEntrySet entries;
+  res.frame_description.reset(new FrameDescription());
+  res.frame_description->layer_tree_size = current_layer_tree_size_;
+  auto& entries = res.frame_description->entries;
 
   for (size_t i = 0; i < layer_entries_.size(); ++i) {
     auto& entry = layer_entries_[i];
@@ -107,8 +125,8 @@ DamageContext::DamageResult DamageContext::FinishFrame() {
 
   if (!previous_frame_ ||
       previous_frame_->layer_tree_size != current_layer_tree_size_) {
-    res.damage_rect = SkRect::MakeIWH(current_layer_tree_size_.width(),
-                                      current_layer_tree_size_.height());
+    res.area.AddRect(SkRect::MakeIWH(current_layer_tree_size_.width(),
+                                     current_layer_tree_size_.height()));
   } else {
     // layer entries that are only found in one set (only this frame or only
     // previous frame) are for layers that were either added, removed, or
@@ -120,20 +138,18 @@ DamageContext::DamageResult DamageContext::FinishFrame() {
     std::vector<const LayerEntry*> matching_previous;
     std::vector<const LayerEntry*> matching_current;
 
-    res.damage_rect = SkRect::MakeEmpty();
     for (const auto& l : entries) {
       auto prev = previous_frame_->entries.find(l);
       if (prev == previous_frame_->entries.end()) {
-        res.damage_rect.join(l.paint_bounds);
+        res.area.AddRect(l.paint_bounds);
       } else {
         matching_current.push_back(&l);
         matching_previous.push_back(&*prev);
       }
     }
     for (const auto& l : previous_frame_->entries) {
-      if (!res.damage_rect.contains(l.paint_bounds) &&
-          entries.find(l) == entries.end()) {
-        res.damage_rect.join(l.paint_bounds);
+      if (entries.find(l) == entries.end()) {
+        res.area.AddRect(l.paint_bounds);
       }
     }
 
@@ -162,8 +178,8 @@ DamageContext::DamageResult DamageContext::FinishFrame() {
 
       while (*(*prev) != *(*cur)) {
         if ((*prev)->paint_bounds.intersects((*cur)->paint_bounds)) {
-          res.damage_rect.join((*prev)->paint_bounds);
-          res.damage_rect.join((*cur)->paint_bounds);
+          res.area.AddRect((*prev)->paint_bounds);
+          res.area.AddRect((*cur)->paint_bounds);
         }
         --cur;
       }
@@ -171,10 +187,6 @@ DamageContext::DamageResult DamageContext::FinishFrame() {
       matching_current.erase(cur);
     }
   }
-
-  res.frame_description.reset(new FrameDescription());
-  res.frame_description->entries = std::move(entries);
-  res.frame_description->layer_tree_size = current_layer_tree_size_;
 
   previous_frame_ = nullptr;
   layer_entries_.clear();

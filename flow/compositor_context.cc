@@ -76,30 +76,27 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     FrameDamage* frame_damage) {
   TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
 
-  SkRect frame_rect = SkRect::MakeIWH(layer_tree.frame_size().width(),
-                                      layer_tree.frame_size().height());
-  SkRect damage_rect = frame_rect;
+  std::optional<DamageArea> damage_area;
 
   if (frame_damage) {
     damage_context()->InitFrame(layer_tree.frame_size(),
                                 frame_damage->previous_frame_description);
     layer_tree.Preroll(*this, true);
-    auto damage = damage_context()->FinishFrame();
-    frame_damage->frame_description = std::move(damage.frame_description);
-    damage.damage_rect.roundOut(&frame_damage->damage_rect);
-    // don't clip on sub pixel boundaries
-    damage.damage_rect.roundOut(&damage_rect);
+    auto damage_res = damage_context()->FinishFrame();
+    frame_damage->frame_description = std::move(damage_res.frame_description);
 
-    // don't bother clipping when repainting more than 80%
-    if (damage_rect.width() * damage_rect.height() >
-        0.8 * frame_rect.width() * frame_rect.height()) {
-      damage_rect = frame_rect;
+    // only bother clipping when less than 80% of screen
+    if (damage_res.area.bounds().width() * damage_res.area.bounds().height() <
+        0.8 * layer_tree.frame_size().width() *
+            layer_tree.frame_size().height()) {
+      damage_area = std::move(damage_res.area);
     }
   }
 
+  auto cull_rect =
+      damage_area ? SkRect::Make(damage_area->bounds()) : kGiantRect;
   bool root_needs_readback =
-      layer_tree.Preroll(*this, ignore_raster_cache,
-                         damage_rect == frame_rect ? kGiantRect : damage_rect);
+      layer_tree.Preroll(*this, ignore_raster_cache, cull_rect);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && raster_thread_merger_) {
@@ -111,31 +108,43 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     return RasterStatus::kResubmit;
   }
 
-  if (canvas() && damage_rect != frame_rect) {
-    canvas()->save();
-    canvas()->clipRect(damage_rect);
-  }
-
-  // Clearing canvas after preroll reduces one render target switch when preroll
-  // paints some raster cache.
-
-  if (canvas()) {
-    if (needs_save_layer) {
-      FML_LOG(INFO) << "Using SaveLayer to protect non-readback surface";
-      SkRect bounds = SkRect::Make(layer_tree.frame_size());
-      SkPaint paint;
-      paint.setBlendMode(SkBlendMode::kSrc);
-      canvas()->saveLayer(&bounds, &paint);
+  auto paint = [&]() {
+    // Clearing canvas after preroll reduces one render target switch when
+    // preroll paints some raster cache.
+    if (canvas()) {
+      if (needs_save_layer) {
+        FML_LOG(INFO) << "Using SaveLayer to protect non-readback surface";
+        SkRect bounds = SkRect::Make(layer_tree.frame_size());
+        SkPaint paint;
+        paint.setBlendMode(SkBlendMode::kSrc);
+        canvas()->saveLayer(&bounds, &paint);
+      }
+      canvas()->clear(SK_ColorTRANSPARENT);
     }
-    canvas()->clear(SK_ColorTRANSPARENT);
-  }
-  layer_tree.Paint(*this, ignore_raster_cache);
-  if (canvas() && needs_save_layer) {
-    canvas()->restore();
+    layer_tree.Paint(*this, ignore_raster_cache);
+    if (canvas() && needs_save_layer) {
+      canvas()->restore();
+    }
+  };
+
+  if (damage_area) {
+    auto rects = damage_area->GetRects();
+    for (const SkIRect& rect : rects) {
+      if (canvas()) {
+        canvas()->save();
+        canvas()->clipRect(SkRect::Make(rect));
+      }
+      paint();
+      if (canvas()) {
+        canvas()->restore();
+      }
+    }
+  } else {
+    paint();
   }
 
-  if (canvas() && damage_rect != frame_rect) {
-    canvas()->restore();
+  if (frame_damage) {
+    frame_damage->damage_area = std::move(damage_area);
   }
 
   return RasterStatus::kSuccess;

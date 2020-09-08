@@ -12,6 +12,25 @@ namespace flutter {
 struct PrerollContext;
 class Layer;
 
+class DamageArea {
+ public:
+  FML_DISALLOW_COPY_AND_ASSIGN(DamageArea);
+
+  DamageArea() = default;
+  DamageArea(DamageArea&&) = default;
+  DamageArea& operator=(DamageArea&&) = default;
+
+  const SkIRect& bounds() const { return bounds_; }
+
+  std::vector<SkIRect> GetRects() const;
+
+  void AddRect(const SkRect& rect);
+  void AddRect(const SkIRect& rect);
+
+ private:
+  SkIRect bounds_ = SkIRect::MakeEmpty();
+};
+
 class DamageContext {
  public:
   typedef bool (*LayerComparator)(const Layer* l1, const Layer* l2);
@@ -39,8 +58,8 @@ class DamageContext {
                         const SkRect& bounds);
 
   struct DamageResult {
+    DamageArea area;
     std::unique_ptr<FrameDescription> frame_description;
-    SkRect damage_rect;
   };
 
   DamageResult FinishFrame();

@@ -43,8 +43,9 @@ struct FrameDamage {
   // out: description for frame being rasterized
   std::unique_ptr<DamageContext::FrameDescription> frame_description;
 
-  // out: area in framebuffer that has changed between frames
-  SkIRect damage_rect;
+  // out: area in framebuffer that has changed between frames;
+  // if optional is empty, whole frame was repainted
+  std::optional<DamageArea> damage_area;
 };
 
 class CompositorContext {
