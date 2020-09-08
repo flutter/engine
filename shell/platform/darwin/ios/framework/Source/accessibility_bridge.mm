@@ -41,7 +41,7 @@ AccessibilityBridge::AccessibilityBridge(FlutterViewController* view_controller,
     : view_controller_(view_controller),
       platform_view_(platform_view),
       platform_views_controller_(platform_views_controller),
-      last_focused_semantics_object_id_(0),
+      last_focused_semantics_object_id_(-1),
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
@@ -67,8 +67,13 @@ UIView<UITextInput>* AccessibilityBridge::textInputView() {
   return [[platform_view_->GetOwnerViewController().get().engine textInputPlugin] textInputView];
 }
 
-void AccessibilityBridge::AccessibilityFocusDidChange(int32_t id) {
+void AccessibilityBridge::AccessibilityObjectDidBecomeFocused(int32_t id) {
   last_focused_semantics_object_id_ = id;
+}
+
+void AccessibilityBridge::AccessibilityObjectDidLoseFocus(int32_t id) {
+  if (last_focused_semantics_object_id_ == id)
+    last_focused_semantics_object_id_ = -1;
 }
 
 void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
@@ -169,6 +174,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
       int index = [newRoutes count] - 1;
       lastAdded = [newRoutes objectAtIndex:index];
     }
+
     if (lastAdded != nil && [lastAdded uid] != previous_route_id_) {
       previous_route_id_ = [lastAdded uid];
       routeChanged = true;
@@ -198,11 +204,15 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
                                                    nextToFocus);
     }
   } else if (layoutChanged) {
-    // Tries to refocus the previous focused semantics object to avoid random jumps.
-    SemanticsObject* nextToFocus =
-        [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
-    if (!nextToFocus && root) {
-      nextToFocus = FindFirstFocusable(root);
+    SemanticsObject* nextToFocus = nil;
+    // This property will be -1 if the focus is outside of the flutter
+    // application. In this case, we should not try to refocus anything.
+    if (last_focused_semantics_object_id_ != -1) {
+      // Tries to refocus the previous focused semantics object to avoid random jumps.
+      nextToFocus = [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
+      if (!nextToFocus && root) {
+        nextToFocus = FindFirstFocusable(root);
+      }
     }
     ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification,
                                                  nextToFocus);
@@ -210,10 +220,12 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     // TODO(chunhtai): figure out what string to use for notification. At this
     // point, it is guarantee the previous focused object is still in the tree
     // so that we don't need to worry about focus lost. (e.g. "Screen 0 of 3")
-    SemanticsObject* nextToFocus =
-        [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
-    if (!nextToFocus && root) {
-      nextToFocus = FindFirstFocusable(root);
+    SemanticsObject* nextToFocus = nil;
+    if (last_focused_semantics_object_id_ != -1) {
+      nextToFocus = [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
+      if (!nextToFocus && root) {
+        nextToFocus = FindFirstFocusable(root);
+      }
     }
     ios_delegate_->PostAccessibilityNotification(UIAccessibilityPageScrolledNotification,
                                                  nextToFocus);
