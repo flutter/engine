@@ -254,6 +254,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
 
   @override
   void setRouteName(String? routeName, {dynamic? state}) {
+    print('set route name $routeName');
     if (locationStrategy != null) {
       _setupFlutterEntry(locationStrategy!, replace: true, path: routeName);
     }

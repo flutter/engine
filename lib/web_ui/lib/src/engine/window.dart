@@ -153,12 +153,20 @@ class EngineWindow extends ui.Window {
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
+  @visibleForTesting
+  BrowserHistory get browserHistory => _browserHistory;
   BrowserHistory _browserHistory = MultiEntriesBrowserHistory();
 
+  @visibleForTesting
+  Future<void> debugUseSingleEntryBrowserHistory() async {
+    await _useSingleEntryBrowserHistory();
+  }
+
   Future<void> _useSingleEntryBrowserHistory() async {
-    if (_browserHistory is SingleEntryBrowserHistory)
+    if (_browserHistory is SingleEntryBrowserHistory) {
       return;
-    final LocationStrategy strategy = _browserHistory.locationStrategy!;
+    }
+    final LocationStrategy? strategy = _browserHistory.locationStrategy;
     await _browserHistory.setLocationStrategy(null);
     _browserHistory = SingleEntryBrowserHistory();
     await _browserHistory.setLocationStrategy(strategy);
