@@ -312,6 +312,7 @@ TEST_F(ShellTest, AllowedDartVMFlag) {
   const std::vector<fml::CommandLine::Option> options = {
 #if !FLUTTER_RELEASE
     fml::CommandLine::Option("dart-flags",
+                             "--lazy_async_stacks,--no-causal_async_stacks,"
                              "--max_profile_depth 1,--random_seed 42")
 #endif
   };
@@ -319,9 +320,11 @@ TEST_F(ShellTest, AllowedDartVMFlag) {
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
 #if !FLUTTER_RELEASE
-  EXPECT_EQ(settings.dart_flags.size(), 2u);
-  EXPECT_EQ(settings.dart_flags[0], "--max_profile_depth 1");
-  EXPECT_EQ(settings.dart_flags[1], "--random_seed 42");
+  EXPECT_EQ(settings.dart_flags.size(), 4u);
+  EXPECT_EQ(settings.dart_flags[0], "--lazy_async_stacks");
+  EXPECT_EQ(settings.dart_flags[1], "--no-causal_async_stacks");
+  EXPECT_EQ(settings.dart_flags[2], "--max_profile_depth 1");
+  EXPECT_EQ(settings.dart_flags[3], "--random_seed 42");
 #else
   EXPECT_EQ(settings.dart_flags.size(), 0u);
 #endif
@@ -599,13 +602,11 @@ TEST_F(ShellTest,
 
 TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
   auto settings = CreateSettingsForFixture();
-  fml::AutoResetWaitableEvent end_frame_latch;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> thread_merger) {
         raster_thread_merger = thread_merger;
-        end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess, true);
@@ -622,9 +623,27 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  PumpOneFrame(shell.get());
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    SkPictureRecorder recorder;
+    SkCanvas* recording_canvas =
+        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
+    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
+                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+    auto sk_picture = recorder.finishRecordingAsPicture();
+    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+    auto picture_layer = std::make_shared<PictureLayer>(
+        SkPoint::Make(10, 10),
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
+    root->Add(picture_layer);
+  };
 
-  end_frame_latch.Wait();
+  PumpOneFrame(shell.get(), 100, 100, builder);
+
+  auto result =
+      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  ASSERT_TRUE(result.ok());
+
   ASSERT_TRUE(raster_thread_merger->IsEnabled());
 
   ValidateDestroyPlatformView(shell.get());
@@ -1466,6 +1485,21 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
+static void LogSkData(sk_sp<SkData> data, const char* title) {
+  FML_LOG(ERROR) << "---------- " << title;
+  std::ostringstream ostr;
+  for (size_t i = 0; i < data->size();) {
+    ostr << std::hex << std::setfill('0') << std::setw(2)
+         << static_cast<int>(data->bytes()[i]) << " ";
+    i++;
+    if (i % 16 == 0 || i == data->size()) {
+      FML_LOG(ERROR) << ostr.str();
+      ostr.str("");
+      ostr.clear();
+    }
+  }
+}
+
 TEST_F(ShellTest, Screenshot) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent firstFrameLatch;
@@ -1522,7 +1556,12 @@ TEST_F(ShellTest, Screenshot) {
   sk_sp<SkData> reference_data = SkData::MakeWithoutCopy(
       reference_png->GetMapping(), reference_png->GetSize());
 
-  ASSERT_TRUE(reference_data->equals(screenshot_future.get().data.get()));
+  sk_sp<SkData> screenshot_data = screenshot_future.get().data;
+  if (!reference_data->equals(screenshot_data.get())) {
+    LogSkData(reference_data, "reference");
+    LogSkData(screenshot_data, "screenshot");
+    ASSERT_TRUE(false);
+  }
 
   DestroyShell(std::move(shell));
 }

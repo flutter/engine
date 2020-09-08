@@ -327,8 +327,8 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
       settings_(std::move(settings)),
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch()),
-      weak_factory_(this),
-      weak_factory_gpu_(nullptr) {
+      weak_factory_gpu_(nullptr),
+      weak_factory_(this) {
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
@@ -400,13 +400,12 @@ Shell::~Shell() {
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetRasterTaskRunner(),
-      fml::MakeCopyable([rasterizer = std::move(rasterizer_),
-                         weak_factory_gpu = std::move(weak_factory_gpu_),
-                         &gpu_latch]() mutable {
-        rasterizer.reset();
-        weak_factory_gpu.reset();
-        gpu_latch.Signal();
-      }));
+      fml::MakeCopyable(
+          [this, rasterizer = std::move(rasterizer_), &gpu_latch]() mutable {
+            rasterizer.reset();
+            this->weak_factory_gpu_.reset();
+            gpu_latch.Signal();
+          }));
   gpu_latch.Wait();
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -609,6 +608,11 @@ fml::WeakPtr<PlatformView> Shell::GetPlatformView() {
   return weak_platform_view_;
 }
 
+fml::WeakPtr<ShellIOManager> Shell::GetIOManager() {
+  FML_DCHECK(is_setup_);
+  return io_manager_->GetWeakPtr();
+}
+
 DartVM* Shell::GetDartVM() {
   return &vm_;
 }
@@ -641,9 +645,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // signals the latch and the platform/raster thread follows with executing
   // raster_task.
   const bool should_post_raster_task =
-      !fml::TaskRunnerChecker::RunsOnTheSameThread(
-          task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
-          task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
+      !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on
@@ -746,9 +748,7 @@ void Shell::OnPlatformViewDestroyed() {
   // thread just signals the latch and the platform/raster thread follows with
   // executing raster_task.
   const bool should_post_raster_task =
-      !fml::TaskRunnerChecker::RunsOnTheSameThread(
-          task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
-          task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
+      !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on

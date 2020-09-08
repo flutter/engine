@@ -90,6 +90,14 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
     raster_thread_merger_ =
         fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
   }
+  if (raster_thread_merger_) {
+    raster_thread_merger_->SetMergeUnmergeCallback([=]() {
+      // Clear the GL context after the thread configuration has changed.
+      if (surface_) {
+        surface_->ClearRenderContext();
+      }
+    });
+  }
 #endif
 }
 
@@ -102,6 +110,7 @@ void Rasterizer::Teardown() {
       raster_thread_merger_.get()->IsMerged()) {
     FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNow();
+    raster_thread_merger_->SetMergeUnmergeCallback(nullptr);
   }
 }
 
@@ -545,13 +554,6 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
-  auto frame = compositor_context.ACQUIRE_FRAME(
-      surface_context, canvas, nullptr, root_surface_transformation, false,
-      true, nullptr);
-  canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true);
-  canvas->flush();
-
   // snapshot_surface->makeImageSnapshot needs the GL context to be set if the
   // render context is GL. frame->Raster() pops the gl context in platforms that
   // gl context switching are used. (For example, older iOS that uses GL) We
@@ -561,6 +563,14 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     FML_LOG(ERROR) << "Screenshot: unable to make image screenshot";
     return nullptr;
   }
+
+  auto frame = compositor_context.ACQUIRE_FRAME(
+      surface_context, canvas, nullptr, root_surface_transformation, false,
+      true, nullptr);
+  canvas->clear(SK_ColorTRANSPARENT);
+  frame->Raster(*tree, true);
+  canvas->flush();
+
   // Prepare an image from the surface, this image may potentially be on th GPU.
   auto potentially_gpu_snapshot = snapshot_surface->makeImageSnapshot();
   if (!potentially_gpu_snapshot) {

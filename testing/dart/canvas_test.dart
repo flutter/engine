@@ -12,6 +12,8 @@ import 'package:image/image.dart' as dart_image;
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
+import 'test_util.dart';
+
 typedef CanvasCallback = void Function(Canvas canvas);
 
 Future<Image> createImage(int width, int height) {
@@ -36,35 +38,6 @@ void testCanvas(CanvasCallback callback) {
   try {
     callback(Canvas(PictureRecorder(), const Rect.fromLTRB(0.0, 0.0, 0.0, 0.0)));
   } catch (error) { } // ignore: empty_catches
-}
-
-void expectAssertion(Function callback) {
-  bool assertsEnabled = false;
-  assert(() {
-    assertsEnabled = true;
-    return true;
-  }());
-  if (assertsEnabled) {
-    bool threw = false;
-    try {
-      callback();
-    } catch (e) {
-      expect(e is AssertionError, true);
-      threw = true;
-    }
-    expect(threw, true);
-  }
-}
-
-void expectArgumentError(Function callback) {
-  bool threw = false;
-  try {
-    callback();
-  } catch (e) {
-    expect(e is ArgumentError, true);
-    threw = true;
-  }
-  expect(threw, true);
 }
 
 void testNoCrashes() {
@@ -295,65 +268,5 @@ void main() {
     expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(0), null, null, rect, paint));
     expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(0), Float32List(4), null, null, rect, paint));
     expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(4), Int32List(2), BlendMode.src, rect, paint));
-  });
-
-  test('Vertex buffer size reflected in picture size for drawVertices', () async {
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder);
-
-    const int uint16max = 65535;
-
-    final Int32List colors = Int32List(uint16max);
-    final Float32List coords = Float32List(uint16max * 2);
-    final Uint16List indices = Uint16List(uint16max);
-    final Float32List positions = Float32List(uint16max * 2);
-    colors[0] = const Color(0xFFFF0000).value;
-    colors[1] = const Color(0xFF00FF00).value;
-    colors[2] = const Color(0xFF0000FF).value;
-    colors[3] = const Color(0xFF00FFFF).value;
-    indices[1] = indices[3] = 1;
-    indices[2] = indices[5] = 3;
-    indices[4] = 2;
-    positions[2] = positions[4] = positions[5] = positions[7] = 250.0;
-
-    final Vertices vertices = Vertices.raw(
-      VertexMode.triangles,
-      positions,
-      textureCoordinates: coords,
-      colors: colors,
-      indices: indices,
-    );
-    canvas.drawVertices(vertices, BlendMode.src, Paint());
-    final Picture picture = recorder.endRecording();
-
-
-    const int minimumExpected = uint16max * 4;
-    expect(picture.approximateBytesUsed, greaterThan(minimumExpected));
-
-    final PictureRecorder recorder2 = PictureRecorder();
-    final Canvas canvas2 = Canvas(recorder2);
-    canvas2.drawPicture(picture);
-    final Picture picture2 = recorder2.endRecording();
-
-    expect(picture2.approximateBytesUsed, greaterThan(minimumExpected));
-  });
-
-  test('Path reflected in picture size for drawPath, clipPath, and drawShadow', () async {
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder);
-    final Path path = Path();
-    for (int i = 0; i < 10000; i++) {
-      path.lineTo(5, 9);
-      path.lineTo(i.toDouble(), i.toDouble());
-    }
-    path.close();
-    canvas.drawPath(path, Paint());
-    canvas.drawShadow(path, const Color(0xFF000000), 5.0, false);
-    canvas.clipPath(path);
-    final Picture picture = recorder.endRecording();
-
-    // Slightly fuzzy here to allow for platform specific differences
-    // Measurement on macOS: 541078
-    expect(picture.approximateBytesUsed, greaterThan(530000));
   });
 }
