@@ -607,8 +607,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess, true);
-  // Set resubmit once to trigger thread merging.
-  external_view_embedder->SetResubmitOnce();
+
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
                            false, external_view_embedder);
 
@@ -657,18 +656,25 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
   const size_t ThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
+
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
         if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
           raster_thread_merger->MergeWithLease(ThreadMergingLease);
+
+          ASSERT_TRUE(raster_thread_merger->IsMerged());
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
         }
         end_frame_latch.Signal();
       };
-  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess, true);
   // Set resubmit once to trigger thread merging.
-  external_view_embedder->SetResubmitOnce();
+  external_view_embedder->UpdatePostPrerollResult(
+      PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
                            false, external_view_embedder);
 
@@ -772,7 +778,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
 
   // Pump a frame with `PostPrerollResult::kResubmitFrame` to start merging
   // threads
-  external_view_embedder->SetResubmitOnce();
+  external_view_embedder->UpdatePostPrerollResult(
+      PostPrerollResult::kResubmitFrame);
   PumpOneFrame(shell.get(), 100, 100, builder);
 
   // Now destroy the platform view immediately.
@@ -950,6 +957,47 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
   ValidateShell(shell.get());
 
   DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+TEST_F(ShellTest, ResubmitFrame) {
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent end_frame_latch;
+
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        end_frame_latch.Signal();
+      };
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kSuccess, true);
+
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  external_view_embedder->UpdatePostPrerollResult(
+      PostPrerollResult::kResubmitFrame);
+  PumpOneFrame(shell.get());
+  end_frame_latch.Wait();
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  external_view_embedder->UpdatePostPrerollResult(PostPrerollResult::kSuccess);
+  PumpOneFrame(shell.get());
+  end_frame_latch.Wait();
+  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
+
+  PumpOneFrame(shell.get());
+  end_frame_latch.Wait();
+  ASSERT_EQ(2, external_view_embedder->GetSubmittedFrameCount());
+
+  DestroyShell(std::move(shell));
 }
 
 TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
