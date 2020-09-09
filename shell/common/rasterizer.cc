@@ -461,7 +461,8 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
 
   if (compositor_frame) {
     RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
-    if (raster_status == RasterStatus::kFailed) {
+    if (raster_status == RasterStatus::kFailed ||
+        raster_status == RasterStatus::kResubmit) {
       return raster_status;
     }
     if (external_view_embedder != nullptr) {
