@@ -17,10 +17,8 @@
 static FlEngine* make_mock_engine() {
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
-  g_autoptr(GError) renderer_error = nullptr;
-  EXPECT_TRUE(fl_renderer_setup(FL_RENDERER(renderer), &renderer_error));
-  EXPECT_EQ(renderer_error, nullptr);
-  g_autoptr(FlEngine) engine = fl_engine_new(project, FL_RENDERER(renderer));
+  g_autoptr(FlEngine) engine = fl_engine_new_channel_override(
+      project, FL_RENDERER(renderer), "test/echo");
   g_autoptr(GError) engine_error = nullptr;
   EXPECT_TRUE(fl_engine_start(engine, &engine_error));
   EXPECT_EQ(engine_error, nullptr);
@@ -52,7 +50,7 @@ TEST(FlKeyEventPluginTest, SendKeyEvent) {
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
   g_autoptr(FlKeyEventPlugin) plugin =
-      fl_key_event_plugin_new(messenger, echo_response_cb, "test/echo");
+      fl_key_event_plugin_new(messenger, echo_response_cb);
 
   char string[] = "A";
   GdkEventKey key_event = GdkEventKey{
@@ -108,7 +106,7 @@ void test_lock_event(guint key_code,
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
   g_autoptr(FlKeyEventPlugin) plugin =
-      fl_key_event_plugin_new(messenger, echo_response_cb, "test/echo");
+      fl_key_event_plugin_new(messenger, echo_response_cb);
 
   GdkEventKey key_event = GdkEventKey{
       GDK_KEY_PRESS,  // event type

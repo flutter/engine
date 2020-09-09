@@ -41,8 +41,7 @@ G_DECLARE_FINAL_TYPE(FlKeyEventPlugin,
  */
 FlKeyEventPlugin* fl_key_event_plugin_new(
     FlBinaryMessenger* messenger,
-    GAsyncReadyCallback response_callback = nullptr,
-    const char* channel_name = nullptr);
+    GAsyncReadyCallback response_callback = nullptr);
 
 /**
  * fl_key_event_plugin_send_key_event:
