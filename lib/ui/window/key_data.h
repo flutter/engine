@@ -27,7 +27,7 @@ enum class KeyChange : int64_t {
 struct alignas(8) LogicalKeyData {
   int64_t character_size;
   KeyChange change;
-  int64_t key;
+  uint64_t key;
 
   void Clear();
 };
@@ -35,9 +35,9 @@ struct alignas(8) LogicalKeyData {
 // This structure is unpacked by hooks.dart.
 struct alignas(8) PhysicalKeyData {
   // Timestamp in microseconds from an arbitrary and consistant start point
-  int64_t timestamp;
+  uint64_t timestamp;
   KeyChange change;
-  int64_t key;
+  uint64_t key;
 
   void Clear();
 };

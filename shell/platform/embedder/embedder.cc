@@ -1381,10 +1381,14 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   }
 
   const FlutterLogicalKeyEvent* logical_events = SAFE_ACCESS(event, logical_events, nullptr);
-  const uint8_t* logical_characters_data = SAFE_ACCESS(event, logical_characters_data, nullptr);
-  if (logical_events == nullptr || logical_characters_data == nullptr) {
+  if (logical_events == nullptr) {
     return LOG_EMBEDDER_ERROR(
-            kInvalidArguments, "Key event does not contain valid fields.");
+            kInvalidArguments, "Key event does not contain valid logical_events.");
+  }
+  const uint8_t* logical_characters_data = SAFE_ACCESS(event, logical_characters_data, nullptr);
+  if (logical_characters_data == nullptr) {
+    return LOG_EMBEDDER_ERROR(
+            kInvalidArguments, "Key event does not contain valid logical_characters_data.");
   }
 
 
