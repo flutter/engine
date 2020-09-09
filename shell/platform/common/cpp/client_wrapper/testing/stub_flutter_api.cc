@@ -46,7 +46,7 @@ FlutterDesktopMessengerRef FlutterDesktopPluginRegistrarGetMessenger(
 
 void FlutterDesktopPluginRegistrarSetDestructionHandler(
     FlutterDesktopPluginRegistrarRef registrar,
-    FlutterDesktopOnRegistrarDestroyed callback) {
+    FlutterDesktopOnPluginRegistrarDestroyed callback) {
   if (s_stub_implementation) {
     s_stub_implementation->PluginRegistrarSetDestructionHandler(callback);
   }

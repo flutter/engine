@@ -40,7 +40,7 @@ class TestApi : public testing::StubFlutterApi {
   }
 
   void PluginRegistrarSetDestructionHandler(
-      FlutterDesktopOnRegistrarDestroyed callback) override {
+      FlutterDesktopOnPluginRegistrarDestroyed callback) override {
     last_destruction_callback_set_ = callback;
   }
 
@@ -48,14 +48,15 @@ class TestApi : public testing::StubFlutterApi {
   FlutterDesktopMessageCallback last_message_callback_set() {
     return last_message_callback_set_;
   }
-  FlutterDesktopOnRegistrarDestroyed last_destruction_callback_set() {
+  FlutterDesktopOnPluginRegistrarDestroyed last_destruction_callback_set() {
     return last_destruction_callback_set_;
   }
 
  private:
   const uint8_t* last_data_sent_ = nullptr;
   FlutterDesktopMessageCallback last_message_callback_set_ = nullptr;
-  FlutterDesktopOnRegistrarDestroyed last_destruction_callback_set_ = nullptr;
+  FlutterDesktopOnPluginRegistrarDestroyed last_destruction_callback_set_ =
+      nullptr;
 };
 
 // A PluginRegistrar whose destruction can be watched for by tests.

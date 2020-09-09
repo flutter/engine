@@ -138,7 +138,7 @@ struct FlutterDesktopPluginRegistrar {
   FlutterDesktopEngineState* engine;
 
   // Callback to be called on registrar destruction.
-  FlutterDesktopOnRegistrarDestroyed destruction_handler;
+  FlutterDesktopOnPluginRegistrarDestroyed destruction_handler;
 };
 
 // State associated with the messenger used to communicate with the engine.
@@ -976,7 +976,7 @@ FlutterDesktopMessengerRef FlutterDesktopPluginRegistrarGetMessenger(
 
 void FlutterDesktopPluginRegistrarSetDestructionHandler(
     FlutterDesktopPluginRegistrarRef registrar,
-    FlutterDesktopOnRegistrarDestroyed callback) {
+    FlutterDesktopOnPluginRegistrarDestroyed callback) {
   registrar->destruction_handler = callback;
 }
 

@@ -19,7 +19,7 @@ extern "C" {
 typedef struct FlutterDesktopPluginRegistrar* FlutterDesktopPluginRegistrarRef;
 
 // Function pointer type for registrar destruction callback.
-typedef void (*FlutterDesktopOnRegistrarDestroyed)(
+typedef void (*FlutterDesktopOnPluginRegistrarDestroyed)(
     FlutterDesktopPluginRegistrarRef);
 
 // Returns the engine messenger associated with this registrar.
@@ -30,7 +30,7 @@ FlutterDesktopPluginRegistrarGetMessenger(
 // Registers a callback to be called when the plugin registrar is destroyed.
 FLUTTER_EXPORT void FlutterDesktopPluginRegistrarSetDestructionHandler(
     FlutterDesktopPluginRegistrarRef registrar,
-    FlutterDesktopOnRegistrarDestroyed callback);
+    FlutterDesktopOnPluginRegistrarDestroyed callback);
 
 #if defined(__cplusplus)
 }  // extern "C"
