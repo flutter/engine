@@ -57,16 +57,14 @@ abstract class BrowserHistory {
   }
 
   /// Exit this application and return to the previous page.
-  Future<void> exit() {
+  Future<void> exit() async {
     if (_locationStrategy != null) {
-      _tearoffStrategy(_locationStrategy);
+      await _tearoffStrategy(_locationStrategy);
       // Now the history should be in the original state, back one more time to
       // exit the application.
-      final Future<void> backFuture = _locationStrategy!.back();
+      await _locationStrategy!.back();
       _locationStrategy = null;
-      return backFuture;
     }
-    return Future<void>.value();
   }
 
   /// This method does the same thing as the browser back button.
@@ -109,7 +107,7 @@ abstract class BrowserHistory {
 /// This class pushes a browser history entry every time the framework reports
 /// route changes and sends a `pushRouteInformation` method call to the
 /// framework when the browser jumps to a specific browser history entry.
-/// 
+///
 /// The web engine uses this class to manage its browser history when the
 /// framework uses a Router for routing.
 ///
@@ -145,7 +143,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
       locationStrategy!.pushState(
         _tagWithSerialCount(state, serialCount),
         'flutter',
-        routeName!
+        routeName
       );
     }
   }
@@ -170,7 +168,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
         const JSONMethodCodec().encodeMethodCall(
           MethodCall('pushRouteInformation', <dynamic, dynamic>{
             'location': currentPath,
-            'state': event.state,
+            'state': event.state?['state'],
           })
         ),
         (_) {},
@@ -207,7 +205,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     }
   }
 }
- 
+
 /// The browser history class is responsible for integrating Flutter Web apps
 /// with the browser history so that the back button works as expected.
 ///
@@ -219,7 +217,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 ///
 /// The web engine uses this class when the framework does not use Router for
 /// routing, and it does not support browser forward button.
-/// 
+///
 /// See also:
 ///
 ///  * [MultiEntriesBrowserHistory], which is used when the framework uses a
@@ -254,7 +252,6 @@ class SingleEntryBrowserHistory extends BrowserHistory {
 
   @override
   void setRouteName(String? routeName, {dynamic? state}) {
-    print('set route name $routeName');
     if (locationStrategy != null) {
       _setupFlutterEntry(locationStrategy!, replace: true, path: routeName);
     }

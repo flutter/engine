@@ -158,8 +158,21 @@ class EngineWindow extends ui.Window {
   BrowserHistory _browserHistory = MultiEntriesBrowserHistory();
 
   @visibleForTesting
-  Future<void> debugUseSingleEntryBrowserHistory() async {
-    await _useSingleEntryBrowserHistory();
+  Future<void> debugSwitchBrowserHistory({required bool useSingle}) async {
+    if (useSingle)
+      await _useSingleEntryBrowserHistory();
+    else
+      await _useMultiEntryBrowserHistory();
+  }
+
+  Future<void> _useMultiEntryBrowserHistory() async {
+    if (_browserHistory is MultiEntriesBrowserHistory) {
+      return;
+    }
+    final LocationStrategy? strategy = _browserHistory.locationStrategy;
+    await _browserHistory.setLocationStrategy(null);
+    _browserHistory = MultiEntriesBrowserHistory();
+    await _browserHistory.setLocationStrategy(strategy);
   }
 
   Future<void> _useSingleEntryBrowserHistory() async {
