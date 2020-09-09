@@ -46,7 +46,7 @@ void main() {
 void testMain() {
   group('$SingleEntryBrowserHistory', () {
     final PlatformMessagesSpy spy = PlatformMessagesSpy();
- 
+
     setUp(() async {
       await window.debugSwitchBrowserHistory(useSingle: true);
       spy.setUp();

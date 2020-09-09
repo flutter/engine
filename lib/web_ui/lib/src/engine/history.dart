@@ -105,7 +105,7 @@ abstract class BrowserHistory {
 /// support browser backward and forward button natively.
 ///
 /// This class pushes a browser history entry every time the framework reports
-/// route changes and sends a `pushRouteInformation` method call to the
+/// a route change and sends a `pushRouteInformation` method call to the
 /// framework when the browser jumps to a specific browser history entry.
 ///
 /// The web engine uses this class to manage its browser history when the
@@ -114,7 +114,7 @@ abstract class BrowserHistory {
 /// See also:
 ///
 /// * [SingleEntryBrowserHistory], which is used when the framework does not use
-///   Router for routing.
+///   a Router for routing.
 class MultiEntriesBrowserHistory extends BrowserHistory {
   int _lastSeenSerialCount = 0;
   int get _getCurrentSerialCount {
