@@ -192,7 +192,8 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
   if (IsValid()) {
     // In case `rewinddir` doesn't work reliably, load SkSLs from a freshly
     // opened directory (https://github.com/flutter/flutter/issues/65258).
-    fml::UniqueFD fresh_dir = fml::OpenDirectoryReadOnly(*cache_directory_, kSkSLSubdirName);
+    fml::UniqueFD fresh_dir =
+        fml::OpenDirectoryReadOnly(*cache_directory_, kSkSLSubdirName);
     fml::VisitFiles(fresh_dir, visitor);
   }
 
