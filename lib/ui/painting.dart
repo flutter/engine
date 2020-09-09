@@ -1566,13 +1566,25 @@ enum PixelFormat {
 /// To draw an [Image], use one of the methods on the [Canvas] class, such as
 /// [Canvas.drawImage].
 ///
+/// A class or method that recieves an image object should call [createHandle]
+/// immediately and then call [dispose] on the handle when it is no longer
+/// needed. The underlying image data will be released only when all outstanding
+/// handles are disposed.
+///
+/// It is also possible to call dispose directly on the image object received
+/// from [FrameInfo.image]. Doing so will attempt to free any native resources
+/// allocated for the object, but it will trigger an assert if there are any
+/// oustanding handles created by [createHandle] for this image.
+///
+/// Once all handles have been disposed of, the image object is no longer usable
+/// from Dart code, including for creating new handles.
+///
 /// See also:
 ///
 ///  * [Image](https://api.flutter.dev/flutter/widgets/Image-class.html), the class in the [widgets] library.
 ///  * [ImageDescriptor], which allows reading information about the image and
 ///    creating a codec to decode it.
 ///  * [instantiateImageCodec], a utility method that wraps [ImageDescriptor].
-///
 @pragma('vm:entry-point')
 class Image extends NativeFieldWrapperClass2 {
   // This class is created by the engine, and should not be instantiated
@@ -1606,12 +1618,148 @@ class Image extends NativeFieldWrapperClass2 {
   /// Returns an error message on failure, null on success.
   String? _toByteData(int format, _Callback<Uint8List?> callback) native 'Image_toByteData';
 
+  bool _disposed = false;
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  void dispose() native 'Image_dispose';
+  ///
+  /// All outstanding handles from [createHandle] should be disposed before
+  /// calling this. Disposing all outstanding handles will automatically
+  /// dispose this object.
+  void dispose() {
+    assert(() {
+      assert(!_disposed);
+      assert(
+        _handles.isEmpty,
+        'Attempted to dispose of an Image object that has ${_handles.length} open handles.',
+      );
+      _disposed = true;
+      return true;
+    }());
+    _dispose();
+
+  }
+
+  void _dispose() native 'Image_dispose';
+
+  /// Returns the native wrapper of the Image. Any calls to `native` must use
+  /// this getter to avoid passing an [_ImageHandle] to native, which will
+  /// crash.
+  Image get _unwrapped => this;
+
+  Set<_ImageHandle> _handles = <_ImageHandle>{};
+
+  /// If asserts are enabled, returns the [StackTrace]s of each open handle from
+  /// [createHandle], in creation order.
+  ///
+  /// If asserts are disabled, this method always returns null.
+  List<StackTrace>? debugGetOpenHandleStackTraces() {
+    assert(!_disposed);
+    List<StackTrace>? stacks;
+    assert(() {
+      stacks = _handles.map((_ImageHandle handle) => handle.debugStack!).toList();
+      return true;
+    }());
+    return stacks;
+  }
+
+  /// Creates a disposable handle to this image.
+  ///
+  /// The returned object behaves identically to this image, except calling
+  /// [dispose] on it will only dispose the underlying native resources if it
+  /// is the last remaining handle.
+  Image createHandle() {
+    if (_disposed) {
+      throw StateError('Object disposed');
+    }
+    final _ImageHandle handle = _ImageHandle(this);
+    _handles.add(handle);
+    return handle;
+  }
 
   @override
   String toString() => '[$width\u00D7$height]';
+}
+
+/// A disposable handle to an [Image].
+///
+/// Handles can create more handles as long as they (and the underlying image)
+/// are not disposed.
+class _ImageHandle implements Image {
+  _ImageHandle(this._image) {
+    assert(() {
+      debugStack = StackTrace.current;
+      return true;
+    }());
+  }
+
+  final Image _image;
+
+  StackTrace? debugStack;
+
+  @override
+  int get width {
+    assert(!_disposed && !_image._disposed);
+    return _image.width;
+  }
+
+  @override
+  int get height {
+    assert(!_disposed && !_image._disposed);
+    return _image.height;
+  }
+
+  @override
+  Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
+    assert(!_disposed && !_image._disposed);
+    return _image.toByteData(format: format);
+  }
+
+  @override
+  Image get _unwrapped {
+    assert(!_disposed && !_image._disposed);
+    return _image;
+  }
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() {
+    assert(!_disposed && !_image._disposed);
+    return _image.debugGetOpenHandleStackTraces();
+  }
+
+
+  @override
+  Image createHandle() {
+    assert(!_disposed && !_image._disposed);
+    return _image.createHandle();
+  }
+
+  @override
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    assert(() {
+      assert(!_disposed && !_image._disposed);
+      assert(_image._handles.contains(this));
+      _disposed = true;
+      return true;
+    }());
+    _image._handles.remove(this);
+    if (_image._handles.isEmpty) {
+      _image.dispose();
+    }
+  }
+
+  /// Unused private implementation of [Image]
+
+  @override
+  Set<_ImageHandle> _handles = <_ImageHandle>{};
+
+  @override
+  void _dispose() => throw UnimplementedError();
+
+  @override
+  String? _toByteData(int format, _Callback<Uint8List?> callback) => throw UnimplementedError();
 }
 
 /// Callback signature for [decodeImageFromList].
@@ -3239,7 +3387,7 @@ class ImageShader extends Shader {
     if (matrix4.length != 16)
       throw ArgumentError('"matrix4" must have 16 entries.');
     _constructor();
-    _initWithImage(image, tmx.index, tmy.index, matrix4);
+    _initWithImage(image._unwrapped, tmx.index, tmy.index, matrix4);
   }
   void _constructor() native 'ImageShader_constructor';
   void _initWithImage(Image image, int tmx, int tmy, Float64List matrix4) native 'ImageShader_initWithImage';
@@ -3843,7 +3991,7 @@ class Canvas extends NativeFieldWrapperClass2 {
     assert(image != null); // image is checked on the engine side
     assert(_offsetIsValid(offset));
     assert(paint != null); // ignore: unnecessary_null_comparison
-    _drawImage(image, offset.dx, offset.dy, paint._objects, paint._data);
+    _drawImage(image._unwrapped, offset.dx, offset.dy, paint._objects, paint._data);
   }
   void _drawImage(Image image,
                   double x,
@@ -3866,7 +4014,7 @@ class Canvas extends NativeFieldWrapperClass2 {
     assert(_rectIsValid(src));
     assert(_rectIsValid(dst));
     assert(paint != null); // ignore: unnecessary_null_comparison
-    _drawImageRect(image,
+    _drawImageRect(image._unwrapped,
                    src.left,
                    src.top,
                    src.right,
@@ -3909,7 +4057,7 @@ class Canvas extends NativeFieldWrapperClass2 {
     assert(_rectIsValid(center));
     assert(_rectIsValid(dst));
     assert(paint != null); // ignore: unnecessary_null_comparison
-    _drawImageNine(image,
+    _drawImageNine(image._unwrapped,
                    center.left,
                    center.top,
                    center.right,
@@ -4198,7 +4346,7 @@ class Canvas extends NativeFieldWrapperClass2 {
     final Float32List? cullRectBuffer = cullRect?._value32;
 
     _drawAtlas(
-      paint._objects, paint._data, atlas, rstTransformBuffer, rectBuffer,
+      paint._objects, paint._data, atlas._unwrapped, rstTransformBuffer, rectBuffer,
       colorBuffer, (blendMode ?? BlendMode.src).index, cullRectBuffer
     );
   }
@@ -4367,7 +4515,7 @@ class Canvas extends NativeFieldWrapperClass2 {
       throw ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
     _drawAtlas(
-      paint._objects, paint._data, atlas, rstTransforms, rects,
+      paint._objects, paint._data, atlas._unwrapped, rstTransforms, rects,
       colors, (blendMode ?? BlendMode.src).index, cullRect?._value32
     );
   }

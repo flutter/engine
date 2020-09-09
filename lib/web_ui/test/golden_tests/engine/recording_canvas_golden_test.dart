@@ -718,6 +718,11 @@ class TestImage implements Image {
 
   @override
   void dispose() {}
+
+  @override
+  Image createHandle() => this;
+
+  List<StackTrace>? debugGetOpenHandleStackTraces() => <StackTrace>[];
 }
 
 Paragraph createTestParagraph() {
