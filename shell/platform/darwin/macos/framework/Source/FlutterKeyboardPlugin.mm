@@ -189,6 +189,32 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   }
 }
 
+// Send a simple event that contains 1 logical event that has the same kind as
+// the physical event and no characters.
+- (void)sendSimpleEventWithKind:(FlutterKeyEventKind)kind
+                    physicalKey:(uint64_t)physicalKey
+                     logicalKey:(uint64_t)logicalKey
+                      timestamp:(double)timestamp {
+  FlutterLogicalKeyEvent logical_event = {
+    .struct_size = sizeof(FlutterLogicalKeyEvent),
+    .kind = kind,
+    .key = logicalKey,
+    .character_size = 0,
+  };
+  FlutterLogicalKeyEvent logical_events[] = {logical_event};
+  FlutterKeyEvent flutterEvent = {
+    .struct_size = sizeof(FlutterKeyEvent),
+    .logical_event_count = 1,
+    .logical_events = logical_events,
+    .logical_characters_data = kEmptyCharacterData,
+    .timestamp = timestamp,
+    .kind = kind,
+    .key = physicalKey,
+    .repeated = false,
+  };
+  [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+}
+
 - (void)dispatchDownEvent:(NSEvent*)event {
   uint64_t physicalKey = GetPhysicalKeyForEvent(event);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
@@ -290,27 +316,10 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
     return;
   }
   [self updateKey:physicalKey asPressed:0];
-
-  FlutterLogicalKeyEvent logical_event = {
-    .struct_size = sizeof(FlutterLogicalKeyEvent),
-    .kind = kFlutterKeyEventKindUp,
-    .key = pressedLogicalKey.unsignedLongLongValue,
-    .character_size = 0,
-  };
-  FlutterLogicalKeyEvent logical_events[] = {logical_event};
-
-  //=== Build physical event ===
-  FlutterKeyEvent flutterEvent = {
-    .struct_size = sizeof(FlutterKeyEvent),
-    .logical_event_count = 1,
-    .logical_events = logical_events,
-    .logical_characters_data = kEmptyCharacterData,
-    .timestamp = GetFlutterTimestampFrom(event),
-    .kind = kFlutterKeyEventKindUp,
-    .key = physicalKey,
-    .repeated = false,
-  };
-  [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+  [self sendSimpleEventWithKind: kFlutterKeyEventKindUp
+                    physicalKey: physicalKey
+                     logicalKey: pressedLogicalKey.unsignedLongLongValue
+                      timestamp: GetFlutterTimestampFrom(event)];
 }
 
 // Process events where modifier keys are pressed or released.
@@ -363,47 +372,19 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   double timestamp = GetFlutterTimestampFrom(event);
   if (siblingKeyShouldCancel) {
     [self updateKey:siblingKey asPressed:0];
-    FlutterLogicalKeyEvent logical_event = {
-      .struct_size = sizeof(FlutterLogicalKeyEvent),
-      .kind = kFlutterKeyEventKindCancel,
-      .key = GetLogicalKeyForModifier(siblingKey),
-      .character_size = 0,
-    };
-    FlutterLogicalKeyEvent logical_events[] = {logical_event};
-    FlutterKeyEvent flutterEvent = {
-      .struct_size = sizeof(FlutterKeyEvent),
-      .logical_event_count = 1,
-      .logical_events = logical_events,
-      .logical_characters_data = kEmptyCharacterData,
-      .timestamp = timestamp,
-      .kind = kFlutterKeyEventKindCancel,
-      .key = siblingKey,
-      .repeated = false,
-    };
-    [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+    [self sendSimpleEventWithKind: kFlutterKeyEventKindCancel
+                      physicalKey: siblingKey
+                       logicalKey: GetLogicalKeyForModifier(siblingKey)
+                        timestamp: timestamp];
   }
 
   if (targetKeyShouldDown || targetKeyShouldUp) {
     uint64_t logicalKey = GetLogicalKeyForModifier(targetKey);
     [self updateKey:targetKey asPressed:(targetKeyShouldDown ? logicalKey : 0)];
-    FlutterLogicalKeyEvent logical_event = {
-      .struct_size = sizeof(FlutterLogicalKeyEvent),
-      .kind = targetKeyShouldDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp,
-      .key = logicalKey,
-      .character_size = 0,
-    };
-    FlutterLogicalKeyEvent logical_events[] = {logical_event};
-    FlutterKeyEvent flutterEvent = {
-      .struct_size = sizeof(FlutterKeyEvent),
-      .logical_event_count = 1,
-      .logical_events = logical_events,
-      .logical_characters_data = kEmptyCharacterData,
-      .timestamp = timestamp,
-      .kind = targetKeyShouldDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp,
-      .key = targetKey,
-      .repeated = false,
-    };
-    [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+    [self sendSimpleEventWithKind: targetKeyShouldDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp
+                      physicalKey: targetKey
+                       logicalKey: logicalKey
+                        timestamp: timestamp];
   }
 }
 
