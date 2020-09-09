@@ -42,7 +42,7 @@ FLUTTER_EXPORT
 /**
  * This just returns the NSPasteboard so that it can be mocked in the tests.
  */
-@property(nonatomic, readonly, nonnull) NSPasteboard* _pasteboard;
+@property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
 
 /**
  * Initializes a controller that will run the given project.

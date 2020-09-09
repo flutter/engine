@@ -21,7 +21,7 @@ id mockViewController() {
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
 
-  // Mock _pasteboard so that this test will work in environments without a
+  // Mock pasteboard so that this test will work in environments without a
   // real pasteboard.
   id pasteboardMock = OCMClassMock([NSPasteboard class]);
   __block NSString* clipboardString = @"";
@@ -33,7 +33,7 @@ id mockViewController() {
     [invocation setReturnValue:&clipboardString];
   });
   id viewControllerMock = OCMPartialMock(viewController);
-  OCMStub([viewControllerMock _pasteboard]).andReturn(pasteboardMock);
+  OCMStub([viewControllerMock pasteboard]).andReturn(pasteboardMock);
   return viewControllerMock;
 }
 
