@@ -963,24 +963,24 @@ bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine) {
   return (result == kSuccess);
 }
 
-void FlutterDesktopRegistrarEnableInputBlocking(
+void FlutterDesktopPluginRegistrarEnableInputBlocking(
     FlutterDesktopPluginRegistrarRef registrar,
     const char* channel) {
   registrar->engine->message_dispatcher->EnableInputBlockingForChannel(channel);
 }
 
-FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
+FlutterDesktopMessengerRef FlutterDesktopPluginRegistrarGetMessenger(
     FlutterDesktopPluginRegistrarRef registrar) {
   return registrar->engine->messenger.get();
 }
 
-void FlutterDesktopRegistrarSetDestructionHandler(
+void FlutterDesktopPluginRegistrarSetDestructionHandler(
     FlutterDesktopPluginRegistrarRef registrar,
     FlutterDesktopOnRegistrarDestroyed callback) {
   registrar->destruction_handler = callback;
 }
 
-FlutterDesktopWindowRef FlutterDesktopRegistrarGetWindow(
+FlutterDesktopWindowRef FlutterDesktopPluginRegistrarGetWindow(
     FlutterDesktopPluginRegistrarRef registrar) {
   FlutterDesktopWindowControllerState* controller =
       registrar->engine->window_controller;

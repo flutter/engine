@@ -24,10 +24,11 @@ typedef void (*FlutterDesktopOnRegistrarDestroyed)(
 
 // Returns the engine messenger associated with this registrar.
 FLUTTER_EXPORT FlutterDesktopMessengerRef
-FlutterDesktopRegistrarGetMessenger(FlutterDesktopPluginRegistrarRef registrar);
+FlutterDesktopPluginRegistrarGetMessenger(
+    FlutterDesktopPluginRegistrarRef registrar);
 
 // Registers a callback to be called when the plugin registrar is destroyed.
-FLUTTER_EXPORT void FlutterDesktopRegistrarSetDestructionHandler(
+FLUTTER_EXPORT void FlutterDesktopPluginRegistrarSetDestructionHandler(
     FlutterDesktopPluginRegistrarRef registrar,
     FlutterDesktopOnRegistrarDestroyed callback);
 

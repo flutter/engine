@@ -39,7 +39,7 @@ class TestApi : public testing::StubFlutterApi {
     last_message_callback_set_ = callback;
   }
 
-  void RegistrarSetDestructionHandler(
+  void PluginRegistrarSetDestructionHandler(
       FlutterDesktopOnRegistrarDestroyed callback) override {
     last_destruction_callback_set_ = callback;
   }
