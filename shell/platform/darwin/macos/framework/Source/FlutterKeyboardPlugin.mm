@@ -315,22 +315,22 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 
 // Process events where modifier keys are pressed or released.
 - (void)dispatchFlagEvent:(NSEvent*)event {
-  // NSEvent only tells the key that triggered the event and the resulting flag,
-  // but not whether the change is a down or up. For keys such as CapsLock, this
-  // can be inferred from the key and the flag.
+  // NSEvent only tells us the key that triggered the event and the resulting
+  // flag, but not whether the change is a down or up. For keys such as
+  // CapsLock, the change type can be inferred from the key and the flag.
   //
-  // Some keys come in paris, but share one flag in `event.modifierFlags` (e.g.
-  // left and right Shift keys share `NSEventModifierFlagShift`), indicating
-  // either key is pressed.
+  // But some other modifier keys come in paris, such as shift or control, and
+  // both of the pair share one flag, which indicates either key is pressed.
+  // If the pressing states of paired keys are desynchronized due to loss of
+  // focus, the change might have to be guessed and synchronized.
   //
   // For convenience, the key corresponding to `event.keycode` is called
   // `targetKey`. If the key is among a pair, the other key is called
   // `siblingKey`.
   //
-  // If the pressing states of paired keys are desynchronized due to loss of
-  // focus, the change has to be guessed based on the whether the key pairs were
-  // considered pressed and whether the incoming flag is set. The logic is shown
-  // as follows: ("*" indicates some extent of synthesizing.)
+  // The logic of guessing is shown as follows, based on whether the key pairs
+  // were recorded as pressed and whether the incoming flag is set: ("*"
+  // indicates some extent of synthesizing.)
   //
   // LastPressed \ NowEither |                   |
   //  (Tgt,Sbl)   \  Pressed |         1         |          0
@@ -340,7 +340,8 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   //                (0, 1)   |      TgtDown      | *    SblCancel
   //                (1, 1)   |       TgtUp       | * SblCancel,TgtUp
   //
-  // For non-pair keys, lastSiblingPressed is always set to 0.
+  // For non-pair keys, lastSiblingPressed is always set to 0, resulting in the
+  // top half of the table.
 
   uint64_t targetKey = GetPhysicalKeyForEvent(event);
   uint64_t modifierFlag = GetModifierFlagForKey(targetKey);
@@ -359,6 +360,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   bool targetKeyShouldUp = lastTargetPressed && (lastSiblingPressed || !nowEitherPressed);
   bool siblingKeyShouldCancel = lastSiblingPressed && !nowEitherPressed;
 
+  double timestamp = GetFlutterTimestampFrom(event);
   if (siblingKeyShouldCancel) {
     [self updateKey:siblingKey asPressed:0];
     FlutterLogicalKeyEvent logical_event = {
@@ -373,7 +375,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .logical_event_count = 1,
       .logical_events = logical_events,
       .logical_characters_data = kEmptyCharacterData,
-      .timestamp = GetFlutterTimestampFrom(event),
+      .timestamp = timestamp,
       .kind = kFlutterKeyEventKindCancel,
       .key = siblingKey,
       .repeated = false,
@@ -396,7 +398,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .logical_event_count = 1,
       .logical_events = logical_events,
       .logical_characters_data = kEmptyCharacterData,
-      .timestamp = GetFlutterTimestampFrom(event),
+      .timestamp = timestamp,
       .kind = targetKeyShouldDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp,
       .key = targetKey,
       .repeated = false,
