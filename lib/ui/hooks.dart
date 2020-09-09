@@ -143,10 +143,9 @@ void _updateAccessibilityFeatures(int values) {
 // ignore: unused_element
 void _dispatchPlatformMessage(String name, ByteData? data, int responseId) {
   if (name == ChannelBuffers.kControlChannelName) {
+    // TODO(ianh): move this logic into ChannelBuffers once we remove onPlatformMessage
     try {
       channelBuffers.handleMessage(data!);
-    } catch (ex) {
-      _printDebug('Message to "$name" caused exception $ex');
     } finally {
       window._respondToPlatformMessage(responseId, null);
     }
@@ -247,6 +246,10 @@ void _invoke(void callback()?, Zone zone) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg].
+///
+/// The 1 in the name refers to the number of arguments expected by
+/// the callback (and thus passed to this function, in addition to the
+/// callback itself and the zone in which the callback is executed).
 void _invoke1<A>(void callback(A a)?, Zone zone, A arg) {
   if (callback == null)
     return;
@@ -260,7 +263,31 @@ void _invoke1<A>(void callback(A a)?, Zone zone, A arg) {
   }
 }
 
+/// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
+///
+/// The 2 in the name refers to the number of arguments expected by
+/// the callback (and thus passed to this function, in addition to the
+/// callback itself and the zone in which the callback is executed).
+void _invoke2<A1, A2>(void callback(A1 a1, A2 a2)?, Zone zone, A1 arg1, A2 arg2) {
+  if (callback == null)
+    return;
+
+  assert(zone != null); // ignore: unnecessary_null_comparison
+
+  if (identical(zone, Zone.current)) {
+    callback(arg1, arg2);
+  } else {
+    zone.runGuarded(() {
+      callback(arg1, arg2);
+    });
+  }
+}
+
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
+///
+/// The 3 in the name refers to the number of arguments expected by
+/// the callback (and thus passed to this function, in addition to the
+/// callback itself and the zone in which the callback is executed).
 void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3)?, Zone zone, A1 arg1, A2 arg2, A3 arg3) {
   if (callback == null)
     return;

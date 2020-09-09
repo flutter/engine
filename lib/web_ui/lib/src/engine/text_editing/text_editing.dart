@@ -276,21 +276,19 @@ class EngineAutofillForm {
 
   /// Sends the 'TextInputClient.updateEditingStateWithTag' message to the framework.
   void _sendAutofillEditingState(String? tag, EditingState editingState) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall(
-            'TextInputClient.updateEditingStateWithTag',
-            <dynamic>[
-              0,
-              <String?, dynamic>{tag: editingState.toFlutter()}
-            ],
-          ),
+    window.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall(
+          'TextInputClient.updateEditingStateWithTag',
+          <dynamic>[
+            0,
+            <String?, dynamic>{tag: editingState.toFlutter()}
+          ],
         ),
-        _emptyCallback,
-      );
-    }
+      ),
+      _emptyCallback,
+    );
   }
 }
 
@@ -1392,50 +1390,44 @@ class TextEditingChannel {
 
   /// Sends the 'TextInputClient.updateEditingState' message to the framework.
   void updateEditingState(int? clientId, EditingState? editingState) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall('TextInputClient.updateEditingState', <dynamic>[
-            clientId,
-            editingState!.toFlutter(),
-          ]),
-        ),
-        _emptyCallback,
-      );
-    }
+    window.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall('TextInputClient.updateEditingState', <dynamic>[
+          clientId,
+          editingState!.toFlutter(),
+        ]),
+      ),
+      _emptyCallback,
+    );
   }
 
   /// Sends the 'TextInputClient.performAction' message to the framework.
   void performAction(int? clientId, String? inputAction) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall(
-            'TextInputClient.performAction',
-            <dynamic>[clientId, inputAction],
-          ),
+    window.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall(
+          'TextInputClient.performAction',
+          <dynamic>[clientId, inputAction],
         ),
-        _emptyCallback,
-      );
-    }
+      ),
+      _emptyCallback,
+    );
   }
 
   /// Sends the 'TextInputClient.onConnectionClosed' message to the framework.
   void onConnectionClosed(int? clientId) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall(
-            'TextInputClient.onConnectionClosed',
-            <dynamic>[clientId],
-          ),
+    window.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall(
+          'TextInputClient.onConnectionClosed',
+          <dynamic>[clientId],
         ),
-        _emptyCallback,
-      );
-    }
+      ),
+      _emptyCallback,
+    );
   }
 }
 

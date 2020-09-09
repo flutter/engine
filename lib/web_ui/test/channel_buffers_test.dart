@@ -7,8 +7,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
+
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -26,7 +29,7 @@ void main() {
   test('push drain', () async {
     const String channel = 'foo';
     final ByteData data = _makeByteData('bar');
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ui.ChannelBuffers buffers = EngineChannelBuffers();
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     buffers.push(channel, data, callback);
     await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
@@ -36,10 +39,10 @@ void main() {
     });
   });
 
-  test('drain is sync', () async {
+  test('deprecated drain is sync', () async {
     const String channel = 'foo';
     final ByteData data = _makeByteData('message');
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ui.ChannelBuffers buffers = EngineChannelBuffers();
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     buffers.push(channel, data, callback);
     final List<String> log = <String>[];
@@ -66,7 +69,7 @@ void main() {
     const String channel = 'foo';
     final ByteData data = _makeByteData('bar');
     final
-    ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    ui.ChannelBuffers buffers = EngineChannelBuffers();
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     _resize(buffers, channel, 0);
     buffers.push(channel, data, callback);
@@ -78,9 +81,9 @@ void main() {
     expect(didCall, equals(false));
   });
 
-  test('drain when empty', () async {
+  test('empty', () async {
     const String channel = 'foo';
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ui.ChannelBuffers buffers = EngineChannelBuffers();
     bool didCall = false;
     await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
       didCall = true;
@@ -95,7 +98,7 @@ void main() {
     final ByteData two = _makeByteData('two');
     final ByteData three = _makeByteData('three');
     final ByteData four = _makeByteData('four');
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ui.ChannelBuffers buffers = EngineChannelBuffers();
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     _resize(buffers, channel, 3);
     expect(buffers.push(channel, one, callback), equals(false));
@@ -117,7 +120,7 @@ void main() {
     const String channel = 'foo';
     final ByteData one = _makeByteData('one');
     final ByteData two = _makeByteData('two');
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ui.ChannelBuffers buffers = EngineChannelBuffers();
     _resize(buffers, channel, 100);
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     expect(buffers.push(channel, one, callback), equals(false));
@@ -138,7 +141,7 @@ void main() {
     const String channel = 'foo';
     final ByteData one = _makeByteData('one');
     final ByteData two = _makeByteData('two');
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ui.ChannelBuffers buffers = EngineChannelBuffers();
     bool didCallCallback = false;
     final ui.PlatformMessageResponseCallback oneCallback = (ByteData responseData) {
       didCallCallback = true;
@@ -155,7 +158,7 @@ void main() {
     const String channel = 'foo';
     final ByteData one = _makeByteData('one');
     final ByteData two = _makeByteData('two');
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ui.ChannelBuffers buffers = EngineChannelBuffers();
     bool didCallCallback = false;
     final ui.PlatformMessageResponseCallback oneCallback = (ByteData responseData) {
       didCallCallback = true;
@@ -168,20 +171,20 @@ void main() {
   });
 
   test('handle garbage', () async {
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ui.ChannelBuffers buffers = EngineChannelBuffers();
     expect(() => buffers.handleMessage(_makeByteData('asdfasdf')),
            throwsException);
   });
 
   test('handle resize garbage', () async {
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ui.ChannelBuffers buffers = EngineChannelBuffers();
     expect(() => buffers.handleMessage(_makeByteData('resize\rfoo\rbar')),
            throwsException);
   });
 
   test('ChannelBuffers.setListener', () async {
     final List<String> log = <String>[];
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ui.ChannelBuffers buffers = EngineChannelBuffers();
     final ByteData one = _makeByteData('one');
     final ByteData two = _makeByteData('two');
     final ByteData three = _makeByteData('three');
@@ -238,53 +241,6 @@ void main() {
       '-8',
       'b: seven',
       '-9',
-    ]);
-  });
-
-  test('ChannelBuffers.clearListener', () async {
-    final List<String> log = <String>[];
-    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
-    final ByteData one = _makeByteData('one');
-    final ByteData two = _makeByteData('two');
-    final ByteData three = _makeByteData('three');
-    final ByteData four = _makeByteData('four');
-    buffers.handleMessage(_makeByteData('resize\ra\r10'));
-    buffers.push('a', one, (ByteData data) { });
-    buffers.push('a', two, (ByteData data) { });
-    buffers.push('a', three, (ByteData data) { });
-    log.add('-1');
-    buffers.setListener('a', (ByteData data, ui.PlatformMessageResponseCallback callback) {
-      log.add('a1: ${utf8.decode(data.buffer.asUint8List())}');
-    });
-    await null; // handles one
-    log.add('-2');
-    buffers.clearListener('a');
-    await null;
-    log.add('-3');
-    buffers.setListener('a', (ByteData data, ui.PlatformMessageResponseCallback callback) {
-      log.add('a2: ${utf8.decode(data.buffer.asUint8List())}');
-    });
-    log.add('-4');
-    await null;
-    buffers.push('a', four, (ByteData data) { });
-    log.add('-5');
-    await null;
-    log.add('-6');
-    await null;
-    log.add('-7');
-    await null;
-    expect(log, <String>[
-      '-1',
-      'a1: one',
-      '-2',
-      '-3',
-      '-4',
-      'a2: two',
-      '-5',
-      'a2: three',
-      '-6',
-      'a2: four',
-      '-7',
     ]);
   });
 }

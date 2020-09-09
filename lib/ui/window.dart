@@ -38,6 +38,7 @@ typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, 
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 
 /// Signature for [Window.onPlatformMessage].
+// TODO(ianh): deprecate once framework uses [ChannelBuffers.setListener].
 typedef PlatformMessageCallback = void Function(String name, ByteData? data, PlatformMessageResponseCallback? callback);
 
 // Signature for _setNeedsReportTimings.
@@ -1205,6 +1206,7 @@ class Window {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
+  // TODO(ianh): deprecate once framework uses [ChannelBuffers.setListener].
   PlatformMessageCallback? get onPlatformMessage => _onPlatformMessage;
   PlatformMessageCallback? _onPlatformMessage;
   Zone _onPlatformMessageZone = Zone.root;

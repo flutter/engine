@@ -442,6 +442,8 @@ class EngineWindow extends ui.Window {
         _onAccessibilityFeaturesChanged, _onAccessibilityFeaturesChangedZone);
   }
 
+  // TODO(ianh): Deprecate onPlatformMessage once the framework is moved over
+  // to using channel buffers exclusively.
   @override
   ui.PlatformMessageCallback? get onPlatformMessage => _onPlatformMessage;
   ui.PlatformMessageCallback? _onPlatformMessage;
@@ -454,15 +456,29 @@ class EngineWindow extends ui.Window {
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnPlatformMessage(String name, ByteData? data,
-      ui.PlatformMessageResponseCallback callback) {
-    _invoke3<String, ByteData?, ui.PlatformMessageResponseCallback>(
-      _onPlatformMessage,
-      _onPlatformMessageZone,
-      name,
-      data,
-      callback,
-    );
+  void invokeOnPlatformMessage(
+    String name,
+    ByteData? data,
+    ui.PlatformMessageResponseCallback callback,
+  ) {
+    if (name == ui.ChannelBuffers.kControlChannelName) {
+      // TODO(ianh): move this logic into ChannelBuffers once we remove onPlatformMessage
+      try {
+        channelBuffers.handleMessage(data!);
+      } finally {
+        callback(null);
+      }
+    } else if (_onPlatformMessage != null) {
+      _invoke3<String, ByteData?, ui.PlatformMessageResponseCallback>(
+        _onPlatformMessage,
+        _onPlatformMessageZone,
+        name,
+        data,
+        callback,
+      );
+    } else {
+      channelBuffers.push(name, data, callback);
+    }
   }
 
   @override
@@ -853,6 +869,24 @@ void _invoke1<A>(void callback(A a)?, Zone? zone, A arg) {
     callback(arg);
   } else {
     zone!.runUnaryGuarded<A>(callback, arg);
+  }
+}
+
+/// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
+void _invoke2<A1, A2>(
+    void callback(A1 a1, A2 a2)?, Zone? zone, A1 arg1, A2 arg2) {
+  if (callback == null) {
+    return;
+  }
+
+  assert(zone != null);
+
+  if (identical(zone, Zone.current)) {
+    callback(arg1, arg2);
+  } else {
+    zone!.runGuarded(() {
+      callback(arg1, arg2);
+    });
   }
 }
 

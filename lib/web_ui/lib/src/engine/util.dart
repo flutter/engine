@@ -482,19 +482,18 @@ final ByteData? _fontChangeMessage = JSONMessageCodec().encodeMessage(<String, d
 bool _fontChangeScheduled = false;
 
 FutureOr<void> sendFontChangeMessage() async {
-  if (window._onPlatformMessage != null)
-    if (!_fontChangeScheduled) {
-      _fontChangeScheduled = true;
-      // Batch updates into next animationframe.
-      html.window.requestAnimationFrame((num _) {
-        _fontChangeScheduled = false;
-        window.invokeOnPlatformMessage(
-          'flutter/system',
-          _fontChangeMessage,
-              (_) {},
-        );
-      });
-    }
+  if (!_fontChangeScheduled) {
+    _fontChangeScheduled = true;
+    // Batch updates into next animationframe.
+    html.window.requestAnimationFrame((num _) {
+      _fontChangeScheduled = false;
+      window.invokeOnPlatformMessage(
+        'flutter/system',
+        _fontChangeMessage,
+        (_) {},
+      );
+    });
+  }
 }
 
 // Stores matrix in a form that allows zero allocation transforms.

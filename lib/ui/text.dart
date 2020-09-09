@@ -2273,11 +2273,18 @@ final ByteData _fontChangeMessage = utf8.encoder.convert(
 ).buffer.asByteData();
 
 FutureOr<void> _sendFontChangeMessage() async {
-  window.onPlatformMessage?.call(
-    'flutter/system',
-    _fontChangeMessage,
-    (_) {},
-  );
+  const String kSystemChannelName = 'flutter/system';
+  if (window.onPlatformMessage != null) {
+    _invoke3<String, ByteData?, PlatformMessageResponseCallback>(
+      window.onPlatformMessage,
+      window._onPlatformMessageZone,
+      kSystemChannelName,
+      _fontChangeMessage,
+      (ByteData? responseData) { },
+    );
+  } else {
+    channelBuffers.push(kSystemChannelName, _fontChangeMessage, (ByteData? responseData) { });
+  }
 }
 
 String _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';
