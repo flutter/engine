@@ -351,6 +351,9 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Whether [browser] is set to "safari".
   bool get isSafariOnMacOS => browser == 'safari' && io.Platform.isMacOS;
 
+  /// Whether [browser] is set to "safari".
+  bool get isSafariIOS => browser == 'ios-safari' && io.Platform.isMacOS;
+
   /// Due to lack of resources Chrome integration tests only run on Linux on
   /// LUCI.
   ///
@@ -410,10 +413,12 @@ class TestCommand extends Command<bool> with ArgUtils {
       'test',
     ));
 
-    // Screenshot tests and smoke tests only run on: "Chrome locally" or
-    // "Chrome on a Linux bot". We can remove the Linux bot restriction after:
+    // Screenshot tests and smoke tests only run on: "Chrome/iOS Safari locally"
+    // or "Chrome on a Linux bot". We can remove the Linux bot restriction
+    // after solving the git issue faced on macOS and Windows bots:
     // TODO: https://github.com/flutter/flutter/issues/63710
-    if ((isChrome && isLuci && io.Platform.isLinux) || (isChrome && !isLuci)) {
+    if ((isChrome && isLuci && io.Platform.isLinux) ||
+        ((isChrome || isSafariIOS) && !isLuci)) {
       // Separate screenshot tests from unit-tests. Screenshot tests must run
       // one at a time. Otherwise, they will end up screenshotting each other.
       // This is not an issue for unit-tests.

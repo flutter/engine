@@ -21,9 +21,19 @@ firefox:
 edge:
   launcher_version: '1.2.0.0'
 ios-safari:
+  # Make sure this version is the same version supported by LUCI macOS bots.
+  # XCode on these bots will be updated once a year, do not forget to update
+  # `heightOfHeader` during this time.
   majorVersion: 13
   minorVersion: 0
   device: 'iPhone 11'
+  # `xcrun simctl` command is used to take screenshots. It takes the screenshot
+  # of the entire simulator. Therefore we need to all the parts other than the
+  # browsers' content. Do not forget to update these values during simulator
+  # version upgrade.
+  # `heightOfHeader` is the number of pixels taken by the phone's header menu
+  # and the browsers address bar.
+  heightOfHeader: 282
 ## geckodriver is used for testing Firefox Browser. It works with multiple
 ## Firefox Browser versions.
 ## See: https://github.com/mozilla/geckodriver/releases

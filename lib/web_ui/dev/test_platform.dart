@@ -182,9 +182,8 @@ class BrowserPlatform extends PlatformPlugin {
       write = true;
     }
 
-    filename = filename.replaceAll('.png', '${_screenshotManager.filenameSuffix}.png');
-
-    print('filename: $filename');
+    filename =
+        filename.replaceAll('.png', '${_screenshotManager.filenameSuffix}.png');
 
     String goldensDirectory;
     if (filename.startsWith('__local__')) {
@@ -231,7 +230,7 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
       }
     }
 
-    // Compare screenshots
+    // Compare screenshots.
     ImageDiff diff = ImageDiff(
       golden: decodeNamedImage(file.readAsBytesSync(), filename),
       other: screenshot,

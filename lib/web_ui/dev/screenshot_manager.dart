@@ -10,6 +10,7 @@ import 'dart:math';
 import 'package:image/image.dart';
 import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
+import 'package:yaml/yaml.dart';
 
 import 'common.dart';
 
@@ -69,14 +70,19 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
 
   String get filenameSuffix => '_iOS_Safari';
 
+  IOSSafariScreenshotManager() {
+    final YamlMap browserLock = BrowserLock.instance.configuration;
+    _heightOfHeader = browserLock['ios-safari']['heightOfHeader'] as int;
+  }
+
   /// Part to crop from the top of the image.
   ///
-  /// Simulator takes the screenshot of the entire simulator. We are cropping
-  /// top bit from the simulator. Otherwise due to the clock on top of the
-  /// screen, the screenshot will differ between each run.
-  /// TODO: Find a better method since these needs to be updated whenever we
-  /// change the phone version of the simulator.
-  static final int topGap = 280;
+  /// `xcrun simctl` command takes the screenshot of the entire simulator. We
+  /// are cropping top bit from screenshot, otherwise due to the clock on top of
+  /// the screen, the screenshot will differ between each run.
+  /// Note that this gap can change per phone and per iOS version. For more
+  /// details refer to `browser_lock,yaml` file.
+  int _heightOfHeader;
 
   Future<Image> capture(Map<String, dynamic> region) async {
     final String suffix = random.nextInt(100).toString();
@@ -97,8 +103,12 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
     final Image screenshot = decodePng(imageBytes);
     file.deleteSync();
 
-    return copyCrop(screenshot, region['x'], topGap + region['y'],
-        region['width'], region['height']);
+    return copyCrop(
+        screenshot,
+        (region['x'] as int),
+        (region['y'] as int) + _heightOfHeader,
+        (region['width'] as int),
+        (region['height'] as int));
   }
 }
 
