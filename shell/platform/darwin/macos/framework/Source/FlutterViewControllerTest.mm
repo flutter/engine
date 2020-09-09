@@ -14,7 +14,7 @@ namespace flutter::testing {
 
 // Returns a mock FlutterViewController that is able to work in environments
 // without a real pasteboard.
-id mockViewController() {
+id mockViewController(NSString* pasteboardString) {
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
@@ -24,13 +24,9 @@ id mockViewController() {
   // Mock pasteboard so that this test will work in environments without a
   // real pasteboard.
   id pasteboardMock = OCMClassMock([NSPasteboard class]);
-  __block NSString* clipboardString = @"";
-  OCMStub([pasteboardMock setString:[OCMArg any] forType:[OCMArg any]])
-      .andDo(^(NSInvocation* invocation) {
-        [invocation getArgument:&clipboardString atIndex:2];
-      });
   OCMExpect([pasteboardMock stringForType:[OCMArg any]]).andDo(^(NSInvocation* invocation) {
-    [invocation setReturnValue:&clipboardString];
+    NSString* returnValue = pasteboardString.length > 0 ? pasteboardString : nil;
+    [invocation setReturnValue:&returnValue];
   });
   id viewControllerMock = OCMPartialMock(viewController);
   OCMStub([viewControllerMock pasteboard]).andReturn(pasteboardMock);
@@ -38,18 +34,8 @@ id mockViewController() {
 }
 
 TEST(FlutterViewControllerTest, HasStringsWhenPasteboardEmpty) {
-  id viewControllerMock = mockViewController();
-
-  // Call setData to make sure that the pasteboard is empty.
-  __block bool calledSetClear = false;
-  FlutterResult resultSetClear = ^(id result) {
-    calledSetClear = true;
-  };
-  FlutterMethodCall* methodCallSetClear =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
-                                        arguments:@{@"text" : [NSNull null]}];
-  [viewControllerMock handleMethodCall:methodCallSetClear result:resultSetClear];
-  ASSERT_TRUE(calledSetClear);
+  // Mock FlutterViewController so that it behaves like the pasteboard is empty.
+  id viewControllerMock = mockViewController(nil);
 
   // Call hasStrings and expect it to be false.
   __block bool calledAfterClear = false;
@@ -67,18 +53,9 @@ TEST(FlutterViewControllerTest, HasStringsWhenPasteboardEmpty) {
 }
 
 TEST(FlutterViewControllerTest, HasStringsWhenPasteboardFull) {
-  id viewControllerMock = mockViewController();
-
-  // Call setClipboardData to make sure there's a string on the pasteboard.
-  __block bool calledSet = false;
-  FlutterResult resultSet = ^(id result) {
-    calledSet = true;
-  };
-  FlutterMethodCall* methodCallSet =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.setData"
-                                        arguments:@{@"text" : @"some string"}];
-  [viewControllerMock handleMethodCall:methodCallSet result:resultSet];
-  ASSERT_TRUE(calledSet);
+  // Mock FlutterViewController so that it behaves like the pasteboard has a
+  // valid string.
+  id viewControllerMock = mockViewController(@"some string");
 
   // Call hasStrings and expect it to be true.
   __block bool called = false;

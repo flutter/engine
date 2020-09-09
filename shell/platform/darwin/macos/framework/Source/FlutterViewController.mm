@@ -175,10 +175,6 @@ struct KeyboardState {
 
 /**
  * Returns true iff the clipboard contains nonempty string data.
- *
- * See also:
- *   * https://developer.apple.com/documentation/uikit/uipasteboard/1829416-hasstrings,
- *     which is the equivalent method that Flutter utilizes in iOS.
  */
 - (BOOL)clipboardHasStrings;
 
@@ -546,9 +542,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (BOOL)clipboardHasStrings {
-  NSDictionary* data = [self getClipboardData:[NSString stringWithFormat:@"%s", kTextPlainFormat]];
-  NSString* string = data[@"text"];
-  return string.length > 0;
+  return [self.pasteboard stringForType:NSPasteboardTypeString].length > 0;
 }
 
 - (NSPasteboard*)pasteboard {
