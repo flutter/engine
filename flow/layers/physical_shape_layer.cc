@@ -88,7 +88,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
 
   context.internal_nodes_canvas->restoreToCount(saveCount);
 
-  if (UsesSaveLayer()){
+  if (UsesSaveLayer()) {
     if (context.checkerboard_offscreen_layers) {
       DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
     }
