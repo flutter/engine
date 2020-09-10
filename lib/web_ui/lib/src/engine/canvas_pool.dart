@@ -232,22 +232,39 @@ class _CanvasPool extends _SaveStackTracking {
   }
 
   void _replayClipStack() {
-    // Replay save/clip stack on this canvas now.
-    html.CanvasRenderingContext2D ctx = context;
-    int clipDepth = 0;
-    Matrix4 prevTransform = Matrix4.identity();
-    for (int saveStackIndex = 0, len = _saveStack.length;
-        saveStackIndex < len;
-        saveStackIndex++) {
-      _SaveStackEntry saveEntry = _saveStack[saveStackIndex];
-      clipDepth = _replaySingleSaveEntry(
-          clipDepth, prevTransform, saveEntry.transform, saveEntry.clipStack);
-      prevTransform = saveEntry.transform;
-      ctx.save();
-      ++_saveContextCount;
+    TransformKind transformKind = transformKindOf(_currentTransform.storage);
+    if (transformKind == TransformKind.complex) {
+      if (_clipStack == null) {
+        setElementTransform(
+          _canvas!,
+          currentTransform.storage,
+        );
+        _canvas!.style.transformStyle = 'preserve-3d';
+      } else {
+        List<html.Element> elements = _clipContent(
+            _clipStack!, _canvas!, ui.Offset.zero, _currentTransform);
+        for (html.Element element in elements) {
+          _rootElement!.append(element);
+        }
+      }
+    } else {
+      // Replay save/clip stack on this canvas now.
+      html.CanvasRenderingContext2D ctx = context;
+      int clipDepth = 0;
+      Matrix4 prevTransform = Matrix4.identity();
+      for (int saveStackIndex = 0, len = _saveStack.length;
+          saveStackIndex < len;
+          saveStackIndex++) {
+        _SaveStackEntry saveEntry = _saveStack[saveStackIndex];
+        clipDepth = _replaySingleSaveEntry(
+            clipDepth, prevTransform, saveEntry.transform, saveEntry.clipStack);
+        prevTransform = saveEntry.transform;
+        ctx.save();
+        ++_saveContextCount;
+      }
+      _replaySingleSaveEntry(
+          clipDepth, prevTransform, _currentTransform, _clipStack);
     }
-    _replaySingleSaveEntry(
-        clipDepth, prevTransform, _currentTransform, _clipStack);
   }
 
   // Marks this pool for reuse.

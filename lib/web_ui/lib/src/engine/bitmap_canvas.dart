@@ -267,6 +267,10 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void transform(Float32List matrix4) {
+    TransformKind transformKind = transformKindOf(matrix4);
+    if (transformKind == TransformKind.complex) {
+      _canvasPool.closeCurrentCanvas();
+    }
     _canvasPool.transform(matrix4);
   }
 
@@ -892,6 +896,9 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
     curElement = newElement;
     final ui.Rect? rect = entry.rect;
     Matrix4 newClipTransform = entry.currentTransform;
+    final TransformKind transformKind = transformKindOf(
+        newClipTransform.storage);
+    bool requiresTransformStyle = transformKind == TransformKind.complex;
     if (rect != null) {
       final double clipOffsetX = rect.left;
       final double clipOffsetY = rect.top;
@@ -936,6 +943,11 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
       reverseTransformDiv,
       (newClipTransform.clone()..invert()).storage,
     );
+    if (requiresTransformStyle) {
+      // Instead of flattening matrix3d, preserve so it can be reversed.
+      curElement.style.transformStyle = 'preserve-3d';
+      reverseTransformDiv.style.transformStyle = 'preserve-3d';
+    }
     curElement.append(reverseTransformDiv);
     curElement = reverseTransformDiv;
   }
