@@ -561,6 +561,12 @@ typedef enum {
   kFlutterKeyEventKindCancel,
 } FlutterKeyEventKind;
 
+typedef enum {
+  kFlutterKeyLockFlagCapsLock = 1 << 0,
+  kFlutterKeyLockFlagNumLock = 1 << 1,
+  kFlutterKeyLockFlagScrollLock = 1 << 2,
+} FlutterKeyLockFlags;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterLogicalKeyEvent).
   size_t struct_size;
@@ -583,6 +589,10 @@ typedef struct {
   const uint8_t* logical_characters_data;
   // Timestamp in microseconds. Maybe 0 (sync or cancel).
   double timestamp;
+  // A bitmask indicating whether each lock is on after this event.
+  //
+  // See `FlutterKeyLockFlags` for possible bits.
+  uint64_t lockFlags;
   // Physical event kind.
   FlutterKeyEventKind kind;
   // Physical key changed.

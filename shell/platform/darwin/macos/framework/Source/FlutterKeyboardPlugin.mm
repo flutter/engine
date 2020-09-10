@@ -22,15 +22,17 @@ static const size_t kMaxCharactersSize = 8;
 
 static const uint8_t kEmptyCharacterData[] = {};
 
+static const uint64_t kCapsLockPhysicalKey = 0x00070039;
+
 // Map the physical key code of a key to that of its sibling key.
 //
 // A sibling key is the other key of a pair of keys that share the same modifier
 // flag, such as left and right shift keys.
 static const NSDictionary* kSiblingPhysicalKeys = @{
-  @0x000700e0 : @0x000700e4,  // control
-  @0x000700e4 : @0x000700e0,  // control
   @0x000700e1 : @0x000700e5,  // shift
   @0x000700e5 : @0x000700e1,  // shift
+  @0x000700e0 : @0x000700e4,  // control
+  @0x000700e4 : @0x000700e0,  // control
   @0x000700e2 : @0x000700e6,  // alt
   @0x000700e6 : @0x000700e2,  // alt
   @0x000700e3 : @0x000700e7,  // meta
@@ -38,7 +40,6 @@ static const NSDictionary* kSiblingPhysicalKeys = @{
 };
 
 static const NSDictionary* kModiferFlags = @{
-  @0x00070039 : @(NSEventModifierFlagCapsLock),  // controlLeft
   @0x000700e1 : @(NSEventModifierFlagShift),    // shiftLeft
   @0x000700e5 : @(NSEventModifierFlagShift),    // shiftRight
   @0x000700e0 : @(NSEventModifierFlagControl),  // controlLeft
@@ -47,6 +48,8 @@ static const NSDictionary* kModiferFlags = @{
   @0x000700e6 : @(NSEventModifierFlagOption),   // altRight
   @0x000700e3 : @(NSEventModifierFlagCommand),  // metaLeft
   @0x000700e7 : @(NSEventModifierFlagCommand),  // metaRight
+  // Don't include CapsLock here, for it is handled specially.
+  // Other modifier keys do not seem to be needed.
 };
 
 static bool IsControlCharacter(NSUInteger length, NSString *label) {
@@ -157,16 +160,17 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 @property(nonatomic, weak) FlutterViewController* flutterViewController;
 
 /**
- * A map of presessd non-modifier keys.
+ * A map of presessd keys.
  *
  * The keys of the dictionary are physical keys, while the values are the logical keys
  * on pressing.
- *
- * For modifier keys, see pressedModifiers.
  */
 @property(nonatomic) NSMutableDictionary* pressedKeys;
 
-@property(nonatomic) NSUInteger* pressedModifiers;
+/**
+ * A bitmask indicating whether each lock is on.
+ */
+@property(nonatomic) NSUInteger lockFlags;
 
 @end
 
@@ -189,8 +193,18 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   }
 }
 
+- (void)updateLockFlag:(uint64_t)lockBit asOn:(BOOL)isOn {
+  if (isOn) {
+    _lockFlags |= lockBit;
+  } else {
+    _lockFlags &= ~lockBit;
+  }
+}
+
 // Send a simple event that contains 1 logical event that has the same kind as
 // the physical event and no characters.
+//
+// The `lockFlags` must be updated before this method if necessary.
 - (void)sendSimpleEventWithKind:(FlutterKeyEventKind)kind
                     physicalKey:(uint64_t)physicalKey
                      logicalKey:(uint64_t)logicalKey
@@ -208,6 +222,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
     .logical_events = logical_events,
     .logical_characters_data = kEmptyCharacterData,
     .timestamp = timestamp,
+    .lockFlags = _lockFlags,
     .kind = kind,
     .key = physicalKey,
     .repeated = false,
@@ -279,7 +294,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
     }
   }
   [self updateKey:physicalKey asPressed:logicalKey];
-  NSCAssert((character_size < kMaxCharactersSize),
+  NSAssert((character_size < kMaxCharactersSize),
       @"Unexpected long key characters: |%@|. Please report this to Flutter.", event.characters);
   memcpy(logical_characters_data, event.characters.UTF8String, character_size);
 
@@ -297,6 +312,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .logical_events = logical_events,
       .logical_characters_data = logical_characters_data,
       .timestamp = GetFlutterTimestampFrom(event),
+      .lockFlags = _lockFlags,
       .kind = kFlutterKeyEventKindDown,
       .key = physicalKey,
       .repeated = (event.isARepeat != NO),
@@ -305,7 +321,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 }
 
 - (void)dispatchUpEvent:(NSEvent*)event {
-  NSCAssert(!event.isARepeat,
+  NSAssert(!event.isARepeat,
       @"Unexpected repeated Up event. Please report this to Flutter.", event.characters);
 
   uint64_t physicalKey = GetPhysicalKeyForEvent(event);
@@ -320,6 +336,23 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
                     physicalKey: physicalKey
                      logicalKey: pressedLogicalKey.unsignedLongLongValue
                       timestamp: GetFlutterTimestampFrom(event)];
+}
+
+- (void)dispatchCapsLockEvent:(NSEvent*)event {
+  bool lockIsOn = (event.modifierFlags & NSEventModifierFlagCapsLock) != 0;
+  [self updateLockFlag:kFlutterKeyLockFlagCapsLock asOn:lockIsOn];
+  double timestamp = GetFlutterTimestampFrom(event);
+  // MacOS sends a Down or an Up when CapsLock is pressed, depending on whether
+  // the lock is enabled or disabled. This event should always be converted to
+  // a Down and a cancel, since we don't know how long it will be pressed.
+  [self sendSimpleEventWithKind: kFlutterKeyEventKindDown
+                    physicalKey: kCapsLockPhysicalKey
+                     logicalKey: GetLogicalKeyForModifier(kCapsLockPhysicalKey)
+                      timestamp: timestamp];
+  [self sendSimpleEventWithKind: kFlutterKeyEventKindCancel
+                    physicalKey: kCapsLockPhysicalKey
+                     logicalKey: GetLogicalKeyForModifier(kCapsLockPhysicalKey)
+                      timestamp: timestamp];
 }
 
 // Process events where modifier keys are pressed or released.
@@ -353,6 +386,9 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   // top half of the table.
 
   uint64_t targetKey = GetPhysicalKeyForEvent(event);
+  if (targetKey == kCapsLockPhysicalKey) {
+    return [self dispatchCapsLockEvent:event];
+  }
   uint64_t modifierFlag = GetModifierFlagForKey(targetKey);
   if (targetKey == 0 || modifierFlag == 0) {
     // Unrecognized modifier.
@@ -400,7 +436,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       [self dispatchFlagEvent:event];
       break;
     default:
-      NSCAssert(false, @"Unexpected key event type: |%@|.", [NSNumber numberWithInt:(int)event.type]);
+      NSAssert(false, @"Unexpected key event type: |%@|.", @(event.type));
   }
 
 }

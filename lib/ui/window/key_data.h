@@ -10,7 +10,7 @@
 namespace flutter {
 
 // If this value changes, update the key data unpacking code in hooks.dart.
-static constexpr int kPhysicalKeyDataFieldCount = 3;
+static constexpr int kPhysicalKeyDataFieldCount = 4;
 static constexpr int kLogicalKeyDataFieldCount = 3;
 static constexpr int kBytesPerKeyField = sizeof(int64_t);
 
@@ -36,6 +36,7 @@ struct alignas(8) LogicalKeyData {
 struct alignas(8) PhysicalKeyData {
   // Timestamp in microseconds from an arbitrary and consistant start point
   uint64_t timestamp;
+  uint64_t lockFlags;
   KeyChange change;
   uint64_t key;
 

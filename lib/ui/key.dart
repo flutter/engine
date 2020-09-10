@@ -42,18 +42,20 @@ class KeyData {
   /// Creates an object that represents the state of a pointer.
   const KeyData({
     this.timeStamp,
+    required this.lockFlags,
     required this.change,
     required this.key,
     required this.logicalEvents,
   });
 
   final Duration? timeStamp;
+  final int lockFlags;
   final KeyChange change;
   final int key;
   final List<LogicalKeyData> logicalEvents;
 
   @override
-  String toString() => 'KeyData(timeStamp: $timeStamp, change: $change, key: $key, logicalEvents: $logicalEvents)';
+  String toString() => 'KeyData(timeStamp: $timeStamp, lockFlags: $lockFlags, change: $change, key: $key, logicalEvents: $logicalEvents)';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {

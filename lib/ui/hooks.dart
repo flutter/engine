@@ -345,7 +345,7 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
 //
 //  * key_data.h
 //  * key.dart
-const int _kPhysicalKeyDataFieldCount = 3;
+const int _kPhysicalKeyDataFieldCount = 4;
 const int _kLogicalKeyDataFieldCount = 3;
 
 List<int> _getLogicalCharacterLengths(ByteData packet) {
@@ -394,6 +394,7 @@ KeyData _unpackKeyData(ByteData packet) {
   int offset = logicalCount * _kLogicalKeyDataFieldCount;
   final KeyData keyData = KeyData(
     timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
+    lockFlags: packet.getInt64(kStride * offset++, _kFakeHostEndian),
     change: KeyChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
     key: packet.getInt64(kStride * offset++, _kFakeHostEndian),
     logicalEvents: logicalKeyDataList,
