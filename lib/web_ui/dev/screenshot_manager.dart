@@ -112,8 +112,30 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
   }
 }
 
+const String _kBrowserChrome = 'chrome';
+const String _kBrowserIOSSafari = 'ios-safari';
+
+typedef ScreenshotManagerFactory = ScreenshotManager Function();
+
 /// Abstract class for taking screenshots in different browsers.
 abstract class ScreenshotManager {
+  static final Map<String, ScreenshotManagerFactory> _browserFactories =
+      <String, ScreenshotManagerFactory>{
+    _kBrowserChrome: () => ChromeScreenshotManager(),
+    _kBrowserIOSSafari: () => IOSSafariScreenshotManager(),
+  };
+
+  static bool isBrowserSupported(String browser) =>
+      _browserFactories.containsKey(browser);
+
+  static ScreenshotManager choose(String browser) {
+    if (isBrowserSupported(browser)) {
+      return _browserFactories[browser]();
+    }
+    throw StateError('Screenshot tests are only supported on Chrome and on '
+        'iOS Safari');
+  }
+
   /// Capture a screenshot of the screen.
   Future<Image> capture(Map<String, dynamic> region);
 
@@ -123,15 +145,4 @@ abstract class ScreenshotManager {
   /// - Chrome, no-suffix: backdrop_filter_clip_moved.actual.png
   /// - iOS Safari: backdrop_filter_clip_moved.actual_iOS_Safari.png
   String get filenameSuffix;
-
-  static ScreenshotManager choose(String browser) {
-    if (browser == 'chrome') {
-      return ChromeScreenshotManager();
-    } else if (browser == 'ios-safari') {
-      return IOSSafariScreenshotManager();
-    } else {
-      throw StateError('Screenshot tests are only supported on Chrome and on '
-          'iOS Safari');
-    }
-  }
 }
