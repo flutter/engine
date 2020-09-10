@@ -43,17 +43,18 @@ static void fl_key_event_plugin_class_init(FlKeyEventPluginClass* klass) {
 
 static void fl_key_event_plugin_init(FlKeyEventPlugin* self) {}
 
-FlKeyEventPlugin* fl_key_event_plugin_new(
-    FlBinaryMessenger* messenger,
-    GAsyncReadyCallback response_callback) {
+FlKeyEventPlugin* fl_key_event_plugin_new(FlBinaryMessenger* messenger,
+                                          GAsyncReadyCallback response_callback,
+                                          const char* channel_name) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
   FlKeyEventPlugin* self = FL_KEY_EVENT_PLUGIN(
       g_object_new(fl_key_event_plugin_get_type(), nullptr));
 
   g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
-  self->channel = fl_basic_message_channel_new(messenger, kChannelName,
-                                               FL_MESSAGE_CODEC(codec));
+  self->channel = fl_basic_message_channel_new(
+      messenger, channel_name == nullptr ? kChannelName : channel_name,
+      FL_MESSAGE_CODEC(codec));
   self->response_callback = response_callback;
 
   return self;

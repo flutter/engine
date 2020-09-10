@@ -56,23 +56,6 @@ typedef gboolean (*FlEnginePlatformMessageHandler)(
 FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer);
 
 /**
- * fl_engine_new_channel_override:
- * @project: an #FlDartProject.
- * @renderer: an #FlRenderer for the engine to use.
- * @channel_override: a channel to use for all communication, in place of the
- * normal message handler channel for all messages. Generally used to override
- * message handler channels in a test.
- *
- * Creates a new Flutter engine which sends all message channel communication
- * over the given channel override. This is useful for tests to be able to (for
- * instance) give "test/echo" as a test channel to receive all communication
- * from the engine.
- */
-FlEngine* fl_engine_new_channel_override(FlDartProject* project,
-                                         FlRenderer* renderer,
-                                         const gchar* channel_override);
-
-/**
  * fl_engine_set_platform_message_handler:
  * @engine: an #FlEngine.
  * @handler: function to call when a platform message is received.

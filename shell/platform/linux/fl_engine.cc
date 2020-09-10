@@ -27,10 +27,6 @@ struct _FlEngine {
   FlDartProject* project;
   FlRenderer* renderer;
   FlBinaryMessenger* binary_messenger;
-
-  // The channel to use if overriding the message channel.
-  GString* channel_override = nullptr;
-
   FlutterEngineAOTData aot_data;
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
 
@@ -293,10 +289,6 @@ static void fl_engine_dispose(GObject* object) {
     self->aot_data = nullptr;
   }
 
-  if (self->channel_override != nullptr) {
-    g_string_free(self->channel_override, true);
-  }
-
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
   g_clear_object(&self->binary_messenger);
@@ -317,8 +309,8 @@ static void fl_engine_class_init(FlEngineClass* klass) {
 
 static void fl_engine_init(FlEngine* self) {
   self->thread = g_thread_self();
+
   self->binary_messenger = fl_binary_messenger_new(self);
-  self->channel_override = g_string_new(nullptr);
 }
 
 FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
@@ -334,14 +326,6 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
 G_MODULE_EXPORT FlEngine* fl_engine_new_headless(FlDartProject* project) {
   g_autoptr(FlRendererHeadless) renderer = fl_renderer_headless_new();
   return fl_engine_new(project, FL_RENDERER(renderer));
-}
-
-FlEngine* fl_engine_new_channel_override(FlDartProject* project,
-                                         FlRenderer* renderer,
-                                         const gchar* channel_override) {
-  FlEngine* engine = fl_engine_new(project, renderer);
-  g_string_assign(engine->channel_override, channel_override);
-  return engine;
 }
 
 gboolean fl_engine_start(FlEngine* self, GError** error) {
@@ -508,11 +492,7 @@ void fl_engine_send_platform_message(FlEngine* self,
 
   FlutterPlatformMessage fl_message = {};
   fl_message.struct_size = sizeof(fl_message);
-  if (self->channel_override != nullptr) {
-    fl_message.channel = self->channel_override->str;
-  } else {
-    fl_message.channel = channel;
-  }
+  fl_message.channel = channel;
   fl_message.message =
       message != nullptr
           ? static_cast<const uint8_t*>(g_bytes_get_data(message, nullptr))
