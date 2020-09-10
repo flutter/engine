@@ -130,7 +130,20 @@ class FlutterEnginePluginRegistry
     // Add the plugin to our generic set of plugins and notify the plugin
     // that is has been attached to an engine.
     plugins.put(plugin.getClass(), plugin);
-    plugin.onAttachedToEngine(pluginBinding);
+
+    try {
+      plugin.onAttachedToEngine(pluginBinding);
+    }catch(Exception e){
+      Log.w(
+        TAG, 
+        "Attempted to attach plugin ("
+              + plugin
+              + ") but there's a problem with this FlutterEngine ("
+              + flutterEngine
+              + ").");
+      return;
+    }
+    
 
     // For ActivityAware plugins, add the plugin to our set of ActivityAware
     // plugins, and if this engine is currently attached to an Activity,
