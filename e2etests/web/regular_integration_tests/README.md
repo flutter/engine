@@ -2,7 +2,7 @@
 
 This directory is for Flutter Web engine integration tests that does not need a specific configuration. If an integration test needs specialized app configuration (e.g. PWA vs non-PWA packaging), please create another directory under e2etests/web. Otherwise tests such as text_editing, history, scrolling, pointer events... should all go under this package.
 
-Tests can be run on both 'debug', 'release' and 'profile' modes. However 'profile' mode will shorten the error stack trace. 'release' mode is for testing release code, it does not run the `assert` checks. Use 'debug' mode for troubleshooting purposes and seeing full stack traces (if there is an error).
+Tests can be run on both 'debug', 'release' and 'profile' modes. However 'profile'/'release' modes will shorten the error stack trace. 'release' mode is for testing release code. Use 'debug' mode for troubleshooting purposes and seeing full stack traces (if there is an error). For more details on build [modes](https://flutter.dev/docs/testing/build-modes).
 
 ## To run the application under test for troubleshooting purposes
 
