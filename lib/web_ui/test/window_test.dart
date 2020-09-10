@@ -25,6 +25,10 @@ void main() {
 }
 
 void testMain() {
+  setUp(() async {
+    await window.debugSwitchBrowserHistory(useSingle: true);
+  });
+
   test('window.defaultRouteName should not change', () async {
     await setStrategy(TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial')));
     expect(window.defaultRouteName, '/initial');
@@ -39,12 +43,11 @@ void testMain() {
     // Reading it multiple times should return the same value.
     expect(window.defaultRouteName, '/initial');
     expect(window.defaultRouteName, '/initial');
-
     window.sendPlatformMessage(
       'flutter/navigation',
       JSONMethodCodec().encodeMethodCall(MethodCall(
-        'routePushed',
-        <String, dynamic>{'previousRouteName': '/foo', 'routeName': '/bar'},
+        'routeUpdated',
+        <String, dynamic>{'routeName': '/bar'},
       )),
       emptyCallback,
     );
