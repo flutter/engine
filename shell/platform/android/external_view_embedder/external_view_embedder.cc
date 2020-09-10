@@ -224,7 +224,10 @@ PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
     // until the threads are merged.
     raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
     CancelFrame();
-    return PostPrerollResult::kResubmitFrame;
+
+    // This frame cannot be submitted since the rasterizer is still
+    // running on the raster thread.
+    return PostPrerollResult::kSkipAndSubmitFrame;
   }
   raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
   // Surface switch requires to resubmit the frame.

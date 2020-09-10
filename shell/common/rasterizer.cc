@@ -176,7 +176,10 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
-  if (raster_status == RasterStatus::kResubmit) {
+
+  auto should_resubmit_frame = raster_status == RasterStatus::kResubmit ||
+                               raster_status == RasterStatus::kSkipAndSubmit;
+  if (should_resubmit_frame) {
     auto front_continuation = pipeline->ProduceIfEmpty();
     bool result =
         front_continuation.Complete(std::move(resubmitted_layer_tree_));
@@ -190,7 +193,6 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // Merging the thread as we know the next `Draw` should be run on the platform
   // thread.
   if (surface_ != nullptr && surface_->GetExternalViewEmbedder() != nullptr) {
-    auto should_resubmit_frame = raster_status == RasterStatus::kResubmit;
     surface_->GetExternalViewEmbedder()->EndFrame(should_resubmit_frame,
                                                   raster_thread_merger_);
   }
@@ -336,7 +338,8 @@ RasterStatus Rasterizer::DoDraw(
   RasterStatus raster_status = DrawToSurface(*layer_tree);
   if (raster_status == RasterStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
-  } else if (raster_status == RasterStatus::kResubmit) {
+  } else if (raster_status == RasterStatus::kResubmit ||
+             raster_status == RasterStatus::kSkipAndSubmit) {
     resubmitted_layer_tree_ = std::move(layer_tree);
     return raster_status;
   }
@@ -462,7 +465,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   if (compositor_frame) {
     RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
     if (raster_status == RasterStatus::kFailed ||
-        raster_status == RasterStatus::kResubmit) {
+        raster_status == RasterStatus::kSkipAndSubmit) {
       return raster_status;
     }
     if (external_view_embedder != nullptr) {

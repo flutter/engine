@@ -959,6 +959,47 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
+TEST_F(ShellTest, SkipAndSubmitFrame) {
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent end_frame_latch;
+
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        end_frame_latch.Signal();
+      };
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kSuccess, true);
+
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  external_view_embedder->UpdatePostPrerollResult(
+      PostPrerollResult::kSkipAndSubmitFrame);
+  PumpOneFrame(shell.get());
+  end_frame_latch.Wait();
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  external_view_embedder->UpdatePostPrerollResult(PostPrerollResult::kSuccess);
+  PumpOneFrame(shell.get());
+  end_frame_latch.Wait();
+  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
+
+  PumpOneFrame(shell.get());
+  end_frame_latch.Wait();
+  ASSERT_EQ(2, external_view_embedder->GetSubmittedFrameCount());
+
+  DestroyShell(std::move(shell));
+}
+
 TEST_F(ShellTest, ResubmitFrame) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
@@ -986,16 +1027,13 @@ TEST_F(ShellTest, ResubmitFrame) {
       PostPrerollResult::kResubmitFrame);
   PumpOneFrame(shell.get());
   end_frame_latch.Wait();
-  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
-
-  external_view_embedder->UpdatePostPrerollResult(PostPrerollResult::kSuccess);
-  PumpOneFrame(shell.get());
-  end_frame_latch.Wait();
-  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
-
-  PumpOneFrame(shell.get());
   end_frame_latch.Wait();
   ASSERT_EQ(2, external_view_embedder->GetSubmittedFrameCount());
+
+  PumpOneFrame(shell.get());
+  end_frame_latch.Wait();
+  end_frame_latch.Wait();
+  ASSERT_EQ(4, external_view_embedder->GetSubmittedFrameCount());
 
   DestroyShell(std::move(shell));
 }

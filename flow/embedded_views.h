@@ -242,7 +242,16 @@ class EmbeddedViewParams {
   SkRect final_bounding_rect_;
 };
 
-enum class PostPrerollResult { kResubmitFrame, kSuccess };
+enum class PostPrerollResult {
+  // Frame has successfully rasterized.
+  kSuccess,
+  // Frame is submitted twice. This is currently only called when
+  // thread configuration change occurs.
+  kResubmitFrame,
+  // Frame is dropped and a new frame is submitted instead. This is
+  // currently only called when thread configuration change occurs.
+  kSkipAndSubmitFrame
+};
 
 // Facilitates embedding of platform views within the flow layer tree.
 //
