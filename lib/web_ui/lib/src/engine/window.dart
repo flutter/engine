@@ -165,14 +165,20 @@ class EngineWindow extends ui.Window {
       await _useMultiEntryBrowserHistory();
   }
 
+  /// This function should only be used for test setup. In real application, we
+  /// only allow one time switch from the MultiEntriesBrowserHistory to
+  /// the SingleEntryBrowserHistory to prevent the application to switch back
+  /// forth between router and non-router.
   Future<void> _useMultiEntryBrowserHistory() async {
     if (_browserHistory is MultiEntriesBrowserHistory) {
       return;
     }
     final LocationStrategy? strategy = _browserHistory.locationStrategy;
-    await _browserHistory.setLocationStrategy(null);
+    if (strategy != null)
+      await _browserHistory.setLocationStrategy(null);
     _browserHistory = MultiEntriesBrowserHistory();
-    await _browserHistory.setLocationStrategy(strategy);
+    if (strategy != null)
+      await _browserHistory.setLocationStrategy(strategy);
   }
 
   Future<void> _useSingleEntryBrowserHistory() async {
@@ -180,9 +186,11 @@ class EngineWindow extends ui.Window {
       return;
     }
     final LocationStrategy? strategy = _browserHistory.locationStrategy;
-    await _browserHistory.setLocationStrategy(null);
+    if (strategy != null)
+      await _browserHistory.setLocationStrategy(null);
     _browserHistory = SingleEntryBrowserHistory();
-    await _browserHistory.setLocationStrategy(strategy);
+    if (strategy != null)
+      await _browserHistory.setLocationStrategy(strategy);
   }
 
   /// Simulates clicking the browser's back button.

@@ -116,8 +116,8 @@ abstract class BrowserHistory {
 /// * [SingleEntryBrowserHistory], which is used when the framework does not use
 ///   a Router for routing.
 class MultiEntriesBrowserHistory extends BrowserHistory {
-  int _lastSeenSerialCount = 0;
-  int get _getCurrentSerialCount {
+  late int _lastSeenSerialCount;
+  int get _currentSerialCount {
     if (_hasSerialCount(currentState)) {
       return currentState['serialCount'] as int;
     }
@@ -137,13 +137,13 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
   @override
   void setRouteName(String? routeName, {dynamic? state}) {
-    if (locationStrategy != null && routeName != null) {
-      final int serialCount = _getCurrentSerialCount +1;
-      _lastSeenSerialCount = serialCount;
+    if (locationStrategy != null) {
+      assert(routeName != null);
+      _lastSeenSerialCount += 1;
       locationStrategy!.pushState(
-        _tagWithSerialCount(state, serialCount),
+        _tagWithSerialCount(state, _lastSeenSerialCount),
         'flutter',
-        routeName
+        routeName!,
       );
     }
   }
@@ -154,14 +154,14 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     // May be a result of direct url access while the flutter application is
     // already running.
     if (!_hasSerialCount(event.state)) {
-      // In this case we assume this will be the next history entry from last
-      // seen entry.
+      // In this case we assume this will be the next history entry from the
+      // last seen entry.
       locationStrategy!.replaceState(
         _tagWithSerialCount(event.state, _lastSeenSerialCount + 1),
         'flutter',
         currentPath);
     }
-    _lastSeenSerialCount = _getCurrentSerialCount;
+    _lastSeenSerialCount = _currentSerialCount;
     if (window._onPlatformMessage != null) {
       window.invokeOnPlatformMessage(
         'flutter/navigation',
@@ -185,24 +185,25 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
         currentPath
       );
     }
+    // If we retore from a page refresh, the _currentSerialCount may not be 0.
+    _lastSeenSerialCount = _currentSerialCount;
     return Future<void>.value();
   }
 
   @override
   Future<void> tearDown() async {
     // Restores the html browser history.
-    if (_hasSerialCount(currentState)) {
-      int backCount = _getCurrentSerialCount;
-      if (backCount > 0) {
-        await locationStrategy!.back(count: backCount);
-      }
-      // Unwrap state.
-      locationStrategy!.replaceState(
-        currentState['state'],
-        'flutter',
-        currentPath,
-      );
+    assert(_hasSerialCount(currentState));
+    int backCount = _currentSerialCount;
+    if (backCount > 0) {
+      await locationStrategy!.back(count: backCount);
     }
+    // Unwrap state.
+    locationStrategy!.replaceState(
+      currentState['state'],
+      'flutter',
+      currentPath,
+    );
   }
 }
 
