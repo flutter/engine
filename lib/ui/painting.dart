@@ -1566,7 +1566,7 @@ enum PixelFormat {
 /// To draw an [Image], use one of the methods on the [Canvas] class, such as
 /// [Canvas.drawImage].
 ///
-/// A class or method that recieves an image object should call [createHandle]
+/// A class or method that receives an image object should call [createHandle]
 /// immediately and then call [dispose] on the handle when it is no longer
 /// needed. The underlying image data will be released only when all outstanding
 /// handles are disposed.
@@ -1576,7 +1576,7 @@ enum PixelFormat {
 /// allocated for the object, but it will trigger an assert if there are any
 /// oustanding handles created by [createHandle] for this image.
 ///
-/// Once all handles have been disposed of, the image object is no longer usable
+/// Once all handles have been disposed, the image object is no longer usable
 /// from Dart code, including for creating new handles.
 ///
 /// See also:
@@ -1636,7 +1636,6 @@ class Image extends NativeFieldWrapperClass2 {
       return true;
     }());
     _dispose();
-
   }
 
   void _dispose() native 'Image_dispose';
