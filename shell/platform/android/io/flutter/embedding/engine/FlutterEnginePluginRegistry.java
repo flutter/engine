@@ -126,14 +126,62 @@ class FlutterEnginePluginRegistry
       return;
     }
 
-    Log.v(TAG, "Adding plugin: " + plugin);
-    // Add the plugin to our generic set of plugins and notify the plugin
-    // that is has been attached to an engine.
-    plugins.put(plugin.getClass(), plugin);
-
     try {
+      Log.v(TAG, "Adding plugin: " + plugin);
+      // Add the plugin to our generic set of plugins and notify the plugin
+      // that is has been attached to an engine.
+      plugins.put(plugin.getClass(), plugin);
       plugin.onAttachedToEngine(pluginBinding);
-    }catch(Exception e){
+    
+      // For ActivityAware plugins, add the plugin to our set of ActivityAware
+      // plugins, and if this engine is currently attached to an Activity,
+      // notify the ActivityAware plugin that it is now attached to an Activity.
+      if (plugin instanceof ActivityAware) {
+        ActivityAware activityAware = (ActivityAware) plugin;
+        activityAwarePlugins.put(plugin.getClass(), activityAware);
+
+        if (isAttachedToActivity()) {
+          activityAware.onAttachedToActivity(activityPluginBinding);
+        }
+      }
+
+      // For ServiceAware plugins, add the plugin to our set of ServiceAware
+      // plugins, and if this engine is currently attached to a Service,
+      // notify the ServiceAware plugin that it is now attached to a Service.
+      if (plugin instanceof ServiceAware) {
+        ServiceAware serviceAware = (ServiceAware) plugin;
+        serviceAwarePlugins.put(plugin.getClass(), serviceAware);
+
+        if (isAttachedToService()) {
+          serviceAware.onAttachedToService(servicePluginBinding);
+        }
+      }
+
+      // For BroadcastReceiverAware plugins, add the plugin to our set of BroadcastReceiverAware
+      // plugins, and if this engine is currently attached to a BroadcastReceiver,
+      // notify the BroadcastReceiverAware plugin that it is now attached to a BroadcastReceiver.
+      if (plugin instanceof BroadcastReceiverAware) {
+        BroadcastReceiverAware broadcastReceiverAware = (BroadcastReceiverAware) plugin;
+        broadcastReceiverAwarePlugins.put(plugin.getClass(), broadcastReceiverAware);
+
+        if (isAttachedToBroadcastReceiver()) {
+          broadcastReceiverAware.onAttachedToBroadcastReceiver(broadcastReceiverPluginBinding);
+        }
+      }
+
+      // For ContentProviderAware plugins, add the plugin to our set of ContentProviderAware
+      // plugins, and if this engine is currently attached to a ContentProvider,
+      // notify the ContentProviderAware plugin that it is now attached to a ContentProvider.
+      if (plugin instanceof ContentProviderAware) {
+        ContentProviderAware contentProviderAware = (ContentProviderAware) plugin;
+        contentProviderAwarePlugins.put(plugin.getClass(), contentProviderAware);
+
+        if (isAttachedToContentProvider()) {
+          contentProviderAware.onAttachedToContentProvider(contentProviderPluginBinding);
+        }
+      }
+
+    } catch(Exception e) {
       Log.w(
         TAG, 
         "Attempted to attach plugin ("
@@ -142,55 +190,6 @@ class FlutterEnginePluginRegistry
               + flutterEngine
               + ").");
       return;
-    }
-    
-
-    // For ActivityAware plugins, add the plugin to our set of ActivityAware
-    // plugins, and if this engine is currently attached to an Activity,
-    // notify the ActivityAware plugin that it is now attached to an Activity.
-    if (plugin instanceof ActivityAware) {
-      ActivityAware activityAware = (ActivityAware) plugin;
-      activityAwarePlugins.put(plugin.getClass(), activityAware);
-
-      if (isAttachedToActivity()) {
-        activityAware.onAttachedToActivity(activityPluginBinding);
-      }
-    }
-
-    // For ServiceAware plugins, add the plugin to our set of ServiceAware
-    // plugins, and if this engine is currently attached to a Service,
-    // notify the ServiceAware plugin that it is now attached to a Service.
-    if (plugin instanceof ServiceAware) {
-      ServiceAware serviceAware = (ServiceAware) plugin;
-      serviceAwarePlugins.put(plugin.getClass(), serviceAware);
-
-      if (isAttachedToService()) {
-        serviceAware.onAttachedToService(servicePluginBinding);
-      }
-    }
-
-    // For BroadcastReceiverAware plugins, add the plugin to our set of BroadcastReceiverAware
-    // plugins, and if this engine is currently attached to a BroadcastReceiver,
-    // notify the BroadcastReceiverAware plugin that it is now attached to a BroadcastReceiver.
-    if (plugin instanceof BroadcastReceiverAware) {
-      BroadcastReceiverAware broadcastReceiverAware = (BroadcastReceiverAware) plugin;
-      broadcastReceiverAwarePlugins.put(plugin.getClass(), broadcastReceiverAware);
-
-      if (isAttachedToBroadcastReceiver()) {
-        broadcastReceiverAware.onAttachedToBroadcastReceiver(broadcastReceiverPluginBinding);
-      }
-    }
-
-    // For ContentProviderAware plugins, add the plugin to our set of ContentProviderAware
-    // plugins, and if this engine is currently attached to a ContentProvider,
-    // notify the ContentProviderAware plugin that it is now attached to a ContentProvider.
-    if (plugin instanceof ContentProviderAware) {
-      ContentProviderAware contentProviderAware = (ContentProviderAware) plugin;
-      contentProviderAwarePlugins.put(plugin.getClass(), contentProviderAware);
-
-      if (isAttachedToContentProvider()) {
-        contentProviderAware.onAttachedToContentProvider(contentProviderPluginBinding);
-      }
     }
   }
 
