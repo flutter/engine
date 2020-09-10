@@ -247,7 +247,8 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
 }
 
 void FlutterPlatformViewsController::CancelFrame() {
-  composition_order_ = active_composition_order_;
+  picture_recorders_.clear();
+  composition_order_.clear();
 }
 
 // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
@@ -263,16 +264,22 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
   // Rename `has_platform_view` to `view_mutated` when the above issue is resolved.
-  const bool has_platform_view = HasPlatformViewThisOrNextFrame();
-  if (has_platform_view) {
-    if (raster_thread_merger->IsMerged()) {
-      raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
-    } else {
-      CancelFrame();
-      raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
-      return PostPrerollResult::kSkipAndSubmitFrame;
-    }
+  if (!HasPlatformViewThisOrNextFrame()) {
+    return PostPrerollResult::kSuccess;
   }
+  if (!raster_thread_merger->IsMerged()) {
+    // The raster thread merger may be disabled if the rasterizer is being
+    // created or teared down.
+    //
+    // In such cases, the current frame will be dropped, and a new frame is
+    // submitted with the same layer tree once the threads have been merged.
+    //
+    // That is, the raster tasks are handled on the platform thread.
+    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
+    CancelFrame();
+    return PostPrerollResult::kSkipAndSubmitFrame;
+  }
+  raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
   return PostPrerollResult::kSuccess;
 }
 

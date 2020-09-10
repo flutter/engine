@@ -220,13 +220,12 @@ PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
     // The raster thread merger may be disabled if the rasterizer is being
     // created or teared down.
     //
-    // In such cases, the current frame will continue to be resubmitted
-    // until the threads are merged.
+    // In such cases, the current frame will be dropped, and a new frame is
+    // submitted with the same layer tree once the threads have been merged.
+    //
+    // That is, the raster tasks are handled on the platform thread.
     raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
     CancelFrame();
-
-    // This frame cannot be submitted since the rasterizer is still
-    // running on the raster thread.
     return PostPrerollResult::kSkipAndSubmitFrame;
   }
   raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);

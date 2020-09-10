@@ -969,7 +969,7 @@ TEST_F(ShellTest, SkipAndSubmitFrame) {
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kSuccess, true);
+      end_frame_callback, PostPrerollResult::kSkipAndSubmitFrame, true);
 
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
                            false, external_view_embedder);
@@ -982,8 +982,6 @@ TEST_F(ShellTest, SkipAndSubmitFrame) {
 
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
-  external_view_embedder->UpdatePostPrerollResult(
-      PostPrerollResult::kSkipAndSubmitFrame);
   PumpOneFrame(shell.get());
   end_frame_latch.Wait();
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
@@ -1010,7 +1008,7 @@ TEST_F(ShellTest, ResubmitFrame) {
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
-      end_frame_callback, PostPrerollResult::kSuccess, true);
+      end_frame_callback, PostPrerollResult::kResubmitFrame, true);
 
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
                            false, external_view_embedder);
@@ -1023,17 +1021,13 @@ TEST_F(ShellTest, ResubmitFrame) {
 
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
-  external_view_embedder->UpdatePostPrerollResult(
-      PostPrerollResult::kResubmitFrame);
   PumpOneFrame(shell.get());
+
   end_frame_latch.Wait();
+  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
+
   end_frame_latch.Wait();
   ASSERT_EQ(2, external_view_embedder->GetSubmittedFrameCount());
-
-  PumpOneFrame(shell.get());
-  end_frame_latch.Wait();
-  end_frame_latch.Wait();
-  ASSERT_EQ(4, external_view_embedder->GetSubmittedFrameCount());
 
   DestroyShell(std::move(shell));
 }
