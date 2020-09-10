@@ -40,11 +40,6 @@ FLUTTER_EXPORT
 @property(nonatomic) FlutterMouseTrackingMode mouseTrackingMode;
 
 /**
- * This just returns the NSPasteboard so that it can be mocked in the tests.
- */
-@property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
-
-/**
  * Initializes a controller that will run the given project.
  *
  * @param project The project to run in this view controller. If nil, a default `FlutterDartProject`
