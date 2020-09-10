@@ -199,6 +199,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
       await locationStrategy!.back(count: backCount);
     }
     // Unwrap state.
+    assert(_hasSerialCount(currentState) && _currentSerialCount == 0);
     locationStrategy!.replaceState(
       currentState['state'],
       'flutter',
