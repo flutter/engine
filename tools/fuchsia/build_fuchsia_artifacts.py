@@ -167,9 +167,10 @@ def CopyIcuDepsToBucket(src, dst):
   deps_bucket_path = os.path.join(_bucket_directory, dst)
   FindFileAndCopyTo('icudtl.dat', source_root, deps_bucket_path)
 
-def BuildBucket(runtime_mode, arch, product):
-  out_dir = 'fuchsia_%s_%s/' % (runtime_mode, arch)
-  bucket_dir = 'flutter/%s/%s/' % (arch, runtime_mode)
+def BuildBucket(runtime_mode, arch, optimized, product):
+  unopt = "_unopt" if not optimized else ""
+  out_dir = 'fuchsia_%s%s_%s/' % (runtime_mode, unopt, arch)
+  bucket_dir = 'flutter/%s/%s%s/' % (arch, runtime_mode, unopt)
   deps_dir = 'flutter/%s/deps/' % (arch)
   CopyToBucket(out_dir, bucket_dir, product)
   CopyVulkanDepsToBucket(out_dir, deps_dir, arch)
@@ -229,23 +230,9 @@ def ProcessCIPDPackage(upload, engine_version):
       if tries == num_tries - 1:
         raise
 
-def GetRunnerTarget(runner_type, product, aot):
-  base = '%s/%s:' % (_fuchsia_base, runner_type)
-  if 'dart' in runner_type:
-    target = 'dart_'
-  else:
-    target = 'flutter_'
-  if aot:
-    target += 'aot_'
-  else:
-    target += 'jit_'
-  if product:
-    target += 'product_'
-  target += 'runner'
-  return base + target
-
-def BuildTarget(runtime_mode, arch, enable_lto, additional_targets=[]):
-  out_dir = 'fuchsia_%s_%s' % (runtime_mode, arch)
+def BuildTarget(runtime_mode, arch, optimized, enable_lto, enable_legacy, asan, additional_targets=[]):
+  unopt = "_unopt" if not optimized else ""
+  out_dir = 'fuchsia_%s%s_%s' % (runtime_mode, unopt, arch)
   flags = [
       '--fuchsia',
       '--fuchsia-cpu',
@@ -254,8 +241,15 @@ def BuildTarget(runtime_mode, arch, enable_lto, additional_targets=[]):
       runtime_mode,
   ]
 
+  if not optimized:
+    flags.append('--unoptimized')
+
   if not enable_lto:
     flags.append('--no-lto')
+  if not enable_legacy:
+    flags.append('--no-fuchsia-legacy')
+  if asan:
+    flags.append('--asan')
 
   RunGN(out_dir, flags)
   BuildNinjaTargets(out_dir, [ 'flutter' ] + additional_targets)
@@ -278,6 +272,12 @@ def main():
       help='Specifies the flutter engine SHA.')
 
   parser.add_argument(
+      '--unoptimized',
+      action='store_true',
+      default=False,
+      help='If set, disables compiler optimization for the build.')
+
+  parser.add_argument(
       '--runtime-mode',
       type=str,
       choices=['debug', 'profile', 'release', 'all'],
@@ -287,10 +287,22 @@ def main():
       '--archs', type=str, choices=['x64', 'arm64', 'all'], default='all')
 
   parser.add_argument(
+      '--asan',
+      action='store_true',
+      default=False,
+      help='If set, enables address sanitization (including leak sanitization) for the build.')
+
+  parser.add_argument(
       '--no-lto',
       action='store_true',
       default=False,
       help='If set, disables LTO for the build.')
+
+  parser.add_argument(
+      '--no-legacy',
+      action='store_true',
+      default=False,
+      help='If set, disables legacy code for the build.')
 
   parser.add_argument(
       '--skip-build',
@@ -312,7 +324,9 @@ def main():
   runtime_modes = ['debug', 'profile', 'release']
   product_modes = [False, False, True]
 
+  optimized = not args.unoptimized
   enable_lto = not args.no_lto
+  enable_legacy = not args.no_legacy
 
   for arch in archs:
     for i in range(3):
@@ -320,8 +334,8 @@ def main():
       product = product_modes[i]
       if build_mode == 'all' or runtime_mode == build_mode:
         if not args.skip_build:
-          BuildTarget(runtime_mode, arch, enable_lto, args.targets.split(","))
-        BuildBucket(runtime_mode, arch, product)
+          BuildTarget(runtime_mode, arch, optimized, enable_lto, enable_legacy, args.asan, args.targets.split(","))
+        BuildBucket(runtime_mode, arch, optimized, product)
 
   if args.upload:
     if args.engine_version is None:

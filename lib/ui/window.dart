@@ -47,6 +47,11 @@ typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 ///
 /// [FrameTiming] records a timestamp of each phase for performance analysis.
 enum FramePhase {
+  /// The timestamp of the vsync signal given by the operating system.
+  ///
+  /// See also [FrameTiming.vsyncOverhead].
+  vsyncStart,
+
   /// When the UI thread starts building a frame.
   ///
   /// See also [FrameTiming.buildDuration].
@@ -84,35 +89,33 @@ enum FramePhase {
 class FrameTiming {
   /// Construct [FrameTiming] with raw timestamps in microseconds.
   ///
-  /// List [timestamps] must have the same number of elements as
-  /// [FramePhase.values].
-  ///
-  /// This constructor is usually only called by the Flutter engine, or a test.
-  /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
-  FrameTiming(List<int> timestamps)
-      : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
-
-  /// Construct [FrameTiming] with given timestamp in micrseconds.
-  ///
   /// This constructor is used for unit test only. Real [FrameTiming]s should
   /// be retrieved from [Window.onReportTimings].
-  ///
-  /// TODO(CareF): This is part of #20229. Remove back to default constructor
-  /// after #20229 lands and corresponding framwork PRs land.
-  factory FrameTiming.fromTimeStamps({
-    int? vsyncStart,
+  factory FrameTiming({
+    required int vsyncStart,
     required int buildStart,
     required int buildFinish,
     required int rasterStart,
-    required int rasterFinish
+    required int rasterFinish,
   }) {
-    return FrameTiming(<int>[
+    return FrameTiming._(<int>[
+      vsyncStart,
       buildStart,
       buildFinish,
       rasterStart,
       rasterFinish
     ]);
   }
+
+  /// Construct [FrameTiming] with raw timestamps in microseconds.
+  ///
+  /// List [timestamps] must have the same number of elements as
+  /// [FramePhase.values].
+  ///
+  /// This constructor is usually only called by the Flutter engine, or a test.
+  /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
+  FrameTiming._(List<int> timestamps)
+      : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
 
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
   /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
@@ -143,14 +146,18 @@ class FrameTiming {
   /// {@macro dart.ui.FrameTiming.fps_milliseconds}
   Duration get rasterDuration => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.rasterStart);
 
-  /// The timespan between build start and raster finish.
+  /// The duration between receiving the vsync signal and starting building the
+  /// frame.
+  Duration get vsyncOverhead => _rawDuration(FramePhase.buildStart) - _rawDuration(FramePhase.vsyncStart);
+
+  /// The timespan between vsync start and raster finish.
   ///
   /// To achieve the lowest latency on an X fps display, this should not exceed
   /// 1000/X milliseconds.
   /// {@macro dart.ui.FrameTiming.fps_milliseconds}
   ///
-  /// See also [buildDuration] and [rasterDuration].
-  Duration get totalSpan => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.buildStart);
+  /// See also [vsyncOverhead], [buildDuration] and [rasterDuration].
+  Duration get totalSpan => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.vsyncStart);
 
   final List<int> _timestamps;  // in microseconds
 
@@ -158,7 +165,7 @@ class FrameTiming {
 
   @override
   String toString() {
-    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, totalSpan: ${_formatMS(totalSpan)})';
+    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, vsyncOverhead: ${_formatMS(vsyncOverhead)}, totalSpan: ${_formatMS(totalSpan)})';
   }
 }
 
@@ -649,20 +656,6 @@ class Window {
   Size get physicalSize => _physicalSize;
   Size _physicalSize = Size.zero;
 
-  /// The physical depth is the maximum elevation that the Window allows.
-  ///
-  /// Physical layers drawn at or above this elevation will have their elevation
-  /// clamped to this value. This can happen if the physical layer itself has
-  /// an elevation larger than available depth, or if some ancestor of the layer
-  /// causes it to have a cumulative elevation that is larger than the available
-  /// depth.
-  ///
-  /// The default value is [double.maxFinite], which is used for platforms that
-  /// do not specify a maximum elevation. This property is currently on expected
-  /// to be set to a non-default value on Fuchsia.
-  double get physicalDepth => _physicalDepth;
-  double _physicalDepth = double.maxFinite;
-
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but over which the operating system
   /// will likely place system UI, such as the keyboard, that fully obscures
@@ -1049,23 +1042,19 @@ class Window {
   ///
   /// ## Android
   ///
-  /// On Android, calling
-  /// [`FlutterView.setInitialRoute`](/javadoc/io/flutter/view/FlutterView.html#setInitialRoute-java.lang.String-)
-  /// will set this value. The value must be set sufficiently early, i.e. before
-  /// the [runApp] call is executed in Dart, for this to have any effect on the
-  /// framework. The `createFlutterView` method in your `FlutterActivity`
-  /// subclass is a suitable time to set the value. The application's
-  /// `AndroidManifest.xml` file must also be updated to have a suitable
-  /// [`<intent-filter>`](https://developer.android.com/guide/topics/manifest/intent-filter-element.html).
+  /// On Android, the initial route can be set on the [initialRoute](/javadoc/io/flutter/embedding/android/FlutterActivity.NewEngineIntentBuilder.html#initialRoute-java.lang.String-)
+  /// method of the [FlutterActivity](/javadoc/io/flutter/embedding/android/FlutterActivity.html)'s
+  /// intent builder.
+  ///
+  /// On a standalone engine, see https://flutter.dev/docs/development/add-to-app/android/add-flutter-screen#initial-route-with-a-cached-engine.
   ///
   /// ## iOS
   ///
-  /// On iOS, calling
-  /// [`FlutterViewController.setInitialRoute`](/objcdoc/Classes/FlutterViewController.html#/c:objc%28cs%29FlutterViewController%28im%29setInitialRoute:)
-  /// will set this value. The value must be set sufficiently early, i.e. before
-  /// the [runApp] call is executed in Dart, for this to have any effect on the
-  /// framework. The `application:didFinishLaunchingWithOptions:` method is a
-  /// suitable time to set this value.
+  /// On iOS, the initial route can be set on the `initialRoute`
+  /// parameter of the [FlutterViewController](/objcdoc/Classes/FlutterViewController.html)'s
+  /// initializer.
+  ///
+  /// On a standalone engine, see https://flutter.dev/docs/development/add-to-app/ios/add-flutter-screen#route.
   ///
   /// See also:
   ///

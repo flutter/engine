@@ -3,13 +3,18 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
-import 'package:test/test.dart';
 
 import '../mock_engine_canvas.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   RecordingCanvas underTest;
   MockEngineCanvas mockCanvas;
   final Rect screenRect = Rect.largest;
@@ -30,8 +35,9 @@ void main() {
       underTest.apply(mockCanvas, screenRect);
 
       _expectDrawDRRectCall(mockCanvas, <String, dynamic>{
-          'path': 'Path(MoveTo(10, 47) LineTo(10, 13) Conic(10, 10, 10, 13, w = 0.7071067690849304) LineTo(47, 10) Conic(50, 10, 10, 50, w = 0.7071067690849304) LineTo(50, 47) Conic(50, 50, 50, 47, w = 0.7071067690849304) LineTo(13, 50) Conic(10, 50, 50, 10, w = 0.7071067690849304) Close() MoveTo(11, 47) LineTo(11, 13) Conic(11, 11, 11, 13, w = 0.7071067690849304) LineTo(47, 11) Conic(49, 11, 11, 49, w = 0.7071067690849304) LineTo(49, 47) Conic(49, 49, 49, 47, w = 0.7071067690849304) LineTo(13, 49) Conic(11, 49, 49, 11, w = 0.7071067690849304) Close())',
-          'paint': somePaint.paintData,
+        'path':
+            'Path(MoveTo(10, 47) LineTo(10, 13) Conic(10, 10, 10, 13, w = 0.7071067690849304) LineTo(47, 10) Conic(50, 10, 10, 50, w = 0.7071067690849304) LineTo(50, 47) Conic(50, 50, 50, 47, w = 0.7071067690849304) LineTo(13, 50) Conic(10, 50, 50, 10, w = 0.7071067690849304) Close() MoveTo(11, 47) LineTo(11, 13) Conic(11, 11, 11, 13, w = 0.7071067690849304) LineTo(47, 11) Conic(49, 11, 11, 49, w = 0.7071067690849304) LineTo(49, 47) Conic(49, 49, 49, 47, w = 0.7071067690849304) LineTo(13, 49) Conic(11, 49, 49, 11, w = 0.7071067690849304) Close())',
+        'paint': somePaint.paintData,
       });
     });
 
@@ -81,7 +87,8 @@ void main() {
 
       // Expect to draw, even when inner has negative radii (which get ignored by canvas)
       _expectDrawDRRectCall(mockCanvas, <String, dynamic>{
-        'path': 'Path(MoveTo(0, 42) LineTo(0, 6) Conic(0, 0, 0, 6, w = 0.7071067690849304) LineTo(88, 0) Conic(88, 0, 0, 88, w = 0.7071067690849304) LineTo(88, 48) Conic(88, 48, 48, 88, w = 0.7071067690849304) LineTo(6, 48) Conic(0, 48, 48, 0, w = 0.7071067690849304) Close() MoveTo(1, 42) LineTo(1, 6) Conic(1, 1, 1, 6, w = 0.7071067690849304) LineTo(87, 1) Conic(87, 1, 1, 87, w = 0.7071067690849304) LineTo(87, 47) Conic(87, 47, 47, 87, w = 0.7071067690849304) LineTo(6, 47) Conic(1, 47, 47, 1, w = 0.7071067690849304) Close())',
+        'path':
+            'Path(MoveTo(0, 42) LineTo(0, 6) Conic(0, 0, 0, 6, w = 0.7071067690849304) LineTo(88, 0) Conic(88, 0, 0, 88, w = 0.7071067690849304) LineTo(88, 48) Conic(88, 48, 48, 88, w = 0.7071067690849304) LineTo(6, 48) Conic(0, 48, 48, 0, w = 0.7071067690849304) Close() MoveTo(1, 42) LineTo(1, 6) Conic(1, 1, 1, 6, w = 0.7071067690849304) LineTo(87, 1) Conic(87, 1, 1, 87, w = 0.7071067690849304) LineTo(87, 47) Conic(87, 47, 47, 87, w = 0.7071067690849304) LineTo(6, 47) Conic(1, 47, 47, 1, w = 0.7071067690849304) Close())',
         'paint': somePaint.paintData,
       });
     });
@@ -97,7 +104,8 @@ void main() {
       underTest.apply(mockCanvas, screenRect);
 
       _expectDrawDRRectCall(mockCanvas, <String, dynamic>{
-        'path': 'Path(MoveTo(10, 20) LineTo(30, 20) LineTo(30, 40) LineTo(10, 40) Close() MoveTo(12, 22) LineTo(28, 22) LineTo(28, 38) LineTo(12, 38) Close())',
+        'path':
+            'Path(MoveTo(10, 20) LineTo(30, 20) LineTo(30, 40) LineTo(10, 40) Close() MoveTo(12, 22) LineTo(28, 22) LineTo(28, 38) LineTo(12, 38) Close())',
         'paint': somePaint.paintData,
       });
     });
@@ -118,7 +126,7 @@ void main() {
 
     // Inside the layer clip but clipped out by a canvas clip
     underTest.save();
-    underTest.clipRect(Rect.fromLTWH(0, 0, 10, 10));
+    underTest.clipRect(Rect.fromLTWH(0, 0, 10, 10), ClipOp.intersect);
     underTest.drawRect(Rect.fromLTWH(20.0, 20.0, 10.0, 10.0), Paint());
     underTest.restore();
 
@@ -192,6 +200,13 @@ void main() {
   test('Allows restore calls after recording has ended', () {
     final RecordingCanvas rc = RecordingCanvas(Rect.fromLTRB(0, 0, 200, 400));
     rc.endRecording();
+    // Should not throw exception on restore.
+    expect(() => rc.restore(), returnsNormally);
+  });
+
+  // Regression test for https://github.com/flutter/flutter/issues/61697.
+  test('Allows restore calls even if recording is not ended', () {
+    final RecordingCanvas rc = RecordingCanvas(Rect.fromLTRB(0, 0, 200, 400));
     // Should not throw exception on restore.
     expect(() => rc.restore(), returnsNormally);
   });

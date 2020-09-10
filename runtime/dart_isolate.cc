@@ -58,6 +58,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     TaskRunners task_runners,
     std::unique_ptr<PlatformConfiguration> platform_configuration,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
     fml::WeakPtr<IOManager> io_manager,
     fml::RefPtr<SkiaUnrefQueue> unref_queue,
     fml::WeakPtr<ImageDecoder> image_decoder,
@@ -84,15 +85,16 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(new DartIsolate(
-          settings,                      // settings
-          task_runners,                  // task runners
-          std::move(snapshot_delegate),  // snapshot delegate
-          std::move(io_manager),         // IO manager
-          std::move(unref_queue),        // Skia unref queue
-          std::move(image_decoder),      // Image Decoder
-          advisory_script_uri,           // advisory URI
-          advisory_script_entrypoint,    // advisory entrypoint
-          true                           // is_root_isolate
+          settings,                        // settings
+          task_runners,                    // task runners
+          std::move(snapshot_delegate),    // snapshot delegate
+          std::move(hint_freed_delegate),  // hint freed delegate
+          std::move(io_manager),           // IO manager
+          std::move(unref_queue),          // Skia unref queue
+          std::move(image_decoder),        // Image Decoder
+          advisory_script_uri,             // advisory URI
+          advisory_script_entrypoint,      // advisory entrypoint
+          true                             // is_root_isolate
           )));
 
   DartErrorString error;
@@ -120,6 +122,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 DartIsolate::DartIsolate(const Settings& settings,
                          TaskRunners task_runners,
                          fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+                         fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
                          fml::WeakPtr<IOManager> io_manager,
                          fml::RefPtr<SkiaUnrefQueue> unref_queue,
                          fml::WeakPtr<ImageDecoder> image_decoder,
@@ -130,6 +133,7 @@ DartIsolate::DartIsolate(const Settings& settings,
                   settings.task_observer_add,
                   settings.task_observer_remove,
                   std::move(snapshot_delegate),
+                  std::move(hint_freed_delegate),
                   std::move(io_manager),
                   std::move(unref_queue),
                   std::move(image_decoder),
@@ -139,7 +143,9 @@ DartIsolate::DartIsolate(const Settings& settings,
                   settings.unhandled_exception_callback,
                   DartVMRef::GetIsolateNameServer(),
                   is_root_isolate),
-      disable_http_(settings.disable_http) {
+      may_insecurely_connect_to_all_domains_(
+          settings.may_insecurely_connect_to_all_domains),
+      domain_network_policy_(settings.domain_network_policy) {
   phase_ = Phase::Uninitialized;
 }
 
@@ -263,7 +269,8 @@ bool DartIsolate::LoadLibraries() {
 
   tonic::DartState::Scope scope(this);
 
-  DartIO::InitForIsolate(disable_http_);
+  DartIO::InitForIsolate(may_insecurely_connect_to_all_domains_,
+                         domain_network_policy_);
 
   DartUI::InitForIsolate();
 
@@ -600,6 +607,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           null_task_runners,              // task runners
           nullptr,                        // platform_configuration
           {},                             // snapshot delegate
+          {},                             // Hint freed delegate
           {},                             // IO Manager
           {},                             // Skia unref queue
           {},                             // Image Decoder
@@ -703,6 +711,7 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
           (*isolate_group_data)->GetSettings(),  // settings
           null_task_runners,                     // task_runners
           fml::WeakPtr<SnapshotDelegate>{},      // snapshot_delegate
+          fml::WeakPtr<HintFreedDelegate>{},     // hint_freed_delegate
           fml::WeakPtr<IOManager>{},             // io_manager
           fml::RefPtr<SkiaUnrefQueue>{},         // unref_queue
           fml::WeakPtr<ImageDecoder>{},          // image_decoder
@@ -746,6 +755,7 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
           (*isolate_group_data)->GetSettings(),           // settings
           null_task_runners,                              // task_runners
           fml::WeakPtr<SnapshotDelegate>{},               // snapshot_delegate
+          fml::WeakPtr<HintFreedDelegate>{},              // hint_freed_delegate
           fml::WeakPtr<IOManager>{},                      // io_manager
           fml::RefPtr<SkiaUnrefQueue>{},                  // unref_queue
           fml::WeakPtr<ImageDecoder>{},                   // image_decoder

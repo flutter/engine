@@ -15,22 +15,30 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.graphics.Insets;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewStructure;
+import android.view.WindowInsets;
+import android.view.WindowInsetsAnimation;
 import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import io.flutter.embedding.android.FlutterView;
+import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.loader.FlutterLoader;
+import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -38,11 +46,14 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -55,6 +66,9 @@ import org.robolectric.shadows.ShadowInputMethodManager;
 @Config(manifest = Config.NONE, shadows = TextInputPluginTest.TestImm.class)
 @RunWith(RobolectricTestRunner.class)
 public class TextInputPluginTest {
+  @Mock FlutterJNI mockFlutterJni;
+  @Mock FlutterLoader mockFlutterLoader;
+
   // Verifies the method and arguments for a captured method call.
   private void verifyMethodCall(ByteBuffer buffer, String methodName, String[] expectedArgs)
       throws JSONException {
@@ -566,6 +580,160 @@ public class TextInputPluginTest {
     verify(mockHandler, times(1)).finishAutofillContext(false);
   }
 
+  @Test
+  public void sendAppPrivateCommand_dataIsEmpty() throws JSONException {
+    ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
+        ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
+    DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
+    TextInputChannel textInputChannel = new TextInputChannel(mockBinaryMessenger);
+
+    EventHandler mockEventHandler = mock(EventHandler.class);
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setEventHandler(mockEventHandler);
+
+    View testView = new View(RuntimeEnvironment.application);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+
+    verify(mockBinaryMessenger, times(1))
+        .setMessageHandler(any(String.class), binaryMessageHandlerCaptor.capture());
+
+    JSONObject arguments = new JSONObject();
+    arguments.put("action", "actionCommand");
+    arguments.put("data", "");
+
+    BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
+        binaryMessageHandlerCaptor.getValue();
+    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.sendAppPrivateCommand", arguments);
+    verify(mockEventHandler, times(1))
+        .sendAppPrivateCommand(any(View.class), eq("actionCommand"), eq(null));
+  }
+
+  @Test
+  public void sendAppPrivateCommand_hasData() throws JSONException {
+    ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
+        ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
+    DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
+    TextInputChannel textInputChannel = new TextInputChannel(mockBinaryMessenger);
+
+    EventHandler mockEventHandler = mock(EventHandler.class);
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setEventHandler(mockEventHandler);
+
+    View testView = new View(RuntimeEnvironment.application);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+
+    verify(mockBinaryMessenger, times(1))
+        .setMessageHandler(any(String.class), binaryMessageHandlerCaptor.capture());
+
+    JSONObject arguments = new JSONObject();
+    arguments.put("action", "actionCommand");
+    arguments.put("data", "actionData");
+
+    ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
+    BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
+        binaryMessageHandlerCaptor.getValue();
+    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.sendAppPrivateCommand", arguments);
+    verify(mockEventHandler, times(1))
+        .sendAppPrivateCommand(any(View.class), eq("actionCommand"), bundleCaptor.capture());
+    assertEquals("actionData", bundleCaptor.getValue().getCharSequence("data"));
+  }
+
+  @Test
+  @TargetApi(30)
+  @Config(sdk = 30)
+  public void ime_windowInsetsSync() {
+    FlutterView testView = new FlutterView(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    TextInputPlugin.ImeSyncDeferringInsetsCallback imeSyncCallback =
+        textInputPlugin.getImeSyncCallback();
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+    testView.attachToFlutterEngine(flutterEngine);
+
+    WindowInsetsAnimation animation = mock(WindowInsetsAnimation.class);
+    when(animation.getTypeMask()).thenReturn(WindowInsets.Type.ime());
+
+    List<WindowInsetsAnimation> animationList = new ArrayList();
+    animationList.add(animation);
+
+    WindowInsets.Builder builder = new WindowInsets.Builder();
+    WindowInsets noneInsets = builder.build();
+
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 100));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(10, 10, 10, 40));
+    WindowInsets imeInsets0 = builder.build();
+
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 30));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(10, 10, 10, 40));
+    WindowInsets imeInsets1 = builder.build();
+
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 200));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(10, 10, 10, 0));
+    WindowInsets deferredInsets = builder.build();
+
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+
+    imeSyncCallback.onApplyWindowInsets(testView, deferredInsets);
+    imeSyncCallback.onApplyWindowInsets(testView, noneInsets);
+
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
+
+    imeSyncCallback.onPrepare(animation);
+    imeSyncCallback.onApplyWindowInsets(testView, deferredInsets);
+    imeSyncCallback.onStart(animation, null);
+
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    // No change, as deferredInset is stored to be passed in onEnd()
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
+
+    imeSyncCallback.onProgress(imeInsets0, animationList);
+
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(40, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(10, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(60, viewportMetricsCaptor.getValue().viewInsetBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
+
+    imeSyncCallback.onProgress(imeInsets1, animationList);
+
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(40, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(10, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom); // Cannot be negative
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
+
+    imeSyncCallback.onEnd(animation);
+
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    // Values should be of deferredInsets
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(10, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(200, viewportMetricsCaptor.getValue().viewInsetBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
+  }
+
+  interface EventHandler {
+    void sendAppPrivateCommand(View view, String action, Bundle data);
+  }
+
   @Implements(InputMethodManager.class)
   public static class TestImm extends ShadowInputMethodManager {
     private InputMethodSubtype currentInputMethodSubtype;
@@ -573,6 +741,7 @@ public class TextInputPluginTest {
     private CursorAnchorInfo cursorAnchorInfo;
     private ArrayList<Integer> selectionUpdateValues;
     private boolean trackSelection = false;
+    private EventHandler handler;
 
     public TestImm() {
       selectionUpdateValues = new ArrayList<Integer>();
@@ -595,6 +764,15 @@ public class TextInputPluginTest {
 
     public int getRestartCount(View view) {
       return restartCounter.get(view.hashCode(), /*defaultValue=*/ 0);
+    }
+
+    public void setEventHandler(EventHandler eventHandler) {
+      handler = eventHandler;
+    }
+
+    @Implementation
+    public void sendAppPrivateCommand(View view, String action, Bundle data) {
+      handler.sendAppPrivateCommand(view, action, data);
     }
 
     @Implementation
