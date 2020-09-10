@@ -4,7 +4,7 @@ This directory is for Flutter Web engine integration tests that does not need a 
 
 Tests can be run on both 'debug', 'release' and 'profile' modes. However 'release' mode will shorten the error. Use 'debug' mode for trouble-shooting purposes where you can also see the full stack trace.
 
-## To run the application under test for trouble shooting purposes
+## To run the application under test for troubleshooting purposes
 
 ```
 flutter run -d web-server lib/text_editing_main.dart --local-engine=host_debug_unopt
@@ -36,4 +36,4 @@ The default browser is Chrome, you can also use `android-chrome`, `safari`,`ios-
 flutter drive -v --target=test_driver/text_editing_integration.dart -d web-server --release --browser-name=firefox --local-engine=host_debug_unopt
 ```
 
-More details for "Running Flutter Driver tests with Web" can be founf in [wiki](https://github.com/flutter/flutter/wiki/Running-Flutter-Driver-tests-with-Web).
+More details for "Running Flutter Driver tests with Web" can be found in [wiki](https://github.com/flutter/flutter/wiki/Running-Flutter-Driver-tests-with-Web).
