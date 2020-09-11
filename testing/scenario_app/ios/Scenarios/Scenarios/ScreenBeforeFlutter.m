@@ -27,7 +27,7 @@
   showFlutterButton.tintColor = UIColor.whiteColor;
   showFlutterButton.clipsToBounds = YES;
   [showFlutterButton addTarget:self
-                        action:@selector(showFlutter)
+                        action:@selector(showFlutter:)
               forControlEvents:UIControlEventTouchUpInside];
 
   [self.view addSubview:showFlutterButton];
@@ -39,11 +39,11 @@
   [_engine runWithEntrypoint:nil];
 }
 
-- (FlutterViewController*)showFlutter {
+- (FlutterViewController*)showFlutter:(void (^)(void))showCompletion {
   FlutterViewController* flutterVC = [[FlutterViewController alloc] initWithEngine:_engine
                                                                            nibName:nil
                                                                             bundle:nil];
-  [self presentViewController:flutterVC animated:NO completion:nil];
+  [self presentViewController:flutterVC animated:NO completion:showCompletion];
   return flutterVC;
 }
 
