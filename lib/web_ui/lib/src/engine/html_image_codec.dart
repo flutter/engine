@@ -123,7 +123,7 @@ class HtmlImage implements ui.Image {
   }
 
   @override
-  ui.Image createHandle() => this;
+  ui.Image clone() => this;
 
   @override
   List<StackTrace>? debugGetOpenHandleStackTraces() => null;

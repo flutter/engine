@@ -1568,13 +1568,13 @@ enum PixelFormat {
 ///
 /// A class or method that receives an image object must call [dispose] on the
 /// handle when it is no longer needed. To create a shareable reference to the
-/// underlying image, call [createHandle]. The method or object that recieves
+/// underlying image, call [clone]. The method or object that recieves
 /// the new instance will then be responsible for disposing it, and the
 /// underlying image itself will be disposed when all outstanding handles are
 /// disposed.
 ///
 /// If `dart:ui` passes an `Image` object and the recipient wishes to share
-/// that handle with other callers, it is critical that [createHandle] is called
+/// that handle with other callers, it is critical that [clone] is called
 /// _before_ [dispose]. A handle that has been disposed cannot create new
 /// handles anymore.
 ///
@@ -1648,11 +1648,10 @@ class Image {
   bool _disposed = false;
 
   /// If asserts are enabled, returns the [StackTrace]s of each open handle from
-  /// [createHandle], in creation order.
+  /// [clone], in creation order.
   ///
   /// If asserts are disabled, this method always returns null.
   List<StackTrace>? debugGetOpenHandleStackTraces() {
-    assert(!_disposed && !_image._disposed);
     List<StackTrace>? stacks;
     assert(() {
       stacks = _image._handles.map((Image handle) => handle._debugStack!).toList();
@@ -1663,12 +1662,17 @@ class Image {
 
   /// Creates a disposable handle to this image.
   ///
-  /// The returned object behaves identically to this image, except calling
+  /// The returned object behaves identically to this image. Calling
   /// [dispose] on it will only dispose the underlying native resources if it
   /// is the last remaining handle.
-  Image createHandle() {
+  Image clone() {
     if (_disposed) {
-      throw StateError('Object disposed');
+      throw StateError(
+        'Cannot clone a disposed image.\n'
+        'The clone() method of a previously-disposed Image was called. Once an '
+        'Image object has been disposed, it can no longer be used to create '
+        'handles, as the underlying data may have been released.'
+      );
     }
     return Image._(_image);
   }
@@ -1733,25 +1737,24 @@ typedef ImageDecoderCallback = void Function(Image result);
 ///
 /// To obtain an instance of the [FrameInfo] interface, see
 /// [Codec.getNextFrame].
-@pragma('vm:entry-point')
-class FrameInfo extends NativeFieldWrapperClass2 {
+class FrameInfo {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///
   /// To obtain an instance of the [FrameInfo] interface, see
   /// [Codec.getNextFrame].
-  @pragma('vm:entry-point')
-  FrameInfo._();
+  FrameInfo._({required this.duration, required this.image});
 
   /// The duration this frame should be shown.
-  Duration get duration => Duration(milliseconds: _durationMillis);
-  int get _durationMillis native 'FrameInfo_durationMillis';
+  ///
+  /// A zero duration indicates that the frame should be shown indefinitely.
+  final Duration duration;
 
-  Image? _cachedImage;
 
   /// The [Image] object for this frame.
-  Image get image => _cachedImage ??= Image._(_image);
-  _Image get _image native 'FrameInfo_image';
+  ///
+  /// This object must be disposed by the recipient of this frame info.
+  final Image image;
 }
 
 /// A handle to an image codec.
@@ -1772,26 +1775,49 @@ class Codec extends NativeFieldWrapperClass2 {
   @pragma('vm:entry-point')
   Codec._();
 
+  int? _cachedFrameCount;
   /// Number of frames in this image.
-  int get frameCount native 'Codec_frameCount';
+  int get frameCount => _cachedFrameCount ??= _frameCount;
+  int get _frameCount native 'Codec_frameCount';
 
+  int? _cachedRepetitionCount;
   /// Number of times to repeat the animation.
   ///
   /// * 0 when the animation should be played once.
   /// * -1 for infinity repetitions.
-  int get repetitionCount native 'Codec_repetitionCount';
+  int get repetitionCount => _cachedRepetitionCount ??= _repetitionCount;
+  int get _repetitionCount native 'Codec_repetitionCount';
+
+  FrameInfo? _cachedFrame;
 
   /// Fetches the next animation frame.
   ///
   /// Wraps back to the first frame after returning the last frame.
   ///
   /// The returned future can complete with an error if the decoding has failed.
-  Future<FrameInfo> getNextFrame() {
-    return _futurize(_getNextFrame);
+  Future<FrameInfo> getNextFrame() async {
+    if (_cachedFrame == null || frameCount != 1) {
+      final Completer<void> completer = Completer<void>.sync();
+      final String? error = _getNextFrame((_Image? image, int durationMilliseconds) {
+        if (image == null) {
+          throw Exception('Codec failed to produce an image, possibly due to invalid image data.');
+        }
+        _cachedFrame = FrameInfo._(
+          image: Image._(image),
+          duration: Duration(milliseconds: durationMilliseconds),
+        );
+        completer.complete();
+      });
+      if (error != null) {
+        throw Exception(error);
+      }
+      await completer.future;
+    }
+    return _cachedFrame!;
   }
 
   /// Returns an error message on failure, null on success.
-  String _getNextFrame(_Callback<FrameInfo> callback) native 'Codec_getNextFrame';
+  String? _getNextFrame(void Function(_Image?, int) callback) native 'Codec_getNextFrame';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.

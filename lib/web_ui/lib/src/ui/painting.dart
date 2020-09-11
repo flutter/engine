@@ -330,7 +330,7 @@ abstract class Image {
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba});
   void dispose();
 
-  Image createHandle() => this;
+  Image clone() => this;
 
   List<StackTrace>? debugGetOpenHandleStackTraces() => null;
 

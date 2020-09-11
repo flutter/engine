@@ -720,7 +720,7 @@ class TestImage implements Image {
   void dispose() {}
 
   @override
-  Image createHandle() => this;
+  Image clone() => this;
 
   List<StackTrace>? debugGetOpenHandleStackTraces() => <StackTrace>[];
 }
