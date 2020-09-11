@@ -607,7 +607,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
   }
-  NSLog(@"FlutterViewController instance %@ sends AppLifecycleState.inactive", self);
+  NSLog(@"FlutterViewController instance %@ is viewWillAppear", self);
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 
   [super viewWillAppear:animated];
@@ -617,7 +617,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   TRACE_EVENT0("flutter", "viewDidAppear");
   [self onUserSettingsChanged:nil];
   [self onAccessibilityStatusChanged:nil];
-  NSLog(@"FlutterViewController instance %@ sends AppLifecycleState.inactive", self);
+  NSLog(@"FlutterViewController instance %@ is viewDidAppear", self);
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
 
   [super viewDidAppear:animated];
@@ -625,7 +625,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewWillDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillDisappear");
-  NSLog(@"FlutterViewController instance %@ sends AppLifecycleState.inactive", self);
+  NSLog(@"FlutterViewController instance %@ is viewWillDisappear", self);
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 
   [super viewWillDisappear:animated];
@@ -635,7 +635,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   TRACE_EVENT0("flutter", "viewDidDisappear");
   if ([_engine.get() viewController] == self) {
     [self surfaceUpdated:NO];
-    NSLog(@"FlutterViewController instance %@ sends AppLifecycleState.inactive", self);
+    NSLog(@"FlutterViewController instance %@ is viewDidDisappear", self);
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
     [self flushOngoingTouches];
     [_engine.get() notifyLowMemory];
@@ -693,22 +693,26 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   TRACE_EVENT0("flutter", "applicationBecameActive");
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
+  NSLog(@"FlutterViewController instance %@ is applicationBecameActive", self);
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [self surfaceUpdated:NO];
+  NSLog(@"FlutterViewController instance %@ is applicationWillResignActive", self);
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
+  NSLog(@"FlutterViewController instance %@ is applicationDidEnterBackground", self);
   [self goToApplicationLifecycle:@"AppLifecycleState.paused"];
 }
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
+  NSLog(@"FlutterViewController instance %@ is applicationWillEnterForeground", self);
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
