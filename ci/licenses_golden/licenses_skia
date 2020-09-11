@@ -1,4 +1,4 @@
-Signature: 23a22d11786d4d278c0b66b086122579
+Signature: 4e289420f54e551dcfca0fa1fe378bde
 
 UNUSED LICENSES:
 
@@ -4088,6 +4088,7 @@ FILE: ../../../third_party/skia/modules/skottie/src/animator/VectorKeyframeAnima
 FILE: ../../../third_party/skia/modules/skottie/src/animator/VectorKeyframeAnimator.h
 FILE: ../../../third_party/skia/modules/skottie/src/effects/BrightnessContrastEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/CornerPinEffect.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/effects/DisplacementMapEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/GlowStyles.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/ShadowStyles.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/AudioLayer.cpp
