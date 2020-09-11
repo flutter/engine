@@ -1585,20 +1585,50 @@ enum PixelFormat {
 ///  * [ImageDescriptor], which allows reading information about the image and
 ///    creating a codec to decode it.
 ///  * [instantiateImageCodec], a utility method that wraps [ImageDescriptor].
-@pragma('vm:entry-point')
-class Image extends NativeFieldWrapperClass2 {
-  // This class is created by the engine, and should not be instantiated
-  // or extended directly.
-  //
-  // To obtain an [Image] object, use [instantiateImageCodec].
-  @pragma('vm:entry-point')
-  Image._();
+class Image {
+  Image._(this._image) {
+    assert(() {
+      _debugStack = StackTrace.current;
+      return true;
+    }());
+    _image._handles.add(this);
+  }
+
+  final _Image _image;
+
+  StackTrace? _debugStack;
 
   /// The number of image pixels along the image's horizontal axis.
-  int get width native 'Image_width';
+  int get width {
+    assert(!_disposed && !_image._disposed);
+    return _image.width;
+  }
 
   /// The number of image pixels along the image's vertical axis.
-  int get height native 'Image_height';
+  int get height {
+    assert(!_disposed && !_image._disposed);
+    return _image.height;
+  }
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  ///
+  /// All outstanding handles from [createHandle] should be disposed before
+  /// calling this. Disposing all outstanding handles will automatically
+  /// dispose this object.
+  void dispose() {
+    assert(() {
+      assert(!_disposed && !_image._disposed);
+      assert(_image._handles.contains(this));
+      _disposed = true;
+      return true;
+    }());
+    final bool removed = _image._handles.remove(this);
+    assert(removed);
+    if (_image._handles.isEmpty) {
+      _image.dispose();
+    }
+  }
 
   /// Converts the [Image] object into a byte array.
   ///
@@ -1608,54 +1638,21 @@ class Image extends NativeFieldWrapperClass2 {
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
-    return _futurize((_Callback<ByteData> callback) {
-      return _toByteData(format.index, (Uint8List? encoded) {
-        callback(encoded!.buffer.asByteData());
-      });
-    });
+    assert(!_disposed && !_image._disposed);
+    return _image.toByteData(format: format);
   }
-
-  /// Returns an error message on failure, null on success.
-  String? _toByteData(int format, _Callback<Uint8List?> callback) native 'Image_toByteData';
 
   bool _disposed = false;
-  /// Release the resources used by this object. The object is no longer usable
-  /// after this method is called.
-  ///
-  /// All outstanding handles from [createHandle] should be disposed before
-  /// calling this. Disposing all outstanding handles will automatically
-  /// dispose this object.
-  void dispose() {
-    assert(() {
-      assert(!_disposed);
-      assert(
-        _handles.isEmpty,
-        'Attempted to dispose of an Image object that has ${_handles.length} open handles.',
-      );
-      _disposed = true;
-      return true;
-    }());
-    _dispose();
-  }
-
-  void _dispose() native 'Image_dispose';
-
-  /// Returns the native wrapper of the Image. Any calls to `native` must use
-  /// this getter to avoid passing an [_ImageHandle] to native, which will
-  /// crash.
-  Image get _unwrapped => this;
-
-  Set<_ImageHandle> _handles = <_ImageHandle>{};
 
   /// If asserts are enabled, returns the [StackTrace]s of each open handle from
   /// [createHandle], in creation order.
   ///
   /// If asserts are disabled, this method always returns null.
   List<StackTrace>? debugGetOpenHandleStackTraces() {
-    assert(!_disposed);
+    assert(!_disposed && !_image._disposed);
     List<StackTrace>? stacks;
     assert(() {
-      stacks = _handles.map((_ImageHandle handle) => handle.debugStack!).toList();
+      stacks = _image._handles.map((Image handle) => handle._debugStack!).toList();
       return true;
     }());
     return stacks;
@@ -1670,95 +1667,60 @@ class Image extends NativeFieldWrapperClass2 {
     if (_disposed) {
       throw StateError('Object disposed');
     }
-    final _ImageHandle handle = _ImageHandle(this);
-    _handles.add(handle);
-    return handle;
+    return Image._(_image);
   }
 
   @override
-  String toString() => '[$width\u00D7$height]';
+  String toString() => _image.toString();
 }
 
-/// A disposable handle to an [Image].
-///
-/// Handles can create more handles as long as they (and the underlying image)
-/// are not disposed.
-class _ImageHandle implements Image {
-  _ImageHandle(this._image) {
-    assert(() {
-      debugStack = StackTrace.current;
-      return true;
-    }());
-  }
+@pragma('vm:entry-point')
+class _Image extends NativeFieldWrapperClass2 {
+  // This class is created by the engine, and should not be instantiated
+  // or extended directly.
+  //
+  // To obtain an [Image] object, use [instantiateImageCodec].
+  @pragma('vm:entry-point')
+  _Image._();
 
-  final Image _image;
+  int get width native 'Image_width';
 
-  StackTrace? debugStack;
+  int get height native 'Image_height';
 
-  @override
-  int get width {
-    assert(!_disposed && !_image._disposed);
-    return _image.width;
-  }
-
-  @override
-  int get height {
-    assert(!_disposed && !_image._disposed);
-    return _image.height;
-  }
-
-  @override
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
-    assert(!_disposed && !_image._disposed);
-    return _image.toByteData(format: format);
+    return _futurize((_Callback<ByteData> callback) {
+      return _toByteData(format.index, (Uint8List? encoded) {
+        callback(encoded!.buffer.asByteData());
+      });
+    });
   }
 
-  @override
-  Image get _unwrapped {
-    assert(!_disposed && !_image._disposed);
-    return _image;
-  }
+  /// Returns an error message on failure, null on success.
+  String? _toByteData(int format, _Callback<Uint8List?> callback) native 'Image_toByteData';
 
-  @override
-  List<StackTrace>? debugGetOpenHandleStackTraces() {
-    assert(!_disposed && !_image._disposed);
-    return _image.debugGetOpenHandleStackTraces();
-  }
-
-
-  @override
-  Image createHandle() {
-    assert(!_disposed && !_image._disposed);
-    return _image.createHandle();
-  }
-
-  @override
   bool _disposed = false;
-
-  @override
   void dispose() {
     assert(() {
-      assert(!_disposed && !_image._disposed);
-      assert(_image._handles.contains(this));
+      assert(!_disposed);
+      assert(
+        _handles.isEmpty,
+        'Attempted to dispose of an Image object that has ${_handles.length} '
+        'open handles.\n'
+        'If you see this, it is a bug in dart:ui. Please file an issue at '
+        'https://github.com/flutter/flutter/issues/new.',
+      );
       _disposed = true;
       return true;
     }());
-    _image._handles.remove(this);
-    if (_image._handles.isEmpty) {
-      _image.dispose();
-    }
+    _dispose();
   }
 
-  /// Unused private implementation of [Image]
+  void _dispose() native 'Image_dispose';
+
+  Set<Image> _handles = <Image>{};
 
   @override
-  Set<_ImageHandle> _handles = <_ImageHandle>{};
-
-  @override
-  void _dispose() => throw UnimplementedError();
-
-  @override
-  String? _toByteData(int format, _Callback<Uint8List?> callback) => throw UnimplementedError();
+  String toString() => '[$width\u00D7$height]';
 }
 
 /// Callback signature for [decodeImageFromList].
@@ -1782,8 +1744,11 @@ class FrameInfo extends NativeFieldWrapperClass2 {
   Duration get duration => Duration(milliseconds: _durationMillis);
   int get _durationMillis native 'FrameInfo_durationMillis';
 
+  Image? _cachedImage;
+
   /// The [Image] object for this frame.
-  Image get image native 'FrameInfo_image';
+  Image get image => _cachedImage ??= Image._(_image);
+  _Image get _image native 'FrameInfo_image';
 }
 
 /// A handle to an image codec.
@@ -3386,10 +3351,10 @@ class ImageShader extends Shader {
     if (matrix4.length != 16)
       throw ArgumentError('"matrix4" must have 16 entries.');
     _constructor();
-    _initWithImage(image._unwrapped, tmx.index, tmy.index, matrix4);
+    _initWithImage(image._image, tmx.index, tmy.index, matrix4);
   }
   void _constructor() native 'ImageShader_constructor';
-  void _initWithImage(Image image, int tmx, int tmy, Float64List matrix4) native 'ImageShader_initWithImage';
+  void _initWithImage(_Image image, int tmx, int tmy, Float64List matrix4) native 'ImageShader_initWithImage';
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.
@@ -3990,9 +3955,9 @@ class Canvas extends NativeFieldWrapperClass2 {
     assert(image != null); // image is checked on the engine side
     assert(_offsetIsValid(offset));
     assert(paint != null); // ignore: unnecessary_null_comparison
-    _drawImage(image._unwrapped, offset.dx, offset.dy, paint._objects, paint._data);
+    _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data);
   }
-  void _drawImage(Image image,
+  void _drawImage(_Image image,
                   double x,
                   double y,
                   List<dynamic>? paintObjects,
@@ -4013,7 +3978,7 @@ class Canvas extends NativeFieldWrapperClass2 {
     assert(_rectIsValid(src));
     assert(_rectIsValid(dst));
     assert(paint != null); // ignore: unnecessary_null_comparison
-    _drawImageRect(image._unwrapped,
+    _drawImageRect(image._image,
                    src.left,
                    src.top,
                    src.right,
@@ -4025,7 +3990,7 @@ class Canvas extends NativeFieldWrapperClass2 {
                    paint._objects,
                    paint._data);
   }
-  void _drawImageRect(Image image,
+  void _drawImageRect(_Image image,
                       double srcLeft,
                       double srcTop,
                       double srcRight,
@@ -4056,7 +4021,7 @@ class Canvas extends NativeFieldWrapperClass2 {
     assert(_rectIsValid(center));
     assert(_rectIsValid(dst));
     assert(paint != null); // ignore: unnecessary_null_comparison
-    _drawImageNine(image._unwrapped,
+    _drawImageNine(image._image,
                    center.left,
                    center.top,
                    center.right,
@@ -4068,7 +4033,7 @@ class Canvas extends NativeFieldWrapperClass2 {
                    paint._objects,
                    paint._data);
   }
-  void _drawImageNine(Image image,
+  void _drawImageNine(_Image image,
                       double centerLeft,
                       double centerTop,
                       double centerRight,
@@ -4345,7 +4310,7 @@ class Canvas extends NativeFieldWrapperClass2 {
     final Float32List? cullRectBuffer = cullRect?._value32;
 
     _drawAtlas(
-      paint._objects, paint._data, atlas._unwrapped, rstTransformBuffer, rectBuffer,
+      paint._objects, paint._data, atlas._image, rstTransformBuffer, rectBuffer,
       colorBuffer, (blendMode ?? BlendMode.src).index, cullRectBuffer
     );
   }
@@ -4514,14 +4479,14 @@ class Canvas extends NativeFieldWrapperClass2 {
       throw ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
     _drawAtlas(
-      paint._objects, paint._data, atlas._unwrapped, rstTransforms, rects,
+      paint._objects, paint._data, atlas._image, rstTransforms, rects,
       colors, (blendMode ?? BlendMode.src).index, cullRect?._value32
     );
   }
 
   void _drawAtlas(List<dynamic>? paintObjects,
                   ByteData paintData,
-                  Image atlas,
+                  _Image atlas,
                   Float32List rstTransforms,
                   Float32List rects,
                   Int32List? colors,
@@ -4575,11 +4540,13 @@ class Picture extends NativeFieldWrapperClass2 {
     if (width <= 0 || height <= 0)
       throw Exception('Invalid image dimensions.');
     return _futurize(
-      (_Callback<Image> callback) => _toImage(width, height, callback)
+      (_Callback<Image> callback) => _toImage(width, height, (_Image image) {
+        callback(Image._(image));
+      }),
     );
   }
 
-  String _toImage(int width, int height, _Callback<Image> callback) native 'Picture_toImage';
+  String _toImage(int width, int height, _Callback<_Image> callback) native 'Picture_toImage';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.

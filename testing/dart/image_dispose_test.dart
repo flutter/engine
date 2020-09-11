@@ -18,7 +18,7 @@ void main() {
   }());
   final Matcher throwsAssertionError = throwsA(const TypeMatcher<AssertionError>());
 
-  test('Image.dispose asserts if handles are active', () async {
+  test('Handles are distinct', () async {
     final Uint8List bytes = await readFile('2x2.png');
     final Codec codec = await instantiateImageCodec(bytes);
     final FrameInfo frame = await codec.getNextFrame();
@@ -31,13 +31,9 @@ void main() {
 
     final Image handle2 = handle1.createHandle();
     expect(handle1 != handle2, true);
+    expect(handle1 != frame.image, true);
+    expect(frame.image == frame.image, true);
 
-    if (assertsEnabled) {
-      expect(() => frame.image.dispose(), throwsAssertionError);
-      handle1.dispose();
-      expect(() => frame.image.dispose(), throwsAssertionError);
-      handle2.dispose();
-    }
     frame.image.dispose();
   });
 
@@ -80,17 +76,21 @@ void main() {
     final Image handle2 = handle1.createHandle();
 
     List<StackTrace> stackTraces = frame.image.debugGetOpenHandleStackTraces();
-    expect(stackTraces.length, 2);
-    expect(stackTraces, equals(handle2.debugGetOpenHandleStackTraces()));
+    expect(stackTraces.length, 3);
+    expect(stackTraces, equals(handle1.debugGetOpenHandleStackTraces()));
 
     handle1.dispose();
     stackTraces = frame.image.debugGetOpenHandleStackTraces();
-    expect(stackTraces.length, 1);
+    expect(stackTraces.length, 2);
     expect(stackTraces, equals(handle2.debugGetOpenHandleStackTraces()));
 
     handle2.dispose();
     stackTraces = frame.image.debugGetOpenHandleStackTraces();
-    expect(stackTraces.length, 0);
+    expect(stackTraces.length, 1);
+    expect(stackTraces, equals(frame.image.debugGetOpenHandleStackTraces()));
+
+    frame.image.dispose();
+    expect(() => frame.image.debugGetOpenHandleStackTraces(), throwsAssertionError);
   }, skip: !assertsEnabled);
 }
 
