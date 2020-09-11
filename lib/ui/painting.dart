@@ -1566,18 +1566,17 @@ enum PixelFormat {
 /// To draw an [Image], use one of the methods on the [Canvas] class, such as
 /// [Canvas.drawImage].
 ///
-/// A class or method that receives an image object should call [createHandle]
-/// immediately and then call [dispose] on the handle when it is no longer
-/// needed. The underlying image data will be released only when all outstanding
-/// handles are disposed.
+/// A class or method that receives an image object must call [dispose] on the
+/// handle when it is no longer needed. To create a shareable reference to the
+/// underlying image, call [createHandle]. The method or object that recieves
+/// the new instance will then be responsible for disposing it, and the
+/// underlying image itself will be disposed when all outstanding handles are
+/// disposed.
 ///
-/// It is also possible to call dispose directly on the image object received
-/// from [FrameInfo.image]. Doing so will attempt to free any native resources
-/// allocated for the object, but it will trigger an assert if there are any
-/// oustanding handles created by [createHandle] for this image.
-///
-/// Once all handles have been disposed, the image object is no longer usable
-/// from Dart code, including for creating new handles.
+/// If `dart:ui` passes an `Image` object and the recipient wishes to share
+/// that handle with other callers, it is critical that [createHandle] is called
+/// _before_ [dispose]. A handle that has been disposed cannot create new
+/// handles anymore.
 ///
 /// See also:
 ///
@@ -1610,12 +1609,16 @@ class Image {
     return _image.height;
   }
 
-  /// Release the resources used by this object. The object is no longer usable
-  /// after this method is called.
+  /// Release this handle's claim on the underlying Image. This handle is no
+  /// longer usable after this method is called.
   ///
-  /// All outstanding handles from [createHandle] should be disposed before
-  /// calling this. Disposing all outstanding handles will automatically
-  /// dispose this object.
+  /// Once all outstanding handles have been disposed, the underlying image will
+  /// be disposed as well.
+  ///
+  /// In debug mode, [debugGetOpenHandleStackTraces] will return a list of
+  /// [StackTrace] objects from all open handles' creation points. This is
+  /// useful when trying to determine what parts of the program are keeping an
+  /// image resident in memory.
   void dispose() {
     assert(() {
       assert(!_disposed && !_image._disposed);
