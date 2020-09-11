@@ -38,19 +38,20 @@ FLUTTER_ASSERT_ARC
 - (void)setUp {
   [super setUp];
   self.continueAfterFailure = NO;
+  // Since this test checks for view controller and application lifecycles, the starting point
+  // must be well defined.
+  XCTAssertEqual([UIApplication sharedApplication].applicationState, UIApplicationStateActive);
 }
 
 // TODO(cbracken): re-enable this test by removing the skip_ prefix once the source of its flakiness
 // has been identified. https://github.com/flutter/flutter/issues/61620
 - (void)skip_testDismissedFlutterViewControllerNotRespondingToApplicationLifecycle {
   XCTestExpectation* engineStartedExpectation = [self expectationWithDescription:@"Engine started"];
-
   // Let the engine finish booting (at the end of which the channels are properly set-up) before
   // moving onto the next step of showing the next view controller.
   ScreenBeforeFlutter* rootVC = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:^void() {
     [engineStartedExpectation fulfill];
   }];
-
   [self waitForExpectationsWithTimeout:5 handler:nil];
 
   UIApplication* application = UIApplication.sharedApplication;
@@ -66,7 +67,7 @@ FLUTTER_ASSERT_ARC
     [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.resumed"
                                                     forStep:@"showing a FlutterViewController"]
   ]];
-  
+
   [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
     if (lifecycleExpectations.count == 0) {
       XCTFail(@"Unexpected lifecycle transition: %@", message);
@@ -74,8 +75,8 @@ FLUTTER_ASSERT_ARC
     }
     XCAppLifecycleTestExpectation* nextExpectation = [lifecycleExpectations objectAtIndex:0];
     if (![[nextExpectation expectedLifecycle] isEqualToString:message]) {
-      XCTFail(@"Expected lifecycle %@ but instead received %@",
-              [nextExpectation expectedLifecycle], message);
+      XCTFail(@"Expected lifecycle %@ but instead received %@", [nextExpectation expectedLifecycle],
+              message);
       return;
     }
 
@@ -93,8 +94,6 @@ FLUTTER_ASSERT_ARC
       [vcShown fulfill];
     }];
     [self waitForExpectationsWithTimeout:5.0 handler:nil];
-    NSLog(@"FlutterViewController instance %@ created", flutterVC);
-
     // The expectations list isn't dequeued by the message handler yet.
     [self waitForExpectations:lifecycleExpectations timeout:5 enforceOrder:YES];
 
@@ -212,7 +211,7 @@ FLUTTER_ASSERT_ARC
     [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.resumed"
                                                     forStep:@"showing a FlutterViewController"]
   ]];
-  
+
   [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
     if (lifecycleExpectations.count == 0) {
       XCTFail(@"Unexpected lifecycle transition: %@", message);
@@ -220,8 +219,8 @@ FLUTTER_ASSERT_ARC
     }
     XCAppLifecycleTestExpectation* nextExpectation = [lifecycleExpectations objectAtIndex:0];
     if (![[nextExpectation expectedLifecycle] isEqualToString:message]) {
-      XCTFail(@"Expected lifecycle %@ but instead received %@",
-              [nextExpectation expectedLifecycle], message);
+      XCTFail(@"Expected lifecycle %@ but instead received %@", [nextExpectation expectedLifecycle],
+              message);
       return;
     }
 
@@ -236,8 +235,6 @@ FLUTTER_ASSERT_ARC
       [vcShown fulfill];
     }];
     [self waitForExpectationsWithTimeout:5.0 handler:nil];
-    NSLog(@"FlutterViewController instance %@ created", flutterVC);
-
     [self waitForExpectations:lifecycleExpectations timeout:5];
 
     // Now put the FlutterViewController into background.
@@ -324,7 +321,7 @@ FLUTTER_ASSERT_ARC
     [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.resumed"
                                                     forStep:@"showing a FlutterViewController"]
   ]];
-  
+
   [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
     if (lifecycleExpectations.count == 0) {
       XCTFail(@"Unexpected lifecycle transition: %@", message);
@@ -332,15 +329,15 @@ FLUTTER_ASSERT_ARC
     }
     XCAppLifecycleTestExpectation* nextExpectation = [lifecycleExpectations objectAtIndex:0];
     if (![[nextExpectation expectedLifecycle] isEqualToString:message]) {
-      XCTFail(@"Expected lifecycle %@ but instead received %@",
-              [nextExpectation expectedLifecycle], message);
+      XCTFail(@"Expected lifecycle %@ but instead received %@", [nextExpectation expectedLifecycle],
+              message);
       return;
     }
 
     [nextExpectation fulfill];
     [lifecycleExpectations removeObjectAtIndex:0];
   }];
-  
+
   // At the end of Flutter VC, we want to make sure it deallocs and sends detached signal.
   // Using autoreleasepool will guarantee that.
   FlutterViewController* flutterVC;
@@ -350,8 +347,6 @@ FLUTTER_ASSERT_ARC
       [vcShown fulfill];
     }];
     [self waitForExpectationsWithTimeout:5.0 handler:nil];
-    NSLog(@"FlutterViewController instance %@ created", flutterVC);
-
     [self waitForExpectations:lifecycleExpectations timeout:5];
 
     // Starts dealloc flutter VC.
