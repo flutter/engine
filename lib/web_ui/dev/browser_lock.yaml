@@ -28,12 +28,15 @@ ios-safari:
   minorVersion: 0
   device: 'iPhone 11'
   # `xcrun simctl` command is used to take screenshots. It takes the screenshot
-  # of the entire simulator. Therefore we need to all the parts other than the
-  # browsers' content. Do not forget to update these values during simulator
+  # of the entire simulator. Therefore we need to crop all the parts other than
+  # the browsers' content. Do not forget to update these values during simulator
   # version upgrade.
   # `heightOfHeader` is the number of pixels taken by the phone's header menu
   # and the browsers address bar.
   heightOfHeader: 282
+  # `heightOfFooter` is the number of pixels taken by the phone's navigation
+  # menu.
+  heightOfFooter: 250
 ## geckodriver is used for testing Firefox Browser. It works with multiple
 ## Firefox Browser versions.
 ## See: https://github.com/mozilla/geckodriver/releases

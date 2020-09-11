@@ -96,7 +96,9 @@ class BrowserPlatform extends PlatformPlugin {
   /// The HTTP client to use when caching JS files in `pub serve`.
   final HttpClient _http;
 
-  /// Handles taking screenshots for diffent browsers.
+  /// Handles taking screenshots during tests.
+  ///
+  /// Implementation will differ depending on the browser.
   ScreenshotManager _screenshotManager;
 
   /// Whether [close] has been called.

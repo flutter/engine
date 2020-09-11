@@ -14,12 +14,19 @@ import 'package:yaml/yaml.dart';
 
 import 'common.dart';
 
-/// [DriverManager] implementation for Chrome.
+/// [ScreenshotManager] implementation for Chrome.
 ///
 /// This manager can be used for both macOS and Linux.
 class ChromeScreenshotManager extends ScreenshotManager {
   String get filenameSuffix => '';
 
+  /// Capture a screenshot of the web content.
+  ///
+  /// Uses Webkit Inspection Protocol server's `captureScreenshot` API.
+  ///
+  /// [region] is used to decide which part of the web content will be used in
+  /// test image. It includes starting coordinate x,y as well as height and
+  /// width of the area to capture.
   Future<Image> capture(Map<String, dynamic> region) async {
     final wip.ChromeConnection chromeConnection =
         wip.ChromeConnection('localhost', kDevtoolsPort);
@@ -37,7 +44,8 @@ class ChromeScreenshotManager extends ScreenshotManager {
           'width': region['width'],
           'height': region['height'],
           'scale':
-              1, // This is NOT the DPI of the page, instead it's the "zoom level".
+              // This is NOT the DPI of the page, instead it's the "zoom level".
+              1,
         },
       };
     }
@@ -62,7 +70,7 @@ class ChromeScreenshotManager extends ScreenshotManager {
   }
 }
 
-/// [DriverManager] implementation for Safari.
+/// [ScreenshotManager] implementation for Safari.
 ///
 /// This manager is will only be created/used for macOS.
 class IOSSafariScreenshotManager extends ScreenshotManager {
@@ -73,17 +81,60 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
   IOSSafariScreenshotManager() {
     final YamlMap browserLock = BrowserLock.instance.configuration;
     _heightOfHeader = browserLock['ios-safari']['heightOfHeader'] as int;
+    _heightOfFooter = browserLock['ios-safari']['heightOfFooter'] as int;
   }
 
-  /// Part to crop from the top of the image.
+  /// Height of the part to crop from the top of the image.
   ///
   /// `xcrun simctl` command takes the screenshot of the entire simulator. We
   /// are cropping top bit from screenshot, otherwise due to the clock on top of
   /// the screen, the screenshot will differ between each run.
   /// Note that this gap can change per phone and per iOS version. For more
-  /// details refer to `browser_lock,yaml` file.
+  /// details refer to `browser_lock.yaml` file.
   int _heightOfHeader;
 
+  /// Height of the part to crop from the bottom of the image.
+  ///
+  /// This area is the footer navigation bar of the phone, it is not the area
+  /// used by tests (which is inside the browser).
+  int _heightOfFooter;
+
+  /// Capture a screenshot of entire simulator.
+  ///
+  /// Example screenshot with dimensions: W x H.
+  ///
+  ///  <----------  W ------------->
+  ///  _____________________________
+  /// | Phone Top bar (clock etc.)  |   Ʌ
+  /// |_____________________________|   |
+  /// | Broswer search bar          |   |
+  /// |_____________________________|   |
+  /// | Web page content            |   |
+  /// |                             |   |
+  /// |                             |   |
+  /// |                             |
+  /// |                             |   H
+  /// |                             |
+  /// |                             |   |
+  /// |                             |   |
+  /// |                             |   |
+  /// |                             |   |
+  /// |                             |   |
+  /// |_____________________________|   |
+  /// | Phone footer bar            |   |
+  /// |_____________________________|   V
+  ///
+  /// After taking the screenshot top and bottom parts of the image by
+  /// [_heightOfHeader] and [_heightOfFooter] consecutively. Hence web content
+  /// has the dimensions:
+  ///
+  /// W x (H - [_heightOfHeader] - [_heightOfFooter])
+  ///
+  /// [region] is used to decide which part of the web content will be used in
+  /// test image. It includes starting coordinate x,y as well as height and
+  /// width of the area to capture.
+  ///
+  /// Uses simulator tool `xcrun simctl`'s 'screenshot' command.
   Future<Image> capture(Map<String, dynamic> region) async {
     final String suffix = random.nextInt(100).toString();
     final io.ProcessResult versionResult = await io.Process.run('xcrun',
@@ -94,21 +145,32 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
     }
     final io.File file = io.File('screenshot${suffix}.png');
     List<int> imageBytes;
-    if (file.existsSync()) {
-      imageBytes = await file.readAsBytes();
-    } else {
+    if (!file.existsSync()) {
       throw Exception('Failed to read the screenshot screenshot${suffix}.png.');
     }
+    imageBytes = await file.readAsBytes();
 
-    final Image screenshot = decodePng(imageBytes);
     file.deleteSync();
 
-    return copyCrop(
-        screenshot,
-        (region['x'] as int),
-        (region['y'] as int) + _heightOfHeader,
-        (region['width'] as int),
-        (region['height'] as int));
+    final Image screenshot = decodePng(imageBytes);
+    // Image with no footer and header.
+    final Image content = copyCrop(
+      screenshot,
+      0,
+      _heightOfHeader,
+      screenshot.width,
+      screenshot.height - _heightOfFooter - _heightOfHeader,
+    );
+
+    return (region == null)
+        ? content
+        : copyCrop(
+            content,
+            (region['x'] as int),
+            (region['y'] as int),
+            (region['width'] as int),
+            (region['height'] as int),
+          );
   }
 }
 
@@ -136,7 +198,9 @@ abstract class ScreenshotManager {
         'iOS Safari');
   }
 
-  /// Capture a screenshot of the screen.
+  /// Capture a screenshot.
+  ///
+  /// Please read the details for the implementing classes.
   Future<Image> capture(Map<String, dynamic> region);
 
   /// Suffix to be added to the end of the filename.

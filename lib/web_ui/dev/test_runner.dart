@@ -351,7 +351,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Whether [browser] is set to "safari".
   bool get isSafariOnMacOS => browser == 'safari' && io.Platform.isMacOS;
 
-  /// Whether [browser] is set to "safari".
+  /// Whether [browser] is set to "ios-safari".
   bool get isSafariIOS => browser == 'ios-safari' && io.Platform.isMacOS;
 
   /// Due to lack of resources Chrome integration tests only run on Linux on
