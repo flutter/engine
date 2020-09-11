@@ -40,6 +40,16 @@ FLUTTER_ASSERT_ARC
   self.continueAfterFailure = NO;
   // Since this test checks for view controller and application lifecycles, the starting point
   // must be well defined.
+  if ([UIApplication sharedApplication].applicationState != UIApplicationStateActive) {
+    NSLog(@"Initial application state is currently %zd. Waiting for active.",
+          [UIApplication sharedApplication].applicationState);
+    // Don't have to inspect the notification since the typed notification itself indicates the
+    // desired state.
+    [self expectationForNotification:UIApplicationDidBecomeActiveNotification
+                              object:self
+                             handler:nil];
+    [self waitForExpectationsWithTimeout:10.0 handler:nil];
+  }
   XCTAssertEqual([UIApplication sharedApplication].applicationState, UIApplicationStateActive);
 }
 
