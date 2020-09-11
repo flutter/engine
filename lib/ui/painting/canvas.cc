@@ -5,7 +5,7 @@
 #include "flutter/lib/ui/painting/canvas.h"
 
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 #include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/lib/ui/painting/image.h"

@@ -5,7 +5,7 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_message_codec.h"
 #include "gtest/gtest.h"
 
-#include <math.h>
+#include <cmath>
 
 // Encodes a message using FlJsonMessageCodec to a UTF-8 string.
 static gchar* encode_message(FlValue* value) {
