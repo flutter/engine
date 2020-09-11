@@ -79,7 +79,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
 
   bool support_thread_merging_;
 
-  int submitted_frame_count_ = 0;
+  std::atomic<int> submitted_frame_count_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestExternalViewEmbedder);
 };

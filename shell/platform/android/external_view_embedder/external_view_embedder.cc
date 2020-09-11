@@ -231,6 +231,7 @@ PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
   }
   raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
   // Surface switch requires to resubmit the frame.
+  // TODO(egarciad): https://github.com/flutter/flutter/issues/65652
   if (previous_frame_view_count_ == 0) {
     return PostPrerollResult::kResubmitFrame;
   }

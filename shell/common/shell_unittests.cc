@@ -1005,13 +1005,16 @@ TEST_F(ShellTest,
 ) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
 
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        external_view_embedder->UpdatePostPrerollResult(
+            PostPrerollResult::kSuccess);
         end_frame_latch.Signal();
       };
-  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSkipAndRetryFrame, true);
 
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
@@ -1026,17 +1029,14 @@ TEST_F(ShellTest,
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
   PumpOneFrame(shell.get());
+
+  // `EndFrame` changed the post preroll result to `kSuccess`.
   end_frame_latch.Wait();
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
-  external_view_embedder->UpdatePostPrerollResult(PostPrerollResult::kSuccess);
   PumpOneFrame(shell.get());
   end_frame_latch.Wait();
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
-
-  PumpOneFrame(shell.get());
-  end_frame_latch.Wait();
-  ASSERT_EQ(2, external_view_embedder->GetSubmittedFrameCount());
 
   DestroyShell(std::move(shell));
 }
@@ -1051,13 +1051,16 @@ TEST_F(ShellTest,
 ) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
 
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        external_view_embedder->UpdatePostPrerollResult(
+            PostPrerollResult::kSuccess);
         end_frame_latch.Signal();
       };
-  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kResubmitFrame, true);
 
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
@@ -1072,7 +1075,7 @@ TEST_F(ShellTest,
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
   PumpOneFrame(shell.get());
-
+  // `EndFrame` changed the post preroll result to `kSuccess`.
   end_frame_latch.Wait();
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
 
