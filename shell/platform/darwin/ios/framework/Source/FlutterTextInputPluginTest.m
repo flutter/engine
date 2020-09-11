@@ -170,6 +170,7 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - EditingState tests
 
+// TODO(justinmc): Write a similar test that shows batching happening.
 - (void)testUITextInputCallsUpdateEditingStateOnce {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
@@ -328,11 +329,24 @@ FLUTTER_ASSERT_ARC
                               }]]);
 }
 
-/*
 - (void)testUpdateEditingClientSelectionClamping {
   // Regression test for https://github.com/flutter/flutter/issues/62992.
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
+
+  // Debounced calls need to be waited for using these expectations.
+  XCTestExpectation* expectation2 = [self expectationWithDescription:@"called updateEditingClient twice"];
+  XCTestExpectation* expectation4 = [self expectationWithDescription:@"called updateEditingClient four times"];
+  __block int updateCount = 0;
+  OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+        if (updateCount == 2) {
+          [expectation2 fulfill];
+        } else if (updateCount == 4) {
+          [expectation4 fulfill];
+        }
+      });
 
   [inputView.text setString:@"SELECTION"];
   inputView.markedTextRange = nil;
@@ -355,7 +369,7 @@ FLUTTER_ASSERT_ARC
   }];
   [inputView updateEditingState];
 
-  // TODO(justinmc): I'll have to wait for this to be called.
+  [self waitForExpectations:@[expectation2] timeout:1];
   OCMVerify([engine updateEditingClient:0
                               withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                                 return ([state[@"selectionBase"] intValue]) == 0 &&
@@ -379,13 +393,13 @@ FLUTTER_ASSERT_ARC
     @"selectionExtent" : @9999
   }];
   [inputView updateEditingState];
+  [self waitForExpectations:@[expectation4] timeout:1];
   OCMVerify([engine updateEditingClient:0
                               withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                                 return ([state[@"selectionBase"] intValue]) == 9 &&
                                        ([state[@"selectionExtent"] intValue] == 9);
                               }]]);
 }
-*/
 
 #pragma mark - Autofill - Utilities
 
