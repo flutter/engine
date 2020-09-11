@@ -24,15 +24,16 @@ class LayerTree;
 enum class RasterStatus {
   // Frame has successfully rasterized.
   kSuccess,
-  // Frame is submitted twice. This is currently only called when
+  // Frame is submitted twice. This is currently only used when
   // thread configuration change occurs.
   kResubmit,
-  // Frame is dropped and a new frame is submitted instead. This is
-  // currently only called when thread configuration change occurs.
-  kSkipAndSubmit,
+  // Frame is dropped and a new frame with the same layer tree is
+  // attempted. This is currently only used when thread configuration
+  // change occurs.
+  kSkipAndRetry,
   // Frame has been successfully rasterized, but "there are additional items in
   // the pipeline waiting to be consumed. This is currently
-  // only called when thread configuration change occurs.
+  // only used when thread configuration change occurs.
   kEnqueuePipeline,
   // Failed to rasterize the frame.
   kFailed

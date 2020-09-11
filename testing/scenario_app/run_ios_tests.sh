@@ -33,12 +33,14 @@ if [[ $# -eq 1 ]]; then
   FLUTTER_ENGINE="$1"
 fi
 
-# Delete after LUCI push.
-"$SCRIPT_DIR/compile_ios_jit.sh" "$SRC_DIR/out/host_debug_unopt" "$SRC_DIR/out/$FLUTTER_ENGINE/clang_x64"
+echo "iOS Scenarios tests currently disabled due to flakiness"
+echo "See: https://github.com/flutter/flutter/issues/61620"
 
-cd ios/Scenarios
-set -o pipefail && xcodebuild -sdk iphonesimulator \
-  -scheme Scenarios \
-  -destination 'platform=iOS Simulator,name=iPhone 8' \
-  test \
-  FLUTTER_ENGINE="$FLUTTER_ENGINE"
+# TODO(cbracken): re-enable when
+# https://github.com/flutter/flutter/issues/61620 is fixed.
+# cd ios/Scenarios
+# set -o pipefail && xcodebuild -sdk iphonesimulator \
+#   -scheme Scenarios \
+#   -destination 'platform=iOS Simulator,name=iPhone 8' \
+#   test \
+#   FLUTTER_ENGINE="$FLUTTER_ENGINE"

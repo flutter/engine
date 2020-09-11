@@ -102,7 +102,7 @@ PostPrerollResult IOSSurface::PostPrerollAction(
   TRACE_EVENT0("flutter", "IOSSurface::PostPrerollAction");
   FML_CHECK(platform_views_controller_ != nullptr);
   PostPrerollResult result = platform_views_controller_->PostPrerollAction(raster_thread_merger);
-  if (result == PostPrerollResult::kSkipAndSubmitFrame) {
+  if (result == PostPrerollResult::kSkipAndRetryFrame) {
     // Commit the current transaction if the frame is dropped.
     [CATransaction commit];
   }

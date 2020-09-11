@@ -271,13 +271,14 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     // The raster thread merger may be disabled if the rasterizer is being
     // created or teared down.
     //
-    // In such cases, the current frame will be dropped, and a new frame is
-    // submitted with the same layer tree once the threads have been merged.
+    // In such cases, the current frame is dropped, and a new frame is attempted
+    // with the same layer tree.
     //
-    // That is, the raster tasks are handled on the platform thread.
+    // Eventually, the frame is submitted once this method returns `kSuccess`.
+    // At that point, the raster tasks are handled on the platform thread.
     raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
     CancelFrame();
-    return PostPrerollResult::kSkipAndSubmitFrame;
+    return PostPrerollResult::kSkipAndRetryFrame;
   }
   raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
   return PostPrerollResult::kSuccess;

@@ -245,12 +245,13 @@ class EmbeddedViewParams {
 enum class PostPrerollResult {
   // Frame has successfully rasterized.
   kSuccess,
-  // Frame is submitted twice. This is currently only called when
+  // Frame is submitted twice. This is currently only used when
   // thread configuration change occurs.
   kResubmitFrame,
-  // Frame is dropped and a new frame is submitted instead. This is
-  // currently only called when thread configuration change occurs.
-  kSkipAndSubmitFrame
+  // Frame is dropped and a new frame with the same layer tree is
+  // attempted. This is currently only used when thread configuration
+  // change occurs.
+  kSkipAndRetryFrame
 };
 
 // Facilitates embedding of platform views within the flow layer tree.

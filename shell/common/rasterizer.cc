@@ -77,9 +77,6 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
                              user_override_resource_cache_bytes_);
   }
   compositor_context_->OnGrContextCreated();
-#if !defined(OS_FUCHSIA)
-  // TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
-  // support for raster thread merger for Fuchsia.
   if (surface_->GetExternalViewEmbedder() &&
       surface_->GetExternalViewEmbedder()->SupportsDynamicThreadMerging() &&
       !raster_thread_merger_) {
@@ -98,7 +95,6 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
       }
     });
   }
-#endif
 }
 
 void Rasterizer::Teardown() {
@@ -178,7 +174,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // front of the queue and also change the consume status to more available.
 
   auto should_resubmit_frame = raster_status == RasterStatus::kResubmit ||
-                               raster_status == RasterStatus::kSkipAndSubmit;
+                               raster_status == RasterStatus::kSkipAndRetry;
   if (should_resubmit_frame) {
     auto front_continuation = pipeline->ProduceIfEmpty();
     bool result =
@@ -339,7 +335,7 @@ RasterStatus Rasterizer::DoDraw(
   if (raster_status == RasterStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
   } else if (raster_status == RasterStatus::kResubmit ||
-             raster_status == RasterStatus::kSkipAndSubmit) {
+             raster_status == RasterStatus::kSkipAndRetry) {
     resubmitted_layer_tree_ = std::move(layer_tree);
     return raster_status;
   }
@@ -465,7 +461,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   if (compositor_frame) {
     RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
     if (raster_status == RasterStatus::kFailed ||
-        raster_status == RasterStatus::kSkipAndSubmit) {
+        raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
     }
     if (external_view_embedder != nullptr) {

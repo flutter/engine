@@ -82,8 +82,8 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   if (post_preroll_result == PostPrerollResult::kResubmitFrame) {
     return RasterStatus::kResubmit;
   }
-  if (post_preroll_result == PostPrerollResult::kSkipAndSubmitFrame) {
-    return RasterStatus::kSkipAndSubmit;
+  if (post_preroll_result == PostPrerollResult::kSkipAndRetryFrame) {
+    return RasterStatus::kSkipAndRetry;
   }
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.
