@@ -1574,9 +1574,8 @@ enum PixelFormat {
 /// disposed.
 ///
 /// If `dart:ui` passes an `Image` object and the recipient wishes to share
-/// that handle with other callers, it is critical that [clone] is called
-/// _before_ [dispose]. A handle that has been disposed cannot create new
-/// handles anymore.
+/// that handle with other callers, [clone] must be called _before_ [dispose].
+/// A handle that has been disposed cannot create new handles anymore.
 ///
 /// See also:
 ///
@@ -1609,6 +1608,7 @@ class Image {
     return _image.height;
   }
 
+  bool _disposed = false;
   /// Release this handle's claim on the underlying Image. This handle is no
   /// longer usable after this method is called.
   ///
@@ -1620,12 +1620,9 @@ class Image {
   /// useful when trying to determine what parts of the program are keeping an
   /// image resident in memory.
   void dispose() {
-    assert(() {
-      assert(!_disposed && !_image._disposed);
-      assert(_image._handles.contains(this));
-      _disposed = true;
-      return true;
-    }());
+    assert(!_disposed && !_image._disposed);
+    assert(_image._handles.contains(this));
+    _disposed = true;
     final bool removed = _image._handles.remove(this);
     assert(removed);
     if (_image._handles.isEmpty) {
@@ -1645,8 +1642,6 @@ class Image {
     return _image.toByteData(format: format);
   }
 
-  bool _disposed = false;
-
   /// If asserts are enabled, returns the [StackTrace]s of each open handle from
   /// [clone], in creation order.
   ///
@@ -1662,6 +1657,71 @@ class Image {
 
   /// Creates a disposable handle to this image.
   ///
+  /// Holders of an [Image] must dispose of the image when they no longer need
+  /// to access it or draw it. However, once the underlying image is disposed,
+  /// it is no longer possible to use it. If a holder of an image needs to share
+  /// access to that image with another object or method, [clone] creates a
+  /// duplicate handle. The underlying image will only be disposed once all
+  /// outstanding handles are disposed. This allows for safe sharing of image
+  /// references while still disposing of the underlying resources when all
+  /// consumers are finished.
+  ///
+  /// It is safe to pass an [Image] handle to another object or method if the
+  /// current holder no longer needs it.
+  ///
+  /// The following example demonstrates valid usage.
+  ///
+  /// ```dart
+  /// import 'dart:async';
+  ///
+  /// Future<Image> _loadImage(int width, int height) {
+  ///   final Completer<Image> completer = Completer<Image>();
+  ///   decodeImageFromPixels(
+  ///     Uint8List.fromList(List<int>.filled(width * height * 4, 0xFF)),
+  ///     width,
+  ///     height,
+  ///     PixelFormat.rgba8888,
+  ///     // Don't worry about disposing or cloning this image - responsibility
+  ///     // is transferred to the caller, and that is safe since this method
+  ///     // will not touch it again.
+  ///     (Image image) => completer.complete(image),
+  ///   );
+  ///   return completer.future;
+  /// }
+  ///
+  /// Future<void> main() async {
+  ///   final Image image = await _loadImage(5, 5);
+  ///   // Make sure to clone the image, because MyHolder might dispose it
+  ///   // and we need to access it again.
+  ///   final MyImageHolder holder = MyImageHolder(image.clone());
+  ///   final MyImageHolder holder2 = MyImageHolder(image.clone());
+  ///   // Now we dispose it because we won't need it again.
+  ///   image.dispose();
+  ///
+  ///   final PictureRecorder recorder = PictureRecorder();
+  ///   final Canvas canvas = Canvas(recorder);
+  ///
+  ///   holder.draw(canvas);
+  ///   holder.dispose();
+  ///
+  ///   canvas.translate(50, 50);
+  ///   holder2.draw(canvas);
+  ///   holder2.dispose();
+  /// }
+  ///
+  /// class MyImageHolder {
+  ///   MyImageLoader(this.image);
+  ///
+  ///   final Image image;
+  ///
+  ///   void draw(Canvas canvas) {
+  ///     canvas.drawImage(image, Offset.zero, Paint());
+  ///   }
+  ///
+  ///   void dispose() => image.dispose();
+  /// }
+  /// ```
+  ///
   /// The returned object behaves identically to this image. Calling
   /// [dispose] on it will only dispose the underlying native resources if it
   /// is the last remaining handle.
@@ -1674,6 +1734,7 @@ class Image {
         'handles, as the underlying data may have been released.'
       );
     }
+    assert(!_image._disposed);
     return Image._(_image);
   }
 
@@ -1686,7 +1747,8 @@ class _Image extends NativeFieldWrapperClass2 {
   // This class is created by the engine, and should not be instantiated
   // or extended directly.
   //
-  // To obtain an [Image] object, use [instantiateImageCodec].
+  // _Images are always handed out wrapped in [Image]s. To create an [Image],
+  // use the ImageDescriptor API.
   @pragma('vm:entry-point')
   _Image._();
 
@@ -1707,18 +1769,15 @@ class _Image extends NativeFieldWrapperClass2 {
 
   bool _disposed = false;
   void dispose() {
-    assert(() {
-      assert(!_disposed);
-      assert(
-        _handles.isEmpty,
-        'Attempted to dispose of an Image object that has ${_handles.length} '
-        'open handles.\n'
-        'If you see this, it is a bug in dart:ui. Please file an issue at '
-        'https://github.com/flutter/flutter/issues/new.',
-      );
-      _disposed = true;
-      return true;
-    }());
+    assert(!_disposed);
+    assert(
+      _handles.isEmpty,
+      'Attempted to dispose of an Image object that has ${_handles.length} '
+      'open handles.\n'
+      'If you see this, it is a bug in dart:ui. Please file an issue at '
+      'https://github.com/flutter/flutter/issues/new.',
+    );
+    _disposed = true;
     _dispose();
   }
 
@@ -1739,7 +1798,8 @@ typedef ImageDecoderCallback = void Function(Image result);
 /// [Codec.getNextFrame].
 ///
 /// The recipient of this class is responsible for calling [Image.dispose] on
-/// [image].
+/// [image]. To share the image with other interested parties, use
+/// [Image.clone].
 class FrameInfo {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -1757,6 +1817,8 @@ class FrameInfo {
   /// The [Image] object for this frame.
   ///
   /// This object must be disposed by the recipient of this frame info.
+  ///
+  /// To share this image with other interested parties, use [Image.clone].
   final Image image;
 }
 
