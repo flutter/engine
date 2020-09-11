@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#define _USE_MATH_DEFINES
+
 #include "flutter/lib/ui/painting/path.h"
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 
 #include "flutter/lib/ui/painting/matrix.h"

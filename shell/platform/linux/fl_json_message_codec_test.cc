@@ -558,10 +558,11 @@ TEST(FlJsonMessageCodecTest, EncodeListNested) {
   g_autoptr(FlValue) even_numbers = fl_value_new_list();
   g_autoptr(FlValue) odd_numbers = fl_value_new_list();
   for (int i = 0; i < 10; i++) {
-    if (i % 2 == 0)
+    if (i % 2 == 0) {
       fl_value_append_take(even_numbers, fl_value_new_int(i));
-    else
+    } else {
       fl_value_append_take(odd_numbers, fl_value_new_int(i));
+    }
   }
   g_autoptr(FlValue) value = fl_value_new_list();
   fl_value_append(value, even_numbers);
