@@ -473,6 +473,13 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   std::optional<uint32_t> GetRootIsolateReturnCode();
 
+  void CompleteDartLoadLibrary(intptr_t loading_unit_id,
+                               std::string lib_name,
+                               std::vector<std::string>& apkPaths,
+                               std::string abi);
+
+  Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id);
+
  protected:
   /// Constructor for Mocks.
   RuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners);

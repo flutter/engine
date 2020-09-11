@@ -152,4 +152,15 @@ PlatformView::ComputePlatformResolvedLocales(
   return out;
 }
 
+Dart_Handle PlatformView::OnDartLoadLibrary(intptr_t loading_unit_id) {
+  return Dart_Null();
+}
+
+void PlatformView::CompleteDartLoadLibrary(
+    intptr_t loading_unit_id,
+    std::string lib_name,
+    std::vector<std::string>& apkPaths,
+    std::string abi,
+    std::shared_ptr<AssetManager> asset_manager) {}
+
 }  // namespace flutter

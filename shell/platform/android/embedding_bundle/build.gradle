@@ -48,6 +48,8 @@ android {
     embedding "androidx.lifecycle:lifecycle-common:$lifecycle_version"
     embedding "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
 
+    embedding "com.google.android.play:core:1.8.0"
+
     // Testing
     // TODO(xster): remove these android-all compile time dependencies.
     // Use https://github.com/robolectric/robolectric/blob/master/robolectric/src/main/java/org/robolectric/plugins/LegacyDependencyResolver.java#L24

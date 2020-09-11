@@ -228,6 +228,16 @@ class PlatformView {
     virtual std::unique_ptr<std::vector<std::string>>
     ComputePlatformViewResolvedLocale(
         const std::vector<std::string>& supported_locale_data) = 0;
+
+    virtual Dart_Handle OnPlatformViewDartLoadLibrary(
+        intptr_t loading_unit_id) = 0;
+
+    virtual void CompleteDartLoadLibrary(
+        intptr_t loading_unit_id,
+        std::string lib_name,
+        std::vector<std::string>& apkPaths,
+        std::string abi,
+        std::shared_ptr<AssetManager> asset_manager) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -580,6 +590,15 @@ class PlatformView {
   virtual std::unique_ptr<std::vector<std::string>>
   ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data);
+
+  virtual Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id);
+
+  virtual void CompleteDartLoadLibrary(
+      intptr_t loading_unit_id,
+      std::string lib_name,
+      std::vector<std::string>& apkPaths,
+      std::string abi,
+      std::shared_ptr<AssetManager> asset_manager);
 
  protected:
   PlatformView::Delegate& delegate_;

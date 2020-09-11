@@ -225,6 +225,7 @@ class DartIsolate : public UIDartState {
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
       Flags flags,
+      Dart_DeferredLoadHandler& deferred_load_handler,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
       std::optional<std::string> dart_entrypoint,
@@ -384,6 +385,10 @@ class DartIsolate : public UIDartState {
   ///
   fml::RefPtr<fml::TaskRunner> GetMessageHandlingTaskRunner() const;
 
+  bool LoadLoadingUnit(intptr_t loading_unit_id,
+                       const uint8_t* snapshot_data,
+                       const uint8_t* snapshot_instructions);
+
  private:
   friend class IsolateConfiguration;
   class AutoFireClosure {
@@ -418,6 +423,7 @@ class DartIsolate : public UIDartState {
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
       Flags flags,
+      Dart_DeferredLoadHandler& deferred_load_handler,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback);
 
@@ -432,7 +438,9 @@ class DartIsolate : public UIDartState {
               std::string advisory_script_entrypoint,
               bool is_root_isolate);
 
-  [[nodiscard]] bool Initialize(Dart_Isolate isolate);
+  [[nodiscard]] bool Initialize(
+      Dart_Isolate isolate,
+      Dart_DeferredLoadHandler& deferred_load_handler);
 
   void SetMessageHandlingTaskRunner(fml::RefPtr<fml::TaskRunner> runner);
 
@@ -472,10 +480,12 @@ class DartIsolate : public UIDartState {
       std::unique_ptr<std::shared_ptr<DartIsolateGroupData>> isolate_group_data,
       std::unique_ptr<std::shared_ptr<DartIsolate>> isolate_data,
       Dart_IsolateFlags* flags,
+      Dart_DeferredLoadHandler& deferred_load_handler,
       char** error);
 
   static bool InitializeIsolate(std::shared_ptr<DartIsolate> embedder_isolate,
                                 Dart_Isolate isolate,
+                                Dart_DeferredLoadHandler& deferred_load_handler,
                                 char** error);
 
   // |Dart_IsolateShutdownCallback|

@@ -12,6 +12,8 @@ import androidx.annotation.Nullable;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager;
+import io.flutter.embedding.engine.dynamicfeatures.PlayStoreDynamicFeatureManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
@@ -97,6 +99,8 @@ public class FlutterEngine {
 
   // Engine Lifecycle.
   @NonNull private final Set<EngineLifecycleListener> engineLifecycleListeners = new HashSet<>();
+
+  @NonNull private DynamicFeatureManager dynamicFeatureManager;
 
   @NonNull
   private final EngineLifecycleListener engineLifecycleListener =
@@ -273,6 +277,7 @@ public class FlutterEngine {
       assetManager = context.getAssets();
     }
     this.dartExecutor = new DartExecutor(flutterJNI, assetManager);
+
     this.dartExecutor.onAttachedToJNI();
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
@@ -289,7 +294,9 @@ public class FlutterEngine {
 
     this.localizationPlugin = new LocalizationPlugin(context, localizationChannel);
 
+
     this.flutterJNI = flutterJNI;
+    dynamicFeatureManager = new PlayStoreDynamicFeatureManager(context, flutterJNI);
     if (flutterLoader == null) {
       flutterLoader = FlutterInjector.instance().flutterLoader();
     }
@@ -299,6 +306,8 @@ public class FlutterEngine {
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
+    flutterJNI.setDynamicFeatureManager(dynamicFeatureManager);
+    flutterJNI.setDynamicFeatureContext(context);
     attachToJni();
 
     // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if

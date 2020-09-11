@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
+import io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
@@ -182,6 +183,8 @@ public class FlutterJNI {
   @Nullable private PlatformMessageHandler platformMessageHandler;
   @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private PlatformViewsController platformViewsController;
+
+  @Nullable private DynamicFeatureManager dynamicFeatureManager;
 
   @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
@@ -938,6 +941,76 @@ public class FlutterJNI {
   }
 
   // ----- End Localization Support ----
+
+  // ----- Start Dynamic Features Support ----
+
+  /** Sets the dynamic feature manager that is used to download and install split features. */
+  @UiThread
+  public void setDynamicFeatureManager(@NonNull DynamicFeatureManager dynamicFeatureManager) {
+    ensureRunningOnMainThread();
+    this.dynamicFeatureManager = dynamicFeatureManager;
+  }
+
+  private Context dynamicFeatureContext;
+  @UiThread
+  public void setDynamicFeatureContext(@NonNull Context context) {
+    ensureRunningOnMainThread();
+    this.dynamicFeatureContext = context;
+  }
+
+  // Called by the engine upon invocation of dart loadLibrary request
+  @SuppressWarnings("unused")
+  @UiThread
+  public void downloadDynamicFeature(@NonNull String moduleName, int loadingUnitId) {
+    dynamicFeatureManager.downloadModule(moduleName, loadingUnitId);
+  }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void downloadDynamicFeature(int loadingUnitId) {
+    String loadingUnitIdResName = dynamicFeatureContext.getResources().getString(dynamicFeatureContext.getResources().getIdentifier("loadingUnit" + loadingUnitId, "string", dynamicFeatureContext.getPackageName()));
+    downloadDynamicFeature(loadingUnitIdResName, loadingUnitId);
+  }
+
+  // This should be called for every loading unit to be loaded into the dart isolate.
+  @UiThread
+  public void loadDartLibrary(
+      int loadingUnitId,
+      @NonNull String abi,
+      @NonNull String libName,
+      @NonNull AssetManager assetManager,
+      @NonNull String[] apkPaths) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeLoadDartLibrary(
+        nativePlatformViewId,
+        loadingUnitId,
+        abi,
+        libName,
+        assetManager,
+        apkPaths);
+    Log.e("flutter", "loadDartLibrary FlutterJNI");
+  }
+  private native void nativeLoadDartLibrary(
+      long nativePlatformViewId,
+      int loadingUnitId,
+      @NonNull String abi,
+      @NonNull String libName,
+      @NonNull AssetManager assetManager,
+      @NonNull String[] apkPaths);
+
+  // Called when an install encounters a failure during the Android portion of installing a module.
+  // When transient is false, new attempts to install will automatically result in same error in dart before
+  // the request is passed to Android.
+  @SuppressWarnings("unused")
+  @UiThread
+  public void dynamicFeatureInstallFailure(@NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans) {
+    ensureRunningOnMainThread();
+    nativeDynamicFeatureInstallFailure(moduleName, loadingUnitId, error, trans);
+  }
+  private native void nativeDynamicFeatureInstallFailure(@NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans);
+
+  // ----- End Dynamic Features Support ----
 
   // @SuppressWarnings("unused")
   @UiThread

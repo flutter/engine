@@ -30,6 +30,7 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_io_manager.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
 namespace flutter {
@@ -260,6 +261,8 @@ class Engine final : public RuntimeDelegate,
     virtual std::unique_ptr<std::vector<std::string>>
     ComputePlatformResolvedLocale(
         const std::vector<std::string>& supported_locale_data) = 0;
+
+    virtual Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -767,6 +770,12 @@ class Engine final : public RuntimeDelegate,
   ///
   const std::string& InitialRoute() const { return initial_route_; }
 
+  void CompleteDartLoadLibrary(intptr_t loading_unit_id,
+                               std::string lib_name,
+                               std::vector<std::string>& apkPaths,
+                               std::string abi,
+                               std::shared_ptr<AssetManager> asset_manager);
+
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;
@@ -814,6 +823,9 @@ class Engine final : public RuntimeDelegate,
   // |RuntimeDelegate|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // |RuntimeDelegate|
+  Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id) override;
 
   void SetNeedsReportTimings(bool value) override;
 

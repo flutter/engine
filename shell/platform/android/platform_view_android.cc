@@ -342,6 +342,25 @@ PlatformViewAndroid::ComputePlatformResolvedLocales(
       supported_locale_data);
 }
 
+// |PlatformView|
+Dart_Handle PlatformViewAndroid::OnDartLoadLibrary(intptr_t loading_unit_id) {
+  if (jni_facade_->FlutterViewDownloadDynamicFeature(loading_unit_id)) {
+    return Dart_Null();
+  }
+  return Dart_Null();  // TODO: RETURN ERROR
+}
+
+// |PlatformView|
+void PlatformViewAndroid::CompleteDartLoadLibrary(
+    intptr_t loading_unit_id,
+    std::string lib_name,
+    std::vector<std::string>& apkPaths,
+    std::string abi,
+    std::shared_ptr<AssetManager> asset_manager) {
+  delegate_.CompleteDartLoadLibrary(loading_unit_id, lib_name, apkPaths, abi,
+                                    std::move(asset_manager));
+}
+
 void PlatformViewAndroid::InstallFirstFrameCallback() {
   // On Platform Task Runner.
   SetNextFrameCallback(

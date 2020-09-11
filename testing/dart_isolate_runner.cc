@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/testing/dart_isolate_runner.h"
+#include "flutter/runtime/dart_deferred_load_handler.h"
 
 #include "flutter/runtime/isolate_configuration.h"
 
@@ -70,6 +71,31 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
   }
 
   auto settings = p_settings;
+  auto weak_isolate = DartIsolate::CreateRootIsolate(
+      vm_data->GetSettings(),         // settings
+      vm_data->GetIsolateSnapshot(),  // isolate snapshot
+      std::move(task_runners),        // task runners
+      nullptr,                        // window
+      {},                             // snapshot delegate
+      {},                             // hint freed delegate
+      io_manager,                     // io manager
+      {},                             // unref queue
+      {},                             // image decoder
+      "main.dart",                    // advisory uri
+      "main",                         // advisory entrypoint
+      nullptr,                        // flags
+      DartDeferredLoadHandler::empty_dart_deferred_load_handler,
+      settings.isolate_create_callback,   // isolate create callback
+      settings.isolate_shutdown_callback  // isolate shutdown callback
+  );
+
+  auto root_isolate = std::make_unique<AutoIsolateShutdown>(
+      weak_isolate.lock(), task_runners.GetUITaskRunner());
+
+  if (!root_isolate->IsValid()) {
+    FML_LOG(ERROR) << "Could not create isolate.";
+    return;
+  }
 
   settings.dart_entrypoint_args = args;
 

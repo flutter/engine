@@ -12,6 +12,7 @@
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/settings.h"
+#include "flutter/fml/command_line.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
@@ -19,7 +20,9 @@
 #include "flutter/fml/size.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/runtime/dart_service_isolate.h"
+#include "flutter/runtime/dart_snapshot.h"
 #include "flutter/shell/common/run_configuration.h"
+#include "flutter/shell/common/switches.h"
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/apk_asset_provider.h"
@@ -99,6 +102,8 @@ static jmethodID g_get_transform_matrix_method = nullptr;
 static jmethodID g_detach_from_gl_context_method = nullptr;
 
 static jmethodID g_compute_platform_resolved_locale_method = nullptr;
+
+static jmethodID g_download_dynamic_feature_method = nullptr;
 
 // Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
@@ -192,6 +197,8 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
       jAssetManager,                                   // asset manager
       fml::jni::JavaStringToString(env, jBundlePath))  // apk asset dir
   );
+  FML_LOG(ERROR) << "ASSETS DIR: "
+                 << fml::jni::JavaStringToString(env, jBundlePath);
 
   std::unique_ptr<IsolateConfiguration> isolate_configuration;
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
@@ -508,6 +515,52 @@ static jboolean FlutterTextUtilsIsRegionalIndicator(JNIEnv* env,
                                                     jint codePoint) {
   return u_hasBinaryProperty(codePoint, UProperty::UCHAR_REGIONAL_INDICATOR);
 }
+
+static void LoadDartLibrary(JNIEnv* env,
+                            jobject obj,
+                            jlong shell_holder,
+                            jint jLoadingUnitId,
+                            jstring jAbi,
+                            jstring jLibName,
+                            jobject jAssetManager,
+                            jobjectArray jApkPaths) {
+  // see RunBundleAndSnapshotFromLibrary above for dart loading code
+  auto asset_manager = std::make_shared<flutter::AssetManager>();
+
+  asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
+      env,               // jni environment
+      jAssetManager,     // asset manager
+      "flutter_assets")  // apk asset dir TODO: Pass in as parameter
+  );
+
+  std::string abi = fml::jni::JavaStringToString(env, jAbi);
+
+  std::vector<std::string> apkPaths =
+      fml::jni::StringArrayToVector(env, jApkPaths);
+
+  ANDROID_SHELL_HOLDER->GetPlatformView()->CompleteDartLoadLibrary(
+      static_cast<intptr_t>(jLoadingUnitId),
+      fml::jni::JavaStringToString(env, jLibName), apkPaths, abi,
+      std::move(asset_manager));
+
+  // asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
+  //     env,                                             // jni environment
+  //     jAssetManager,                                   // asset manager
+  //     fml::jni::JavaStringToString(env, jBundlePath))  // apk asset dir
+  // );
+
+  // RunConfiguration config(std::move(isolate_configuration),
+  //                         std::move(asset_manager));
+}
+
+static void DynamicFeatureInstallFailure(JNIEnv* env,
+                                         jobject obj,
+                                         jobject moduleName,
+                                         jint loadigUnitId,
+                                         jobject error,
+                                         jboolean transient) {
+  // TODO: Implement
+}
 bool RegisterApi(JNIEnv* env) {
   static const JNINativeMethod flutter_jni_methods[] = {
       // Start of methods from FlutterJNI
@@ -663,6 +716,18 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(I)Z",
           .fnPtr =
               reinterpret_cast<void*>(&FlutterTextUtilsIsRegionalIndicator),
+      },
+      {
+          .name = "nativeLoadDartLibrary",
+          .signature =
+              "(JILjava/lang/String;Ljava/lang/String;Landroid/content/"
+              "res/AssetManager;[Ljava/lang/String;)V",
+          .fnPtr = reinterpret_cast<void*>(&LoadDartLibrary),
+      },
+      {
+          .name = "nativeDynamicFeatureInstallFailure",
+          .signature = "(Ljava/lang/String;ILjava/lang/String;Z)V",
+          .fnPtr = reinterpret_cast<void*>(&DynamicFeatureInstallFailure),
       },
   };
 
@@ -904,6 +969,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   if (g_compute_platform_resolved_locale_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate computePlatformResolvedLocale method";
+    return false;
+  }
+
+  g_download_dynamic_feature_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "downloadDynamicFeature", "(I)V");
+
+  if (g_download_dynamic_feature_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate downloadDynamicFeature method";
     return false;
   }
 
@@ -1332,6 +1405,22 @@ double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
 
   jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
   return static_cast<double>(env->GetStaticFloatField(clazz, fid));
+}
+
+bool PlatformViewAndroidJNIImpl::FlutterViewDownloadDynamicFeature(
+    int loading_unit_id) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return true;
+  }
+
+  env->CallObjectMethod(java_object.obj(), g_download_dynamic_feature_method,
+                        loading_unit_id);
+
+  FML_CHECK(CheckException(env));
+  return true;
 }
 
 }  // namespace flutter

@@ -36,6 +36,7 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_io_manager.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
 namespace flutter {
 
@@ -511,6 +512,17 @@ class Shell final : public PlatformView::Delegate,
   std::unique_ptr<std::vector<std::string>> ComputePlatformViewResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
 
+  // |PlatformView::Delegate|
+  Dart_Handle OnPlatformViewDartLoadLibrary(intptr_t loading_unit_id) override;
+
+  // |PlatformView::Delegate|
+  void CompleteDartLoadLibrary(
+      intptr_t loading_unit_id,
+      std::string lib_name,
+      std::vector<std::string>& apkPaths,
+      std::string abi,
+      std::shared_ptr<AssetManager> asset_manager) override;
+
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;
 
@@ -551,6 +563,9 @@ class Shell final : public PlatformView::Delegate,
   // |Engine::Delegate|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // |Engine::Delegate|
+  Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id) override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;

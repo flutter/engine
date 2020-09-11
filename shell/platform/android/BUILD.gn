@@ -155,6 +155,8 @@ android_java_sources = [
   "io/flutter/embedding/engine/dart/DartExecutor.java",
   "io/flutter/embedding/engine/dart/DartMessenger.java",
   "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
+  "io/flutter/embedding/engine/dynamicfeatures/DynamicFeatureManager.java",
+  "io/flutter/embedding/engine/dynamicfeatures/PlayStoreDynamicFeatureManager.java",
   "io/flutter/embedding/engine/loader/ApplicationInfoLoader.java",
   "io/flutter/embedding/engine/loader/FlutterApplicationInfo.java",
   "io/flutter/embedding/engine/loader/FlutterLoader.java",
