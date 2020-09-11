@@ -67,6 +67,7 @@ source_set("flutter_framework_source") {
   sources += _flutter_framework_headers
 
   deps = [
+    "//flutter/fml:fml",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
   ]
@@ -80,6 +81,8 @@ source_set("flutter_framework_source") {
   libs = [
     "Cocoa.framework",
     "CoreVideo.framework",
+    "IOSurface.framework",
+    "QuartzCore.framework",
   ]
 }
 

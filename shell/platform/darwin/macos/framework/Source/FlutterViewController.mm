@@ -80,7 +80,7 @@ struct KeyboardState {
 /**
  * Private interface declaration for FlutterViewController.
  */
-@interface FlutterViewController () <FlutterViewReshapeListener>
+@interface FlutterViewController () <FlutterViewDelegate>
 
 /**
  * A list of additional responders to keyboard events. Keybord events are forwarded to all of them.
@@ -246,7 +246,7 @@ static void CommonInit(FlutterViewController* controller) {
     return;
   }
   FlutterView* flutterView = [[FlutterView alloc] initWithShareContext:resourceContext
-                                                       reshapeListener:self];
+                                                              delegate:self];
   self.view = flutterView;
 }
 
@@ -549,13 +549,17 @@ static void CommonInit(FlutterViewController* controller) {
   return [NSPasteboard generalPasteboard];
 }
 
-#pragma mark - FlutterViewReshapeListener
+#pragma mark - FlutterViewDelegate
 
 /**
  * Responds to view reshape by notifying the engine of the change in dimensions.
  */
 - (void)viewDidReshape:(NSView*)view {
   [_engine updateWindowMetrics];
+}
+
+- (void)scheduleOnRasterTread:(dispatch_block_t)block {
+  [_engine scheduleOnRasterTread:block];
 }
 
 #pragma mark - FlutterPluginRegistry
