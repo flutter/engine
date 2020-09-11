@@ -9,7 +9,7 @@
 
 @synthesize engine = _engine;
 
-- (id)initWithEngineRunCompletion:(void (^)(void))engineRunCompletion {
+- (id)initWithEngineRunCompletion:(dispatch_block_t)engineRunCompletion {
   self = [super init];
   _engine = [[FlutterEngine alloc] initWithScenario:@"poppable_screen"
                                      withCompletion:engineRunCompletion];
@@ -39,7 +39,7 @@
   [_engine runWithEntrypoint:nil];
 }
 
-- (FlutterViewController*)showFlutter:(void (^)(void))showCompletion {
+- (FlutterViewController*)showFlutter:(dispatch_block_t)showCompletion {
   FlutterViewController* flutterVC = [[FlutterViewController alloc] initWithEngine:_engine
                                                                            nibName:nil
                                                                             bundle:nil];
