@@ -71,6 +71,7 @@ FLUTTER_ASSERT_ARC
     // FlutterViewController wouldn't keep listening to the application lifecycle events and produce
     // false positives for the application lifecycle tests further below.
     flutterVC = [rootVC showFlutter];
+    NSLog(@"FlutterViewController instance %@ created", flutterVC);
     [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
       if (lifecycleExpectations.count == 0) {
         XCTFail(@"Unexpected lifecycle transition: %@", message);
@@ -147,6 +148,7 @@ FLUTTER_ASSERT_ARC
 
   @autoreleasepool {
     flutterVC = [rootVC showFlutter];
+    NSLog(@"FlutterViewController instance %@ created", flutterVC);
     [self waitForExpectations:lifecycleExpectations timeout:5 enforceOrder:YES];
 
     // The final dismissal cycles through inactive and paused again.
@@ -201,6 +203,7 @@ FLUTTER_ASSERT_ARC
   FlutterViewController* flutterVC;
   @autoreleasepool {
     flutterVC = [rootVC showFlutter];
+    NSLog(@"FlutterViewController instance %@ created", flutterVC);
     [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
       if (lifecycleExpectations.count == 0) {
         XCTFail(@"Unexpected lifecycle transition: %@", message);
@@ -306,6 +309,7 @@ FLUTTER_ASSERT_ARC
   FlutterViewController* flutterVC;
   @autoreleasepool {
     flutterVC = [rootVC showFlutter];
+    NSLog(@"FlutterViewController instance %@ created", flutterVC);
     [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
       if (lifecycleExpectations.count == 0) {
         XCTFail(@"Unexpected lifecycle transition: %@", message);
