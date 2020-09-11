@@ -139,8 +139,7 @@ static bool OnPresent(FlutterEngine* engine) {
 }
 
 static uint32_t OnFBO(FlutterEngine* engine) {
-  // There is currently no case where a different FBO is used, so no need to forward.
-  return 0;
+  return engine.viewController.flutterView.frameBufferId;
 }
 
 static bool OnMakeResourceCurrent(FlutterEngine* engine) {
@@ -280,7 +279,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   }
 
   [self sendUserLocales];
-  [self updateWindowMetrics];
+
+  [self.viewController.flutterView start];
   return YES;
 }
 
@@ -291,7 +291,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     [self shutDownEngine];
     _resourceContext = nil;
   }
-  [self updateWindowMetrics];
+  if (_engine) {
+    [self.viewController.flutterView start];
+  }
 }
 
 - (id<FlutterBinaryMessenger>)binaryMessenger {
@@ -317,6 +319,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return _resourceContext;
 }
 
+// Must be driven by FlutterView (i.e. [FlutterView start])
 - (void)updateWindowMetrics {
   if (!_engine) {
     return;
@@ -332,6 +335,18 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .pixel_ratio = pixelRatio,
   };
   FlutterEngineSendWindowMetricsEvent(_engine, &event);
+}
+
+- (void)scheduleOnRasterTread:(dispatch_block_t)block {
+  void* copy = Block_copy((__bridge void*)block);
+  FlutterEnginePostRenderThreadTask(
+      _engine,
+      [](void* cb) {
+        dispatch_block_t block = (__bridge dispatch_block_t)cb;
+        block();
+        Block_release(block);
+      },
+      copy);
 }
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {
@@ -380,7 +395,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   if (!_mainOpenGLContext) {
     return false;
   }
-  [_mainOpenGLContext flushBuffer];
+  [self.viewController.flutterView present];
   return true;
 }
 

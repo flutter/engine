@@ -27,6 +27,11 @@
 - (void)updateWindowMetrics;
 
 /**
+ * Schedules the block on rater thread.
+ */
+- (void)scheduleOnRasterTread:(nonnull dispatch_block_t)block;
+
+/**
  * Dispatches the given pointer event data to engine.
  */
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event;
