@@ -607,6 +607,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
   }
+  NSLog(@"FlutterViewController instance %@ sends AppLifecycleState.inactive", self);
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 
   [super viewWillAppear:animated];
@@ -616,6 +617,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   TRACE_EVENT0("flutter", "viewDidAppear");
   [self onUserSettingsChanged:nil];
   [self onAccessibilityStatusChanged:nil];
+  NSLog(@"FlutterViewController instance %@ sends AppLifecycleState.inactive", self);
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
 
   [super viewDidAppear:animated];
@@ -623,6 +625,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewWillDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillDisappear");
+  NSLog(@"FlutterViewController instance %@ sends AppLifecycleState.inactive", self);
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 
   [super viewWillDisappear:animated];
@@ -632,6 +635,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   TRACE_EVENT0("flutter", "viewDidDisappear");
   if ([_engine.get() viewController] == self) {
     [self surfaceUpdated:NO];
+    NSLog(@"FlutterViewController instance %@ sends AppLifecycleState.inactive", self);
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
     [self flushOngoingTouches];
     [_engine.get() notifyLowMemory];
