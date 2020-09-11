@@ -123,6 +123,12 @@ class HtmlImage implements ui.Image {
   }
 
   @override
+  ui.Image createHandle() => this;
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
+
+  @override
   final int width;
 
   @override
