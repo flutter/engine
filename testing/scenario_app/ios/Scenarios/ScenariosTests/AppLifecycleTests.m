@@ -78,8 +78,8 @@ FLUTTER_ASSERT_ARC
       }
       XCAppLifecycleTestExpectation* nextExpectation = [lifecycleExpectations objectAtIndex:0];
       if (![[nextExpectation expectedLifecycle] isEqualToString:message]) {
-        XCTFail(@"Expected lifecycle %@ but instead received %@", [nextExpectation expectedLifecycle],
-                message);
+        XCTFail(@"Expected lifecycle %@ but instead received %@",
+                [nextExpectation expectedLifecycle], message);
         return;
       }
 
@@ -92,16 +92,18 @@ FLUTTER_ASSERT_ARC
 
     // Now dismiss the FlutterViewController again and expect another inactive and paused.
     [lifecycleExpectations addObjectsFromArray:@[
-      [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.inactive"
-                                                      forStep:@"dismissing a FlutterViewController"],
+      [[XCAppLifecycleTestExpectation alloc]
+          initForLifecycle:@"AppLifecycleState.inactive"
+                   forStep:@"dismissing a FlutterViewController"],
       [[XCAppLifecycleTestExpectation alloc]
           initForLifecycle:@"AppLifecycleState.paused"
                    forStep:@"dismissing a FlutterViewController"]
     ]];
     XCTestExpectation* vcDismissed = [self expectationWithDescription:@"dismiss"];
-    [flutterVC dismissViewControllerAnimated:NO completion:^{
-      [vcDismissed fulfill];
-    }];
+    [flutterVC dismissViewControllerAnimated:NO
+                                  completion:^{
+                                    [vcDismissed fulfill];
+                                  }];
     [self waitForExpectationsWithTimeout:5.0 handler:nil];
     [self waitForExpectations:lifecycleExpectations timeout:5 enforceOrder:YES];
 
@@ -149,17 +151,17 @@ FLUTTER_ASSERT_ARC
 
     // The final dismissal cycles through inactive and paused again.
     [lifecycleExpectations addObjectsFromArray:@[
-      [[XCAppLifecycleTestExpectation alloc]
-          initForLifecycle:@"AppLifecycleState.inactive"
-                   forStep:@"popping the FlutterViewController"],
+      [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.inactive"
+                                                      forStep:@"popping the FlutterViewController"],
       [[XCAppLifecycleTestExpectation alloc]
           initForLifecycle:@"AppLifecycleState.paused"
                    forStep:@"popping the FlutterViewController"]
     ]];
     XCTestExpectation* vcDismissed = [self expectationWithDescription:@"dismiss"];
-    [flutterVC dismissViewControllerAnimated:NO completion:^{
-      [vcDismissed fulfill];
-    }];
+    [flutterVC dismissViewControllerAnimated:NO
+                                  completion:^{
+                                    [vcDismissed fulfill];
+                                  }];
     [self waitForExpectationsWithTimeout:5.0 handler:nil];
     flutterVC = nil;
     [engine setViewController:nil];
@@ -206,8 +208,8 @@ FLUTTER_ASSERT_ARC
       }
       XCAppLifecycleTestExpectation* nextExpectation = [lifecycleExpectations objectAtIndex:0];
       if (![[nextExpectation expectedLifecycle] isEqualToString:message]) {
-        XCTFail(@"Expected lifecycle %@ but instead received %@", [nextExpectation expectedLifecycle],
-                message);
+        XCTFail(@"Expected lifecycle %@ but instead received %@",
+                [nextExpectation expectedLifecycle], message);
         return;
       }
 
@@ -253,17 +255,17 @@ FLUTTER_ASSERT_ARC
 
     // The final dismissal cycles through inactive and paused again.
     [lifecycleExpectations addObjectsFromArray:@[
-      [[XCAppLifecycleTestExpectation alloc]
-          initForLifecycle:@"AppLifecycleState.inactive"
-                   forStep:@"popping the FlutterViewController"],
+      [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.inactive"
+                                                      forStep:@"popping the FlutterViewController"],
       [[XCAppLifecycleTestExpectation alloc]
           initForLifecycle:@"AppLifecycleState.paused"
                    forStep:@"popping the FlutterViewController"]
     ]];
     XCTestExpectation* vcDismissed = [self expectationWithDescription:@"dismiss"];
-    [flutterVC dismissViewControllerAnimated:NO completion:^{
-      [vcDismissed fulfill];
-    }];
+    [flutterVC dismissViewControllerAnimated:NO
+                                  completion:^{
+                                    [vcDismissed fulfill];
+                                  }];
     [self waitForExpectationsWithTimeout:5.0 handler:nil];
     flutterVC = nil;
     [engine setViewController:nil];
