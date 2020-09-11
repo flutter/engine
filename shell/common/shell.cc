@@ -1185,6 +1185,27 @@ std::unique_ptr<std::vector<std::string>> Shell::ComputePlatformResolvedLocale(
   return platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
 }
 
+void Shell::CompleteDartLoadLibrary(intptr_t loading_unit_id,
+                                    std::string lib_name,
+                                    std::vector<std::string>& apkPaths,
+                                    std::string abi) {
+  engine_->CompleteDartLoadLibrary(loading_unit_id, lib_name, apkPaths, abi);
+}
+
+void Shell::UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) {
+  engine_->UpdateAssetManager(std::move(asset_manager));
+}
+
+// |Engine::Delegate|
+Dart_Handle Shell::OnDartLoadLibrary(intptr_t loading_unit_id) {
+  return OnPlatformViewDartLoadLibrary(loading_unit_id);
+}
+
+// |PlatformView::Delegate|
+Dart_Handle Shell::OnPlatformViewDartLoadLibrary(intptr_t loading_unit_id) {
+  return platform_view_->OnDartLoadLibrary(loading_unit_id);
+}
+
 void Shell::ReportTimings() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());

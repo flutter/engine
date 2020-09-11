@@ -100,6 +100,8 @@ static jmethodID g_detach_from_gl_context_method = nullptr;
 
 static jmethodID g_compute_platform_resolved_locale_method = nullptr;
 
+static jmethodID g_download_dynamic_feature_method = nullptr;
+
 // Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
 
@@ -508,6 +510,52 @@ static jboolean FlutterTextUtilsIsRegionalIndicator(JNIEnv* env,
                                                     jint codePoint) {
   return u_hasBinaryProperty(codePoint, UProperty::UCHAR_REGIONAL_INDICATOR);
 }
+
+static void LoadDartLibrary(JNIEnv* env,
+                            jobject obj,
+                            jlong shell_holder,
+                            jint jLoadingUnitId,
+                            jstring jLibName,
+                            jobjectArray jApkPaths,
+                            jstring jAbi,
+                            jstring jSoPath) {
+  std::string abi = fml::jni::JavaStringToString(env, jAbi);
+
+  std::vector<std::string> apkPaths =
+      fml::jni::StringArrayToVector(env, jApkPaths);
+
+  ANDROID_SHELL_HOLDER->GetPlatformView()->CompleteDartLoadLibrary(
+      static_cast<intptr_t>(jLoadingUnitId),
+      fml::jni::JavaStringToString(env, jLibName), apkPaths, abi);
+
+  // TODO(garyq): fallback on soPath.
+}
+
+static void UpdateAssetManager(JNIEnv* env,
+                               jobject obj,
+                               jlong shell_holder,
+                               jobject jAssetManager,
+                               jstring jAssetBundlePath) {
+  auto asset_manager = std::make_shared<flutter::AssetManager>();
+  asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
+      env,                                                  // jni environment
+      jAssetManager,                                        // asset manager
+      fml::jni::JavaStringToString(env, jAssetBundlePath))  // apk asset dir
+  );
+
+  ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetManager(
+      std::move(asset_manager));
+}
+
+static void DynamicFeatureInstallFailure(JNIEnv* env,
+                                         jobject obj,
+                                         jobject moduleName,
+                                         jint loadigUnitId,
+                                         jobject error,
+                                         jboolean transient) {
+  // TODO(garyq): Implement
+}
+
 bool RegisterApi(JNIEnv* env) {
   static const JNINativeMethod flutter_jni_methods[] = {
       // Start of methods from FlutterJNI
@@ -663,6 +711,23 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(I)Z",
           .fnPtr =
               reinterpret_cast<void*>(&FlutterTextUtilsIsRegionalIndicator),
+      },
+      {
+          .name = "nativeLoadDartLibrary",
+          .signature = "(JILjava/lang/String;[Ljava/lang/String;Ljava/lang/"
+                       "String;Ljava/lang/String;)V",
+          .fnPtr = reinterpret_cast<void*>(&LoadDartLibrary),
+      },
+      {
+          .name = "nativeUpdateAssetManager",
+          .signature =
+              "(JLandroid/content/res/AssetManager;Ljava/lang/String;)V",
+          .fnPtr = reinterpret_cast<void*>(&UpdateAssetManager),
+      },
+      {
+          .name = "nativeDynamicFeatureInstallFailure",
+          .signature = "(Ljava/lang/String;ILjava/lang/String;Z)V",
+          .fnPtr = reinterpret_cast<void*>(&DynamicFeatureInstallFailure),
       },
   };
 
@@ -904,6 +969,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   if (g_compute_platform_resolved_locale_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate computePlatformResolvedLocale method";
+    return false;
+  }
+
+  g_download_dynamic_feature_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "downloadDynamicFeature", "(I)V");
+
+  if (g_download_dynamic_feature_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate downloadDynamicFeature method";
     return false;
   }
 
@@ -1332,6 +1405,22 @@ double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
 
   jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
   return static_cast<double>(env->GetStaticFloatField(clazz, fid));
+}
+
+bool PlatformViewAndroidJNIImpl::FlutterViewDownloadDynamicFeature(
+    int loading_unit_id) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return true;
+  }
+
+  env->CallObjectMethod(java_object.obj(), g_download_dynamic_feature_method,
+                        loading_unit_id);
+
+  FML_CHECK(CheckException(env));
+  return true;
 }
 
 }  // namespace flutter

@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
+import io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
@@ -224,6 +225,8 @@ public class FlutterJNI {
   @Nullable private PlatformMessageHandler platformMessageHandler;
   @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private PlatformViewsController platformViewsController;
+
+  @Nullable private DynamicFeatureManager dynamicFeatureManager;
 
   @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
@@ -980,6 +983,108 @@ public class FlutterJNI {
   }
 
   // ----- End Localization Support ----
+
+  // ----- Start Dynamic Features Support ----
+
+  /** Sets the dynamic feature manager that is used to download and install split features. */
+  @UiThread
+  public void setDynamicFeatureManager(@NonNull DynamicFeatureManager dynamicFeatureManager) {
+    ensureRunningOnMainThread();
+    this.dynamicFeatureManager = dynamicFeatureManager;
+  }
+
+  private Context dynamicFeatureContext;
+  @UiThread
+  public void setDynamicFeatureContext(@NonNull Context context) {
+    ensureRunningOnMainThread();
+    this.dynamicFeatureContext = context;
+  }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void downloadDynamicFeature(int loadingUnitId) {
+    String loadingUnitIdResName = dynamicFeatureContext.getResources().getString(dynamicFeatureContext.getResources().getIdentifier("loadingUnit" + loadingUnitId, "string", dynamicFeatureContext.getPackageName()));
+    downloadDynamicFeature(loadingUnitIdResName, loadingUnitId);
+  }
+
+  // Called by the engine upon invocation of dart loadLibrary() request
+  @SuppressWarnings("unused")
+  @UiThread
+  public void downloadDynamicFeature(String moduleName, int loadingUnitId) {
+    dynamicFeatureManager.downloadFeature(moduleName, loadingUnitId);
+  }
+
+  /**
+   * This should be called for every loading unit to be loaded into the dart isolate.
+   * 
+   * abi, libName, and apkPaths are used together to search the installed apks for the
+   * desired .so library. If not found, soPath may be provided as a fallback if a
+   * pre-extracted .so exists, especially on older devices with libs compressed in the
+   * apk.
+   *
+   * Successful loading of the dart library also completes the loadLibrary() future
+   * that triggered the install/load process.
+   */
+  @UiThread
+  public void loadDartLibrary(
+      int loadingUnitId,
+      @NonNull String libName,
+      @NonNull String[] apkPaths,
+      @NonNull String abi,
+      @NonNull String soPath) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeLoadDartLibrary(
+        nativePlatformViewId,
+        loadingUnitId,
+        libName,
+        apkPaths,
+        abi,
+        soPath);
+  }
+  private native void nativeLoadDartLibrary(
+      long nativePlatformViewId,
+      int loadingUnitId,
+      @NonNull String libName,
+      @NonNull String[] apkPaths,
+      @NonNull String abi,
+      @NonNull String soPath);
+
+
+  /**
+   * Specifies a new AssetManager that has access to the dynamic feature's assets in addition
+   * to the base module's assets.
+   *
+   * assetBundlePath is the subdirectory that the flutter assets are stored in. The typical
+   * value is `flutter_assets`.
+   */
+  @UiThread
+  public void updateAssetManager(
+      @NonNull AssetManager assetManager,
+      @NonNull String assetBundlePath
+  ) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeUpdateAssetManager(nativePlatformViewId, assetManager, assetBundlePath);
+  }
+  private native void nativeUpdateAssetManager(
+      long nativePlatformViewId,
+      @NonNull AssetManager assetManager,
+      @NonNull String assetBundlePath
+  );
+
+  // Called when an install encounters a failure during the Android portion of installing a module.
+  // When transient is false, new attempts to install will automatically result in same error in
+  // dart before the request is passed to Android.
+  @SuppressWarnings("unused")
+  @UiThread
+  public void dynamicFeatureInstallFailure(@NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans) {
+    ensureRunningOnMainThread();
+    nativeDynamicFeatureInstallFailure(moduleName, loadingUnitId, error, trans);
+  }
+  private native void nativeDynamicFeatureInstallFailure(@NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans);
+
+  // ----- End Dynamic Features Support ----
 
   // @SuppressWarnings("unused")
   @UiThread
