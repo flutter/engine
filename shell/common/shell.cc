@@ -822,13 +822,8 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
 
   // This is the formula Android uses.
   // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
-  size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
-  task_runners_.GetRasterTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
-        if (rasterizer) {
-          rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
-        }
-      });
+  resource_cache_max_bytes_update_ =
+      metrics.physical_width * metrics.physical_height * 12 * 4;
 
   task_runners_.GetUITaskRunner()->PostTask(
       [engine = engine_->GetWeakPtr(), metrics]() {
@@ -836,6 +831,10 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
           engine->SetViewportMetrics(metrics);
         }
       });
+
+  std::scoped_lock<std::mutex> lock(resize_mutex_);
+  expected_frame_size_ =
+      SkISize::Make(metrics.physical_width, metrics.physical_height);
 }
 
 // |PlatformView::Delegate|
@@ -1025,13 +1024,22 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
     }
   }
 
+  size_t max_bytes = resource_cache_max_bytes_update_;
+  resource_cache_max_bytes_update_ = 0;
+
   task_runners_.GetRasterTaskRunner()->PostTask(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
-       rasterizer = rasterizer_->GetWeakPtr(),
-       pipeline = std::move(pipeline)]() {
+       rasterizer = rasterizer_->GetWeakPtr(), max_bytes,
+       pipeline = std::move(pipeline), this]() {
         if (rasterizer) {
-          rasterizer->Draw(pipeline);
+          if (max_bytes != 0) {
+            rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
+          }
+          rasterizer->Draw(pipeline, [this](flutter::LayerTree& tree) {
+            std::scoped_lock<std::mutex> lock(resize_mutex_);
+            return tree.frame_size() != expected_frame_size_;
+          });
 
           if (waiting_for_first_frame.load()) {
             waiting_for_first_frame.store(false);

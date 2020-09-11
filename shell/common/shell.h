@@ -425,6 +425,10 @@ class Shell final : public PlatformView::Delegate,
   // and read from the raster thread.
   std::atomic<float> display_refresh_rate_ = 0.0f;
 
+  std::mutex resize_mutex_;
+  SkISize expected_frame_size_ = SkISize::MakeEmpty();
+  size_t resource_cache_max_bytes_update_ = 0;
+
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
 
