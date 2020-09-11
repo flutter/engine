@@ -1737,6 +1737,9 @@ typedef ImageDecoderCallback = void Function(Image result);
 ///
 /// To obtain an instance of the [FrameInfo] interface, see
 /// [Codec.getNextFrame].
+///
+/// The recipient of this class is responsible for calling [Image.dispose] on
+/// [image].
 class FrameInfo {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -1795,6 +1798,9 @@ class Codec extends NativeFieldWrapperClass2 {
   /// Wraps back to the first frame after returning the last frame.
   ///
   /// The returned future can complete with an error if the decoding has failed.
+  ///
+  /// The caller of this method is responsible for disposing the
+  /// [FrameInfo.image] on the returned object.
   Future<FrameInfo> getNextFrame() async {
     if (_cachedFrame == null || frameCount != 1) {
       final Completer<void> completer = Completer<void>.sync();
