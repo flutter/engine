@@ -40,10 +40,11 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
  public:
   LayerTestBase()
       : preroll_context_({
-            nullptr, /* raster_cache */
-            nullptr, /* gr_context */
-            nullptr, /* external_view_embedder */
-            mutators_stack_, TestT::mock_canvas().imageInfo().colorSpace(),
+            nullptr,                  /* raster_cache */
+            nullptr,                  /* gr_context */
+            nullptr,                  /* external_view_embedder */
+            mutators_stack_, nullptr, /* damage_context */
+            TestT::mock_canvas().imageInfo().colorSpace(),
             kGiantRect, /* cull_rect */
             false,      /* layer reads from surface */
             raster_time_, ui_time_, texture_registry_,

@@ -38,6 +38,8 @@ class PhysicalShapeLayer : public ContainerLayer {
   float elevation() const { return elevation_; }
 
  private:
+  static bool compare(const Layer* l1, const Layer* l2);
+
   SkColor color_;
   SkColor shadow_color_;
   float elevation_ = 0.0f;

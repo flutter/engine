@@ -42,7 +42,8 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
   flutter::SceneUpdateContext& scene_update_context_;
 
   flutter::RasterStatus Raster(flutter::LayerTree& layer_tree,
-                               bool ignore_raster_cache) override {
+                               bool ignore_raster_cache,
+                               flutter::FrameDamage* frame_damage) override {
     std::vector<flutter::SceneUpdateContext::PaintTask> frame_paint_tasks;
     std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
 

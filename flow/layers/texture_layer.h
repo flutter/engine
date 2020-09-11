@@ -24,6 +24,10 @@ class TextureLayer : public Layer {
   void Paint(PaintContext& context) const override;
 
  private:
+  // TODO(knopp) It would be great if there was way to determine if texture
+  // has changed and whether it needs to contribute to damage rectangle
+  static bool compare(const Layer* l1, const Layer* l2) { return false; }
+
   SkPoint offset_;
   SkSize size_;
   int64_t texture_id_;
