@@ -48,7 +48,7 @@ FLUTTER_ASSERT_ARC
     [self expectationForNotification:UIApplicationDidBecomeActiveNotification
                               object:self
                              handler:nil];
-    [self waitForExpectationsWithTimeout:30.0 handler:nil];
+    [self waitForExpectationsWithTimeout:60.0 handler:nil];
   }
   XCTAssertEqual([UIApplication sharedApplication].applicationState, UIApplicationStateActive);
 }
