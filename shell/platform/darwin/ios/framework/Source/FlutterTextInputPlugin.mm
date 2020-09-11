@@ -1003,26 +1003,19 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // updates, thereby avoiding common race conditions.
   if (_latestState == nil) {
     _latestState = state;
-    NSLog(@"justin leading edge updateEditingClient for %@", _latestState[@"text"]);
     [self updateEditingClient];
-    NSLog(@"justin 1");
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10000000), dispatch_get_main_queue(), ^(void){
-      NSLog(@"justin 2");
       if (_latestState == state) {
-        NSLog(@"justin updateEditingClient clear leading edge for %@", _latestState[@"text"]);
         _latestState = nil;
       }
     });
-    NSLog(@"justin 3");
     return;
   }
   _latestState = state;
-  NSLog(@"justin updateEditingClient start trailing edge timer for _latestState for %@", _latestState[@"text"]);
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10000000), dispatch_get_main_queue(), ^(void){
     if (state != _latestState) {
       return;
     }
-    NSLog(@"justin trailing edge updateEditingClient for %@", _latestState[@"text"]);
     [self updateEditingClient];
     _latestState = nil;
   });
@@ -1367,7 +1360,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (void)setTextInputEditingState:(NSDictionary*)state {
   if ([_activeView setTextInputState:state]) {
-    NSLog(@"justin setTextInputEditingState for %@", state[@"text"]);
     [_activeView updateEditingState];
   }
 }

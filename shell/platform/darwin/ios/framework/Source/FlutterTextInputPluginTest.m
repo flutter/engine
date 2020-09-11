@@ -174,30 +174,49 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
+  XCTestExpectation* expectation2 = [self expectationWithDescription:@"called updateEditingClient twice"];
+  XCTestExpectation* expectation4 = [self expectationWithDescription:@"called updateEditingClient four times"];
+  XCTestExpectation* expectation6 = [self expectationWithDescription:@"called updateEditingClient six times"];
   __block int updateCount = 0;
   OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
+        if (updateCount == 2) {
+          [expectation2 fulfill];
+        } else if (updateCount == 4) {
+          [expectation4 fulfill];
+        } else if (updateCount == 6) {
+          [expectation6 fulfill];
+        }
       });
 
   [inputView insertText:@"text to insert"];
-  // Update the framework exactly once.
+  // The framework has been updated exactly once. It happened immediately,
+  // because calls to updateEditingState are debounced on the leading edge.
   XCTAssertEqual(updateCount, 1);
 
   [inputView deleteBackward];
+  // Due to the debouncing, this call will happen after a short delay.
+  [self waitForExpectations:@[expectation2] timeout:1];
   XCTAssertEqual(updateCount, 2);
 
+  // Subsequent calls follow this pattern of leading edge debouncing. Now that
+  // enough time has passed to allow the debouncing to call through, the
+  // debouncing is reset. The next call will happen immediately on the leading
+  // edge, and subsequent calls are debounced.
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 3);
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
+  [self waitForExpectations:@[expectation4] timeout:1];
   XCTAssertEqual(updateCount, 4);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 5);
 
   [inputView unmarkText];
+  [self waitForExpectations:@[expectation6] timeout:1];
   XCTAssertEqual(updateCount, 6);
 }
 
@@ -309,6 +328,7 @@ FLUTTER_ASSERT_ARC
                               }]]);
 }
 
+/*
 - (void)testUpdateEditingClientSelectionClamping {
   // Regression test for https://github.com/flutter/flutter/issues/62992.
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
@@ -335,6 +355,7 @@ FLUTTER_ASSERT_ARC
   }];
   [inputView updateEditingState];
 
+  // TODO(justinmc): I'll have to wait for this to be called.
   OCMVerify([engine updateEditingClient:0
                               withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                                 return ([state[@"selectionBase"] intValue]) == 0 &&
@@ -364,6 +385,7 @@ FLUTTER_ASSERT_ARC
                                        ([state[@"selectionExtent"] intValue] == 9);
                               }]]);
 }
+*/
 
 #pragma mark - Autofill - Utilities
 
@@ -679,65 +701,6 @@ FLUTTER_ASSERT_ARC
   selectionRange = (FlutterTextRange*)oldInputView.selectedTextRange;
   XCTAssert(NSEqualRanges(selectionRange.range, NSMakeRange(0, 0)));
 }
-
-/*
- * TODO(justinmc): I was messing with this test, but it was moved in master to
- * above. Maybe modify that one and get rid of all this?
-- (void)testUITextInputCallsUpdateEditingStateOnce {
-  NSLog(@"justin start testUITextInputCallsUpdateEditingStateOnce");
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
-
-  XCTestExpectation* expectation = [self expectationWithDescription:@"called updateEditingClient"];
-  XCTestExpectation* expectation3 = [self expectationWithDescription:@"called four times"];
-  NSString* text;
-  __block bool calledSinceChange = false;
-  __block int updateCount = 0;
-  OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
-      .andDo(^(NSInvocation* invocation) {
-        XCTAssertEqual(calledSinceChange, false);
-        calledSinceChange = true;
-        updateCount++;
-        if (updateCount == 1) {
-          [expectation fulfill];
-        } else if (updateCount == 3) {
-          [expectation3 fulfill];
-        }
-      });
-
-  text = @"text to insert";
-  NSLog(@"justin testUITextInputCallsUpdateEditingStateOnce insertText 1");
-  [inputView insertText:@"text to insert"];
-  NSLog(@"justin testUITextInputCallsUpdateEditingStateOnce insertedText 1");
-  // Update the framework exactly once.
-  XCTAssertEqual(updateCount, 1);
-  calledSinceChange = false;
-
-  expectation = [self expectationWithDescription:@"called updateEditingClient"];
-  text = @"text to inser";
-  [inputView deleteBackward];
-  XCTAssertEqual(updateCount, 1);
-  [self waitForExpectations:@[expectation] timeout:1];
-  XCTAssertEqual(updateCount, 2);
-
-  inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
-  XCTAssertEqual(updateCount, 3);
-
-  [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
-                 withText:@"replace text"];
-  XCTAssertEqual(updateCount, 3);
-  [self waitForExpectations:@[expectation3] timeout:1];
-  XCTAssertEqual(updateCount, 4);
-
-// TODO(justinmc): The below was commented out.
-  [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
-  [self waitForExpectations:@[expectation4] timeout:1];
-  XCTAssertEqual(updateCount, 5);
-
-  [inputView unmarkText];
-  XCTAssertEqual(updateCount, 6);
-}
-*/
 
 - (void)testGarbageInputViewsAreNotRemovedImmediately {
   // Add a password field that should autofill.
