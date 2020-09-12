@@ -117,7 +117,7 @@ executable("flutter_desktop_darwin_unittests") {
     "//flutter/testing:dart",
     "//flutter/testing:skia",
     "//flutter/testing:testing_lib",
-    "//third_party/ocmock:ocmock_src",
+    "//third_party/ocmock:ocmock",
   ]
 }
 
