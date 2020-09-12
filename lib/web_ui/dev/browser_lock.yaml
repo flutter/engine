@@ -29,10 +29,11 @@ ios-safari:
   device: 'iPhone 11'
   # `xcrun simctl` command is used to take screenshots. It takes the screenshot
   # of the entire simulator. Therefore we need to crop all the parts other than
-  # the browsers' content. Do not forget to update these values during simulator
-  # version upgrade.
+  # the browsers' content. This file must be in sync with the local and LUCI
+  # versions of macOS, iOS Simulator, and Xcode.
   # `heightOfHeader` is the number of pixels taken by the phone's header menu
   # and the browsers address bar.
+  # TODO: https://github.com/flutter/flutter/issues/65672
   heightOfHeader: 282
   # `heightOfFooter` is the number of pixels taken by the phone's navigation
   # menu.

@@ -20,6 +20,7 @@ import 'utils.dart';
 /// [ScreenshotManager] implementation for Chrome.
 ///
 /// This manager can be used for both macOS and Linux.
+// TODO: https://github.com/flutter/flutter/issues/65673
 class ChromeScreenshotManager extends ScreenshotManager {
   String get filenameSuffix => '';
 
