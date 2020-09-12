@@ -187,7 +187,7 @@ Future<void> _takeScreenshot(
     String fileName, io.Directory workingDirectory) async {
   final io.ProcessResult versionResult = await io.Process.run(
       'xcrun', ['simctl', 'io', 'booted', 'screenshot', fileName],
-      workingDirectory: environment.webUiSimulatorScreenshotsDirectory.path);
+      workingDirectory: workingDirectory.path);
 
   if (versionResult.exitCode != 0) {
     throw Exception('Failed to run xcrun screenshot on iOS simulator.');
