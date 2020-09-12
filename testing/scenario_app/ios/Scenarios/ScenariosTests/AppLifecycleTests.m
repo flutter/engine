@@ -59,9 +59,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual([UIApplication sharedApplication].applicationState, UIApplicationStateActive);
 }
 
-// TODO(cbracken): re-enable this test by removing the skip_ prefix once the source of its flakiness
-// has been identified. https://github.com/flutter/flutter/issues/61620
-- (void)skip_testDismissedFlutterViewControllerNotRespondingToApplicationLifecycle {
+- (void)testDismissedFlutterViewControllerNotRespondingToApplicationLifecycle {
   XCTestExpectation* engineStartedExpectation = [self expectationWithDescription:@"Engine started"];
   // Let the engine finish booting (at the end of which the channels are properly set-up) before
   // moving onto the next step of showing the next view controller.
@@ -203,9 +201,7 @@ FLUTTER_ASSERT_ARC
   [engine destroyContext];
 }
 
-// TODO(cbracken): re-enable this test by removing the skip_ prefix once the source of its flakiness
-// has been identified. https://github.com/flutter/flutter/issues/61620
-- (void)skip_testVisibleFlutterViewControllerRespondsToApplicationLifecycle {
+- (void)VisibleFlutterViewControllerRespondsToApplicationLifecycle {
   XCTestExpectation* engineStartedExpectation = [self expectationWithDescription:@"Engine started"];
 
   // Let the engine finish booting (at the end of which the channels are properly set-up) before
@@ -315,9 +311,7 @@ FLUTTER_ASSERT_ARC
   [engine destroyContext];
 }
 
-// TODO(cbracken): re-enable this test by removing the skip_ prefix once the source of its flakiness
-// has been identified. https://github.com/flutter/flutter/issues/61620
-- (void)skip_testFlutterViewControllerDetachingSendsApplicationLifecycle {
+- (void)testFlutterViewControllerDetachingSendsApplicationLifecycle {
   XCTestExpectation* engineStartedExpectation = [self expectationWithDescription:@"Engine started"];
 
   // Let the engine finish booting (at the end of which the channels are properly set-up) before
