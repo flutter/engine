@@ -51,9 +51,10 @@ FLUTTER_ASSERT_ARC
           [UIApplication sharedApplication].applicationState);
     // Don't have to inspect the notification since the typed notification itself indicates the
     // desired state.
-    [self expectationForNotification:UIApplicationDidBecomeActiveNotification
-                              object:self
-                             handler:nil];
+//    [self expectationForNotification:UIApplicationDidBecomeActiveNotification
+//                              object:self
+//                             handler:nil];
+    [self keyValueObservingExpectationForObject:[UIApplication sharedApplication] keyPath:@"applicationState" expectedValue:nil];
     [self waitForExpectationsWithTimeout:30.0 handler:nil];
   }
   XCTAssertEqual([UIApplication sharedApplication].applicationState, UIApplicationStateActive);
@@ -201,7 +202,7 @@ FLUTTER_ASSERT_ARC
   [engine destroyContext];
 }
 
-- (void)VisibleFlutterViewControllerRespondsToApplicationLifecycle {
+- (void)testVisibleFlutterViewControllerRespondsToApplicationLifecycle {
   XCTestExpectation* engineStartedExpectation = [self expectationWithDescription:@"Engine started"];
 
   // Let the engine finish booting (at the end of which the channels are properly set-up) before
