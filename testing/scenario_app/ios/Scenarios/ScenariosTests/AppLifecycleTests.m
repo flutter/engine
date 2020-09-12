@@ -40,24 +40,25 @@ FLUTTER_ASSERT_ARC
   self.continueAfterFailure = NO;
 }
 
-- (void)ensureApplicationIsInActiveState {
-  // Since this test checks for view controller and application lifecycles, the starting point
-  // must be well defined.
-
-  // Make this check after setting the root view controller since it seems to just hang if
-  // done in setUp.
+- (NSArray*)initialPresentLifecycles {
+  NSMutableArray* expectations =
+      [NSMutableArray arrayWithObject:[[XCAppLifecycleTestExpectation alloc]
+                                          initForLifecycle:@"AppLifecycleState.inactive"
+                                                   forStep:@"showing a FlutterViewController"]];
+  
+  // If the test is the very first test to run in the test target, the UIApplication may
+  // be in inactive state. Haven't found a good way to force it to go to active state.
+  // So just account for it in the initial lifecycle events with an extra resumed since
+  // the FlutterViewController tracks all view controller and application lifecycle events.
   if ([UIApplication sharedApplication].applicationState != UIApplicationStateActive) {
-    NSLog(@"Initial application state is currently %zd. Waiting for active.",
-          [UIApplication sharedApplication].applicationState);
-    // Don't have to inspect the notification since the typed notification itself indicates the
-    // desired state.
-//    [self expectationForNotification:UIApplicationDidBecomeActiveNotification
-//                              object:self
-//                             handler:nil];
-    [self keyValueObservingExpectationForObject:[UIApplication sharedApplication] keyPath:@"applicationState" expectedValue:nil];
-    [self waitForExpectationsWithTimeout:30.0 handler:nil];
+    [expectations addObject:[[XCAppLifecycleTestExpectation alloc]
+                                initForLifecycle:@"AppLifecycleState.resumed"
+                                         forStep:@"showing a FlutterViewController"]];
   }
-  XCTAssertEqual([UIApplication sharedApplication].applicationState, UIApplicationStateActive);
+  [expectations addObject:[[XCAppLifecycleTestExpectation alloc]
+                              initForLifecycle:@"AppLifecycleState.resumed"
+                                       forStep:@"showing a FlutterViewController"]];
+  return expectations;
 }
 
 - (void)testDismissedFlutterViewControllerNotRespondingToApplicationLifecycle {
@@ -73,17 +74,10 @@ FLUTTER_ASSERT_ARC
   application.delegate.window.rootViewController = rootVC;
   FlutterEngine* engine = rootVC.engine;
 
-  [self ensureApplicationIsInActiveState];
-
   NSMutableArray* lifecycleExpectations = [NSMutableArray arrayWithCapacity:10];
 
   // Expected sequence from showing the FlutterViewController is inactive and resumed.
-  [lifecycleExpectations addObjectsFromArray:@[
-    [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.inactive"
-                                                    forStep:@"showing a FlutterViewController"],
-    [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.resumed"
-                                                    forStep:@"showing a FlutterViewController"]
-  ]];
+  [lifecycleExpectations addObjectsFromArray:[self initialPresentLifecycles]];
 
   [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
     if (lifecycleExpectations.count == 0) {
@@ -217,17 +211,10 @@ FLUTTER_ASSERT_ARC
   application.delegate.window.rootViewController = rootVC;
   FlutterEngine* engine = rootVC.engine;
 
-  [self ensureApplicationIsInActiveState];
-
   NSMutableArray* lifecycleExpectations = [NSMutableArray arrayWithCapacity:10];
 
   // Expected sequence from showing the FlutterViewController is inactive and resumed.
-  [lifecycleExpectations addObjectsFromArray:@[
-    [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.inactive"
-                                                    forStep:@"showing a FlutterViewController"],
-    [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.resumed"
-                                                    forStep:@"showing a FlutterViewController"]
-  ]];
+  [lifecycleExpectations addObjectsFromArray:[self initialPresentLifecycles]];
 
   [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
     if (lifecycleExpectations.count == 0) {
@@ -327,17 +314,10 @@ FLUTTER_ASSERT_ARC
   application.delegate.window.rootViewController = rootVC;
   FlutterEngine* engine = rootVC.engine;
 
-  [self ensureApplicationIsInActiveState];
-
   NSMutableArray* lifecycleExpectations = [NSMutableArray arrayWithCapacity:10];
 
   // Expected sequence from showing the FlutterViewController is inactive and resumed.
-  [lifecycleExpectations addObjectsFromArray:@[
-    [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.inactive"
-                                                    forStep:@"showing a FlutterViewController"],
-    [[XCAppLifecycleTestExpectation alloc] initForLifecycle:@"AppLifecycleState.resumed"
-                                                    forStep:@"showing a FlutterViewController"]
-  ]];
+  [lifecycleExpectations addObjectsFromArray:[self initialPresentLifecycles]];
 
   [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
     if (lifecycleExpectations.count == 0) {
