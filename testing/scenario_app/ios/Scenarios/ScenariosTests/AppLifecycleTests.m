@@ -45,7 +45,7 @@ FLUTTER_ASSERT_ARC
       [NSMutableArray arrayWithObject:[[XCAppLifecycleTestExpectation alloc]
                                           initForLifecycle:@"AppLifecycleState.inactive"
                                                    forStep:@"showing a FlutterViewController"]];
-  
+
   // If the test is the very first test to run in the test target, the UIApplication may
   // be in inactive state. Haven't found a good way to force it to go to active state.
   // So just account for it in the initial lifecycle events with an extra resumed since
