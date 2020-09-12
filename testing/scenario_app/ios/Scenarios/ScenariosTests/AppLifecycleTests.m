@@ -38,8 +38,14 @@ FLUTTER_ASSERT_ARC
 - (void)setUp {
   [super setUp];
   self.continueAfterFailure = NO;
+}
+
+- (void)ensureApplicationIsInActiveState {
   // Since this test checks for view controller and application lifecycles, the starting point
   // must be well defined.
+
+  // Make this check after setting the root view controller since it seems to just hang if
+  // done in setUp.
   if ([UIApplication sharedApplication].applicationState != UIApplicationStateActive) {
     NSLog(@"Initial application state is currently %zd. Waiting for active.",
           [UIApplication sharedApplication].applicationState);
@@ -48,7 +54,7 @@ FLUTTER_ASSERT_ARC
     [self expectationForNotification:UIApplicationDidBecomeActiveNotification
                               object:self
                              handler:nil];
-    [self waitForExpectationsWithTimeout:60.0 handler:nil];
+    [self waitForExpectationsWithTimeout:30.0 handler:nil];
   }
   XCTAssertEqual([UIApplication sharedApplication].applicationState, UIApplicationStateActive);
 }
@@ -67,6 +73,8 @@ FLUTTER_ASSERT_ARC
   UIApplication* application = UIApplication.sharedApplication;
   application.delegate.window.rootViewController = rootVC;
   FlutterEngine* engine = rootVC.engine;
+
+  [self ensureApplicationIsInActiveState];
 
   NSMutableArray* lifecycleExpectations = [NSMutableArray arrayWithCapacity:10];
 
@@ -212,6 +220,8 @@ FLUTTER_ASSERT_ARC
   application.delegate.window.rootViewController = rootVC;
   FlutterEngine* engine = rootVC.engine;
 
+  [self ensureApplicationIsInActiveState];
+
   NSMutableArray* lifecycleExpectations = [NSMutableArray arrayWithCapacity:10];
 
   // Expected sequence from showing the FlutterViewController is inactive and resumed.
@@ -321,6 +331,8 @@ FLUTTER_ASSERT_ARC
   UIApplication* application = UIApplication.sharedApplication;
   application.delegate.window.rootViewController = rootVC;
   FlutterEngine* engine = rootVC.engine;
+
+  [self ensureApplicationIsInActiveState];
 
   NSMutableArray* lifecycleExpectations = [NSMutableArray arrayWithCapacity:10];
 
