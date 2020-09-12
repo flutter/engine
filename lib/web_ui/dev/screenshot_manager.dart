@@ -8,11 +8,14 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:image/image.dart';
+import 'package:path/path.dart' as path;
 import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
 import 'package:yaml/yaml.dart';
 
 import 'common.dart';
+import 'environment.dart';
+import 'utils.dart';
 
 /// [ScreenshotManager] implementation for Chrome.
 ///
@@ -62,7 +65,6 @@ class ChromeScreenshotManager extends ScreenshotManager {
     final wip.WipResponse response = await wipConnection.sendCommand(
         'Page.captureScreenshot', captureScreenshotParameters);
 
-    // Compare screenshots
     final Image screenshot =
         decodePng(base64.decode(response.result['data'] as String));
 
@@ -82,6 +84,15 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
     final YamlMap browserLock = BrowserLock.instance.configuration;
     _heightOfHeader = browserLock['ios-safari']['heightOfHeader'] as int;
     _heightOfFooter = browserLock['ios-safari']['heightOfFooter'] as int;
+
+    /// Create the directory to use for taking screenshots, if it does not
+    /// exists.
+    if (!environment.webUiSimulatorScreenshotsDirectory.existsSync()) {
+      environment.webUiSimulatorScreenshotsDirectory.createSync();
+    }
+    // Temporary directories are deleted in the clenaup phase of after `felt`
+    // runs the tests.
+    temporaryDirectories.add(environment.webUiSimulatorScreenshotsDirectory);
   }
 
   /// Height of the part to crop from the top of the image.
@@ -137,20 +148,18 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
   /// Uses simulator tool `xcrun simctl`'s 'screenshot' command.
   Future<Image> capture(Map<String, dynamic> region) async {
     final String suffix = random.nextInt(100).toString();
-    final io.ProcessResult versionResult = await io.Process.run('xcrun',
-        ['simctl', 'io', 'booted', 'screenshot', 'screenshot${suffix}.png']);
+    final String filename = 'screenshot${suffix}.png';
 
-    if (versionResult.exitCode != 0) {
-      throw Exception('Failed to run xcrun screenshot on iOS simulator.');
-    }
-    final io.File file = io.File('screenshot${suffix}.png');
+    await _takeScreenshot(
+        filename, environment.webUiSimulatorScreenshotsDirectory);
+
+    final io.File file = io.File(path.join(
+        environment.webUiSimulatorScreenshotsDirectory.path, filename));
     List<int> imageBytes;
     if (!file.existsSync()) {
       throw Exception('Failed to read the screenshot screenshot${suffix}.png.');
     }
     imageBytes = await file.readAsBytes();
-
-    file.deleteSync();
 
     final Image screenshot = decodePng(imageBytes);
     // Image with no footer and header.
@@ -171,6 +180,17 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
             (region['width'] as int),
             (region['height'] as int),
           );
+  }
+}
+
+Future<void> _takeScreenshot(
+    String fileName, io.Directory workingDirectory) async {
+  final io.ProcessResult versionResult = await io.Process.run(
+      'xcrun', ['simctl', 'io', 'booted', 'screenshot', fileName],
+      workingDirectory: environment.webUiSimulatorScreenshotsDirectory.path);
+
+  if (versionResult.exitCode != 0) {
+    throw Exception('Failed to run xcrun screenshot on iOS simulator.');
   }
 }
 
