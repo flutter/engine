@@ -218,8 +218,12 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
 ''';
     }
 
-    final Rectangle regionAsRectange =
-        Rectangle(region['x'], region['y'], region['width'], region['height']);
+    final Rectangle regionAsRectange = Rectangle(
+      region['x'] as num,
+      region['y'] as num,
+      region['width'] as num,
+      region['height'] as num,
+    );
 
     // Take screenshot.
     final Image screenshot = await _screenshotManager.capture(regionAsRectange);

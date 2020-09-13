@@ -173,16 +173,14 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
       screenshot.height - _heightOfFooter - _heightOfHeader,
     );
 
-    file.deleteSync();
-
     return (region == null)
         ? content
         : copyCrop(
             content,
-            region.left,
-            region.top,
-            region.width,
-            region.height,
+            region.left.toInt(),
+            region.top.toInt(),
+            region.width.toInt(),
+            region.height.toInt(),
           );
   }
 }
