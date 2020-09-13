@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 
 import 'package:async/async.dart';
 import 'package:http_multi_server/http_multi_server.dart';
@@ -217,8 +218,11 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
 ''';
     }
 
+    final Rectangle regionAsRectange =
+        Rectangle(region['x'], region['y'], region['width'], region['height']);
+
     // Take screenshot.
-    final Image screenshot = await _screenshotManager.capture(region);
+    final Image screenshot = await _screenshotManager.capture(regionAsRectange);
 
     if (write) {
       // Don't even bother with the comparison, just write and return

@@ -31,7 +31,7 @@ class ChromeScreenshotManager extends ScreenshotManager {
   /// [region] is used to decide which part of the web content will be used in
   /// test image. It includes starting coordinate x,y as well as height and
   /// width of the area to capture.
-  Future<Image> capture(Map<String, dynamic> region) async {
+  Future<Image> capture(Rectangle region) async {
     final wip.ChromeConnection chromeConnection =
         wip.ChromeConnection('localhost', kDevtoolsPort);
     final wip.ChromeTab chromeTab = await chromeConnection.getTab(
@@ -43,10 +43,10 @@ class ChromeScreenshotManager extends ScreenshotManager {
       captureScreenshotParameters = <String, dynamic>{
         'format': 'png',
         'clip': <String, dynamic>{
-          'x': region['x'],
-          'y': region['y'],
-          'width': region['width'],
-          'height': region['height'],
+          'x': region.left,
+          'y': region.top,
+          'width': region.width,
+          'height': region.height,
           'scale':
               // This is NOT the DPI of the page, instead it's the "zoom level".
               1,
@@ -79,7 +79,7 @@ class ChromeScreenshotManager extends ScreenshotManager {
 class IOSSafariScreenshotManager extends ScreenshotManager {
   final Random random = Random();
 
-  String get filenameSuffix => '_iOS_Safari';
+  String get filenameSuffix => '.iOS_Safari';
 
   IOSSafariScreenshotManager() {
     final YamlMap browserLock = BrowserLock.instance.configuration;
@@ -123,11 +123,9 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
   /// |_____________________________|   |
   /// | Web page content            |   |
   /// |                             |   |
-  /// |                             |   |
   /// |                             |
   /// |                             |   H
   /// |                             |
-  /// |                             |   |
   /// |                             |   |
   /// |                             |   |
   /// |                             |   |
@@ -147,7 +145,7 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
   /// width of the area to capture.
   ///
   /// Uses simulator tool `xcrun simctl`'s 'screenshot' command.
-  Future<Image> capture(Map<String, dynamic> region) async {
+  Future<Image> capture(Rectangle region) async {
     final String suffix = random.nextInt(100).toString();
     final String filename = 'screenshot${suffix}.png';
 
@@ -176,10 +174,10 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
         ? content
         : copyCrop(
             content,
-            (region['x'] as int),
-            (region['y'] as int),
-            (region['width'] as int),
-            (region['height'] as int),
+            region.left,
+            region.top,
+            region.width,
+            region.height,
           );
   }
 }
@@ -222,12 +220,12 @@ abstract class ScreenshotManager {
   /// Capture a screenshot.
   ///
   /// Please read the details for the implementing classes.
-  Future<Image> capture(Map<String, dynamic> region);
+  Future<Image> capture(Rectangle region);
 
   /// Suffix to be added to the end of the filename.
   ///
   /// Example file names:
   /// - Chrome, no-suffix: backdrop_filter_clip_moved.actual.png
-  /// - iOS Safari: backdrop_filter_clip_moved.actual_iOS_Safari.png
+  /// - iOS Safari: backdrop_filter_clip_moved.actual.iOS_Safari.png
   String get filenameSuffix;
 }
