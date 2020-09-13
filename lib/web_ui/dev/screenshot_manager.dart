@@ -77,7 +77,7 @@ class ChromeScreenshotManager extends ScreenshotManager {
 ///
 /// This manager is will only be created/used for macOS.
 class IOSSafariScreenshotManager extends ScreenshotManager {
-  final Random random = Random();
+  int _fileNameCounter = 0;
 
   String get filenameSuffix => '.iOS_Safari';
 
@@ -146,8 +146,8 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
   ///
   /// Uses simulator tool `xcrun simctl`'s 'screenshot' command.
   Future<Image> capture(Rectangle region) async {
-    final String suffix = random.nextInt(100).toString();
-    final String filename = 'screenshot${suffix}.png';
+    final String filename = 'screenshot${_fileNameCounter}.png';
+    _fileNameCounter++;
 
     await _takeScreenshot(
         filename, environment.webUiSimulatorScreenshotsDirectory);
@@ -156,7 +156,8 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
         environment.webUiSimulatorScreenshotsDirectory.path, filename));
     List<int> imageBytes;
     if (!file.existsSync()) {
-      throw Exception('Failed to read the screenshot screenshot${suffix}.png.');
+      throw Exception('Failed to read the screenshot '
+          'screenshot${_fileNameCounter}.png.');
     }
     imageBytes = await file.readAsBytes();
 
@@ -169,6 +170,8 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
       screenshot.width,
       screenshot.height - _heightOfFooter - _heightOfHeader,
     );
+
+    file.deleteSync();
 
     return (region == null)
         ? content
