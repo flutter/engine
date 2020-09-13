@@ -77,7 +77,6 @@ class ChromeScreenshotManager extends ScreenshotManager {
 ///
 /// This manager is will only be created/used for macOS.
 class IOSSafariScreenshotManager extends ScreenshotManager {
-  int _fileNameCounter = 0;
 
   String get filenameSuffix => '.iOS_Safari';
 
@@ -110,6 +109,9 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
   /// This area is the footer navigation bar of the phone, it is not the area
   /// used by tests (which is inside the browser).
   int _heightOfFooter;
+
+  /// Used as a suffix for the temporary file names used for screenshots.
+  int _fileNameCounter = 0;
 
   /// Capture a screenshot of entire simulator.
   ///
