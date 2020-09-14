@@ -996,11 +996,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     @"text" : [NSString stringWithString:self.text],
   };
 
-  // Debounce calls to updateEditingClient. This makes iOS text editing behave
-  // more similarly to Android's, which has built-in event batching, and avoids
-  // race conditions. The delay value was chosen to be imperceptible by the user
-  // but still long enough to allow the framework to respond with formatting
-  // updates, thereby avoiding common race conditions.
+  // Debounce calls to updateEditingClient on the leading edge. This makes iOS
+  // text editing behave more similarly to Android's, which has built-in event
+  // batching, and avoids race conditions. The delay value was chosen to be
+  // imperceptible by the user but still long enough to allow the framework to
+  // respond with formatting updates, thereby avoiding common race conditions.
   if (_latestState == nil) {
     _latestState = state;
     [self updateEditingClient];

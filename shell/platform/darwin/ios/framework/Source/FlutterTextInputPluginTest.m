@@ -174,19 +174,13 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
-  XCTestExpectation* expectation2 = [self expectationWithDescription:@"called updateEditingClient twice"];
-  XCTestExpectation* expectation4 = [self expectationWithDescription:@"called updateEditingClient four times"];
-  XCTestExpectation* expectation6 = [self expectationWithDescription:@"called updateEditingClient six times"];
+  __block XCTestExpectation* expectation;
   __block int updateCount = 0;
   OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
-        if (updateCount == 2) {
-          [expectation2 fulfill];
-        } else if (updateCount == 4) {
-          [expectation4 fulfill];
-        } else if (updateCount == 6) {
-          [expectation6 fulfill];
+        if (expectation != nil) {
+          [expectation fulfill];
         }
       });
 
@@ -195,10 +189,12 @@ FLUTTER_ASSERT_ARC
   // because calls to updateEditingState are debounced on the leading edge.
   XCTAssertEqual(updateCount, 1);
 
+  expectation = [self expectationWithDescription:@"called updateEditingClient"];
   [inputView deleteBackward];
   // Due to the debouncing, this call will happen after a short delay.
   XCTAssertEqual(updateCount, 1);
-  [self waitForExpectations:@[expectation2] timeout:1];
+  [self waitForExpectations:@[expectation] timeout:1];
+  expectation = nil;
   XCTAssertEqual(updateCount, 2);
 
   // Subsequent calls follow this pattern of leading edge debouncing. Now that
@@ -208,18 +204,22 @@ FLUTTER_ASSERT_ARC
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 3);
 
+  expectation = [self expectationWithDescription:@"called updateEditingClient"];
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
   XCTAssertEqual(updateCount, 3);
-  [self waitForExpectations:@[expectation4] timeout:1];
+  [self waitForExpectations:@[expectation] timeout:1];
+  expectation = nil;
   XCTAssertEqual(updateCount, 4);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 5);
 
+  expectation = [self expectationWithDescription:@"called updateEditingClient"];
   [inputView unmarkText];
   XCTAssertEqual(updateCount, 5);
-  [self waitForExpectations:@[expectation6] timeout:1];
+  [self waitForExpectations:@[expectation] timeout:1];
+  expectation = nil;
   XCTAssertEqual(updateCount, 6);
 }
 
@@ -227,13 +227,13 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
-  XCTestExpectation* expectation2 = [self expectationWithDescription:@"called updateEditingClient twice"];
+  __block XCTestExpectation* expectation;
   __block int updateCount = 0;
   OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
-        if (updateCount == 2) {
-          [expectation2 fulfill];
+        if (expectation != nil) {
+          [expectation fulfill];
         }
       });
 
@@ -243,11 +243,12 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(updateCount, 1);
 
   // These calls will be batched and come through after a short delay.
+  expectation = [self expectationWithDescription:@"called updateEditingClient twice"];
   [inputView deleteBackward];
   [inputView deleteBackward];
   [inputView deleteBackward];
   XCTAssertEqual(updateCount, 1);
-  [self waitForExpectations:@[expectation2] timeout:1];
+  [self waitForExpectations:@[expectation] timeout:1];
   XCTAssertEqual(updateCount, 2);
   XCTAssertTrue([inputView.text isEqualToString:@"text to ins"]);
 }
@@ -365,17 +366,14 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
-  // Debounced calls need to be waited for using these expectations.
-  XCTestExpectation* expectation2 = [self expectationWithDescription:@"called updateEditingClient twice"];
-  XCTestExpectation* expectation4 = [self expectationWithDescription:@"called updateEditingClient four times"];
+  // Debounced calls need to be waited for using this expectation.
+  __block XCTestExpectation* expectation;
   __block int updateCount = 0;
   OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
-        if (updateCount == 2) {
-          [expectation2 fulfill];
-        } else if (updateCount == 4) {
-          [expectation4 fulfill];
+        if (expectation != nil) {
+          [expectation fulfill];
         }
       });
 
@@ -393,6 +391,7 @@ FLUTTER_ASSERT_ARC
                               }]]);
 
   // Needs clamping.
+  expectation = [self expectationWithDescription:@"called updateEditingClient"];
   [inputView setTextInputState:@{
     @"text" : @"SELECTION",
     @"selectionBase" : @0,
@@ -400,7 +399,8 @@ FLUTTER_ASSERT_ARC
   }];
   [inputView updateEditingState];
 
-  [self waitForExpectations:@[expectation2] timeout:1];
+  [self waitForExpectations:@[expectation] timeout:1];
+  expectation = nil;
   OCMVerify([engine updateEditingClient:0
                               withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                                 return ([state[@"selectionBase"] intValue]) == 0 &&
@@ -418,13 +418,15 @@ FLUTTER_ASSERT_ARC
                               }]]);
 
   // Both ends need clamping.
+  expectation = [self expectationWithDescription:@"called updateEditingClient"];
   [inputView setTextInputState:@{
     @"text" : @"SELECTION",
     @"selectionBase" : @9999,
     @"selectionExtent" : @9999
   }];
   [inputView updateEditingState];
-  [self waitForExpectations:@[expectation4] timeout:1];
+  [self waitForExpectations:@[expectation] timeout:1];
+  expectation = nil;
   OCMVerify([engine updateEditingClient:0
                               withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                                 return ([state[@"selectionBase"] intValue]) == 9 &&
