@@ -5,6 +5,7 @@
 #include "flutter/lib/ui/dart_ui.h"
 
 #include "flutter/fml/build_config.h"
+#include "flutter/lib/ui/assets.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/compositing/scene_builder.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
@@ -33,7 +34,6 @@
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/logging/dart_error.h"
-#include "flutter/lib/ui/assets.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 #include "flutter/lib/ui/compositing/scene_host.h"  // nogncheck
