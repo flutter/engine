@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/assets/asset_manager.h"
 #include "flutter/runtime/runtime_controller.h"
+#include "flutter/assets/asset_manager.h"
 
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"

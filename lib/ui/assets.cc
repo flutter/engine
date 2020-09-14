@@ -4,15 +4,14 @@
 
 #include "flutter/lib/ui/assets.h"
 
-#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/assets/asset_manager.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/logging/dart_invoke.h"
-#include "third_party/tonic/typed_data/typed_list.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
-#include "third_party/tonic/dart_library_natives.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 using tonic::DartInvoke;
 using tonic::DartPersistentValue;
@@ -30,7 +29,8 @@ void Assets::loadAssetBytes(Dart_NativeArguments args) {
   Dart_Handle asset_name_handle = Dart_GetNativeArgument(args, 0);
   uint8_t* chars = nullptr;
   intptr_t asset_length = 0;
-  Dart_Handle result = Dart_StringToUTF8(asset_name_handle, &chars, &asset_length);
+  Dart_Handle result =
+      Dart_StringToUTF8(asset_name_handle, &chars, &asset_length);
   if (Dart_IsError(result)) {
     Dart_PropagateError(result);
     return;
@@ -39,18 +39,17 @@ void Assets::loadAssetBytes(Dart_NativeArguments args) {
                                        static_cast<size_t>(asset_length)};
 
   std::shared_ptr<AssetManager> asset_manager = UIDartState::Current()
-                                      ->platform_configuration()
-                                      ->client()
-                                      ->GetAssetManager();
-  std::unique_ptr<fml::Mapping> data =
-        asset_manager->GetAsMapping(asset_name);
+                                                    ->platform_configuration()
+                                                    ->client()
+                                                    ->GetAssetManager();
+  std::unique_ptr<fml::Mapping> data = asset_manager->GetAsMapping(asset_name);
 
   if (data == nullptr) {
     return;
   }
 
   Dart_Handle byte_buffer =
-    tonic::DartByteData::Create(data->GetMapping(), data->GetSize());
+      tonic::DartByteData::Create(data->GetMapping(), data->GetSize());
   tonic::DartInvoke(callback, {ToDart(byte_buffer)});
 }
 
@@ -60,4 +59,4 @@ void Assets::RegisterNatives(tonic::DartLibraryNatives* natives) {
   });
 }
 
-} // namespace flutter
+}  // namespace flutter
