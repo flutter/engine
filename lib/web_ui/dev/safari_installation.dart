@@ -104,7 +104,7 @@ class IosSafariArgParser extends BrowserArgParser {
       );
     } catch (e) {
       throw Exception('Error getting requested simulator. Try running '
-          '`felt create` command first before running the tests. exception: '
+          '`felt create` command first before running the tests. Exception: '
           '$e');
     }
 

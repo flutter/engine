@@ -76,12 +76,12 @@ class ChromeScreenshotManager extends ScreenshotManager {
 
 /// [ScreenshotManager] implementation for Safari.
 ///
-/// This manager is will only be created/used for macOS.
-class IOSSafariScreenshotManager extends ScreenshotManager {
+/// This manager will only be created/used for macOS.
+class IosSafariScreenshotManager extends ScreenshotManager {
 
   String get filenameSuffix => '.iOS_Safari';
 
-  IOSSafariScreenshotManager() {
+  IosSafariScreenshotManager() {
     final YamlMap browserLock = BrowserLock.instance.configuration;
     _heightOfHeader = browserLock['ios-safari']['heightOfHeader'] as int;
     _heightOfFooter = browserLock['ios-safari']['heightOfFooter'] as int;
@@ -137,9 +137,9 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
   /// | Phone footer bar            |   |
   /// |_____________________________|   V
   ///
-  /// After taking the screenshot top and bottom parts of the image by
-  /// [_heightOfHeader] and [_heightOfFooter] consecutively. Hence web content
-  /// has the dimensions:
+  /// After taking the screenshot, the image is cropped as heigh as
+  /// [_heightOfHeader] and [_heightOfFooter] from the top and bottom parts
+  /// consecutively. Hence web content has the dimensions:
   ///
   /// W x (H - [_heightOfHeader] - [_heightOfFooter])
   ///
@@ -163,6 +163,7 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
           'screenshot${_fileNameCounter}.png.');
     }
     imageBytes = await file.readAsBytes();
+    file.deleteSync();
 
     final Image screenshot = decodePng(imageBytes);
     // Image with no footer and header.
@@ -191,12 +192,12 @@ const String _kBrowserIOSSafari = 'ios-safari';
 
 typedef ScreenshotManagerFactory = ScreenshotManager Function();
 
-/// Abstract class for taking screenshots in different browsers.
+/// Abstract class for taking screenshots in one of the browsers.
 abstract class ScreenshotManager {
   static final Map<String, ScreenshotManagerFactory> _browserFactories =
       <String, ScreenshotManagerFactory>{
     _kBrowserChrome: () => ChromeScreenshotManager(),
-    _kBrowserIOSSafari: () => IOSSafariScreenshotManager(),
+    _kBrowserIOSSafari: () => IosSafariScreenshotManager(),
   };
 
   static bool isBrowserSupported(String browser) =>

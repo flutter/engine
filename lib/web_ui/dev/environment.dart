@@ -172,7 +172,7 @@ class Environment {
   io.Directory get webUiSimulatorScreenshotsDirectory =>
       io.Directory(pathlib.join(
         webUiDartToolDir.path,
-        'screenshots',
+        'ios_screenshots',
       ));
 
   /// Path to the script that clones the Flutter repo.
