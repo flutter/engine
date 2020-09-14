@@ -481,7 +481,7 @@ public class TextInputPlugin {
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
-            view, inputTarget.id, textInputChannel, mEditable, outAttrs, this);
+            view, inputTarget.id, textInputChannel, keyProcessor, mEditable, outAttrs);
     outAttrs.initialSelStart = Selection.getSelectionStart(mEditable);
     outAttrs.initialSelEnd = Selection.getSelectionEnd(mEditable);
 

@@ -721,7 +721,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Invoked when key is pressed or released.
+   * Invoked when a hardware key is pressed or released, before the IME receives the key.
    *
    * <p>This method is typically invoked in response to the press of a physical keyboard key or a
    * D-pad button. It is generally not invoked when a virtual software keyboard is used, though a
@@ -733,12 +733,12 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    */
   @Override
   public boolean dispatchKeyEventPreIme(KeyEvent event) {
+    // If the key processor doesn't handle it, then send it on to the
+    // superclass. The key processor will typically handle all events except
+    // those where it has re-dispatched the event after receiving a reply from
+    // the framework that the framework did not handle it.
     return (isAttachedToFlutterEngine() && androidKeyProcessor.onKeyEvent(event))
         || super.dispatchKeyEventPreIme(event);
-  }
-
-  public AndroidKeyProcessor getKeyProcessor() {
-    return androidKeyProcessor;
   }
 
   /**
