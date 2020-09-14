@@ -721,27 +721,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Invoked when key is released.
-   *
-   * <p>This method is typically invoked in response to the release of a physical keyboard key or a
-   * D-pad button. It is generally not invoked when a virtual software keyboard is used, though a
-   * software keyboard may choose to invoke this method in some situations.
-   *
-   * <p>{@link KeyEvent}s are sent from Android to Flutter. {@link AndroidKeyProcessor} may do some
-   * additional work with the given {@link KeyEvent}, e.g., combine this {@code keyCode} with the
-   * previous {@code keyCode} to generate a unicode combined character.
-   */
-  @Override
-  public boolean onKeyUp(int keyCode, @NonNull KeyEvent event) {
-    if (!isAttachedToFlutterEngine()) {
-      return super.onKeyUp(keyCode, event);
-    }
-
-    return androidKeyProcessor.onKeyUp(event) || super.onKeyUp(keyCode, event);
-  }
-
-  /**
-   * Invoked when key is pressed.
+   * Invoked when key is pressed or released.
    *
    * <p>This method is typically invoked in response to the press of a physical keyboard key or a
    * D-pad button. It is generally not invoked when a virtual software keyboard is used, though a
@@ -752,12 +732,13 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * previous {@code keyCode} to generate a unicode combined character.
    */
   @Override
-  public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
-    if (!isAttachedToFlutterEngine()) {
-      return super.onKeyDown(keyCode, event);
-    }
+  public boolean dispatchKeyEventPreIme(KeyEvent event) {
+    return (isAttachedToFlutterEngine() && androidKeyProcessor.onKeyEvent(event))
+        || super.dispatchKeyEventPreIme(event);
+  }
 
-    return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
+  public AndroidKeyProcessor getKeyProcessor() {
+    return androidKeyProcessor;
   }
 
   /**

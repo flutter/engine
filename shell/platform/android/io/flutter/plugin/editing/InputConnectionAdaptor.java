@@ -27,13 +27,17 @@ import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import io.flutter.Log;
+import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 
 class InputConnectionAdaptor extends BaseInputConnection {
+  private static final String TAG = "InputConnectionAdaptor";
+
   private final View mFlutterView;
   private final int mClient;
   private final TextInputChannel textInputChannel;
+  private final TextInputPlugin textInputPlugin;
   private final Editable mEditable;
   private final EditorInfo mEditorInfo;
   private int mBatchCount;
@@ -99,7 +103,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
       TextInputChannel textInputChannel,
       Editable editable,
       EditorInfo editorInfo,
-      FlutterJNI flutterJNI) {
+      FlutterJNI flutterJNI,
+      TextInputPlugin textInputPlugin) {
     super(view, true);
     mFlutterView = view;
     mClient = client;
@@ -107,6 +112,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     mEditable = editable;
     mEditorInfo = editorInfo;
     mBatchCount = 0;
+    this.textInputPlugin = textInputPlugin;
     this.flutterTextUtils = new FlutterTextUtils(flutterJNI);
     // We create a dummy Layout with max width so that the selection
     // shifting acts as if all text were in one line.
@@ -129,8 +135,9 @@ class InputConnectionAdaptor extends BaseInputConnection {
       int client,
       TextInputChannel textInputChannel,
       Editable editable,
-      EditorInfo editorInfo) {
-    this(view, client, textInputChannel, editable, editorInfo, new FlutterJNI());
+      EditorInfo editorInfo,
+      TextInputPlugin textInputPlugin) {
+    this(view, client, textInputChannel, editable, editorInfo, new FlutterJNI(), textInputPlugin);
   }
 
   // Send the current state of the editable to Flutter.
@@ -323,6 +330,15 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
+    String type = event.getAction() == KeyEvent.ACTION_DOWN ? "DOWN" : "UP";
+    int action = event.getAction();
+    AndroidKeyProcessor processor = textInputPlugin.getKeyEventProcessor();
+    if (processor != null) {
+      if (processor.onKeyEvent(event)) {
+        return true;
+      }
+    }
+
     markDirty();
     if (event.getAction() == KeyEvent.ACTION_DOWN) {
       if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
