@@ -15,6 +15,7 @@ import 'package:yaml/yaml.dart';
 
 import 'common.dart';
 import 'environment.dart';
+import 'safari_installation.dart';
 import 'utils.dart';
 
 /// [ScreenshotManager] implementation for Chrome.
@@ -151,7 +152,7 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
     final String filename = 'screenshot${_fileNameCounter}.png';
     _fileNameCounter++;
 
-    await _takeScreenshot(
+    await IosSafariArgParser.instance.iosSimulator.takeScreenshot(
         filename, environment.webUiSimulatorScreenshotsDirectory);
 
     final io.File file = io.File(path.join(
@@ -182,17 +183,6 @@ class IOSSafariScreenshotManager extends ScreenshotManager {
             region.width.toInt(),
             region.height.toInt(),
           );
-  }
-}
-
-Future<void> _takeScreenshot(
-    String fileName, io.Directory workingDirectory) async {
-  final io.ProcessResult versionResult = await io.Process.run(
-      'xcrun', ['simctl', 'io', 'booted', 'screenshot', fileName],
-      workingDirectory: workingDirectory.path);
-
-  if (versionResult.exitCode != 0) {
-    throw Exception('Failed to run xcrun screenshot on iOS simulator.');
   }
 }
 
