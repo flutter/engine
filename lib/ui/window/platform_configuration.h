@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "flutter/assets/asset_manager.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/window/platform_message.h"
@@ -110,6 +111,8 @@ class PlatformConfigurationClient {
   ///             collections of them. MinikinFontForTest is used for FontFamily
   ///             creation.
   virtual FontCollection& GetFontCollection() = 0;
+
+  virtual std::shared_ptr<AssetManager> GetAssetManager() = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Notifies this client of the name of the root isolate and its

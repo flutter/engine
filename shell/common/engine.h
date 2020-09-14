@@ -751,6 +751,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
+  // |RuntimeDelegate|
+  std::shared_ptr<AssetManager> GetAssetManager() override;
+
   // |PointerDataDispatcher::Delegate|
   void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                         uint64_t trace_flow_id) override;

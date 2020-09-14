@@ -35,6 +35,7 @@ part 'src/ui/test_embedding.dart';
 part 'src/ui/text.dart';
 part 'src/ui/tile_mode.dart';
 part 'src/ui/window.dart';
+part 'src/ui/assets.dart';
 
 /// Provides a compile time constant to customize flutter framework and other
 /// users of ui engine for web runtime.

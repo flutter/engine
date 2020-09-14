@@ -46,6 +46,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
                void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
   MOCK_METHOD1(HandlePlatformMessage, void(fml::RefPtr<PlatformMessage>));
   MOCK_METHOD0(GetFontCollection, FontCollection&());
+  MOCK_METHOD0(GetAssetManager, std::shared_ptr<AssetManager>());
   MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
   MOCK_METHOD1(SetNeedsReportTimings, void(bool));
   MOCK_METHOD1(ComputePlatformResolvedLocale,

@@ -513,6 +513,10 @@ FontCollection& Engine::GetFontCollection() {
   return font_collection_;
 }
 
+std::shared_ptr<AssetManager> Engine::GetAssetManager() {
+  return asset_manager_;
+}
+
 void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                               uint64_t trace_flow_id) {
   animator_->EnqueueTraceFlowId(trace_flow_id);

@@ -33,6 +33,7 @@
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/logging/dart_error.h"
+#include "flutter/lib/ui/assets.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 #include "flutter/lib/ui/compositing/scene_host.h"  // nogncheck
@@ -86,6 +87,7 @@ void DartUI::InitForGlobal() {
     SemanticsUpdateBuilder::RegisterNatives(g_natives);
     Vertices::RegisterNatives(g_natives);
     PlatformConfiguration::RegisterNatives(g_natives);
+    Assets::RegisterNatives(g_natives);
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
     SceneHost::RegisterNatives(g_natives);
 #endif

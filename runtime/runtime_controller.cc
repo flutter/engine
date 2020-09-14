@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/assets/asset_manager.h"
 #include "flutter/runtime/runtime_controller.h"
 
 #include "flutter/fml/message_loop.h"
@@ -326,6 +327,11 @@ void RuntimeController::HandlePlatformMessage(
 // |PlatformConfigurationClient|
 FontCollection& RuntimeController::GetFontCollection() {
   return client_.GetFontCollection();
+}
+
+// |PlatfromConfigurationClient|
+std::shared_ptr<AssetManager> RuntimeController::GetAssetManager() {
+  return client_.GetAssetManager();
 }
 
 // |PlatformConfigurationClient|

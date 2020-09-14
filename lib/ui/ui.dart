@@ -24,6 +24,7 @@ import 'dart:nativewrappers';
 import 'dart:typed_data';
 
 part 'annotations.dart';
+part 'assets.dart';
 part 'channel_buffers.dart';
 part 'compositing.dart';
 part 'geometry.dart';
