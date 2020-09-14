@@ -275,12 +275,26 @@ public class FlutterView extends SurfaceView
     return androidKeyProcessor.onKeyUp(event) || super.onKeyUp(keyCode, event);
   }
 
-  @Override
-  public boolean onKeyDown(int keyCode, KeyEvent event) {
+  // @Override
+  // public boolean onKeyDown(int keyCode, KeyEvent event) {
+  //   if (!isAttached()) {
+  //     return super.onKeyDown(keyCode, event);
+  //   }
+  //   return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
+  // }
+
+  @override
+  public boolean dispatchKeyEventPreIme(KeyEvent event) {
     if (!isAttached()) {
-      return super.onKeyDown(keyCode, event);
+      return super.dispatchKeyEventPreIme(event);
     }
-    return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
+    int action = event.getAction();
+    if (action == ACTION_DOWN) {
+      return androidKeyProcessor.onKeyDown(event) || super.dispatchKeyEventPreIme(keyCode, event);
+    } else if (action == ACTION_UP) {
+      return androidKeyProcessor.onKeyUp(event) || super.dispatchKeyEventPreIme(keyCode, event);
+    }
+    return super.dispatchKeyEventPreIme(event);
   }
 
   public FlutterNativeView getFlutterNativeView() {
