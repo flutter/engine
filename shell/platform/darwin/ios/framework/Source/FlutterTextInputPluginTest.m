@@ -170,7 +170,6 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - EditingState tests
 
-// TODO(justinmc): Write a similar test that shows batching happening.
 - (void)testUITextInputCallsUpdateEditingStateOnce {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
@@ -198,6 +197,7 @@ FLUTTER_ASSERT_ARC
 
   [inputView deleteBackward];
   // Due to the debouncing, this call will happen after a short delay.
+  XCTAssertEqual(updateCount, 1);
   [self waitForExpectations:@[expectation2] timeout:1];
   XCTAssertEqual(updateCount, 2);
 
@@ -210,6 +210,7 @@ FLUTTER_ASSERT_ARC
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
+  XCTAssertEqual(updateCount, 3);
   [self waitForExpectations:@[expectation4] timeout:1];
   XCTAssertEqual(updateCount, 4);
 
@@ -217,8 +218,38 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(updateCount, 5);
 
   [inputView unmarkText];
+  XCTAssertEqual(updateCount, 5);
   [self waitForExpectations:@[expectation6] timeout:1];
   XCTAssertEqual(updateCount, 6);
+}
+
+- (void)testUITextInputCallsToUpdateEditingStateAreDebounced {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  inputView.textInputDelegate = engine;
+
+  XCTestExpectation* expectation2 = [self expectationWithDescription:@"called updateEditingClient twice"];
+  __block int updateCount = 0;
+  OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+        if (updateCount == 2) {
+          [expectation2 fulfill];
+        }
+      });
+
+  [inputView insertText:@"text to insert"];
+  // The framework has been updated exactly once. It happened immediately,
+  // because calls to updateEditingState are debounced on the leading edge.
+  XCTAssertEqual(updateCount, 1);
+
+  // These calls will be batched and come through after a short delay.
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  XCTAssertEqual(updateCount, 1);
+  [self waitForExpectations:@[expectation2] timeout:1];
+  XCTAssertEqual(updateCount, 2);
+  XCTAssertTrue([inputView.text isEqualToString:@"text to ins"]);
 }
 
 - (void)testTextChangesTriggerUpdateEditingClient {
