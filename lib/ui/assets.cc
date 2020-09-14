@@ -45,6 +45,10 @@ void Assets::loadAssetBytes(Dart_NativeArguments args) {
   std::unique_ptr<fml::Mapping> data =
         asset_manager->GetAsMapping(asset_name);
 
+  if (data == nullptr) {
+    return;
+  }
+
   Dart_Handle byte_buffer =
     tonic::DartByteData::Create(data->GetMapping(), data->GetSize());
   tonic::DartInvoke(callback, {ToDart(byte_buffer)});
