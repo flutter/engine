@@ -1797,9 +1797,44 @@ typedef ImageDecoderCallback = void Function(Image result);
 /// To obtain an instance of the [FrameInfo] interface, see
 /// [Codec.getNextFrame].
 ///
-/// The recipient of this class is responsible for calling [Image.dispose] on
-/// [image]. To share the image with other interested parties, use
-/// [Image.clone].
+/// The recipient of an instance of this class is responsible for calling
+/// [Image.dispose] on [image]. To share the image with other interested
+/// parties, use [Image.clone]. If the [FrameInfo] object itself is passed to
+/// another method or object, that method or object must assume it is
+/// responsible for disposing the image when done, and the passer must not
+/// access the [image] after that point.
+///
+/// For example, the following code sample is incorrect:
+///
+/// ```dart
+/// /// BAD
+/// Future<void> nextFrameRoutine(Codec codec) async {
+///   final FrameInfo frameInfo = await codec.getNextFrame();
+///   _cacheImage(frameInfo);
+///   // ERROR - _cacheImage is now responsible for disposing the image, and
+///   // the image may not be available any more for this drawing routine.
+///   _drawImage(frameInfo);
+///   // ERROR again - the previous methods might or might not have created
+///   // handles to the image.
+///   frameInfo.image.dispose();
+/// }
+/// ```
+///
+/// Correct usage is:
+///
+/// ```dart
+/// /// GOOD
+/// Future<void> nextFrameRoutine(Codec codec) async {
+///   final FrameInfo frameInfo = await codec.getNextFrame();
+///   _cacheImage(frameInfo.image.clone(), frameInfo.duration);
+///   _drawImage(frameInfo.image.clone(), frameInfo.duration);
+///   // This method is done with its handle, and has passed handles to its
+///   // clients already.
+///   // The image will live until those clients dispose of their handles, and
+///   // this one must not be disposed since it will not be used again.
+///   frameInfo.image.dispose();
+/// }
+/// ```
 class FrameInfo {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
