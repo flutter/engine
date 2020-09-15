@@ -26,6 +26,7 @@ RuntimeController::RuntimeController(
     fml::RefPtr<const DartSnapshot> p_isolate_snapshot,
     TaskRunners p_task_runners,
     fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
+    fml::WeakPtr<HintFreedDelegate> p_hint_freed_delegate,
     fml::WeakPtr<IOManager> p_io_manager,
     fml::RefPtr<SkiaUnrefQueue> p_unref_queue,
     fml::WeakPtr<ImageDecoder> p_image_decoder,
@@ -41,6 +42,7 @@ RuntimeController::RuntimeController(
       isolate_snapshot_(std::move(p_isolate_snapshot)),
       task_runners_(p_task_runners),
       snapshot_delegate_(p_snapshot_delegate),
+      hint_freed_delegate_(p_hint_freed_delegate),
       io_manager_(p_io_manager),
       unref_queue_(p_unref_queue),
       image_decoder_(p_image_decoder),
@@ -61,6 +63,7 @@ RuntimeController::RuntimeController(
           task_runners_,                                  //
           std::make_unique<PlatformConfiguration>(this),  //
           snapshot_delegate_,                             //
+          hint_freed_delegate_,                           //
           io_manager_,                                    //
           unref_queue_,                                   //
           image_decoder_,                                 //
@@ -122,6 +125,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
       isolate_snapshot_,            //
       task_runners_,                //
       snapshot_delegate_,           //
+      hint_freed_delegate_,         //
       io_manager_,                  //
       unref_queue_,                 //
       image_decoder_,               //

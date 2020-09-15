@@ -139,7 +139,8 @@ def RunCCTests(build_dir, filter):
     RunEngineExecutable(build_dir, 'jni_unittests', filter, shuffle_flags)
     RunEngineExecutable(build_dir, 'platform_view_android_delegate_unittests', filter, shuffle_flags)
 
-  RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags)
+  # The image release unit test can take a while on slow machines.
+  RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags + ['--timeout=90'])
 
   RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags)
 
@@ -395,7 +396,7 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
   RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get'], cwd=dart_tests_dir)
 
-  dart_tests = glob.glob('%s/*.dart' % dart_tests_dir)
+  dart_tests = glob.glob('%s/*_test.dart' % dart_tests_dir)
 
   for dart_test_file in dart_tests:
     if filter is not None and os.path.basename(dart_test_file) not in filter:

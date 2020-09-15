@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_COMMON_SHELL_TEST_H_
 #define FLUTTER_SHELL_COMMON_SHELL_TEST_H_
 
+#include "flutter/shell/common/shell.h"
+
 #include <memory>
 
 #include "flutter/common/settings.h"
@@ -15,7 +17,6 @@
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/run_configuration.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/shell_test_external_view_embedder.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiters_test.h"
@@ -59,11 +60,14 @@ class ShellTest : public FixtureTest {
   /// the `will_draw_new_frame` to true.
   static void VSyncFlush(Shell* shell, bool& will_draw_new_frame);
 
-  static void SetViewportMetrics(Shell* shell, double width, double height);
   /// Given the root layer, this callback builds the layer tree to be rasterized
   /// in PumpOneFrame.
   using LayerTreeBuilder =
       std::function<void(std::shared_ptr<ContainerLayer> root)>;
+
+  static void SetViewportMetrics(Shell* shell, double width, double height);
+  static void NotifyIdle(Shell* shell, int64_t deadline);
+
   static void PumpOneFrame(Shell* shell,
                            double width = 1,
                            double height = 1,

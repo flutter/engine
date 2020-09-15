@@ -77,7 +77,21 @@ void _validateExternal(Uint8List result) native 'ValidateExternal';
 
 @pragma('vm:entry-point')
 Future<void> pumpImage() async {
+  const int width = 6000;
+  const int height = 6000;
+  final Completer<Image> completer = Completer<Image>();
+  decodeImageFromPixels(
+    Uint8List.fromList(List<int>.filled(width * height * 4, 0xFF)),
+    width,
+    height,
+    PixelFormat.rgba8888,
+    (Image image) => completer.complete(image),
+  );
+  final Image image = await completer.future;
+
   final FrameCallback renderBlank = (Duration duration) {
+    image.dispose();
+
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.drawRect(Rect.largest, Paint());
@@ -96,33 +110,21 @@ Future<void> pumpImage() async {
   };
 
   final FrameCallback renderImage = (Duration duration) {
-    const int width = 8000;
-    const int height = 8000;
-    final Completer<Image> completer = Completer<Image>();
-    decodeImageFromPixels(
-      Uint8List.fromList(List<int>.filled(width * height * 4, 0xFF)),
-      width,
-      height,
-      PixelFormat.rgba8888,
-      (Image image) => completer.complete(image),
-    );
-    completer.future.then((Image image) {
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder);
-      canvas.drawImage(image, Offset.zero, Paint());
-      final Picture picture = recorder.endRecording();
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawImage(image, Offset.zero, Paint());
+    final Picture picture = recorder.endRecording();
 
-      final SceneBuilder builder = SceneBuilder();
-      builder.addPicture(Offset.zero, picture);
+    final SceneBuilder builder = SceneBuilder();
+    builder.addPicture(Offset.zero, picture);
 
-      _captureImageAndPicture(image, picture);
+    _captureImageAndPicture(image, picture);
 
-      final Scene scene = builder.build();
-      window.render(scene);
-      scene.dispose();
-      window.onBeginFrame = renderBlank;
-      window.scheduleFrame();
-    });
+    final Scene scene = builder.build();
+    window.render(scene);
+    scene.dispose();
+    window.onBeginFrame = renderBlank;
+    window.scheduleFrame();
   };
 
   window.onBeginFrame = renderImage;

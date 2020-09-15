@@ -85,7 +85,8 @@ void ShellTest::RestartEngine(Shell* shell, RunConfiguration configuration) {
 
 void ShellTest::VSyncFlush(Shell* shell, bool& will_draw_new_frame) {
   fml::AutoResetWaitableEvent latch;
-  shell->GetTaskRunners().GetPlatformTaskRunner()->PostTask(
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
       [shell, &will_draw_new_frame, &latch] {
         // The following UI task ensures that all previous UI tasks are flushed.
         fml::AutoResetWaitableEvent ui_latch;
@@ -130,11 +131,25 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, engine = shell->weak_engine_, viewport_metrics]() {
-        engine->SetViewportMetrics(std::move(viewport_metrics));
-        const auto frame_begin_time = fml::TimePoint::Now();
-        const auto frame_end_time =
-            frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
-        engine->animator_->BeginFrame(frame_begin_time, frame_end_time);
+        if (engine) {
+          engine->SetViewportMetrics(std::move(viewport_metrics));
+          const auto frame_begin_time = fml::TimePoint::Now();
+          const auto frame_end_time =
+              frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
+          engine->animator_->BeginFrame(frame_begin_time, frame_end_time);
+        }
+        latch.Signal();
+      });
+  latch.Wait();
+}
+
+void ShellTest::NotifyIdle(Shell* shell, int64_t deadline) {
+  fml::AutoResetWaitableEvent latch;
+  shell->GetTaskRunners().GetUITaskRunner()->PostTask(
+      [&latch, engine = shell->weak_engine_, deadline]() {
+        if (engine) {
+          engine->NotifyIdle(deadline);
+        }
         latch.Signal();
       });
   latch.Wait();

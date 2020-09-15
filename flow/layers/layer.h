@@ -28,11 +28,9 @@
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-
 #include "flutter/flow/scene_update_context.h"  //nogncheck
 #include "lib/ui/scenic/cpp/resources.h"        //nogncheck
 #include "lib/ui/scenic/cpp/session.h"          //nogncheck
-
 #endif
 
 namespace flutter {
@@ -67,14 +65,13 @@ struct PrerollContext {
   // Informs whether a layer needs to be system composited.
   bool child_scene_layer_exists_below = false;
 #endif
-  size_t uncached_external_size = 0;
 };
 
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
 class Layer {
  public:
-  Layer(size_t external_size = 0);
+  Layer();
   virtual ~Layer();
 
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
@@ -179,8 +176,6 @@ class Layer {
 
   uint64_t unique_id() const { return unique_id_; }
 
-  size_t external_size() const { return external_size_; }
-
  protected:
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   bool child_layer_exists_below_ = false;
@@ -190,7 +185,6 @@ class Layer {
   SkRect paint_bounds_;
   uint64_t unique_id_;
   bool needs_system_composite_;
-  size_t external_size_ = 0;
 
   static uint64_t NextUniqueID();
 

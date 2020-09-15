@@ -85,7 +85,7 @@ class FontWeight {
     assert(t != null); // ignore: unnecessary_null_comparison
     if (a == null && b == null)
       return null;
-    return values[_lerpInt((a ?? normal).index, (b ?? normal).index, t).round().clamp(0, 8) as int];
+    return values[_lerpInt((a ?? normal).index, (b ?? normal).index, t).round().clamp(0, 8)];
   }
 
   @override
@@ -106,7 +106,7 @@ class FontWeight {
 
 /// A feature tag and value that affect the selection of glyphs in a font.
 ///
-/// {@tool sample}
+/// {@tool sample --template=freeform}
 ///
 /// This example shows usage of several OpenType font features, including
 /// Small Caps (smcp), old-style figures, fractional ligatures and stylistic
