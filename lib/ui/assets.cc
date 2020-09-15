@@ -19,6 +19,12 @@ using tonic::ToDart;
 
 namespace flutter {
 
+  void FinalizeSkData(void* isolate_callback_data,
+                    Dart_WeakPersistentHandle handle,
+                    void* peer) {
+
+}
+
 void Assets::loadAssetBytes(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
   Dart_Handle callback = Dart_GetNativeArgument(args, 1);
@@ -47,9 +53,15 @@ void Assets::loadAssetBytes(Dart_NativeArguments args) {
   if (data == nullptr) {
     return;
   }
+  const void* bytes_ = static_cast<const void*>(data->GetMapping());
+  void* bytes = const_cast<void*>(bytes_);
+  const intptr_t length = data->GetSize();
+  void* peer = reinterpret_cast<void*>(data.release());
+  Dart_Handle byte_buffer = Dart_NewExternalTypedDataWithFinalizer(
+      Dart_TypedData_kUint8, bytes, length, peer, length, FinalizeSkData);
 
-  Dart_Handle byte_buffer =
-      tonic::DartByteData::Create(data->GetMapping(), data->GetSize());
+  // Dart_Handle byte_buffer =
+  //     tonic::DartByteData::Create(data->GetMapping(), data->GetSize());
   tonic::DartInvoke(callback, {ToDart(byte_buffer)});
 }
 

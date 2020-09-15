@@ -14,10 +14,10 @@ part of dart.ui;
 /// If the [assetKey] does not correspond to a real asset, returns `null`.
 ByteData? loadAsset(String assetKey) {
   ByteData? result;
-  _loadAsset(assetKey, (ByteData? byteData) {
-    result = byteData;
+  _loadAsset(assetKey, (Uint8List bytes) {
+    result = bytes.buffer.asByteData();
   });
   return result;
 }
 
-void _loadAsset(String asseyKey, void Function(ByteData?) onData) native 'loadAssetBytes';
+void _loadAsset(String asseyKey, void Function(Uint8List) onData) native 'loadAssetBytes';
