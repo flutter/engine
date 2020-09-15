@@ -21,8 +21,15 @@ static fml::TimePoint SnapToNextTick(fml::TimePoint value,
 
 }  // namespace
 
+VsyncWaiterFallback::VsyncWaiterFallback(TaskRunners task_runners,
+                                         float display_refresh_rate)
+    : VsyncWaiter(std::move(task_runners)),
+      phase_(fml::TimePoint::Now()),
+      display_refresh_rate_(display_refresh_rate) {}
+
 VsyncWaiterFallback::VsyncWaiterFallback(TaskRunners task_runners)
-    : VsyncWaiter(std::move(task_runners)), phase_(fml::TimePoint::Now()) {}
+    : VsyncWaiterFallback(std::move(task_runners),
+                          VsyncWaiter::kUnknownRefreshRateFPS) {}
 
 VsyncWaiterFallback::~VsyncWaiterFallback() = default;
 
@@ -35,6 +42,10 @@ void VsyncWaiterFallback::AwaitVSync() {
       SnapToNextTick(fml::TimePoint::Now(), phase_, kSingleFrameInterval);
 
   FireCallback(next, next + kSingleFrameInterval);
+}
+
+float VsyncWaiterFallback::GetDisplayRefreshRate() const {
+  return display_refresh_rate_;
 }
 
 }  // namespace flutter

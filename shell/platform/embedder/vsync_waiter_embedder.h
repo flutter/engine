@@ -15,7 +15,8 @@ class VsyncWaiterEmbedder final : public VsyncWaiter {
   using VsyncCallback = std::function<void(intptr_t)>;
 
   VsyncWaiterEmbedder(const VsyncCallback& callback,
-                      flutter::TaskRunners task_runners);
+                      flutter::TaskRunners task_runners,
+                      float display_refresh_rate);
 
   ~VsyncWaiterEmbedder() override;
 
@@ -23,8 +24,11 @@ class VsyncWaiterEmbedder final : public VsyncWaiter {
                               fml::TimePoint frame_start_time,
                               fml::TimePoint frame_target_time);
 
+  float GetDisplayRefreshRate() const override;
+
  private:
   const VsyncCallback vsync_callback_;
+  const float display_refresh_rate_;
 
   // |VsyncWaiter|
   void AwaitVSync() override;

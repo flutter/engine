@@ -209,5 +209,13 @@ void EmbedderTestContext::FireRootSurfacePresentCallbackIfPresent(
   callback(image_callback());
 }
 
+void EmbedderTestContext::SetDisplayRefreshRate(double refresh_rate) {
+  display_refresh_rate_ = refresh_rate;
+}
+
+double EmbedderTestContext::GetDisplayRefreshRate() const {
+  return display_refresh_rate_;
+}
+
 }  // namespace testing
 }  // namespace flutter

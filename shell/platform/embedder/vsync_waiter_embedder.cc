@@ -7,8 +7,11 @@
 namespace flutter {
 
 VsyncWaiterEmbedder::VsyncWaiterEmbedder(const VsyncCallback& vsync_callback,
-                                         flutter::TaskRunners task_runners)
-    : VsyncWaiter(std::move(task_runners)), vsync_callback_(vsync_callback) {
+                                         flutter::TaskRunners task_runners,
+                                         float display_refresh_rate)
+    : VsyncWaiter(std::move(task_runners)),
+      vsync_callback_(vsync_callback),
+      display_refresh_rate_(display_refresh_rate) {
   FML_DCHECK(vsync_callback_);
 }
 
@@ -38,6 +41,10 @@ bool VsyncWaiterEmbedder::OnEmbedderVsync(intptr_t baton,
 
   strong_waiter->FireCallback(frame_start_time, frame_target_time);
   return true;
+}
+
+float VsyncWaiterEmbedder::GetDisplayRefreshRate() const {
+  return display_refresh_rate_;
 }
 
 }  // namespace flutter

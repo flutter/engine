@@ -78,6 +78,14 @@ class EmbedderTestContext {
 
   virtual size_t GetSurfacePresentCount() const = 0;
 
+  /// Sets the refresh rate of the display.
+  void SetDisplayRefreshRate(double refresh_rate);
+
+  /// Returns the last set refresh rate of the display. Returns zero otherwise.
+  ///
+  /// See: `SetDisplayRefreshRate`.
+  double GetDisplayRefreshRate() const;
+
   // TODO(gw280): encapsulate these properly for subclasses to use
  protected:
   // This allows the builder to access the hooks.
@@ -100,6 +108,7 @@ class EmbedderTestContext {
   std::unique_ptr<EmbedderTestCompositor> compositor_;
   NextSceneCallback next_scene_callback_;
   SkMatrix root_surface_transformation_;
+  double display_refresh_rate_ = 0;
 
   static VoidCallback GetIsolateCreateCallbackHook();
 

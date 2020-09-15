@@ -1442,7 +1442,7 @@ bool Shell::OnServiceProtocolGetDisplayRefreshRate(
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   response->SetObject();
   response->AddMember("type", "DisplayRefreshRate", response->GetAllocator());
-  response->AddMember("fps", engine_->GetDisplayRefreshRate(),
+  response->AddMember("fps", display_refresh_rate_.load(),
                       response->GetAllocator());
   return true;
 }

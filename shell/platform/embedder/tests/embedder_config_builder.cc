@@ -232,6 +232,22 @@ void EmbedderConfigBuilder::SetPlatformMessageCallback(
   context_.SetPlatformMessageCallback(callback);
 }
 
+void EmbedderConfigBuilder::SetDisplayRefreshRate(double refresh_rate) {
+  context_.SetDisplayRefreshRate(refresh_rate);
+  project_args_.display_settings_callback =
+      [](void* context, FlutterDisplaySettings* display_settings) {
+        if (!display_settings->displays) {
+          display_settings->display_count = 1;
+        } else {
+          auto& display = display_settings->displays[0];
+          display.struct_size = sizeof(FlutterDisplay);
+          display.display_id = 1;
+          display.refresh_rate = reinterpret_cast<EmbedderTestContext*>(context)
+                                     ->GetDisplayRefreshRate();
+        }
+      };
+}
+
 void EmbedderConfigBuilder::SetCompositor() {
   context_.SetupCompositor();
   auto& compositor = context_.GetCompositor();

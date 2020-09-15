@@ -47,6 +47,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/switches.h"
+#include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
@@ -993,13 +994,42 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                               "Compositor arguments were invalid.");
   }
 
+  auto display_settings_callback =
+      SAFE_ACCESS(args, display_settings_callback, nullptr);
+  double main_display_refresh_rate =
+      flutter::VsyncWaiter::kUnknownRefreshRateFPS;
+
+  if (display_settings_callback) {
+    FlutterDisplaySettings display_settings;
+    display_settings.struct_size = sizeof(FlutterDisplaySettings);
+    display_settings.displays = nullptr;
+    display_settings.display_count = 0;
+    display_settings_callback(user_data, &display_settings);
+
+    if (display_settings.display_count == 0) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Invalid display settings provided by the "
+                                "embedder, got 0 active displays.");
+    }
+
+    display_settings.displays =
+        new FlutterDisplay[display_settings.display_count];
+    display_settings_callback(user_data, &display_settings);
+
+    // TODO(iskakaushik): Add support for multiple displays.
+    main_display_refresh_rate = display_settings.displays[0].refresh_rate;
+
+    delete display_settings.displays;
+  }
+
   flutter::PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table =
       {
-          update_semantics_nodes_callback,            //
-          update_semantics_custom_actions_callback,   //
-          platform_message_response_callback,         //
-          vsync_callback,                             //
-          compute_platform_resolved_locale_callback,  //
+          update_semantics_nodes_callback,                //
+          update_semantics_custom_actions_callback,       //
+          platform_message_response_callback,             //
+          vsync_callback,                                 //
+          compute_platform_resolved_locale_callback,      //
+          static_cast<float>(main_display_refresh_rate),  //
       };
 
   auto on_create_platform_view = InferPlatformViewCreationCallback(

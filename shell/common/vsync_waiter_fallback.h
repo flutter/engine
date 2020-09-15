@@ -12,15 +12,22 @@
 
 namespace flutter {
 
-/// A |VsyncWaiter| that will fire at 60 fps irrespective of the vsync.
+/// A |VsyncWaiter| that will fire at 60 fps irrespective of the vsync. The
+/// refresh rate can also optionally be set, this is currently only used to
+/// indicate to devtools, this will still fire at 60fps.
 class VsyncWaiterFallback final : public VsyncWaiter {
  public:
   VsyncWaiterFallback(TaskRunners task_runners);
 
+  VsyncWaiterFallback(TaskRunners task_runners, float display_refresh_rate);
+
   ~VsyncWaiterFallback() override;
 
+  float GetDisplayRefreshRate() const override;
+
  private:
-  fml::TimePoint phase_;
+  const fml::TimePoint phase_;
+  const float display_refresh_rate_;
 
   // |VsyncWaiter|
   void AwaitVSync() override;

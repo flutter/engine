@@ -9,6 +9,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "flutter/shell/platform/embedder/embedder_surface_gl.h"
@@ -38,6 +39,7 @@ class PlatformViewEmbedder final : public PlatformView {
     VsyncWaiterEmbedder::VsyncCallback vsync_callback;  // optional
     ComputePlatformResolvedLocaleCallback
         compute_platform_resolved_locale_callback;
+    float display_refresh_rate;
   };
 
   // Creates a platform view that sets up an OpenGL rasterizer.
