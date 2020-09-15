@@ -590,6 +590,7 @@ public class FlutterViewTest {
   }
 
   @Test
+  @SuppressLint("WrongCall") /*View#onDraw*/
   public void flutterImageView_acquiresMaxImagesAtMost() {
     final ImageReader mockReader = mock(ImageReader.class);
     when(mockReader.getMaxImages()).thenReturn(3);
