@@ -4,8 +4,8 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
-#include <gdk/gdkx.h>
 #include <gdk/gdkwayland.h>
+#include <gdk/gdkx.h>
 #include <cstring>
 
 #include "flutter/shell/platform/linux/fl_engine_private.h"
