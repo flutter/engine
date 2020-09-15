@@ -1155,7 +1155,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
   jobject mutatorsStack = env->NewObject(g_mutators_stack_class->obj(),
                                          g_mutators_stack_init_method);
 
-  std::vector<std::shared_ptr<Mutator>>::const_iterator iter =
+  std::vector<std::shared_ptr<MutatorNode>>::const_iterator iter =
       mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {

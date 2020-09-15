@@ -115,6 +115,29 @@ class Mutator {
 
 };  // Mutator
 
+// Mutator subclass with intrusive link to next item in mutator stack;
+//
+// MutatorNode can be used to take snapshot of mutator stack without having
+// to make copy of the vector.
+class MutatorNode : public Mutator {
+ public:
+  MutatorNode(const SkRect& rect, const std::shared_ptr<MutatorNode>& next)
+      : Mutator(rect), next_(next) {}
+  MutatorNode(const SkRRect& rrect, const std::shared_ptr<MutatorNode>& next)
+      : Mutator(rrect), next_(next) {}
+  MutatorNode(const SkPath& path, const std::shared_ptr<MutatorNode>& next)
+      : Mutator(path), next_(next) {}
+  MutatorNode(const SkMatrix& matrix, const std::shared_ptr<MutatorNode>& next)
+      : Mutator(matrix), next_(next) {}
+  MutatorNode(int alpha, const std::shared_ptr<MutatorNode>& next)
+      : Mutator(alpha), next_(next) {}
+
+  const std::shared_ptr<MutatorNode>& next() const { return next_; }
+
+ private:
+  std::shared_ptr<MutatorNode> next_;
+};
+
 // A stack of mutators that can be applied to an embedded platform view.
 //
 // The stack may include mutators like transforms and clips, each mutator
@@ -140,20 +163,20 @@ class MutatorsStack {
 
   // Returns a reverse iterator pointing to the top of the stack, which is the
   // mutator that is furtherest from the leaf node.
-  const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator Top()
+  const std::vector<std::shared_ptr<MutatorNode>>::const_reverse_iterator Top()
       const;
   // Returns a reverse iterator pointing to the bottom of the stack, which is
   // the mutator that is closeset from the leaf node.
-  const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator Bottom()
-      const;
+  const std::vector<std::shared_ptr<MutatorNode>>::const_reverse_iterator
+  Bottom() const;
 
   // Returns an iterator pointing to the begining of the mutator vector, which
   // is the mutator that is furtherest from the leaf node.
-  const std::vector<std::shared_ptr<Mutator>>::const_iterator Begin() const;
+  const std::vector<std::shared_ptr<MutatorNode>>::const_iterator Begin() const;
 
   // Returns an iterator pointing to the end of the mutator vector, which is the
   // mutator that is closest from the leaf node.
-  const std::vector<std::shared_ptr<Mutator>>::const_iterator End() const;
+  const std::vector<std::shared_ptr<MutatorNode>>::const_iterator End() const;
 
   bool is_empty() const { return vector_.empty(); }
 
@@ -190,7 +213,11 @@ class MutatorsStack {
   }
 
  private:
-  std::vector<std::shared_ptr<Mutator>> vector_;
+  std::shared_ptr<MutatorNode> Last() const {
+    return vector_.empty() ? nullptr : vector_.back();
+  }
+
+  std::vector<std::shared_ptr<MutatorNode>> vector_;
 };  // MutatorsStack
 
 class EmbeddedViewParams {

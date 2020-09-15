@@ -320,7 +320,7 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
 }
 
 int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_stack) {
-  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
+  std::vector<std::shared_ptr<MutatorNode>>::const_reverse_iterator iter = mutators_stack.Bottom();
   int clipCount = 0;
   while (iter != mutators_stack.Top()) {
     if ((*iter)->IsClipType()) {
