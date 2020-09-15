@@ -41,6 +41,27 @@ public class PlatformPluginTest {
     // SELECTION_CLICK haptic response is only available on "LOLLIPOP" (21) and later.
     platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
   }
+  
+  @Test
+  public void platformPlugin_getClipboardData() {
+    ClipboardManager clipboardManager =
+        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    when(fakeActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    ClipData clip = ClipData.newPlainText("label", "Text");
+    clipboardManager.setPrimaryClip(clip);
+    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+  }
 
   @Test
   public void platformPlugin_hasStrings() {
@@ -63,29 +84,5 @@ public class PlatformPluginTest {
     clip = ClipData.newPlainText("", "");
     clipboardManager.setPrimaryClip(clip);
     assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
-  }
-
-  @Test
-  public void platformPlugin_getClipboardData() {
-    ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
-
-    View fakeDecorView = mock(View.class);
-    Window fakeWindow = mock(Window.class);
-    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
-    Activity fakeActivity = mock(Activity.class);
-    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
-    when(fakeActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
-    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
-    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
-
-    ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
-    ClipData clip = ClipData.newPlainText("label", "Text");
-    clipboardManager.setPrimaryClip(clip);
-    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
-
-    clip = ClipData.newPlainText("", "");
-    clipboardManager.setPrimaryClip(clip);
-    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 }
