@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.Window;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -84,6 +83,7 @@ public class PlatformPluginTest {
     ClipData clip = ClipData.newPlainText("label", "Text");
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    
     clip = ClipData.newPlainText("", "");
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
