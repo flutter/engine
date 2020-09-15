@@ -281,7 +281,7 @@ public class PlatformPlugin {
     ClipboardManager clipboard =
         (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
     
-    if (!clipboard.hasPrimaryClip()) return null; 
+    if (!clipboard.hasPrimaryClip()) return null;
     
     ClipData clip = clipboard.getPrimaryClip();
     if (clip == null) return null;
