@@ -84,7 +84,7 @@ class IosSafariScreenshotManager extends ScreenshotManager {
     final YamlMap browserLock = BrowserLock.instance.configuration;
     _heightOfHeader = browserLock['ios-safari']['heightOfHeader'] as int;
     _heightOfFooter = browserLock['ios-safari']['heightOfFooter'] as int;
-    _scale_factor = browserLock['ios-safari']['scaleFactor'] as double;
+    _scaleFactor = browserLock['ios-safari']['scaleFactor'] as double;
 
     /// Create the directory to use for taking screenshots, if it does not
     /// exists.
@@ -99,7 +99,7 @@ class IosSafariScreenshotManager extends ScreenshotManager {
   /// This scale factor is used to enlarge/shrink the screenshot region
   /// sent from the tests.
   /// For more details see [_scaleScreenshotRegion(region)].
-  double _scale_factor;
+  double _scaleFactor;
 
   /// Height of the part to crop from the top of the image.
   ///
@@ -198,13 +198,13 @@ class IosSafariScreenshotManager extends ScreenshotManager {
 
   /// Perform a linear transform on the screenshot region to convert its
   /// dimensions from linear coordinated to coordinated on the phone screen.
-  /// This uniform/isotropic scaling is done using [_scale_factor].
+  /// This uniform/isotropic scaling is done using [_scaleFactor].
   Rectangle _scaleScreenshotRegion(Rectangle region) {
     return Rectangle(
-      region.left * _scale_factor,
-      region.top * _scale_factor,
-      region.width * _scale_factor,
-      region.height * _scale_factor,
+      region.left * _scaleFactor,
+      region.top * _scaleFactor,
+      region.width * _scaleFactor,
+      region.height * _scaleFactor,
     );
   }
 }
