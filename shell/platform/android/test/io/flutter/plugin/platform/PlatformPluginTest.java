@@ -41,7 +41,7 @@ public class PlatformPluginTest {
     // SELECTION_CLICK haptic response is only available on "LOLLIPOP" (21) and later.
     platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
   }
-  
+
   @Test
   public void platformPlugin_getClipboardData() {
     ClipboardManager clipboardManager =
