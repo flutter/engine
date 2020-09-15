@@ -752,7 +752,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       _inputConfiguration.autofillGroup?.formElement;
 
   @override
-  @mustCallSuper
   void initializeTextEditing(
     InputConfiguration inputConfig, {
     required _OnChangeCallback onChange,
