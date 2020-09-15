@@ -13,15 +13,9 @@ FLUTTER_ASSERT_ARC
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
 
-<<<<<<< HEAD
 - (void)setEditableTransform:(NSArray*)matrix;
-- (void)setMarkedRect:(CGRect)markedRect;
 - (BOOL)setTextInputState:(NSDictionary*)state;
-=======
-- (void)setTextInputState:(NSDictionary*)state;
-- (void)setEditableTransform:(NSArray*)matrix;
 - (void)setMarkedRect:(CGRect)markedRect;
->>>>>>> f087e1da2c2087bfdb6904f016189bae40e952a8
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
 @end
