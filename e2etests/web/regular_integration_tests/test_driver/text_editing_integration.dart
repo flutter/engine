@@ -144,6 +144,7 @@ void main() {
   });
 
   testWidgets('Read-only fields work', (WidgetTester tester) async {
+    const String text = 'Lorem ipsum dolor sit amet';
     app.main();
     await tester.pumpAndSettle();
 
@@ -170,14 +171,13 @@ void main() {
     expect(nodeList.length, equals(1));
     final TextAreaElement input = nodeList[0] as TextAreaElement;
     // The element's value should contain the selectable text.
-    expect(input.value, 'Lorem ipsum dolor sit amet');
+    expect(input.value, text);
     expect(input.hasAttribute('readonly'), isTrue);
 
     // Make sure the entire text is selected.
-    expect(
-      js_util.callMethod(window.getSelection(), 'toString', <dynamic>[]),
-      'Lorem ipsum dolor sit amet',
-    );
+    TextRange range =
+        TextRange(start: input.selectionStart, end: input.selectionEnd);
+    expect(range.textInside(text), text);
 
     // Double tap to select the first word.
     final Offset firstWordOffset = topLeft.translate(10.0, 0.0);
@@ -189,10 +189,8 @@ void main() {
     await gesture.up();
     await gesture.down(firstWordOffset);
     await gesture.up();
-    expect(
-      js_util.callMethod(window.getSelection(), 'toString', <dynamic>[]),
-      'Lorem',
-    );
+    range = TextRange(start: input.selectionStart, end: input.selectionEnd);
+    expect(range.textInside(text), 'Lorem');
 
     // Double tap to select the last word.
     final Offset lastWordOffset = topRight.translate(-10.0, 0.0);
@@ -204,10 +202,8 @@ void main() {
     await gesture.up();
     await gesture.down(lastWordOffset);
     await gesture.up();
-    expect(
-      js_util.callMethod(window.getSelection(), 'toString', <dynamic>[]),
-      'amet',
-    );
+    range = TextRange(start: input.selectionStart, end: input.selectionEnd);
+    expect(range.textInside(text), 'amet');
   });
 }
 
