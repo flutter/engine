@@ -38,6 +38,15 @@ ios-safari:
   # `heightOfFooter` is the number of pixels taken by the phone's navigation
   # menu.
   heightOfFooter: 250
+  # Most of the time tests use a portion of the screen to compare goldens
+  # instead of the entire screen. This area is reprented by a rectangle
+  # when taking screenshots. However the rectangle dimensions are in logical
+  # coordinates. In order to convert these coordinates to coordinates on the
+  # phone screeen we enlarge or shrink the area by applying a linear
+  # transformation by a scale_factor (a.k.a. we perform isotropic scaling).
+  # This value will be differ depending on the phone.
+  scaleFactor: 1.15
+
 ## geckodriver is used for testing Firefox Browser. It works with multiple
 ## Firefox Browser versions.
 ## See: https://github.com/mozilla/geckodriver/releases

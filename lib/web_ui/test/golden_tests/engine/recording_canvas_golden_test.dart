@@ -313,7 +313,9 @@ void testMain() async {
       const Rect.fromLTRB(textLeft, textTop, textLeft + widthConstraint, 21.0),
     );
     await _checkScreenshot(rc, 'draw_paragraph');
-  });
+  },  // TODO: https://github.com/flutter/flutter/issues/65789
+      skip: browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.iOs);
 
   test('Computes paint bounds for multi-line draw paragraph', () async {
     final RecordingCanvas rc = RecordingCanvas(screenRect);

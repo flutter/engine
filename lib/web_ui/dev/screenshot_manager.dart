@@ -78,13 +78,13 @@ class ChromeScreenshotManager extends ScreenshotManager {
 ///
 /// This manager will only be created/used for macOS.
 class IosSafariScreenshotManager extends ScreenshotManager {
-
   String get filenameSuffix => '.iOS_Safari';
 
   IosSafariScreenshotManager() {
     final YamlMap browserLock = BrowserLock.instance.configuration;
     _heightOfHeader = browserLock['ios-safari']['heightOfHeader'] as int;
     _heightOfFooter = browserLock['ios-safari']['heightOfFooter'] as int;
+    _scale_factor = browserLock['ios-safari']['scaleFactor'] as double;
 
     /// Create the directory to use for taking screenshots, if it does not
     /// exists.
@@ -95,6 +95,11 @@ class IosSafariScreenshotManager extends ScreenshotManager {
     // runs the tests.
     temporaryDirectories.add(environment.webUiSimulatorScreenshotsDirectory);
   }
+
+  /// This scale factor is used to enlarge/shrink the screenshot region
+  /// sent from the tests.
+  /// For more details see [_scaleScreenshotRegion(region)].
+  double _scale_factor;
 
   /// Height of the part to crop from the top of the image.
   ///
@@ -166,7 +171,9 @@ class IosSafariScreenshotManager extends ScreenshotManager {
     file.deleteSync();
 
     final Image screenshot = decodePng(imageBytes);
-    // Image with no footer and header.
+    // Create an image with no footer and header. The _heightOfHeader,
+    // _heightOfFooter values are already in real coordinates therefore
+    // they don't need to be scaled.
     final Image content = copyCrop(
       screenshot,
       0,
@@ -175,15 +182,30 @@ class IosSafariScreenshotManager extends ScreenshotManager {
       screenshot.height - _heightOfFooter - _heightOfHeader,
     );
 
-    return (region == null)
-        ? content
-        : copyCrop(
-            content,
-            region.left.toInt(),
-            region.top.toInt(),
-            region.width.toInt(),
-            region.height.toInt(),
-          );
+    if (region == null) {
+      return content;
+    } else {
+      final Rectangle scaledRegion = _scaleScreenshotRegion(region);
+      return copyCrop(
+        content,
+        scaledRegion.left.toInt(),
+        scaledRegion.top.toInt(),
+        scaledRegion.width.toInt(),
+        scaledRegion.height.toInt(),
+      );
+    }
+  }
+
+  /// Perform a linear transform on the screenshot region to convert its
+  /// dimensions from linear coordinated to coordinated on the phone screen.
+  /// This uniform/isotropic scaling is done using [_scale_factor].
+  Rectangle _scaleScreenshotRegion(Rectangle region) {
+    return Rectangle(
+      region.left * _scale_factor,
+      region.top * _scale_factor,
+      region.width * _scale_factor,
+      region.height * _scale_factor,
+    );
   }
 }
 

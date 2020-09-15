@@ -215,7 +215,9 @@ void cleanup() async {
   // Delete temporary directories.
   if (temporaryDirectories.length > 0) {
     for (io.Directory directory in temporaryDirectories) {
-      if (!directory.existsSync()) directory.deleteSync(recursive: true);
+      if (!directory.existsSync()) {
+        directory.deleteSync(recursive: true);
+      }
     }
   }
 
