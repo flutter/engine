@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 
@@ -113,7 +114,6 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
     [self updateEditState];
   } else {
     handled = NO;
-    NSLog(@"Unhandled text input method '%@'", method);
   }
   result(handled ? nil : FlutterMethodNotImplemented);
 }
@@ -182,15 +182,14 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
 
 - (void)deleteBackward:(id)sender {
   NSRange selection = self.activeModel.selectedRange;
-  if (selection.location == 0)
-    return;
   NSRange range = selection;
   if (selection.length == 0) {
+    if (selection.location == 0)
+      return;
     NSUInteger location = (selection.location == NSNotFound) ? self.activeModel.text.length - 1
                                                              : selection.location - 1;
     range = NSMakeRange(location, 1);
   }
-  self.activeModel.selectedRange = NSMakeRange(range.location, 0);
   [self insertText:@"" replacementRange:range];  // Updates edit state
 }
 

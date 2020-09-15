@@ -5,10 +5,9 @@
 #ifndef FLUTTER_FML_TIME_TIME_DELTA_H_
 #define FLUTTER_FML_TIME_TIME_DELTA_H_
 
-#include <stdint.h>
-#include <time.h>
-
 #include <chrono>
+#include <cstdint>
+#include <ctime>
 #include <iosfwd>
 #include <limits>
 
@@ -53,6 +52,10 @@ class TimeDelta {
 
   static constexpr TimeDelta FromSecondsF(double seconds) {
     return FromNanoseconds(seconds * (1000.0 * 1000.0 * 1000.0));
+  }
+
+  static constexpr TimeDelta FromMillisecondsF(double millis) {
+    return FromNanoseconds(millis * (1000.0 * 1000.0));
   }
 
   constexpr int64_t ToNanoseconds() const { return delta_; }

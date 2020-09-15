@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:ui';
 
 import 'package:test/test.dart';
@@ -53,12 +54,6 @@ void main() {
     expect(const Color(123), isNot(equals(const NotAColor(123))));
     expect(const NotAColor(123), isNot(equals(const Color(123))));
     expect(const NotAColor(123), equals(const NotAColor(123)));
-  });
-
-  test('Color.fromRGBO', () {
-    expect(const Color.fromRGBO(0, 0, 0, 1.0), const Color(0xFF000000));
-    expect(const Color.fromRGBO(0, 0, 0, 0.5), const Color(0x80000000));
-    expect(const Color.fromRGBO(0, 0, 0, 0.0), const Color(0x00000000));
   });
 
   test('Color.lerp', () {

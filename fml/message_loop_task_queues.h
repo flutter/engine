@@ -83,9 +83,7 @@ class MessageLoopTaskQueues
 
   bool HasPendingTasks(TaskQueueId queue_id) const;
 
-  void GetTasksToRunNow(TaskQueueId queue_id,
-                        FlushType type,
-                        std::vector<fml::closure>& invocations);
+  fml::closure GetNextTaskToRun(TaskQueueId queue_id, fml::TimePoint from_time);
 
   size_t GetNumPendingTasks(TaskQueueId queue_id) const;
 
@@ -112,7 +110,7 @@ class MessageLoopTaskQueues
   //  3. Each task queue can only be merged and subsumed once.
   //
   //  Methods currently aware of the merged state of the queues:
-  //  HasPendingTasks, GetTasksToRunNow, GetNumPendingTasks
+  //  HasPendingTasks, GetNextTaskToRun, GetNumPendingTasks
 
   // This method returns false if either the owner or subsumed has already been
   // merged with something else.
@@ -127,19 +125,15 @@ class MessageLoopTaskQueues
  private:
   class MergedQueuesRunner;
 
-  using Mutexes = std::vector<std::unique_ptr<std::mutex>>;
-
   MessageLoopTaskQueues();
 
   ~MessageLoopTaskQueues();
 
   void WakeUpUnlocked(TaskQueueId queue_id, fml::TimePoint time) const;
 
-  std::mutex& GetMutex(TaskQueueId queue_id) const;
-
   bool HasPendingTasksUnlocked(TaskQueueId queue_id) const;
 
-  const DelayedTask& PeekNextTaskUnlocked(TaskQueueId queue_id,
+  const DelayedTask& PeekNextTaskUnlocked(TaskQueueId owner,
                                           TaskQueueId& top_queue_id) const;
 
   fml::TimePoint GetNextWakeTimeUnlocked(TaskQueueId queue_id) const;
@@ -147,9 +141,8 @@ class MessageLoopTaskQueues
   static std::mutex creation_mutex_;
   static fml::RefPtr<MessageLoopTaskQueues> instance_;
 
-  std::unique_ptr<fml::SharedMutex> queue_meta_mutex_;
+  mutable std::mutex queue_mutex_;
   std::map<TaskQueueId, std::unique_ptr<TaskQueueEntry>> queue_entries_;
-  std::map<TaskQueueId, std::unique_ptr<std::mutex>> queue_locks_;
 
   size_t task_queue_id_counter_;
 

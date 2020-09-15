@@ -2,22 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// An implementation of [ui.PictureRecorder] backed by a [RecordingCanvas].
 class EnginePictureRecorder implements ui.PictureRecorder {
   EnginePictureRecorder();
 
-  RecordingCanvas _canvas;
-  ui.Rect cullRect;
+  RecordingCanvas? _canvas;
+  late ui.Rect cullRect;
   bool _isRecording = false;
 
   RecordingCanvas beginRecording(ui.Rect bounds) {
     assert(!_isRecording);
     cullRect = bounds;
     _isRecording = true;
-    _canvas = RecordingCanvas(cullRect);
-    return _canvas;
+    return _canvas = RecordingCanvas(cullRect);
   }
 
   @override
@@ -25,12 +25,13 @@ class EnginePictureRecorder implements ui.PictureRecorder {
 
   @override
   ui.Picture endRecording() {
-    // Returning null is what the flutter engine does:
-    // lib/ui/painting/picture_recorder.cc
     if (!_isRecording) {
-      return null;
+      // The mobile version returns an empty picture in this case. To match the
+      // behavior we produce a blank picture too.
+      beginRecording(ui.Rect.largest);
     }
     _isRecording = false;
+    _canvas!.endRecording();
     return EnginePicture(_canvas, cullRect);
   }
 }
@@ -45,9 +46,10 @@ class EnginePicture implements ui.Picture {
 
   @override
   Future<ui.Image> toImage(int width, int height) async {
-    final BitmapCanvas canvas = BitmapCanvas(ui.Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble()));
-    recordingCanvas.apply(canvas);
-    final String imageDataUrl = canvas.canvas.toDataUrl();
+    final ui.Rect imageRect = ui.Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble());
+    final BitmapCanvas canvas = BitmapCanvas(imageRect);
+    recordingCanvas!.apply(canvas, imageRect);
+    final String imageDataUrl = canvas.toDataUrl();
     final html.ImageElement imageElement = html.ImageElement()
       ..src = imageDataUrl
       ..width = width
@@ -65,6 +67,6 @@ class EnginePicture implements ui.Picture {
   @override
   int get approximateBytesUsed => 0;
 
-  final RecordingCanvas recordingCanvas;
-  final ui.Rect cullRect;
+  final RecordingCanvas? recordingCanvas;
+  final ui.Rect? cullRect;
 }

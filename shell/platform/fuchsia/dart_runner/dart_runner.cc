@@ -4,13 +4,14 @@
 
 #include "dart_runner.h"
 
-#include <errno.h>
 #include <lib/async-loop/loop.h>
 #include <lib/async/default.h>
 #include <lib/syslog/global.h>
 #include <sys/stat.h>
 #include <zircon/status.h>
 #include <zircon/syscalls.h>
+
+#include <cerrno>
 #include <memory>
 #include <thread>
 #include <utility>
@@ -125,7 +126,7 @@ bool EntropySource(uint8_t* buffer, intptr_t count) {
 
 }  // namespace
 
-DartRunner::DartRunner() : context_(sys::ComponentContext::Create()) {
+DartRunner::DartRunner(sys::ComponentContext* context) : context_(context) {
   context_->outgoing()->AddPublicService<fuchsia::sys::Runner>(
       [this](fidl::InterfaceRequest<fuchsia::sys::Runner> request) {
         bindings_.AddBinding(this, std::move(request));
@@ -155,12 +156,12 @@ DartRunner::DartRunner() : context_(sys::ComponentContext::Create()) {
   params.vm_snapshot_data = ::_kDartVmSnapshotData;
   params.vm_snapshot_instructions = ::_kDartVmSnapshotInstructions;
 #else
-  if (!MappedResource::LoadFromNamespace(
-          nullptr, "pkg/data/vm_snapshot_data.bin", vm_snapshot_data_)) {
+  if (!dart_utils::MappedResource::LoadFromNamespace(
+          nullptr, "/pkg/data/vm_snapshot_data.bin", vm_snapshot_data_)) {
     FX_LOG(FATAL, LOG_TAG, "Failed to load vm snapshot data");
   }
-  if (!MappedResource::LoadFromNamespace(
-          nullptr, "pkg/data/vm_snapshot_instructions.bin",
+  if (!dart_utils::MappedResource::LoadFromNamespace(
+          nullptr, "/pkg/data/vm_snapshot_instructions.bin",
           vm_snapshot_instructions_, true /* executable */)) {
     FX_LOG(FATAL, LOG_TAG, "Failed to load vm snapshot instructions");
   }

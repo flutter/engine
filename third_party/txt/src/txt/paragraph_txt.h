@@ -139,6 +139,7 @@ class ParagraphTxt : public Paragraph {
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, CenterAlignParagraph);
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, JustifyAlignParagraph);
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, JustifyRTL);
+  FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, InlinePlaceholderLongestLine);
   FRIEND_TEST_LINUX_ONLY(ParagraphTest, JustifyRTLNewLine);
   FRIEND_TEST(ParagraphTest, DecorationsParagraph);
   FRIEND_TEST(ParagraphTest, ItalicsParagraph);
@@ -146,7 +147,7 @@ class ParagraphTxt : public Paragraph {
   FRIEND_TEST(ParagraphTest, DISABLED_ArabicParagraph);
   FRIEND_TEST(ParagraphTest, SpacingParagraph);
   FRIEND_TEST(ParagraphTest, LongWordParagraph);
-  FRIEND_TEST(ParagraphTest, KernScaleParagraph);
+  FRIEND_TEST_LINUX_ONLY(ParagraphTest, KernScaleParagraph);
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, NewlineParagraph);
   FRIEND_TEST_LINUX_ONLY(ParagraphTest, EmojiParagraph);
   FRIEND_TEST_LINUX_ONLY(ParagraphTest, EmojiMultiLineRectsParagraph);
@@ -162,6 +163,7 @@ class ParagraphTxt : public Paragraph {
   FRIEND_TEST(ParagraphTest, FontFeaturesParagraph);
   FRIEND_TEST(ParagraphTest, GetGlyphPositionAtCoordinateSegfault);
   FRIEND_TEST(ParagraphTest, KhmerLineBreaker);
+  FRIEND_TEST(ParagraphTest, TextHeightBehaviorRectsParagraph);
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
@@ -233,6 +235,7 @@ class ParagraphTxt : public Paragraph {
           end_(e),
           direction_(d),
           style_(&st),
+          is_ghost_(false),
           placeholder_run_(&placeholder) {}
 
     size_t start() const { return start_; }
@@ -368,12 +371,13 @@ class ParagraphTxt : public Paragraph {
                          double& max_ascent,
                          double& max_descent,
                          double& max_unscaled_ascent,
-                         PlaceholderRun* placeholder_run);
+                         PlaceholderRun* placeholder_run,
+                         size_t line_number,
+                         size_t line_limit);
+
   // Calculate the starting X offset of a line based on the line's width and
   // alignment.
-  double GetLineXOffset(double line_total_advance,
-                        size_t line_number,
-                        bool justify_line);
+  double GetLineXOffset(double line_total_advance, bool justify_line);
 
   // Creates and draws the decorations onto the canvas.
   void PaintDecorations(SkCanvas* canvas,

@@ -2,51 +2,63 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
-import("//flutter/testing/testing.gni")
+import("testing.gni")
 
 source_set("testing_lib") {
   testonly = true
 
   sources = [
-    "$flutter_root/testing/assertions.h",
-    "$flutter_root/testing/testing.cc",
-    "$flutter_root/testing/testing.h",
-    "$flutter_root/testing/thread_test.cc",
-    "$flutter_root/testing/thread_test.h",
+    "assertions.h",
+    "testing.cc",
+    "testing.h",
+    "thread_test.cc",
+    "thread_test.h",
   ]
 
   public_deps = [
-    "$flutter_root/fml",
+    "//flutter/fml",
+    "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
   ]
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [ "//flutter:config" ]
 }
 
 source_set("testing") {
   testonly = true
 
   sources = [
-    "$flutter_root/testing/run_all_unittests.cc",
+    "debugger_detection.cc",
+    "debugger_detection.h",
+    "run_all_unittests.cc",
+    "test_timeout_listener.cc",
+    "test_timeout_listener.h",
   ]
 
-  public_deps = [
-    ":testing_lib",
-  ]
+  public_deps = [ ":testing_lib" ]
 }
 
 source_set("dart") {
   testonly = true
 
   sources = [
-    "$flutter_root/testing/test_dart_native_resolver.cc",
-    "$flutter_root/testing/test_dart_native_resolver.h",
+    "dart_isolate_runner.cc",
+    "dart_isolate_runner.h",
+    "elf_loader.cc",
+    "elf_loader.h",
+    "test_dart_native_resolver.cc",
+    "test_dart_native_resolver.h",
   ]
 
   public_deps = [
-    ":testing",
-    "$flutter_root/runtime:libdart",
-    "//third_party/tonic",
+    ":testing_lib",
+    "//flutter/common",
+    "//flutter/runtime",
+    "//flutter/runtime:libdart",
+    "//flutter/third_party/tonic",
+    "//third_party/dart/runtime/bin:elf_loader",
+    "//third_party/skia",
   ]
 }
 
@@ -54,11 +66,11 @@ source_set("skia") {
   testonly = true
 
   sources = [
-    "$flutter_root/testing/assertions_skia.cc",
-    "$flutter_root/testing/assertions_skia.h",
-    "$flutter_root/testing/canvas_test.h",
-    "$flutter_root/testing/mock_canvas.cc",
-    "$flutter_root/testing/mock_canvas.h",
+    "assertions_skia.cc",
+    "assertions_skia.h",
+    "canvas_test.h",
+    "mock_canvas.cc",
+    "mock_canvas.h",
   ]
 
   public_deps = [
@@ -67,22 +79,55 @@ source_set("skia") {
   ]
 }
 
-if (current_toolchain == host_toolchain) {
-  source_set("opengl") {
+source_set("fixture_test") {
+  testonly = true
+
+  sources = [
+    "fixture_test.cc",
+    "fixture_test.h",
+  ]
+
+  public_deps = [
+    ":dart",
+    "//flutter/common",
+    "//flutter/runtime",
+  ]
+}
+
+if (enable_unittests) {
+  source_set("vulkan") {
     testonly = true
-
-    configs += [ "//third_party/swiftshader_flutter:swiftshader_config" ]
-
-    sources = [
-      "$flutter_root/testing/test_gl_surface.cc",
-      "$flutter_root/testing/test_gl_surface.h",
-    ]
 
     deps = [
       ":skia",
-      "$flutter_root/fml",
-      "//third_party/swiftshader_flutter:swiftshader",
+      "//flutter/fml",
     ]
+
+    # SwiftShader only supports x86/x64_64
+    if (target_cpu == "x86" || target_cpu == "x64") {
+      configs += [ "//third_party/swiftshader_flutter:swiftshader_config" ]
+      deps += [ "//third_party/swiftshader_flutter:swiftshader_vulkan" ]
+    }
+  }
+
+  # SwiftShader only supports x86/x64_64
+  if (target_cpu == "x86" || target_cpu == "x64") {
+    source_set("opengl") {
+      testonly = true
+
+      configs += [ "//third_party/swiftshader_flutter:swiftshader_config" ]
+
+      sources = [
+        "test_gl_surface.cc",
+        "test_gl_surface.h",
+      ]
+
+      deps = [
+        ":skia",
+        "//flutter/fml",
+        "//third_party/swiftshader_flutter:swiftshader_gl",
+      ]
+    }
   }
 
   # All targets on all platforms should be able to use the Metal utilities. On
@@ -95,20 +140,20 @@ if (current_toolchain == host_toolchain) {
     testonly = true
 
     sources = [
-      "$flutter_root/testing/test_metal_surface.cc",
-      "$flutter_root/testing/test_metal_surface.h",
+      "test_metal_surface.cc",
+      "test_metal_surface.h",
     ]
 
     defines = []
 
     if (shell_enable_metal) {
-      sources += [ "$flutter_root/testing/test_metal_surface_impl.mm" ]
+      sources += [ "test_metal_surface_impl.mm" ]
       defines += [ "TESTING_ENABLE_METAL" ]
     }
 
     deps = [
       ":skia",
-      "$flutter_root/fml",
+      "//flutter/fml",
     ]
   }
 
@@ -127,13 +172,11 @@ if (current_toolchain == host_toolchain) {
     ]
 
     deps = [
-      ":dart",
       ":metal",
-      ":opengl",
       ":skia",
       ":testing",
       ":testing_fixtures",
-      ":testing_lib",
+      "//flutter/runtime:libdart",
     ]
   }
 }

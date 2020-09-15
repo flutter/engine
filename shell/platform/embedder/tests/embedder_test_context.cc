@@ -5,8 +5,10 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 
 #include "flutter/fml/make_copyable.h"
+#include "flutter/fml/paths.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
+#include "flutter/testing/testing.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -15,38 +17,10 @@ namespace testing {
 
 EmbedderTestContext::EmbedderTestContext(std::string assets_path)
     : assets_path_(std::move(assets_path)),
+      aot_symbols_(LoadELFSymbolFromFixturesIfNeccessary()),
       native_resolver_(std::make_shared<TestDartNativeResolver>()) {
-  auto assets_dir = fml::OpenDirectory(assets_path_.c_str(), false,
-                                       fml::FilePermission::kRead);
-
-  if (flutter::DartVM::IsRunningPrecompiledCode()) {
-    std::string filename(assets_path_);
-    filename += "/app_elf_snapshot.so";
-
-    const uint8_t *vm_snapshot_data = nullptr,
-                  *vm_snapshot_instructions = nullptr,
-                  *isolate_snapshot_data = nullptr,
-                  *isolate_snapshot_instructions = nullptr;
-    const char* error = nullptr;
-
-    elf_library_handle_ =
-        Dart_LoadELF(filename.c_str(), /*file_offset=*/0, &error,
-                     &vm_snapshot_data, &vm_snapshot_instructions,
-                     &isolate_snapshot_data, &isolate_snapshot_instructions);
-
-    if (elf_library_handle_ != nullptr) {
-      vm_snapshot_data_.reset(new fml::NonOwnedMapping(vm_snapshot_data, 0));
-      vm_snapshot_instructions_.reset(
-          new fml::NonOwnedMapping(vm_snapshot_instructions, 0));
-      isolate_snapshot_data_.reset(
-          new fml::NonOwnedMapping(isolate_snapshot_data, 0));
-      isolate_snapshot_instructions_.reset(
-          new fml::NonOwnedMapping(isolate_snapshot_instructions, 0));
-    } else {
-      FML_LOG(WARNING) << "Could not load snapshot: " << error;
-    }
-  }
-
+  SetupAOTMappingsIfNecessary();
+  SetupAOTDataIfNecessary();
   isolate_create_callbacks_.push_back(
       [weak_resolver =
            std::weak_ptr<TestDartNativeResolver>{native_resolver_}]() {
@@ -57,9 +31,39 @@ EmbedderTestContext::EmbedderTestContext(std::string assets_path)
 }
 
 EmbedderTestContext::~EmbedderTestContext() {
-  if (elf_library_handle_ != nullptr) {
-    Dart_UnloadELF(elf_library_handle_);
+  SetGLGetFBOCallback(nullptr);
+}
+
+void EmbedderTestContext::SetupAOTMappingsIfNecessary() {
+  if (!DartVM::IsRunningPrecompiledCode()) {
+    return;
   }
+  vm_snapshot_data_ =
+      std::make_unique<fml::NonOwnedMapping>(aot_symbols_.vm_snapshot_data, 0u);
+  vm_snapshot_instructions_ = std::make_unique<fml::NonOwnedMapping>(
+      aot_symbols_.vm_snapshot_instrs, 0u);
+  isolate_snapshot_data_ =
+      std::make_unique<fml::NonOwnedMapping>(aot_symbols_.vm_isolate_data, 0u);
+  isolate_snapshot_instructions_ = std::make_unique<fml::NonOwnedMapping>(
+      aot_symbols_.vm_isolate_instrs, 0u);
+}
+
+void EmbedderTestContext::SetupAOTDataIfNecessary() {
+  if (!DartVM::IsRunningPrecompiledCode()) {
+    return;
+  }
+  FlutterEngineAOTDataSource data_in = {};
+  FlutterEngineAOTData data_out = nullptr;
+
+  const auto elf_path =
+      fml::paths::JoinPaths({GetFixturesPath(), kAOTAppELFFileName});
+
+  data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
+  data_in.elf_path = elf_path.c_str();
+
+  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kSuccess);
+
+  aot_data_.reset(data_out);
 }
 
 const std::string& EmbedderTestContext::GetAssetsPath() const {
@@ -81,6 +85,10 @@ const fml::Mapping* EmbedderTestContext::GetIsolateSnapshotData() const {
 const fml::Mapping* EmbedderTestContext::GetIsolateSnapshotInstructions()
     const {
   return isolate_snapshot_instructions_.get();
+}
+
+FlutterEngineAOTData EmbedderTestContext::GetAOTData() const {
+  return aot_data_.get();
 }
 
 void EmbedderTestContext::SetRootSurfaceTransformation(SkMatrix matrix) {
@@ -154,6 +162,14 @@ EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook() {
   };
 }
 
+FlutterComputePlatformResolvedLocaleCallback
+EmbedderTestContext::GetComputePlatformResolvedLocaleCallbackHook() {
+  return [](const FlutterLocale** supported_locales,
+            size_t length) -> const FlutterLocale* {
+    return supported_locales[0];
+  };
+}
+
 void EmbedderTestContext::SetupOpenGLSurface(SkISize surface_size) {
   FML_CHECK(!gl_surface_);
   gl_surface_ = std::make_unique<TestGLSurface>(surface_size);
@@ -169,9 +185,19 @@ bool EmbedderTestContext::GLClearCurrent() {
   return gl_surface_->ClearCurrent();
 }
 
-bool EmbedderTestContext::GLPresent() {
+bool EmbedderTestContext::GLPresent(uint32_t fbo_id) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
   gl_surface_present_count_++;
+
+  GLPresentCallback callback;
+  {
+    std::scoped_lock lock(gl_callback_mutex_);
+    callback = gl_present_callback_;
+  }
+
+  if (callback) {
+    callback(fbo_id);
+  }
 
   FireRootSurfacePresentCallbackIfPresent(
       [&]() { return gl_surface_->GetRasterSurfaceSnapshot(); });
@@ -183,9 +209,31 @@ bool EmbedderTestContext::GLPresent() {
   return true;
 }
 
-uint32_t EmbedderTestContext::GLGetFramebuffer() {
+void EmbedderTestContext::SetGLGetFBOCallback(GLGetFBOCallback callback) {
+  std::scoped_lock lock(gl_callback_mutex_);
+  gl_get_fbo_callback_ = callback;
+}
+
+void EmbedderTestContext::SetGLPresentCallback(GLPresentCallback callback) {
+  std::scoped_lock lock(gl_callback_mutex_);
+  gl_present_callback_ = callback;
+}
+
+uint32_t EmbedderTestContext::GLGetFramebuffer(FlutterFrameInfo frame_info) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->GetFramebuffer();
+
+  GLGetFBOCallback callback;
+  {
+    std::scoped_lock lock(gl_callback_mutex_);
+    callback = gl_get_fbo_callback_;
+  }
+
+  if (callback) {
+    callback(frame_info);
+  }
+
+  const auto size = frame_info.size;
+  return gl_surface_->GetFramebuffer(size.width, size.height);
 }
 
 bool EmbedderTestContext::GLMakeResourceCurrent() {
@@ -261,6 +309,11 @@ void EmbedderTestContext::FireRootSurfacePresentCallbackIfPresent(
   auto callback = next_scene_callback_;
   next_scene_callback_ = nullptr;
   callback(image_callback());
+}
+
+uint32_t EmbedderTestContext::GetWindowFBOId() const {
+  FML_CHECK(gl_surface_);
+  return gl_surface_->GetWindowFBOId();
 }
 
 }  // namespace testing

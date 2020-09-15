@@ -30,7 +30,7 @@ std::string FontFeatures::GetFeatureSettings() const {
 
   std::ostringstream stream;
 
-  for (auto kv : feature_map_) {
+  for (const auto& kv : feature_map_) {
     if (stream.tellp()) {
       stream << ',';
     }
@@ -38,6 +38,10 @@ std::string FontFeatures::GetFeatureSettings() const {
   }
 
   return stream.str();
+}
+
+const std::map<std::string, int>& FontFeatures::GetFontFeatures() const {
+  return feature_map_;
 }
 
 }  // namespace txt

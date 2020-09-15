@@ -2,19 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "runtime/dart/utils/handle_exception.h"
+#include "handle_exception.h"
 
 #include <fuchsia/feedback/cpp/fidl.h>
 #include <fuchsia/mem/cpp/fidl.h>
 #include <lib/syslog/global.h>
 #include <lib/zx/vmo.h>
 #include <sys/types.h>
-#include <third_party/tonic/converter/dart_converter.h>
 #include <zircon/status.h>
 
 #include <string>
 
-#include "runtime/dart/utils/logging.h"
+#include "third_party/tonic/converter/dart_converter.h"
+
+#include "logging.h"
 
 namespace {
 static bool SetStackTrace(const std::string& data,
@@ -63,6 +64,11 @@ fuchsia::feedback::CrashReport BuildCrashReport(
     error_message =
         error.substr(delimiter_pos + 2 /*to get rid of the leading ': '*/);
   }
+
+  // Truncate error message to the maximum length allowed for the crash_reporter
+  // FIDL call
+  error_message = error_message.substr(
+      0, fuchsia::feedback::MAX_EXCEPTION_MESSAGE_LENGTH - 1);
 
   fuchsia::feedback::RuntimeCrashReport dart_report;
   dart_report.set_exception_type(error_type);

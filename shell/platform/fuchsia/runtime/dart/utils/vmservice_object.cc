@@ -2,17 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "runtime/dart/utils/vmservice_object.h"
+#include "vmservice_object.h"
 
 #include <dirent.h>
-#include <errno.h>
-#include <string>
-
 #include <fuchsia/io/cpp/fidl.h>
 #include <lib/syslog/global.h>
 #include <zircon/status.h>
 
-#include "runtime/dart/utils/logging.h"
+#include <cerrno>
+#include <string>
+
+#include "logging.h"
 
 namespace {
 

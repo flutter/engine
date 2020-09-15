@@ -3,12 +3,15 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
+
+#include <cstring>
+
 #include "gtest/gtest.h"
 
 namespace flutter {
 namespace testing {
 
-void CreateSimulatedPointerData(PointerData& data,
+void CreateSimulatedPointerData(PointerData& data,  // NOLINT
                                 PointerData::Change change,
                                 int64_t device,
                                 double dx,
@@ -43,7 +46,7 @@ void CreateSimulatedPointerData(PointerData& data,
   data.scroll_delta_y = 0.0;
 }
 
-void CreateSimulatedMousePointerData(PointerData& data,
+void CreateSimulatedMousePointerData(PointerData& data,  // NOLINT
                                      PointerData::Change change,
                                      PointerData::SignalKind signal_kind,
                                      int64_t device,
@@ -81,7 +84,7 @@ void CreateSimulatedMousePointerData(PointerData& data,
   data.scroll_delta_y = scroll_delta_y;
 }
 
-void UnpackPointerPacket(std::vector<PointerData>& output,
+void UnpackPointerPacket(std::vector<PointerData>& output,  // NOLINT
                          std::unique_ptr<PointerDataPacket> packet) {
   size_t kBytesPerPointerData = kPointerDataFieldCount * kBytesPerField;
   auto buffer = packet->data();
@@ -242,6 +245,43 @@ TEST(PointerDataPacketConverterTest, CanUpdatePointerIdentifier) {
 
   ASSERT_EQ(result[6].change, PointerData::Change::kRemove);
   ASSERT_EQ(result[6].synthesized, 0);
+}
+
+TEST(PointerDataPacketConverterTest, AlwaysForwardMoveEvent) {
+  PointerDataPacketConverter converter;
+  auto packet = std::make_unique<PointerDataPacket>(4);
+  PointerData data;
+  CreateSimulatedPointerData(data, PointerData::Change::kAdd, 0, 0.0, 0.0);
+  packet->SetPointerData(0, data);
+  CreateSimulatedPointerData(data, PointerData::Change::kDown, 0, 0.0, 0.0);
+  packet->SetPointerData(1, data);
+  // Creates a move event without a location change.
+  CreateSimulatedPointerData(data, PointerData::Change::kMove, 0, 0.0, 0.0);
+  packet->SetPointerData(2, data);
+  CreateSimulatedPointerData(data, PointerData::Change::kUp, 0, 0.0, 0.0);
+  packet->SetPointerData(3, data);
+
+  auto converted_packet = converter.Convert(std::move(packet));
+
+  std::vector<PointerData> result;
+  UnpackPointerPacket(result, std::move(converted_packet));
+
+  ASSERT_EQ(result.size(), (size_t)4);
+  ASSERT_EQ(result[0].change, PointerData::Change::kAdd);
+  ASSERT_EQ(result[0].synthesized, 0);
+
+  ASSERT_EQ(result[1].change, PointerData::Change::kDown);
+  ASSERT_EQ(result[1].pointer_identifier, 1);
+  ASSERT_EQ(result[1].synthesized, 0);
+
+  // Does not filter out the move event.
+  ASSERT_EQ(result[2].change, PointerData::Change::kMove);
+  ASSERT_EQ(result[2].pointer_identifier, 1);
+  ASSERT_EQ(result[2].synthesized, 0);
+
+  ASSERT_EQ(result[3].change, PointerData::Change::kUp);
+  ASSERT_EQ(result[3].pointer_identifier, 1);
+  ASSERT_EQ(result[3].synthesized, 0);
 }
 
 TEST(PointerDataPacketConverterTest, CanWorkWithDifferentDevices) {

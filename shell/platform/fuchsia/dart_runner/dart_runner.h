@@ -9,13 +9,13 @@
 #include <lib/fidl/cpp/binding_set.h>
 #include <lib/sys/cpp/component_context.h>
 
-#include "mapped_resource.h"
+#include "runtime/dart/utils/mapped_resource.h"
 
 namespace dart_runner {
 
 class DartRunner : public fuchsia::sys::Runner {
  public:
-  explicit DartRunner();
+  explicit DartRunner(sys::ComponentContext* context);
   ~DartRunner() override;
 
  private:
@@ -26,12 +26,13 @@ class DartRunner : public fuchsia::sys::Runner {
       ::fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller)
       override;
 
-  std::unique_ptr<sys::ComponentContext> context_;
+  // Not owned by DartRunner.
+  sys::ComponentContext* context_;
   fidl::BindingSet<fuchsia::sys::Runner> bindings_;
 
 #if !defined(AOT_RUNTIME)
-  MappedResource vm_snapshot_data_;
-  MappedResource vm_snapshot_instructions_;
+  dart_utils::MappedResource vm_snapshot_data_;
+  dart_utils::MappedResource vm_snapshot_instructions_;
 #endif
 
   // Disallow copy and assignment.

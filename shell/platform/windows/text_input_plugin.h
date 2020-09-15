@@ -10,13 +10,14 @@
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/method_channel.h"
+#include "flutter/shell/platform/common/cpp/json_method_codec.h"
 #include "flutter/shell/platform/common/cpp/text_input_model.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 
 namespace flutter {
 
-class Win32FlutterWindow;
+class FlutterWindowsView;
 
 // Implements a text input plugin.
 //
@@ -28,14 +29,14 @@ class TextInputPlugin : public KeyboardHookHandler {
   virtual ~TextInputPlugin();
 
   // |KeyboardHookHandler|
-  void KeyboardHook(Win32FlutterWindow* window,
+  void KeyboardHook(FlutterWindowsView* view,
                     int key,
                     int scancode,
                     int action,
-                    int mods) override;
+                    char32_t character) override;
 
   // |KeyboardHookHandler|
-  void CharHook(Win32FlutterWindow* window, char32_t code_point) override;
+  void TextHook(FlutterWindowsView* view, const std::u16string& text) override;
 
  private:
   // Sends the current state of the given model to the Flutter engine.
@@ -52,8 +53,19 @@ class TextInputPlugin : public KeyboardHookHandler {
   // The MethodChannel used for communication with the Flutter engine.
   std::unique_ptr<flutter::MethodChannel<rapidjson::Document>> channel_;
 
+  // The active client id.
+  int client_id_;
+
   // The active model. nullptr if not set.
   std::unique_ptr<TextInputModel> active_model_;
+
+  // Keyboard type of the client. See available options:
+  // https://docs.flutter.io/flutter/services/TextInputType-class.html
+  std::string input_type_;
+
+  // An action requested by the user on the input client. See available options:
+  // https://docs.flutter.io/flutter/services/TextInputAction-class.html
+  std::string input_action_;
 };
 
 }  // namespace flutter

@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async' show Future;
 import 'dart:html';
 
-import 'package:ui/src/engine.dart';
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
 
 const MessageCodec<dynamic> codec = StandardMessageCodec();
 const String testMessage = 'This is an tooltip.';
@@ -15,6 +17,10 @@ const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{
 };
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   AccessibilityAnnouncements accessibilityAnnouncements;
 
   group('$AccessibilityAnnouncements', () {
@@ -32,7 +38,8 @@ void main() {
       // Initially there is no accessibility-element
       expect(document.getElementById('accessibility-element'), isNull);
 
-      accessibilityAnnouncements.handleMessage(codec.encodeMessage(testInput));
+      accessibilityAnnouncements.handleMessage(codec,
+          codec.encodeMessage(testInput));
       expect(
         document.getElementById('accessibility-element'),
         isNotNull,

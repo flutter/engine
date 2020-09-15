@@ -4,9 +4,9 @@
 
 import("//build/compiled_action.gni")
 import("//build/fuchsia/sdk.gni")
+import("//flutter/common/config.gni")
+import("//flutter/lib/ui/dart_ui.gni")
 import("//third_party/dart/utils/compile_platform.gni")
-import("$flutter_root/common/config.gni")
-import("$flutter_root/lib/ui/dart_ui.gni")
 
 bindings_output_dir = "$root_gen_dir/sky/bindings"
 
@@ -14,9 +14,7 @@ copy("generate_dart_ui") {
   visibility = [ ":*" ]
   sources = dart_ui_files
 
-  outputs = [
-    "$bindings_output_dir/dart_ui/{{source_file_part}}",
-  ]
+  outputs = [ "$bindings_output_dir/dart_ui/{{source_file_part}}" ]
 }
 
 compiled_action("generate_snapshot_bin") {
@@ -30,19 +28,10 @@ compiled_action("generate_snapshot_bin") {
     tool = "//third_party/dart/runtime/bin:gen_snapshot"
   }
 
-  if ((is_fuchsia || is_fuchsia_host) && !using_fuchsia_sdk) {
-    platform_kernel =
-        "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill"
-  } else {
-    platform_kernel = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
-  }
+  platform_kernel = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
 
-  inputs = [
-    platform_kernel,
-  ]
-  deps = [
-    ":kernel_platform_files",
-  ]
+  inputs = [ platform_kernel ]
+  deps = [ ":kernel_platform_files" ]
 
   vm_snapshot_data = "$target_gen_dir/vm_isolate_snapshot.bin"
   vm_snapshot_instructions = "$target_gen_dir/vm_snapshot_instructions.bin"
@@ -57,6 +46,7 @@ compiled_action("generate_snapshot_bin") {
   ]
 
   args = [
+    "--enable-experiment=non-nullable",
     "--snapshot_kind=core",
     "--enable_mirrors=false",
     "--vm_snapshot_data=" + rebase_path(vm_snapshot_data),
@@ -113,9 +103,7 @@ template("bin_to_assembly") {
       script,
       invoker.input,
     ]
-    outputs = [
-      output,
-    ]
+    outputs = [ output ]
   }
 }
 
@@ -154,12 +142,8 @@ template("bin_to_coff") {
     if (current_cpu == "x64") {
       args += [ "--64-bit" ]
     }
-    inputs = [
-      invoker.input,
-    ]
-    outputs = [
-      output,
-    ]
+    inputs = [ invoker.input ]
+    outputs = [ output ]
   }
 }
 
@@ -178,50 +162,36 @@ template("bin_to_linkable") {
 }
 
 bin_to_linkable("vm_snapshot_data_linkable") {
-  deps = [
-    ":generate_snapshot_bin",
-  ]
+  deps = [ ":generate_snapshot_bin" ]
   input = "$target_gen_dir/vm_isolate_snapshot.bin"
   symbol = "kDartVmSnapshotData"
   executable = false
 }
 
 bin_to_linkable("vm_snapshot_instructions_linkable") {
-  deps = [
-    ":generate_snapshot_bin",
-  ]
+  deps = [ ":generate_snapshot_bin" ]
   input = "$target_gen_dir/vm_snapshot_instructions.bin"
   symbol = "kDartVmSnapshotInstructions"
   executable = true
 }
 
 bin_to_linkable("isolate_snapshot_data_linkable") {
-  deps = [
-    ":generate_snapshot_bin",
-  ]
+  deps = [ ":generate_snapshot_bin" ]
   input = "$target_gen_dir/isolate_snapshot.bin"
   symbol = "kDartIsolateSnapshotData"
   executable = false
 }
 
 bin_to_linkable("isolate_snapshot_instructions_linkable") {
-  deps = [
-    ":generate_snapshot_bin",
-  ]
+  deps = [ ":generate_snapshot_bin" ]
   input = "$target_gen_dir/isolate_snapshot_instructions.bin"
   symbol = "kDartIsolateSnapshotInstructions"
   executable = true
 }
 
 bin_to_linkable("platform_strong_dill_linkable") {
-  deps = [
-    ":kernel_platform_files",
-  ]
-  if ((is_fuchsia || is_fuchsia_host) && !using_fuchsia_sdk) {
-    input = "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill"
-  } else {
-    input = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
-  }
+  deps = [ ":kernel_platform_files" ]
+  input = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
   symbol = "kPlatformStrongDill"
   size_symbol = "kPlatformStrongDillSize"
   executable = false
@@ -242,23 +212,6 @@ source_set("snapshot") {
             get_target_outputs(":platform_strong_dill_linkable")
 }
 
-compile_platform("non_strong_platform") {
-  single_root_scheme = "org-dartlang-sdk"
-  single_root_base = rebase_path("../../../")
-  libraries_specification_uri =
-      "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
-
-  outputs = [
-    "$root_out_dir/flutter_patched_sdk/platform.dill",
-    "$root_out_dir/flutter_patched_sdk/vm_outline.dill",
-  ]
-
-  args = [
-    "--target=flutter",
-    "dart:core",
-  ]
-}
-
 compile_platform("strong_platform") {
   single_root_scheme = "org-dartlang-sdk"
   single_root_base = rebase_path("../../../")
@@ -274,6 +227,8 @@ compile_platform("strong_platform") {
       flutter_runtime_mode == "release" || flutter_runtime_mode == "jit_release"
   allow_causal_async_stacks = !is_runtime_mode_release
   args = [
+    "--enable-experiment=non-nullable",
+    "--nnbd-agnostic",
     "--target=flutter",
     "-Ddart.vm.product=$is_runtime_mode_release",
     "-Ddart.developer.causal_async_stacks=$allow_causal_async_stacks",
@@ -283,16 +238,6 @@ compile_platform("strong_platform") {
 }
 
 # Fuchsia's snapshot requires a different platform with extra dart: libraries.
-if ((is_fuchsia || is_fuchsia_host) && !using_fuchsia_sdk) {
-  group("kernel_platform_files") {
-    public_deps = [
-      "//topaz/runtime/flutter_runner/kernel:kernel_platform_files",
-    ]
-  }
-} else {
-  group("kernel_platform_files") {
-    public_deps = [
-      ":strong_platform",
-    ]
-  }
+group("kernel_platform_files") {
+  public_deps = [ ":strong_platform" ]
 }

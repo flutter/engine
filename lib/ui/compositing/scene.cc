@@ -8,6 +8,7 @@
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/window.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -26,25 +27,29 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Scene);
 
 DART_BIND_ALL(Scene, FOR_EACH_BINDING)
 
-fml::RefPtr<Scene> Scene::create(std::shared_ptr<flutter::Layer> rootLayer,
-                                 uint32_t rasterizerTracingThreshold,
-                                 bool checkerboardRasterCacheImages,
-                                 bool checkerboardOffscreenLayers) {
-  return fml::MakeRefCounted<Scene>(
+void Scene::create(Dart_Handle scene_handle,
+                   std::shared_ptr<flutter::Layer> rootLayer,
+                   uint32_t rasterizerTracingThreshold,
+                   bool checkerboardRasterCacheImages,
+                   bool checkerboardOffscreenLayers) {
+  auto scene = fml::MakeRefCounted<Scene>(
       std::move(rootLayer), rasterizerTracingThreshold,
       checkerboardRasterCacheImages, checkerboardOffscreenLayers);
+  scene->AssociateWithDartWrapper(scene_handle);
 }
 
 Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
              bool checkerboardOffscreenLayers) {
-  auto viewport_metrics = UIDartState::Current()->window()->viewport_metrics();
+  auto viewport_metrics = UIDartState::Current()
+                              ->platform_configuration()
+                              ->window()
+                              ->viewport_metrics();
 
   layer_tree_ = std::make_unique<LayerTree>(
       SkISize::Make(viewport_metrics.physical_width,
                     viewport_metrics.physical_height),
-      static_cast<float>(viewport_metrics.physical_depth),
       static_cast<float>(viewport_metrics.device_pixel_ratio));
   layer_tree_->set_root_layer(std::move(rootLayer));
   layer_tree_->set_rasterizer_tracing_threshold(rasterizerTracingThreshold);

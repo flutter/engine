@@ -2,14 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:math' as math show sqrt;
 import 'dart:math' show pi;
 
-import 'package:ui/ui.dart';
-
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
+import 'package:ui/ui.dart';
+
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   test('Offset.direction', () {
     expect(const Offset(0.0, 0.0).direction, 0.0);
     expect(const Offset(0.0, 1.0).direction, pi / 2.0);

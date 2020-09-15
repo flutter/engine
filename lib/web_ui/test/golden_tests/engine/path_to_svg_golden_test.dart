@@ -2,18 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
-import 'package:test/test.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-void main() async {
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() async {
   final Rect region = Rect.fromLTWH(8, 8, 600, 800); // Compensate for old scuba tester padding
 
-  Future<void> testPath(Path path, String scubaFileName, {Paint paint}) async {
+  Future<void> testPath(Path path, String scubaFileName, {Paint paint, double maxDiffRatePercent = null}) async {
     const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 800);
     final BitmapCanvas bitmapCanvas = BitmapCanvas(canvasBounds);
     final RecordingCanvas canvas = RecordingCanvas(canvasBounds);
@@ -36,9 +42,10 @@ void main() async {
     html.document.body.append(bitmapCanvas.rootElement);
     html.document.body.append(svgElement);
 
-    canvas.apply(bitmapCanvas);
+    canvas.endRecording();
+    canvas.apply(bitmapCanvas, canvasBounds);
 
-    await matchGoldenFile('$scubaFileName.png', region: region);
+    await matchGoldenFile('$scubaFileName.png', region: region, maxDiffRatePercent: maxDiffRatePercent);
 
     bitmapCanvas.rootElement.remove();
     svgElement.remove();
@@ -57,21 +64,21 @@ void main() async {
           ..color = const Color(0xFFFF0000)
           ..strokeWidth = 2.0
           ..style = PaintingStyle.stroke);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('render quad bezier curve', () async {
     final Path path = Path();
     path.moveTo(50, 60);
     path.quadraticBezierTo(200, 60, 50, 200);
     await testPath(path, 'svg_quad_bezier');
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('render cubic curve', () async {
     final Path path = Path();
     path.moveTo(50, 60);
     path.cubicTo(200, 60, -100, -50, 150, 200);
     await testPath(path, 'svg_cubic_bezier');
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('render arcs', () async {
     final List<ArcSample> arcs = <ArcSample>[
@@ -98,14 +105,14 @@ void main() async {
       final Path path = sample.createPath();
       await testPath(path, 'svg_arc_$sampleIndex');
     }
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('render rect', () async {
     final Path path = Path();
     path.addRect(const Rect.fromLTRB(15, 15, 60, 20));
     path.addRect(const Rect.fromLTRB(35, 160, 15, 100));
-    await testPath(path, 'svg_rect');
-  }, timeout: const Timeout(Duration(seconds: 10)));
+    await testPath(path, 'svg_rect', maxDiffRatePercent: 1.0);
+  });
 
   test('render notch', () async {
     final Path path = Path();
@@ -122,7 +129,7 @@ void main() async {
     path.lineTo(0, 80);
     path.lineTo(0, 10);
     await testPath(path, 'svg_notch');
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 }
 
 html.Element pathToSvgElement(Path path, Paint paint) {
@@ -132,11 +139,11 @@ html.Element pathToSvgElement(Path path, Paint paint) {
       '<svg viewBox="0 0 ${bounds.right} ${bounds.bottom}" width="${bounds.right}" height="${bounds.bottom}">');
   sb.write('<path ');
   if (paint.style == PaintingStyle.stroke) {
-    sb.write('stroke="${paint.color.toCssString()}" ');
+    sb.write('stroke="${colorToCssString(paint.color)}" ');
     sb.write('stroke-width="${paint.strokeWidth}" ');
   }
   if (paint.style == PaintingStyle.fill) {
-    sb.write('fill="${paint.color.toCssString()}" ');
+    sb.write('fill="${colorToCssString(paint.color)}" ');
   }
   sb.write('d="');
   pathToSvg(path, sb); // This is what we're testing!

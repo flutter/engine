@@ -2,7 +2,71 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
+
+/// Text editing used by accesibility mode.
+///
+/// [SemanticsTextEditingStrategy] assumes the caller will own the creation,
+/// insertion and disposal of the DOM element. Due to this
+/// [initializeElementPlacement], [initializeTextEditing] and
+/// [disable] strategies are handled differently.
+///
+/// This class is still responsible for hooking up the DOM element with the
+/// [HybridTextEditing] instance so that changes are communicated to Flutter.
+class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
+  /// Creates a [SemanticsTextEditingStrategy] that eagerly instantiates
+  /// [domElement] so the caller can insert it before calling
+  /// [SemanticsTextEditingStrategy.enable].
+  SemanticsTextEditingStrategy(
+      HybridTextEditing owner, html.HtmlElement domElement)
+      : super(owner) {
+    // Make sure the DOM element is of a type that we support for text editing.
+    // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
+    assert((domElement is html.InputElement) ||
+        (domElement is html.TextAreaElement));
+    super.domElement = domElement;
+  }
+
+  @override
+  void disable() {
+    // We don't want to remove the DOM element because the caller is responsible
+    // for that.
+    //
+    // Remove focus from the editable element to cause the keyboard to hide.
+    // Otherwise, the keyboard stays on screen even when the user navigates to
+    // a different screen (e.g. by hitting the "back" button).
+    domElement.blur();
+  }
+
+  @override
+  void initializeElementPlacement() {
+    // Element placement is done by [TextField].
+  }
+
+  @override
+  void initializeTextEditing(InputConfiguration inputConfig,
+      {_OnChangeCallback? onChange, _OnActionCallback? onAction}) {
+    // In accesibilty mode, the user of this class is supposed to insert the
+    // [domElement] on their own. Let's make sure they did.
+    assert(html.document.body!.contains(domElement));
+
+    isEnabled = true;
+    _inputConfiguration = inputConfig;
+    _onChange = onChange;
+    _onAction = onAction;
+
+    domElement.focus();
+  }
+
+  @override
+  void setEditingState(EditingState? editingState) {
+    super.setEditingState(editingState);
+
+    // Refocus after setting editing state.
+    domElement.focus();
+  }
+}
 
 /// Manages semantics objects that represent editable text fields.
 ///
@@ -19,15 +83,15 @@ class TextField extends RoleManager {
         semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
             ? html.TextAreaElement()
             : html.InputElement();
-    persistentTextEditingElement = PersistentTextEditingElement(
+    textEditingElement = SemanticsTextEditingStrategy(
       textEditing,
       editableDomElement,
     );
     _setupDomElement();
   }
 
-  PersistentTextEditingElement persistentTextEditingElement;
-  html.Element get _textFieldElement => persistentTextEditingElement.domElement;
+  SemanticsTextEditingStrategy? textEditingElement;
+  html.Element get _textFieldElement => textEditingElement!.domElement;
 
   void _setupDomElement() {
     // On iOS, even though the semantic text field is transparent, the cursor
@@ -54,14 +118,16 @@ class TextField extends RoleManager {
       //   and size of the parent `<flt-semantics>` element.
       ..top = '0'
       ..left = '0'
-      ..width = '${semanticsObject.rect.width}px'
-      ..height = '${semanticsObject.rect.height}px';
+      ..width = '${semanticsObject.rect!.width}px'
+      ..height = '${semanticsObject.rect!.height}px';
     semanticsObject.element.append(_textFieldElement);
 
     switch (browserEngine) {
       case BrowserEngine.blink:
       case BrowserEngine.edge:
+      case BrowserEngine.ie11:
       case BrowserEngine.firefox:
+      case BrowserEngine.ie11:
       case BrowserEngine.unknown:
         _initializeForBlink();
         break;
@@ -81,9 +147,9 @@ class TextField extends RoleManager {
         return;
       }
 
-      textEditing.useCustomEditableElement(persistentTextEditingElement);
-      ui.window
-          .onSemanticsAction(semanticsObject.id, ui.SemanticsAction.tap, null);
+      textEditing.useCustomEditableElement(textEditingElement);
+      window
+          .invokeOnSemanticsAction(semanticsObject.id, ui.SemanticsAction.tap, null);
     });
   }
 
@@ -93,23 +159,23 @@ class TextField extends RoleManager {
   /// events are present regardless of whether accessibility is enabled or not,
   /// this mode is always enabled.
   void _initializeForWebkit() {
-    num lastTouchStartOffsetX;
-    num lastTouchStartOffsetY;
+    num? lastTouchStartOffsetX;
+    num? lastTouchStartOffsetY;
 
     _textFieldElement.addEventListener('touchstart', (html.Event event) {
-      textEditing.useCustomEditableElement(persistentTextEditingElement);
-      final html.TouchEvent touchEvent = event;
-      lastTouchStartOffsetX = touchEvent.changedTouches.last.client.x;
-      lastTouchStartOffsetY = touchEvent.changedTouches.last.client.y;
+      textEditing.useCustomEditableElement(textEditingElement);
+      final html.TouchEvent touchEvent = event as html.TouchEvent;
+      lastTouchStartOffsetX = touchEvent.changedTouches!.last.client.x;
+      lastTouchStartOffsetY = touchEvent.changedTouches!.last.client.y;
     }, true);
 
     _textFieldElement.addEventListener('touchend', (html.Event event) {
-      final html.TouchEvent touchEvent = event;
+      final html.TouchEvent touchEvent = event as html.TouchEvent;
 
       if (lastTouchStartOffsetX != null) {
         assert(lastTouchStartOffsetY != null);
-        final num offsetX = touchEvent.changedTouches.last.client.x;
-        final num offsetY = touchEvent.changedTouches.last.client.y;
+        final num offsetX = touchEvent.changedTouches!.last.client.x;
+        final num offsetY = touchEvent.changedTouches!.last.client.y;
 
         // This should match the similar constant define in:
         //
@@ -120,7 +186,7 @@ class TextField extends RoleManager {
 
         if (offsetX * offsetX + offsetY * offsetY < kTouchSlop) {
           // Recognize it as a tap that requires a keyboard.
-          ui.window.onSemanticsAction(
+          window.invokeOnSemanticsAction(
               semanticsObject.id, ui.SemanticsAction.tap, null);
         }
       } else {

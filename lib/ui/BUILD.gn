@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("$flutter_root/common/config.gni")
-import("$flutter_root/testing/testing.gni")
+import("//flutter/common/config.gni")
+import("//flutter/testing/testing.gni")
 
 source_set("ui") {
   sources = [
@@ -38,12 +38,16 @@ source_set("ui") {
     "painting/image.h",
     "painting/image_decoder.cc",
     "painting/image_decoder.h",
+    "painting/image_descriptor.cc",
+    "painting/image_descriptor.h",
     "painting/image_encoding.cc",
     "painting/image_encoding.h",
     "painting/image_filter.cc",
     "painting/image_filter.h",
     "painting/image_shader.cc",
     "painting/image_shader.h",
+    "painting/immutable_buffer.cc",
+    "painting/immutable_buffer.h",
     "painting/matrix.cc",
     "painting/matrix.h",
     "painting/multi_frame_codec.cc",
@@ -81,16 +85,16 @@ source_set("ui") {
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
     "text/font_collection.h",
-    "text/line_metrics.cc",
     "text/line_metrics.h",
     "text/paragraph.cc",
     "text/paragraph.h",
     "text/paragraph_builder.cc",
     "text/paragraph_builder.h",
-    "text/text_box.cc",
     "text/text_box.h",
     "ui_dart_state.cc",
     "ui_dart_state.h",
+    "window/platform_configuration.cc",
+    "window/platform_configuration.h",
     "window/platform_message.cc",
     "window/platform_message.h",
     "window/platform_message_response.cc",
@@ -109,71 +113,105 @@ source_set("ui") {
     "window/window.h",
   ]
 
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [ "//flutter:config" ]
+
+  public_deps = [ "//flutter/third_party/txt" ]
 
   deps = [
-    "$flutter_root/assets",
-    "$flutter_root/common",
-    "$flutter_root/flow",
-    "$flutter_root/fml",
-    "$flutter_root/runtime:test_font",
+    "//flutter/assets",
+    "//flutter/common",
+    "//flutter/flow",
+    "//flutter/fml",
+    "//flutter/runtime:test_font",
+    "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
-    "//third_party/tonic",
   ]
 
-  public_deps = [
-    "$flutter_root/third_party/txt",
-  ]
-
+  if (!defined(defines)) {
+    defines = []
+  }
   if (flutter_enable_skshaper) {
-    defines = [ "FLUTTER_ENABLE_SKSHAPER" ]
+    defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
+  }
+  if (is_win) {
+    # Required for M_PI and others.
+    defines += [ "_USE_MATH_DEFINES" ]
   }
 
-  if (is_fuchsia) {
+  if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
     sources += [
       "compositing/scene_host.cc",
       "compositing/scene_host.h",
     ]
 
-    if (using_fuchsia_sdk) {
-      deps += [
-        "$flutter_root/shell/platform/fuchsia/dart-pkg/fuchsia",
-        "$flutter_root/shell/platform/fuchsia/dart-pkg/zircon",
-        "$fuchsia_sdk_root/pkg:async-cpp",
-      ]
-    } else {
-      deps += [ "//topaz/public/dart-pkg/zircon" ]
-    }
+    deps += [
+      "$fuchsia_sdk_root/pkg:async-cpp",
+      "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
+      "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+    ]
   }
 }
 
-if (current_toolchain == host_toolchain) {
+if (enable_unittests) {
   test_fixtures("ui_unittests_fixtures") {
     dart_main = "fixtures/ui_test.dart"
     fixtures = [
       "fixtures/DashInNooglerHat.jpg",
       "fixtures/Horizontal.jpg",
+      "fixtures/Horizontal.png",
       "fixtures/hello_loop_2.gif",
       "fixtures/hello_loop_2.webp",
+    ]
+  }
+
+  executable("ui_benchmarks") {
+    testonly = true
+
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
+    sources = [ "ui_benchmarks.cc" ]
+
+    deps = [
+      ":ui",
+      ":ui_unittests_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/shell/common",
+      "//flutter/testing:fixture_test",
     ]
   }
 
   executable("ui_unittests") {
     testonly = true
 
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
     sources = [
-      "painting/image_decoder_unittests.cc",
+      "painting/image_dispose_unittests.cc",
+      "painting/image_encoding_unittests.cc",
+      "painting/vertices_unittests.cc",
+      "window/platform_configuration_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]
 
     deps = [
       ":ui",
       ":ui_unittests_fixtures",
-      "$flutter_root/common",
-      "$flutter_root/testing:dart",
-      "$flutter_root/testing:opengl",
+      "//flutter/common",
+      "//flutter/shell/common:shell_test_fixture_sources",
+      "//flutter/testing",
+      "//flutter/testing:dart",
+      "//flutter/testing:fixture_test",
+      "//flutter/third_party/tonic",
+      "//third_party/dart/runtime/bin:elf_loader",
     ]
+
+    # TODO(https://github.com/flutter/flutter/issues/63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.
+    if (!is_fuchsia) {
+      sources += [ "painting/image_decoder_unittests.cc" ]
+
+      deps += [ "//flutter/testing:opengl" ]
+    }
   }
 }

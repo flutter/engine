@@ -14,18 +14,21 @@
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
 
+#include "flutter_runner_product_configuration.h"
 #include "vsync_recorder.h"
 
 namespace flutter_runner {
 
 VsyncWaiter::VsyncWaiter(std::string debug_label,
                          zx_handle_t session_present_handle,
-                         flutter::TaskRunners task_runners)
+                         flutter::TaskRunners task_runners,
+                         fml::TimeDelta vsync_offset)
     : flutter::VsyncWaiter(task_runners),
       debug_label_(std::move(debug_label)),
       session_wait_(session_present_handle, SessionPresentSignal),
-      weak_factory_(this),
-      weak_factory_ui_(nullptr) {
+      vsync_offset_(vsync_offset),
+      weak_factory_ui_(nullptr),
+      weak_factory_(this) {
   auto wait_handler = [&](async_dispatcher_t* dispatcher,   //
                           async::Wait* wait,                //
                           zx_status_t status,               //
@@ -50,6 +53,14 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
             std::make_unique<fml::WeakPtrFactory<VsyncWaiter>>(this);
       }));
   session_wait_.set_handler(wait_handler);
+
+  if (vsync_offset_ >= fml::TimeDelta::FromSeconds(1)) {
+    FML_LOG(WARNING) << "Given vsync_offset is extremely high: "
+                     << vsync_offset_.ToMilliseconds() << "ms";
+  } else {
+    FML_LOG(INFO) << "Set vsync_offset to " << vsync_offset_.ToMicroseconds()
+                  << "us";
+  }
 }
 
 VsyncWaiter::~VsyncWaiter() {
@@ -127,10 +138,27 @@ void VsyncWaiter::AwaitVSync() {
   VsyncInfo vsync_info = VsyncRecorder::GetInstance().GetCurrentVsyncInfo();
 
   fml::TimePoint now = fml::TimePoint::Now();
-  fml::TimePoint next_vsync = SnapToNextPhase(now, vsync_info.presentation_time,
-                                              vsync_info.presentation_interval);
+  fml::TimePoint last_presentation_time =
+      VsyncRecorder::GetInstance().GetLastPresentationTime();
+
+  fml::TimePoint next_vsync =
+      VsyncRecorder::GetInstance().GetCurrentVsyncInfo().presentation_time;
+
+  if (next_vsync <= now) {
+    next_vsync = SnapToNextPhase(now, last_presentation_time,
+                                 vsync_info.presentation_interval);
+  }
+
+  auto next_vsync_start_time = next_vsync - vsync_offset_;
+
+  if (now >= next_vsync_start_time)
+    next_vsync_start_time =
+        next_vsync_start_time + vsync_info.presentation_interval;
+
+  fml::TimeDelta delta = next_vsync_start_time - now;
+
   task_runners_.GetUITaskRunner()->PostDelayedTask(
-      [& weak_factory_ui = this->weak_factory_ui_] {
+      [&weak_factory_ui = this->weak_factory_ui_] {
         if (!weak_factory_ui) {
           FML_LOG(WARNING) << "WeakPtrFactory for VsyncWaiter is null, likely "
                               "due to the VsyncWaiter being destroyed.";
@@ -141,7 +169,7 @@ void VsyncWaiter::AwaitVSync() {
           self->FireCallbackWhenSessionAvailable();
         }
       },
-      next_vsync - now);
+      delta);
 }
 
 void VsyncWaiter::FireCallbackWhenSessionAvailable() {
@@ -158,8 +186,15 @@ void VsyncWaiter::FireCallbackNow() {
   VsyncInfo vsync_info = VsyncRecorder::GetInstance().GetCurrentVsyncInfo();
 
   fml::TimePoint now = fml::TimePoint::Now();
-  fml::TimePoint next_vsync = SnapToNextPhase(now, vsync_info.presentation_time,
-                                              vsync_info.presentation_interval);
+  fml::TimePoint last_presentation_time =
+      VsyncRecorder::GetInstance().GetLastPresentationTime();
+  fml::TimePoint next_vsync =
+      VsyncRecorder::GetInstance().GetCurrentVsyncInfo().presentation_time;
+
+  if (next_vsync <= now) {
+    next_vsync = SnapToNextPhase(now, last_presentation_time,
+                                 vsync_info.presentation_interval);
+  }
   fml::TimePoint previous_vsync = next_vsync - vsync_info.presentation_interval;
 
   FireCallback(previous_vsync, next_vsync);

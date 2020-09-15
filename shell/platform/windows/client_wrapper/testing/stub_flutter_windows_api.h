@@ -29,36 +29,51 @@ class StubFlutterWindowsApi {
 
   virtual ~StubFlutterWindowsApi() {}
 
-  // Called for FlutterDesktopCreateView.
-  virtual FlutterDesktopViewControllerRef CreateViewController(
-      int initial_width,
-      int initial_height,
-      const char* assets_path,
-      const char* icu_data_path,
-      const char** arguments,
-      size_t argument_count) {
+  // Called for FlutterDesktopViewControllerCreate.
+  virtual FlutterDesktopViewControllerRef
+  ViewControllerCreate(int width, int height, FlutterDesktopEngineRef engine) {
     return nullptr;
   }
 
-  // Called for FlutterDesktopDestroyView.
-  virtual void DestroyViewController() {}
+  // Called for FlutterDesktopViewControllerDestroy.
+  virtual void ViewControllerDestroy() {}
 
-  // Called for FlutterDesktopProcessMessages
-  virtual uint64_t FlutterDesktopProcessMessages() { return 0; }
+  // Called for FlutterDesktopViewControllerHandleTopLevelWindowProc.
+  virtual bool ViewControllerHandleTopLevelWindowProc(HWND hwnd,
+                                                      UINT message,
+                                                      WPARAM wparam,
+                                                      LPARAM lparam,
+                                                      LRESULT* result) {
+    return false;
+  }
 
-  // Called for FlutterDesktopProcessMessages
-  virtual HWND FlutterDesktopGetHWND() { return reinterpret_cast<HWND>(1); }
-
-  // Called for FlutterDesktopRunEngine.
-  virtual FlutterDesktopEngineRef RunEngine(const char* assets_path,
-                                            const char* icu_data_path,
-                                            const char** arguments,
-                                            size_t argument_count) {
+  // Called for FlutterDesktopEngineCreate.
+  virtual FlutterDesktopEngineRef EngineCreate(
+      const FlutterDesktopEngineProperties& engine_properties) {
     return nullptr;
   }
 
-  // Called for FlutterDesktopShutDownEngine.
-  virtual bool ShutDownEngine() { return true; }
+  // Called for FlutterDesktopEngineDestroy.
+  virtual bool EngineDestroy() { return true; }
+
+  // Called for FlutterDesktopEngineRun.
+  virtual bool EngineRun(const char* entry_point) { return true; }
+
+  // Called for FlutterDesktopEngineProcessMessages.
+  virtual uint64_t EngineProcessMessages() { return 0; }
+
+  // Called for FlutterDesktopViewGetHWND.
+  virtual HWND ViewGetHWND() { return reinterpret_cast<HWND>(1); }
+
+  // Called for FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate.
+  virtual void PluginRegistrarRegisterTopLevelWindowProcDelegate(
+      FlutterDesktopWindowProcCallback delegate,
+      void* user_data) {}
+
+  // Called for
+  // FlutterDesktopPluginRegistrarUnregisterTopLevelWindowProcDelegate.
+  virtual void PluginRegistrarUnregisterTopLevelWindowProcDelegate(
+      FlutterDesktopWindowProcCallback delegate) {}
 };
 
 // A test helper that owns a stub implementation, making it the test stub for

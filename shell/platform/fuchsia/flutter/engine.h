@@ -11,12 +11,23 @@
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/sys/cpp/service_directory.h>
+#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/zx/event.h>
 
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
+
+#include "flutter_runner_product_configuration.h"
+#include "fuchsia_external_view_embedder.h"
 #include "isolate_configurator.h"
+#include "session_connection.h"
 #include "thread.h"
+#include "vulkan_surface_producer.h"
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+#include "flutter/flow/scene_update_context.h"  // nogncheck
+#endif
 
 namespace flutter_runner {
 
@@ -36,10 +47,10 @@ class Engine final {
          flutter::Settings settings,
          fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
          fuchsia::ui::views::ViewToken view_token,
-         fuchsia::ui::views::ViewRefControl view_ref_control,
-         fuchsia::ui::views::ViewRef view_ref,
+         scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
-         fidl::InterfaceRequest<fuchsia::io::Directory> directory_request);
+         fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
+         FlutterRunnerProductConfiguration product_config);
   ~Engine();
 
   // Returns the Dart return code for the root isolate if one is present. This
@@ -52,15 +63,29 @@ class Engine final {
 
  private:
   Delegate& delegate_;
+
   const std::string thread_label_;
-  flutter::Settings settings_;
-  std::array<std::unique_ptr<Thread>, 3> threads_;
+  std::array<Thread, 3> threads_;
+
+  std::optional<SessionConnection> session_connection_;
+  std::optional<VulkanSurfaceProducer> surface_producer_;
+  std::optional<FuchsiaExternalViewEmbedder> external_view_embedder_;
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  std::optional<flutter::SceneUpdateContext> legacy_external_view_embedder_;
+#endif
+
   std::unique_ptr<IsolateConfigurator> isolate_configurator_;
   std::unique_ptr<flutter::Shell> shell_;
-  zx::event vsync_event_;
-  fml::WeakPtrFactory<Engine> weak_factory_;
-  // A stub for the FIDL protocol fuchsia.intl.PropertyProvider.
+
   fuchsia::intl::PropertyProviderPtr intl_property_provider_;
+
+  zx::event vsync_event_;
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  bool use_legacy_renderer_ = true;
+#endif
+
+  fml::WeakPtrFactory<Engine> weak_factory_;
 
   void OnMainIsolateStart();
 
@@ -68,11 +93,12 @@ class Engine final {
 
   void Terminate();
 
-  void OnSessionMetricsDidChange(const fuchsia::ui::gfx::Metrics& metrics);
-  void OnSessionSizeChangeHint(float width_change_factor,
-                               float height_change_factor);
+  void DebugWireframeSettingsChanged(bool enabled);
+  void CreateView(int64_t view_id, bool hit_testable, bool focusable);
+  void UpdateView(int64_t view_id, bool hit_testable, bool focusable);
+  void DestroyView(int64_t view_id);
 
-  void OnDebugWireframeSettingsChanged(bool enabled);
+  std::unique_ptr<flutter::Surface> CreateSurface();
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };

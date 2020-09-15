@@ -11,17 +11,21 @@
   NSAssert([scenario length] != 0, @"You need to provide a scenario");
   self = [self initWithName:[NSString stringWithFormat:@"Test engine for %@", scenario]
                     project:nil];
-  [self runWithEntrypoint:nil];
-  [self.binaryMessenger
-      setMessageHandlerOnChannel:@"scenario_status"
-            binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
-              [self.binaryMessenger
-                  sendOnChannel:@"set_scenario"
-                        message:[scenario dataUsingEncoding:NSUTF8StringEncoding]];
-              if (engineRunCompletion != nil) {
-                engineRunCompletion();
-              }
-            }];
+  [self run];
+
+  [self.binaryMessenger setMessageHandlerOnChannel:@"waiting_for_status"
+                              binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
+                                FlutterMethodChannel* channel = [FlutterMethodChannel
+                                    methodChannelWithName:@"driver"
+                                          binaryMessenger:self.binaryMessenger
+                                                    codec:[FlutterJSONMethodCodec sharedInstance]];
+                                [channel invokeMethod:@"set_scenario"
+                                            arguments:@{@"name" : scenario}];
+
+                                if (engineRunCompletion != nil) {
+                                  engineRunCompletion();
+                                }
+                              }];
   return self;
 }
 

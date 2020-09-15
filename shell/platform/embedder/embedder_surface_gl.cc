@@ -34,8 +34,9 @@ bool EmbedderSurfaceGL::IsValid() const {
 }
 
 // |GPUSurfaceGLDelegate|
-bool EmbedderSurfaceGL::GLContextMakeCurrent() {
-  return gl_dispatch_table_.gl_make_current_callback();
+std::unique_ptr<GLContextResult> EmbedderSurfaceGL::GLContextMakeCurrent() {
+  return std::make_unique<GLContextDefaultResult>(
+      gl_dispatch_table_.gl_make_current_callback());
 }
 
 // |GPUSurfaceGLDelegate|
@@ -44,13 +45,13 @@ bool EmbedderSurfaceGL::GLContextClearCurrent() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool EmbedderSurfaceGL::GLContextPresent() {
-  return gl_dispatch_table_.gl_present_callback();
+bool EmbedderSurfaceGL::GLContextPresent(uint32_t fbo_id) {
+  return gl_dispatch_table_.gl_present_callback(fbo_id);
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t EmbedderSurfaceGL::GLContextFBO() const {
-  return gl_dispatch_table_.gl_fbo_callback();
+intptr_t EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
+  return gl_dispatch_table_.gl_fbo_callback(frame_info);
 }
 
 // |GPUSurfaceGLDelegate|
@@ -89,7 +90,7 @@ std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
 }
 
 // |EmbedderSurface|
-sk_sp<GrContext> EmbedderSurfaceGL::CreateResourceContext() const {
+sk_sp<GrDirectContext> EmbedderSurfaceGL::CreateResourceContext() const {
   auto callback = gl_dispatch_table_.gl_make_resource_current_callback;
   if (callback && callback()) {
     if (auto context = ShellIOManager::CreateCompatibleResourceLoadingContext(

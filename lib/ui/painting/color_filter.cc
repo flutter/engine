@@ -4,6 +4,9 @@
 
 #include "flutter/lib/ui/painting/color_filter.h"
 
+#include <cstring>
+
+#include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -12,6 +15,7 @@
 namespace flutter {
 
 static void ColorFilter_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&ColorFilter::Create, args);
 }
 

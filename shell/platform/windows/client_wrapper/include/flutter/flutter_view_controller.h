@@ -6,11 +6,14 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_VIEW_CONTROLLER_H_
 
 #include <flutter_windows.h>
+#include <windows.h>
 
-#include <chrono>
-#include <string>
-#include <vector>
+#include <memory>
+#include <optional>
 
+#include "dart_project.h"
+#include "flutter_engine.h"
+#include "flutter_view.h"
 #include "plugin_registrar.h"
 #include "plugin_registry.h"
 
@@ -21,27 +24,15 @@ namespace flutter {
 // This is the primary wrapper class for the desktop C API.
 // If you use this class, you should not call any of the setup or teardown
 // methods in the C API directly, as this class will do that internally.
-class FlutterViewController : public PluginRegistry {
+class FlutterViewController {
  public:
-  // There must be only one instance of this class in an application at any
-  // given time, as Flutter does not support multiple engines in one process,
-  // or multiple views in one engine.
-
   // Creates a FlutterView that can be parented into a Windows View hierarchy
   // either using HWNDs or in the future into a CoreWindow, or using compositor.
-
-  // The |assets_path| is the path to the flutter_assets folder for the Flutter
-  // application to be run. |icu_data_path| is the path to the icudtl.dat file
-  // for the version of Flutter you are using.
   //
-  // The |arguments| are passed to the Flutter engine. See:
-  // https://github.com/flutter/engine/blob/master/shell/common/switches.h for
-  // for details. Not all arguments will apply to desktop.
-  explicit FlutterViewController(const std::string& icu_data_path,
-                                 int width,
+  // |dart_project| will be used to configure the engine backing this view.
+  explicit FlutterViewController(int width,
                                  int height,
-                                 const std::string& assets_path,
-                                 const std::vector<std::string>& arguments);
+                                 const DartProject& project);
 
   virtual ~FlutterViewController();
 
@@ -49,28 +40,31 @@ class FlutterViewController : public PluginRegistry {
   FlutterViewController(FlutterViewController const&) = delete;
   FlutterViewController& operator=(FlutterViewController const&) = delete;
 
-  // Return backing HWND for manipulation in host application.
-  HWND GetNativeWindow();
+  // Returns the engine running Flutter content in this view.
+  FlutterEngine* engine() { return engine_.get(); }
 
-  // Processes any pending events in the Flutter engine, and returns the
-  // nanosecond delay until the next scheduled event (or  max, if none).
+  // Returns the view managed by this controller.
+  FlutterView* view() { return view_.get(); }
+
+  // Allows the Flutter engine and any interested plugins an opportunity to
+  // handle the given message.
   //
-  // This should be called on every run of the application-level runloop, and
-  // a wait for native events in the runloop should never be longer than the
-  // last return value from this function.
-  std::chrono::nanoseconds ProcessMessages();
-
-  // flutter::PluginRegistry:
-  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
-      const std::string& plugin_name) override;
+  // If a result is returned, then the message was handled in such a way that
+  // further handling should not be done.
+  std::optional<LRESULT> HandleTopLevelWindowProc(HWND hwnd,
+                                                  UINT message,
+                                                  WPARAM wparam,
+                                                  LPARAM lparam);
 
  private:
-  // The path to the ICU data file. Set at creation time since it is the same
-  // for any view created.
-  std::string icu_data_path_;
-
   // Handle for interacting with the C API's view controller, if any.
   FlutterDesktopViewControllerRef controller_ = nullptr;
+
+  // The backing engine
+  std::unique_ptr<FlutterEngine> engine_;
+
+  // The owned FlutterView.
+  std::unique_ptr<FlutterView> view_;
 };
 
 }  // namespace flutter

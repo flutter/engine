@@ -5,14 +5,15 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_COMPOSITOR_CONTEXT_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_COMPOSITOR_CONTEXT_H_
 
-#include <fuchsia/ui/scenic/cpp/fidl.h>
-#include <fuchsia/ui/views/cpp/fidl.h>
-#include <lib/fit/function.h>
+#include <memory>
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/scene_update_context.h"
 #include "flutter/fml/macros.h"
+
 #include "session_connection.h"
+#include "vulkan_surface_producer.h"
 
 namespace flutter_runner {
 
@@ -20,33 +21,26 @@ namespace flutter_runner {
 // Fuchsia.
 class CompositorContext final : public flutter::CompositorContext {
  public:
-  CompositorContext(std::string debug_label,
-                    fuchsia::ui::views::ViewToken view_token,
-                    fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
-                    fml::closure session_error_callback,
-                    zx_handle_t vsync_event_handle);
+  CompositorContext(SessionConnection& session_connection,
+                    VulkanSurfaceProducer& surface_producer,
+                    flutter::SceneUpdateContext& scene_update_context);
 
   ~CompositorContext() override;
 
-  void OnSessionMetricsDidChange(const fuchsia::ui::gfx::Metrics& metrics);
-  void OnSessionSizeChangeHint(float width_change_factor,
-                               float height_change_factor);
-
-  void OnWireframeEnabled(bool enabled);
-
  private:
-  const std::string debug_label_;
-  SessionConnection session_connection_;
+  SessionConnection& session_connection_;
+  VulkanSurfaceProducer& surface_producer_;
+  flutter::SceneUpdateContext& scene_update_context_;
 
   // |flutter::CompositorContext|
   std::unique_ptr<ScopedFrame> AcquireFrame(
-      GrContext* gr_context,
+      GrDirectContext* gr_context,
       SkCanvas* canvas,
       flutter::ExternalViewEmbedder* view_embedder,
       const SkMatrix& root_surface_transformation,
       bool instrumentation_enabled,
       bool surface_supports_readback,
-      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CompositorContext);
 };

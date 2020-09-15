@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 
 import 'package:args/command_runner.dart';
@@ -12,7 +13,7 @@ import 'package:watcher/watcher.dart';
 import 'environment.dart';
 import 'utils.dart';
 
-class BuildCommand extends Command<bool> {
+class BuildCommand extends Command<bool> with ArgUtils {
   BuildCommand() {
     argParser
       ..addFlag(
@@ -20,11 +21,6 @@ class BuildCommand extends Command<bool> {
         abbr: 'w',
         help: 'Run the build in watch mode so it rebuilds whenever a change'
             'is made.',
-      )
-      ..addOption(
-        'ninja-jobs',
-        abbr: 'j',
-        help: 'Number of parallel jobs to use in the ninja build.',
       );
   }
 
@@ -34,23 +30,14 @@ class BuildCommand extends Command<bool> {
   @override
   String get description => 'Build the Flutter web engine.';
 
-  bool get isWatchMode => argResults['watch'];
-
-  int getNinjaJobCount() {
-    final String ninjaJobsArg = argResults['ninja-jobs'];
-    if (ninjaJobsArg != null) {
-      return int.tryParse(ninjaJobsArg);
-    }
-    return null;
-  }
+  bool get isWatchMode => boolArg('watch');
 
   @override
   FutureOr<bool> run() async {
-    final int ninjaJobCount = getNinjaJobCount();
     final FilePath libPath = FilePath.fromWebUi('lib');
     final Pipeline buildPipeline = Pipeline(steps: <PipelineStep>[
       gn,
-      () => ninja(ninjaJobCount),
+      () => ninja(),
     ]);
     await buildPipeline.start();
 
@@ -83,17 +70,11 @@ Future<void> gn() {
 }
 
 // TODO(mdebbar): Make the ninja step interruptable in the pipeline.
-Future<void> ninja(int ninjaJobs) {
-  if (ninjaJobs == null) {
-    print('Running ninja (with default ninja parallelization)...');
-  } else {
-    print('Running ninja (with $ninjaJobs parallel jobs)...');
-  }
-
-  return runProcess('ninja', <String>[
+Future<void> ninja() {
+  print('Running autoninja...');
+  return runProcess('autoninja', <String>[
     '-C',
     environment.hostDebugUnoptDir.path,
-    if (ninjaJobs != null) ...['-j', '$ninjaJobs'],
   ]);
 }
 

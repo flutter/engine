@@ -4,14 +4,14 @@
 
 #include "runner.h"
 
+#include <fcntl.h>
 #include <fuchsia/mem/cpp/fidl.h>
 #include <lib/async/cpp/task.h>
 #include <lib/trace-engine/instrumentation.h>
 #include <zircon/status.h>
 #include <zircon/types.h>
 
-#include <fcntl.h>
-#include <stdint.h>
+#include <cstdint>
 #include <sstream>
 #include <utility>
 
@@ -75,7 +75,7 @@ bool InitializeTZData() {
                   << strerror(errno);
     return false;
   }
-  if (!close(fd)) {
+  if (close(fd)) {
     FML_LOG(WARNING) << "Could not close: " << tzdata_dir << ": "
                      << strerror(errno);
   }
@@ -87,7 +87,7 @@ bool InitializeICU() {
   const char* data_path = kIcuDataPath;
 
   fuchsia::mem::Buffer icu_data;
-  if (!dart_utils::VmoFromFilename(data_path, &icu_data)) {
+  if (!dart_utils::VmoFromFilename(data_path, false, &icu_data)) {
     return false;
   }
 
@@ -146,8 +146,8 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 }
 #endif  // !defined(DART_PRODUCT)
 
-Runner::Runner(async::Loop* loop)
-    : loop_(loop), context_(sys::ComponentContext::Create()) {
+Runner::Runner(async::Loop* loop, sys::ComponentContext* context)
+    : loop_(loop), context_(context) {
 #if !defined(DART_PRODUCT)
   // The VM service isolate uses the process-wide namespace. It writes the
   // vm service protocol port under /tmp. The VMServiceObject exposes that

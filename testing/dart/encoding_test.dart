@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -113,7 +114,7 @@ class GrayscaleImage {
   GrayscaleImage._();
 
   static Future<Image> load() async {
-    final Uint8List bytes = await readFile('4x4.png');
+    final Uint8List bytes = await readFile('2x2.png');
     final Completer<Image> completer = Completer<Image>();
     decodeImageFromList(bytes, (Image image) => completer.complete(image));
     return await completer.future;

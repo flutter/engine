@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 class _PointerState {
   _PointerState(this.x, this.y);
 
   /// The identifier used in framework hit test.
-  int get pointer => _pointer;
-  int _pointer;
+  int? get pointer => _pointer;
+  int? _pointer;
   static int _pointerCount = 0;
   void startNewPointer() {
     _pointerCount += 1;
@@ -64,33 +65,33 @@ class PointerDataConverter {
   }
 
   ui.PointerData _generateCompletePointerData({
-    Duration timeStamp,
-    ui.PointerChange change,
-    ui.PointerDeviceKind kind,
-    ui.PointerSignalKind signalKind,
-    int device,
-    double physicalX,
-    double physicalY,
-    int buttons,
-    bool obscured,
-    double pressure,
-    double pressureMin,
-    double pressureMax,
-    double distance,
-    double distanceMax,
-    double size,
-    double radiusMajor,
-    double radiusMinor,
-    double radiusMin,
-    double radiusMax,
-    double orientation,
-    double tilt,
-    int platformData,
-    double scrollDeltaX,
-    double scrollDeltaY,
+    required Duration timeStamp,
+    required ui.PointerChange change,
+    required ui.PointerDeviceKind kind,
+    ui.PointerSignalKind? signalKind,
+    required int device,
+    required double physicalX,
+    required double physicalY,
+    required int buttons,
+    required bool obscured,
+    required double pressure,
+    required double pressureMin,
+    required double pressureMax,
+    required double distance,
+    required double distanceMax,
+    required double size,
+    required double radiusMajor,
+    required double radiusMinor,
+    required double radiusMin,
+    required double radiusMax,
+    required double orientation,
+    required double tilt,
+    required int platformData,
+    required double scrollDeltaX,
+    required double scrollDeltaY,
   }) {
     assert(_pointers.containsKey(device));
-    final _PointerState state = _pointers[device];
+    final _PointerState state = _pointers[device]!;
     final double deltaX = physicalX - state.x;
     final double deltaY = physicalY - state.y;
     state.x = physicalX;
@@ -128,37 +129,37 @@ class PointerDataConverter {
 
   bool _locationHasChanged(int device, double physicalX, double physicalY) {
     assert(_pointers.containsKey(device));
-    final _PointerState state = _pointers[device];
+    final _PointerState state = _pointers[device]!;
     return state.x != physicalX || state.y != physicalY;
   }
 
   ui.PointerData _synthesizePointerData({
-    Duration timeStamp,
-    ui.PointerChange change,
-    ui.PointerDeviceKind kind,
-    int device,
-    double physicalX,
-    double physicalY,
-    int buttons,
-    bool obscured,
-    double pressure,
-    double pressureMin,
-    double pressureMax,
-    double distance,
-    double distanceMax,
-    double size,
-    double radiusMajor,
-    double radiusMinor,
-    double radiusMin,
-    double radiusMax,
-    double orientation,
-    double tilt,
-    int platformData,
-    double scrollDeltaX,
-    double scrollDeltaY,
+    required Duration timeStamp,
+    required ui.PointerChange change,
+    required ui.PointerDeviceKind kind,
+    required int device,
+    required double physicalX,
+    required double physicalY,
+    required int buttons,
+    required bool obscured,
+    required double pressure,
+    required double pressureMin,
+    required double pressureMax,
+    required double distance,
+    required double distanceMax,
+    required double size,
+    required double radiusMajor,
+    required double radiusMinor,
+    required double radiusMin,
+    required double radiusMax,
+    required double orientation,
+    required double tilt,
+    required int platformData,
+    required double scrollDeltaX,
+    required double scrollDeltaY,
   }) {
     assert(_pointers.containsKey(device));
-    final _PointerState state = _pointers[device];
+    final _PointerState state = _pointers[device]!;
     final double deltaX = physicalX - state.x;
     final double deltaY = physicalY - state.y;
     state.x = physicalX;
@@ -205,7 +206,7 @@ class PointerDataConverter {
     Duration timeStamp = Duration.zero,
     ui.PointerChange change = ui.PointerChange.cancel,
     ui.PointerDeviceKind kind = ui.PointerDeviceKind.touch,
-    ui.PointerSignalKind signalKind,
+    ui.PointerSignalKind? signalKind,
     int device = 0,
     double physicalX = 0.0,
     double physicalY = 0.0,
@@ -227,7 +228,7 @@ class PointerDataConverter {
     double scrollDeltaX = 0.0,
     double scrollDeltaY = 0.0,
   }) {
-    assert(change != null);
+    assert(change != null); // ignore: unnecessary_null_comparison
     if (signalKind == null ||
       signalKind == ui.PointerSignalKind.none) {
       switch (change) {
@@ -333,10 +334,11 @@ class PointerDataConverter {
           final _PointerState state = _ensureStateForPointer(
             device, physicalX, physicalY);
           assert(!state.down);
+          state.startNewPointer();
           if (!alreadyAdded) {
             // Synthesizes an add pointer data.
             result.add(
-                _synthesizePointerData(
+              _synthesizePointerData(
                 timeStamp: timeStamp,
                 change: ui.PointerChange.add,
                 kind: kind,
@@ -363,8 +365,38 @@ class PointerDataConverter {
               )
             );
           }
-          assert(!_locationHasChanged(device, physicalX, physicalY));
-          state.startNewPointer();
+          if (_locationHasChanged(device, physicalX, physicalY)) {
+            assert(alreadyAdded);
+            // Synthesize a hover of the pointer to the down location before
+            // sending the down event, if necessary.
+            result.add(
+              _synthesizePointerData(
+                timeStamp: timeStamp,
+                change: ui.PointerChange.hover,
+                kind: kind,
+                device: device,
+                physicalX: physicalX,
+                physicalY: physicalY,
+                buttons: 0,
+                obscured: obscured,
+                pressure: 0.0,
+                pressureMin: pressureMin,
+                pressureMax: pressureMax,
+                distance: distance,
+                distanceMax: distanceMax,
+                size: size,
+                radiusMajor: radiusMajor,
+                radiusMinor: radiusMinor,
+                radiusMin: radiusMin,
+                radiusMax: radiusMax,
+                orientation: orientation,
+                tilt: tilt,
+                platformData: platformData,
+                scrollDeltaX: scrollDeltaX,
+                scrollDeltaY: scrollDeltaY,
+              )
+            );
+          }
           state.down = true;
           result.add(
             _generateCompletePointerData(
@@ -397,7 +429,7 @@ class PointerDataConverter {
           break;
         case ui.PointerChange.move:
           assert(_pointers.containsKey(device));
-          final _PointerState state = _pointers[device];
+          final _PointerState state = _pointers[device]!;
           assert(state.down);
           result.add(
             _generateCompletePointerData(
@@ -431,9 +463,48 @@ class PointerDataConverter {
         case ui.PointerChange.up:
         case ui.PointerChange.cancel:
           assert(_pointers.containsKey(device));
-          final _PointerState state = _pointers[device];
+          final _PointerState state = _pointers[device]!;
           assert(state.down);
-          assert(!_locationHasChanged(device, physicalX, physicalY));
+          // Cancel events can have different coordinates due to various
+          // reasons (window lost focus which is accompanied by window
+          // movement, or PointerEvent simply always gives 0). Instead of
+          // caring about the coordinates, we want to cancel the pointers as
+          // soon as possible.
+          if (change == ui.PointerChange.cancel) {
+            physicalX = state.x;
+            physicalY = state.y;
+          }
+          if (_locationHasChanged(device, physicalX, physicalY)) {
+            // Synthesize a move of the pointer to the up location before
+            // sending the up event, if necessary.
+            result.add(
+              _synthesizePointerData(
+                timeStamp: timeStamp,
+                change: ui.PointerChange.move,
+                kind: kind,
+                device: device,
+                physicalX: physicalX,
+                physicalY: physicalY,
+                buttons: buttons,
+                obscured: obscured,
+                pressure: pressure,
+                pressureMin: pressureMin,
+                pressureMax: pressureMax,
+                distance: distance,
+                distanceMax: distanceMax,
+                size: size,
+                radiusMajor: radiusMajor,
+                radiusMinor: radiusMinor,
+                radiusMin: radiusMin,
+                radiusMax: radiusMax,
+                orientation: orientation,
+                tilt: tilt,
+                platformData: platformData,
+                scrollDeltaX: scrollDeltaX,
+                scrollDeltaY: scrollDeltaY,
+              )
+            );
+          }
           state.down = false;
           result.add(
             _generateCompletePointerData(
@@ -463,13 +534,44 @@ class PointerDataConverter {
               scrollDeltaY: scrollDeltaY,
             )
           );
+          if (kind == ui.PointerDeviceKind.touch) {
+            // The browser sends a new device ID for each touch gesture. To
+            // avoid memory leaks, we send a "remove" event when the gesture is
+            // over (i.e. when "up" or "cancel" is received).
+            result.add(
+              _synthesizePointerData(
+                timeStamp: timeStamp,
+                change: ui.PointerChange.remove,
+                kind: kind,
+                device: device,
+                physicalX: physicalX,
+                physicalY: physicalY,
+                buttons: 0,
+                obscured: obscured,
+                pressure: 0.0,
+                pressureMin: pressureMin,
+                pressureMax: pressureMax,
+                distance: distance,
+                distanceMax: distanceMax,
+                size: size,
+                radiusMajor: radiusMajor,
+                radiusMinor: radiusMinor,
+                radiusMin: radiusMin,
+                radiusMax: radiusMax,
+                orientation: orientation,
+                tilt: tilt,
+                platformData: platformData,
+                scrollDeltaX: scrollDeltaX,
+                scrollDeltaY: scrollDeltaY,
+              )
+            );
+            _pointers.remove(device);
+          }
           break;
         case ui.PointerChange.remove:
           assert(_pointers.containsKey(device));
-          final _PointerState state = _pointers[device];
+          final _PointerState state = _pointers[device]!;
           assert(!state.down);
-          assert(!_locationHasChanged(device, physicalX, physicalY));
-          _pointers.remove(device);
           result.add(
             _generateCompletePointerData(
               timeStamp: timeStamp,
@@ -477,8 +579,8 @@ class PointerDataConverter {
               kind: kind,
               signalKind: signalKind,
               device: device,
-              physicalX: physicalX,
-              physicalY: physicalY,
+              physicalX: state.x,
+              physicalY: state.y,
               buttons: buttons,
               obscured: obscured,
               pressure: pressure,
@@ -498,6 +600,7 @@ class PointerDataConverter {
               scrollDeltaY: scrollDeltaY,
             )
           );
+          _pointers.remove(device);
           break;
       }
     } else {

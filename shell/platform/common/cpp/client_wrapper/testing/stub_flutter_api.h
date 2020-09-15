@@ -34,8 +34,9 @@ class StubFlutterApi {
 
   virtual ~StubFlutterApi() {}
 
-  // Called for FlutterDesktopRegistrarEnableInputBlocking.
-  virtual void RegistrarEnableInputBlocking(const char* channel) {}
+  // Called for FlutterDesktopPluginRegistrarSetDestructionHandler.
+  virtual void PluginRegistrarSetDestructionHandler(
+      FlutterDesktopOnPluginRegistrarDestroyed callback) {}
 
   // Called for FlutterDesktopMessengerSend.
   virtual bool MessengerSend(const char* channel,

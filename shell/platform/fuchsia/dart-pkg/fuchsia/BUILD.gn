@@ -9,9 +9,7 @@ config("sdk_ext_config") {
 }
 
 group("fuchsia") {
-  public_deps = [
-    ":sdk_ext",
-  ]
+  public_deps = [ ":sdk_ext" ]
 }
 
 source_set("sdk_ext") {
@@ -21,11 +19,11 @@ source_set("sdk_ext") {
   ]
 
   deps = [
-    "$flutter_root/fml",
     "$fuchsia_sdk_root/fidl:fuchsia.sys",
     "$fuchsia_sdk_root/pkg:async-cpp",
     "../zircon",
-    "//third_party/tonic",
+    "//flutter/fml",
+    "//flutter/third_party/tonic",
   ]
 
   public_configs = [ ":sdk_ext_config" ]

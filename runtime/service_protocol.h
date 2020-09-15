@@ -27,6 +27,8 @@ class ServiceProtocol {
   static const std::string_view kFlushUIThreadTasksExtensionName;
   static const std::string_view kSetAssetBundlePathExtensionName;
   static const std::string_view kGetDisplayRefreshRateExtensionName;
+  static const std::string_view kGetSkSLsExtensionName;
+  static const std::string_view kEstimateRasterCacheMemoryExtensionName;
 
   class Handler {
    public:
@@ -55,7 +57,7 @@ class ServiceProtocol {
     virtual bool HandleServiceProtocolMessage(
         std::string_view method,  // one if the extension names specified above.
         const ServiceProtocolMap& params,
-        rapidjson::Document& response) = 0;
+        rapidjson::Document* response) = 0;
   };
 
   ServiceProtocol();
@@ -76,25 +78,22 @@ class ServiceProtocol {
   std::unique_ptr<fml::SharedMutex> handlers_mutex_;
   std::map<Handler*, fml::AtomicObject<Handler::Description>> handlers_;
 
-  FML_WARN_UNUSED_RESULT
-  static bool HandleMessage(const char* method,
-                            const char** param_keys,
-                            const char** param_values,
-                            intptr_t num_params,
-                            void* user_data,
-                            const char** json_object);
-  FML_WARN_UNUSED_RESULT
-  static bool HandleMessage(std::string_view method,
-                            const Handler::ServiceProtocolMap& params,
-                            ServiceProtocol* service_protocol,
-                            rapidjson::Document& response);
-  FML_WARN_UNUSED_RESULT
-  bool HandleMessage(std::string_view method,
-                     const Handler::ServiceProtocolMap& params,
-                     rapidjson::Document& response) const;
+  [[nodiscard]] static bool HandleMessage(const char* method,
+                                          const char** param_keys,
+                                          const char** param_values,
+                                          intptr_t num_params,
+                                          void* user_data,
+                                          const char** json_object);
+  [[nodiscard]] static bool HandleMessage(
+      std::string_view method,
+      const Handler::ServiceProtocolMap& params,
+      ServiceProtocol* service_protocol,
+      rapidjson::Document* response);
+  [[nodiscard]] bool HandleMessage(std::string_view method,
+                                   const Handler::ServiceProtocolMap& params,
+                                   rapidjson::Document* response) const;
 
-  FML_WARN_UNUSED_RESULT
-  bool HandleListViewsMethod(rapidjson::Document& response) const;
+  [[nodiscard]] bool HandleListViewsMethod(rapidjson::Document* response) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ServiceProtocol);
 };

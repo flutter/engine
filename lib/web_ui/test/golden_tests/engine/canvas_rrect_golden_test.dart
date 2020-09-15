@@ -2,15 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
-import 'package:test/test.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-void main() async {
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() async {
   final Rect region = Rect.fromLTWH(8, 8, 500, 100); // Compensate for old scuba tester padding
 
   BitmapCanvas canvas;
@@ -43,7 +49,7 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_rrect_round_square.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('round rect with big radius scale down smaller radius', () async {
     for (int i = 0; i < 5; i++) {
@@ -59,7 +65,7 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_rrect_overlapping_radius.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('diff round rect with big radius scale down smaller radius', () async {
     for (int i = 0; i < 5; i++) {
@@ -82,5 +88,5 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_drrect_overlapping_radius.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 }

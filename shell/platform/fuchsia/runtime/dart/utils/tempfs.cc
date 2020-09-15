@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "runtime/dart/utils/tempfs.h"
+#include "tempfs.h"
 
 #include <future>
 #include <string>
@@ -18,7 +18,7 @@
 #include <zircon/status.h>
 #include <zircon/syscalls.h>
 
-#include "runtime/dart/utils/logging.h"
+#include "logging.h"
 
 namespace {
 
@@ -45,9 +45,10 @@ void RunnerTemp::Start() {
     zx_status_t status = memfs_install_at_with_page_limit(
         loop_->dispatcher(), kMaxTmpPages, kTmpPath);
 #else
+    memfs_filesystem_t* fs;
     // Hot reload uses /tmp to hold the updated dills and assets so do not
     // impose any size limitation in non product runners.
-    zx_status_t status = memfs_install_at(loop_->dispatcher(), kTmpPath);
+    zx_status_t status = memfs_install_at(loop_->dispatcher(), kTmpPath, &fs);
 #endif
     finished.set_value();
     if (status != ZX_OK) {

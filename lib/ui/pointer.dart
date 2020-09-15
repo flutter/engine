@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
+
 part of dart.ui;
 
 /// How the pointer has changed since the last report.
@@ -54,7 +56,7 @@ enum PointerDeviceKind {
   unknown
 }
 
-/// The kind of [PointerDeviceKind.signal].
+/// The kind of pointer signal event.
 enum PointerSignalKind {
   /// The event is not associated with a pointer signal.
   none,
@@ -70,6 +72,7 @@ enum PointerSignalKind {
 class PointerData {
   /// Creates an object that represents the state of a pointer.
   const PointerData({
+    this.embedderId = 0,
     this.timeStamp = Duration.zero,
     this.change = PointerChange.cancel,
     this.kind = PointerDeviceKind.touch,
@@ -100,6 +103,13 @@ class PointerData {
     this.scrollDeltaY = 0.0,
   });
 
+  /// Unique identifier that ties the [PointerEvent] to embedder event created it.
+  ///
+  /// No two pointer events can have the same [embedderId]. This is different from
+  /// [pointerIdentifier] - used for hit-testing, whereas [embedderId] is used to
+  /// identify the platform event.
+  final int embedderId;
+
   /// Time of event dispatch, relative to an arbitrary timeline.
   final Duration timeStamp;
 
@@ -110,7 +120,7 @@ class PointerData {
   final PointerDeviceKind kind;
 
   /// The kind of signal for a pointer signal event.
-  final PointerSignalKind signalKind;
+  final PointerSignalKind? signalKind;
 
   /// Unique identifier for the pointing device, reused across interactions.
   final int device;
@@ -261,6 +271,7 @@ class PointerData {
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
     return '$runtimeType('
+             'embedderId: $embedderId, '
              'timeStamp: $timeStamp, '
              'change: $change, '
              'kind: $kind, '
@@ -295,7 +306,7 @@ class PointerData {
 /// A sequence of reports about the state of pointers.
 class PointerDataPacket {
   /// Creates a packet of pointer data reports.
-  const PointerDataPacket({ this.data = const <PointerData>[] });
+  const PointerDataPacket({ this.data = const <PointerData>[] }) : assert(data != null); // ignore: unnecessary_null_comparison
 
   /// Data about the individual pointers in this packet.
   ///

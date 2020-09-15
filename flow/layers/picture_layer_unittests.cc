@@ -71,7 +71,7 @@ TEST_F(PictureLayerTest, InvalidPictureDies) {
 TEST_F(PictureLayerTest, SimplePicture) {
   const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
   const SkMatrix layer_offset_matrix =
-      SkMatrix::MakeTrans(layer_offset.fX, layer_offset.fY);
+      SkMatrix::Translate(layer_offset.fX, layer_offset.fY);
   const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   auto mock_picture = SkPicture::MakePlaceholder(picture_bounds);
   auto layer = std::make_shared<PictureLayer>(
@@ -94,9 +94,6 @@ TEST_F(PictureLayerTest, SimplePicture) {
            1, MockCanvas::SetMatrixData{RasterCache::GetIntegralTransCTM(
                   layer_offset_matrix)}},
 #endif
-       MockCanvas::DrawCall{
-           1, MockCanvas::DrawPictureData{mock_picture->serialize(), SkPaint(),
-                                          SkMatrix()}},
        MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
 }

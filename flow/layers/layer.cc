@@ -55,9 +55,30 @@ Layer::AutoPrerollSaveLayerState::~AutoPrerollSaveLayerState() {
   }
 }
 
-#if defined(OS_FUCHSIA)
-void Layer::UpdateScene(SceneUpdateContext& context) {}
-#endif  // defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+
+void Layer::CheckForChildLayerBelow(PrerollContext* context) {
+  // If there is embedded Fuchsia content in the scene (a ChildSceneLayer),
+  // PhysicalShapeLayers that appear above the embedded content will be turned
+  // into their own Scenic layers.
+  child_layer_exists_below_ = context->child_scene_layer_exists_below;
+  if (child_layer_exists_below_) {
+    set_needs_system_composite(true);
+  }
+}
+
+void Layer::UpdateScene(SceneUpdateContext& context) {
+  FML_DCHECK(needs_system_composite());
+  FML_DCHECK(child_layer_exists_below_);
+
+  SceneUpdateContext::Frame frame(
+      context, SkRRect::MakeRect(paint_bounds()), SK_ColorTRANSPARENT,
+      SkScalarRoundToInt(context.alphaf() * 255), "flutter::Layer");
+
+  frame.AddPaintLayer(this);
+}
+
+#endif
 
 Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
                                     const SkRect& bounds,

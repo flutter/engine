@@ -4,6 +4,8 @@
 
 #include "flutter/flow/view_holder.h"
 
+#include <unordered_map>
+
 #include "flutter/fml/thread_local.h"
 
 namespace {
@@ -52,8 +54,8 @@ void ViewHolder::Create(zx_koid_t id,
                         fml::RefPtr<fml::TaskRunner> ui_task_runner,
                         fuchsia::ui::views::ViewHolderToken view_holder_token,
                         const BindCallback& on_bind_callback) {
-  // This GPU thread contains at least 1 ViewHolder.  Initialize the per-thread
-  // bindings.
+  // This raster thread contains at least 1 ViewHolder.  Initialize the
+  // per-thread bindings.
   if (tls_view_holder_bindings.get() == nullptr) {
     tls_view_holder_bindings.reset(new ViewHolderBindings());
   }
@@ -95,31 +97,37 @@ ViewHolder::ViewHolder(fml::RefPtr<fml::TaskRunner> ui_task_runner,
     : ui_task_runner_(std::move(ui_task_runner)),
       pending_view_holder_token_(std::move(view_holder_token)),
       pending_bind_callback_(on_bind_callback) {
-  FML_DCHECK(ui_task_runner_);
   FML_DCHECK(pending_view_holder_token_.value);
 }
 
-void ViewHolder::UpdateScene(SceneUpdateContext& context,
+void ViewHolder::UpdateScene(scenic::Session* session,
+                             scenic::ContainerNode& container_node,
                              const SkPoint& offset,
                              const SkSize& size,
+                             SkAlpha opacity,
                              bool hit_testable) {
   if (pending_view_holder_token_.value) {
-    entity_node_ = std::make_unique<scenic::EntityNode>(context.session());
+    entity_node_ = std::make_unique<scenic::EntityNode>(session);
+    opacity_node_ = std::make_unique<scenic::OpacityNodeHACK>(session);
     view_holder_ = std::make_unique<scenic::ViewHolder>(
-        context.session(), std::move(pending_view_holder_token_),
-        "Flutter SceneHost");
-
+        session, std::move(pending_view_holder_token_), "Flutter SceneHost");
+    opacity_node_->AddChild(*entity_node_);
+    opacity_node_->SetLabel("flutter::ViewHolder");
     entity_node_->Attach(*view_holder_);
-    ui_task_runner_->PostTask(
-        [bind_callback = std::move(pending_bind_callback_),
-         view_holder_id = view_holder_->id()]() {
-          bind_callback(view_holder_id);
-        });
+    if (ui_task_runner_ && pending_view_holder_token_.value) {
+      ui_task_runner_->PostTask(
+          [bind_callback = std::move(pending_bind_callback_),
+           view_holder_id = view_holder_->id()]() {
+            bind_callback(view_holder_id);
+          });
+    }
   }
   FML_DCHECK(entity_node_);
+  FML_DCHECK(opacity_node_);
   FML_DCHECK(view_holder_);
 
-  context.top_entity()->embedder_node().AddChild(*entity_node_);
+  container_node.AddChild(*opacity_node_);
+  opacity_node_->SetOpacity(opacity / 255.0f);
   entity_node_->SetTranslation(offset.x(), offset.y(), -0.1f);
   entity_node_->SetHitTestBehavior(
       hit_testable ? fuchsia::ui::gfx::HitTestBehavior::kDefault

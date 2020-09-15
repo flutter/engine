@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -93,7 +94,7 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void transform(Float64List matrix4) {
+  void transform(Float32List matrix4) {
     _called('transform', arguments: matrix4);
   }
 
@@ -136,7 +137,10 @@ class MockEngineCanvas implements EngineCanvas {
 
   @override
   void drawRect(Rect rect, SurfacePaintData paint) {
-    _called('drawRect', arguments: paint);
+    _called('drawRect', arguments: <String, dynamic>{
+      'rect': rect,
+      'paint': paint,
+    });
   }
 
   @override
@@ -220,12 +224,26 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawVertices(Vertices vertices, BlendMode blendMode,
-      SurfacePaintData paint) {
+  void drawVertices(
+      Vertices vertices, BlendMode blendMode, SurfacePaintData paint) {
     _called('drawVertices', arguments: <String, dynamic>{
       'vertices': vertices,
       'blendMode': blendMode,
       'paint': paint,
     });
+  }
+
+  @override
+  void drawPoints(PointMode pointMode, Float32List points, SurfacePaintData paint) {
+    _called('drawPoints', arguments: <String, dynamic>{
+      'pointMode': pointMode,
+      'points': points,
+      'paint': paint,
+    });
+  }
+
+  @override
+  void endOfPaint() {
+    _called('endOfPaint', arguments: <String, dynamic>{});
   }
 }

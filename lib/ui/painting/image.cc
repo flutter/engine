@@ -37,10 +37,15 @@ Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
 }
 
 void CanvasImage::dispose() {
+  auto hint_freed_delegate = UIDartState::Current()->GetHintFreedDelegate();
+  if (hint_freed_delegate) {
+    hint_freed_delegate->HintFreed(GetAllocationSize());
+  }
+  image_.reset();
   ClearDartWrapper();
 }
 
-size_t CanvasImage::GetAllocationSize() {
+size_t CanvasImage::GetAllocationSize() const {
   if (auto image = image_.get()) {
     const auto& info = image->imageInfo();
     const auto kMipmapOverhead = 4.0 / 3.0;

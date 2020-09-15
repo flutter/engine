@@ -1,13 +1,16 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
 #include <cstdlib>
+#include <cstring>
 
 #include "flutter/assets/asset_manager.h"
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
@@ -109,7 +112,7 @@ int RunTester(const flutter::Settings& settings,
 
   std::unique_ptr<ThreadHost> threadhost;
   fml::RefPtr<fml::TaskRunner> platform_task_runner;
-  fml::RefPtr<fml::TaskRunner> gpu_task_runner;
+  fml::RefPtr<fml::TaskRunner> raster_task_runner;
   fml::RefPtr<fml::TaskRunner> ui_task_runner;
   fml::RefPtr<fml::TaskRunner> io_task_runner;
 
@@ -118,17 +121,17 @@ int RunTester(const flutter::Settings& settings,
         thread_label, ThreadHost::Type::Platform | ThreadHost::Type::IO |
                           ThreadHost::Type::UI | ThreadHost::Type::GPU);
     platform_task_runner = current_task_runner;
-    gpu_task_runner = threadhost->gpu_thread->GetTaskRunner();
+    raster_task_runner = threadhost->raster_thread->GetTaskRunner();
     ui_task_runner = threadhost->ui_thread->GetTaskRunner();
     io_task_runner = threadhost->io_thread->GetTaskRunner();
   } else {
-    platform_task_runner = gpu_task_runner = ui_task_runner = io_task_runner =
-        current_task_runner;
+    platform_task_runner = raster_task_runner = ui_task_runner =
+        io_task_runner = current_task_runner;
   }
 
   const flutter::TaskRunners task_runners(thread_label,  // dart thread label
                                           platform_task_runner,  // platform
-                                          gpu_task_runner,       // gpu
+                                          raster_task_runner,    // raster
                                           ui_task_runner,        // ui
                                           io_task_runner         // io
   );
@@ -139,7 +142,7 @@ int RunTester(const flutter::Settings& settings,
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
-    return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
+    return std::make_unique<Rasterizer>(shell);
   };
 
   auto shell = Shell::Create(task_runners,             //
@@ -233,10 +236,10 @@ int RunTester(const flutter::Settings& settings,
                      }
                    });
 
-  flutter::ViewportMetrics metrics;
+  flutter::ViewportMetrics metrics{};
   metrics.device_pixel_ratio = 3.0;
-  metrics.physical_width = 2400;   // 800 at 3x resolution
-  metrics.physical_height = 1800;  // 600 at 3x resolution
+  metrics.physical_width = 2400.0;   // 800 at 3x resolution.
+  metrics.physical_height = 1800.0;  // 600 at 3x resolution.
   shell->GetPlatformView()->SetViewportMetrics(metrics);
 
   // Run the message loop and wait for the script to do its thing.

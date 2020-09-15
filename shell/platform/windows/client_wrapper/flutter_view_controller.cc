@@ -9,54 +9,35 @@
 
 namespace flutter {
 
-FlutterViewController::FlutterViewController(
-    const std::string& icu_data_path,
-    int width,
-    int height,
-    const std::string& assets_path,
-    const std::vector<std::string>& arguments)
-    : icu_data_path_(icu_data_path) {
-  if (controller_) {
-    std::cerr << "Only one Flutter view can exist at a time." << std::endl;
-  }
-
-  std::vector<const char*> engine_arguments;
-  std::transform(
-      arguments.begin(), arguments.end(), std::back_inserter(engine_arguments),
-      [](const std::string& arg) -> const char* { return arg.c_str(); });
-  size_t arg_count = engine_arguments.size();
-
-  controller_ = FlutterDesktopCreateViewController(
-      width, height, assets_path.c_str(), icu_data_path_.c_str(),
-      arg_count > 0 ? &engine_arguments[0] : nullptr, arg_count);
+FlutterViewController::FlutterViewController(int width,
+                                             int height,
+                                             const DartProject& project) {
+  engine_ = std::make_unique<FlutterEngine>(project);
+  controller_ = FlutterDesktopViewControllerCreate(width, height,
+                                                   engine_->RelinquishEngine());
   if (!controller_) {
-    std::cerr << "Failed to create view." << std::endl;
+    std::cerr << "Failed to create view controller." << std::endl;
+    return;
   }
+  view_ = std::make_unique<FlutterView>(
+      FlutterDesktopViewControllerGetView(controller_));
 }
 
 FlutterViewController::~FlutterViewController() {
   if (controller_) {
-    FlutterDesktopDestroyViewController(controller_);
+    FlutterDesktopViewControllerDestroy(controller_);
   }
 }
 
-HWND FlutterViewController::GetNativeWindow() {
-  return FlutterDesktopGetHWND(controller_);
-}
-
-std::chrono::nanoseconds FlutterViewController::ProcessMessages() {
-  return std::chrono::nanoseconds(FlutterDesktopProcessMessages(controller_));
-}
-
-FlutterDesktopPluginRegistrarRef FlutterViewController::GetRegistrarForPlugin(
-    const std::string& plugin_name) {
-  if (!controller_) {
-    std::cerr << "Cannot get plugin registrar without a window; call "
-                 "CreateWindow first."
-              << std::endl;
-    return nullptr;
-  }
-  return FlutterDesktopGetPluginRegistrar(controller_, plugin_name.c_str());
+std::optional<LRESULT> FlutterViewController::HandleTopLevelWindowProc(
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam) {
+  LRESULT result;
+  bool handled = FlutterDesktopViewControllerHandleTopLevelWindowProc(
+      controller_, hwnd, message, wparam, lparam, &result);
+  return handled ? result : std::optional<LRESULT>(std::nullopt);
 }
 
 }  // namespace flutter

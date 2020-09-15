@@ -13,13 +13,30 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter_runner {
 
 namespace {
 
+// Immutable format is technically limited to R8G8B8A8_SRGB but
+// R8G8B8A8_UNORM works with existing ARM drivers so we allow that
+// until we have a more reliable API for creating external Vulkan
+// images using sysmem. TODO(fxb/52835)
+#if defined(__aarch64__)
+constexpr SkColorType kSkiaColorType = kRGBA_8888_SkColorType;
+constexpr fuchsia::images::PixelFormat kPixelFormat =
+    fuchsia::images::PixelFormat::R8G8B8A8;
+constexpr VkFormat kVulkanFormat = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr VkImageCreateFlags kVulkanImageCreateFlags = 0;
+#else
 constexpr SkColorType kSkiaColorType = kBGRA_8888_SkColorType;
+constexpr fuchsia::images::PixelFormat kPixelFormat =
+    fuchsia::images::PixelFormat::BGRA_8;
+constexpr VkFormat kVulkanFormat = VK_FORMAT_B8G8R8A8_UNORM;
+constexpr VkImageCreateFlags kVulkanImageCreateFlags =
+    VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+#endif
 
 }  // namespace
 
@@ -44,9 +61,9 @@ bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
   out_vulkan_image->vk_image_create_info = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
       .pNext = &out_vulkan_image->vk_external_image_create_info,
-      .flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+      .flags = kVulkanImageCreateFlags,
       .imageType = VK_IMAGE_TYPE_2D,
-      .format = VK_FORMAT_B8G8R8A8_UNORM,
+      .format = kVulkanFormat,
       .extent = VkExtent3D{static_cast<uint32_t>(size.width()),
                            static_cast<uint32_t>(size.height()), 1},
       .mipLevels = 1,
@@ -73,7 +90,7 @@ bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
     }
 
     out_vulkan_image->vk_image = {
-        vk_image, [& vulkan_provider = vulkan_provider](VkImage image) {
+        vk_image, [&vulkan_provider = vulkan_provider](VkImage image) {
           vulkan_provider.vk().DestroyImage(vulkan_provider.vk_device(), image,
                                             NULL);
         }};
@@ -87,7 +104,7 @@ bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
 }
 
 VulkanSurface::VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
-                             sk_sp<GrContext> context,
+                             sk_sp<GrDirectContext> context,
                              scenic::Session* session,
                              const SkISize& size)
     : vulkan_provider_(vulkan_provider), session_(session), wait_(this) {
@@ -209,7 +226,7 @@ bool VulkanSurface::CreateFences() {
   return true;
 }
 
-bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
+bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrDirectContext> context,
                                          const SkISize& size,
                                          zx::vmo& exported_vmo) {
   if (size.isEmpty()) {
@@ -254,7 +271,8 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
   };
 
   {
-    TRACE_EVENT0("flutter", "vkAllocateMemory");
+    TRACE_EVENT1("flutter", "vkAllocateMemory", "allocationSize",
+                 alloc_info.allocationSize);
     VkDeviceMemory vk_memory = VK_NULL_HANDLE;
     if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().AllocateMemory(
             vulkan_provider_.vk_device(), &alloc_info, NULL, &vk_memory)) !=
@@ -262,8 +280,8 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
       return false;
     }
 
-    vk_memory_ = {vk_memory, [& vulkan_provider =
-                                  vulkan_provider_](VkDeviceMemory memory) {
+    vk_memory_ = {vk_memory,
+                  [&vulkan_provider = vulkan_provider_](VkDeviceMemory memory) {
                     vulkan_provider.vk().FreeMemory(vulkan_provider.vk_device(),
                                                     memory, NULL);
                   }};
@@ -305,7 +323,7 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
                           image_create_info, memory_reqs);
 }
 
-bool VulkanSurface::SetupSkiaSurface(sk_sp<GrContext> context,
+bool VulkanSurface::SetupSkiaSurface(sk_sp<GrDirectContext> context,
                                      const SkISize& size,
                                      SkColorType color_type,
                                      const VkImageCreateInfo& image_create_info,
@@ -314,14 +332,19 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrContext> context,
     return false;
   }
 
-  const GrVkImageInfo image_info = {
-      vulkan_image_.vk_image,                // image
-      {vk_memory_, 0, memory_reqs.size, 0},  // alloc
-      image_create_info.tiling,              // tiling
-      image_create_info.initialLayout,       // layout
-      image_create_info.format,              // format
-      image_create_info.mipLevels,           // level count
-  };
+  GrVkAlloc alloc;
+  alloc.fMemory = vk_memory_;
+  alloc.fOffset = 0;
+  alloc.fSize = memory_reqs.size;
+  alloc.fFlags = 0;
+
+  GrVkImageInfo image_info;
+  image_info.fImage = vulkan_image_.vk_image;
+  image_info.fAlloc = alloc;
+  image_info.fImageTiling = image_create_info.tiling;
+  image_info.fImageLayout = image_create_info.initialLayout;
+  image_info.fFormat = image_create_info.format;
+  image_info.fLevelCount = image_create_info.mipLevels;
 
   GrBackendRenderTarget sk_render_target(size.width(), size.height(), 0,
                                          image_info);
@@ -334,7 +357,7 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrContext> context,
                                              sk_render_target,          //
                                              kTopLeft_GrSurfaceOrigin,  //
                                              color_type,                //
-                                             nullptr,                   //
+                                             SkColorSpace::MakeSRGB(),  //
                                              &sk_surface_props          //
       );
 
@@ -357,7 +380,7 @@ bool VulkanSurface::PushSessionImageSetupOps(scenic::Session* session) {
   image_info.width = sk_surface_->width();
   image_info.height = sk_surface_->height();
   image_info.stride = 4 * sk_surface_->width();
-  image_info.pixel_format = fuchsia::images::PixelFormat::BGRA_8;
+  image_info.pixel_format = kPixelFormat;
   image_info.color_space = fuchsia::images::ColorSpace::SRGB;
   switch (vulkan_image_.vk_image_create_info.tiling) {
     case VK_IMAGE_TILING_OPTIMAL:
@@ -389,7 +412,7 @@ sk_sp<SkSurface> VulkanSurface::GetSkiaSurface() const {
   return valid_ ? sk_surface_ : nullptr;
 }
 
-bool VulkanSurface::BindToImage(sk_sp<GrContext> context,
+bool VulkanSurface::BindToImage(sk_sp<GrDirectContext> context,
                                 VulkanImage vulkan_image) {
   FML_DCHECK(vulkan_image.vk_memory_requirements.size <=
              vk_memory_info_.allocationSize);

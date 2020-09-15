@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "runtime/dart/utils/files.h"
+#include "files.h"
 
 #include <fcntl.h>
-#include <stdint.h>
 
-#include "runtime/dart/utils/inlines.h"
-#include "runtime/dart/utils/logging.h"
+#include <cstdint>
+
+#include "inlines.h"
+#include "logging.h"
 
 namespace dart_utils {
 

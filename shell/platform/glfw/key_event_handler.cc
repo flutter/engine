@@ -1,12 +1,13 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 
 #include <iostream>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_message_codec.h"
+#include "flutter/shell/platform/common/cpp/json_message_codec.h"
 
 static constexpr char kChannelName[] = "flutter/keyevent";
 

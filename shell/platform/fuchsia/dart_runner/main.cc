@@ -12,6 +12,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "logging.h"
+#include "platform/utils.h"
 #include "runtime/dart/utils/files.h"
 #include "runtime/dart/utils/tempfs.h"
 #include "third_party/dart/runtime/include/dart_api.h"
@@ -31,12 +32,10 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 #endif  // !defined(DART_PRODUCT)
 
 int main(int argc, const char** argv) {
-  fx_log_init();
   async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
 
   std::unique_ptr<trace::TraceProviderWithFdio> provider;
   {
-    TRACE_DURATION("dart", "CreateTraceProvider");
     bool already_started;
     // Use CreateSynchronously to prevent loss of early events.
     trace::TraceProviderWithFdio::CreateSynchronously(
@@ -52,7 +51,7 @@ int main(int argc, const char** argv) {
 #endif  // !defined(DART_PRODUCT)
 
   dart_utils::RunnerTemp runner_temp;
-  dart_runner::DartRunner runner;
+  dart_runner::DartRunner runner(dart::ComponentContext());
   loop.Run();
   return 0;
 }

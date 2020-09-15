@@ -2,26 +2,35 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:math' as math;
 
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
-import 'package:test/test.dart';
 
 import '../../matchers.dart';
 import 'package:web_engine_tester/golden_tester.dart';
 
 final Rect region = Rect.fromLTWH(0, 0, 500, 100);
 
-void main() async {
-  debugShowClipLayers = true;
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
 
-  setUp(() {
+void testMain() async {
+  setUp(() async {
+    debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
     for (html.Node scene in html.document.querySelectorAll('flt-scene')) {
       scene.remove();
     }
+
+    await webOnlyInitializePlatform();
+    webOnlyFontCollection.debugRegisterTestFonts();
+    await webOnlyFontCollection.ensureFontsLoaded();
   });
 
   test('pushClipRect', () async {
@@ -35,14 +44,14 @@ void main() async {
     html.document.body.append(builder.build().webOnlyRootElement);
 
     await matchGoldenFile('compositing_shifted_clip_rect.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('pushClipRect with offset and transform', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
 
     builder.pushOffset(0, 60);
     builder.pushTransform(
-      Matrix4.diagonal3Values(1, -1, 1).storage,
+      Matrix4.diagonal3Values(1, -1, 1).toFloat64(),
     );
     builder.pushClipRect(
       const Rect.fromLTRB(10, 10, 60, 60),
@@ -54,8 +63,9 @@ void main() async {
 
     html.document.body.append(builder.build().webOnlyRootElement);
 
-    await matchGoldenFile('compositing_clip_rect_with_offset_and_transform.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+    await matchGoldenFile('compositing_clip_rect_with_offset_and_transform.png',
+        region: region);
+  });
 
   test('pushClipRRect', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
@@ -68,7 +78,7 @@ void main() async {
     html.document.body.append(builder.build().webOnlyRootElement);
 
     await matchGoldenFile('compositing_shifted_clip_rrect.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('pushPhysicalShape', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
@@ -95,8 +105,22 @@ void main() async {
 
     html.document.body.append(builder.build().webOnlyRootElement);
 
-    await matchGoldenFile('compositing_shifted_physical_shape_clip.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+    await matchGoldenFile('compositing_shifted_physical_shape_clip.png',
+        region: region);
+  });
+
+  test('pushImageFilter', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    builder.pushImageFilter(
+      ImageFilter.blur(sigmaX: 1, sigmaY: 3),
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+
+    html.document.body.append(builder.build().webOnlyRootElement);
+
+    await matchGoldenFile('compositing_image_filter.png', region: region);
+  });
 
   group('Cull rect computation', () {
     _testCullRectComputation();
@@ -114,7 +138,7 @@ void _testCullRectComputation() {
     });
     builder.build();
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, const Rect.fromLTRB(0, 0, 500, 100));
   }, skip: '''TODO(https://github.com/flutter/flutter/issues/40395)
   Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500''');
@@ -128,7 +152,7 @@ void _testCullRectComputation() {
     });
     builder.build();
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, const Rect.fromLTRB(0, 0, 20, 20));
   });
 
@@ -142,7 +166,7 @@ void _testCullRectComputation() {
     });
     builder.build();
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, Rect.zero);
     expect(picture.debugExactGlobalCullRect, Rect.zero);
   });
@@ -157,7 +181,7 @@ void _testCullRectComputation() {
     });
     builder.build();
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, const Rect.fromLTRB(40, 40, 60, 60));
   });
 
@@ -176,7 +200,7 @@ void _testCullRectComputation() {
 
     builder.build();
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, const Rect.fromLTRB(40, 40, 60, 60));
   });
 
@@ -194,7 +218,7 @@ void _testCullRectComputation() {
 
     builder.build();
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(
         picture.debugExactGlobalCullRect, const Rect.fromLTRB(0, 70, 20, 100));
     expect(picture.optimalLocalCullRect, const Rect.fromLTRB(0, -20, 20, 10));
@@ -222,11 +246,12 @@ void _testCullRectComputation() {
     builder.pop(); // pushClipRect
     html.document.body.append(builder.build().webOnlyRootElement);
 
-    await matchGoldenFile('compositing_cull_rect_fills_layer_clip.png', region: region);
+    await matchGoldenFile('compositing_cull_rect_fills_layer_clip.png',
+        region: region);
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, const Rect.fromLTRB(40, 40, 70, 70));
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   // Draw a picture inside a layer clip but position the picture such that its
   // paint bounds overflow the layer clip. Verify that the cull rect is the
@@ -250,11 +275,13 @@ void _testCullRectComputation() {
     builder.pop(); // pushClipRect
     html.document.body.append(builder.build().webOnlyRootElement);
 
-    await matchGoldenFile('compositing_cull_rect_intersects_clip_and_paint_bounds.png', region: region);
+    await matchGoldenFile(
+        'compositing_cull_rect_intersects_clip_and_paint_bounds.png',
+        region: region);
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, const Rect.fromLTRB(50, 40, 70, 70));
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   // Draw a picture inside a layer clip that's positioned inside the clip using
   // an offset layer. Verify that the cull rect is the intersection between the
@@ -280,12 +307,13 @@ void _testCullRectComputation() {
     builder.pop(); // pushClipRect
     html.document.body.append(builder.build().webOnlyRootElement);
 
-    await matchGoldenFile('compositing_cull_rect_offset_inside_layer_clip.png', region: region);
+    await matchGoldenFile('compositing_cull_rect_offset_inside_layer_clip.png',
+        region: region);
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect,
         const Rect.fromLTRB(-15.0, -20.0, 15.0, 0.0));
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   // Draw a picture inside a layer clip that's positioned an offset layer such
   // that the picture is push completely outside the clip area. Verify that the
@@ -312,7 +340,7 @@ void _testCullRectComputation() {
 
     builder.build();
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, Rect.zero);
     expect(picture.debugExactGlobalCullRect, Rect.zero);
   });
@@ -324,7 +352,7 @@ void _testCullRectComputation() {
     builder.pushOffset(80, 50);
 
     builder.pushTransform(
-      Matrix4.rotationZ(-math.pi / 4).storage,
+      Matrix4.rotationZ(-math.pi / 4).toFloat64(),
     );
 
     builder.pushClipRect(
@@ -332,7 +360,7 @@ void _testCullRectComputation() {
     );
 
     builder.pushTransform(
-      Matrix4.rotationZ(math.pi / 4).storage,
+      Matrix4.rotationZ(math.pi / 4).toFloat64(),
     );
 
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
@@ -355,13 +383,13 @@ void _testCullRectComputation() {
 
     await matchGoldenFile('compositing_cull_rect_rotated.png', region: region);
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedPicture picture = enumeratePictures().single;
     expect(
       picture.optimalLocalCullRect,
       within(
           distance: 0.05, from: const Rect.fromLTRB(-14.1, -14.1, 14.1, 14.1)),
     );
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('pushClipPath', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
@@ -376,19 +404,24 @@ void _testCullRectComputation() {
     html.document.body.append(builder.build().webOnlyRootElement);
 
     await matchGoldenFile('compositing_clip_path.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   // Draw a picture inside a rotated clip. Verify that the cull rect is big
   // enough to fit the rotated clip.
   test('clips correctly when using 3d transforms', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+
+    builder.pushTransform(Matrix4.diagonal3Values(
+        EngineWindow.browserDevicePixelRatio,
+        EngineWindow.browserDevicePixelRatio, 1.0).toFloat64());
+
     // TODO(yjbanov): see the TODO below.
     // final double screenWidth = html.window.innerWidth.toDouble();
     // final double screenHeight = html.window.innerHeight.toDouble();
 
     final Matrix4 scaleTransform = Matrix4.identity().scaled(0.5, 0.2);
     builder.pushTransform(
-      scaleTransform.storage,
+      scaleTransform.toFloat64(),
     );
 
     builder.pushOffset(400, 200);
@@ -398,14 +431,14 @@ void _testCullRectComputation() {
     );
 
     builder.pushTransform(
-      Matrix4.rotationY(45.0 * math.pi / 180.0).storage,
+      Matrix4.rotationY(45.0 * math.pi / 180.0).toFloat64()
     );
 
     builder.pushClipRect(
       const Rect.fromLTRB(-140, -140, 140, 140),
     );
 
-    builder.pushTransform(Matrix4.translationValues(0, 0, -50).storage);
+    builder.pushTransform(Matrix4.translationValues(0, 0, -50).toFloat64());
 
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
       canvas.drawPaint(Paint()
@@ -476,11 +509,13 @@ void _testCullRectComputation() {
     builder.pop(); // pushClipRect
     builder.pop(); // pushOffset
     builder.pop(); // pushTransform scale
+    builder.pop(); // pushTransform scale devicepixelratio
     html.document.body.append(builder.build().webOnlyRootElement);
 
     await matchGoldenFile('compositing_3d_rotate1.png', region: region);
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    // ignore: unused_local_variable
+    final PersistedPicture picture = enumeratePictures().single;
     // TODO(https://github.com/flutter/flutter/issues/40395):
     //   Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500.
     // expect(
@@ -490,7 +525,91 @@ void _testCullRectComputation() {
     //       from: Rect.fromLTRB(
     //           -140, -140, screenWidth - 360.0, screenHeight + 40.0)),
     // );
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
+
+  // This test reproduces text blurriness when two pieces of text appear inside
+  // two nested clips:
+  //
+  //   ┌───────────────────────┐
+  //   │   text in outer clip  │
+  //   │ ┌────────────────────┐│
+  //   │ │ text in inner clip ││
+  //   │ └────────────────────┘│
+  //   └───────────────────────┘
+  //
+  // This test clips using layers. See a similar test in `canvas_golden_test.dart`,
+  // which clips using canvas.
+  //
+  // More details: https://github.com/flutter/flutter/issues/32274
+  test(
+    'renders clipped text with high quality',
+    () async {
+      // To reproduce blurriness we need real clipping.
+      debugShowClipLayers = false;
+      final Paragraph paragraph =
+          (ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'))..addText('Am I blurry?')).build();
+      paragraph.layout(const ParagraphConstraints(width: 1000));
+
+      final Rect canvasSize = Rect.fromLTRB(
+        0,
+        0,
+        paragraph.maxIntrinsicWidth + 16,
+        2 * paragraph.height + 32,
+      );
+      final Rect outerClip =
+          Rect.fromLTRB(0.5, 0.5, canvasSize.right, canvasSize.bottom);
+      final Rect innerClip = Rect.fromLTRB(0.5, canvasSize.bottom / 2 + 0.5,
+          canvasSize.right, canvasSize.bottom);
+      final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+
+      builder.pushClipRect(outerClip);
+
+      {
+        final EnginePictureRecorder recorder = PictureRecorder();
+        final RecordingCanvas canvas = recorder.beginRecording(outerClip);
+        canvas.drawParagraph(paragraph, const Offset(8.5, 8.5));
+        final Picture picture = recorder.endRecording();
+        expect(canvas.hasArbitraryPaint, false);
+
+        builder.addPicture(
+          Offset.zero,
+          picture,
+        );
+      }
+
+      builder.pushClipRect(innerClip);
+      {
+        final EnginePictureRecorder recorder = PictureRecorder();
+        final RecordingCanvas canvas = recorder.beginRecording(innerClip);
+        canvas.drawParagraph(paragraph, Offset(8.5, 8.5 + innerClip.top));
+        final Picture picture = recorder.endRecording();
+        expect(canvas.hasArbitraryPaint, false);
+
+        builder.addPicture(
+          Offset.zero,
+          picture,
+        );
+      }
+      builder.pop(); // inner clip
+      builder.pop(); // outer clip
+
+      final html.Element sceneElement = builder.build().webOnlyRootElement;
+      expect(
+        sceneElement.querySelectorAll('p').map<String>((e) => e.innerText).toList(),
+        <String>['Am I blurry?', 'Am I blurry?'],
+        reason: 'Expected to render text using HTML',
+      );
+      html.document.body.append(sceneElement);
+
+      await matchGoldenFile(
+        'compositing_draw_high_quality_text.png',
+        region: canvasSize,
+        maxDiffRatePercent: 0.0,
+        pixelComparison: PixelComparison.precise,
+      );
+    },
+    testOn: 'chrome',
+  );
 }
 
 void _drawTestPicture(SceneBuilder builder) {

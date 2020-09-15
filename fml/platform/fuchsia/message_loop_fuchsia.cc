@@ -6,14 +6,23 @@
 
 #include <lib/async-loop/default.h>
 #include <lib/async/cpp/task.h>
+#include <lib/async/default.h>
 #include <lib/zx/time.h>
 
 namespace fml {
 
 MessageLoopFuchsia::MessageLoopFuchsia()
-    : loop_(&kAsyncLoopConfigAttachToCurrentThread) {}
+    : loop_(&kAsyncLoopConfigNoAttachToCurrentThread) {
+  async_set_default_dispatcher(loop_.dispatcher());
+}
 
-MessageLoopFuchsia::~MessageLoopFuchsia() = default;
+MessageLoopFuchsia::~MessageLoopFuchsia() {
+  // It is only safe to unset the current thread's default dispatcher if it is
+  // already pointing to this loop.
+  if (async_get_default_dispatcher() == loop_.dispatcher()) {
+    async_set_default_dispatcher(nullptr);
+  }
+}
 
 void MessageLoopFuchsia::Run() {
   loop_.Run();
@@ -30,9 +39,9 @@ void MessageLoopFuchsia::WakeUp(fml::TimePoint time_point) {
     due_time = zx::nsec((time_point - now).ToNanoseconds());
   }
 
-  FML_DCHECK(async::PostDelayedTask(
-                 loop_.dispatcher(), [this]() { RunExpiredTasksNow(); },
-                 due_time) == ZX_OK);
+  auto status = async::PostDelayedTask(
+      loop_.dispatcher(), [this]() { RunExpiredTasksNow(); }, due_time);
+  FML_DCHECK(status == ZX_OK);
 }
 
 }  // namespace fml

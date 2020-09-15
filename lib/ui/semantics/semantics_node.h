@@ -5,13 +5,12 @@
 #ifndef FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_NODE_H_
 #define FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_NODE_H_
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "third_party/skia/include/core/SkMatrix44.h"
+#include "third_party/skia/include/core/SkM44.h"
 #include "third_party/skia/include/core/SkRect.h"
 
 namespace flutter {
@@ -48,7 +47,12 @@ const int kScrollableSemanticsActions =
     static_cast<int32_t>(SemanticsAction::kScrollUp) |
     static_cast<int32_t>(SemanticsAction::kScrollDown);
 
-// Must match the SemanticsFlags enum in semantics.dart.
+/// C/C++ representation of `SemanticsFlags` defined in
+/// `lib/ui/semantics.dart`.
+///\warning This must match the `SemanticsFlags` enum in
+///         `lib/ui/semantics.dart`.
+/// See also:
+///   - file://./../../../lib/ui/semantics.dart
 enum class SemanticsFlags : int32_t {
   kHasCheckedState = 1 << 0,
   kIsChecked = 1 << 1,
@@ -115,7 +119,7 @@ struct SemanticsNode {
   int32_t textDirection = 0;  // 0=unknown, 1=rtl, 2=ltr
 
   SkRect rect = SkRect::MakeEmpty();
-  SkMatrix44 transform = SkMatrix44(SkMatrix44::kIdentity_Constructor);
+  SkM44 transform = SkM44{};  // Identity
   std::vector<int32_t> childrenInTraversalOrder;
   std::vector<int32_t> childrenInHitTestOrder;
   std::vector<int32_t> customAccessibilityActions;

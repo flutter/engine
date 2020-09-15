@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 
 import 'package:async/async.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:image/image.dart';
-import 'package:package_resolver/package_resolver.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf.dart' as shelf;
@@ -33,14 +35,12 @@ import 'package:test_core/src/runner/environment.dart'; // ignore: implementatio
 
 import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
 import 'package:test_core/src/runner/configuration.dart'; // ignore: implementation_imports
-import 'package:test_core/src/runner/load_exception.dart'; // ignore: implementation_imports
-import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
-    as wip;
 
 import 'browser.dart';
 import 'common.dart';
 import 'environment.dart' as env;
 import 'goldens.dart';
+import 'screenshot_manager.dart';
 import 'supported_browsers.dart';
 
 class BrowserPlatform extends PlatformPlugin {
@@ -97,6 +97,11 @@ class BrowserPlatform extends PlatformPlugin {
   /// The HTTP client to use when caching JS files in `pub serve`.
   final HttpClient _http;
 
+  /// Handles taking screenshots during tests.
+  ///
+  /// Implementation will differ depending on the browser.
+  ScreenshotManager _screenshotManager;
+
   /// Whether [close] has been called.
   bool get _closed => _closeMemo.hasRun;
 
@@ -124,9 +129,10 @@ class BrowserPlatform extends PlatformPlugin {
               serveFilesOutsidePath:
                   config.suiteDefaults.precompiledPath != null))
           .add(_wrapperHandler);
-      // Screenshot tests are only enabled in chrome for now.
-      if (name == 'chrome') {
+      // Screenshot tests are only enabled in Chrome and Safari iOS for now.
+      if (browserName == 'chrome' || browserName == 'ios-safari') {
         cascade = cascade.add(_screeshotHandler);
+        _screenshotManager = ScreenshotManager.choose(browserName);
       }
     }
 
@@ -141,8 +147,9 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   Future<shelf.Response> _screeshotHandler(shelf.Request request) async {
-    if (browserName != 'chrome') {
-      throw Exception('Screenshots tests are only available in Chrome.');
+    if (browserName != 'chrome' && browserName != 'ios-safari') {
+      throw Exception('Screenshots tests are only available in Chrome '
+          'and in Safari-iOS.');
     }
 
     if (!request.requestedUri.path.endsWith('/screenshot')) {
@@ -151,22 +158,35 @@ class BrowserPlatform extends PlatformPlugin {
     }
 
     final String payload = await request.readAsString();
-    final Map<String, dynamic> requestData = json.decode(payload);
-    final String filename = requestData['filename'];
-    final bool write = requestData['write'];
-    final double maxDiffRate = requestData['maxdiffrate'];
-    final Map<String, dynamic> region = requestData['region'];
+    final Map<String, dynamic> requestData =
+        json.decode(payload) as Map<String, dynamic>;
+    final String filename = requestData['filename'] as String;
+    final bool write = requestData['write'] as bool;
+    final double maxDiffRate = requestData.containsKey('maxdiffrate')
+        ? (requestData['maxdiffrate'] as num)
+            .toDouble() // can be parsed as either int or double
+        : kMaxDiffRateFailure;
+    final Map<String, dynamic> region =
+        requestData['region'] as Map<String, dynamic>;
+    final PixelComparison pixelComparison = PixelComparison.values.firstWhere(
+        (value) => value.toString() == requestData['pixelComparison']);
     final String result = await _diffScreenshot(
-        filename, write, maxDiffRate ?? kMaxDiffRateFailure, region);
+        filename, write, maxDiffRate, region, pixelComparison);
     return shelf.Response.ok(json.encode(result));
   }
 
   Future<String> _diffScreenshot(
-      String filename, bool write, double maxDiffRateFailure,
-      [Map<String, dynamic> region]) async {
+      String filename,
+      bool write,
+      double maxDiffRateFailure,
+      Map<String, dynamic> region,
+      PixelComparison pixelComparison) async {
     if (doUpdateScreenshotGoldens) {
       write = true;
     }
+
+    filename =
+        filename.replaceAll('.png', '${_screenshotManager.filenameSuffix}.png');
 
     String goldensDirectory;
     if (filename.startsWith('__local__')) {
@@ -198,40 +218,15 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
 ''';
     }
 
-    final wip.ChromeConnection chromeConnection =
-        wip.ChromeConnection('localhost', kDevtoolsPort);
-    final wip.ChromeTab chromeTab = await chromeConnection.getTab(
-        (wip.ChromeTab chromeTab) => chromeTab.url.contains('localhost'));
-    final wip.WipConnection wipConnection = await chromeTab.connect();
+    final Rectangle regionAsRectange = Rectangle(
+      region['x'] as num,
+      region['y'] as num,
+      region['width'] as num,
+      region['height'] as num,
+    );
 
-    Map<String, dynamic> captureScreenshotParameters = null;
-    if (region != null) {
-      captureScreenshotParameters = {
-        'format': 'png',
-        'clip': {
-          'x': region['x'],
-          'y': region['y'],
-          'width': region['width'],
-          'height': region['height'],
-          'scale':
-              1, // This is NOT the DPI of the page, instead it's the "zoom level".
-        },
-      };
-    }
-
-    // Setting hardware-independent screen parameters:
-    // https://chromedevtools.github.io/devtools-protocol/tot/Emulation
-    await wipConnection.sendCommand('Emulation.setDeviceMetricsOverride', {
-      'width': kMaxScreenshotWidth,
-      'height': kMaxScreenshotHeight,
-      'deviceScaleFactor': 1,
-      'mobile': false,
-    });
-    final wip.WipResponse response = await wipConnection.sendCommand(
-        'Page.captureScreenshot', captureScreenshotParameters);
-
-    // Compare screenshots
-    final Image screenshot = decodePng(base64.decode(response.result['data']));
+    // Take screenshot.
+    final Image screenshot = await _screenshotManager.capture(regionAsRectange);
 
     if (write) {
       // Don't even bother with the comparison, just write and return
@@ -245,9 +240,12 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
       }
     }
 
+    // Compare screenshots.
     ImageDiff diff = ImageDiff(
-        golden: decodeNamedImage(file.readAsBytesSync(), filename),
-        other: screenshot);
+      golden: decodeNamedImage(file.readAsBytesSync(), filename),
+      other: screenshot,
+      pixelComparison: pixelComparison,
+    );
 
     if (diff.rate > 0) {
       // Images are different, so produce some debug info
@@ -392,26 +390,25 @@ Golden file $filename did not match the image generated by the test.
       throw ArgumentError('$browser is not a browser.');
     }
 
-    var htmlPath = p.withoutExtension(path) + '.html';
-    if (File(htmlPath).existsSync() &&
-        !File(htmlPath).readAsStringSync().contains('packages/test/dart.js')) {
-      throw LoadException(
-          path,
-          '"${htmlPath}" must contain <script src="packages/test/dart.js">'
-          '</script>.');
+    if (_closed) {
+      return null;
     }
-
-    if (_closed) return null;
     Uri suiteUrl = url.resolveUri(
         p.toUri(p.withoutExtension(p.relative(path, from: _root)) + '.html'));
 
-    if (_closed) return null;
+    if (_closed) {
+      return null;
+    }
 
     var browserManager = await _browserManagerFor(browser);
-    if (_closed || browserManager == null) return null;
+    if (_closed || browserManager == null) {
+      return null;
+    }
 
     var suite = await browserManager.load(path, suiteUrl, suiteConfig, message);
-    if (_closed) return null;
+    if (_closed) {
+      return null;
+    }
     return suite;
   }
 
@@ -424,14 +421,16 @@ Golden file $filename did not match the image generated by the test.
   ///
   /// If no browser manager is running yet, starts one.
   Future<BrowserManager> _browserManagerFor(Runtime browser) {
-    if (_browserManager != null) return _browserManager;
+    if (_browserManager != null) {
+      return _browserManager;
+    }
 
     var completer = Completer<WebSocketChannel>.sync();
     var path = _webSocketHandler.create(webSocketHandler(completer.complete));
     var webSocketUrl = url.replace(scheme: 'ws').resolve(path);
     var hostUrl = (_config.pubServeUrl == null ? url : _config.pubServeUrl)
         .resolve('packages/web_engine_tester/static/index.html')
-        .replace(queryParameters: {
+        .replace(queryParameters: <String, dynamic>{
       'managerUrl': webSocketUrl.toString(),
       'debug': _config.pauseAfterLoad.toString()
     });
@@ -441,7 +440,7 @@ Golden file $filename did not match the image generated by the test.
 
     // Store null values for browsers that error out so we know not to load them
     // again.
-    _browserManager = future.catchError((_) => null);
+    _browserManager = future.catchError((dynamic _) => null);
 
     return future;
   }
@@ -480,7 +479,7 @@ Golden file $filename did not match the image generated by the test.
     });
   }
 
-  final _closeMemo = AsyncMemoizer();
+  final AsyncMemoizer<dynamic> _closeMemo = AsyncMemoizer<dynamic>();
 }
 
 /// A Shelf handler that provides support for one-time handlers.
@@ -513,11 +512,15 @@ class OneOffHandler {
   /// Dispatches [request] to the appropriate handler.
   FutureOr<shelf.Response> _onRequest(shelf.Request request) {
     var components = p.url.split(request.url.path);
-    if (components.isEmpty) return shelf.Response.notFound(null);
+    if (components.isEmpty) {
+      return shelf.Response.notFound(null);
+    }
 
     var path = components.removeAt(0);
     var handler = _handlers.remove(path);
-    if (handler == null) return shelf.Response.notFound(null);
+    if (handler == null) {
+      return shelf.Response.notFound(null);
+    }
     return handler(request.change(path: path));
   }
 }
@@ -558,13 +561,19 @@ class PathHandler {
     var components = p.url.split(request.url.path);
     for (var i = 0; i < components.length; i++) {
       node = node.children[components[i]];
-      if (node == null) break;
-      if (node.handler == null) continue;
+      if (node == null) {
+        break;
+      }
+      if (node.handler == null) {
+        continue;
+      }
       handler = node.handler;
       handlerIndex = i;
     }
 
-    if (handler == null) return shelf.Response.notFound('Not found.');
+    if (handler == null) {
+      return shelf.Response.notFound('Not found.');
+    }
 
     return handler(
         request.change(path: p.url.joinAll(components.take(handlerIndex + 1))));
@@ -618,7 +627,7 @@ class BrowserManager {
   CancelableCompleter _pauseCompleter;
 
   /// The controller for [_BrowserEnvironment.onRestart].
-  final _onRestartController = StreamController.broadcast();
+  final _onRestartController = StreamController<dynamic>.broadcast();
 
   /// The environment to attach to each suite.
   Future<_BrowserEnvironment> _environment;
@@ -653,33 +662,38 @@ class BrowserManager {
 
     var completer = Completer<BrowserManager>();
 
-    browser.onExit.then((_) {
-      throw Exception('${runtime.name} exited before connecting.');
-    }).catchError((error, StackTrace stackTrace) {
-      if (completer.isCompleted) return;
+    // For the cases where we use a delegator such as `adb` (for Android) or
+    // `xcrun` (for IOS), these delegator processes can shut down before the
+    // websocket is available. Therefore do not throw an error if proccess
+    // exits with exitCode 0. Note that `browser` will throw and error if the
+    // exit code was not 0, which will be processed by the next callback.
+    browser.onExit.catchError((dynamic error, StackTrace stackTrace) {
+      if (completer.isCompleted) {
+        return;
+      }
       completer.completeError(error, stackTrace);
     });
 
     future.then((webSocket) {
-      if (completer.isCompleted) return;
+      if (completer.isCompleted) {
+        return;
+      }
       completer.complete(BrowserManager._(browser, runtime, webSocket));
-    }).catchError((error, StackTrace stackTrace) {
+    }).catchError((dynamic error, StackTrace stackTrace) {
       browser.close();
-      if (completer.isCompleted) return;
+      if (completer.isCompleted) {
+        return;
+      }
       completer.completeError(error, stackTrace);
     });
 
-    return completer.future.timeout(Duration(seconds: 30), onTimeout: () {
-      browser.close();
-      throw Exception('Timed out waiting for ${runtime.name} to connect.');
-    });
+    return completer.future;
   }
 
   /// Starts the browser identified by [browser] using [settings] and has it load [url].
   ///
   /// If [debug] is true, starts the browser in debug mode.
-  static Browser _newBrowser(Uri url, Runtime browser,
-      {bool debug = false}) {
+  static Browser _newBrowser(Uri url, Runtime browser, {bool debug = false}) {
     return SupportedBrowsers.instance.getBrowser(browser, url, debug: debug);
   }
 
@@ -701,10 +715,12 @@ class BrowserManager {
 
     // Whenever we get a message, no matter which child channel it's for, we the
     // know browser is still running code which means the user isn't debugging.
-    _channel = MultiChannel(
+    _channel = MultiChannel<dynamic>(
         webSocket.cast<String>().transform(jsonDocument).changeStream((stream) {
       return stream.map((message) {
-        if (!_closed) _timer.reset();
+        if (!_closed) {
+          _timer.reset();
+        }
         for (var controller in _controllers) {
           controller.setDebugging(false);
         }
@@ -715,7 +731,7 @@ class BrowserManager {
 
     _environment = _loadBrowserEnvironment();
     _channel.stream
-        .listen((message) => _onMessage(message as Map), onDone: close);
+        .listen((dynamic message) => _onMessage(message as Map), onDone: close);
   }
 
   /// Loads [_BrowserEnvironment].
@@ -732,15 +748,17 @@ class BrowserManager {
   Future<RunnerSuite> load(String path, Uri url, SuiteConfiguration suiteConfig,
       Object message) async {
     url = url.replace(
-        fragment: Uri.encodeFull(jsonEncode({
+        fragment: Uri.encodeFull(jsonEncode(<String, dynamic>{
       'metadata': suiteConfig.metadata.serialize(),
       'browser': _runtime.identifier
     })));
 
     var suiteID = _suiteID++;
     RunnerSuiteController controller;
-    closeIframe() {
-      if (_closed) return;
+    void closeIframe() {
+      if (_closed) {
+        return;
+      }
       _controllers.remove(controller);
       _channel.sink.add({'command': 'closeSuite', 'id': suiteID});
     }
@@ -749,8 +767,8 @@ class BrowserManager {
     // case we should unload the iframe.
     var virtualChannel = _channel.virtualChannel();
     var suiteChannelID = virtualChannel.id;
-    var suiteChannel = virtualChannel
-        .transformStream(StreamTransformer.fromHandlers(handleDone: (sink) {
+    var suiteChannel = virtualChannel.transformStream(
+        StreamTransformer<dynamic, dynamic>.fromHandlers(handleDone: (sink) {
       closeIframe();
       sink.close();
     }));
@@ -767,15 +785,22 @@ class BrowserManager {
         controller = deserializeSuite(path, currentPlatform(_runtime),
             suiteConfig, await _environment, suiteChannel, message);
 
-        final String mapPath = p.join(
-          env.environment.webUiRootDir.path,
-          'build',
-          '$path.browser_test.dart.js.map',
-        );
+        final String sourceMapFileName =
+            '${p.basename(path)}.browser_test.dart.js.map';
+        final String pathToTest = p.dirname(path);
+
+        final String mapPath = p.join(env.environment.webUiRootDir.path,
+            'build', pathToTest, sourceMapFileName);
+
+        PackageConfig packageConfig =
+            await loadPackageConfigUri(await Isolate.packageConfig);
+        Map<String, Uri> packageMap = {
+          for (var p in packageConfig.packages) p.name: p.packageUriRoot
+        };
         final JSStackTraceMapper mapper = JSStackTraceMapper(
           await File(mapPath).readAsString(),
           mapUrl: p.toUri(mapPath),
-          packageResolver: await PackageResolver.current.asSync,
+          packageMap: packageMap,
           sdkRoot: p.toUri(sdkDir),
         );
 
@@ -792,9 +817,11 @@ class BrowserManager {
 
   /// An implementation of [Environment.displayPause].
   CancelableOperation _displayPause() {
-    if (_pauseCompleter != null) return _pauseCompleter.operation;
+    if (_pauseCompleter != null) {
+      return _pauseCompleter.operation;
+    }
 
-    _pauseCompleter = CancelableCompleter(onCancel: () {
+    _pauseCompleter = CancelableCompleter<void>(onCancel: () {
       _channel.sink.add({'command': 'resume'});
       _pauseCompleter = null;
     });
@@ -819,7 +846,9 @@ class BrowserManager {
         break;
 
       case 'resume':
-        if (_pauseCompleter != null) _pauseCompleter.complete();
+        if (_pauseCompleter != null) {
+          _pauseCompleter.complete();
+        }
         break;
 
       default:
@@ -834,12 +863,14 @@ class BrowserManager {
   Future close() => _closeMemoizer.runOnce(() {
         _closed = true;
         _timer.cancel();
-        if (_pauseCompleter != null) _pauseCompleter.complete();
+        if (_pauseCompleter != null) {
+          _pauseCompleter.complete();
+        }
         _pauseCompleter = null;
         _controllers.clear();
         return _browser.close();
       });
-  final _closeMemoizer = AsyncMemoizer();
+  final AsyncMemoizer<dynamic> _closeMemoizer = AsyncMemoizer<dynamic>();
 }
 
 /// An implementation of [Environment] for the browser.

@@ -5,17 +5,17 @@
 package io.flutter.embedding.engine.plugins.broadcastreceiver;
 
 import android.content.BroadcastReceiver;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
- * Binding that gives {@link BroadcastReceiverAware} plugins access to an associated
- * {@link BroadcastReceiver}.
+ * Binding that gives {@link BroadcastReceiverAware} plugins access to an associated {@link
+ * BroadcastReceiver}.
  */
 public interface BroadcastReceiverPluginBinding {
 
   /**
-   * Returns the {@link BroadcastReceiver} that is currently attached to the {@link FlutterEngine} that
-   * owns this {@code BroadcastReceiverAwarePluginBinding}.
+   * Returns the {@link BroadcastReceiver} that is currently attached to the {@link FlutterEngine}
+   * that owns this {@code BroadcastReceiverAwarePluginBinding}.
    */
   @NonNull
   BroadcastReceiver getBroadcastReceiver();

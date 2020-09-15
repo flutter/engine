@@ -27,13 +27,11 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
-#if defined(OS_FUCHSIA)
-
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 #include "flutter/flow/scene_update_context.h"  //nogncheck
 #include "lib/ui/scenic/cpp/resources.h"        //nogncheck
 #include "lib/ui/scenic/cpp/session.h"          //nogncheck
-
-#endif  // defined(OS_FUCHSIA)
+#endif
 
 namespace flutter {
 
@@ -44,7 +42,7 @@ enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
 struct PrerollContext {
   RasterCache* raster_cache;
-  GrContext* gr_context;
+  GrDirectContext* gr_context;
   ExternalViewEmbedder* view_embedder;
   MutatorsStack& mutators_stack;
   SkColorSpace* dst_color_space;
@@ -56,16 +54,17 @@ struct PrerollContext {
   const Stopwatch& ui_time;
   TextureRegistry& texture_registry;
   const bool checkerboard_offscreen_layers;
-
-  // These allow us to make use of the scene metrics during Preroll.
-  float frame_physical_depth;
-  float frame_device_pixel_ratio;
+  const float frame_device_pixel_ratio;
 
   // These allow us to track properties like elevation, opacity, and the
   // prescence of a platform view during Preroll.
-  float total_elevation = 0.0f;
   bool has_platform_view = false;
   bool is_opaque = true;
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  // True if, during the traversal so far, we have seen a child_scene_layer.
+  // Informs whether a layer needs to be system composited.
+  bool child_scene_layer_exists_below = false;
+#endif
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -84,7 +83,7 @@ class Layer {
   // destruction.
   class AutoPrerollSaveLayerState {
    public:
-    FML_WARN_UNUSED_RESULT static AutoPrerollSaveLayerState Create(
+    [[nodiscard]] static AutoPrerollSaveLayerState Create(
         PrerollContext* preroll_context,
         bool save_layer_is_active = true,
         bool layer_itself_performs_readback = false);
@@ -116,29 +115,25 @@ class Layer {
     // layers.
     SkCanvas* internal_nodes_canvas;
     SkCanvas* leaf_nodes_canvas;
-    GrContext* gr_context;
+    GrDirectContext* gr_context;
     ExternalViewEmbedder* view_embedder;
     const Stopwatch& raster_time;
     const Stopwatch& ui_time;
     TextureRegistry& texture_registry;
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
-
-    // These allow us to make use of the scene metrics during Paint.
-    float frame_physical_depth;
-    float frame_device_pixel_ratio;
+    const float frame_device_pixel_ratio;
   };
 
   // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also
   // draws a checkerboard over the layer if that is enabled in the PaintContext.
   class AutoSaveLayer {
    public:
-    FML_WARN_UNUSED_RESULT static AutoSaveLayer Create(
-        const PaintContext& paint_context,
-        const SkRect& bounds,
-        const SkPaint* paint);
+    [[nodiscard]] static AutoSaveLayer Create(const PaintContext& paint_context,
+                                              const SkRect& bounds,
+                                              const SkPaint* paint);
 
-    FML_WARN_UNUSED_RESULT static AutoSaveLayer Create(
+    [[nodiscard]] static AutoSaveLayer Create(
         const PaintContext& paint_context,
         const SkCanvas::SaveLayerRec& layer_rec);
 
@@ -158,9 +153,10 @@ class Layer {
 
   virtual void Paint(PaintContext& context) const = 0;
 
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   // Updates the system composited scene.
   virtual void UpdateScene(SceneUpdateContext& context);
+  virtual void CheckForChildLayerBelow(PrerollContext* context);
 #endif
 
   bool needs_system_composite() const { return needs_system_composite_; }
@@ -179,6 +175,11 @@ class Layer {
   bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
   uint64_t unique_id() const { return unique_id_; }
+
+ protected:
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  bool child_layer_exists_below_ = false;
+#endif
 
  private:
   SkRect paint_bounds_;

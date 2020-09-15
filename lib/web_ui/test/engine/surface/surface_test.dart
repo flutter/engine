@@ -2,17 +2,39 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   group('Surface', () {
     setUp(() {
       SurfaceSceneBuilder.debugForgetFrameScene();
+    });
+
+    test('debugAssertSurfaceState produces a human-readable message', () {
+      final SceneBuilder builder = SceneBuilder();
+      final PersistedOpacity opacityLayer = builder.pushOpacity(100);
+      try {
+        debugAssertSurfaceState(opacityLayer, PersistedSurfaceState.active, PersistedSurfaceState.pendingRetention);
+        fail('Expected $PersistedSurfaceException');
+      } on PersistedSurfaceException catch (exception) {
+        expect(
+          '$exception',
+          'PersistedOpacity: is in an unexpected state.\n'
+          'Expected one of: PersistedSurfaceState.active, PersistedSurfaceState.pendingRetention\n'
+          'But was: PersistedSurfaceState.created',
+        );
+      }
     });
 
     test('is created', () {
@@ -46,7 +68,7 @@ void main() {
       final SceneBuilder builder1 = SceneBuilder();
       final PersistedOpacity opacityLayer = builder1.pushOpacity(100);
       final PersistedTransform transformLayer =
-          builder1.pushTransform(Matrix4.identity().storage);
+          builder1.pushTransform(Matrix4.identity().toFloat64());
       builder1.pop();
       builder1.pop();
       builder1.build();
@@ -125,19 +147,28 @@ void main() {
     //   A         A
     //   |         |
     //   B     ┌──>C
-    //   |     │
-    //   C ────┘
+    //   |     │   |
+    //   C ────┘   L
+    //   |
+    //   L
+    //
+    // Layer "L" is a logging layer used to track what would happen to the
+    // child of "C" as it's being dragged around the tree. For example, we
+    // check that the child doesn't get discarded by mistake.
     test('reparents DOM element when updated', () {
-      final SceneBuilder builder1 = SceneBuilder();
+      final _LoggingTestSurface logger = _LoggingTestSurface();
+      final SurfaceSceneBuilder builder1 = SurfaceSceneBuilder();
       final PersistedTransform a1 =
-          builder1.pushTransform(Matrix4.identity().storage);
+          builder1.pushTransform(Matrix4.identity().toFloat64());
       final PersistedOpacity b1 = builder1.pushOpacity(100);
       final PersistedTransform c1 =
-          builder1.pushTransform(Matrix4.identity().storage);
+          builder1.pushTransform(Matrix4.identity().toFloat64());
+      builder1.debugAddSurface(logger);
       builder1.pop();
       builder1.pop();
       builder1.pop();
       builder1.build();
+      expect(logger.log, <String>['build', 'createElement', 'apply']);
 
       final html.Element elementA = a1.rootElement;
       final html.Element elementB = b1.rootElement;
@@ -146,14 +177,21 @@ void main() {
       expect(elementC.parent, elementB);
       expect(elementB.parent, elementA);
 
-      final SceneBuilder builder2 = SceneBuilder();
+      final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
       final PersistedTransform a2 =
-          builder2.pushTransform(Matrix4.identity().storage, oldLayer: a1);
+          builder2.pushTransform(Matrix4.identity().toFloat64(), oldLayer: a1);
       final PersistedTransform c2 =
-          builder2.pushTransform(Matrix4.identity().storage, oldLayer: c1);
+          builder2.pushTransform(Matrix4.identity().toFloat64(), oldLayer: c1);
+      builder2.addRetained(logger);
       builder2.pop();
       builder2.pop();
+
+      expect(c1.isPendingUpdate, true);
+      expect(c2.isCreated, true);
       builder2.build();
+      expect(logger.log, <String>['build', 'createElement', 'apply', 'retain']);
+      expect(c1.isReleased, true);
+      expect(c2.isActive, true);
 
       expect(a2.rootElement, elementA);
       expect(b1.rootElement, isNull);
@@ -161,7 +199,11 @@ void main() {
 
       expect(elementC.parent, elementA);
       expect(elementB.parent, null);
-    });
+    },
+        // This method failed on iOS Safari.
+        // TODO: https://github.com/flutter/flutter/issues/60036
+        skip: (browserEngine == BrowserEngine.webkit &&
+            operatingSystem == OperatingSystem.iOs));
 
     test('is retained', () {
       final SceneBuilder builder1 = SceneBuilder();
@@ -172,6 +214,8 @@ void main() {
       final html.Element element = opacityLayer.rootElement;
 
       final SceneBuilder builder2 = SceneBuilder();
+
+      expect(opacityLayer.isActive, true);
       builder2.addRetained(opacityLayer);
       expect(opacityLayer.isPendingRetention, true);
 
@@ -181,20 +225,25 @@ void main() {
     });
 
     test('revives released surface when retained', () {
-      final SceneBuilder builder1 = SceneBuilder();
+      final SurfaceSceneBuilder builder1 = SurfaceSceneBuilder();
       final PersistedOpacity opacityLayer = builder1.pushOpacity(100);
+      final _LoggingTestSurface logger = _LoggingTestSurface();
+      builder1.debugAddSurface(logger);
       builder1.pop();
       builder1.build();
       expect(opacityLayer.isActive, true);
+      expect(logger.log, <String>['build', 'createElement', 'apply']);
       final html.Element element = opacityLayer.rootElement;
 
       SceneBuilder().build();
       expect(opacityLayer.isReleased, true);
       expect(opacityLayer.rootElement, isNull);
+      expect(logger.log, <String>['build', 'createElement', 'apply', 'discard']);
 
       final SceneBuilder builder2 = SceneBuilder();
       builder2.addRetained(opacityLayer);
       expect(opacityLayer.isCreated, true); // revived
+      expect(logger.log, <String>['build', 'createElement', 'apply', 'discard', 'revive']);
 
       builder2.build();
       expect(opacityLayer.isActive, true);
@@ -205,7 +254,7 @@ void main() {
       final SceneBuilder builder1 = SceneBuilder();
       final PersistedOpacity opacityLayer = builder1.pushOpacity(100);
       final PersistedTransform transformLayer =
-          builder1.pushTransform(Matrix4.identity().storage);
+          builder1.pushTransform(Matrix4.identity().toFloat64());
       builder1.pop();
       builder1.pop();
       builder1.build();
@@ -310,5 +359,75 @@ void main() {
       expect(
           opacityLayer2.rootElement, element); // adopts old surface's element
     });
+
+    // Regression test for https://github.com/flutter/flutter/issues/60461
+    //
+    // During retained match many to many, build can be called on existing
+    // PersistedPhysicalShape multiple times when not matched.
+    test('Can call apply multiple times on existing PersistedPhysicalShape'
+        'when using arbitrary path',
+            () {
+      final SceneBuilder builder1 = SceneBuilder();
+      final Path path = Path();
+      path.addPolygon([Offset(50, 0), Offset(100, 80), Offset(20, 40)], true);
+      PersistedPhysicalShape shape = builder1.pushPhysicalShape(path: path,
+        color: Color(0xFF00FF00), elevation: 1);
+      builder1.build();
+      expect(() => shape.apply(), returnsNormally);
+    });
   });
+}
+
+class _LoggingTestSurface extends PersistedContainerSurface {
+  final List<String> log = <String>[];
+
+  _LoggingTestSurface() : super(null);
+
+  void build() {
+    log.add('build');
+    super.build();
+  }
+
+  @override
+  void apply() {
+    log.add('apply');
+  }
+
+  @override
+  html.Element createElement() {
+    log.add('createElement');
+    return html.Element.tag('flt-test-layer');
+  }
+
+  @override
+  void update(_LoggingTestSurface oldSurface) {
+    log.add('update');
+    super.update(oldSurface);
+  }
+
+  void adoptElements(covariant PersistedSurface oldSurface) {
+    log.add('adoptElements');
+    super.adoptElements(oldSurface);
+  }
+
+  void retain() {
+    log.add('retain');
+    super.retain();
+  }
+
+  @override
+  void discard() {
+    log.add('discard');
+    super.discard();
+  }
+
+  void revive() {
+    log.add('revive');
+    super.revive();
+  }
+
+  @override
+  double matchForUpdate(PersistedSurface existingSurface) {
+    return 1.0;
+  }
 }

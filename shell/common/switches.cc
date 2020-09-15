@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include <algorithm>
 #include <iomanip>
@@ -40,24 +41,28 @@ struct SwitchDesc {
 #if FLUTTER_RELEASE
 
 // clang-format off
-static const std::string gDartFlagsWhitelist[] = {
+static const std::string gAllowedDartFlags[] = {
     "--no-causal_async_stacks",
+    "--lazy_async_stacks",
 };
 // clang-format on
 
 #else
 
 // clang-format off
-static const std::string gDartFlagsWhitelist[] = {
+static const std::string gAllowedDartFlags[] = {
+    "--enable_mirrors",
+    "--enable-service-port-fallback",
+    "--lazy_async_stacks",
     "--max_profile_depth",
+    "--no-causal_async_stacks",
     "--profile_period",
     "--random_seed",
-    "--enable_mirrors",
-    "--write-service-info",
     "--sample-buffer-duration",
-    "--no-causal_async_stacks",
     "--trace-reload",
     "--trace-reload-verbose",
+    "--write-service-info",
+    "--null_assertions",
 };
 // clang-format on
 
@@ -145,10 +150,10 @@ const std::string_view FlagForSwitch(Switch swtch) {
   return std::string_view();
 }
 
-static bool IsWhitelistedDartVMFlag(const std::string& flag) {
-  for (uint32_t i = 0; i < fml::size(gDartFlagsWhitelist); ++i) {
-    const std::string& allowed = gDartFlagsWhitelist[i];
-    // Check that the prefix of the flag matches one of the whitelisted flags.
+static bool IsAllowedDartVMFlag(const std::string& flag) {
+  for (uint32_t i = 0; i < fml::size(gAllowedDartFlags); ++i) {
+    const std::string& allowed = gAllowedDartFlags[i];
+    // Check that the prefix of the flag matches one of the allowed flags.
     // We don't need to worry about cases like "--safe --sneaky_dangerous" as
     // the VM will discard these as a single unrecognized flag.
     if (std::equal(allowed.begin(), allowed.end(), flag.begin())) {
@@ -234,10 +239,21 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     }
   }
 
+  settings.may_insecurely_connect_to_all_domains = !command_line.HasOption(
+      FlagForSwitch(Switch::DisallowInsecureConnections));
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::DomainNetworkPolicy),
+                              &settings.domain_network_policy);
+
   // Disable need for authentication codes for VM service communication, if
   // specified.
   settings.disable_service_auth_codes =
       command_line.HasOption(FlagForSwitch(Switch::DisableServiceAuthCodes));
+
+  // Allow fallback to automatic port selection if binding to a specified port
+  // fails.
+  settings.enable_service_port_fallback =
+      command_line.HasOption(FlagForSwitch(Switch::EnableServicePortFallback));
 
   // Checked mode overrides.
   settings.disable_dart_asserts =
@@ -263,6 +279,18 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.trace_skia =
       command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::TraceAllowlist),
+                              &settings.trace_allowlist);
+
+  if (settings.trace_allowlist.empty()) {
+    command_line.GetOptionValue(FlagForSwitch(Switch::TraceWhitelist),
+                                &settings.trace_allowlist);
+    if (!settings.trace_allowlist.empty()) {
+      FML_LOG(INFO)
+          << "--trace-whitelist is deprecated. Use --trace-allowlist instead.";
+    }
+  }
 
   settings.trace_systrace =
       command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
@@ -349,8 +377,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
     // Assume that individual flags are comma separated.
     while (std::getline(stream, flag, ',')) {
-      if (!IsWhitelistedDartVMFlag(flag)) {
-        FML_LOG(FATAL) << "Encountered blacklisted Dart VM flag: " << flag;
+      if (!IsAllowedDartVMFlag(flag)) {
+        FML_LOG(FATAL) << "Encountered disallowed Dart VM flag: " << flag;
       }
       settings.dart_flags.push_back(flag);
     }
@@ -365,6 +393,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.cache_sksl =
       command_line.HasOption(FlagForSwitch(Switch::CacheSkSL));
+
+  settings.purge_persistent_cache =
+      command_line.HasOption(FlagForSwitch(Switch::PurgePersistentCache));
 
   return settings;
 }

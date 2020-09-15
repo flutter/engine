@@ -11,13 +11,17 @@
 
 namespace flutter {
 
-MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec)
-    : codec_(std::move(codec)),
-      frameCount_(codec_->getFrameCount()),
-      repetitionCount_(codec_->getRepetitionCount()),
-      nextFrameIndex_(0) {}
+MultiFrameCodec::MultiFrameCodec(
+    std::shared_ptr<SkCodecImageGenerator> generator)
+    : state_(new State(std::move(generator))) {}
 
 MultiFrameCodec::~MultiFrameCodec() = default;
+
+MultiFrameCodec::State::State(std::shared_ptr<SkCodecImageGenerator> generator)
+    : generator_(std::move(generator)),
+      frameCount_(generator_->getFrameCount()),
+      repetitionCount_(generator_->getRepetitionCount()),
+      nextFrameIndex_(0) {}
 
 static void InvokeNextFrameCallback(
     fml::RefPtr<FrameInfo> frameInfo,
@@ -70,19 +74,20 @@ static bool CopyToBitmap(SkBitmap* dst,
   return true;
 }
 
-sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
-    fml::WeakPtr<GrContext> resourceContext) {
+sk_sp<SkImage> MultiFrameCodec::State::GetNextFrameImage(
+    fml::WeakPtr<GrDirectContext> resourceContext) {
   SkBitmap bitmap = SkBitmap();
-  SkImageInfo info = codec_->getInfo().makeColorType(kN32_SkColorType);
+  SkImageInfo info = generator_->getInfo().makeColorType(kN32_SkColorType);
   if (info.alphaType() == kUnpremul_SkAlphaType) {
-    info = info.makeAlphaType(kPremul_SkAlphaType);
+    SkImageInfo updated = info.makeAlphaType(kPremul_SkAlphaType);
+    info = updated;
   }
   bitmap.allocPixels(info);
 
   SkCodec::Options options;
   options.fFrameIndex = nextFrameIndex_;
-  SkCodec::FrameInfo frameInfo;
-  codec_->getFrameInfo(nextFrameIndex_, &frameInfo);
+  SkCodec::FrameInfo frameInfo{0};
+  generator_->getFrameInfo(nextFrameIndex_, &frameInfo);
   const int requiredFrameIndex = frameInfo.fRequiredFrame;
   if (requiredFrameIndex != SkCodec::kNoFrame) {
     if (lastRequiredFrame_ == nullptr) {
@@ -103,8 +108,8 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     }
   }
 
-  if (SkCodec::kSuccess != codec_->getPixels(info, bitmap.getPixels(),
-                                             bitmap.rowBytes(), &options)) {
+  if (!generator_->getPixels(info, bitmap.getPixels(), bitmap.rowBytes(),
+                             &options)) {
     FML_LOG(ERROR) << "Could not getPixels for frame " << nextFrameIndex_;
     return nullptr;
   }
@@ -121,17 +126,17 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     return SkImage::MakeCrossContextFromPixmap(resourceContext.get(), pixmap,
                                                true);
   } else {
-    // Defer decoding until time of draw later on the GPU thread. Can happen
+    // Defer decoding until time of draw later on the raster thread. Can happen
     // when GL operations are currently forbidden such as in the background
     // on iOS.
     return SkImage::MakeFromBitmap(bitmap);
   }
 }
 
-void MultiFrameCodec::GetNextFrameAndInvokeCallback(
+void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
     std::unique_ptr<DartPersistentValue> callback,
     fml::RefPtr<fml::TaskRunner> ui_task_runner,
-    fml::WeakPtr<GrContext> resourceContext,
+    fml::WeakPtr<GrDirectContext> resourceContext,
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
     size_t trace_id) {
   fml::RefPtr<FrameInfo> frameInfo = NULL;
@@ -139,8 +144,8 @@ void MultiFrameCodec::GetNextFrameAndInvokeCallback(
   if (skImage) {
     fml::RefPtr<CanvasImage> image = CanvasImage::Create();
     image->set_image({skImage, std::move(unref_queue)});
-    SkCodec::FrameInfo skFrameInfo;
-    codec_->getFrameInfo(nextFrameIndex_, &skFrameInfo);
+    SkCodec::FrameInfo skFrameInfo{0};
+    generator_->getFrameInfo(nextFrameIndex_, &skFrameInfo);
     frameInfo =
         fml::MakeRefCounted<FrameInfo>(std::move(image), skFrameInfo.fDuration);
   }
@@ -167,9 +172,16 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   task_runners.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
       [callback = std::make_unique<DartPersistentValue>(
            tonic::DartState::Current(), callback_handle),
-       this, trace_id, ui_task_runner = task_runners.GetUITaskRunner(),
+       weak_state = std::weak_ptr<MultiFrameCodec::State>(state_), trace_id,
+       ui_task_runner = task_runners.GetUITaskRunner(),
        io_manager = dart_state->GetIOManager()]() mutable {
-        GetNextFrameAndInvokeCallback(
+        auto state = weak_state.lock();
+        if (!state) {
+          ui_task_runner->PostTask(fml::MakeCopyable(
+              [callback = std::move(callback)]() { callback->Clear(); }));
+          return;
+        }
+        state->GetNextFrameAndInvokeCallback(
             std::move(callback), std::move(ui_task_runner),
             io_manager->GetResourceContext(), io_manager->GetSkiaUnrefQueue(),
             trace_id);
@@ -179,11 +191,11 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 }
 
 int MultiFrameCodec::frameCount() const {
-  return frameCount_;
+  return state_->frameCount_;
 }
 
 int MultiFrameCodec::repetitionCount() const {
-  return repetitionCount_;
+  return state_->repetitionCount_;
 }
 
 }  // namespace flutter

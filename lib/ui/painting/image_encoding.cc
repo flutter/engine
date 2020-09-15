@@ -35,6 +35,13 @@ enum ImageByteFormat {
   kPNG,
 };
 
+void FinalizeSkData(void* isolate_callback_data,
+                    Dart_WeakPersistentHandle handle,
+                    void* peer) {
+  SkData* buffer = reinterpret_cast<SkData*>(peer);
+  buffer->unref();
+}
+
 void InvokeDataCallback(std::unique_ptr<DartPersistentValue> callback,
                         sk_sp<SkData> buffer) {
   std::shared_ptr<tonic::DartState> dart_state = callback->dart_state().lock();
@@ -44,16 +51,22 @@ void InvokeDataCallback(std::unique_ptr<DartPersistentValue> callback,
   tonic::DartState::Scope scope(dart_state);
   if (!buffer) {
     DartInvoke(callback->value(), {Dart_Null()});
-  } else {
-    Dart_Handle dart_data = tonic::DartConverter<tonic::Uint8List>::ToDart(
-        buffer->bytes(), buffer->size());
-    DartInvoke(callback->value(), {dart_data});
+    return;
   }
+  // Skia will not modify the buffer, and it is backed by memory that is
+  // read/write, so Dart can be given direct access to the buffer through an
+  // external Uint8List.
+  void* bytes = const_cast<void*>(buffer->data());
+  const intptr_t length = buffer->size();
+  void* peer = reinterpret_cast<void*>(buffer.release());
+  Dart_Handle dart_data = Dart_NewExternalTypedDataWithFinalizer(
+      Dart_TypedData_kUint8, bytes, length, peer, length, FinalizeSkData);
+  DartInvoke(callback->value(), {dart_data});
 }
 
 sk_sp<SkImage> ConvertToRasterUsingResourceContext(
     sk_sp<SkImage> image,
-    GrContext* resource_context) {
+    GrDirectContext* resource_context) {
   sk_sp<SkSurface> surface;
   SkImageInfo surface_info = SkImageInfo::MakeN32Premul(image->dimensions());
   if (resource_context) {
@@ -83,9 +96,9 @@ sk_sp<SkImage> ConvertToRasterUsingResourceContext(
 
 void ConvertImageToRaster(sk_sp<SkImage> image,
                           std::function<void(sk_sp<SkImage>)> encode_task,
-                          fml::RefPtr<fml::TaskRunner> gpu_task_runner,
+                          fml::RefPtr<fml::TaskRunner> raster_task_runner,
                           fml::RefPtr<fml::TaskRunner> io_task_runner,
-                          GrContext* resource_context,
+                          GrDirectContext* resource_context,
                           fml::WeakPtr<SnapshotDelegate> snapshot_delegate) {
   // Check validity of the image.
   if (image == nullptr) {
@@ -116,11 +129,11 @@ void ConvertImageToRaster(sk_sp<SkImage> image,
   }
 
   // Cross-context images do not support makeRasterImage. Convert these images
-  // by drawing them into a surface.  This must be done on the GPU thread
-  // to prevent concurrent usage of the image on both the IO and GPU threads.
-  gpu_task_runner->PostTask([image, encode_task = std::move(encode_task),
-                             resource_context, snapshot_delegate,
-                             io_task_runner]() {
+  // by drawing them into a surface.  This must be done on the raster thread
+  // to prevent concurrent usage of the image on both the IO and raster threads.
+  raster_task_runner->PostTask([image, encode_task = std::move(encode_task),
+                                resource_context, snapshot_delegate,
+                                io_task_runner]() {
     sk_sp<SkImage> raster_image =
         snapshot_delegate->ConvertToRasterImage(image);
 
@@ -210,9 +223,9 @@ void EncodeImageAndInvokeDataCallback(
     std::unique_ptr<DartPersistentValue> callback,
     ImageByteFormat format,
     fml::RefPtr<fml::TaskRunner> ui_task_runner,
-    fml::RefPtr<fml::TaskRunner> gpu_task_runner,
+    fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<fml::TaskRunner> io_task_runner,
-    GrContext* resource_context,
+    GrDirectContext* resource_context,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate) {
   auto callback_task = fml::MakeCopyable(
       [callback = std::move(callback)](sk_sp<SkData> encoded) mutable {
@@ -222,12 +235,13 @@ void EncodeImageAndInvokeDataCallback(
   auto encode_task = [callback_task = std::move(callback_task), format,
                       ui_task_runner](sk_sp<SkImage> raster_image) {
     sk_sp<SkData> encoded = EncodeImage(std::move(raster_image), format);
-    ui_task_runner->PostTask(
-        [callback_task = std::move(callback_task),
-         encoded = std::move(encoded)] { callback_task(encoded); });
+    ui_task_runner->PostTask([callback_task = std::move(callback_task),
+                              encoded = std::move(encoded)]() mutable {
+      callback_task(std::move(encoded));
+    });
   };
 
-  ConvertImageToRaster(std::move(image), encode_task, gpu_task_runner,
+  ConvertImageToRaster(std::move(image), encode_task, raster_task_runner,
                        io_task_runner, resource_context, snapshot_delegate);
 }
 
@@ -236,11 +250,13 @@ void EncodeImageAndInvokeDataCallback(
 Dart_Handle EncodeImage(CanvasImage* canvas_image,
                         int format,
                         Dart_Handle callback_handle) {
-  if (!canvas_image)
+  if (!canvas_image) {
     return ToDart("encode called with non-genuine Image.");
+  }
 
-  if (!Dart_IsClosure(callback_handle))
+  if (!Dart_IsClosure(callback_handle)) {
     return ToDart("Callback must be a function.");
+  }
 
   ImageByteFormat image_format = static_cast<ImageByteFormat>(format);
 
@@ -252,14 +268,14 @@ Dart_Handle EncodeImage(CanvasImage* canvas_image,
   task_runners.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
       [callback = std::move(callback), image = canvas_image->image(),
        image_format, ui_task_runner = task_runners.GetUITaskRunner(),
-       gpu_task_runner = task_runners.GetGPUTaskRunner(),
+       raster_task_runner = task_runners.GetRasterTaskRunner(),
        io_task_runner = task_runners.GetIOTaskRunner(),
        io_manager = UIDartState::Current()->GetIOManager(),
        snapshot_delegate =
            UIDartState::Current()->GetSnapshotDelegate()]() mutable {
         EncodeImageAndInvokeDataCallback(
             std::move(image), std::move(callback), image_format,
-            std::move(ui_task_runner), std::move(gpu_task_runner),
+            std::move(ui_task_runner), std::move(raster_task_runner),
             std::move(io_task_runner), io_manager->GetResourceContext().get(),
             std::move(snapshot_delegate));
       }));

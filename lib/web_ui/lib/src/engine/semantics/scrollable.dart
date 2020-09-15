@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// Implements vertical and horizontal scrolling functionality for semantics
@@ -26,13 +27,13 @@ class Scrollable extends RoleManager {
       : super(Role.scrollable, semanticsObject);
 
   /// Disables browser-driven scrolling in the presence of pointer events.
-  GestureModeCallback _gestureModeListener;
+  GestureModeCallback? _gestureModeListener;
 
   /// Listens to HTML "scroll" gestures detected by the browser.
   ///
   /// This gesture is converted to [ui.SemanticsAction.scrollUp] or
   /// [ui.SemanticsAction.scrollDown], depending on the direction.
-  html.EventListener _scrollListener;
+  html.EventListener? _scrollListener;
 
   /// The value of the "scrollTop" or "scrollLeft" property of this object's
   /// [element] that has zero offset relative to the [scrollPosition].
@@ -52,20 +53,20 @@ class Scrollable extends RoleManager {
       final int semanticsId = semanticsObject.id;
       if (doScrollForward) {
         if (semanticsObject.isVerticalScrollContainer) {
-          ui.window.onSemanticsAction(
+          window.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollUp, null);
         } else {
           assert(semanticsObject.isHorizontalScrollContainer);
-          ui.window.onSemanticsAction(
+          window.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollLeft, null);
         }
       } else {
         if (semanticsObject.isVerticalScrollContainer) {
-          ui.window.onSemanticsAction(
+          window.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollDown, null);
         } else {
           assert(semanticsObject.isHorizontalScrollContainer);
-          ui.window.onSemanticsAction(
+          window.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollRight, null);
         }
       }
@@ -125,7 +126,7 @@ class Scrollable extends RoleManager {
   /// have zero offset relative to Flutter's notion of scroll position is
   /// referred to as "neutral scroll position".
   ///
-  /// We always set the the scroll position to a non-zero value in order to
+  /// We always set the scroll position to a non-zero value in order to
   /// be able to scroll in the negative direction. When scrollTop/scrollLeft is
   /// zero the browser will refuse to scroll back even when there is more
   /// content available.

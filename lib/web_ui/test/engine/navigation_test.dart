@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 
@@ -14,6 +17,10 @@ const engine.MethodCodec codec = engine.JSONMethodCodec();
 void emptyCallback(ByteData date) {}
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   setUp(() {
     engine.window.locationStrategy = _strategy = engine.TestLocationStrategy();
   });
@@ -22,58 +29,17 @@ void main() {
     engine.window.locationStrategy = _strategy = null;
   });
 
-  test('Tracks pushed, replaced and popped routes', () {
+  test('Tracks pushed, replaced and popped routes', () async {
+    final Completer<void> completer = Completer<void>();
     engine.window.sendPlatformMessage(
       'flutter/navigation',
       codec.encodeMethodCall(const engine.MethodCall(
-        'routePushed',
-        <String, dynamic>{'previousRouteName': '/', 'routeName': '/foo'},
+        'routeUpdated',
+        <String, dynamic>{'routeName': '/foo'},
       )),
-      emptyCallback,
+      (_) => completer.complete(),
     );
+    await completer.future;
     expect(_strategy.path, '/foo');
-
-    engine.window.sendPlatformMessage(
-      'flutter/navigation',
-      codec.encodeMethodCall(const engine.MethodCall(
-        'routePushed',
-        <String, dynamic>{'previousRouteName': '/foo', 'routeName': '/bar'},
-      )),
-      emptyCallback,
-    );
-    expect(_strategy.path, '/bar');
-
-    engine.window.sendPlatformMessage(
-      'flutter/navigation',
-      codec.encodeMethodCall(const engine.MethodCall(
-        'routePopped',
-        <String, dynamic>{'previousRouteName': '/foo', 'routeName': '/bar'},
-      )),
-      emptyCallback,
-    );
-    expect(_strategy.path, '/foo');
-
-    engine.window.sendPlatformMessage(
-      'flutter/navigation',
-      codec.encodeMethodCall(const engine.MethodCall(
-        'routePushed',
-        <String, dynamic>{'previousRouteName': '/foo', 'routeName': '/bar/baz'},
-      )),
-      emptyCallback,
-    );
-    expect(_strategy.path, '/bar/baz');
-
-    engine.window.sendPlatformMessage(
-      'flutter/navigation',
-      codec.encodeMethodCall(const engine.MethodCall(
-        'routeReplaced',
-        <String, dynamic>{
-          'previousRouteName': '/bar/baz',
-          'routeName': '/bar/baz2',
-        },
-      )),
-      emptyCallback,
-    );
-    expect(_strategy.path, '/bar/baz2');
   });
 }

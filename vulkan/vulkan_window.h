@@ -12,12 +12,12 @@
 
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
+#include "vulkan_proc_table.h"
 
 namespace vulkan {
 
@@ -32,13 +32,14 @@ class VulkanBackbuffer;
 class VulkanWindow {
  public:
   VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
-               std::unique_ptr<VulkanNativeSurface> native_surface);
+               std::unique_ptr<VulkanNativeSurface> native_surface,
+               bool render_to_surface);
 
   ~VulkanWindow();
 
   bool IsValid() const;
 
-  GrContext* GetSkiaGrContext();
+  GrDirectContext* GetSkiaGrContext();
 
   sk_sp<SkSurface> AcquireSurface();
 
@@ -51,14 +52,13 @@ class VulkanWindow {
   std::unique_ptr<VulkanDevice> logical_device_;
   std::unique_ptr<VulkanSurface> surface_;
   std::unique_ptr<VulkanSwapchain> swapchain_;
-  sk_sp<GrContext> skia_gr_context_;
+  sk_sp<GrDirectContext> skia_gr_context_;
 
   bool CreateSkiaGrContext();
 
   bool CreateSkiaBackendContext(GrVkBackendContext* context);
 
-  FML_WARN_UNUSED_RESULT
-  bool RecreateSwapchain();
+  [[nodiscard]] bool RecreateSwapchain();
 
   FML_DISALLOW_COPY_AND_ASSIGN(VulkanWindow);
 };

@@ -1,3 +1,8 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// @dart = 2.6
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -7,7 +12,7 @@ import 'package:test/test.dart';
 void main() {
 
   ByteData _makeByteData(String str) {
-    final Uint8List list = utf8.encode(str);
+    final Uint8List list = utf8.encode(str) as Uint8List;
     final ByteBuffer buffer = list is Uint8List ? list.buffer : Uint8List.fromList(list).buffer;
     return ByteData.view(buffer);
   }

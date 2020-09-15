@@ -4,22 +4,25 @@
 
 assert(is_mac || is_ios)
 
-import("$flutter_root/testing/testing.gni")
+import("//flutter/shell/platform/config.gni")
+import("//flutter/testing/testing.gni")
 
 group("darwin") {
   if (is_ios) {
-    deps = [
-      "ios:flutter_framework",
-    ]
+    deps = [ "ios:flutter_framework" ]
   }
   if (is_mac) {
-    deps = [
-      "macos",
-    ]
+    deps = []
+    if (enable_desktop_embeddings) {
+      deps += [ "macos" ]
+    }
   }
 }
 
 source_set("flutter_channels") {
+  cflags_objc = flutter_cflags_objc
+  cflags_objcc = flutter_cflags_objcc
+
   sources = [
     "common/buffer_conversions.h",
     "common/buffer_conversions.mm",
@@ -34,15 +37,15 @@ source_set("flutter_channels") {
   ]
 
   deps = [
-    "$flutter_root/common",
-    "$flutter_root/flow",
-    "$flutter_root/fml",
-    "$flutter_root/runtime",
-    "$flutter_root/shell/common",
+    "//flutter/common",
+    "//flutter/flow",
+    "//flutter/fml",
+    "//flutter/runtime",
+    "//flutter/shell/common",
     "//third_party/skia",
   ]
 
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [ "//flutter:config" ]
 }
 
 test_fixtures("flutter_channels_fixtures") {
@@ -60,9 +63,9 @@ executable("flutter_channels_unittests") {
   deps = [
     ":flutter_channels",
     ":flutter_channels_fixtures",
-    "$flutter_root/testing",
+    "//flutter/testing",
     "//third_party/dart/runtime:libdart_jit",
   ]
 
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [ "//flutter:config" ]
 }

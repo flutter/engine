@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
+
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -12,44 +14,49 @@ final ArgParser argParser = ArgParser()
   ..addOption('input-dir')
   ..addFlag('ui', defaultsTo: false)
   ..addFlag('engine', defaultsTo: false)
-  ..addMultiOption('input');
+  ..addMultiOption('input')
+  ..addOption('stamp');
 
 const List<List<String>> uiPatterns = <List<String>>[
   <String>['library ui;', 'library dart.ui;'],
   <String>['part of ui;', 'part of dart.ui;'],
   <String>[
-r'''
+    r'''
 import 'src/engine.dart' as engine;
 ''',
-r'''
+    r'''
 import 'dart:_engine' as engine;
 '''
   ],
   <String>[
-r'''
+    r'''
 export 'src/engine.dart'
 ''',
-r'''
+    r'''
 export 'dart:_engine'
 ''',
-  ]
+  ],
 ];
 
 const List<List<String>> enginePatterns = <List<String>>[
   <String>['library engine;', 'library dart._engine;'],
   <String>['part of engine;', 'part of dart._engine;'],
   <String>[
-r'''
+    r'''
 import '../ui.dart' as ui;
 ''',
-r'''
+    r'''
 import 'dart:ui' as ui;
 '''
-  ]
+  ],
+  <String>[
+    'import \'package:js/js.dart\'',
+    'import \'dart:_js_annotations\'',
+  ],
 ];
 
 const List<List<String>> sharedPatterns = <List<String>>[
-  <String>["import 'package:meta/meta.dart';" ,''],
+  <String>["import 'package:meta/meta.dart';", ''],
   <String>['@required', ''],
   <String>['@protected', ''],
   <String>['@mustCallSuper', ''],
@@ -65,7 +72,8 @@ void main(List<String> arguments) {
   final String inputDirectoryPath = results['input-dir'];
   for (String inputFilePath in results['input']) {
     final File inputFile = File(inputFilePath);
-    final File outputFile = File(path.join(directory.path, inputFile.path.substring(inputDirectoryPath.length)))
+    final File outputFile = File(path.join(
+        directory.path, inputFile.path.substring(inputDirectoryPath.length)))
       ..createSync(recursive: true);
     String source = inputFile.readAsStringSync();
     final List<List<String>> replacementPatterns = <List<String>>[];
@@ -79,5 +87,8 @@ void main(List<String> arguments) {
       source = source.replaceAll(patterns.first, patterns.last);
     }
     outputFile.writeAsStringSync(source);
+    if (results['stamp'] != null) {
+      File(results['stamp']).writeAsStringSync("stamp");
+    }
   }
 }

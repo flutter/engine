@@ -1,15 +1,18 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
+
+#include "flutter/shell/common/animator.h"
 
 #include <functional>
 #include <future>
 #include <memory>
 
-#include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/shell_test.h"
+#include "flutter/shell/common/shell_test_platform_view.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 
@@ -45,19 +48,18 @@ TEST_F(ShellTest, VSyncTargetTime) {
   };
 
   // create a shell with a constant firing vsync waiter.
-  fml::AutoResetWaitableEvent shell_creation;
-
   auto platform_task = std::async(std::launch::async, [&]() {
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+
     shell = Shell::Create(
         task_runners, settings,
         [vsync_clock, &create_vsync_waiter](Shell& shell) {
-          return std::make_unique<ShellTestPlatformView>(
+          return ShellTestPlatformView::Create(
               shell, shell.GetTaskRunners(), vsync_clock,
-              std::move(create_vsync_waiter));
+              std::move(create_vsync_waiter),
+              ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
         },
-        [](Shell& shell) {
-          return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
-        });
+        [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
     ASSERT_TRUE(DartVMRef::IsInstanceRunning());
 
     auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -65,10 +67,8 @@ TEST_F(ShellTest, VSyncTargetTime) {
     configuration.SetEntrypoint("onBeginFrameMain");
 
     RunEngine(shell.get(), std::move(configuration));
-    shell_creation.Signal();
   });
-
-  shell_creation.Wait();
+  platform_task.wait();
 
   // schedule a frame to trigger window.onBeginFrame
   fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetUITaskRunner(),
@@ -82,9 +82,13 @@ TEST_F(ShellTest, VSyncTargetTime) {
                                     });
 
   on_target_time_latch.Wait();
-  ASSERT_EQ(ConstantFiringVsyncWaiter::frame_target_time.ToEpochDelta()
-                .ToMicroseconds(),
+  const auto vsync_waiter_target_time =
+      ConstantFiringVsyncWaiter::frame_target_time;
+  ASSERT_EQ(vsync_waiter_target_time.ToEpochDelta().ToMicroseconds(),
             target_time);
+
+  // validate that the latest target time has also been updated.
+  ASSERT_EQ(GetLatestFrameTargetTime(shell.get()), vsync_waiter_target_time);
 
   // teardown.
   DestroyShell(std::move(shell), std::move(task_runners));
