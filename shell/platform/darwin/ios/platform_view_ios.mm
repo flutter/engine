@@ -166,7 +166,10 @@ void PlatformViewIOS::SetAccessibilityFeatures(int32_t flags) {
 // |PlatformView|
 void PlatformViewIOS::UpdateSemantics(flutter::SemanticsNodeUpdates update,
                                       flutter::CustomAccessibilityActionUpdates actions) {
-  FML_DCHECK(owner_controller_);
+  if (!owner_controller_) {
+    return;
+  }
+
   if (accessibility_bridge_) {
     accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
     [[NSNotificationCenter defaultCenter] postNotificationName:FlutterSemanticsUpdateNotification
