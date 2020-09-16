@@ -199,7 +199,16 @@ public class TextInputPlugin {
 
     private View view;
     private WindowInsets lastWindowInsets;
+    // True when an animation that matches deferredInsetTypes is active.
+    //
+    // While this is active, this class will capture the initial window inset
+    // sent into lastWindowInsets by flagging needsSave to true, and will hold
+    // onto the intitial inset until the animation is completed, when it will
+    // re-dispatch the inset change.
     private boolean animating = false;
+    // When an animation begins, android sends a WindowInset with the final
+    // state of the animation. When needsSave is true, we know to capture this
+    // initial WindowInset.
     private boolean needsSave = false;
 
     ImeSyncDeferringInsetsCallback(
@@ -214,7 +223,10 @@ public class TextInputPlugin {
     public WindowInsets onApplyWindowInsets(View view, WindowInsets windowInsets) {
       this.view = view;
       if (needsSave) {
-        // Store the view and insets for us in onEnd() below
+        // Store the view and insets for us in onEnd() below. This captured inset
+        // is not part of the animation and instead, represents the final state
+        // of the inset after the animation is completed. Thus, we defer the processing
+        // of this WindowInset until the animation completes.
         lastWindowInsets = windowInsets;
         needsSave = false;
       }
