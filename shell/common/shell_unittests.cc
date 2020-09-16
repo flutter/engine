@@ -5,8 +5,8 @@
 
 #define FML_USED_ON_EMBEDDER
 
-#include <time.h>
 #include <algorithm>
+#include <ctime>
 #include <functional>
 #include <future>
 #include <memory>
@@ -497,9 +497,6 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   DestroyShell(std::move(shell));
 }
 
-#if !defined(OS_FUCHSIA)
-// TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
-// support for raster thread merger for Fuchsia.
 TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
@@ -548,8 +545,14 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
   DestroyShell(std::move(shell));
 }
 
+// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
-       ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit) {
+#if defined(OS_FUCHSIA)
+       DISABLED_ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit
+#else
+       ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit
+#endif
+) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   bool end_frame_called = false;
@@ -597,7 +600,14 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
+// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
+TEST_F(ShellTest,
+#if defined(OS_FUCHSIA)
+       DISABLED_OnPlatformViewDestroyDisablesThreadMerger
+#else
+       OnPlatformViewDestroyDisablesThreadMerger
+#endif
+) {
   auto settings = CreateSettingsForFixture();
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger;
   auto end_frame_callback =
@@ -607,8 +617,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess, true);
-  // Set resubmit once to trigger thread merging.
-  external_view_embedder->SetResubmitOnce();
+
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
                            false, external_view_embedder);
 
@@ -653,22 +662,36 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
+// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
+TEST_F(ShellTest,
+#if defined(OS_FUCHSIA)
+       DISABLED_OnPlatformViewDestroyAfterMergingThreads
+#else
+       OnPlatformViewDestroyAfterMergingThreads
+#endif
+) {
   const size_t ThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
+
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
         if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
           raster_thread_merger->MergeWithLease(ThreadMergingLease);
+
+          ASSERT_TRUE(raster_thread_merger->IsMerged());
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
         }
         end_frame_latch.Signal();
       };
-  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess, true);
   // Set resubmit once to trigger thread merging.
-  external_view_embedder->SetResubmitOnce();
+  external_view_embedder->UpdatePostPrerollResult(
+      PostPrerollResult::kResubmitFrame);
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
                            false, external_view_embedder);
 
@@ -719,7 +742,14 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
+// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
+TEST_F(ShellTest,
+#if defined(OS_FUCHSIA)
+       DISABLED_OnPlatformViewDestroyWhenThreadsAreMerging
+#else
+       OnPlatformViewDestroyWhenThreadsAreMerging
+#endif
+) {
   const size_t kThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
@@ -772,7 +802,8 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
 
   // Pump a frame with `PostPrerollResult::kResubmitFrame` to start merging
   // threads
-  external_view_embedder->SetResubmitOnce();
+  external_view_embedder->UpdatePostPrerollResult(
+      PostPrerollResult::kResubmitFrame);
   PumpOneFrame(shell.get(), 100, 100, builder);
 
   // Now destroy the platform view immediately.
@@ -792,8 +823,14 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
   DestroyShell(std::move(shell));
 }
 
+// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
-       OnPlatformViewDestroyWithThreadMergerWhileThreadsAreUnmerged) {
+#if defined(OS_FUCHSIA)
+       DISABLED_OnPlatformViewDestroyWithThreadMergerWhileThreadsAreUnmerged
+#else
+       OnPlatformViewDestroyWithThreadMergerWhileThreadsAreUnmerged
+#endif
+) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
@@ -894,9 +931,15 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
 
   DestroyShell(std::move(shell));
 }
-#endif
 
-TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
+// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
+TEST_F(ShellTest,
+#if defined(OS_FUCHSIA)
+       DISABLED_OnPlatformViewDestroyWithStaticThreadMerging
+#else
+       OnPlatformViewDestroyWithStaticThreadMerging
+#endif
+) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
@@ -950,6 +993,96 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
   ValidateShell(shell.get());
 
   DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
+TEST_F(ShellTest,
+#if defined(OS_FUCHSIA)
+       DISABLED_SkipAndSubmitFrame
+#else
+       SkipAndSubmitFrame
+#endif
+) {
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent end_frame_latch;
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
+
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        external_view_embedder->UpdatePostPrerollResult(
+            PostPrerollResult::kSuccess);
+        end_frame_latch.Signal();
+      };
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kSkipAndRetryFrame, true);
+
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  PumpOneFrame(shell.get());
+
+  // `EndFrame` changed the post preroll result to `kSuccess`.
+  end_frame_latch.Wait();
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  PumpOneFrame(shell.get());
+  end_frame_latch.Wait();
+  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
+
+  DestroyShell(std::move(shell));
+}
+
+// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
+TEST_F(ShellTest,
+#if defined(OS_FUCHSIA)
+       DISABLED_ResubmitFrame
+#else
+       ResubmitFrame
+#endif
+) {
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent end_frame_latch;
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
+
+  auto end_frame_callback =
+      [&](bool should_resubmit_frame,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        external_view_embedder->UpdatePostPrerollResult(
+            PostPrerollResult::kSuccess);
+        end_frame_latch.Signal();
+      };
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kResubmitFrame, true);
+
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  PumpOneFrame(shell.get());
+  // `EndFrame` changed the post preroll result to `kSuccess`.
+  end_frame_latch.Wait();
+  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
+
+  end_frame_latch.Wait();
+  ASSERT_EQ(2, external_view_embedder->GetSubmittedFrameCount());
+
+  DestroyShell(std::move(shell));
 }
 
 TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {

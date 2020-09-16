@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
-#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 
 #if FLUTTER_SHELL_ENABLE_METAL
-#include "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
 namespace flutter {
@@ -101,7 +101,12 @@ PostPrerollResult IOSSurface::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::PostPrerollAction");
   FML_CHECK(platform_views_controller_ != nullptr);
-  return platform_views_controller_->PostPrerollAction(raster_thread_merger);
+  PostPrerollResult result = platform_views_controller_->PostPrerollAction(raster_thread_merger);
+  if (result == PostPrerollResult::kSkipAndRetryFrame) {
+    // Commit the current transaction if the frame is dropped.
+    [CATransaction commit];
+  }
+  return result;
 }
 
 // |ExternalViewEmbedder|

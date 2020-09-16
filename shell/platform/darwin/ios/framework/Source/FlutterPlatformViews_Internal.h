@@ -9,11 +9,11 @@
 #include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/shell.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
 @class FlutterTouchInterceptingView;
@@ -279,10 +279,6 @@ class FlutterPlatformViewsController {
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
 
-  // Default to `false`.
-  // If `true`, gpu thread and platform thread should be merged during |EndFrame|.
-  // Always resets to `false` right after the threads are merged.
-  bool merge_threads_ = false;
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
   // the picture on the layer's canvas.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
