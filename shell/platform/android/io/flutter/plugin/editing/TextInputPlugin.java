@@ -32,6 +32,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.HashMap;
@@ -199,7 +200,8 @@ public class TextInputPlugin {
 
     private View view;
     private WindowInsets lastWindowInsets;
-    private boolean started = false;
+    private boolean animating = false;
+    private boolean needsSave = false;
 
     ImeSyncDeferringInsetsCallback(
         @NonNull View view, int overlayInsetTypes, int deferredInsetTypes) {
@@ -212,15 +214,17 @@ public class TextInputPlugin {
     @Override
     public WindowInsets onApplyWindowInsets(View view, WindowInsets windowInsets) {
       this.view = view;
-      if (started) {
+      if (needsSave) {
+        // Store the view and insets for us in onEnd() below
+        lastWindowInsets = windowInsets;
+        needsSave = false;
+      }
+      if (animating) {
         // While animation is running, we consume the insets to prevent disrupting
         // the animation, which skips this implementation and calls the view's
         // onApplyWindowInsets directly to avoid being consumed here.
         return WindowInsets.CONSUMED;
       }
-
-      // Store the view and insets for us in onEnd() below
-      lastWindowInsets = windowInsets;
 
       // If no animation is happening, pass the insets on to the view's own
       // inset handling.
@@ -228,18 +232,18 @@ public class TextInputPlugin {
     }
 
     @Override
-    public WindowInsetsAnimation.Bounds onStart(
-        WindowInsetsAnimation animation, WindowInsetsAnimation.Bounds bounds) {
+    public void onPrepare(
+        WindowInsetsAnimation animation) {
       if ((animation.getTypeMask() & deferredInsetTypes) != 0) {
-        started = true;
+        animating = true;
+        needsSave = true;
       }
-      return bounds;
     }
 
     @Override
     public WindowInsets onProgress(
         WindowInsets insets, List<WindowInsetsAnimation> runningAnimations) {
-      if (!started) {
+      if (!animating || needsSave) {
         return insets;
       }
       boolean matching = false;
@@ -280,10 +284,10 @@ public class TextInputPlugin {
 
     @Override
     public void onEnd(WindowInsetsAnimation animation) {
-      if (started && (animation.getTypeMask() & deferredInsetTypes) != 0) {
+      if (animating && (animation.getTypeMask() & deferredInsetTypes) != 0) {
         // If we deferred the IME insets and an IME animation has finished, we need to reset
         // the flags
-        started = false;
+        animating = false;
 
         // And finally dispatch the deferred insets to the view now.
         // Ideally we would just call view.requestApplyInsets() and let the normal dispatch
