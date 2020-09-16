@@ -669,6 +669,8 @@ public class TextInputPluginTest {
     WindowInsets.Builder builder = new WindowInsets.Builder();
     WindowInsets noneInsets = builder.build();
 
+    // imeInsets0, 1, and 2 contain unique IME bottom insets, and are used
+    // to distinguish which insets were sent at each stage.
     builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 100));
     builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(10, 10, 10, 40));
     WindowInsets imeInsets0 = builder.build();
