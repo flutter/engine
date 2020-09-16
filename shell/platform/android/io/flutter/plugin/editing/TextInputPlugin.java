@@ -298,6 +298,10 @@ public class TextInputPlugin {
         }
       }
     }
+
+    public boolean isAnimating() {
+      return animating;
+    }
   }
 
   @NonNull
