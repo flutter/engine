@@ -13,7 +13,7 @@ static IOSContextMetal* CastToMetalContext(const std::shared_ptr<IOSContext>& co
   return reinterpret_cast<IOSContextMetal*>(context.get());
 }
 
-IOSSurfaceMetal::IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
+IOSSurfaceMetal::IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer*> layer,
                                  std::shared_ptr<IOSContext> context,
                                  FlutterPlatformViewsController* platform_views_controller)
     : IOSSurface(std::move(context), platform_views_controller), layer_(std::move(layer)) {

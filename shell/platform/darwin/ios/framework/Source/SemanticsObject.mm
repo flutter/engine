@@ -109,7 +109,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 @end
 
 @implementation SemanticsObject {
-  fml::scoped_nsobject<SemanticsObjectContainer> _container;
+  fml::scoped_nsobject<SemanticsObjectContainer*> _container;
   NSMutableArray<SemanticsObject*>* _children;
 }
 

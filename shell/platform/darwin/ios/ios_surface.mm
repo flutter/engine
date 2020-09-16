@@ -15,14 +15,14 @@ namespace flutter {
 
 std::unique_ptr<IOSSurface> IOSSurface::Create(
     std::shared_ptr<IOSContext> context,
-    fml::scoped_nsobject<CALayer> layer,
+    fml::scoped_nsobject<CALayer*> layer,
     FlutterPlatformViewsController* platform_views_controller) {
   FML_DCHECK(layer);
   FML_DCHECK(context);
 
   if ([layer.get() isKindOfClass:[CAEAGLLayer class]]) {
     return std::make_unique<IOSSurfaceGL>(
-        fml::scoped_nsobject<CAEAGLLayer>(
+        fml::scoped_nsobject<CAEAGLLayer*>(
             reinterpret_cast<CAEAGLLayer*>([layer.get() retain])),  // EAGL layer
         std::move(context),                                         // context
         platform_views_controller                                   // platform views controller
@@ -32,7 +32,7 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(
 #if FLUTTER_SHELL_ENABLE_METAL
   if ([layer.get() isKindOfClass:[CAMetalLayer class]]) {
     return std::make_unique<IOSSurfaceMetal>(
-        fml::scoped_nsobject<CAMetalLayer>(
+        fml::scoped_nsobject<CAMetalLayer*>(
             reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
         std::move(context),                                          // context
         platform_views_controller                                    // platform views controller

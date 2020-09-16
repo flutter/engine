@@ -54,30 +54,30 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @end
 
 @implementation FlutterEngine {
-  fml::scoped_nsobject<FlutterDartProject> _dartProject;
+  fml::scoped_nsobject<FlutterDartProject*> _dartProject;
   flutter::ThreadHost _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
   NSString* _labelPrefix;
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
 
   fml::WeakPtr<FlutterViewController> _viewController;
-  fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
+  fml::scoped_nsobject<FlutterObservatoryPublisher*> _publisher;
 
   std::unique_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
   std::unique_ptr<flutter::ProfilerMetricsIOS> _profiler_metrics;
   std::unique_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
-  fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
-  fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
-  fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
-  fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
-  fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
-  fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
-  fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
+  fml::scoped_nsobject<FlutterPlatformPlugin*> _platformPlugin;
+  fml::scoped_nsobject<FlutterTextInputPlugin*> _textInputPlugin;
+  fml::scoped_nsobject<FlutterMethodChannel*> _localizationChannel;
+  fml::scoped_nsobject<FlutterMethodChannel*> _navigationChannel;
+  fml::scoped_nsobject<FlutterMethodChannel*> _platformChannel;
+  fml::scoped_nsobject<FlutterMethodChannel*> _platformViewsChannel;
+  fml::scoped_nsobject<FlutterMethodChannel*> _textInputChannel;
+  fml::scoped_nsobject<FlutterBasicMessageChannel*> _lifecycleChannel;
+  fml::scoped_nsobject<FlutterBasicMessageChannel*> _systemChannel;
+  fml::scoped_nsobject<FlutterBasicMessageChannel*> _settingsChannel;
 
   int64_t _nextTextureId;
 

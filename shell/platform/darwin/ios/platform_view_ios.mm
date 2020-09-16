@@ -121,7 +121,7 @@ PointerDataDispatcherMaker PlatformViewIOS::GetDispatcherMaker() {
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
   RegisterTexture(ios_context_->CreateExternalTexture(
-      texture_id, fml::scoped_nsobject<NSObject<FlutterTexture>>{[texture retain]}));
+      texture_id, fml::scoped_nsobject<NSObject<FlutterTexture>*>{[texture retain]}));
 }
 
 // |PlatformView|

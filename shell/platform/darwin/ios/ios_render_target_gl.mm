@@ -12,8 +12,8 @@
 
 namespace flutter {
 
-IOSRenderTargetGL::IOSRenderTargetGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-                                     fml::scoped_nsobject<EAGLContext> context)
+IOSRenderTargetGL::IOSRenderTargetGL(fml::scoped_nsobject<CAEAGLLayer*> layer,
+                                     fml::scoped_nsobject<EAGLContext*> context)
     : layer_(std::move(layer)), context_(context) {
   FML_DCHECK(layer_ != nullptr);
   FML_DCHECK(context_ != nullptr);

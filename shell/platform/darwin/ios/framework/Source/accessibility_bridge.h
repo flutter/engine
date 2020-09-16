@@ -90,7 +90,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
   // been focused or the focus is currently outside of the flutter application
   // (i.e. the status bar or keyboard)
   int32_t last_focused_semantics_object_id_;
-  fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
+  fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>*> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;
   int32_t previous_route_id_;

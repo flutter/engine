@@ -27,7 +27,7 @@ IOSContextGL::IOSContextGL() {
 IOSContextGL::~IOSContextGL() = default;
 
 std::unique_ptr<IOSRenderTargetGL> IOSContextGL::CreateRenderTarget(
-    fml::scoped_nsobject<CAEAGLLayer> layer) {
+    fml::scoped_nsobject<CAEAGLLayer*> layer) {
   return std::make_unique<IOSRenderTargetGL>(std::move(layer), context_);
 }
 
@@ -52,7 +52,7 @@ std::unique_ptr<GLContextResult> IOSContextGL::MakeCurrent() {
 // |IOSContext|
 std::unique_ptr<Texture> IOSContextGL::CreateExternalTexture(
     int64_t texture_id,
-    fml::scoped_nsobject<NSObject<FlutterTexture>> texture) {
+    fml::scoped_nsobject<NSObject<FlutterTexture>*> texture) {
   return std::make_unique<IOSExternalTextureGL>(texture_id, std::move(texture));
 }
 

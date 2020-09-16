@@ -66,7 +66,7 @@ float VsyncWaiterIOS::GetDisplayRefreshRate() const {
 
 @implementation VSyncClient {
   flutter::VsyncWaiter::Callback callback_;
-  fml::scoped_nsobject<CADisplayLink> display_link_;
+  fml::scoped_nsobject<CADisplayLink*> display_link_;
 }
 
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
@@ -75,7 +75,7 @@ float VsyncWaiterIOS::GetDisplayRefreshRate() const {
 
   if (self) {
     callback_ = std::move(callback);
-    display_link_ = fml::scoped_nsobject<CADisplayLink> {
+    display_link_ = fml::scoped_nsobject<CADisplayLink*> {
       [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
     };
     display_link_.get().paused = YES;

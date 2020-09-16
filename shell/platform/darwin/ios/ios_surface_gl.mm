@@ -14,7 +14,7 @@ static IOSContextGL* CastToGLContext(const std::shared_ptr<IOSContext>& context)
   return reinterpret_cast<IOSContextGL*>(context.get());
 }
 
-IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
+IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer*> layer,
                            std::shared_ptr<IOSContext> context,
                            FlutterPlatformViewsController* platform_views_controller)
     : IOSSurface(context, platform_views_controller) {

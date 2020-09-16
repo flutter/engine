@@ -63,15 +63,15 @@ class IOSContextGL;
 class IOSSurface;
 
 struct FlutterPlatformViewLayer {
-  FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> overlay_view,
-                           fml::scoped_nsobject<UIView> overlay_view_wrapper,
+  FlutterPlatformViewLayer(fml::scoped_nsobject<UIView*> overlay_view,
+                           fml::scoped_nsobject<UIView*> overlay_view_wrapper,
                            std::unique_ptr<IOSSurface> ios_surface,
                            std::unique_ptr<Surface> surface);
 
   ~FlutterPlatformViewLayer();
 
-  fml::scoped_nsobject<UIView> overlay_view;
-  fml::scoped_nsobject<UIView> overlay_view_wrapper;
+  fml::scoped_nsobject<UIView*> overlay_view;
+  fml::scoped_nsobject<UIView*> overlay_view_wrapper;
   std::unique_ptr<IOSSurface> ios_surface;
   std::unique_ptr<Surface> surface;
 
@@ -199,18 +199,18 @@ class FlutterPlatformViewsController {
   // operation until the next platform view or the end of the last leaf node in the layer tree.
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 
-  fml::scoped_nsobject<FlutterMethodChannel> channel_;
-  fml::scoped_nsobject<UIView> flutter_view_;
-  fml::scoped_nsobject<UIViewController> flutter_view_controller_;
-  std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
-  std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
-  std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> touch_interceptors_;
+  fml::scoped_nsobject<FlutterMethodChannel*> channel_;
+  fml::scoped_nsobject<UIView*> flutter_view_;
+  fml::scoped_nsobject<UIViewController*> flutter_view_controller_;
+  std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>*>> factories_;
+  std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>*>> views_;
+  std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView*>> touch_interceptors_;
   // Mapping a platform view ID to the top most parent view (root_view) who is a direct child to
   // the `flutter_view_`.
   //
   // The platform view with the view ID is a child of the root view; If the platform view is not
   // clipped, and no clipping view is added, the root view will be the intercepting view.
-  std::map<int64_t, fml::scoped_nsobject<UIView>> root_views_;
+  std::map<int64_t, fml::scoped_nsobject<UIView*>> root_views_;
   // Mapping a platform view ID to its latest composition params.
   std::map<int64_t, EmbeddedViewParams> current_composition_params_;
   // Mapping a platform view ID to the count of the clipping operations that were applied to the

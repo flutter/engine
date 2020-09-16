@@ -21,7 +21,7 @@ class VsyncWaiterIOS final : public VsyncWaiter {
   ~VsyncWaiterIOS() override;
 
  private:
-  fml::scoped_nsobject<VSyncClient> client_;
+  fml::scoped_nsobject<VSyncClient*> client_;
 
   // |VsyncWaiter|
   void AwaitVSync() override;

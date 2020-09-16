@@ -59,12 +59,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 @implementation FlutterViewController {
   std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
-  fml::scoped_nsobject<FlutterEngine> _engine;
+  fml::scoped_nsobject<FlutterEngine*> _engine;
 
   // We keep a separate reference to this and create it ahead of time because we want to be able to
   // setup a shell along with its platform view before the view has to appear.
-  fml::scoped_nsobject<FlutterView> _flutterView;
-  fml::scoped_nsobject<UIView> _splashScreenView;
+  fml::scoped_nsobject<FlutterView*> _flutterView;
+  fml::scoped_nsobject<UIView*> _splashScreenView;
   fml::ScopedBlock<void (^)(void)> _flutterViewRenderedCallback;
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
@@ -72,12 +72,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
-  fml::scoped_nsobject<NSMutableSet<NSNumber*>> _ongoingTouches;
+  fml::scoped_nsobject<NSMutableSet<NSNumber*>*> _ongoingTouches;
   // This scroll view is a workaround to accomodate iOS 13 and higher.  There isn't a way to get
   // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
   // UIScrollView with height zero and a content offset so we can get those events. See also:
   // https://github.com/flutter/flutter/issues/35050
-  fml::scoped_nsobject<UIScrollView> _scrollView;
+  fml::scoped_nsobject<UIScrollView*> _scrollView;
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -157,7 +157,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 - (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
                   initialRoute:(nullable NSString*)initialRoute {
-  auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
+  auto engine = fml::scoped_nsobject<FlutterEngine*>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
       allowHeadlessExecution:self.engineAllowHeadlessExecution]};
@@ -471,7 +471,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
     FML_DCHECK(RasterTaskRunner->RunsTasksOnCurrentThread());
     // Get callback on raster thread and jump back to platform thread.
     platformTaskRunner->PostTask([weakSelf]() {
-      fml::scoped_nsobject<FlutterViewController> flutterViewController(
+      fml::scoped_nsobject<FlutterViewController*> flutterViewController(
           [(FlutterViewController*)weakSelf.get() retain]);
       if (flutterViewController) {
         if (flutterViewController.get()->_splashScreenView) {

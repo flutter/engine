@@ -17,7 +17,7 @@ static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 namespace flutter {
 
 GPUSurfaceMetal::GPUSurfaceMetal(GPUSurfaceDelegate* delegate,
-                                 fml::scoped_nsobject<CAMetalLayer> layer,
+                                 fml::scoped_nsobject<CAMetalLayer*> layer,
                                  sk_sp<GrDirectContext> context,
                                  fml::scoped_nsprotocol<id<MTLCommandQueue>> command_queue)
     : delegate_(delegate),

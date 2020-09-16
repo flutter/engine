@@ -15,7 +15,7 @@ namespace flutter {
 IOSExternalTextureMetal::IOSExternalTextureMetal(
     int64_t texture_id,
     fml::CFRef<CVMetalTextureCacheRef> texture_cache,
-    fml::scoped_nsobject<NSObject<FlutterTexture>> external_texture)
+    fml::scoped_nsobject<NSObject<FlutterTexture>*> external_texture)
     : Texture(texture_id),
       texture_cache_(std::move(texture_cache)),
       external_texture_(std::move(external_texture)) {

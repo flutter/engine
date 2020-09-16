@@ -19,8 +19,8 @@ namespace flutter {
 
 class IOSRenderTargetGL {
  public:
-  IOSRenderTargetGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-                    fml::scoped_nsobject<EAGLContext> context_);
+  IOSRenderTargetGL(fml::scoped_nsobject<CAEAGLLayer*> layer,
+                    fml::scoped_nsobject<EAGLContext*> context_);
 
   ~IOSRenderTargetGL();
 
@@ -33,8 +33,8 @@ class IOSRenderTargetGL {
   bool UpdateStorageSizeIfNecessary();
 
  private:
-  fml::scoped_nsobject<CAEAGLLayer> layer_;
-  fml::scoped_nsobject<EAGLContext> context_;
+  fml::scoped_nsobject<CAEAGLLayer*> layer_;
+  fml::scoped_nsobject<EAGLContext*> context_;
   GLuint framebuffer_ = GL_NONE;
   GLuint colorbuffer_ = GL_NONE;
   GLint storage_size_width_ = GL_NONE;

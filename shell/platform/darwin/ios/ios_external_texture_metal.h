@@ -22,14 +22,14 @@ class IOSExternalTextureMetal final : public Texture {
  public:
   IOSExternalTextureMetal(int64_t texture_id,
                           fml::CFRef<CVMetalTextureCacheRef> texture_cache,
-                          fml::scoped_nsobject<NSObject<FlutterTexture>> external_texture);
+                          fml::scoped_nsobject<NSObject<FlutterTexture>*> external_texture);
 
   // |Texture|
   ~IOSExternalTextureMetal();
 
  private:
   fml::CFRef<CVMetalTextureCacheRef> texture_cache_;
-  fml::scoped_nsobject<NSObject<FlutterTexture>> external_texture_;
+  fml::scoped_nsobject<NSObject<FlutterTexture>*> external_texture_;
   std::atomic_bool texture_frame_available_;
   fml::CFRef<CVPixelBufferRef> last_pixel_buffer_;
   sk_sp<SkImage> external_image_;

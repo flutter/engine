@@ -15,7 +15,7 @@ namespace flutter {
 
 class IOSSurfaceMetal final : public IOSSurface, public GPUSurfaceDelegate {
  public:
-  IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
+  IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer*> layer,
                   std::shared_ptr<IOSContext> context,
                   FlutterPlatformViewsController* platform_views_controller);
 
@@ -23,7 +23,7 @@ class IOSSurfaceMetal final : public IOSSurface, public GPUSurfaceDelegate {
   ~IOSSurfaceMetal() override;
 
  private:
-  fml::scoped_nsobject<CAMetalLayer> layer_;
+  fml::scoped_nsobject<CAMetalLayer*> layer_;
   bool is_valid_ = false;
 
   // |IOSSurface|

@@ -20,7 +20,7 @@ namespace flutter {
 class GPUSurfaceMetal : public Surface {
  public:
   GPUSurfaceMetal(GPUSurfaceDelegate* delegate,
-                  fml::scoped_nsobject<CAMetalLayer> layer,
+                  fml::scoped_nsobject<CAMetalLayer*> layer,
                   sk_sp<GrDirectContext> context,
                   fml::scoped_nsprotocol<id<MTLCommandQueue>> command_queue);
 
@@ -29,7 +29,7 @@ class GPUSurfaceMetal : public Surface {
 
  private:
   GPUSurfaceDelegate* delegate_;
-  fml::scoped_nsobject<CAMetalLayer> layer_;
+  fml::scoped_nsobject<CAMetalLayer*> layer_;
   sk_sp<GrDirectContext> context_;
   fml::scoped_nsprotocol<id<MTLCommandQueue>> command_queue_;
   GrMTLHandle next_drawable_ = nullptr;

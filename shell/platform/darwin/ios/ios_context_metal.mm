@@ -106,7 +106,7 @@ std::unique_ptr<GLContextResult> IOSContextMetal::MakeCurrent() {
 // |IOSContext|
 std::unique_ptr<Texture> IOSContextMetal::CreateExternalTexture(
     int64_t texture_id,
-    fml::scoped_nsobject<NSObject<FlutterTexture>> texture) {
+    fml::scoped_nsobject<NSObject<FlutterTexture>*> texture) {
   return std::make_unique<IOSExternalTextureMetal>(texture_id, texture_cache_, std::move(texture));
 }
 

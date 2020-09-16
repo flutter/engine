@@ -12,8 +12,8 @@ static int kMaxPointsInVerb = 4;
 namespace flutter {
 
 FlutterPlatformViewLayer::FlutterPlatformViewLayer(
-    fml::scoped_nsobject<UIView> overlay_view,
-    fml::scoped_nsobject<UIView> overlay_view_wrapper,
+    fml::scoped_nsobject<UIView*> overlay_view,
+    fml::scoped_nsobject<UIView*> overlay_view_wrapper,
     std::unique_ptr<IOSSurface> ios_surface,
     std::unique_ptr<Surface> surface)
     : overlay_view(std::move(overlay_view)),

@@ -37,20 +37,27 @@ namespace fml {
 // We check for bad uses of scoped_nsobject and NSAutoreleasePool at compile
 // time with a template specialization (see below).
 
-class scoped_nsprotocol_arc_memory_management {
+#if __has_feature(objc_arc)
+class scoped_nsprotocol_memory_management {
  public:
-  static id Retain(__unsafe_unretained id object) __attribute((ns_returns_not_retained));
-  static id Autorelease(__unsafe_unretained id object) __attribute((ns_returns_not_retained));
-  static void Release(__unsafe_unretained id object);
-  static id InvalidValue() __attribute((ns_returns_not_retained)) { return nil; }
+  static id Retain(__unsafe_unretained id object) { return object; }
+  static id Autorelease(__unsafe_unretained id object) { return object; }
+  static void Release(__unsafe_unretained id object) {}
+  static id InvalidValue() { return nil; }
 };
-
-template <typename NST>
-using scoped_nsprotocol_memory_management = scoped_nsprotocol_arc_memory_management;
+#else
+class scoped_nsprotocol_memory_management {
+ public:
+  static id Retain(id object) { return [object retain]; }
+  static id Autorelease(id object) { return [object autorelease]; }
+  static void Release(id object) { [object release]; }
+  static id InvalidValue() { return nil; }
+};
+#endif
 
 template <typename NST>
 class scoped_nsprotocol {
-  using Memory = scoped_nsprotocol_memory_management<NST>;
+  using Memory = scoped_nsprotocol_memory_management;
 
  public:
   explicit scoped_nsprotocol(NST object = Memory::InvalidValue()) : object_(object) {}
@@ -99,9 +106,7 @@ class scoped_nsprotocol {
   }
 
   // Shift reference to the autorelease pool to be released later.
-  NST autorelease() __attribute((ns_returns_not_retained)) {
-    return Memory::Autorelease(release());
-  }
+  NST autorelease() { return Memory::Autorelease(release()); }
 
  private:
   NST object_;
@@ -124,42 +129,7 @@ bool operator!=(C p1, const scoped_nsprotocol<C>& p2) {
 }
 
 template <typename NST>
-class scoped_nsobject : public scoped_nsprotocol<NST*> {
-  using Memory = scoped_nsprotocol_memory_management<NST*>;
-
- public:
-  explicit scoped_nsobject(NST* object = Memory::InvalidValue())
-      : scoped_nsprotocol<NST*>(object) {}
-
-  scoped_nsobject(const scoped_nsobject<NST>& that) : scoped_nsprotocol<NST*>(that) {}
-
-  template <typename NSU>
-  scoped_nsobject(const scoped_nsobject<NSU>& that) : scoped_nsprotocol<NST*>(that) {}
-
-  scoped_nsobject& operator=(const scoped_nsobject<NST>& that) {
-    scoped_nsprotocol<NST*>::operator=(that);
-    return *this;
-  }
-};
-
-// Specialization to make scoped_nsobject<id> work.
-template <>
-class scoped_nsobject<id> : public scoped_nsprotocol<id> {
-  using Memory = scoped_nsprotocol_memory_management<id>;
-
- public:
-  explicit scoped_nsobject(id object = Memory::InvalidValue()) : scoped_nsprotocol<id>(object) {}
-
-  scoped_nsobject(const scoped_nsobject<id>& that) : scoped_nsprotocol<id>(that) {}
-
-  template <typename NSU>
-  scoped_nsobject(const scoped_nsobject<NSU>& that) : scoped_nsprotocol<id>(that) {}
-
-  scoped_nsobject& operator=(const scoped_nsobject<id>& that) {
-    scoped_nsprotocol<id>::operator=(that);
-    return *this;
-  }
-};
+using scoped_nsobject = scoped_nsprotocol<NST>;
 
 #if !__has_feature(objc_arc)
 
@@ -167,10 +137,10 @@ class scoped_nsobject<id> : public scoped_nsprotocol<id> {
 // ScopedNSAutoreleasePool instead. This is a compile time check. See details
 // at top of header.
 template <>
-class scoped_nsobject<NSAutoreleasePool> {
+class scoped_nsprotocol<NSAutoreleasePool*> {
  private:
-  explicit scoped_nsobject(NSAutoreleasePool* object = nil);
-  FML_DISALLOW_COPY_AND_ASSIGN(scoped_nsobject);
+  explicit scoped_nsprotocol(NSAutoreleasePool* object = nil);
+  FML_DISALLOW_COPY_AND_ASSIGN(scoped_nsprotocol);
 };
 
 #endif  // !__has_feature(objc_arc)

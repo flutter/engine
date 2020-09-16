@@ -21,7 +21,7 @@ class IOSExternalTextureGL final : public Texture {
 
  private:
   bool new_frame_ready_ = false;
-  fml::scoped_nsobject<NSObject<FlutterTexture>> external_texture_;
+  fml::scoped_nsobject<NSObject<FlutterTexture>*> external_texture_;
   fml::CFRef<CVOpenGLESTextureCacheRef> cache_ref_;
   fml::CFRef<CVOpenGLESTextureRef> texture_ref_;
   fml::CFRef<CVPixelBufferRef> buffer_ref_;

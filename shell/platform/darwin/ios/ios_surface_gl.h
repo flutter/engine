@@ -18,7 +18,7 @@ namespace flutter {
 
 class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
  public:
-  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
+  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer*> layer,
                std::shared_ptr<IOSContext> context,
                FlutterPlatformViewsController* platform_views_controller = nullptr);
 

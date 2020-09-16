@@ -26,7 +26,7 @@ class IOSSurface : public ExternalViewEmbedder {
  public:
   static std::unique_ptr<IOSSurface> Create(
       std::shared_ptr<IOSContext> context,
-      fml::scoped_nsobject<CALayer> layer,
+      fml::scoped_nsobject<CALayer*> layer,
       FlutterPlatformViewsController* platform_views_controller);
 
   // |ExternalViewEmbedder|

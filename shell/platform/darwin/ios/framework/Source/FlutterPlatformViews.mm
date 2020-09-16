@@ -26,8 +26,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
     std::shared_ptr<IOSContext> ios_context) {
   if (available_layer_index_ >= layers_.size()) {
     std::shared_ptr<FlutterPlatformViewLayer> layer;
-    fml::scoped_nsobject<FlutterOverlayView> overlay_view;
-    fml::scoped_nsobject<FlutterOverlayView> overlay_view_wrapper;
+    fml::scoped_nsobject<FlutterOverlayView*> overlay_view;
+    fml::scoped_nsobject<FlutterOverlayView*> overlay_view_wrapper;
 
     if (!gr_context) {
       overlay_view.reset([[FlutterOverlayView alloc] init]);
@@ -161,7 +161,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   // Set a unique view identifier, so the platform view can be identified in unit tests.
   [embedded_view view].accessibilityIdentifier =
       [NSString stringWithFormat:@"platform_view[%ld]", viewId];
-  views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
+  views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>*>([embedded_view retain]);
 
   FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
                   initWithEmbeddedView:embedded_view.view
@@ -170,12 +170,12 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
       autorelease];
 
   touch_interceptors_[viewId] =
-      fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
+      fml::scoped_nsobject<FlutterTouchInterceptingView*>([touch_interceptor retain]);
 
   ChildClippingView* clipping_view =
       [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
   [clipping_view addSubview:touch_interceptor];
-  root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
+  root_views_[viewId] = fml::scoped_nsobject<UIView*>([clipping_view retain]);
 
   result(nil);
 }
@@ -238,7 +238,7 @@ void FlutterPlatformViewsController::RegisterViewFactory(
   std::string idString([factoryId UTF8String]);
   FML_CHECK(factories_.count(idString) == 0);
   factories_[idString] =
-      fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>([factory retain]);
+      fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>*>([factory retain]);
   gesture_recognizers_blocking_policies[idString] = gestureRecognizerBlockingPolicy;
 }
 
@@ -703,7 +703,7 @@ void FlutterPlatformViewsController::DisposeViews() {
 @end
 
 @implementation FlutterTouchInterceptingView {
-  fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
+  fml::scoped_nsobject<DelayingGestureRecognizer*> _delayingRecognizer;
   FlutterPlatformViewGestureRecognizersBlockingPolicy _blockingPolicy;
 }
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
@@ -781,7 +781,7 @@ void FlutterPlatformViewsController::DisposeViews() {
 @end
 
 @implementation DelayingGestureRecognizer {
-  fml::scoped_nsobject<UIGestureRecognizer> _forwardingRecognizer;
+  fml::scoped_nsobject<UIGestureRecognizer*> _forwardingRecognizer;
 }
 
 - (instancetype)initWithTarget:(id)target

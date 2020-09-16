@@ -75,9 +75,9 @@
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
     (std::shared_ptr<flutter::IOSContext>)ios_context {
   return flutter::IOSSurface::Create(
-      std::move(ios_context),                              // context
-      fml::scoped_nsobject<CALayer>{[self.layer retain]},  // layer
-      [_delegate platformViewsController]                  // platform views controller
+      std::move(ios_context),                               // context
+      fml::scoped_nsobject<CALayer*>{[self.layer retain]},  // layer
+      [_delegate platformViewsController]                   // platform views controller
   );
 }
 

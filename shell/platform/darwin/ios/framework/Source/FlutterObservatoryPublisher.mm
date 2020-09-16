@@ -49,14 +49,14 @@
 - (void)publishServiceProtocolPort:(NSString*)uri;
 - (void)stopService;
 
-@property(readonly) fml::scoped_nsobject<NSURL> url;
+@property(readonly) fml::scoped_nsobject<NSURL*> url;
 @end
 
 @interface FlutterObservatoryPublisher ()
 - (NSData*)createTxtData:(NSURL*)url;
 
 @property(readonly) NSString* serviceName;
-@property(readonly) fml::scoped_nsobject<NSObject<FlutterObservatoryPublisherDelegate>> delegate;
+@property(readonly) fml::scoped_nsobject<NSObject<FlutterObservatoryPublisherDelegate>*> delegate;
 
 @end
 
@@ -68,7 +68,7 @@
 @end
 
 @implementation ObservatoryDNSServiceDelegate {
-  fml::scoped_nsobject<FlutterObservatoryPublisher> _owner;
+  fml::scoped_nsobject<FlutterObservatoryPublisher*> _owner;
   DNSServiceRef _dnsServiceRef;
 }
 
@@ -165,8 +165,8 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
 @end
 
 @implementation ObservatoryNSNetServiceDelegate {
-  fml::scoped_nsobject<FlutterObservatoryPublisher> _owner;
-  fml::scoped_nsobject<NSNetService> _netService;
+  fml::scoped_nsobject<FlutterObservatoryPublisher*> _owner;
+  fml::scoped_nsobject<NSNetService*> _netService;
 }
 
 @synthesize url;

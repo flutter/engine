@@ -104,7 +104,7 @@ class IOSContext {
   ///
   virtual std::unique_ptr<Texture> CreateExternalTexture(
       int64_t texture_id,
-      fml::scoped_nsobject<NSObject<FlutterTexture>> texture) = 0;
+      fml::scoped_nsobject<NSObject<FlutterTexture>*> texture) = 0;
 
  protected:
   IOSContext();
