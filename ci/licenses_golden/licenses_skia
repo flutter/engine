@@ -1,4 +1,4 @@
-Signature: 485658ff3c37addf345dc164bc48ba29
+Signature: 9f49c84bea1169b8b57796c9bffc958f
 
 UNUSED LICENSES:
 
@@ -4134,6 +4134,8 @@ FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrHashMapWithCache.h
 FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSTArenaList.h
+FILE: ../../../third_party/skia/src/gpu/GrThreadSafeUniquelyKeyedProxyViewCache.cpp
+FILE: ../../../third_party/skia/src/gpu/GrThreadSafeUniquelyKeyedProxyViewCache.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrAutoMapVertexBuffer.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrArithmeticProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrDitherEffect.fp
@@ -5579,6 +5581,7 @@ FILE: ../../../third_party/skia/src/opts/SkVM_opts.h
 FILE: ../../../third_party/skia/src/sksl/SkSLAnalysis.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLIRNode.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC.
 
