@@ -6,6 +6,7 @@
 #define FLUTTER_FLOW_COMPOSITOR_CONTEXT_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "flutter/flow/embedded_views.h"

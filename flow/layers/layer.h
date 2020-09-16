@@ -69,7 +69,7 @@ struct PrerollContext {
 
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
-class Layer {
+class Layer : public std::enable_shared_from_this<Layer> {
  public:
   Layer();
   virtual ~Layer();
