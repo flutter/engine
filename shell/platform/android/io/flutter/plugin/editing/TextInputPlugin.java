@@ -32,7 +32,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
-import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.HashMap;
@@ -232,8 +231,7 @@ public class TextInputPlugin {
     }
 
     @Override
-    public void onPrepare(
-        WindowInsetsAnimation animation) {
+    public void onPrepare(WindowInsetsAnimation animation) {
       if ((animation.getTypeMask() & deferredInsetTypes) != 0) {
         animating = true;
         needsSave = true;
