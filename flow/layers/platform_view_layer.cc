@@ -26,6 +26,13 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
                       "does not support embedding";
     return;
   }
+
+  if (context->damage_context &&
+      context->damage_context->IsDeterminingDamage()) {
+    // Don't interact with view embedder during damage pass
+    return;
+  }
+
   context->has_platform_view = true;
   std::unique_ptr<EmbeddedViewParams> params =
       std::make_unique<EmbeddedViewParams>(matrix, size_,

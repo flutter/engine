@@ -15,6 +15,12 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Preroll");
 
+  DamageContext::LayerContributionHandle contribution;
+  if (context->damage_context) {
+    contribution = context->damage_context->AddLayerContribution(
+        this, compare, matrix, *context);
+  }
+
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
@@ -28,6 +34,12 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     child_bounds = SkRect::Make(filter_output_bounds);
   }
   set_paint_bounds(child_bounds);
+
+  if (context->damage_context) {
+    // Push entry before children
+    contribution.UpdatePaintBounds();
+    context->damage_context->AddReadbackArea(matrix, paint_bounds());
+  }
 
   transformed_filter_ = nullptr;
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
@@ -90,6 +102,12 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
       context, GetChildContainer()->paint_bounds(), &paint);
   PaintChildren(context);
+}
+
+bool ImageFilterLayer::compare(const Layer* l1, const Layer* l2) {
+  const auto* bf1 = reinterpret_cast<const ImageFilterLayer*>(l1);
+  const auto* bf2 = reinterpret_cast<const ImageFilterLayer*>(l2);
+  return bf1->filter_ == bf2->filter_;
 }
 
 }  // namespace flutter

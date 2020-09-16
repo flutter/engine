@@ -19,6 +19,8 @@ class ImageFilterLayer : public MergedContainerLayer {
   void Paint(PaintContext& context) const override;
 
  private:
+  static bool compare(const Layer* l1, const Layer* l2);
+
   // The ImageFilterLayer might cache the filtered output of this layer
   // if the layer remains stable (if it is not animating for instance).
   // If the ImageFilterLayer is not the same between rendered frames,

@@ -43,6 +43,19 @@ void VisualizeStopWatch(SkCanvas* canvas,
 
 }  // namespace
 
+static bool compareLayers(const Layer*, const Layer*) {
+  return false;
+}
+
+void PerformanceOverlayLayer::Preroll(PrerollContext* context,
+                                      const SkMatrix& matrix) {
+  if (context->damage_context) {
+    context->damage_context->AddLayerContribution(this, compareLayers, matrix,
+                                                  *context);
+  }
+  Layer::Preroll(context, matrix);
+}
+
 sk_sp<SkTextBlob> PerformanceOverlayLayer::MakeStatisticsText(
     const Stopwatch& stopwatch,
     const std::string& label_prefix,

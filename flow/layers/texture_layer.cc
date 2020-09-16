@@ -32,6 +32,11 @@ void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   if (!context->cull_rect.intersects(paint_bounds())) {
     set_paint_bounds(SkRect::MakeEmpty());
   }
+
+  if (context->damage_context) {
+    context->damage_context->AddLayerContribution(this, compare, matrix,
+                                                  *context);
+  }
 }
 
 void TextureLayer::Paint(PaintContext& context) const {

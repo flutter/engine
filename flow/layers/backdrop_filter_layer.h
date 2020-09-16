@@ -21,6 +21,8 @@ class BackdropFilterLayer : public ContainerLayer {
  private:
   sk_sp<SkImageFilter> filter_;
 
+  static bool compare(const Layer* l1, const Layer* l2);
+
   FML_DISALLOW_COPY_AND_ASSIGN(BackdropFilterLayer);
 };
 
