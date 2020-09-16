@@ -39,8 +39,9 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     bool surface_supports_readback,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   return std::make_unique<ScopedFrame>(
-      *this, gr_context, canvas, view_embedder, root_surface_transformation,
-      instrumentation_enabled, surface_supports_readback, raster_thread_merger);
+      *this, gr_context, canvas, view_embedder, &damage_context_,
+      root_surface_transformation, instrumentation_enabled,
+      surface_supports_readback, raster_thread_merger);
 }
 
 CompositorContext::ScopedFrame::ScopedFrame(
@@ -48,6 +49,7 @@ CompositorContext::ScopedFrame::ScopedFrame(
     GrDirectContext* gr_context,
     SkCanvas* canvas,
     ExternalViewEmbedder* view_embedder,
+    DamageContext* damage_context,
     const SkMatrix& root_surface_transformation,
     bool instrumentation_enabled,
     bool surface_supports_readback,
@@ -56,6 +58,7 @@ CompositorContext::ScopedFrame::ScopedFrame(
       gr_context_(gr_context),
       canvas_(canvas),
       view_embedder_(view_embedder),
+      damage_context_(damage_context),
       root_surface_transformation_(root_surface_transformation),
       instrumentation_enabled_(instrumentation_enabled),
       surface_supports_readback_(surface_supports_readback),
@@ -69,9 +72,31 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 
 RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
-    bool ignore_raster_cache) {
+    bool ignore_raster_cache,
+    FrameDamage* frame_damage) {
   TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
-  bool root_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
+
+  std::optional<DamageArea> damage_area;
+
+  if (frame_damage) {
+    damage_context()->InitFrame(layer_tree.frame_size(),
+                                frame_damage->previous_frame_description);
+    layer_tree.Preroll(*this, true);
+    auto damage_res = damage_context()->FinishFrame();
+    frame_damage->frame_description = std::move(damage_res.frame_description);
+
+    // only bother clipping when less than 80% of screen
+    if (damage_res.area.bounds().width() * damage_res.area.bounds().height() <
+        0.8 * layer_tree.frame_size().width() *
+            layer_tree.frame_size().height()) {
+      damage_area = std::move(damage_res.area);
+    }
+  }
+
+  auto cull_rect =
+      damage_area ? SkRect::Make(damage_area->bounds()) : kGiantRect;
+  bool root_needs_readback =
+      layer_tree.Preroll(*this, ignore_raster_cache, cull_rect);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && raster_thread_merger_) {
@@ -85,6 +110,12 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   if (post_preroll_result == PostPrerollResult::kSkipAndRetryFrame) {
     return RasterStatus::kSkipAndRetry;
   }
+
+  if (canvas() && damage_area) {
+    canvas()->save();
+    canvas()->clipRect(SkRect::Make(damage_area->bounds()));
+  }
+
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.
   if (canvas()) {
@@ -101,6 +132,14 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   if (canvas() && needs_save_layer) {
     canvas()->restore();
   }
+  if (canvas() && damage_area) {
+    canvas()->restore();
+  }
+
+  if (frame_damage) {
+    frame_damage->damage_area = std::move(damage_area);
+  }
+
   return RasterStatus::kSuccess;
 }
 

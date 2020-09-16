@@ -1982,7 +1982,8 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             nullptr,                 /* raster_cache */
             nullptr,                 /* gr_context */
             nullptr,                 /* external_view_embedder */
-            mutators_stack, nullptr, /* color_space */
+            mutators_stack, nullptr, /* damage_context */
+            nullptr,                 /* color_space */
             kGiantRect,              /* cull_rect */
             false,                   /* layer reads from surface */
             raster_time,    ui_time, texture_registry,
