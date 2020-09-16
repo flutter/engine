@@ -677,6 +677,10 @@ public class TextInputPluginTest {
     builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(10, 10, 10, 40));
     WindowInsets imeInsets1 = builder.build();
 
+    builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(10, 10, 10, 40));
+    WindowInsets imeInsets2 = builder.build();
+
     builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 200));
     builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(10, 10, 10, 0));
     WindowInsets deferredInsets = builder.build();
@@ -696,6 +700,8 @@ public class TextInputPluginTest {
     imeSyncCallback.onPrepare(animation);
     imeSyncCallback.onApplyWindowInsets(testView, deferredInsets);
     imeSyncCallback.onStart(animation, null);
+    // Only the final state call is saved, extra calls are passed on.
+    imeSyncCallback.onApplyWindowInsets(testView, imeInsets2);
 
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     // No change, as deferredInset is stored to be passed in onEnd()
@@ -723,7 +729,7 @@ public class TextInputPluginTest {
     imeSyncCallback.onEnd(animation);
 
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    // Values should be of deferredInsets
+    // Values should be of deferredInsets, not imeInsets2
     assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
     assertEquals(10, viewportMetricsCaptor.getValue().paddingTop);
     assertEquals(200, viewportMetricsCaptor.getValue().viewInsetBottom);
