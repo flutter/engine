@@ -149,12 +149,19 @@ static gboolean flutter_source_dispatch(GSource* source,
   return G_SOURCE_REMOVE;
 }
 
+// Called when a flutter source completes.
+static void flutter_source_finalize(GSource* source) {
+  FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
+
+  g_object_unref(fl_source->self);
+}
+
 // Table of functions for Flutter GLib main loop integration.
 static GSourceFuncs flutter_source_funcs = {
     nullptr,                  // prepare
     nullptr,                  // check
     flutter_source_dispatch,  // dispatch
-    nullptr,                  // finalize
+    flutter_source_finalize,  // finalize
     nullptr,
     nullptr  // Internal usage
 };
@@ -226,7 +233,7 @@ static void fl_engine_post_task(FlutterTask task,
   g_autoptr(GSource) source =
       g_source_new(&flutter_source_funcs, sizeof(FlutterSource));
   FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  fl_source->self = self;
+  fl_source->self = static_cast<FlEngine*>(g_object_ref(self));
   fl_source->task = task;
   g_source_set_ready_time(source,
                           target_time_nanos / kMicrosecondsPerNanosecond);
