@@ -5,16 +5,13 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
-<<<<<<< HEAD
 #include "flutter/common/constants.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-=======
->>>>>>> upstream/master
-    #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 
-    FLUTTER_ASSERT_ARC
+FLUTTER_ASSERT_ARC
 
-    @interface FlutterDartProjectTest : XCTestCase
+@interface FlutterDartProjectTest : XCTestCase
 @end
 
 @implementation FlutterDartProjectTest
@@ -28,7 +25,7 @@
 - (void)testOldGenHeapSizeSetting {
   FlutterDartProject* project = [[FlutterDartProject alloc] init];
   int64_t old_gen_heap_size =
-      std::round([NSProcessInfo processInfo].physicalMemory / *.48 / kMegaByteSizeInBytes);
+      std::round([NSProcessInfo processInfo].physicalMemory / *.48 / flutter::kMegaByteSizeInBytes);
   XCTAssertEqual(project.settings.old_gen_heap_size, old_gen_heap_size);
 }
 

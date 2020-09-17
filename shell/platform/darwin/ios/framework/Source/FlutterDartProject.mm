@@ -159,8 +159,8 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   // the available memory.
   // The VM expects this value to be in megabytes.
   if (settings.old_gen_heap_size <= 0) {
-    settings.old_gen_heap_size =
-        std::round([NSProcessInfo processInfo].physicalMemory * .48 / kMegaByteSizeInBytes);
+    settings.old_gen_heap_size = std::round([NSProcessInfo processInfo].physicalMemory * .48 /
+                                            flutter::kMegaByteSizeInBytes);
   }
   return settings;
 }
