@@ -17,7 +17,7 @@ class EmbedderTestCompositorGL : public EmbedderTestCompositor {
   EmbedderTestCompositorGL(SkISize surface_size,
                            sk_sp<GrDirectContext> context);
 
-  virtual ~EmbedderTestCompositorGL();
+  ~EmbedderTestCompositorGL() override;
 
  private:
   bool UpdateOffscrenComposition(const FlutterLayer** layers,

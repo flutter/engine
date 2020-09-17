@@ -12,13 +12,14 @@ namespace testing {
 
 class EmbedderTestContextGL : public EmbedderTestContext {
  public:
+  using GLGetFBOCallback = std::function<void(FlutterFrameInfo frame_info)>;
+  using GLPresentCallback = std::function<void(uint32_t fbo_id)>;
+
   EmbedderTestContextGL(std::string assets_path = "");
 
-  ~EmbedderTestContextGL();
+  ~EmbedderTestContextGL() override;
 
   size_t GetSurfacePresentCount() const override;
-
-  using GLGetFBOCallback = std::function<void(FlutterFrameInfo frame_info)>;
 
   //----------------------------------------------------------------------------
   /// @brief      Sets a callback that will be invoked (on the raster task
@@ -34,8 +35,6 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   void SetGLGetFBOCallback(GLGetFBOCallback callback);
 
   uint32_t GetWindowFBOId() const;
-
-  using GLPresentCallback = std::function<void(uint32_t fbo_id)>;
 
   //----------------------------------------------------------------------------
   /// @brief      Sets a callback that will be invoked (on the raster task

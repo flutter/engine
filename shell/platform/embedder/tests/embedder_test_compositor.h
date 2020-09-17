@@ -18,6 +18,12 @@ namespace testing {
 
 class EmbedderTestCompositor {
  public:
+  using PlatformViewRendererCallback =
+      std::function<sk_sp<SkImage>(const FlutterLayer& layer,
+                                   GrDirectContext* context)>;
+  using PresentCallback =
+      std::function<void(const FlutterLayer** layers, size_t layers_count)>;
+
   EmbedderTestCompositor(SkISize surface_size, sk_sp<GrDirectContext> context);
 
   virtual ~EmbedderTestCompositor();
@@ -32,14 +38,9 @@ class EmbedderTestCompositor {
 
   bool Present(const FlutterLayer** layers, size_t layers_count);
 
-  using PlatformViewRendererCallback =
-      std::function<sk_sp<SkImage>(const FlutterLayer& layer,
-                                   GrDirectContext* context)>;
   void SetPlatformViewRendererCallback(
       const PlatformViewRendererCallback& callback);
 
-  using PresentCallback =
-      std::function<void(const FlutterLayer** layers, size_t layers_count)>;
   //----------------------------------------------------------------------------
   /// @brief      Allows tests to install a callback to notify them when the
   ///             entire render tree has been finalized so they can run their

@@ -14,7 +14,7 @@ class EmbedderTestContextSoftware : public EmbedderTestContext {
  public:
   EmbedderTestContextSoftware(std::string assets_path = "");
 
-  ~EmbedderTestContextSoftware();
+  ~EmbedderTestContextSoftware() override;
 
   size_t GetSurfacePresentCount() const override;
 
