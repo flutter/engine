@@ -34,7 +34,7 @@ ios-safari:
   # `heightOfHeader` is the number of pixels taken by the phone's header menu
   # and the browsers address bar.
   # TODO: https://github.com/flutter/flutter/issues/65672
-  heightOfHeader: 282
+  heightOfHeader: 283
   # `heightOfFooter` is the number of pixels taken by the phone's navigation
   # menu.
   heightOfFooter: 250

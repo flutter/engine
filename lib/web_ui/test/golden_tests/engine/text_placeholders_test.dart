@@ -27,6 +27,7 @@ void testMain() async {
     final Rect screenRect = const Rect.fromLTWH(0, 0, 600, 600);
     final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
 
+    recordingCanvas.save();
     Offset offset = Offset.zero;
     for (PlaceholderAlignment placeholderAlignment
         in PlaceholderAlignment.values) {
@@ -39,6 +40,7 @@ void testMain() async {
       );
       offset = offset.translate(0.0, 80.0);
     }
+    recordingCanvas.restore();
     recordingCanvas.endRecording();
     recordingCanvas.apply(canvas, screenRect);
     return scuba.diffCanvasScreenshot(canvas, 'text_with_placeholders');
@@ -48,6 +50,7 @@ void testMain() async {
     final Rect screenRect = const Rect.fromLTWH(0, 0, 600, 600);
     final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
 
+    recordingCanvas.save();
     Offset offset = Offset.zero;
     _paintTextWithPlaceholder(
       recordingCanvas,
@@ -72,6 +75,7 @@ void testMain() async {
       after: 'ipsum.',
       textAlignment: TextAlign.end,
     );
+    recordingCanvas.restore();
     recordingCanvas.endRecording();
     recordingCanvas.apply(canvas, screenRect);
     return scuba.diffCanvasScreenshot(canvas, 'text_align_with_placeholders');
