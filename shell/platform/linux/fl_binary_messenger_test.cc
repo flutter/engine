@@ -5,6 +5,8 @@
 // Included first as it collides with the X11 headers.
 #include "gtest/gtest.h"
 
+#include <cstring>
+
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
@@ -14,9 +16,6 @@
 static FlEngine* make_mock_engine() {
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
-  g_autoptr(GError) renderer_error = nullptr;
-  EXPECT_TRUE(fl_renderer_setup(FL_RENDERER(renderer), &renderer_error));
-  EXPECT_EQ(renderer_error, nullptr);
   g_autoptr(FlEngine) engine = fl_engine_new(project, FL_RENDERER(renderer));
   g_autoptr(GError) engine_error = nullptr;
   EXPECT_TRUE(fl_engine_start(engine, &engine_error));

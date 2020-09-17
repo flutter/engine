@@ -42,6 +42,8 @@ struct SwitchDesc {
 
 // clang-format off
 static const std::string gAllowedDartFlags[] = {
+    "--enable-isolate-groups",
+    "--no-enable-isolate-groups",
     "--no-causal_async_stacks",
     "--lazy_async_stacks",
 };
@@ -51,6 +53,8 @@ static const std::string gAllowedDartFlags[] = {
 
 // clang-format off
 static const std::string gAllowedDartFlags[] = {
+    "--enable-isolate-groups",
+    "--no-enable-isolate-groups",
     "--enable_mirrors",
     "--enable-service-port-fallback",
     "--lazy_async_stacks",
@@ -228,9 +232,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
         command_line.HasOption(FlagForSwitch(Switch::IPv6)) ? "::1"
                                                             : "127.0.0.1";
   }
-
-  settings.use_embedded_view =
-      command_line.HasOption(FlagForSwitch(Switch::UseEmbeddedView));
 
   // Set Observatory Port
   if (command_line.HasOption(FlagForSwitch(Switch::DeviceObservatoryPort))) {

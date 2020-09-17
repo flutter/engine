@@ -189,11 +189,8 @@ class EngineAutofillForm {
 
     // If a form with the same Autofill elements is already on the dom, remove
     // it from DOM.
-    if (formsOnTheDom[formIdentifier] != null) {
-      final html.FormElement form =
-          formsOnTheDom[formIdentifier] as html.FormElement;
-      form.remove();
-    }
+    html.FormElement? form = formsOnTheDom[formIdentifier];
+    form?.remove();
 
     // In order to submit the form when Framework sends a `TextInput.commit`
     // message, we add a submit button to the form.
@@ -243,7 +240,7 @@ class EngineAutofillForm {
           throw StateError(
               'Autofill would not work withuot Autofill value set');
         } else {
-          final AutofillInfo autofillInfo = items![key] as AutofillInfo;
+          final AutofillInfo autofillInfo = items![key]!;
           _handleChange(element, autofillInfo);
         }
       }));
@@ -535,7 +532,7 @@ class InputConfiguration {
   final bool readOnly;
 
   /// Whether to hide the text being edited.
-  final bool? obscureText;
+  final bool obscureText;
 
   /// Whether to enable autocorrection.
   ///
@@ -614,10 +611,15 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
 
   @override
   void placeElement() {
-    super.placeElement();
     if (hasAutofillGroup) {
       _geometry?.applyToDomElement(focusedFormElement!);
       placeForm();
+      // Set the last editing state if it exists, this is critical for a
+      // users ongoing work to continue uninterrupted when there is an update to
+      // the transform.
+      if (_lastEditingState != null) {
+        _lastEditingState!.applyToDomElement(domElement);
+      }
       // On Chrome, when a form is focused, it opens an autofill menu
       // immediately.
       // Flutter framework sends `setEditableSizeAndTransform` for informing
@@ -627,7 +629,9 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       //  `setEditableSizeAndTransform` method is called and focus on the form
       // only after placing it to the correct position. Hence autofill menu
       // does not appear on top-left of the page.
+      // Refocus on the elements after applying the geometry.
       focusedFormElement!.focus();
+      domElement.focus();
     } else {
       _geometry?.applyToDomElement(domElement);
     }
@@ -672,6 +676,15 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
       // form only after placing it to the correct position and only once after
       // that. Calling focus multiple times causes flickering.
       focusedFormElement!.focus();
+
+      // Set the last editing state if it exists, this is critical for a
+      // users ongoing work to continue uninterrupted when there is an update to
+      // the transform.
+      // If domElement is not focused cursor location will not be correct.
+      domElement.focus();
+      if (_lastEditingState != null) {
+        _lastEditingState!.applyToDomElement(domElement);
+      }
     }
   }
 
@@ -749,20 +762,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   }) {
     assert(!isEnabled);
 
-    this._inputConfiguration = inputConfig;
-
     _domElement = inputConfig.inputType.createDomElement();
-    if (inputConfig.readOnly) {
-      domElement.setAttribute('readonly', 'readonly');
-    }
-    if (inputConfig.obscureText!) {
-      domElement.setAttribute('type', 'password');
-    }
-
-    inputConfig.autofill?.applyToDomElement(domElement, focusedElement: true);
-
-    final String autocorrectValue = inputConfig.autocorrect! ? 'on' : 'off';
-    domElement.setAttribute('autocorrect', autocorrectValue);
+    _applyConfiguration(inputConfig);
 
     _setStaticStyleAttributes(domElement);
     _style?.applyToDomElement(domElement);
@@ -781,6 +782,25 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     isEnabled = true;
     _onChange = onChange;
     _onAction = onAction;
+  }
+
+  void _applyConfiguration(InputConfiguration config) {
+    _inputConfiguration = config;
+
+    if (config.readOnly) {
+      domElement.setAttribute('readonly', 'readonly');
+    } else {
+      domElement.removeAttribute('readonly');
+    }
+
+    if (config.obscureText) {
+      domElement.setAttribute('type', 'password');
+    }
+
+    config.autofill?.applyToDomElement(domElement, focusedElement: true);
+
+    final String autocorrectValue = config.autocorrect ? 'on' : 'off';
+    domElement.setAttribute('autocorrect', autocorrectValue);
   }
 
   @override
@@ -1236,6 +1256,12 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   void placeElement() {
     domElement.focus();
     _geometry?.applyToDomElement(domElement);
+    // Set the last editing state if it exists, this is critical for a
+    // users ongoing work to continue uninterrupted when there is an update to
+    // the transform.
+    if (_lastEditingState != null) {
+      _lastEditingState!.applyToDomElement(domElement);
+    }
   }
 }
 
@@ -1260,6 +1286,11 @@ class TextEditingChannel {
           call.arguments[0],
           InputConfiguration.fromFrameworkMessage(call.arguments[1]),
         );
+        break;
+
+      case 'TextInput.updateConfig':
+        final config = InputConfiguration.fromFrameworkMessage(call.arguments);
+        implementation.updateConfig(config);
         break;
 
       case 'TextInput.setEditingState':
@@ -1457,6 +1488,11 @@ class HybridTextEditing {
     }
     _clientId = clientId;
     _configuration = configuration;
+  }
+
+  void updateConfig(InputConfiguration configuration) {
+    _configuration = configuration;
+    editingElement?._applyConfiguration(_configuration);
   }
 
   /// Responds to the 'TextInput.setEditingState' message.

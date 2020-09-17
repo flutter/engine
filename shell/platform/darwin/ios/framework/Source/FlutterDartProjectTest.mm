@@ -5,8 +5,11 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
+<<<<<<< HEAD
 #include "flutter/common/constants.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+=======
+>>>>>>> upstream/master
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 
 FLUTTER_ASSERT_ARC

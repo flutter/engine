@@ -9,12 +9,14 @@
 #include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/shell.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
+
+@class FlutterTouchInterceptingView;
 
 // A UIView that acts as a clipping mask for the |ChildClippingView|.
 //
@@ -41,24 +43,6 @@
 // The `path` is transformed with the `matrix` before adding to the queue.
 - (void)clipPath:(const SkPath&)path matrix:(const CATransform3D&)matrix;
 
-@end
-
-// A UIView that is used as the parent for embedded UIViews.
-//
-// This view has 2 roles:
-// 1. Delay or prevent touch events from arriving the embedded view.
-// 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
-@interface FlutterTouchInterceptingView : UIView
-- (instancetype)initWithEmbeddedView:(UIView*)embeddedView
-               flutterViewController:(UIViewController*)flutterViewController
-    gestureRecognizersBlockingPolicy:
-        (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy;
-
-// Stop delaying any active touch sequence (and let it arrive the embedded view).
-- (void)releaseGesture;
-
-// Prevent the touch sequence from ever arriving to the embedded view.
-- (void)blockGesture;
 @end
 
 // The parent view handles clipping to its subviews.
@@ -143,9 +127,13 @@ class FlutterPlatformViewsController {
 
   ~FlutterPlatformViewsController();
 
+  fml::WeakPtr<flutter::FlutterPlatformViewsController> GetWeakPtr();
+
   void SetFlutterView(UIView* flutter_view);
 
   void SetFlutterViewController(UIViewController* flutter_view_controller);
+
+  UIViewController* getFlutterViewController();
 
   void RegisterViewFactory(
       NSObject<FlutterPlatformViewFactory>* factory,
@@ -255,6 +243,8 @@ class FlutterPlatformViewsController {
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies;
 
+  std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
+
   void OnCreate(FlutterMethodCall* call, FlutterResult& result);
   void OnDispose(FlutterMethodCall* call, FlutterResult& result);
   void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
@@ -289,10 +279,6 @@ class FlutterPlatformViewsController {
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
 
-  // Default to `false`.
-  // If `true`, gpu thread and platform thread should be merged during |EndFrame|.
-  // Always resets to `false` right after the threads are merged.
-  bool merge_threads_ = false;
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
   // the picture on the layer's canvas.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
@@ -312,5 +298,24 @@ class FlutterPlatformViewsController {
 };
 
 }  // namespace flutter
+
+// A UIView that is used as the parent for embedded UIViews.
+//
+// This view has 2 roles:
+// 1. Delay or prevent touch events from arriving the embedded view.
+// 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
+@interface FlutterTouchInterceptingView : UIView
+- (instancetype)initWithEmbeddedView:(UIView*)embeddedView
+             platformViewsController:
+                 (fml::WeakPtr<flutter::FlutterPlatformViewsController>)platformViewsController
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy;
+
+// Stop delaying any active touch sequence (and let it arrive the embedded view).
+- (void)releaseGesture;
+
+// Prevent the touch sequence from ever arriving to the embedded view.
+- (void)blockGesture;
+@end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

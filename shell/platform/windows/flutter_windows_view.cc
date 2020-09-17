@@ -52,6 +52,7 @@ void FlutterWindowsView::SetEngine(
 
 void FlutterWindowsView::OnWindowSizeChanged(size_t width,
                                              size_t height) const {
+  surface_manager_->ResizeSurface(GetRenderTarget(), width, height);
   SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
 }
 
@@ -104,13 +105,6 @@ void FlutterWindowsView::OnScroll(double x,
   SendScroll(x, y, delta_x, delta_y, scroll_offset_multiplier);
 }
 
-void FlutterWindowsView::OnFontChange() {
-  if (engine_->engine() == nullptr) {
-    return;
-  }
-  FlutterEngineReloadSystemFonts(engine_->engine());
-}
-
 // Sends new size  information to FlutterEngine.
 void FlutterWindowsView::SendWindowMetrics(size_t width,
                                            size_t height,
@@ -125,6 +119,13 @@ void FlutterWindowsView::SendWindowMetrics(size_t width,
   event.height = height;
   event.pixel_ratio = dpiScale;
   auto result = FlutterEngineSendWindowMetricsEvent(engine_->engine(), &event);
+}
+
+void FlutterWindowsView::SendInitialBounds() {
+  PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
+
+  SendWindowMetrics(bounds.width, bounds.height,
+                    binding_handler_->GetDpiScale());
 }
 
 // Set's |event_data|'s phase to either kMove or kHover depending on the current
@@ -263,7 +264,9 @@ bool FlutterWindowsView::SwapBuffers() {
 }
 
 void FlutterWindowsView::CreateRenderSurface() {
-  surface_manager_->CreateSurface(render_target_.get());
+  PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
+  surface_manager_->CreateSurface(GetRenderTarget(), bounds.width,
+                                  bounds.height);
 }
 
 void FlutterWindowsView::DestroyRenderSurface() {
@@ -272,7 +275,7 @@ void FlutterWindowsView::DestroyRenderSurface() {
   }
 }
 
-WindowsRenderTarget* FlutterWindowsView::GetRenderTarget() {
+WindowsRenderTarget* FlutterWindowsView::GetRenderTarget() const {
   return render_target_.get();
 }
 

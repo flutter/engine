@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_context_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_context_gl.h"
 
 namespace flutter {
 
@@ -44,7 +44,7 @@ std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrDirectContext* gr_cont
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t IOSSurfaceGL::GLContextFBO() const {
+intptr_t IOSSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
   return IsValid() ? render_target_->GetFramebuffer() : GL_NONE;
 }
 
@@ -77,14 +77,14 @@ bool IOSSurfaceGL::GLContextClearCurrent() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool IOSSurfaceGL::GLContextPresent() {
+bool IOSSurfaceGL::GLContextPresent(uint32_t fbo_id) {
   TRACE_EVENT0("flutter", "IOSSurfaceGL::GLContextPresent");
   return IsValid() && render_target_->PresentRenderBuffer();
 }
 
 // |GPUSurfaceGLDelegate|
 ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
-  return GetExternalViewEmbedderIfEnabled();
+  return this;
 }
 
 }  // namespace flutter

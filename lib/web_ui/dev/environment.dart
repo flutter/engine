@@ -156,10 +156,23 @@ class Environment {
         'test',
       ));
 
+  /// Path to the "lib" directory containing web engine code.
+  io.Directory get webUiLibDir => io.Directory(pathlib.join(
+        webUiRootDir.path,
+        'lib',
+      ));
+
   /// Path to the clone of the flutter/goldens repository.
   io.Directory get webUiGoldensRepositoryDirectory => io.Directory(pathlib.join(
         webUiDartToolDir.path,
         'goldens',
+      ));
+
+  /// Path to the screenshots taken by iOS simulator.
+  io.Directory get webUiSimulatorScreenshotsDirectory =>
+      io.Directory(pathlib.join(
+        webUiDartToolDir.path,
+        'ios_screenshots',
       ));
 
   /// Path to the script that clones the Flutter repo.

@@ -30,7 +30,7 @@ void _validateColorStops(List<Color> colors, List<double>? colorStops) {
 }
 
 Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha(_clampInt((a.alpha * factor).round(), 0, 255));
+  return a.withAlpha(engine.clampInt((a.alpha * factor).round(), 0, 255));
 }
 
 class Color {
@@ -103,10 +103,10 @@ class Color {
         return _scaleAlpha(b, t);
       } else {
         return Color.fromARGB(
-          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+          engine.clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
+          engine.clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
+          engine.clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
+          engine.clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
         );
       }
     }
@@ -528,12 +528,9 @@ class Shadow {
     this.color = const Color(_kColorDefault),
     this.offset = Offset.zero,
     this.blurRadius = 0.0,
-  })  : assert(color != null,
-            'Text shadow color was null.'), // ignore: unnecessary_null_comparison
-        assert(offset != null,
-            'Text shadow offset was null.'), // ignore: unnecessary_null_comparison
-        assert(blurRadius >= 0.0,
-            'Text shadow blur radius should be non-negative.');
+  })  : assert(color != null, 'Text shadow color was null.'), // ignore: unnecessary_null_comparison
+        assert(offset != null, 'Text shadow offset was null.'), // ignore: unnecessary_null_comparison
+        assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
 
   static const int _kColorDefault = 0xFF000000;
   final Color color;

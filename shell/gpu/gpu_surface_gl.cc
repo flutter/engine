@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 // FLUTTER_NOLINT
 
-#include "gpu_surface_gl.h"
+#include "flutter/shell/gpu/gpu_surface_gl.h"
 
 #include "flutter/fml/base32.h"
 #include "flutter/fml/logging.h"
@@ -125,6 +125,7 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   }
 
   onscreen_surface_ = nullptr;
+  fbo_id_ = 0;
   if (context_owner_) {
     context_->releaseResourcesAndAbandonContext();
   }
@@ -196,6 +197,7 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
 
   // Either way, we need to get rid of previous surface.
   onscreen_surface_ = nullptr;
+  fbo_id_ = 0;
 
   if (size.isEmpty()) {
     FML_LOG(ERROR) << "Cannot create surfaces of empty size.";
@@ -204,11 +206,13 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
 
   sk_sp<SkSurface> onscreen_surface;
 
-  onscreen_surface =
-      WrapOnscreenSurface(context_.get(),            // GL context
-                          size,                      // root surface size
-                          delegate_->GLContextFBO()  // window FBO ID
-      );
+  GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
+                            static_cast<uint32_t>(size.height())};
+  const uint32_t fbo_id = delegate_->GLContextFBO(frame_info);
+  onscreen_surface = WrapOnscreenSurface(context_.get(),  // GL context
+                                         size,            // root surface size
+                                         fbo_id           // window FBO ID
+  );
 
   if (onscreen_surface == nullptr) {
     // If the onscreen surface could not be wrapped. There is absolutely no
@@ -218,6 +222,7 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   }
 
   onscreen_surface_ = std::move(onscreen_surface);
+  fbo_id_ = fbo_id;
 
   return true;
 }
@@ -279,7 +284,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     onscreen_surface_->getCanvas()->flush();
   }
 
-  if (!delegate_->GLContextPresent()) {
+  if (!delegate_->GLContextPresent(fbo_id_)) {
     return false;
   }
 
@@ -287,12 +292,16 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     auto current_size =
         SkISize::Make(onscreen_surface_->width(), onscreen_surface_->height());
 
+    GLFrameInfo frame_info = {static_cast<uint32_t>(current_size.width()),
+                              static_cast<uint32_t>(current_size.height())};
+
     // The FBO has changed, ask the delegate for the new FBO and do a surface
     // re-wrap.
+    const uint32_t fbo_id = delegate_->GLContextFBO(frame_info);
     auto new_onscreen_surface =
-        WrapOnscreenSurface(context_.get(),            // GL context
-                            current_size,              // root surface size
-                            delegate_->GLContextFBO()  // window FBO ID
+        WrapOnscreenSurface(context_.get(),  // GL context
+                            current_size,    // root surface size
+                            fbo_id           // window FBO ID
         );
 
     if (!new_onscreen_surface) {
@@ -300,6 +309,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     }
 
     onscreen_surface_ = std::move(new_onscreen_surface);
+    fbo_id_ = fbo_id;
   }
 
   return true;
@@ -334,6 +344,11 @@ flutter::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
 // |Surface|
 std::unique_ptr<GLContextResult> GPUSurfaceGL::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
+}
+
+// |Surface|
+bool GPUSurfaceGL::ClearRenderContext() {
+  return delegate_->GLContextClearCurrent();
 }
 
 }  // namespace flutter

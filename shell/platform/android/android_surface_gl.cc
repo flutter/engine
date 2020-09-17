@@ -35,7 +35,11 @@ AndroidSurfaceGL::AndroidSurfaceGL(
 AndroidSurfaceGL::~AndroidSurfaceGL() = default;
 
 void AndroidSurfaceGL::TeardownOnScreenContext() {
+  // When the onscreen surface is destroyed, the context and the surface
+  // instance should be deleted. Issue:
+  // https://github.com/flutter/flutter/issues/64414
   android_context_->ClearCurrent();
+  onscreen_surface_ = nullptr;
 }
 
 bool AndroidSurfaceGL::IsValid() const {
@@ -88,6 +92,9 @@ bool AndroidSurfaceGL::SetNativeWindow(
   FML_DCHECK(IsValid());
   FML_DCHECK(window);
   native_window_ = window;
+  // Ensure the destructor is called since it destroys the `EGLSurface` before
+  // creating a new onscreen surface.
+  onscreen_surface_ = nullptr;
   // Create the onscreen surface.
   onscreen_surface_ = android_context_->CreateOnscreenSurface(window);
   if (!onscreen_surface_->IsValid()) {
@@ -109,13 +116,13 @@ bool AndroidSurfaceGL::GLContextClearCurrent() {
   return android_context_->ClearCurrent();
 }
 
-bool AndroidSurfaceGL::GLContextPresent() {
+bool AndroidSurfaceGL::GLContextPresent(uint32_t fbo_id) {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
   return onscreen_surface_->SwapBuffers();
 }
 
-intptr_t AndroidSurfaceGL::GLContextFBO() const {
+intptr_t AndroidSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
   FML_DCHECK(IsValid());
   // The default window bound framebuffer on Android.
   return 0;
@@ -123,9 +130,6 @@ intptr_t AndroidSurfaceGL::GLContextFBO() const {
 
 // |GPUSurfaceGLDelegate|
 ExternalViewEmbedder* AndroidSurfaceGL::GetExternalViewEmbedder() {
-  if (!AndroidShellHolder::use_embedded_view) {
-    return nullptr;
-  }
   return external_view_embedder_.get();
 }
 

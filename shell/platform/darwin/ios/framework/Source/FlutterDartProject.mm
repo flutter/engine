@@ -4,7 +4,7 @@
 
 #define FML_USED_ON_EMBEDDER
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 
 #include "flutter/common/constants.h"
 #include "flutter/common/task_runners.h"
@@ -14,8 +14,8 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
-#include "flutter/shell/platform/darwin/common/command_line.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/common/command_line.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 
 extern "C" {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
@@ -140,12 +140,6 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
       [FlutterDartProject allowsArbitraryLoads:appTransportSecurity];
   settings.domain_network_policy =
       [FlutterDartProject domainNetworkPolicy:appTransportSecurity].UTF8String;
-
-  // TODO(mehmetf): We need to announce this change since it is breaking.
-  // Remove these two lines after we announce and we know which release this is
-  // going to be part of.
-  settings.may_insecurely_connect_to_all_domains = true;
-  settings.domain_network_policy = "";
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // There are no ownership concerns here as all mappings are owned by the

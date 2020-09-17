@@ -589,13 +589,13 @@ class EngineParagraph implements ui.Paragraph {
   @override
   ui.TextRange getWordBoundary(ui.TextPosition position) {
     ui.TextPosition textPosition = position;
-    if (_plainText == null) {
+    final String? text = _plainText;
+    if (text == null) {
       return ui.TextRange(start: textPosition.offset, end: textPosition.offset);
     }
 
-    final int start =
-        WordBreaker.prevBreakIndex(_plainText, textPosition.offset);
-    final int end = WordBreaker.nextBreakIndex(_plainText, textPosition.offset);
+    final int start = WordBreaker.prevBreakIndex(text, textPosition.offset + 1);
+    final int end = WordBreaker.nextBreakIndex(text, textPosition.offset);
     return ui.TextRange(start: start, end: end);
   }
 
@@ -1255,6 +1255,8 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       return EngineParagraph(
         paragraphElement: _paragraphElement,
         geometricStyle: ParagraphGeometricStyle(
+          textDirection: _paragraphStyle._effectiveTextDirection,
+          textAlign: _paragraphStyle._effectiveTextAlign,
           fontFamily: fontFamily,
           fontWeight: fontWeight,
           fontStyle: fontStyle,
@@ -1310,6 +1312,8 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
     return EngineParagraph(
       paragraphElement: _paragraphElement,
       geometricStyle: ParagraphGeometricStyle(
+        textDirection: _paragraphStyle._effectiveTextDirection,
+        textAlign: _paragraphStyle._effectiveTextAlign,
         fontFamily: fontFamily,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
@@ -1364,6 +1368,8 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
     return EngineParagraph(
       paragraphElement: _paragraphElement,
       geometricStyle: ParagraphGeometricStyle(
+        textDirection: _paragraphStyle._effectiveTextDirection,
+        textAlign: _paragraphStyle._effectiveTextAlign,
         fontFamily: _paragraphStyle._fontFamily,
         fontWeight: _paragraphStyle._fontWeight,
         fontStyle: _paragraphStyle._fontStyle,
@@ -1791,7 +1797,7 @@ String? textDirectionIndexToCss(int textDirectionIndex) {
 /// ```css
 /// text-align: right;
 /// ```
-String? textAlignToCssValue(ui.TextAlign? align, ui.TextDirection textDirection) {
+String textAlignToCssValue(ui.TextAlign? align, ui.TextDirection textDirection) {
   switch (align) {
     case ui.TextAlign.left:
       return 'left';
@@ -1808,13 +1814,16 @@ String? textAlignToCssValue(ui.TextAlign? align, ui.TextDirection textDirection)
         case ui.TextDirection.rtl:
           return 'left';
       }
-    default: // including ui.TextAlign.start
+    case ui.TextAlign.start:
       switch (textDirection) {
         case ui.TextDirection.ltr:
-          return null; // it's the default
+          return ''; // it's the default
         case ui.TextDirection.rtl:
           return 'right';
       }
+    case null:
+      // If align is not specified return default.
+      return '';
   }
 }
 

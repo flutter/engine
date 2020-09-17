@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
 #include "flutter/fml/platform/darwin/cf_utils.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 static int kMaxPointsInVerb = 4;
 
@@ -24,9 +24,14 @@ FlutterPlatformViewLayer::FlutterPlatformViewLayer(
 FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
 
 FlutterPlatformViewsController::FlutterPlatformViewsController()
-    : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>()){};
+    : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>()),
+      weak_factory_(std::make_unique<fml::WeakPtrFactory<FlutterPlatformViewsController>>(this)){};
 
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
+
+fml::WeakPtr<flutter::FlutterPlatformViewsController> FlutterPlatformViewsController::GetWeakPtr() {
+  return weak_factory_->GetWeakPtr();
+}
 
 CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
   // Skia only supports 2D transform so we don't map z.
