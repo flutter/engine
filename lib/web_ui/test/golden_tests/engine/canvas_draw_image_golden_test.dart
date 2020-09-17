@@ -28,7 +28,8 @@ void testMain() async {
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
-      double maxDiffRatePercent = 0.0}) async {
+      double maxDiffRatePercent = 0.0, bool setupPerspective = false,
+        bool write = false}) async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
 
     rc.endRecording();
@@ -37,10 +38,13 @@ void testMain() async {
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');
     try {
+      if (setupPerspective) {
+        engineCanvas.rootElement.style.perspective = '200px';
+      }
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
       await matchGoldenFile('$fileName.png',
-          region: region, maxDiffRatePercent: maxDiffRatePercent);
+          region: region, maxDiffRatePercent: maxDiffRatePercent, write: write);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -399,6 +403,46 @@ void testMain() async {
     canvas.drawImage(createNineSliceImage(), Offset.zero, Paint());
     await _checkScreenshot(canvas, 'draw_clipped_and_transformed_image',
         region: region, maxDiffRatePercent: 1.0);
+  });
+
+  /// Regression test for https://github.com/flutter/flutter/issues/61245
+  test('Should render image with perspective', () async {
+    final Rect region = const Rect.fromLTRB(0, 0, 200, 200);
+    final RecordingCanvas canvas = RecordingCanvas(region);
+    canvas.translate(10, 10);
+    canvas.drawImage(createTestImage(), Offset(0, 0), new Paint());
+    Matrix4 transform = Matrix4.identity()
+      ..setRotationY(0.8)
+      ..setEntry(3, 2, 0.0005); // perspective
+    canvas.transform(transform.storage);
+    canvas.drawImage(createTestImage(), Offset(0, 100), new Paint());
+    await _checkScreenshot(canvas, 'draw_image_3d',
+        region: region,
+        maxDiffRatePercent: 1.0,
+        setupPerspective: true,
+        write: true);
+  });
+
+  /// Regression test for https://github.com/flutter/flutter/issues/61245
+  test('Should render image with perspective inside clip area', () async {
+    final Rect region = const Rect.fromLTRB(0, 0, 200, 200);
+    final RecordingCanvas canvas = RecordingCanvas(region);
+    canvas.drawRect(region, Paint()..color = Color(0xFFE0E0E0));
+    canvas.translate(10, 10);
+    canvas.drawImage(createTestImage(), Offset(0, 0), new Paint());
+    Matrix4 transform = Matrix4.identity()
+      ..setRotationY(0.8)
+      ..setEntry(3, 2, 0.0005); // perspective
+    canvas.transform(transform.storage);
+    canvas.clipRect(region, ClipOp.intersect);
+    canvas.drawRect(Rect.fromLTWH(0, 0, 100, 200), Paint()..color = Color(0x801080E0));
+    canvas.drawImage(createTestImage(), Offset(0, 100), new Paint());
+    canvas.drawRect(Rect.fromLTWH(50, 150, 50, 20), Paint()..color = Color(0x80000000));
+    await _checkScreenshot(canvas, 'draw_image_3d_clipped',
+        region: region,
+        maxDiffRatePercent: 1.0,
+        setupPerspective: true,
+        write: true);
   });
 }
 
