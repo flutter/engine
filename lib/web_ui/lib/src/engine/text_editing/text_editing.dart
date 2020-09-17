@@ -680,7 +680,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
       // Set the last editing state if it exists, this is critical for a
       // users ongoing work to continue uninterrupted when there is an update to
       // the transform.
-      // If domElement is not focused cursor location won't be correct.
+      // If domElement is not focused cursor location will not be correct.
       domElement.focus();
       if (_lastEditingState != null) {
         _lastEditingState!.applyToDomElement(domElement);
