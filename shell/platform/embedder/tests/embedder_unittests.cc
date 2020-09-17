@@ -2104,6 +2104,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositor) {
   builder.SetDartEntrypoint("render_gradient");
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   auto renderered_scene = context.GetNextSceneImage();
 
@@ -2138,6 +2140,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {
   builder.SetDartEntrypoint("render_gradient");
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 800));
   builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   auto renderered_scene = context.GetNextSceneImage();
 
@@ -2165,6 +2169,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
   builder.SetDartEntrypoint("render_gradient_on_non_root_backing_store");
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   context.GetCompositor().SetNextPresentCallback(
       [&](const FlutterLayer** layers, size_t layers_count) {
@@ -2276,6 +2282,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
   builder.SetDartEntrypoint("render_gradient_on_non_root_backing_store");
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 800));
   builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   context.GetCompositor().SetNextPresentCallback(
       [&](const FlutterLayer** layers, size_t layers_count) {
@@ -2397,6 +2405,8 @@ TEST_F(EmbedderTest, VerifyB141980393) {
 
   // Use a compositor instead of rendering directly to the surface.
   builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   builder.SetDartEntrypoint("verify_b141980393");
 
@@ -3459,6 +3469,8 @@ TEST_F(EmbedderTest, SceneWithNoRootContainerIsAcceptable) {
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
   builder.SetDartEntrypoint("scene_with_no_container");
   fml::AutoResetWaitableEvent latch;
   context.AddNativeCallback(
@@ -3488,6 +3500,8 @@ TEST_F(EmbedderTest, ArcEndCapsAreDrawnCorrectly) {
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 1024));
   builder.SetCompositor();
   builder.SetDartEntrypoint("arc_end_caps_correct");
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   const auto root_surface_transformation = SkMatrix()
                                                .preScale(1.0, -1.0)
@@ -3567,6 +3581,8 @@ TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
   builder.SetOpenGLRendererConfig(SkISize::Make(400, 300));
   builder.SetCompositor();
   builder.SetDartEntrypoint("scene_builder_with_clips");
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   const auto root_surface_transformation =
       SkMatrix().preTranslate(0, 400).preRotate(-90, 0, 0);
@@ -3644,6 +3660,8 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
   builder.SetOpenGLRendererConfig(SkISize::Make(1024, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("scene_builder_with_complex_clips");
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   const auto root_surface_transformation =
       SkMatrix().preTranslate(0, 1024).preRotate(-90, 0, 0);

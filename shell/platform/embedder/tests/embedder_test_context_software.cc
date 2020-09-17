@@ -8,7 +8,7 @@
 #include "flutter/fml/paths.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
-#include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_compositor_software.h"
 #include "flutter/testing/testing.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -43,7 +43,7 @@ void EmbedderTestContextSoftware::SetupCompositor() {
   FML_CHECK(!compositor_) << "Already ssetup a compositor in this context.";
   FML_CHECK(gl_surface_)
       << "Setup the GL surface before setting up a compositor.";
-  compositor_ = std::make_unique<EmbedderTestCompositorGL>(
+  compositor_ = std::make_unique<EmbedderTestCompositorSoftware>(
       gl_surface_->GetSurfaceSize(), gl_surface_->GetGrContext());
 }
 
