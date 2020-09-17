@@ -94,7 +94,9 @@ static void ValidateDestroyPlatformView(Shell* shell) {
 }
 
 static std::string CreateFlagsString(std::vector<const char*>& flags) {
-  if (flags.size() == 0) return "";
+  if (flags.size() == 0) {
+    return "";
+  }
   std::string flags_string = flags[0];
   for (size_t i = 1; i < flags.size(); ++i) {
     flags_string += ",";
@@ -313,8 +315,8 @@ TEST_F(ShellTest, DisallowedDartVMFlag) {
 
 TEST_F(ShellTest, AllowedDartVMFlag) {
   std::vector<const char*> flags = {
-    "--enable-isolate-groups",
-    "--no-enable-isolate-groups",
+      "--enable-isolate-groups",
+      "--no-enable-isolate-groups",
   };
 #if !FLUTTER_RELEASE
   flags.push_back("--max_profile_depth 1");
