@@ -272,7 +272,7 @@ FlutterCompositor& EmbedderConfigBuilder::GetCompositor() {
 void EmbedderConfigBuilder::SetRenderTargetType(
     EmbedderTestBackingStoreProducer::RenderTargetType type) {
   auto& compositor = context_.GetCompositor();
-  // TODO: figure out a better way of plumbing through the GrDirectContext
+  // TODO(wrightgeorge): figure out a better way of plumbing through the GrDirectContext
   compositor.SetBackingStoreProducer(
       std::make_unique<EmbedderTestBackingStoreProducer>(
           compositor.GetGrContext(), type));
