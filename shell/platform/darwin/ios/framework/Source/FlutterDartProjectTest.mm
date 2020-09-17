@@ -10,11 +10,11 @@
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 =======
 >>>>>>> upstream/master
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+    #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 
-FLUTTER_ASSERT_ARC
+    FLUTTER_ASSERT_ARC
 
-@interface FlutterDartProjectTest : XCTestCase
+    @interface FlutterDartProjectTest : XCTestCase
 @end
 
 @implementation FlutterDartProjectTest
