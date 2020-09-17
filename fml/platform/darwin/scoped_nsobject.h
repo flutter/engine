@@ -38,26 +38,28 @@ namespace fml {
 // time with a template specialization (see below).
 
 #if __has_feature(objc_arc)
+template <typename NST>
 class scoped_nsprotocol_memory_management {
  public:
-  static id Retain(__unsafe_unretained id object) { return object; }
-  static id Autorelease(__unsafe_unretained id object) { return object; }
-  static void Release(__unsafe_unretained id object) {}
-  static id InvalidValue() { return nil; }
+  static NST Retain(NST object) { return object; }
+  static NST Autorelease(NST object) { return object; }
+  static void Release(NST object) {}
+  static NST InvalidValue() { return nil; }
 };
 #else
+template <typename NST>
 class scoped_nsprotocol_memory_management {
  public:
-  static id Retain(id object) { return [object retain]; }
-  static id Autorelease(id object) { return [object autorelease]; }
-  static void Release(id object) { [object release]; }
-  static id InvalidValue() { return nil; }
+  static NST Retain(NST object) { return [object retain]; }
+  static NST Autorelease(NST object) { return [object autorelease]; }
+  static void Release(NST object) { [object release]; }
+  static NST InvalidValue() { return nil; }
 };
 #endif
 
 template <typename NST>
 class scoped_nsprotocol {
-  using Memory = scoped_nsprotocol_memory_management;
+  using Memory = scoped_nsprotocol_memory_management<NST>;
 
  public:
   explicit scoped_nsprotocol(NST object = Memory::InvalidValue()) : object_(object) {}
