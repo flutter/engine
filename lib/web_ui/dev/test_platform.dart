@@ -197,7 +197,7 @@ class BrowserPlatform extends PlatformPlugin {
         'golden_files',
       );
     } else {
-      if (!isLuci) {
+      if(!isLuci || !Platform.isMacOS) {
         await fetchGoldens();
       }
       goldensDirectory = p.join(
