@@ -25,7 +25,7 @@ FLUTTER_ASSERT_ARC
 - (void)testOldGenHeapSizeSetting {
   FlutterDartProject* project = [[FlutterDartProject alloc] init];
   int64_t old_gen_heap_size =
-      std::round([NSProcessInfo processInfo].physicalMemory / *.48 / flutter::kMegaByteSizeInBytes);
+      std::round([NSProcessInfo processInfo].physicalMemory * .48 / flutter::kMegaByteSizeInBytes);
   XCTAssertEqual(project.settings.old_gen_heap_size, old_gen_heap_size);
 }
 
