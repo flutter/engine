@@ -95,7 +95,7 @@ typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 
 /// Runs the given test [body] with each type of canvas.
 void testEachCanvas(String description, CanvasTest body,
-    {double maxDiffRate}) {
+    {double maxDiffRate, bool skip = false}) {
   const ui.Rect bounds = ui.Rect.fromLTWH(0, 0, 600, 800);
   test('$description (bitmap)', () {
     try {
@@ -106,7 +106,7 @@ void testEachCanvas(String description, CanvasTest body,
       WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
-  });
+  }, skip: skip);
   test('$description (bitmap + canvas measurement)', () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
@@ -116,7 +116,7 @@ void testEachCanvas(String description, CanvasTest body,
       WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
-  });
+  }, skip: skip);
   test('$description (dom)', () {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
@@ -126,7 +126,7 @@ void testEachCanvas(String description, CanvasTest body,
       WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
-  });
+  }, skip: skip);
 }
 
 final ui.TextStyle _defaultTextStyle = ui.TextStyle(

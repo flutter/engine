@@ -42,7 +42,9 @@ void testMain() async {
     recordingCanvas.endRecording();
     recordingCanvas.apply(canvas, screenRect);
     return scuba.diffCanvasScreenshot(canvas, 'text_with_placeholders');
-  });
+  },  // https://github.com/flutter/flutter/issues/66129
+      skip: operatingSystem == OperatingSystem.iOs &&
+          browserEngine == BrowserEngine.webkit);
 
   testEachCanvas('text alignment and placeholders', (EngineCanvas canvas) {
     final Rect screenRect = const Rect.fromLTWH(0, 0, 600, 600);
@@ -75,7 +77,9 @@ void testMain() async {
     recordingCanvas.endRecording();
     recordingCanvas.apply(canvas, screenRect);
     return scuba.diffCanvasScreenshot(canvas, 'text_align_with_placeholders');
-  });
+  },  // https://github.com/flutter/flutter/issues/66129
+      skip: operatingSystem == OperatingSystem.iOs &&
+          browserEngine == BrowserEngine.webkit);
 }
 
 const Color black = Color(0xFF000000);
