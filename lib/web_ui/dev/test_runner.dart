@@ -402,7 +402,8 @@ class TestCommand extends Command<bool> with ArgUtils {
     // after solving the git issue faced on macOS and Windows bots:
     // TODO: https://github.com/flutter/flutter/issues/63710
     if ((isChrome && isLuci && io.Platform.isLinux) ||
-        (isChrome && !isLuci) || (isSafariIOS && isLuci)) {
+        ((isChrome || isSafariIOS) && !isLuci) ||
+        (isSafariIOS && isLuci)) {
       print('INFO: Also running the screenshot tests.');
       // Separate screenshot tests from unit-tests. Screenshot tests must run
       // one at a time. Otherwise, they will end up screenshotting each other.
