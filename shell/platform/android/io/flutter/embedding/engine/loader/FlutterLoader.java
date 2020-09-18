@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.engine.loader;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -15,7 +16,6 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.BuildConfig;
-import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.util.PathUtils;
 import io.flutter.view.VsyncWaiter;
@@ -60,10 +60,22 @@ public class FlutterLoader {
     return instance;
   }
 
+  public FlutterLoader() {
+    this(null);
+  }
+
+  public FlutterLoader(@Nullable FlutterJNI.FlutterJNILoader flutterJNILoader) {
+    if (flutterJNILoader == null) {
+      flutterJNILoader = new FlutterJNI.FlutterJNILoader();
+    }
+    this.flutterJNILoader = flutterJNILoader;
+  }
+
   private boolean initialized = false;
   @Nullable private Settings settings;
   private long initStartTimestampMillis;
   private FlutterApplicationInfo flutterApplicationInfo;
+  private FlutterJNI.FlutterJNILoader flutterJNILoader;
 
   private static class InitResult {
     final String appStoragePath;
@@ -125,9 +137,7 @@ public class FlutterLoader {
           public InitResult call() {
             ResourceExtractor resourceExtractor = initResources(appContext);
 
-            if (FlutterInjector.instance().shouldLoadNative()) {
-              System.loadLibrary("flutter");
-            }
+            flutterJNILoader.loadLibrary();
 
             // Prefetch the default font manager as soon as possible on a background thread.
             // It helps to reduce time cost of engine setup that blocks the platform thread.
@@ -136,7 +146,7 @@ public class FlutterLoader {
                     new Runnable() {
                       @Override
                       public void run() {
-                        FlutterJNI.nativePrefetchDefaultFontManager();
+                        flutterJNILoader.prefetchDefaultFontManager();
                       }
                     });
 
@@ -225,21 +235,20 @@ public class FlutterLoader {
         shellArgs.add("--log-tag=" + settings.getLogTag());
       }
 
-      ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-      long oldGenHeapSizeMegaBytes = activityManager.getLargeMemoryClass();
+      ActivityManager activityManager =
+          (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
+      int oldGenHeapSizeMegaBytes = activityManager.getLargeMemoryClass();
 
       long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
 
-      if (FlutterInjector.instance().shouldLoadNative()) {
-        FlutterJNI.nativeInit(
-            applicationContext,
-            shellArgs.toArray(new String[0]),
-            kernelPath,
-            result.appStoragePath,
-            result.engineCachesPath,
-            initTimeMillis,
-            oldGenHeapSizeMegaBytes);
-      }
+      flutterJNILoader.nativeInit(
+          applicationContext,
+          shellArgs.toArray(new String[0]),
+          kernelPath,
+          result.appStoragePath,
+          result.engineCachesPath,
+          initTimeMillis,
+          oldGenHeapSizeMegaBytes);
 
       initialized = true;
     } catch (Exception e) {

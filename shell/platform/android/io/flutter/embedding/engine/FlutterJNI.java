@@ -94,6 +94,58 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 @Keep
 public class FlutterJNI {
+  public static class FlutterJNILoader {
+    /**
+     * Loads the libflutter.so library.
+     *
+     * <p>This must be called before any other native methods, and can be overridden by tests to
+     * avoid loading native libraries.
+     */
+    public void loadLibrary() {
+      System.loadLibrary("flutter");
+    }
+
+    /**
+     * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
+     * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
+     * noticeable time, but later calls will return a reference to the preexisting font manager.
+     */
+    public void prefetchDefaultFontManager() {
+      FlutterJNI.nativePrefetchDefaultFontManager();
+    }
+
+    /**
+     * Perform one time initialization of the Dart VM and Flutter engine.
+     *
+     * <p>This method must be called only once.
+     *
+     * @param context The application context.
+     * @param args Arguments to the Dart VM/Flutter engine.
+     * @param bundlePath For JIT runtimes, the path to the Dart kernel file for the application.
+     * @param appStoragePath The path to the application data directory.
+     * @param engineCachesPath The path to the application cache directory.
+     * @param initTimeMillis The time, in milliseconds, taken for initialization.
+     * @param oldGenHeapSizeMegaBytes The maximum size for the old gen heap size.
+     */
+    public void nativeInit(
+        @NonNull Context context,
+        @NonNull String[] args,
+        @Nullable String bundlePath,
+        @NonNull String appStoragePath,
+        @NonNull String engineCachesPath,
+        long initTimeMillis,
+        int oldGenHeapSizeMegaBytes) {
+      FlutterJNI.nativeInit(
+          context,
+          args,
+          bundlePath,
+          appStoragePath,
+          engineCachesPath,
+          initTimeMillis,
+          oldGenHeapSizeMegaBytes);
+    }
+  }
+
   private static final String TAG = "FlutterJNI";
 
   @Nullable private static AsyncWaitForVsyncDelegate asyncWaitForVsyncDelegate;
@@ -104,22 +156,16 @@ public class FlutterJNI {
   // This is set from native code via JNI.
   @Nullable private static String observatoryUri;
 
-  // TODO(mattcarroll): add javadocs
-  public static native void nativeInit(
+  private static native void nativeInit(
       @NonNull Context context,
       @NonNull String[] args,
       @Nullable String bundlePath,
       @NonNull String appStoragePath,
       @NonNull String engineCachesPath,
       long initTimeMillis,
-      long oldGenHeapSizeMegaBytes);
+      int oldGenHeapSizeMegaBytes);
 
-  /**
-   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
-   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
-   * noticeable time, but later calls will return a reference to the preexisting font manager.
-   */
-  public static native void nativePrefetchDefaultFontManager();
+  private static native void nativePrefetchDefaultFontManager();
 
   private native boolean nativeGetIsSoftwareRenderingEnabled();
 

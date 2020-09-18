@@ -64,7 +64,7 @@ void FlutterMain::Init(JNIEnv* env,
                        jstring appStoragePath,
                        jstring engineCachesPath,
                        jlong initTimeMillis,
-                       jlong oldGenHeapSizeBytes) {
+                       jint oldGenHeapSizeMegaBytes) {
   std::vector<std::string> args;
   args.push_back("flutter");
   for (auto& arg : fml::jni::StringArrayToVector(env, jargs)) {
@@ -121,7 +121,7 @@ void FlutterMain::Init(JNIEnv* env,
       make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
-  settings.old_gen_heap_size = static_cast<int64_t>(oldGenHeapSizeBytes);
+  settings.old_gen_heap_size = static_cast<int64_t>(oldGenHeapSizeMegaBytes);
 
   // Not thread safe. Will be removed when FlutterMain is refactored to no
   // longer be a singleton.
@@ -169,7 +169,7 @@ bool FlutterMain::Register(JNIEnv* env) {
       {
           .name = "nativeInit",
           .signature = "(Landroid/content/Context;[Ljava/lang/String;Ljava/"
-                       "lang/String;Ljava/lang/String;Ljava/lang/String;J;J)V",
+                       "lang/String;Ljava/lang/String;Ljava/lang/String;J;I)V",
           .fnPtr = reinterpret_cast<void*>(&Init),
       },
       {

@@ -4,11 +4,21 @@
 
 package io.flutter.embedding.engine.loader;
 
+import static android.os.Looper.getMainLooper;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.robolectric.Shadows.shadowOf;
 
-import io.flutter.FlutterInjector;
-import org.junit.Before;
+import android.app.ActivityManager;
+import android.content.Context;
+import io.flutter.embedding.engine.FlutterJNI;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -18,10 +28,6 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class FlutterLoaderTest {
-  @Before
-  public void setUp() {
-    FlutterInjector.reset();
-  }
 
   @Test
   public void itReportsUninitializedAfterCreating() {
@@ -31,13 +37,26 @@ public class FlutterLoaderTest {
 
   @Test
   public void itReportsInitializedAfterInitializing() {
-    FlutterInjector.setInstance(new FlutterInjector.Builder().setShouldLoadNative(false).build());
-    FlutterLoader flutterLoader = new FlutterLoader();
+    FlutterJNI.FlutterJNILoader mockFlutterJNILoader = mock(FlutterJNI.FlutterJNILoader.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNILoader);
 
     assertFalse(flutterLoader.initialized());
     flutterLoader.startInitialization(RuntimeEnvironment.application);
     flutterLoader.ensureInitializationComplete(RuntimeEnvironment.application, null);
+    shadowOf(getMainLooper()).idle();
     assertTrue(flutterLoader.initialized());
-    FlutterInjector.reset();
+    verify(mockFlutterJNILoader, times(1)).loadLibrary();
+
+    ActivityManager activityManager =
+        (ActivityManager) RuntimeEnvironment.application.getSystemService(Context.ACTIVITY_SERVICE);
+    verify(mockFlutterJNILoader, times(1))
+        .nativeInit(
+            eq(RuntimeEnvironment.application),
+            any(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyLong(),
+            eq(activityManager.getLargeMemoryClass()));
   }
 }
