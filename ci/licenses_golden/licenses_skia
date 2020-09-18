@@ -1,4 +1,4 @@
-Signature: 1b5c964accecfb568db2b97a1b981f64
+Signature: ab6bb712b55598c93bd4290fbef36706
 
 UNUSED LICENSES:
 
@@ -975,6 +975,9 @@ FILE: ../../../third_party/skia/bench/skpbench.json
 FILE: ../../../third_party/skia/build/fuchsia/skqp/skqp.cmx
 FILE: ../../../third_party/skia/build/fuchsia/skqp/test_manifest.json
 FILE: ../../../third_party/skia/demos.skia.org/demos/hello_world/index.html
+FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/index.html
+FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/main.js
+FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/worker.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/garbage.svg
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/main.js
@@ -4134,6 +4137,8 @@ FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrHashMapWithCache.h
 FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSTArenaList.h
+FILE: ../../../third_party/skia/src/gpu/GrThreadSafeUniquelyKeyedProxyViewCache.cpp
+FILE: ../../../third_party/skia/src/gpu/GrThreadSafeUniquelyKeyedProxyViewCache.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrAutoMapVertexBuffer.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrArithmeticProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrDitherEffect.fp
