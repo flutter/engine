@@ -18,9 +18,8 @@ import io.flutter.view.FlutterView;
 /**
  * Deprecated base class for activities that use Flutter.
  *
- * @deprecated {@link io.flutter.embedding.android.FlutterActivity} is the new API that now
- * replaces this class. See https://flutter.dev/go/android-project-migration for more migration
- * details.
+ * @deprecated {@link io.flutter.embedding.android.FlutterActivity} is the new API that now replaces
+ *     this class. See https://flutter.dev/go/android-project-migration for more migration details.
  */
 @Deprecated
 public class FlutterActivity extends Activity

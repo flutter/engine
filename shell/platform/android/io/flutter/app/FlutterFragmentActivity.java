@@ -28,9 +28,8 @@ import io.flutter.view.FlutterView;
  *
  * @see <a target="_new"
  *     href="https://developer.android.com/training/testing/set-up-project">https://developer.android.com/training/testing/set-up-project</a>
- *
  * @deprecated this class is replaced by {@link
- * io.flutter.embedding.android.FlutterFragmentActivity}.
+ *     io.flutter.embedding.android.FlutterFragmentActivity}.
  */
 @Deprecated
 public class FlutterFragmentActivity extends FragmentActivity

@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
 
 /**
  * @deprecated {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
- * this class. See https://flutter.dev/go/android-project-migration for more migration details.
+ *     this class. See https://flutter.dev/go/android-project-migration for more migration details.
  */
 @Deprecated
 public class FlutterNativeView implements BinaryMessenger {
