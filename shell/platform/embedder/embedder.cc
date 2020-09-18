@@ -1012,24 +1012,22 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                                 "embedder, got 0 active displays.");
     }
 
-    display_settings.displays =
-        new FlutterDisplay[display_settings.display_count];
+    std::vector<FlutterDisplay> displays(display_settings.display_count);
+    display_settings.displays = displays.data();
     display_settings_callback(user_data, &display_settings);
 
     // TODO(iskakaushik): Add support for multiple displays.
     main_display_refresh_rate = display_settings.displays[0].refresh_rate;
-
-    delete display_settings.displays;
   }
 
   flutter::PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table =
       {
-          update_semantics_nodes_callback,                //
-          update_semantics_custom_actions_callback,       //
-          platform_message_response_callback,             //
-          vsync_callback,                                 //
-          compute_platform_resolved_locale_callback,      //
-          static_cast<float>(main_display_refresh_rate),  //
+          update_semantics_nodes_callback,            //
+          update_semantics_custom_actions_callback,   //
+          platform_message_response_callback,         //
+          vsync_callback,                             //
+          compute_platform_resolved_locale_callback,  //
+          main_display_refresh_rate,                  //
       };
 
   auto on_create_platform_view = InferPlatformViewCreationCallback(

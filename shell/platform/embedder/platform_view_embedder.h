@@ -39,7 +39,7 @@ class PlatformViewEmbedder final : public PlatformView {
     VsyncWaiterEmbedder::VsyncCallback vsync_callback;  // optional
     ComputePlatformResolvedLocaleCallback
         compute_platform_resolved_locale_callback;
-    float display_refresh_rate;
+    double display_refresh_rate;
   };
 
   // Creates a platform view that sets up an OpenGL rasterizer.
