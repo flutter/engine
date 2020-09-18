@@ -560,7 +560,11 @@ public class FlutterActivity extends Activity
   @Override
   protected void onStop() {
     super.onStop();
-    delegate.onStop();
+    if (delegate != null) {
+      delegate.onStop();
+    } else {
+      Log.v(TAG, "FlutterActivity " + hashCode() + " onStop called after release.");
+    }
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
   }
 
@@ -570,11 +574,31 @@ public class FlutterActivity extends Activity
     delegate.onSaveInstanceState(outState);
   }
 
+  /**
+   * Irreversibly release this activity's control of the {@link FlutterEngine} and its
+   * subcomponents.
+   *
+   * Calling will disconnect this activity's view from the Flutter renderer, disconnect this
+   * activity from plugins' {@link ActivityControlSurface}, and stop system channel messages from
+   * this activity.
+   *
+   * After calling, this activity should be disposed immediately and not be re-used.
+   */
+  protected void release() {
+    delegate.onDestroyView();
+    delegate.onDetach();
+    delegate.release();
+    delegate = null;
+  }
+
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    delegate.onDestroyView();
-    delegate.onDetach();
+    if (delegate != null) {
+      release();
+    } else {
+      Log.v(TAG, "FlutterActivity " + hashCode() + " onDestroy called after release.");
+    }
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
   }
 

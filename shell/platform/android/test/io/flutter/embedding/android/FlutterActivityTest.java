@@ -6,6 +6,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -156,6 +159,36 @@ public class FlutterActivityTest {
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertEquals(1, registeredEngines.size());
     assertEquals(activity.getFlutterEngine(), registeredEngines.get(0));
+  }
+
+  @Test
+  public void itCanBeManuallyReleasedBeforeOnDestroy() {
+    FlutterActivityAndFragmentDelegate mockDelegate = mock(FlutterActivityAndFragmentDelegate.class);
+
+    Intent intent = FlutterActivity.withCachedEngine("my_cached_engine")
+        .build(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    flutterActivity.setDelegate(mockDelegate);
+    flutterActivity.onCreate(null);
+    flutterActivity.onStart();
+    flutterActivity.onResume();
+
+    verify(mockDelegate, times(1)).onAttach(flutterActivity);
+    verify(mockDelegate, times(1)).onStart();
+    verify(mockDelegate, times(1)).onResume();
+
+    flutterActivity.onPause();
+    flutterActivity.release(); // Package visibility.
+    verify(mockDelegate, times(1)).onPause();
+
+    flutterActivity.onStop();
+    flutterActivity.onDestroy();
+
+    verify(mockDelegate, never()).onStop();
+    verify(mockDelegate, never()).onDestroyView();
+    verify(mockDelegate, never()).onDetach();
   }
 
   static class FlutterActivityWithProvidedEngine extends FlutterActivity {
