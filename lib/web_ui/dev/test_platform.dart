@@ -197,7 +197,9 @@ class BrowserPlatform extends PlatformPlugin {
         'golden_files',
       );
     } else {
-      await fetchGoldens();
+      if (!isLuci) {
+        await fetchGoldens();
+      }
       goldensDirectory = p.join(
         env.environment.webUiGoldensRepositoryDirectory.path,
         'engine',
