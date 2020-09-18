@@ -125,7 +125,6 @@ public class FlutterJNI {
      * @param appStoragePath The path to the application data directory.
      * @param engineCachesPath The path to the application cache directory.
      * @param initTimeMillis The time, in milliseconds, taken for initialization.
-     * @param oldGenHeapSizeMegaBytes The maximum size for the old gen heap size.
      */
     public void nativeInit(
         @NonNull Context context,
@@ -133,16 +132,9 @@ public class FlutterJNI {
         @Nullable String bundlePath,
         @NonNull String appStoragePath,
         @NonNull String engineCachesPath,
-        long initTimeMillis,
-        int oldGenHeapSizeMegaBytes) {
+        long initTimeMillis) {
       FlutterJNI.nativeInit(
-          context,
-          args,
-          bundlePath,
-          appStoragePath,
-          engineCachesPath,
-          initTimeMillis,
-          oldGenHeapSizeMegaBytes);
+          context, args, bundlePath, appStoragePath, engineCachesPath, initTimeMillis);
     }
   }
 
@@ -162,8 +154,7 @@ public class FlutterJNI {
       @Nullable String bundlePath,
       @NonNull String appStoragePath,
       @NonNull String engineCachesPath,
-      long initTimeMillis,
-      int oldGenHeapSizeMegaBytes);
+      long initTimeMillis);
 
   private static native void nativePrefetchDefaultFontManager();
 

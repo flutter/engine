@@ -238,6 +238,7 @@ public class FlutterLoader {
       ActivityManager activityManager =
           (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
       int oldGenHeapSizeMegaBytes = activityManager.getLargeMemoryClass();
+      shellArgs.add("--old-gen-heap-size=" + oldGenHeapSizeMegaBytes);
 
       long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
 
@@ -247,8 +248,7 @@ public class FlutterLoader {
           kernelPath,
           result.appStoragePath,
           result.engineCachesPath,
-          initTimeMillis,
-          oldGenHeapSizeMegaBytes);
+          initTimeMillis);
 
       initialized = true;
     } catch (Exception e) {

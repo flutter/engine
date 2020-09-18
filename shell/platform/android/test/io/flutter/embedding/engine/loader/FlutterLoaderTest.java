@@ -7,7 +7,6 @@ package io.flutter.embedding.engine.loader;
 import static android.os.Looper.getMainLooper;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
@@ -19,8 +18,10 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.ActivityManager;
 import android.content.Context;
 import io.flutter.embedding.engine.FlutterJNI;
+import java.util.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -49,14 +50,17 @@ public class FlutterLoaderTest {
 
     ActivityManager activityManager =
         (ActivityManager) RuntimeEnvironment.application.getSystemService(Context.ACTIVITY_SERVICE);
+    final String oldGenHeapArg = "--old-gen-heap-size=" + activityManager.getLargeMemoryClass();
+    ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
     verify(mockFlutterJNILoader, times(1))
         .nativeInit(
             eq(RuntimeEnvironment.application),
-            any(),
+            shellArgsCaptor.capture(),
             anyString(),
             anyString(),
             anyString(),
-            anyLong(),
-            eq(activityManager.getLargeMemoryClass()));
+            anyLong());
+    List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
+    assertTrue(arguments.contains(oldGenHeapArg));
   }
 }
