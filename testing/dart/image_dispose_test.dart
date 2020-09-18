@@ -89,7 +89,7 @@ void main() {
     expect(stackTraces, equals(frame.image.debugGetOpenHandleStackTraces()));
 
     frame.image.dispose();
-    expect(() => frame.image.debugGetOpenHandleStackTraces(), isEmpty);
+    expect(frame.image.debugGetOpenHandleStackTraces(), isEmpty);
   }, skip: !assertsEnabled);
 }
 
