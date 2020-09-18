@@ -514,6 +514,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [_selectedTextRange release];
   [_tokenizer release];
   [_autofillId release];
+  [_latestState release];
   [super dealloc];
 }
 
