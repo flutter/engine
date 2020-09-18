@@ -14,11 +14,11 @@ bool AndroidSurfaceMock::GLContextClearCurrent() {
   return true;
 }
 
-bool AndroidSurfaceMock::GLContextPresent() {
+bool AndroidSurfaceMock::GLContextPresent(uint32_t fbo_id) {
   return true;
 }
 
-intptr_t AndroidSurfaceMock::GLContextFBO() const {
+intptr_t AndroidSurfaceMock::GLContextFBO(GLFrameInfo frame_info) const {
   return 0;
 }
 

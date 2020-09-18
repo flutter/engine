@@ -3,9 +3,10 @@
 // found in the LICENSE file.
 // FLUTTER_NOLINT
 
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/encodable_value.h"
+
 #include <limits>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/encodable_value.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
@@ -14,6 +15,8 @@ TEST(EncodableValueTest, Null) {
   EncodableValue value;
   value.IsNull();
 }
+
+#ifndef USE_LEGACY_ENCODABLE_VALUE
 
 TEST(EncodableValueTest, Bool) {
   EncodableValue value(false);
@@ -279,5 +282,7 @@ TEST(EncodableValueTest, DeepCopy) {
   innermost_map = std::get<EncodableMap>(second_child[2]);
   EXPECT_EQ(std::get<std::string>(innermost_map[EncodableValue("a")]), "b");
 }
+
+#endif  // !LEGACY_ENCODABLE_VALUE
 
 }  // namespace flutter

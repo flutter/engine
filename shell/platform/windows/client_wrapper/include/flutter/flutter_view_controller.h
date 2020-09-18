@@ -6,6 +6,10 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_VIEW_CONTROLLER_H_
 
 #include <flutter_windows.h>
+#include <windows.h>
+
+#include <memory>
+#include <optional>
 
 #include "dart_project.h"
 #include "flutter_engine.h"
@@ -20,7 +24,7 @@ namespace flutter {
 // This is the primary wrapper class for the desktop C API.
 // If you use this class, you should not call any of the setup or teardown
 // methods in the C API directly, as this class will do that internally.
-class FlutterViewController : public PluginRegistry {
+class FlutterViewController {
  public:
   // Creates a FlutterView that can be parented into a Windows View hierarchy
   // either using HWNDs or in the future into a CoreWindow, or using compositor.
@@ -42,12 +46,15 @@ class FlutterViewController : public PluginRegistry {
   // Returns the view managed by this controller.
   FlutterView* view() { return view_.get(); }
 
-  // DEPRECATED. Call engine()->ProcessMessages() instead.
-  std::chrono::nanoseconds ProcessMessages();
-
-  // DEPRECATED. Call engine()->GetRegistrarForPlugin() instead.
-  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
-      const std::string& plugin_name) override;
+  // Allows the Flutter engine and any interested plugins an opportunity to
+  // handle the given message.
+  //
+  // If a result is returned, then the message was handled in such a way that
+  // further handling should not be done.
+  std::optional<LRESULT> HandleTopLevelWindowProc(HWND hwnd,
+                                                  UINT message,
+                                                  WPARAM wparam,
+                                                  LPARAM lparam);
 
  private:
   // Handle for interacting with the C API's view controller, if any.

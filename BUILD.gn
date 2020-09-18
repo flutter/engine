@@ -19,18 +19,12 @@ config("config") {
       cflags = [ "/WX" ]  # Treat warnings as errors.
     }
   }
-}
 
-# This "fuchsia_legacy" configuration includes old, non-embedder API sources and
-# defines the LEGACY_FUCHSIA_EMBEDDER symbol.  This config and its associated
-# template are both transitional and will be removed after the embedder API
-# transition is complete.
-#
-# See `source_set_maybe_fuchsia_legacy` in //flutter/common/config.gni
-#
-# TODO(fxb/54041): Remove when no longer neccesary.
-config("fuchsia_legacy") {
-  if (is_fuchsia) {
+  # This define is transitional and will be removed after the embedder API
+  # transition is complete.
+  #
+  # TODO(bugs.fuchsia.dev/54041): Remove when no longer neccesary.
+  if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
     defines = [ "LEGACY_FUCHSIA_EMBEDDER" ]
   }
 }
@@ -51,6 +45,11 @@ group("flutter") {
     "//flutter/sky",
   ]
 
+  # Flutter SDK artifacts should only be built when either doing host builds, or
+  # for cross-compiled desktop targets.
+  build_engine_artifacts =
+      current_toolchain == host_toolchain || (is_linux && !is_chromeos)
+
   # If enbaled, compile the SDK / snapshot.
   if (!is_fuchsia) {
     public_deps += [
@@ -58,7 +57,7 @@ group("flutter") {
       "//flutter/lib/snapshot:kernel_platform_files",
     ]
 
-    if (current_toolchain == host_toolchain) {
+    if (build_engine_artifacts) {
       public_deps += [
         "//flutter/flutter_frontend_server:frontend_server",
         "//third_party/dart:create_sdk",
@@ -70,8 +69,7 @@ group("flutter") {
     }
   }
 
-  # If on the host, compile tools.
-  if (current_toolchain == host_toolchain) {
+  if (build_engine_artifacts) {
     public_deps += [
       "//flutter/shell/testing",
       "//flutter/tools/const_finder",

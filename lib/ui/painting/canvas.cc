@@ -4,8 +4,7 @@
 
 #include "flutter/lib/ui/painting/canvas.h"
 
-#define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 #include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/lib/ui/painting/image.h"
@@ -198,7 +197,6 @@ void Canvas::clipPath(const CanvasPath* path, bool doAntiAlias) {
         ToDart("Canvas.clipPath called with non-genuine Path."));
     return;
   }
-  external_allocation_size_ += path->path().approximateBytesUsed();
   canvas_->clipPath(path->path(), doAntiAlias);
 }
 
@@ -310,7 +308,6 @@ void Canvas::drawPath(const CanvasPath* path,
         ToDart("Canvas.drawPath called with non-genuine Path."));
     return;
   }
-  external_allocation_size_ += path->path().approximateBytesUsed();
   canvas_->drawPath(path->path(), *paint.paint());
 }
 
@@ -327,7 +324,6 @@ void Canvas::drawImage(const CanvasImage* image,
         ToDart("Canvas.drawImage called with non-genuine Image."));
     return;
   }
-  external_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImage(image->image(), x, y, paint.paint());
 }
 
@@ -352,7 +348,6 @@ void Canvas::drawImageRect(const CanvasImage* image,
   }
   SkRect src = SkRect::MakeLTRB(src_left, src_top, src_right, src_bottom);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
-  external_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImageRect(image->image(), src, dst, paint.paint(),
                          SkCanvas::kFast_SrcRectConstraint);
 }
@@ -381,7 +376,6 @@ void Canvas::drawImageNine(const CanvasImage* image,
   SkIRect icenter;
   center.round(&icenter);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
-  external_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImageNine(image->image(), icenter, dst, paint.paint());
 }
 
@@ -394,7 +388,6 @@ void Canvas::drawPicture(Picture* picture) {
         ToDart("Canvas.drawPicture called with non-genuine Picture."));
     return;
   }
-  external_allocation_size_ += picture->GetAllocationSize();
   canvas_->drawPicture(picture->picture().get());
 }
 
@@ -427,7 +420,6 @@ void Canvas::drawVertices(const Vertices* vertices,
         ToDart("Canvas.drawVertices called with non-genuine Vertices."));
     return;
   }
-  external_allocation_size_ += vertices->GetAllocationSize();
   canvas_->drawVertices(vertices->vertices(), blend_mode, *paint.paint());
 }
 
@@ -456,7 +448,6 @@ void Canvas::drawAtlas(const Paint& paint,
   static_assert(sizeof(SkRect) == sizeof(float) * 4,
                 "SkRect doesn't use floats.");
 
-  external_allocation_size_ += atlas->GetAllocationSize();
   canvas_->drawAtlas(
       skImage.get(), reinterpret_cast<const SkRSXform*>(transforms.data()),
       reinterpret_cast<const SkRect*>(rects.data()),
@@ -480,16 +471,15 @@ void Canvas::drawShadow(const CanvasPath* path,
                      ->window()
                      ->viewport_metrics()
                      .device_pixel_ratio;
-  external_allocation_size_ += path->path().approximateBytesUsed();
   flutter::PhysicalShapeLayer::DrawShadow(canvas_, path->path(), color,
                                           elevation, transparentOccluder, dpr);
 }
 
 void Canvas::Invalidate() {
+  canvas_ = nullptr;
   if (dart_wrapper()) {
     ClearDartWrapper();
   }
-  canvas_ = nullptr;
 }
 
 }  // namespace flutter

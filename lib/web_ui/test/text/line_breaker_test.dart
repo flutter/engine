@@ -3,14 +3,20 @@
 // found in the LICENSE file.
 
 // @dart = 2.10
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-import 'line_breaker_test_data.dart';
+import 'line_breaker_test_helper.dart';
+import 'line_breaker_test_raw_data.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   group('nextLineBreak', () {
     test('Does not go beyond the ends of a string', () {
       expect(split('foo'), <Line>[
@@ -219,8 +225,9 @@ void main() {
     });
 
     test('comprehensive test', () {
-      for (int t = 0; t < data.length; t++) {
-        final TestCase testCase = data[t];
+      final List<TestCase> testCollection = parseRawTestData(rawLineBreakTestData);
+      for (int t = 0; t < testCollection.length; t++) {
+        final TestCase testCase = testCollection[t];
         final String text = testCase.toText();
 
         int lastLineBreak = 0;

@@ -29,7 +29,7 @@ TEST(MethodChannelTest, Success) {
         EXPECT_EQ(*i, value);
       },
       nullptr, nullptr);
-  result.Success(&value);
+  result.Success(value);
   EXPECT_TRUE(called);
 }
 
@@ -50,7 +50,7 @@ TEST(MethodChannelTest, Error) {
         EXPECT_EQ(*details, error_details);
       },
       nullptr);
-  result.Error(error_code, error_message, &error_details);
+  result.Error(error_code, error_message, error_details);
   EXPECT_TRUE(called);
 }
 

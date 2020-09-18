@@ -64,6 +64,20 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
   return reinterpret_cast<FlutterDesktopViewRef>(1);
 }
 
+bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
+    FlutterDesktopViewControllerRef controller,
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam,
+    LRESULT* result) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->ViewControllerHandleTopLevelWindowProc(
+        hwnd, message, wparam, lparam, result);
+  }
+  return false;
+}
+
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
     const FlutterDesktopEngineProperties& engine_properties) {
   if (s_stub_implementation) {
@@ -94,11 +108,23 @@ uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
   return 0;
 }
 
+void FlutterDesktopEngineReloadSystemFonts(FlutterDesktopEngineRef engine) {
+  if (s_stub_implementation) {
+    s_stub_implementation->EngineReloadSystemFonts();
+  }
+}
+
 FlutterDesktopPluginRegistrarRef FlutterDesktopEngineGetPluginRegistrar(
     FlutterDesktopEngineRef engine,
     const char* plugin_name) {
   // The stub ignores this, so just return an arbitrary non-zero value.
   return reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1);
+}
+
+FlutterDesktopMessengerRef FlutterDesktopEngineGetMessenger(
+    FlutterDesktopEngineRef engine) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopMessengerRef>(2);
 }
 
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef controller) {
@@ -112,4 +138,24 @@ FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef controller) {
   // The stub ignores this, so just return an arbitrary non-zero value.
   return reinterpret_cast<FlutterDesktopViewRef>(1);
+}
+
+void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopWindowProcCallback delegate,
+    void* user_data) {
+  if (s_stub_implementation) {
+    return s_stub_implementation
+        ->PluginRegistrarRegisterTopLevelWindowProcDelegate(delegate,
+                                                            user_data);
+  }
+}
+
+void FlutterDesktopPluginRegistrarUnregisterTopLevelWindowProcDelegate(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopWindowProcCallback delegate) {
+  if (s_stub_implementation) {
+    return s_stub_implementation
+        ->PluginRegistrarUnregisterTopLevelWindowProcDelegate(delegate);
+  }
 }

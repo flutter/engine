@@ -1,7 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-//
+
 #ifndef FLUTTER_FLOW_EMBEDDED_VIEWS_H_
 #define FLUTTER_FLOW_EMBEDDED_VIEWS_H_
 
@@ -242,7 +242,17 @@ class EmbeddedViewParams {
   SkRect final_bounding_rect_;
 };
 
-enum class PostPrerollResult { kResubmitFrame, kSuccess };
+enum class PostPrerollResult {
+  // Frame has successfully rasterized.
+  kSuccess,
+  // Frame is submitted twice. This is currently only used when
+  // thread configuration change occurs.
+  kResubmitFrame,
+  // Frame is dropped and a new frame with the same layer tree is
+  // attempted. This is currently only used when thread configuration
+  // change occurs.
+  kSkipAndRetryFrame
+};
 
 // Facilitates embedding of platform views within the flow layer tree.
 //
@@ -266,6 +276,10 @@ class ExternalViewEmbedder {
   // sets the stage for the next pre-roll.
   virtual void CancelFrame() = 0;
 
+  // Indicates the begining of a frame.
+  //
+  // The `raster_thread_merger` will be null if |SupportsDynamicThreadMerging|
+  // returns false.
   virtual void BeginFrame(
       SkISize frame_size,
       GrDirectContext* context,
@@ -306,9 +320,19 @@ class ExternalViewEmbedder {
   // A new frame on the platform thread starts immediately. If the GPU thread
   // still has some task running, there could be two frames being rendered
   // concurrently, which causes undefined behaviors.
+  //
+  // The `raster_thread_merger` will be null if |SupportsDynamicThreadMerging|
+  // returns false.
   virtual void EndFrame(
       bool should_resubmit_frame,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
+
+  // Whether the embedder should support dynamic thread merging.
+  //
+  // Returning `true` results a |RasterThreadMerger| instance to be created.
+  // * See also |BegineFrame| and |EndFrame| for getting the
+  // |RasterThreadMerger| instance.
+  virtual bool SupportsDynamicThreadMerging();
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

@@ -70,6 +70,8 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
       bool should_resubmit_frame,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
+  bool SupportsDynamicThreadMerging() override;
+
   // Gets the rect based on the device pixel ratio of a platform view displayed
   // on the screen.
   SkRect GetViewRect(int view_id) const;
@@ -95,10 +97,6 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // Holds surfaces. Allows to recycle surfaces or allocate new ones.
   const std::unique_ptr<SurfacePool> surface_pool_;
-
-  // Whether the rasterizer task runner should run on the platform thread.
-  // When this is true, the current frame is cancelled and resubmitted.
-  bool should_run_rasterizer_on_platform_thread_ = false;
 
   // The size of the root canvas.
   SkISize frame_size_;
@@ -129,6 +127,9 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // Resets the state.
   void Reset();
+
+  // Whether the layer tree in the current frame has platform layers.
+  bool FrameHasPlatformLayers();
 
   // Creates a Surface when needed or recycles an existing one.
   // Finally, draws the picture on the frame's canvas.

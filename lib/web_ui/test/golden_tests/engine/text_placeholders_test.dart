@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
-// import 'package:image/image.dart';
+import 'package:test/bootstrap/browser.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
@@ -11,7 +11,11 @@ import 'scuba.dart';
 
 typedef PaintTest = void Function(RecordingCanvas recordingCanvas);
 
-void main() async {
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() async {
   final EngineScubaTester scuba = await EngineScubaTester.initialize(
     viewportSize: const Size(600, 600),
   );
@@ -23,13 +27,53 @@ void main() async {
     final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
 
     Offset offset = Offset.zero;
-    for (PlaceholderAlignment alignment in PlaceholderAlignment.values) {
-      _paintTextWithPlaceholder(recordingCanvas, offset, alignment);
+    for (PlaceholderAlignment placeholderAlignment
+        in PlaceholderAlignment.values) {
+      _paintTextWithPlaceholder(
+        recordingCanvas,
+        offset,
+        before: 'Lorem ipsum',
+        after: 'dolor sit amet, consectetur.',
+        placeholderAlignment: placeholderAlignment,
+      );
       offset = offset.translate(0.0, 80.0);
     }
     recordingCanvas.endRecording();
     recordingCanvas.apply(canvas, screenRect);
     return scuba.diffCanvasScreenshot(canvas, 'text_with_placeholders');
+  });
+
+  testEachCanvas('text alignment and placeholders', (EngineCanvas canvas) {
+    final Rect screenRect = const Rect.fromLTWH(0, 0, 600, 600);
+    final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
+
+    Offset offset = Offset.zero;
+    _paintTextWithPlaceholder(
+      recordingCanvas,
+      offset,
+      before: 'Lorem',
+      after: 'ipsum.',
+      textAlignment: TextAlign.start,
+    );
+    offset = offset.translate(0.0, 80.0);
+    _paintTextWithPlaceholder(
+      recordingCanvas,
+      offset,
+      before: 'Lorem',
+      after: 'ipsum.',
+      textAlignment: TextAlign.center,
+    );
+    offset = offset.translate(0.0, 80.0);
+    _paintTextWithPlaceholder(
+      recordingCanvas,
+      offset,
+      before: 'Lorem',
+      after: 'ipsum.',
+      textAlignment: TextAlign.end,
+    );
+    recordingCanvas.endRecording();
+    recordingCanvas.apply(canvas, screenRect);
+    return scuba.diffCanvasScreenshot(canvas, 'text_align_with_placeholders');
   });
 }
 
@@ -41,11 +85,19 @@ const Size placeholderSize = Size(80.0, 50.0);
 
 void _paintTextWithPlaceholder(
   RecordingCanvas canvas,
-  Offset offset,
-  PlaceholderAlignment alignment,
-) {
+  Offset offset, {
+  String before,
+  String after,
+  PlaceholderAlignment placeholderAlignment = PlaceholderAlignment.baseline,
+  TextAlign textAlignment = TextAlign.left,
+}) {
   // First let's draw the paragraph.
-  final Paragraph paragraph = _createParagraphWithPlaceholder(alignment);
+  final Paragraph paragraph = _createParagraphWithPlaceholder(
+    before,
+    after,
+    placeholderAlignment,
+    textAlignment,
+  );
   canvas.drawParagraph(paragraph, offset);
 
   // Then fill the placeholders.
@@ -56,19 +108,25 @@ void _paintTextWithPlaceholder(
   );
 }
 
-Paragraph _createParagraphWithPlaceholder(PlaceholderAlignment alignment) {
-  final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
+Paragraph _createParagraphWithPlaceholder(
+  String before,
+  String after,
+  PlaceholderAlignment placeholderAlignment,
+  TextAlign textAlignment,
+) {
+  final ParagraphBuilder builder =
+      ParagraphBuilder(ParagraphStyle(textAlign: textAlignment));
   builder
       .pushStyle(TextStyle(color: black, fontFamily: 'Roboto', fontSize: 14));
-  builder.addText('Lorem ipsum');
+  builder.addText(before);
   builder.addPlaceholder(
     placeholderSize.width,
     placeholderSize.height,
-    alignment,
+    placeholderAlignment,
     baselineOffset: 40.0,
     baseline: TextBaseline.alphabetic,
   );
   builder.pushStyle(TextStyle(color: blue, fontFamily: 'Roboto', fontSize: 14));
-  builder.addText('dolor sit amet, consectetur.');
+  builder.addText(after);
   return builder.build()..layout(ParagraphConstraints(width: 200.0));
 }

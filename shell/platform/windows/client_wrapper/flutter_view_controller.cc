@@ -29,13 +29,15 @@ FlutterViewController::~FlutterViewController() {
   }
 }
 
-std::chrono::nanoseconds FlutterViewController::ProcessMessages() {
-  return engine_->ProcessMessages();
-}
-
-FlutterDesktopPluginRegistrarRef FlutterViewController::GetRegistrarForPlugin(
-    const std::string& plugin_name) {
-  return engine_->GetRegistrarForPlugin(plugin_name);
+std::optional<LRESULT> FlutterViewController::HandleTopLevelWindowProc(
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam) {
+  LRESULT result;
+  bool handled = FlutterDesktopViewControllerHandleTopLevelWindowProc(
+      controller_, hwnd, message, wparam, lparam, &result);
+  return handled ? result : std::optional<LRESULT>(std::nullopt);
 }
 
 }  // namespace flutter

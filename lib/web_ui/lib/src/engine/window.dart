@@ -73,8 +73,8 @@ class EngineWindow extends ui.Window {
       double windowInnerHeight;
       final html.VisualViewport? viewport = html.window.visualViewport;
       if (viewport != null) {
-        windowInnerWidth = viewport.width! * devicePixelRatio as double;
-        windowInnerHeight = viewport.height! * devicePixelRatio as double;
+        windowInnerWidth = viewport.width!.toDouble() * devicePixelRatio;
+        windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
       } else {
         windowInnerWidth = html.window.innerWidth! * devicePixelRatio;
         windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
@@ -90,7 +90,7 @@ class EngineWindow extends ui.Window {
     double windowInnerHeight;
     final html.VisualViewport? viewport = html.window.visualViewport;
     if (viewport != null) {
-      windowInnerHeight = viewport.height! * devicePixelRatio as double;
+      windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
     } else {
       windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
     }
@@ -117,8 +117,8 @@ class EngineWindow extends ui.Window {
     double height = 0;
     double width = 0;
     if (html.window.visualViewport != null) {
-      height = html.window.visualViewport!.height! * devicePixelRatio as double;
-      width = html.window.visualViewport!.width! * devicePixelRatio as double;
+      height = html.window.visualViewport!.height!.toDouble() * devicePixelRatio;
+      width = html.window.visualViewport!.width!.toDouble() * devicePixelRatio;
     } else {
       height = html.window.innerHeight! * devicePixelRatio;
       width = html.window.innerWidth! * devicePixelRatio;
@@ -151,12 +151,47 @@ class EngineWindow extends ui.Window {
   /// Overrides the value of [physicalSize] in tests.
   ui.Size? webOnlyDebugPhysicalSizeOverride;
 
-  @override
-  double get physicalDepth => double.maxFinite;
-
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
-  final BrowserHistory _browserHistory = BrowserHistory();
+  @visibleForTesting
+  BrowserHistory get browserHistory => _browserHistory;
+  BrowserHistory _browserHistory = MultiEntriesBrowserHistory();
+
+  @visibleForTesting
+  Future<void> debugSwitchBrowserHistory({required bool useSingle}) async {
+    if (useSingle)
+      await _useSingleEntryBrowserHistory();
+    else
+      await _useMultiEntryBrowserHistory();
+  }
+
+  /// This function should only be used for test setup. In real application, we
+  /// only allow one time switch from the MultiEntriesBrowserHistory to
+  /// the SingleEntryBrowserHistory to prevent the application to switch back
+  /// forth between router and non-router.
+  Future<void> _useMultiEntryBrowserHistory() async {
+    if (_browserHistory is MultiEntriesBrowserHistory) {
+      return;
+    }
+    final LocationStrategy? strategy = _browserHistory.locationStrategy;
+    if (strategy != null)
+      await _browserHistory.setLocationStrategy(null);
+    _browserHistory = MultiEntriesBrowserHistory();
+    if (strategy != null)
+      await _browserHistory.setLocationStrategy(strategy);
+  }
+
+  Future<void> _useSingleEntryBrowserHistory() async {
+    if (_browserHistory is SingleEntryBrowserHistory) {
+      return;
+    }
+    final LocationStrategy? strategy = _browserHistory.locationStrategy;
+    if (strategy != null)
+      await _browserHistory.setLocationStrategy(null);
+    _browserHistory = SingleEntryBrowserHistory();
+    if (strategy != null)
+      await _browserHistory.setLocationStrategy(strategy);
+  }
 
   /// Simulates clicking the browser's back button.
   Future<void> webOnlyBack() => _browserHistory.back();
@@ -184,7 +219,7 @@ class EngineWindow extends ui.Window {
   ///
   /// By setting this to null, the browser history will be disabled.
   set locationStrategy(LocationStrategy? strategy) {
-    _browserHistory.locationStrategy = strategy;
+    _browserHistory.setLocationStrategy(strategy);
   }
 
   /// Returns the currently active location strategy.
@@ -611,16 +646,20 @@ class EngineWindow extends ui.Window {
         final Map<String, dynamic>? message = decoded.arguments;
         switch (decoded.method) {
           case 'routeUpdated':
-          case 'routePushed':
-          case 'routeReplaced':
-            _browserHistory.setRouteName(message!['routeName']);
-            _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
+            _useSingleEntryBrowserHistory().then((void data) {
+              _browserHistory.setRouteName(message!['routeName']);
+              _replyToPlatformMessage(
+                  callback, codec.encodeSuccessEnvelope(true));
+            });
             break;
-          case 'routePopped':
-            _browserHistory.setRouteName(message!['previousRouteName']);
+          case 'routeInformationUpdated':
+            assert(_browserHistory is MultiEntriesBrowserHistory);
+            _browserHistory.setRouteName(
+              message!['location'],
+              state: message['state'],
+            );
             _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
+              callback, codec.encodeSuccessEnvelope(true));
             break;
         }
         // As soon as Flutter starts taking control of the app navigation, we

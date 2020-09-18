@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/common/shell_test_platform_view_gl.h"
+
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 
 namespace flutter {
@@ -55,13 +56,13 @@ bool ShellTestPlatformViewGL::GLContextClearCurrent() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool ShellTestPlatformViewGL::GLContextPresent() {
+bool ShellTestPlatformViewGL::GLContextPresent(uint32_t fbo_id) {
   return gl_surface_.Present();
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t ShellTestPlatformViewGL::GLContextFBO() const {
-  return gl_surface_.GetFramebuffer();
+intptr_t ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
+  return gl_surface_.GetFramebuffer(frame_info.width, frame_info.height);
 }
 
 // |GPUSurfaceGLDelegate|

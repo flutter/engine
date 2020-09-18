@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_COMMON_SHELL_TEST_H_
 #define FLUTTER_SHELL_COMMON_SHELL_TEST_H_
 
+#include "flutter/shell/common/shell.h"
+
 #include <memory>
 
 #include "flutter/common/settings.h"
@@ -15,7 +17,6 @@
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/run_configuration.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/shell_test_external_view_embedder.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiters_test.h"
@@ -50,6 +51,8 @@ class ShellTest : public FixtureTest {
 
   static void PlatformViewNotifyCreated(
       Shell* shell);  // This creates the surface
+  static void PlatformViewNotifyDestroyed(
+      Shell* shell);  // This destroys the surface
   static void RunEngine(Shell* shell, RunConfiguration configuration);
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
@@ -61,6 +64,10 @@ class ShellTest : public FixtureTest {
   /// in PumpOneFrame.
   using LayerTreeBuilder =
       std::function<void(std::shared_ptr<ContainerLayer> root)>;
+
+  static void SetViewportMetrics(Shell* shell, double width, double height);
+  static void NotifyIdle(Shell* shell, int64_t deadline);
+
   static void PumpOneFrame(Shell* shell,
                            double width = 1,
                            double height = 1,
@@ -80,6 +87,7 @@ class ShellTest : public FixtureTest {
 
   enum ServiceProtocolEnum {
     kGetSkSLs,
+    kEstimateRasterCacheMemory,
     kSetAssetBundlePath,
     kRunInView,
   };

@@ -3,10 +3,11 @@
 // found in the LICENSE file.
 // FLUTTER_NOLINT
 
+#include "flutter/shell/common/shell.h"
+
 #include "flutter/benchmarking/benchmarking.h"
 #include "flutter/fml/logging.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/elf_loader.h"
 #include "flutter/testing/testing.h"
@@ -58,11 +59,7 @@ static void StartupAndShutdownShell(benchmark::State& state,
         [](Shell& shell) {
           return std::make_unique<PlatformView>(shell, shell.GetTaskRunners());
         },
-        [](Shell& shell) {
-          return std::make_unique<Rasterizer>(
-              shell, shell.GetTaskRunners(),
-              shell.GetIsGpuDisabledSyncSwitch());
-        });
+        [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
   }
 
   FML_CHECK(shell);

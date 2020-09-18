@@ -6,9 +6,12 @@
 
 #include <filesystem>
 #include <iostream>
+#include <sstream>
 
 #include "flutter/shell/platform/common/cpp/path_utils.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
+#include "flutter/shell/platform/windows/string_conversion.h"
+#include "flutter/shell/platform/windows/system_utils.h"
 
 namespace flutter {
 
@@ -69,6 +72,21 @@ static FlutterDesktopMessage ConvertToDesktopMessage(
   return message;
 }
 
+// Converts a LanguageInfo struct to a FlutterLocale struct. |info| must outlive
+// the returned value, since the returned FlutterLocale has pointers into it.
+FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
+  FlutterLocale locale = {};
+  locale.struct_size = sizeof(FlutterLocale);
+  locale.language_code = info.language.c_str();
+  if (!info.region.empty()) {
+    locale.country_code = info.region.c_str();
+  }
+  if (!info.script.empty()) {
+    locale.script_code = info.script.c_str();
+  }
+  return locale;
+}
+
 }  // namespace
 
 FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
@@ -85,16 +103,16 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
         }
       });
 
-  // Set up the structure of the state/handle objects; engine and view paramater
-  // will be filled in late.
-  auto messenger = std::make_unique<FlutterDesktopMessenger>();
-  message_dispatcher_ =
-      std::make_unique<IncomingMessageDispatcher>(messenger.get());
-  messenger->dispatcher = message_dispatcher_.get();
-
+  // Set up the legacy structs backing the API handles.
+  messenger_ = std::make_unique<FlutterDesktopMessenger>();
+  messenger_->engine = this;
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
-  plugin_registrar_->messenger = std::move(messenger);
-  plugin_registrar_->view = std::make_unique<FlutterDesktopView>();
+  plugin_registrar_->engine = this;
+
+  message_dispatcher_ =
+      std::make_unique<IncomingMessageDispatcher>(messenger_.get());
+  window_proc_delegate_manager_ =
+      std::make_unique<Win32WindowProcDelegateManager>();
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -172,14 +190,15 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     return false;
   }
 
-  plugin_registrar_->messenger->engine = engine_;
+  SendSystemSettings();
+
   return true;
 }
 
 bool FlutterWindowsEngine::Stop() {
   if (engine_) {
-    if (plugin_registrar_ && plugin_registrar_->destruction_handler) {
-      plugin_registrar_->destruction_handler(plugin_registrar_.get());
+    if (plugin_registrar_destruction_callback_) {
+      plugin_registrar_destruction_callback_(plugin_registrar_.get());
     }
     FlutterEngineResult result = FlutterEngineShutdown(engine_);
     engine_ = nullptr;
@@ -190,12 +209,16 @@ bool FlutterWindowsEngine::Stop() {
 
 void FlutterWindowsEngine::SetView(FlutterWindowsView* view) {
   view_ = view;
-  plugin_registrar_->view->view = view;
 }
 
 // Returns the currently configured Plugin Registrar.
 FlutterDesktopPluginRegistrarRef FlutterWindowsEngine::GetRegistrar() {
   return plugin_registrar_.get();
+}
+
+void FlutterWindowsEngine::SetPluginRegistrarDestructionCallback(
+    FlutterDesktopOnPluginRegistrarDestroyed callback) {
+  plugin_registrar_destruction_callback_ = callback;
 }
 
 void FlutterWindowsEngine::HandlePlatformMessage(
@@ -211,6 +234,26 @@ void FlutterWindowsEngine::HandlePlatformMessage(
 
   message_dispatcher_->HandleMessage(
       message, [this] {}, [this] {});
+}
+
+void FlutterWindowsEngine::SendSystemSettings() {
+  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
+  std::vector<FlutterLocale> flutter_locales;
+  flutter_locales.reserve(languages.size());
+  for (const auto& info : languages) {
+    flutter_locales.push_back(CovertToFlutterLocale(info));
+  }
+  // Convert the locale list to the locale pointer list that must be provided.
+  std::vector<const FlutterLocale*> flutter_locale_list;
+  flutter_locale_list.reserve(flutter_locales.size());
+  std::transform(
+      flutter_locales.begin(), flutter_locales.end(),
+      std::back_inserter(flutter_locale_list),
+      [](const auto& arg) -> const auto* { return &arg; });
+  FlutterEngineUpdateLocales(engine_, flutter_locale_list.data(),
+                             flutter_locale_list.size());
+
+  // TODO: Send 'flutter/settings' channel settings here as well.
 }
 
 }  // namespace flutter

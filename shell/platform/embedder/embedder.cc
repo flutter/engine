@@ -7,6 +7,7 @@
 #define FML_USED_ON_EMBEDDER
 #define RAPIDJSON_HAS_STDSTRING 1
 
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -91,10 +92,11 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
 
   const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
 
-  if (SAFE_ACCESS(open_gl_config, make_current, nullptr) == nullptr ||
-      SAFE_ACCESS(open_gl_config, clear_current, nullptr) == nullptr ||
-      SAFE_ACCESS(open_gl_config, present, nullptr) == nullptr ||
-      SAFE_ACCESS(open_gl_config, fbo_callback, nullptr) == nullptr) {
+  if (!SAFE_EXISTS(open_gl_config, make_current) ||
+      !SAFE_EXISTS(open_gl_config, clear_current) ||
+      !SAFE_EXISTS_ONE_OF(open_gl_config, fbo_callback,
+                          fbo_with_frame_info_callback) ||
+      !SAFE_EXISTS_ONE_OF(open_gl_config, present, present_with_info)) {
     return false;
   }
 
@@ -164,12 +166,33 @@ InferOpenGLPlatformViewCreationCallback(
   auto gl_clear_current = [ptr = config->open_gl.clear_current,
                            user_data]() -> bool { return ptr(user_data); };
 
-  auto gl_present = [ptr = config->open_gl.present, user_data]() -> bool {
-    return ptr(user_data);
+  auto gl_present = [present = config->open_gl.present,
+                     present_with_info = config->open_gl.present_with_info,
+                     user_data](uint32_t fbo_id) -> bool {
+    if (present) {
+      return present(user_data);
+    } else {
+      FlutterPresentInfo present_info = {};
+      present_info.struct_size = sizeof(FlutterPresentInfo);
+      present_info.fbo_id = fbo_id;
+      return present_with_info(user_data, &present_info);
+    }
   };
 
-  auto gl_fbo_callback = [ptr = config->open_gl.fbo_callback,
-                          user_data]() -> intptr_t { return ptr(user_data); };
+  auto gl_fbo_callback =
+      [fbo_callback = config->open_gl.fbo_callback,
+       fbo_with_frame_info_callback =
+           config->open_gl.fbo_with_frame_info_callback,
+       user_data](flutter::GLFrameInfo gl_frame_info) -> intptr_t {
+    if (fbo_callback) {
+      return fbo_callback(user_data);
+    } else {
+      FlutterFrameInfo frame_info = {};
+      frame_info.struct_size = sizeof(FlutterFrameInfo);
+      frame_info.size = {gl_frame_info.width, gl_frame_info.height};
+      return fbo_with_frame_info_callback(user_data, &frame_info);
+    }
+  };
 
   const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
   std::function<bool()> gl_make_resource_current_callback = nullptr;
@@ -991,8 +1014,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) {
-        return std::make_unique<flutter::Rasterizer>(
-            shell, shell.GetTaskRunners(), shell.GetIsGpuDisabledSyncSwitch());
+        return std::make_unique<flutter::Rasterizer>(shell);
       };
 
   // TODO(chinmaygarde): This is the wrong spot for this. It belongs in the

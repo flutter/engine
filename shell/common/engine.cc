@@ -76,11 +76,12 @@ Engine::Engine(Delegate& delegate,
              io_manager,
              nullptr) {
   runtime_controller_ = std::make_unique<RuntimeController>(
-      *this,                        // runtime delegate
-      &vm,                          // VM
-      std::move(isolate_snapshot),  // isolate snapshot
-      task_runners_,                // task runners
-      std::move(snapshot_delegate),
+      *this,                                 // runtime delegate
+      &vm,                                   // VM
+      std::move(isolate_snapshot),           // isolate snapshot
+      task_runners_,                         // task runners
+      std::move(snapshot_delegate),          // snapshot delegate
+      GetWeakPtr(),                          // hint freed delegate
       std::move(io_manager),                 // io manager
       std::move(unref_queue),                // Skia unref queue
       image_decoder_.GetWeakPtr(),           // image decoder
@@ -248,11 +249,16 @@ void Engine::ReportTimings(std::vector<int64_t> timings) {
   runtime_controller_->ReportTimings(std::move(timings));
 }
 
+void Engine::HintFreed(size_t size) {
+  hint_freed_bytes_since_last_idle_ += size;
+}
+
 void Engine::NotifyIdle(int64_t deadline) {
   auto trace_event = std::to_string(deadline - Dart_TimelineGetMicros());
   TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
                trace_event.c_str());
-  runtime_controller_->NotifyIdle(deadline);
+  runtime_controller_->NotifyIdle(deadline, hint_freed_bytes_since_last_idle_);
+  hint_freed_bytes_since_last_idle_ = 0;
 }
 
 std::pair<bool, uint32_t> Engine::GetUIIsolateReturnCode() {
@@ -290,7 +296,6 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
   bool dimensions_changed =
       viewport_metrics_.physical_height != metrics.physical_height ||
       viewport_metrics_.physical_width != metrics.physical_width ||
-      viewport_metrics_.physical_depth != metrics.physical_depth ||
       viewport_metrics_.device_pixel_ratio != metrics.device_pixel_ratio;
   viewport_metrics_ = metrics;
   runtime_controller_->SetViewportMetrics(viewport_metrics_);
@@ -476,8 +481,7 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
 
   // Ensure frame dimensions are sane.
   if (layer_tree->frame_size().isEmpty() ||
-      layer_tree->frame_physical_depth() <= 0.0f ||
-      layer_tree->frame_device_pixel_ratio() <= 0.0f) {
+      layer_tree->device_pixel_ratio() <= 0.0f) {
     return;
   }
 
