@@ -23,7 +23,7 @@ TEST_F(ShellTest, EncodeImageGivesExternalTypedData) {
     auto image_handle = Dart_GetNativeArgument(args, 0);
     image_handle =
         Dart_GetField(image_handle, Dart_NewStringFromCString("_image"));
-    ASSERT_FALSE(Dart_IsError(image_handle));
+    ASSERT_FALSE(Dart_IsError(image_handle)) << Dart_GetError(image_handle);
     ASSERT_FALSE(Dart_IsNull(image_handle));
     auto format_handle = Dart_GetNativeArgument(args, 1);
     auto callback_handle = Dart_GetNativeArgument(args, 2);

@@ -45,7 +45,8 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrame) {
     auto image_handle = Dart_GetNativeArgument(args, 0);
     auto native_image_handle =
         Dart_GetField(image_handle, Dart_NewStringFromCString("_image"));
-    ASSERT_FALSE(Dart_IsError(native_image_handle));
+    ASSERT_FALSE(Dart_IsError(native_image_handle))
+        << Dart_GetError(native_image_handle);
     ASSERT_FALSE(Dart_IsNull(native_image_handle));
     CanvasImage* image = GetNativePeer<CanvasImage>(native_image_handle);
     Picture* picture = GetNativePeer<Picture>(Dart_GetNativeArgument(args, 1));
