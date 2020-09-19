@@ -1494,7 +1494,7 @@ class HybridTextEditing {
 
   void updateConfig(InputConfiguration configuration) {
     _configuration = configuration;
-    editingElement?._applyConfiguration(_configuration);
+    editingElement._applyConfiguration(_configuration);
   }
 
   /// Responds to the 'TextInput.setEditingState' message.
