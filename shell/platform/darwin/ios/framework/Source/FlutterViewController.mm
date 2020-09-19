@@ -338,6 +338,7 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
     messageLabel.textAlignment = NSTextAlignmentCenter;
     messageLabel.autoresizingMask =
         UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    messageLabel.textColor = UIColor.blackColor;
     messageLabel.text =
         @"In iOS 14+, Flutter application in debug mode can only be launched from Flutter tooling, "
         @"IDEs with Flutter plugins or from Xcode.\n\nAlternatively, build in profile or release "
