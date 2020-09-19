@@ -309,7 +309,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 - (NSOpenGLContext*)resourceContext {
   if (!_resourceContext) {
     NSOpenGLPixelFormatAttribute attributes[] = {
-        NSOpenGLPFAColorSize, 24, NSOpenGLPFAAlphaSize, 8, NSOpenGLPFADoubleBuffer, 0,
+        NSOpenGLPFAColorSize,
+        24,
+        NSOpenGLPFAAlphaSize,
+        8,
+        NSOpenGLPFADoubleBuffer,
+        NSOpenGLPFAAllowOfflineRenderers,
+        0,
     };
     NSOpenGLPixelFormat* pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
     _resourceContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:nil];
