@@ -648,7 +648,7 @@ class EngineWindow extends ui.Window {
       case 'flutter/navigation':
         const MethodCodec codec = JSONMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
-        final Map<String, dynamic> message = decoded.arguments ?? const <String, dynamic>{};
+        final Map<String, dynamic> message = decoded.arguments as Map<String, dynamic>;
         switch (decoded.method) {
           case 'routeUpdated':
             _useSingleEntryBrowserHistory().then((void data) {
