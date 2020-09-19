@@ -215,6 +215,16 @@ class BrowserPlatform extends PlatformPlugin {
       );
     }
 
+    final Rectangle regionAsRectange = Rectangle(
+      region['x'] as num,
+      region['y'] as num,
+      region['width'] as num,
+      region['height'] as num,
+    );
+
+    // Take screenshot.
+    final Image screenshot = await _screenshotManager.capture(regionAsRectange);
+
     // Bail out fast if golden doesn't exist, and user doesn't want to create it.
     final File file = File(p.join(
       goldensDirectory,
@@ -227,16 +237,6 @@ Golden file $filename does not exist on path ${file.absolute.path}
 To automatically create this file call matchGoldenFile('$filename', write: true).
 ''';
     }
-
-    final Rectangle regionAsRectange = Rectangle(
-      region['x'] as num,
-      region['y'] as num,
-      region['width'] as num,
-      region['height'] as num,
-    );
-
-    // Take screenshot.
-    final Image screenshot = await _screenshotManager.capture(regionAsRectange);
 
     if (write) {
       // Don't even bother with the comparison, just write and return
