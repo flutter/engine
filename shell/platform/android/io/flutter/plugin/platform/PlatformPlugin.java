@@ -19,6 +19,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.util.List;
+import android.content.ClipDescription;
+import static android.content.ClipDescription.MIMETYPE_TEXT_PLAIN;
 
 /** Android implementation of the platform plugin. */
 public class PlatformPlugin {
@@ -280,8 +282,15 @@ public class PlatformPlugin {
   private CharSequence getClipboardData(PlatformChannel.ClipboardContentFormat format) {
     ClipboardManager clipboard =
         (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+
+    if (!clipboard.hasPrimaryClip()) return null;
+    
+    ClipDescription clipDescription = clipboard.getPrimaryClipDescription();
+    if (clipDescription == null || !clipDescription.hasMimeType(MIMETYPE_TEXT_PLAIN)) {
+      return null;
+    }
+
     ClipData clip = clipboard.getPrimaryClip();
-    if (clip == null) return null;
 
     if (format == null || format == PlatformChannel.ClipboardContentFormat.PLAIN_TEXT) {
       return clip.getItemAt(0).coerceToText(activity);
