@@ -4,9 +4,12 @@
 
 package io.flutter.plugin.platform;
 
+import static android.content.ClipDescription.MIMETYPE_TEXT_PLAIN;
+
 import android.app.Activity;
 import android.app.ActivityManager.TaskDescription;
 import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Build;
@@ -19,8 +22,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.util.List;
-import android.content.ClipDescription;
-import static android.content.ClipDescription.MIMETYPE_TEXT_PLAIN;
 
 /** Android implementation of the platform plugin. */
 public class PlatformPlugin {
@@ -284,7 +285,7 @@ public class PlatformPlugin {
         (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
 
     if (!clipboard.hasPrimaryClip()) return null;
-    
+
     ClipDescription clipDescription = clipboard.getPrimaryClipDescription();
     if (clipDescription == null || !clipDescription.hasMimeType(MIMETYPE_TEXT_PLAIN)) {
       return null;
