@@ -292,7 +292,6 @@ public class PlatformPlugin {
     }
 
     ClipData clip = clipboard.getPrimaryClip();
-    if (clip == null) return null;
 
     if (format == null || format == PlatformChannel.ClipboardContentFormat.PLAIN_TEXT) {
       return clip.getItemAt(0).coerceToText(activity);
