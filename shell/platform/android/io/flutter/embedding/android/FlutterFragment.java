@@ -639,6 +639,22 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   @Override
+  public void detachFromFlutterEngine() {
+    Log.v(
+        TAG,
+        "FlutterFragment "
+            + this
+            + " connection to the engine "
+            + getFlutterEngine()
+            + " evicted by another attaching activity");
+    // Redundant calls are ok.
+    delegate.onDestroyView();
+    delegate.onDetach();
+    delegate.release();
+    delegate = null;
+  }
+
+  @Override
   public void onDetach() {
     super.onDetach();
     delegate.onDetach();

@@ -10,6 +10,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
+import io.flutter.embedding.android.ExclusiveAppComponent;
 
 /**
  * Control surface through which an {@link Activity} attaches to a {@link FlutterEngine}.
@@ -50,6 +51,9 @@ public interface ActivityControlSurface {
    * plugins are given access to the {@link Activity}.
    */
   void attachToActivity(@NonNull Activity activity, @NonNull Lifecycle lifecycle);
+
+  void attachToActivity(
+      @NonNull ExclusiveAppComponent<Activity> exclusiveActivity, @NonNull Lifecycle lifecycle);
 
   /**
    * Call this method from the {@link Activity} that is attached to this {@code

@@ -163,10 +163,11 @@ public class FlutterActivityTest {
 
   @Test
   public void itCanBeManuallyReleasedBeforeOnDestroy() {
-    FlutterActivityAndFragmentDelegate mockDelegate = mock(FlutterActivityAndFragmentDelegate.class);
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
 
-    Intent intent = FlutterActivity.withCachedEngine("my_cached_engine")
-        .build(RuntimeEnvironment.application);
+    Intent intent =
+        FlutterActivity.withCachedEngine("my_cached_engine").build(RuntimeEnvironment.application);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
