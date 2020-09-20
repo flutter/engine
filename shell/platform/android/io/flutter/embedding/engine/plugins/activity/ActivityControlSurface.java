@@ -35,9 +35,9 @@ import io.flutter.embedding.android.ExclusiveAppComponent;
  *       {@link Activity} is no longer interested in displaying a {@link FlutterEngine}'s content,
  *       the {@link Activity} should invoke {@link #detachFromActivity()}.
  *   <li>When a {@link Activity} is being attached while an existing {@link ExclusiveAppComponent}
- *       is already attached, the existing {@link ExclusiveAppComponent} is given a chance to
- *       detach first via {@link ExclusiveAppComponent#detachFromFlutterEngine()} before the new
- *       activity attaches.
+ *       is already attached, the existing {@link ExclusiveAppComponent} is given a chance to detach
+ *       first via {@link ExclusiveAppComponent#detachFromFlutterEngine()} before the new activity
+ *       attaches.
  * </ol>
  *
  * The attached {@link Activity} should also forward all {@link Activity} calls that this {@code
@@ -55,9 +55,9 @@ public interface ActivityControlSurface {
    * FlutterEngine} is considered "attached" to the {@link Activity} and all {@link ActivityAware}
    * plugins are given access to the {@link Activity}.
    *
-   * @deprecated Prefer using the {@link #attachToActivity(ExclusiveAppComponent, Lifecycle)} API
-   * to avoid situations where multiple activities are driving the FlutterEngine simultaneously.
-   * See https://github.com/flutter/flutter/issues/66192.
+   * @deprecated Prefer using the {@link #attachToActivity(ExclusiveAppComponent, Lifecycle)} API to
+   *     avoid situations where multiple activities are driving the FlutterEngine simultaneously.
+   *     See https://github.com/flutter/flutter/issues/66192.
    */
   @Deprecated
   void attachToActivity(@NonNull Activity activity, @NonNull Lifecycle lifecycle);

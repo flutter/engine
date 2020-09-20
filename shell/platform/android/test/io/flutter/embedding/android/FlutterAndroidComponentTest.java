@@ -20,8 +20,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
-import io.flutter.FlutterInjectorTest;
-import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -190,7 +188,8 @@ public class FlutterAndroidComponentTest {
     FakeHost fakeHost = new FakeHost(cachedEngine);
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = spy(new FlutterActivityAndFragmentDelegate(fakeHost));
+    FlutterActivityAndFragmentDelegate delegate =
+        spy(new FlutterActivityAndFragmentDelegate(fakeHost));
 
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.

@@ -7,29 +7,29 @@ package io.flutter.embedding.android;
 import androidx.annotation.NonNull;
 
 /**
- * An Android App Component exclusively attached to a {@link io.flutter.embedding.engine.FlutterEngine}.
+ * An Android App Component exclusively attached to a {@link
+ * io.flutter.embedding.engine.FlutterEngine}.
  *
- * An exclusive App Component's {@link #detachFromFlutterEngine} is invoked when another
- * App Component is becoming attached to the {@link io.flutter.embedding.engine.FlutterEngine}.
+ * <p>An exclusive App Component's {@link #detachFromFlutterEngine} is invoked when another App
+ * Component is becoming attached to the {@link io.flutter.embedding.engine.FlutterEngine}.
  *
- * The term "App Component" refer to the 4 component types: Activity, Service, Broadcast Receiver,
- * and Content Provider, as defined in https://developer.android.com/guide/components/fundamentals.
+ * <p>The term "App Component" refer to the 4 component types: Activity, Service, Broadcast
+ * Receiver, and Content Provider, as defined in
+ * https://developer.android.com/guide/components/fundamentals.
  *
  * @param <T> The App Component behind this exclusive App Component.
  */
 public interface ExclusiveAppComponent<T> {
   /**
-   * Called when another App Component is about to become attached to the
-   * {@link io.flutter.embedding.engine.FlutterEngine} this App Component is currently attached
-   * to.
+   * Called when another App Component is about to become attached to the {@link
+   * io.flutter.embedding.engine.FlutterEngine} this App Component is currently attached to.
    *
-   * This App Component's connections to the {@link io.flutter.embedding.engine.FlutterEngine} are
-   * still valid at the moment of this call.
+   * <p>This App Component's connections to the {@link io.flutter.embedding.engine.FlutterEngine}
+   * are still valid at the moment of this call.
    */
   void detachFromFlutterEngine();
 
-  /**
-   * Retrieve the App Component behind this exclusive App Component.
-   */
-  @NonNull T getAppComponent();
+  /** Retrieve the App Component behind this exclusive App Component. */
+  @NonNull
+  T getAppComponent();
 }

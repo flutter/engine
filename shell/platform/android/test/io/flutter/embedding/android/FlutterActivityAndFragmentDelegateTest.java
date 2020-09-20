@@ -18,7 +18,6 @@ import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import io.flutter.FlutterInjector;
-import io.flutter.embedding.android.ExclusiveAppComponent;
 import io.flutter.embedding.android.FlutterActivityAndFragmentDelegate.Host;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;

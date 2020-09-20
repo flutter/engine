@@ -62,8 +62,7 @@ import java.util.Arrays;
  * the same form. <strong>Do not use this class as a convenient shortcut for any other
  * behavior.</strong>
  */
-/* package */ class FlutterActivityAndFragmentDelegate
-    implements ExclusiveAppComponent<Activity> {
+/* package */ class FlutterActivityAndFragmentDelegate implements ExclusiveAppComponent<Activity> {
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
   private static final String FRAMEWORK_RESTORATION_BUNDLE_KEY = "framework";
   private static final String PLUGINS_RESTORATION_BUNDLE_KEY = "plugins";
@@ -495,9 +494,11 @@ import java.util.Arrays;
     if (host.shouldDestroyEngineWithHost()) {
       // The host owns the engine and should never have its engine taken by another exclusive
       // activity.
-      throw new AssertionError("The internal FlutterEngine created by " + host +
-          " has been attached to by another activity. To persist a FlutterEngine beyond the " +
-          "ownership of this activity, explicitly create a FlutterEngine");
+      throw new AssertionError(
+          "The internal FlutterEngine created by "
+              + host
+              + " has been attached to by another activity. To persist a FlutterEngine beyond the "
+              + "ownership of this activity, explicitly create a FlutterEngine");
     }
 
     // Default, but customizable, behavior is for the host to call {@link #onDetach}
@@ -771,8 +772,8 @@ import java.util.Arrays;
      * Callback called when the {@link FlutterEngine} has been attached to by another activity
      * before this activity was destroyed.
      *
-     * The expected behavior is for this activity to synchronously stop using the
-     * {@link FlutterEngine} to avoid lifecycle crosstalk with the new activity.
+     * <p>The expected behavior is for this activity to synchronously stop using the {@link
+     * FlutterEngine} to avoid lifecycle crosstalk with the new activity.
      */
     void detachFromFlutterEngine();
 
