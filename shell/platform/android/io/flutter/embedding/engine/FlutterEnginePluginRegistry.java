@@ -59,8 +59,7 @@ import java.util.Set;
       new HashMap<>();
 
   // TODO(xster): remove activity after 2021/03/01 since exclusiveActivity should be the API to use.
-  @Deprecated
-  @Nullable private Activity activity;
+  @Deprecated @Nullable private Activity activity;
   @Nullable private ExclusiveAppComponent<Activity> exclusiveActivity;
   @Nullable private FlutterEngineActivityPluginBinding activityPluginBinding;
   private boolean isWaitingForActivityReattachment = false;

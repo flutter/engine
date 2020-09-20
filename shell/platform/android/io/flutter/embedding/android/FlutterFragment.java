@@ -598,12 +598,14 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onStart() {
     super.onStart();
+    ensureAlive();
     delegate.onStart();
   }
 
   @Override
   public void onResume() {
     super.onResume();
+    ensureAlive();
     delegate.onResume();
   }
 
@@ -611,12 +613,14 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   // possible.
   @ActivityCallThrough
   public void onPostResume() {
+    ensureAlive();
     delegate.onPostResume();
   }
 
   @Override
   public void onPause() {
     super.onPause();
+    ensureAlive();
     delegate.onPause();
   }
 
@@ -692,6 +696,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @ActivityCallThrough
   public void onRequestPermissionsResult(
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    ensureAlive();
     delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
   }
 
@@ -707,6 +712,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onNewIntent(@NonNull Intent intent) {
+    ensureAlive();
     delegate.onNewIntent(intent);
   }
 
@@ -717,6 +723,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onBackPressed() {
+    ensureAlive();
     delegate.onBackPressed();
   }
 
@@ -732,6 +739,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    ensureAlive();
     delegate.onActivityResult(requestCode, resultCode, data);
   }
 
@@ -743,6 +751,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onUserLeaveHint() {
+    ensureAlive();
     delegate.onUserLeaveHint();
   }
 
@@ -757,6 +766,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onTrimMemory(int level) {
+    ensureAlive();
     delegate.onTrimMemory(level);
   }
 
@@ -768,6 +778,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onLowMemory() {
     super.onLowMemory();
+    ensureAlive();
     delegate.onLowMemory();
   }
 
@@ -1065,6 +1076,12 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       return false;
     }
     return true;
+  }
+
+  private void ensureAlive() {
+    if (delegate == null) {
+      throw new IllegalStateException("Cannot execute method on a destroyed FlutterFragment.");
+    }
   }
 
   /**

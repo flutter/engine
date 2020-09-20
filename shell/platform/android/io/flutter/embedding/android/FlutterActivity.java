@@ -533,6 +533,7 @@ public class FlutterActivity extends Activity
   @Override
   protected void onStart() {
     super.onStart();
+    ensureAlive();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_START);
     delegate.onStart();
   }
@@ -540,6 +541,7 @@ public class FlutterActivity extends Activity
   @Override
   protected void onResume() {
     super.onResume();
+    ensureAlive();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
     delegate.onResume();
   }
@@ -547,12 +549,14 @@ public class FlutterActivity extends Activity
   @Override
   public void onPostResume() {
     super.onPostResume();
+    ensureAlive();
     delegate.onPostResume();
   }
 
   @Override
   protected void onPause() {
     super.onPause();
+    ensureAlive();
     delegate.onPause();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
   }
@@ -620,6 +624,7 @@ public class FlutterActivity extends Activity
 
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    ensureAlive();
     delegate.onActivityResult(requestCode, resultCode, data);
   }
 
@@ -627,28 +632,33 @@ public class FlutterActivity extends Activity
   protected void onNewIntent(@NonNull Intent intent) {
     // TODO(mattcarroll): change G3 lint rule that forces us to call super
     super.onNewIntent(intent);
+    ensureAlive();
     delegate.onNewIntent(intent);
   }
 
   @Override
   public void onBackPressed() {
+    ensureAlive();
     delegate.onBackPressed();
   }
 
   @Override
   public void onRequestPermissionsResult(
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    ensureAlive();
     delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
   }
 
   @Override
   public void onUserLeaveHint() {
+    ensureAlive();
     delegate.onUserLeaveHint();
   }
 
   @Override
   public void onTrimMemory(int level) {
     super.onTrimMemory(level);
+    ensureAlive();
     delegate.onTrimMemory(level);
   }
 
@@ -1000,5 +1010,11 @@ public class FlutterActivity extends Activity
       return false;
     }
     return true;
+  }
+
+  private void ensureAlive() {
+    if (delegate == null) {
+      throw new IllegalStateException("Cannot execute method on a destroyed FlutterActivity.");
+    }
   }
 }
