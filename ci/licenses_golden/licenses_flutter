@@ -19,6 +19,7 @@ FILE: ../../../flutter/assets/directory_asset_bundle.cc
 FILE: ../../../flutter/assets/directory_asset_bundle.h
 FILE: ../../../flutter/benchmarking/benchmarking.cc
 FILE: ../../../flutter/benchmarking/benchmarking.h
+FILE: ../../../flutter/common/constants.h
 FILE: ../../../flutter/common/exported_symbols.sym
 FILE: ../../../flutter/common/settings.cc
 FILE: ../../../flutter/common/settings.h
@@ -969,8 +970,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge_test.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/connection_collection.cc
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/connection_collection.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/connection_collection.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/connection_collection_test.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.mm
@@ -1035,6 +1036,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextI
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/fixtures/flutter_desktop_test.dart
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/module.modulemap
@@ -1303,6 +1305,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_renderer.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer.h
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_headless.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_headless.h
+FILE: ../../../flutter/shell/platform/linux/fl_renderer_wayland.cc
+FILE: ../../../flutter/shell/platform/linux/fl_renderer_wayland.h
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_x11.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_x11.h
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec.cc
