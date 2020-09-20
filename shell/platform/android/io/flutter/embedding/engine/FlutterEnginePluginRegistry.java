@@ -104,12 +104,9 @@ import java.util.Set;
 
   public void destroy() {
     Log.v(TAG, "Destroying.");
-    // Detach from any Android component that we may currently be attached to, e.g.,
-    // Activity,
-    // Service,
-    // BroadcastReceiver, ContentProvider. This must happen before removing all
-    // plugins so that the
-    // plugins have an opportunity to clean up references as a result of component
+    // Detach from any Android component that we may currently be attached to, e.g., Activity,
+    // Service, BroadcastReceiver, ContentProvider. This must happen before removing all plugins so
+    // that the plugins have an opportunity to clean up references as a result of component
     // detachment.
     detachFromAppComponent();
 
@@ -161,11 +158,9 @@ import java.util.Set;
       }
     }
 
-    // For BroadcastReceiverAware plugins, add the plugin to our set of
-    // BroadcastReceiverAware
+    // For BroadcastReceiverAware plugins, add the plugin to our set of BroadcastReceiverAware
     // plugins, and if this engine is currently attached to a BroadcastReceiver,
-    // notify the BroadcastReceiverAware plugin that it is now attached to a
-    // BroadcastReceiver.
+    // notify the BroadcastReceiverAware plugin that it is now attached to a BroadcastReceiver.
     if (plugin instanceof BroadcastReceiverAware) {
       BroadcastReceiverAware broadcastReceiverAware = (BroadcastReceiverAware) plugin;
       broadcastReceiverAwarePlugins.put(plugin.getClass(), broadcastReceiverAware);
@@ -175,11 +170,9 @@ import java.util.Set;
       }
     }
 
-    // For ContentProviderAware plugins, add the plugin to our set of
-    // ContentProviderAware
+    // For ContentProviderAware plugins, add the plugin to our set of ContentProviderAware
     // plugins, and if this engine is currently attached to a ContentProvider,
-    // notify the ContentProviderAware plugin that it is now attached to a
-    // ContentProvider.
+    // notify the ContentProviderAware plugin that it is now attached to a ContentProvider.
     if (plugin instanceof ContentProviderAware) {
       ContentProviderAware contentProviderAware = (ContentProviderAware) plugin;
       contentProviderAwarePlugins.put(plugin.getClass(), contentProviderAware);
@@ -234,10 +227,8 @@ import java.util.Set;
         serviceAwarePlugins.remove(pluginClass);
       }
 
-      // For BroadcastReceiverAware plugins, notify the plugin that it is detached
-      // from
-      // a BroadcastReceiver if a BroadcastReceiver is currently attached to this
-      // engine. Then
+      // For BroadcastReceiverAware plugins, notify the plugin that it is detached from
+      // a BroadcastReceiver if a BroadcastReceiver is currently attached to this engine. Then
       // remove the plugin from our set of BroadcastReceiverAware plugins.
       if (plugin instanceof BroadcastReceiverAware) {
         if (isAttachedToBroadcastReceiver()) {
@@ -248,8 +239,7 @@ import java.util.Set;
       }
 
       // For ContentProviderAware plugins, notify the plugin that it is detached from
-      // a ContentProvider if a ContentProvider is currently attached to this engine.
-      // Then
+      // a ContentProvider if a ContentProvider is currently attached to this engine. Then
       // remove the plugin from our set of ContentProviderAware plugins.
       if (plugin instanceof ContentProviderAware) {
         if (isAttachedToContentProvider()) {
@@ -337,15 +327,14 @@ import java.util.Set;
   private void attachToActivityInternal(@NonNull Activity activity, @NonNull Lifecycle lifecycle) {
     this.activityPluginBinding = new FlutterEngineActivityPluginBinding(activity, lifecycle);
 
-    // Activate the PlatformViewsController. This must happen before any plugins
-    // attempt to use it, otherwise an error stack trace will appear that says there is no
+    // Activate the PlatformViewsController. This must happen before any plugins attempt
+    // to use it, otherwise an error stack trace will appear that says there is no
     // flutter/platform_views channel.
     flutterEngine
         .getPlatformViewsController()
         .attach(activity, flutterEngine.getRenderer(), flutterEngine.getDartExecutor());
 
-    // Notify all ActivityAware plugins that they are now attached to a new
-    // Activity.
+    // Notify all ActivityAware plugins that they are now attached to a new Activity.
     for (ActivityAware activityAware : activityAwarePlugins.values()) {
       if (isWaitingForActivityReattachment) {
         activityAware.onReattachedToActivityForConfigChanges(activityPluginBinding);
@@ -501,8 +490,7 @@ import java.util.Set;
   public void detachFromService() {
     if (isAttachedToService()) {
       Log.v(TAG, "Detaching from a Service: " + service);
-      // Notify all ServiceAware plugins that they are no longer attached to a
-      // Service.
+      // Notify all ServiceAware plugins that they are no longer attached to a Service.
       for (ServiceAware serviceAware : serviceAwarePlugins.values()) {
         serviceAware.onDetachedFromService();
       }
@@ -546,8 +534,7 @@ import java.util.Set;
     this.broadcastReceiver = broadcastReceiver;
     this.broadcastReceiverPluginBinding =
         new FlutterEngineBroadcastReceiverPluginBinding(broadcastReceiver);
-    // TODO(mattcarroll): resolve possibility of different lifecycles between this
-    // and engine
+    // TODO(mattcarroll): resolve possibility of different lifecycles between this and engine
     // attachment
 
     // Notify all BroadcastReceiverAware plugins that they are now attached to a new
@@ -561,8 +548,7 @@ import java.util.Set;
   public void detachFromBroadcastReceiver() {
     if (isAttachedToBroadcastReceiver()) {
       Log.v(TAG, "Detaching from BroadcastReceiver: " + broadcastReceiver);
-      // Notify all BroadcastReceiverAware plugins that they are no longer attached to
-      // a
+      // Notify all BroadcastReceiverAware plugins that they are no longer attached to a
       // BroadcastReceiver.
       for (BroadcastReceiverAware broadcastReceiverAware : broadcastReceiverAwarePlugins.values()) {
         broadcastReceiverAware.onDetachedFromBroadcastReceiver();
@@ -590,12 +576,10 @@ import java.util.Set;
     this.contentProvider = contentProvider;
     this.contentProviderPluginBinding =
         new FlutterEngineContentProviderPluginBinding(contentProvider);
-    // TODO(mattcarroll): resolve possibility of different lifecycles between this
-    // and engine
+    // TODO(mattcarroll): resolve possibility of different lifecycles between this and engine
     // attachment
 
-    // Notify all ContentProviderAware plugins that they are now attached to a new
-    // ContentProvider.
+    // Notify all ContentProviderAware plugins that they are now attached to a new ContentProvider.
     for (ContentProviderAware contentProviderAware : contentProviderAwarePlugins.values()) {
       contentProviderAware.onAttachedToContentProvider(contentProviderPluginBinding);
     }

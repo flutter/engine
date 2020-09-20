@@ -623,19 +623,31 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onStop() {
     super.onStop();
-    delegate.onStop();
+    if (delegate != null) {
+      delegate.onStop();
+    } else {
+      Log.v(TAG, "FlutterFragment " + this + " onStop called after release.");
+    }
   }
 
   @Override
   public void onDestroyView() {
     super.onDestroyView();
-    delegate.onDestroyView();
+    if (delegate != null) {
+      delegate.onDestroyView();
+    } else {
+      Log.v(TAG, "FlutterFragment " + this + " onDestroyView called after release.");
+    }
   }
 
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    delegate.onSaveInstanceState(outState);
+    if (delegate != null) {
+      delegate.onSaveInstanceState(outState);
+    } else {
+      Log.v(TAG, "FlutterFragment " + this + " onSaveInstanceState called after release.");
+    }
   }
 
   @Override
@@ -657,9 +669,13 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onDetach() {
     super.onDetach();
-    delegate.onDetach();
-    delegate.release();
-    delegate = null;
+    if (delegate != null) {
+      delegate.onDetach();
+      delegate.release();
+      delegate = null;
+    } else {
+      Log.v(TAG, "FlutterFragment " + this + " onDetach called after release.");
+    }
   }
 
   /**
@@ -945,8 +961,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    *
    * <p>This method is called after {@link #provideFlutterEngine(Context)}, and after the given
    * {@link FlutterEngine} has been attached to the owning {@code FragmentActivity}. See {@link
-   * io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(Activity,
-   * Lifecycle)}.
+   * io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(
+   * ExclusiveAppComponent, Lifecycle)}.
    *
    * <p>It is possible that the owning {@code FragmentActivity} opted not to connect itself as an
    * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface}. In that case, any

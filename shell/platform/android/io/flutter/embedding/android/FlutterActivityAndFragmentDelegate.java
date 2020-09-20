@@ -165,7 +165,7 @@ import java.util.Arrays;
       // which means there shouldn't be any possibility for the Fragment Lifecycle to get out of
       // sync with the Activity. We use the Fragment's Lifecycle because it is possible that the
       // attached Activity is not a LifecycleOwner.
-      Log.v(TAG, "Attaching FlutterEngine to the Activity that owns this Fragment.");
+      Log.v(TAG, "Attaching FlutterEngine to the Activity that owns this delegate.");
       flutterEngine.getActivityControlSurface().attachToActivity(this, host.getLifecycle());
     }
 
@@ -495,12 +495,14 @@ import java.util.Arrays;
     if (host.shouldDestroyEngineWithHost()) {
       // The host owns the engine and should never have its engine taken by another exclusive
       // activity.
-      throw new AssertionError("");
+      throw new AssertionError("The internal FlutterEngine created by " + host +
+          " has been attached to by another activity. To persist a FlutterEngine beyond the " +
+          "ownership of this activity, explicitly create a FlutterEngine";
     }
 
     // Default, but customizable, behavior is for the host to call {@link #onDetach}
-    // deterministically
-    // as to not mix more events during the lifecycle of the next exclusive activity.
+    // deterministically as to not mix more events during the lifecycle of the next exclusive
+    // activity.
     host.detachFromFlutterEngine();
   }
 
@@ -765,6 +767,13 @@ import java.util.Arrays;
      */
     boolean shouldDestroyEngineWithHost();
 
+    /**
+     * Callback called when the {@link FlutterEngine} has been attached to by another activity
+     * before this activity was destroyed.
+     *
+     * The expected behavior is for this activity to synchronously stop using the
+     * {@link FlutterEngine} to avoid lifecycle crosstalk with the new activity.
+     */
     void detachFromFlutterEngine();
 
     /** Returns the Dart entrypoint that should run when a new {@link FlutterEngine} is created. */

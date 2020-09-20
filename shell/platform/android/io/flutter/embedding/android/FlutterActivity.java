@@ -126,17 +126,14 @@ import io.flutter.plugin.platform.PlatformPlugin;
  *
  * <p>The following illustrates how to pre-warm and cache a {@link FlutterEngine}:
  *
- * <pre>
- * {
- *   &#64;code
- *   // Create and pre-warm a FlutterEngine.
- *   FlutterEngine flutterEngine = new FlutterEngine(context);
- *   flutterEngine.getDartExecutor().executeDartEntrypoint(DartEntrypoint.createDefault());
+ * <pre>{@code
+ * // Create and pre-warm a FlutterEngine.
+ * FlutterEngine flutterEngine = new FlutterEngine(context);
+ * flutterEngine.getDartExecutor().executeDartEntrypoint(DartEntrypoint.createDefault());
  *
- *   // Cache the pre-warmed FlutterEngine in the FlutterEngineCache.
- *   FlutterEngineCache.getInstance().put("my_engine", flutterEngine);
- * }
- * </pre>
+ * // Cache the pre-warmed FlutterEngine in the FlutterEngineCache.
+ * FlutterEngineCache.getInstance().put("my_engine", flutterEngine);
+ * }</pre>
  *
  * <p><strong>Alternatives to FlutterActivity</strong>
  *
@@ -188,7 +185,7 @@ import io.flutter.plugin.platform.PlatformPlugin;
  * windowBackground} as the launch theme discussed previously. To use that splash screen, include
  * the following metadata in AndroidManifest.xml for this {@code FlutterActivity}:
  *
- * <p>{@code <meta-data android:name= "io.flutter.app.android.SplashScreenUntilFirstFrame"
+ * <p>{@code <meta-data android:name="io.flutter.app.android.SplashScreenUntilFirstFrame"
  * android:value="true" /> }
  *
  * <p><strong>Alternative Activity</strong> {@link FlutterFragmentActivity} is also available, which
@@ -196,10 +193,8 @@ import io.flutter.plugin.platform.PlatformPlugin;
  * {@code FlutterActivity}, if possible, but if you need a {@code FragmentActivity} then you should
  * use {@link FlutterFragmentActivity}.
  */
-// A number of methods in this class have the same implementation as
-// FlutterFragmentActivity. These
-// methods are duplicated for readability purposes. Be sure to replicate any
-// change in this class in
+// A number of methods in this class have the same implementation as FlutterFragmentActivity. These
+// methods are duplicated for readability purposes. Be sure to replicate any change in this class in
 // FlutterFragmentActivity, too.
 public class FlutterActivity extends Activity
     implements FlutterActivityAndFragmentDelegate.Host, LifecycleOwner {
@@ -378,8 +373,7 @@ public class FlutterActivity extends Activity
   }
 
   // Delegate that runs all lifecycle and OS hook logic that is common between
-  // FlutterActivity and FlutterFragment. See the
-  // FlutterActivityAndFragmentDelegate
+  // FlutterActivity and FlutterFragment. See the FlutterActivityAndFragmentDelegate
   // implementation for details about why it exists.
   @VisibleForTesting protected FlutterActivityAndFragmentDelegate delegate;
 
@@ -408,30 +402,17 @@ public class FlutterActivity extends Activity
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     switchLaunchThemeForNormalTheme();
 
-    Log.e("meh", "Activity " + this + " onCreate");
-
     super.onCreate(savedInstanceState);
-    Log.e("meh", "Activity " + this + " super oncreate finished");
 
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
 
     delegate = new FlutterActivityAndFragmentDelegate(this);
-    Log.e("meh", "Activity " + this + " created delegate");
     delegate.onAttach(this);
     delegate.onActivityCreated(savedInstanceState);
 
     configureWindowForTransparency();
     setContentView(createFlutterView());
     configureStatusBarForFullscreenFlutterExperience();
-  }
-
-  @Override
-  protected void onRestart() {
-    super.onRestart();
-    Log.e("meh", "Activity " + this + " onRestart");
-    delegate = new FlutterActivityAndFragmentDelegate(this);
-    delegate.onAttach(this);
-    delegate.onActivityCreated(null);
   }
 
   /**
@@ -552,7 +533,6 @@ public class FlutterActivity extends Activity
   @Override
   protected void onStart() {
     super.onStart();
-    Log.e("meh", "Activity " + this + " onStart");
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_START);
     delegate.onStart();
   }
@@ -560,7 +540,6 @@ public class FlutterActivity extends Activity
   @Override
   protected void onResume() {
     super.onResume();
-    Log.e("meh", "Activity " + this + " onResume");
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
     delegate.onResume();
   }
@@ -574,7 +553,6 @@ public class FlutterActivity extends Activity
   @Override
   protected void onPause() {
     super.onPause();
-    Log.e("meh", "Activity " + this + " onPause");
     delegate.onPause();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
   }
@@ -582,7 +560,6 @@ public class FlutterActivity extends Activity
   @Override
   protected void onStop() {
     super.onStop();
-    Log.e("meh", "Activity " + this + " onStop");
     if (delegate != null) {
       delegate.onStop();
     } else {
@@ -832,8 +809,7 @@ public class FlutterActivity extends Activity
   public String getAppBundlePath() {
     // If this Activity was launched from tooling, and the incoming Intent contains
     // a custom app bundle path, return that path.
-    // TODO(mattcarroll): determine if we should have an explicit
-    // FlutterTestActivity instead of
+    // TODO(mattcarroll): determine if we should have an explicit FlutterTestActivity instead of
     // conflating.
     if (isDebuggable() && Intent.ACTION_RUN.equals(getIntent().getAction())) {
       String appBundlePath = getIntent().getDataString();
@@ -973,7 +949,7 @@ public class FlutterActivity extends Activity
    * <p>Returning false from this method does not preclude a {@link FlutterEngine} from being
    * attaching to a {@code FlutterActivity} - it just prevents the attachment from happening
    * automatically. A developer can choose to subclass {@code FlutterActivity} and then invoke
-   * {@link ActivityControlSurface#attachToActivity(Activity, Lifecycle)} and {@link
+   * {@link ActivityControlSurface#attachToActivity(ExclusiveAppComponent, Lifecycle)} and {@link
    * ActivityControlSurface#detachFromActivity()} at the desired times.
    *
    * <p>One reason that a developer might choose to manually manage the relationship between the
@@ -1001,8 +977,7 @@ public class FlutterActivity extends Activity
 
   @Override
   public void onFlutterUiDisplayed() {
-    // Notifies Android that we're fully drawn so that performance metrics can be
-    // collected by
+    // Notifies Android that we're fully drawn so that performance metrics can be collected by
     // Flutter performance tests.
     // This was supported in KitKat (API 19), but has a bug around requiring
     // permissions. See https://github.com/flutter/flutter/issues/46172
@@ -1022,8 +997,7 @@ public class FlutterActivity extends Activity
       return getIntent().getBooleanExtra(EXTRA_ENABLE_STATE_RESTORATION, false);
     }
     if (getCachedEngineId() != null) {
-      // Prevent overwriting the existing state in a cached engine with restoration
-      // state.
+      // Prevent overwriting the existing state in a cached engine with restoration state.
       return false;
     }
     return true;
