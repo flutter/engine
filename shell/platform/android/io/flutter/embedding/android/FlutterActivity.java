@@ -610,7 +610,6 @@ public class FlutterActivity extends Activity
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    Log.e("meh", "Activity " + this + " onDestroy");
     if (delegate != null) {
       release();
     } else {

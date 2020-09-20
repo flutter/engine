@@ -58,6 +58,8 @@ import java.util.Set;
   private final Map<Class<? extends FlutterPlugin>, ActivityAware> activityAwarePlugins =
       new HashMap<>();
 
+  // TODO(xster): remove activity after 2021/03/01 since exclusiveActivity should be the API to use.
+  @Deprecated
   @Nullable private Activity activity;
   @Nullable private ExclusiveAppComponent<Activity> exclusiveActivity;
   @Nullable private FlutterEngineActivityPluginBinding activityPluginBinding;
@@ -306,6 +308,9 @@ import java.util.Set;
     // If we were already attached to an app component, detach from it.
     detachFromAppComponent();
 
+    if (this.exclusiveActivity != null) {
+      throw new AssertionError("Only activity or exclusiveActivity should be set");
+    }
     this.activity = activity;
     attachToActivityInternal(activity, lifecycle);
   }
@@ -326,6 +331,9 @@ import java.util.Set;
     // If we were already attached to an app component, detach from it.
     detachFromAppComponent();
 
+    if (this.activity != null) {
+      throw new AssertionError("Only activity or exclusiveActivity should be set");
+    }
     this.exclusiveActivity = exclusiveActivity;
     attachToActivityInternal(exclusiveActivity.getAppComponent(), lifecycle);
   }
