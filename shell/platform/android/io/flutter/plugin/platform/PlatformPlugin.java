@@ -290,7 +290,7 @@ public class PlatformPlugin {
     if (clipDescription == null || !clipDescription.hasMimeType(MIMETYPE_TEXT_PLAIN)) {
       return null;
     }
-    
+
     ClipData clip = clipboard.getPrimaryClip();
 
     if (format == null || format == PlatformChannel.ClipboardContentFormat.PLAIN_TEXT) {
