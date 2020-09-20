@@ -18,6 +18,7 @@ import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import io.flutter.FlutterInjector;
+import io.flutter.embedding.android.ExclusiveAppComponent;
 import io.flutter.embedding.android.FlutterActivityAndFragmentDelegate.Host;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
@@ -357,7 +358,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the ActivityControlSurface was told to attach to an Activity.
     verify(mockFlutterEngine.getActivityControlSurface(), times(1))
-        .attachToActivity(any(Activity.class), any(Lifecycle.class));
+        .attachToActivity(any(ExclusiveAppComponent.class), any(Lifecycle.class));
 
     // Flutter is detached from the surrounding Activity in onDetach.
     delegate.onDetach();

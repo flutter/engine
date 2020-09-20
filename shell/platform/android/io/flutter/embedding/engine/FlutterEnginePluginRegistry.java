@@ -300,6 +300,9 @@ import java.util.Set;
             + activity
             + "."
             + (isWaitingForActivityReattachment ? " This is after a config change." : ""));
+    if (this.exclusiveActivity != null) {
+      this.exclusiveActivity.detachFromFlutterEngine();
+    }
     // If we were already attached to an app component, detach from it.
     detachFromAppComponent();
 
@@ -317,6 +320,9 @@ import java.util.Set;
             + (isAttachedToActivity() ? " evicting previous activity " + attachedActivity() : "")
             + "."
             + (isWaitingForActivityReattachment ? " This is after a config change." : ""));
+    if (this.exclusiveActivity != null) {
+      this.exclusiveActivity.detachFromFlutterEngine();
+    }
     // If we were already attached to an app component, detach from it.
     detachFromAppComponent();
 
@@ -379,11 +385,7 @@ import java.util.Set;
     // Deactivate PlatformViewsController.
     flutterEngine.getPlatformViewsController().detach();
 
-    if (exclusiveActivity != null) {
-      final ExclusiveAppComponent<Activity> detachingActivity = exclusiveActivity;
-      exclusiveActivity = null;
-      detachingActivity.detachFromFlutterEngine();
-    }
+    exclusiveActivity = null;
     activity = null;
     activityPluginBinding = null;
   }

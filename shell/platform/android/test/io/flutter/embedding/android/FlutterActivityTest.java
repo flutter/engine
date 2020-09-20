@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -16,10 +17,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
 import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
 import io.flutter.plugins.GeneratedPluginRegistrant;
 import java.util.List;
 import org.junit.After;
@@ -162,9 +166,11 @@ public class FlutterActivityTest {
   }
 
   @Test
-  public void itCanBeManuallyReleasedBeforeOnDestroy() {
+  public void itCanBeDetachedFromTheEngineAndStopSendingFurtherEvents() {
     FlutterActivityAndFragmentDelegate mockDelegate =
         mock(FlutterActivityAndFragmentDelegate.class);
+    FlutterEngine mockEngine = mock(FlutterEngine.class);
+    FlutterEngineCache.getInstance().put("my_cached_engine", mockEngine);
 
     Intent intent =
         FlutterActivity.withCachedEngine("my_cached_engine").build(RuntimeEnvironment.application);
@@ -172,24 +178,25 @@ public class FlutterActivityTest {
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
     flutterActivity.setDelegate(mockDelegate);
-    flutterActivity.onCreate(null);
     flutterActivity.onStart();
     flutterActivity.onResume();
 
-    verify(mockDelegate, times(1)).onAttach(flutterActivity);
     verify(mockDelegate, times(1)).onStart();
     verify(mockDelegate, times(1)).onResume();
 
     flutterActivity.onPause();
-    flutterActivity.release(); // Package visibility.
+    flutterActivity.detachFromFlutterEngine();
     verify(mockDelegate, times(1)).onPause();
+    verify(mockDelegate, times(1)).onDestroyView();
+    verify(mockDelegate, times(1)).onDetach();
 
     flutterActivity.onStop();
     flutterActivity.onDestroy();
 
     verify(mockDelegate, never()).onStop();
-    verify(mockDelegate, never()).onDestroyView();
-    verify(mockDelegate, never()).onDetach();
+    // 1 time same as before.
+    verify(mockDelegate, times(1)).onDestroyView();
+    verify(mockDelegate, times(1)).onDetach();
   }
 
   static class FlutterActivityWithProvidedEngine extends FlutterActivity {
