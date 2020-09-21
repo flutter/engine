@@ -558,7 +558,7 @@ class PlatformViewForTouchIOSScenario extends Scenario
   @override
   void onDrawFrame() {
     // Some iOS gesture recognizers bugs are introduced in the second frame (with a different platform view rect) after laying out the platform view.
-    // So in this test, we pop 2 frames to ensure that we cover those cases.
+    // So in this test, we load 2 frames to ensure that we cover those cases.
     // See https://github.com/flutter/flutter/issues/66044
     if (_nextFrame == _firstFrame) {
       _nextFrame = _secondFrame;
