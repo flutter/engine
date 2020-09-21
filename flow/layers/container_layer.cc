@@ -10,6 +10,85 @@ namespace flutter {
 
 ContainerLayer::ContainerLayer() {}
 
+void ContainerLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  auto old_container = reinterpret_cast<const ContainerLayer*>(old_layer);
+  DiffContext::AutoSubtreeRestore subtree(context);
+  DiffChildren(context, old_container);
+  set_paint_region(context->CurrentSubtreeRegion());
+}
+
+void ContainerLayer::DiffChildren(DiffContext* context,
+                                  const ContainerLayer* old_layer) {
+  if (context->IsSubtreeDirty()) {
+    for (auto& layer : layers_) {
+      layer->Diff(context, nullptr);
+    }
+    return;
+  }
+  assert(old_layer);
+
+  const auto& prev_layers = old_layer->layers_;
+
+  // first mismatched element
+  int new_children_top = 0;
+  int old_children_top = 0;
+
+  // last mismatched element
+  int new_children_bottom = layers_.size() - 1;
+  int old_children_bottom = prev_layers.size() - 1;
+
+  while ((old_children_top <= old_children_bottom) &&
+         (new_children_top <= new_children_bottom)) {
+    if (!layers_[new_children_top]->CanDiff(
+            prev_layers[old_children_top].get())) {
+      break;
+    }
+    ++new_children_top;
+    ++old_children_top;
+  }
+
+  while ((old_children_top <= old_children_bottom) &&
+         (new_children_top <= new_children_bottom)) {
+    if (!layers_[new_children_top]->CanDiff(
+            prev_layers[old_children_top].get())) {
+      break;
+    }
+    --new_children_bottom;
+    --old_children_bottom;
+  }
+
+  // old layers that don't match
+  for (int i = old_children_top; i <= old_children_bottom; ++i) {
+    auto layer = prev_layers[i];
+    context->AddDamage(layer->paint_region());
+  }
+
+  for (int i = 0; i < static_cast<int>(layers_.size()); ++i) {
+    if (i < new_children_top || i > new_children_bottom) {
+      int i_prev =
+          i < new_children_top ? i : prev_layers.size() - (layers_.size() - i);
+      auto layer = layers_[i];
+      auto prev_layer = prev_layers[i_prev];
+      if (layer == prev_layer && !layer->paint_region().has_readback()) {
+        // for retained layers, stop processing the subtree and add existing
+        // region; We know current subtree is not dirty (every ancestor up to
+        // here matches) so the retained subtree will render identically to
+        // previous frame; We can only do this if there is no readback in the
+        // subtree. Layers that do readback must be able to register readback
+        // inside Diff
+        context->AddPaintRegion(layer->paint_region());
+      } else {
+        layer->Diff(context, prev_layer.get());
+      }
+    } else {
+      DiffContext::AutoSubtreeRestore subtree(context);
+      context->MarkSubtreeDirty();
+      auto layer = layers_[i];
+      layer->Diff(context, nullptr);
+    }
+  }
+}
+
 void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   layers_.emplace_back(std::move(layer));
 }

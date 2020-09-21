@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
@@ -66,12 +67,26 @@ struct PrerollContext {
 #endif
 };
 
+class PictureLayer;
+class PerformanceOverlayLayer;
+class TextureLayer;
+
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
 class Layer {
  public:
   Layer();
   virtual ~Layer();
+
+  void AssignOldLayer(std::shared_ptr<Layer> old_layer) {
+    original_layer_id_ = old_layer->original_layer_id_;
+  }
+
+  virtual bool CanDiff(const Layer* layer) const {
+    return original_layer_id_ == layer->original_layer_id_;
+  }
+
+  virtual void Diff(DiffContext* context, const Layer* old_layer) {}
 
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
 
@@ -171,9 +186,25 @@ class Layer {
     paint_bounds_ = paint_bounds;
   }
 
+  void set_paint_region(const PaintRegion& paint_region) {
+    paint_region_ = paint_region;
+  }
+
+  const PaintRegion& paint_region() const { return paint_region_; }
+
   bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
+  // Propagated unique_id of the first layer in "chain" of replacement layers
+  // that can be diffed.
+  uint64_t original_layer_id() const { return original_layer_id_; }
+
   uint64_t unique_id() const { return unique_id_; }
+
+  virtual const PictureLayer* as_picture_layer() const { return nullptr; }
+  virtual const TextureLayer* as_texture_layer() const { return nullptr; }
+  virtual const PerformanceOverlayLayer* as_performance_overlay_layer() const {
+    return nullptr;
+  }
 
  protected:
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
@@ -183,7 +214,10 @@ class Layer {
  private:
   SkRect paint_bounds_;
   uint64_t unique_id_;
+  uint64_t original_layer_id_;
   bool needs_system_composite_;
+
+  PaintRegion paint_region_;
 
   static uint64_t NextUniqueID();
 

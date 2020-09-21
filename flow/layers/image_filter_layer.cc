@@ -11,6 +11,31 @@ ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
       transformed_filter_(nullptr),
       render_count_(1) {}
 
+void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  auto* prev = reinterpret_cast<const ImageFilterLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    assert(prev);
+    if (filter_ != prev->filter_) {
+      context->MarkSubtreeDirty(old_layer->paint_region());
+    }
+  }
+
+  DiffChildren(context, prev);
+
+  SkMatrix inverse;
+  if (context->GetTransform().invert(&inverse)) {
+    auto paint_bounds = context->CurrentSubtreeRegion().GetBounds();
+    inverse.mapRect(&paint_bounds);
+    paint_bounds = filter_->computeFastBounds(paint_bounds);
+
+    context->AddPaintRegion(paint_bounds);
+    context->AddReadbackRegion(paint_bounds);
+  }
+
+  set_paint_region(context->CurrentSubtreeRegion());
+}
+
 void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Preroll");

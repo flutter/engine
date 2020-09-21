@@ -22,9 +22,17 @@ class PictureLayer : public Layer {
 
   SkPicture* picture() const { return picture_.get().get(); }
 
+  bool CanDiff(const Layer* layer) const override {
+    return layer->as_picture_layer() != nullptr;
+  }
+
+  void Diff(DiffContext* context, const Layer* old_layer) override;
+
   void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
+
+  const PictureLayer* as_picture_layer() const override { return this; }
 
  private:
   SkPoint offset_;
@@ -33,6 +41,10 @@ class PictureLayer : public Layer {
   SkiaGPUObject<SkPicture> picture_;
   bool is_complex_ = false;
   bool will_change_ = false;
+
+  sk_sp<SkData> SerializedPicture() const;
+  mutable sk_sp<SkData> cached_serialized_picture_;
+  static bool Compare(const PictureLayer* l1, const PictureLayer* l2);
 
   FML_DISALLOW_COPY_AND_ASSIGN(PictureLayer);
 };

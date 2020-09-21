@@ -20,8 +20,16 @@ class TextureLayer : public Layer {
                bool freeze,
                SkFilterQuality filter_quality);
 
+  bool CanDiff(const Layer* layer) const override {
+    return layer->as_texture_layer() != nullptr;
+  }
+
+  void Diff(DiffContext* context, const Layer* old_layer) override;
+
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
+
+  const TextureLayer* as_texture_layer() const override { return this; }
 
  private:
   SkPoint offset_;

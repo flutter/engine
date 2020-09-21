@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
@@ -50,6 +51,17 @@ enum class RasterStatus {
   kDiscarded
 };
 
+struct FrameDamage {
+  // IN: Previous layer tree
+  const LayerTree* prev_layer_tree = nullptr;
+
+  // IN: Additional damage (accumulated for double / triple buffering)
+  SkIRect additional_damage = SkIRect::MakeEmpty();
+
+  // OUT: Damage
+  Damage damage_out;
+};
+
 class CompositorContext {
  public:
   class ScopedFrame {
@@ -80,7 +92,8 @@ class CompositorContext {
     GrDirectContext* gr_context() const { return gr_context_; }
 
     virtual RasterStatus Raster(LayerTree& layer_tree,
-                                bool ignore_raster_cache);
+                                bool ignore_raster_cache,
+                                FrameDamage* frame_damage);
 
    private:
     CompositorContext& context_;
