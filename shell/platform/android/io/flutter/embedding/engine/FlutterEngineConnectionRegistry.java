@@ -37,13 +37,20 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/* package */ class FlutterEnginePluginRegistry
+/**
+ * This class is owned by the {@link FlutterEngine} and its role is to managed its connections with
+ * Android App Components and Flutter plugins.
+ *
+ * It enforces the {0|1}:1 relationship between activity and engine, and propagates the app
+ * component connection to the plugins.
+ */
+/* package */ class FlutterEngineConnectionRegistry
     implements PluginRegistry,
         ActivityControlSurface,
         ServiceControlSurface,
         BroadcastReceiverControlSurface,
         ContentProviderControlSurface {
-  private static final String TAG = "FlutterEnginePluginRegistry";
+  private static final String TAG = "FlutterEngineConnectionRegistry";
 
   // PluginRegistry
   @NonNull
@@ -88,7 +95,7 @@ import java.util.Set;
   @Nullable private ContentProvider contentProvider;
   @Nullable private FlutterEngineContentProviderPluginBinding contentProviderPluginBinding;
 
-  FlutterEnginePluginRegistry(
+  FlutterEngineConnectionRegistry(
       @NonNull Context appContext,
       @NonNull FlutterEngine flutterEngine,
       @NonNull FlutterLoader flutterLoader) {

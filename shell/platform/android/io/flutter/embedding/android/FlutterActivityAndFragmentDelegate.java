@@ -187,7 +187,7 @@ import java.util.Arrays;
           "FlutterActivityAndFragmentDelegate's getAppComponent should only "
               + "be queried after onAttach, when the host's activity should always be non-null");
     }
-    return host.getActivity();
+    return activity;
   }
 
   /**
