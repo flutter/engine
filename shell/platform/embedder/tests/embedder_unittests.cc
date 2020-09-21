@@ -4484,7 +4484,7 @@ TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
 }
 
 TEST_F(EmbedderTest, DisplayRefreshRateIsSet) {
-  auto& context = GetEmbedderContext();
+  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
   fml::AutoResetWaitableEvent latch;
   context.AddIsolateCreateCallback([&latch]() { latch.Signal(); });
   EmbedderConfigBuilder builder(context);
@@ -4506,7 +4506,7 @@ TEST_F(EmbedderTest, DisplayRefreshRateIsSet) {
 }
 
 TEST_F(EmbedderTest, DefaultDisplayRefreshRateIsUnknown) {
-  auto& context = GetEmbedderContext();
+  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
   fml::AutoResetWaitableEvent latch;
   context.AddIsolateCreateCallback([&latch]() { latch.Signal(); });
   EmbedderConfigBuilder builder(context);
