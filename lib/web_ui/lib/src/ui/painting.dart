@@ -491,7 +491,7 @@ Future<Codec> _createBmp(
   PixelFormat format,
 ) {
   // See https://en.wikipedia.org/wiki/BMP_file_format for format examples.
-  final int bufferSize = 0x36 + (width * height);
+  final int bufferSize = 0x36 + (width * height * 4);
   final ByteData bmpData = ByteData(bufferSize);
   // 'BM' header
   bmpData.setUint8(0x00, 0x42);
