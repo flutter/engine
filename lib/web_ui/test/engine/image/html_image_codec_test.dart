@@ -36,9 +36,6 @@ void testMain() async {
       final ui.Image image = await completer.future;
       expect(image.width, width);
       expect(image.height, height);
-      final ByteData data = await image.toByteData();
-      expect(data.lengthInBytes, width * height * 4);
-      expect(data.getUint32(0), 0xFF0000FF);
     });
     test('supports raw images - BGRA8888', () async {
       final Completer<ui.Image> completer = Completer<ui.Image>();
@@ -59,8 +56,6 @@ void testMain() async {
       expect(image.width, width);
       expect(image.height, height);
       final ByteData data = await image.toByteData();
-      expect(data.lengthInBytes, width * height * 4);
-      expect(data.getUint32(0), 0xFFFF0000);
     });
     test('loads sample image', () async {
       final HtmlCodec codec = HtmlCodec('sample_image1.png');
