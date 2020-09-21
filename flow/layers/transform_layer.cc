@@ -26,6 +26,20 @@ TransformLayer::TransformLayer(const SkMatrix& transform)
   }
 }
 
+void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  auto subtree = context->BeginSubtree();
+  auto* prev = reinterpret_cast<const TransformLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    assert(prev);
+    if (transform_ != prev->transform_) {
+      context->MarkSubtreeDirty(old_layer->paint_region());
+    }
+  }
+  context->PushTransform(transform_);
+  DiffChildren(context, prev);
+  set_paint_region(context->CurrentSubtreeRegion());
+}
+
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "TransformLayer::Preroll");
 

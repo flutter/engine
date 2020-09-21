@@ -15,6 +15,8 @@ class TransformLayer : public ContainerLayer {
  public:
   TransformLayer(const SkMatrix& transform);
 
+  void Diff(DiffContext* context, const Layer* old_layer) override;
+
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;

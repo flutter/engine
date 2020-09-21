@@ -48,6 +48,17 @@ enum class RasterStatus {
   kFailed
 };
 
+struct FrameDamage {
+  // IN: Previous layer tree
+  const LayerTree* prev_layer_tree = nullptr;
+
+  // IN: Additional damage (accumulated for double / triple buffering)
+  SkIRect additional_damage = SkIRect::MakeEmpty();
+
+  // OUT: Damage
+  SkIRect damage_out;
+};
+
 class CompositorContext {
  public:
   class ScopedFrame {
@@ -78,7 +89,8 @@ class CompositorContext {
     GrDirectContext* gr_context() const { return gr_context_; }
 
     virtual RasterStatus Raster(LayerTree& layer_tree,
-                                bool ignore_raster_cache);
+                                bool ignore_raster_cache,
+                                FrameDamage* frame_damage);
 
    private:
     CompositorContext& context_;

@@ -10,6 +10,83 @@ namespace flutter {
 
 ContainerLayer::ContainerLayer() {}
 
+void ContainerLayer::AssignOldLayer(std::shared_ptr<ContainerLayer> old_layer) {
+  old_layer->old_layer_ = nullptr;
+  old_layer_ = old_layer;
+}
+
+void ContainerLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  auto old_container = reinterpret_cast<const ContainerLayer*>(old_layer);
+  auto tree = context->BeginSubtree();
+  DiffChildren(context, old_container);
+  set_paint_region(context->CurrentSubtreeRegion());
+}
+
+void ContainerLayer::DiffChildren(DiffContext* context,
+                                  const ContainerLayer* old_layer) {
+  if (context->IsSubtreeDirty()) {
+    for (auto& layer : layers_) {
+      layer->Diff(context, nullptr);
+    }
+  } else {
+    assert(old_layer);
+
+    const auto& prev_layers = old_layer->layers_;
+
+    int first_changed, end, last_cur, last_prev;
+    end = layers_.size();
+    first_changed = 0;
+    last_cur = end;
+    last_prev = prev_layers.size();
+    while (first_changed < last_cur && first_changed < last_prev &&
+           layers_[first_changed]->CanDiff(prev_layers[first_changed].get())) {
+      first_changed++;
+    }
+    while (first_changed < last_cur - 1 && first_changed < last_prev - 1 &&
+           layers_[last_cur - 1]->CanDiff(prev_layers[last_prev - 1].get())) {
+      last_cur--;
+      last_prev--;
+    }
+
+    // old layers that don't match
+    for (int i = first_changed; i < last_prev; ++i) {
+      auto layer = prev_layers[i];
+      auto subtree = context->BeginSubtree();
+      context->MarkSubtreeDirty(layer->paint_region());
+    }
+
+    for (int i = 0; i < end; ++i) {
+      if (i < first_changed) {
+        auto layer = layers_[i];
+        auto prev_layer = prev_layers[i];
+        if (layer == prev_layer && !layer->paint_region().has_readback()) {
+          // for retained layers just add their existing paint region, but only
+          // if there is no readback in subtree
+          context->AddPaintRegion(layer->paint_region());
+        } else {
+          layer->Diff(context, prev_layer.get());
+        }
+      } else if (i < last_cur) {
+        auto subtree = context->BeginSubtree();
+        context->MarkSubtreeDirty();
+        auto layer = layers_[i];
+        layer->Diff(context, nullptr);
+      } else {
+        int i_prev = prev_layers.size() - (end - i);
+        auto layer = layers_[i];
+        auto prev_layer = prev_layers[i_prev];
+        if (layer == prev_layer && !layer->paint_region().has_readback()) {
+          // for retained layers just add their existing paint region, but only
+          // if there is no readback in subtree
+          context->AddPaintRegion(layer->paint_region());
+        } else {
+          layer->Diff(context, prev_layer.get());
+        }
+      }
+    }
+  }
+}
+
 void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   layers_.emplace_back(std::move(layer));
 }

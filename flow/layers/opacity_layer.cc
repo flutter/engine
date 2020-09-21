@@ -12,6 +12,20 @@ namespace flutter {
 OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
     : alpha_(alpha), offset_(offset) {}
 
+void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  auto subtree = context->BeginSubtree();
+  auto* prev = reinterpret_cast<const OpacityLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    assert(prev);
+    if (alpha_ != prev->alpha_ || offset_ != prev->offset_) {
+      context->MarkSubtreeDirty(old_layer->paint_region());
+    }
+  }
+  context->PushTransform(SkMatrix::Translate(offset_.fX, offset_.fY));
+  DiffChildren(context, prev);
+  set_paint_region(context->CurrentSubtreeRegion());
+}
+
 void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "OpacityLayer::Preroll");
 

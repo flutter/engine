@@ -4,6 +4,7 @@
 
 #include "flutter/flow/compositor_context.h"
 
+#include "flutter/flow/diff_context.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
@@ -69,9 +70,37 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 
 RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
-    bool ignore_raster_cache) {
+    bool ignore_raster_cache,
+    FrameDamage* frame_damage) {
   TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
-  bool root_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
+
+  SkRect clip_rect = kGiantRect;
+
+  if (frame_damage) {
+    DiffContext context(layer_tree.device_pixel_ratio());
+    context.PushCullRect(SkRect::MakeIWH(layer_tree.frame_size().width(),
+                                         layer_tree.frame_size().height()));
+
+    {
+      auto subtree = context.BeginSubtree();
+      const Layer* prev_root_layer = nullptr;
+      if (!frame_damage->prev_layer_tree ||
+          frame_damage->prev_layer_tree->frame_size() !=
+              layer_tree.frame_size()) {
+        context.MarkSubtreeDirty();
+      } else {
+        prev_root_layer = frame_damage->prev_layer_tree->root_layer();
+      }
+      layer_tree.root_layer()->Diff(&context, prev_root_layer);
+    }
+
+    context.GetDamage().roundOut(&frame_damage->damage_out);
+    clip_rect = SkRect::Make(frame_damage->damage_out);
+    clip_rect.join(SkRect::Make(frame_damage->additional_damage));
+  }
+
+  bool root_needs_readback =
+      layer_tree.Preroll(*this, ignore_raster_cache, clip_rect);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && raster_thread_merger_) {
@@ -85,6 +114,12 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   if (post_preroll_result == PostPrerollResult::kSkipAndRetryFrame) {
     return RasterStatus::kSkipAndRetry;
   }
+
+  if (canvas() && clip_rect != kGiantRect) {
+    canvas()->save();
+    canvas()->clipRect(clip_rect);
+  }
+
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.
   if (canvas()) {
@@ -101,6 +136,11 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   if (canvas() && needs_save_layer) {
     canvas()->restore();
   }
+
+  if (canvas() && clip_rect != kGiantRect) {
+    canvas()->restore();
+  }
+
   return RasterStatus::kSuccess;
 }
 
