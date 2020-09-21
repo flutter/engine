@@ -19,6 +19,20 @@ TextureLayer::TextureLayer(const SkPoint& offset,
       freeze_(freeze),
       filter_quality_(filter_quality) {}
 
+void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  if (!context->IsSubtreeDirty()) {
+    assert(old_layer);
+    auto prev = old_layer->as_texture_layer();
+    // TODO(knopp) It would be nice to be able to determine that a texture is
+    // dirty
+    context->MarkSubtreeDirty(prev->paint_region());
+  }
+  context->AddPaintRegion(SkRect::MakeXYWH(offset_.x(), offset_.y(),
+                                           size_.width(), size_.height()));
+  set_paint_region(context->CurrentSubtreeRegion());
+}
+
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "TextureLayer::Preroll");
 

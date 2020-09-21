@@ -26,10 +26,20 @@ class PerformanceOverlayLayer : public Layer {
                                               const std::string& label_prefix,
                                               const std::string& font_path);
 
+  bool CanDiff(const Layer* layer) const override {
+    return layer->as_performance_overlay_layer() != nullptr;
+  }
+
+  void Diff(DiffContext* context, const Layer* old_layer) override;
+
   explicit PerformanceOverlayLayer(uint64_t options,
                                    const char* font_path = nullptr);
 
   void Paint(PaintContext& context) const override;
+
+  const PerformanceOverlayLayer* as_performance_overlay_layer() const override {
+    return this;
+  }
 
  private:
   int options_;

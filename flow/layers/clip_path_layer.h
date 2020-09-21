@@ -13,6 +13,8 @@ class ClipPathLayer : public ContainerLayer {
  public:
   ClipPathLayer(const SkPath& clip_path, Clip clip_behavior = Clip::antiAlias);
 
+  void Diff(DiffContext* context, const Layer* old_layer) override;
+
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
