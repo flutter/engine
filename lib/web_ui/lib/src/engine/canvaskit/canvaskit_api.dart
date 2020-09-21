@@ -1494,6 +1494,7 @@ class SkParagraphBuilder {
 }
 
 @JS()
+@anonymous
 class SkParagraphStyle {}
 
 @JS()
