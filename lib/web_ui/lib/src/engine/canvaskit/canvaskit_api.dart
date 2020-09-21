@@ -1468,6 +1468,7 @@ class SkPicture {
 }
 
 @JS()
+@anonymous
 class SkParagraphBuilderNamespace {
   external SkParagraphBuilder Make(
     SkParagraphStyle paragraphStyle,
