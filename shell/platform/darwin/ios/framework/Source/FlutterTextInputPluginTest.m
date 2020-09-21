@@ -278,6 +278,29 @@ FLUTTER_ASSERT_ARC
   XCTAssertFalse(shouldUpdate);
 }
 
+- (void)testUITextInputAvoidUnnecessaryUndateEditingClientCalls {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  inputView.textInputDelegate = engine;
+
+  __block int updateCount = 0;
+  OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+
+  [inputView unmarkText];
+  // updateEditingClient shouldn't fire as the text is already unmarked.
+  XCTAssertEqual(updateCount, 0);
+
+  [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+  // updateEditingClient fires in response to setMarkedText.
+  XCTAssertEqual(updateCount, 1);
+
+  [inputView unmarkText];
+  // updateEditingClient fires in response to unmarkText.
+  XCTAssertEqual(updateCount, 2);
+}
+
 - (void)testUpdateEditingClientNegativeSelection {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
