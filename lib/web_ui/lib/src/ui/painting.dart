@@ -534,14 +534,18 @@ Future<Codec> _createBmp(
       swapRedBlue = false;
       break;
   }
-  for (int pixelSourceIndex = 0; pixelSourceIndex < pixels.length; pixelSourceIndex += 4, pixelDestinationIndex += 4) {
+  for (int pixelSourceIndex = 0; pixelSourceIndex < pixels.length; pixelSourceIndex += 4) {
     final int r = swapRedBlue ? pixels[pixelSourceIndex + 2] : pixels[pixelSourceIndex];
-    final int g = pixels[pixelSourceIndex + 1];
     final int b = swapRedBlue ? pixels[pixelSourceIndex]     : pixels[pixelSourceIndex + 2];
+    final int g = pixels[pixelSourceIndex + 1];
     final int a = pixels[pixelSourceIndex + 3];
-    final int colorPart = pixels[pixelSourceIndex];
+
     // Set the pixel past the header data.
-    bmpData.setUint16(pixelDestinationIndex + 0x36, colorPart, pixelEndianness);
+    bmpData.setUint8(pixelDestinationIndex + 0x36, r);
+    bmpData.setUint8(pixelDestinationIndex + 0x37, g);
+    bmpData.setUint8(pixelDestinationIndex + 0x38, b);
+    bmpData.setUint8(pixelDestinationIndex + 0x39, a);
+    pixelDestinationIndex += 4;
     if (rowBytes != width && pixelSourceIndex % width == 0) {
       pixelSourceIndex += rowBytes - width;
     }
