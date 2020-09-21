@@ -41,7 +41,7 @@ import java.util.Set;
  * This class is owned by the {@link FlutterEngine} and its role is to managed its connections with
  * Android App Components and Flutter plugins.
  *
- * It enforces the {0|1}:1 relationship between activity and engine, and propagates the app
+ * <p>It enforces the {0|1}:1 relationship between activity and engine, and propagates the app
  * component connection to the plugins.
  */
 /* package */ class FlutterEngineConnectionRegistry
