@@ -483,14 +483,13 @@ Future<void> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback call
   final FrameInfo frameInfo = await codec.getNextFrame();
   callback(frameInfo.image);
 }
-
-Future<void> _createBmp(
+Future<Codec> _createBmp(
   Uint8List pixels,
   int width,
   int height,
-  Endian pixelEndianness,
-  ImageDecoderCallback callback,
-) async {
+  int rowBytes,
+  PixelFormat format,
+) {
   // See https://en.wikipedia.org/wiki/BMP_file_format for format examples.
   final int bufferSize = 0x36 + (width * height);
   final ByteData bmpData = ByteData(bufferSize);
@@ -523,20 +522,37 @@ Future<void> _createBmp(
   bmpData.setUint32(0x2E, 0x00, Endian.little);
   // important colors
   bmpData.setUint32(0x32, 0x00, Endian.little);
-  int pixelIndex = 0x36;
-  for (final color in pixels.buffer.asUint32List()) {
-    bmpData.setUint32(pixelIndex, color, pixelEndianness);
-    pixelIndex += 4;
+
+
+  int pixelDestinationIndex = 0;
+  late bool swapRedBlue;
+  switch (format) {
+    case PixelFormat.bgra8888:
+      swapRedBlue = true;
+      break;
+    case PixelFormat.rgba8888:
+      swapRedBlue = false;
+      break;
+  }
+  for (int pixelSourceIndex = 0; pixelSourceIndex < pixels.length; pixelSourceIndex += 4, pixelDestinationIndex += 4) {
+    final int r = swapRedBlue ? pixels[pixelSourceIndex + 2] : pixels[pixelSourceIndex];
+    final int g = pixels[pixelSourceIndex + 1];
+    final int b = swapRedBlue ? pixels[pixelSourceIndex]     : pixels[pixelSourceIndex + 2];
+    final int a = pixels[pixelSourceIndex + 3];
+    final int colorPart = pixels[pixelSourceIndex];
+    // Set the pixel past the header data.
+    bmpData.setUint16(pixelDestinationIndex + 0x36, colorPart, pixelEndianness);
+    if (rowBytes != width && pixelSourceIndex % width == 0) {
+      pixelSourceIndex += rowBytes - width;
+    }
   }
 
+  final Completer<Codec> codecCompleter = Completer<Codec>();
   _instantiateImageCodec(
     bmpData.buffer.asUint8List(),
-    (Codec codec) {
-      codec.getNextFrame().then((FrameInfo frameInfo) {
-        callback(frameInfo.image);
-      });
-    }
+    (Codec codec) => codecCompleter.complete(codec),
   );
+  return codecCompleter.future;
 }
 
 void decodeImageFromPixels(
@@ -565,14 +581,13 @@ void decodeImageFromPixels(
     );
     return;
   }
-  switch (format) {
-    case PixelFormat.rgba8888:
-      _createBmp(pixels, width, height, Endian.big, callback);
-      return;
-    case PixelFormat.bgra8888:
-      _createBmp(pixels, width, height, Endian.little, callback);
-      return;
-  }
+
+  Null Function(Codec) callbacker = (Codec codec) {
+    codec.getNextFrame().then((FrameInfo frameInfo) {
+      callback(frameInfo.image);
+    });
+  };
+  _createBmp(pixels, width, height, rowBytes ?? width, format).then(callbacker);
 
 }
 
@@ -731,27 +746,19 @@ class ImageDescriptor {
   int get bytesPerPixel =>
       throw UnsupportedError('ImageDescriptor.bytesPerPixel is not supported on web.');
   void dispose() => _data = null;
-  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) {
+  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) async {
     if (_data == null) {
       throw StateError('Object is disposed');
     }
     if (_width == null) {
-      return instantiateImageCodec(
+      return await instantiateImageCodec(
         _data!,
         targetWidth: targetWidth,
         targetHeight: targetHeight,
         allowUpscaling: false,
       );
     }
-    return _futurize((engine.Callback<Codec> callback) {
-      return _instantiateImageCodec(
-        _data!,
-        callback,
-        width: _width,
-        height: _height,
-        format: _format,
-        rowBytes: _rowBytes,
-      );
-    });
+
+    return await _createBmp(_data!, width, height, _rowBytes ?? width, _format!);
   }
 }
