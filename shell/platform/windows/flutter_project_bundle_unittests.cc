@@ -39,6 +39,9 @@ TEST(FlutterProjectBundle, SwitchesEmpty) {
   properties.assets_path = L"foo\\flutter_assets";
   properties.icu_data_path = L"foo\\icudtl.dat";
 
+  // Clear the main environment variable, since test order is not guaranteed.
+  _putenv_s("FLUTTER_ENGINE_SWITCHES", "");
+
   FlutterProjectBundle project(properties);
 
   EXPECT_EQ(project.GetSwitches().size(), 0);
