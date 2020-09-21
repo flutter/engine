@@ -91,9 +91,8 @@ void ResetAnchor(CALayer* layer) {
 }
 
 // In some scenarios, when we add this view as a maskView of the ChildClippingView, iOS added
-// this view as a
-// subview of the ChildClippingView. This results this view blocking touch events on the
-// ChildClippingView.
+// this view as a subview of the ChildClippingView.
+// This results this view blocking touch events on the ChildClippingView.
 // So we should always ignore any touch events sent to this view.
 // See https://github.com/flutter/flutter/issues/66044
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent*)event {
