@@ -226,7 +226,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertFalse([inputView setTextInputState:@{@"text" : @"AFTER"}]);
 }
 
-- (void)testSelectionChangeTriggersUpdateEditingClient {
+- (void)testSelectionChangeDoesNotTriggerUpdateEditingClient {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
@@ -236,15 +236,15 @@ FLUTTER_ASSERT_ARC
 
   BOOL shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @3}];
-  XCTAssertTrue(shouldUpdate);
+  XCTAssertFalse(shouldUpdate);
 
   shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @3}];
-  XCTAssertTrue(shouldUpdate);
+  XCTAssertFalse(shouldUpdate);
 
   shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @2}];
-  XCTAssertTrue(shouldUpdate);
+  XCTAssertFalse(shouldUpdate);
 
   // Don't send anything if there's nothing new.
   shouldUpdate = [inputView
@@ -252,7 +252,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertFalse(shouldUpdate);
 }
 
-- (void)testComposingChangeTriggersUpdateEditingClient {
+- (void)testComposingChangeDoesNotTriggerUpdateEditingClient {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
@@ -263,17 +263,16 @@ FLUTTER_ASSERT_ARC
 
   BOOL shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @0, @"composingExtent" : @3}];
-  XCTAssertTrue(shouldUpdate);
+  XCTAssertFalse(shouldUpdate);
 
   shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
-  XCTAssertTrue(shouldUpdate);
+  XCTAssertFalse(shouldUpdate);
 
   shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
-  XCTAssertTrue(shouldUpdate);
+  XCTAssertFalse(shouldUpdate);
 
-  // Don't send anything if there's nothing new.
   shouldUpdate = [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
   XCTAssertFalse(shouldUpdate);
