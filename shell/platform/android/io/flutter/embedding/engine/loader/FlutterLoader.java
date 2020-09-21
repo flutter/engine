@@ -64,9 +64,9 @@ public class FlutterLoader {
     this(null);
   }
 
-  public FlutterLoader(@Nullable FlutterJNI.FlutterJNILoader flutterJNILoader) {
+  public FlutterLoader(@Nullable FlutterJNI flutterJNILoader) {
     if (flutterJNILoader == null) {
-      flutterJNILoader = new FlutterJNI.FlutterJNILoader();
+      flutterJNILoader = new FlutterJNI();
     }
     this.flutterJNILoader = flutterJNILoader;
   }
@@ -75,7 +75,7 @@ public class FlutterLoader {
   @Nullable private Settings settings;
   private long initStartTimestampMillis;
   private FlutterApplicationInfo flutterApplicationInfo;
-  private FlutterJNI.FlutterJNILoader flutterJNILoader;
+  private FlutterJNI flutterJNILoader;
 
   private static class InitResult {
     final String appStoragePath;
@@ -242,7 +242,7 @@ public class FlutterLoader {
 
       long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
 
-      flutterJNILoader.nativeInit(
+      flutterJNILoader.init(
           applicationContext,
           shellArgs.toArray(new String[0]),
           kernelPath,

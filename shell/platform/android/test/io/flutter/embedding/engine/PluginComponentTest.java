@@ -32,7 +32,7 @@ public class PluginComponentTest {
   @Test
   public void pluginsCanAccessFlutterAssetPaths() {
     // Setup test.
-    FlutterJNI.FlutterJNILoader mockFlutterJNILoader = mock(FlutterJNI.FlutterJNILoader.class);
+    FlutterJNI mockFlutterJNILoader = mock(FlutterJNI.class);
     FlutterInjector.setInstance(
         new FlutterInjector.Builder()
             .setFlutterLoader(new FlutterLoader(mockFlutterJNILoader))

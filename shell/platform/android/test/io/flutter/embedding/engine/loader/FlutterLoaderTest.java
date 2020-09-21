@@ -38,7 +38,7 @@ public class FlutterLoaderTest {
 
   @Test
   public void itReportsInitializedAfterInitializing() {
-    FlutterJNI.FlutterJNILoader mockFlutterJNILoader = mock(FlutterJNI.FlutterJNILoader.class);
+    FlutterJNI mockFlutterJNILoader = mock(FlutterJNI.class);
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNILoader);
 
     assertFalse(flutterLoader.initialized());
@@ -53,7 +53,7 @@ public class FlutterLoaderTest {
     final String oldGenHeapArg = "--old-gen-heap-size=" + activityManager.getLargeMemoryClass();
     ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
     verify(mockFlutterJNILoader, times(1))
-        .nativeInit(
+        .init(
             eq(RuntimeEnvironment.application),
             shellArgsCaptor.capture(),
             anyString(),

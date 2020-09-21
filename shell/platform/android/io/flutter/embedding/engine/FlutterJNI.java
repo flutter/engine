@@ -94,51 +94,51 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 @Keep
 public class FlutterJNI {
-  public static class FlutterJNILoader {
-    /**
-     * Loads the libflutter.so library.
-     *
-     * <p>This must be called before any other native methods, and can be overridden by tests to
-     * avoid loading native libraries.
-     */
-    public void loadLibrary() {
-      System.loadLibrary("flutter");
-    }
+  private static final String TAG = "FlutterJNI";
 
-    /**
-     * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
-     * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
-     * noticeable time, but later calls will return a reference to the preexisting font manager.
-     */
-    public void prefetchDefaultFontManager() {
-      FlutterJNI.nativePrefetchDefaultFontManager();
-    }
-
-    /**
-     * Perform one time initialization of the Dart VM and Flutter engine.
-     *
-     * <p>This method must be called only once.
-     *
-     * @param context The application context.
-     * @param args Arguments to the Dart VM/Flutter engine.
-     * @param bundlePath For JIT runtimes, the path to the Dart kernel file for the application.
-     * @param appStoragePath The path to the application data directory.
-     * @param engineCachesPath The path to the application cache directory.
-     * @param initTimeMillis The time, in milliseconds, taken for initialization.
-     */
-    public void nativeInit(
-        @NonNull Context context,
-        @NonNull String[] args,
-        @Nullable String bundlePath,
-        @NonNull String appStoragePath,
-        @NonNull String engineCachesPath,
-        long initTimeMillis) {
-      FlutterJNI.nativeInit(
-          context, args, bundlePath, appStoragePath, engineCachesPath, initTimeMillis);
-    }
+  // BEGIN Methods related to loading for FlutterLoader.
+  /**
+   * Loads the libflutter.so library.
+   *
+   * <p>This must be called before any other native methods, and can be overridden by tests to avoid
+   * loading native libraries.
+   */
+  public void loadLibrary() {
+    System.loadLibrary("flutter");
   }
 
-  private static final String TAG = "FlutterJNI";
+  /**
+   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
+   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
+   * noticeable time, but later calls will return a reference to the preexisting font manager.
+   */
+  public void prefetchDefaultFontManager() {
+    FlutterJNI.nativePrefetchDefaultFontManager();
+  }
+
+  /**
+   * Perform one time initialization of the Dart VM and Flutter engine.
+   *
+   * <p>This method must be called only once.
+   *
+   * @param context The application context.
+   * @param args Arguments to the Dart VM/Flutter engine.
+   * @param bundlePath For JIT runtimes, the path to the Dart kernel file for the application.
+   * @param appStoragePath The path to the application data directory.
+   * @param engineCachesPath The path to the application cache directory.
+   * @param initTimeMillis The time, in milliseconds, taken for initialization.
+   */
+  public void init(
+      @NonNull Context context,
+      @NonNull String[] args,
+      @Nullable String bundlePath,
+      @NonNull String appStoragePath,
+      @NonNull String engineCachesPath,
+      long initTimeMillis) {
+    FlutterJNI.nativeInit(
+        context, args, bundlePath, appStoragePath, engineCachesPath, initTimeMillis);
+  }
+  // END methods related to FlutterLoader
 
   @Nullable private static AsyncWaitForVsyncDelegate asyncWaitForVsyncDelegate;
   // This should also be updated by FlutterView when it is attached to a Display.
@@ -148,7 +148,9 @@ public class FlutterJNI {
   // This is set from native code via JNI.
   @Nullable private static String observatoryUri;
 
-  private static native void nativeInit(
+  /** @deprecated Use {@link #init(Context, String[], String, String, String, long)} instead. */
+  @Deprecated
+  public static native void nativeInit(
       @NonNull Context context,
       @NonNull String[] args,
       @Nullable String bundlePath,
@@ -156,7 +158,9 @@ public class FlutterJNI {
       @NonNull String engineCachesPath,
       long initTimeMillis);
 
-  private static native void nativePrefetchDefaultFontManager();
+  /** @deprecated Use {@link #prefetchDefaultFontManager()} instead. */
+  @Deprecated
+  public static native void nativePrefetchDefaultFontManager();
 
   private native boolean nativeGetIsSoftwareRenderingEnabled();
 
