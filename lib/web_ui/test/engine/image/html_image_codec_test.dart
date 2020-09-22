@@ -55,7 +55,6 @@ void testMain() async {
       final ui.Image image = await completer.future;
       expect(image.width, width);
       expect(image.height, height);
-      final ByteData data = await image.toByteData();
     });
     test('loads sample image', () async {
       final HtmlCodec codec = HtmlCodec('sample_image1.png');
