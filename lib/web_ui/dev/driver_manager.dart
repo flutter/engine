@@ -184,14 +184,12 @@ class SafariDriverManager extends DriverManager {
 /// tests.
 abstract class DriverManager {
   /// Installation directory for browser's driver.
-  @protected
   final io.Directory _browserDriverDir;
 
   /// This is the parent directory for all drivers.
   ///
   /// This directory is saved to [temporaryDirectories] and deleted before
   /// tests shutdown.
-  @protected
   final io.Directory _drivers;
 
   DriverManager(String browser)
@@ -223,7 +221,6 @@ abstract class DriverManager {
 
   Future<void> _verifyDriverForLUCI();
 
-  @protected
   Future<void> _startDriver();
 
   static DriverManager chooseDriver(String browser) {
