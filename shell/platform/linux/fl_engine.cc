@@ -159,9 +159,11 @@ static void engine_weak_notify_cb(gpointer user_data, GObject* object) {
 // Called when a flutter source completes.
 static void flutter_source_finalize(GSource* source) {
   FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  g_object_weak_unref(G_OBJECT(fl_source->engine), engine_weak_notify_cb,
-                      fl_source);
-  fl_source->engine = nullptr;
+  if (fl_source->engine != nullptr) {
+    g_object_weak_unref(G_OBJECT(fl_source->engine), engine_weak_notify_cb,
+                        fl_source);
+    fl_source->engine = nullptr;
+  }
 }
 
 // Table of functions for Flutter GLib main loop integration.
