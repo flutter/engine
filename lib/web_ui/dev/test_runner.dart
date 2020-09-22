@@ -184,9 +184,10 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Preparations before running the tests such as booting simulators or
   /// creating directories.
   Future<void> _prepare() async {
-    if(!environment.webUiTestResultsDirectory.existsSync()) {
-      environment.webUiTestResultsDirectory.createSync(recursive: true);
+    if (environment.webUiTestResultsDirectory.existsSync()) {
+      environment.webUiTestResultsDirectory.deleteSync(recursive: true);
     }
+    environment.webUiTestResultsDirectory.createSync(recursive: true);
 
     // In order to run iOS Safari unit tests we need to make sure iOS Simulator
     // is booted.
