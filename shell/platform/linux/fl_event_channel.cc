@@ -143,11 +143,8 @@ static void message_cb(FlBinaryMessenger* messenger,
   }
 }
 
-// Called when the channel handler is closed.
-static void channel_closed_cb(gpointer user_data) {
-  g_autoptr(FlEventChannel) self = FL_EVENT_CHANNEL(user_data);
-
-  // Disconnect handlers.
+// Removes handlers and their associated data.
+static void remove_handlers(FlEventChannel* self) {
   if (self->handler_data_destroy_notify != nullptr) {
     self->handler_data_destroy_notify(self->handler_data);
   }
@@ -155,6 +152,12 @@ static void channel_closed_cb(gpointer user_data) {
   self->cancel_handler = nullptr;
   self->handler_data = nullptr;
   self->handler_data_destroy_notify = nullptr;
+}
+
+// Called when the channel handler is closed.
+static void channel_closed_cb(gpointer user_data) {
+  g_autoptr(FlEventChannel) self = FL_EVENT_CHANNEL(user_data);
+  remove_handlers(self);
 }
 
 static void fl_event_channel_dispose(GObject* object) {
@@ -169,13 +172,7 @@ static void fl_event_channel_dispose(GObject* object) {
   g_clear_pointer(&self->name, g_free);
   g_clear_object(&self->codec);
 
-  if (self->handler_data_destroy_notify != nullptr) {
-    self->handler_data_destroy_notify(self->handler_data);
-  }
-  self->listen_handler = nullptr;
-  self->cancel_handler = nullptr;
-  self->handler_data = nullptr;
-  self->handler_data_destroy_notify = nullptr;
+  remove_handlers(self);
 
   G_OBJECT_CLASS(fl_event_channel_parent_class)->dispose(object);
 }
