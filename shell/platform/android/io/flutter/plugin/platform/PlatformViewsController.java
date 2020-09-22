@@ -460,9 +460,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   @UiThread
   public void detach() {
-    if (platformViewsChannel != null) {
-      platformViewsChannel.setPlatformViewsHandler(null);
-    }
+    platformViewsChannel.setPlatformViewsHandler(null);
     platformViewsChannel = null;
     context = null;
     textureRegistry = null;
