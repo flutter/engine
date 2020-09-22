@@ -598,14 +598,12 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onStart() {
     super.onStart();
-    ensureAlive();
     delegate.onStart();
   }
 
   @Override
   public void onResume() {
     super.onResume();
-    ensureAlive();
     delegate.onResume();
   }
 
@@ -613,91 +611,84 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   // possible.
   @ActivityCallThrough
   public void onPostResume() {
-    ensureAlive();
     delegate.onPostResume();
   }
 
   @Override
   public void onPause() {
     super.onPause();
-    ensureAlive();
     delegate.onPause();
   }
 
   @Override
   public void onStop() {
     super.onStop();
-    if (delegate != null) {
+    if (stillAttachedForEvent("onStop")) {
       delegate.onStop();
-    } else {
-      Log.v(TAG, "FlutterFragment " + this + " onStop called after release.");
     }
   }
 
   @Override
   public void onDestroyView() {
     super.onDestroyView();
-    if (delegate != null) {
+    if (stillAttachedForEvent("onDestroyView")) {
       delegate.onDestroyView();
-    } else {
-      Log.v(TAG, "FlutterFragment " + this + " onDestroyView called after release.");
     }
   }
 
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    if (delegate != null) {
+    if (stillAttachedForEvent("onSaveInstanceState")) {
       delegate.onSaveInstanceState(outState);
-    } else {
-      Log.v(TAG, "FlutterFragment " + this + " onSaveInstanceState called after release.");
     }
   }
 
   @Override
   public void detachFromFlutterEngine() {
     Log.v(
-        TAG,
-        "FlutterFragment "
-            + this
-            + " connection to the engine "
-            + getFlutterEngine()
-            + " evicted by another attaching activity");
-    // Redundant calls are ok.
-    delegate.onDestroyView();
-    delegate.onDetach();
-    delegate.release();
-    delegate = null;
-  }
-
-  @Override
-  public void onDetach() {
-    super.onDetach();
-    if (delegate != null) {
+      TAG,
+      "FlutterFragment "
+      + this
+      + " connection to the engine "
+      + getFlutterEngine()
+      + " evicted by another attaching activity");
+      // Redundant calls are ok.
+      delegate.onDestroyView();
       delegate.onDetach();
       delegate.release();
       delegate = null;
-    } else {
-      Log.v(TAG, "FlutterFragment " + this + " onDetach called after release.");
     }
-  }
 
-  /**
-   * The result of a permission request has been received.
-   *
-   * <p>See {@link android.app.Activity#onRequestPermissionsResult(int, String[], int[])}
-   *
-   * <p>
-   *
-   * @param requestCode identifier passed with the initial permission request
-   * @param permissions permissions that were requested
-   * @param grantResults permission grants or denials
-   */
-  @ActivityCallThrough
-  public void onRequestPermissionsResult(
+    @Override
+    public void onDetach() {
+      super.onDetach();
+      if (delegate != null) {
+        delegate.onDetach();
+        delegate.release();
+        delegate = null;
+      } else {
+        Log.v(TAG, "FlutterFragment " + this + " onDetach called after release.");
+      }
+    }
+
+    /**
+     * The result of a permission request has been received.
+     *
+     * <p>See {@link android.app.Activity#onRequestPermissionsResult(int, String[], int[])}
+     *
+     * <p>
+     *
+     * @param requestCode identifier passed with the initial permission request
+     * @param permissions permissions that were requested
+     * @param grantResults permission grants or denials
+     */
+    @ActivityCallThrough
+    public void onRequestPermissionsResult(
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    ensureAlive();
-    delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (stillAttachedForEvent("onRequestPermissionsResult")) {
+      delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
   }
 
   /**
@@ -712,8 +703,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onNewIntent(@NonNull Intent intent) {
-    ensureAlive();
-    delegate.onNewIntent(intent);
+    if (stillAttachedForEvent("onNewIntent")) {
+      delegate.onNewIntent(intent);
+    }
   }
 
   /**
@@ -723,8 +715,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onBackPressed() {
-    ensureAlive();
-    delegate.onBackPressed();
+    if (stillAttachedForEvent("onBackPressed")) {
+      delegate.onBackPressed();
+    }
   }
 
   /**
@@ -739,8 +732,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    ensureAlive();
-    delegate.onActivityResult(requestCode, resultCode, data);
+    if (stillAttachedForEvent("onActivityResult")) {
+      delegate.onActivityResult(requestCode, resultCode, data);
+    }
   }
 
   /**
@@ -751,8 +745,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onUserLeaveHint() {
-    ensureAlive();
-    delegate.onUserLeaveHint();
+    if (stillAttachedForEvent("onUserLeaveHint")) {
+      delegate.onUserLeaveHint();
+    }
   }
 
   /**
@@ -766,8 +761,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onTrimMemory(int level) {
-    ensureAlive();
-    delegate.onTrimMemory(level);
+    if (stillAttachedForEvent("onTrimMemory")) {
+      delegate.onTrimMemory(level);
+    }
   }
 
   /**
@@ -778,8 +774,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onLowMemory() {
     super.onLowMemory();
-    ensureAlive();
-    delegate.onLowMemory();
+    if (stillAttachedForEvent("onLowMemory")) {
+      delegate.onLowMemory();
+    }
   }
 
   /**
@@ -1078,10 +1075,12 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     return true;
   }
 
-  private void ensureAlive() {
+  private boolean stillAttachedForEvent(String event) {
     if (delegate == null) {
-      throw new IllegalStateException("Cannot execute method on a destroyed FlutterFragment.");
+      Log.v(TAG, "FlutterFragment " + hashCode() + " " + event + " called after release.");
+      return false;
     }
+    return true;
   }
 
   /**

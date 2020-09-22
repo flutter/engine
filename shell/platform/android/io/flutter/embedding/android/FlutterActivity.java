@@ -533,7 +533,6 @@ public class FlutterActivity extends Activity
   @Override
   protected void onStart() {
     super.onStart();
-    ensureAlive();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_START);
     delegate.onStart();
   }
@@ -541,7 +540,6 @@ public class FlutterActivity extends Activity
   @Override
   protected void onResume() {
     super.onResume();
-    ensureAlive();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
     delegate.onResume();
   }
@@ -549,14 +547,12 @@ public class FlutterActivity extends Activity
   @Override
   public void onPostResume() {
     super.onPostResume();
-    ensureAlive();
     delegate.onPostResume();
   }
 
   @Override
   protected void onPause() {
     super.onPause();
-    ensureAlive();
     delegate.onPause();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
   }
@@ -564,10 +560,8 @@ public class FlutterActivity extends Activity
   @Override
   protected void onStop() {
     super.onStop();
-    if (delegate != null) {
+    if (stillAttachedForEvent("onStop")) {
       delegate.onStop();
-    } else {
-      Log.v(TAG, "FlutterActivity " + this + " onStop called after release.");
     }
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
   }
@@ -575,10 +569,8 @@ public class FlutterActivity extends Activity
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    if (delegate != null) {
+    if (stillAttachedForEvent("onSaveInstanceState")) {
       delegate.onSaveInstanceState(outState);
-    } else {
-      Log.v(TAG, "FlutterActivity " + this + " onSaveInstanceState called after release.");
     }
   }
 
@@ -614,52 +606,56 @@ public class FlutterActivity extends Activity
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    if (delegate != null) {
+    if (stillAttachedForEvent("onDestroy")) {
       release();
-    } else {
-      Log.v(TAG, "FlutterActivity " + this + " onDestroy called after release.");
     }
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
   }
 
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    ensureAlive();
-    delegate.onActivityResult(requestCode, resultCode, data);
+    if (stillAttachedForEvent("onActivityResult")) {
+      delegate.onActivityResult(requestCode, resultCode, data);
+    }
   }
 
   @Override
   protected void onNewIntent(@NonNull Intent intent) {
     // TODO(mattcarroll): change G3 lint rule that forces us to call super
     super.onNewIntent(intent);
-    ensureAlive();
-    delegate.onNewIntent(intent);
+    if (stillAttachedForEvent("onNewIntent")) {
+      delegate.onNewIntent(intent);
+    }
   }
 
   @Override
   public void onBackPressed() {
-    ensureAlive();
-    delegate.onBackPressed();
+    if (stillAttachedForEvent("onBackPressed")) {
+      delegate.onBackPressed();
+    }
   }
 
   @Override
   public void onRequestPermissionsResult(
-      int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    ensureAlive();
-    delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    if (stillAttachedForEvent("onRequestPermissionsResult")) {
+      delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
   }
 
   @Override
   public void onUserLeaveHint() {
-    ensureAlive();
-    delegate.onUserLeaveHint();
+    if (stillAttachedForEvent("onUserLeaveHint")) {
+      delegate.onUserLeaveHint();
+    }
   }
 
   @Override
   public void onTrimMemory(int level) {
     super.onTrimMemory(level);
-    ensureAlive();
-    delegate.onTrimMemory(level);
+    if (stillAttachedForEvent("onTrimMemory")) {
+      delegate.onTrimMemory(level);
+    }
   }
 
   /**
@@ -1012,9 +1008,11 @@ public class FlutterActivity extends Activity
     return true;
   }
 
-  private void ensureAlive() {
+  private boolean stillAttachedForEvent(String event) {
     if (delegate == null) {
-      throw new IllegalStateException("Cannot execute method on a destroyed FlutterActivity.");
+      Log.v(TAG, "FlutterActivity " + hashCode() + " " + event + " called after release.");
+      return false;
     }
+    return true;
   }
 }
