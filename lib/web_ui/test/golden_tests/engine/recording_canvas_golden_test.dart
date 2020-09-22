@@ -726,7 +726,8 @@ class TestImage implements Image {
   @override
   Image clone() => this;
 
-  List<StackTrace>? debugGetOpenHandleStackTraces() => <StackTrace>[];
+  @override
+  List<StackTrace>/*?*/ debugGetOpenHandleStackTraces() => <StackTrace>[];
 }
 
 Paragraph createTestParagraph() {
