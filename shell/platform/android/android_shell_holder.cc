@@ -75,6 +75,9 @@ AndroidShellHolder::AndroidShellHolder(
           );
         }
         weak_platform_view = platform_view_android->GetWeakPtr();
+        shell.OnDisplayUpdates(DisplayUpdateType::kStartup,
+                               {Display(kSingleScreenDeviceId,
+                                        jni_facade->GetDisplayRefreshRate())});
         return platform_view_android;
       };
 

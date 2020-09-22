@@ -1955,3 +1955,32 @@ FlutterEngineResult FlutterEnginePostCallbackOnAllNativeThreads(
                                   "Internal error while attempting to post "
                                   "tasks to all threads.");
 }
+
+FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
+    FLUTTER_API_SYMBOL(FlutterEngine) raw_engine,
+    const FlutterEngineDisplaysUpdateType update_type,
+    const FlutterEngineDisplay* displays,
+    size_t display_count) {
+  if (raw_engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  auto engine = reinterpret_cast<flutter::EmbedderEngine*>(raw_engine);
+
+  switch (update_type) {
+    case kFlutterEngineDisplaysUpdateTypeStartup: {
+      std::vector<flutter::Display> displays;
+      for (size_t i = 0; i < display_count; i++) {
+        displays.push_back(flutter::Display(displays[i].GetDisplayId(),
+                                            displays[i].GetRefreshRate()));
+      }
+      engine->GetShell().OnDisplayUpdates(flutter::DisplayUpdateType::kStartup,
+                                          displays);
+      return kSuccess;
+    }
+    default:
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Invalid FlutterEngineDartObjectType type specified.");
+  }
+}
