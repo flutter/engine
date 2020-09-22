@@ -33,7 +33,8 @@
       {
         "name":"Linux Web Framework tests",
         "repo":"engine",
-        "enabled": true
+        "enabled": true,
+        "run_if": ["DEPS", "lib/web_ui/**", "web_sdk/**"]
       },
       {
          "name":"Mac Android AOT Engine",
