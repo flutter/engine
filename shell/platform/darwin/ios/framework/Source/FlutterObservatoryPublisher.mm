@@ -112,11 +112,35 @@
                          htons(port), txtData.length, txtData.bytes, registrationCallback, NULL);
 
   if (err != 0) {
-    FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
+    FML_LOG(ERROR) << "Failed to register observatory port with mDNS with error " << err << ".";
+    if (@available(iOS 14.0, *)) {
+      FML_LOG(ERROR)
+          << "▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒\n"
+          << "On iOS 14+, local network broadcast in apps need to be declared in "
+          << "the app's Info.plist. Debug and profile Flutter apps and modules host "
+          << "VM services on the local network to support debugging features such "
+          << "as hot reload and DevTools.\n\nTo make your Flutter app or module "
+          << "attachable and debuggable, add a '" << registrationType << "' value "
+          << "to the 'NSBonjourServices' key in your Info.plist for the Debug/"
+          << "Profile configurations.\n\n"
+          << "For more information, see "
+          // Update link to a specific header as needed.
+          << "https://flutter.dev/docs/development/add-to-app/ios/project-setup"
+          << "\n▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒";
+    }
   } else {
     DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
   }
 }
+
+/// TODO(aaclarke): Remove this preprocessor macro once infra is moved to Xcode 12.
+static const DNSServiceErrorType kFlutter_DNSServiceErr_PolicyDenied =
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 140000
+    kDNSServiceErr_PolicyDenied;
+#else
+    // Found in usr/include/dns_sd.h.
+    -65570;
+#endif  // __IPHONE_OS_VERSION_MAX_ALLOWED
 
 static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
                                            DNSServiceFlags flags,
@@ -127,6 +151,11 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
                                            void* context) {
   if (errorCode == kDNSServiceErr_NoError) {
     FML_DLOG(INFO) << "FlutterObservatoryPublisher is ready!";
+  } else if (errorCode == kFlutter_DNSServiceErr_PolicyDenied) {
+    FML_LOG(ERROR)
+        << "Could not register as server for FlutterObservatoryPublisher, permission "
+        << "denied. Check your 'Local Network' permissions for this app in the Privacy section of "
+        << "the system Settings.";
   } else {
     FML_LOG(ERROR) << "Could not register as server for FlutterObservatoryPublisher. Check your "
                       "network settings and relaunch the application.";

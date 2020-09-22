@@ -4,11 +4,12 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#include "flutter/fml/raster_thread_merger.h"
+
 #include <atomic>
 #include <thread>
 
 #include "flutter/fml/message_loop.h"
-#include "flutter/fml/raster_thread_merger.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
@@ -577,6 +578,54 @@ TEST(RasterThreadMerger, RunExpiredTasksWhileFirstTaskUnMergesThreads) {
 
   thread_platform.join();
   thread_raster.join();
+}
+
+TEST(RasterThreadMerger, SetMergeUnmergeCallback) {
+  fml::MessageLoop* loop1 = nullptr;
+  fml::AutoResetWaitableEvent latch1;
+  fml::AutoResetWaitableEvent term1;
+  std::thread thread1([&loop1, &latch1, &term1]() {
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    loop1 = &fml::MessageLoop::GetCurrent();
+    latch1.Signal();
+    term1.Wait();
+  });
+
+  fml::MessageLoop* loop2 = nullptr;
+  fml::AutoResetWaitableEvent latch2;
+  fml::AutoResetWaitableEvent term2;
+  std::thread thread2([&loop2, &latch2, &term2]() {
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    loop2 = &fml::MessageLoop::GetCurrent();
+    latch2.Signal();
+    term2.Wait();
+  });
+
+  latch1.Wait();
+  latch2.Wait();
+
+  fml::TaskQueueId qid1 = loop1->GetTaskRunner()->GetTaskQueueId();
+  fml::TaskQueueId qid2 = loop2->GetTaskRunner()->GetTaskQueueId();
+
+  const auto raster_thread_merger =
+      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+
+  int callbacks = 0;
+  raster_thread_merger->SetMergeUnmergeCallback(
+      [&callbacks]() { callbacks++; });
+
+  ASSERT_EQ(0, callbacks);
+
+  raster_thread_merger->MergeWithLease(1);
+  ASSERT_EQ(1, callbacks);
+
+  raster_thread_merger->DecrementLease();
+  ASSERT_EQ(2, callbacks);
+
+  term1.Signal();
+  term2.Signal();
+  thread1.join();
+  thread2.join();
 }
 
 }  // namespace testing

@@ -129,13 +129,13 @@ class HtmlImage implements ui.Image {
   final int height;
 
   @override
-  Future<ByteData?> toByteData(
-      {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    return futurize((Callback<ByteData?> callback) {
-      return _toByteData(format.index, (Uint8List? encoded) {
-        callback(encoded?.buffer.asByteData());
-      });
-    });
+  Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
+    if (imgElement.src?.startsWith('data:') == true) {
+      final data = UriData.fromUri(Uri.parse(imgElement.src!));
+      return Future.value(data.contentAsBytes().buffer.asByteData());
+    } else {
+      return Future.value(null);
+    }
   }
 
   // Returns absolutely positioned actual image element on first call and
@@ -150,11 +150,6 @@ class HtmlImage implements ui.Image {
     }
   }
 
-  // TODO(het): Support this for asset images and images generated from
-  // `Picture`s.
-  /// Returns an error message on failure, null on success.
-  String _toByteData(int format, Callback<Uint8List?> callback) {
-    callback(null);
-    return 'Image.toByteData is not supported in Flutter for Web';
-  }
+  @override
+  String toString() => '[$width\u00D7$height]';
 }

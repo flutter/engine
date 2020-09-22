@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
+#include <cstring>
+
 #include "win32_dpi_utils.h"
 
 namespace flutter {
@@ -127,9 +129,6 @@ Win32Window::HandleMessage(UINT const message,
       current_width_ = width;
       current_height_ = height;
       HandleResize(width, height);
-      break;
-    case WM_FONTCHANGE:
-      OnFontChange();
       break;
     case WM_MOUSEMOVE:
       TrackMouseLeaveEvent(window_handle_);

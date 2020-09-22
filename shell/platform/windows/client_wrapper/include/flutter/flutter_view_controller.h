@@ -5,8 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_VIEW_CONTROLLER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_VIEW_CONTROLLER_H_
 
-#include <Windows.h>
 #include <flutter_windows.h>
+#include <windows.h>
 
 #include <memory>
 #include <optional>
@@ -24,7 +24,7 @@ namespace flutter {
 // This is the primary wrapper class for the desktop C API.
 // If you use this class, you should not call any of the setup or teardown
 // methods in the C API directly, as this class will do that internally.
-class FlutterViewController : public PluginRegistry {
+class FlutterViewController {
  public:
   // Creates a FlutterView that can be parented into a Windows View hierarchy
   // either using HWNDs or in the future into a CoreWindow, or using compositor.
@@ -55,13 +55,6 @@ class FlutterViewController : public PluginRegistry {
                                                   UINT message,
                                                   WPARAM wparam,
                                                   LPARAM lparam);
-
-  // DEPRECATED. Call engine()->ProcessMessages() instead.
-  std::chrono::nanoseconds ProcessMessages();
-
-  // DEPRECATED. Call engine()->GetRegistrarForPlugin() instead.
-  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
-      const std::string& plugin_name) override;
 
  private:
   // Handle for interacting with the C API's view controller, if any.

@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "flutter/shell/platform/windows/win32_flutter_window.h"
 
 #include <chrono>
@@ -165,10 +169,6 @@ void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
   ScreenToClient(GetWindowHandle(), &point);
   binding_handler_delegate_->OnScroll(point.x, point.y, delta_x, delta_y,
                                       kScrollOffsetMultiplier);
-}
-
-void Win32FlutterWindow::OnFontChange() {
-  binding_handler_delegate_->OnFontChange();
 }
 
 }  // namespace flutter

@@ -3,11 +3,12 @@
 // found in the LICENSE file.
 // FLUTTER_NOLINT
 
+#include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
+
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/raster_thread_merger.h"
 #include "flutter/fml/thread.h"
-#include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 #include "flutter/shell/platform/android/jni/jni_mock.h"
 #include "flutter/shell/platform/android/surface/android_surface_mock.h"
 #include "gmock/gmock.h"
@@ -160,7 +161,7 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
       0, std::make_unique<EmbeddedViewParams>());
 
   auto postpreroll_result = embedder->PostPrerollAction(raster_thread_merger);
-  ASSERT_EQ(PostPrerollResult::kResubmitFrame, postpreroll_result);
+  ASSERT_EQ(PostPrerollResult::kSkipAndRetryFrame, postpreroll_result);
 
   EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
   embedder->EndFrame(/*should_resubmit_frame=*/true, raster_thread_merger);
@@ -584,7 +585,7 @@ TEST(AndroidExternalViewEmbedder, DisableThreadMerger) {
       0, std::make_unique<EmbeddedViewParams>());
 
   auto postpreroll_result = embedder->PostPrerollAction(raster_thread_merger);
-  ASSERT_EQ(PostPrerollResult::kResubmitFrame, postpreroll_result);
+  ASSERT_EQ(PostPrerollResult::kSkipAndRetryFrame, postpreroll_result);
 
   EXPECT_CALL(*jni_mock, FlutterViewEndFrame()).Times(0);
   embedder->EndFrame(/*should_resubmit_frame=*/true, raster_thread_merger);

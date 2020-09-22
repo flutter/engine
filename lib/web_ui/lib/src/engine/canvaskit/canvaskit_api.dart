@@ -4,7 +4,7 @@
 
 /// Bindings for CanvasKit JavaScript API.
 ///
-/// Prefer keeping the originl CanvasKit names so it is easier to locate
+/// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
 
 // @dart = 2.10
@@ -31,6 +31,8 @@ class CanvasKit {
   external SkBlurStyleEnum get BlurStyle;
   external SkTileModeEnum get TileMode;
   external SkFillTypeEnum get FillType;
+  external SkAlphaTypeEnum get AlphaType;
+  external SkColorTypeEnum get ColorType;
   external SkPathOpEnum get PathOp;
   external SkClipOpEnum get ClipOp;
   external SkPointModeEnum get PointMode;
@@ -62,6 +64,13 @@ class CanvasKit {
   external SkParagraphStyle ParagraphStyle(
       SkParagraphStyleProperties properties);
   external SkTextStyle TextStyle(SkTextStyleProperties properties);
+  external SkSurface MakeSurface(
+    int width,
+    int height,
+  );
+  external Uint8List getSkDataBytes(
+    SkData skData,
+  );
 
   // Text decoration enum is embedded in the CanvasKit object itself.
   external int get NoDecoration;
@@ -128,6 +137,7 @@ class SkSurface {
   external int width();
   external int height();
   external void dispose();
+  external SkImage makeImageSnapshot();
 }
 
 @JS()
@@ -624,6 +634,38 @@ SkTileMode toSkTileMode(ui.TileMode mode) {
 }
 
 @JS()
+class SkAlphaTypeEnum {
+  external SkAlphaType get Opaque;
+  external SkAlphaType get Premul;
+  external SkAlphaType get Unpremul;
+}
+
+@JS()
+class SkAlphaType {
+  external int get value;
+}
+
+@JS()
+class SkColorTypeEnum {
+  external SkColorType get Alpha_8;
+  external SkColorType get RGB_565;
+  external SkColorType get ARGB_4444;
+  external SkColorType get RGBA_8888;
+  external SkColorType get RGB_888x;
+  external SkColorType get BGRA_8888;
+  external SkColorType get RGBA_1010102;
+  external SkColorType get RGB_101010x;
+  external SkColorType get Gray_8;
+  external SkColorType get RGBA_F16;
+  external SkColorType get RGBA_F32;
+}
+
+@JS()
+class SkColorType {
+  external int get value;
+}
+
+@JS()
 @anonymous
 class SkAnimatedImage {
   external int getFrameCount();
@@ -634,6 +676,8 @@ class SkAnimatedImage {
   external SkImage getCurrentFrame();
   external int width();
   external int height();
+  external Uint8List readPixels(SkImageInfo imageInfo, int srcX, int srcY);
+  external SkData encodeToData();
 
   /// Deletes the C++ object.
   ///
@@ -652,6 +696,8 @@ class SkImage {
     SkTileMode tileModeY,
     Float32List? matrix, // 3x3 matrix
   );
+  external Uint8List readPixels(SkImageInfo imageInfo, int srcX, int srcY);
+  external SkData encodeToData();
 }
 
 @JS()
@@ -1260,6 +1306,7 @@ class SkPictureRecorder {
 /// "borrowed", i.e. their memory is managed by other objects. In the case of
 /// [SkCanvas] it is managed by [SkPictureRecorder].
 @JS()
+@anonymous
 class SkCanvas {
   external void clear(Float32List color);
   external void clipPath(
@@ -1398,11 +1445,13 @@ class SkCanvas {
 }
 
 @JS()
+@anonymous
 class SkCanvasSaveLayerWithoutBoundsOverload {
   external void saveLayer(SkPaint paint);
 }
 
 @JS()
+@anonymous
 class SkCanvasSaveLayerWithFilterOverload {
   external void saveLayer(
     SkPaint? paint,
@@ -1419,6 +1468,7 @@ class SkPicture {
 }
 
 @JS()
+@anonymous
 class SkParagraphBuilderNamespace {
   external SkParagraphBuilder Make(
     SkParagraphStyle paragraphStyle,
@@ -1444,6 +1494,7 @@ class SkParagraphBuilder {
 }
 
 @JS()
+@anonymous
 class SkParagraphStyle {}
 
 @JS()
@@ -1594,7 +1645,7 @@ class TypefaceFontProviderNamespace {
 Timer? _skObjectCollector;
 List<SkDeletable> _skObjectDeleteQueue = <SkDeletable>[];
 
-final SkObjectFinalizationRegistry<SkDeletable> skObjectFinalizationRegistry = SkObjectFinalizationRegistry<SkDeletable>(js.allowInterop((SkDeletable deletable) {
+final SkObjectFinalizationRegistry skObjectFinalizationRegistry = SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
   _skObjectDeleteQueue.add(deletable);
   _skObjectCollector ??= _scheduleSkObjectCollection();
 }));
@@ -1627,8 +1678,6 @@ Timer _scheduleSkObjectCollection() => Timer(Duration.zero, () {
   html.window.performance.measure('SkObject collection', 'SkObject collection-start', 'SkObject collection-end');
 });
 
-typedef SkObjectFinalizer<T> = void Function(T key);
-
 /// Any Skia object that has a `delete` method.
 @JS()
 @anonymous
@@ -1652,8 +1701,10 @@ class SkDeletable {
 /// 5. The finalizer function is called with the SkPaint as the sole argument.
 /// 6. We call `delete` on SkPaint.
 @JS('window.FinalizationRegistry')
-class SkObjectFinalizationRegistry<T> {
-  external SkObjectFinalizationRegistry(SkObjectFinalizer<T> finalizer);
+class SkObjectFinalizationRegistry {
+  // TODO(hterkelsen): Add a type for the `cleanup` function when
+  // native constructors support type parameters.
+  external SkObjectFinalizationRegistry(Function cleanup);
   external void register(Object ckObject, Object skObject);
 }
 
@@ -1662,3 +1713,34 @@ external Object? get _finalizationRegistryConstructor;
 
 /// Whether the current browser supports `FinalizationRegistry`.
 bool browserSupportsFinalizationRegistry = _finalizationRegistryConstructor != null;
+
+@JS()
+class SkData {
+  external int size();
+  external bool isEmpty();
+  external Uint8List bytes();
+}
+
+@JS()
+@anonymous
+class SkImageInfo {
+  external factory SkImageInfo({
+    required int width,
+    required int height,
+    SkAlphaType alphaType,
+    SkColorSpace colorSpace,
+    SkColorType colorType,
+  });
+  external SkAlphaType get alphaType;
+  external SkColorSpace get colorSpace;
+  external SkColorType get colorType;
+  external int get height;
+  external bool get isEmpty;
+  external bool get isOpaque;
+  external SkRect get bounds;
+  external int get width;
+  external SkImageInfo makeAlphaType(SkAlphaType alphaType);
+  external SkImageInfo makeColorSpace(SkColorSpace colorSpace);
+  external SkImageInfo makeColorType(SkColorType colorType);
+  external SkImageInfo makeWH(int width, int height);
+}

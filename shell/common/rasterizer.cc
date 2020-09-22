@@ -77,9 +77,6 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
                              user_override_resource_cache_bytes_);
   }
   compositor_context_->OnGrContextCreated();
-#if !defined(OS_FUCHSIA)
-  // TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
-  // support for raster thread merger for Fuchsia.
   if (surface_->GetExternalViewEmbedder() &&
       surface_->GetExternalViewEmbedder()->SupportsDynamicThreadMerging() &&
       !raster_thread_merger_) {
@@ -90,7 +87,14 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
     raster_thread_merger_ =
         fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
   }
-#endif
+  if (raster_thread_merger_) {
+    raster_thread_merger_->SetMergeUnmergeCallback([=]() {
+      // Clear the GL context after the thread configuration has changed.
+      if (surface_) {
+        surface_->ClearRenderContext();
+      }
+    });
+  }
 }
 
 void Rasterizer::Teardown() {
@@ -102,6 +106,7 @@ void Rasterizer::Teardown() {
       raster_thread_merger_.get()->IsMerged()) {
     FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNow();
+    raster_thread_merger_->SetMergeUnmergeCallback(nullptr);
   }
 }
 
@@ -147,7 +152,8 @@ void Rasterizer::DrawLastLayerTree() {
   DrawToSurface(*last_layer_tree_);
 }
 
-void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
+void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+                      LayerTreeDiscardCallback discardCallback) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -161,13 +167,20 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   RasterStatus raster_status = RasterStatus::kFailed;
   Pipeline<flutter::LayerTree>::Consumer consumer =
       [&](std::unique_ptr<LayerTree> layer_tree) {
-        raster_status = DoDraw(std::move(layer_tree));
+        if (discardCallback(*layer_tree.get())) {
+          raster_status = RasterStatus::kDiscarded;
+        } else {
+          raster_status = DoDraw(std::move(layer_tree));
+        }
       };
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
-  if (raster_status == RasterStatus::kResubmit) {
+
+  auto should_resubmit_frame = raster_status == RasterStatus::kResubmit ||
+                               raster_status == RasterStatus::kSkipAndRetry;
+  if (should_resubmit_frame) {
     auto front_continuation = pipeline->ProduceIfEmpty();
     bool result =
         front_continuation.Complete(std::move(resubmitted_layer_tree_));
@@ -178,14 +191,9 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
   }
 
-  if (surface_ != nullptr) {
-    surface_->ClearRenderContext();
-  }
-
   // Merging the thread as we know the next `Draw` should be run on the platform
   // thread.
   if (surface_ != nullptr && surface_->GetExternalViewEmbedder() != nullptr) {
-    auto should_resubmit_frame = raster_status == RasterStatus::kResubmit;
     surface_->GetExternalViewEmbedder()->EndFrame(should_resubmit_frame,
                                                   raster_thread_merger_);
   }
@@ -331,7 +339,8 @@ RasterStatus Rasterizer::DoDraw(
   RasterStatus raster_status = DrawToSurface(*layer_tree);
   if (raster_status == RasterStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
-  } else if (raster_status == RasterStatus::kResubmit) {
+  } else if (raster_status == RasterStatus::kResubmit ||
+             raster_status == RasterStatus::kSkipAndRetry) {
     resubmitted_layer_tree_ = std::move(layer_tree);
     return raster_status;
   }
@@ -456,7 +465,8 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
 
   if (compositor_frame) {
     RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
-    if (raster_status == RasterStatus::kFailed) {
+    if (raster_status == RasterStatus::kFailed ||
+        raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
     }
     if (external_view_embedder != nullptr) {
@@ -549,13 +559,6 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
-  auto frame = compositor_context.ACQUIRE_FRAME(
-      surface_context, canvas, nullptr, root_surface_transformation, false,
-      true, nullptr);
-  canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true);
-  canvas->flush();
-
   // snapshot_surface->makeImageSnapshot needs the GL context to be set if the
   // render context is GL. frame->Raster() pops the gl context in platforms that
   // gl context switching are used. (For example, older iOS that uses GL) We
@@ -565,6 +568,14 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     FML_LOG(ERROR) << "Screenshot: unable to make image screenshot";
     return nullptr;
   }
+
+  auto frame = compositor_context.ACQUIRE_FRAME(
+      surface_context, canvas, nullptr, root_surface_transformation, false,
+      true, nullptr);
+  canvas->clear(SK_ColorTRANSPARENT);
+  frame->Raster(*tree, true);
+  canvas->flush();
+
   // Prepare an image from the surface, this image may potentially be on th GPU.
   auto potentially_gpu_snapshot = snapshot_surface->makeImageSnapshot();
   if (!potentially_gpu_snapshot) {

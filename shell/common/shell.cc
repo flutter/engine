@@ -327,8 +327,8 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
       settings_(std::move(settings)),
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch()),
-      weak_factory_(this),
-      weak_factory_gpu_(nullptr) {
+      weak_factory_gpu_(nullptr),
+      weak_factory_(this) {
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
@@ -608,6 +608,11 @@ fml::WeakPtr<PlatformView> Shell::GetPlatformView() {
   return weak_platform_view_;
 }
 
+fml::WeakPtr<ShellIOManager> Shell::GetIOManager() {
+  FML_DCHECK(is_setup_);
+  return io_manager_->GetWeakPtr();
+}
+
 DartVM* Shell::GetDartVM() {
   return &vm_;
 }
@@ -640,9 +645,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // signals the latch and the platform/raster thread follows with executing
   // raster_task.
   const bool should_post_raster_task =
-      !fml::TaskRunnerChecker::RunsOnTheSameThread(
-          task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
-          task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
+      !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on
@@ -745,9 +748,7 @@ void Shell::OnPlatformViewDestroyed() {
   // thread just signals the latch and the platform/raster thread follows with
   // executing raster_task.
   const bool should_post_raster_task =
-      !fml::TaskRunnerChecker::RunsOnTheSameThread(
-          task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
-          task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
+      !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on
@@ -831,6 +832,12 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
           engine->SetViewportMetrics(metrics);
         }
       });
+
+  {
+    std::scoped_lock<std::mutex> lock(resize_mutex_);
+    expected_frame_size_ =
+        SkISize::Make(metrics.physical_width, metrics.physical_height);
+  }
 }
 
 // |PlatformView::Delegate|
@@ -1020,13 +1027,19 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
     }
   }
 
+  auto discard_callback = [this](flutter::LayerTree& tree) {
+    std::scoped_lock<std::mutex> lock(resize_mutex_);
+    return !expected_frame_size_.isEmpty() &&
+           tree.frame_size() != expected_frame_size_;
+  };
+
   task_runners_.GetRasterTaskRunner()->PostTask(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
-       rasterizer = rasterizer_->GetWeakPtr(),
-       pipeline = std::move(pipeline)]() {
+       rasterizer = rasterizer_->GetWeakPtr(), pipeline = std::move(pipeline),
+       discard_callback = std::move(discard_callback)]() {
         if (rasterizer) {
-          rasterizer->Draw(pipeline);
+          rasterizer->Draw(pipeline, std::move(discard_callback));
 
           if (waiting_for_first_frame.load()) {
             waiting_for_first_frame.store(false);
@@ -1224,7 +1237,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     frame_timings_report_scheduled_ = true;
     task_runners_.GetRasterTaskRunner()->PostDelayedTask(
         [self = weak_factory_gpu_->GetWeakPtr()]() {
-          if (!self.get()) {
+          if (!self) {
             return;
           }
           self->frame_timings_report_scheduled_ = false;

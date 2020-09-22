@@ -11,15 +11,13 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/runtime/ptrace_check.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/platform/darwin/common/command_line.h"
-#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
-#include "flutter/shell/profiling/sampling_profiler.h"
-
+#import "flutter/shell/platform/darwin/common/command_line.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
@@ -31,6 +29,8 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+#import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+#include "flutter/shell/profiling/sampling_profiler.h"
 
 NSString* const FlutterDefaultDartEntrypoint = nil;
 NSString* const FlutterDefaultInitialRoute = nil;
@@ -113,6 +113,16 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     _dartProject.reset([[FlutterDartProject alloc] init]);
   else
     _dartProject.reset([project retain]);
+
+  if (!EnableTracingIfNecessary([_dartProject.get() settings])) {
+    NSLog(
+        @"Cannot create a FlutterEngine instance in debug mode without Flutter tooling or "
+        @"Xcode.\n\nTo launch in debug mode in iOS 14+, run flutter run from Flutter tools, run "
+        @"from an IDE with a Flutter IDE plugin or run the iOS project from Xcode.\nAlternatively "
+        @"profile and release mode apps can be launched from the home screen.");
+    [self release];
+    return nil;
+  }
 
   _pluginPublications = [NSMutableDictionary new];
   _registrars = [[NSMutableDictionary alloc] init];
@@ -514,6 +524,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                     _threadHost.ui_thread->GetTaskRunner(),          // ui
                                     _threadHost.io_thread->GetTaskRunner()           // io
   );
+
   // Create the shell. This is a blocking operation.
   _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
                                   std::move(platformData),  // window data

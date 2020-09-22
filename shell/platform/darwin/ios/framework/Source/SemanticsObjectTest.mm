@@ -1,8 +1,12 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
-#import "third_party/ocmock/Source/OCMock/OCMock.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -33,7 +37,8 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
     SemanticsActionObservation observation(id, action);
     observations.push_back(observation);
   }
-  void AccessibilityFocusDidChange(int32_t id) override {}
+  void AccessibilityObjectDidBecomeFocused(int32_t id) override {}
+  void AccessibilityObjectDidLoseFocus(int32_t id) override {}
   FlutterPlatformViewsController* GetPlatformViewsController() const override { return nil; }
   std::vector<SemanticsActionObservation> observations;
 
