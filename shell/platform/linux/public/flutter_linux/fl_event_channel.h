@@ -135,6 +135,7 @@ FlEventChannel* fl_event_channel_new(FlBinaryMessenger* messenger,
  * to ignore.
  *
  * Sends an event on the channel.
+ * Events should only be sent once the channel is being listened to.
  *
  * Returns: %TRUE if successful.
  */
@@ -142,6 +143,44 @@ gboolean fl_event_channel_send(FlEventChannel* channel,
                                FlValue* event,
                                GCancellable* cancellable,
                                GError** error);
+
+/**
+ * fl_event_channel_send_error:
+ * @channel: an #FlEventChannel.
+ * @code: error code to send.
+ * @message: error message to send.
+ * @details: (allow-none): error details or %NULL.
+ * @cancellable: (allow-none): a #GCancellable or %NULL.
+ * @error: (allow-none): #GError location to store the error occurring, or %NULL
+ * to ignore.
+ *
+ * Sends an error on the channel.
+ * Errors should only be sent once the channel is being listened to.
+ *
+ * Returns: %TRUE if successful.
+ */
+gboolean fl_event_channel_send_error(FlEventChannel* channel,
+                                     const gchar* code,
+                                     const gchar* message,
+                                     FlValue* details,
+                                     GCancellable* cancellable,
+                                     GError** error);
+
+/**
+ * fl_event_channel_send_end_of_stream:
+ * @channel: an #FlEventChannel.
+ * @cancellable: (allow-none): a #GCancellable or %NULL.
+ * @error: (allow-none): #GError location to store the error occurring, or %NULL
+ * to ignore.
+ *
+ * Indicates the stream has completed.
+ * It is a programmer error to send any more events after calling this.
+ *
+ * Returns: %TRUE if successful.
+ */
+gboolean fl_event_channel_send_end_of_stream(FlEventChannel* channel,
+                                             GCancellable* cancellable,
+                                             GError** error);
 
 G_END_DECLS
 

@@ -203,3 +203,35 @@ G_MODULE_EXPORT gboolean fl_event_channel_send(FlEventChannel* self,
 
   return TRUE;
 }
+
+G_MODULE_EXPORT gboolean fl_event_channel_send_error(FlEventChannel* self,
+                                                     const gchar* code,
+                                                     const gchar* message,
+                                                     FlValue* details,
+                                                     GCancellable* cancellable,
+                                                     GError** error) {
+  g_return_val_if_fail(FL_IS_EVENT_CHANNEL(self), FALSE);
+  g_return_val_if_fail(code != nullptr, FALSE);
+  g_return_val_if_fail(message != nullptr, FALSE);
+
+  g_autoptr(GBytes) data = fl_method_codec_encode_error_envelope(
+      self->codec, code, message, details, error);
+  if (data == nullptr) {
+    return FALSE;
+  }
+
+  fl_binary_messenger_send_on_channel(self->messenger, self->name, data,
+                                      cancellable, nullptr, nullptr);
+
+  return TRUE;
+}
+
+G_MODULE_EXPORT gboolean
+fl_event_channel_send_end_of_stream(FlEventChannel* self,
+                                    GCancellable* cancellable,
+                                    GError** error) {
+  g_return_val_if_fail(FL_IS_EVENT_CHANNEL(self), FALSE);
+  fl_binary_messenger_send_on_channel(self->messenger, self->name, nullptr,
+                                      cancellable, nullptr, nullptr);
+  return TRUE;
+}
