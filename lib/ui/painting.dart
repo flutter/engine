@@ -1593,7 +1593,7 @@ class Image {
   }
 
   // C++ unit tests access this.
-  @pragma('vm:entry-point', !bool.fromEnvironment('dart.vm.product'))
+  @pragma('vm:entry-point')
   final _Image _image;
 
   StackTrace? _debugStack;
