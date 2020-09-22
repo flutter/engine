@@ -75,6 +75,17 @@ class PersistedPlatformView extends PersistedLeafSurface {
     }
   }
 
+  // Platform Views can only be updated if their viewId matches.
+  @override
+  bool canUpdateAsMatch(PersistedSurface oldSurface) {
+    if (super.canUpdateAsMatch(oldSurface)) {
+      if (oldSurface is PersistedPlatformView) {
+        return viewId == oldSurface.viewId;
+      }
+    }
+    return false;
+  }
+
   @override
   double matchForUpdate(PersistedPlatformView existingSurface) {
     return existingSurface.viewId == viewId ? 0.0 : 1.0;
@@ -82,11 +93,10 @@ class PersistedPlatformView extends PersistedLeafSurface {
 
   @override
   void update(PersistedPlatformView oldSurface) {
+    assert(viewId == oldSurface.viewId, 'PersistedPlatformView with different viewId should never be updated. Check the canUpdateAsMatch method.',);
     super.update(oldSurface);
-    if (viewId != oldSurface.viewId) {
-      // The content of the surface has to be rebuild if the viewId is changed.
-      build();
-    } else if (dx != oldSurface.dx ||
+    // Only update if the view has been resized
+    if (dx != oldSurface.dx ||
         dy != oldSurface.dy ||
         width != oldSurface.width ||
         height != oldSurface.height) {
