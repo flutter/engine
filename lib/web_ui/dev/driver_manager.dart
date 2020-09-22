@@ -5,7 +5,6 @@
 // @dart = 2.6
 import 'dart:io' as io;
 
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as pathlib;
 import 'package:web_driver_installer/chrome_driver_installer.dart';
 import 'package:web_driver_installer/firefox_driver_installer.dart';
