@@ -43,9 +43,9 @@ G_MODULE_EXPORT GType fl_event_channel_get_type();
 G_DEFINE_TYPE(FlEventChannel, fl_event_channel, G_TYPE_OBJECT)
 
 // Handle method calls from the Dart side of the channel.
-static FlMethodResponse* handle_method_call(FlEventChannel* self,
-                                            const gchar* name,
-                                            FlValue* args) {
+static FlMethodErrorResponse* handle_method_call(FlEventChannel* self,
+                                                 const gchar* name,
+                                                 FlValue* args) {
   FlEventChannelHandler handler;
   if (g_strcmp0(name, kListenMethod) == 0) {
     handler = self->listen_handler;
@@ -54,38 +54,15 @@ static FlMethodResponse* handle_method_call(FlEventChannel* self,
   } else {
     g_autofree gchar* message =
         g_strdup_printf("Unknown event channel request '%s'", name);
-    return FL_METHOD_RESPONSE(
-        fl_method_error_response_new(kEventRequestError, message, nullptr));
+    return fl_method_error_response_new(kEventRequestError, message, nullptr);
   }
 
   // If not handled, just accept requests.
   if (handler == nullptr) {
-    return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+    return nullptr;
   }
 
-  FlMethodResponse* response = handler(self, args, self->handler_data);
-  if (response == nullptr) {
-    g_autofree gchar* message =
-        g_strdup_printf("Event channel request '%s' not responded to", name);
-    return FL_METHOD_RESPONSE(
-        fl_method_error_response_new(kEventRequestError, message, nullptr));
-  }
-
-  // Validate the method response is one of the acceptable types.
-  if (FL_IS_METHOD_SUCCESS_RESPONSE(response)) {
-    if (fl_method_success_response_get_result(
-            FL_METHOD_SUCCESS_RESPONSE(response)) != nullptr) {
-      g_warning("Event channel %s responded to '%s' with value", self->name,
-                name);
-    }
-  } else if (FL_IS_METHOD_ERROR_RESPONSE(response)) {
-    // All errors are valid.
-  } else {
-    g_warning("Event channel %s responded to '%s' with response other than ",
-              self->name, name);
-  }
-
-  return response;
+  return handler(self, args, self->handler_data);
 }
 
 // Called when a binary message is received on this channel.
@@ -108,33 +85,28 @@ static void message_cb(FlBinaryMessenger* messenger,
     return;
   }
 
-  g_autoptr(FlMethodResponse) response = handle_method_call(self, name, args);
+  g_autoptr(FlMethodErrorResponse) response =
+      handle_method_call(self, name, args);
 
   g_autoptr(GBytes) data = nullptr;
-  if (FL_IS_METHOD_SUCCESS_RESPONSE(response)) {
-    FlMethodSuccessResponse* r = FL_METHOD_SUCCESS_RESPONSE(response);
+  if (response == nullptr) {
     g_autoptr(GError) codec_error = nullptr;
-    data = fl_method_codec_encode_success_envelope(
-        self->codec, fl_method_success_response_get_result(r), &codec_error);
+    data = fl_method_codec_encode_success_envelope(self->codec, nullptr,
+                                                   &codec_error);
     if (data == nullptr) {
       g_warning("Failed to encode event channel %s success response: %s",
                 self->name, codec_error->message);
     }
-  } else if (FL_IS_METHOD_ERROR_RESPONSE(response)) {
-    FlMethodErrorResponse* r = FL_METHOD_ERROR_RESPONSE(response);
+  } else {
     g_autoptr(GError) codec_error = nullptr;
     data = fl_method_codec_encode_error_envelope(
-        self->codec, fl_method_error_response_get_code(r),
-        fl_method_error_response_get_message(r),
-        fl_method_error_response_get_details(r), &codec_error);
+        self->codec, fl_method_error_response_get_code(response),
+        fl_method_error_response_get_message(response),
+        fl_method_error_response_get_details(response), &codec_error);
     if (data == nullptr) {
       g_warning("Failed to encode event channel %s error response: %s",
                 self->name, codec_error->message);
     }
-  } else if (FL_IS_METHOD_NOT_IMPLEMENTED_RESPONSE(response)) {
-    data = nullptr;
-  } else {
-    g_assert_not_reached();
   }
 
   if (!fl_binary_messenger_send_response(messenger, response_handle, data,

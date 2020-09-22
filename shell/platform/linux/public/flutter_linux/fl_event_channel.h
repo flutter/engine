@@ -52,18 +52,18 @@ G_DECLARE_FINAL_TYPE(FlEventChannelResponseHandle,
  *   }
  * }
  *
- * static FlMethodResponse* listen_cb (FlEventChannel* channel,
- *                                     FlValue *args,
- *                                     gpointer user_data) {
+ * static FlMethodErrorResponse* listen_cb (FlEventChannel* channel,
+ *                                          FlValue *args,
+ *                                          gpointer user_data) {
  *   send_events = TRUE;
- *   return FL_METHOD_RESPONSE (fl_method_success_response_new (NULL));
+ *   return NULL;
  * }
  *
- * static FlMethodResponse* cancel_cb (GObject *object,
- *                                     FlValue *args,
- *                                     gpointer user_data) {
+ * static FlMethodErrorResponse* cancel_cb (GObject *object,
+ *                                          FlValue *args,
+ *                                          gpointer user_data) {
  *   send_events = FALSE;
- *   return FL_METHOD_RESPONSE (fl_method_success_response_new (NULL));
+ *   return NULL;
  * }
  *
  * static void setup_channel () {
@@ -93,11 +93,11 @@ G_DECLARE_FINAL_TYPE(FlEventChannelResponseHandle,
  *
  * Function called when the stream is listened to or cancelled.
  *
- * Returns: (transfer full): an #FlMethodResponse for this request.
+ * Returns: (transfer full): an #FlMethodErrorResponse or %NULL if no error.
  */
-typedef FlMethodResponse* (*FlEventChannelHandler)(FlEventChannel* channel,
-                                                   FlValue* args,
-                                                   gpointer user_data);
+typedef FlMethodErrorResponse* (*FlEventChannelHandler)(FlEventChannel* channel,
+                                                        FlValue* args,
+                                                        gpointer user_data);
 
 /**
  * fl_event_channel_new:

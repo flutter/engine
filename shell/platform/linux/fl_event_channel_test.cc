@@ -59,14 +59,14 @@ static void cancel_channel(FlBinaryMessenger* messenger, FlValue* args) {
 }
 
 // Called when when the remote end starts listening on the channel.
-static FlMethodResponse* listen_listen_cb(FlEventChannel* channel,
-                                          FlValue* args,
-                                          gpointer user_data) {
+static FlMethodErrorResponse* listen_listen_cb(FlEventChannel* channel,
+                                               FlValue* args,
+                                               gpointer user_data) {
   EXPECT_EQ(fl_value_get_type(args), FL_VALUE_TYPE_NULL);
 
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
 
-  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+  return nullptr;
 }
 
 // Checks we detect a listen event.
@@ -90,11 +90,12 @@ TEST(FlEventChannelTest, Listen) {
 }
 
 // Called when when the remote end starts listening on the channel.
-static FlMethodResponse* listen_exception_listen_cb(FlEventChannel* channel,
-                                                    FlValue* args,
-                                                    gpointer user_data) {
-  return FL_METHOD_RESPONSE(fl_method_error_response_new(
-      "LISTEN-ERROR", "LISTEN-ERROR-MESSAGE", nullptr));
+static FlMethodErrorResponse* listen_exception_listen_cb(
+    FlEventChannel* channel,
+    FlValue* args,
+    gpointer user_data) {
+  return fl_method_error_response_new("LISTEN-ERROR", "LISTEN-ERROR-MESSAGE",
+                                      nullptr);
 }
 
 // Called when a the test engine notifies us what response we sent in the
@@ -151,14 +152,14 @@ TEST(FlEventChannelTest, ListenException) {
 }
 
 // Called when when the remote end cancels their subscription.
-static FlMethodResponse* cancel_cancel_cb(FlEventChannel* channel,
-                                          FlValue* args,
-                                          gpointer user_data) {
+static FlMethodErrorResponse* cancel_cancel_cb(FlEventChannel* channel,
+                                               FlValue* args,
+                                               gpointer user_data) {
   EXPECT_EQ(fl_value_get_type(args), FL_VALUE_TYPE_NULL);
 
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
 
-  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+  return nullptr;
 }
 
 // Checks we detect a cancel event.
@@ -183,11 +184,12 @@ TEST(FlEventChannelTest, Cancel) {
 }
 
 // Called when when the remote end cancels their subscription.
-static FlMethodResponse* cancel_exception_cancel_cb(FlEventChannel* channel,
-                                                    FlValue* args,
-                                                    gpointer user_data) {
-  return FL_METHOD_RESPONSE(fl_method_error_response_new(
-      "CANCEL-ERROR", "CANCEL-ERROR-MESSAGE", nullptr));
+static FlMethodErrorResponse* cancel_exception_cancel_cb(
+    FlEventChannel* channel,
+    FlValue* args,
+    gpointer user_data) {
+  return fl_method_error_response_new("CANCEL-ERROR", "CANCEL-ERROR-MESSAGE",
+                                      nullptr);
 }
 
 // Called when a the test engine notifies us what response we sent in the
@@ -250,25 +252,25 @@ TEST(FlEventChannelTest, CancelException) {
 }
 
 // Called when when the remote end starts listening on the channel.
-static FlMethodResponse* args_listen_cb(FlEventChannel* channel,
-                                        FlValue* args,
-                                        gpointer user_data) {
+static FlMethodErrorResponse* args_listen_cb(FlEventChannel* channel,
+                                             FlValue* args,
+                                             gpointer user_data) {
   g_autoptr(FlValue) expected_args = fl_value_new_string("LISTEN-ARGS");
   EXPECT_TRUE(fl_value_equal(args, expected_args));
 
-  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+  return nullptr;
 }
 
 // Called when when the remote end cancels their subscription.
-static FlMethodResponse* args_cancel_cb(FlEventChannel* channel,
-                                        FlValue* args,
-                                        gpointer user_data) {
+static FlMethodErrorResponse* args_cancel_cb(FlEventChannel* channel,
+                                             FlValue* args,
+                                             gpointer user_data) {
   g_autoptr(FlValue) expected_args = fl_value_new_string("CANCEL-ARGS");
   EXPECT_TRUE(fl_value_equal(args, expected_args));
 
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
 
-  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+  return nullptr;
 }
 
 // Checks args are passed to listen/cancel.
@@ -295,9 +297,9 @@ TEST(FlEventChannelTest, Args) {
 }
 
 // Called when when the remote end starts listening on the channel.
-static FlMethodResponse* send_events_listen_cb(FlEventChannel* channel,
-                                               FlValue* args,
-                                               gpointer user_data) {
+static FlMethodErrorResponse* send_events_listen_cb(FlEventChannel* channel,
+                                                    FlValue* args,
+                                                    gpointer user_data) {
   // Send some events.
   for (int i = 0; i < 5; i++) {
     g_autoptr(FlValue) event = fl_value_new_int(i);
@@ -306,7 +308,7 @@ static FlMethodResponse* send_events_listen_cb(FlEventChannel* channel,
     EXPECT_EQ(error, nullptr);
   }
 
-  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+  return nullptr;
 }
 
 // Called when a the test engine notifies us what event we sent in the
