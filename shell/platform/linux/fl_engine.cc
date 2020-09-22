@@ -52,7 +52,7 @@ G_DEFINE_TYPE_WITH_CODE(
 // Subclass of GSource that integrates Flutter tasks into the GLib main loop.
 typedef struct {
   GSource parent;
-  FlEngine* self;
+  FlEngine* engine;
   FlutterTask task;
 } FlutterSource;
 
@@ -138,7 +138,7 @@ static gboolean flutter_source_dispatch(GSource* source,
                                         GSourceFunc callback,
                                         gpointer user_data) {
   FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  FlEngine* self = fl_source->self;
+  FlEngine* self = fl_source->engine;
 
   FlutterEngineResult result =
       FlutterEngineRunTask(self->engine, &fl_source->task);
@@ -149,11 +149,19 @@ static gboolean flutter_source_dispatch(GSource* source,
   return G_SOURCE_REMOVE;
 }
 
+// Called when the engine is disposed.
+static void engine_weak_notify_cb(gpointer user_data, GObject* object) {
+  FlutterSource* source = reinterpret_cast<FlutterSource*>(user_data);
+  source->engine = nullptr;
+  g_source_destroy(reinterpret_cast<GSource*>(source));
+}
+
 // Called when a flutter source completes.
 static void flutter_source_finalize(GSource* source) {
   FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-
-  g_object_unref(fl_source->self);
+  g_object_weak_unref(G_OBJECT(fl_source->engine), engine_weak_notify_cb,
+                      fl_source);
+  fl_source->engine = nullptr;
 }
 
 // Table of functions for Flutter GLib main loop integration.
@@ -233,7 +241,8 @@ static void fl_engine_post_task(FlutterTask task,
   g_autoptr(GSource) source =
       g_source_new(&flutter_source_funcs, sizeof(FlutterSource));
   FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  fl_source->self = static_cast<FlEngine*>(g_object_ref(self));
+  fl_source->engine = self;
+  g_object_weak_ref(G_OBJECT(self), engine_weak_notify_cb, fl_source);
   fl_source->task = task;
   g_source_set_ready_time(source,
                           target_time_nanos / kMicrosecondsPerNanosecond);
