@@ -131,8 +131,15 @@ source_set("ui") {
     "//third_party/skia",
   ]
 
+  if (!defined(defines)) {
+    defines = []
+  }
   if (flutter_enable_skshaper) {
-    defines = [ "FLUTTER_ENABLE_SKSHAPER" ]
+    defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
+  }
+  if (is_win) {
+    # Required for M_PI and others.
+    defines += [ "_USE_MATH_DEFINES" ]
   }
 
   if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
@@ -183,6 +190,7 @@ if (enable_unittests) {
     public_configs = [ "//flutter:export_dynamic_symbols" ]
 
     sources = [
+      "painting/image_dispose_unittests.cc",
       "painting/image_encoding_unittests.cc",
       "painting/vertices_unittests.cc",
       "window/platform_configuration_unittests.cc",

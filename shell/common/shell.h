@@ -274,6 +274,13 @@ class Shell final : public PlatformView::Delegate,
   ///
   fml::WeakPtr<PlatformView> GetPlatformView();
 
+  //----------------------------------------------------------------------------
+  /// @brief      The IO Manager may only be accessed on the IO task runner.
+  ///
+  /// @return     A weak pointer to the IO manager.
+  ///
+  fml::WeakPtr<ShellIOManager> GetIOManager();
+
   // Embedders should call this under low memory conditions to free up
   // internal caches used.
   //
@@ -417,6 +424,13 @@ class Shell final : public PlatformView::Delegate,
   // The atomic is for extra thread safety as this is written in the UI thread
   // and read from the raster thread.
   std::atomic<float> display_refresh_rate_ = 0.0f;
+
+  // protects expected_frame_size_ which is set on platform thread and read on
+  // raster thread
+  std::mutex resize_mutex_;
+
+  // used to discard wrong size layer tree produced during interactive resizing
+  SkISize expected_frame_size_ = SkISize::MakeEmpty();
 
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
@@ -589,12 +603,11 @@ class Shell final : public PlatformView::Delegate,
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
 
-  fml::WeakPtrFactory<Shell> weak_factory_;
-
   // For accessing the Shell via the raster thread, necessary for various
   // rasterizer callbacks.
   std::unique_ptr<fml::TaskRunnerAffineWeakPtrFactory<Shell>> weak_factory_gpu_;
 
+  fml::WeakPtrFactory<Shell> weak_factory_;
   friend class testing::ShellTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Shell);

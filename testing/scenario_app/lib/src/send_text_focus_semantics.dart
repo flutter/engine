@@ -1,4 +1,4 @@
-// Copyright 2020 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -55,9 +55,16 @@ class SendTextFocusScemantics extends Scenario {
         currentValueLength: 0,
         scrollChildren: 0,
         scrollIndex: 0,
+        scrollPosition: 0.0,
+        scrollExtentMax: 0.0,
+        scrollExtentMin: 0.0,
         transform: Matrix4.identity().storage,
         elevation: 0.0,
         thickness: 0.0,
+        hint: '',
+        value: '',
+        increasedValue: '',
+        decreasedValue: '',
         childrenInTraversalOrder: Int32List(0),
         childrenInHitTestOrder: Int32List(0),
         additionalActions: Int32List(0),
@@ -105,9 +112,16 @@ class SendTextFocusScemantics extends Scenario {
         currentValueLength: 0,
         scrollChildren: 0,
         scrollIndex: 0,
+        scrollPosition: 0.0,
+        scrollExtentMax: 0.0,
+        scrollExtentMin: 0.0,
         transform: Matrix4.identity().storage,
         elevation: 0.0,
         thickness: 0.0,
+        hint: '',
+        value: '',
+        increasedValue: '',
+        decreasedValue: '',
         childrenInTraversalOrder: Int32List(0),
         childrenInHitTestOrder: Int32List(0),
         additionalActions: Int32List(0),

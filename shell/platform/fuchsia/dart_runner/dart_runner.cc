@@ -4,13 +4,14 @@
 
 #include "dart_runner.h"
 
-#include <errno.h>
 #include <lib/async-loop/loop.h>
 #include <lib/async/default.h>
 #include <lib/syslog/global.h>
 #include <sys/stat.h>
 #include <zircon/status.h>
 #include <zircon/syscalls.h>
+
+#include <cerrno>
 #include <memory>
 #include <thread>
 #include <utility>
@@ -39,9 +40,7 @@ const char* kDartVMArgs[] = {
     // addressed.
     "--no_causal_async_stacks",
 
-#if !defined(FLUTTER_PROFILE)
     "--systrace_timeline",
-#endif
     "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM",
 
 #if defined(AOT_RUNTIME)

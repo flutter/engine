@@ -4,10 +4,10 @@
 
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 
-#include <assert.h>
 #include <io.h>
 
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
@@ -136,6 +136,10 @@ uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
   return EngineFromHandle(engine)->task_runner()->ProcessTasks().count();
 }
 
+void FlutterDesktopEngineReloadSystemFonts(FlutterDesktopEngineRef engine) {
+  FlutterEngineReloadSystemFonts(EngineFromHandle(engine)->engine());
+}
+
 FlutterDesktopPluginRegistrarRef FlutterDesktopEngineGetPluginRegistrar(
     FlutterDesktopEngineRef engine,
     const char* plugin_name) {
@@ -196,14 +200,14 @@ void FlutterDesktopResyncOutputStreams() {
 
 // Implementations of common/cpp/ API methods.
 
-FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
+FlutterDesktopMessengerRef FlutterDesktopPluginRegistrarGetMessenger(
     FlutterDesktopPluginRegistrarRef registrar) {
   return registrar->engine->messenger();
 }
 
-void FlutterDesktopRegistrarSetDestructionHandler(
+void FlutterDesktopPluginRegistrarSetDestructionHandler(
     FlutterDesktopPluginRegistrarRef registrar,
-    FlutterDesktopOnRegistrarDestroyed callback) {
+    FlutterDesktopOnPluginRegistrarDestroyed callback) {
   registrar->engine->SetPluginRegistrarDestructionCallback(callback);
 }
 
