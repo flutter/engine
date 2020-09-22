@@ -60,22 +60,26 @@ public class FlutterLoader {
     return instance;
   }
 
+  /** Creates a {@code FlutterLoader} that uses a default constructed {@link FlutterJNI}. */
   public FlutterLoader() {
-    this(null);
+    this(new FlutterJNI());
   }
 
-  public FlutterLoader(@Nullable FlutterJNI flutterJNILoader) {
-    if (flutterJNILoader == null) {
-      flutterJNILoader = new FlutterJNI();
-    }
-    this.flutterJNILoader = flutterJNILoader;
+  /**
+   * Creates a {@code FlutterLoader} with the specified {@link FlutterJNI}.
+   *
+   * @param flutterJNI The {@link FlutterJNI} instance to use for loading the libflutter.so C++
+   *     library, setting up the font manager, and calling into C++ initalization.
+   */
+  public FlutterLoader(@NonNull FlutterJNI flutterJNI) {
+    this.flutterJNI = flutterJNI;
   }
 
   private boolean initialized = false;
   @Nullable private Settings settings;
   private long initStartTimestampMillis;
   private FlutterApplicationInfo flutterApplicationInfo;
-  private FlutterJNI flutterJNILoader;
+  private FlutterJNI flutterJNI;
 
   private static class InitResult {
     final String appStoragePath;
@@ -137,7 +141,7 @@ public class FlutterLoader {
           public InitResult call() {
             ResourceExtractor resourceExtractor = initResources(appContext);
 
-            flutterJNILoader.loadLibrary();
+            flutterJNI.loadLibrary();
 
             // Prefetch the default font manager as soon as possible on a background thread.
             // It helps to reduce time cost of engine setup that blocks the platform thread.
@@ -146,7 +150,7 @@ public class FlutterLoader {
                     new Runnable() {
                       @Override
                       public void run() {
-                        flutterJNILoader.prefetchDefaultFontManager();
+                        flutterJNI.prefetchDefaultFontManager();
                       }
                     });
 
@@ -242,7 +246,7 @@ public class FlutterLoader {
 
       long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
 
-      flutterJNILoader.init(
+      flutterJNI.init(
           applicationContext,
           shellArgs.toArray(new String[0]),
           kernelPath,

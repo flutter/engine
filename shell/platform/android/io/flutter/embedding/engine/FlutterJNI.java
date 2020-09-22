@@ -98,7 +98,7 @@ public class FlutterJNI {
 
   // BEGIN Methods related to loading for FlutterLoader.
   /**
-   * Loads the libflutter.so library.
+   * Loads the libflutter.so C++ library.
    *
    * <p>This must be called before any other native methods, and can be overridden by tests to avoid
    * loading native libraries.

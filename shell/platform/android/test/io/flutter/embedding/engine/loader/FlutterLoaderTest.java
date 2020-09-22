@@ -18,7 +18,8 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.ActivityManager;
 import android.content.Context;
 import io.flutter.embedding.engine.FlutterJNI;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -38,21 +39,32 @@ public class FlutterLoaderTest {
 
   @Test
   public void itReportsInitializedAfterInitializing() {
-    FlutterJNI mockFlutterJNILoader = mock(FlutterJNI.class);
-    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNILoader);
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
     assertFalse(flutterLoader.initialized());
     flutterLoader.startInitialization(RuntimeEnvironment.application);
     flutterLoader.ensureInitializationComplete(RuntimeEnvironment.application, null);
     shadowOf(getMainLooper()).idle();
     assertTrue(flutterLoader.initialized());
-    verify(mockFlutterJNILoader, times(1)).loadLibrary();
+    verify(mockFlutterJNI, times(1)).loadLibrary();
+  }
+
+  @Test
+  public void itSetsTheOldGenHeapSizeAppropriately() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+
+    assertFalse(flutterLoader.initialized());
+    flutterLoader.startInitialization(RuntimeEnvironment.application);
+    flutterLoader.ensureInitializationComplete(RuntimeEnvironment.application, null);
+    shadowOf(getMainLooper()).idle();
 
     ActivityManager activityManager =
         (ActivityManager) RuntimeEnvironment.application.getSystemService(Context.ACTIVITY_SERVICE);
     final String oldGenHeapArg = "--old-gen-heap-size=" + activityManager.getLargeMemoryClass();
     ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
-    verify(mockFlutterJNILoader, times(1))
+    verify(mockFlutterJNI, times(1))
         .init(
             eq(RuntimeEnvironment.application),
             shellArgsCaptor.capture(),
