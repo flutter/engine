@@ -44,7 +44,8 @@ G_DEFINE_TYPE(FlEventChannel, fl_event_channel, G_TYPE_OBJECT)
 
 // Handle method calls from the Dart side of the channel.
 static FlMethodResponse* handle_method_call(FlEventChannel* self,
-                                            const gchar* name) {
+                                            const gchar* name,
+                                            FlValue* args) {
   FlEventChannelHandler handler;
   if (g_strcmp0(name, kListenMethod) == 0) {
     handler = self->listen_handler;
@@ -62,7 +63,7 @@ static FlMethodResponse* handle_method_call(FlEventChannel* self,
     return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
   }
 
-  FlMethodResponse* response = handler(self, self->handler_data);
+  FlMethodResponse* response = handler(self, args, self->handler_data);
   if (response == nullptr) {
     g_autofree gchar* message =
         g_strdup_printf("Event channel request '%s' not responded to", name);
@@ -70,6 +71,7 @@ static FlMethodResponse* handle_method_call(FlEventChannel* self,
         fl_method_error_response_new(kEventRequestError, message, nullptr));
   }
 
+  // Validate the method response is one of the acceptable types.
   if (FL_IS_METHOD_SUCCESS_RESPONSE(response)) {
     if (fl_method_success_response_get_result(
             FL_METHOD_SUCCESS_RESPONSE(response)) != nullptr) {
@@ -77,6 +79,7 @@ static FlMethodResponse* handle_method_call(FlEventChannel* self,
                 name);
     }
   } else if (FL_IS_METHOD_ERROR_RESPONSE(response)) {
+    // All errors are valid.
   } else {
     g_warning("Event channel %s responded to '%s' with response other than ",
               self->name, name);
@@ -105,7 +108,7 @@ static void message_cb(FlBinaryMessenger* messenger,
     return;
   }
 
-  g_autoptr(FlMethodResponse) response = handle_method_call(self, name);
+  g_autoptr(FlMethodResponse) response = handle_method_call(self, name, args);
 
   g_autoptr(GBytes) data = nullptr;
   if (FL_IS_METHOD_SUCCESS_RESPONSE(response)) {

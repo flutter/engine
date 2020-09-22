@@ -53,12 +53,14 @@ G_DECLARE_FINAL_TYPE(FlEventChannelResponseHandle,
  * }
  *
  * static FlMethodResponse* listen_cb (FlEventChannel* channel,
+ *                                     FlValue *args,
  *                                     gpointer user_data) {
  *   send_events = TRUE;
  *   return FL_METHOD_RESPONSE (fl_method_success_response_new (NULL));
  * }
  *
  * static FlMethodResponse* cancel_cb (GObject *object,
+ *                                     FlValue *args,
  *                                     gpointer user_data) {
  *   send_events = FALSE;
  *   return FL_METHOD_RESPONSE (fl_method_success_response_new (NULL));
@@ -86,6 +88,7 @@ G_DECLARE_FINAL_TYPE(FlEventChannelResponseHandle,
 /**
  * FlEventChannelHandler:
  * @channel: an #FlEventChannel.
+ * @args: arguments passed from the Dart end of the channel.
  * @user_data: (closure): data provided when registering this handler.
  *
  * Function called when the stream is listened to or cancelled.
@@ -93,6 +96,7 @@ G_DECLARE_FINAL_TYPE(FlEventChannelResponseHandle,
  * Returns: (transfer full): an #FlMethodResponse for this request.
  */
 typedef FlMethodResponse* (*FlEventChannelHandler)(FlEventChannel* channel,
+                                                   FlValue* args,
                                                    gpointer user_data);
 
 /**

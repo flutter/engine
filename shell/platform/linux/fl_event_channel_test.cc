@@ -27,38 +27,43 @@ static FlEngine* make_mock_engine() {
 }
 
 // Triggers the engine to start listening to the channel.
-static void listen_channel(FlBinaryMessenger* messenger) {
+static void listen_channel(FlBinaryMessenger* messenger, FlValue* args) {
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   g_autoptr(FlMethodChannel) channel = fl_method_channel_new(
       messenger, "test/standard-method", FL_METHOD_CODEC(codec));
 
   // Trigger the engine to make a method call.
-  g_autoptr(FlValue) args = fl_value_new_list();
-  fl_value_append_take(args, fl_value_new_string("test/standard-event"));
-  fl_value_append_take(args, fl_value_new_string("listen"));
-  fl_value_append_take(args, fl_value_new_null());
-  fl_method_channel_invoke_method(channel, "InvokeMethod", args, nullptr,
+  g_autoptr(FlValue) invoke_args = fl_value_new_list();
+  fl_value_append_take(invoke_args, fl_value_new_string("test/standard-event"));
+  fl_value_append_take(invoke_args, fl_value_new_string("listen"));
+  fl_value_append(invoke_args,
+                  args != nullptr ? fl_value_ref(args) : fl_value_new_null());
+  fl_method_channel_invoke_method(channel, "InvokeMethod", invoke_args, nullptr,
                                   nullptr, nullptr);
 }
 
 // Triggers the engine to cancel the subscription to the channel.
-static void cancel_channel(FlBinaryMessenger* messenger) {
+static void cancel_channel(FlBinaryMessenger* messenger, FlValue* args) {
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   g_autoptr(FlMethodChannel) channel = fl_method_channel_new(
       messenger, "test/standard-method", FL_METHOD_CODEC(codec));
 
   // Trigger the engine to make a method call.
-  g_autoptr(FlValue) args = fl_value_new_list();
-  fl_value_append_take(args, fl_value_new_string("test/standard-event"));
-  fl_value_append_take(args, fl_value_new_string("cancel"));
-  fl_value_append_take(args, fl_value_new_null());
-  fl_method_channel_invoke_method(channel, "InvokeMethod", args, nullptr,
+  g_autoptr(FlValue) invoke_args = fl_value_new_list();
+  fl_value_append_take(invoke_args, fl_value_new_string("test/standard-event"));
+  fl_value_append_take(invoke_args, fl_value_new_string("cancel"));
+  fl_value_append_take(
+      invoke_args, args != nullptr ? fl_value_ref(args) : fl_value_new_null());
+  fl_method_channel_invoke_method(channel, "InvokeMethod", invoke_args, nullptr,
                                   nullptr, nullptr);
 }
 
 // Called when when the remote end starts listening on the channel.
 static FlMethodResponse* listen_listen_cb(FlEventChannel* channel,
+                                          FlValue* args,
                                           gpointer user_data) {
+  EXPECT_EQ(fl_value_get_type(args), FL_VALUE_TYPE_NULL);
+
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
@@ -75,7 +80,7 @@ TEST(FlEventChannelTest, Listen) {
       messenger, "test/standard-event", FL_METHOD_CODEC(codec),
       listen_listen_cb, nullptr, loop, nullptr);
 
-  listen_channel(messenger);
+  listen_channel(messenger, nullptr);
 
   // Blocks here until listen_listen_cb called.
   g_main_loop_run(loop);
@@ -86,6 +91,7 @@ TEST(FlEventChannelTest, Listen) {
 
 // Called when when the remote end starts listening on the channel.
 static FlMethodResponse* listen_exception_listen_cb(FlEventChannel* channel,
+                                                    FlValue* args,
                                                     gpointer user_data) {
   return FL_METHOD_RESPONSE(fl_method_error_response_new(
       "LISTEN-ERROR", "LISTEN-ERROR-MESSAGE", nullptr));
@@ -135,7 +141,7 @@ TEST(FlEventChannelTest, ListenException) {
   fl_binary_messenger_set_message_handler_on_channel(
       messenger, "test/responses", listen_exception_response_cb, loop, nullptr);
 
-  listen_channel(messenger);
+  listen_channel(messenger, nullptr);
 
   // Blocks here until listen_exception_response_cb called.
   g_main_loop_run(loop);
@@ -146,7 +152,10 @@ TEST(FlEventChannelTest, ListenException) {
 
 // Called when when the remote end cancels their subscription.
 static FlMethodResponse* cancel_cancel_cb(FlEventChannel* channel,
+                                          FlValue* args,
                                           gpointer user_data) {
+  EXPECT_EQ(fl_value_get_type(args), FL_VALUE_TYPE_NULL);
+
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
@@ -163,8 +172,8 @@ TEST(FlEventChannelTest, Cancel) {
       messenger, "test/standard-event", FL_METHOD_CODEC(codec), nullptr,
       cancel_cancel_cb, loop, nullptr);
 
-  listen_channel(messenger);
-  cancel_channel(messenger);
+  listen_channel(messenger, nullptr);
+  cancel_channel(messenger, nullptr);
 
   // Blocks here until cancel_cancel_cb called.
   g_main_loop_run(loop);
@@ -175,6 +184,7 @@ TEST(FlEventChannelTest, Cancel) {
 
 // Called when when the remote end cancels their subscription.
 static FlMethodResponse* cancel_exception_cancel_cb(FlEventChannel* channel,
+                                                    FlValue* args,
                                                     gpointer user_data) {
   return FL_METHOD_RESPONSE(fl_method_error_response_new(
       "CANCEL-ERROR", "CANCEL-ERROR-MESSAGE", nullptr));
@@ -229,8 +239,8 @@ TEST(FlEventChannelTest, CancelException) {
   fl_binary_messenger_set_message_handler_on_channel(
       messenger, "test/responses", cancel_exception_response_cb, loop, nullptr);
 
-  listen_channel(messenger);
-  cancel_channel(messenger);
+  listen_channel(messenger, nullptr);
+  cancel_channel(messenger, nullptr);
 
   // Blocks here until cancel_exception_response_cb called.
   g_main_loop_run(loop);
@@ -240,7 +250,53 @@ TEST(FlEventChannelTest, CancelException) {
 }
 
 // Called when when the remote end starts listening on the channel.
+static FlMethodResponse* args_listen_cb(FlEventChannel* channel,
+                                        FlValue* args,
+                                        gpointer user_data) {
+  g_autoptr(FlValue) expected_args = fl_value_new_string("LISTEN-ARGS");
+  EXPECT_TRUE(fl_value_equal(args, expected_args));
+
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+}
+
+// Called when when the remote end cancels their subscription.
+static FlMethodResponse* args_cancel_cb(FlEventChannel* channel,
+                                        FlValue* args,
+                                        gpointer user_data) {
+  g_autoptr(FlValue) expected_args = fl_value_new_string("CANCEL-ARGS");
+  EXPECT_TRUE(fl_value_equal(args, expected_args));
+
+  g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+}
+
+// Checks args are passed to listen/cancel.
+TEST(FlEventChannelTest, Args) {
+  g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
+
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+  FlEventChannel* channel = fl_event_channel_new(
+      messenger, "test/standard-event", FL_METHOD_CODEC(codec), args_listen_cb,
+      args_cancel_cb, loop, nullptr);
+
+  g_autoptr(FlValue) listen_args = fl_value_new_string("LISTEN-ARGS");
+  listen_channel(messenger, listen_args);
+  g_autoptr(FlValue) cancel_args = fl_value_new_string("CANCEL-ARGS");
+  cancel_channel(messenger, cancel_args);
+
+  // Blocks here until args_cancel_cb called.
+  g_main_loop_run(loop);
+
+  // Manually unref because the compiler complains 'channel' is unused.
+  g_object_unref(channel);
+}
+
+// Called when when the remote end starts listening on the channel.
 static FlMethodResponse* send_events_listen_cb(FlEventChannel* channel,
+                                               FlValue* args,
                                                gpointer user_data) {
   // Send some events.
   for (int i = 0; i < 5; i++) {
@@ -302,8 +358,8 @@ TEST(FlEventChannelTest, SendEvents) {
   fl_binary_messenger_set_message_handler_on_channel(
       messenger, "test/events", send_events_events_cb, loop, nullptr);
 
-  listen_channel(messenger);
-  cancel_channel(messenger);
+  listen_channel(messenger, nullptr);
+  cancel_channel(messenger, nullptr);
 
   // Blocks here until send_events_events_cb receives the last event.
   g_main_loop_run(loop);
