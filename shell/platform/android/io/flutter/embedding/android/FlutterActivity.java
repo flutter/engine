@@ -637,7 +637,7 @@ public class FlutterActivity extends Activity
 
   @Override
   public void onRequestPermissionsResult(
-    int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+      int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     if (stillAttachedForEvent("onRequestPermissionsResult")) {
       delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }

@@ -647,44 +647,44 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void detachFromFlutterEngine() {
     Log.v(
-      TAG,
-      "FlutterFragment "
-      + this
-      + " connection to the engine "
-      + getFlutterEngine()
-      + " evicted by another attaching activity");
-      // Redundant calls are ok.
-      delegate.onDestroyView();
+        TAG,
+        "FlutterFragment "
+            + this
+            + " connection to the engine "
+            + getFlutterEngine()
+            + " evicted by another attaching activity");
+    // Redundant calls are ok.
+    delegate.onDestroyView();
+    delegate.onDetach();
+    delegate.release();
+    delegate = null;
+  }
+
+  @Override
+  public void onDetach() {
+    super.onDetach();
+    if (delegate != null) {
       delegate.onDetach();
       delegate.release();
       delegate = null;
+    } else {
+      Log.v(TAG, "FlutterFragment " + this + " onDetach called after release.");
     }
+  }
 
-    @Override
-    public void onDetach() {
-      super.onDetach();
-      if (delegate != null) {
-        delegate.onDetach();
-        delegate.release();
-        delegate = null;
-      } else {
-        Log.v(TAG, "FlutterFragment " + this + " onDetach called after release.");
-      }
-    }
-
-    /**
-     * The result of a permission request has been received.
-     *
-     * <p>See {@link android.app.Activity#onRequestPermissionsResult(int, String[], int[])}
-     *
-     * <p>
-     *
-     * @param requestCode identifier passed with the initial permission request
-     * @param permissions permissions that were requested
-     * @param grantResults permission grants or denials
-     */
-    @ActivityCallThrough
-    public void onRequestPermissionsResult(
+  /**
+   * The result of a permission request has been received.
+   *
+   * <p>See {@link android.app.Activity#onRequestPermissionsResult(int, String[], int[])}
+   *
+   * <p>
+   *
+   * @param requestCode identifier passed with the initial permission request
+   * @param permissions permissions that were requested
+   * @param grantResults permission grants or denials
+   */
+  @ActivityCallThrough
+  public void onRequestPermissionsResult(
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     if (stillAttachedForEvent("onRequestPermissionsResult")) {
       delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
