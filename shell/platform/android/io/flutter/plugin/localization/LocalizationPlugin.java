@@ -50,7 +50,6 @@ public class LocalizationPlugin {
       int localeCount = localeList.size();
       for (int index = 0; index < localeCount; ++index) {
         Locale locale = localeList.get(index);
-        String localeString = locale.toString();
         // Convert locale string into language range format.
         String fullRange = locale.getLanguage();
         if (!locale.getScript().isEmpty()) {
