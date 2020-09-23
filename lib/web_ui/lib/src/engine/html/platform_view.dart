@@ -79,9 +79,8 @@ class PersistedPlatformView extends PersistedLeafSurface {
   @override
   bool canUpdateAsMatch(PersistedSurface oldSurface) {
     if (super.canUpdateAsMatch(oldSurface)) {
-      if (oldSurface is PersistedPlatformView) {
-        return viewId == oldSurface.viewId;
-      }
+      // super checks the runtimeType of the surface, so we can just cast...
+      return viewId == ((oldSurface as PersistedPlatformView).viewId);
     }
     return false;
   }

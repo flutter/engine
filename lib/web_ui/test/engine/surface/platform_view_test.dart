@@ -26,9 +26,14 @@ void testMain() {
 
   group('PersistedPlatformView', () {
     setUp(() async {
-      SurfaceSceneBuilder.debugForgetFrameScene();
-      platformViewRegistry.registerViewFactory('test-0', (viewId) => html.DivElement());
-      platformViewRegistry.registerViewFactory('test-1', (viewId) => html.DivElement());
+      platformViewRegistry.registerViewFactory(
+        'test-0',
+        (viewId) => html.DivElement(),
+      );
+      platformViewRegistry.registerViewFactory(
+        'test-1',
+        (viewId) => html.DivElement(),
+      );
       // Ensure the views are created...
       await Future.wait([
         _createPlatformView(0, 'test-0'),
@@ -40,7 +45,9 @@ void testMain() {
     group('update', () {
       test('throws assertion error if called with different viewIds', () {
         final differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
-        expect(() { view.update(differentView); }, throwsAssertionError);
+        expect(() {
+          view.update(differentView);
+        }, throwsAssertionError);
       });
     });
 
@@ -70,7 +77,10 @@ Future<void> _createPlatformView(int id, String viewType) {
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall(
       'create',
-      <String, dynamic>{'id': id, 'viewType': viewType,},
+      <String, dynamic>{
+        'id': id,
+        'viewType': viewType,
+      },
     )),
     (dynamic _) => completer.complete(),
   );

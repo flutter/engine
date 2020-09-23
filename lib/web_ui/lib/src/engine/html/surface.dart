@@ -303,6 +303,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   html.Element? rootElement;
 
   /// Whether this surface can update an existing [oldSurface].
+  @mustCallSuper
   bool canUpdateAsMatch(PersistedSurface oldSurface) {
     return oldSurface.isActive && runtimeType == oldSurface.runtimeType;
   }
