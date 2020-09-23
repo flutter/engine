@@ -215,6 +215,19 @@ public class LocalizationPluginTest {
     assertEquals(result[0], "it");
     assertEquals(result[1], "IT");
     assertEquals(result[2], "");
+
+    supportedLocales =
+        new String[] {
+          "zh", "CN", "Hant",
+          "zh", "CN", "Hans",
+        };
+    userLocale = new Locale("zh", "CN");
+    setLegacyLocale(config, userLocale);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "zh");
+    assertEquals(result[1], "CN");
+    assertEquals(result[2], "Hans");
   }
 
   // Tests the legacy pre API 24 algorithm.
@@ -306,19 +319,6 @@ public class LocalizationPluginTest {
     assertEquals(result[0], "fr");
     assertEquals(result[1], "");
     assertEquals(result[2], "");
-
-    supportedLocales =
-        new String[] {
-          "zh", "CN", "Hant",
-          "zh", "CN", "Hans",
-        };
-    userLocale = new Locale("zh", "CN");
-    setLegacyLocale(config, userLocale);
-    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
-    assertEquals(result.length, 3);
-    assertEquals(result[0], "zh");
-    assertEquals(result[1], "CN");
-    assertEquals(result[2], "Hans");
   }
 
   private static void setApiVersion(int apiVersion) {
