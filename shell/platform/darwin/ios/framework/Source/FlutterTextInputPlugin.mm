@@ -432,7 +432,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
-  NSDictionary* _latestState;
   CGRect _cachedFirstRect;
 }
 
@@ -531,7 +530,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [_selectedTextRange release];
   [_tokenizer release];
   [_autofillId release];
-  [_latestState release];
   [super dealloc];
 }
 
@@ -539,10 +537,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   _textInputClient = client;
 }
 
-// Return true if the new input state needs to be synced back to the framework.
-// TODO(LongCatIsLooong): setTextInputState should never call updateEditingState. Sending the
-// editing value back may overwrite the framework's updated editing value.
-- (BOOL)setTextInputState:(NSDictionary*)state {
+- (void)setTextInputState:(NSDictionary*)state {
   NSString* newText = state[@"text"];
   BOOL textChanged = ![self.text isEqualToString:newText];
   if (textChanged) {
@@ -577,9 +572,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (textChanged) {
     [self.inputDelegate textDidChange:self];
   }
-
-  // For consistency with Android behavior, send an update to the framework if the text changed.
-  return textChanged;
 }
 
 // Extracts the selection information from the editing state dictionary.
@@ -1069,36 +1061,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     @"text" : [NSString stringWithString:self.text],
   };
 
-  // Debounce calls to updateEditingClient on the leading edge. This makes iOS
-  // text editing behave more similarly to Android's, which has built-in event
-  // batching, and avoids race conditions. The delay value was chosen to be
-  // imperceptible by the user but still long enough to allow the framework to
-  // respond with formatting updates, thereby avoiding common race conditions.
-  if (_latestState == nil) {
-    _latestState = state;
-    [self updateEditingClient];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10000000), dispatch_get_main_queue(), ^(void){
-      if (_latestState == state) {
-        _latestState = nil;
-      }
-    });
-    return;
-  }
-  _latestState = state;
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10000000), dispatch_get_main_queue(), ^(void){
-    if (state != _latestState) {
-      return;
-    }
-    [self updateEditingClient];
-    _latestState = nil;
-  });
-}
-
-- (void)updateEditingClient {
   if (_textInputClient == 0 && _autofillId != nil) {
-    [_textInputDelegate updateEditingClient:_textInputClient withState:_latestState withTag:_autofillId];
+    [_textInputDelegate updateEditingClient:_textInputClient withState:state withTag:_autofillId];
   } else {
-    [_textInputDelegate updateEditingClient:_textInputClient withState:_latestState];
+    [_textInputDelegate updateEditingClient:_textInputClient withState:state];
   }
 }
 
@@ -1451,9 +1417,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)setTextInputEditingState:(NSDictionary*)state {
-  if ([_activeView setTextInputState:state]) {
-    [_activeView updateEditingState];
-  }
+  [_activeView setTextInputState:state];
 }
 
 - (void)clearTextInputClient {
