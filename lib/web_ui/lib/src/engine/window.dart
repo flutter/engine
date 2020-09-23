@@ -603,6 +603,11 @@ class EngineWindow extends ui.Window {
         }
         break;
 
+      // Dispatched by the bindings to delay service worker initialization.
+      case 'flutter/service_worker':
+        html.window.dispatchEvent(html.Event('flutter-first-frame'));
+        return;
+
       case 'flutter/textinput':
         textEditing.channel.handleTextInput(data, callback);
         return;
@@ -656,7 +661,7 @@ class EngineWindow extends ui.Window {
             assert(_browserHistory is MultiEntriesBrowserHistory);
             _browserHistory.setRouteName(
               message!['location'],
-              state: message!['state'],
+              state: message['state'],
             );
             _replyToPlatformMessage(
               callback, codec.encodeSuccessEnvelope(true));
