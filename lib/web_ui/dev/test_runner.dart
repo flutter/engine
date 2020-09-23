@@ -371,6 +371,15 @@ class TestCommand extends Command<bool> with ArgUtils {
       isFirefoxIntegrationTestAvailable ||
       isSafariIntegrationTestAvailable;
 
+  bool get isScreenhotTestsAvailable =>
+      isIntegrationTestsAvailable || isUnitTestsScreenshotsAvailable;
+
+  // For unit tests screenshot tests and smoke tests only run on:
+  // "Chrome/iOS" for LUCI/local.
+  bool get isUnitTestsScreenshotsAvailable =>
+      ((isChrome && isLuci && io.Platform.isLinux) ||
+          ((isChrome || isSafariIOS) && !isLuci));
+
   /// Use system flutter instead of cloning the repository.
   ///
   /// Read the flag help for more details. Uses PATH to locate flutter.
@@ -397,13 +406,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       'test',
     ));
 
-    // Screenshot tests and smoke tests only run on: "Chrome/iOS Safari"
-    // locally and on LUCI. They are not available on Windows bots:
-    // TODO: https://github.com/flutter/flutter/issues/63710
-    if ((isChrome && isLuci && io.Platform.isLinux) ||
-        ((isChrome || isSafariIOS) && !isLuci) ||
-        (isSafariIOS && isLuci)) {
-      print('INFO: Also running the screenshot tests.');
+    if (isUnitTestsScreenshotsAvailable) {
       // Separate screenshot tests from unit-tests. Screenshot tests must run
       // one at a time. Otherwise, they will end up screenshotting each other.
       // This is not an issue for unit-tests.
