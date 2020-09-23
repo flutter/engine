@@ -586,7 +586,7 @@ void decodeImageFromPixels(
     return;
   }
 
-  Null Function(Codec) callbacker = (Codec codec) {
+  void Function(Codec) callbacker = (Codec codec) {
     codec.getNextFrame().then((FrameInfo frameInfo) {
       callback(frameInfo.image);
     });
