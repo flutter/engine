@@ -123,11 +123,11 @@ public class LocalizationPluginTest {
 
     supportedLocales =
         new String[] {
-          "zh", "CN", "Hant",
           "zh", "CN", "Hans",
+          "zh", "HK", "Hant",
         };
-    Locale userLocale = new Locale("zh", "CN");
-    setLegacyLocale(config, userLocale);
+    localeList = new LocaleList(new Locale("zh", "CN"));
+    when(config.getLocales()).thenReturn(localeList);
     result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
     assertEquals(result.length, 3);
     assertEquals(result[0], "zh");
