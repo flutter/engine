@@ -184,150 +184,56 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
-  __block XCTestExpectation* expectation;
   __block int updateCount = 0;
   OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
-        if (expectation != nil) {
-          [expectation fulfill];
-        }
       });
 
   [inputView insertText:@"text to insert"];
-  // The framework has been updated exactly once. It happened immediately,
-  // because calls to updateEditingState are debounced on the leading edge.
+  // Update the framework exactly once.
   XCTAssertEqual(updateCount, 1);
 
-  expectation = [self expectationWithDescription:@"called updateEditingClient"];
   [inputView deleteBackward];
-  // Due to the debouncing, this call will happen after a short delay.
-  XCTAssertEqual(updateCount, 1);
-  [self waitForExpectations:@[expectation] timeout:1];
-  expectation = nil;
   XCTAssertEqual(updateCount, 2);
 
-  // Subsequent calls follow this pattern of leading edge debouncing. Now that
-  // enough time has passed to allow the debouncing to call through, the
-  // debouncing is reset. The next call will happen immediately on the leading
-  // edge, and subsequent calls are debounced.
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 3);
 
-  expectation = [self expectationWithDescription:@"called updateEditingClient"];
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
-  XCTAssertEqual(updateCount, 3);
-  [self waitForExpectations:@[expectation] timeout:1];
-  expectation = nil;
   XCTAssertEqual(updateCount, 4);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 5);
 
-  expectation = [self expectationWithDescription:@"called updateEditingClient"];
   [inputView unmarkText];
-  XCTAssertEqual(updateCount, 5);
-  [self waitForExpectations:@[expectation] timeout:1];
-  expectation = nil;
   XCTAssertEqual(updateCount, 6);
 }
 
-- (void)testUITextInputCallsToUpdateEditingStateAreDebounced {
+- (void)testTextChangesDoNotTriggerUpdateEditingClient {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
-  __block XCTestExpectation* expectation;
   __block int updateCount = 0;
   OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
       .andDo(^(NSInvocation* invocation) {
         updateCount++;
-        if (expectation != nil) {
-          [expectation fulfill];
-        }
       });
 
-  [inputView insertText:@"text to insert"];
-  // The framework has been updated exactly once. It happened immediately,
-  // because calls to updateEditingState are debounced on the leading edge.
-  XCTAssertEqual(updateCount, 1);
-
-  // These calls will be batched and come through after a short delay.
-  expectation = [self expectationWithDescription:@"called updateEditingClient twice"];
-  [inputView deleteBackward];
-  [inputView deleteBackward];
-  [inputView deleteBackward];
-  XCTAssertEqual(updateCount, 1);
-  [self waitForExpectations:@[expectation] timeout:1];
-  XCTAssertEqual(updateCount, 2);
-  XCTAssertTrue([inputView.text isEqualToString:@"text to ins"]);
-}
-
-- (void)testTextChangesTriggerUpdateEditingClient {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
-
   [inputView.text setString:@"BEFORE"];
+  XCTAssertEqual(updateCount, 0);
+
   inputView.markedTextRange = nil;
   inputView.selectedTextRange = nil;
+  XCTAssertEqual(updateCount, 1);
 
-  // Text changes trigger update.
-  XCTAssertTrue([inputView setTextInputState:@{@"text" : @"AFTER"}]);
-
-  // Don't send anything if there's nothing new.
-  XCTAssertFalse([inputView setTextInputState:@{@"text" : @"AFTER"}]);
-}
-
-- (void)testSelectionChangeDoesNotTriggerUpdateEditingClient {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
-
-  [inputView.text setString:@"SELECTION"];
-  inputView.markedTextRange = nil;
-  inputView.selectedTextRange = nil;
-
-  BOOL shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @3}];
-  XCTAssertFalse(shouldUpdate);
-
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @3}];
-  XCTAssertFalse(shouldUpdate);
-
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @2}];
-  XCTAssertFalse(shouldUpdate);
-
-  // Don't send anything if there's nothing new.
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @2}];
-  XCTAssertFalse(shouldUpdate);
-}
-
-- (void)testComposingChangeDoesNotTriggerUpdateEditingClient {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
-
-  // Reset to test marked text.
-  [inputView.text setString:@"COMPOSING"];
-  inputView.markedTextRange = nil;
-  inputView.selectedTextRange = nil;
-
-  BOOL shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @0, @"composingExtent" : @3}];
-  XCTAssertFalse(shouldUpdate);
-
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
-  XCTAssertFalse(shouldUpdate);
-
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
-  XCTAssertFalse(shouldUpdate);
-
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
-  XCTAssertFalse(shouldUpdate);
+  // Text changes don't trigger an update.
+  XCTAssertEqual(updateCount, 1);
+  [inputView setTextInputState:@{@"text" : @"AFTER"}];
+  XCTAssertEqual(updateCount, 1);
+  [inputView setTextInputState:@{@"text" : @"AFTER"}];
+  XCTAssertEqual(updateCount, 1);
 }
 
 - (void)testUITextInputAvoidUnnecessaryUndateEditingClientCalls {
@@ -398,17 +304,6 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
-  // Debounced calls need to be waited for using this expectation.
-  __block XCTestExpectation* expectation;
-  __block int updateCount = 0;
-  OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
-      .andDo(^(NSInvocation* invocation) {
-        updateCount++;
-        if (expectation != nil) {
-          [expectation fulfill];
-        }
-      });
-
   [inputView.text setString:@"SELECTION"];
   inputView.markedTextRange = nil;
   inputView.selectedTextRange = nil;
@@ -423,7 +318,6 @@ FLUTTER_ASSERT_ARC
                               }]]);
 
   // Needs clamping.
-  expectation = [self expectationWithDescription:@"called updateEditingClient"];
   [inputView setTextInputState:@{
     @"text" : @"SELECTION",
     @"selectionBase" : @0,
@@ -431,8 +325,6 @@ FLUTTER_ASSERT_ARC
   }];
   [inputView updateEditingState];
 
-  [self waitForExpectations:@[expectation] timeout:1];
-  expectation = nil;
   OCMVerify([engine updateEditingClient:0
                               withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                                 return ([state[@"selectionBase"] intValue]) == 0 &&
@@ -450,15 +342,12 @@ FLUTTER_ASSERT_ARC
                               }]]);
 
   // Both ends need clamping.
-  expectation = [self expectationWithDescription:@"called updateEditingClient"];
   [inputView setTextInputState:@{
     @"text" : @"SELECTION",
     @"selectionBase" : @9999,
     @"selectionExtent" : @9999
   }];
   [inputView updateEditingState];
-  [self waitForExpectations:@[expectation] timeout:1];
-  expectation = nil;
   OCMVerify([engine updateEditingClient:0
                               withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                                 return ([state[@"selectionBase"] intValue]) == 9 &&
