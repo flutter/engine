@@ -145,6 +145,31 @@ AccessibilityBridge::GetNodeActions(const flutter::SemanticsNode& node,
   return node_actions;
 }
 
+fuchsia::accessibility::semantics::Role AccessibilityBridge::GetNodeRole(
+    const flutter::SemanticsNode& node) const {
+  if (node.HasFlag(flutter::SemanticsFlags::kIsButton)) {
+    return fuchsia::accessibility::semantics::Role::BUTTON;
+  }
+
+  if (node.HasFlag(flutter::SemanticsFlags::kIsHeader)) {
+    return fuchsia::accessibility::semantics::Role::HEADER;
+  }
+
+  if (node.HasFlag(flutter::SemanticsFlags::kIsImage)) {
+    return fuchsia::accessibility::semantics::Role::IMAGE;
+  }
+
+  if (node.HasFlag(flutter::SemanticsFlags::kIsTextField)) {
+    return fuchsia::accessibility::semantics::Role::TEXT_FIELD;
+  }
+
+  if (node.HasFlag(flutter::SemanticsFlags::kIsSlider)) {
+    return fuchsia::accessibility::semantics::Role::SLIDER;
+  }
+
+  return fuchsia::accessibility::semantics::Role::UNKNOWN;
+}
+
 std::unordered_set<int32_t> AccessibilityBridge::GetDescendants(
     int32_t node_id) const {
   std::unordered_set<int32_t> descendents;
@@ -258,6 +283,7 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
         .set_attributes(GetNodeAttributes(flutter_node, &this_node_size))
         .set_states(GetNodeStates(flutter_node, &this_node_size))
         .set_actions(GetNodeActions(flutter_node, &this_node_size))
+        .set_role(GetNodeRole(flutter_node))
         .set_child_ids(child_ids);
     this_node_size +=
         kNodeIdSize * flutter_node.childrenInTraversalOrder.size();
