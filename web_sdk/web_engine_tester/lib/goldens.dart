@@ -143,8 +143,8 @@ class ImageDiff {
   }
 
   void _computeDiff() {
-    int goldenWidth = golden.width;
-    int goldenHeight = golden.height;
+    final int goldenWidth = golden.width;
+    final int goldenHeight = golden.height;
 
     _pixelCount = goldenWidth * goldenHeight;
     diff = Image(goldenWidth, goldenHeight);
@@ -178,7 +178,7 @@ class ImageDiff {
   }
 }
 
-// Returns text explaining pixel difference rate.
+/// Returns text explaining pixel difference rate.
 String getPrintableDiffFilesInfo(double diffRate, double maxRate) =>
   '(${((diffRate) * 100).toStringAsFixed(4)}% of pixels were different. '
   'Maximum allowed rate is: ${(maxRate * 100).toStringAsFixed(4)}%).';
