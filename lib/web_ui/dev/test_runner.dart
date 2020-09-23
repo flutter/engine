@@ -133,11 +133,6 @@ class TestCommand extends Command<bool> with ArgUtils {
       /// Collect information on the bot.
       final MacOSInfo macOsInfo = new MacOSInfo();
       await macOsInfo.printInformation();
-
-      /// Tests may fail on the CI, therefore exit test_runner.
-      if (isLuci) {
-        return true;
-      }
     }
 
     switch (testTypesRequested) {
@@ -175,12 +170,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runPubGet();
     }
 
-    // In order to run iOS Safari unit tests we need to make sure iOS Simulator
-    // is booted.
-    if (isSafariIOS) {
-      await IosSafariArgParser.instance.initIosSimulator();
-    }
-
+    await _prepare();
     await _buildTargets();
 
     if (runAllTests) {
@@ -189,6 +179,21 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runSpecificTests(targetFiles);
     }
     return true;
+  }
+
+  /// Preparations before running the tests such as booting simulators or
+  /// creating directories.
+  Future<void> _prepare() async {
+    if (environment.webUiTestResultsDirectory.existsSync()) {
+      environment.webUiTestResultsDirectory.deleteSync(recursive: true);
+    }
+    environment.webUiTestResultsDirectory.createSync(recursive: true);
+
+    // In order to run iOS Safari unit tests we need to make sure iOS Simulator
+    // is booted.
+    if (isSafariIOS) {
+      await IosSafariArgParser.instance.initIosSimulator();
+    }
   }
 
   /// Builds all test targets that will be run.
