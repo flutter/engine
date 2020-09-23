@@ -1,4 +1,4 @@
-Signature: ebd8bc066fc36f64f1fe466aedcb2238
+Signature: 1e0b5ca3c06269cd65c554b797a528d9
 
 UNUSED LICENSES:
 
@@ -975,6 +975,9 @@ FILE: ../../../third_party/skia/bench/skpbench.json
 FILE: ../../../third_party/skia/build/fuchsia/skqp/skqp.cmx
 FILE: ../../../third_party/skia/build/fuchsia/skqp/test_manifest.json
 FILE: ../../../third_party/skia/demos.skia.org/demos/hello_world/index.html
+FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/index.html
+FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/main.js
+FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/worker.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/garbage.svg
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/main.js
@@ -3913,6 +3916,7 @@ FILE: ../../../third_party/skia/src/core/SkVM_fwd.h
 FILE: ../../../third_party/skia/src/core/SkYUVAInfo.cpp
 FILE: ../../../third_party/skia/src/core/SkYUVAPixmaps.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendSemaphore.cpp
+FILE: ../../../third_party/skia/src/gpu/GrBackendSurfaceMutableState.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendSurfaceMutableStateImpl.h
 FILE: ../../../third_party/skia/src/gpu/GrBackendUtils.h
 FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.cpp
@@ -3930,6 +3934,8 @@ FILE: ../../../third_party/skia/src/gpu/GrUniformDataManager.cpp
 FILE: ../../../third_party/skia/src/gpu/GrUniformDataManager.h
 FILE: ../../../third_party/skia/src/gpu/GrUnrefDDLTask.h
 FILE: ../../../third_party/skia/src/gpu/GrUtil.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DAMDMemoryAllocator.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DAMDMemoryAllocator.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DBuffer.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCaps.cpp
@@ -6322,8 +6328,8 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/include/gpu/GrConfig.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/include/gpu/GrConfig.h
-FILE: ../../../third_party/skia/include/gpu/GrContext.h
 FILE: ../../../third_party/skia/include/gpu/GrTypes.h
+FILE: ../../../third_party/skia/include/private/GrContext.h
 FILE: ../../../third_party/skia/src/core/SkImageInfo.cpp
 FILE: ../../../third_party/skia/src/core/SkRasterClip.cpp
 FILE: ../../../third_party/skia/src/core/SkRasterClip.h
