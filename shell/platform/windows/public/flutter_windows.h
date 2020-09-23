@@ -5,9 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 
-#include <Windows.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <windows.h>
 
 #include "flutter_export.h"
 #include "flutter_messenger.h"
@@ -46,15 +46,6 @@ typedef struct {
   // containing the executable. This can be nullptr for a non-AOT build, as
   // it will be ignored in that case.
   const wchar_t* aot_library_path;
-
-  // The switches to pass to the Flutter engine.
-  //
-  // See: https://github.com/flutter/engine/blob/master/shell/common/switches.h
-  // for details. Not all arguments will apply to desktop.
-  const char** switches;
-
-  // The number of elements in |switches|.
-  size_t switches_count;
 } FlutterDesktopEngineProperties;
 
 // ========== View Controller ==========
@@ -142,6 +133,9 @@ FLUTTER_EXPORT bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
 // last return value from this function.
 FLUTTER_EXPORT uint64_t
 FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine);
+
+FLUTTER_EXPORT void FlutterDesktopEngineReloadSystemFonts(
+    FlutterDesktopEngineRef engine);
 
 // Returns the plugin registrar handle for the plugin with the given name.
 //

@@ -1306,6 +1306,7 @@ class SkPictureRecorder {
 /// "borrowed", i.e. their memory is managed by other objects. In the case of
 /// [SkCanvas] it is managed by [SkPictureRecorder].
 @JS()
+@anonymous
 class SkCanvas {
   external void clear(Float32List color);
   external void clipPath(
@@ -1444,11 +1445,13 @@ class SkCanvas {
 }
 
 @JS()
+@anonymous
 class SkCanvasSaveLayerWithoutBoundsOverload {
   external void saveLayer(SkPaint paint);
 }
 
 @JS()
+@anonymous
 class SkCanvasSaveLayerWithFilterOverload {
   external void saveLayer(
     SkPaint? paint,
@@ -1465,6 +1468,7 @@ class SkPicture {
 }
 
 @JS()
+@anonymous
 class SkParagraphBuilderNamespace {
   external SkParagraphBuilder Make(
     SkParagraphStyle paragraphStyle,
@@ -1490,6 +1494,7 @@ class SkParagraphBuilder {
 }
 
 @JS()
+@anonymous
 class SkParagraphStyle {}
 
 @JS()
@@ -1640,7 +1645,7 @@ class TypefaceFontProviderNamespace {
 Timer? _skObjectCollector;
 List<SkDeletable> _skObjectDeleteQueue = <SkDeletable>[];
 
-final SkObjectFinalizationRegistry<SkDeletable> skObjectFinalizationRegistry = SkObjectFinalizationRegistry<SkDeletable>(js.allowInterop((SkDeletable deletable) {
+final SkObjectFinalizationRegistry skObjectFinalizationRegistry = SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
   _skObjectDeleteQueue.add(deletable);
   _skObjectCollector ??= _scheduleSkObjectCollection();
 }));
@@ -1673,8 +1678,6 @@ Timer _scheduleSkObjectCollection() => Timer(Duration.zero, () {
   html.window.performance.measure('SkObject collection', 'SkObject collection-start', 'SkObject collection-end');
 });
 
-typedef SkObjectFinalizer<T> = void Function(T key);
-
 /// Any Skia object that has a `delete` method.
 @JS()
 @anonymous
@@ -1698,8 +1701,10 @@ class SkDeletable {
 /// 5. The finalizer function is called with the SkPaint as the sole argument.
 /// 6. We call `delete` on SkPaint.
 @JS('window.FinalizationRegistry')
-class SkObjectFinalizationRegistry<T> {
-  external SkObjectFinalizationRegistry(SkObjectFinalizer<T> finalizer);
+class SkObjectFinalizationRegistry {
+  // TODO(hterkelsen): Add a type for the `cleanup` function when
+  // native constructors support type parameters.
+  external SkObjectFinalizationRegistry(Function cleanup);
   external void register(Object ckObject, Object skObject);
 }
 

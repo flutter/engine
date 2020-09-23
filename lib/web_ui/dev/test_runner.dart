@@ -15,7 +15,6 @@ import 'package:test_core/src/runner/hack_register_platform.dart'
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
-import 'package:simulators/simulator_manager.dart';
 
 import 'common.dart';
 import 'environment.dart';
@@ -134,11 +133,6 @@ class TestCommand extends Command<bool> with ArgUtils {
       /// Collect information on the bot.
       final MacOSInfo macOsInfo = new MacOSInfo();
       await macOsInfo.printInformation();
-
-      /// Tests may fail on the CI, therefore exit test_runner.
-      if (isLuci) {
-        return true;
-      }
     }
 
     switch (testTypesRequested) {
@@ -176,32 +170,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runPubGet();
     }
 
-    // In order to run iOS Safari unit tests we need to make sure iOS Simulator
-    // is booted.
-    if (browser == 'ios-safari') {
-      final IosSimulatorManager iosSimulatorManager = IosSimulatorManager();
-      IosSimulator iosSimulator;
-      try {
-        iosSimulator = await iosSimulatorManager.getSimulator(
-            IosSafariArgParser.instance.iosMajorVersion,
-            IosSafariArgParser.instance.iosMinorVersion,
-            IosSafariArgParser.instance.iosDevice);
-      } catch (e) {
-        throw Exception('Error getting requested simulator. Try running '
-            '`felt create` command first before running the tests. exception: '
-            '$e');
-      }
-
-      if (!iosSimulator.booted) {
-        await iosSimulator.boot();
-        print('INFO: Simulator ${iosSimulator.id} booted.');
-        cleanupCallbacks.add(() async {
-          await iosSimulator.shutdown();
-          print('INFO: Simulator ${iosSimulator.id} shutdown.');
-        });
-      }
-    }
-
+    await _prepare();
     await _buildTargets();
 
     if (runAllTests) {
@@ -210,6 +179,21 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runSpecificTests(targetFiles);
     }
     return true;
+  }
+
+  /// Preparations before running the tests such as booting simulators or
+  /// creating directories.
+  Future<void> _prepare() async {
+    if (environment.webUiTestResultsDirectory.existsSync()) {
+      environment.webUiTestResultsDirectory.deleteSync(recursive: true);
+    }
+    environment.webUiTestResultsDirectory.createSync(recursive: true);
+
+    // In order to run iOS Safari unit tests we need to make sure iOS Simulator
+    // is booted.
+    if (isSafariIOS) {
+      await IosSafariArgParser.instance.initIosSimulator();
+    }
   }
 
   /// Builds all test targets that will be run.
@@ -351,6 +335,9 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Whether [browser] is set to "safari".
   bool get isSafariOnMacOS => browser == 'safari' && io.Platform.isMacOS;
 
+  /// Whether [browser] is set to "ios-safari".
+  bool get isSafariIOS => browser == 'ios-safari' && io.Platform.isMacOS;
+
   /// Due to lack of resources Chrome integration tests only run on Linux on
   /// LUCI.
   ///
@@ -410,10 +397,12 @@ class TestCommand extends Command<bool> with ArgUtils {
       'test',
     ));
 
-    // Screenshot tests and smoke tests only run on: "Chrome locally" or
-    // "Chrome on a Linux bot". We can remove the Linux bot restriction after:
+    // Screenshot tests and smoke tests only run on: "Chrome/iOS Safari locally"
+    // or "Chrome on a Linux bot". We can remove the Linux bot restriction
+    // after solving the git issue faced on macOS and Windows bots:
     // TODO: https://github.com/flutter/flutter/issues/63710
-    if ((isChrome && isLuci && io.Platform.isLinux) || (isChrome && !isLuci)) {
+    if ((isChrome && isLuci && io.Platform.isLinux) ||
+        ((isChrome || isSafariIOS) && !isLuci)) {
       // Separate screenshot tests from unit-tests. Screenshot tests must run
       // one at a time. Otherwise, they will end up screenshotting each other.
       // This is not an issue for unit-tests.

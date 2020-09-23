@@ -313,7 +313,9 @@ void testMain() async {
       const Rect.fromLTRB(textLeft, textTop, textLeft + widthConstraint, 21.0),
     );
     await _checkScreenshot(rc, 'draw_paragraph');
-  });
+  },  // TODO: https://github.com/flutter/flutter/issues/65789
+      skip: browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.iOs);
 
   test('Computes paint bounds for multi-line draw paragraph', () async {
     final RecordingCanvas rc = RecordingCanvas(screenRect);
@@ -330,7 +332,9 @@ void testMain() async {
       const Rect.fromLTRB(textLeft, textTop, textLeft + widthConstraint, 35.0),
     );
     await _checkScreenshot(rc, 'draw_paragraph_multi_line');
-  });
+  },  // TODO: https://github.com/flutter/flutter/issues/65789
+      skip: browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.iOs);
 
   test('Should exclude painting outside simple clipRect', () async {
     // One clipped line.
@@ -718,6 +722,12 @@ class TestImage implements Image {
 
   @override
   void dispose() {}
+
+  @override
+  Image clone() => this;
+
+  @override
+  List<StackTrace>/*?*/ debugGetOpenHandleStackTraces() => <StackTrace>[];
 }
 
 Paragraph createTestParagraph() {
