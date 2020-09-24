@@ -5,6 +5,8 @@
 #include "flutter/shell/platform/windows/win32_window_proc_delegate_manager.h"
 #include "gtest/gtest.h"
 
+#include <iostream>
+
 namespace flutter {
 namespace testing {
 
@@ -99,14 +101,19 @@ TEST(Win32WindowProcDelegateManagerTest, RegisterMultiple) {
   TestWindowProcDelegate delegate_a =
       [&called_a](HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
         called_a = true;
+        std::cerr << "Called A" << std::endl;
         return std::optional<LRESULT>();
       };
   bool called_b = false;
   TestWindowProcDelegate delegate_b =
       [&called_b](HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
         called_b = true;
+        std::cerr << "Called B" << std::endl;
         return std::optional<LRESULT>();
       };
+  std::cerr << std::hex << reinterpret_cast<long>(TestWindowProcCallback)
+            << " vs " << std::hex
+            << reinterpret_cast<long>(TestWindowProcCallback2) << std::endl;
   manager.RegisterTopLevelWindowProcDelegate(TestWindowProcCallback,
                                              &delegate_a);
   // Function pointer is different, so both should be called.
