@@ -197,7 +197,11 @@ class BrowserPlatform extends PlatformPlugin {
         'golden_files',
       );
     } else {
-      if(!isLuci || !Platform.isMacOS) {
+      // On LUCI MacOS bots the goldens are fetched by the recipe code.
+      // Fetch the goldens if:
+      // - Tests are running on a local machine.
+      // - Tests are running on an OS other than macOS.
+      if (!isLuci || !Platform.isMacOS) {
         await fetchGoldens();
       }
       goldensDirectory = p.join(
