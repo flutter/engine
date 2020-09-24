@@ -5,6 +5,9 @@
 import 'dart:io' as io;
 import 'package:image/image.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as path;
+
+import 'package:yaml/yaml.dart';
 
 /// How to compares pixels within the image.
 ///
@@ -25,14 +28,14 @@ void main(List<String> args) {
   final io.File fileB = io.File(args[1]);
   final Image imageA = decodeNamedImage(fileA.readAsBytesSync(), 'a.png');
   final Image imageB = decodeNamedImage(fileB.readAsBytesSync(), 'b.png');
-  final ImageDiff diff = ImageDiff(golden: imageA, other: imageB, pixelComparison: PixelComparison.fuzzy);
+  final ImageDiff diff = ImageDiff(
+      golden: imageA, other: imageB, pixelComparison: PixelComparison.fuzzy);
   print('Diff: ${(diff.rate * 100).toStringAsFixed(4)}%');
 }
 
 /// This class encapsulates visually diffing an Image with any other.
 /// Both images need to be the exact same size.
 class ImageDiff {
-
   /// The image to match
   final Image golden;
 
@@ -54,6 +57,8 @@ class ImageDiff {
   /// This gets set to 1 (100% difference) when golden and other aren't the same size.
   double get rate => _wrongPixels / _pixelCount;
 
+  /// Image diff constructor which requires two [Image]s to compare and
+  /// [PixelComparison] algorithm.
   ImageDiff({
     @required this.golden,
     @required this.other,
@@ -67,8 +72,8 @@ class ImageDiff {
 
   /// That would be the distance between black and white.
   static final double _maxTheoreticalColorDistance = Color.distance(
-    <num>[255, 255, 255],  // white
-    <num>[0, 0, 0],  // black
+    <num>[255, 255, 255], // white
+    <num>[0, 0, 0], // black
     false,
   ).toDouble();
 
@@ -116,11 +121,9 @@ class ImageDiff {
           _reflectedPixel(image, x - 1, y - 1),
           _reflectedPixel(image, x - 1, y),
           _reflectedPixel(image, x - 1, y + 1),
-
           _reflectedPixel(image, x, y - 1),
           _reflectedPixel(image, x, y),
           _reflectedPixel(image, x, y + 1),
-
           _reflectedPixel(image, x + 1, y - 1),
           _reflectedPixel(image, x + 1, y),
           _reflectedPixel(image, x + 1, y + 1),
@@ -150,18 +153,23 @@ class ImageDiff {
     diff = Image(goldenWidth, goldenHeight);
 
     if (goldenWidth == other.width && goldenHeight == other.height) {
-      for(int y = 0; y < goldenHeight; y++) {
+      for (int y = 0; y < goldenHeight; y++) {
         for (int x = 0; x < goldenWidth; x++) {
-          final bool isExactlySame = golden.getPixel(x, y) == other.getPixel(x, y);
+          final bool isExactlySame =
+              golden.getPixel(x, y) == other.getPixel(x, y);
           final List<int> goldenPixel = _getPixelRgbForComparison(golden, x, y);
           final List<int> otherPixel = _getPixelRgbForComparison(other, x, y);
-          final double colorDistance = Color.distance(goldenPixel, otherPixel, false) / _maxTheoreticalColorDistance;
+          final double colorDistance =
+              Color.distance(goldenPixel, otherPixel, false) /
+                  _maxTheoreticalColorDistance;
           final bool isFuzzySame = colorDistance < _kColorDistanceThreshold;
           if (isExactlySame || isFuzzySame) {
             diff.setPixel(x, y, _colorOk);
           } else {
-            final int goldenLuminance = getLuminanceRgb(goldenPixel[0], goldenPixel[1], goldenPixel[2]);
-            final int otherLuminance = getLuminanceRgb(otherPixel[0], otherPixel[1], otherPixel[2]);
+            final int goldenLuminance =
+                getLuminanceRgb(goldenPixel[0], goldenPixel[1], goldenPixel[2]);
+            final int otherLuminance =
+                getLuminanceRgb(otherPixel[0], otherPixel[1], otherPixel[2]);
             if (goldenLuminance < otherLuminance) {
               diff.setPixel(x, y, _colorExpectedPixel);
             } else {
@@ -180,5 +188,94 @@ class ImageDiff {
 
 /// Returns text explaining pixel difference rate.
 String getPrintableDiffFilesInfo(double diffRate, double maxRate) =>
-  '(${((diffRate) * 100).toStringAsFixed(4)}% of pixels were different. '
-  'Maximum allowed rate is: ${(maxRate * 100).toStringAsFixed(4)}%).';
+    '(${((diffRate) * 100).toStringAsFixed(4)}% of pixels were different. '
+    'Maximum allowed rate is: ${(maxRate * 100).toStringAsFixed(4)}%).';
+
+/// Downloads the repository that we store the golden files.
+///
+/// Reads the url of the repo and `commit no` to sync to, from
+/// `goldens_lock.yaml`.
+class GoldensRepoFetcher {
+  String _repository;
+  String _revision;
+  final io.Directory _webUiGoldensRepositoryDirectory;
+  final String _lockFilePath;
+
+  /// Constructor that takes directory to download the repository and
+  /// file with goldens repo information.
+  GoldensRepoFetcher(this._webUiGoldensRepositoryDirectory, this._lockFilePath);
+
+  /// Fetches golden files from github.com/flutter/goldens, cloning the
+  /// repository if necessary.
+  ///
+  /// The repository is cloned into web_ui/.dart_tool.
+  Future<void> fetch() async {
+    final io.File lockFile = io.File(path.join(_lockFilePath));
+    final YamlMap lock = loadYaml(lockFile.readAsStringSync()) as YamlMap;
+    _repository = lock['repository'] as String;
+    _revision = lock['revision'] as String;
+
+    final String localRevision = await _getLocalRevision();
+    if (localRevision == _revision) {
+      return;
+    }
+
+    print('Fetching $_repository@$_revision');
+
+    if (!_webUiGoldensRepositoryDirectory.existsSync()) {
+      _webUiGoldensRepositoryDirectory.createSync(recursive: true);
+      await _runGit(
+        <String>['init'],
+        _webUiGoldensRepositoryDirectory.path,
+      );
+
+      await _runGit(
+        <String>['remote', 'add', 'origin', _repository],
+        _webUiGoldensRepositoryDirectory.path,
+      );
+    }
+
+    await _runGit(
+      <String>['fetch', 'origin', 'master'],
+      _webUiGoldensRepositoryDirectory.path,
+    );
+    await _runGit(
+      <String>['checkout', _revision],
+      _webUiGoldensRepositoryDirectory.path,
+    );
+  }
+
+  Future<String> _getLocalRevision() async {
+    final io.File head = io.File(
+        path.join(_webUiGoldensRepositoryDirectory.path, '.git', 'HEAD'));
+
+    if (!head.existsSync()) {
+      return null;
+    }
+
+    return head.readAsStringSync().trim();
+  }
+
+  /// Runs `git` with given arguments.
+  Future<int> _runGit(
+    List<String> arguments,
+    String workingDirectory,
+  ) async {
+    final io.Process process = await io.Process.start(
+      'git',
+      arguments,
+      workingDirectory: workingDirectory,
+      // Running the process in a system shell for Windows. Otherwise
+      // the process is not able to get Dart from path.
+      runInShell: io.Platform.isWindows,
+      mode: io.ProcessStartMode.inheritStdio,
+    );
+    final int exitCode = await process.exitCode;
+    if (exitCode != 0) {
+      throw Exception('Git command failed with arguments $arguments on '
+          'workingDirectory: $workingDirectory resulting with exitCode: '
+          '$exitCode');
+    }
+    return exitCode;
+  }
+}

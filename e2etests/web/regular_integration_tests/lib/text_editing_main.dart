@@ -56,6 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
               enabled: true,
               controller: _emptyController,
               decoration: const InputDecoration(
+                contentPadding: EdgeInsets.all(10.0),
                 labelText: 'Empty Input Field:',
               ),
             ),
@@ -67,6 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
               enabled: true,
               controller: _controller,
               decoration: const InputDecoration(
+                contentPadding: EdgeInsets.all(10.0),
                 labelText: 'Text Input Field:',
               ),
             ),
@@ -78,6 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
               enabled: true,
               controller: _controller2,
               decoration: const InputDecoration(
+                contentPadding: EdgeInsets.all(10.0),
                 labelText: 'Text Input Field 2:',
               ),
               onFieldSubmitted: (String str) {

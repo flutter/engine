@@ -1,0 +1,12 @@
+name: golden_comparator
+
+environment:
+  sdk: ">=2.2.0 <3.0.0"
+
+dependencies:
+  path: 1.8.0-nullsafety
+  image: 2.1.13
+  js: 0.6.1+1
+  yaml: 2.2.1
+  common_test_utils:
+    path: ../common_test_utils
