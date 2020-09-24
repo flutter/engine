@@ -816,6 +816,12 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  if (metrics.device_pixel_ratio <= 0) {
+    FML_DLOG(ERROR)
+        << "Embedding reported a device pixel ratio of 0, ignoring update.";
+    return;
+  }
+
   // This is the formula Android uses.
   // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
   size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;

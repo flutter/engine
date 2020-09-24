@@ -2066,5 +2066,50 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   DestroyShell(std::move(shell));
 }
 
+TEST_F(ShellTest, IgnoresZeroDPR) {
+  fml::AutoResetWaitableEvent latch;
+  double last_device_pixel_ratio;
+  auto native_report_device_pixel_ratio = [&](Dart_NativeArguments args) {
+    auto dpr_handle = Dart_GetNativeArgument(args, 0);
+    ASSERT_TRUE(Dart_IsDouble(dpr_handle));
+    Dart_DoubleValue(dpr_handle, &last_device_pixel_ratio);
+    ASSERT_FALSE(last_device_pixel_ratio == 0.0);
+    latch.Signal();
+  };
+
+  Settings settings = CreateSettingsForFixture();
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+
+  AddNativeCallback("ReportDevicePixelRatio",
+                    CREATE_NATIVE_ENTRY(native_report_device_pixel_ratio));
+
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("reportDevicePixelRatio");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  task_runner->PostTask([&]() {
+    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200});
+    task_runner->PostTask([&]() {
+      shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 200});
+    });
+  });
+  latch.Wait();
+  ASSERT_EQ(last_device_pixel_ratio, 0.8);
+  latch.Reset();
+  task_runner->PostTask([&]() {
+    shell->GetPlatformView()->SetViewportMetrics({1.2, 400, 200});
+  });
+  latch.Wait();
+  ASSERT_EQ(last_device_pixel_ratio, 1.2);
+
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
 }  // namespace testing
 }  // namespace flutter
