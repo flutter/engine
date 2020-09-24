@@ -177,7 +177,7 @@ G_MODULE_EXPORT FlEventChannel* fl_event_channel_new(
   return self;
 }
 
-G_MODULE_EXPORT void fl_event_channel_set_event_handlers(
+G_MODULE_EXPORT void fl_event_channel_set_stream_handlers(
     FlEventChannel* self,
     FlEventChannelHandler listen_handler,
     FlEventChannelHandler cancel_handler,

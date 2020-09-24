@@ -78,8 +78,8 @@ TEST(FlEventChannelTest, Listen) {
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   FlEventChannel* channel = fl_event_channel_new(
       messenger, "test/standard-event", FL_METHOD_CODEC(codec));
-  fl_event_channel_set_event_handlers(channel, listen_listen_cb, nullptr, loop,
-                                      nullptr);
+  fl_event_channel_set_stream_handlers(channel, listen_listen_cb, nullptr, loop,
+                                       nullptr);
 
   listen_channel(messenger, nullptr);
 
@@ -137,8 +137,8 @@ TEST(FlEventChannelTest, ListenException) {
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   FlEventChannel* channel = fl_event_channel_new(
       messenger, "test/standard-event", FL_METHOD_CODEC(codec));
-  fl_event_channel_set_event_handlers(channel, listen_exception_listen_cb,
-                                      nullptr, loop, nullptr);
+  fl_event_channel_set_stream_handlers(channel, listen_exception_listen_cb,
+                                       nullptr, loop, nullptr);
 
   // Listen for response to the engine.
   fl_binary_messenger_set_message_handler_on_channel(
@@ -173,8 +173,8 @@ TEST(FlEventChannelTest, Cancel) {
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   FlEventChannel* channel = fl_event_channel_new(
       messenger, "test/standard-event", FL_METHOD_CODEC(codec));
-  fl_event_channel_set_event_handlers(channel, nullptr, cancel_cancel_cb, loop,
-                                      nullptr);
+  fl_event_channel_set_stream_handlers(channel, nullptr, cancel_cancel_cb, loop,
+                                       nullptr);
 
   listen_channel(messenger, nullptr);
   cancel_channel(messenger, nullptr);
@@ -238,7 +238,7 @@ TEST(FlEventChannelTest, CancelException) {
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   FlEventChannel* channel = fl_event_channel_new(
       messenger, "test/standard-event", FL_METHOD_CODEC(codec));
-  fl_event_channel_set_event_handlers(
+  fl_event_channel_set_stream_handlers(
       channel, nullptr, cancel_exception_cancel_cb, loop, nullptr);
 
   // Listen for response to the engine.
@@ -286,8 +286,8 @@ TEST(FlEventChannelTest, Args) {
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   FlEventChannel* channel = fl_event_channel_new(
       messenger, "test/standard-event", FL_METHOD_CODEC(codec));
-  fl_event_channel_set_event_handlers(channel, args_listen_cb, args_cancel_cb,
-                                      loop, nullptr);
+  fl_event_channel_set_stream_handlers(channel, args_listen_cb, args_cancel_cb,
+                                       loop, nullptr);
 
   g_autoptr(FlValue) listen_args = fl_value_new_string("LISTEN-ARGS");
   listen_channel(messenger, listen_args);
@@ -359,8 +359,8 @@ TEST(FlEventChannelTest, SendEvents) {
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   FlEventChannel* channel = fl_event_channel_new(
       messenger, "test/standard-event", FL_METHOD_CODEC(codec));
-  fl_event_channel_set_event_handlers(channel, send_events_listen_cb, nullptr,
-                                      loop, nullptr);
+  fl_event_channel_set_stream_handlers(channel, send_events_listen_cb, nullptr,
+                                       loop, nullptr);
 
   // Listen for events from the engine.
   fl_binary_messenger_set_message_handler_on_channel(

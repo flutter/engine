@@ -64,7 +64,7 @@ G_DECLARE_FINAL_TYPE(FlEventChannel,
  *   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new ();
  *   channel = fl_event_channel_new (messenger, "flutter/foo",
  *                                   FL_METHOD_CODEC (codec));
- *   fl_event_channel_set_event_handlers (channel, listen_cb, cancel_cb,
+ *   fl_event_channel_set_stream_handlers (channel, listen_cb, cancel_cb,
  *                                        NULL, NULL);
  * }
  * ]|
@@ -103,7 +103,7 @@ FlEventChannel* fl_event_channel_new(FlBinaryMessenger* messenger,
                                      FlMethodCodec* codec);
 
 /**
- * fl_event_channel_set_event_handlers:
+ * fl_event_channel_set_stream_handlers:
  * @channel: an #FlEventChannel.
  * @listen_handler: (allow-none): function to call when the Dart side of the
  * channel starts listening to the stream.
@@ -120,11 +120,11 @@ FlEventChannel* fl_event_channel_new(FlBinaryMessenger* messenger,
  * The handlers are removed if the channel is closed or is replaced by another
  * handler, set @destroy_notify if you want to detect this.
  */
-void fl_event_channel_set_event_handlers(FlEventChannel* channel,
-                                         FlEventChannelHandler listen_handler,
-                                         FlEventChannelHandler cancel_handler,
-                                         gpointer user_data,
-                                         GDestroyNotify destroy_notify);
+void fl_event_channel_set_stream_handlers(FlEventChannel* channel,
+                                          FlEventChannelHandler listen_handler,
+                                          FlEventChannelHandler cancel_handler,
+                                          gpointer user_data,
+                                          GDestroyNotify destroy_notify);
 
 /**
  * fl_event_channel_send:
