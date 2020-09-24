@@ -14,6 +14,9 @@ void BackdropFilterLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
   ContainerLayer::Preroll(context, matrix);
+
+  // paint bounds is determined by clip, not children
+  set_paint_bounds(context->cull_rect);
 }
 
 void BackdropFilterLayer::Paint(PaintContext& context) const {
