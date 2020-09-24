@@ -1671,6 +1671,10 @@ class Image {
   /// It is safe to pass an [Image] handle to another object or method if the
   /// current holder no longer needs it.
   ///
+  /// To check whether two [Image] references are refering to the same
+  /// underlying image memory, use [isCloneOf] rather than the equality operator
+  /// or [identical].
+  ///
   /// The following example demonstrates valid usage.
   ///
   /// ```dart
@@ -1740,8 +1744,8 @@ class Image {
     return Image._(_image);
   }
 
-  /// Returns true if `other` shares the same underlying image memory as this,
-  /// even if this or `other` is [dispose]d.
+  /// Returns true if `other` is a [clone] of this and thus shares the same
+  /// underlying image memory, even if this or `other` is [dispose]d.
   ///
   /// This method may return false for two images that were decoded from the
   /// same underlying asset, if they are not sharing the same memory. For
