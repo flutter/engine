@@ -24,12 +24,6 @@ G_DECLARE_FINAL_TYPE(FlEventChannel,
                      EVENT_CHANNEL,
                      GObject)
 
-G_DECLARE_FINAL_TYPE(FlEventChannelResponseHandle,
-                     fl_event_channel_response_handle,
-                     FL,
-                     EVENT_CHANNEL_RESPONSE_HANDLE,
-                     GObject)
-
 /**
  * FlEventChannel:
  *
@@ -69,20 +63,14 @@ G_DECLARE_FINAL_TYPE(FlEventChannelResponseHandle,
  * static void setup_channel () {
  *   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new ();
  *   channel = fl_event_channel_new (messenger, "flutter/foo",
- *                                   FL_METHOD_CODEC (codec),
- *                                   listen_cb, cancel_cb, NULL, NULL);
+ *                                   FL_METHOD_CODEC (codec));
+ *   fl_event_channel_set_event_handlers (channel, listen_cb, cancel_cb,
+ *                                        NULL, NULL);
  * }
  * ]|
  *
  * #FlEventChannel matches the EventChannel class in the Flutter
  * services library.
- */
-
-/**
- * FlEventChannelResponseHandle:
- *
- * #FlEventChannelResponseHandle is an object used to send responses
- * with.
  */
 
 /**
@@ -104,6 +92,19 @@ typedef FlMethodErrorResponse* (*FlEventChannelHandler)(FlEventChannel* channel,
  * @messenger: an #FlBinaryMessenger.
  * @name: a channel name.
  * @codec: the message codec.
+ *
+ * Creates an event channel. @codec must match the codec used on the Dart
+ * end of the channel.
+ *
+ * Returns: a new #FlEventChannel.
+ */
+FlEventChannel* fl_event_channel_new(FlBinaryMessenger* messenger,
+                                     const gchar* name,
+                                     FlMethodCodec* codec);
+
+/**
+ * fl_event_channel_set_event_handlers:
+ * @channel: an #FlEventChannel.
  * @listen_handler: (allow-none): function to call when the Dart side of the
  * channel starts listening to the stream.
  * @cancel_handler: (allow-none): function to call when the Dart side of the
@@ -113,18 +114,17 @@ typedef FlMethodErrorResponse* (*FlEventChannelHandler)(FlEventChannel* channel,
  * @destroy_notify: (allow-none): a function which gets called to free
  * @user_data, or %NULL.
  *
- * Creates an event channel. @codec must match the codec used on the Dart
- * end of the channel.
+ * Sets the functions called when the Dart side requests the stream to start and
+ * finish.
  *
- * Returns: a new #FlEventChannel.
+ * The handlers are removed if the channel is closed or is replaced by another
+ * handler, set @destroy_notify if you want to detect this.
  */
-FlEventChannel* fl_event_channel_new(FlBinaryMessenger* messenger,
-                                     const gchar* name,
-                                     FlMethodCodec* codec,
-                                     FlEventChannelHandler listen_handler,
-                                     FlEventChannelHandler cancel_handler,
-                                     gpointer user_data,
-                                     GDestroyNotify destroy_notify);
+void fl_event_channel_set_event_handlers(FlEventChannel* channel,
+                                         FlEventChannelHandler listen_handler,
+                                         FlEventChannelHandler cancel_handler,
+                                         gpointer user_data,
+                                         GDestroyNotify destroy_notify);
 
 /**
  * fl_event_channel_send:

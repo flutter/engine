@@ -158,11 +158,7 @@ static void fl_event_channel_init(FlEventChannel* self) {}
 G_MODULE_EXPORT FlEventChannel* fl_event_channel_new(
     FlBinaryMessenger* messenger,
     const gchar* name,
-    FlMethodCodec* codec,
-    FlEventChannelHandler listen_handler,
-    FlEventChannelHandler cancel_handler,
-    gpointer user_data,
-    GDestroyNotify destroy_notify) {
+    FlMethodCodec* codec) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
   g_return_val_if_fail(name != nullptr, nullptr);
   g_return_val_if_fail(FL_IS_METHOD_CODEC(codec), nullptr);
@@ -173,16 +169,27 @@ G_MODULE_EXPORT FlEventChannel* fl_event_channel_new(
   self->messenger = FL_BINARY_MESSENGER(g_object_ref(messenger));
   self->name = g_strdup(name);
   self->codec = FL_METHOD_CODEC(g_object_ref(codec));
-  self->listen_handler = listen_handler;
-  self->cancel_handler = cancel_handler;
-  self->handler_data = user_data;
-  self->handler_data_destroy_notify = destroy_notify;
 
   fl_binary_messenger_set_message_handler_on_channel(
       self->messenger, self->name, message_cb, g_object_ref(self),
       channel_closed_cb);
 
   return self;
+}
+
+G_MODULE_EXPORT void fl_event_channel_set_event_handlers(
+    FlEventChannel* self,
+    FlEventChannelHandler listen_handler,
+    FlEventChannelHandler cancel_handler,
+    gpointer user_data,
+    GDestroyNotify destroy_notify) {
+  g_return_if_fail(FL_IS_EVENT_CHANNEL(self));
+
+  remove_handlers(self);
+  self->listen_handler = listen_handler;
+  self->cancel_handler = cancel_handler;
+  self->handler_data = user_data;
+  self->handler_data_destroy_notify = destroy_notify;
 }
 
 G_MODULE_EXPORT gboolean fl_event_channel_send(FlEventChannel* self,
