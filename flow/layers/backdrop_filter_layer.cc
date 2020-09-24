@@ -11,8 +11,10 @@ BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
 
 void BackdropFilterLayer::Preroll(PrerollContext* context,
                                   const SkMatrix& matrix) {
+  bool active = !context->cull_rect.isEmpty();
+
   Layer::AutoPrerollSaveLayerState save =
-      Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
+      Layer::AutoPrerollSaveLayerState::Create(context, active, bool(filter_));
   ContainerLayer::Preroll(context, matrix);
 
   // paint bounds is determined by clip, not children
