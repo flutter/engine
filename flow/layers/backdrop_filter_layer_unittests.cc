@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/backdrop_filter_layer.h"
+#include "flutter/flow/layers/clip_rect_layer.h"
 
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
@@ -20,6 +21,7 @@ using BackdropFilterLayerTest = LayerTest;
 TEST_F(BackdropFilterLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<BackdropFilterLayer>(sk_sp<SkImageFilter>());
 
+  preroll_context()->cull_rect = kEmptyRect;
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting());
@@ -52,19 +54,19 @@ TEST_F(BackdropFilterLayerTest, EmptyFilter) {
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_transform);
-  EXPECT_EQ(layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->paint_bounds(), preroll_context()->cull_rect);
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
   layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{child_bounds, SkPaint(),
-                                                    nullptr, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(mock_canvas().draw_calls(),
+            std::vector(
+                {MockCanvas::DrawCall{
+                     0, MockCanvas::SaveLayerData{preroll_context()->cull_rect,
+                                                  SkPaint(), nullptr, 1}},
+                 MockCanvas::DrawCall{
+                     1, MockCanvas::DrawPathData{child_path, child_paint}},
+                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(BackdropFilterLayerTest, SimpleFilter) {
@@ -78,19 +80,19 @@ TEST_F(BackdropFilterLayerTest, SimpleFilter) {
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context(), initial_transform);
-  EXPECT_EQ(layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->paint_bounds(), preroll_context()->cull_rect);
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
 
   layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{child_bounds, SkPaint(),
-                                                    layer_filter, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path, child_paint}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(mock_canvas().draw_calls(),
+            std::vector(
+                {MockCanvas::DrawCall{
+                     0, MockCanvas::SaveLayerData{preroll_context()->cull_rect,
+                                                  SkPaint(), layer_filter, 1}},
+                 MockCanvas::DrawCall{
+                     1, MockCanvas::DrawPathData{child_path, child_paint}},
+                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(BackdropFilterLayerTest, MultipleChildren) {
@@ -113,7 +115,7 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
-  EXPECT_EQ(layer->paint_bounds(), children_bounds);
+  EXPECT_EQ(layer->paint_bounds(), preroll_context()->cull_rect);
   EXPECT_TRUE(mock_layer1->needs_painting());
   EXPECT_TRUE(mock_layer2->needs_painting());
   EXPECT_TRUE(layer->needs_painting());
@@ -121,16 +123,16 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
   EXPECT_EQ(mock_layer2->parent_matrix(), initial_transform);
 
   layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::SaveLayerData{children_bounds, SkPaint(),
-                                                    layer_filter, 1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{
-                       1, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(mock_canvas().draw_calls(),
+            std::vector(
+                {MockCanvas::DrawCall{
+                     0, MockCanvas::SaveLayerData{preroll_context()->cull_rect,
+                                                  SkPaint(), layer_filter, 1}},
+                 MockCanvas::DrawCall{
+                     1, MockCanvas::DrawPathData{child_path1, child_paint1}},
+                 MockCanvas::DrawCall{
+                     1, MockCanvas::DrawPathData{child_path2, child_paint2}},
+                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(BackdropFilterLayerTest, Nested) {
@@ -139,6 +141,7 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   const SkPath child_path1 = SkPath().addRect(child_bounds);
   const SkPath child_path2 =
       SkPath().addRect(child_bounds.makeOffset(3.0f, 0.0f));
+  const SkRect clip_rect = child_path1.getBounds();
   const SkPaint child_paint1 = SkPaint(SkColors::kYellow);
   const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
   auto layer_filter1 = SkImageFilters::Paint(SkPaint(SkColors::kMagenta));
@@ -147,17 +150,19 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer1 = std::make_shared<BackdropFilterLayer>(layer_filter1);
   auto layer2 = std::make_shared<BackdropFilterLayer>(layer_filter2);
+  auto clip_layer = std::make_shared<ClipRectLayer>(clip_rect, Clip::hardEdge);
   layer2->Add(mock_layer2);
   layer1->Add(mock_layer1);
-  layer1->Add(layer2);
+  layer1->Add(clip_layer);
+  clip_layer->Add(layer2);
 
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
   layer1->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
-  EXPECT_EQ(layer1->paint_bounds(), children_bounds);
-  EXPECT_EQ(layer2->paint_bounds(), mock_layer2->paint_bounds());
+  EXPECT_EQ(layer1->paint_bounds(), preroll_context()->cull_rect);
+  EXPECT_EQ(layer2->paint_bounds(), clip_rect);
   EXPECT_TRUE(mock_layer1->needs_painting());
   EXPECT_TRUE(mock_layer2->needs_painting());
   EXPECT_TRUE(layer1->needs_painting());
@@ -166,20 +171,25 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   EXPECT_EQ(mock_layer2->parent_matrix(), initial_transform);
 
   layer1->Paint(paint_context());
-  EXPECT_EQ(mock_canvas().draw_calls(),
-            std::vector(
-                {MockCanvas::DrawCall{
-                     0, MockCanvas::SaveLayerData{children_bounds, SkPaint(),
-                                                  layer_filter1, 1}},
-                 MockCanvas::DrawCall{
-                     1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                 MockCanvas::DrawCall{
-                     1, MockCanvas::SaveLayerData{child_path2.getBounds(),
-                                                  SkPaint(), layer_filter2, 2}},
-                 MockCanvas::DrawCall{
-                     2, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                 MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
-                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(
+      mock_canvas().draw_calls(),
+      std::vector(
+          {MockCanvas::DrawCall{
+               0, MockCanvas::SaveLayerData{preroll_context()->cull_rect,
+                                            SkPaint(), layer_filter1, 1}},
+           MockCanvas::DrawCall{
+               1, MockCanvas::DrawPathData{child_path1, child_paint1}},
+           MockCanvas::DrawCall{1, MockCanvas::SaveData{2}},
+           MockCanvas::DrawCall{
+               2, MockCanvas::ClipRectData{clip_rect, SkClipOp::kIntersect,
+                                           MockCanvas::kHard_ClipEdgeStyle}},
+           MockCanvas::DrawCall{
+               2, MockCanvas::SaveLayerData{clip_rect, SkPaint(), layer_filter2, 3}},
+           MockCanvas::DrawCall{
+               3, MockCanvas::DrawPathData{child_path2, child_paint2}},
+           MockCanvas::DrawCall{3, MockCanvas::RestoreData{2}},
+           MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
+           MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(BackdropFilterLayerTest, Readback) {
