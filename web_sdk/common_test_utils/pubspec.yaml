@@ -1,0 +1,7 @@
+name: common_test_utils
+
+environment:
+  sdk: ">=2.2.0 <3.0.0"
+
+dependencies:
+  path: 1.8.0-nullsafety

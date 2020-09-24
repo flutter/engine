@@ -15,6 +15,7 @@ import 'package:test_core/src/runner/hack_register_platform.dart'
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
+import 'package:golden_comparator/goldens.dart';
 
 import 'common.dart';
 import 'environment.dart';
@@ -188,6 +189,14 @@ class TestCommand extends Command<bool> with ArgUtils {
       environment.webUiTestResultsDirectory.deleteSync(recursive: true);
     }
     environment.webUiTestResultsDirectory.createSync(recursive: true);
+
+    // If screenshot tests are available, fetch the screenshot goldens.
+    if (isScreenhotTestsAvailable) {
+      final GoldensRepoFetcher goldensRepoFetcher = GoldensRepoFetcher(
+          environment.webUiGoldensRepositoryDirectory,
+          path.join(environment.webUiDevDir.path, 'goldens_lock.yaml'));
+      await goldensRepoFetcher.fetch();
+    }
 
     // In order to run iOS Safari unit tests we need to make sure iOS Simulator
     // is booted.
@@ -371,6 +380,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       isFirefoxIntegrationTestAvailable ||
       isSafariIntegrationTestAvailable;
 
+  // Whether the tests will do screenshot testing.
   bool get isScreenhotTestsAvailable =>
       isIntegrationTestsAvailable || isUnitTestsScreenshotsAvailable;
 
@@ -378,7 +388,8 @@ class TestCommand extends Command<bool> with ArgUtils {
   // "Chrome/iOS" for LUCI/local.
   bool get isUnitTestsScreenshotsAvailable =>
       ((isChrome && isLuci && io.Platform.isLinux) ||
-          ((isChrome || isSafariIOS) && !isLuci));
+          (isChrome || isSafariIOS) && !isLuci) ||
+      (isSafariIOS && isLuci);
 
   /// Use system flutter instead of cloning the repository.
   ///
@@ -624,7 +635,8 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   /// Runs a batch of tests.
   ///
-  /// Unless [expectFailure] is set to false, sets [io.exitCode] to a non-zero value if any tests fail.
+  /// Unless [expectFailure] is set to false, sets [io.exitCode] to a non-zero
+  /// value if any tests fail.
   Future<void> _runTestBatch(
     List<FilePath> testFiles, {
     @required int concurrency,
@@ -647,7 +659,8 @@ class TestCommand extends Command<bool> with ArgUtils {
       return BrowserPlatform.start(
         browser,
         root: io.Directory.current.path,
-        // It doesn't make sense to update a screenshot for a test that is expected to fail.
+        // It doesn't make sense to update a screenshot for a test that is
+        // expected to fail.
         doUpdateScreenshotGoldens: !expectFailure && doUpdateScreenshotGoldens,
       );
     });
