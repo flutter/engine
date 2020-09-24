@@ -1740,6 +1740,17 @@ class Image {
     return Image._(_image);
   }
 
+  /// Returns true if `other` shares the same underlying image memory as this,
+  /// even if this or `other` is [dispose]d.
+  ///
+  /// This method may return false for two images that were decoded from the
+  /// same underlying asset, if they are not sharing the same memory. For
+  /// example, if the same file is decoded using [instantiateImageCodec] twice,
+  /// or the same bytes are decoded using [decodeImageFromPixels] twice, there
+  /// will be two distinct [Image]s that render the same but do not share
+  /// underlying memory, and so will not be treated as clones of each other.
+  bool isCloneOf(Image other) => other._image == _image;
+
   @override
   String toString() => _image.toString();
 }
