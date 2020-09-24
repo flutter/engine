@@ -54,6 +54,11 @@ class EnginePicture implements ui.Picture {
       ..src = imageDataUrl
       ..width = width
       ..height = height;
+
+    // The image loads asynchronously. We need to wait before returning,
+    // otherwise the returned HtmlImage will be temporarily unusable.
+    await imageElement.onLoad.first;
+
     return HtmlImage(
       imageElement,
       width,
