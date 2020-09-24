@@ -48,6 +48,12 @@ source_set("common_cpp_input") {
   }
 }
 
+source_set("common_cpp_switches") {
+  public = [ "engine_switches.h" ]
+
+  sources = [ "engine_switches.cc" ]
+}
+
 source_set("common_cpp") {
   public = [
     "incoming_message_dispatcher.h",
@@ -115,6 +121,7 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
+      "engine_switches_unittests.cc",
       "json_message_codec_unittests.cc",
       "json_method_codec_unittests.cc",
       "text_input_model_unittests.cc",
@@ -124,6 +131,7 @@ if (enable_unittests) {
       ":common_cpp",
       ":common_cpp_fixtures",
       ":common_cpp_input",
+      ":common_cpp_switches",
       "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper",
       "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper_library_stubs",
       "//flutter/testing",
