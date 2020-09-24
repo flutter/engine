@@ -48,13 +48,17 @@ void onPointerDataPacketMain() {
 void emptyMain() {}
 
 @pragma('vm:entry-point')
-void reportDevicePixelRatio() {
+void reportMetrics() {
   window.onMetricsChanged = () {
-    _reportDevicePixelRatio(window.devicePixelRatio);
+    _reportMetrics(
+      window.devicePixelRatio,
+      window.physicalSize.width,
+      window.physicalSize.height,
+    );
   };
 }
 
-void _reportDevicePixelRatio(double devicePixelRatio) native 'ReportDevicePixelRatio';
+void _reportMetrics(double devicePixelRatio, double width, double height) native 'ReportMetrics';
 
 @pragma('vm:entry-point')
 void dummyReportTimingsMain() {
