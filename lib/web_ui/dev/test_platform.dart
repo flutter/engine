@@ -202,7 +202,6 @@ class BrowserPlatform extends PlatformPlugin {
       // - Tests are running on a local machine.
       // - Tests are running on an OS other than macOS.
       if (!isLuci || !Platform.isMacOS) {
-        print('INFO: fetch goldens');
         await fetchGoldens();
       } else {
         if (!env.environment.webUiGoldensRepositoryDirectory.existsSync()) {

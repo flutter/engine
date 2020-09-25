@@ -189,26 +189,6 @@ class TestCommand extends Command<bool> with ArgUtils {
     }
     environment.webUiTestResultsDirectory.createSync(recursive: true);
 
-    if (isLuci &&
-        io.Platform.isMacOS &&
-        !environment.webUiGoldensRepositoryDirectory.existsSync()) {
-      throw Exception('The goldens directory must have been copied');
-    } else {
-      print('found the golden directory printing out the contents');
-      final List<io.FileSystemEntity> entities = environment
-          .webUiGoldensRepositoryDirectory
-          .listSync(followLinks: false);
-
-      for (io.FileSystemEntity e in entities) {
-        if (e is io.File) {
-          print('found file: ${e.absolute.path}');
-        }
-        if (e is io.Directory) {
-          print('directory found: ${e.absolute.path}');
-        }
-      }
-    }
-
     // In order to run iOS Safari unit tests we need to make sure iOS Simulator
     // is booted.
     if (isSafariIOS) {
