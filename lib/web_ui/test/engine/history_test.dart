@@ -555,4 +555,7 @@ class TestPlatformLocation extends PlatformLocation {
   void go(int count) {
     throw UnimplementedError();
   }
+
+  @override
+  String getBaseHref() => '/';
 }

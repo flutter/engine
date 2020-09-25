@@ -797,7 +797,7 @@ class EngineWindow extends ui.Window {
   }
 
   void _addUrlStrategyListener() {
-    _onUrlStrategy = setUrlStrategy;
+    _onUrlStrategy = allowInterop(setUrlStrategy);
     registerHotRestartListener(() {
       _onUrlStrategy = null;
     });
