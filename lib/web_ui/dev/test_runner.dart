@@ -189,6 +189,15 @@ class TestCommand extends Command<bool> with ArgUtils {
     }
     environment.webUiTestResultsDirectory.createSync(recursive: true);
 
+    if (isLuci &&
+        io.Platform.isMacOS &&
+        !environment.webUiGoldensRepositoryDirectory.existsSync()) {
+      throw Exception('The goldens directory must have been copied');
+    } else {
+      print('found the golden directory printing out the contents');
+
+    }
+
     // In order to run iOS Safari unit tests we need to make sure iOS Simulator
     // is booted.
     if (isSafariIOS) {

@@ -202,7 +202,12 @@ class BrowserPlatform extends PlatformPlugin {
       // - Tests are running on a local machine.
       // - Tests are running on an OS other than macOS.
       if (!isLuci || !Platform.isMacOS) {
+        print('INFO: fetch goldens');
         await fetchGoldens();
+      } else {
+        if (!env.environment.webUiGoldensRepositoryDirectory.existsSync()) {
+          throw Exception('The goldens directory must have been copied');
+        }
       }
       goldensDirectory = p.join(
         env.environment.webUiGoldensRepositoryDirectory.path,
@@ -218,7 +223,7 @@ class BrowserPlatform extends PlatformPlugin {
     ));
     if (!file.existsSync() && !write) {
       return '''
-Golden file $filename does not exist.
+Golden file $filename does not exist on path ${file.absolute.path}
 
 To automatically create this file call matchGoldenFile('$filename', write: true).
 ''';
