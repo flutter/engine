@@ -134,7 +134,7 @@ class HashUrlStrategy extends UrlStrategy {
 /// [UrlStrategy] when they need to interact with the DOM apis like
 /// pushState, popState, etc...
 abstract class PlatformLocation {
-  ///
+  /// This constructor is here only to allow subclasses to be const.
   const PlatformLocation();
 
   /// Registers an event listener for the `onpopstate` event.
@@ -183,11 +183,14 @@ abstract class PlatformLocation {
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/go
   void go(int count);
+
+  /// The base href where the flutter app is being served.
+  String? getBaseHref();
 }
 
 /// An implementation of [PlatformLocation] for the browser.
 class BrowserPlatformLocation extends PlatformLocation {
-  ///
+  /// Default constructor for [BrowserPlatformLocation].
   const BrowserPlatformLocation();
 
   html.Location get _location => html.window.location;
@@ -229,4 +232,7 @@ class BrowserPlatformLocation extends PlatformLocation {
   void go(int count) {
     _history.go(count);
   }
+
+  @override
+  String? getBaseHref() => html.document.baseUri;
 }

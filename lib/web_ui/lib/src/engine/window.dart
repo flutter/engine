@@ -797,10 +797,7 @@ class EngineWindow extends ui.Window {
   }
 
   void _addUrlStrategyListener() {
-    // TODO(mdebbar): Do we need "allowInterop" here?
-    _onUrlStrategy = allowInterop((JsUrlStrategy strategy) {
-      setUrlStrategy(strategy);
-    });
+    _onUrlStrategy = setUrlStrategy;
     registerHotRestartListener(() {
       _onUrlStrategy = null;
     });
