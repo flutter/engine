@@ -140,6 +140,7 @@ public class FlutterMutatorView extends FrameLayout {
         prevTop = top;
         break;
       case MotionEvent.ACTION_UP:
+      default:
         screenMatrix.postTranslate(left, top);
         break;
     }
