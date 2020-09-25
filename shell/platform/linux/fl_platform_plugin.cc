@@ -60,13 +60,14 @@ static void clipboard_text_cb(GtkClipboard* clipboard,
 
 // Called when clipboard text received during has_strings.
 static void clipboard_text_has_strings_cb(GtkClipboard* clipboard,
-                              const gchar* text,
-                              gpointer user_data) {
+                                          const gchar* text,
+                                          gpointer user_data) {
   g_autoptr(FlMethodCall) method_call = FL_METHOD_CALL(user_data);
 
   g_autoptr(FlValue) result = fl_value_new_map();
-  fl_value_set_string_take(result, kValueKey,
-                           fl_value_new_bool(text != nullptr && strlen(text) > 0));
+  fl_value_set_string_take(
+      result, kValueKey,
+      fl_value_new_bool(text != nullptr && strlen(text) > 0));
 
   g_autoptr(FlMethodResponse) response =
       FL_METHOD_RESPONSE(fl_method_success_response_new(result));
@@ -123,8 +124,9 @@ static FlMethodResponse* clipboard_get_data_async(FlPlatformPlugin* self,
 
 // Called when Flutter wants to know if the content of the clipboard is able to
 // be pasted, without actually accessing the clipboard content itself.
-static FlMethodResponse* clipboard_has_strings_async(FlPlatformPlugin* self,
-                                                  FlMethodCall* method_call) {
+static FlMethodResponse* clipboard_has_strings_async(
+    FlPlatformPlugin* self,
+    FlMethodCall* method_call) {
   GtkClipboard* clipboard =
       gtk_clipboard_get_default(gdk_display_get_default());
   gtk_clipboard_request_text(clipboard, clipboard_text_has_strings_cb,
