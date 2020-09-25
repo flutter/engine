@@ -127,7 +127,7 @@ class AccessibilityBridge
   // Assists with pruning unreachable nodes and hit testing.
   std::unordered_map<int32_t, SemanticsNode> nodes_;
 
-  fuchsia::accessibility::semantics::Node GetRootNodeUpdate(size_t & node_size);
+  fuchsia::accessibility::semantics::Node GetRootNodeUpdate(size_t& node_size);
 
   // Derives the BoundingBox of a Flutter semantics node from its
   // rect and elevation.

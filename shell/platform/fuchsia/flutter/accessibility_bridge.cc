@@ -324,10 +324,11 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
   // Handles root node update.
   float new_view_pixel_ratio = delegate_.GetViewPixelRatio();
   if (has_root_node_update ||
-     last_seen_view_pixel_ratio_ != new_view_pixel_ratio) {
+      last_seen_view_pixel_ratio_ != new_view_pixel_ratio) {
     last_seen_view_pixel_ratio_ = new_view_pixel_ratio;
     size_t root_node_size;
-    fuchsia::accessibility::semantics::Node root_update = GetRootNodeUpdate(root_node_size);
+    fuchsia::accessibility::semantics::Node root_update =
+        GetRootNodeUpdate(root_node_size);
     // TODO(MI4-2531, FIDL-718): Remove this
     // This is defensive. If, despite our best efforts, we ended up with a node
     // that is larger than the max fidl size, we send no updates.
@@ -354,8 +355,8 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
   tree_ptr_->CommitUpdates([]() {});
 }
 
-fuchsia::accessibility::semantics::Node
-AccessibilityBridge::GetRootNodeUpdate(size_t & node_size) {
+fuchsia::accessibility::semantics::Node AccessibilityBridge::GetRootNodeUpdate(
+    size_t& node_size) {
   fuchsia::accessibility::semantics::Node root_fuchsia_node;
   std::vector<uint32_t> child_ids;
   node_size = sizeof(fuchsia::accessibility::semantics::Node);
@@ -386,11 +387,10 @@ AccessibilityBridge::GetRootNodeUpdate(size_t & node_size) {
       .set_attributes(
           GetNodeAttributes(root_flutter_semantics_node_, &node_size))
       .set_states(GetNodeStates(root_flutter_semantics_node_, &node_size))
-      .set_actions(
-          GetNodeActions(root_flutter_semantics_node_, &node_size))
+      .set_actions(GetNodeActions(root_flutter_semantics_node_, &node_size))
       .set_child_ids(child_ids);
-  node_size +=
-        kNodeIdSize * root_flutter_semantics_node_.childrenInTraversalOrder.size();
+  node_size += kNodeIdSize *
+               root_flutter_semantics_node_.childrenInTraversalOrder.size();
   return root_fuchsia_node;
 }
 
