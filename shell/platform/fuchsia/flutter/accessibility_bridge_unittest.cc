@@ -22,11 +22,13 @@ namespace flutter_runner_test {
 class AccessibilityBridgeTestDelegate
     : public flutter_runner::AccessibilityBridge::Delegate {
  public:
+  float view_pixel_ratio = 1.f;
   void SetSemanticsEnabled(bool enabled) override { enabled_ = enabled; }
   void DispatchSemanticsAction(int32_t node_id,
                                flutter::SemanticsAction action) override {
     actions.push_back(std::make_pair(node_id, action));
   }
+  float GetViewPixelRatio() override { return view_pixel_ratio; }
 
   bool enabled() { return enabled_; }
   std::vector<std::pair<int32_t, flutter::SemanticsAction>> actions;
@@ -267,6 +269,21 @@ TEST_F(AccessibilityBridgeTest, PopulatesSelectedState) {
 
   EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
+}
+
+TEST_F(AccessibilityBridgeTest, ApplyViewPixelRatioToRoot) {
+  accessibility_delegate_.view_pixel_ratio = 1.25f;
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.flags = static_cast<int>(flutter::SemanticsFlags::kIsSelected);
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}});
+  RunLoopUntilIdle();
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_EQ(fuchsia_node.transform().matrix[0], 0.8f);
+  EXPECT_EQ(fuchsia_node.transform().matrix[5], 0.8f);
+  EXPECT_EQ(fuchsia_node.transform().matrix[10], 1.f);
 }
 
 TEST_F(AccessibilityBridgeTest, PopulatesHiddenState) {
