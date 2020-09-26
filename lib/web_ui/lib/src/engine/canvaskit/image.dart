@@ -52,6 +52,14 @@ class CkAnimatedImage implements ui.Image {
     box.delete();
   }
 
+  @override
+  ui.Image clone() => this;
+
+  @override
+  bool isCloneOf(ui.Image other) => other == this;
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
   int get frameCount => _skAnimatedImage.getFrameCount();
 
   /// Decodes the next frame and returns the frame duration.
@@ -116,6 +124,15 @@ class CkImage implements ui.Image {
   void dispose() {
     box.delete();
   }
+
+  @override
+  ui.Image clone() => this;
+
+  @override
+  bool isCloneOf(ui.Image other) => other == this;
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
 
   @override
   int get width => skImage.width();
