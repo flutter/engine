@@ -79,7 +79,13 @@ class Layer {
   Layer();
   virtual ~Layer();
 
-  virtual bool CanDiff(const Layer* layer) const { return layer == this; }
+  void AssignOldLayer(std::shared_ptr<Layer> old_layer) {
+    diff_id_ = old_layer->diff_id_;
+  }
+
+  virtual bool CanDiff(const Layer* layer) const {
+    return diff_id_ == layer->diff_id_;
+  }
 
   virtual void Diff(DiffContext* context, const Layer* old_layer) {}
 
@@ -205,6 +211,7 @@ class Layer {
  private:
   SkRect paint_bounds_;
   uint64_t unique_id_;
+  uint64_t diff_id_;
   bool needs_system_composite_;
 
   PaintRegion paint_region_;

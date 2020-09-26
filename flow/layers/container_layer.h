@@ -15,12 +15,6 @@ class ContainerLayer : public Layer {
  public:
   ContainerLayer();
 
-  void AssignOldLayer(std::shared_ptr<ContainerLayer> old_layer);
-
-  bool CanDiff(const Layer* layer) const override {
-    return layer == this || layer == this->old_layer_.lock().get();
-  }
-
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
   virtual void Add(std::shared_ptr<Layer> layer);
@@ -62,8 +56,6 @@ class ContainerLayer : public Layer {
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;
-
-  std::weak_ptr<const ContainerLayer> old_layer_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
 };

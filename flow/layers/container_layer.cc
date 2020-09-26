@@ -10,10 +10,6 @@ namespace flutter {
 
 ContainerLayer::ContainerLayer() {}
 
-void ContainerLayer::AssignOldLayer(std::shared_ptr<ContainerLayer> old_layer) {
-  old_layer_ = old_layer;
-}
-
 void ContainerLayer::Diff(DiffContext* context, const Layer* old_layer) {
   auto old_container = reinterpret_cast<const ContainerLayer*>(old_layer);
   DiffContext::AutoSubtreeRestore subtree(context);
