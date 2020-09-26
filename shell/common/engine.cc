@@ -111,7 +111,7 @@ bool Engine::UpdateAssetManager(
   if (asset_manager_ == new_asset_manager) {
     return false;
   }
-
+  new_asset_manager->Merge(asset_manager_);
   asset_manager_ = new_asset_manager;
 
   if (!asset_manager_) {

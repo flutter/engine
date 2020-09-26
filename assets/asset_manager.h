@@ -25,6 +25,8 @@ class AssetManager final : public AssetResolver {
 
   void PushBack(std::unique_ptr<AssetResolver> resolver);
 
+  void Merge(std::shared_ptr<AssetManager> assetManager);
+
   // |AssetResolver|
   bool IsValid() const override;
 
