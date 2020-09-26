@@ -83,7 +83,7 @@ class AccessibilityBridge
 
   // Adds a semantics node update to the buffer of node updates to apply.
   void AddSemanticsNodeUpdate(const flutter::SemanticsNodeUpdates update,
-                              float view_pixel_ration);
+                              float view_pixel_ratio);
 
   // Notifies the bridge of a 'hover move' touch exploration event.
   zx_status_t OnHoverMove(double x, double y);
