@@ -33,7 +33,7 @@ void AssetManager::Merge(std::shared_ptr<AssetManager> assetManager) {
   if (assetManager == nullptr) {
     return;
   }
-  for (int i = 0; i < assetManager->resolvers_.size(); i++) {
+  for (auto i = 0; i < assetManager->resolvers_.size(); i++) {
     resolvers_.push_back(std::move(assetManager->resolvers_[i]));
   }
 }
