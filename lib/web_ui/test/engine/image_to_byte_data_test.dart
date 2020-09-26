@@ -38,29 +38,13 @@ void testMain() async {
 
     final ByteData pngBytes =
         await testImage.toByteData(format: ImageByteFormat.png);
+
+    // PNG-encoding is browser-specific, but the header is standard. We only
+    // test the header.
+    final List<int> pngHeader = <int>[137, 80, 78, 71, 13, 10, 26, 10];
     expect(
-      pngBytes.buffer.asUint32List(),
-      <int>[
-        0x474E5089,
-        0xA1A0A0D,
-        0xD000000,
-        0x52444849,
-        0x5000000,
-        0x5000000,
-        0x608,
-        0x266F8D00,
-        0xE5,
-        0x41444913,
-        0x63571854,
-        0xE197733C,
-        0x601A033F,
-        0x2081A4,
-        0x4E0DFF25,
-        0xED54E7EE,
-        0x0,
-        0x444E4549,
-        0x826042AE
-      ],
+      pngBytes.buffer.asUint8List().sublist(0, pngHeader.length),
+      pngHeader,
     );
   });
 }
