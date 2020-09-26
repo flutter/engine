@@ -4960,6 +4960,22 @@ class ImmutableBuffer extends NativeFieldWrapperClass2 {
   }
   void _init(Uint8List list, _Callback<void> callback) native 'ImmutableBuffer_init';
 
+  /// Create a buffer from the asset with key [assetKey].
+  ///
+  /// Returns `null` if the asset does not exist.
+  static ImmutableBuffer? fromAsset(String assetKey) {
+    final ImmutableBuffer buffer = ImmutableBuffer._(0);
+    bool success = false;
+    _fromAsset(assetKey, buffer, (void result) {
+      success = true;
+    });
+    if (!success) {
+      return null;
+    }
+    return buffer;
+  }
+  static void _fromAsset(String assetKey, ImmutableBuffer buffer, _Callback<void> callback) native 'ImmutableBuffer_fromAsset';
+
   /// The length, in bytes, of the underlying data.
   final int length;
 

@@ -5,7 +5,6 @@
 #include "flutter/lib/ui/dart_ui.h"
 
 #include "flutter/fml/build_config.h"
-#include "flutter/lib/ui/assets.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/compositing/scene_builder.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
@@ -85,7 +84,6 @@ void DartUI::InitForGlobal() {
     SemanticsUpdateBuilder::RegisterNatives(g_natives);
     Vertices::RegisterNatives(g_natives);
     PlatformConfiguration::RegisterNatives(g_natives);
-    Assets::RegisterNatives(g_natives);
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
     SceneHost::RegisterNatives(g_natives);
 #endif

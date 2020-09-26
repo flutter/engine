@@ -10,6 +10,8 @@
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
+#include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 
 #if OS_ANDROID
 #include <sys/mman.h>
@@ -30,6 +32,9 @@ ImmutableBuffer::~ImmutableBuffer() {}
 void ImmutableBuffer::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({{"ImmutableBuffer_init", ImmutableBuffer::init, 3, true},
                      FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
+  natives->Register({{"ImmutableBuffer_fromAsset", ImmutableBuffer::fromAsset, 3, true},
+                    FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
+
 }
 
 void ImmutableBuffer::init(Dart_NativeArguments args) {
@@ -51,6 +56,49 @@ void ImmutableBuffer::init(Dart_NativeArguments args) {
 
 size_t ImmutableBuffer::GetAllocationSize() const {
   return sizeof(ImmutableBuffer) + data_->size();
+}
+
+void ImmutableBuffer::fromAsset(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  Dart_Handle callback_handle = Dart_GetNativeArgument(args, 2);
+  if (!Dart_IsClosure(callback_handle)) {
+    Dart_SetReturnValue(args, tonic::ToDart("Callback must be a function"));
+    return;
+  }
+  Dart_Handle asset_name_handle = Dart_GetNativeArgument(args, 0);
+  uint8_t* chars = nullptr;
+  intptr_t asset_length = 0;
+  Dart_Handle result =
+      Dart_StringToUTF8(asset_name_handle, &chars, &asset_length);
+  if (Dart_IsError(result)) {
+    Dart_PropagateError(result);
+    return;
+  }
+  Dart_Handle immutable_buffer = Dart_GetNativeArgument(args, 1);
+
+  std::string asset_name = std::string{reinterpret_cast<const char*>(chars),
+                                       static_cast<size_t>(asset_length)};
+
+  std::shared_ptr<AssetManager> asset_manager = UIDartState::Current()
+                                                    ->platform_configuration()
+                                                    ->client()
+                                                    ->GetAssetManager();
+  std::unique_ptr<fml::Mapping> data = asset_manager->GetAsMapping(asset_name);
+
+  if (data == nullptr) {
+    return;
+  }
+  const void* bytes = static_cast<const void*>(data->GetMapping());
+  void* peer = reinterpret_cast<void*>(data.release());
+  auto size = data->GetSize();
+  SkData::ReleaseProc proc = [](const void* ptr, void* context) {
+    // TODO: what do
+  };
+
+  auto sk_data = SkData::MakeWithProc(bytes, size, proc, peer);
+  auto buffer = fml::MakeRefCounted<ImmutableBuffer>(sk_data);
+  buffer->AssociateWithDartWrapper(immutable_buffer);
+  tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
 }
 
 #if OS_ANDROID

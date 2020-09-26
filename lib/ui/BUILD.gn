@@ -8,8 +8,6 @@ import("//flutter/testing/testing.gni")
 
 source_set("ui") {
   sources = [
-    "assets.cc",
-    "assets.h",
     "compositing/scene.cc",
     "compositing/scene.h",
     "compositing/scene_builder.cc",

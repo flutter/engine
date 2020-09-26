@@ -39,6 +39,15 @@ class ImmutableBuffer : public RefCountedDartWrappable<ImmutableBuffer> {
   /// when the copy has completed.
   static void init(Dart_NativeArguments args);
 
+  /// Create a new ImmutableData from a Dart asset key.
+  ///
+  /// The zero indexed argument is the UTF8 encoded string which corresponds to
+  /// the asset manager key.
+  ///
+  /// The first indexed argument is a callback that can optionally be invoked
+  /// with the resulting ImmutableData.
+  static void fromAsset(Dart_NativeArguments args);
+
   /// The length of the data in bytes.
   size_t length() const {
     FML_DCHECK(data_);
