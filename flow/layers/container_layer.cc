@@ -11,7 +11,6 @@ namespace flutter {
 ContainerLayer::ContainerLayer() {}
 
 void ContainerLayer::AssignOldLayer(std::shared_ptr<ContainerLayer> old_layer) {
-  old_layer->old_layer_ = nullptr;
   old_layer_ = old_layer;
 }
 
