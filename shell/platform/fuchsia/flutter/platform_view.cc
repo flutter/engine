@@ -571,16 +571,10 @@ void PlatformView::DispatchSemanticsAction(int32_t node_id,
 }
 
 // |flutter::PlatformView|
-// |flutter_runner::AccessibilityBridge::Delegate|
-float PlatformView::GetViewPixelRatio() {
-  return view_pixel_ratio_;
-}
-
-// |flutter::PlatformView|
 void PlatformView::UpdateSemantics(
     flutter::SemanticsNodeUpdates update,
     flutter::CustomAccessibilityActionUpdates actions) {
-  accessibility_bridge_->AddSemanticsNodeUpdate(update);
+  accessibility_bridge_->AddSemanticsNodeUpdate(update, view_pixel_ratio_);
 }
 
 // Channel handler for kAccessibilityChannel

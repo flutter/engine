@@ -244,7 +244,8 @@ static void PrintNodeSizeError(uint32_t node_id) {
 }
 
 void AccessibilityBridge::AddSemanticsNodeUpdate(
-    const flutter::SemanticsNodeUpdates update) {
+    const flutter::SemanticsNodeUpdates update,
+    float view_pixel_ratio) {
   if (update.empty()) {
     return;
   }
@@ -322,10 +323,8 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
   }
 
   // Handles root node update.
-  float new_view_pixel_ratio = delegate_.GetViewPixelRatio();
-  if (has_root_node_update ||
-      last_seen_view_pixel_ratio_ != new_view_pixel_ratio) {
-    last_seen_view_pixel_ratio_ = new_view_pixel_ratio;
+  if (has_root_node_update || last_seen_view_pixel_ratio_ != view_pixel_ratio) {
+    last_seen_view_pixel_ratio_ = view_pixel_ratio;
     size_t root_node_size;
     fuchsia::accessibility::semantics::Node root_update =
         GetRootNodeUpdate(root_node_size);

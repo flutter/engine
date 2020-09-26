@@ -46,7 +46,6 @@ class AccessibilityBridge
     virtual void SetSemanticsEnabled(bool enabled) = 0;
     virtual void DispatchSemanticsAction(int32_t node_id,
                                          flutter::SemanticsAction action) = 0;
-    virtual float GetViewPixelRatio() = 0;
   };
 
   // TODO(MI4-2531, FIDL-718): Remove this. We shouldn't be worried about
@@ -83,7 +82,8 @@ class AccessibilityBridge
   void SetSemanticsEnabled(bool enabled);
 
   // Adds a semantics node update to the buffer of node updates to apply.
-  void AddSemanticsNodeUpdate(const flutter::SemanticsNodeUpdates update);
+  void AddSemanticsNodeUpdate(const flutter::SemanticsNodeUpdates update,
+                              float view_pixel_ration);
 
   // Notifies the bridge of a 'hover move' touch exploration event.
   zx_status_t OnHoverMove(double x, double y);

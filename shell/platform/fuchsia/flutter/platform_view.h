@@ -70,8 +70,6 @@ class PlatformView final : public flutter::PlatformView,
   // |flutter_runner::AccessibilityBridge::Delegate|
   void DispatchSemanticsAction(int32_t node_id,
                                flutter::SemanticsAction action) override;
-  // |flutter_runner::AccessibilityBridge::Delegate|
-  float GetViewPixelRatio() override;
 
   // |PlatformView|
   flutter::PointerDataDispatcherMaker GetDispatcherMaker() override;
