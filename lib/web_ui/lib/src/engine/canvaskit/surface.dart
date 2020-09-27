@@ -163,14 +163,14 @@ class Surface {
       // CanvasKit's default.
       _syncCacheBytes();
 
-      SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
+      SkSurface skSurface = canvasKit.MakeOnScreenGLSurface(
         _grContext!,
         pixelWidth,
         pixelHeight,
         SkColorSpaceSRGB,
       );
 
-      if (skSurface == null) {
+      if (skSurface == null) { // ignore: unnecessary_null_comparison
         return _makeSoftwareCanvasSurface(htmlCanvas);
       }
 
