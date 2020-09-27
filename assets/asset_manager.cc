@@ -34,7 +34,8 @@ void AssetManager::Merge(std::shared_ptr<AssetManager> assetManager) {
     return;
   }
   if (assetManager->resolvers_.size() > 0) {
-    resolvers_.push_back(std::move(assetManager->resolvers_[assetManager->resolvers_.size() - 1]));
+    resolvers_.push_back(std::move(
+        assetManager->resolvers_[assetManager->resolvers_.size() - 1]));
   }
 }
 
