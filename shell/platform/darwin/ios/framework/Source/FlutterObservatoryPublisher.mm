@@ -43,6 +43,8 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/runtime/dart_service_isolate.h"
+#include "flutter/shell/common/switches.h"
+#include "flutter/shell/platform/darwin/common/command_line.h"
 
 @protocol FlutterObservatoryPublisherDelegate
 - (instancetype)initWithOwner:(FlutterObservatoryPublisher*)owner;
@@ -219,27 +221,32 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
   self = [super init];
   NSAssert(self, @"Super must not return null on init.");
 
-  if (@available(iOS 9.3, *)) {
-    _delegate.reset([[ObservatoryDNSServiceDelegate alloc] initWithOwner:self]);
+  auto command_line = flutter::CommandLineFromNSProcessInfo();
+  auto settings = flutter::SettingsFromCommandLine(command_line);
+  if (settings.enable_observatory_publication) {
+    if (@available(iOS 9.3, *)) {
+      _delegate.reset([[ObservatoryDNSServiceDelegate alloc] initWithOwner:self]);
+    } else {
+      _delegate.reset([[ObservatoryNSNetServiceDelegate alloc] initWithOwner:self]);
+    }
+    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterObservatoryPublisher>>(self);
+
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    _callbackHandle = flutter::DartServiceIsolate::AddServerStatusCallback(
+        [weak = _weakFactory->GetWeakPtr(),
+         runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
+          if (!uri.empty()) {
+            runner->PostTask([weak, uri]() {
+              if (weak) {
+                [[weak.get() delegate]
+                    publishServiceProtocolPort:[NSString stringWithUTF8String:uri.c_str()]];
+              }
+            });
+          }
+        });
   } else {
-    _delegate.reset([[ObservatoryNSNetServiceDelegate alloc] initWithOwner:self]);
+    FML_LOG(INFO) << "Skipping mDNS obsesrvatory publishing";
   }
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterObservatoryPublisher>>(self);
-
-  fml::MessageLoop::EnsureInitializedForCurrentThread();
-
-  _callbackHandle = flutter::DartServiceIsolate::AddServerStatusCallback(
-      [weak = _weakFactory->GetWeakPtr(),
-       runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
-        if (!uri.empty()) {
-          runner->PostTask([weak, uri]() {
-            if (weak) {
-              [[weak.get() delegate]
-                  publishServiceProtocolPort:[NSString stringWithUTF8String:uri.c_str()]];
-            }
-          });
-        }
-      });
 
   return self;
 }
@@ -262,7 +269,9 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
 - (void)dealloc {
   [_delegate stopService];
 
-  flutter::DartServiceIsolate::RemoveServerStatusCallback(std::move(_callbackHandle));
+  if (_callbackHandle) {
+    flutter::DartServiceIsolate::RemoveServerStatusCallback(std::move(_callbackHandle));
+  }
   [super dealloc];
 }
 @end
