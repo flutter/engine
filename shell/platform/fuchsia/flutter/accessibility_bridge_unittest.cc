@@ -141,7 +141,7 @@ TEST_F(AccessibilityBridgeTest, UpdatesNodeRoles) {
   node4.flags |= static_cast<int>(flutter::SemanticsFlags::kIsSlider);
   updates.emplace(4, node4);
 
-  accessibility_bridge_->AddSemanticsNodeUpdate(std::move(updates));
+  accessibility_bridge_->AddSemanticsNodeUpdate(std::move(updates), 1.f);
   RunLoopUntilIdle();
 
   std::unordered_map<uint32_t, fuchsia::accessibility::semantics::Role>
