@@ -21,18 +21,50 @@ class SurfaceFrame {
   using SubmitCallback =
       std::function<bool(const SurfaceFrame& surface_frame, SkCanvas* canvas)>;
 
+  // Information about the underlying framebuffer
+  struct FramebufferInfo {
+    // Indicates whether or not the surface supports pixel readback as used in
+    // circumstances such as a BackdropFilter.
+    bool supports_readback = false;
+
+    // This is area of framebuffer that lags behind the front buffer. When doing
+    // partial redraw, this area must be repainted alongside with any additional
+    // area; If not set, entire frame must be repainted
+    std::vector<SkIRect> existing_damage;
+
+    // Specifies the minimum alignment for outermost clip rect. Some devices
+    // with tile based rendering might incur additional overhead when rendering
+    // in the middle of existing tiles
+    int partial_repaint_clip_alignment = 1;
+  };
+
   SurfaceFrame(sk_sp<SkSurface> surface,
-               bool supports_readback,
+               FramebufferInfo framebuffer_info,
                const SubmitCallback& submit_callback);
 
   SurfaceFrame(sk_sp<SkSurface> surface,
-               bool supports_readback,
+               FramebufferInfo framebuffer_info,
                const SubmitCallback& submit_callback,
                std::unique_ptr<GLContextResult> context_result);
 
   ~SurfaceFrame();
 
-  bool Submit();
+  struct SubmitInfo {
+    // The surface damage for frame n is the difference between frame n and
+    // frame (n-1), and represents the area that a compositor must recompose.
+    //
+    // Corresponds to EGL_KHR_swap_buffers_with_damage
+    std::vector<SkIRect> surface_damage;
+
+    // The buffer damage for a frame is the area changed since that same buffer
+    // was last used. If the buffer has not been used before, the buffer damage
+    // is the entire area of the buffer.
+    //
+    // Corresponds to EGL_KHR_partial_update
+    std::vector<SkIRect> buffer_damage;
+  };
+
+  bool Submit(SubmitInfo submit_info = SubmitInfo());
 
   bool IsSubmitted() const;
 
@@ -40,12 +72,14 @@ class SurfaceFrame {
 
   sk_sp<SkSurface> SkiaSurface() const;
 
-  bool supports_readback() { return supports_readback_; }
+  const FramebufferInfo& framebuffer_info() const { return framebuffer_info_; }
+  const SubmitInfo& submit_info() const { return submit_info_; }
 
  private:
   bool submitted_ = false;
   sk_sp<SkSurface> surface_;
-  bool supports_readback_;
+  FramebufferInfo framebuffer_info_;
+  SubmitInfo submit_info_;
   SubmitCallback submit_callback_;
   std::unique_ptr<GLContextResult> context_result_;
 

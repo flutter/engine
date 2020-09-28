@@ -107,7 +107,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
     return true;
   };
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), true, submit_callback);
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
+  return std::make_unique<SurfaceFrame>(std::move(surface), std::move(framebuffer_info),
+                                        submit_callback);
 }
 
 // |Surface|
