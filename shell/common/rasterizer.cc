@@ -531,8 +531,9 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       external_view_embedder_.get(),  // external view embedder
       root_surface_transformation,    // root surface transformation
       true,                           // instrumentation enabled
-      frame->supports_readback(),     // surface supports pixel reads
-      raster_thread_merger_           // thread merger
+      frame->framebuffer_info()
+          .supports_readback,  // surface supports pixel reads
+      raster_thread_merger_    // thread merger
   );
   if (compositor_frame) {
     RasterStatus raster_status =
