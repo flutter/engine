@@ -39,7 +39,7 @@ void VsyncWaiterIOS::AwaitVSync() {
 
 @implementation VSyncClient {
   flutter::VsyncWaiter::Callback callback_;
-  CADisplayLink* display_link_;
+  fml::scoped_nsobject<CADisplayLink> display_link_;
 }
 
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
@@ -48,11 +48,14 @@ void VsyncWaiterIOS::AwaitVSync() {
 
   if (self) {
     callback_ = std::move(callback);
-    display_link_ = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
-    display_link_.paused = YES;
+    display_link_ = fml::scoped_nsobject<CADisplayLink> {
+      [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
+    };
+    display_link_.get().paused = YES;
 
     task_runner->PostTask([client = [self retain]]() {
-      [client->display_link_ addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+      [client->display_link_.get() addToRunLoop:[NSRunLoop currentRunLoop]
+                                        forMode:NSRunLoopCommonModes];
       [client release];
     });
   }
@@ -61,7 +64,7 @@ void VsyncWaiterIOS::AwaitVSync() {
 }
 
 - (void)await {
-  display_link_.paused = NO;
+  display_link_.get().paused = NO;
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
@@ -71,13 +74,13 @@ void VsyncWaiterIOS::AwaitVSync() {
   fml::TimePoint frame_start_time = fml::TimePoint::Now() - fml::TimeDelta::FromSecondsF(delay);
   fml::TimePoint frame_target_time = frame_start_time + fml::TimeDelta::FromSecondsF(link.duration);
 
-  display_link_.paused = YES;
+  display_link_.get().paused = YES;
 
   callback_(frame_start_time, frame_target_time);
 }
 
 - (void)invalidate {
-  [display_link_ invalidate];
+  [display_link_.get() invalidate];
 }
 
 - (void)dealloc {
@@ -89,15 +92,17 @@ void VsyncWaiterIOS::AwaitVSync() {
 @end
 
 @implementation DisplayLinkManager {
-  CADisplayLink* display_link_;
+  fml::scoped_nsobject<CADisplayLink> display_link_;
 }
 
 - (instancetype)init {
   self = [super init];
 
   if (self) {
-    display_link_ = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
-    display_link_.paused = YES;
+    display_link_ = fml::scoped_nsobject<CADisplayLink> {
+      [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
+    };
+    display_link_.get().paused = YES;
   }
 
   return self;
@@ -105,7 +110,7 @@ void VsyncWaiterIOS::AwaitVSync() {
 
 - (double)displayRefreshRate {
   if (@available(iOS 10.3, *)) {
-    auto preferredFPS = display_link_.preferredFramesPerSecond;  // iOS 10.0
+    auto preferredFPS = display_link_.get().preferredFramesPerSecond;  // iOS 10.0
 
     // From Docs:
     // The default value for preferredFramesPerSecond is 0. When this value is 0, the preferred
@@ -127,7 +132,7 @@ void VsyncWaiterIOS::AwaitVSync() {
 }
 
 - (void)dealloc {
-  [display_link_ invalidate];
+  [display_link_.get() invalidate];
 
   [super dealloc];
 }
