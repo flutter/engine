@@ -16,7 +16,7 @@ import 'package:image/image.dart';
 ///
 /// We are allowing a higher difference rate compared to the unit tests (where
 /// this rate is set to 0.28), since during the end to end tests there are
-/// more components on the screen which are not related to the functinality
+/// more components on the screen which are not related to the functionality
 /// under test ex: a blinking cursor.
 const double kMaxDiffRateFailure = 0.5 / 100; // 0.5%
 
@@ -31,7 +31,8 @@ const double kMaxDiffRateFailure = 0.5 / 100; // 0.5%
 ///
 /// It provides an `onScreenshot` callback to the `integrationDriver` method.
 /// It also includes options for updating the golden files.
-Future<void> main() async {
+Future<void> runTestWithScreenshots(
+    {double diffRateFailure = kMaxDiffRateFailure}) async {
   final WebFlutterDriver driver =
       await FlutterDriver.connect() as WebFlutterDriver;
 
@@ -39,21 +40,17 @@ Future<void> main() async {
   final String browser = driver.webDriver.capabilities['browserName'] as String;
 
   bool updateGoldens = false;
-  try {
+  final String updateGoldensFlag = io.Platform.environment['UPDATE_GOLDENS'];
+  if (updateGoldensFlag == null || updateGoldensFlag.toLowerCase() != 'true') {
     // We are using an environment variable since instead of an argument, since
     // this code is not invoked from the shell but from the `flutter drive`
     // tool itself. Therefore we do not have control on the command line
     // arguments.
     // Please read the README, further info on how to update the goldens.
-    updateGoldens =
-        io.Platform.environment['UPDATE_GOLDENS'].toLowerCase() == 'true';
-  } catch (ex) {
-    if (ex
-        .toString()
-        .contains('is not a subtype of type \'bool\' in type cast')) {
-      print('INFO: goldens will not be updated, please set `UPDATE_GOLDENS` '
-          'environment variable to true');
-    }
+    print('INFO: Goldens will not be updated. Please set `UPDATE_GOLDENS` '
+        'environment variable to `true` for updating them.');
+  } else {
+    updateGoldens = true;
   }
 
   test.integrationDriver(
@@ -65,7 +62,7 @@ Future<void> main() async {
         updateGoldens,
         '$screenshotName-$browser.png',
         PixelComparison.fuzzy,
-        kMaxDiffRateFailure,
+        diffRateFailure,
         forIntegrationTests: true,
         write: updateGoldens,
       );

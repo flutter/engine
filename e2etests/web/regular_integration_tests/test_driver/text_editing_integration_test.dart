@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:regular_integration_tests/screenshot_support.dart'
-    as with_screenshot;
+import 'package:regular_integration_tests/screenshot_support.dart' as test;
 
 Future<void> main() async {
-  await with_screenshot.main();
+  await test.runTestWithScreenshots();
 }
