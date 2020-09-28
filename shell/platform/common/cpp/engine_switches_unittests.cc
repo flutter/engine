@@ -35,6 +35,17 @@ TEST(FlutterProjectBundle, SwitchesEmpty) {
   EXPECT_EQ(GetSwitchesFromEnvironment().size(), 0U);
 }
 
+#ifdef FLUTTER_RELEASE
+TEST(FlutterProjectBundle, SwitchesIgnoredInRelease) {
+  SetEnvironmentVariable("FLUTTER_ENGINE_SWITCHES", "2");
+  SetEnvironmentVariable("FLUTTER_ENGINE_SWITCH_1", "abc");
+  SetEnvironmentVariable("FLUTTER_ENGINE_SWITCH_2", "foo=\"bar, baz\"");
+
+  std::vector<std::string> switches = GetSwitchesFromEnvironment();
+  EXPECT_EQ(switches.size(), 0U);
+}
+#endif  // FLUTTER_RELEASE
+
 #ifndef FLUTTER_RELEASE
 TEST(FlutterProjectBundle, Switches) {
   SetEnvironmentVariable("FLUTTER_ENGINE_SWITCHES", "2");
