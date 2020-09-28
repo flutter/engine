@@ -191,7 +191,7 @@ String getPrintableDiffFilesInfo(double diffRate, double maxRate) =>
     '(${((diffRate) * 100).toStringAsFixed(4)}% of pixels were different. '
     'Maximum allowed rate is: ${(maxRate * 100).toStringAsFixed(4)}%).';
 
-/// Downloads the repository that we store the golden files.
+/// Downloads the repository that stores the golden files.
 ///
 /// Reads the url of the repo and `commit no` to sync to, from
 /// `goldens_lock.yaml`.
@@ -257,7 +257,7 @@ class GoldensRepoFetcher {
   }
 
   /// Runs `git` with given arguments.
-  Future<int> _runGit(
+  Future<void> _runGit(
     List<String> arguments,
     String workingDirectory,
   ) async {
@@ -276,6 +276,5 @@ class GoldensRepoFetcher {
           'workingDirectory: $workingDirectory resulting with exitCode: '
           '$exitCode');
     }
-    return exitCode;
   }
 }
