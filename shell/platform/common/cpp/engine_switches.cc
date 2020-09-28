@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/common/cpp/engine_switches.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
