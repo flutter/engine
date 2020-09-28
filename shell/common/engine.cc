@@ -111,12 +111,13 @@ bool Engine::UpdateAssetManager(
   if (asset_manager_ == new_asset_manager) {
     return false;
   }
-  new_asset_manager->Merge(asset_manager_);
+  auto old_asset_manager = asset_manager_;
   asset_manager_ = new_asset_manager;
 
   if (!asset_manager_) {
     return false;
   }
+  asset_manager_->Merge(old_asset_manager);
 
   // Using libTXT as the text engine.
   font_collection_.RegisterFonts(asset_manager_);
