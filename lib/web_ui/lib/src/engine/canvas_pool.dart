@@ -352,7 +352,7 @@ class _CanvasPool extends _SaveStackTracking {
   @override
   void restore() {
     super.restore();
-    if (_canvas != null) {
+    if (_canvas != null && _saveContextCount != 0) {
       context.restore();
       contextHandle.reset();
       --_saveContextCount;

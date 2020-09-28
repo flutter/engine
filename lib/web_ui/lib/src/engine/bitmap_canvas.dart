@@ -94,6 +94,12 @@ class BitmapCanvas extends EngineCanvas {
     _childOverdraw = value;
   }
 
+  /// Indicates bitmap canvas contains a 3d transform.
+  /// WebKit fails to preserve paint order when this happens and therefore
+  /// requires insertion of <div style="translate3d(0,0,0)> to be used for
+  /// each child to force correct rendering order.
+  bool _contains3dTransform = false;
+
   /// Allocates a canvas with enough memory to paint a picture within the given
   /// [bounds].
   ///
@@ -175,6 +181,7 @@ class BitmapCanvas extends EngineCanvas {
   /// Prepare to reuse this canvas by clearing it's current contents.
   @override
   void clear() {
+    _contains3dTransform = false;
     _canvasPool.clear();
     final int len = _children.length;
     for (int i = 0; i < len; i++) {
@@ -270,6 +277,7 @@ class BitmapCanvas extends EngineCanvas {
     TransformKind transformKind = transformKindOf(matrix4);
     if (transformKind == TransformKind.complex) {
       _canvasPool.closeCurrentCanvas();
+      _contains3dTransform = true;
     }
     _canvasPool.transform(matrix4);
   }
@@ -774,6 +782,16 @@ class BitmapCanvas extends EngineCanvas {
   void endOfPaint() {
     _canvasPool.endOfPaint();
     _elementCache?.commitFrame();
+    // Wrap all elements in translate3d (workaround for webkit paint order bug).
+    if (/*_contains3dTransform &&*/ browserEngine == BrowserEngine.webkit) {
+      for (html.Element element in rootElement.children) {
+        html.DivElement paintOrderElement = html.DivElement()
+          ..style.transform = 'translate3d(0,0,0)';
+        paintOrderElement.append(element);
+        rootElement.append(paintOrderElement);
+        _children.add(paintOrderElement);
+      }
+    }
   }
 }
 
