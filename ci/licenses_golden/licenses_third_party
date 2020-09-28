@@ -1,4 +1,4 @@
-Signature: 962e5633685d33a69b598d96ab4c063c
+Signature: 57da458d62f2c3345caac33099afe5a2
 
 UNUSED LICENSES:
 
@@ -8105,6 +8105,7 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_binary_flowgraph_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.h
@@ -8130,6 +8131,7 @@ FILE: ../../../third_party/dart/samples/ffi/sample_ffi_functions_callbacks_closu
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_struct_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/internal/lowering.dart
 FILE: ../../../third_party/dart/sdk/lib/io/network_policy.dart
 FILE: ../../../third_party/dart/third_party/wasmer/wasmer_wrapper.cc
 ----------------------------------------------------------------------------------------------------
@@ -9579,6 +9581,7 @@ FILE: ../../../third_party/dart/runtime/observatory/web/timeline_message_handler
 FILE: ../../../third_party/dart/runtime/platform/syslog_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/platform/utils_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/platform/utils_fuchsia.h
+FILE: ../../../third_party/dart/runtime/vm/canonical_tables.h
 FILE: ../../../third_party/dart/runtime/vm/clustered_snapshot.cc
 FILE: ../../../third_party/dart/runtime/vm/clustered_snapshot.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/branch_optimizer.cc
@@ -9615,7 +9618,6 @@ FILE: ../../../third_party/dart/runtime/vm/signal_handler_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_interrupter_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/vm/token_position.cc
 FILE: ../../../third_party/dart/runtime/vm/token_position.h
-FILE: ../../../third_party/dart/runtime/vm/type_table.h
 FILE: ../../../third_party/dart/runtime/vm/uri.cc
 FILE: ../../../third_party/dart/runtime/vm/uri.h
 FILE: ../../../third_party/dart/runtime/vm/uri_test.cc

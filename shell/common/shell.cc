@@ -333,6 +333,8 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  display_manager_ = std::make_unique<DisplayManager>();
+
   // Generate a WeakPtrFactory for use with the raster thread. This does not
   // need to wait on a latch because it can only ever be used from the raster
   // thread from this class, so we have ordering guarantees.
@@ -574,14 +576,6 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
     PersistentCache::GetCacheForProcess()->Purge();
   }
 
-  // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
-  // same thread as it was created on. Shell is constructed on the platform
-  // thread but we need to call into the Engine on the UI thread, so we need
-  // to use getUnsafe() here to avoid failing the assertion.
-  //
-  // https://github.com/flutter/flutter/issues/42947
-  display_refresh_rate_ = weak_engine_.getUnsafe()->GetDisplayRefreshRate();
-
   return true;
 }
 
@@ -816,6 +810,16 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  if (metrics.device_pixel_ratio <= 0 || metrics.physical_width <= 0 ||
+      metrics.physical_height <= 0) {
+    FML_DLOG(ERROR)
+        << "Embedding reported invalid ViewportMetrics, ignoring update."
+        << "\nphysical_width: " << metrics.physical_width
+        << "\nphysical_height: " << metrics.physical_height
+        << "\ndevice_pixel_ratio: " << metrics.device_pixel_ratio;
+    return;
+  }
+
   // This is the formula Android uses.
   // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
   size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
@@ -832,6 +836,12 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
           engine->SetViewportMetrics(metrics);
         }
       });
+
+  {
+    std::scoped_lock<std::mutex> lock(resize_mutex_);
+    expected_frame_size_ =
+        SkISize::Make(metrics.physical_width, metrics.physical_height);
+  }
 }
 
 // |PlatformView::Delegate|
@@ -1021,13 +1031,19 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
     }
   }
 
+  auto discard_callback = [this](flutter::LayerTree& tree) {
+    std::scoped_lock<std::mutex> lock(resize_mutex_);
+    return !expected_frame_size_.isEmpty() &&
+           tree.frame_size() != expected_frame_size_;
+  };
+
   task_runners_.GetRasterTaskRunner()->PostTask(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
-       rasterizer = rasterizer_->GetWeakPtr(),
-       pipeline = std::move(pipeline)]() {
+       rasterizer = rasterizer_->GetWeakPtr(), pipeline = std::move(pipeline),
+       discard_callback = std::move(discard_callback)]() {
         if (rasterizer) {
-          rasterizer->Draw(pipeline);
+          rasterizer->Draw(pipeline, std::move(discard_callback));
 
           if (waiting_for_first_frame.load()) {
             waiting_for_first_frame.store(false);
@@ -1238,8 +1254,9 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
 }
 
 fml::Milliseconds Shell::GetFrameBudget() {
-  if (display_refresh_rate_ > 0) {
-    return fml::RefreshRateToFrameBudget(display_refresh_rate_.load());
+  double display_refresh_rate = display_manager_->GetMainDisplayRefreshRate();
+  if (display_refresh_rate > 0) {
+    return fml::RefreshRateToFrameBudget(display_refresh_rate);
   } else {
     return fml::kDefaultFrameBudget;
   }
@@ -1430,9 +1447,13 @@ bool Shell::OnServiceProtocolGetDisplayRefreshRate(
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   response->SetObject();
   response->AddMember("type", "DisplayRefreshRate", response->GetAllocator());
-  response->AddMember("fps", engine_->GetDisplayRefreshRate(),
+  response->AddMember("fps", display_manager_->GetMainDisplayRefreshRate(),
                       response->GetAllocator());
   return true;
+}
+
+double Shell::GetMainDisplayRefreshRate() {
+  return display_manager_->GetMainDisplayRefreshRate();
 }
 
 bool Shell::OnServiceProtocolGetSkSLs(
@@ -1594,6 +1615,11 @@ bool Shell::ReloadSystemFonts() {
 
 std::shared_ptr<fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch() const {
   return is_gpu_disabled_sync_switch_;
+}
+
+void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
+                             std::vector<Display> displays) {
+  display_manager_->HandleDisplayUpdates(update_type, displays);
 }
 
 }  // namespace flutter

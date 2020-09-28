@@ -123,6 +123,15 @@ class HtmlImage implements ui.Image {
   }
 
   @override
+  ui.Image clone() => this;
+
+  @override
+  bool isCloneOf(ui.Image other) => other == this;
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
+
+  @override
   final int width;
 
   @override
@@ -149,4 +158,7 @@ class HtmlImage implements ui.Image {
       return imgElement;
     }
   }
+
+  @override
+  String toString() => '[$width\u00D7$height]';
 }

@@ -52,6 +52,14 @@ class CkAnimatedImage implements ui.Image {
     box.delete();
   }
 
+  @override
+  ui.Image clone() => this;
+
+  @override
+  bool isCloneOf(ui.Image other) => other == this;
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
   int get frameCount => _skAnimatedImage.getFrameCount();
 
   /// Decodes the next frame and returns the frame duration.
@@ -95,6 +103,9 @@ class CkAnimatedImage implements ui.Image {
     final ByteData data = bytes.buffer.asByteData(0, bytes.length);
     return Future<ByteData>.value(data);
   }
+
+  @override
+  String toString() => '[$width\u00D7$height]';
 }
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
@@ -113,6 +124,15 @@ class CkImage implements ui.Image {
   void dispose() {
     box.delete();
   }
+
+  @override
+  ui.Image clone() => this;
+
+  @override
+  bool isCloneOf(ui.Image other) => other == this;
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
 
   @override
   int get width => skImage.width();
@@ -143,6 +163,9 @@ class CkImage implements ui.Image {
     final ByteData data = bytes.buffer.asByteData(0, bytes.length);
     return Future<ByteData>.value(data);
   }
+
+  @override
+  String toString() => '[$width\u00D7$height]';
 }
 
 /// A [Codec] that wraps an `SkAnimatedImage`.

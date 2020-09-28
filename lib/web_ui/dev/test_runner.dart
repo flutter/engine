@@ -170,12 +170,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runPubGet();
     }
 
-    // In order to run iOS Safari unit tests we need to make sure iOS Simulator
-    // is booted.
-    if (isSafariIOS) {
-      await IosSafariArgParser.instance.initIosSimulator();
-    }
-
+    await _prepare();
     await _buildTargets();
 
     if (runAllTests) {
@@ -184,6 +179,21 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runSpecificTests(targetFiles);
     }
     return true;
+  }
+
+  /// Preparations before running the tests such as booting simulators or
+  /// creating directories.
+  Future<void> _prepare() async {
+    if (environment.webUiTestResultsDirectory.existsSync()) {
+      environment.webUiTestResultsDirectory.deleteSync(recursive: true);
+    }
+    environment.webUiTestResultsDirectory.createSync(recursive: true);
+
+    // In order to run iOS Safari unit tests we need to make sure iOS Simulator
+    // is booted.
+    if (isSafariIOS) {
+      await IosSafariArgParser.instance.initIosSimulator();
+    }
   }
 
   /// Builds all test targets that will be run.
@@ -387,12 +397,13 @@ class TestCommand extends Command<bool> with ArgUtils {
       'test',
     ));
 
-    // Screenshot tests and smoke tests only run on: "Chrome/iOS Safari locally"
-    // or "Chrome on a Linux bot". We can remove the Linux bot restriction
-    // after solving the git issue faced on macOS and Windows bots:
+    // Screenshot tests and smoke tests only run on: "Chrome/iOS Safari"
+    // locally and on LUCI. They are not available on Windows bots:
     // TODO: https://github.com/flutter/flutter/issues/63710
     if ((isChrome && isLuci && io.Platform.isLinux) ||
-        ((isChrome || isSafariIOS) && !isLuci)) {
+        ((isChrome || isSafariIOS) && !isLuci) ||
+        (isSafariIOS && isLuci)) {
+      print('INFO: Also running the screenshot tests.');
       // Separate screenshot tests from unit-tests. Screenshot tests must run
       // one at a time. Otherwise, they will end up screenshotting each other.
       // This is not an issue for unit-tests.

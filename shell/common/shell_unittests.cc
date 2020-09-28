@@ -997,13 +997,9 @@ TEST_F(ShellTest,
 }
 
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
-TEST_F(ShellTest,
-#if defined(OS_FUCHSIA)
-       DISABLED_SkipAndSubmitFrame
-#else
-       SkipAndSubmitFrame
-#endif
-) {
+// TODO(https://github.com/flutter/flutter/issues/66056): Deflake on all other
+// platforms
+TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
@@ -2013,6 +2009,130 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   ASSERT_EQ(actual_json, expected_json);
 
   DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, DiscardLayerTreeOnResize) {
+  auto settings = CreateSettingsForFixture();
+
+  SkISize wrong_size = SkISize::Make(400, 100);
+  SkISize expected_size = SkISize::Make(400, 200);
+
+  fml::AutoResetWaitableEvent end_frame_latch;
+
+  auto end_frame_callback = [&](bool, fml::RefPtr<fml::RasterThreadMerger>) {
+    end_frame_latch.Signal();
+  };
+
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder =
+      std::make_shared<ShellTestExternalViewEmbedder>(
+          std::move(end_frame_callback), PostPrerollResult::kSuccess, true);
+
+  std::unique_ptr<Shell> shell = CreateShell(
+      settings, GetTaskRunnersForFixture(), false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [&shell, &expected_size]() {
+        shell->GetPlatformView()->SetViewportMetrics(
+            {1.0, static_cast<double>(expected_size.width()),
+             static_cast<double>(expected_size.height())});
+      });
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->GetEngine();
+
+  PumpOneFrame(shell.get(), static_cast<double>(wrong_size.width()),
+               static_cast<double>(wrong_size.height()));
+
+  end_frame_latch.Wait();
+
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  PumpOneFrame(shell.get(), static_cast<double>(expected_size.width()),
+               static_cast<double>(expected_size.height()));
+
+  end_frame_latch.Wait();
+
+  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
+  ASSERT_EQ(expected_size, external_view_embedder->GetLastSubmittedFrameSize());
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, IgnoresInvalidMetrics) {
+  fml::AutoResetWaitableEvent latch;
+  double last_device_pixel_ratio;
+  double last_width;
+  double last_height;
+  auto native_report_device_pixel_ratio = [&](Dart_NativeArguments args) {
+    auto dpr_handle = Dart_GetNativeArgument(args, 0);
+    ASSERT_TRUE(Dart_IsDouble(dpr_handle));
+    Dart_DoubleValue(dpr_handle, &last_device_pixel_ratio);
+    ASSERT_FALSE(last_device_pixel_ratio == 0.0);
+
+    auto width_handle = Dart_GetNativeArgument(args, 1);
+    ASSERT_TRUE(Dart_IsDouble(width_handle));
+    Dart_DoubleValue(width_handle, &last_width);
+    ASSERT_FALSE(last_width == 0.0);
+
+    auto height_handle = Dart_GetNativeArgument(args, 2);
+    ASSERT_TRUE(Dart_IsDouble(height_handle));
+    Dart_DoubleValue(height_handle, &last_height);
+    ASSERT_FALSE(last_height == 0.0);
+
+    latch.Signal();
+  };
+
+  Settings settings = CreateSettingsForFixture();
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+
+  AddNativeCallback("ReportMetrics",
+                    CREATE_NATIVE_ENTRY(native_report_device_pixel_ratio));
+
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("reportMetrics");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  task_runner->PostTask([&]() {
+    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200});
+    task_runner->PostTask([&]() {
+      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200});
+      task_runner->PostTask([&]() {
+        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0});
+        task_runner->PostTask([&]() {
+          shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 200.0});
+        });
+      });
+    });
+  });
+  latch.Wait();
+  ASSERT_EQ(last_device_pixel_ratio, 0.8);
+  ASSERT_EQ(last_width, 400.0);
+  ASSERT_EQ(last_height, 200.0);
+  latch.Reset();
+
+  task_runner->PostTask([&]() {
+    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300});
+  });
+  latch.Wait();
+  ASSERT_EQ(last_device_pixel_ratio, 1.2);
+  ASSERT_EQ(last_width, 600.0);
+  ASSERT_EQ(last_height, 300.0);
+
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 }  // namespace testing

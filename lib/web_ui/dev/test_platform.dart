@@ -197,7 +197,17 @@ class BrowserPlatform extends PlatformPlugin {
         'golden_files',
       );
     } else {
-      await fetchGoldens();
+      // On LUCI MacOS bots the goldens are fetched by the recipe code.
+      // Fetch the goldens if:
+      // - Tests are running on a local machine.
+      // - Tests are running on an OS other than macOS.
+      if (!isLuci || !Platform.isMacOS) {
+        await fetchGoldens();
+      } else {
+        if (!env.environment.webUiGoldensRepositoryDirectory.existsSync()) {
+          throw Exception('The goldens directory must have been copied');
+        }
+      }
       goldensDirectory = p.join(
         env.environment.webUiGoldensRepositoryDirectory.path,
         'engine',
@@ -212,7 +222,7 @@ class BrowserPlatform extends PlatformPlugin {
     ));
     if (!file.existsSync() && !write) {
       return '''
-Golden file $filename does not exist.
+Golden file $filename does not exist on path ${file.absolute.path}
 
 To automatically create this file call matchGoldenFile('$filename', write: true).
 ''';
@@ -248,17 +258,8 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
     );
 
     if (diff.rate > 0) {
-      // Images are different, so produce some debug info
-      final String testResultsPath = isCirrus
-          ? p.join(
-              Platform.environment['CIRRUS_WORKING_DIR'],
-              'test_results',
-            )
-          : p.join(
-              env.environment.webUiDartToolDir.path,
-              'test_results',
-            );
-      Directory(testResultsPath).createSync(recursive: true);
+      final String testResultsPath =
+          env.environment.webUiTestResultsDirectory.path;
       final String basename = p.basenameWithoutExtension(file.path);
 
       final File actualFile =
