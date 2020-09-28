@@ -10,6 +10,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Build;
+import android.util.Log;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
@@ -19,7 +20,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.util.List;
-import android.util.Log;
 
 /** Android implementation of the platform plugin. */
 public class PlatformPlugin {
