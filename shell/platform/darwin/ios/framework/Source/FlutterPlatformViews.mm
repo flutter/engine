@@ -461,7 +461,8 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
 
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                  std::shared_ptr<IOSContext> ios_context,
-                                                 std::unique_ptr<SurfaceFrame> frame) {
+                                                 std::unique_ptr<SurfaceFrame> frame,
+                                                 SurfaceFrame::SubmitInfo submit_info) {
   FML_DCHECK(flutter_view_);
 
   // Any UIKit related code has to run on main thread.
@@ -554,7 +555,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // Reset the composition order, so next frame starts empty.
   composition_order_.clear();
 
-  did_submit &= frame->Submit();
+  did_submit &= frame->Submit(submit_info);
 
   // If the frame is submitted with embedded platform views,
   // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.

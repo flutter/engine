@@ -115,10 +115,13 @@ SkCanvas* IOSSurface::CompositeEmbeddedView(int view_id) {
 }
 
 // |ExternalViewEmbedder|
-void IOSSurface::SubmitFrame(GrDirectContext* context, std::unique_ptr<SurfaceFrame> frame) {
+void IOSSurface::SubmitFrame(GrDirectContext* context,
+                             std::unique_ptr<SurfaceFrame> frame,
+                             SurfaceFrame::SubmitInfo submit_info) {
   TRACE_EVENT0("flutter", "IOSSurface::SubmitFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame));
+  platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame),
+                                          std::move(submit_info));
   TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
 }
 

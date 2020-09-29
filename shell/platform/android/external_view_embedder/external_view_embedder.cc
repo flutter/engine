@@ -74,11 +74,12 @@ SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
-    std::unique_ptr<SurfaceFrame> frame) {
+    std::unique_ptr<SurfaceFrame> frame,
+    SurfaceFrame::SubmitInfo submit_info) {
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
 
   if (!FrameHasPlatformLayers()) {
-    frame->Submit();
+    frame->Submit(std::move(submit_info));
     return;
   }
 
@@ -150,7 +151,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
   // `PostPrerollAction` that this frame must be resubmitted.
   auto should_submit_current_frame = previous_frame_view_count_ > 0;
   if (should_submit_current_frame) {
-    frame->Submit();
+    frame->Submit(submit_info);
   }
 
   for (int64_t view_id : composition_order_) {
@@ -176,7 +177,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
                                 overlay_rect           //
           );
       if (should_submit_current_frame) {
-        frame->Submit();
+        frame->Submit(submit_info);
       }
     }
   }

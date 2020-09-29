@@ -80,7 +80,9 @@ class IOSSurface : public ExternalViewEmbedder {
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  void SubmitFrame(GrDirectContext* context, std::unique_ptr<SurfaceFrame> frame) override;
+  void SubmitFrame(GrDirectContext* context,
+                   std::unique_ptr<SurfaceFrame> frame,
+                   SurfaceFrame::SubmitInfo submit_info) override;
 
   // |ExternalViewEmbedder|
   void EndFrame(bool should_resubmit_frame,

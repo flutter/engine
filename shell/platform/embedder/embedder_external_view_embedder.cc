@@ -133,7 +133,8 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
-    std::unique_ptr<SurfaceFrame> frame) {
+    std::unique_ptr<SurfaceFrame> frame,
+    SurfaceFrame::SubmitInfo submit_info) {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
 
@@ -266,7 +267,7 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
                                            std::move(render_target.second));
   }
 
-  frame->Submit();
+  frame->Submit(std::move(submit_info));
 }
 
 }  // namespace flutter
