@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -64,10 +65,16 @@ public class PlatformPluginTest {
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
 
-    Uri uri =
+    Uri uri = Uri.parse("content://media/external_primary/images/media/");
+    ContentResolver contentResolver = RuntimeEnvironment.application.getContentResolver();
+    clip = ClipData.newUri(contentResolver, "URI", uri);
+    clipboardManager.setPrimaryClip(clip);
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+
+    uri =
         RingtoneManager.getActualDefaultRingtoneUri(
-            fakeActivity.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
-    clip = ClipData.newUri(fakeActivity.getContentResolver(), "URI", uri);
+            RuntimeEnvironment.application.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
+    clip = ClipData.newUri(contentResolver, "URI", uri);
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
