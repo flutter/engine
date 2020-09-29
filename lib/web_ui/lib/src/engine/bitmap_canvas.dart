@@ -276,7 +276,6 @@ class BitmapCanvas extends EngineCanvas {
   void transform(Float32List matrix4) {
     TransformKind transformKind = transformKindOf(matrix4);
     if (transformKind == TransformKind.complex) {
-      //_canvasPool.closeCurrentCanvas();
       _contains3dTransform = true;
     }
     _canvasPool.transform(matrix4);
