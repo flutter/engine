@@ -56,20 +56,24 @@ Future<void> runTestWithScreenshots(
   test.integrationDriver(
     driver: driver,
     onScreenshot: (String screenshotName, List<int> screenshotBytes) async {
-      final Image screenshot = decodePng(screenshotBytes);
-      final String result = compareImage(
-        screenshot,
-        updateGoldens,
-        '$screenshotName-$browser.png',
-        PixelComparison.fuzzy,
-        diffRateFailure,
-        forIntegrationTests: true,
-        write: updateGoldens,
-      );
-      if (result != 'OK') {
-        print('ERROR: $result');
+      if (browser == 'chrome') {
+        final Image screenshot = decodePng(screenshotBytes);
+        final String result = compareImage(
+          screenshot,
+          updateGoldens,
+          '$screenshotName-$browser.png',
+          PixelComparison.fuzzy,
+          diffRateFailure,
+          forIntegrationTests: true,
+          write: updateGoldens,
+        );
+        if (result != 'OK') {
+          print('ERROR: $result');
+        }
+        return result == 'OK';
+      } else {
+        return true;
       }
-      return result == 'OK';
     },
   );
 }
