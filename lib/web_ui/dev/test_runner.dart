@@ -191,7 +191,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     environment.webUiTestResultsDirectory.createSync(recursive: true);
 
     // If screenshot tests are available, fetch the screenshot goldens.
-    if (isScreenhotTestsAvailable) {
+    if (isScreenshotTestsAvailable) {
       final GoldensRepoFetcher goldensRepoFetcher = GoldensRepoFetcher(
           environment.webUiGoldensRepositoryDirectory,
           path.join(environment.webUiDevDir.path, 'goldens_lock.yaml'));
@@ -381,15 +381,13 @@ class TestCommand extends Command<bool> with ArgUtils {
       isSafariIntegrationTestAvailable;
 
   // Whether the tests will do screenshot testing.
-  bool get isScreenhotTestsAvailable =>
+  bool get isScreenshotTestsAvailable =>
       isIntegrationTestsAvailable || isUnitTestsScreenshotsAvailable;
 
   // For unit tests screenshot tests and smoke tests only run on:
   // "Chrome/iOS" for LUCI/local.
   bool get isUnitTestsScreenshotsAvailable =>
-      ((isChrome && isLuci && io.Platform.isLinux) ||
-          (isChrome || isSafariIOS) && !isLuci) ||
-      (isSafariIOS && isLuci);
+      isChrome && (io.Platform.isLinux || !isLuci) || isSafariIOS;
 
   /// Use system flutter instead of cloning the repository.
   ///
