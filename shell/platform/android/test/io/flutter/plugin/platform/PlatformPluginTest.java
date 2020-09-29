@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.content.Context;
 import android.view.View;
 import android.view.Window;
@@ -59,6 +61,11 @@ public class PlatformPluginTest {
     ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     ClipData clip = ClipData.newPlainText("label", "Text");
+    clipboardManager.setPrimaryClip(clip);
+    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    
+    Uri uri = RingtoneManager.getActualDefaultRingtoneUri(fakeActivity.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
+    clip = ClipData.newUri(fakeActivity.getContentResolver(), "URI", uri);
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
