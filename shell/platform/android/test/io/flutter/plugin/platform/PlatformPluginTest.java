@@ -10,9 +10,9 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Context;
 import android.media.RingtoneManager;
 import android.net.Uri;
-import android.content.Context;
 import android.view.View;
 import android.view.Window;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
@@ -63,13 +63,15 @@ public class PlatformPluginTest {
     ClipData clip = ClipData.newPlainText("label", "Text");
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
-    
+
     Uri uri = Uri.parse("content://media/external_primary/images/media/");
     clip = ClipData.newUri(fakeActivity.getContentResolver(), "URI", uri);
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
-    
-    uri = RingtoneManager.getActualDefaultRingtoneUri(fakeActivity.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
+
+    uri =
+        RingtoneManager.getActualDefaultRingtoneUri(
+            fakeActivity.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
     clip = ClipData.newUri(fakeActivity.getContentResolver(), "URI", uri);
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
