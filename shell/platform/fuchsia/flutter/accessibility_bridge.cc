@@ -104,8 +104,8 @@ fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
   // Set selected state.
   states.set_selected(node.HasFlag(flutter::SemanticsFlags::kIsSelected));
 
-  // Flutter's definition of a hidden node is different from Fuchsia, so it must
-  // not be set here.
+  // Set hidden state.
+  states.set_hidden(node.HasFlag(flutter::SemanticsFlags::kIsHidden));
 
   // Set value.
   if (node.value.size() > fuchsia::accessibility::semantics::MAX_VALUE_SIZE) {
