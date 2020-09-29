@@ -165,7 +165,7 @@ class IntegrationTestsManager {
         IntegrationArguments.fromBrowser(_browser);
     final int exitCode = await runProcess(
       executable,
-      arguments.getTestArguments(testName, 'profile'),
+      arguments.getTestArguments(testName, 'release'),
       workingDirectory: directory.path,
     );
 
@@ -173,7 +173,7 @@ class IntegrationTestsManager {
       io.stderr
           .writeln('ERROR: Failed to run test. Exited with exit code $exitCode'
               '. To run $testName locally use the following command:'
-              '\n\n${arguments.getCommandToRun(testName, 'profile')}');
+              '\n\n${arguments.getCommandToRun(testName, 'release')}');
       return false;
     } else {
       return true;
@@ -341,7 +341,7 @@ class ChromeIntegrationArguments extends IntegrationArguments {
 
   String getCommandToRun(String testName, String mode) {
     String statementToRun = 'flutter drive '
-        '--target=test_driver/${testName} -d web-server --profile '
+        '--target=test_driver/${testName} -d web-server --release '
         '--browser-name=chrome --local-engine=host_debug_unopt';
     if (isLuci) {
       statementToRun = '$statementToRun --chrome-binary='
