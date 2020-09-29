@@ -64,7 +64,7 @@ public class PlatformPluginTest {
     ClipData clip = ClipData.newPlainText("label", "Text");
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
-    
+
     ContentResolver contentResolver = RuntimeEnvironment.application.getContentResolver();
     Uri uri =
         RingtoneManager.getActualDefaultRingtoneUri(
