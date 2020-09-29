@@ -30,6 +30,7 @@ public class PlatformPlugin {
   private final PlatformChannel platformChannel;
   private PlatformChannel.SystemChromeStyle currentTheme;
   private int mEnabledOverlays;
+  private static final String TAG = "PlatformPlugin";
 
   @VisibleForTesting
   final PlatformChannel.PlatformMessageHandler mPlatformMessageHandler =
@@ -291,7 +292,12 @@ public class PlatformPlugin {
         return clip.getItemAt(0).coerceToText(activity);
       }
     } catch (SecurityException e) {
-      Log.w("flutter", "ClipData", e);
+      Log.w(
+          TAG,
+          "Attempted to get clipboard data that requires additional permission(s).\n"
+              + "See the exception details for which permission(s) are required, and consider adding them to your Android Manifest as described in:\n"
+              + "https://developer.android.com/guide/topics/permissions/overview",
+          e);
       return null;
     }
 
