@@ -23,10 +23,8 @@ dev_dependencies:
   build_web_compilers: 2.11.0
   yaml: 2.2.1
   watcher: 0.9.7+15
-  common_test_utils:
-    path: ../../web_sdk/common_test_utils
-  golden_comparator:
-    path: ../../web_sdk/golden_comparator
+  web_test_utils:
+    path: ../../web_sdk/web_test_utils
   web_engine_tester:
     path: ../../web_sdk/web_engine_tester
   simulators:

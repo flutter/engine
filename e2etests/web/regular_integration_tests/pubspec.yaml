@@ -15,8 +15,8 @@ dev_dependencies:
     sdk: flutter
   integration_test: 0.9.0
   http: 0.12.0+2
-  golden_comparator:
-    path: ../../../web_sdk/golden_comparator
+  web_test_utils:
+    path: ../../../web_sdk/web_test_utils
 
 flutter:
   assets:

@@ -15,7 +15,7 @@ import 'package:test_core/src/runner/hack_register_platform.dart'
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
-import 'package:golden_comparator/goldens.dart';
+import 'package:web_test_utils/goldens.dart';
 
 import 'common.dart';
 import 'environment.dart';
