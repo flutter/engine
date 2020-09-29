@@ -5,10 +5,10 @@
 import 'dart:io' as io;
 
 import 'package:flutter_driver/flutter_driver.dart';
-import 'package:golden_comparator/goldens.dart';
 import 'package:integration_test/integration_test_driver_extended.dart' as test;
 
-import 'package:golden_comparator/image_compare.dart';
+import 'package:web_test_utils/goldens.dart';
+import 'package:web_test_utils/image_compare.dart';
 
 import 'package:image/image.dart';
 

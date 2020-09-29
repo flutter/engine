@@ -21,9 +21,9 @@ import 'package:shelf_static/shelf_static.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:shelf_packages_handler/shelf_packages_handler.dart';
 import 'package:stream_channel/stream_channel.dart';
-import 'package:golden_comparator/goldens.dart';
-import 'package:golden_comparator/image_compare.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_test_utils/goldens.dart';
+import 'package:web_test_utils/image_compare.dart';
 
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_api/src/backend/suite_platform.dart'; // ignore: implementation_imports

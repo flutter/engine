@@ -7,12 +7,17 @@ import 'dart:io';
 import 'package:image/image.dart';
 import 'package:path/path.dart' as p;
 
-import 'package:common_test_utils/environment.dart';
+import 'environment.dart';
 import 'goldens.dart';
 
 /// Compares a screenshot taken through a test with it's golden.
 ///
 /// Used by Flutter Web Engine unit tests and the integration tests.
+///
+/// Returns the results of the tests as `String`. When tests passes the result
+/// is simply `OK`, however when they fail it contains a detailed explanation
+/// on which files are compared, their absolute locations and an HTML page
+/// that the developer can see the comparison.
 String compareImage(
   Image screenshot,
   bool doUpdateScreenshotGoldens,
