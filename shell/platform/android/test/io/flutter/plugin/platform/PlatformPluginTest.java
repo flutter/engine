@@ -45,6 +45,7 @@ public class PlatformPluginTest {
     platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
   }
 
+  @Config(sdk = 29)
   @Test
   public void platformPlugin_getClipboardData() {
     ClipboardManager clipboardManager =
@@ -66,12 +67,10 @@ public class PlatformPluginTest {
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
 
     ContentResolver contentResolver = RuntimeEnvironment.application.getContentResolver();
-    Uri uri =
-        RingtoneManager.getActualDefaultRingtoneUri(
-            RuntimeEnvironment.application.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
-    clip = ClipData.newUri(contentResolver, "URI", uri);
+    Uri uri = Uri.parse("content://media/external_primary/images/media/");
+    clip = ClipData.newUri(fakeActivity.getContentResolver(), "URI", uri);
     clipboardManager.setPrimaryClip(clip);
-    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
   @Test
