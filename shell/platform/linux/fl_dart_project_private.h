@@ -17,7 +17,7 @@ G_BEGIN_DECLS
  *
  * Determines the engine switches that should be passed to the Flutter engine.
  *
- * Returns: an array of switechs to pass to the Flutter engine.
+ * Returns: an array of switches to pass to the Flutter engine.
  */
 GPtrArray* fl_dart_project_get_switches(FlDartProject* project);
 
