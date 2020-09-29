@@ -465,18 +465,31 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   );
 
   if (compositor_frame) {
+    FrameDamage damage;
+    if (!frame->framebuffer_info().existing_damage.empty()) {
+      damage.prev_layer_tree = last_layer_tree_.get();
+      for (const auto& r : frame->framebuffer_info().existing_damage) {
+        damage.additional_damage.join(r);
+      }
+    }
+
     RasterStatus raster_status =
-        compositor_frame->Raster(layer_tree, false, nullptr);
+        compositor_frame->Raster(layer_tree, false, &damage);
     if (raster_status == RasterStatus::kFailed ||
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
     }
+
+    SurfaceFrame::SubmitInfo submit_info;
+    submit_info.surface_damage.push_back(damage.damage_out.surface_damage);
+    submit_info.buffer_damage.push_back(damage.damage_out.buffer_damage);
+
     if (external_view_embedder != nullptr) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder->SubmitFrame(surface_->GetContext(),
-                                          std::move(frame));
+      external_view_embedder->SubmitFrame(
+          surface_->GetContext(), std::move(frame), std::move(submit_info));
     } else {
-      frame->Submit();
+      frame->Submit(std::move(submit_info));
     }
 
     FireNextFrameCallbackIfPresent();
