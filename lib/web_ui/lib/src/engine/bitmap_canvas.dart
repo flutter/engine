@@ -276,7 +276,7 @@ class BitmapCanvas extends EngineCanvas {
   void transform(Float32List matrix4) {
     TransformKind transformKind = transformKindOf(matrix4);
     if (transformKind == TransformKind.complex) {
-      _canvasPool.closeCurrentCanvas();
+      //_canvasPool.closeCurrentCanvas();
       _contains3dTransform = true;
     }
     _canvasPool.transform(matrix4);
@@ -297,37 +297,99 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPool.clipPath(path);
   }
 
+  /// Whether drawing operation should use DOM node instead of Canvas.
+  ///
+  /// - Perspective transforms are not supported by canvas and require
+  ///   DOM to render correctly.
+  /// - Pictures typically have large rect/rounded rectangles as background
+  ///   prefer DOM if canvas has not been allocated yet.
+  bool get _useDomForRendering =>
+      _contains3dTransform || _canvasPool._canvas == null;
+
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    _canvasPool.drawColor(color, blendMode);
+    if (_useDomForRendering) {
+      drawRect(ui.Rect.fromLTWH(0, 0, _bounds.width, _bounds.height),
+        SurfacePaintData()
+          ..color = color
+          ..blendMode = blendMode);
+    } else {
+      _canvasPool.drawColor(color, blendMode);
+    }
   }
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaintData paint) {
-    _setUpPaint(paint);
-    _canvasPool.strokeLine(p1, p2);
-    _tearDownPaint();
+    if (_useDomForRendering) {
+      final SurfacePath path = SurfacePath()
+          ..moveTo(p1.dx, p1.dy)
+          ..lineTo(p2.dx, p2.dy);
+      drawPath(path, paint);
+    } else {
+      _setUpPaint(paint);
+      _canvasPool.strokeLine(p1, p2);
+      _tearDownPaint();
+    }
   }
 
   @override
   void drawPaint(SurfacePaintData paint) {
-    _setUpPaint(paint);
-    _canvasPool.fill();
-    _tearDownPaint();
+    if (_useDomForRendering) {
+      drawRect(ui.Rect.fromLTWH(0, 0, _bounds.width, _bounds.height), paint);
+    } else {
+      _setUpPaint(paint);
+      _canvasPool.fill();
+      _tearDownPaint();
+    }
   }
 
   @override
   void drawRect(ui.Rect rect, SurfacePaintData paint) {
-    _setUpPaint(paint);
-    _canvasPool.drawRect(rect, paint.style);
-    _tearDownPaint();
+    if (_useDomForRendering) {
+      html.HtmlElement element = _buildDrawRectElement(rect, paint, 'draw-rect',
+        _canvasPool._currentTransform);
+      _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
+          math.min(rect.top, rect.bottom)));
+    } else {
+      _setUpPaint(paint);
+      _canvasPool.drawRect(rect, paint.style);
+      _tearDownPaint();
+    }
+  }
+
+  /// Inserts a dom element at [offset] creating stack of divs for clipping
+  /// if required.
+  void _drawElement(html.Element element, ui.Offset offset) {
+    if (_canvasPool.isClipped) {
+      final List<html.Element> clipElements = _clipContent(
+          _canvasPool._clipStack!,
+          element,
+          ui.Offset.zero,
+          transformWithOffset(_canvasPool._currentTransform, offset));
+      for (html.Element clipElement in clipElements) {
+        rootElement.append(clipElement);
+        _children.add(clipElement);
+      }
+    } else {
+      rootElement.append(element);
+      _children.add(element);
+    }
   }
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    _setUpPaint(paint);
-    _canvasPool.drawRRect(rrect, paint.style);
-    _tearDownPaint();
+    final ui.Rect rect = rrect.outerRect;
+    if (_useDomForRendering) {
+      html.HtmlElement element = _buildDrawRectElement(rect, paint,
+          'draw-rrect', _canvasPool._currentTransform);
+      _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
+          math.min(rect.top, rect.bottom)));
+      _applyRRectBorderRadius(element.style, rrect);
+    } else {
+      _setUpPaint(paint);
+      _canvasPool.drawRRect(rrect, paint.style);
+      _tearDownPaint();
+    }
   }
 
   @override
@@ -339,23 +401,50 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawOval(ui.Rect rect, SurfacePaintData paint) {
-    _setUpPaint(paint);
-    _canvasPool.drawOval(rect, paint.style);
-    _tearDownPaint();
+    if (_useDomForRendering) {
+      html.HtmlElement element = _buildDrawRectElement(rect, paint,
+          'draw-oval', _canvasPool._currentTransform);
+      _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
+          math.min(rect.top, rect.bottom)));
+      element.style.borderRadius = '${(rect.width/2.0)}px / ${(rect.height/2.0)}px';
+    } else {
+      _setUpPaint(paint);
+      _canvasPool.drawOval(rect, paint.style);
+      _tearDownPaint();
+    }
   }
 
   @override
   void drawCircle(ui.Offset c, double radius, SurfacePaintData paint) {
-    _setUpPaint(paint);
-    _canvasPool.drawCircle(c, radius, paint.style);
-    _tearDownPaint();
+    ui.Rect rect = ui.Rect.fromCircle(center:c, radius:radius);
+    if (_useDomForRendering) {
+      html.HtmlElement element = _buildDrawRectElement(rect, paint,
+          'draw-circle', _canvasPool._currentTransform);
+      _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
+          math.min(rect.top, rect.bottom)));
+      element.style.borderRadius = '50%';
+    } else {
+      _setUpPaint(paint);
+      _canvasPool.drawCircle(c, radius, paint.style);
+      _tearDownPaint();
+    }
   }
 
   @override
   void drawPath(ui.Path path, SurfacePaintData paint) {
-    _setUpPaint(paint);
-    _canvasPool.drawPath(path, paint.style);
-    _tearDownPaint();
+    if (_useDomForRendering) {
+      html.Element svgElm = _pathToSvgElement(path as SurfacePath, paint,
+          '${_bounds.width}', '${_bounds.height}');
+      svgElm.style
+          ..transform = matrix4ToCssTransform(_canvasPool._currentTransform)
+          ..transformOrigin = '0 0 0'
+          ..position = 'absolute';
+      _drawElement(svgElm, ui.Offset(0, 0));
+    } else {
+      _setUpPaint(paint);
+      _canvasPool.drawPath(path, paint.style);
+      _tearDownPaint();
+    }
   }
 
   @override
@@ -897,7 +986,7 @@ String _stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
 /// it's contents. The clipping rectangles are nested and returned together
 /// with a list of svg elements that provide clip-paths.
 List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
-    html.HtmlElement content, ui.Offset offset, Matrix4 currentTransform) {
+    html.Element content, ui.Offset offset, Matrix4 currentTransform) {
   html.Element? root, curElement;
   final List<html.Element> clipDefs = <html.Element>[];
   final int len = clipStack.length;

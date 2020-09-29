@@ -39,7 +39,12 @@ void testMain() async {
     final html.Element sceneElement = html.Element.tag('flt-scene');
     try {
       if (setupPerspective) {
-        engineCanvas.rootElement.style.perspective = '200px';
+        // iFrame disables perspective, set it explicitly for test.
+        engineCanvas.rootElement.style.perspective = '400px';
+        for (html.Element element in engineCanvas.rootElement.querySelectorAll(
+            'div')) {
+          element.style.perspective = '400px';
+        }
       }
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
@@ -416,11 +421,10 @@ void testMain() async {
       ..setEntry(3, 2, 0.0005); // perspective
     canvas.transform(transform.storage);
     canvas.drawImage(createTestImage(), Offset(0, 100), new Paint());
-    await _checkScreenshot(canvas, 'draw_image_3d',
+    await _checkScreenshot(canvas, 'draw_3d_image',
         region: region,
         maxDiffRatePercent: 1.0,
-        setupPerspective: true,
-        write: true);
+        setupPerspective: true);
   });
 
   /// Regression test for https://github.com/flutter/flutter/issues/61245
@@ -438,11 +442,124 @@ void testMain() async {
     canvas.drawRect(Rect.fromLTWH(0, 0, 100, 200), Paint()..color = Color(0x801080E0));
     canvas.drawImage(createTestImage(), Offset(0, 100), new Paint());
     canvas.drawRect(Rect.fromLTWH(50, 150, 50, 20), Paint()..color = Color(0x80000000));
-    await _checkScreenshot(canvas, 'draw_image_3d_clipped',
+    await _checkScreenshot(canvas, 'draw_3d_image_clipped',
         region: region,
         maxDiffRatePercent: 1.0,
-        setupPerspective: true,
-        write: true);
+        setupPerspective: true);
+  });
+
+  test('Should render rect with perspective transform', () async {
+    final Rect region = const Rect.fromLTRB(0, 0, 400, 400);
+    final RecordingCanvas canvas = RecordingCanvas(region);
+    canvas.drawRect(region, Paint()..color = Color(0xFFE0E0E0));
+    canvas.translate(20, 20);
+    canvas.drawRect(Rect.fromLTWH(0, 0, 100, 40),
+        Paint()..color = Color(0xFF000000));
+    Matrix4 transform = Matrix4.identity()
+      ..setRotationY(0.8)
+      ..setEntry(3, 2, 0.001); // perspective
+    canvas.transform(transform.storage);
+    canvas.clipRect(region, ClipOp.intersect);
+    canvas.drawRect(Rect.fromLTWH(0, 60, 120, 40), Paint()..color = Color(0x801080E0));
+    canvas.drawRect(Rect.fromLTWH(300, 250, 120, 40), Paint()..color = Color(0x80E010E0));
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 120, 160, 40), Radius.circular(5)),
+        Paint()..color = Color(0x801080E0));
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(300, 320, 90, 40), Radius.circular(20)),
+        Paint()..color = Color(0x80E010E0));
+    await _checkScreenshot(canvas, 'draw_3d_rect_clipped',
+        region: region,
+        maxDiffRatePercent: 1.0,
+        setupPerspective: true);
+  });
+
+  test('Should render color and ovals with perspective transform', () async {
+    final Rect region = const Rect.fromLTRB(0, 0, 400, 400);
+    final RecordingCanvas canvas = RecordingCanvas(region);
+    canvas.drawRect(region, Paint()..color = Color(0xFFFF0000));
+    canvas.drawColor(Color(0xFFE0E0E0), BlendMode.src);
+    canvas.translate(20, 20);
+    canvas.drawRect(Rect.fromLTWH(0, 0, 100, 40),
+        Paint()..color = Color(0xFF000000));
+    Matrix4 transform = Matrix4.identity()
+      ..setRotationY(0.8)
+      ..setEntry(3, 2, 0.001); // perspective
+    canvas.transform(transform.storage);
+    canvas.clipRect(region, ClipOp.intersect);
+    canvas.drawOval(Rect.fromLTWH(0, 120, 130, 40),
+        Paint()..color = Color(0x801080E0));
+    canvas.drawOval(Rect.fromLTWH(300, 290, 90, 40),
+        Paint()..color = Color(0x80E010E0));
+    canvas.drawCircle(Offset(60, 240), 50, Paint()..color = Color(0x801080E0));
+    canvas.drawCircle(Offset(360, 370), 30, Paint()..color = Color(0x80E010E0));
+    await _checkScreenshot(canvas, 'draw_3d_oval_clipped',
+        region: region,
+        maxDiffRatePercent: 1.0,
+        setupPerspective: true);
+  });
+
+  test('Should render path with perspective transform', () async {
+    final Rect region = const Rect.fromLTRB(0, 0, 400, 400);
+    final RecordingCanvas canvas = RecordingCanvas(region);
+    canvas.drawRect(region, Paint()..color = Color(0xFFFF0000));
+    canvas.drawColor(Color(0xFFE0E0E0), BlendMode.src);
+    canvas.translate(20, 20);
+    canvas.drawRect(Rect.fromLTWH(0, 0, 100, 20),
+        Paint()..color = Color(0xFF000000));
+    Matrix4 transform = Matrix4.identity()
+      ..setRotationY(0.8)
+      ..setEntry(3, 2, 0.001); // perspective
+    canvas.transform(transform.storage);
+    canvas.drawRect(Rect.fromLTWH(0, 120, 130, 40),
+        Paint()..color = Color(0x801080E0));
+    canvas.drawOval(Rect.fromLTWH(300, 290, 90, 40),
+        Paint()..color = Color(0x80E010E0));
+    Path path = Path();
+    path.moveTo(50, 50);
+    path.lineTo(100, 50);
+    path.lineTo(100, 100);
+    path.close();
+    canvas.drawPath(path, Paint()..color = Color(0x801080E0));
+
+    canvas.drawCircle(Offset(50, 50), 4, Paint()..color = Color(0xFF000000));
+    canvas.drawCircle(Offset(100, 100), 4, Paint()..color = Color(0xFF000000));
+    canvas.drawCircle(Offset(100, 50), 4, Paint()..color = Color(0xFF000000));
+    await _checkScreenshot(canvas, 'draw_3d_path',
+        region: region,
+        maxDiffRatePercent: 1.0,
+        setupPerspective: true);
+  });
+
+  test('Should render path with perspective transform', () async {
+    final Rect region = const Rect.fromLTRB(0, 0, 400, 400);
+    final RecordingCanvas canvas = RecordingCanvas(region);
+    canvas.drawRect(region, Paint()..color = Color(0xFFFF0000));
+    canvas.drawColor(Color(0xFFE0E0E0), BlendMode.src);
+    canvas.translate(20, 20);
+    canvas.drawRect(Rect.fromLTWH(0, 0, 100, 20),
+        Paint()..color = Color(0xFF000000));
+    Matrix4 transform = Matrix4.identity()
+      ..setRotationY(0.8)
+      ..setEntry(3, 2, 0.001); // perspective
+    canvas.transform(transform.storage);
+    //canvas.clipRect(region, ClipOp.intersect);
+    canvas.drawRect(Rect.fromLTWH(0, 120, 130, 40),
+        Paint()..color = Color(0x801080E0));
+    canvas.drawOval(Rect.fromLTWH(300, 290, 90, 40),
+        Paint()..color = Color(0x80E010E0));
+    Path path = Path();
+    path.moveTo(50, 50);
+    path.lineTo(100, 50);
+    path.lineTo(100, 100);
+    path.close();
+    canvas.drawPath(path, Paint()..color = Color(0x801080E0));
+
+    canvas.drawCircle(Offset(50, 50), 4, Paint()..color = Color(0xFF000000));
+    canvas.drawCircle(Offset(100, 100), 4, Paint()..color = Color(0xFF000000));
+    canvas.drawCircle(Offset(100, 50), 4, Paint()..color = Color(0xFF000000));
+    await _checkScreenshot(canvas, 'draw_3d_path_clipped',
+        region: region,
+        maxDiffRatePercent: 1.0,
+        setupPerspective: true);
   });
 }
 
