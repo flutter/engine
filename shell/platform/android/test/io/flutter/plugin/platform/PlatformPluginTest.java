@@ -68,7 +68,7 @@ public class PlatformPluginTest {
 
     ContentResolver contentResolver = RuntimeEnvironment.application.getContentResolver();
     Uri uri = Uri.parse("content://media/external_primary/images/media/");
-    clip = ClipData.newUri(fakeActivity.getContentResolver(), "URI", uri);
+    clip = ClipData.newUri(contentResolver, "URI", uri);
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
