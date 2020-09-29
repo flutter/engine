@@ -23,6 +23,8 @@ namespace flutter {
 /// This can be used in conjuction to unique_ptr to provide better guarantees
 /// about the lifespan of the `EGLSurface` object.
 ///
+class AndroidEGLSurfaceDamage;
+
 class AndroidEGLSurface {
  public:
   AndroidEGLSurface(EGLSurface surface, EGLDisplay display, EGLContext context);
@@ -44,12 +46,25 @@ class AndroidEGLSurface {
   bool MakeCurrent();
 
   //----------------------------------------------------------------------------
+  /// @brief      This is the minimal area that needs to be repainted to get
+  ///             correct result
+  ///
+  /// @return     The area of current surface where it is behind front buffer.
+  ///
+  std::vector<SkIRect> InitialDamage();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Sets the damage region for current surface. Corresponds to
+  //              eglSetDamageRegionKHR
+  void SetDamageRegion(std::vector<SkIRect> buffer_damage);
+
+  //----------------------------------------------------------------------------
   /// @brief      This only applies to on-screen surfaces such as those created
   ///             by `AndroidContextGL::CreateOnscreenSurface`.
   ///
   /// @return     Whether the EGL surface color buffer was swapped.
   ///
-  bool SwapBuffers();
+  bool SwapBuffers(std::vector<SkIRect> surface_damage);
 
   //----------------------------------------------------------------------------
   /// @return     The size of an `EGLSurface`.
@@ -60,6 +75,7 @@ class AndroidEGLSurface {
   const EGLSurface surface_;
   const EGLDisplay display_;
   const EGLContext context_;
+  std::unique_ptr<AndroidEGLSurfaceDamage> damage_;
 };
 
 //------------------------------------------------------------------------------

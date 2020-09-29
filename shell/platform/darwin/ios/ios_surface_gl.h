@@ -40,13 +40,13 @@ class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
   bool GLContextClearCurrent() override;
 
   // |GPUSurfaceGLDelegate|
-  bool GLContextPresent(uint32_t fbo_id) override;
+  bool GLContextPresent(uint32_t fbo_id, std::vector<SkIRect> damage) override;
 
   // |GPUSurfaceGLDelegate|
   intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
-  bool SurfaceSupportsReadback() const override;
+  SurfaceFrame::FramebufferInfo GLContextFramebufferInfo() const override;
 
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;

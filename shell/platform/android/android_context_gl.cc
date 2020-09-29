@@ -6,6 +6,7 @@
 
 #include <EGL/eglext.h>
 
+#include <list>
 #include <utility>
 
 #include "flutter/fml/trace_event.h"
@@ -105,10 +106,111 @@ static bool TeardownContext(EGLDisplay display, EGLContext context) {
   return true;
 }
 
+class AndroidEGLSurfaceDamage {
+ public:
+  void init(EGLDisplay display, EGLContext context) {
+    const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
+    if (HasExtension(extensions, "EGL_KHR_partial_update")) {
+      set_damage_region = reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
+          eglGetProcAddress("eglSetDamageRegionKHR"));
+    }
+
+    if (HasExtension(extensions, "EGL_EXT_swap_buffers_with_damage")) {
+      swap_buffers_with_damage =
+          reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
+              eglGetProcAddress("eglSwapBuffersWithDamageEXT"));
+    } else if (HasExtension(extensions, "EGL_KHR_swap_buffers_with_damage")) {
+      swap_buffers_with_damage =
+          reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
+              eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
+    }
+  }
+
+  void SetDamageRegion(EGLDisplay display,
+                       EGLSurface surface,
+                       const std::vector<SkIRect>& region) {
+    if (set_damage_region) {
+      auto rects = RectsToInts(display, surface, region);
+      set_damage_region(display, surface, rects.data(), region.size());
+    }
+  }
+
+  std::vector<SkIRect> InitialDamage(EGLDisplay display, EGLSurface surface) {
+    EGLint age;
+    eglQuerySurface(display, surface, EGL_BUFFER_AGE_EXT, &age);
+
+    std::vector<SkIRect> res;
+    // age == 0 - full repaint (empty res)
+    if (age == 1) {
+      // no initial damage
+      res.push_back(SkIRect::MakeEmpty());
+    } else if (age > 1) {
+      age -= 2;
+      for (auto i = damage_history_.begin();
+           i != damage_history_.end() && age >= 0; ++i, --age) {
+        res.insert(res.end(), i->begin(), i->end());
+      }
+    }
+
+    return res;
+  }
+
+  bool SwapBuffersWithDamage(EGLDisplay display,
+                             EGLSurface surface,
+                             std::vector<SkIRect> damage) {
+    if (swap_buffers_with_damage) {
+      auto rects = RectsToInts(display, surface, damage);
+      damage_history_.push_back(std::move(damage));
+      if (damage_history_.size() > 2) {
+        damage_history_.pop_front();
+      }
+      return swap_buffers_with_damage(display, surface, rects.data(),
+                                      damage.size());
+
+    } else {
+      return eglSwapBuffers(display, surface);
+    }
+  }
+
+ private:
+  std::vector<EGLint> RectsToInts(EGLDisplay display,
+                                  EGLSurface surface,
+                                  const std::vector<SkIRect>& rects) {
+    std::vector<EGLint> res;
+    EGLint height;
+    eglQuerySurface(display, surface, EGL_HEIGHT, &height);
+    res.reserve(rects.size() * 4);
+    for (const auto& r : rects) {
+      res.push_back(r.left());
+      res.push_back(height - r.bottom());
+      res.push_back(r.width());
+      res.push_back(r.height());
+    }
+    return res;
+  }
+
+  PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region = nullptr;
+  PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC swap_buffers_with_damage = nullptr;
+
+  bool HasExtension(const char* extensions, const char* name) {
+    const char* r = strstr(extensions, name);
+    auto len = strlen(name);
+    // check that the extension name is terminated by space or null terminator
+    return r != nullptr && (r[len] == ' ' || r[len] == 0);
+  }
+
+  std::list<std::vector<SkIRect>> damage_history_;
+};
+
 AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
                                      EGLDisplay display,
                                      EGLContext context)
-    : surface_(surface), display_(display), context_(context) {}
+    : surface_(surface),
+      display_(display),
+      context_(context),
+      damage_(std::make_unique<AndroidEGLSurfaceDamage>()) {
+  damage_->init(display, context);
+}
 
 AndroidEGLSurface::~AndroidEGLSurface() {
   auto result = eglDestroySurface(display_, surface_);
@@ -128,9 +230,18 @@ bool AndroidEGLSurface::MakeCurrent() {
   return true;
 }
 
-bool AndroidEGLSurface::SwapBuffers() {
+void AndroidEGLSurface::SetDamageRegion(std::vector<SkIRect> buffer_damage) {
+  damage_->SetDamageRegion(display_, surface_, buffer_damage);
+}
+
+bool AndroidEGLSurface::SwapBuffers(std::vector<SkIRect> surface_damage) {
   TRACE_EVENT0("flutter", "AndroidContextGL::SwapBuffers");
-  return eglSwapBuffers(display_, surface_);
+  return damage_->SwapBuffersWithDamage(display_, surface_,
+                                        std::move(surface_damage));
+}
+
+std::vector<SkIRect> AndroidEGLSurface::InitialDamage() {
+  return damage_->InitialDamage(display_, surface_);
 }
 
 SkISize AndroidEGLSurface::GetSize() const {

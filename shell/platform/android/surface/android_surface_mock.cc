@@ -14,7 +14,8 @@ bool AndroidSurfaceMock::GLContextClearCurrent() {
   return true;
 }
 
-bool AndroidSurfaceMock::GLContextPresent(uint32_t fbo_id) {
+bool AndroidSurfaceMock::GLContextPresent(uint32_t fbo_id,
+                                          std::vector<SkIRect> damage) {
   return true;
 }
 

@@ -123,10 +123,25 @@ bool AndroidSurfaceGL::GLContextClearCurrent() {
   return android_context_->ClearCurrent();
 }
 
-bool AndroidSurfaceGL::GLContextPresent(uint32_t fbo_id) {
+SurfaceFrame::FramebufferInfo AndroidSurfaceGL::GLContextFramebufferInfo()
+    const {
+  FML_DCHECK(IsValid());
+  SurfaceFrame::FramebufferInfo res;
+  res.supports_readback = true;
+  res.existing_damage = onscreen_surface_->InitialDamage();
+  return res;
+}
+
+void AndroidSurfaceGL::GLContextSetDamageRegion(std::vector<SkIRect> region) {
+  FML_DCHECK(IsValid());
+  onscreen_surface_->SetDamageRegion(std::move(region));
+}
+
+bool AndroidSurfaceGL::GLContextPresent(uint32_t fbo_id,
+                                        std::vector<SkIRect> damage) {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
-  return onscreen_surface_->SwapBuffers();
+  return onscreen_surface_->SwapBuffers(std::move(damage));
 }
 
 intptr_t AndroidSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {

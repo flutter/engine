@@ -72,7 +72,7 @@ class GPUSurfaceGL : public Surface {
       const SkISize& untransformed_size,
       const SkMatrix& root_surface_transformation);
 
-  bool PresentSurface(SkCanvas* canvas);
+  bool PresentSurface(SkCanvas* canvas, const SurfaceFrame& frame);
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
 };
