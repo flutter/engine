@@ -64,7 +64,12 @@ public class PlatformPluginTest {
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     
-    Uri uri = RingtoneManager.getActualDefaultRingtoneUri(fakeActivity.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
+    Uri uri = Uri.parse("content://media/external_primary/images/media/");
+    clip = ClipData.newUri(fakeActivity.getContentResolver(), "URI", uri);
+    clipboardManager.setPrimaryClip(clip);
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    
+    uri = RingtoneManager.getActualDefaultRingtoneUri(fakeActivity.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
     clip = ClipData.newUri(fakeActivity.getContentResolver(), "URI", uri);
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
