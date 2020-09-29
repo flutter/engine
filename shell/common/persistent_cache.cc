@@ -85,15 +85,26 @@ bool PersistentCache::Purge() {
   FML_CHECK(GetWorkerTaskRunner());
 
   std::promise<bool> removed;
-  GetWorkerTaskRunner()->PostTask(
-      [&removed, cache_directory = cache_directory_]() {
-        if (cache_directory->is_valid()) {
-          FML_LOG(INFO) << "Purge persistent cache.";
-          removed.set_value(RemoveFilesInDirectory(*cache_directory));
-        } else {
-          removed.set_value(false);
+  GetWorkerTaskRunner()->PostTask([&removed,
+                                   cache_directory = cache_directory_]() {
+    if (cache_directory->is_valid()) {
+      // Only remove files but not directories.
+      FML_LOG(INFO) << "Purge persistent cache.";
+      fml::FileVisitor recursive_cleanup = [&recursive_cleanup](
+                                               const fml::UniqueFD& directory,
+                                               const std::string& filename) {
+        if (!fml::IsDirectory(directory, filename.c_str())) {
+          return fml::UnlinkFile(directory, filename.c_str());
         }
-      });
+        fml::UniqueFD sub_dir =
+            OpenDirectoryReadOnly(directory, filename.c_str());
+        return VisitFiles(sub_dir, recursive_cleanup);
+      };
+      removed.set_value(VisitFiles(*cache_directory, recursive_cleanup));
+    } else {
+      removed.set_value(false);
+    }
+  });
   return removed.get_future().get();
 }
 
@@ -279,20 +290,18 @@ static void PersistentCacheStore(fml::RefPtr<fml::TaskRunner> worker,
                                  std::shared_ptr<fml::UniqueFD> cache_directory,
                                  std::string key,
                                  std::unique_ptr<fml::Mapping> value) {
-  auto task =
-      fml::MakeCopyable([cache_directory,             //
-                         file_name = std::move(key),  //
-                         mapping = std::move(value)   //
+  auto task = fml::MakeCopyable([cache_directory,             //
+                                 file_name = std::move(key),  //
+                                 mapping = std::move(value)   //
   ]() mutable {
-        TRACE_EVENT0("flutter", "PersistentCacheStore");
-        if (!fml::WriteAtomically(*cache_directory,   //
-                                  file_name.c_str(),  //
-                                  *mapping)           //
-        ) {
-          FML_DLOG(WARNING)
-              << "Could not write cache contents to persistent store.";
-        }
-      });
+    TRACE_EVENT0("flutter", "PersistentCacheStore");
+    if (!fml::WriteAtomically(*cache_directory,   //
+                              file_name.c_str(),  //
+                              *mapping)           //
+    ) {
+      FML_LOG(ERROR) << "Could not write cache contents to persistent store.";
+    }
+  });
 
   if (!worker) {
     FML_LOG(WARNING)
