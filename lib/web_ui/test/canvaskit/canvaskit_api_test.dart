@@ -202,20 +202,19 @@ void _fillTypeTests() {
 }
 
 void _pathOpTests() {
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/61403
-  // test('path op mapping is correct', () {
-  //   expect(canvasKit.PathOp.Difference.value, ui.PathOperation.difference.index);
-  //   expect(canvasKit.PathOp.Intersect.value, ui.PathOperation.intersect.index);
-  //   expect(canvasKit.PathOp.Union.value, ui.PathOperation.union.index);
-  //   expect(canvasKit.PathOp.XOR.value, ui.PathOperation.xor.index);
-  //   expect(canvasKit.PathOp.ReverseDifference, ui.PathOperation.reverseDifference.index);
-  // });
+  test('path op mapping is correct', () {
+    expect(canvasKit.PathOp.Difference.value, ui.PathOperation.difference.index);
+    expect(canvasKit.PathOp.Intersect.value, ui.PathOperation.intersect.index);
+    expect(canvasKit.PathOp.Union.value, ui.PathOperation.union.index);
+    expect(canvasKit.PathOp.XOR.value, ui.PathOperation.xor.index);
+    expect(canvasKit.PathOp.ReverseDifference.value, ui.PathOperation.reverseDifference.index);
+  });
 
-  // test('ui.PathOperation converts to SkPathOp', () {
-  //   for (ui.PathOperation op in ui.PathOperation.values) {
-  //     expect(toSkPathOp(op).value, op.index);
-  //   }
-  // });
+  test('ui.PathOperation converts to SkPathOp', () {
+    for (ui.PathOperation op in ui.PathOperation.values) {
+      expect(toSkPathOp(op).value, op.index);
+    }
+  });
 }
 
 void _clipOpTests() {
