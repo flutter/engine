@@ -12,6 +12,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.view.View;
 import android.view.Window;
@@ -70,6 +71,13 @@ public class PlatformPluginTest {
     clip = ClipData.newUri(contentResolver, "URI", uri);
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+
+    uri =
+        RingtoneManager.getActualDefaultRingtoneUri(
+            RuntimeEnvironment.application.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
+    clip = ClipData.newUri(contentResolver, "URI", uri);
+    clipboardManager.setPrimaryClip(clip);
+    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
   @Test
