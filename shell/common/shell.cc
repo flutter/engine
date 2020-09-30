@@ -1403,10 +1403,10 @@ bool Shell::OnServiceProtocolRunInView(
 
   configuration.AddAssetResolver(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
-          settings_.assets_path.c_str(), false, fml::FilePermission::kRead)));
+          asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
   configuration.AddAssetResolver(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
-          asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
+          settings_.assets_path.c_str(), false, fml::FilePermission::kRead)));
 
   auto& allocator = response->GetAllocator();
   response->SetObject();
