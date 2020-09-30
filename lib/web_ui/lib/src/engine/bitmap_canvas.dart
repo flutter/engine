@@ -887,7 +887,7 @@ class BitmapCanvas extends EngineCanvas {
       }
     }
     if (rootElement.firstChild is html.HtmlElement &&
-        (rootElement.firstChild as html.HtmlElement)?.tagName.toLowerCase() == 'canvas') {
+        (rootElement.firstChild as html.HtmlElement).tagName.toLowerCase() == 'canvas') {
       (rootElement.firstChild as html.HtmlElement).style.zIndex = '-1';
     }
   }
