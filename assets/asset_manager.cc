@@ -29,15 +29,6 @@ void AssetManager::PushBack(std::unique_ptr<AssetResolver> resolver) {
   resolvers_.push_back(std::move(resolver));
 }
 
-void AssetManager::Merge(std::shared_ptr<AssetManager> assetManager) {
-  if (assetManager == nullptr) {
-    return;
-  }
-  if (assetManager->resolvers_.size() > 0) {
-    resolvers_.push_back(std::move(assetManager->resolvers_[assetManager->resolvers_.size() - 1]));
-  }
-}
-
 // |AssetResolver|
 std::unique_ptr<fml::Mapping> AssetManager::GetAsMapping(
     const std::string& asset_name) const {

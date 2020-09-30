@@ -1403,6 +1403,9 @@ bool Shell::OnServiceProtocolRunInView(
 
   configuration.AddAssetResolver(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
+          settings_.assets_path.c_str(), false, fml::FilePermission::kRead)));
+  configuration.AddAssetResolver(
+      std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
           asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
 
   auto& allocator = response->GetAllocator();
@@ -1516,6 +1519,9 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 
   auto asset_manager = std::make_shared<AssetManager>();
 
+  asset_manager->PushFront(
+      std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
+          settings_.assets_path.c_str(), false, fml::FilePermission::kRead)));
   asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
       fml::OpenDirectory(params.at("assetDirectory").data(), false,
                          fml::FilePermission::kRead)));
