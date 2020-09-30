@@ -18,7 +18,6 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer* container = GetChildContainer();
   FML_DCHECK(!container->layers().empty());  // OpacityLayer can't be a leaf.
 
-  const bool parent_is_opaque = context->is_opaque;
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
 
@@ -26,7 +25,6 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   // reverse transformation to the cull rect to properly cull child layers.
   context->cull_rect = context->cull_rect.makeOffset(-offset_.fX, -offset_.fY);
 
-  context->is_opaque = parent_is_opaque && (alpha_ == SK_AlphaOPAQUE);
   context->mutators_stack.PushTransform(
       SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
@@ -35,7 +33,6 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer::Preroll(context, child_matrix);
   context->mutators_stack.Pop();
   context->mutators_stack.Pop();
-  context->is_opaque = parent_is_opaque;
 
   {
     set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
