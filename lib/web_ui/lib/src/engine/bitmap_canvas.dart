@@ -302,16 +302,19 @@ class BitmapCanvas extends EngineCanvas {
   ///   DOM to render correctly.
   /// - Pictures typically have large rect/rounded rectangles as background
   ///   prefer DOM if canvas has not been allocated yet.
-  bool get _useDomForRendering =>
-      _contains3dTransform || _canvasPool._canvas == null;
+  bool _useDomForRendering(SurfacePaintData paint) =>
+      _contains3dTransform || (_canvasPool._canvas == null
+          && paint.maskFilter == null && paint.shader == null &&
+          paint.style != ui.PaintingStyle.stroke);
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    if (_useDomForRendering) {
+    final SurfacePaintData paintData = SurfacePaintData()
+      ..color = color
+      ..blendMode = blendMode;
+    if (_useDomForRendering(paintData)) {
       drawRect(ui.Rect.fromLTWH(0, 0, _bounds.width, _bounds.height),
-        SurfacePaintData()
-          ..color = color
-          ..blendMode = blendMode);
+        paintData);
     } else {
       _canvasPool.drawColor(color, blendMode);
     }
@@ -319,7 +322,7 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaintData paint) {
-    if (_useDomForRendering) {
+    if (_useDomForRendering(paint)) {
       final SurfacePath path = SurfacePath()
           ..moveTo(p1.dx, p1.dy)
           ..lineTo(p2.dx, p2.dy);
@@ -333,7 +336,7 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawPaint(SurfacePaintData paint) {
-    if (_useDomForRendering) {
+    if (_useDomForRendering(paint)) {
       drawRect(ui.Rect.fromLTWH(0, 0, _bounds.width, _bounds.height), paint);
     } else {
       _setUpPaint(paint);
@@ -344,7 +347,7 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawRect(ui.Rect rect, SurfacePaintData paint) {
-    if (_useDomForRendering) {
+    if (_useDomForRendering(paint)) {
       html.HtmlElement element = _buildDrawRectElement(rect, paint, 'draw-rect',
         _canvasPool._currentTransform);
       _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
@@ -378,7 +381,7 @@ class BitmapCanvas extends EngineCanvas {
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
     final ui.Rect rect = rrect.outerRect;
-    if (_useDomForRendering) {
+    if (_useDomForRendering(paint)) {
       html.HtmlElement element = _buildDrawRectElement(rect, paint,
           'draw-rrect', _canvasPool._currentTransform);
       _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
@@ -400,7 +403,7 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawOval(ui.Rect rect, SurfacePaintData paint) {
-    if (_useDomForRendering) {
+    if (_useDomForRendering(paint)) {
       html.HtmlElement element = _buildDrawRectElement(rect, paint,
           'draw-oval', _canvasPool._currentTransform);
       _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
@@ -416,7 +419,7 @@ class BitmapCanvas extends EngineCanvas {
   @override
   void drawCircle(ui.Offset c, double radius, SurfacePaintData paint) {
     ui.Rect rect = ui.Rect.fromCircle(center:c, radius:radius);
-    if (_useDomForRendering) {
+    if (_useDomForRendering(paint)) {
       html.HtmlElement element = _buildDrawRectElement(rect, paint,
           'draw-circle', _canvasPool._currentTransform);
       _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
@@ -431,7 +434,7 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawPath(ui.Path path, SurfacePaintData paint) {
-    if (_useDomForRendering) {
+    if (_useDomForRendering(paint)) {
       html.Element svgElm = _pathToSvgElement(path as SurfacePath, paint,
           '${_bounds.width}', '${_bounds.height}');
       svgElm.style
