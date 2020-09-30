@@ -351,7 +351,7 @@ class BitmapCanvas extends EngineCanvas {
       html.HtmlElement element = _buildDrawRectElement(rect, paint, 'draw-rect',
         _canvasPool._currentTransform);
       _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
-          math.min(rect.top, rect.bottom)));
+          math.min(rect.top, rect.bottom)), paint);
     } else {
       _setUpPaint(paint);
       _canvasPool.drawRect(rect, paint.style);
@@ -361,7 +361,8 @@ class BitmapCanvas extends EngineCanvas {
 
   /// Inserts a dom element at [offset] creating stack of divs for clipping
   /// if required.
-  void _drawElement(html.Element element, ui.Offset offset) {
+  void _drawElement(html.Element element, ui.Offset offset,
+      SurfacePaintData paint) {
     if (_canvasPool.isClipped) {
       final List<html.Element> clipElements = _clipContent(
           _canvasPool._clipStack!,
@@ -376,6 +377,10 @@ class BitmapCanvas extends EngineCanvas {
       rootElement.append(element);
       _children.add(element);
     }
+    ui.BlendMode? blendMode = paint.blendMode;
+    if (blendMode != null) {
+      element.style.mixBlendMode = _stringForBlendMode(blendMode) ?? '';
+    }
   }
 
   @override
@@ -385,7 +390,7 @@ class BitmapCanvas extends EngineCanvas {
       html.HtmlElement element = _buildDrawRectElement(rect, paint,
           'draw-rrect', _canvasPool._currentTransform);
       _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
-          math.min(rect.top, rect.bottom)));
+          math.min(rect.top, rect.bottom)), paint);
       _applyRRectBorderRadius(element.style, rrect);
     } else {
       _setUpPaint(paint);
@@ -407,7 +412,7 @@ class BitmapCanvas extends EngineCanvas {
       html.HtmlElement element = _buildDrawRectElement(rect, paint,
           'draw-oval', _canvasPool._currentTransform);
       _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
-          math.min(rect.top, rect.bottom)));
+          math.min(rect.top, rect.bottom)), paint);
       element.style.borderRadius = '${(rect.width/2.0)}px / ${(rect.height/2.0)}px';
     } else {
       _setUpPaint(paint);
@@ -423,7 +428,7 @@ class BitmapCanvas extends EngineCanvas {
       html.HtmlElement element = _buildDrawRectElement(rect, paint,
           'draw-circle', _canvasPool._currentTransform);
       _drawElement(element, ui.Offset(math.min(rect.left, rect.right),
-          math.min(rect.top, rect.bottom)));
+          math.min(rect.top, rect.bottom)), paint);
       element.style.borderRadius = '50%';
     } else {
       _setUpPaint(paint);
@@ -444,7 +449,7 @@ class BitmapCanvas extends EngineCanvas {
           ..transform = matrix4ToCssTransform(transform)
           ..transformOrigin = '0 0 0'
           ..position = 'absolute';
-      _drawElement(svgElm, ui.Offset(0, 0));
+      _drawElement(svgElm, ui.Offset(0, 0), paint);
     } else {
       _setUpPaint(paint);
       _canvasPool.drawPath(path, paint.style);
