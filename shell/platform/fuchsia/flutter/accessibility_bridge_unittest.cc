@@ -19,6 +19,20 @@
 
 namespace flutter_runner_test {
 
+namespace {
+
+void ExpectNodeHasRole(
+    const fuchsia::accessibility::semantics::Node& node,
+    const std::unordered_map<uint32_t, fuchsia::accessibility::semantics::Role>
+        roles_by_node_id) {
+  ASSERT_TRUE(node.has_node_id());
+  ASSERT_NE(roles_by_node_id.find(node.node_id()), roles_by_node_id.end());
+  EXPECT_TRUE(node.has_role());
+  EXPECT_EQ(node.role(), roles_by_node_id.at(node.node_id()));
+}
+
+}  // namespace
+
 class AccessibilityBridgeTestDelegate
     : public flutter_runner::AccessibilityBridge::Delegate {
  public:
@@ -89,6 +103,67 @@ TEST_F(AccessibilityBridgeTest, EnableDisable) {
   EXPECT_TRUE(accessibility_delegate_.enabled());
 }
 
+TEST_F(AccessibilityBridgeTest, UpdatesNodeRoles) {
+  flutter::SemanticsNodeUpdates updates;
+
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.flags |= static_cast<int>(flutter::SemanticsFlags::kIsButton);
+  node0.childrenInTraversalOrder = {1, 2, 3, 4};
+  node0.childrenInHitTestOrder = {1, 2, 3, 4};
+  updates.emplace(0, node0);
+
+  flutter::SemanticsNode node1;
+  node1.id = 1;
+  node1.flags |= static_cast<int>(flutter::SemanticsFlags::kIsHeader);
+  node1.childrenInTraversalOrder = {};
+  node1.childrenInHitTestOrder = {};
+  updates.emplace(1, node1);
+
+  flutter::SemanticsNode node2;
+  node2.id = 2;
+  node2.flags |= static_cast<int>(flutter::SemanticsFlags::kIsImage);
+  node2.childrenInTraversalOrder = {};
+  node2.childrenInHitTestOrder = {};
+  updates.emplace(2, node2);
+
+  flutter::SemanticsNode node3;
+  node3.id = 3;
+  node3.flags |= static_cast<int>(flutter::SemanticsFlags::kIsTextField);
+  node3.childrenInTraversalOrder = {};
+  node3.childrenInHitTestOrder = {};
+  updates.emplace(3, node3);
+
+  flutter::SemanticsNode node4;
+  node4.childrenInTraversalOrder = {};
+  node4.childrenInHitTestOrder = {};
+  node4.id = 4;
+  node4.flags |= static_cast<int>(flutter::SemanticsFlags::kIsSlider);
+  updates.emplace(4, node4);
+
+  accessibility_bridge_->AddSemanticsNodeUpdate(std::move(updates), 1.f);
+  RunLoopUntilIdle();
+
+  std::unordered_map<uint32_t, fuchsia::accessibility::semantics::Role>
+      roles_by_node_id = {
+          {0u, fuchsia::accessibility::semantics::Role::BUTTON},
+          {1u, fuchsia::accessibility::semantics::Role::HEADER},
+          {2u, fuchsia::accessibility::semantics::Role::IMAGE},
+          {3u, fuchsia::accessibility::semantics::Role::TEXT_FIELD},
+          {4u, fuchsia::accessibility::semantics::Role::SLIDER}};
+
+  EXPECT_EQ(0, semantics_manager_.DeleteCount());
+  EXPECT_EQ(1, semantics_manager_.UpdateCount());
+  EXPECT_EQ(1, semantics_manager_.CommitCount());
+  EXPECT_EQ(5U, semantics_manager_.LastUpdatedNodes().size());
+  for (const auto& node : semantics_manager_.LastUpdatedNodes()) {
+    ExpectNodeHasRole(node, roles_by_node_id);
+  }
+
+  EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
+  EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
+}
+
 TEST_F(AccessibilityBridgeTest, DeletesChildrenTransitively) {
   // Test that when a node is deleted, so are its transitive children.
   flutter::SemanticsNode node2;
@@ -104,11 +179,13 @@ TEST_F(AccessibilityBridgeTest, DeletesChildrenTransitively) {
   node0.childrenInTraversalOrder = {1};
   node0.childrenInHitTestOrder = {1};
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-      {1, node1},
-      {2, node2},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+          {2, node2},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
@@ -122,9 +199,11 @@ TEST_F(AccessibilityBridgeTest, DeletesChildrenTransitively) {
   // Remove the children
   node0.childrenInTraversalOrder.clear();
   node0.childrenInHitTestOrder.clear();
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(1, semantics_manager_.DeleteCount());
@@ -137,18 +216,81 @@ TEST_F(AccessibilityBridgeTest, DeletesChildrenTransitively) {
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
 }
 
+TEST_F(AccessibilityBridgeTest, PopulatesRoleButton) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.flags = static_cast<int>(flutter::SemanticsFlags::kIsButton);
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.f);
+  RunLoopUntilIdle();
+
+  EXPECT_EQ(1U, semantics_manager_.LastUpdatedNodes().size());
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_TRUE(fuchsia_node.has_role());
+  EXPECT_EQ(fuchsia_node.role(),
+            fuchsia::accessibility::semantics::Role::BUTTON);
+}
+
+TEST_F(AccessibilityBridgeTest, PopulatesRoleImage) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.flags = static_cast<int>(flutter::SemanticsFlags::kIsImage);
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.f);
+  RunLoopUntilIdle();
+
+  EXPECT_EQ(1U, semantics_manager_.LastUpdatedNodes().size());
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_TRUE(fuchsia_node.has_role());
+  EXPECT_EQ(fuchsia_node.role(),
+            fuchsia::accessibility::semantics::Role::IMAGE);
+}
+
+TEST_F(AccessibilityBridgeTest, PopulatesRoleSlider) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.actions |= static_cast<int>(flutter::SemanticsAction::kIncrease);
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.f);
+  RunLoopUntilIdle();
+
+  EXPECT_EQ(1U, semantics_manager_.LastUpdatedNodes().size());
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_TRUE(fuchsia_node.has_role());
+  EXPECT_EQ(fuchsia_node.role(),
+            fuchsia::accessibility::semantics::Role::SLIDER);
+}
+
+TEST_F(AccessibilityBridgeTest, PopulatesRoleHeader) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.flags = static_cast<int>(flutter::SemanticsFlags::kIsHeader);
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.f);
+  RunLoopUntilIdle();
+
+  EXPECT_EQ(1U, semantics_manager_.LastUpdatedNodes().size());
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_TRUE(fuchsia_node.has_role());
+  EXPECT_EQ(fuchsia_node.role(),
+            fuchsia::accessibility::semantics::Role::HEADER);
+}
+
 TEST_F(AccessibilityBridgeTest, PopulatesCheckedState) {
   flutter::SemanticsNode node0;
   node0.id = 0;
   // HasCheckedState = true
   // IsChecked = true
   // IsSelected = false
-  // IsHidden = false
   node0.flags |= static_cast<int>(flutter::SemanticsFlags::kHasCheckedState);
   node0.flags |= static_cast<int>(flutter::SemanticsFlags::kIsChecked);
   node0.value = "value";
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}});
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
@@ -164,8 +306,6 @@ TEST_F(AccessibilityBridgeTest, PopulatesCheckedState) {
             fuchsia::accessibility::semantics::CheckedState::CHECKED);
   EXPECT_TRUE(states.has_selected());
   EXPECT_FALSE(states.selected());
-  EXPECT_TRUE(states.has_hidden());
-  EXPECT_FALSE(states.hidden());
   EXPECT_TRUE(states.has_value());
   EXPECT_EQ(states.value(), node0.value);
 
@@ -179,10 +319,9 @@ TEST_F(AccessibilityBridgeTest, PopulatesSelectedState) {
   // HasCheckedState = false
   // IsChecked = false
   // IsSelected = true
-  // IsHidden = false
   node0.flags = static_cast<int>(flutter::SemanticsFlags::kIsSelected);
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}});
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
@@ -198,14 +337,28 @@ TEST_F(AccessibilityBridgeTest, PopulatesSelectedState) {
             fuchsia::accessibility::semantics::CheckedState::NONE);
   EXPECT_TRUE(states.has_selected());
   EXPECT_TRUE(states.selected());
-  EXPECT_TRUE(states.has_hidden());
-  EXPECT_FALSE(states.hidden());
 
   EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
 }
 
-TEST_F(AccessibilityBridgeTest, PopulatesHiddenState) {
+TEST_F(AccessibilityBridgeTest, ApplyViewPixelRatioToRoot) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.flags = static_cast<int>(flutter::SemanticsFlags::kIsSelected);
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.25f);
+  RunLoopUntilIdle();
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_EQ(fuchsia_node.transform().matrix[0], 0.8f);
+  EXPECT_EQ(fuchsia_node.transform().matrix[5], 0.8f);
+  EXPECT_EQ(fuchsia_node.transform().matrix[10], 1.f);
+}
+
+TEST_F(AccessibilityBridgeTest, DoesNotPopulatesHiddenState) {
+  // Flutter's notion of a hidden node is different from Fuchsia's hidden node.
+  // This test make sures that this state does not get sent.
   flutter::SemanticsNode node0;
   node0.id = 0;
   // HasCheckedState = false
@@ -214,7 +367,7 @@ TEST_F(AccessibilityBridgeTest, PopulatesHiddenState) {
   // IsHidden = true
   node0.flags = static_cast<int>(flutter::SemanticsFlags::kIsHidden);
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}});
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
@@ -230,8 +383,7 @@ TEST_F(AccessibilityBridgeTest, PopulatesHiddenState) {
             fuchsia::accessibility::semantics::CheckedState::NONE);
   EXPECT_TRUE(states.has_selected());
   EXPECT_FALSE(states.selected());
-  EXPECT_TRUE(states.has_hidden());
-  EXPECT_TRUE(states.hidden());
+  EXPECT_FALSE(states.has_hidden());
 
   EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
@@ -246,7 +398,7 @@ TEST_F(AccessibilityBridgeTest, PopulatesActions) {
   node0.actions |= static_cast<int>(flutter::SemanticsAction::kIncrease);
   node0.actions |= static_cast<int>(flutter::SemanticsAction::kDecrease);
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}});
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
@@ -283,11 +435,13 @@ TEST_F(AccessibilityBridgeTest, TruncatesLargeLabel) {
   node0.childrenInTraversalOrder = {1, 2};
   node0.childrenInHitTestOrder = {1, 2};
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-      {1, node1},
-      {2, bad_node},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+          {2, bad_node},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   // Nothing to delete, but we should have broken
@@ -327,11 +481,13 @@ TEST_F(AccessibilityBridgeTest, TruncatesLargeValue) {
   node0.childrenInTraversalOrder = {1, 2};
   node0.childrenInHitTestOrder = {1, 2};
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-      {1, node1},
-      {2, bad_node},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+          {2, bad_node},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
@@ -382,13 +538,15 @@ TEST_F(AccessibilityBridgeTest, SplitsLargeUpdates) {
   node1.childrenInTraversalOrder = {3, 4};
   node1.childrenInHitTestOrder = {3, 4};
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-      {1, node1},
-      {2, node2},
-      {3, node3},
-      {4, node4},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+          {2, node2},
+          {3, node3},
+          {4, node4},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   // Nothing to delete, but we should have broken into groups (4, 3, 2), (1, 0)
@@ -406,9 +564,11 @@ TEST_F(AccessibilityBridgeTest, HandlesCycles) {
   node0.id = 0;
   node0.childrenInTraversalOrder.push_back(0);
   node0.childrenInHitTestOrder.push_back(0);
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
@@ -423,10 +583,12 @@ TEST_F(AccessibilityBridgeTest, HandlesCycles) {
   node1.id = 1;
   node1.childrenInTraversalOrder = {0};
   node1.childrenInHitTestOrder = {0};
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-      {1, node1},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
@@ -463,7 +625,7 @@ TEST_F(AccessibilityBridgeTest, BatchesLargeMessages) {
   }
 
   update.insert(std::make_pair(0, std::move(node0)));
-  accessibility_bridge_->AddSemanticsNodeUpdate(update);
+  accessibility_bridge_->AddSemanticsNodeUpdate(update, 1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
@@ -477,9 +639,11 @@ TEST_F(AccessibilityBridgeTest, BatchesLargeMessages) {
   // Remove the children
   node0.childrenInTraversalOrder.clear();
   node0.childrenInHitTestOrder.clear();
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   EXPECT_EQ(1, semantics_manager_.DeleteCount());
@@ -514,13 +678,15 @@ TEST_F(AccessibilityBridgeTest, HitTest) {
   node0.childrenInTraversalOrder = {1, 2, 3, 4};
   node0.childrenInHitTestOrder = {1, 2, 3, 4};
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-      {1, node1},
-      {2, node2},
-      {3, node3},
-      {4, node4},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+          {2, node2},
+          {3, node3},
+          {4, node4},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   uint32_t hit_node_id;
@@ -565,11 +731,13 @@ TEST_F(AccessibilityBridgeTest, HitTestOverlapping) {
   node0.childrenInTraversalOrder = {1, 2};
   node0.childrenInHitTestOrder = {2, 1};
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-      {1, node1},
-      {2, node2},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+          {2, node2},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   uint32_t hit_node_id;
@@ -592,10 +760,12 @@ TEST_F(AccessibilityBridgeTest, Actions) {
   node0.childrenInTraversalOrder = {1};
   node0.childrenInHitTestOrder = {1};
 
-  accessibility_bridge_->AddSemanticsNodeUpdate({
-      {0, node0},
-      {1, node1},
-  });
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+      },
+      1.f);
   RunLoopUntilIdle();
 
   auto handled_callback = [](bool handled) { EXPECT_TRUE(handled); };

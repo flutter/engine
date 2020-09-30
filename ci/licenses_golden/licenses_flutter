@@ -41,6 +41,7 @@ FILE: ../../../flutter/flow/instrumentation.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.cc
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer_unittests.cc
+FILE: ../../../flutter/flow/layers/checkerboard_layertree_unittests.cc
 FILE: ../../../flutter/flow/layers/child_scene_layer.cc
 FILE: ../../../flutter/flow/layers/child_scene_layer.h
 FILE: ../../../flutter/flow/layers/clip_path_layer.cc
@@ -328,8 +329,6 @@ FILE: ../../../flutter/lib/ui/painting/color_filter.cc
 FILE: ../../../flutter/lib/ui/painting/color_filter.h
 FILE: ../../../flutter/lib/ui/painting/engine_layer.cc
 FILE: ../../../flutter/lib/ui/painting/engine_layer.h
-FILE: ../../../flutter/lib/ui/painting/frame_info.cc
-FILE: ../../../flutter/lib/ui/painting/frame_info.h
 FILE: ../../../flutter/lib/ui/painting/gradient.cc
 FILE: ../../../flutter/lib/ui/painting/gradient.h
 FILE: ../../../flutter/lib/ui/painting/image.cc
@@ -601,6 +600,9 @@ FILE: ../../../flutter/shell/common/animator_unittests.cc
 FILE: ../../../flutter/shell/common/canvas_spy.cc
 FILE: ../../../flutter/shell/common/canvas_spy.h
 FILE: ../../../flutter/shell/common/canvas_spy_unittests.cc
+FILE: ../../../flutter/shell/common/display.h
+FILE: ../../../flutter/shell/common/display_manager.cc
+FILE: ../../../flutter/shell/common/display_manager.h
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/engine_unittests.cc
@@ -708,6 +710,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegist
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidKeyProcessor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidTouchProcessor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/DrawableSplashScreen.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/ExclusiveAppComponent.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivityAndFragmentDelegate.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivityLaunchConfigs.java
@@ -727,7 +730,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/Splas
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/TransparencyMode.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngine.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineCache.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEnginePluginRegistry.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineConnectionRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterJNI.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterOverlaySurface.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterShellArgs.java
@@ -876,6 +879,9 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/plugin_registrar
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_codec.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_message_codec_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_method_codec_unittests.cc
+FILE: ../../../flutter/shell/platform/common/cpp/engine_switches.cc
+FILE: ../../../flutter/shell/platform/common/cpp/engine_switches.h
+FILE: ../../../flutter/shell/platform/common/cpp/engine_switches_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.h
 FILE: ../../../flutter/shell/platform/common/cpp/json_message_codec.cc
@@ -1359,6 +1365,7 @@ FILE: ../../../flutter/shell/platform/windows/cursor_handler.cc
 FILE: ../../../flutter/shell/platform/windows/cursor_handler.h
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.h
+FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_engine.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_engine.h

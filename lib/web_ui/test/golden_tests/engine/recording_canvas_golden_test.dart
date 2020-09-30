@@ -722,6 +722,15 @@ class TestImage implements Image {
 
   @override
   void dispose() {}
+
+  @override
+  Image clone() => this;
+
+  @override
+  bool isCloneOf(Image other) => other == this;
+
+  @override
+  List<StackTrace>/*?*/ debugGetOpenHandleStackTraces() => <StackTrace>[];
 }
 
 Paragraph createTestParagraph() {

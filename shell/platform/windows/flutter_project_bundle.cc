@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 
+#include "flutter/shell/platform/common/cpp/engine_switches.h"
 #include "flutter/shell/platform/common/cpp/path_utils.h"
 
 namespace flutter {
@@ -37,11 +38,6 @@ FlutterProjectBundle::FlutterProjectBundle(
             std::filesystem::path(executable_location) / aot_library_path_;
       }
     }
-  }
-
-  if (properties.switches_count > 0) {
-    switches_.insert(switches_.end(), &properties.switches[0],
-                     &properties.switches[properties.switches_count]);
   }
 }
 
@@ -77,5 +73,9 @@ UniqueAotDataPtr FlutterProjectBundle::LoadAotData() {
 }
 
 FlutterProjectBundle::~FlutterProjectBundle() {}
+
+const std::vector<std::string> FlutterProjectBundle::GetSwitches() {
+  return GetSwitchesFromEnvironment();
+}
 
 }  // namespace flutter
