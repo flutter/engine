@@ -234,6 +234,7 @@ void testMain() {
       builder.pop();
 
       html.HtmlElement content = builder.build().webOnlyRootElement;
+      html.document.body.append(content);
       expect(content.querySelector('canvas').style.zIndex, '-1');
 
       // Force update to scene which will utilize reuse code path.
@@ -627,8 +628,16 @@ Picture _drawPicture() {
   final EnginePictureRecorder recorder = PictureRecorder();
   final RecordingCanvas canvas =
   recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
+  Shader gradient = Gradient.radial(
+      Offset(100, 100), 50, [
+    const Color.fromARGB(255, 0, 0, 0),
+    const Color.fromARGB(255, 0, 0, 255)
+  ]);
   canvas.drawCircle(
-      Offset(offsetX + 10, offsetY + 10), 10, Paint()..style = PaintingStyle.fill);
+      Offset(offsetX + 10, offsetY + 10), 10,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..shader = gradient);
   canvas.drawCircle(
       Offset(offsetX + 60, offsetY + 10),
       10,
@@ -656,8 +665,16 @@ Picture _drawPathImagePath() {
   final EnginePictureRecorder recorder = PictureRecorder();
   final RecordingCanvas canvas =
   recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
+  Shader gradient = Gradient.radial(
+      Offset(100, 100), 50, [
+    const Color.fromARGB(255, 0, 0, 0),
+    const Color.fromARGB(255, 0, 0, 255)
+  ]);
   canvas.drawCircle(
-      Offset(offsetX + 10, offsetY + 10), 10, Paint()..style = PaintingStyle.fill);
+      Offset(offsetX + 10, offsetY + 10), 10,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..shader = gradient);
   canvas.drawCircle(
       Offset(offsetX + 60, offsetY + 10),
       10,
@@ -671,6 +688,11 @@ Picture _drawPathImagePath() {
         ..style = PaintingStyle.fill
         ..color = const Color.fromRGBO(0, 255, 0, 1));
   canvas.drawImage(createTestImage(), Offset(0, 0), Paint());
+  canvas.drawCircle(
+      Offset(offsetX + 10, offsetY + 10), 10,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..shader = gradient);
   canvas.drawCircle(
       Offset(offsetX + 60, offsetY + 60),
       10,
