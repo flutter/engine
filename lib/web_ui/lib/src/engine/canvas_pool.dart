@@ -33,8 +33,6 @@ class _CanvasPool extends _SaveStackTracking {
 
   html.HtmlElement? _rootElement;
   int _saveContextCount = 0;
-  // Number of elements that have been added to flt-canvas.
-  int _activeElementCount = 0;
 
   _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
 
@@ -76,7 +74,6 @@ class _CanvasPool extends _SaveStackTracking {
       _context = null;
       _contextHandle = null;
     }
-    _activeElementCount++;
   }
 
   void allocateCanvas(html.HtmlElement rootElement) {
@@ -134,15 +131,12 @@ class _CanvasPool extends _SaveStackTracking {
       _rootElement!.append(canvas);
     }
 
-    if (_activeElementCount == 0) {
-      canvas.style.zIndex = '-1';
-    } else if (reused) {
-      // If a canvas is the first element we set z-index = -1 to workaround
-      // blink compositing bug. To make sure this does not leak when reused
-      // reset z-index.
+    if (reused) {
+      // If a canvas is the first element we set z-index = -1 in [BitmapCanvas]
+      // endOfPaint to workaround blink compositing bug. To make sure this
+      // does not leak when reused reset z-index.
       canvas.style.removeProperty('z-index');
     }
-    ++_activeElementCount;
 
     final html.CanvasRenderingContext2D context = _context = canvas.context2D;
     _contextHandle = ContextStateHandle(this, context);
@@ -265,7 +259,6 @@ class _CanvasPool extends _SaveStackTracking {
     _canvas = null;
     _context = null;
     _contextHandle = null;
-    _activeElementCount = 0;
   }
 
   void endOfPaint() {

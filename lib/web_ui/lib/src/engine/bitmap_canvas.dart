@@ -435,10 +435,13 @@ class BitmapCanvas extends EngineCanvas {
   @override
   void drawPath(ui.Path path, SurfacePaintData paint) {
     if (_useDomForRendering(paint)) {
-      html.Element svgElm = _pathToSvgElement(path as SurfacePath, paint,
-          '${_bounds.width}', '${_bounds.height}');
+      final Matrix4 transform = _canvasPool._currentTransform;
+      final SurfacePath surfacePath = path as SurfacePath;
+      final ui.Rect pathBounds = surfacePath.getBounds();
+      html.Element svgElm = _pathToSvgElement(surfacePath, paint,
+          '${pathBounds.right}', '${pathBounds.bottom}');
       svgElm.style
-          ..transform = matrix4ToCssTransform(_canvasPool._currentTransform)
+          ..transform = matrix4ToCssTransform(transform)
           ..transformOrigin = '0 0 0'
           ..position = 'absolute';
       _drawElement(svgElm, ui.Offset(0, 0));
@@ -874,7 +877,7 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPool.endOfPaint();
     _elementCache?.commitFrame();
     // Wrap all elements in translate3d (workaround for webkit paint order bug).
-    if (/*_contains3dTransform &&*/ browserEngine == BrowserEngine.webkit) {
+    if (_contains3dTransform && browserEngine == BrowserEngine.webkit) {
       for (html.Element element in rootElement.children) {
         html.DivElement paintOrderElement = html.DivElement()
           ..style.transform = 'translate3d(0,0,0)';
@@ -882,6 +885,10 @@ class BitmapCanvas extends EngineCanvas {
         rootElement.append(paintOrderElement);
         _children.add(paintOrderElement);
       }
+    }
+    if (rootElement.firstChild is html.HtmlElement &&
+        (rootElement.firstChild as html.HtmlElement)?.tagName.toLowerCase() == 'canvas') {
+      (rootElement.firstChild as html.HtmlElement).style.zIndex = '-1';
     }
   }
 }
