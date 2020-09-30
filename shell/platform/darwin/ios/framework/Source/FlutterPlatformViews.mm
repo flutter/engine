@@ -279,6 +279,7 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     CancelFrame();
     return PostPrerollResult::kSkipAndRetryFrame;
   }
+  [CATransaction begin];
   raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
   return PostPrerollResult::kSuccess;
 }
@@ -547,7 +548,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   composition_order_.clear();
 
   did_submit &= frame->Submit();
-
+  [CATransaction commit];
   return did_submit;
 }
 
