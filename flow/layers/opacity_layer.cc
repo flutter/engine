@@ -14,9 +14,7 @@ OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
 
 void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "OpacityLayer::Preroll");
-
-  ContainerLayer* container = GetChildContainer();
-  FML_DCHECK(!container->layers().empty());  // OpacityLayer can't be a leaf.
+  FML_DCHECK(!GetChildContainer()->layers().empty());  // We can't be a leaf.
 
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
