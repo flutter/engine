@@ -1671,6 +1671,10 @@ class Image {
   /// It is safe to pass an [Image] handle to another object or method if the
   /// current holder no longer needs it.
   ///
+  /// To check whether two [Image] references are refering to the same
+  /// underlying image memory, use [isCloneOf] rather than the equality operator
+  /// or [identical].
+  ///
   /// The following example demonstrates valid usage.
   ///
   /// ```dart
@@ -1739,6 +1743,17 @@ class Image {
     assert(!_image._disposed);
     return Image._(_image);
   }
+
+  /// Returns true if `other` is a [clone] of this and thus shares the same
+  /// underlying image memory, even if this or `other` is [dispose]d.
+  ///
+  /// This method may return false for two images that were decoded from the
+  /// same underlying asset, if they are not sharing the same memory. For
+  /// example, if the same file is decoded using [instantiateImageCodec] twice,
+  /// or the same bytes are decoded using [decodeImageFromPixels] twice, there
+  /// will be two distinct [Image]s that render the same but do not share
+  /// underlying memory, and so will not be treated as clones of each other.
+  bool isCloneOf(Image other) => other._image == _image;
 
   @override
   String toString() => _image.toString();
@@ -1890,8 +1905,6 @@ class Codec extends NativeFieldWrapperClass2 {
   int get repetitionCount => _cachedRepetitionCount ??= _repetitionCount;
   int get _repetitionCount native 'Codec_repetitionCount';
 
-  FrameInfo? _cachedFrame;
-
   /// Fetches the next animation frame.
   ///
   /// Wraps back to the first frame after returning the last frame.
@@ -1901,24 +1914,20 @@ class Codec extends NativeFieldWrapperClass2 {
   /// The caller of this method is responsible for disposing the
   /// [FrameInfo.image] on the returned object.
   Future<FrameInfo> getNextFrame() async {
-    if (_cachedFrame == null || frameCount != 1) {
-      final Completer<void> completer = Completer<void>.sync();
-      final String? error = _getNextFrame((_Image? image, int durationMilliseconds) {
-        if (image == null) {
-          throw Exception('Codec failed to produce an image, possibly due to invalid image data.');
-        }
-        _cachedFrame = FrameInfo._(
-          image: Image._(image),
-          duration: Duration(milliseconds: durationMilliseconds),
-        );
-        completer.complete();
-      });
-      if (error != null) {
-        throw Exception(error);
+    final Completer<FrameInfo> completer = Completer<FrameInfo>.sync();
+    final String? error = _getNextFrame((_Image? image, int durationMilliseconds) {
+      if (image == null) {
+        throw Exception('Codec failed to produce an image, possibly due to invalid image data.');
       }
-      await completer.future;
+      completer.complete(FrameInfo._(
+        image: Image._(image),
+        duration: Duration(milliseconds: durationMilliseconds),
+      ));
+    });
+    if (error != null) {
+      throw Exception(error);
     }
-    return _cachedFrame!;
+    return await completer.future;
   }
 
   /// Returns an error message on failure, null on success.

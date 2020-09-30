@@ -64,6 +64,9 @@ source_set("common") {
     "animator.h",
     "canvas_spy.cc",
     "canvas_spy.h",
+    "display.h",
+    "display_manager.cc",
+    "display_manager.h",
     "engine.cc",
     "engine.h",
     "isolate_configuration.cc",
@@ -143,13 +146,6 @@ template("shell_host_executable") {
 }
 
 if (enable_unittests) {
-  declare_args() {
-    test_enable_vulkan = is_fuchsia
-    test_enable_gl = !is_fuchsia
-    test_enable_software = true
-    test_enable_metal = false
-  }
-
   config("test_enable_gl_config") {
     defines = [ "SHELL_ENABLE_GL" ]
   }

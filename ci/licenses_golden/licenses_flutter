@@ -41,6 +41,7 @@ FILE: ../../../flutter/flow/instrumentation.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.cc
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer.h
 FILE: ../../../flutter/flow/layers/backdrop_filter_layer_unittests.cc
+FILE: ../../../flutter/flow/layers/checkerboard_layertree_unittests.cc
 FILE: ../../../flutter/flow/layers/child_scene_layer.cc
 FILE: ../../../flutter/flow/layers/child_scene_layer.h
 FILE: ../../../flutter/flow/layers/clip_path_layer.cc
@@ -599,6 +600,9 @@ FILE: ../../../flutter/shell/common/animator_unittests.cc
 FILE: ../../../flutter/shell/common/canvas_spy.cc
 FILE: ../../../flutter/shell/common/canvas_spy.h
 FILE: ../../../flutter/shell/common/canvas_spy_unittests.cc
+FILE: ../../../flutter/shell/common/display.h
+FILE: ../../../flutter/shell/common/display_manager.cc
+FILE: ../../../flutter/shell/common/display_manager.h
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/engine_unittests.cc
@@ -875,6 +879,9 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/plugin_registrar
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_codec.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_message_codec_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_method_codec_unittests.cc
+FILE: ../../../flutter/shell/platform/common/cpp/engine_switches.cc
+FILE: ../../../flutter/shell/platform/common/cpp/engine_switches.h
+FILE: ../../../flutter/shell/platform/common/cpp/engine_switches_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.h
 FILE: ../../../flutter/shell/platform/common/cpp/json_message_codec.cc
