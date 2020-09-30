@@ -45,8 +45,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
   // Used to determine if Samsung-specific hacks should be applied.
   private final boolean isSamsung;
 
-  private boolean mRepeatCheckNeeded = false;
-  private TextEditingValue mLastSentTextEditngValue;
+  private TextEditingValue mLastKnownTextEditingValue;
   // Data class used to get and store the last-sent values via updateEditingState to
   // the  framework. These are then compared against to prevent redundant messages
   // with the same data before any valid operations were made to the contents.
@@ -149,7 +148,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     // occurred to mark this as dirty. This prevents duplicate remote updates of
     // the same data, which can break formatters that change the length of the
     // contents.
-    if (mRepeatCheckNeeded && currentValue.equals(mLastSentTextEditngValue)) {
+    if (currentValue.equals(mLastKnownTextEditingValue)) {
       return;
     }
 
@@ -168,17 +167,13 @@ class InputConnectionAdaptor extends BaseInputConnection {
         currentValue.composingStart,
         currentValue.composingEnd);
 
-    mRepeatCheckNeeded = true;
-    mLastSentTextEditngValue = currentValue;
+    mLastKnownTextEditingValue = currentValue;
   }
 
-  // This should be called whenever a change could have been made to
-  // the value of mEditable, which will make any call of updateEditingState()
-  // ineligible for repeat checking as we do not want to skip sending real changes
-  // to the framework.
-  public void markDirty() {
-    // Disable updateEditngState's repeat-update check
-    mRepeatCheckNeeded = false;
+  // Called when the current text editing state held by the text input plugin is overwritten by a
+  // newly received value from the framework.
+  public void didUpdateEditingValue() {
+    mLastKnownTextEditingValue = new TextEditingValue(mEditable) ;
   }
 
   @Override
@@ -203,7 +198,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
   @Override
   public boolean commitText(CharSequence text, int newCursorPosition) {
     boolean result = super.commitText(text, newCursorPosition);
-    markDirty();
     return result;
   }
 
@@ -212,21 +206,18 @@ class InputConnectionAdaptor extends BaseInputConnection {
     if (Selection.getSelectionStart(mEditable) == -1) return true;
 
     boolean result = super.deleteSurroundingText(beforeLength, afterLength);
-    markDirty();
     return result;
   }
 
   @Override
   public boolean deleteSurroundingTextInCodePoints(int beforeLength, int afterLength) {
     boolean result = super.deleteSurroundingTextInCodePoints(beforeLength, afterLength);
-    markDirty();
     return result;
   }
 
   @Override
   public boolean setComposingRegion(int start, int end) {
     boolean result = super.setComposingRegion(start, end);
-    markDirty();
     return result;
   }
 
@@ -238,7 +229,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
     } else {
       result = super.setComposingText(text, newCursorPosition);
     }
-    markDirty();
     return result;
   }
 
@@ -260,7 +250,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
       }
     }
 
-    markDirty();
     return result;
   }
 
@@ -277,7 +266,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
   @Override
   public boolean clearMetaKeyStates(int states) {
     boolean result = super.clearMetaKeyStates(states);
-    markDirty();
     return result;
   }
 
@@ -305,7 +293,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
   @Override
   public boolean setSelection(int start, int end) {
     boolean result = super.setSelection(start, end);
-    markDirty();
     updateEditingState();
     return result;
   }
@@ -336,7 +323,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
       return true;
     }
 
-    markDirty();
     if (event.getAction() == KeyEvent.ACTION_DOWN) {
       if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
         int selStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
@@ -440,7 +426,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean performContextMenuAction(int id) {
-    markDirty();
     if (id == android.R.id.selectAll) {
       setSelection(0, mEditable.length());
       return true;
@@ -500,7 +485,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean performEditorAction(int actionCode) {
-    markDirty();
     switch (actionCode) {
       case EditorInfo.IME_ACTION_NONE:
         textInputChannel.newline(mClient);

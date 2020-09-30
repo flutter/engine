@@ -607,14 +607,13 @@ public class TextInputPlugin {
     if (!state.text.equals(mEditable.toString())) {
       mEditable.replace(0, mEditable.length(), state.text);
     }
+
+    // Notify the autofill manager of the value change.
     notifyValueChanged(mEditable.toString());
     // Always apply state to selection which handles updating the selection if needed.
     applyStateToSelection(state);
-    InputConnection connection = getLastInputConnection();
-    if (connection != null && connection instanceof InputConnectionAdaptor) {
-      ((InputConnectionAdaptor) connection).markDirty();
-    }
-    // Use updateSelection to update imm on selection if it is not neccessary to restart.
+
+    // Use updateSelection to update imm on selection if it is not necessary to restart.
     if (!restartAlwaysRequired && !mRestartInputPending) {
       mImm.updateSelection(
           mView,
@@ -627,6 +626,12 @@ public class TextInputPlugin {
     } else {
       mImm.restartInput(view);
       mRestartInputPending = false;
+    }
+
+    // Notify the connection adaptor that the last known remote editing state has been updated.
+    InputConnection connection = getLastInputConnection();
+    if (connection != null && connection instanceof InputConnectionAdaptor) {
+      ((InputConnectionAdaptor) connection).didUpdateEditingValue();
     }
   }
 
