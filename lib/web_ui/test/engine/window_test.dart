@@ -248,6 +248,7 @@ void testMain() {
     expect(responded, isTrue);
   });
 
+  /// Regression test for https://github.com/flutter/flutter/issues/66128.
   test('setPreferredOrientation responds even if browser doesn\'t support api', () async {
     final html.Screen screen = html.window.screen;
     js_util.setProperty(screen, 'orientation', null);
