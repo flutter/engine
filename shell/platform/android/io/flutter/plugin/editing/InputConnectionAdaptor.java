@@ -173,7 +173,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
   // Called when the current text editing state held by the text input plugin is overwritten by a
   // newly received value from the framework.
   public void didUpdateEditingValue() {
-    mLastKnownTextEditingValue = new TextEditingValue(mEditable) ;
+    mLastKnownTextEditingValue = new TextEditingValue(mEditable);
   }
 
   @Override

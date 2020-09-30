@@ -956,6 +956,41 @@ public class InputConnectionAdaptorTest {
   }
 
   @Test
+  public void inputConnectionAdaptor_skipCallsAfterEditingValueUpdateFromFramework() {
+    View testView = new View(RuntimeEnvironment.application);
+    FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
+    int inputTargetId = 0;
+    TestTextInputChannel textInputChannel = new TestTextInputChannel(dartExecutor);
+    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
+    Editable mEditable = Editable.Factory.getInstance().newEditable("");
+    Editable spyEditable = spy(mEditable);
+    EditorInfo outAttrs = new EditorInfo();
+    outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+
+    InputConnectionAdaptor inputConnectionAdaptor =
+        new InputConnectionAdaptor(
+            testView, inputTargetId, textInputChannel, mockKeyProcessor, spyEditable, outAttrs);
+
+    inputConnectionAdaptor.setComposingText("initial text", 1);
+    // Calls updateEditingState.
+    inputConnectionAdaptor.beginBatchEdit();
+    inputConnectionAdaptor.endBatchEdit();
+    // Do send update to the framework.
+    assertEquals(textInputChannel.updateEditingStateInvocations, 1);
+
+    // Change the internal state and pretend this is from the framework.
+    inputConnectionAdaptor.setComposingText("updated text from the framework", 1);
+    inputConnectionAdaptor.didUpdateEditingValue();
+
+    // Calls updateEditingState.
+    inputConnectionAdaptor.beginBatchEdit();
+    inputConnectionAdaptor.endBatchEdit();
+    // Does not send update because it is the same as the state we just received.
+    assertEquals(textInputChannel.updateEditingStateInvocations, 1);
+  }
+
+  @Test
   public void testSendKeyEvent_delKeyDeletesBackward() {
     int selStart = 29;
     Editable editable = sampleEditable(selStart, selStart, SAMPLE_RTL_TEXT);
