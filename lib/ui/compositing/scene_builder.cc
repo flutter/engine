@@ -100,7 +100,7 @@ void SceneBuilder::pushTransform(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
@@ -114,7 +114,7 @@ void SceneBuilder::pushOffset(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
@@ -133,7 +133,7 @@ void SceneBuilder::pushClipRect(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
@@ -148,7 +148,7 @@ void SceneBuilder::pushClipRRect(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
@@ -164,7 +164,7 @@ void SceneBuilder::pushClipPath(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
@@ -179,7 +179,7 @@ void SceneBuilder::pushOpacity(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
@@ -192,7 +192,7 @@ void SceneBuilder::pushColorFilter(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
@@ -205,7 +205,7 @@ void SceneBuilder::pushImageFilter(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
@@ -217,7 +217,7 @@ void SceneBuilder::pushBackdropFilter(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
@@ -237,7 +237,7 @@ void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 
@@ -256,7 +256,7 @@ void SceneBuilder::pushPhysicalShape(Dart_Handle layer_handle,
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {
-    layer->AssignOldLayer(oldLayer->Layer());
+    layer->AssignOldLayer(oldLayer->Layer().get());
   }
 }
 

@@ -105,6 +105,8 @@ class MergedContainerLayer : public ContainerLayer {
  public:
   MergedContainerLayer();
 
+  void AssignOldLayer(Layer* old_layer) override;
+
   void Add(std::shared_ptr<Layer> layer) override;
 
  protected:

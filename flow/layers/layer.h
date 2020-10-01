@@ -78,7 +78,7 @@ class Layer {
   Layer();
   virtual ~Layer();
 
-  void AssignOldLayer(std::shared_ptr<Layer> old_layer) {
+  virtual void AssignOldLayer(Layer* old_layer) {
     original_layer_id_ = old_layer->original_layer_id_;
   }
 

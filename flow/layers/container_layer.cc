@@ -218,6 +218,12 @@ MergedContainerLayer::MergedContainerLayer() {
   ContainerLayer::Add(std::make_shared<ContainerLayer>());
 }
 
+void MergedContainerLayer::AssignOldLayer(Layer* old_layer) {
+  ContainerLayer::AssignOldLayer(old_layer);
+  auto layer = static_cast<MergedContainerLayer*>(old_layer);
+  GetChildContainer()->AssignOldLayer(layer->GetChildContainer());
+}
+
 void MergedContainerLayer::Add(std::shared_ptr<Layer> layer) {
   GetChildContainer()->Add(std::move(layer));
 }
