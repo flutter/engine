@@ -5,8 +5,8 @@
 @interface FlutterResizeSynchronizer () {
   uint32_t cookie;  // counter to detect stale callbacks
   std::mutex mutex;
-  std::condition_variable condRun;
-  std::condition_variable condBlock;
+  std::condition_variable condNoPendingCommit;
+  std::condition_variable condPendingCommit;
   bool accepting;
   bool waiting;
   bool pendingCommit;
@@ -38,7 +38,8 @@
   accepting = false;
 
   // let pending commits finish to unblock the raster thread
-  condRun.notify_all();
+  pendingCommit = false;
+  condNoPendingCommit.notify_all();
 
   // let the engine send resize notification
   notify();
@@ -47,13 +48,11 @@
 
   waiting = true;
 
-  condBlock.wait(lock);
+  condPendingCommit.wait(lock, [&] { return pendingCommit; });
 
-  if (pendingCommit) {
-    [delegate resizeSynchronizerCommit:self];
-    pendingCommit = false;
-    condRun.notify_all();
-  }
+  [delegate resizeSynchronizerCommit:self];
+  pendingCommit = false;
+  condNoPendingCommit.notify_all();
 
   waiting = false;
 }
@@ -76,21 +75,23 @@
 
   if (waiting) {  // BeginResize is in progress, interrupt it and schedule commit call
     pendingCommit = true;
-    condBlock.notify_all();
-    condRun.wait(lock);
+    condPendingCommit.notify_all();
+    condNoPendingCommit.wait(lock, [&]() { return !pendingCommit; });
   } else {
     // No resize, schedule commit on platform thread and wait until either done
     // or interrupted by incoming BeginResize
+    pendingCommit = true;
     dispatch_async(dispatch_get_main_queue(), [self, cookie_ = cookie] {
       std::unique_lock<std::mutex> lock(mutex);
       if (cookie_ == cookie) {
         if (delegate) {
           [delegate resizeSynchronizerCommit:self];
         }
-        condRun.notify_all();
+        pendingCommit = false;
+        condNoPendingCommit.notify_all();
       }
     });
-    condRun.wait(lock);
+    condNoPendingCommit.wait(lock, [&]() { return !pendingCommit; });
   }
 }
 
