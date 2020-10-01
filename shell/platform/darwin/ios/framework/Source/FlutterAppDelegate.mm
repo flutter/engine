@@ -142,10 +142,11 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
                                                                           arguments:url.path];
                      }
                    }];
+      return YES;
     } else {
       FML_LOG(ERROR) << "Attempting to open an URL without a Flutter RootViewController.";
+      return NO;
     }
-    return YES;
   }
 }
 
