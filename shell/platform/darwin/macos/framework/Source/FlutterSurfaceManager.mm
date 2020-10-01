@@ -59,7 +59,7 @@ enum {
   NSOpenGLContext* prev = [NSOpenGLContext currentContext];
   [openGLContext makeCurrentContext];
 
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < kBufferCount; ++i) {
     if (_ioSurface[i]) {
       CFRelease(_ioSurface[i]);
     }
