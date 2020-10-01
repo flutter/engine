@@ -32,7 +32,7 @@ echo "Using the flutter/flutter commit $COMMIT_NO";
 git reset --hard $COMMIT_NO
 
 # Set commit no to an env variable.
-export REF_SHA=$COMMIT_NO
+export FLUTTER_REF=$COMMIT_NO
 
 # Print out the flutter version for troubleshooting
 $FLUTTER_CLONE_REPO_PATH/bin/flutter --version
