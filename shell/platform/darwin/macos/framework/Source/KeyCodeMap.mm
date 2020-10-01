@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import <Foundation/Foundation.h>
+#import <Cocoa/Cocoa.h>
 #include "./KeyCodeMap_internal.h"
 
 // DO NOT EDIT -- DO NOT EDIT -- DO NOT EDIT
@@ -228,3 +229,27 @@ const NSDictionary* keyCodeToFunctionKey = @{
   @0x00000050 : @0x010007006e,    // f19
   @0x0000005a : @0x010007006f,    // f20
 };
+
+const NSDictionary* siblingPhysicalKeys = @{
+  @0x000700e1 : @0x000700e5, // shift
+  @0x000700e5 : @0x000700e1, // shift
+  @0x000700e3 : @0x000700e7, // meta
+  @0x000700e7 : @0x000700e3, // meta
+  @0x000700e2 : @0x000700e6, // alt
+  @0x000700e6 : @0x000700e2, // alt
+  @0x000700e0 : @0x000700e4, // control
+  @0x000700e4 : @0x000700e0, // control
+};
+
+const NSDictionary* modiferFlags = @{
+  @0x000700e1 : @(NSEventModifierFlagShift),
+  @0x000700e5 : @(NSEventModifierFlagShift),
+  @0x000700e0 : @(NSEventModifierFlagControl),
+  @0x000700e4 : @(NSEventModifierFlagControl),
+  @0x000700e2 : @(NSEventModifierFlagOption),
+  @0x000700e6 : @(NSEventModifierFlagOption),
+  @0x000700e3 : @(NSEventModifierFlagCommand),
+  @0x000700e7 : @(NSEventModifierFlagCommand),
+};
+
+const uint64_t kCapsLockPhysicalKey = 0x00070039;

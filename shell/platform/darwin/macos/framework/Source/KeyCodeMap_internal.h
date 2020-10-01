@@ -36,3 +36,27 @@ extern const uint64_t kSynonymMask;
  * representation.
  */
 static const uint64_t kMacosPlane = 0x00500000000;
+
+/**
+ * Map the physical key code of a key to that of its sibling key.
+ *
+ * A sibling key is the other key of a pair of keys that share the same modifier
+ * flag, such as left and right shift keys.
+ */
+extern const NSDictionary* siblingPhysicalKeys;
+
+/**
+ * Map the physical key code of a key to its corresponding bitmask of
+ * NSEventModifierFlags.
+ *
+ * This does not include CapsLock, for it is handled specially. Other modifier
+ * keys do not seem to be needed either.
+ */
+extern const NSDictionary* modiferFlags;
+
+/**
+ * The physical key for CapsLock, which needs special handling.
+ *
+ * This should be kept up to date with KeyCodeMap.mm
+ */
+extern const uint64_t kCapsLockPhysicalKey;

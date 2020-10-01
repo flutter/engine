@@ -23,41 +23,6 @@ static const size_t kMaxCharactersSize = 8;
 // An empty list for an empty logical_characters_data.
 static const uint8_t kEmptyCharacterData[] = {};
 
-// The physical key for CapsLock, which needs special handling.
-//
-// This should be kept up to date with KeyCodeMap.mm
-static const uint64_t kCapsLockPhysicalKey = 0x00070039;
-
-// Map the physical key code of a key to that of its sibling key.
-//
-// A sibling key is the other key of a pair of keys that share the same modifier
-// flag, such as left and right shift keys.
-static const NSDictionary* kSiblingPhysicalKeys = @{
-  @0x000700e1 : @0x000700e5,  // shift
-  @0x000700e5 : @0x000700e1,  // shift
-  @0x000700e0 : @0x000700e4,  // control
-  @0x000700e4 : @0x000700e0,  // control
-  @0x000700e2 : @0x000700e6,  // alt
-  @0x000700e6 : @0x000700e2,  // alt
-  @0x000700e3 : @0x000700e7,  // meta
-  @0x000700e7 : @0x000700e3,  // meta
-};
-
-// Map the physical key code of a key to its corresponding bitmask of
-// NSEventModifierFlags.
-static const NSDictionary* kModiferFlags = @{
-  @0x000700e1 : @(NSEventModifierFlagShift),    // shiftLeft
-  @0x000700e5 : @(NSEventModifierFlagShift),    // shiftRight
-  @0x000700e0 : @(NSEventModifierFlagControl),  // controlLeft
-  @0x000700e4 : @(NSEventModifierFlagControl),  // controlRight
-  @0x000700e2 : @(NSEventModifierFlagOption),   // altLeft
-  @0x000700e6 : @(NSEventModifierFlagOption),   // altRight
-  @0x000700e3 : @(NSEventModifierFlagCommand),  // metaLeft
-  @0x000700e7 : @(NSEventModifierFlagCommand),  // metaRight
-  // Don't include CapsLock here, for it is handled specially.
-  // Other modifier keys do not seem to be needed.
-};
-
 // Whether a string represents a control character.
 static bool IsControlCharacter(NSUInteger length, NSString *label) {
   if (length > 1) {
@@ -81,21 +46,21 @@ static uint64_t KeyOfPlane(uint64_t baseKey, uint64_t plane) {
   return plane | (baseKey & kValueMask);
 }
 
-// Find the sibling key for a physical key by looking up `kSiblingPhysicalKeys`.
+// Find the sibling key for a physical key by looking up `siblingPhysicalKeys`.
 //
 // Returns 0 if not found.
 static uint64_t GetSiblingKeyForKey(uint64_t physicalKey) {
-  NSNumber* siblingKey = [kSiblingPhysicalKeys objectForKey:@(physicalKey)];
+  NSNumber* siblingKey = [siblingPhysicalKeys objectForKey:@(physicalKey)];
   if (siblingKey == nil)
     return 0;
   return siblingKey.unsignedLongLongValue;
 }
 
-// Find the modifer flag for a physical key by looking up `kModiferFlags`.
+// Find the modifer flag for a physical key by looking up `modiferFlags`.
 //
 // Returns 0 if not found.
 static uint64_t GetModifierFlagForKey(uint64_t physicalKey) {
-  NSNumber* modifierFlag = [kModiferFlags objectForKey:@(physicalKey)];
+  NSNumber* modifierFlag = [modiferFlags objectForKey:@(physicalKey)];
   if (modifierFlag == nil)
     return 0;
   return modifierFlag.unsignedLongLongValue;
