@@ -50,6 +50,7 @@
 
   condPendingCommit.wait(lock, [&] { return pendingCommit; });
 
+  [delegate resizeSynchronizerFlush:self];
   [delegate resizeSynchronizerCommit:self];
   pendingCommit = false;
   condNoPendingCommit.notify_all();
@@ -80,6 +81,7 @@
   } else {
     // No resize, schedule commit on platform thread and wait until either done
     // or interrupted by incoming BeginResize
+    [delegate resizeSynchronizerFlush:self];
     pendingCommit = true;
     dispatch_async(dispatch_get_main_queue(), [self, cookie_ = cookie] {
       std::unique_lock<std::mutex> lock(mutex);

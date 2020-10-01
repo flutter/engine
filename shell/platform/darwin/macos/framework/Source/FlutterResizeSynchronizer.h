@@ -4,8 +4,10 @@
 
 @protocol FlutterResizeSynchronizerDelegate
 
-// Invoked on platform thread; Delegate should flush OpenGL context and
-// flip the surfaces
+// Invoked on raster thread; Delegate should flush the OpenGL context
+- (void)resizeSynchronizerFlush:(FlutterResizeSynchronizer*)synchronizer;
+
+// Invoked on platform thread; Delegate should flip the surfaces
 - (void)resizeSynchronizerCommit:(FlutterResizeSynchronizer*)synchronizer;
 
 @end

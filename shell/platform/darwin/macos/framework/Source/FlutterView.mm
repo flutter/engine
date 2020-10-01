@@ -50,11 +50,13 @@
   return self;
 }
 
-- (void)resizeSynchronizerCommit:(FlutterResizeSynchronizer*)synchronizer {
+- (void)resizeSynchronizerFlush:(FlutterResizeSynchronizer*)synchronizer {
   [self.openGLContext makeCurrentContext];
   glFlush();
   [NSOpenGLContext clearCurrentContext];
+}
 
+- (void)resizeSynchronizerCommit:(FlutterResizeSynchronizer*)synchronizer {
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
   self.layer.frame = self.bounds;
