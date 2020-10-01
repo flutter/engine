@@ -14,7 +14,7 @@ ClipRectLayer::ClipRectLayer(const SkRect& clip_rect, Clip clip_behavior)
 
 void ClipRectLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
-  auto* prev = reinterpret_cast<const ClipRectLayer*>(old_layer);
+  auto* prev = static_cast<const ClipRectLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     assert(prev);
     if (clip_behavior_ != prev->clip_behavior_ ||

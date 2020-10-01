@@ -11,7 +11,7 @@ ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
 
 void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
-  auto* prev = reinterpret_cast<const ColorFilterLayer*>(old_layer);
+  auto* prev = static_cast<const ColorFilterLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     assert(prev);
     if (filter_ != prev->filter_) {

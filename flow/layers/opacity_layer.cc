@@ -14,7 +14,7 @@ OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
 
 void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
-  auto* prev = reinterpret_cast<const OpacityLayer*>(old_layer);
+  auto* prev = static_cast<const OpacityLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     assert(prev);
     if (alpha_ != prev->alpha_ || offset_ != prev->offset_) {

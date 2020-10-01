@@ -11,7 +11,7 @@ BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
 
 void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
-  auto* prev = reinterpret_cast<const BackdropFilterLayer*>(old_layer);
+  auto* prev = static_cast<const BackdropFilterLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     assert(prev);
     if (filter_ != prev->filter_) {

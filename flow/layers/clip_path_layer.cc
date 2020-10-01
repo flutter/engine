@@ -18,7 +18,7 @@ ClipPathLayer::ClipPathLayer(const SkPath& clip_path, Clip clip_behavior)
 
 void ClipPathLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
-  auto* prev = reinterpret_cast<const ClipPathLayer*>(old_layer);
+  auto* prev = static_cast<const ClipPathLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     assert(prev);
     if (clip_behavior_ != prev->clip_behavior_ ||

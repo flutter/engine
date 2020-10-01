@@ -13,7 +13,7 @@ ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
 
 void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
-  auto* prev = reinterpret_cast<const ImageFilterLayer*>(old_layer);
+  auto* prev = static_cast<const ImageFilterLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     assert(prev);
     if (filter_ != prev->filter_) {

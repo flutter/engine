@@ -13,7 +13,7 @@ ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
 
 void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
-  auto* prev = reinterpret_cast<const ShaderMaskLayer*>(old_layer);
+  auto* prev = static_cast<const ShaderMaskLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     assert(prev);
     if (shader_ != prev->shader_ || mask_rect_ != prev->mask_rect_ ||

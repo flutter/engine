@@ -11,7 +11,7 @@ namespace flutter {
 ContainerLayer::ContainerLayer() {}
 
 void ContainerLayer::Diff(DiffContext* context, const Layer* old_layer) {
-  auto old_container = reinterpret_cast<const ContainerLayer*>(old_layer);
+  auto old_container = static_cast<const ContainerLayer*>(old_layer);
   DiffContext::AutoSubtreeRestore subtree(context);
   DiffChildren(context, old_container);
   set_paint_region(context->CurrentSubtreeRegion());
