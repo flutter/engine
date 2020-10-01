@@ -7,8 +7,8 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
-#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
 @class CAMetalLayer;
 
