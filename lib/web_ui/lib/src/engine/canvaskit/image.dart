@@ -47,10 +47,23 @@ class CkAnimatedImage implements ui.Image {
     box = SkiaObjectBox(this, _skAnimatedImage as SkDeletable);
   }
 
+  bool _disposed = false;
   @override
   void dispose() {
     box.delete();
+    _disposed = true;
   }
+
+  @override
+  bool get debugDisposed {
+    bool? disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed ?? (throw StateError('Image.debugDisposed is only available when asserts are enabled.'));
+  }
+
 
   @override
   ui.Image clone() => this;
@@ -120,9 +133,24 @@ class CkImage implements ui.Image {
     box = SkiaObjectBox(this, skImage as SkDeletable);
   }
 
+  bool _disposed = false;
   @override
   void dispose() {
     box.delete();
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+  }
+
+  @override
+  bool get debugDisposed {
+    bool? disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed ?? (throw StateError('Image.debugDisposed is only available when asserts are enabled.'));
   }
 
   @override
