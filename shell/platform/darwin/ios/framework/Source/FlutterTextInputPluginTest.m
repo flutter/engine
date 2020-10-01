@@ -234,6 +234,22 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(updateCount, 1);
   [inputView setTextInputState:@{@"text" : @"AFTER"}];
   XCTAssertEqual(updateCount, 1);
+
+  // Selection changes don't trigger an update.
+  [inputView
+      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @3}];
+  XCTAssertEqual(updateCount, 1);
+  [inputView
+      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @3}];
+  XCTAssertEqual(updateCount, 1);
+
+  // Composing region changes don't trigger an update.
+  [inputView
+      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
+  XCTAssertEqual(updateCount, 1);
+  [inputView
+      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
+  XCTAssertEqual(updateCount, 1);
 }
 
 - (void)testUITextInputAvoidUnnecessaryUndateEditingClientCalls {
