@@ -13,7 +13,6 @@
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterResizeSynchronizer* resizeSynchronizer;
   FlutterSurfaceManager* surfaceManager;
-  BOOL active;
   CALayer* contentLayer;
 }
 
@@ -80,18 +79,15 @@
   [resizeSynchronizer requestCommit];
 }
 
-- (void)start {
-  active = YES;
-  [self reshaped];
-}
-
 - (void)reshaped {
-  if (active) {
+  if (self.synchronousResizing) {
     CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
     [resizeSynchronizer beginResize:scaledSize
                              notify:^{
                                [_reshapeListener viewDidReshape:self];
                              }];
+  } else {
+    [_reshapeListener viewDidReshape:self];
   }
 }
 

@@ -21,6 +21,7 @@
 @interface FlutterView : NSView
 
 @property(readwrite, nonatomic, nonnull) NSOpenGLContext* openGLContext;
+@property(readwrite, nonatomic) BOOL synchronousResizing;
 
 - (nullable instancetype)initWithFrame:(NSRect)frame
                           shareContext:(nonnull NSOpenGLContext*)shareContext
@@ -37,7 +38,6 @@
 - (nullable instancetype)initWithCoder:(nonnull NSCoder*)coder NS_UNAVAILABLE;
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
-- (void)start;
 - (void)present;
 - (int)getFrameBufferIdForSize:(CGSize)size;
 

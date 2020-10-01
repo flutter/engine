@@ -321,7 +321,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
   [self sendUserLocales];
   [self updateDisplayConfig];
-  [self.viewController.flutterView start];
+  self.viewController.flutterView.synchronousResizing = YES;
   return YES;
 }
 
@@ -363,7 +363,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     _resourceContext = nil;
   }
   if (_engine) {
-    [self.viewController.flutterView start];
+    self.viewController.flutterView.synchronousResizing = YES;
   }
 }
 
@@ -415,7 +415,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   CVDisplayLinkRelease(displayLinkRef);
 }
 
-// Must be driven by FlutterView (i.e. [FlutterView start])
+// Called by [FlutterViewController viewDidReshape]
 - (void)updateWindowMetrics {
   if (!_engine) {
     return;
