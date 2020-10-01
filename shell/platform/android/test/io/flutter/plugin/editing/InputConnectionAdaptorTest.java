@@ -964,30 +964,35 @@ public class InputConnectionAdaptorTest {
     TestTextInputChannel textInputChannel = new TestTextInputChannel(dartExecutor);
     AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     Editable mEditable = Editable.Factory.getInstance().newEditable("");
-    Editable spyEditable = spy(mEditable);
     EditorInfo outAttrs = new EditorInfo();
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
 
     InputConnectionAdaptor inputConnectionAdaptor =
         new InputConnectionAdaptor(
-            testView, inputTargetId, textInputChannel, mockKeyProcessor, spyEditable, outAttrs);
+            testView, inputTargetId, textInputChannel, mockKeyProcessor, mEditable, outAttrs);
 
     inputConnectionAdaptor.setComposingText("initial text", 1);
+    assertEquals(textInputChannel.text, "initial text");
     // Calls updateEditingState.
     inputConnectionAdaptor.beginBatchEdit();
     inputConnectionAdaptor.endBatchEdit();
+    assertEquals(textInputChannel.text, "initial text");
     // Do send update to the framework.
     assertEquals(textInputChannel.updateEditingStateInvocations, 1);
 
     // Change the internal state and pretend this is from the framework.
-    inputConnectionAdaptor.setComposingText("updated text from the framework", 1);
+    mEditable.replace(0, mEditable.length(), "updated text from the framework");
     inputConnectionAdaptor.didUpdateEditingValue();
+    // Does not send update because it is the same as the state we just received.
+    assertEquals(textInputChannel.updateEditingStateInvocations, 1);
 
+    mEditable.replace(0, mEditable.length(), "yet another updated text from the framework");
     // Calls updateEditingState.
     inputConnectionAdaptor.beginBatchEdit();
     inputConnectionAdaptor.endBatchEdit();
-    // Does not send update because it is the same as the state we just received.
-    assertEquals(textInputChannel.updateEditingStateInvocations, 1);
+    // Does send update because it is the same as the state we just received.
+    assertEquals(textInputChannel.text, "yet another updated text from the framework");
+    assertEquals(textInputChannel.updateEditingStateInvocations, 2);
   }
 
   @Test

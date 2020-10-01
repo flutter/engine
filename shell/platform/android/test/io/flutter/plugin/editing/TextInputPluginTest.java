@@ -121,6 +121,46 @@ public class TextInputPluginTest {
   }
 
   @Test
+  public void setTextInputEditingState_doesNotInvokeUpdateEditingState() {
+    // Initialize a general TextInputPlugin.
+    InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+    View testView = new View(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            null,
+            null));
+
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("initial input from framework", 0, 0));
+    assertTrue(textInputPlugin.getEditable().toString().equals("initial input from framework"));
+
+    verify(textInputChannel, times(0))
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("more update from the framwork", 1, 1));
+
+    assertTrue(textInputPlugin.getEditable().toString().equals("more update from the framwork"));
+    verify(textInputChannel, times(0))
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+  }
+
+  @Test
   public void setTextInputEditingState_doesNotRestartWhenTextIsIdentical() {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
