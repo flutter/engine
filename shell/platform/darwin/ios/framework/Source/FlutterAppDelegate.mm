@@ -4,9 +4,10 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
 
-#include "flutter/fml/logging.h"
+#import "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
 
 static NSString* kUIBackgroundMode = @"UIBackgroundModes";
@@ -124,7 +125,28 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  return [_lifeCycleDelegate application:application openURL:url options:options];
+  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
+    return YES;
+  } else {
+    UIViewController* rootViewController = _window.rootViewController;
+    if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
+      FlutterViewController* flutterViewController = (FlutterViewController*)rootViewController;
+      [flutterViewController.engine
+          waitForFirstFrame:3.0
+                   callback:^(BOOL didTimeout) {
+                     if (didTimeout) {
+                       FML_LOG(ERROR)
+                           << "Timeout waiting for the first frame when launching an URL.";
+                     } else {
+                       [flutterViewController.engine.navigationChannel invokeMethod:@"pushRoute"
+                                                                          arguments:url.path];
+                     }
+                   }];
+    } else {
+      FML_LOG(ERROR) << "Attempting to open an URL without a Flutter RootViewController.";
+    }
+    return YES;
+  }
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
