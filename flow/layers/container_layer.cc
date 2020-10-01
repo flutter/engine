@@ -165,9 +165,13 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
 void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
                                              Layer* layer,
                                              const SkMatrix& matrix) {
-  if (!context->has_platform_view && context->raster_cache &&
-      SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
-    context->raster_cache->Prepare(context, layer, matrix);
+  if (!context->has_platform_view && context->raster_cache) {
+    if (SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
+      context->raster_cache->Prepare(context, layer, matrix);
+    } else {
+      // Don't evict raster cache entry during partial repaint
+      context->raster_cache->Touch(layer, matrix);
+    }
   }
 }
 

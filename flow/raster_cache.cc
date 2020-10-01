@@ -147,6 +147,14 @@ void RasterCache::Prepare(PrerollContext* context,
   }
 }
 
+void RasterCache::Touch(Layer* layer, const SkMatrix& ctm) {
+  LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
+  auto it = layer_cache_.find(cache_key);
+  if (it != layer_cache_.end()) {
+    it->second.used_this_frame = true;
+  }
+}
+
 std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
     PrerollContext* context,
     Layer* layer,
@@ -219,6 +227,15 @@ bool RasterCache::Prepare(GrDirectContext* context,
     picture_cached_this_frame_++;
   }
   return true;
+}
+
+void RasterCache::Touch(SkPicture* picture,
+                        const SkMatrix& transformation_matrix) {
+  PictureRasterCacheKey cache_key(picture->uniqueID(), transformation_matrix);
+  auto it = picture_cache_.find(cache_key);
+  if (it != picture_cache_.end()) {
+    it->second.used_this_frame = true;
+  }
 }
 
 bool RasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {

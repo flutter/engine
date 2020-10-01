@@ -89,6 +89,14 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   SkPicture* sk_picture = picture();
 
+  SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
+
+  if (context->cull_rect.intersects(bounds)) {
+    set_paint_bounds(bounds);
+  } else {
+    set_paint_bounds(SkRect::MakeEmpty());
+  }
+
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
 
@@ -97,16 +105,13 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     ctm = RasterCache::GetIntegralTransCTM(ctm);
 #endif
-    cache->Prepare(context->gr_context, sk_picture, ctm,
-                   context->dst_color_space, is_complex_, will_change_);
-  }
-
-  SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
-
-  if (context->cull_rect.intersects(bounds)) {
-    set_paint_bounds(bounds);
-  } else {
-    set_paint_bounds(SkRect::MakeEmpty());
+    if (needs_painting()) {
+      cache->Prepare(context->gr_context, sk_picture, ctm,
+                     context->dst_color_space, is_complex_, will_change_);
+    } else {
+      // Don't evict raster cache entry during partial repaint
+      cache->Touch(sk_picture, ctm);
+    }
   }
 }
 
