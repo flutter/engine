@@ -299,7 +299,7 @@ static void PersistentCacheStore(fml::RefPtr<fml::TaskRunner> worker,
                               file_name.c_str(),  //
                               *mapping)           //
     ) {
-      FML_LOG(ERROR) << "Could not write cache contents to persistent store.";
+      FML_LOG(WARNING) << "Could not write cache contents to persistent store.";
     }
   });
 
