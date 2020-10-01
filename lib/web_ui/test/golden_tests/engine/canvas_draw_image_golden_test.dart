@@ -423,7 +423,7 @@ void testMain() async {
     canvas.drawImage(createTestImage(), Offset(0, 100), new Paint());
     await _checkScreenshot(canvas, 'draw_3d_image',
         region: region,
-        maxDiffRatePercent: 1.0,
+        maxDiffRatePercent: 6.0,
         setupPerspective: true);
   });
 
@@ -444,7 +444,7 @@ void testMain() async {
     canvas.drawRect(Rect.fromLTWH(50, 150, 50, 20), Paint()..color = Color(0x80000000));
     await _checkScreenshot(canvas, 'draw_3d_image_clipped',
         region: region,
-        maxDiffRatePercent: 1.0,
+        maxDiffRatePercent: 5.0,
         setupPerspective: true);
   });
 

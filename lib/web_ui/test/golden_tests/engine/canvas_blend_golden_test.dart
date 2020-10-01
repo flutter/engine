@@ -4,6 +4,7 @@
 
 // @dart = 2.6
 import 'dart:html' as html;
+import 'dart:io';
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
@@ -24,7 +25,7 @@ void testMain() async {
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
-       double maxDiffRatePercent = 0.0}) async {
+       double maxDiffRatePercent = 0.0, bool write = false}) async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
 
     rc.endRecording();
@@ -35,7 +36,8 @@ void testMain() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      await matchGoldenFile('$fileName.png', region: region, maxDiffRatePercent: maxDiffRatePercent);
+      await matchGoldenFile('$fileName.png', region: region,
+          maxDiffRatePercent: maxDiffRatePercent, write: write);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -83,7 +85,8 @@ void testMain() async {
           ..color = const Color.fromARGB(128, 255, 0, 0));
     rc.restore();
     await _checkScreenshot(rc, 'canvas_blend_circle_diff_color',
-        maxDiffRatePercent: operatingSystem == OperatingSystem.macOs ? 2.95 : 0);
+        maxDiffRatePercent: operatingSystem == OperatingSystem.macOs ? 2.95 :
+            operatingSystem == OperatingSystem.iOs ? 1.0 : 0);
   });
 
   test('Blend circle and text with multiply', () async {
@@ -120,7 +123,8 @@ void testMain() async {
         Paint()..blendMode = BlendMode.multiply);
     rc.restore();
     await _checkScreenshot(rc, 'canvas_blend_image_multiply',
-        maxDiffRatePercent: operatingSystem == OperatingSystem.macOs ? 2.95 : 0);
+        maxDiffRatePercent: operatingSystem == OperatingSystem.macOs ? 2.95 :
+        operatingSystem == OperatingSystem.iOs ? 2.0 : 0, write: true);
   });
 }
 
