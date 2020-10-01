@@ -16,7 +16,7 @@ FLUTTER_ASSERT_ARC
 @property(nonatomic, copy) NSString* autofillId;
 
 - (void)setEditableTransform:(NSArray*)matrix;
-- (BOOL)setTextInputState:(NSDictionary*)state;
+- (void)setTextInputState:(NSDictionary*)state;
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
