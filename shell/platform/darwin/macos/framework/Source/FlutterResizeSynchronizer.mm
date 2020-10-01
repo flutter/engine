@@ -74,15 +74,14 @@
     return;
   }
 
+  pendingCommit = true;
   if (waiting) {  // BeginResize is in progress, interrupt it and schedule commit call
-    pendingCommit = true;
     condPendingCommit.notify_all();
     condNoPendingCommit.wait(lock, [&]() { return !pendingCommit; });
   } else {
     // No resize, schedule commit on platform thread and wait until either done
     // or interrupted by incoming BeginResize
     [delegate resizeSynchronizerFlush:self];
-    pendingCommit = true;
     dispatch_async(dispatch_get_main_queue(), [self, cookie_ = cookie] {
       std::unique_lock<std::mutex> lock(mutex);
       if (cookie_ == cookie) {
