@@ -30,3 +30,6 @@ fi
 COMMIT_NO=`git log --before="$LATEST_COMMIT_TIME_ENGINE" -n 1 | grep commit | cut -d ' ' -f2`
 echo "Using the flutter/flutter commit $COMMIT_NO";
 git reset --hard $COMMIT_NO
+
+# Print out the flutter version for troubleshooting
+$FLUTTER_CLONE_REPO_PATH/bin/flutter --version
