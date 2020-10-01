@@ -320,6 +320,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   }
 
   [self sendUserLocales];
+  [self updateWindowMetrics];
   [self updateDisplayConfig];
   self.viewController.flutterView.synchronousResizing = YES;
   return YES;
@@ -415,7 +416,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   CVDisplayLinkRelease(displayLinkRef);
 }
 
-// Called by [FlutterViewController viewDidReshape]
 - (void)updateWindowMetrics {
   if (!_engine) {
     return;
