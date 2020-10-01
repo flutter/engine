@@ -5,10 +5,10 @@
 // @dart = 2.10
 part of engine;
 
-/// [UrlStrategy] is responsible for representing and reading route state
-/// from the browser's URL.
+/// Represents and reads route state from the browser's URL.
 ///
-/// At the moment, only one strategy is implemented: [HashUrlStrategy].
+/// By default, the [HashUrlStrategy] subclass is used if the app doesn't
+/// specify one.
 ///
 /// This is used by [BrowserHistory] to interact with browser history APIs.
 abstract class UrlStrategy {
@@ -17,25 +17,41 @@ abstract class UrlStrategy {
 
   /// Subscribes to popstate events and returns a function that could be used to
   /// unsubscribe from popstate events.
-  ui.VoidCallback onPopState(html.EventListener fn);
+  ui.VoidCallback addPopStateListener(html.EventListener fn);
 
   /// Returns the active path in the browser.
   String getPath();
 
   /// The state of the current browser history entry.
-  dynamic getState();
+  ///
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/state
+  Object? getState();
 
   /// Given a path that's internal to the app, create the external url that
   /// will be used in the browser.
   String prepareExternalUrl(String internalUrl);
 
   /// Push a new history entry.
-  void pushState(dynamic state, String title, String url);
+  ///
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/pushState
+  void pushState(Object? state, String title, String url);
 
   /// Replace the currently active history entry.
-  void replaceState(dynamic state, String title, String url);
+  ///
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/replaceState
+  void replaceState(Object? state, String title, String url);
 
   /// Moves forwards or backwards through the history stack.
+  ///
+  /// A negative [count] value causes a backward move in the history stack. And
+  /// a positive [count] value causs a forward move.
+  ///
+  /// Examples:
+  ///
+  /// * `go(-2)` moves back 2 steps in history.
+  /// * `go(3)` moves forward 3 steps in hisotry.
+  ///
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/go
   Future<void> go(int count);
 }
 
@@ -62,9 +78,9 @@ class HashUrlStrategy extends UrlStrategy {
   final PlatformLocation _platformLocation;
 
   @override
-  ui.VoidCallback onPopState(html.EventListener fn) {
-    _platformLocation.onPopState(fn);
-    return () => _platformLocation.offPopState(fn);
+  ui.VoidCallback addPopStateListener(html.EventListener fn) {
+    _platformLocation.addPopStateListener(fn);
+    return () => _platformLocation.removePopStateListener(fn);
   }
 
   @override
@@ -83,7 +99,7 @@ class HashUrlStrategy extends UrlStrategy {
   }
 
   @override
-  dynamic getState() => _platformLocation.state;
+  Object? getState() => _platformLocation.state;
 
   @override
   String prepareExternalUrl(String internalUrl) {
@@ -97,12 +113,12 @@ class HashUrlStrategy extends UrlStrategy {
   }
 
   @override
-  void pushState(dynamic state, String title, String url) {
+  void pushState(Object? state, String title, String url) {
     _platformLocation.pushState(state, title, prepareExternalUrl(url));
   }
 
   @override
-  void replaceState(dynamic state, String title, String url) {
+  void replaceState(Object? state, String title, String url) {
     _platformLocation.replaceState(state, title, prepareExternalUrl(url));
   }
 
@@ -119,7 +135,7 @@ class HashUrlStrategy extends UrlStrategy {
   Future<void> _waitForPopState() {
     final Completer<void> completer = Completer<void>();
     late ui.VoidCallback unsubscribe;
-    unsubscribe = onPopState((_) {
+    unsubscribe = addPopStateListener((_) {
       unsubscribe();
       completer.complete();
     });
@@ -127,28 +143,62 @@ class HashUrlStrategy extends UrlStrategy {
   }
 }
 
+/// Wraps a custom implementation of [UrlStrategy] that was previously converted
+/// to a [JsUrlStrategy].
+class CustomUrlStrategy extends UrlStrategy {
+  CustomUrlStrategy.fromJs(this.delegate);
+
+  final JsUrlStrategy delegate;
+
+  @override
+  ui.VoidCallback addPopStateListener(html.EventListener fn) =>
+      delegate.addPopStateListener(fn);
+
+  @override
+  String getPath() => delegate.getPath();
+
+  @override
+  Object? getState() => delegate.getState();
+
+  @override
+  String prepareExternalUrl(String internalUrl) =>
+      delegate.prepareExternalUrl(internalUrl);
+
+  @override
+  void pushState(Object? state, String title, String url) =>
+      delegate.pushState(state, title, url);
+
+  @override
+  void replaceState(Object? state, String title, String url) =>
+      delegate.replaceState(state, title, url);
+
+  @override
+  Future<void> go(int count) => delegate.go(count);
+}
+
 /// [PlatformLocation] encapsulates all calls to DOM apis, which allows the
 /// [UrlStrategy] classes to be platform agnostic and testable.
 ///
 /// The [PlatformLocation] class is used directly by all implementations of
 /// [UrlStrategy] when they need to interact with the DOM apis like
-/// pushState, popState, etc...
+/// pushState, popState, etc.
 abstract class PlatformLocation {
   /// This constructor is here only to allow subclasses to be const.
   const PlatformLocation();
 
-  /// Registers an event listener for the `onpopstate` event.
+  /// Registers an event listener for the `popstate` event.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
-  void onPopState(html.EventListener fn);
+  void addPopStateListener(html.EventListener fn);
 
-  /// Unregisters the given listener from the`popstate` event.
+  /// Unregisters the given listener from the `popstate` event.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
-  void offPopState(html.EventListener fn);
+  void removePopStateListener(html.EventListener fn);
 
-  /// The [pathname](https://developer.mozilla.org/en-US/docs/Web/API/Location/pathname)
-  /// part of the URL in the browser address bar.
+  /// The `pathname` part of the URL in the browser address bar.
+  ///
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/Location/pathname
   String get pathname;
 
   /// The `query` part of the URL in the browser address bar.
@@ -164,27 +214,34 @@ abstract class PlatformLocation {
   /// The `state` in the current history entry.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/state
-  dynamic get state;
+  Object? get state;
 
   /// Adds a new entry to the browser history stack.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/pushState
-  void pushState(dynamic state, String title, String url);
+  void pushState(Object? state, String title, String url);
 
   /// Replaces the current entry in the browser history stack.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/replaceState
-  void replaceState(dynamic state, String title, String url);
+  void replaceState(Object? state, String title, String url);
 
   /// Moves forwards or backwards through the history stack.
   ///
-  /// A negative [count] moves backwards, while a positive [count] moves
-  /// forwards.
+  /// A negative [count] value causes a backward move in the history stack. And
+  /// a positive [count] value causs a forward move.
+  ///
+  /// Examples:
+  ///
+  /// * `go(-2)` moves back 2 steps in history.
+  /// * `go(3)` moves forward 3 steps in hisotry.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/go
   void go(int count);
 
-  /// The base href where the flutter app is being served.
+  /// The base href where the Flutter app is being served.
+  ///
+  /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
   String? getBaseHref();
 }
 
@@ -197,12 +254,12 @@ class BrowserPlatformLocation extends PlatformLocation {
   html.History get _history => html.window.history;
 
   @override
-  void onPopState(html.EventListener fn) {
+  void addPopStateListener(html.EventListener fn) {
     html.window.addEventListener('popstate', fn);
   }
 
   @override
-  void offPopState(html.EventListener fn) {
+  void removePopStateListener(html.EventListener fn) {
     html.window.removeEventListener('popstate', fn);
   }
 
@@ -216,15 +273,15 @@ class BrowserPlatformLocation extends PlatformLocation {
   String get hash => _location.hash;
 
   @override
-  dynamic get state => _history.state;
+  Object? get state => _history.state;
 
   @override
-  void pushState(dynamic state, String title, String url) {
+  void pushState(Object? state, String title, String url) {
     _history.pushState(state, title, url);
   }
 
   @override
-  void replaceState(dynamic state, String title, String url) {
+  void replaceState(Object? state, String title, String url) {
     _history.replaceState(state, title, url);
   }
 

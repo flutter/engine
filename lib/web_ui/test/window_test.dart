@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
-import 'dart:async';
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
@@ -11,6 +10,9 @@ import 'dart:typed_data';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
+
+import 'engine/history_test.dart';
+import 'matchers.dart';
 
 const MethodCodec codec = JSONMethodCodec();
 
@@ -21,10 +23,6 @@ void main() {
 }
 
 void testMain() {
-  setUp(() async {
-    await window.debugSwitchBrowserHistory(useSingle: true);
-  });
-
   tearDown(() async {
     await window.debugResetHistory();
   });
@@ -33,7 +31,7 @@ void testMain() {
     final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
       TestHistoryEntry('initial state', null, '/initial'),
     );
-    await window.debugConvertAndSetUrlStrategy(strategy);
+    await window.debugInitializeHistory(strategy, useSingle: true);
     expect(window.defaultRouteName, '/initial');
 
     // Changing the URL in the address bar later shouldn't affect [window.defaultRouteName].
@@ -43,9 +41,9 @@ void testMain() {
 
   test('window.defaultRouteName should reset after navigation platform message',
       () async {
-    await window.debugConvertAndSetUrlStrategy(TestUrlStrategy.fromEntry(
+    await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
       TestHistoryEntry('initial state', null, '/initial'),
-    ));
+    ), useSingle: true);
     // Reading it multiple times should return the same value.
     expect(window.defaultRouteName, '/initial');
     expect(window.defaultRouteName, '/initial');
@@ -63,41 +61,41 @@ void testMain() {
   });
 
   test('can disable location strategy', () async {
-    final testStrategy = TestUrlStrategy.fromEntry(
-      TestHistoryEntry('initial state', null, '/'),
-    );
-    await window.debugConvertAndSetUrlStrategy(testStrategy);
-
-    expect(window.urlStrategy, isNotNull);
-    // A single listener should've been setup.
-    expect(testStrategy.listeners, hasLength(1));
-    // The initial entry should be there, plus another "flutter" entry.
-    expect(testStrategy.history, hasLength(2));
-    expect(testStrategy.history[0].state,
-        <String, dynamic>{'origin': true, 'state': 'initial state'});
-    expect(testStrategy.history[1].state, <String, bool>{'flutter': true});
-    expect(testStrategy.currentEntry, testStrategy.history[1]);
-
-    // Now, let's disable location strategy and make sure things get cleaned up.
+    // Disable URL strategy.
     expect(() => jsSetUrlStrategy(null), returnsNormally);
-    // The url strategy is teared down asynchronously.
-    await Future<void>.delayed(Duration.zero);
-    expect(window.urlStrategy, isNull);
+    // History should be initialized.
+    expect(window.browserHistory, isNotNull);
+    // But without a URL strategy.
+    expect(window.browserHistory.urlStrategy, isNull);
+    // Current path is always "/" in this case.
+    expect(window.browserHistory.currentPath, '/');
 
-    // The listener is removed asynchronously.
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-
-    // No more listeners.
-    expect(testStrategy.listeners, isEmpty);
-    // History should've moved back to the initial state.
-    expect(testStrategy.history[0].state, "initial state");
-    expect(testStrategy.currentEntry, testStrategy.history[0]);
+    // Perform some navigation operations.
+    routeInfomrationUpdated('/foo/bar', null);
+    // Path should not be updated because URL strategy is disabled.
+    expect(window.browserHistory.currentPath, '/');
   });
 
   test('js interop throws on wrong type', () {
     expect(() => jsSetUrlStrategy(123), throwsA(anything));
     expect(() => jsSetUrlStrategy('foo'), throwsA(anything));
     expect(() => jsSetUrlStrategy(false), throwsA(anything));
+  });
+
+  test('cannot set url strategy after it is initialized', () async {
+    final testStrategy = TestUrlStrategy.fromEntry(
+      TestHistoryEntry('initial state', null, '/'),
+    );
+    await window.debugInitializeHistory(testStrategy, useSingle: true);
+
+    expect(() => jsSetUrlStrategy(null), throwsA(isAssertionError));
+  });
+
+  test('cannot set url strategy more than once', () async {
+    // First time is okay.
+    expect(() => jsSetUrlStrategy(null), returnsNormally);
+    // Second time is not allowed.
+    expect(() => jsSetUrlStrategy(null), throwsA(isAssertionError));
   });
 }
 

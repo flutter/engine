@@ -16,13 +16,6 @@ import 'package:ui/src/engine.dart';
 
 import '../spy.dart';
 
-TestUrlStrategy _strategy;
-TestUrlStrategy get strategy => _strategy;
-Future<void> setStrategy(TestUrlStrategy newStrategy) async {
-  _strategy = newStrategy;
-  await window.debugConvertAndSetUrlStrategy(newStrategy);
-}
-
 Map<String, dynamic> _wrapOriginState(dynamic state) {
   return <String, dynamic>{'origin': true, 'state': state};
 }
@@ -50,7 +43,6 @@ void testMain() {
     final PlatformMessagesSpy spy = PlatformMessagesSpy();
 
     setUp(() async {
-      await window.debugSwitchBrowserHistory(useSingle: true);
       spy.setUp();
     });
 
@@ -60,8 +52,10 @@ void testMain() {
     });
 
     test('basic setup works', () async {
-      await setStrategy(TestUrlStrategy.fromEntry(
-          TestHistoryEntry('initial state', null, '/initial')));
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        TestHistoryEntry('initial state', null, '/initial'),
+      );
+      await window.debugInitializeHistory(strategy, useSingle: true);
 
       // There should be two entries: origin and flutter.
       expect(strategy.history, hasLength(2));
@@ -84,7 +78,11 @@ void testMain() {
         skip: browserEngine == BrowserEngine.edge);
 
     test('browser back button pops routes correctly', () async {
-      await setStrategy(TestUrlStrategy.fromEntry(TestHistoryEntry(null, null, '/home')));
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        TestHistoryEntry(null, null, '/home'),
+      );
+      await window.debugInitializeHistory(strategy, useSingle: true);
+
       // Initially, we should be on the flutter entry.
       expect(strategy.history, hasLength(2));
       expect(strategy.currentEntry.state, flutterState);
@@ -117,7 +115,10 @@ void testMain() {
         skip: browserEngine == BrowserEngine.edge);
 
     test('multiple browser back clicks', () async {
-      await setStrategy(TestUrlStrategy.fromEntry(TestHistoryEntry(null, null, '/home')));
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        TestHistoryEntry(null, null, '/home'),
+      );
+      await window.debugInitializeHistory(strategy, useSingle: true);
 
       await routeUpdated('/page1');
       await routeUpdated('/page2');
@@ -183,7 +184,10 @@ void testMain() {
             browserEngine == BrowserEngine.webkit);
 
     test('handle user-provided url', () async {
-      await setStrategy(TestUrlStrategy.fromEntry(TestHistoryEntry(null, null, '/home')));
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        TestHistoryEntry(null, null, '/home'),
+      );
+      await window.debugInitializeHistory(strategy, useSingle: true);
 
       await strategy.simulateUserTypingUrl('/page3');
       // This delay is necessary to wait for [BrowserHistory] because it
@@ -223,7 +227,10 @@ void testMain() {
         skip: browserEngine == BrowserEngine.edge);
 
     test('user types unknown url', () async {
-      await setStrategy(TestUrlStrategy.fromEntry(TestHistoryEntry(null, null, '/home')));
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        TestHistoryEntry(null, null, '/home'),
+      );
+      await window.debugInitializeHistory(strategy, useSingle: true);
 
       await strategy.simulateUserTypingUrl('/unknown');
       // This delay is necessary to wait for [BrowserHistory] because it
@@ -250,7 +257,6 @@ void testMain() {
     final PlatformMessagesSpy spy = PlatformMessagesSpy();
 
     setUp(() async {
-      await window.debugSwitchBrowserHistory(useSingle: false);
       spy.setUp();
     });
 
@@ -260,8 +266,10 @@ void testMain() {
     });
 
     test('basic setup works', () async {
-      await setStrategy(TestUrlStrategy.fromEntry(
-          TestHistoryEntry('initial state', null, '/initial')));
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        TestHistoryEntry('initial state', null, '/initial'),
+      );
+      await window.debugInitializeHistory(strategy, useSingle: false);
 
       // There should be only one entry.
       expect(strategy.history, hasLength(1));
@@ -275,7 +283,11 @@ void testMain() {
         skip: browserEngine == BrowserEngine.edge);
 
     test('browser back button push route infromation correctly', () async {
-      await setStrategy(TestUrlStrategy.fromEntry(TestHistoryEntry('initial state', null, '/home')));
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        TestHistoryEntry('initial state', null, '/home'),
+      );
+      await window.debugInitializeHistory(strategy, useSingle: false);
+
       // Initially, we should be on the flutter entry.
       expect(strategy.history, hasLength(1));
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
@@ -312,7 +324,10 @@ void testMain() {
         skip: browserEngine == BrowserEngine.edge);
 
     test('multiple browser back clicks', () async {
-      await setStrategy(TestUrlStrategy.fromEntry(TestHistoryEntry('initial state', null, '/home')));
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        TestHistoryEntry('initial state', null, '/home'),
+      );
+      await window.debugInitializeHistory(strategy, useSingle: false);
 
       await routeInfomrationUpdated('/page1', 'page1 state');
       await routeInfomrationUpdated('/page2', 'page2 state');
@@ -361,7 +376,10 @@ void testMain() {
             browserEngine == BrowserEngine.webkit);
 
     test('handle user-provided url', () async {
-      await setStrategy(TestUrlStrategy.fromEntry(TestHistoryEntry('initial state', null, '/home')));
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        TestHistoryEntry('initial state', null, '/home'),
+      );
+      await window.debugInitializeHistory(strategy, useSingle: false);
 
       await strategy.simulateUserTypingUrl('/page3');
       // This delay is necessary to wait for [BrowserHistory] because it
@@ -403,7 +421,10 @@ void testMain() {
         skip: browserEngine == BrowserEngine.edge);
 
     test('forward button works', () async {
-      await setStrategy(TestUrlStrategy.fromEntry(TestHistoryEntry('initial state', null, '/home')));
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        TestHistoryEntry('initial state', null, '/home'),
+      );
+      await window.debugInitializeHistory(strategy, useSingle: false);
 
       await routeInfomrationUpdated('/page1', 'page1 state');
       await routeInfomrationUpdated('/page2', 'page2 state');
@@ -532,12 +553,12 @@ class TestPlatformLocation extends PlatformLocation {
   dynamic state;
 
   @override
-  void onPopState(html.EventListener fn) {
+  void addPopStateListener(html.EventListener fn) {
     throw UnimplementedError();
   }
 
   @override
-  void offPopState(html.EventListener fn) {
+  void removePopStateListener(html.EventListener fn) {
     throw UnimplementedError();
   }
 

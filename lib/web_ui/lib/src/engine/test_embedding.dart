@@ -20,7 +20,7 @@ class TestHistoryEntry {
   }
 }
 
-/// This url strategy mimics the browser's history as closely as possible
+/// This URL strategy mimics the browser's history as closely as possible
 /// while doing it all in memory with no interaction with the browser.
 ///
 /// It keeps a list of history entries and event listeners in memory and
@@ -122,7 +122,7 @@ class TestUrlStrategy extends UrlStrategy {
   final List<html.EventListener> listeners = <html.EventListener>[];
 
   @override
-  ui.VoidCallback onPopState(html.EventListener fn) {
+  ui.VoidCallback addPopStateListener(html.EventListener fn) {
     listeners.add(fn);
     return () {
       // Schedule a micro task here to avoid removing the listener during
