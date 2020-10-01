@@ -8,7 +8,7 @@
 
 #include "flutter/shell/platform/embedder/embedder_layers.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -47,9 +47,11 @@ void EmbedderExternalViewEmbedder::CancelFrame() {
 }
 
 // |ExternalViewEmbedder|
-void EmbedderExternalViewEmbedder::BeginFrame(SkISize frame_size,
-                                              GrContext* context,
-                                              double device_pixel_ratio) {
+void EmbedderExternalViewEmbedder::BeginFrame(
+    SkISize frame_size,
+    GrDirectContext* context,
+    double device_pixel_ratio,
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   Reset();
 
   pending_frame_size_ = frame_size;
@@ -129,8 +131,9 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 }
 
 // |ExternalViewEmbedder|
-bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context,
-                                               SkCanvas* background_canvas) {
+void EmbedderExternalViewEmbedder::SubmitFrame(
+    GrDirectContext* context,
+    std::unique_ptr<SurfaceFrame> frame) {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
 
@@ -182,7 +185,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context,
 
     if (!render_target) {
       FML_LOG(ERROR) << "Embedder did not return a valid render target.";
-      return false;
+      return;
     }
     matched_render_targets[pending_key] = std::move(render_target);
   }
@@ -201,7 +204,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context,
              ->Render(*render_target.second)) {
       FML_LOG(ERROR)
           << "Could not render into the embedder supplied render target.";
-      return false;
+      return;
     }
   }
 
@@ -211,7 +214,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context,
   //
   // @warning: Embedder may trample on our OpenGL context here.
   if (context) {
-    context->flush();
+    context->flushAndSubmit();
   }
 
   // Submit the scribbled layer to the embedder for presentation.
@@ -263,10 +266,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context,
                                            std::move(render_target.second));
   }
 
-  return true;
+  frame->Submit();
 }
-
-// |ExternalViewEmbedder|
-void EmbedderExternalViewEmbedder::FinishFrame() {}
 
 }  // namespace flutter

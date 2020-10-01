@@ -5,8 +5,7 @@
 #ifndef FLUTTER_LIB_UI_COMPOSITING_SCENE_BUILDER_H_
 #define FLUTTER_LIB_UI_COMPOSITING_SCENE_BUILDER_H_
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -22,8 +21,8 @@
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-#if defined(OS_FUCHSIA)
-#include "flutter/lib/ui/compositing/scene_host.h"
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+#include "flutter/lib/ui/compositing/scene_host.h"  // nogncheck
 #endif
 
 namespace flutter {
@@ -92,7 +91,8 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                   double width,
                   double height,
                   int64_t textureId,
-                  bool freeze);
+                  bool freeze,
+                  int filterQuality);
 
   void addPlatformView(double dx,
                        double dy,
@@ -100,7 +100,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                        double height,
                        int64_t viewId);
 
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   void addChildScene(double dx,
                      double dy,
                      double width,

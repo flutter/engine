@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
+import android.os.Build;
 import android.os.Looper;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -19,12 +20,18 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
+import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.plugin.common.StandardMessageCodec;
+import io.flutter.plugin.localization.LocalizationPlugin;
+import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -83,7 +90,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *
  * <p>To invoke a native method that is not associated with a platform view, invoke it statically:
  *
- * <p>{@code bool enabled = FlutterJNI.nativeGetIsSoftwareRenderingEnabled(); }
+ * <p>{@code bool enabled = FlutterJNI.getIsSoftwareRenderingEnabled(); }
  */
 @Keep
 public class FlutterJNI {
@@ -103,14 +110,23 @@ public class FlutterJNI {
       @NonNull String[] args,
       @Nullable String bundlePath,
       @NonNull String appStoragePath,
-      @NonNull String engineCachesPath);
+      @NonNull String engineCachesPath,
+      long initTimeMillis);
 
-  // TODO(mattcarroll): add javadocs
-  public static native void nativeRecordStartTimestamp(long initTimeMillis);
+  /**
+   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
+   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
+   * noticeable time, but later calls will return a reference to the preexisting font manager.
+   */
+  public static native void nativePrefetchDefaultFontManager();
 
-  // TODO(mattcarroll): add javadocs
+  private native boolean nativeGetIsSoftwareRenderingEnabled();
+
   @UiThread
-  public native boolean nativeGetIsSoftwareRenderingEnabled();
+  // TODO(mattcarroll): add javadocs
+  public boolean getIsSoftwareRenderingEnabled() {
+    return nativeGetIsSoftwareRenderingEnabled();
+  }
 
   @Nullable
   // TODO(mattcarroll): add javadocs
@@ -146,9 +162,25 @@ public class FlutterJNI {
   @NonNull
   public static native FlutterCallbackInformation nativeLookupCallbackInformation(long handle);
 
+  // ----- Start FlutterTextUtils Methods ----
+
+  public native boolean nativeFlutterTextUtilsIsEmoji(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsEmojiModifier(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsEmojiModifierBase(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsVariationSelector(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsRegionalIndicator(int codePoint);
+
+  // ----- End Engine FlutterTextUtils Methods ----
+
   @Nullable private Long nativePlatformViewId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;
   @Nullable private PlatformMessageHandler platformMessageHandler;
+  @Nullable private LocalizationPlugin localizationPlugin;
+  @Nullable private PlatformViewsController platformViewsController;
 
   @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
@@ -184,7 +216,12 @@ public class FlutterJNI {
   public void attachToNative(boolean isBackgroundView) {
     ensureRunningOnMainThread();
     ensureNotAttachedToNative();
-    nativePlatformViewId = nativeAttach(this, isBackgroundView);
+    nativePlatformViewId = performNativeAttach(this, isBackgroundView);
+  }
+
+  @VisibleForTesting
+  public long performNativeAttach(@NonNull FlutterJNI flutterJNI, boolean isBackgroundView) {
+    return nativeAttach(flutterJNI, isBackgroundView);
   }
 
   private native long nativeAttach(@NonNull FlutterJNI flutterJNI, boolean isBackgroundView);
@@ -251,7 +288,7 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @VisibleForTesting
   @UiThread
-  void onFirstFrame() {
+  public void onFirstFrame() {
     ensureRunningOnMainThread();
 
     for (FlutterUiDisplayListener listener : flutterUiDisplayListeners) {
@@ -285,6 +322,23 @@ public class FlutterJNI {
   }
 
   private native void nativeSurfaceCreated(long nativePlatformViewId, @NonNull Surface surface);
+
+  /**
+   * In hybrid composition, call this method when the {@link Surface} has changed.
+   *
+   * <p>In hybrid composition, the root surfaces changes from {@link
+   * android.view.SurfaceHolder#getSurface()} to {@link android.media.ImageReader#getSurface()} when
+   * a platform view is in the current frame.
+   */
+  @UiThread
+  public void onSurfaceWindowChanged(@NonNull Surface surface) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeSurfaceWindowChanged(nativePlatformViewId, surface);
+  }
+
+  private native void nativeSurfaceWindowChanged(
+      long nativePlatformViewId, @NonNull Surface surface);
 
   /**
    * Call this method when the {@link Surface} changes that was previously registered with {@link
@@ -395,6 +449,12 @@ public class FlutterJNI {
   private native void nativeDispatchPointerDataPacket(
       long nativePlatformViewId, @NonNull ByteBuffer buffer, int position);
   // ------ End Touch Interaction Support ---
+
+  @UiThread
+  public void setPlatformViewsController(@NonNull PlatformViewsController platformViewsController) {
+    ensureRunningOnMainThread();
+    this.platformViewsController = platformViewsController;
+  }
 
   // ------ Start Accessibility Support -----
   /**
@@ -625,7 +685,8 @@ public class FlutterJNI {
   // Called by native.
   // TODO(mattcarroll): determine if message is nonull or nullable
   @SuppressWarnings("unused")
-  private void handlePlatformMessage(
+  @VisibleForTesting
+  public void handlePlatformMessage(
       @NonNull final String channel, byte[] message, final int replyId) {
     if (platformMessageHandler != null) {
       platformMessageHandler.handleMessageFromDart(channel, message, replyId);
@@ -761,7 +822,141 @@ public class FlutterJNI {
       listener.onPreEngineRestart();
     }
   }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to position an overlay surface");
+    }
+    platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+  }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void onBeginFrame() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to begin the frame");
+    }
+    platformViewsController.onBeginFrame();
+  }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void onEndFrame() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to end the frame");
+    }
+    platformViewsController.onEndFrame();
+  }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public FlutterOverlaySurface createOverlaySurface() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to position an overlay surface");
+    }
+    return platformViewsController.createOverlaySurface();
+  }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void destroyOverlaySurfaces() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to destroy an overlay surface");
+    }
+    platformViewsController.destroyOverlaySurfaces();
+  }
   // ----- End Engine Lifecycle Support ----
+
+  // ----- Start Localization Support ----
+
+  /** Sets the localization plugin that is used in various localization methods. */
+  @UiThread
+  public void setLocalizationPlugin(@Nullable LocalizationPlugin localizationPlugin) {
+    ensureRunningOnMainThread();
+    this.localizationPlugin = localizationPlugin;
+  }
+
+  /** Invoked by native to obtain the results of Android's locale resolution algorithm. */
+  @SuppressWarnings("unused")
+  @VisibleForTesting
+  String[] computePlatformResolvedLocale(@NonNull String[] strings) {
+    if (localizationPlugin == null) {
+      return new String[0];
+    }
+    List<Locale> supportedLocales = new ArrayList<Locale>();
+    final int localeDataLength = 3;
+    for (int i = 0; i < strings.length; i += localeDataLength) {
+      String languageCode = strings[i + 0];
+      String countryCode = strings[i + 1];
+      String scriptCode = strings[i + 2];
+      // Convert to Locales via LocaleBuilder if available (API 24+) to include scriptCode.
+      if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+        Locale.Builder localeBuilder = new Locale.Builder();
+        if (!languageCode.isEmpty()) {
+          localeBuilder.setLanguage(languageCode);
+        }
+        if (!countryCode.isEmpty()) {
+          localeBuilder.setRegion(countryCode);
+        }
+        if (!scriptCode.isEmpty()) {
+          localeBuilder.setScript(scriptCode);
+        }
+        supportedLocales.add(localeBuilder.build());
+      } else {
+        // Pre-API 24, we fall back on scriptCode-less locales.
+        supportedLocales.add(new Locale(languageCode, countryCode));
+      }
+    }
+
+    Locale result = localizationPlugin.resolveNativeLocale(supportedLocales);
+
+    if (result == null) {
+      return new String[0];
+    }
+    String[] output = new String[localeDataLength];
+    output[0] = result.getLanguage();
+    output[1] = result.getCountry();
+    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+      output[2] = result.getScript();
+    } else {
+      output[2] = "";
+    }
+    return output;
+  }
+
+  // ----- End Localization Support ----
+
+  // @SuppressWarnings("unused")
+  @UiThread
+  public void onDisplayPlatformView(
+      int viewId,
+      int x,
+      int y,
+      int width,
+      int height,
+      int viewWidth,
+      int viewHeight,
+      FlutterMutatorsStack mutatorsStack) {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to position a platform view");
+    }
+    platformViewsController.onDisplayPlatformView(
+        viewId, x, y, width, height, viewWidth, viewHeight, mutatorsStack);
+  }
 
   // TODO(mattcarroll): determine if this is nonull or nullable
   @UiThread
@@ -773,6 +968,22 @@ public class FlutterJNI {
 
   // TODO(mattcarroll): determine if this is nonull or nullable
   private native Bitmap nativeGetBitmap(long nativePlatformViewId);
+
+  /**
+   * Notifies the Dart VM of a low memory event, or that the application is in a state such that now
+   * is an appropriate time to free resources, such as going to the background.
+   *
+   * <p>This is distinct from sending a SystemChannel message about low memory, which only notifies
+   * the running Flutter application.
+   */
+  @UiThread
+  public void notifyLowMemoryWarning() {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeNotifyLowMemoryWarning(nativePlatformViewId);
+  }
+
+  private native void nativeNotifyLowMemoryWarning(long nativePlatformViewId);
 
   private void ensureRunningOnMainThread() {
     if (Looper.myLooper() != mainLooper) {

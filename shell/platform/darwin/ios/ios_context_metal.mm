@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_context_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_context_metal.h"
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/common/persistent_cache.h"
-#include "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
 namespace flutter {
@@ -40,9 +40,11 @@ IOSContextMetal::IOSContextMetal() {
   const auto& context_options = CreateMetalGrContextOptions();
 
   // Skia expect arguments to `MakeMetal` transfer ownership of the reference in for release later
-  // when the GrContext is collected.
-  main_context_ = GrContext::MakeMetal([device_ retain], [main_queue_ retain], context_options);
-  resource_context_ = GrContext::MakeMetal([device_ retain], [main_queue_ retain], context_options);
+  // when the GrDirectContext is collected.
+  main_context_ =
+      GrDirectContext::MakeMetal([device_ retain], [main_queue_ retain], context_options);
+  resource_context_ =
+      GrDirectContext::MakeMetal([device_ retain], [main_queue_ retain], context_options);
 
   if (!main_context_ || !resource_context_) {
     FML_DLOG(ERROR) << "Could not create Skia Metal contexts.";
@@ -63,8 +65,6 @@ IOSContextMetal::IOSContextMetal() {
     return;
   }
   texture_cache_.Reset(texture_cache_raw);
-
-  is_valid_ = false;
 }
 
 IOSContextMetal::~IOSContextMetal() = default;
@@ -82,35 +82,23 @@ fml::scoped_nsprotocol<id<MTLCommandQueue>> IOSContextMetal::GetResourceCommandQ
   return main_queue_;
 }
 
-sk_sp<GrContext> IOSContextMetal::GetMainContext() const {
+sk_sp<GrDirectContext> IOSContextMetal::GetMainContext() const {
   return main_context_;
 }
 
-sk_sp<GrContext> IOSContextMetal::GetResourceContext() const {
+sk_sp<GrDirectContext> IOSContextMetal::GetResourceContext() const {
   return resource_context_;
 }
 
 // |IOSContext|
-sk_sp<GrContext> IOSContextMetal::CreateResourceContext() {
+sk_sp<GrDirectContext> IOSContextMetal::CreateResourceContext() {
   return resource_context_;
 }
 
 // |IOSContext|
-bool IOSContextMetal::MakeCurrent() {
+std::unique_ptr<GLContextResult> IOSContextMetal::MakeCurrent() {
   // This only makes sense for context that need to be bound to a specific thread.
-  return true;
-}
-
-// |IOSContext|
-bool IOSContextMetal::ResourceMakeCurrent() {
-  // This only makes sense for context that need to be bound to a specific thread.
-  return true;
-}
-
-// |IOSContext|
-bool IOSContextMetal::ClearCurrent() {
-  // This only makes sense for context that need to be bound to a specific thread.
-  return true;
+  return std::make_unique<GLContextDefaultResult>(true);
 }
 
 // |IOSContext|

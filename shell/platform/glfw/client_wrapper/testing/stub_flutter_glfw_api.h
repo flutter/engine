@@ -83,8 +83,14 @@ class StubFlutterGlfwApi {
     return nullptr;
   }
 
+  // Called for FlutterDesktopRunEngineEventLoopWithTimeout.
+  virtual void RunEngineEventLoopWithTimeout(uint32_t millisecond_timeout) {}
+
   // Called for FlutterDesktopShutDownEngine.
   virtual bool ShutDownEngine() { return true; }
+
+  // Called for FlutterDesktopPluginRegistrarEnableInputBlocking.
+  virtual void PluginRegistrarEnableInputBlocking(const char* channel) {}
 };
 
 // A test helper that owns a stub implementation, making it the test stub for

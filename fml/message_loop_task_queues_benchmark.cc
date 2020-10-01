@@ -2,18 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/fml/message_loop_task_queues.h"
+
 #include <cassert>
 #include <string>
 #include <thread>
 #include <vector>
+
 #include "flutter/benchmarking/benchmarking.h"
-#include "flutter/fml/message_loop_task_queues.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 
 namespace fml {
 namespace benchmarking {
 
-static void BM_RegisterAndGetTasks(benchmark::State& state) {
+static void BM_RegisterAndGetTasks(benchmark::State& state) {  // NOLINT
   while (state.KeepRunning()) {
     auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
 
@@ -39,10 +41,17 @@ static void BM_RegisterAndGetTasks(benchmark::State& state) {
         }
         tasks_registered.CountDown();
         tasks_registered.Wait();
-        std::vector<fml::closure> invocations;
-        task_queue->GetTasksToRunNow(TaskQueueId(task_runner_id),
-                                     fml::FlushType::kAll, invocations);
-        assert(invocations.size() == num_tasks_per_queue);
+        const auto now = fml::TimePoint::Now();
+        int num_invocations = 0;
+        for (;;) {
+          fml::closure invocation =
+              task_queue->GetNextTaskToRun(TaskQueueId(task_runner_id), now);
+          if (!invocation) {
+            break;
+          }
+          num_invocations++;
+        }
+        assert(num_invocations == num_tasks_per_queue);
         tasks_done.CountDown();
       });
     }

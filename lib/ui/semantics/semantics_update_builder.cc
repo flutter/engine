@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
 
+#include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkScalar.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -13,6 +14,7 @@
 namespace flutter {
 
 static void SemanticsUpdateBuilder_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&SemanticsUpdateBuilder::create, args);
 }
 

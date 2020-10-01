@@ -5,10 +5,15 @@
 // @dart = 2.6
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart';
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   test('creating elements works', () {
     final DomRenderer renderer = DomRenderer();
     final html.Element element = renderer.createElement('div');
@@ -75,29 +80,6 @@ void main() {
     final html.Element child = renderer.createElement('div', parent: element);
     renderer.detachElement(child);
     expect(element.children, isEmpty);
-  });
-  test('can reattach detached elements', () {
-    final DomRenderer renderer = DomRenderer();
-    final html.Element element = renderer.createElement('div');
-    final html.Element child = renderer.createElement('div', parent: element);
-    final html.Element otherChild =
-        renderer.createElement('foo', parent: element);
-    renderer.detachElement(child);
-    expect(element.children, hasLength(1));
-    renderer.attachBeforeElement(element, otherChild, child);
-    expect(element.children, hasLength(2));
-  });
-  test('insert two elements in the middle of a child list', () {
-    final DomRenderer renderer = DomRenderer();
-    final html.Element parent = renderer.createElement('div');
-    renderer.createElement('a', parent: parent);
-    final html.Element childD = renderer.createElement('d', parent: parent);
-    expect(parent.innerHtml, '<a></a><d></d>');
-    final html.Element childB = renderer.createElement('b', parent: parent);
-    final html.Element childC = renderer.createElement('c', parent: parent);
-    renderer.attachBeforeElement(parent, childD, childB);
-    renderer.attachBeforeElement(parent, childD, childC);
-    expect(parent.innerHtml, '<a></a><b></b><c></c><d></d>');
   });
 
   test('innerHeight/innerWidth are equal to visualViewport height and width',

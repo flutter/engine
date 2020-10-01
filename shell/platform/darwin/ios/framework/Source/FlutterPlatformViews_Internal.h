@@ -9,40 +9,44 @@
 #include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/shell.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
+#include "third_party/skia/include/core/SkPictureRecorder.h"
 
-// A UIView that is used as the parent for embedded UIViews.
+@class FlutterTouchInterceptingView;
+
+// A UIView that acts as a clipping mask for the |ChildClippingView|.
 //
-// This view has 2 roles:
-// 1. Delay or prevent touch events from arriving the embedded view.
-// 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
-@interface FlutterTouchInterceptingView : UIView
-- (instancetype)initWithEmbeddedView:(UIView*)embeddedView
-               flutterViewController:(UIViewController*)flutterViewController
-    gestureRecognizersBlockingPolicy:
-        (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy;
+// On the [UIView drawRect:] method, this view performs a series of clipping operations and sets the
+// alpha channel to the final resulting area to be 1; it also sets the "clipped out" area's alpha
+// channel to be 0.
+//
+// When a UIView sets a |FlutterClippingMaskView| as its `maskView`, the alpha channel of the UIView
+// is replaced with the alpha channel of the |FlutterClippingMaskView|.
+@interface FlutterClippingMaskView : UIView
 
-// Stop delaying any active touch sequence (and let it arrive the embedded view).
-- (void)releaseGesture;
+// Adds a clip rect operation to the queue.
+//
+// The `clipSkRect` is transformed with the `matrix` before adding to the queue.
+- (void)clipRect:(const SkRect&)clipSkRect matrix:(const CATransform3D&)matrix;
 
-// Prevent the touch sequence from ever arriving to the embedded view.
-- (void)blockGesture;
+// Adds a clip rrect operation to the queue.
+//
+// The `clipSkRRect` is transformed with the `matrix` before adding to the queue.
+- (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const CATransform3D&)matrix;
+
+// Adds a clip path operation to the queue.
+//
+// The `path` is transformed with the `matrix` before adding to the queue.
+- (void)clipPath:(const SkPath&)path matrix:(const CATransform3D&)matrix;
+
 @end
 
 // The parent view handles clipping to its subviews.
 @interface ChildClippingView : UIView
-
-// Performs the clipping based on the type.
-//
-// The `type` must be one of the 3: clip_rect, clip_rrect, clip_path.
-- (void)setClip:(flutter::MutatorType)type
-           rect:(const SkRect&)rect
-          rrect:(const SkRRect&)rrect
-           path:(const SkPath&)path;
 
 @end
 
@@ -77,7 +81,7 @@ struct FlutterPlatformViewLayer {
   // The GrContext that is currently used by the overlay surfaces.
   // We track this to know when the GrContext for the Flutter app has changed
   // so we can update the overlay with the new context.
-  GrContext* gr_context;
+  GrDirectContext* gr_context;
 };
 
 // This class isn't thread safe.
@@ -88,7 +92,7 @@ class FlutterPlatformViewLayerPool {
 
   // Gets a layer from the pool if available, or allocates a new one.
   // Finally, it marks the layer as used. That is, it increments `available_layer_index_`.
-  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrContext* gr_context,
+  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      std::shared_ptr<IOSContext> ios_context);
 
   // Gets the layers in the pool that aren't currently used.
@@ -123,9 +127,13 @@ class FlutterPlatformViewsController {
 
   ~FlutterPlatformViewsController();
 
+  fml::WeakPtr<flutter::FlutterPlatformViewsController> GetWeakPtr();
+
   void SetFlutterView(UIView* flutter_view);
 
   void SetFlutterViewController(UIViewController* flutter_view_controller);
+
+  UIViewController* getFlutterViewController();
 
   void RegisterViewFactory(
       NSObject<FlutterPlatformViewFactory>* factory,
@@ -161,14 +169,15 @@ class FlutterPlatformViewsController {
   // Discards all platform views instances and auxiliary resources.
   void Reset();
 
-  bool SubmitFrame(GrContext* gr_context,
+  bool SubmitFrame(GrDirectContext* gr_context,
                    std::shared_ptr<IOSContext> ios_context,
-                   SkCanvas* background_canvas);
+                   std::unique_ptr<SurfaceFrame> frame);
 
   // Invoked at the very end of a frame.
   // After invoking this method, nothing should happen on the current TaskRunner during the same
   // frame.
-  void EndFrame(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+  void EndFrame(bool should_resubmit_frame,
+                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
@@ -209,12 +218,11 @@ class FlutterPlatformViewsController {
   std::map<int64_t, int64_t> clip_count_;
   SkISize frame_size_;
 
-  // This is the number of frames the task runners will stay
-  // merged after a frame where we see a mutation to the embedded views.
-  // Note: This number was arbitrarily picked. The rationale being
-  // merge-unmerge are not zero cost operations. To account for cases
-  // like animating platform views, we picked it to be > 2, as we would
-  // want to avoid merge-unmerge during each frame with a mutation.
+  // The number of frames the rasterizer task runner will continue
+  // to run on the platform thread after no platform view is rendered.
+  //
+  // Note: this is an arbitrary number that attempts to account for cases
+  // where the platform view might be momentarily off the screen.
   static const int kDefaultMergedLeaseDuration = 10;
 
   // Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
@@ -235,6 +243,8 @@ class FlutterPlatformViewsController {
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies;
 
+  std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
+
   void OnCreate(FlutterMethodCall* call, FlutterResult& result);
   void OnDispose(FlutterMethodCall* call, FlutterResult& result);
   void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
@@ -242,26 +252,15 @@ class FlutterPlatformViewsController {
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
 
-  // This will return true after pre-roll if any of the embedded views
-  // have mutated for last layer tree.
-  bool HasPendingViewOperations();
+  // Returns true if there are embedded views in the scene at current frame
+  // Or there will be embedded views in the next frame.
+  // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
+  // Make this method check if there are pending view operations instead.
+  // Also rename it to `HasPendingViewOperations`.
+  bool HasPlatformViewThisOrNextFrame();
 
   // Traverse the `mutators_stack` and return the number of clip operations.
   int CountClips(const MutatorsStack& mutators_stack);
-
-  // Make sure that platform_view has exactly clip_count ChildClippingView ancestors.
-  //
-  // Existing ChildClippingViews are re-used. If there are currently more ChildClippingView
-  // ancestors than needed, the extra views are detached. If there are less ChildClippingView
-  // ancestors than needed, new ChildClippingViews will be added.
-  //
-  // If head_clip_view was attached as a subview to FlutterView, the head of the newly constructed
-  // ChildClippingViews chain is attached to FlutterView in the same position.
-  //
-  // Returns the new head of the clip views chain.
-  UIView* ReconstructClipViewsChain(int number_of_clips,
-                                    UIView* platform_view,
-                                    UIView* head_clip_view);
 
   // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
   // `ReconstructClipViewsChain`
@@ -280,13 +279,9 @@ class FlutterPlatformViewsController {
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
 
-  // Default to `false`.
-  // If `true`, gpu thread and platform thread should be merged during |EndFrame|.
-  // Always resets to `false` right after the threads are merged.
-  bool merge_threads_ = false;
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
   // the picture on the layer's canvas.
-  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrContext* gr_context,
+  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      std::shared_ptr<IOSContext> ios_context,
                                                      sk_sp<SkPicture> picture,
                                                      SkRect rect,
@@ -303,5 +298,24 @@ class FlutterPlatformViewsController {
 };
 
 }  // namespace flutter
+
+// A UIView that is used as the parent for embedded UIViews.
+//
+// This view has 2 roles:
+// 1. Delay or prevent touch events from arriving the embedded view.
+// 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
+@interface FlutterTouchInterceptingView : UIView
+- (instancetype)initWithEmbeddedView:(UIView*)embeddedView
+             platformViewsController:
+                 (fml::WeakPtr<flutter::FlutterPlatformViewsController>)platformViewsController
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy;
+
+// Stop delaying any active touch sequence (and let it arrive the embedded view).
+- (void)releaseGesture;
+
+// Prevent the touch sequence from ever arriving to the embedded view.
+- (void)blockGesture;
+@end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

@@ -11,6 +11,7 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_BACKGROUND_MODE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_CACHED_ENGINE_ID;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DESTROY_ENGINE_WITH_ACTIVITY;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_ENABLE_STATE_RESTORATION;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_INITIAL_ROUTE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.INITIAL_ROUTE_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.NORMAL_THEME_META_DATA_KEY;
@@ -41,9 +42,8 @@ import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
+import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.view.FlutterMain;
-import java.lang.reflect.Method;
 
 /**
  * {@code Activity} which displays a fullscreen Flutter UI.
@@ -63,6 +63,7 @@ import java.lang.reflect.Method;
  *   <li>Chooses Flutter's initial route.
  *   <li>Renders {@code Activity} transparently, if desired.
  *   <li>Offers hooks for subclasses to provide and configure a {@link FlutterEngine}.
+ *   <li>Save and restore instance state, see {@code #shouldRestoreAndSaveState()};
  * </ul>
  *
  * <p><strong>Dart entrypoint, initial route, and app bundle path</strong>
@@ -241,7 +242,7 @@ public class FlutterActivity extends Activity
      *
      * <p>{@code return new NewEngineIntentBuilder(MyFlutterActivity.class); }
      */
-    protected NewEngineIntentBuilder(@NonNull Class<? extends FlutterActivity> activityClass) {
+    public NewEngineIntentBuilder(@NonNull Class<? extends FlutterActivity> activityClass) {
       this.activityClass = activityClass;
     }
 
@@ -314,12 +315,12 @@ public class FlutterActivity extends Activity
      * {@code FlutterActivity}.
      *
      * <p>Subclasses of {@code FlutterActivity} should provide their own static version of {@link
-     * #withNewEngine()}, which returns an instance of {@code CachedEngineIntentBuilder} constructed
-     * with a {@code Class} reference to the {@code FlutterActivity} subclass, e.g.:
+     * #withCachedEngine()}, which returns an instance of {@code CachedEngineIntentBuilder}
+     * constructed with a {@code Class} reference to the {@code FlutterActivity} subclass, e.g.:
      *
      * <p>{@code return new CachedEngineIntentBuilder(MyFlutterActivity.class, engineId); }
      */
-    protected CachedEngineIntentBuilder(
+    public CachedEngineIntentBuilder(
         @NonNull Class<? extends FlutterActivity> activityClass, @NonNull String engineId) {
       this.activityClass = activityClass;
       this.cachedEngineId = engineId;
@@ -559,56 +560,102 @@ public class FlutterActivity extends Activity
   @Override
   protected void onStop() {
     super.onStop();
-    delegate.onStop();
+    if (stillAttachedForEvent("onStop")) {
+      delegate.onStop();
+    }
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
   }
 
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    delegate.onSaveInstanceState(outState);
+    if (stillAttachedForEvent("onSaveInstanceState")) {
+      delegate.onSaveInstanceState(outState);
+    }
+  }
+
+  /**
+   * Irreversibly release this activity's control of the {@link FlutterEngine} and its
+   * subcomponents.
+   *
+   * <p>Calling will disconnect this activity's view from the Flutter renderer, disconnect this
+   * activity from plugins' {@link ActivityControlSurface}, and stop system channel messages from
+   * this activity.
+   *
+   * <p>After calling, this activity should be disposed immediately and not be re-used.
+   */
+  private void release() {
+    delegate.onDestroyView();
+    delegate.onDetach();
+    delegate.release();
+    delegate = null;
+  }
+
+  @Override
+  public void detachFromFlutterEngine() {
+    Log.v(
+        TAG,
+        "FlutterActivity "
+            + this
+            + " connection to the engine "
+            + getFlutterEngine()
+            + " evicted by another attaching activity");
+    release();
   }
 
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    delegate.onDestroyView();
-    delegate.onDetach();
+    if (stillAttachedForEvent("onDestroy")) {
+      release();
+    }
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
   }
 
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    delegate.onActivityResult(requestCode, resultCode, data);
+    if (stillAttachedForEvent("onActivityResult")) {
+      delegate.onActivityResult(requestCode, resultCode, data);
+    }
   }
 
   @Override
   protected void onNewIntent(@NonNull Intent intent) {
     // TODO(mattcarroll): change G3 lint rule that forces us to call super
     super.onNewIntent(intent);
-    delegate.onNewIntent(intent);
+    if (stillAttachedForEvent("onNewIntent")) {
+      delegate.onNewIntent(intent);
+    }
   }
 
   @Override
   public void onBackPressed() {
-    delegate.onBackPressed();
+    if (stillAttachedForEvent("onBackPressed")) {
+      delegate.onBackPressed();
+    }
   }
 
   @Override
   public void onRequestPermissionsResult(
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (stillAttachedForEvent("onRequestPermissionsResult")) {
+      delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
   }
 
   @Override
   public void onUserLeaveHint() {
-    delegate.onUserLeaveHint();
+    if (stillAttachedForEvent("onUserLeaveHint")) {
+      delegate.onUserLeaveHint();
+    }
   }
 
   @Override
   public void onTrimMemory(int level) {
     super.onTrimMemory(level);
-    delegate.onTrimMemory(level);
+    if (stillAttachedForEvent("onTrimMemory")) {
+      delegate.onTrimMemory(level);
+    }
   }
 
   /**
@@ -752,12 +799,14 @@ public class FlutterActivity extends Activity
   }
 
   /**
-   * The path to the bundle that contains this Flutter app's resources, e.g., Dart code snapshots.
+   * A custom path to the bundle that contains this Flutter app's resources, e.g., Dart code
+   * snapshots.
    *
    * <p>When this {@code FlutterActivity} is run by Flutter tooling and a data String is included in
    * the launching {@code Intent}, that data String is interpreted as an app bundle path.
    *
-   * <p>By default, the app bundle path is obtained from {@link FlutterMain#findAppBundlePath()}.
+   * <p>When otherwise unspecified, the value is null, which defaults to the app bundle path defined
+   * in {@link FlutterLoader#findAppBundlePath()}.
    *
    * <p>Subclasses may override this method to return a custom app bundle path.
    */
@@ -774,9 +823,7 @@ public class FlutterActivity extends Activity
       }
     }
 
-    // Return the default app bundle path.
-    // TODO(mattcarroll): move app bundle resolution into an appropriately named class.
-    return FlutterMain.findAppBundlePath();
+    return null;
   }
 
   /**
@@ -870,7 +917,7 @@ public class FlutterActivity extends Activity
    */
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
-    registerPlugins(flutterEngine);
+    GeneratedPluginRegister.registerGeneratedPlugins(flutterEngine);
   }
 
   /**
@@ -907,7 +954,7 @@ public class FlutterActivity extends Activity
    * <p>Returning false from this method does not preclude a {@link FlutterEngine} from being
    * attaching to a {@code FlutterActivity} - it just prevents the attachment from happening
    * automatically. A developer can choose to subclass {@code FlutterActivity} and then invoke
-   * {@link ActivityControlSurface#attachToActivity(Activity, Lifecycle)} and {@link
+   * {@link ActivityControlSurface#attachToActivity(ExclusiveAppComponent, Lifecycle)} and {@link
    * ActivityControlSurface#detachFromActivity()} at the desired times.
    *
    * <p>One reason that a developer might choose to manually manage the relationship between the
@@ -949,33 +996,23 @@ public class FlutterActivity extends Activity
     // no-op
   }
 
-  /**
-   * Registers all plugins that an app lists in its pubspec.yaml.
-   *
-   * <p>The Flutter tool generates a class called GeneratedPluginRegistrant, which includes the code
-   * necessary to register every plugin in the pubspec.yaml with a given {@code FlutterEngine}. The
-   * GeneratedPluginRegistrant must be generated per app, because each app uses different sets of
-   * plugins. Therefore, the Android embedding cannot place a compile-time dependency on this
-   * generated class. This method uses reflection to attempt to locate the generated file and then
-   * use it at runtime.
-   *
-   * <p>This method fizzles if the GeneratedPluginRegistrant cannot be found or invoked. This
-   * situation should never occur, but if any eventuality comes up that prevents an app from using
-   * this behavior, that app can still write code that explicitly registers plugins.
-   */
-  private static void registerPlugins(@NonNull FlutterEngine flutterEngine) {
-    try {
-      Class<?> generatedPluginRegistrant =
-          Class.forName("io.flutter.plugins.GeneratedPluginRegistrant");
-      Method registrationMethod =
-          generatedPluginRegistrant.getDeclaredMethod("registerWith", FlutterEngine.class);
-      registrationMethod.invoke(null, flutterEngine);
-    } catch (Exception e) {
-      Log.w(
-          TAG,
-          "Tried to automatically register plugins with FlutterEngine ("
-              + flutterEngine
-              + ") but could not find and invoke the GeneratedPluginRegistrant.");
+  @Override
+  public boolean shouldRestoreAndSaveState() {
+    if (getIntent().hasExtra(EXTRA_ENABLE_STATE_RESTORATION)) {
+      return getIntent().getBooleanExtra(EXTRA_ENABLE_STATE_RESTORATION, false);
     }
+    if (getCachedEngineId() != null) {
+      // Prevent overwriting the existing state in a cached engine with restoration state.
+      return false;
+    }
+    return true;
+  }
+
+  private boolean stillAttachedForEvent(String event) {
+    if (delegate == null) {
+      Log.v(TAG, "FlutterActivity " + hashCode() + " " + event + " called after release.");
+      return false;
+    }
+    return true;
   }
 }

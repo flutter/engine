@@ -7,14 +7,17 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/painting/codec.h"
-#include "flutter/lib/ui/painting/frame_info.h"
+#include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "flutter/lib/ui/painting/image_descriptor.h"
 
 namespace flutter {
 
 class SingleFrameCodec : public Codec {
  public:
-  SingleFrameCodec(ImageDecoder::ImageDescriptor descriptor);
+  SingleFrameCodec(fml::RefPtr<ImageDescriptor> descriptor,
+                   uint32_t target_width,
+                   uint32_t target_height);
 
   ~SingleFrameCodec() override;
 
@@ -28,13 +31,15 @@ class SingleFrameCodec : public Codec {
   Dart_Handle getNextFrame(Dart_Handle args) override;
 
   // |DartWrappable|
-  size_t GetAllocationSize() override;
+  size_t GetAllocationSize() const override;
 
  private:
   enum class Status { kNew, kInProgress, kComplete };
   Status status_;
-  ImageDecoder::ImageDescriptor descriptor_;
-  fml::RefPtr<FrameInfo> cached_frame_;
+  fml::RefPtr<ImageDescriptor> descriptor_;
+  uint32_t target_width_;
+  uint32_t target_height_;
+  fml::RefPtr<CanvasImage> cached_image_;
   std::vector<DartPersistentValue> pending_callbacks_;
 
   FML_FRIEND_MAKE_REF_COUNTED(SingleFrameCodec);

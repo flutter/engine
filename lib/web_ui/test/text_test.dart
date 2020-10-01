@@ -5,6 +5,7 @@
 // @dart = 2.6
 import 'dart:html';
 
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/ui.dart';
@@ -12,10 +13,24 @@ import 'package:ui/src/engine.dart';
 
 import 'matchers.dart';
 
-void main() async {
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() async {
   const double baselineRatio = 1.1662499904632568;
 
   await webOnlyInitializeTestDomRenderer();
+
+  String fallback;
+  setUp(() {
+    if (operatingSystem == OperatingSystem.macOs ||
+        operatingSystem == OperatingSystem.iOs) {
+      fallback = '-apple-system, BlinkMacSystemFont';
+    } else {
+      fallback = 'Arial';
+    }
+  });
 
   test('predictably lays out a single-line paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -361,9 +376,9 @@ void main() async {
     expect(paragraph.plainText, isNull);
     final List<SpanElement> spans =
         paragraph.paragraphElement.querySelectorAll('span');
-    expect(spans[0].style.fontFamily, 'Ahem, Arial, sans-serif');
+    expect(spans[0].style.fontFamily, 'Ahem, $fallback, sans-serif');
     // The nested span here should not set it's family to default sans-serif.
-    expect(spans[1].style.fontFamily, 'Ahem, Arial, sans-serif');
+    expect(spans[1].style.fontFamily, 'Ahem, $fallback, sans-serif');
   },
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50771
       // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
@@ -383,7 +398,7 @@ void main() async {
 
     final EngineParagraph paragraph = builder.build();
     expect(paragraph.paragraphElement.style.fontFamily,
-        'SomeFont, Arial, sans-serif');
+        'SomeFont, $fallback, sans-serif');
 
     debugEmulateFlutterTesterEnvironment = true;
   },
@@ -422,7 +437,7 @@ void main() async {
 
     final EngineParagraph paragraph = builder.build();
     expect(paragraph.paragraphElement.style.fontFamily,
-        '"MyFont 2000", Arial, sans-serif');
+        '"MyFont 2000", $fallback, sans-serif');
 
     debugEmulateFlutterTesterEnvironment = true;
   },

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 // TODO(mdebbar): add other strategies.
@@ -25,6 +25,9 @@ abstract class LocationStrategy {
   /// The active path in the browser history.
   String get path;
 
+  /// The state of the current browser history entry.
+  dynamic get state;
+
   /// Given a path that's internal to the app, create the external url that
   /// will be used in the browser.
   String prepareExternalUrl(String internalUrl);
@@ -36,7 +39,7 @@ abstract class LocationStrategy {
   void replaceState(dynamic state, String title, String url);
 
   /// Go to the previous history entry.
-  Future<void> back();
+  Future<void> back({int count = 1});
 }
 
 /// This is an implementation of [LocationStrategy] that uses the browser URL's
@@ -73,11 +76,17 @@ class HashLocationStrategy extends LocationStrategy {
     // and if it is empty then it will stay empty
     String path = _platformLocation.hash ?? '';
     assert(path.isEmpty || path.startsWith('#'));
-    // Dart will complain if a call to substring is
-    // executed with a position value that exceeds the
-    // length of string.
-    return path.isEmpty ? path : path.substring(1);
+
+    // We don't want to return an empty string as a path. Instead we default to "/".
+    if (path.isEmpty || path == '#') {
+      return '/';
+    }
+    // At this point, we know [path] starts with "#" and isn't empty.
+    return path.substring(1);
   }
+
+  @override
+  dynamic get state => _platformLocation.state;
 
   @override
   String prepareExternalUrl(String internalUrl) {
@@ -101,8 +110,8 @@ class HashLocationStrategy extends LocationStrategy {
   }
 
   @override
-  Future<void> back() {
-    _platformLocation.back();
+  Future<void> back({int count = 1}) {
+    _platformLocation.back(count);
     return _waitForPopState();
   }
 
@@ -112,7 +121,7 @@ class HashLocationStrategy extends LocationStrategy {
   /// `history.back` transition.
   Future<void> _waitForPopState() {
     final Completer<void> completer = Completer<void>();
-    ui.VoidCallback unsubscribe;
+    late ui.VoidCallback unsubscribe;
     unsubscribe = onPopState((_) {
       unsubscribe();
       completer.complete();
@@ -138,11 +147,12 @@ abstract class PlatformLocation {
 
   String get pathname;
   String get search;
-  String get hash;
+  String? get hash;
+  dynamic get state;
 
   void pushState(dynamic state, String title, String url);
   void replaceState(dynamic state, String title, String url);
-  void back();
+  void back(int count);
 }
 
 /// An implementation of [PlatformLocation] for the browser.
@@ -173,13 +183,16 @@ class BrowserPlatformLocation extends PlatformLocation {
   }
 
   @override
-  String get pathname => _location.pathname;
+  String get pathname => _location.pathname!;
 
   @override
-  String get search => _location.search;
+  String get search => _location.search!;
 
   @override
   String get hash => _location.hash;
+
+  @override
+  dynamic get state => _history.state;
 
   @override
   void pushState(dynamic state, String title, String url) {
@@ -192,7 +205,7 @@ class BrowserPlatformLocation extends PlatformLocation {
   }
 
   @override
-  void back() {
-    _history.back();
+  void back(int count) {
+    _history.go(-count);
   }
 }

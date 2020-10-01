@@ -35,7 +35,8 @@ class Animator final {
     virtual void OnAnimatorNotifyIdle(int64_t deadline) = 0;
 
     virtual void OnAnimatorDraw(
-        fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) = 0;
+        fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+        fml::TimePoint frame_target_time) = 0;
 
     virtual void OnAnimatorDrawLastLayerTree() = 0;
   };
@@ -45,8 +46,6 @@ class Animator final {
            std::unique_ptr<VsyncWaiter> waiter);
 
   ~Animator();
-
-  float GetDisplayRefreshRate() const;
 
   void RequestFrame(bool regenerate_layer_tree = true);
 
@@ -97,6 +96,7 @@ class Animator final {
   std::shared_ptr<VsyncWaiter> waiter_;
 
   fml::TimePoint last_frame_begin_time_;
+  fml::TimePoint last_vsync_start_time_;
   fml::TimePoint last_frame_target_time_;
   int64_t dart_frame_deadline_;
   fml::RefPtr<LayerTreePipeline> layer_tree_pipeline_;

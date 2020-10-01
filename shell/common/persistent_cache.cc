@@ -4,12 +4,10 @@
 
 #include "flutter/shell/common/persistent_cache.h"
 
+#include <future>
 #include <memory>
 #include <string>
 #include <string_view>
-
-#include "rapidjson/document.h"
-#include "third_party/skia/include/utils/SkBase64.h"
 
 #include "flutter/fml/base32.h"
 #include "flutter/fml/file.h"
@@ -19,11 +17,14 @@
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/version/version.h"
+#include "rapidjson/document.h"
+#include "third_party/skia/include/utils/SkBase64.h"
 
 namespace flutter {
 
 std::string PersistentCache::cache_base_path_;
-std::string PersistentCache::asset_path_;
+
+std::shared_ptr<AssetManager> PersistentCache::asset_manager_;
 
 std::mutex PersistentCache::instance_mutex_;
 std::unique_ptr<PersistentCache> PersistentCache::gPersistentCache;
@@ -77,7 +78,48 @@ void PersistentCache::SetCacheDirectoryPath(std::string path) {
   cache_base_path_ = path;
 }
 
+bool PersistentCache::Purge() {
+  // Make sure that this is called after the worker task runner setup so all the
+  // file system modifications would happen on that single thread to avoid
+  // racing.
+  FML_CHECK(GetWorkerTaskRunner());
+
+  std::promise<bool> removed;
+  GetWorkerTaskRunner()->PostTask(
+      [&removed, cache_directory = cache_directory_]() {
+        if (cache_directory->is_valid()) {
+          FML_LOG(INFO) << "Purge persistent cache.";
+          removed.set_value(RemoveFilesInDirectory(*cache_directory));
+        } else {
+          removed.set_value(false);
+        }
+      });
+  return removed.get_future().get();
+}
+
 namespace {
+
+constexpr char kEngineComponent[] = "flutter_engine";
+
+static void FreeOldCacheDirectory(const fml::UniqueFD& cache_base_dir) {
+  fml::UniqueFD engine_dir =
+      fml::OpenDirectoryReadOnly(cache_base_dir, kEngineComponent);
+  if (!engine_dir.is_valid()) {
+    return;
+  }
+  fml::VisitFiles(engine_dir, [](const fml::UniqueFD& directory,
+                                 const std::string& filename) {
+    if (filename != GetFlutterEngineVersion()) {
+      auto dir = fml::OpenDirectory(directory, filename.c_str(), false,
+                                    fml::FilePermission::kReadWrite);
+      if (dir.is_valid()) {
+        fml::RemoveDirectoryRecursively(directory, filename.c_str());
+      }
+    }
+    return true;
+  });
+}
+
 static std::shared_ptr<fml::UniqueFD> MakeCacheDirectory(
     const std::string& global_cache_base_path,
     bool read_only,
@@ -91,8 +133,9 @@ static std::shared_ptr<fml::UniqueFD> MakeCacheDirectory(
   }
 
   if (cache_base_dir.is_valid()) {
+    FreeOldCacheDirectory(cache_base_dir);
     std::vector<std::string> components = {
-        "flutter_engine", GetFlutterEngineVersion(), "skia", GetSkiaVersion()};
+        kEngineComponent, GetFlutterEngineVersion(), "skia", GetSkiaVersion()};
     if (cache_sksl) {
       components.push_back(PersistentCache::kSkSLSubdirName);
     }
@@ -146,19 +189,23 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
   // However, we'd like to continue visit the asset dir even if this persistent
   // cache is invalid.
   if (IsValid()) {
-    fml::VisitFiles(*sksl_cache_directory_, visitor);
+    // In case `rewinddir` doesn't work reliably, load SkSLs from a freshly
+    // opened directory (https://github.com/flutter/flutter/issues/65258).
+    fml::UniqueFD fresh_dir =
+        fml::OpenDirectoryReadOnly(*cache_directory_, kSkSLSubdirName);
+    if (fresh_dir.is_valid()) {
+      fml::VisitFiles(fresh_dir, visitor);
+    }
   }
 
-  fml::UniqueFD root_asset_dir = fml::OpenDirectory(asset_path_.c_str(), false,
-                                                    fml::FilePermission::kRead);
-  fml::UniqueFD sksl_asset_dir =
-      fml::OpenDirectoryReadOnly(root_asset_dir, kSkSLSubdirName);
-  auto sksl_asset_file = fml::OpenFileReadOnly(sksl_asset_dir, kAssetFileName);
-  if (!sksl_asset_file.is_valid()) {
-    FML_LOG(INFO) << "No sksl asset file found.";
+  std::unique_ptr<fml::Mapping> mapping = nullptr;
+  if (asset_manager_ != nullptr) {
+    mapping = asset_manager_->GetAsMapping(kAssetFileName);
+  }
+  if (mapping == nullptr) {
+    FML_LOG(INFO) << "No sksl asset found.";
   } else {
     FML_LOG(INFO) << "Found sksl asset. Loading SkSLs from it...";
-    auto mapping = std::make_unique<fml::FileMapping>(sksl_asset_file);
     rapidjson::Document json_doc;
     rapidjson::ParseResult parse_result =
         json_doc.Parse(reinterpret_cast<const char*>(mapping->GetMapping()),
@@ -224,8 +271,6 @@ sk_sp<SkData> PersistentCache::load(const SkData& key) {
   auto result = PersistentCache::LoadFile(*cache_directory_, file_name);
   if (result != nullptr) {
     TRACE_EVENT0("flutter", "PersistentCacheLoadHit");
-  } else {
-    FML_LOG(INFO) << "PersistentCache::load failed: " << file_name;
   }
   return result;
 }
@@ -334,9 +379,9 @@ fml::RefPtr<fml::TaskRunner> PersistentCache::GetWorkerTaskRunner() const {
   return worker;
 }
 
-void PersistentCache::UpdateAssetPath(const std::string& path) {
-  FML_LOG(INFO) << "PersistentCache::UpdateAssetPath: " << path;
-  asset_path_ = path;
+void PersistentCache::SetAssetManager(std::shared_ptr<AssetManager> value) {
+  TRACE_EVENT_INSTANT0("flutter", "PersistentCache::SetAssetManager");
+  asset_manager_ = value;
 }
 
 }  // namespace flutter

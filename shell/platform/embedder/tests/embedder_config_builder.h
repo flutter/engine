@@ -9,8 +9,7 @@
 #include "flutter/fml/unique_object.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test.h"
-#include "flutter/shell/platform/embedder/tests/embedder_test_compositor.h"
-#include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_context_software.h"
 
 namespace flutter {
 namespace testing {
@@ -31,13 +30,15 @@ using UniqueEngine = fml::UniqueObject<FlutterEngine, UniqueEngineTraits>;
 class EmbedderConfigBuilder {
  public:
   enum class InitializationPreference {
-    kInitialize,
+    kSnapshotsInitialize,
+    kAOTDataInitialize,
+    kMultiAOTInitialize,
     kNoInitialize,
   };
 
   EmbedderConfigBuilder(EmbedderTestContext& context,
                         InitializationPreference preference =
-                            InitializationPreference::kInitialize);
+                            InitializationPreference::kSnapshotsInitialize);
 
   ~EmbedderConfigBuilder();
 
@@ -47,13 +48,29 @@ class EmbedderConfigBuilder {
 
   void SetOpenGLRendererConfig(SkISize surface_size);
 
+  // Used to explicitly set an `open_gl.fbo_callback`. Using this method will
+  // cause your test to fail since the ctor for this class sets
+  // `open_gl.fbo_callback_with_frame_info`. This method exists as a utility to
+  // explicitly test this behavior.
+  void SetOpenGLFBOCallBack();
+
+  // Used to explicitly set an `open_gl.present`. Using this method will cause
+  // your test to fail since the ctor for this class sets
+  // `open_gl.present_with_info`. This method exists as a utility to explicitly
+  // test this behavior.
+  void SetOpenGLPresentCallBack();
+
   void SetAssetsPath();
 
   void SetSnapshots();
 
+  void SetAOTDataElf();
+
   void SetIsolateCreateCallbackHook();
 
   void SetSemanticsCallbackHooks();
+
+  void SetLocalizationCallbackHooks();
 
   void SetDartEntrypoint(std::string entrypoint);
 
@@ -70,6 +87,9 @@ class EmbedderConfigBuilder {
 
   FlutterCompositor& GetCompositor();
 
+  void SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType type);
+
   UniqueEngine LaunchEngine() const;
 
   UniqueEngine InitializeEngine() const;
@@ -79,7 +99,9 @@ class EmbedderConfigBuilder {
   FlutterProjectArgs project_args_ = {};
   FlutterRendererConfig renderer_config_ = {};
   FlutterSoftwareRendererConfig software_renderer_config_ = {};
+#ifdef SHELL_ENABLE_GL
   FlutterOpenGLRendererConfig opengl_renderer_config_ = {};
+#endif
   std::string dart_entrypoint_;
   FlutterCustomTaskRunners custom_task_runners_ = {};
   FlutterCompositor compositor_ = {};

@@ -21,28 +21,7 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
       shadow_color_(shadow_color),
       elevation_(elevation),
       path_(path),
-      isRect_(false),
-      clip_behavior_(clip_behavior) {
-  SkRect rect;
-  if (path.isRect(&rect)) {
-    isRect_ = true;
-    frameRRect_ = SkRRect::MakeRect(rect);
-  } else if (path.isRRect(&frameRRect_)) {
-    isRect_ = frameRRect_.isRect();
-  } else if (path.isOval(&rect)) {
-    // isRRect returns false for ovals, so we need to explicitly check isOval
-    // as well.
-    frameRRect_ = SkRRect::MakeOval(rect);
-  } else {
-    // Scenic currently doesn't provide an easy way to create shapes from
-    // arbitrary paths.
-    // For shapes that cannot be represented as a rounded rectangle we
-    // default to use the bounding rectangle.
-    // TODO(amirh): fix this once we have a way to create a Scenic shape from
-    // an SkPath.
-    frameRRect_ = SkRRect::MakeRect(path.getBounds());
-  }
-}
+      clip_behavior_(clip_behavior) {}
 
 void PhysicalShapeLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
@@ -50,24 +29,8 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
 
-  context->total_elevation += elevation_;
-  total_elevation_ = context->total_elevation;
-#if defined(OS_FUCHSIA)
-  child_layer_exists_below_ = context->child_scene_layer_exists_below;
-  context->child_scene_layer_exists_below = false;
-#endif
-
   SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
-
-#if defined(OS_FUCHSIA)
-  if (child_layer_exists_below_) {
-    set_needs_system_composite(true);
-  }
-  context->child_scene_layer_exists_below =
-      context->child_scene_layer_exists_below || child_layer_exists_below_;
-#endif
-  context->total_elevation -= elevation_;
 
   if (elevation_ == 0) {
     set_paint_bounds(path_.getBounds());
@@ -79,62 +42,6 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
                                          context->frame_device_pixel_ratio));
   }
 }
-
-#if defined(OS_FUCHSIA)
-
-void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
-  FML_DCHECK(needs_system_composite());
-  TRACE_EVENT0("flutter", "PhysicalShapeLayer::UpdateScene");
-
-  // If there is embedded Fuchsia content in the scene (a ChildSceneLayer),
-  // PhysicalShapeLayers that appear above the embedded content will be turned
-  // into their own Scenic layers.
-  if (child_layer_exists_below_) {
-    float global_scenic_elevation =
-        context.GetGlobalElevationForNextScenicLayer();
-    float local_scenic_elevation =
-        global_scenic_elevation - context.scenic_elevation();
-    float z_translation = -local_scenic_elevation;
-
-    // Retained rendering: speedup by reusing a retained entity node if
-    // possible. When an entity node is reused, no paint layer is added to the
-    // frame so we won't call PhysicalShapeLayer::Paint.
-    LayerRasterCacheKey key(unique_id(), context.Matrix());
-    if (context.HasRetainedNode(key)) {
-      TRACE_EVENT_INSTANT0("flutter", "retained layer cache hit");
-      scenic::EntityNode* retained_node = context.GetRetainedNode(key);
-      FML_DCHECK(context.top_entity());
-      FML_DCHECK(retained_node->session() == context.session());
-
-      // Re-adjust the elevation.
-      retained_node->SetTranslation(0.f, 0.f, z_translation);
-
-      context.top_entity()->entity_node().AddChild(*retained_node);
-      return;
-    }
-
-    TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
-    // If we can't find an existing retained surface, create one.
-    SceneUpdateContext::Frame frame(context, frameRRect_, SK_ColorTRANSPARENT,
-                                    SkScalarRoundToInt(context.alphaf() * 255),
-                                    "flutter::PhysicalShapeLayer",
-                                    z_translation, this);
-
-    frame.AddPaintLayer(this);
-
-    // Node: UpdateSceneChildren needs to be called here so that |frame| is
-    // still in scope (and therefore alive) while UpdateSceneChildren is being
-    // called.
-    float scenic_elevation = context.scenic_elevation();
-    context.set_scenic_elevation(scenic_elevation + local_scenic_elevation);
-    ContainerLayer::UpdateSceneChildren(context);
-    context.set_scenic_elevation(scenic_elevation);
-  } else {
-    ContainerLayer::UpdateSceneChildren(context);
-  }
-}
-
-#endif  // defined(OS_FUCHSIA)
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
@@ -180,6 +87,12 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 
   context.internal_nodes_canvas->restoreToCount(saveCount);
+
+  if (UsesSaveLayer()) {
+    if (context.checkerboard_offscreen_layers) {
+      DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
+    }
+  }
 }
 
 SkRect PhysicalShapeLayer::ComputeShadowBounds(const SkRect& bounds,

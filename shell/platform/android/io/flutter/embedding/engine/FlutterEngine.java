@@ -7,6 +7,7 @@ package io.flutter.embedding.engine;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -21,11 +22,14 @@ import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
+import io.flutter.embedding.engine.systemchannels.RestorationChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.lang.reflect.Method;
 import java.util.HashSet;
@@ -70,14 +74,17 @@ public class FlutterEngine {
   @NonNull private final FlutterJNI flutterJNI;
   @NonNull private final FlutterRenderer renderer;
   @NonNull private final DartExecutor dartExecutor;
-  @NonNull private final FlutterEnginePluginRegistry pluginRegistry;
+  @NonNull private final FlutterEngineConnectionRegistry pluginRegistry;
+  @NonNull private final LocalizationPlugin localizationPlugin;
 
   // System channels.
   @NonNull private final AccessibilityChannel accessibilityChannel;
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final LifecycleChannel lifecycleChannel;
   @NonNull private final LocalizationChannel localizationChannel;
+  @NonNull private final MouseCursorChannel mouseCursorChannel;
   @NonNull private final NavigationChannel navigationChannel;
+  @NonNull private final RestorationChannel restorationChannel;
   @NonNull private final PlatformChannel platformChannel;
   @NonNull private final SettingsChannel settingsChannel;
   @NonNull private final SystemChannel systemChannel;
@@ -100,6 +107,7 @@ public class FlutterEngine {
           }
 
           platformViewsController.onPreEngineRestart();
+          restorationChannel.clearData();
         }
       };
 
@@ -124,7 +132,8 @@ public class FlutterEngine {
    * <p>In order to pass Dart VM initialization arguments (see {@link
    * io.flutter.embedding.engine.FlutterShellArgs}) when creating the VM, manually set the
    * initialization arguments by calling {@link FlutterLoader#startInitialization(Context)} and
-   * {@link FlutterLoader#ensureInitializationComplete(Context, String[])}.
+   * {@link FlutterLoader#ensureInitializationComplete(Context, String[])} before constructing the
+   * engine.
    */
   public FlutterEngine(@NonNull Context context) {
     this(context, null);
@@ -136,7 +145,7 @@ public class FlutterEngine {
    * <p>If the Dart VM has already started, the given arguments will have no effect.
    */
   public FlutterEngine(@NonNull Context context, @Nullable String[] dartVmArgs) {
-    this(context, FlutterLoader.getInstance(), new FlutterJNI(), dartVmArgs, true);
+    this(context, /* flutterLoader */ null, new FlutterJNI(), dartVmArgs, true);
   }
 
   /**
@@ -151,10 +160,43 @@ public class FlutterEngine {
       boolean automaticallyRegisterPlugins) {
     this(
         context,
-        FlutterLoader.getInstance(),
+        /* flutterLoader */ null,
         new FlutterJNI(),
         dartVmArgs,
         automaticallyRegisterPlugins);
+  }
+
+  /**
+   * Same as {@link #FlutterEngine(Context, String[], boolean)} with added support for configuring
+   * whether the engine will receive restoration data.
+   *
+   * <p>The {@code waitForRestorationData} flag controls whether the engine delays responding to
+   * requests from the framework for restoration data until that data has been provided to the
+   * engine via {@code RestorationChannel.setRestorationData(byte[] data)}. If the flag is false,
+   * the framework may temporarily initialize itself to default values before the restoration data
+   * has been made available to the engine. Setting {@code waitForRestorationData} to true avoids
+   * this extra work by delaying initialization until the data is available.
+   *
+   * <p>When {@code waitForRestorationData} is set, {@code
+   * RestorationChannel.setRestorationData(byte[] data)} must be called at a later point in time. If
+   * it later turns out that no restoration data is available to restore the framework from, that
+   * method must still be called with null as an argument to indicate "no data".
+   *
+   * <p>If the framework never requests the restoration data, this flag has no effect.
+   */
+  public FlutterEngine(
+      @NonNull Context context,
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins,
+      boolean waitForRestorationData) {
+    this(
+        context,
+        /* flutterLoader */ null,
+        new FlutterJNI(),
+        new PlatformViewsController(),
+        dartVmArgs,
+        automaticallyRegisterPlugins,
+        waitForRestorationData);
   }
 
   /**
@@ -166,7 +208,7 @@ public class FlutterEngine {
    */
   public FlutterEngine(
       @NonNull Context context,
-      @NonNull FlutterLoader flutterLoader,
+      @Nullable FlutterLoader flutterLoader,
       @NonNull FlutterJNI flutterJNI) {
     this(context, flutterLoader, flutterJNI, null, true);
   }
@@ -179,7 +221,7 @@ public class FlutterEngine {
    */
   public FlutterEngine(
       @NonNull Context context,
-      @NonNull FlutterLoader flutterLoader,
+      @Nullable FlutterLoader flutterLoader,
       @NonNull FlutterJNI flutterJNI,
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins) {
@@ -192,43 +234,74 @@ public class FlutterEngine {
         automaticallyRegisterPlugins);
   }
 
-  /** Fully configurable {@code FlutterEngine} constructor. */
+  /**
+   * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[], boolean)}, plus the
+   * ability to provide a custom {@code PlatformViewsController}.
+   */
   public FlutterEngine(
       @NonNull Context context,
-      @NonNull FlutterLoader flutterLoader,
+      @Nullable FlutterLoader flutterLoader,
       @NonNull FlutterJNI flutterJNI,
       @NonNull PlatformViewsController platformViewsController,
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins) {
-    this.flutterJNI = flutterJNI;
-    flutterLoader.startInitialization(context.getApplicationContext());
-    flutterLoader.ensureInitializationComplete(context, dartVmArgs);
+    this(
+        context,
+        flutterLoader,
+        flutterJNI,
+        platformViewsController,
+        dartVmArgs,
+        automaticallyRegisterPlugins,
+        false);
+  }
 
-    flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
-    attachToJni();
-
+  /** Fully configurable {@code FlutterEngine} constructor. */
+  public FlutterEngine(
+      @NonNull Context context,
+      @Nullable FlutterLoader flutterLoader,
+      @NonNull FlutterJNI flutterJNI,
+      @NonNull PlatformViewsController platformViewsController,
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins,
+      boolean waitForRestorationData) {
     this.dartExecutor = new DartExecutor(flutterJNI, context.getAssets());
     this.dartExecutor.onAttachedToJNI();
-
-    // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if
-    // possible.
-    this.renderer = new FlutterRenderer(flutterJNI);
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
+    mouseCursorChannel = new MouseCursorChannel(dartExecutor);
     navigationChannel = new NavigationChannel(dartExecutor);
     platformChannel = new PlatformChannel(dartExecutor);
+    restorationChannel = new RestorationChannel(dartExecutor, waitForRestorationData);
     settingsChannel = new SettingsChannel(dartExecutor);
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
+
+    this.localizationPlugin = new LocalizationPlugin(context, localizationChannel);
+
+    this.flutterJNI = flutterJNI;
+    if (flutterLoader == null) {
+      flutterLoader = FlutterInjector.instance().flutterLoader();
+    }
+    flutterLoader.startInitialization(context.getApplicationContext());
+    flutterLoader.ensureInitializationComplete(context, dartVmArgs);
+
+    flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
+    flutterJNI.setPlatformViewsController(platformViewsController);
+    flutterJNI.setLocalizationPlugin(localizationPlugin);
+    attachToJni();
+
+    // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if
+    // possible.
+    this.renderer = new FlutterRenderer(flutterJNI);
 
     this.platformViewsController = platformViewsController;
     this.platformViewsController.onAttachedToJNI();
 
     this.pluginRegistry =
-        new FlutterEnginePluginRegistry(context.getApplicationContext(), this, flutterLoader);
+        new FlutterEngineConnectionRegistry(context.getApplicationContext(), this, flutterLoader);
 
     if (automaticallyRegisterPlugins) {
       registerPlugins();
@@ -377,6 +450,18 @@ public class FlutterEngine {
   }
 
   /**
+   * System channel to exchange restoration data between framework and engine.
+   *
+   * <p>The engine can obtain the current restoration data from the framework via this channel to
+   * store it on disk and - when the app is relaunched - provide the stored data back to the
+   * framework to recreate the original state of the app.
+   */
+  @NonNull
+  public RestorationChannel getRestorationChannel() {
+    return restorationChannel;
+  }
+
+  /**
    * System channel that sends platform/user settings from Android to Flutter, e.g., time format,
    * scale factor, etc.
    */
@@ -393,6 +478,12 @@ public class FlutterEngine {
 
   /** System channel that sends and receives text input requests and state. */
   @NonNull
+  public MouseCursorChannel getMouseCursorChannel() {
+    return mouseCursorChannel;
+  }
+
+  /** System channel that sends and receives text input requests and state. */
+  @NonNull
   public TextInputChannel getTextInputChannel() {
     return textInputChannel;
   }
@@ -403,6 +494,12 @@ public class FlutterEngine {
   @NonNull
   public PluginRegistry getPlugins() {
     return pluginRegistry;
+  }
+
+  /** The LocalizationPlugin this FlutterEngine created. */
+  @NonNull
+  public LocalizationPlugin getLocalizationPlugin() {
+    return localizationPlugin;
   }
 
   /**

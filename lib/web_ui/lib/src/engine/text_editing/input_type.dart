@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 /// Various types of inputs used in text fields.
@@ -14,10 +14,10 @@ part of engine;
 abstract class EngineInputType {
   const EngineInputType();
 
-  static EngineInputType fromName(String name) {
+  static EngineInputType fromName(String name, {bool isDecimal = false}) {
     switch (name) {
       case 'TextInputType.number':
-        return number;
+        return isDecimal ? decimal : number;
       case 'TextInputType.phone':
         return phone;
       case 'TextInputType.emailAddress':
@@ -26,7 +26,6 @@ abstract class EngineInputType {
         return url;
       case 'TextInputType.multiline':
         return multiline;
-
       case 'TextInputType.text':
       default:
         return text;
@@ -38,6 +37,9 @@ abstract class EngineInputType {
 
   /// Numeric input type.
   static const NumberInputType number = NumberInputType();
+
+  /// Decimal input type.
+  static const DecimalInputType decimal = DecimalInputType();
 
   /// Phone number input type.
   static const PhoneInputType phone = PhoneInputType();
@@ -58,7 +60,7 @@ abstract class EngineInputType {
   ///
   /// For various `inputmode` values supported by browsers, see:
   /// <https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inputmode>.
-  String get inputmodeAttribute;
+  String? get inputmodeAttribute;
 
   /// Whether this input type allows the "Enter" key to submit the input action.
   bool get submitActionOnEnter => true;
@@ -76,7 +78,7 @@ abstract class EngineInputType {
     // keyboard shows up.
     if (operatingSystem == OperatingSystem.iOs ||
         operatingSystem == OperatingSystem.android) {
-      domElement.setAttribute('inputmode', inputmodeAttribute);
+      domElement.setAttribute('inputmode', inputmodeAttribute!);
     }
   }
 }
@@ -90,11 +92,24 @@ class TextInputType extends EngineInputType {
 }
 
 /// Numeric input type.
+///
+/// Input keyboard with only the digits 0–9.
 class NumberInputType extends EngineInputType {
   const NumberInputType();
 
   @override
   final String inputmodeAttribute = 'numeric';
+}
+
+/// Decimal input type.
+///
+/// Input keyboard with containing the digits 0–9 and a decimal separator.
+/// Seperator can be `.`, `,` depending on the locale.
+class DecimalInputType extends EngineInputType {
+  const DecimalInputType();
+
+  @override
+  final String inputmodeAttribute = 'decimal';
 }
 
 /// Phone number input type.
@@ -126,7 +141,7 @@ class MultilineInputType extends EngineInputType {
   const MultilineInputType();
 
   @override
-  final String inputmodeAttribute = null;
+  final String? inputmodeAttribute = null;
 
   @override
   bool get submitActionOnEnter => false;

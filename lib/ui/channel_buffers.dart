@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
+
 part of dart.ui;
 
 /// A saved platform message for a channel with its callback.
@@ -14,8 +15,8 @@ class _StoredMessage {
   _StoredMessage(this._data, this._callback);
 
   /// Representation of the message's payload.
-  final ByteData _data;
-  ByteData get data => _data;
+  final ByteData? _data;
+  ByteData? get data => _data;
 
   /// Callback to be called when the message is received.
   final PlatformMessageResponseCallback _callback;
@@ -24,7 +25,7 @@ class _StoredMessage {
 
 /// A fixed-size circular queue.
 class _RingBuffer<T> {
-  /// The underlying data for the RingBuffer.  ListQueue's dynamically resize,
+  /// The underlying data for the RingBuffer.  ListQueues dynamically resize,
   /// [_RingBuffer]s do not.
   final collection.ListQueue<T> _queue;
 
@@ -43,7 +44,7 @@ class _RingBuffer<T> {
 
   /// A callback that get's called when items are ejected from the [_RingBuffer]
   /// by way of an overflow or a resizing.
-  Function(T) _dropItemCallback;
+  Function(T)? _dropItemCallback;
   set dropItemCallback(Function(T) callback) {
     _dropItemCallback = callback;
   }
@@ -60,7 +61,7 @@ class _RingBuffer<T> {
   }
 
   /// Returns null when empty.
-  T pop() {
+  T? pop() {
     return _queue.isEmpty ? null : _queue.removeFirst();
   }
 
@@ -70,9 +71,7 @@ class _RingBuffer<T> {
     int result = 0;
     while (_queue.length > lengthLimit) {
       final T item = _queue.removeFirst();
-      if (_dropItemCallback != null) {
-        _dropItemCallback(item);
-      }
+      _dropItemCallback?.call(item);
       result += 1;
     }
     return result;
@@ -86,7 +85,7 @@ class _RingBuffer<T> {
 }
 
 /// Signature for [ChannelBuffers.drain].
-typedef DrainChannelCallback = Future<void> Function(ByteData, PlatformMessageResponseCallback);
+typedef DrainChannelCallback = Future<void> Function(ByteData?, PlatformMessageResponseCallback);
 
 /// Storage of channel messages until the channels are completely routed,
 /// i.e. when a message handler is attached to the channel on the framework side.
@@ -116,8 +115,8 @@ class ChannelBuffers {
   static const String kControlChannelName = 'dev.flutter/channel-buffers';
 
   /// A mapping between a channel name and its associated [_RingBuffer].
-  final Map<String, _RingBuffer<_StoredMessage>> _messages =
-    <String, _RingBuffer<_StoredMessage>>{};
+  final Map<String, _RingBuffer<_StoredMessage>?> _messages =
+    <String, _RingBuffer<_StoredMessage>?>{};
 
   _RingBuffer<_StoredMessage> _makeRingBuffer(int size) {
     final _RingBuffer<_StoredMessage> result = _RingBuffer<_StoredMessage>(size);
@@ -130,8 +129,8 @@ class ChannelBuffers {
   }
 
   /// Returns true on overflow.
-  bool push(String channel, ByteData data, PlatformMessageResponseCallback callback) {
-    _RingBuffer<_StoredMessage> queue = _messages[channel];
+  bool push(String channel, ByteData? data, PlatformMessageResponseCallback callback) {
+    _RingBuffer<_StoredMessage>? queue = _messages[channel];
     if (queue == null) {
       queue = _makeRingBuffer(kDefaultBufferSize);
       _messages[channel] = queue;
@@ -150,15 +149,15 @@ class ChannelBuffers {
   }
 
   /// Returns null on underflow.
-  _StoredMessage _pop(String channel) {
-    final _RingBuffer<_StoredMessage> queue = _messages[channel];
-    final _StoredMessage result = queue?.pop();
+  _StoredMessage? _pop(String channel) {
+    final _RingBuffer<_StoredMessage>? queue = _messages[channel];
+    final _StoredMessage? result = queue?.pop();
     return result;
   }
 
   bool _isEmpty(String channel) {
-    final _RingBuffer<_StoredMessage> queue = _messages[channel];
-    return (queue == null) ? true : queue.isEmpty;
+    final _RingBuffer<_StoredMessage>? queue = _messages[channel];
+    return queue == null || queue.isEmpty;
   }
 
   /// Changes the capacity of the queue associated with the given channel.
@@ -166,7 +165,7 @@ class ChannelBuffers {
   /// This could result in the dropping of messages if newSize is less
   /// than the current length of the queue.
   void _resize(String channel, int newSize) {
-    _RingBuffer<_StoredMessage> queue = _messages[channel];
+    _RingBuffer<_StoredMessage>? queue = _messages[channel];
     if (queue == null) {
       queue = _makeRingBuffer(newSize);
       _messages[channel] = queue;
@@ -184,7 +183,7 @@ class ChannelBuffers {
   /// (i.e. when a message handler is setup in the framework).
   Future<void> drain(String channel, DrainChannelCallback callback) async {
     while (!_isEmpty(channel)) {
-      final _StoredMessage message = _pop(channel);
+      final _StoredMessage message = _pop(channel)!;
       await callback(message.data, message.callback);
     }
   }
@@ -214,7 +213,7 @@ class ChannelBuffers {
   }
 }
 
-/// [ChannelBuffer]s that allow the storage of messages between the
+/// [ChannelBuffers] that allow the storage of messages between the
 /// Engine and the Framework.  Typically messages that can't be delivered
 /// are stored here until the Framework is able to process them.
 ///

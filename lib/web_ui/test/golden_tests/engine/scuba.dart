@@ -47,11 +47,13 @@ class EngineScubaTester {
     String fileName, {
     ui.Rect region,
     double maxDiffRatePercent,
+    bool write = false,
   }) async {
     await matchGoldenFile(
       '$fileName.png',
       region: region ?? viewportRegion,
       maxDiffRatePercent: maxDiffRatePercent,
+      write: write,
     );
   }
 
@@ -64,6 +66,7 @@ class EngineScubaTester {
     String fileName, {
     ui.Rect region,
     double maxDiffRatePercent,
+    bool write = false,
   }) async {
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');
@@ -78,6 +81,7 @@ class EngineScubaTester {
         screenshotName,
         region: region,
         maxDiffRatePercent: maxDiffRatePercent,
+        write: write,
       );
     } finally {
       // The page is reused across tests, so remove the element after taking the
@@ -91,7 +95,7 @@ typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 
 /// Runs the given test [body] with each type of canvas.
 void testEachCanvas(String description, CanvasTest body,
-    {double maxDiffRate, bool bSkipHoudini = false}) {
+    {double maxDiffRate}) {
   const ui.Rect bounds = ui.Rect.fromLTWH(0, 0, 600, 800);
   test('$description (bitmap)', () {
     try {
@@ -116,21 +120,13 @@ void testEachCanvas(String description, CanvasTest body,
   test('$description (dom)', () {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
+      WebExperiments.instance.useCanvasText = false;
       return body(DomCanvas());
     } finally {
+      WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
   });
-  if (!bSkipHoudini) {
-    test('$description (houdini)', () {
-      try {
-        TextMeasurementService.initialize(rulerCacheCapacity: 2);
-        return body(HoudiniCanvas(bounds));
-      } finally {
-        TextMeasurementService.clearCache();
-      }
-    });
-  }
 }
 
 final ui.TextStyle _defaultTextStyle = ui.TextStyle(

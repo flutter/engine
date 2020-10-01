@@ -5,6 +5,8 @@
 #include "flutter/flow/raster_cache.h"
 
 #include "gtest/gtest.h"
+#include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
@@ -159,9 +161,6 @@ TEST(RasterCache, DeviceRectRoundOut) {
   ASSERT_TRUE(cache.Draw(*picture, canvas));
 
   canvas.translate(248, 0);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  canvas.setMatrix(RasterCache::GetIntegralTransCTM(canvas.getTotalMatrix()));
-#endif
   ASSERT_TRUE(cache.Draw(*picture, canvas));
 }
 

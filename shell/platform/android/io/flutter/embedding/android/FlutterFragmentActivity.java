@@ -39,8 +39,8 @@ import io.flutter.Log;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
+import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.view.FlutterMain;
 
 /**
  * A Flutter {@code Activity} that is based upon {@link FragmentActivity}.
@@ -101,8 +101,7 @@ public class FlutterFragmentActivity extends FragmentActivity
      *
      * <p>{@code return new NewEngineIntentBuilder(MyFlutterActivity.class); }
      */
-    protected NewEngineIntentBuilder(
-        @NonNull Class<? extends FlutterFragmentActivity> activityClass) {
+    public NewEngineIntentBuilder(@NonNull Class<? extends FlutterFragmentActivity> activityClass) {
       this.activityClass = activityClass;
     }
 
@@ -177,13 +176,13 @@ public class FlutterFragmentActivity extends FragmentActivity
      * {@code FlutterFragmentActivity}.
      *
      * <p>Subclasses of {@code FlutterFragmentActivity} should provide their own static version of
-     * {@link #withNewEngine()}, which returns an instance of {@code CachedEngineIntentBuilder}
+     * {@link #withCachedEngine()}, which returns an instance of {@code CachedEngineIntentBuilder}
      * constructed with a {@code Class} reference to the {@code FlutterFragmentActivity} subclass,
      * e.g.:
      *
      * <p>{@code return new CachedEngineIntentBuilder(MyFlutterActivity.class, engineId); }
      */
-    protected CachedEngineIntentBuilder(
+    public CachedEngineIntentBuilder(
         @NonNull Class<? extends FlutterFragmentActivity> activityClass, @NonNull String engineId) {
       this.activityClass = activityClass;
       this.cachedEngineId = engineId;
@@ -398,10 +397,9 @@ public class FlutterFragmentActivity extends FragmentActivity
    */
   @NonNull
   protected FlutterFragment createFlutterFragment() {
-    BackgroundMode backgroundMode = getBackgroundMode();
-    RenderMode renderMode =
-        backgroundMode == BackgroundMode.opaque ? RenderMode.surface : RenderMode.texture;
-    TransparencyMode transparencyMode =
+    final BackgroundMode backgroundMode = getBackgroundMode();
+    final RenderMode renderMode = getRenderMode();
+    final TransparencyMode transparencyMode =
         backgroundMode == BackgroundMode.opaque
             ? TransparencyMode.opaque
             : TransparencyMode.transparent;
@@ -556,13 +554,18 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   /**
-   * Hook for subclasses to easily configure a {@code FlutterEngine}, e.g., register plugins.
+   * Hook for subclasses to easily configure a {@code FlutterEngine}.
    *
    * <p>This method is called after {@link #provideFlutterEngine(Context)}.
+   *
+   * <p>All plugins listed in the app's pubspec are registered in the base implementation of this
+   * method. To avoid automatic plugin registration, override this method without invoking super().
+   * To keep automatic plugin registration and further configure the flutterEngine, override this
+   * method, invoke super(), and then configure the flutterEngine as desired.
    */
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
-    // No-op. Hook for subclasses.
+    GeneratedPluginRegister.registerGeneratedPlugins(flutterEngine);
   }
 
   /**
@@ -577,14 +580,15 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   /**
-   * The path to the bundle that contains this Flutter app's resources, e.g., Dart code snapshots.
+   * A custom path to the bundle that contains this Flutter app's resources, e.g., Dart code
+   * snapshots.
    *
    * <p>When this {@code FlutterFragmentActivity} is run by Flutter tooling and a data String is
    * included in the launching {@code Intent}, that data String is interpreted as an app bundle
    * path.
    *
-   * <p>By default, the app bundle path is obtained from {@link
-   * FlutterMain#findAppBundlePath(Context)}.
+   * <p>When otherwise unspecified, the value is null, which defaults to the app bundle path defined
+   * in {@link FlutterLoader#findAppBundlePath()}.
    *
    * <p>Subclasses may override this method to return a custom app bundle path.
    */
@@ -601,9 +605,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       }
     }
 
-    // Return the default app bundle path.
-    // TODO(mattcarroll): move app bundle resolution into an appropriately named class.
-    return FlutterMain.findAppBundlePath();
+    return null;
   }
 
   /**
@@ -689,6 +691,19 @@ public class FlutterFragmentActivity extends FragmentActivity
     } else {
       return BackgroundMode.opaque;
     }
+  }
+
+  /**
+   * Returns the desired {@link RenderMode} for the {@link FlutterView} displayed in this {@code
+   * FlutterFragmentActivity}.
+   *
+   * <p>That is, {@link RenderMode#surface} if {@link FlutterFragmentActivity#getBackgroundMode()}
+   * is {@link BackgroundMode.opaque} or {@link RenderMode#texture} otherwise.
+   */
+  @NonNull
+  protected RenderMode getRenderMode() {
+    final BackgroundMode backgroundMode = getBackgroundMode();
+    return backgroundMode == BackgroundMode.opaque ? RenderMode.surface : RenderMode.texture;
   }
 
   /**

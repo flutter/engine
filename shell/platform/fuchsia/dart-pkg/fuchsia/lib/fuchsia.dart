@@ -13,25 +13,25 @@ import 'dart:zircon';
 
 // TODO: refactors this incomingServices instead
 @pragma('vm:entry-point')
-Handle _environment;
+Handle? _environment;
 
 @pragma('vm:entry-point')
-Handle _outgoingServices;
+Handle? _outgoingServices;
 
 @pragma('vm:entry-point')
-Handle _viewRef;
+Handle? _viewRef;
 
 class MxStartupInfo {
   // TODO: refactor Handle to a Channel
   // https://github.com/flutter/flutter/issues/49439
   static Handle takeEnvironment() {
-    if (_outgoingServices == null && Platform.isFuchsia) {
+    if (_environment == null && Platform.isFuchsia) {
       throw Exception(
           'Attempting to call takeEnvironment more than once per process');
     }
-    Handle handle = _environment;
+    final handle = _environment;
     _environment = null;
-    return handle;
+    return handle!;
   }
 
   // TODO: refactor Handle to a Channel
@@ -41,9 +41,9 @@ class MxStartupInfo {
       throw Exception(
           'Attempting to call takeOutgoingServices more than once per process');
     }
-    Handle handle = _outgoingServices;
+    final handle = _outgoingServices;
     _outgoingServices = null;
-    return handle;
+    return handle!;
   }
 
   // TODO: refactor Handle to a ViewRef
@@ -53,9 +53,9 @@ class MxStartupInfo {
       throw Exception(
           'Attempting to call takeViewRef more than once per process');
     }
-    Handle handle = _viewRef;
+    final handle = _viewRef;
     _viewRef = null;
-    return handle;
+    return handle!;
   }
 }
 

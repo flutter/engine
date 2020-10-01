@@ -15,9 +15,11 @@ import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
 
 /**
- * Base class for activities that use Flutter who also require the use of the Android v4 Support
- * library's {@link FragmentActivity}. Applications that don't have this need will likely want to
- * use {@link FlutterActivity} instead.
+ * Deprecated class for activities that use Flutter who also require the use of the Android v4
+ * Support library's {@link FragmentActivity}.
+ *
+ * <p>Applications that don't have this need will likely want to use {@link FlutterActivity}
+ * instead.
  *
  * <p><strong>Important!</strong> Flutter does not bundle the necessary Android v4 Support library
  * classes for this class to work at runtime. It is the responsibility of the app developer using
@@ -26,7 +28,10 @@ import io.flutter.view.FlutterView;
  *
  * @see <a target="_new"
  *     href="https://developer.android.com/training/testing/set-up-project">https://developer.android.com/training/testing/set-up-project</a>
+ * @deprecated this class is replaced by {@link
+ *     io.flutter.embedding.android.FlutterFragmentActivity}.
  */
+@Deprecated
 public class FlutterFragmentActivity extends FragmentActivity
     implements FlutterView.Provider, PluginRegistry, ViewFactory {
   private final FlutterActivityDelegate delegate = new FlutterActivityDelegate(this, this);

@@ -14,10 +14,10 @@
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
-#include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/runtime/window_data.h"
+#include "flutter/runtime/platform_data.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 
@@ -38,7 +38,7 @@ class Window;
 /// used by the engine to copy the currently accumulated window state so it can
 /// be referenced by the new runtime controller.
 ///
-class RuntimeController final : public WindowClient {
+class RuntimeController : public PlatformConfigurationClient {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a runtime controller. This is
@@ -67,6 +67,11 @@ class RuntimeController final : public WindowClient {
   /// @param[in]  snapshot_delegate           The snapshot delegate used by the
   ///                                         isolate to gather raster snapshots
   ///                                         of Flutter view hierarchies.
+  /// @param[in]  hint_freed_delegate         The delegate used by the isolate
+  ///                                         to hint the Dart VM when
+  ///                                         additional memory may be freed
+  ///                                         if a GC ran at the next
+  ///                                         NotifyIdle.
   /// @param[in]  io_manager                  The IO manager used by the isolate
   ///                                         for asynchronous texture uploads.
   /// @param[in]  unref_queue                 The unref queue used by the
@@ -90,7 +95,7 @@ class RuntimeController final : public WindowClient {
   ///                                         code in isolate scope when the VM
   ///                                         is about to be notified that the
   ///                                         engine is going to be idle.
-  /// @param[in]  window_data                 The window data (if exists).
+  /// @param[in]  platform_data                 The window data (if exists).
   /// @param[in]  isolate_create_callback     The isolate create callback. This
   ///                                         allows callers to run native code
   ///                                         in isolate scope on the UI task
@@ -111,18 +116,19 @@ class RuntimeController final : public WindowClient {
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       TaskRunners task_runners,
       fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
       fml::WeakPtr<IOManager> io_manager,
       fml::RefPtr<SkiaUnrefQueue> unref_queue,
       fml::WeakPtr<ImageDecoder> image_decoder,
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
       const std::function<void(int64_t)>& idle_notification_callback,
-      const WindowData& window_data,
+      const PlatformData& platform_data,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
       std::shared_ptr<const fml::Mapping> persistent_isolate_data);
 
-  // |WindowClient|
+  // |PlatformConfigurationClient|
   ~RuntimeController() override;
 
   //----------------------------------------------------------------------------
@@ -136,11 +142,11 @@ class RuntimeController final : public WindowClient {
   std::unique_ptr<RuntimeController> Clone() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Forward the specified window metrics to the running isolate.
+  /// @brief      Forward the specified viewport metrics to the running isolate.
   ///             If the isolate is not running, these metrics will be saved and
   ///             flushed to the isolate when it starts.
   ///
-  /// @param[in]  metrics  The metrics.
+  /// @param[in]  metrics  The viewport metrics.
   ///
   /// @return     If the window metrics were forwarded to the running isolate.
   ///
@@ -160,23 +166,6 @@ class RuntimeController final : public WindowClient {
   /// @return     If the locale data was forwarded to the running isolate.
   ///
   bool SetLocales(const std::vector<std::string>& locale_data);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Forward the specified locale data to the running isolate. If
-  ///             the isolate is not running, this data will be saved and
-  ///             flushed to the isolate when it starts running.
-  ///
-  ///
-  /// @deprecated The persistent isolate data must be used for this purpose
-  ///             instead.
-  ///
-  /// @param[in]  locale_data  The locale data. This should consist of a vector
-  ///             of 4 strings, representing languageCode, contryCode,
-  ///             scriptCode, and variant of the locale.
-  ///
-  /// @return     If the locale data was forwarded to the running isolate.
-  ///
-  bool SetPlatformResolvedLocale(const std::vector<std::string>& locale_data);
 
   //----------------------------------------------------------------------------
   /// @brief      Forward the user settings data to the running isolate. If the
@@ -345,10 +334,12 @@ class RuntimeController final : public WindowClient {
   /// @param[in]  deadline  The deadline measures in microseconds against the
   ///             system's monotonic time. The clock can be accessed via
   ///             `Dart_TimelineGetMicros`.
+  /// @param[in] freed_hint  A hint of the number of bytes potentially freed
+  ///                        since the last call to NotifyIdle if a GC were run.
   ///
   /// @return     If the idle notification was forwarded to the running isolate.
   ///
-  bool NotifyIdle(int64_t deadline);
+  bool NotifyIdle(int64_t deadline, size_t freed_hint);
 
   //----------------------------------------------------------------------------
   /// @brief      Returns if the root isolate is running. The isolate must be
@@ -357,7 +348,7 @@ class RuntimeController final : public WindowClient {
   ///
   /// @return     True if root isolate running, False otherwise.
   ///
-  bool IsRootIsolateRunning() const;
+  virtual bool IsRootIsolateRunning() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatch the specified platform message to running root
@@ -368,7 +359,7 @@ class RuntimeController final : public WindowClient {
   /// @return     If the message was dispatched to the running root isolate.
   ///             This may fail is an isolate is not running.
   ///
-  bool DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  virtual bool DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatch the specified pointer data message to the running
@@ -457,6 +448,10 @@ class RuntimeController final : public WindowClient {
   ///
   std::pair<bool, uint32_t> GetRootIsolateReturnCode();
 
+ protected:
+  /// Constructor for Mocks.
+  RuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners);
+
  private:
   struct Locale {
     Locale(std::string language_code_,
@@ -477,50 +472,55 @@ class RuntimeController final : public WindowClient {
   fml::RefPtr<const DartSnapshot> isolate_snapshot_;
   TaskRunners task_runners_;
   fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
+  fml::WeakPtr<HintFreedDelegate> hint_freed_delegate_;
   fml::WeakPtr<IOManager> io_manager_;
   fml::RefPtr<SkiaUnrefQueue> unref_queue_;
   fml::WeakPtr<ImageDecoder> image_decoder_;
   std::string advisory_script_uri_;
   std::string advisory_script_entrypoint_;
   std::function<void(int64_t)> idle_notification_callback_;
-  WindowData window_data_;
+  PlatformData platform_data_;
   std::weak_ptr<DartIsolate> root_isolate_;
   std::pair<bool, uint32_t> root_isolate_return_code_ = {false, 0};
   const fml::closure isolate_create_callback_;
   const fml::closure isolate_shutdown_callback_;
   std::shared_ptr<const fml::Mapping> persistent_isolate_data_;
 
-  Window* GetWindowIfAvailable();
+  PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
   bool FlushRuntimeStateToIsolate();
 
-  // |WindowClient|
+  // |PlatformConfigurationClient|
   std::string DefaultRouteName() override;
 
-  // |WindowClient|
+  // |PlatformConfigurationClient|
   void ScheduleFrame() override;
 
-  // |WindowClient|
+  // |PlatformConfigurationClient|
   void Render(Scene* scene) override;
 
-  // |WindowClient|
+  // |PlatformConfigurationClient|
   void UpdateSemantics(SemanticsUpdate* update) override;
 
-  // |WindowClient|
+  // |PlatformConfigurationClient|
   void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
 
-  // |WindowClient|
+  // |PlatformConfigurationClient|
   FontCollection& GetFontCollection() override;
 
-  // |WindowClient|
+  // |PlatformConfigurationClient|
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
 
-  // |WindowClient|
+  // |PlatformConfigurationClient|
   void SetNeedsReportTimings(bool value) override;
 
-  // |WindowClient|
+  // |PlatformConfigurationClient|
   std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() override;
+
+  // |PlatformConfigurationClient|
+  std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };

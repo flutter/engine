@@ -35,7 +35,8 @@ import io.flutter.view.FlutterView;
 import java.util.ArrayList;
 
 /**
- * Class that performs the actual work of tying Android {@link Activity} instances to Flutter.
+ * Deprecated class that performs the actual work of tying Android {@link Activity} instances to
+ * Flutter.
  *
  * <p>This exists as a dedicated class (as opposed to being integrated directly into {@link
  * FlutterActivity}) to facilitate applications that don't wish to subclass {@code FlutterActivity}.
@@ -48,7 +49,12 @@ import java.util.ArrayList;
  * FlutterActivityEvents} from your activity to an instance of this class. Optionally, you can make
  * your activity implement {@link PluginRegistry} and/or {@link
  * io.flutter.view.FlutterView.Provider} and forward those methods to this class as well.
+ *
+ * @deprecated {@link io.flutter.embedding.android.FlutterActivity} is the new API that now replaces
+ *     this class and {@link io.flutter.app.FlutterActivity}. See
+ *     https://flutter.dev/go/android-project-migration for more migration details.
  */
+@Deprecated
 public final class FlutterActivityDelegate
     implements FlutterActivityEvents, FlutterView.Provider, PluginRegistry {
   private static final String SPLASH_SCREEN_META_DATA_KEY =
@@ -307,6 +313,9 @@ public final class FlutterActivityDelegate
     if (intent.getBooleanExtra("cache-sksl", false)) {
       args.add("--cache-sksl");
     }
+    if (intent.getBooleanExtra("purge-persistent-cache", false)) {
+      args.add("--purge-persistent-cache");
+    }
     if (intent.getBooleanExtra("verbose-logging", false)) {
       args.add("--verbose-logging");
     }
@@ -321,9 +330,8 @@ public final class FlutterActivityDelegate
       args.add("--endless-trace-buffer");
     }
     // NOTE: all flags provided with this argument are subject to filtering
-    // based on a whitelist in shell/common/switches.cc. If any flag provided
-    // is not present in the whitelist, the process will immediately
-    // terminate.
+    // based on a a list of allowed flags in shell/common/switches.cc. If any
+    // flag provided is not allowed, the process will immediately terminate.
     if (intent.hasExtra("dart-flags")) {
       args.add("--dart-flags=" + intent.getStringExtra("dart-flags"));
     }

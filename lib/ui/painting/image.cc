@@ -14,7 +14,14 @@ namespace flutter {
 
 typedef CanvasImage Image;
 
-IMPLEMENT_WRAPPERTYPEINFO(ui, Image);
+// Since _Image is a private class, we can't use IMPLEMENT_WRAPPERTYPEINFO
+static const tonic::DartWrapperInfo kDartWrapperInfo_ui_Image = {
+    "ui",
+    "_Image",
+    sizeof(Image),
+};
+const tonic::DartWrapperInfo& Image::dart_wrapper_info_ =
+    kDartWrapperInfo_ui_Image;
 
 #define FOR_EACH_BINDING(V) \
   V(Image, width)           \
@@ -37,10 +44,15 @@ Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
 }
 
 void CanvasImage::dispose() {
+  auto hint_freed_delegate = UIDartState::Current()->GetHintFreedDelegate();
+  if (hint_freed_delegate) {
+    hint_freed_delegate->HintFreed(GetAllocationSize());
+  }
+  image_.reset();
   ClearDartWrapper();
 }
 
-size_t CanvasImage::GetAllocationSize() {
+size_t CanvasImage::GetAllocationSize() const {
   if (auto image = image_.get()) {
     const auto& info = image->imageInfo();
     const auto kMipmapOverhead = 4.0 / 3.0;

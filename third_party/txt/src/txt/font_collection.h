@@ -21,6 +21,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+
 #include "flutter/fml/macros.h"
 #include "minikin/FontCollection.h"
 #include "minikin/FontFamily.h"
@@ -31,7 +32,7 @@
 #include "txt/text_style.h"
 
 #if FLUTTER_ENABLE_SKSHAPER
-#include "third_party/skia/modules/skparagraph/include/FontCollection.h"
+#include "third_party/skia/modules/skparagraph/include/FontCollection.h"  // nogncheck
 #endif
 
 namespace txt {
@@ -126,6 +127,11 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
   std::shared_ptr<minikin::FontFamily> CreateMinikinFontFamily(
       const sk_sp<SkFontMgr>& manager,
       const std::string& family_name);
+
+  // Sorts in-place a group of SkTypeface from an SkTypefaceSet into a
+  // reasonable order for future queries.
+  FRIEND_TEST(FontCollectionTest, CheckSkTypefacesSorting);
+  static void SortSkTypefaces(std::vector<sk_sp<SkTypeface>>& sk_typefaces);
 
   const std::shared_ptr<minikin::FontFamily>& GetFallbackFontFamily(
       const sk_sp<SkFontMgr>& manager,

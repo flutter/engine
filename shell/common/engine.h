@@ -12,6 +12,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/lib/ui/hint_freed_delegate.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
@@ -23,6 +24,7 @@
 #include "flutter/runtime/runtime_controller.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/rasterizer.h"
@@ -68,7 +70,9 @@ namespace flutter {
 ///           name and it does happen to be one of the older classes in the
 ///           repository.
 ///
-class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
+class Engine final : public RuntimeDelegate,
+                     public HintFreedDelegate,
+                     PointerDataDispatcher::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Indicates the result of the call to `Engine::Run`.
@@ -227,7 +231,40 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///                              collected and send back to Dart.
     ///
     virtual void SetNeedsReportTimings(bool needs_reporting) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Directly invokes platform-specific APIs to compute the
+    ///             locale the platform would have natively resolved to.
+    ///
+    /// @param[in]  supported_locale_data  The vector of strings that represents
+    ///                                    the locales supported by the app.
+    ///                                    Each locale consists of three
+    ///                                    strings: languageCode, countryCode,
+    ///                                    and scriptCode in that order.
+    ///
+    /// @return     A vector of 3 strings languageCode, countryCode, and
+    ///             scriptCode that represents the locale selected by the
+    ///             platform. Empty strings mean the value was unassigned. Empty
+    ///             vector represents a null locale.
+    ///
+    virtual std::unique_ptr<std::vector<std::string>>
+    ComputePlatformResolvedLocale(
+        const std::vector<std::string>& supported_locale_data) = 0;
   };
+
+  //----------------------------------------------------------------------------
+  /// @brief      Creates an instance of the engine with a supplied
+  ///             `RuntimeController`.  Use the other constructor except for
+  ///             tests.
+  ///
+  Engine(Delegate& delegate,
+         const PointerDataDispatcherMaker& dispatcher_maker,
+         std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
+         TaskRunners task_runners,
+         Settings settings,
+         std::unique_ptr<Animator> animator,
+         fml::WeakPtr<IOManager> io_manager,
+         std::unique_ptr<RuntimeController> runtime_controller);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an instance of the engine. This is done by the Shell
@@ -276,7 +313,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          TaskRunners task_runners,
-         const WindowData window_data,
+         const PlatformData platform_data,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
@@ -291,30 +328,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             needed.
   ///
   ~Engine() override;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Gets the refresh rate in frames per second of the vsync waiter
-  ///             used by the animator managed by this engine. This information
-  ///             is purely advisory and is not used by any component. It is
-  ///             only used by the tooling to visualize frame performance.
-  ///
-  /// @attention  The display refresh rate is useless for frame scheduling
-  ///             because it can vary and more accurate frame specific
-  ///             information is given to the engine by the vsync waiter
-  ///             already. However, this call is used by the tooling to ask very
-  ///             high level questions about display refresh rate. For example,
-  ///             "Is the display 60 or 120Hz?". This information is quite
-  ///             unreliable (not available immediately on launch on some
-  ///             platforms), variable and advisory. It must not be used by any
-  ///             component that claims to use it to perform accurate frame
-  ///             scheduling.
-  ///
-  /// @return     The display refresh rate in frames per second. This may change
-  ///             from frame to frame, throughout the lifecycle of the
-  ///             application, and, may not be available immediately upon
-  ///             application launch.
-  ///
-  float GetDisplayRefreshRate() const;
 
   //----------------------------------------------------------------------------
   /// @return     The pointer to this instance of the engine. The engine may
@@ -364,6 +377,11 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   [[nodiscard]] bool Restart(RunConfiguration configuration);
 
   //----------------------------------------------------------------------------
+  /// @brief      Setup default font manager according to specific platform.
+  ///
+  void SetupDefaultFontManager();
+
+  //----------------------------------------------------------------------------
   /// @brief      Updates the asset manager referenced by the root isolate of a
   ///             Flutter application. This happens implicitly in the call to
   ///             `Engine::Run` and `Engine::Restart` as the asset manager is
@@ -397,7 +415,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             one frame interval from this point, the Flutter application
   ///             will jank.
   ///
-  ///             If an root isolate is running, this method calls the
+  ///             If a root isolate is running, this method calls the
   ///             `::_beginFrame` method in `hooks.dart`. If a root isolate is
   ///             not running, this call does nothing.
   ///
@@ -426,6 +444,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                         physics simulations, etc..
   ///
   void BeginFrame(fml::TimePoint frame_time);
+
+  // |HintFreedDelegate|
+  void HintFreed(size_t size) override;
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the UI task runner is not expected to
@@ -677,9 +698,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has expressed an opinion
-  ///             about where the accessibility tree should be generated or not.
-  ///             This call originates in the platform view and is forwarded to
-  ///             the engine here on the UI task runner by the shell.
+  ///             about whether the accessibility tree should be generated or
+  ///             not. This call originates in the platform view and is
+  ///             forwarded to the engine here on the UI task runner by the
+  ///             shell.
   ///
   /// @param[in]  enabled  Whether the accessibility tree is enabled or
   ///                      disabled.
@@ -703,7 +725,11 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void SetAccessibilityFeatures(int32_t flags);
 
   // |RuntimeDelegate|
-  void ScheduleFrame(bool regenerate_layer_tree = true) override;
+  void ScheduleFrame(bool regenerate_layer_tree) override;
+
+  /// Schedule a frame with the default parameter of regenerating the layer
+  /// tree.
+  void ScheduleFrame() { ScheduleFrame(true); }
 
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
@@ -727,6 +753,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   const std::string& GetLastEntrypointLibrary() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Getter for the initial route.  This can be set with a platform
+  ///             message.
+  ///
+  const std::string& InitialRoute() const { return initial_route_; }
+
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;
@@ -748,6 +780,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   FontCollection font_collection_;
   ImageDecoder image_decoder_;
   TaskRunners task_runners_;
+  size_t hint_freed_bytes_since_last_idle_ = 0;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
@@ -766,6 +799,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |RuntimeDelegate|
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
+
+  // |RuntimeDelegate|
+  std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) override;
 
   void SetNeedsReportTimings(bool value) override;
 

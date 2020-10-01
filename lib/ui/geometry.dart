@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
+
 part of dart.ui;
 
 /// Base class for [Size] and [Offset], which are both ways to describe
@@ -13,11 +14,9 @@ abstract class OffsetBase {
   ///
   /// The first argument sets the horizontal component, and the second the
   /// vertical component.
-  const OffsetBase(double dx, double dy)
-      : _dx = dx ?? 0.0,
-        _dy = dy ?? 0.0,
-        assert(dx != null),
-        assert(dy != null);
+  const OffsetBase(this._dx, this._dy)
+      : assert(_dx != null), // ignore: unnecessary_null_comparison
+        assert(_dy != null); // ignore: unnecessary_null_comparison
 
   final double _dx;
   final double _dy;
@@ -85,7 +84,7 @@ abstract class OffsetBase {
   /// left-hand-side operand are equal to the horizontal and vertical values of
   /// the right-hand-side operand respectively. Returns false otherwise.
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return other is OffsetBase
         && other._dx == _dx
         && other._dy == _dy;
@@ -95,7 +94,7 @@ abstract class OffsetBase {
   int get hashCode => hashValues(_dx, _dy);
 
   @override
-  String toString() => 'OffsetBase(${_dx?.toStringAsFixed(1)}, ${_dy?.toStringAsFixed(1)})';
+  String toString() => 'OffsetBase(${_dx.toStringAsFixed(1)}, ${_dy.toStringAsFixed(1)})';
 }
 
 /// An immutable 2D floating-point offset.
@@ -156,7 +155,7 @@ class Offset extends OffsetBase {
 
   /// The angle of this offset as radians clockwise from the positive x-axis, in
   /// the range -[pi] to [pi], assuming positive values of the x-axis go to the
-  /// left and positive values of the y-axis go down.
+  /// right and positive values of the y-axis go down.
   ///
   /// Zero means that [dy] is zero and [dx] is zero or positive.
   ///
@@ -316,20 +315,26 @@ class Offset extends OffsetBase {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static Offset lerp(Offset a, Offset b, double t) {
-    assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null)
-      return b * t;
-    if (b == null)
-      return a * (1.0 - t);
-    return Offset(lerpDouble(a.dx, b.dx, t), lerpDouble(a.dy, b.dy, t));
+  static Offset? lerp(Offset? a, Offset? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
+    if (b == null) {
+      if (a == null) {
+        return null;
+      } else {
+        return a * (1.0 - t);
+      }
+    } else {
+      if (a == null) {
+        return b * t;
+      } else {
+        return Offset(_lerpDouble(a.dx, b.dx, t), _lerpDouble(a.dy, b.dy, t));
+      }
+    }
   }
 
   /// Compares two Offsets for equality.
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return other is Offset
         && other.dx == dx
         && other.dy == dy;
@@ -339,7 +344,7 @@ class Offset extends OffsetBase {
   int get hashCode => hashValues(dx, dy);
 
   @override
-  String toString() => 'Offset(${dx?.toStringAsFixed(1)}, ${dy?.toStringAsFixed(1)})';
+  String toString() => 'Offset(${dx.toStringAsFixed(1)}, ${dy.toStringAsFixed(1)})';
 }
 
 /// Holds a 2D floating-point size.
@@ -581,21 +586,27 @@ class Size extends OffsetBase {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static Size lerp(Size a, Size b, double t) {
-    assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null)
-      return b * t;
-    if (b == null)
-      return a * (1.0 - t);
-    return Size(lerpDouble(a.width, b.width, t), lerpDouble(a.height, b.height, t));
+  static Size? lerp(Size? a, Size? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
+    if (b == null) {
+      if (a == null) {
+        return null;
+      } else {
+        return a * (1.0 - t);
+      }
+    } else {
+      if (a == null) {
+        return b * t;
+      } else {
+        return Size(_lerpDouble(a.width, b.width, t), _lerpDouble(a.height, b.height, t));
+      }
+    }
   }
 
   /// Compares two Sizes for equality.
   // We don't compare the runtimeType because of _DebugSize in the framework.
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return other is Size
         && other._dx == _dx
         && other._dy == _dy;
@@ -605,7 +616,7 @@ class Size extends OffsetBase {
   int get hashCode => hashValues(_dx, _dy);
 
   @override
-  String toString() => 'Size(${width?.toStringAsFixed(1)}, ${height?.toStringAsFixed(1)})';
+  String toString() => 'Size(${width.toStringAsFixed(1)}, ${height.toStringAsFixed(1)})';
 }
 
 /// An immutable, 2D, axis-aligned, floating-point rectangle whose coordinates
@@ -620,15 +631,11 @@ class Size extends OffsetBase {
 class Rect {
   /// Construct a rectangle from its left, top, right, and bottom edges.
   @pragma('vm:entry-point')
-      const Rect.fromLTRB(double left, double top, double right, double bottom)
-          : left = left ?? 0.0,
-            right = right ?? 0.0,
-            top = top ?? 0.0,
-            bottom = bottom ?? 0.0,
-            assert(left != null),
-            assert(top != null),
-            assert(right != null),
-            assert(bottom != null);
+  const Rect.fromLTRB(this.left, this.top, this.right, this.bottom)
+      : assert(left != null), // ignore: unnecessary_null_comparison
+        assert(top != null), // ignore: unnecessary_null_comparison
+        assert(right != null), // ignore: unnecessary_null_comparison
+        assert(bottom != null); // ignore: unnecessary_null_comparison
 
   /// Construct a rectangle from its left and top edges, its width, and its
   /// height.
@@ -640,7 +647,7 @@ class Rect {
   /// Construct a rectangle that bounds the given circle.
   ///
   /// The `center` argument is assumed to be an offset from the origin.
-  Rect.fromCircle({ Offset center, double radius }) : this.fromCenter(
+  Rect.fromCircle({ required Offset center, required double radius }) : this.fromCenter(
     center: center,
     width: radius * 2,
     height: radius * 2,
@@ -649,7 +656,7 @@ class Rect {
   /// Constructs a rectangle from its center point, width, and height.
   ///
   /// The `center` argument is assumed to be an offset from the origin.
-  Rect.fromCenter({ Offset center, double width, double height }) : this.fromLTRB(
+  Rect.fromCenter({ required Offset center, required double width, required double height }) : this.fromLTRB(
     center.dx - width / 2,
     center.dy - height / 2,
     center.dx + width / 2,
@@ -856,26 +863,31 @@ class Rect {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static Rect lerp(Rect a, Rect b, double t) {
-    assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null)
-      return Rect.fromLTRB(b.left * t, b.top * t, b.right * t, b.bottom * t);
+  static Rect? lerp(Rect? a, Rect? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
-      final double k = 1.0 - t;
-      return Rect.fromLTRB(a.left * k, a.top * k, a.right * k, a.bottom * k);
+      if (a == null) {
+        return null;
+      } else {
+        final double k = 1.0 - t;
+        return Rect.fromLTRB(a.left * k, a.top * k, a.right * k, a.bottom * k);
+      }
+    } else {
+      if (a == null) {
+        return Rect.fromLTRB(b.left * t, b.top * t, b.right * t, b.bottom * t);
+      } else {
+        return Rect.fromLTRB(
+          _lerpDouble(a.left, b.left, t),
+          _lerpDouble(a.top, b.top, t),
+          _lerpDouble(a.right, b.right, t),
+          _lerpDouble(a.bottom, b.bottom, t),
+        );
+      }
     }
-    return Rect.fromLTRB(
-      lerpDouble(a.left, b.left, t),
-      lerpDouble(a.top, b.top, t),
-      lerpDouble(a.right, b.right, t),
-      lerpDouble(a.bottom, b.bottom, t),
-    );
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (runtimeType != other.runtimeType)
@@ -980,24 +992,29 @@ class Radius {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static Radius lerp(Radius a, Radius b, double t) {
-    assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null)
-      return Radius.elliptical(b.x * t, b.y * t);
+  static Radius? lerp(Radius? a, Radius? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
-      final double k = 1.0 - t;
-      return Radius.elliptical(a.x * k, a.y * k);
+      if (a == null) {
+        return null;
+      } else {
+        final double k = 1.0 - t;
+        return Radius.elliptical(a.x * k, a.y * k);
+      }
+    } else {
+      if (a == null) {
+        return Radius.elliptical(b.x * t, b.y * t);
+      } else {
+        return Radius.elliptical(
+          _lerpDouble(a.x, b.x, t),
+          _lerpDouble(a.y, b.y, t),
+        );
+      }
     }
-    return Radius.elliptical(
-      lerpDouble(a.x, b.x, t),
-      lerpDouble(a.y, b.y, t),
-    );
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (runtimeType != other.runtimeType)
@@ -1162,18 +1179,18 @@ class RRect {
     this.brRadiusY = 0.0,
     this.blRadiusX = 0.0,
     this.blRadiusY = 0.0,
-  }) : assert(left != null),
-       assert(top != null),
-       assert(right != null),
-       assert(bottom != null),
-       assert(tlRadiusX != null),
-       assert(tlRadiusY != null),
-       assert(trRadiusX != null),
-       assert(trRadiusY != null),
-       assert(brRadiusX != null),
-       assert(brRadiusY != null),
-       assert(blRadiusX != null),
-       assert(blRadiusY != null);
+  }) : assert(left != null), // ignore: unnecessary_null_comparison
+       assert(top != null), // ignore: unnecessary_null_comparison
+       assert(right != null), // ignore: unnecessary_null_comparison
+       assert(bottom != null), // ignore: unnecessary_null_comparison
+       assert(tlRadiusX != null), // ignore: unnecessary_null_comparison
+       assert(tlRadiusY != null), // ignore: unnecessary_null_comparison
+       assert(trRadiusX != null), // ignore: unnecessary_null_comparison
+       assert(trRadiusY != null), // ignore: unnecessary_null_comparison
+       assert(brRadiusX != null), // ignore: unnecessary_null_comparison
+       assert(brRadiusY != null), // ignore: unnecessary_null_comparison
+       assert(blRadiusX != null), // ignore: unnecessary_null_comparison
+       assert(blRadiusY != null); // ignore: unnecessary_null_comparison
 
   Float32List get _value32 => Float32List.fromList(<double>[
     left,
@@ -1540,61 +1557,65 @@ class RRect {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static RRect lerp(RRect a, RRect b, double t) {
-    assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null) {
-      return RRect._raw(
-        left: b.left * t,
-        top: b.top * t,
-        right: b.right * t,
-        bottom: b.bottom * t,
-        tlRadiusX: b.tlRadiusX * t,
-        tlRadiusY: b.tlRadiusY * t,
-        trRadiusX: b.trRadiusX * t,
-        trRadiusY: b.trRadiusY * t,
-        brRadiusX: b.brRadiusX * t,
-        brRadiusY: b.brRadiusY * t,
-        blRadiusX: b.blRadiusX * t,
-        blRadiusY: b.blRadiusY * t,
-      );
-    }
+  static RRect? lerp(RRect? a, RRect? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
-      final double k = 1.0 - t;
-      return RRect._raw(
-        left: a.left * k,
-        top: a.top * k,
-        right: a.right * k,
-        bottom: a.bottom * k,
-        tlRadiusX: a.tlRadiusX * k,
-        tlRadiusY: a.tlRadiusY * k,
-        trRadiusX: a.trRadiusX * k,
-        trRadiusY: a.trRadiusY * k,
-        brRadiusX: a.brRadiusX * k,
-        brRadiusY: a.brRadiusY * k,
-        blRadiusX: a.blRadiusX * k,
-        blRadiusY: a.blRadiusY * k,
-      );
+      if (a == null) {
+        return null;
+      } else {
+        final double k = 1.0 - t;
+        return RRect._raw(
+          left: a.left * k,
+          top: a.top * k,
+          right: a.right * k,
+          bottom: a.bottom * k,
+          tlRadiusX: a.tlRadiusX * k,
+          tlRadiusY: a.tlRadiusY * k,
+          trRadiusX: a.trRadiusX * k,
+          trRadiusY: a.trRadiusY * k,
+          brRadiusX: a.brRadiusX * k,
+          brRadiusY: a.brRadiusY * k,
+          blRadiusX: a.blRadiusX * k,
+          blRadiusY: a.blRadiusY * k,
+        );
+      }
+    } else {
+      if (a == null) {
+        return RRect._raw(
+          left: b.left * t,
+          top: b.top * t,
+          right: b.right * t,
+          bottom: b.bottom * t,
+          tlRadiusX: b.tlRadiusX * t,
+          tlRadiusY: b.tlRadiusY * t,
+          trRadiusX: b.trRadiusX * t,
+          trRadiusY: b.trRadiusY * t,
+          brRadiusX: b.brRadiusX * t,
+          brRadiusY: b.brRadiusY * t,
+          blRadiusX: b.blRadiusX * t,
+          blRadiusY: b.blRadiusY * t,
+        );
+      } else {
+        return RRect._raw(
+          left: _lerpDouble(a.left, b.left, t),
+          top: _lerpDouble(a.top, b.top, t),
+          right: _lerpDouble(a.right, b.right, t),
+          bottom: _lerpDouble(a.bottom, b.bottom, t),
+          tlRadiusX: _lerpDouble(a.tlRadiusX, b.tlRadiusX, t),
+          tlRadiusY: _lerpDouble(a.tlRadiusY, b.tlRadiusY, t),
+          trRadiusX: _lerpDouble(a.trRadiusX, b.trRadiusX, t),
+          trRadiusY: _lerpDouble(a.trRadiusY, b.trRadiusY, t),
+          brRadiusX: _lerpDouble(a.brRadiusX, b.brRadiusX, t),
+          brRadiusY: _lerpDouble(a.brRadiusY, b.brRadiusY, t),
+          blRadiusX: _lerpDouble(a.blRadiusX, b.blRadiusX, t),
+          blRadiusY: _lerpDouble(a.blRadiusY, b.blRadiusY, t),
+        );
+      }
     }
-    return RRect._raw(
-      left: lerpDouble(a.left, b.left, t),
-      top: lerpDouble(a.top, b.top, t),
-      right: lerpDouble(a.right, b.right, t),
-      bottom: lerpDouble(a.bottom, b.bottom, t),
-      tlRadiusX: lerpDouble(a.tlRadiusX, b.tlRadiusX, t),
-      tlRadiusY: lerpDouble(a.tlRadiusY, b.tlRadiusY, t),
-      trRadiusX: lerpDouble(a.trRadiusX, b.trRadiusX, t),
-      trRadiusY: lerpDouble(a.trRadiusY, b.trRadiusY, t),
-      brRadiusX: lerpDouble(a.brRadiusX, b.brRadiusX, t),
-      brRadiusY: lerpDouble(a.brRadiusY, b.brRadiusY, t),
-      blRadiusX: lerpDouble(a.blRadiusX, b.blRadiusX, t),
-      blRadiusY: lerpDouble(a.blRadiusY, b.blRadiusY, t),
-    );
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (runtimeType != other.runtimeType)
@@ -1700,12 +1721,12 @@ class RSTransform {
   /// over multiple [RSTransform] objects, it may be more efficient to directly
   /// use the more direct [new RSTransform] constructor instead.
   factory RSTransform.fromComponents({
-    double rotation,
-    double scale,
-    double anchorX,
-    double anchorY,
-    double translateX,
-    double translateY
+    required double rotation,
+    required double scale,
+    required double anchorX,
+    required double anchorY,
+    required double translateX,
+    required double translateY
   }) {
     final double scos = math.cos(rotation) * scale;
     final double ssin = math.sin(rotation) * scale;

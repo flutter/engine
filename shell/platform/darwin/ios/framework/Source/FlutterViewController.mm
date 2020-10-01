@@ -13,6 +13,7 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/runtime/ptrace_check.h"
 #include "flutter/shell/common/thread_host.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
@@ -33,68 +34,13 @@ NSNotificationName const FlutterViewControllerHideHomeIndicator =
 NSNotificationName const FlutterViewControllerShowHomeIndicator =
     @"FlutterViewControllerShowHomeIndicator";
 
-/// Class to coalesce calls for a period of time.
-///
-/// This is used to filter out the conflicting notifications that can get sent
-/// in rapid succession when the app gets foregrounded.
-@interface FlutterCoalescer : NSObject
-@property(nonatomic, assign) BOOL isTriggered;
-@property(nonatomic, assign) BOOL isCoalescing;
-@property(nonatomic, copy) dispatch_block_t block;
-@end
-
-@implementation FlutterCoalescer
-- (instancetype)initWithBlock:(dispatch_block_t)block {
-  self = [super init];
-  if (self) {
-    self.block = block;
-  }
-  return self;
-}
-
-- (void)dealloc {
-  [_block release];
-  [super dealloc];
-}
-
-- (void)trigger {
-  if (_isCoalescing) {
-    _isTriggered = YES;
-  } else {
-    _isTriggered = NO;
-    if (_block) {
-      _block();
-    }
-  }
-}
-
-- (void)coalesceForSeconds:(double)seconds {
-  if (self.isCoalescing || !self.block) {
-    return;
-  }
-  self.isCoalescing = YES;
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, seconds * NSEC_PER_SEC),
-                 dispatch_get_main_queue(), ^{
-                   if (self.isTriggered && self.block) {
-                     self.block();
-                   }
-                   self.isTriggered = NO;
-                   self.isCoalescing = NO;
-                 });
-}
-
-- (void)invalidate {
-  self.block = nil;
-}
-
-@end  // FlutterCoalescer
-
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
+@property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 @end
 
 // The following conditional compilation defines an API 13 concept on earlier API targets so that
@@ -126,10 +72,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
-  NSMutableSet<NSNumber*>* _ongoingTouches;
-  // Coalescer that filters out superfluous keyboard notifications when the app
-  // is being foregrounded.
-  fml::scoped_nsobject<FlutterCoalescer> _updateViewportMetrics;
+  fml::scoped_nsobject<NSMutableSet<NSNumber*>> _ongoingTouches;
   // This scroll view is a workaround to accomodate iOS 13 and higher.  There isn't a way to get
   // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
   // UIScrollView with height zero and a content offset so we can get those events. See also:
@@ -160,7 +103,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
     _engineNeedsLaunch = NO;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-    _ongoingTouches = [[NSMutableSet alloc] init];
+    _ongoingTouches.reset([[NSMutableSet alloc] init]);
 
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
@@ -169,22 +112,24 @@ typedef enum UIAccessibilityContrast : NSInteger {
   return self;
 }
 
-- (instancetype)initWithProject:(nullable FlutterDartProject*)project
-                        nibName:(nullable NSString*)nibName
-                         bundle:(nullable NSBundle*)nibBundle {
+- (instancetype)initWithProject:(FlutterDartProject*)project
+                        nibName:(NSString*)nibName
+                         bundle:(NSBundle*)nibBundle {
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
-    _viewOpaque = YES;
-    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
-                                              project:project
-                               allowHeadlessExecution:NO]);
-    _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
-    [_engine.get() createShell:nil libraryURI:nil];
-    _engineNeedsLaunch = YES;
-    _ongoingTouches = [[NSMutableSet alloc] init];
-    [self loadDefaultSplashScreenView];
-    [self performCommonViewControllerInitialization];
+    [self sharedSetupWithProject:project initialRoute:nil];
+  }
+
+  return self;
+}
+
+- (instancetype)initWithProject:(FlutterDartProject*)project
+                   initialRoute:(NSString*)initialRoute
+                        nibName:(NSString*)nibName
+                         bundle:(NSBundle*)nibBundle {
+  self = [super initWithNibName:nibName bundle:nibBundle];
+  if (self) {
+    [self sharedSetupWithProject:project initialRoute:initialRoute];
   }
 
   return self;
@@ -195,11 +140,41 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
-  return [self initWithProject:nil nibName:nil bundle:nil];
+  self = [super initWithCoder:aDecoder];
+  return self;
+}
+
+- (void)awakeFromNib {
+  [super awakeFromNib];
+  if (!_engine) {
+    [self sharedSetupWithProject:nil initialRoute:nil];
+  }
 }
 
 - (instancetype)init {
   return [self initWithProject:nil nibName:nil bundle:nil];
+}
+
+- (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
+                  initialRoute:(nullable NSString*)initialRoute {
+  auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
+                initWithName:@"io.flutter"
+                     project:project
+      allowHeadlessExecution:self.engineAllowHeadlessExecution]};
+
+  if (!engine) {
+    return;
+  }
+
+  _viewOpaque = YES;
+  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+  _engine = std::move(engine);
+  _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+  [_engine.get() createShell:nil libraryURI:nil initialRoute:initialRoute];
+  _engineNeedsLaunch = YES;
+  _ongoingTouches.reset([[NSMutableSet alloc] init]);
+  [self loadDefaultSplashScreenView];
+  [self performCommonViewControllerInitialization];
 }
 
 - (BOOL)isViewOpaque {
@@ -226,11 +201,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   _statusBarStyle = UIStatusBarStyleDefault;
 
   [self setupNotificationCenterObservers];
-
-  __block FlutterViewController* blockSelf = self;
-  _updateViewportMetrics.reset([[FlutterCoalescer alloc] initWithBlock:^{
-    [blockSelf updateViewportMetricsImplementation];
-  }]);
 }
 
 - (FlutterEngine*)engine {
@@ -348,8 +318,42 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 #pragma mark - Loading the view
 
+static UIView* GetViewOrPlaceholder(UIView* existing_view) {
+  if (existing_view) {
+    return existing_view;
+  }
+
+  auto placeholder = [[[UIView alloc] init] autorelease];
+
+  placeholder.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  if (@available(iOS 13.0, *)) {
+    placeholder.backgroundColor = UIColor.systemBackgroundColor;
+  } else {
+    placeholder.backgroundColor = UIColor.whiteColor;
+  }
+  placeholder.autoresizesSubviews = YES;
+
+  // Only add the label when we know we have failed to enable tracing (and it was necessary).
+  // Otherwise, a spurious warning will be shown in cases where an engine cannot be initialized for
+  // other reasons.
+  if (flutter::GetTracingResult() == flutter::TracingResult::kDisabled) {
+    auto messageLabel = [[[UILabel alloc] init] autorelease];
+    messageLabel.numberOfLines = 0u;
+    messageLabel.textAlignment = NSTextAlignmentCenter;
+    messageLabel.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    messageLabel.text =
+        @"In iOS 14+, debug mode Flutter apps can only be launched from Flutter tooling, "
+        @"IDEs with Flutter plugins or from Xcode.\n\nAlternatively, build in profile or release "
+        @"modes to enable launching from the home screen.";
+    [placeholder addSubview:messageLabel];
+  }
+
+  return placeholder;
+}
+
 - (void)loadView {
-  self.view = _flutterView.get();
+  self.view = GetViewOrPlaceholder(_flutterView.get());
   self.view.multipleTouchEnabled = YES;
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
@@ -384,6 +388,9 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (BOOL)scrollViewShouldScrollToTop:(UIScrollView*)scrollView {
+  if (!_engine) {
+    return NO;
+  }
   CGPoint statusBarPoint = CGPointZero;
   sendFakeTouchEvent(_engine.get(), statusBarPoint, flutter::PointerData::Change::kDown);
   sendFakeTouchEvent(_engine.get(), statusBarPoint, flutter::PointerData::Change::kUp);
@@ -452,6 +459,10 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (void)installFirstFrameCallback {
+  if (!_engine) {
+    return;
+  }
+
   fml::WeakPtr<flutter::PlatformViewIOS> weakPlatformView = [_engine.get() platformView];
   if (!weakPlatformView) {
     return;
@@ -480,10 +491,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 #pragma mark - Properties
-
-- (FlutterView*)flutterView {
-  return _flutterView;
-}
 
 - (UIView*)splashScreenView {
   if (!_splashScreenView) {
@@ -524,7 +531,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (UIView*)splashScreenFromXib:(NSString*)name {
-  NSArray* objects = [[NSBundle mainBundle] loadNibNamed:name owner:self options:nil];
+  NSArray* objects = nil;
+  @try {
+    objects = [[NSBundle mainBundle] loadNibNamed:name owner:self options:nil];
+  } @catch (NSException* exception) {
+    return nil;
+  }
   if ([objects count] != 0) {
     UIView* view = [objects objectAtIndex:0];
     return view;
@@ -553,6 +565,10 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 #pragma mark - Surface creation and teardown updates
 
 - (void)surfaceUpdated:(BOOL)appeared {
+  if (!_engine) {
+    return;
+  }
+
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and raster
   // thread.
   if (appeared) {
@@ -573,14 +589,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewDidLoad {
   TRACE_EVENT0("flutter", "viewDidLoad");
 
-  if (_engineNeedsLaunch) {
+  if (_engine && _engineNeedsLaunch) {
     [_engine.get() launchEngine:nil libraryURI:nil];
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
   }
 
-  FML_DCHECK([_engine.get() viewController] != nil)
-      << "FlutterViewController::viewWillAppear:AttachView ViewController was nil";
   [_engine.get() attachView];
 
   [super viewDidLoad];
@@ -620,20 +634,23 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
-  [self surfaceUpdated:NO];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
-  [self flushOngoingTouches];
+  if ([_engine.get() viewController] == self) {
+    [self surfaceUpdated:NO];
+    [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+    [self flushOngoingTouches];
+    [_engine.get() notifyLowMemory];
+  }
 
   [super viewDidDisappear:animated];
 }
 
 - (void)flushOngoingTouches {
-  if (_ongoingTouches.count > 0) {
-    auto packet = std::make_unique<flutter::PointerDataPacket>(_ongoingTouches.count);
+  if (_engine && _ongoingTouches.get().count > 0) {
+    auto packet = std::make_unique<flutter::PointerDataPacket>(_ongoingTouches.get().count);
     size_t pointer_index = 0;
     // If the view controller is going away, we want to flush cancel all the ongoing
     // touches to the framework so nothing gets orphaned.
-    for (NSNumber* device in _ongoingTouches) {
+    for (NSNumber* device in _ongoingTouches.get()) {
       // Create fake PointerData to balance out each previously started one for the framework.
       flutter::PointerData pointer_data;
       pointer_data.Clear();
@@ -667,8 +684,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
                                                       object:self
                                                     userInfo:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
-  [_ongoingTouches release];
-  [_updateViewportMetrics invalidate];
   [super dealloc];
 }
 
@@ -695,7 +710,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
-  [_updateViewportMetrics coalesceForSeconds:0.5];
 }
 
 // Make this transition only while this current view controller is visible.
@@ -755,6 +769,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 // touch is specified in the second argument.
 - (void)dispatchTouches:(NSSet*)touches
     pointerDataChangeOverride:(flutter::PointerData::Change*)overridden_change {
+  if (!_engine) {
+    return;
+  }
+
   const CGFloat scale = [UIScreen mainScreen].scale;
   auto packet = std::make_unique<flutter::PointerDataPacket>(touches.count);
 
@@ -886,13 +904,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
-  [_updateViewportMetrics trigger];
-}
-
-/// The direct implementation of updateViewportMetrics, it doesn't conform to
-/// the coalescing logic when foregrounding the app.  Most calls should be
-/// directed to [updateViewportMetrics].
-- (void)updateViewportMetricsImplementation {
   [_engine.get() updateViewportMetrics:_viewportMetrics];
 }
 
@@ -920,11 +931,17 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   _viewportMetrics.physical_height = viewSize.height * scale;
 
   [self updateViewportPadding];
-  [self updateViewportMetricsImplementation];
+  [self updateViewportMetrics];
+
+  // There is no guarantee that UIKit will layout subviews when the application is active. Creating
+  // the surface when inactive will cause GPU accesses from the background. Only wait for the first
+  // frame to render when the application is actually active.
+  bool applicationIsActive =
+      [UIApplication sharedApplication].applicationState == UIApplicationStateActive;
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
-  if (firstViewBoundsUpdate) {
+  if (firstViewBoundsUpdate && applicationIsActive && _engine) {
     [self surfaceUpdated:YES];
 
     flutter::Shell& shell = [_engine.get() shell];
@@ -967,6 +984,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)keyboardWillChangeFrame:(NSNotification*)notification {
   NSDictionary* info = [notification userInfo];
+
+  if (@available(iOS 9, *)) {
+    // Ignore keyboard notifications related to other apps.
+    id isLocal = info[UIKeyboardIsLocalUserInfoKey];
+    if (isLocal && ![isLocal boolValue]) {
+      return;
+    }
+  }
+
   CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
   CGRect screenRect = [[UIScreen mainScreen] bounds];
 
@@ -1068,6 +1094,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Accessibility
 
 - (void)onAccessibilityStatusChanged:(NSNotification*)notification {
+  if (!_engine) {
+    return;
+  }
   auto platformView = [_engine.get() platformView];
   int32_t flags = 0;
   if (UIAccessibilityIsInvertColorsEnabled())
@@ -1262,10 +1291,16 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_engine.get().binaryMessenger sendOnChannel:channel message:message binaryReply:callback];
 }
 
-- (void)setMessageHandlerOnChannel:(NSString*)channel
-              binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
+- (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(NSString*)channel
+                                          binaryMessageHandler:
+                                              (FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel must not be null");
-  [_engine.get().binaryMessenger setMessageHandlerOnChannel:channel binaryMessageHandler:handler];
+  return [_engine.get().binaryMessenger setMessageHandlerOnChannel:channel
+                                              binaryMessageHandler:handler];
+}
+
+- (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
+  [_engine.get().binaryMessenger cleanupConnection:connection];
 }
 
 #pragma mark - FlutterTextureRegistry
@@ -1306,6 +1341,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
   return [_engine.get() valuePublishedByPlugin:pluginKey];
+}
+
+- (void)presentViewController:(UIViewController*)viewControllerToPresent
+                     animated:(BOOL)flag
+                   completion:(void (^)(void))completion {
+  self.isPresentingViewControllerAnimating = YES;
+  [super presentViewController:viewControllerToPresent
+                      animated:flag
+                    completion:^{
+                      self.isPresentingViewControllerAnimating = NO;
+                      if (completion) {
+                        completion();
+                      }
+                    }];
+}
+
+- (BOOL)isPresentingViewController {
+  return self.presentedViewController != nil || self.isPresentingViewControllerAnimating;
 }
 
 @end

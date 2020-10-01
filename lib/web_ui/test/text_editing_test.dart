@@ -3,13 +3,15 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+import 'dart:async';
 import 'dart:html';
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' hide window;
-
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+
+import 'package:ui/src/engine.dart' hide window;
 
 import 'matchers.dart';
 import 'spy.dart';
@@ -28,18 +30,13 @@ String lastInputAction;
 
 final InputConfiguration singlelineConfig = InputConfiguration(
   inputType: EngineInputType.text,
-  obscureText: false,
-  inputAction: 'TextInputAction.done',
-  autocorrect: true,
 );
 final Map<String, dynamic> flutterSinglelineConfig =
     createFlutterConfig('text');
 
 final InputConfiguration multilineConfig = InputConfiguration(
   inputType: EngineInputType.multiline,
-  obscureText: false,
   inputAction: 'TextInputAction.newline',
-  autocorrect: true,
 );
 final Map<String, dynamic> flutterMultilineConfig =
     createFlutterConfig('multiline');
@@ -53,6 +50,10 @@ void trackInputAction(String inputAction) {
 }
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   tearDown(() {
     lastEditingState = null;
     lastInputAction = null;
@@ -106,13 +107,23 @@ void main() {
       expect(document.activeElement, document.body);
     });
 
-    test('Knows how to create password fields', () {
-      final InputConfiguration config = InputConfiguration(
-        inputType: EngineInputType.text,
-        inputAction: 'TextInputAction.done',
-        obscureText: true,
-        autocorrect: true,
+    test('Respects read-only config', () {
+      final InputConfiguration config = InputConfiguration(readOnly: true);
+      editingElement.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
       );
+      expect(document.getElementsByTagName('input'), hasLength(1));
+      final InputElement input = document.getElementsByTagName('input')[0];
+      expect(editingElement.domElement, input);
+      expect(input.getAttribute('readonly'), 'readonly');
+
+      editingElement.disable();
+    });
+
+    test('Knows how to create password fields', () {
+      final InputConfiguration config = InputConfiguration(obscureText: true);
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -127,12 +138,7 @@ void main() {
     });
 
     test('Knows to turn autocorrect off', () {
-      final InputConfiguration config = InputConfiguration(
-        inputType: EngineInputType.text,
-        inputAction: 'TextInputAction.done',
-        obscureText: false,
-        autocorrect: false,
-      );
+      final InputConfiguration config = InputConfiguration(autocorrect: false);
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -147,12 +153,7 @@ void main() {
     });
 
     test('Knows to turn autocorrect on', () {
-      final InputConfiguration config = InputConfiguration(
-        inputType: EngineInputType.text,
-        inputAction: 'TextInputAction.done',
-        obscureText: false,
-        autocorrect: true,
-      );
+      final InputConfiguration config = InputConfiguration(autocorrect: true);
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -286,12 +287,8 @@ void main() {
     });
 
     test('Triggers input action', () {
-      final InputConfiguration config = InputConfiguration(
-        inputType: EngineInputType.text,
-        obscureText: false,
-        inputAction: 'TextInputAction.done',
-        autocorrect: true,
-      );
+      final InputConfiguration config =
+          InputConfiguration(inputAction: 'TextInputAction.done');
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -314,9 +311,7 @@ void main() {
     test('Does not trigger input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
         inputType: EngineInputType.multiline,
-        obscureText: false,
         inputAction: 'TextInputAction.done',
-        autocorrect: true,
       );
       editingElement.enable(
         config,
@@ -389,7 +384,7 @@ void main() {
       );
     });
 
-    test('Does not re-acquire focus', () {
+    test('Re-acquire focus', () {
       editingElement =
           SemanticsTextEditingStrategy(HybridTextEditing(), testInputElement);
 
@@ -403,16 +398,17 @@ void main() {
       );
       expect(document.activeElement, testInputElement);
 
-      // The input should lose focus now.
+      // The input should refocus after blur.
       editingElement.domElement.blur();
-      expect(document.activeElement, document.body);
+      expect(document.activeElement, editingElement.domElement);
 
       editingElement.disable();
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
         skip: (browserEngine == BrowserEngine.webkit ||
-            browserEngine == BrowserEngine.edge));
+            browserEngine == BrowserEngine.edge ||
+            browserEngine == BrowserEngine.firefox));
 
     test('Does not dispose and recreate dom elements in persistent mode', () {
       editingElement =
@@ -447,8 +443,12 @@ void main() {
       // It doesn't remove the DOM element.
       expect(editingElement.domElement, testInputElement);
       expect(document.body.contains(editingElement.domElement), isTrue);
-      // But the DOM element loses focus.
-      expect(document.activeElement, document.body);
+      // The textArea does not lose focus.
+      // Even though this passes on manual tests it does not work on
+      // Firefox automated unit tests.
+      if (browserEngine != BrowserEngine.firefox) {
+        expect(document.activeElement, editingElement.domElement);
+      }
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
@@ -465,12 +465,7 @@ void main() {
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      expect(document.activeElement, testInputElement);
-
-      editingElement.domElement.blur();
-      expect(document.activeElement, document.body);
-
-      // The input should regain focus now.
+      // The input will have focus after editing state is set.
       editingElement.setEditingState(EditingState(text: 'foo'));
       expect(document.activeElement, testInputElement);
 
@@ -508,20 +503,17 @@ void main() {
       // Focuses the textarea.
       expect(document.activeElement, textarea);
 
-      // Doesn't re-acquire focus.
       textarea.blur();
-      expect(document.activeElement, document.body);
-
-      // Re-focuses when setting editing state
-      editingElement.setEditingState(EditingState(text: 'foo'));
-      expect(document.activeElement, textarea);
+      // The textArea does not lose focus.
+      // Even though this passes on manual tests it does not work on
+      // Firefox automated unit tests.
+      if (browserEngine != BrowserEngine.firefox) {
+        expect(document.activeElement, textarea);
+      }
 
       editingElement.disable();
       // It doesn't remove the textarea from the DOM.
-      expect(editingElement.domElement, textarea);
       expect(document.body.contains(editingElement.domElement), isTrue);
-      // But the textarea loses focus.
-      expect(document.activeElement, document.body);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
@@ -567,12 +559,14 @@ void main() {
     /// the keyboard.
     ///
     /// Returns the `clientId` used in the platform message.
-    int showKeyboard({String inputType, String inputAction}) {
+    int showKeyboard(
+        {String inputType, String inputAction, bool decimal = false}) {
       final MethodCall setClient = MethodCall(
         'TextInput.setClient',
         <dynamic>[
           ++clientId,
-          createFlutterConfig(inputType, inputAction: inputAction),
+          createFlutterConfig(inputType,
+              inputAction: inputAction, decimal: decimal),
         ],
       );
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -673,7 +667,46 @@ void main() {
       expect(spy.messages, isEmpty);
     });
 
-    test('close connection on blur', () async {
+    test('setClient, setEditingState, show, updateConfig, clearClient', () {
+      final MethodCall setClient = MethodCall('TextInput.setClient', <dynamic>[
+        123,
+        createFlutterConfig('text', readOnly: true),
+      ]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState = MethodCall(
+        'TextInput.setEditingState',
+        <String, dynamic>{
+          'text': 'abcd',
+          'selectionBase': 2,
+          'selectionExtent': 3,
+        },
+      );
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      final HtmlElement element = textEditing.editingElement.domElement;
+      expect(element.getAttribute('readonly'), 'readonly');
+
+      // Update the read-only config.
+      final MethodCall updateConfig = MethodCall(
+        'TextInput.updateConfig',
+        createFlutterConfig('text', readOnly: false),
+      );
+      sendFrameworkMessage(codec.encodeMethodCall(updateConfig));
+
+      expect(element.hasAttribute('readonly'), isFalse);
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      // Confirm that [HybridTextEditing] didn't send any messages.
+      expect(spy.messages, isEmpty);
+    });
+
+    test('do not close connection on blur', () async {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -698,6 +731,47 @@ void main() {
       // DOM element is blurred.
       textEditing.editingElement.domElement.blur();
 
+      expect(spy.messages, hasLength(0));
+
+      // DOM element still has focus.
+      // Even though this passes on manual tests it does not work on
+      // Firefox automated unit tests.
+      if (browserEngine != BrowserEngine.firefox) {
+        expect(document.activeElement, textEditing.editingElement.domElement);
+      }
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
+
+    test('finishAutofillContext closes connection no autofill element',
+        () async {
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+
+      // Editing shouldn't have started yet.
+      expect(document.activeElement, document.body);
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'abcd', 2, 3);
+
+      const MethodCall finishAutofillContext =
+          MethodCall('TextInput.finishAutofillContext', false);
+      sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
+
       expect(spy.messages, hasLength(1));
       expect(spy.messages[0].channel, 'flutter/textinput');
       expect(spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
@@ -710,6 +784,159 @@ void main() {
       spy.messages.clear();
       // Input element is removed from DOM.
       expect(document.getElementsByTagName('input'), hasLength(0));
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
+
+    test('finishAutofillContext removes form from DOM', () async {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'username',
+              autofillHintsForFields: [
+            'username',
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // Form is added to DOM.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      // Confirm that [HybridTextEditing] didn't send any messages.
+      expect(spy.messages, isEmpty);
+      // Form stays on the DOM until autofill context is finalized.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(formsOnTheDom, hasLength(1));
+
+      const MethodCall finishAutofillContext =
+          MethodCall('TextInput.finishAutofillContext', false);
+      sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
+
+      // Form element is removed from DOM.
+      expect(document.getElementsByTagName('form'), hasLength(0));
+      expect(formsOnTheDom, hasLength(0));
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
+
+    test('finishAutofillContext with save submits forms', () async {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'username',
+              autofillHintsForFields: [
+            'username',
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // Form is added to DOM.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      FormElement formElement = document.getElementsByTagName('form')[0];
+      final Completer<bool> submittedForm = Completer<bool>();
+      formElement.addEventListener(
+          'submit', (event) => submittedForm.complete(true));
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      const MethodCall finishAutofillContext =
+          MethodCall('TextInput.finishAutofillContext', true);
+      sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
+
+      // `submit` action is called on form.
+      await expectLater(await submittedForm.future, true);
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
+
+    test('forms submits for focused input', () async {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'username',
+              autofillHintsForFields: [
+            'username',
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // Form is added to DOM.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      FormElement formElement = document.getElementsByTagName('form')[0];
+      final Completer<bool> submittedForm = Completer<bool>();
+      formElement.addEventListener(
+          'submit', (event) => submittedForm.complete(true));
+
+      // Clear client is not called. The used requested context to be finalized.
+      const MethodCall finishAutofillContext =
+          MethodCall('TextInput.finishAutofillContext', true);
+      sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
+
+      // Connection is closed by the engine.
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
+
+      // `submit` action is called on form.
+      await expectLater(await submittedForm.future, true);
+      // Form element is removed from DOM.
+      expect(document.getElementsByTagName('form'), hasLength(0));
+      expect(formsOnTheDom, hasLength(0));
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
@@ -785,6 +1012,233 @@ void main() {
 
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
+    });
+
+    test(
+        'singleTextField Autofill: setClient, setEditingState, show, '
+        'setSizeAndTransform, setEditingState, clearClient', () {
+      // Create a configuration with focused element has autofil hint.
+      final Map<String, dynamic> flutterSingleAutofillElementConfig =
+          createFlutterConfig('text', autofillHint: 'username');
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterSingleAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
+      // The second [setEditingState] should override the first one.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'abcd', 2, 3);
+
+      final FormElement formElement = document.getElementsByTagName('form')[0];
+      // The form has one input element and one submit button.
+      expect(formElement.childNodes, hasLength(2));
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      // Confirm that [HybridTextEditing] didn't send any messages.
+      expect(spy.messages, isEmpty);
+      // Form stays on the DOM until autofill context is finalized.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(formsOnTheDom, hasLength(1));
+    });
+
+    test(
+        'singleTextField Autofill setEditableSizeAndTransform preserves'
+        'editing state', () {
+      // Create a configuration with focused element has autofil hint.
+      final Map<String, dynamic> flutterSingleAutofillElementConfig =
+          createFlutterConfig('text', autofillHint: 'username');
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterSingleAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      final InputElement inputElement =
+          textEditing.editingElement.domElement as InputElement;
+      expect(inputElement.value, 'abcd');
+      if (!(browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.macOs)) {
+        // In Safari Desktop Autofill menu appears as soon as an element is
+        // focused, therefore the input element is only focused after the
+        // location is received.
+        expect(document.activeElement, inputElement);
+        expect(inputElement.selectionStart, 2);
+        expect(inputElement.selectionEnd, 3);
+      }
+
+      // The transform is changed. For example after a validation error, red
+      // line appeared under the input field.
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
+      // Check the element still has focus. User can keep editing.
+      expect(document.activeElement, textEditing.editingElement.domElement);
+
+      // Check the cursor location is the same.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'abcd', 2, 3);
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      // Confirm that [HybridTextEditing] didn't send any messages.
+      expect(spy.messages, isEmpty);
+      // Form stays on the DOM until autofill context is finalized.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(formsOnTheDom, hasLength(1));
+    });
+
+    test(
+        'multiTextField Autofill: setClient, setEditingState, show, '
+        'setSizeAndTransform setEditingState, clearClient', () {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'username',
+              autofillHintsForFields: [
+            'username',
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
+      // The second [setEditingState] should override the first one.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'abcd', 2, 3);
+
+      final FormElement formElement = document.getElementsByTagName('form')[0];
+      // The form has 4 input elements and one submit button.
+      expect(formElement.childNodes, hasLength(5));
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      // Confirm that [HybridTextEditing] didn't send any messages.
+      expect(spy.messages, isEmpty);
+      // Form stays on the DOM until autofill context is finalized.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(formsOnTheDom, hasLength(1));
+    });
+
+    test('No capitilization: setClient, setEditingState, show', () {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> capitilizeWordsConfig = createFlutterConfig(
+          'text',
+          textCapitalization: 'TextCapitalization.none');
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, capitilizeWordsConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': '',
+        'selectionBase': 0,
+        'selectionExtent': 0,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+      spy.messages.clear();
+
+      // Test for mobile Safari. `sentences` is the default attribute for
+      // mobile browsers. Check if `off` is added to the input element.
+      if (browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.iOs) {
+        expect(
+            textEditing.editingElement.domElement
+                .getAttribute('autocapitalize'),
+            'off');
+      } else {
+        expect(
+            textEditing.editingElement.domElement
+                .getAttribute('autocapitalize'),
+            isNull);
+      }
+
+      spy.messages.clear();
+      hideKeyboard();
+    });
+
+    test('All characters capitilization: setClient, setEditingState, show', () {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> capitilizeWordsConfig = createFlutterConfig(
+          'text',
+          textCapitalization: 'TextCapitalization.characters');
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, capitilizeWordsConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': '',
+        'selectionBase': 0,
+        'selectionExtent': 0,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+      spy.messages.clear();
+
+      // Test for mobile Safari.
+      if (browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.iOs) {
+        expect(
+            textEditing.editingElement.domElement
+                .getAttribute('autocapitalize'),
+            'characters');
+      }
+
+      spy.messages.clear();
+      hideKeyboard();
     });
 
     test(
@@ -1040,6 +1494,80 @@ void main() {
       hideKeyboard();
     });
 
+    test('multiTextField Autofill sync updates back to Flutter', () {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final String hintForFirstElement = 'familyName';
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'email',
+              autofillHintsForFields: [
+            hintForFirstElement,
+            'email',
+            'givenName',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
+      // The second [setEditingState] should override the first one.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'abcd', 2, 3);
+
+      final FormElement formElement = document.getElementsByTagName('form')[0];
+      // The form has 4 input elements and one submit button.
+      expect(formElement.childNodes, hasLength(5));
+
+      // Autofill one of the form elements.
+      InputElement element = formElement.childNodes.first;
+      if (browserEngine == BrowserEngine.firefox) {
+        expect(element.name,
+            BrowserAutofillHints.instance.flutterToEngine(hintForFirstElement));
+      } else {
+        expect(element.autocomplete,
+            BrowserAutofillHints.instance.flutterToEngine(hintForFirstElement));
+      }
+      element.value = 'something';
+      element.dispatchEvent(Event.eventType('Event', 'input'));
+
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName,
+          'TextInputClient.updateEditingStateWithTag');
+      expect(
+        spy.messages[0].methodArguments,
+        <dynamic>[
+          0, // Client ID
+          <String, dynamic>{
+            hintForFirstElement: <String, dynamic>{
+              'text': 'something',
+              'selectionBase': 9,
+              'selectionExtent': 9
+            }
+          },
+        ],
+      );
+
+      spy.messages.clear();
+      hideKeyboard();
+    });
+
     test('Multi-line mode also works', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterMultilineConfig]);
@@ -1132,6 +1660,12 @@ void main() {
       showKeyboard(inputType: 'number');
       expect(getEditingInputMode(), 'numeric');
 
+      showKeyboard(inputType: 'number', decimal: false);
+      expect(getEditingInputMode(), 'numeric');
+
+      showKeyboard(inputType: 'number', decimal: true);
+      expect(getEditingInputMode(), 'decimal');
+
       showKeyboard(inputType: 'phone');
       expect(getEditingInputMode(), 'tel');
 
@@ -1145,29 +1679,36 @@ void main() {
     });
 
     test('sets correct input type in iOS', () {
-      debugOperatingSystemOverride = OperatingSystem.iOs;
-      debugBrowserEngineOverride = BrowserEngine.webkit;
+      // Test on ios-safari only.
+      if (browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.iOs) {
+        /// During initialization [HybridTextEditing] will pick the correct
+        /// text editing strategy for [OperatingSystem.iOs].
+        textEditing = HybridTextEditing();
 
-      /// During initialization [HybridTextEditing] will pick the correct
-      /// text editing strategy for [OperatingSystem.iOs].
-      textEditing = HybridTextEditing();
+        showKeyboard(inputType: 'text');
+        expect(getEditingInputMode(), 'text');
 
-      showKeyboard(inputType: 'text');
-      expect(getEditingInputMode(), 'text');
+        showKeyboard(inputType: 'number');
+        expect(getEditingInputMode(), 'numeric');
 
-      showKeyboard(inputType: 'number');
-      expect(getEditingInputMode(), 'numeric');
+        showKeyboard(inputType: 'number', decimal: false);
+        expect(getEditingInputMode(), 'numeric');
 
-      showKeyboard(inputType: 'phone');
-      expect(getEditingInputMode(), 'tel');
+        showKeyboard(inputType: 'number', decimal: true);
+        expect(getEditingInputMode(), 'decimal');
 
-      showKeyboard(inputType: 'emailAddress');
-      expect(getEditingInputMode(), 'email');
+        showKeyboard(inputType: 'phone');
+        expect(getEditingInputMode(), 'tel');
 
-      showKeyboard(inputType: 'url');
-      expect(getEditingInputMode(), 'url');
+        showKeyboard(inputType: 'emailAddress');
+        expect(getEditingInputMode(), 'email');
 
-      hideKeyboard();
+        showKeyboard(inputType: 'url');
+        expect(getEditingInputMode(), 'url');
+
+        hideKeyboard();
+      }
     });
 
     test('sends the correct input action as a platform message', () {
@@ -1212,6 +1753,206 @@ void main() {
       expect(spy.messages, isEmpty);
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
+    });
+
+    tearDown(() {
+      clearForms();
+    });
+  });
+
+  group('EngineAutofillForm', () {
+    test('validate multi element form', () {
+      final List<dynamic> fields = createFieldValues(
+          ['username', 'password', 'newPassword'],
+          ['field1', 'field2', 'field3']);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              createAutofillInfo('username', 'field1'), fields);
+
+      // Number of elements if number of fields sent to the constructor minus
+      // one (for the focused text element).
+      expect(autofillForm.elements, hasLength(2));
+      expect(autofillForm.items, hasLength(2));
+      expect(autofillForm.formElement, isNotNull);
+
+      expect(autofillForm.formIdentifier, 'field1*field2*field3');
+
+      final FormElement form = autofillForm.formElement;
+      // Note that we also add a submit button. Therefore the form element has
+      // 3 child nodes.
+      expect(form.childNodes, hasLength(3));
+
+      final InputElement firstElement = form.childNodes.first;
+      // Autofill value is applied to the element.
+      expect(firstElement.name,
+          BrowserAutofillHints.instance.flutterToEngine('password'));
+      expect(firstElement.id,
+          BrowserAutofillHints.instance.flutterToEngine('password'));
+      expect(firstElement.type, 'password');
+      if (browserEngine == BrowserEngine.firefox) {
+        expect(firstElement.name,
+            BrowserAutofillHints.instance.flutterToEngine('password'));
+      } else {
+        expect(firstElement.autocomplete,
+            BrowserAutofillHints.instance.flutterToEngine('password'));
+      }
+
+      // Editing state is applied to the element.
+      expect(firstElement.value, 'Test');
+      expect(firstElement.selectionStart, 0);
+      expect(firstElement.selectionEnd, 0);
+
+      // Element is hidden.
+      final CssStyleDeclaration css = firstElement.style;
+      expect(css.color, 'transparent');
+      expect(css.backgroundColor, 'transparent');
+    });
+
+    test('validate multi element form ids sorted for form id', () {
+      final List<dynamic> fields = createFieldValues(
+          ['username', 'password', 'newPassword'],
+          ['zzyyxx', 'aabbcc', 'jjkkll']);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              createAutofillInfo('username', 'field1'), fields);
+
+      expect(autofillForm.formIdentifier, 'aabbcc*jjkkll*zzyyxx');
+    });
+
+    test('place and store form', () {
+      expect(document.getElementsByTagName('form'), isEmpty);
+
+      final List<dynamic> fields = createFieldValues(
+          ['username', 'password', 'newPassword'],
+          ['field1', 'fields2', 'field3']);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              createAutofillInfo('username', 'field1'), fields);
+
+      final InputElement testInputElement = InputElement();
+      autofillForm.placeForm(testInputElement);
+
+      // The focused element is appended to the form, form also has the button
+      // so in total it shoould have 4 elements.
+      final FormElement form = autofillForm.formElement;
+      expect(form.childNodes, hasLength(4));
+
+      final FormElement formOnDom = document.getElementsByTagName('form')[0];
+      // Form is attached to the DOM.
+      expect(form, equals(formOnDom));
+
+      autofillForm.storeForm();
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(formsOnTheDom, hasLength(1));
+    });
+
+    test('Validate single element form', () {
+      final List<dynamic> fields = createFieldValues(['username'], ['field1']);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              createAutofillInfo('username', 'field1'), fields);
+
+      // The focused element is the only field. Form should be empty after
+      // the initialization (focus element is appended later).
+      expect(autofillForm.elements, isEmpty);
+      expect(autofillForm.items, isEmpty);
+      expect(autofillForm.formElement, isNotNull);
+
+      final FormElement form = autofillForm.formElement;
+      // Submit button is added to the form.
+      expect(form.childNodes, isNotEmpty);
+      final InputElement inputElement = form.childNodes.first;
+      expect(inputElement.type, 'submit');
+
+      // The submit button should have class `submitBtn`.
+      expect(inputElement.className, 'submitBtn');
+    });
+
+    test('Return null if no focused element', () {
+      final List<dynamic> fields = createFieldValues(['username'], ['field1']);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(null, fields);
+
+      expect(autofillForm, isNull);
+    });
+
+    tearDown(() {
+      clearForms();
+    });
+  });
+
+  group('AutofillInfo', () {
+    const String testHint = 'streetAddressLine2';
+    const String testId = 'EditableText-659836579';
+    const String testPasswordHint = 'password';
+
+    test('autofill has correct value', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          createAutofillInfo(testHint, testId));
+
+      // Hint sent from the framework is converted to the hint compatible with
+      // browsers.
+      expect(autofillInfo.hint,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+      expect(autofillInfo.uniqueIdentifier, testId);
+    });
+
+    test('input with autofill hint', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          createAutofillInfo(testHint, testId));
+
+      final InputElement testInputElement = InputElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      // Hint sent from the framework is converted to the hint compatible with
+      // browsers.
+      expect(testInputElement.name,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+      expect(testInputElement.id,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+      expect(testInputElement.type, 'text');
+      if (browserEngine == BrowserEngine.firefox) {
+        expect(testInputElement.name,
+            BrowserAutofillHints.instance.flutterToEngine(testHint));
+      } else {
+        expect(testInputElement.autocomplete,
+            BrowserAutofillHints.instance.flutterToEngine(testHint));
+      }
+    });
+
+    test('textarea with autofill hint', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          createAutofillInfo(testHint, testId));
+
+      final TextAreaElement testInputElement = TextAreaElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      // Hint sent from the framework is converted to the hint compatible with
+      // browsers.
+      expect(testInputElement.name,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+      expect(testInputElement.id,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+      expect(testInputElement.getAttribute('autocomplete'),
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+    });
+
+    test('password autofill hint', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          createAutofillInfo(testPasswordHint, testId));
+
+      final InputElement testInputElement = InputElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      // Hint sent from the framework is converted to the hint compatible with
+      // browsers.
+      expect(testInputElement.name,
+          BrowserAutofillHints.instance.flutterToEngine(testPasswordHint));
+      expect(testInputElement.id,
+          BrowserAutofillHints.instance.flutterToEngine(testPasswordHint));
+      expect(testInputElement.type, 'password');
+      expect(testInputElement.getAttribute('autocomplete'),
+          BrowserAutofillHints.instance.flutterToEngine(testPasswordHint));
     });
   });
 
@@ -1356,7 +2097,7 @@ MethodCall configureSetSizeAndTransformMethodCall(
 /// Will disable editing element which will also clean the backup DOM
 /// element from the page.
 void cleanTextEditingElement() {
-  if (editingElement.isEnabled) {
+  if (editingElement != null && editingElement.isEnabled) {
     // Clean up all the DOM elements and event listeners.
     editingElement.disable();
   }
@@ -1399,18 +2140,81 @@ void checkTextAreaEditingState(
   expect(textarea.selectionEnd, end);
 }
 
+/// Creates an [InputConfiguration] for using in the tests.
+///
+/// For simplicity this method is using `autofillHint` as the `uniqueId` for
+/// simplicity.
 Map<String, dynamic> createFlutterConfig(
   String inputType, {
+  bool readOnly = false,
   bool obscureText = false,
   bool autocorrect = true,
+  String textCapitalization = 'TextCapitalization.none',
   String inputAction,
+  String autofillHint,
+  List<String> autofillHintsForFields,
+  bool decimal = false,
 }) {
   return <String, dynamic>{
-    'inputType': <String, String>{
+    'inputType': <String, dynamic>{
       'name': 'TextInputType.$inputType',
+      if (decimal) 'decimal': true,
     },
+    'readOnly': readOnly,
     'obscureText': obscureText,
     'autocorrect': autocorrect,
     'inputAction': inputAction ?? 'TextInputAction.done',
+    'textCapitalization': textCapitalization,
+    if (autofillHint != null)
+      'autofill': createAutofillInfo(autofillHint, autofillHint),
+    if (autofillHintsForFields != null)
+      'fields':
+          createFieldValues(autofillHintsForFields, autofillHintsForFields),
   };
+}
+
+Map<String, dynamic> createAutofillInfo(String hint, String uniqueId) =>
+    <String, dynamic>{
+      'uniqueIdentifier': uniqueId,
+      'hints': [hint],
+      'editingValue': {
+        'text': 'Test',
+        'selectionBase': 0,
+        'selectionExtent': 0,
+        'selectionAffinity': 'TextAffinity.downstream',
+        'selectionIsDirectional': false,
+        'composingBase': -1,
+        'composingExtent': -1,
+      },
+    };
+
+List<dynamic> createFieldValues(List<String> hints, List<String> uniqueIds) {
+  final List<dynamic> testFields = <dynamic>[];
+
+  expect(hints.length, equals(uniqueIds.length));
+
+  for (int i = 0; i < hints.length; i++) {
+    testFields.add(createOneFieldValue(hints[i], uniqueIds[i]));
+  }
+
+  return testFields;
+}
+
+Map<String, dynamic> createOneFieldValue(String hint, String uniqueId) =>
+    <String, dynamic>{
+      'inputType': {
+        'name': 'TextInputType.text',
+        'signed': null,
+        'decimal': null
+      },
+      'textCapitalization': 'TextCapitalization.none',
+      'autofill': createAutofillInfo(hint, uniqueId)
+    };
+
+/// In order to not leak test state, clean up the forms from dom if any remains.
+void clearForms() {
+  while (document.getElementsByTagName('form').length > 0) {
+    document.getElementsByTagName('form').last.remove();
+  }
+  formsOnTheDom.clear();
 }

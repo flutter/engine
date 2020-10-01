@@ -20,19 +20,18 @@ G_DECLARE_FINAL_TYPE(FlRendererX11,
 /**
  * FlRendererX11:
  *
- * #FlRendererX11 is an implementation of a #FlRenderer that renders to X11
+ * #FlRendererX11 is an implementation of #FlRenderer that renders to X11
  * windows.
  */
 
 /**
  * fl_renderer_x11_new:
- * @xid: The X window to render to.
  *
- * Create an object that allows Flutter to render to X11 windows.
+ * Creates an object that allows Flutter to render to X11 windows.
  *
- * Returns: a #FlRendererX11
+ * Returns: a new #FlRendererX11.
  */
-FlRendererX11* fl_renderer_x11_new(Window xid);
+FlRendererX11* fl_renderer_x11_new();
 
 G_END_DECLS
 

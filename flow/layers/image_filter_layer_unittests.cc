@@ -42,7 +42,7 @@ TEST_F(ImageFilterLayerTest, PaintBeforePrerollDies) {
 #endif
 
 TEST_F(ImageFilterLayerTest, EmptyFilter) {
-  const SkMatrix initial_transform = SkMatrix::MakeTrans(0.5f, 1.0f);
+  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
@@ -60,20 +60,17 @@ TEST_F(ImageFilterLayerTest, EmptyFilter) {
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-                MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkMatrix()}},
                 MockCanvas::DrawCall{
-                    1, MockCanvas::SaveLayerData{child_bounds, filter_paint,
-                                                 nullptr, 2}},
+                    0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
+                                                 nullptr, 1}},
                 MockCanvas::DrawCall{
-                    2, MockCanvas::DrawPathData{child_path, child_paint}},
-                MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
+                    1, MockCanvas::DrawPathData{child_path, child_paint}},
                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
             }));
 }
 
 TEST_F(ImageFilterLayerTest, SimpleFilter) {
-  const SkMatrix initial_transform = SkMatrix::MakeTrans(0.5f, 1.0f);
+  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
@@ -96,24 +93,21 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-                MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkMatrix()}},
                 MockCanvas::DrawCall{
-                    1, MockCanvas::SaveLayerData{child_bounds, filter_paint,
-                                                 nullptr, 2}},
+                    0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
+                                                 nullptr, 1}},
                 MockCanvas::DrawCall{
-                    2, MockCanvas::DrawPathData{child_path, child_paint}},
-                MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
+                    1, MockCanvas::DrawPathData{child_path, child_paint}},
                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
             }));
 }
 
 TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
-  const SkMatrix initial_transform = SkMatrix::MakeTrans(0.5f, 1.0f);
+  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
-  const SkMatrix filter_transform = SkMatrix::MakeScale(2.0, 2.0);
+  const SkMatrix filter_transform = SkMatrix::Scale(2.0, 2.0);
   auto layer_filter = SkImageFilter::MakeMatrixFilter(
       filter_transform, SkFilterQuality::kMedium_SkFilterQuality, nullptr);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
@@ -132,20 +126,17 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-                MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkMatrix()}},
                 MockCanvas::DrawCall{
-                    1, MockCanvas::SaveLayerData{child_bounds, filter_paint,
-                                                 nullptr, 2}},
+                    0, MockCanvas::SaveLayerData{child_bounds, filter_paint,
+                                                 nullptr, 1}},
                 MockCanvas::DrawCall{
-                    2, MockCanvas::DrawPathData{child_path, child_paint}},
-                MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
+                    1, MockCanvas::DrawPathData{child_path, child_paint}},
                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
             }));
 }
 
 TEST_F(ImageFilterLayerTest, MultipleChildren) {
-  const SkMatrix initial_transform = SkMatrix::MakeTrans(0.5f, 1.0f);
+  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
   const SkPath child_path1 = SkPath().addRect(child_bounds);
   const SkPath child_path2 =
@@ -177,23 +168,20 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
   SkPaint filter_paint;
   filter_paint.setImageFilter(layer_filter);
   layer->Paint(paint_context());
-  EXPECT_EQ(mock_canvas().draw_calls(),
-            std::vector(
-                {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-                 MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkMatrix()}},
-                 MockCanvas::DrawCall{
-                     1, MockCanvas::SaveLayerData{children_bounds, filter_paint,
-                                                  nullptr, 2}},
-                 MockCanvas::DrawCall{
-                     2, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                 MockCanvas::DrawCall{
-                     2, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                 MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
-                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(
+      mock_canvas().draw_calls(),
+      std::vector({MockCanvas::DrawCall{
+                       0, MockCanvas::SaveLayerData{children_bounds,
+                                                    filter_paint, nullptr, 1}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::DrawPathData{child_path1, child_paint1}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::DrawPathData{child_path2, child_paint2}},
+                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(ImageFilterLayerTest, Nested) {
-  const SkMatrix initial_transform = SkMatrix::MakeTrans(0.5f, 1.0f);
+  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
   const SkPath child_path1 = SkPath().addRect(child_bounds);
   const SkPath child_path2 =
@@ -237,22 +225,16 @@ TEST_F(ImageFilterLayerTest, Nested) {
   layer1->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({
-                MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkMatrix()}},
                 MockCanvas::DrawCall{
-                    1, MockCanvas::SaveLayerData{children_bounds, filter_paint1,
-                                                 nullptr, 2}},
+                    0, MockCanvas::SaveLayerData{children_bounds, filter_paint1,
+                                                 nullptr, 1}},
                 MockCanvas::DrawCall{
-                    2, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                MockCanvas::DrawCall{2, MockCanvas::SaveData{3}},
-                MockCanvas::DrawCall{3, MockCanvas::SetMatrixData{SkMatrix()}},
+                    1, MockCanvas::DrawPathData{child_path1, child_paint1}},
                 MockCanvas::DrawCall{
-                    3, MockCanvas::SaveLayerData{child_path2.getBounds(),
-                                                 filter_paint2, nullptr, 4}},
+                    1, MockCanvas::SaveLayerData{child_path2.getBounds(),
+                                                 filter_paint2, nullptr, 2}},
                 MockCanvas::DrawCall{
-                    4, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                MockCanvas::DrawCall{4, MockCanvas::RestoreData{3}},
-                MockCanvas::DrawCall{3, MockCanvas::RestoreData{2}},
+                    2, MockCanvas::DrawPathData{child_path2, child_paint2}},
                 MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
             }));
@@ -276,6 +258,71 @@ TEST_F(ImageFilterLayerTest, Readback) {
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
+}
+
+TEST_F(ImageFilterLayerTest, ChildIsCached) {
+  auto layer_filter = SkImageFilter::MakeMatrixFilter(
+      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
+  layer->Add(mock_layer);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+
+  layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_TRUE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+}
+
+TEST_F(ImageFilterLayerTest, ChildrenNotCached) {
+  auto layer_filter = SkImageFilter::MakeMatrixFilter(
+      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  const SkPath child_path2 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
+  auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
+  layer->Add(mock_layer1);
+  layer->Add(mock_layer2);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
+
+  layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
 }
 
 }  // namespace testing

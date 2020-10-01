@@ -7,12 +7,13 @@
 
 #include <memory>
 
+#include "flutter/flow/gl_context_switch.h"
 #include "flutter/flow/texture.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
-#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
+#import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -57,12 +58,12 @@ class IOSContext {
   ///             asynchronously and collect resources that are no longer needed
   ///             on the render task runner.
   ///
-  /// @attention  Client rendering APIs for which a GrContext cannot be realized
+  /// @attention  Client rendering APIs for which a GrDirectContext cannot be realized
   ///             (software rendering), this method will always return null.
   ///
   /// @return     A non-null Skia context on success. `nullptr` on failure.
   ///
-  virtual sk_sp<GrContext> CreateResourceContext() = 0;
+  virtual sk_sp<GrDirectContext> CreateResourceContext() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      When using client rendering APIs whose contexts need to be
@@ -74,7 +75,7 @@ class IOSContext {
   ///             bindings (anything that is not OpenGL) will always return
   ///             `true`.
   ///
-  /// @attention  Client rendering APIs for which a GrContext cannot be created
+  /// @attention  Client rendering APIs for which a GrDirectContext cannot be created
   ///             (software rendering) will always return `false`.
   ///
   /// @attention  This binds the on-screen context to the current thread. To
@@ -84,42 +85,12 @@ class IOSContext {
   /// @attention  Only one context may be bound to a thread at any given time.
   ///             Making a binding on a thread, clears the old binding.
   ///
-  /// @return     If the on-screen context could be bound to the current thread.
+  /// @return     A GLContextResult that represents the result of the method.
+  ///             The GetResult() returns a bool that indicates If the on-screen context could be
+  ///             bound to the current
+  /// thread.
   ///
-  virtual bool MakeCurrent() = 0;
-
-  //----------------------------------------------------------------------------
-  /// @brief      When using client rendering APIs whose contexts need to be
-  ///             bound to a specific thread, the engine will call this method
-  ///             to give the off-screen context a chance to bind to the current
-  ///             thread.
-  ///
-  /// @attention  Client rendering APIs that have no-concept of thread local
-  ///             bindings (anything that is not OpenGL) will always return
-  ///             `true`.
-  ///
-  /// @attention  Client rendering APIs for which a GrContext cannot be created
-  ///             (software rendering) will always return `false`.
-  ///
-  /// @attention  This binds the off-screen context to the current thread. To
-  ///             bind the on-screen context to the thread, use the
-  ///             `MakeCurrent` method instead.
-  ///
-  /// @attention  Only one context may be bound to a thread at any given time.
-  ///             Making a binding on a thread, clears the old binding.
-  ///
-  /// @return     If the off-screen context could be bound to the current
-  ///             thread.
-  ///
-  virtual bool ResourceMakeCurrent() = 0;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Clears the context binding of the current thread if one is
-  ///             present. Does noting otherwise.
-  ///
-  /// @return     `true` is the current context bound to the thread is cleared.
-  ///
-  virtual bool ClearCurrent() = 0;
+  virtual std::unique_ptr<GLContextResult> MakeCurrent() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an external texture proxy of the appropriate client

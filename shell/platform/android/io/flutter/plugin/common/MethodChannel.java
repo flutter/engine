@@ -11,6 +11,9 @@ import androidx.annotation.UiThread;
 import io.flutter.BuildConfig;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.ByteBuffer;
 
 /**
@@ -26,7 +29,7 @@ import java.nio.ByteBuffer;
  * <p>The logical identity of the channel is given by its name. Identically named channels will
  * interfere with each other's communication.
  */
-public final class MethodChannel {
+public class MethodChannel {
   private static final String TAG = "MethodChannel#";
 
   private final BinaryMessenger messenger;
@@ -90,7 +93,7 @@ public final class MethodChannel {
    * @param callback a {@link Result} callback for the invocation result, or null.
    */
   @UiThread
-  public void invokeMethod(String method, @Nullable Object arguments, Result callback) {
+  public void invokeMethod(String method, @Nullable Object arguments, @Nullable Result callback) {
     messenger.send(
         name,
         codec.encodeMethodCall(new MethodCall(method, arguments)),
@@ -165,7 +168,9 @@ public final class MethodChannel {
     /**
      * Handles a successful result.
      *
-     * @param result The result, possibly null.
+     * @param result The result, possibly null. The result must be an Object type supported by the
+     *     codec. For instance, if you are using {@link StandardMessageCodec} (default), please see
+     *     its documentation on what types are supported.
      */
     @UiThread
     void success(@Nullable Object result);
@@ -175,7 +180,9 @@ public final class MethodChannel {
      *
      * @param errorCode An error code String.
      * @param errorMessage A human-readable error message String, possibly null.
-     * @param errorDetails Error details, possibly null
+     * @param errorDetails Error details, possibly null. The details must be an Object type
+     *     supported by the codec. For instance, if you are using {@link StandardMessageCodec}
+     *     (default), please see its documentation on what types are supported.
      */
     @UiThread
     void error(String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails);
@@ -243,8 +250,16 @@ public final class MethodChannel {
             });
       } catch (RuntimeException e) {
         Log.e(TAG + name, "Failed to handle method call", e);
-        reply.reply(codec.encodeErrorEnvelope("error", e.getMessage(), null));
+        reply.reply(
+            codec.encodeErrorEnvelopeWithStacktrace(
+                "error", e.getMessage(), null, getStackTrace(e)));
       }
+    }
+
+    private String getStackTrace(Exception e) {
+      Writer result = new StringWriter();
+      e.printStackTrace(new PrintWriter(result));
+      return result.toString();
     }
   }
 }

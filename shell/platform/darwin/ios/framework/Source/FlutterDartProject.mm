@@ -4,8 +4,9 @@
 
 #define FML_USED_ON_EMBEDDER
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 
+#include "flutter/common/constants.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/message_loop.h"
@@ -13,8 +14,8 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
-#include "flutter/shell/platform/darwin/common/command_line.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/common/command_line.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 
 extern "C" {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
@@ -132,6 +133,14 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     }
   }
 
+  // Domain network configuration
+  NSDictionary* appTransportSecurity =
+      [mainBundle objectForInfoDictionaryKey:@"NSAppTransportSecurity"];
+  settings.may_insecurely_connect_to_all_domains =
+      [FlutterDartProject allowsArbitraryLoads:appTransportSecurity];
+  settings.domain_network_policy =
+      [FlutterDartProject domainNetworkPolicy:appTransportSecurity].UTF8String;
+
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // There are no ownership concerns here as all mappings are owned by the
   // embedder and not the engine.
@@ -143,6 +152,16 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
       make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
+  // If we even support setting this e.g. from the command line or the plist,
+  // we should let the user override it.
+  // Otherwise, we want to set this to a value that will avoid having the OS
+  // kill us. On most iOS devices, that happens somewhere near half
+  // the available memory.
+  // The VM expects this value to be in megabytes.
+  if (settings.old_gen_heap_size <= 0) {
+    settings.old_gen_heap_size = std::round([NSProcessInfo processInfo].physicalMemory * .48 /
+                                            flutter::kMegaByteSizeInBytes);
+  }
   return settings;
 }
 
@@ -168,12 +187,12 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   return self;
 }
 
-#pragma mark - WindowData accessors
+#pragma mark - PlatformData accessors
 
-- (const flutter::WindowData)defaultWindowData {
-  flutter::WindowData windowData;
-  windowData.lifecycle_state = std::string("AppLifecycleState.detached");
-  return windowData;
+- (const flutter::PlatformData)defaultPlatformData {
+  flutter::PlatformData PlatformData;
+  PlatformData.lifecycle_state = std::string("AppLifecycleState.detached");
+  return PlatformData;
 }
 
 #pragma mark - Settings accessors
@@ -219,6 +238,34 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   return flutterAssetsName;
 }
 
++ (NSString*)domainNetworkPolicy:(NSDictionary*)appTransportSecurity {
+  // https://developer.apple.com/documentation/bundleresources/information_property_list/nsapptransportsecurity/nsexceptiondomains
+  NSDictionary* exceptionDomains = [appTransportSecurity objectForKey:@"NSExceptionDomains"];
+  if (exceptionDomains == nil) {
+    return @"";
+  }
+  NSMutableArray* networkConfigArray = [[NSMutableArray alloc] init];
+  for (NSString* domain in exceptionDomains) {
+    NSDictionary* domainConfiguration = [exceptionDomains objectForKey:domain];
+    // Default value is false.
+    bool includesSubDomains =
+        [[domainConfiguration objectForKey:@"NSIncludesSubdomains"] boolValue];
+    bool allowsCleartextCommunication =
+        [[domainConfiguration objectForKey:@"NSExceptionAllowsInsecureHTTPLoads"] boolValue];
+    [networkConfigArray addObject:@[
+      domain, includesSubDomains ? @YES : @NO, allowsCleartextCommunication ? @YES : @NO
+    ]];
+  }
+  NSData* jsonData = [NSJSONSerialization dataWithJSONObject:networkConfigArray
+                                                     options:0
+                                                       error:NULL];
+  return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+}
+
++ (bool)allowsArbitraryLoads:(NSDictionary*)appTransportSecurity {
+  return [[appTransportSecurity objectForKey:@"NSAllowsArbitraryLoads"] boolValue];
+}
+
 + (NSString*)lookupKeyForAsset:(NSString*)asset {
   return [self lookupKeyForAsset:asset fromBundle:nil];
 }
@@ -261,6 +308,6 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   );
 }
 
-#pragma mark - windowData utilities
+#pragma mark - PlatformData utilities
 
 @end

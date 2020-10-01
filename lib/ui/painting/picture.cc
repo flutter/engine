@@ -4,6 +4,8 @@
 
 #include "flutter/lib/ui/painting/picture.h"
 
+#include <memory>
+
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -51,12 +53,13 @@ Dart_Handle Picture::toImage(uint32_t width,
 }
 
 void Picture::dispose() {
+  picture_.reset();
   ClearDartWrapper();
 }
 
-size_t Picture::GetAllocationSize() {
+size_t Picture::GetAllocationSize() const {
   if (auto picture = picture_.get()) {
-    return picture->approximateBytesUsed();
+    return picture->approximateBytesUsed() + sizeof(Picture);
   } else {
     return sizeof(Picture);
   }
@@ -75,8 +78,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
   }
 
   auto* dart_state = UIDartState::Current();
-  tonic::DartPersistentValue* image_callback =
-      new tonic::DartPersistentValue(dart_state, raw_image_callback);
+  auto image_callback = std::make_unique<tonic::DartPersistentValue>(
+      dart_state, raw_image_callback);
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
@@ -89,7 +92,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
 
   auto picture_bounds = SkISize::Make(width, height);
 
-  auto ui_task = fml::MakeCopyable([image_callback, unref_queue](
+  auto ui_task = fml::MakeCopyable([image_callback = std::move(image_callback),
+                                    unref_queue](
                                        sk_sp<SkImage> raster_image) mutable {
     auto dart_state = image_callback->dart_state().lock();
     if (!dart_state) {
@@ -111,8 +115,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
     tonic::DartInvoke(image_callback->Get(), {raw_dart_image});
 
     // image_callback is associated with the Dart isolate and must be deleted
-    // on the UI thread
-    delete image_callback;
+    // on the UI thread.
+    image_callback.reset();
   });
 
   // Kick things off on the raster rask runner.

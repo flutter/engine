@@ -7,11 +7,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 
 import 'package:async/async.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:image/image.dart';
-import 'package:package_resolver/package_resolver.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf.dart' as shelf;
@@ -34,14 +35,12 @@ import 'package:test_core/src/runner/environment.dart'; // ignore: implementatio
 
 import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
 import 'package:test_core/src/runner/configuration.dart'; // ignore: implementation_imports
-import 'package:test_core/src/runner/load_exception.dart'; // ignore: implementation_imports
-import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
-    as wip;
 
 import 'browser.dart';
 import 'common.dart';
 import 'environment.dart' as env;
 import 'goldens.dart';
+import 'screenshot_manager.dart';
 import 'supported_browsers.dart';
 
 class BrowserPlatform extends PlatformPlugin {
@@ -98,6 +97,11 @@ class BrowserPlatform extends PlatformPlugin {
   /// The HTTP client to use when caching JS files in `pub serve`.
   final HttpClient _http;
 
+  /// Handles taking screenshots during tests.
+  ///
+  /// Implementation will differ depending on the browser.
+  ScreenshotManager _screenshotManager;
+
   /// Whether [close] has been called.
   bool get _closed => _closeMemo.hasRun;
 
@@ -125,9 +129,10 @@ class BrowserPlatform extends PlatformPlugin {
               serveFilesOutsidePath:
                   config.suiteDefaults.precompiledPath != null))
           .add(_wrapperHandler);
-      // Screenshot tests are only enabled in chrome for now.
-      if (name == 'chrome') {
+      // Screenshot tests are only enabled in Chrome and Safari iOS for now.
+      if (browserName == 'chrome' || browserName == 'ios-safari') {
         cascade = cascade.add(_screeshotHandler);
+        _screenshotManager = ScreenshotManager.choose(browserName);
       }
     }
 
@@ -142,8 +147,9 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   Future<shelf.Response> _screeshotHandler(shelf.Request request) async {
-    if (browserName != 'chrome') {
-      throw Exception('Screenshots tests are only available in Chrome.');
+    if (browserName != 'chrome' && browserName != 'ios-safari') {
+      throw Exception('Screenshots tests are only available in Chrome '
+          'and in Safari-iOS.');
     }
 
     if (!request.requestedUri.path.endsWith('/screenshot')) {
@@ -179,6 +185,9 @@ class BrowserPlatform extends PlatformPlugin {
       write = true;
     }
 
+    filename =
+        filename.replaceAll('.png', '${_screenshotManager.filenameSuffix}.png');
+
     String goldensDirectory;
     if (filename.startsWith('__local__')) {
       filename = filename.substring('__local__/'.length);
@@ -188,7 +197,17 @@ class BrowserPlatform extends PlatformPlugin {
         'golden_files',
       );
     } else {
-      await fetchGoldens();
+      // On LUCI MacOS bots the goldens are fetched by the recipe code.
+      // Fetch the goldens if:
+      // - Tests are running on a local machine.
+      // - Tests are running on an OS other than macOS.
+      if (!isLuci || !Platform.isMacOS) {
+        await fetchGoldens();
+      } else {
+        if (!env.environment.webUiGoldensRepositoryDirectory.existsSync()) {
+          throw Exception('The goldens directory must have been copied');
+        }
+      }
       goldensDirectory = p.join(
         env.environment.webUiGoldensRepositoryDirectory.path,
         'engine',
@@ -203,48 +222,21 @@ class BrowserPlatform extends PlatformPlugin {
     ));
     if (!file.existsSync() && !write) {
       return '''
-Golden file $filename does not exist.
+Golden file $filename does not exist on path ${file.absolute.path}
 
 To automatically create this file call matchGoldenFile('$filename', write: true).
 ''';
     }
 
-    final wip.ChromeConnection chromeConnection =
-        wip.ChromeConnection('localhost', kDevtoolsPort);
-    final wip.ChromeTab chromeTab = await chromeConnection.getTab(
-        (wip.ChromeTab chromeTab) => chromeTab.url.contains('localhost'));
-    final wip.WipConnection wipConnection = await chromeTab.connect();
+    final Rectangle regionAsRectange = Rectangle(
+      region['x'] as num,
+      region['y'] as num,
+      region['width'] as num,
+      region['height'] as num,
+    );
 
-    Map<String, dynamic> captureScreenshotParameters = null;
-    if (region != null) {
-      captureScreenshotParameters = <String, dynamic>{
-        'format': 'png',
-        'clip': <String, dynamic>{
-          'x': region['x'],
-          'y': region['y'],
-          'width': region['width'],
-          'height': region['height'],
-          'scale':
-              1, // This is NOT the DPI of the page, instead it's the "zoom level".
-        },
-      };
-    }
-
-    // Setting hardware-independent screen parameters:
-    // https://chromedevtools.github.io/devtools-protocol/tot/Emulation
-    await wipConnection
-        .sendCommand('Emulation.setDeviceMetricsOverride', <String, dynamic>{
-      'width': kMaxScreenshotWidth,
-      'height': kMaxScreenshotHeight,
-      'deviceScaleFactor': 1,
-      'mobile': false,
-    });
-    final wip.WipResponse response = await wipConnection.sendCommand(
-        'Page.captureScreenshot', captureScreenshotParameters);
-
-    // Compare screenshots
-    final Image screenshot =
-        decodePng(base64.decode(response.result['data'] as String));
+    // Take screenshot.
+    final Image screenshot = await _screenshotManager.capture(regionAsRectange);
 
     if (write) {
       // Don't even bother with the comparison, just write and return
@@ -258,6 +250,7 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
       }
     }
 
+    // Compare screenshots.
     ImageDiff diff = ImageDiff(
       golden: decodeNamedImage(file.readAsBytesSync(), filename),
       other: screenshot,
@@ -265,17 +258,8 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
     );
 
     if (diff.rate > 0) {
-      // Images are different, so produce some debug info
-      final String testResultsPath = isCirrus
-          ? p.join(
-              Platform.environment['CIRRUS_WORKING_DIR'],
-              'test_results',
-            )
-          : p.join(
-              env.environment.webUiDartToolDir.path,
-              'test_results',
-            );
-      Directory(testResultsPath).createSync(recursive: true);
+      final String testResultsPath =
+          env.environment.webUiTestResultsDirectory.path;
       final String basename = p.basenameWithoutExtension(file.path);
 
       final File actualFile =
@@ -405,15 +389,6 @@ Golden file $filename did not match the image generated by the test.
 
     if (!browser.isBrowser) {
       throw ArgumentError('$browser is not a browser.');
-    }
-
-    var htmlPath = p.withoutExtension(path) + '.html';
-    if (File(htmlPath).existsSync() &&
-        !File(htmlPath).readAsStringSync().contains('packages/test/dart.js')) {
-      throw LoadException(
-          path,
-          '"${htmlPath}" must contain <script src="packages/test/dart.js">'
-          '</script>.');
     }
 
     if (_closed) {
@@ -688,9 +663,12 @@ class BrowserManager {
 
     var completer = Completer<BrowserManager>();
 
-    browser.onExit.then((_) {
-      throw Exception('${runtime.name} exited before connecting.');
-    }).catchError((dynamic error, StackTrace stackTrace) {
+    // For the cases where we use a delegator such as `adb` (for Android) or
+    // `xcrun` (for IOS), these delegator processes can shut down before the
+    // websocket is available. Therefore do not throw an error if proccess
+    // exits with exitCode 0. Note that `browser` will throw and error if the
+    // exit code was not 0, which will be processed by the next callback.
+    browser.onExit.catchError((dynamic error, StackTrace stackTrace) {
       if (completer.isCompleted) {
         return;
       }
@@ -710,10 +688,7 @@ class BrowserManager {
       completer.completeError(error, stackTrace);
     });
 
-    return completer.future.timeout(Duration(seconds: 30), onTimeout: () {
-      browser.close();
-      throw Exception('Timed out waiting for ${runtime.name} to connect.');
-    });
+    return completer.future;
   }
 
   /// Starts the browser identified by [browser] using [settings] and has it load [url].
@@ -811,15 +786,22 @@ class BrowserManager {
         controller = deserializeSuite(path, currentPlatform(_runtime),
             suiteConfig, await _environment, suiteChannel, message);
 
-        final String mapPath = p.join(
-          env.environment.webUiRootDir.path,
-          'build',
-          '$path.browser_test.dart.js.map',
-        );
+        final String sourceMapFileName =
+            '${p.basename(path)}.browser_test.dart.js.map';
+        final String pathToTest = p.dirname(path);
+
+        final String mapPath = p.join(env.environment.webUiRootDir.path,
+            'build', pathToTest, sourceMapFileName);
+
+        PackageConfig packageConfig =
+            await loadPackageConfigUri(await Isolate.packageConfig);
+        Map<String, Uri> packageMap = {
+          for (var p in packageConfig.packages) p.name: p.packageUriRoot
+        };
         final JSStackTraceMapper mapper = JSStackTraceMapper(
           await File(mapPath).readAsString(),
           mapUrl: p.toUri(mapPath),
-          packageResolver: await PackageResolver.current.asSync,
+          packageMap: packageMap,
           sdkRoot: p.toUri(sdkDir),
         );
 

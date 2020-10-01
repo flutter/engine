@@ -8,12 +8,13 @@ import android.content.res.AssetManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StringCodec;
 import io.flutter.view.FlutterCallbackInformation;
-import io.flutter.view.FlutterMain;
 import java.nio.ByteBuffer;
 
 /**
@@ -233,13 +234,36 @@ public class DartExecutor implements BinaryMessenger {
   }
 
   /**
+   * Notify the Dart VM of a low memory event, or that the application is in a state such that now
+   * is an appropriate time to free resources, such as going to the background.
+   *
+   * <p>This does not notify a Flutter application about memory pressure. For that, use the {@link
+   * SystemChannel#sendMemoryPressureWarning}.
+   */
+  public void notifyLowMemoryWarning() {
+    if (flutterJNI.isAttached()) {
+      flutterJNI.notifyLowMemoryWarning();
+    }
+  }
+
+  /**
    * Configuration options that specify which Dart entrypoint function is executed and where to find
    * that entrypoint and other assets required for Dart execution.
    */
   public static class DartEntrypoint {
+    /**
+     * Create a DartEntrypoint pointing to the default Flutter assets location with a default Dart
+     * entrypoint.
+     */
     @NonNull
     public static DartEntrypoint createDefault() {
-      return new DartEntrypoint(FlutterMain.findAppBundlePath(), "main");
+      FlutterLoader flutterLoader = FlutterInjector.instance().flutterLoader();
+
+      if (!flutterLoader.initialized()) {
+        throw new AssertionError(
+            "DartEntrypoints can only be created once a FlutterEngine is created.");
+      }
+      return new DartEntrypoint(flutterLoader.findAppBundlePath(), "main");
     }
 
     /** The path within the AssetManager where the app will look for assets. */

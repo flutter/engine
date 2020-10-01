@@ -24,7 +24,7 @@ class _Logger {
 }
 
 @pragma('vm:entry-point')
-String _rawScript;
+late String _rawScript;
 
 Uri _scriptUri() {
   if (_rawScript.startsWith('http:') ||

@@ -9,15 +9,19 @@ import 'dart:io' as io;
 import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
+import 'package:pool/pool.dart';
 import 'package:test_core/src/runner/hack_register_platform.dart'
     as hack; // ignore: implementation_imports
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
 
+import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 import 'integration_tests_manager.dart';
+import 'macos_info.dart';
+import 'safari_installation.dart';
 import 'supported_browsers.dart';
 import 'test_platform.dart';
 import 'utils.dart';
@@ -57,17 +61,17 @@ class TestCommand extends Command<bool> with ArgUtils {
             'tests.',
       )
       ..addFlag('use-system-flutter',
-        defaultsTo: false,
-        help: 'integration tests are using flutter repository for various tasks'
-        ', such as flutter drive, flutter pub get. If this flag is set, felt '
-        'will use flutter command without cloning the repository. This flag '
-        'can save internet bandwidth. However use with caution. Note that '
-        'since flutter repo is always synced to youngest commit older than '
-        'the engine commit for the tests running in CI, the tests results '
-        'won\'t be consistent with CIs when this flag is set. flutter '
-        'command should be set in the PATH for this flag to be useful.'
-        'This flag can also be used to test local Flutter changes.'
-      )
+          defaultsTo: false,
+          help:
+              'integration tests are using flutter repository for various tasks'
+              ', such as flutter drive, flutter pub get. If this flag is set, felt '
+              'will use flutter command without cloning the repository. This flag '
+              'can save internet bandwidth. However use with caution. Note that '
+              'since flutter repo is always synced to youngest commit older than '
+              'the engine commit for the tests running in CI, the tests results '
+              'won\'t be consistent with CIs when this flag is set. flutter '
+              'command should be set in the PATH for this flag to be useful.'
+              'This flag can also be used to test local Flutter changes.')
       ..addFlag(
         'update-screenshot-goldens',
         defaultsTo: false,
@@ -95,6 +99,9 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   TestTypesRequested testTypesRequested = null;
 
+  /// How many dart2js build tasks are running at the same time.
+  final Pool _pool = Pool(8);
+
   /// Check the flags to see what type of tests are requested.
   TestTypesRequested findTestType() {
     if (boolArg('unit-tests-only') && boolArg('integration-tests-only')) {
@@ -104,7 +111,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       print('Running the unit tests only');
       return TestTypesRequested.unit;
     } else if (boolArg('integration-tests-only')) {
-      if (!isChrome) {
+      if (!isChrome && !isSafariOnMacOS && !isFirefox) {
         throw UnimplementedError(
             'Integration tests are only available on Chrome Desktop for now');
       }
@@ -122,17 +129,21 @@ class TestCommand extends Command<bool> with ArgUtils {
     // Check the flags to see what type of integration tests are requested.
     testTypesRequested = findTestType();
 
+    if (isSafariOnMacOS) {
+      /// Collect information on the bot.
+      final MacOSInfo macOsInfo = new MacOSInfo();
+      await macOsInfo.printInformation();
+    }
+
     switch (testTypesRequested) {
       case TestTypesRequested.unit:
         return runUnitTests();
       case TestTypesRequested.integration:
         return runIntegrationTests();
       case TestTypesRequested.all:
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/53322
-        // TODO(nurhan): Expand browser matrix for felt integration tests.
-        if (runAllTests && isChrome) {
-          bool integrationTestResult = await runIntegrationTests();
+        if (runAllTests && isIntegrationTestsAvailable) {
           bool unitTestResult = await runUnitTests();
+          bool integrationTestResult = await runIntegrationTests();
           if (integrationTestResult != unitTestResult) {
             print('Tests run. Integration tests passed: $integrationTestResult '
                 'unit tests passed: $unitTestResult');
@@ -146,11 +157,6 @@ class TestCommand extends Command<bool> with ArgUtils {
   }
 
   Future<bool> runIntegrationTests() async {
-    // TODO(nurhan): https://github.com/flutter/flutter/issues/52983
-    if (io.Platform.environment['LUCI_CONTEXT'] != null) {
-      return true;
-    }
-
     return IntegrationTestsManager(browser, useSystemFlutter).runTests();
   }
 
@@ -164,33 +170,138 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runPubGet();
     }
 
-    await _buildTests(targets: targetFiles);
-
-    // Many tabs will be left open after Safari runs, quit Safari during
-    // cleanup.
-    if (browser == 'safari') {
-      cleanupCallbacks.add(() async {
-        // Only close Safari if felt is running in CI environments. Do not close
-        // Safari for the local testing.
-        if (io.Platform.environment['LUCI_CONTEXT'] != null || isCirrus) {
-          print('INFO: Safari tests ran. Quit Safari.');
-          await runProcess(
-            'sudo',
-            ['pkill', '-lf', 'Safari'],
-            workingDirectory: environment.webUiRootDir.path,
-          );
-        } else {
-          print('INFO: Safari tests ran. Please quit Safari tabs.');
-        }
-      });
-    }
+    await _prepare();
+    await _buildTargets();
 
     if (runAllTests) {
-      await _runAllTests();
+      await _runAllTestsForCurrentPlatform();
     } else {
-      await _runTargetTests(targetFiles);
+      await _runSpecificTests(targetFiles);
     }
     return true;
+  }
+
+  /// Preparations before running the tests such as booting simulators or
+  /// creating directories.
+  Future<void> _prepare() async {
+    if (environment.webUiTestResultsDirectory.existsSync()) {
+      environment.webUiTestResultsDirectory.deleteSync(recursive: true);
+    }
+    environment.webUiTestResultsDirectory.createSync(recursive: true);
+
+    // In order to run iOS Safari unit tests we need to make sure iOS Simulator
+    // is booted.
+    if (isSafariIOS) {
+      await IosSafariArgParser.instance.initIosSimulator();
+    }
+  }
+
+  /// Builds all test targets that will be run.
+  Future<void> _buildTargets() async {
+    final Stopwatch stopwatch = Stopwatch()..start();
+    List<FilePath> allTargets;
+    if (runAllTests) {
+      allTargets = environment.webUiTestDir
+          .listSync(recursive: true)
+          .whereType<io.File>()
+          .where((io.File f) => f.path.endsWith('_test.dart'))
+          .map<FilePath>((io.File f) => FilePath.fromWebUi(
+              path.relative(f.path, from: environment.webUiRootDir.path)))
+          .toList();
+    } else {
+      allTargets = targetFiles;
+    }
+
+    // Separate HTML targets from CanvasKit targets because the two use
+    // different dart2js options (and different build.*.yaml files).
+    final List<FilePath> htmlTargets = <FilePath>[];
+    final List<FilePath> canvasKitTargets = <FilePath>[];
+    final String canvasKitTestDirectory =
+        path.join(environment.webUiTestDir.path, 'canvaskit');
+    for (FilePath target in allTargets) {
+      if (path.isWithin(canvasKitTestDirectory, target.absolute)) {
+        canvasKitTargets.add(target);
+      } else {
+        htmlTargets.add(target);
+      }
+    }
+
+    if (htmlTargets.isNotEmpty) {
+      await _buildTestsInParallel(targets: htmlTargets, forCanvasKit: false);
+    }
+
+    // Currently iOS Safari tests are running on simulator, which does not
+    // support canvaskit backend.
+    if (canvasKitTargets.isNotEmpty) {
+      await _buildTestsInParallel(
+          targets: canvasKitTargets, forCanvasKit: true);
+    }
+
+    _copyFilesFromTestToBuid();
+    _copyFilesFromLibToBuid();
+
+    stopwatch.stop();
+    print('The build took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
+
+    _cleanupExtraFilesUnderTestDir();
+  }
+
+  /// Copy image files from test/ to build/test/.
+  ///
+  /// By copying all the files helps with the following:
+  /// - Tests using on an asset/image are able to reach these files.
+  /// - Source maps can locate test files.
+  ///
+  /// A side effect is this file copies all the images even when only one
+  /// target test is asked to run.
+  void _copyFilesFromTestToBuid() {
+    final List<io.FileSystemEntity> contents =
+        environment.webUiTestDir.listSync(recursive: true);
+    _copyFiles(contents);
+  }
+
+  /// Copy contents of /lib under /build.
+  ///
+  /// Since the source map are created to assume library files are under
+  /// `../../../../lib/src/`. Unless these files are copied under /build,
+  /// they are not visible during debug.
+  ///
+  /// This operation was handled by `build_runner` before we started using
+  /// plain `dart2js`.
+  void _copyFilesFromLibToBuid() {
+    final List<io.FileSystemEntity> contents =
+        environment.webUiLibDir.listSync(recursive: true);
+    _copyFiles(contents);
+  }
+
+  void _copyFiles(List<io.FileSystemEntity> contents) {
+    contents.whereType<io.File>().forEach((final io.File entity) {
+      final String directoryPath = path.relative(path.dirname(entity.path),
+          from: environment.webUiRootDir.path);
+      final io.Directory directory = io.Directory(
+          path.join(environment.webUiBuildDir.path, directoryPath));
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
+      }
+      final String pathRelativeToWebUi = path.relative(entity.absolute.path,
+          from: environment.webUiRootDir.path);
+      entity.copySync(
+          path.join(environment.webUiBuildDir.path, pathRelativeToWebUi));
+    });
+  }
+
+  /// Dart2js initially run under /test directory.
+  ///
+  /// The following files are copied under /build directory after that.
+  ///
+  void _cleanupExtraFilesUnderTestDir() {
+    final List<io.FileSystemEntity> contents =
+        environment.webUiTestDir.listSync(recursive: true);
+    contents.whereType<io.File>().forEach((final io.File entity) {
+      if (path.basename(entity.path).contains('.browser_test.dart.js')) {
+        entity.deleteSync();
+      }
+    });
   }
 
   /// Whether to start the browser in debug mode.
@@ -218,6 +329,48 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Whether [browser] is set to "chrome".
   bool get isChrome => browser == 'chrome';
 
+  /// Whether [browser] is set to "firefox".
+  bool get isFirefox => browser == 'firefox';
+
+  /// Whether [browser] is set to "safari".
+  bool get isSafariOnMacOS => browser == 'safari' && io.Platform.isMacOS;
+
+  /// Whether [browser] is set to "ios-safari".
+  bool get isSafariIOS => browser == 'ios-safari' && io.Platform.isMacOS;
+
+  /// Due to lack of resources Chrome integration tests only run on Linux on
+  /// LUCI.
+  ///
+  /// They run on all platforms for local.
+  bool get isChromeIntegrationTestAvailable =>
+      (isChrome && isLuci && io.Platform.isLinux) || (isChrome && !isLuci);
+
+  /// Due to efficiancy constraints, Firefox integration tests only run on
+  /// Linux on LUCI.
+  ///
+  /// For now Firefox integration tests only run on Linux and Mac on local.
+  ///
+  // TODO: https://github.com/flutter/flutter/issues/63832
+  bool get isFirefoxIntegrationTestAvailable =>
+      (isFirefox && isLuci && io.Platform.isLinux) ||
+      (isFirefox && !isLuci && !io.Platform.isWindows);
+
+  /// Latest versions of Safari Desktop are only available on macOS.
+  ///
+  /// Integration testing on LUCI is not supported at the moment.
+  // TODO: https://github.com/flutter/flutter/issues/63710
+  bool get isSafariIntegrationTestAvailable => isSafariOnMacOS && !isLuci;
+
+  /// Due to various factors integration tests might be missing on a given
+  /// platform and given environment.
+  /// See: [isChromeIntegrationTestAvailable]
+  /// See: [isSafariIntegrationTestAvailable]
+  /// See: [isFirefoxIntegrationTestAvailable]
+  bool get isIntegrationTestsAvailable =>
+      isChromeIntegrationTestAvailable ||
+      isFirefoxIntegrationTestAvailable ||
+      isSafariIntegrationTestAvailable;
+
   /// Use system flutter instead of cloning the repository.
   ///
   /// Read the flag help for more details. Uses PATH to locate flutter.
@@ -227,19 +380,30 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// ".dart_tool/goldens".
   bool get doUpdateScreenshotGoldens => boolArg('update-screenshot-goldens');
 
-  Future<void> _runTargetTests(List<FilePath> targets) async {
+  /// Runs all tests specified in [targets].
+  ///
+  /// Unlike [_runAllTestsForCurrentPlatform], this does not filter targets
+  /// by platform/browser capabilites, and instead attempts to run all of
+  /// them.
+  Future<void> _runSpecificTests(List<FilePath> targets) async {
     await _runTestBatch(targets, concurrency: 1, expectFailure: false);
     _checkExitCode();
   }
 
-  Future<void> _runAllTests() async {
+  /// Runs as many tests as possible on the current OS/browser combination.
+  Future<void> _runAllTestsForCurrentPlatform() async {
     final io.Directory testDir = io.Directory(path.join(
       environment.webUiRootDir.path,
       'test',
     ));
 
-    // Screenshot tests and smoke tests only run in Chrome.
-    if (isChrome) {
+    // Screenshot tests and smoke tests only run on: "Chrome/iOS Safari"
+    // locally and on LUCI. They are not available on Windows bots:
+    // TODO: https://github.com/flutter/flutter/issues/63710
+    if ((isChrome && isLuci && io.Platform.isLinux) ||
+        ((isChrome || isSafariIOS) && !isLuci) ||
+        (isSafariIOS && isLuci)) {
+      print('INFO: Also running the screenshot tests.');
       // Separate screenshot tests from unit-tests. Screenshot tests must run
       // one at a time. Otherwise, they will end up screenshotting each other.
       // This is not an issue for unit-tests.
@@ -378,29 +542,80 @@ class TestCommand extends Command<bool> with ArgUtils {
     timestampFile.writeAsStringSync(timestamp);
   }
 
-  Future<void> _buildTests({List<FilePath> targets}) async {
+  Future<void> _buildTestsInParallel(
+      {List<FilePath> targets, bool forCanvasKit = false}) async {
+    final List<TestBuildInput> buildInputs = targets
+        .map((FilePath f) => TestBuildInput(f, forCanvasKit: forCanvasKit))
+        .toList();
+
+    final results = _pool.forEach(
+      buildInputs,
+      _buildTest,
+    );
+    await for (final bool isSuccess in results) {
+      if (!isSuccess) {
+        throw ToolException('Failed to compile tests.');
+      }
+    }
+  }
+
+  /// Builds the specific test [targets].
+  ///
+  /// [targets] must not be null.
+  ///
+  /// Uses `dart2js` for building the test.
+  ///
+  /// When building for CanvasKit we have to use extra argument
+  /// `DFLUTTER_WEB_USE_SKIA=true`.
+  ///
+  /// Dart2js creates the following outputs:
+  /// - target.browser_test.dart.js
+  /// - target.browser_test.dart.js.deps
+  /// - target.browser_test.dart.js.maps
+  /// under the same directory with test file. If all these files are not in
+  /// the same directory, Chrome dev tools cannot load the source code during
+  /// debug.
+  ///
+  /// All the files under test already copied from /test directory to /build
+  /// directory before test are build. See [_copyFilesFromTestToBuid].
+  ///
+  /// Later the extra files will be deleted in [_cleanupExtraFilesUnderTestDir].
+  Future<bool> _buildTest(TestBuildInput input) async {
+    final targetFileName = '${input.path.relativeToWebUi}.browser_test.dart.js';
+
+    final io.Directory directoryToTarget = io.Directory(path.join(
+        environment.webUiBuildDir.path,
+        path.dirname(input.path.relativeToWebUi)));
+
+    if (!directoryToTarget.existsSync()) {
+      directoryToTarget.createSync(recursive: true);
+    }
+
     List<String> arguments = <String>[
-      'run',
-      'build_runner',
-      'build',
-      'test',
+      '--no-minify',
+      '--disable-inlining',
+      '--enable-asserts',
+      '--enable-experiment=non-nullable',
+      '--no-sound-null-safety',
+      if (input.forCanvasKit) '-DFLUTTER_WEB_USE_SKIA=true',
+      '-O2',
       '-o',
-      'build',
-      if (targets != null)
-        for (FilePath path in targets) ...[
-          '--build-filter=${path.relativeToWebUi}.js',
-          '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
-        ],
+      targetFileName, // target path.
+      '${input.path.relativeToWebUi}', // current path.
     ];
+
     final int exitCode = await runProcess(
-      environment.pubExecutable,
+      environment.dart2jsExecutable,
       arguments,
       workingDirectory: environment.webUiRootDir.path,
     );
 
     if (exitCode != 0) {
-      throw ToolException(
-          'Failed to compile tests. Compiler exited with exit code $exitCode');
+      io.stderr.writeln('ERROR: Failed to compile test ${input.path}. '
+          'Dart2js exited with exit code $exitCode');
+      return false;
+    } else {
+      return true;
     }
   }
 
@@ -471,4 +686,17 @@ void _copyTestFontsIntoWebUi() {
         path.join(environment.webUiRootDir.path, 'lib', 'assets', fontFile);
     sourceTtf.copySync(destinationTtfPath);
   }
+}
+
+/// Used as an input message to the PoolResources that are building a test.
+class TestBuildInput {
+  /// Test to build.
+  final FilePath path;
+
+  /// Whether these tests should be build for CanvasKit.
+  ///
+  /// `-DFLUTTER_WEB_USE_SKIA=true` is passed to dart2js for CanvasKit.
+  final bool forCanvasKit;
+
+  TestBuildInput(this.path, {this.forCanvasKit = false});
 }

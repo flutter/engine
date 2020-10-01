@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_swapchain.h"
+#include "vulkan_swapchain.h"
 
-#include "flutter/vulkan/vulkan_backbuffer.h"
-#include "flutter/vulkan/vulkan_device.h"
-#include "flutter/vulkan/vulkan_image.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
-#include "flutter/vulkan/vulkan_surface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
+#include "vulkan_backbuffer.h"
+#include "vulkan_device.h"
+#include "vulkan_image.h"
+#include "vulkan_proc_table.h"
+#include "vulkan_surface.h"
 
 namespace vulkan {
 
@@ -39,7 +39,7 @@ static std::vector<FormatInfo> DesiredFormatInfos() {
 VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
                                  const VulkanDevice& device,
                                  const VulkanSurface& surface,
-                                 GrContext* skia_context,
+                                 GrDirectContext* skia_context,
                                  std::unique_ptr<VulkanSwapchain> old_swapchain,
                                  uint32_t queue_family_index)
     : vk(p_vk),
@@ -208,7 +208,7 @@ SkISize VulkanSwapchain::GetSize() const {
 }
 
 sk_sp<SkSurface> VulkanSwapchain::CreateSkiaSurface(
-    GrContext* gr_context,
+    GrDirectContext* gr_context,
     VkImage image,
     const SkISize& size,
     SkColorType color_type,
@@ -222,19 +222,17 @@ sk_sp<SkSurface> VulkanSwapchain::CreateSkiaSurface(
     return nullptr;
   }
 
-  const GrVkImageInfo image_info = {
-      image,                      // image
-      GrVkAlloc(),                // alloc
-      VK_IMAGE_TILING_OPTIMAL,    // tiling
-      VK_IMAGE_LAYOUT_UNDEFINED,  // layout
-      surface_format_.format,     // format
-      1,                          // level count
-  };
+  GrVkImageInfo image_info;
+  image_info.fImage = image;
+  image_info.fImageTiling = VK_IMAGE_TILING_OPTIMAL;
+  image_info.fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  image_info.fFormat = surface_format_.format;
+  image_info.fLevelCount = 1;
 
   // TODO(chinmaygarde): Setup the stencil buffer and the sampleCnt.
   GrBackendRenderTarget backend_render_target(size.fWidth, size.fHeight, 0,
                                               image_info);
-  SkSurfaceProps props(SkSurfaceProps::InitType::kLegacyFontHost_InitType);
+  SkSurfaceProps props(0, kUnknown_SkPixelGeometry);
 
   return SkSurface::MakeFromBackendRenderTarget(
       gr_context,                // context
@@ -246,7 +244,7 @@ sk_sp<SkSurface> VulkanSwapchain::CreateSkiaSurface(
   );
 }
 
-bool VulkanSwapchain::CreateSwapchainImages(GrContext* skia_context,
+bool VulkanSwapchain::CreateSwapchainImages(GrDirectContext* skia_context,
                                             SkColorType color_type,
                                             sk_sp<SkColorSpace> color_space) {
   std::vector<VkImage> images = GetImages();
@@ -488,7 +486,7 @@ bool VulkanSwapchain::Submit() {
   // Step 0:
   // Make sure Skia has flushed all work for the surface to the gpu.
   // ---------------------------------------------------------------------------
-  surface->flush();
+  surface->flushAndSubmit();
 
   // ---------------------------------------------------------------------------
   // Step 1:

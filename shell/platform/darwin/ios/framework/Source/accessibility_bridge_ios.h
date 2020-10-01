@@ -24,6 +24,18 @@ class AccessibilityBridgeIos {
   virtual void DispatchSemanticsAction(int32_t id,
                                        flutter::SemanticsAction action,
                                        std::vector<uint8_t> args) = 0;
+  /**
+   * A callback that is called when a SemanticObject receives focus.
+   *
+   * The input id is the uid of the newly focused SemanticObject.
+   */
+  virtual void AccessibilityObjectDidBecomeFocused(int32_t id) = 0;
+  /**
+   * A callback that is called when a SemanticObject loses focus
+   *
+   * The input id is the uid of the newly focused SemanticObject.
+   */
+  virtual void AccessibilityObjectDidLoseFocus(int32_t id) = 0;
   virtual FlutterPlatformViewsController* GetPlatformViewsController() const = 0;
 };
 

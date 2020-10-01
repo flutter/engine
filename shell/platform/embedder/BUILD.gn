@@ -2,16 +2,24 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/toolchain/clang.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/embedder/embedder.gni")
 import("//flutter/testing/testing.gni")
 
+declare_args() {
+  embedder_enable_software = shell_enable_software
+  embedder_enable_vulkan = shell_enable_vulkan
+  embedder_enable_gl = shell_enable_gl
+  embedder_enable_metal = shell_enable_metal
+}
+
 shell_gpu_configuration("embedder_gpu_configuration") {
-  enable_software = true
-  enable_vulkan = false
-  enable_gl = true
-  enable_metal = false
+  enable_software = embedder_enable_software
+  enable_vulkan = embedder_enable_vulkan
+  enable_gl = embedder_enable_gl
+  enable_metal = embedder_enable_metal
 }
 
 _framework_binary_subpath = "Versions/A/FlutterEmbedder"
@@ -24,11 +32,8 @@ template("embedder_source_set") {
   source_set(target_name) {
     sources = [
       "embedder.cc",
-      "embedder.h",
       "embedder_engine.cc",
       "embedder_engine.h",
-      "embedder_external_texture_gl.cc",
-      "embedder_external_texture_gl.h",
       "embedder_external_view.cc",
       "embedder_external_view.h",
       "embedder_external_view_embedder.cc",
@@ -46,8 +51,6 @@ template("embedder_source_set") {
       "embedder_safe_access.h",
       "embedder_surface.cc",
       "embedder_surface.h",
-      "embedder_surface_gl.cc",
-      "embedder_surface_gl.h",
       "embedder_surface_software.cc",
       "embedder_surface_software.h",
       "embedder_task_runner.cc",
@@ -60,6 +63,15 @@ template("embedder_source_set") {
       "vsync_waiter_embedder.h",
     ]
 
+    if (embedder_enable_gl) {
+      sources += [
+        "embedder_external_texture_gl.cc",
+        "embedder_external_texture_gl.h",
+        "embedder_surface_gl.cc",
+        "embedder_surface_gl.h",
+      ]
+    }
+
     deps = [
       ":embedder_gpu_configuration",
       "//flutter/assets",
@@ -71,10 +83,16 @@ template("embedder_source_set") {
       "//flutter/shell/common",
       "//flutter/third_party/tonic",
       "//third_party/dart/runtime/bin:dart_io_api",
+      "//third_party/dart/runtime/bin:elf_loader",
       "//third_party/skia",
     ]
 
-    public_configs += [ "//flutter:config" ]
+    public_deps = [ ":embedder_headers" ]
+
+    public_configs += [
+      ":embedder_gpu_configuration_config",
+      "//flutter:config",
+    ]
   }
 }
 
@@ -82,12 +100,26 @@ embedder_source_set("embedder") {
   public_configs = []
 }
 
-embedder_source_set("embedder_with_symbol_prefix") {
-  public_configs = [ ":embedder_prefix_config" ]
+embedder_source_set("embedder_as_internal_library") {
+  public_configs = [ ":embedder_internal_library_config" ]
 }
 
-config("embedder_prefix_config") {
-  defines = [ "FLUTTER_API_SYMBOL_PREFIX=Embedder" ]
+source_set("embedder_headers") {
+  public = [ "embedder.h" ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
+# For using the embedder API as internal implementation detail of an
+# embedding.
+config("embedder_internal_library_config") {
+  defines = [
+    # Use prefixed symbols to avoid collisions with higher level API.
+    "FLUTTER_API_SYMBOL_PREFIX=Embedder",
+
+    # Don't export the embedder.h API surface.
+    "FLUTTER_NO_EXPORT",
+  ]
 }
 
 test_fixtures("fixtures") {
@@ -110,11 +142,14 @@ test_fixtures("fixtures") {
   ]
 }
 
-if (current_toolchain == host_toolchain) {
+if (enable_unittests) {
   executable("embedder_unittests") {
     testonly = true
 
-    configs += [ "//flutter:export_dynamic_symbols" ]
+    configs += [
+      ":embedder_gpu_configuration_config",
+      "//flutter:export_dynamic_symbols",
+    ]
 
     include_dirs = [ "." ]
 
@@ -124,27 +159,46 @@ if (current_toolchain == host_toolchain) {
       "tests/embedder_config_builder.h",
       "tests/embedder_test.cc",
       "tests/embedder_test.h",
+      "tests/embedder_test_backingstore_producer.cc",
+      "tests/embedder_test_backingstore_producer.h",
       "tests/embedder_test_compositor.cc",
       "tests/embedder_test_compositor.h",
+      "tests/embedder_test_compositor_software.cc",
+      "tests/embedder_test_compositor_software.h",
       "tests/embedder_test_context.cc",
       "tests/embedder_test_context.h",
+      "tests/embedder_test_context_software.cc",
+      "tests/embedder_test_context_software.h",
       "tests/embedder_unittests.cc",
+      "tests/embedder_unittests_util.cc",
     ]
 
     deps = [
       ":embedder",
+      ":embedder_gpu_configuration",
       ":fixtures",
       "//flutter/flow",
       "//flutter/lib/ui",
       "//flutter/runtime",
       "//flutter/testing",
       "//flutter/testing:dart",
-      "//flutter/testing:opengl",
       "//flutter/testing:skia",
       "//flutter/third_party/tonic",
       "//third_party/dart/runtime/bin:elf_loader",
       "//third_party/skia",
     ]
+
+    if (test_enable_gl) {
+      sources += [
+        "tests/embedder_test_compositor_gl.cc",
+        "tests/embedder_test_compositor_gl.h",
+        "tests/embedder_test_context_gl.cc",
+        "tests/embedder_test_context_gl.h",
+        "tests/embedder_unittests_gl.cc",
+      ]
+
+      deps += [ "//flutter/testing:opengl" ]
+    }
   }
 }
 
@@ -157,21 +211,15 @@ shared_library("flutter_engine_library") {
     ldflags = [ "-Wl,-install_name,@rpath/FlutterEmbedder.framework/$_framework_binary_subpath" ]
   }
 
-  deps = [
-    ":embedder",
-  ]
+  deps = [ ":embedder" ]
 
   public_configs = [ "//flutter:config" ]
 }
 
 copy("copy_headers") {
   visibility = [ ":*" ]
-  sources = [
-    "embedder.h",
-  ]
-  outputs = [
-    "$root_out_dir/flutter_embedder.h",
-  ]
+  sources = [ "embedder.h" ]
+  outputs = [ "$root_out_dir/flutter_embedder.h" ]
 }
 
 if (is_mac && !embedder_for_target) {
@@ -179,9 +227,7 @@ if (is_mac && !embedder_for_target) {
 
   copy("copy_framework_headers") {
     visibility = [ ":*" ]
-    sources = [
-      "embedder.h",
-    ]
+    sources = [ "embedder.h" ]
     outputs = [
       "$_flutter_embedder_framework_dir/Versions/A/Headers/FlutterEmbedder.h",
     ]
@@ -189,35 +235,27 @@ if (is_mac && !embedder_for_target) {
 
   copy("copy_icu") {
     visibility = [ ":*" ]
-    sources = [
-      "//third_party/icu/flutter/icudtl.dat",
-    ]
-    outputs = [
-      "$_flutter_embedder_framework_dir/Versions/A/Resources/icudtl.dat",
-    ]
+    sources = [ "//third_party/icu/flutter/icudtl.dat" ]
+    outputs =
+        [ "$_flutter_embedder_framework_dir/Versions/A/Resources/icudtl.dat" ]
   }
 
   action("copy_info_plist") {
     script = "//flutter/build/copy_info_plist.py"
     visibility = [ ":*" ]
-    sources = [
-      "assets/EmbedderInfo.plist",
-    ]
-    outputs = [
-      "$_flutter_embedder_framework_dir/Versions/A/Resources/Info.plist",
-    ]
+    sources = [ "assets/EmbedderInfo.plist" ]
+    outputs =
+        [ "$_flutter_embedder_framework_dir/Versions/A/Resources/Info.plist" ]
     args = [
       rebase_path(sources[0]),
       rebase_path(outputs[0]),
-      "--bitcode=$flutter_enable_bitcode",
+      "--bitcode=$enable_bitcode",
     ]
   }
 
   copy("copy_module_map") {
     visibility = [ ":*" ]
-    sources = [
-      "assets/embedder.modulemap",
-    ]
+    sources = [ "assets/embedder.modulemap" ]
     outputs = [
       "$_flutter_embedder_framework_dir/Versions/A/Modules/module.modulemap",
     ]
@@ -226,24 +264,16 @@ if (is_mac && !embedder_for_target) {
   copy("copy_dylib") {
     visibility = [ ":*" ]
 
-    sources = [
-      "$root_out_dir/libflutter_engine.dylib",
-    ]
-    outputs = [
-      "$_flutter_embedder_framework_dir/$_framework_binary_subpath",
-    ]
+    sources = [ "$root_out_dir/libflutter_engine.dylib" ]
+    outputs = [ "$_flutter_embedder_framework_dir/$_framework_binary_subpath" ]
 
-    deps = [
-      ":flutter_engine_library",
-    ]
+    deps = [ ":flutter_engine_library" ]
   }
 
   action("generate_symlinks") {
     visibility = [ ":*" ]
     script = "//build/config/mac/package_framework.py"
-    outputs = [
-      "$root_build_dir/FlutterEmbedder.stamp",
-    ]
+    outputs = [ "$root_build_dir/FlutterEmbedder.stamp" ]
     args = [
       "--framework",
       "FlutterEmbedder.framework",
@@ -268,9 +298,7 @@ if (is_mac && !embedder_for_target) {
 
   group("flutter_embedder_framework") {
     visibility = [ ":*" ]
-    deps = [
-      ":generate_symlinks",
-    ]
+    deps = [ ":generate_symlinks" ]
   }
 }
 

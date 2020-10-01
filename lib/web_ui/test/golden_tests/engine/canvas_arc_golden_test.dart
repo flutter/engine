@@ -4,14 +4,19 @@
 
 // @dart = 2.6
 import 'dart:html' as html;
-
+import 'dart:math' as math;
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
-import 'package:test/test.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-void main() async {
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() async {
   final Rect region = Rect.fromLTWH(0, 0, 400, 600);
 
   BitmapCanvas canvas;
@@ -47,6 +52,38 @@ void main() async {
     await matchGoldenFile('canvas_arc_to_point.png', region: region);
   });
 
+  test('Path.addArc that starts new path has correct start point', () async {
+    final Rect rect = Rect.fromLTWH(20, 20, 200, 200);
+    final Path p = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(rect)
+      ..addArc(Rect.fromCircle(center: rect.center,
+          radius: rect.size.shortestSide / 2), 0.25 * math.pi, 1.5 * math.pi);
+    canvas.drawPath(p, SurfacePaintData()
+      ..color = Color(0xFFFF9800) // orange
+      ..style = PaintingStyle.fill);
+
+    html.document.body.append(canvas.rootElement);
+    await matchGoldenFile('canvas_addarc.png', region: region);
+  });
+
+  test('Should render counter clockwise arcs', () async {
+    final Path path = Path();
+    path.moveTo(149.999999999999997, 50);
+    path.lineTo(149.999999999999997, 20);
+    path.arcTo(Rect.fromLTRB(20, 20, 280, 280), 4.71238898038469,
+        5.759586531581287 - 4.71238898038469, true);
+    path.lineTo(236.60254037844385, 99.99999999999999);
+    path.arcTo(Rect.fromLTRB(50, 50, 250, 250), 5.759586531581287,
+        4.71238898038469 - 5.759586531581287, true);
+    path.lineTo(149.999999999999997, 20);
+    canvas.drawPath(path, SurfacePaintData()
+      ..color = Color(0xFFFF9800) // orange
+      ..style = PaintingStyle.fill);
+
+    html.document.body.append(canvas.rootElement);
+    await matchGoldenFile('canvas_addarc_ccw.png', region: region);
+  });
 }
 
 void paintArc(BitmapCanvas canvas, Offset offset,

@@ -19,17 +19,21 @@ class Handle extends NativeFieldWrapperClass2 {
   }
   static Handle _createInvalid() native 'Handle_CreateInvalid';
 
-  int get _handle native 'Handle_handle';
+  int get handle native 'Handle_handle';
+
+  int get koid native 'Handle_koid';
 
   @override
-  String toString() => 'Handle($_handle)';
+  String toString() => 'Handle($handle)';
 
   @override
-  bool operator ==(Object other) =>
-      (other is Handle) && (_handle == other._handle);
+  bool operator ==(Object other) {
+    return other is Handle
+        && other.handle == handle;
+  }
 
   @override
-  int get hashCode => _handle.hashCode;
+  int get hashCode => handle.hashCode;
 
   // Common handle operations.
   bool get isValid native 'Handle_is_valid';

@@ -2,27 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
-#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 
 #include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 
 #if FLUTTER_SHELL_ENABLE_METAL
-#include "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
 namespace flutter {
-
-// The name of the Info.plist flag to enable the embedded iOS views preview.
-constexpr const char* kEmbeddedViewsPreview = "io.flutter.embedded_views_preview";
-
-bool IsIosEmbeddedViewsPreviewEnabled() {
-  static bool preview_enabled =
-      [[[NSBundle mainBundle] objectForInfoDictionaryKey:@(kEmbeddedViewsPreview)] boolValue];
-  return preview_enabled;
-}
 
 std::unique_ptr<IOSSurface> IOSSurface::Create(
     std::shared_ptr<IOSContext> context,
@@ -79,14 +70,6 @@ SkCanvas* IOSSurface::GetRootCanvas() {
   return nullptr;
 }
 
-ExternalViewEmbedder* IOSSurface::GetExternalViewEmbedderIfEnabled() {
-  if (IsIosEmbeddedViewsPreviewEnabled()) {
-    return this;
-  } else {
-    return nullptr;
-  }
-}
-
 // |ExternalViewEmbedder|
 void IOSSurface::CancelFrame() {
   TRACE_EVENT0("flutter", "IOSSurface::CancelFrame");
@@ -94,25 +77,18 @@ void IOSSurface::CancelFrame() {
   platform_views_controller_->CancelFrame();
   // Committing the current transaction as |BeginFrame| will create a nested
   // CATransaction otherwise.
-  if ([[NSThread currentThread] isMainThread]) {
-    // The only time we need to commit the `CATranscation` is when
-    // there are platform views in the scene, which has to be run on the
-    // main thread.
-    [CATransaction commit];
-  }
+  [CATransaction commit];
 }
 
 // |ExternalViewEmbedder|
-void IOSSurface::BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) {
+void IOSSurface::BeginFrame(SkISize frame_size,
+                            GrDirectContext* context,
+                            double device_pixel_ratio,
+                            fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::BeginFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   platform_views_controller_->SetFrameSize(frame_size);
-  if ([[NSThread currentThread] isMainThread]) {
-    // The only time we need to commit the `CATranscation` is when
-    // there are platform views in the scene, which has to be run on the
-    // main thread.
-    [CATransaction begin];
-  }
+  [CATransaction begin];
 }
 
 // |ExternalViewEmbedder|
@@ -129,7 +105,12 @@ PostPrerollResult IOSSurface::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::PostPrerollAction");
   FML_CHECK(platform_views_controller_ != nullptr);
-  return platform_views_controller_->PostPrerollAction(raster_thread_merger);
+  PostPrerollResult result = platform_views_controller_->PostPrerollAction(raster_thread_merger);
+  if (result == PostPrerollResult::kSkipAndRetryFrame) {
+    // Commit the current transaction if the frame is dropped.
+    [CATransaction commit];
+  }
+  return result;
 }
 
 // |ExternalViewEmbedder|
@@ -146,30 +127,29 @@ SkCanvas* IOSSurface::CompositeEmbeddedView(int view_id) {
 }
 
 // |ExternalViewEmbedder|
-bool IOSSurface::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
+void IOSSurface::SubmitFrame(GrDirectContext* context, std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "IOSSurface::SubmitFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   bool submitted =
-      platform_views_controller_->SubmitFrame(std::move(context), ios_context_, background_canvas);
-  return submitted;
+      platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame));
+
+  if (submitted) {
+    TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
+    [CATransaction commit];
+  }
 }
 
 // |ExternalViewEmbedder|
-void IOSSurface::EndFrame(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+void IOSSurface::EndFrame(bool should_resubmit_frame,
+                          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::EndFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  return platform_views_controller_->EndFrame(raster_thread_merger);
+  return platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger);
 }
 
 // |ExternalViewEmbedder|
-void IOSSurface::FinishFrame() {
-  TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
-  if (![[NSThread currentThread] isMainThread]) {
-    return;
-  }
-  // The only time we need to commit the `CATranscation` is when
-  // there are platform views in the scene, which has to be run on the
-  // main thread.
-  [CATransaction commit];
+bool IOSSurface::SupportsDynamicThreadMerging() {
+  return true;
 }
+
 }  // namespace flutter

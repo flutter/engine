@@ -6,11 +6,16 @@
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
+import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
   setUp(() {
     Profiler.isBenchmarkMode = true;
     Profiler.ensureInitialized();
@@ -78,14 +83,16 @@ class BenchmarkDatapoint {
   int get hashCode => hashValues(name, value);
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return name == other.name && value == other.value;
+    return other is BenchmarkDatapoint
+        && other.name == name
+        && other.value == value;
   }
 
   @override

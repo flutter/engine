@@ -23,9 +23,12 @@
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-
+  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--maskview-blocking"]) {
+    self.window.tintColor = UIColor.systemPinkColor;
+  }
   NSDictionary<NSString*, NSString*>* launchArgsMap = @{
     // The Platform view golden test args should match `PlatformViewGoldenTestManager`.
+    @"--locale-initialization" : @"locale_initialization",
     @"--platform-view" : @"platform_view",
     @"--platform-view-no-overlay-intersection" : @"platform_view_no_overlay_intersection",
     @"--platform-view-two-intersecting-overlays" : @"platform_view_two_intersecting_overlays",
@@ -57,7 +60,6 @@
           *stop = YES;
         }
       }];
-
   if (flutterViewControllerTestName) {
     [self setupFlutterViewControllerTest:flutterViewControllerTestName];
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
@@ -89,9 +91,11 @@
   [engine.binaryMessenger
       setMessageHandlerOnChannel:@"waiting_for_status"
             binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
-              [engine.binaryMessenger
-                  sendOnChannel:@"set_scenario"
-                        message:[scenarioIdentifier dataUsingEncoding:NSUTF8StringEncoding]];
+              FlutterMethodChannel* channel = [FlutterMethodChannel
+                  methodChannelWithName:@"driver"
+                        binaryMessenger:engine.binaryMessenger
+                                  codec:[FlutterJSONMethodCodec sharedInstance]];
+              [channel invokeMethod:@"set_scenario" arguments:@{@"name" : scenarioIdentifier}];
             }];
   [engine.binaryMessenger
       setMessageHandlerOnChannel:@"touches_scenario"

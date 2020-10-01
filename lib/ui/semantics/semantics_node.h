@@ -5,8 +5,7 @@
 #ifndef FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_NODE_H_
 #define FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_NODE_H_
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -48,7 +47,12 @@ const int kScrollableSemanticsActions =
     static_cast<int32_t>(SemanticsAction::kScrollUp) |
     static_cast<int32_t>(SemanticsAction::kScrollDown);
 
-// Must match the SemanticsFlags enum in semantics.dart.
+/// C/C++ representation of `SemanticsFlags` defined in
+/// `lib/ui/semantics.dart`.
+///\warning This must match the `SemanticsFlags` enum in
+///         `lib/ui/semantics.dart`.
+/// See also:
+///   - file://./../../../lib/ui/semantics.dart
 enum class SemanticsFlags : int32_t {
   kHasCheckedState = 1 << 0,
   kIsChecked = 1 << 1,
@@ -74,6 +78,7 @@ enum class SemanticsFlags : int32_t {
   kIsReadOnly = 1 << 20,
   kIsFocusable = 1 << 21,
   kIsLink = 1 << 22,
+  kIsSlider = 1 << 23,
 };
 
 const int kScrollableSemanticsFlags =

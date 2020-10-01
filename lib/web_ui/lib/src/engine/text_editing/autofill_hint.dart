@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 /// Maps AutofillHints from the framework to the autofill hints that is used for
@@ -37,7 +37,7 @@ class BrowserAutofillHints {
           'creditCardSecurityCode': 'cc-csc',
           'creditCardType': 'cc-type',
           'email': 'email',
-          'familyName': 'familyName',
+          'familyName': 'family-name',
           'fullStreetAddress': 'street-address',
           'gender': 'sex',
           'givenName': 'given-name',

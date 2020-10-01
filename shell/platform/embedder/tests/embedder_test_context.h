@@ -8,6 +8,7 @@
 #include <future>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -18,7 +19,6 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor.h"
 #include "flutter/testing/elf_loader.h"
 #include "flutter/testing/test_dart_native_resolver.h"
-#include "flutter/testing/test_gl_surface.h"
 #include "third_party/skia/include/core/SkImage.h"
 
 namespace flutter {
@@ -28,11 +28,21 @@ using SemanticsNodeCallback = std::function<void(const FlutterSemanticsNode*)>;
 using SemanticsActionCallback =
     std::function<void(const FlutterSemanticsCustomAction*)>;
 
+struct AOTDataDeleter {
+  void operator()(FlutterEngineAOTData aot_data) {
+    if (aot_data) {
+      FlutterEngineCollectAOTData(aot_data);
+    }
+  }
+};
+
+using UniqueAOTData = std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter>;
+
 class EmbedderTestContext {
  public:
   EmbedderTestContext(std::string assets_path = "");
 
-  ~EmbedderTestContext();
+  virtual ~EmbedderTestContext();
 
   const std::string& GetAssetsPath() const;
 
@@ -43,6 +53,8 @@ class EmbedderTestContext {
   const fml::Mapping* GetIsolateSnapshotData() const;
 
   const fml::Mapping* GetIsolateSnapshotInstructions() const;
+
+  FlutterEngineAOTData GetAOTData() const;
 
   void SetRootSurfaceTransformation(SkMatrix matrix);
 
@@ -59,15 +71,14 @@ class EmbedderTestContext {
   void SetPlatformMessageCallback(
       const std::function<void(const FlutterPlatformMessage*)>& callback);
 
-  EmbedderTestCompositor& GetCompositor();
-
   std::future<sk_sp<SkImage>> GetNextSceneImage();
 
-  size_t GetGLSurfacePresentCount() const;
+  EmbedderTestCompositor& GetCompositor();
 
-  size_t GetSoftwareSurfacePresentCount() const;
+  virtual size_t GetSurfacePresentCount() const = 0;
 
- private:
+  // TODO(gw280): encapsulate these properly for subclasses to use
+ protected:
   // This allows the builder to access the hooks.
   friend class EmbedderConfigBuilder;
 
@@ -79,17 +90,15 @@ class EmbedderTestContext {
   std::unique_ptr<fml::Mapping> vm_snapshot_instructions_;
   std::unique_ptr<fml::Mapping> isolate_snapshot_data_;
   std::unique_ptr<fml::Mapping> isolate_snapshot_instructions_;
+  UniqueAOTData aot_data_;
   std::vector<fml::closure> isolate_create_callbacks_;
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
   SemanticsNodeCallback update_semantics_node_callback_;
   SemanticsActionCallback update_semantics_custom_action_callback_;
   std::function<void(const FlutterPlatformMessage*)> platform_message_callback_;
-  std::unique_ptr<TestGLSurface> gl_surface_;
   std::unique_ptr<EmbedderTestCompositor> compositor_;
   NextSceneCallback next_scene_callback_;
   SkMatrix root_surface_transformation_;
-  size_t gl_surface_present_count_ = 0;
-  size_t software_surface_present_count_ = 0;
 
   static VoidCallback GetIsolateCreateCallbackHook();
 
@@ -99,38 +108,29 @@ class EmbedderTestContext {
   static FlutterUpdateSemanticsCustomActionCallback
   GetUpdateSemanticsCustomActionCallbackHook();
 
+  static FlutterComputePlatformResolvedLocaleCallback
+  GetComputePlatformResolvedLocaleCallbackHook();
+
   void SetupAOTMappingsIfNecessary();
 
-  void SetupCompositor();
+  void SetupAOTDataIfNecessary();
+
+  virtual void SetupCompositor() = 0;
 
   void FireIsolateCreateCallbacks();
 
   void SetNativeResolver();
 
-  void SetupOpenGLSurface(SkISize surface_size);
-
-  bool GLMakeCurrent();
-
-  bool GLClearCurrent();
-
-  bool GLPresent();
-
-  uint32_t GLGetFramebuffer();
-
-  bool GLMakeResourceCurrent();
-
-  void* GLGetProcAddress(const char* name);
-
   FlutterTransformation GetRootSurfaceTransformation();
 
   void PlatformMessageCallback(const FlutterPlatformMessage* message);
-
-  bool SofwarePresent(sk_sp<SkImage> image);
 
   void FireRootSurfacePresentCallbackIfPresent(
       const std::function<sk_sp<SkImage>(void)>& image_callback);
 
   void SetNextSceneCallback(const NextSceneCallback& next_scene_callback);
+
+  virtual void SetupSurface(SkISize surface_size) = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestContext);
 };

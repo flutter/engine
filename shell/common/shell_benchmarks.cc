@@ -1,11 +1,13 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
+
+#include "flutter/shell/common/shell.h"
 
 #include "flutter/benchmarking/benchmarking.h"
 #include "flutter/fml/logging.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/elf_loader.h"
 #include "flutter/testing/testing.h"
@@ -57,12 +59,25 @@ static void StartupAndShutdownShell(benchmark::State& state,
         [](Shell& shell) {
           return std::make_unique<PlatformView>(shell, shell.GetTaskRunners());
         },
-        [](Shell& shell) {
-          return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
-        });
+        [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
   }
 
   FML_CHECK(shell);
+
+  {
+    // The ui thread could be busy processing tasks after shell created, e.g.,
+    // default font manager setup. The measurement of shell shutdown should be
+    // considered after those ui tasks have been done.
+    //
+    // However, if we're measuring the complete time from startup to shutdown,
+    // this time should still be included.
+    benchmarking::ScopedPauseTiming pause(
+        state, !measure_shutdown || !measure_startup);
+    fml::AutoResetWaitableEvent latch;
+    fml::TaskRunner::RunNowOrPostTask(thread_host->ui_thread->GetTaskRunner(),
+                                      [&latch]() { latch.Signal(); });
+    latch.Wait();
+  }
 
   {
     benchmarking::ScopedPauseTiming pause(state, !measure_shutdown);

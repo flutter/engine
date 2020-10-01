@@ -5,12 +5,12 @@
 #ifndef FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_H_
 #define FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_H_
 
+#include <flutter_plugin_registrar.h>
+
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
-
-#include <flutter_plugin_registrar.h>
 
 #include "binary_messenger.h"
 
@@ -48,11 +48,8 @@ class PluginRegistrar {
   // that they stay valid for any registered callbacks.
   void AddPlugin(std::unique_ptr<Plugin> plugin);
 
-  // Enables input blocking on the given channel name.
-  //
-  // If set, then the parent window should disable input callbacks
-  // while waiting for the handler for messages on that channel to run.
-  void EnableInputBlockingForChannel(const std::string& channel);
+ protected:
+  FlutterDesktopPluginRegistrarRef registrar() { return registrar_; }
 
  private:
   // Handle for interacting with the C API's registrar.
@@ -94,8 +91,8 @@ class PluginRegistrarManager {
     auto insert_result =
         registrars_.emplace(registrar_ref, std::make_unique<T>(registrar_ref));
     auto& registrar_pair = *(insert_result.first);
-    FlutterDesktopRegistrarSetDestructionHandler(registrar_pair.first,
-                                                 OnRegistrarDestroyed);
+    FlutterDesktopPluginRegistrarSetDestructionHandler(registrar_pair.first,
+                                                       OnRegistrarDestroyed);
     return static_cast<T*>(registrar_pair.second.get());
   }
 

@@ -10,6 +10,8 @@
 #    private fields, especially on the Window object):
 
 analyzer:
+  enable-experiment:
+    - non-nullable
   exclude: [
     # this test pretends to be part of dart:ui and results in lots of false
     # positives.
@@ -28,6 +30,8 @@ analyzer:
     native_function_body_in_non_sdk_code: ignore
     # allow having TODOs in the code
     todo: ignore
+    # allow dart:ui to import dart:_internal
+    import_internal_library: ignore
   # `flutter analyze` (without `--watch`) just ignores directories
   # that contain a .dartignore file, and this file does not have any
   # effect on what files are actually analyzed.

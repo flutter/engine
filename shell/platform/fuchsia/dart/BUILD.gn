@@ -9,11 +9,10 @@ import("//third_party/dart/utils/compile_platform.gni")
 application_snapshot("kernel_compiler") {
   main_dart = "compiler.dart"
 
-  deps = [
-    "../flutter/kernel:kernel_platform_files($host_toolchain)",
-  ]
+  deps = [ "../flutter/kernel:kernel_platform_files($host_toolchain)" ]
 
-  dot_packages = rebase_path("//third_party/dart/.packages")
+  dot_packages =
+      rebase_path("//third_party/dart/.dart_tool/package_config.json")
 
   training_args = [
     "--train",
@@ -37,4 +36,15 @@ application_snapshot("kernel_compiler") {
                   "list lines")
 
   inputs = kernel_compiler_files
+}
+
+application_snapshot("list_libraries") {
+  main_dart = "//third_party/dart/pkg/vm/bin/list_libraries.dart"
+  training_args = [
+    # train against the dill file which is generated for this snapshot. If this build file
+    # changes location this path will need to be updated.
+    rebase_path(
+        root_gen_dir +
+        "/flutter/shell/platform/fuchsia/dart/list_libraries.dart.dill"),
+  ]
 }

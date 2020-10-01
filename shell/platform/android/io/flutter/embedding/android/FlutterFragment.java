@@ -22,7 +22,6 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.view.FlutterMain;
 
 /**
  * {@code Fragment} which displays a Flutter UI that takes up all available {@code Fragment} space.
@@ -113,6 +112,11 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    * outlive the {@code FlutterFragment}.
    */
   protected static final String ARG_DESTROY_ENGINE_WITH_FRAGMENT = "destroy_engine_with_fragment";
+  /**
+   * True if the framework state in the engine attached to this engine should be stored and restored
+   * when this fragment is created and destroyed.
+   */
+  protected static final String ARG_ENABLE_STATE_RESTORATION = "enable_state_restoration";
 
   /**
    * Creates a {@code FlutterFragment} with a default configuration.
@@ -221,8 +225,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     }
 
     /**
-     * The path to the app bundle which contains the Dart app to execute, defaults to {@link
-     * FlutterMain#findAppBundlePath()}
+     * The path to the app bundle which contains the Dart app to execute. Null when unspecified,
+     * which defaults to {@link FlutterLoader#findAppBundlePath()}
      */
     @NonNull
     public NewEngineFragmentBuilder appBundlePath(@NonNull String appBundlePath) {
@@ -619,27 +623,53 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onStop() {
     super.onStop();
-    delegate.onStop();
+    if (stillAttachedForEvent("onStop")) {
+      delegate.onStop();
+    }
   }
 
   @Override
   public void onDestroyView() {
     super.onDestroyView();
-    delegate.onDestroyView();
+    if (stillAttachedForEvent("onDestroyView")) {
+      delegate.onDestroyView();
+    }
   }
 
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    delegate.onSaveInstanceState(outState);
+    if (stillAttachedForEvent("onSaveInstanceState")) {
+      delegate.onSaveInstanceState(outState);
+    }
+  }
+
+  @Override
+  public void detachFromFlutterEngine() {
+    Log.v(
+        TAG,
+        "FlutterFragment "
+            + this
+            + " connection to the engine "
+            + getFlutterEngine()
+            + " evicted by another attaching activity");
+    // Redundant calls are ok.
+    delegate.onDestroyView();
+    delegate.onDetach();
+    delegate.release();
+    delegate = null;
   }
 
   @Override
   public void onDetach() {
     super.onDetach();
-    delegate.onDetach();
-    delegate.release();
-    delegate = null;
+    if (delegate != null) {
+      delegate.onDetach();
+      delegate.release();
+      delegate = null;
+    } else {
+      Log.v(TAG, "FlutterFragment " + this + " onDetach called after release.");
+    }
   }
 
   /**
@@ -656,7 +686,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @ActivityCallThrough
   public void onRequestPermissionsResult(
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (stillAttachedForEvent("onRequestPermissionsResult")) {
+      delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
   }
 
   /**
@@ -671,7 +703,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onNewIntent(@NonNull Intent intent) {
-    delegate.onNewIntent(intent);
+    if (stillAttachedForEvent("onNewIntent")) {
+      delegate.onNewIntent(intent);
+    }
   }
 
   /**
@@ -681,7 +715,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onBackPressed() {
-    delegate.onBackPressed();
+    if (stillAttachedForEvent("onBackPressed")) {
+      delegate.onBackPressed();
+    }
   }
 
   /**
@@ -696,7 +732,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    delegate.onActivityResult(requestCode, resultCode, data);
+    if (stillAttachedForEvent("onActivityResult")) {
+      delegate.onActivityResult(requestCode, resultCode, data);
+    }
   }
 
   /**
@@ -707,7 +745,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onUserLeaveHint() {
-    delegate.onUserLeaveHint();
+    if (stillAttachedForEvent("onUserLeaveHint")) {
+      delegate.onUserLeaveHint();
+    }
   }
 
   /**
@@ -721,7 +761,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onTrimMemory(int level) {
-    delegate.onTrimMemory(level);
+    if (stillAttachedForEvent("onTrimMemory")) {
+      delegate.onTrimMemory(level);
+    }
   }
 
   /**
@@ -732,7 +774,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onLowMemory() {
     super.onLowMemory();
-    delegate.onLowMemory();
+    if (stillAttachedForEvent("onLowMemory")) {
+      delegate.onLowMemory();
+    }
   }
 
   /**
@@ -795,16 +839,18 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * Returns the file path to the desired Flutter app's bundle of code.
+   * A custom path to the bundle that contains this Flutter app's resources, e.g., Dart code
+   * snapshots.
    *
-   * <p>Defaults to {@link FlutterMain#findAppBundlePath()}.
+   * <p>When unspecified, the value is null, which defaults to the app bundle path defined in {@link
+   * FlutterLoader#findAppBundlePath()}.
    *
    * <p>Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate.Host}
    */
   @Override
   @NonNull
   public String getAppBundlePath() {
-    return getArguments().getString(ARG_APP_BUNDLE_PATH, FlutterMain.findAppBundlePath());
+    return getArguments().getString(ARG_APP_BUNDLE_PATH);
   }
 
   /**
@@ -923,8 +969,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    *
    * <p>This method is called after {@link #provideFlutterEngine(Context)}, and after the given
    * {@link FlutterEngine} has been attached to the owning {@code FragmentActivity}. See {@link
-   * io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(Activity,
-   * Lifecycle)}.
+   * io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(
+   * ExclusiveAppComponent, Lifecycle)}.
    *
    * <p>It is possible that the owning {@code FragmentActivity} opted not to connect itself as an
    * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface}. In that case, any
@@ -1016,6 +1062,25 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     if (attachedActivity instanceof FlutterUiDisplayListener) {
       ((FlutterUiDisplayListener) attachedActivity).onFlutterUiNoLongerDisplayed();
     }
+  }
+
+  @Override
+  public boolean shouldRestoreAndSaveState() {
+    if (getArguments().containsKey(ARG_ENABLE_STATE_RESTORATION)) {
+      return getArguments().getBoolean(ARG_ENABLE_STATE_RESTORATION);
+    }
+    if (getCachedEngineId() != null) {
+      return false;
+    }
+    return true;
+  }
+
+  private boolean stillAttachedForEvent(String event) {
+    if (delegate == null) {
+      Log.v(TAG, "FlutterFragment " + hashCode() + " " + event + " called after release.");
+      return false;
+    }
+    return true;
   }
 
   /**
