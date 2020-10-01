@@ -11,8 +11,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
-#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
 @class CAMetalLayer;
 
