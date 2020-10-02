@@ -64,7 +64,7 @@ class CkAnimatedImage implements ui.Image {
   @override
   bool isCloneOf(ui.Image other) {
     return other is CkAnimatedImage
-        && other._skAnimatedImage == _skAnimatedImage;
+        && other._skAnimatedImage.isAliasOf(_skAnimatedImage);
   }
 
   @override
@@ -147,7 +147,7 @@ class CkImage implements ui.Image {
   @override
   bool isCloneOf(ui.Image other) {
     return other is CkImage
-        && other.skImage == skImage;
+        && other.skImage.isAliasOf(skImage);
   }
 
   @override
