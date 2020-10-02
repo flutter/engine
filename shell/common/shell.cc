@@ -40,6 +40,19 @@ constexpr char kSystemChannel[] = "flutter/system";
 constexpr char kTypeKey[] = "type";
 constexpr char kFontChange[] = "fontsChange";
 
+// Add the original asset directory to the resolvers so that unmodified assets
+// bundled with the application specific format (APK, IPA) can be used without
+// syncing to the Dart devFS.
+std::unique_ptr<DirectoryAssetBundle> restoreOriginalAssetResolver(
+    const Settings& settings) {
+  if (fml::UniqueFD::traits_type::IsValid(settings.assets_dir)) {
+    return std::make_unique<DirectoryAssetBundle>(
+        fml::Duplicate(settings.assets_dir));
+  }
+  return std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
+      settings.assets_path.c_str(), false, fml::FilePermission::kRead));
+};
+
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
     TaskRunners task_runners,
@@ -1404,17 +1417,7 @@ bool Shell::OnServiceProtocolRunInView(
   configuration.AddAssetResolver(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
           asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
-  // Add the original asset directory to the resolvers so that unmodified assets
-  // bundled with the application specific format (APK, IPA) can be used without
-  // syncing to the Dart devFS.
-  if (fml::UniqueFD::traits_type::IsValid(settings_.assets_dir)) {
-    configuration.AddAssetResolver(std::make_unique<DirectoryAssetBundle>(
-        fml::Duplicate(settings_.assets_dir)));
-  } else {
-    configuration.AddAssetResolver(
-        std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
-            settings_.assets_path.c_str(), false, fml::FilePermission::kRead)));
-  }
+  configuration.AddAssetResolver(restoreOriginalAssetResolver(settings_));
 
   auto& allocator = response->GetAllocator();
   response->SetObject();
@@ -1527,17 +1530,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 
   auto asset_manager = std::make_shared<AssetManager>();
 
-  // Add the original asset directory to the resolvers so that unmodified assets
-  // bundled with the application specific format (APK, IPA) can be used without
-  // syncing to the Dart devFS.
-  if (fml::UniqueFD::traits_type::IsValid(settings_.assets_dir)) {
-    asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
-        fml::Duplicate(settings_.assets_dir)));
-  } else {
-    asset_manager->PushFront(
-        std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
-            settings_.assets_path.c_str(), false, fml::FilePermission::kRead)));
-  }
+  asset_manager->PushFront(restoreOriginalAssetResolver(settings_));
   asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
       fml::OpenDirectory(params.at("assetDirectory").data(), false,
                          fml::FilePermission::kRead)));
