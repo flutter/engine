@@ -292,7 +292,7 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   // All the CATransactions should be committed by the end of the last frame,
-  // so catransaction_added_ must be false. 
+  // so catransaction_added_ must be false.
   FML_DCHECK(!catransaction_added_);
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
 
