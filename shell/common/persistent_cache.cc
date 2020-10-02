@@ -90,17 +90,15 @@ bool PersistentCache::Purge() {
     if (cache_directory->is_valid()) {
       // Only remove files but not directories.
       FML_LOG(INFO) << "Purge persistent cache.";
-      fml::FileVisitor recursive_cleanup = [&recursive_cleanup](
-                                               const fml::UniqueFD& directory,
-                                               const std::string& filename) {
-        if (!fml::IsDirectory(directory, filename.c_str())) {
-          return fml::UnlinkFile(directory, filename.c_str());
+      fml::FileVisitor delete_file = [](const fml::UniqueFD& directory,
+                                        const std::string& filename) {
+        // Do not delete directories. Return true to continue with other files.
+        if (fml::IsDirectory(directory, filename.c_str())) {
+          return true;
         }
-        fml::UniqueFD sub_dir =
-            OpenDirectoryReadOnly(directory, filename.c_str());
-        return VisitFiles(sub_dir, recursive_cleanup);
+        return fml::UnlinkFile(directory, filename.c_str());
       };
-      removed.set_value(VisitFiles(*cache_directory, recursive_cleanup));
+      removed.set_value(VisitFilesRecursively(*cache_directory, delete_file));
     } else {
       removed.set_value(false);
     }
