@@ -1636,5 +1636,4 @@ std::unique_ptr<DirectoryAssetBundle> Shell::RestoreOriginalAssetResolver() {
       settings_.assets_path.c_str(), false, fml::FilePermission::kRead));
 };
 
-
 }  // namespace flutter
