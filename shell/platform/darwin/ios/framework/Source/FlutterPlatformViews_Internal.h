@@ -296,6 +296,13 @@ class FlutterPlatformViewsController {
   // order.
   void BringLayersIntoView(LayersMap layer_map);
 
+  // Begin a CATransaction.
+  // This transaction needs to be balanced with |CommitCATransactionIfNeeded|.
+  void BeginCATransaction();
+
+  // Commit a CATransaction if |BeginCATransaction| has been called during the frame.
+  void CommitCATransactionIfNeeded();
+
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 

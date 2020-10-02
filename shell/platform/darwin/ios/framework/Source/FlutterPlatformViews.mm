@@ -283,9 +283,7 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
   // In order to sync the rendering of the platform views (quartz) with skia's rendering,
   // We need to begin an explicit CATransaction. This transaction needs to be submitted
   // after the current frame is submitted.
-  FML_DCHECK([[NSThread currentThread] isMainThread]);
-  [CATransaction begin];
-  catransaction_added_ = true;
+  BeginCATransaction();
   raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
   return PostPrerollResult::kSuccess;
 }
@@ -293,6 +291,8 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
+  // No CATransactions should be added in the begining of the frame.
+  FML_DCHECK(!catransaction_added_);
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
 
   auto rtree_factory = RTreeFactory();
@@ -555,14 +555,10 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   did_submit &= frame->Submit();
 
-  // The frame is submitted with embedded platform views.
-  // There should be a |[CATransaction begin]| call in this frame prior to all the drawing.
-  // Now we need to commit the transaction.
-  if (catransaction_added_) {
-    FML_DCHECK([[NSThread currentThread] isMainThread]);
-    [CATransaction commit];
-    catransaction_added_ = false;
-  }
+  // If the frame is submitted with embedded platform views,
+  // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
+  // If that case, we need to commit the transaction.
+  CommitCATransactionIfNeeded();
   return did_submit;
 }
 
@@ -675,6 +671,20 @@ void FlutterPlatformViewsController::DisposeViews() {
     views_to_recomposite_.erase(viewId);
   }
   views_to_dispose_.clear();
+}
+
+void FlutterPlatformViewsController::BeginCATransaction() {
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
+  [CATransaction begin];
+  catransaction_added_ = true;
+}
+
+void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
+  if (catransaction_added_) {
+    FML_DCHECK([[NSThread currentThread] isMainThread]);
+    [CATransaction commit];
+    catransaction_added_ = false;
+  }
 }
 
 }  // namespace flutter
