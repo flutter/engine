@@ -676,6 +676,7 @@ void FlutterPlatformViewsController::DisposeViews() {
 
 void FlutterPlatformViewsController::BeginCATransaction() {
   FML_DCHECK([[NSThread currentThread] isMainThread]);
+  FML_DCHECK(!catransaction_added_);
   [CATransaction begin];
   catransaction_added_ = true;
 }
