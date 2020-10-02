@@ -29,4 +29,4 @@ COMMIT_NO=`git log --before="$LATEST_COMMIT_TIME_ENGINE" -n 1 | grep commit | cu
 git reset --hard $COMMIT_NO
 
 # Set commit no to an env variable.
-echo "$COMMIT_NO"
+echo '{ "FLUTTER_REF" : ' $COMMIT_NO '} '
