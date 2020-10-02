@@ -155,15 +155,17 @@ void _tests() {
     });
   });
 
-  group(RefCountedSkiaObjectBox, () {
-    test('Records stack traces and respects refcounts', () {
-      final TestSkiaObject skObject = TestSkiaObject();
+
+  group(SkiaObjectBox, () {
+    test('Records stack traces and respects refcounts', () async {
+      TestOneShotSkiaObject.deleteCount = 0;
+      final TestOneShotSkiaObject skObject = TestOneShotSkiaObject();
       final Object wrapper = Object();
-      final RefCountedSkiaObjectBox box = RefCountedSkiaObjectBox(wrapper, skObject);
+      final SkiaObjectBox box = SkiaObjectBox(wrapper, skObject);
 
       expect(box.debugGetStackTraces().length, 1);
 
-      final RefCountedSkiaObjectBox clone = box.clone(wrapper);
+      final SkiaObjectBox clone = box.clone(wrapper);
       expect(clone, isNot(same(box)));
       expect(clone.debugGetStackTraces().length, 2);
       expect(box.debugGetStackTraces().length, 2);
@@ -172,21 +174,29 @@ void _tests() {
 
       expect(() => box.clone(wrapper), throwsAssertionError);
 
-      expect(skObject.deleteCount, 0);
+      expect(box.isDeleted, true);
+
+      // Let any timers elapse.
+      await Future<void>.delayed(Duration.zero);
+      expect(TestOneShotSkiaObject.deleteCount, 0);
+
       expect(clone.debugGetStackTraces().length, 1);
       expect(box.debugGetStackTraces().length, 1);
 
       clone.delete();
       expect(() => clone.clone(wrapper), throwsAssertionError);
 
-      expect(skObject.deleteCount, 1);
+      // Let any timers elapse.
+      await Future<void>.delayed(Duration.zero);
+      expect(TestOneShotSkiaObject.deleteCount, 1);
+
       expect(clone.debugGetStackTraces().length, 0);
       expect(box.debugGetStackTraces().length, 0);
     });
   });
 }
 
-class TestOneShotSkiaObject extends OneShotSkiaObject<SkPaint> {
+class TestOneShotSkiaObject extends OneShotSkiaObject<SkPaint> implements SkDeletable {
   static int deleteCount = 0;
 
   TestOneShotSkiaObject() : super(SkPaint());
@@ -198,7 +208,7 @@ class TestOneShotSkiaObject extends OneShotSkiaObject<SkPaint> {
   }
 }
 
-class TestSkiaObject extends ManagedSkiaObject<SkPaint> implements SkDeletable {
+class TestSkiaObject extends ManagedSkiaObject<SkPaint> {
   int createDefaultCount = 0;
   int resurrectCount = 0;
   int deleteCount = 0;

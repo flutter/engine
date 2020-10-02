@@ -41,15 +41,15 @@ class CkAnimatedImage implements ui.Image {
 
   // Use a box because `SkImage` may be deleted either due to this object
   // being garbage-collected, or by an explicit call to [delete].
-  late final RefCountedSkiaObjectBox box;
+  late final SkiaObjectBox box;
 
   CkAnimatedImage(SkAnimatedImage skAnimatedImage) : this._(skAnimatedImage, null);
 
-  CkAnimatedImage._(this._skAnimatedImage, RefCountedSkiaObjectBox? boxToClone) {
+  CkAnimatedImage._(this._skAnimatedImage, SkiaObjectBox? boxToClone) {
     if (boxToClone != null) {
       box = boxToClone.clone(this);
     } else {
-      box = RefCountedSkiaObjectBox(this, _skAnimatedImage as SkDeletable);
+      box = SkiaObjectBox(this, _skAnimatedImage as SkDeletable);
     }
   }
 
@@ -124,15 +124,15 @@ class CkImage implements ui.Image {
 
   // Use a box because `SkImage` may be deleted either due to this object
   // being garbage-collected, or by an explicit call to [delete].
-  late final RefCountedSkiaObjectBox box;
+  late final SkiaObjectBox box;
 
   CkImage(SkImage skImage) : this._(skImage, null);
 
-  CkImage._(this.skImage, RefCountedSkiaObjectBox? boxToClone) {
+  CkImage._(this.skImage, SkiaObjectBox? boxToClone) {
     if (boxToClone != null) {
       box = boxToClone.clone(this);
     } else {
-      box = RefCountedSkiaObjectBox(this, skImage as SkDeletable);
+      box = SkiaObjectBox(this, skImage as SkDeletable);
     }
   }
 
