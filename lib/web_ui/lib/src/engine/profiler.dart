@@ -165,7 +165,7 @@ void _frameTimingsOnBuildFinish() {
 ///
 /// This also means different things between HTML and CanvasKit renderers.
 ///
-/// In HTML "rasterization" only captures DOM updates, but not work that
+/// In HTML "rasterization" only captures DOM updates, but not the work that
 /// the browser performs after the DOM updates are committed. The browser
 /// does not report that information.
 ///

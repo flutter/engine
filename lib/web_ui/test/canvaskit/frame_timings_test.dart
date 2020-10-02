@@ -8,6 +8,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import 'common.dart';
 import '../frame_timings_common.dart';
 
 void main() {
@@ -15,15 +16,17 @@ void main() {
 }
 
 void testMain() {
-  setUpAll(() async {
-    await ui.webOnlyInitializePlatform();
-  });
+  group('frame timings', () {
+    setUpAll(() async {
+      await ui.webOnlyInitializePlatform();
+    });
 
-  test('Using CanvasKit', () {
-    expect(experimentalUseSkia, true);
-  });
+    test('Using CanvasKit', () {
+      expect(experimentalUseSkia, true);
+    });
 
-  test('collects frame timings', () async {
-    await runFrameTimingsTest();
-  });
+    test('collects frame timings', () async {
+      await runFrameTimingsTest();
+    });
+  }, skip: isIosSafari); // TODO: https://github.com/flutter/flutter/issues/60040
 }
