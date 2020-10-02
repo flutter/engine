@@ -12,6 +12,7 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/src/engine.dart';
 
 import 'common.dart';
+import '../matchers.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -151,6 +152,36 @@ void _tests() {
       expect(SkiaObjects.oneShotCache.length, 3);
       expect(SkiaObjects.oneShotCache.debugContains(object1), isFalse);
       expect(SkiaObjects.oneShotCache.debugContains(object2), isFalse);
+    });
+  });
+
+  group(RefCountedSkiaObjectBox, () {
+    test('Records stack traces and respects refcounts', () {
+      final TestSkiaObject skObject = TestSkiaObject();
+      final Object wrapper = Object();
+      final RefCountedSkiaObjectBox box = RefCountedSkiaObjectBox(wrapper, skObject as SkDeletable);
+
+      expect(box.debugGetStackTraces().length, 1);
+
+      final RefCountedSkiaObjectBox clone = box.clone(wrapper);
+      expect(clone, isNot(same(box)));
+      expect(clone.debugGetStackTraces().length, 2);
+      expect(box.debugGetStackTraces().length, 2);
+
+      box.delete();
+
+      expect(() => box.clone(wrapper), throwsAssertionError);
+
+      expect(skObject.deleteCount, 0);
+      expect(clone.debugGetStackTraces().length, 1);
+      expect(box.debugGetStackTraces().length, 1);
+
+      clone.delete();
+      expect(() => clone.clone(wrapper), throwsAssertionError);
+
+      expect(skObject.deleteCount, 1);
+      expect(clone.debugGetStackTraces().length, 0);
+      expect(box.debugGetStackTraces().length, 0);
     });
   });
 }

@@ -41,10 +41,16 @@ class CkAnimatedImage implements ui.Image {
 
   // Use a box because `SkImage` may be deleted either due to this object
   // being garbage-collected, or by an explicit call to [delete].
-  late final SkiaObjectBox box;
+  late final RefCountedSkiaObjectBox box;
 
-  CkAnimatedImage(this._skAnimatedImage) {
-    box = SkiaObjectBox(this, _skAnimatedImage as SkDeletable);
+  CkAnimatedImage(SkAnimatedImage skAnimatedImage) : this._(skAnimatedImage, null);
+
+  CkAnimatedImage._(this._skAnimatedImage, RefCountedSkiaObjectBox? boxToClone) {
+    if (boxToClone != null) {
+      box = boxToClone.clone(this);
+    } else {
+      box = RefCountedSkiaObjectBox(this, _skAnimatedImage as SkDeletable);
+    }
   }
 
   @override
@@ -53,13 +59,17 @@ class CkAnimatedImage implements ui.Image {
   }
 
   @override
-  ui.Image clone() => this;
+  ui.Image clone() => CkAnimatedImage._(_skAnimatedImage, box);
 
   @override
-  bool isCloneOf(ui.Image other) => other == this;
+  bool isCloneOf(ui.Image other) {
+    return other is CkAnimatedImage
+        && other._skAnimatedImage == _skAnimatedImage;
+  }
 
   @override
-  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
+  List<StackTrace>? debugGetOpenHandleStackTraces() => box.debugGetStackTraces();
+
   int get frameCount => _skAnimatedImage.getFrameCount();
 
   /// Decodes the next frame and returns the frame duration.
@@ -114,10 +124,16 @@ class CkImage implements ui.Image {
 
   // Use a box because `SkImage` may be deleted either due to this object
   // being garbage-collected, or by an explicit call to [delete].
-  late final SkiaObjectBox box;
+  late final RefCountedSkiaObjectBox box;
 
-  CkImage(this.skImage) {
-    box = SkiaObjectBox(this, skImage as SkDeletable);
+  CkImage(SkImage skImage) : this._(skImage, null);
+
+  CkImage._(this.skImage, RefCountedSkiaObjectBox? boxToClone) {
+    if (boxToClone != null) {
+      box = boxToClone.clone(this);
+    } else {
+      box = RefCountedSkiaObjectBox(this, skImage as SkDeletable);
+    }
   }
 
   @override
@@ -126,13 +142,16 @@ class CkImage implements ui.Image {
   }
 
   @override
-  ui.Image clone() => this;
+  ui.Image clone() => CkImage._(skImage, box);
 
   @override
-  bool isCloneOf(ui.Image other) => other == this;
+  bool isCloneOf(ui.Image other) {
+    return other is CkImage
+        && other.skImage == skImage;
+  }
 
   @override
-  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
+  List<StackTrace>? debugGetOpenHandleStackTraces() => box.debugGetStackTraces();
 
   @override
   int get width => skImage.width();
