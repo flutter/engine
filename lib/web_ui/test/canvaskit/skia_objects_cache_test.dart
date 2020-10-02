@@ -198,7 +198,7 @@ class TestOneShotSkiaObject extends OneShotSkiaObject<SkPaint> {
   }
 }
 
-class TestSkiaObject extends ManagedSkiaObject<SkPaint> {
+class TestSkiaObject extends ManagedSkiaObject<SkPaint> implements SkDeletable {
   int createDefaultCount = 0;
   int resurrectCount = 0;
   int deleteCount = 0;

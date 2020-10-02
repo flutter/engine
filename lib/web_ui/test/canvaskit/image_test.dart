@@ -46,9 +46,11 @@ void testMain() {
       expect(image.isCloneOf(imageClone), true);
       expect(image.box.isDeleted, false);
       image.dispose();
-      expect(image.box.isDeleted, false);
+      expect(image.box.isDeleted, true);
+      expect(imageClone.box.isDeleted, false);
       imageClone.dispose();
       expect(image.box.isDeleted, true);
+      expect(imageClone.box.isDeleted, true);
     });
 
     test('CkImage toString', () {
@@ -71,14 +73,16 @@ void testMain() {
     test('CkImage can be explicitly disposed of', () {
       final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage).getCurrentFrame();
       final CkImage image = CkImage(skImage);
-      final CkAnimatedImage imageClone = image.clone();
+      final CkImage imageClone = image.clone();
 
       expect(image.isCloneOf(imageClone), true);
       expect(image.box.isDeleted, false);
       image.dispose();
-      expect(image.box.isDeleted, false);
+      expect(image.box.isDeleted, true);
+      expect(imageClone.box.isDeleted, false);
       imageClone.dispose();
       expect(image.box.isDeleted, true);
+      expect(imageClone.box.isDeleted, true);
     });
   // TODO: https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
