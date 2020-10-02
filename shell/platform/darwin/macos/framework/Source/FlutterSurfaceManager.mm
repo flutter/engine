@@ -11,7 +11,9 @@ enum {
 
 @interface FlutterSurfaceManager () {
   CGSize surfaceSize;
-  CALayer* layer;
+  CALayer* layer;  // provided (parent layer)
+  CALayer* contentLayer;
+
   NSOpenGLContext* openGLContext;
   uint32_t _frameBufferId[kBufferCount];
   uint32_t _backingTexture[kBufferCount];
@@ -25,6 +27,11 @@ enum {
   if (self = [super init]) {
     layer = layer_;
     openGLContext = opengLContext_;
+
+    // Layer for content. This is separate from provided layer, because it needs to be flipped
+    // vertically if we render to OpenGL texture
+    contentLayer = [[CALayer alloc] init];
+    [layer_ addSublayer:contentLayer];
 
     NSOpenGLContext* prev = [NSOpenGLContext currentContext];
     [openGLContext makeCurrentContext];
@@ -102,7 +109,13 @@ enum {
 }
 
 - (void)swapBuffers {
-  [layer setContents:(__bridge id)_ioSurface[kBack]];
+  contentLayer.frame = layer.bounds;
+  // OpengL texture is rendered upside down
+  contentLayer.transform =
+      CATransform3DTranslate(CATransform3DMakeScale(1, -1, 1), 0, -layer.frame.size.height, 0);
+
+  [contentLayer setContents:(__bridge id)_ioSurface[kBack]];
+
   std::swap(_ioSurface[kBack], _ioSurface[kFront]);
   std::swap(_frameBufferId[kBack], _frameBufferId[kFront]);
   std::swap(_backingTexture[kBack], _backingTexture[kFront]);

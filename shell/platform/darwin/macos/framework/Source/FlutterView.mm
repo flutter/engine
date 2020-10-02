@@ -13,7 +13,6 @@
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterResizeSynchronizer* resizeSynchronizer;
   FlutterSurfaceManager* surfaceManager;
-  CALayer* contentLayer;
 }
 
 @end
@@ -35,13 +34,8 @@
 
     [self setWantsLayer:YES];
 
-    // Layer for content (which will be set by surfaceManager). This is separate from
-    // self.layer because it needs to be flipped vertically (using layer.sublayerTransform)
-    contentLayer = [[CALayer alloc] init];
-    [self.layer addSublayer:contentLayer];
-
     resizeSynchronizer = [[FlutterResizeSynchronizer alloc] initWithDelegate:self];
-    surfaceManager = [[FlutterSurfaceManager alloc] initWithLayer:contentLayer
+    surfaceManager = [[FlutterSurfaceManager alloc] initWithLayer:self.layer
                                                     openGLContext:self.openGLContext];
 
     _reshapeListener = reshapeListener;
@@ -59,9 +53,6 @@
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
   self.layer.frame = self.bounds;
-  self.layer.sublayerTransform = CATransform3DTranslate(CATransform3DMakeScale(1, -1, 1), 0,
-                                                        -self.layer.bounds.size.height, 0);
-  contentLayer.frame = self.layer.bounds;
 
   [surfaceManager swapBuffers];
 
