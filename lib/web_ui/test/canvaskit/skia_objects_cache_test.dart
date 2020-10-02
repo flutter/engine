@@ -159,7 +159,7 @@ void _tests() {
     test('Records stack traces and respects refcounts', () {
       final TestSkiaObject skObject = TestSkiaObject();
       final Object wrapper = Object();
-      final RefCountedSkiaObjectBox box = RefCountedSkiaObjectBox(wrapper, skObject as SkDeletable);
+      final RefCountedSkiaObjectBox box = RefCountedSkiaObjectBox(wrapper, skObject);
 
       expect(box.debugGetStackTraces().length, 1);
 
