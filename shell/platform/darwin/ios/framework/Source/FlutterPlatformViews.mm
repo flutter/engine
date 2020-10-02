@@ -279,6 +279,10 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     CancelFrame();
     return PostPrerollResult::kSkipAndRetryFrame;
   }
+  // If the post preroll action is successful, we will display platform views in the current frame.
+  // In order to sync the rendering of the platform views (quartz) with skia's rendering,
+  // We need to begin an explicit CATransaction. This transaction needs to be submitted
+  // after the current frame is submitted.
   [CATransaction begin];
   raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
   return PostPrerollResult::kSuccess;
@@ -548,6 +552,10 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   composition_order_.clear();
 
   did_submit &= frame->Submit();
+
+  // The frame is submitted with embedded platform views.
+  // There should be a |[CATransaction begin]| call in this frame prior to all the drawing.
+  // Now we need to commit the transaction.
   [CATransaction commit];
   return did_submit;
 }
