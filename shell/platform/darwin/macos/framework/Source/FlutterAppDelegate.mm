@@ -22,10 +22,19 @@
   // Update UI elements to match the application name.
   NSString* applicationName = [self applicationName];
   _mainFlutterWindow.title = applicationName;
+  // _mainFlutterWindow.accessibilityLabel = @"yeayeeeeee";
   for (NSMenuItem* menuItem in _applicationMenu.itemArray) {
     menuItem.title = [menuItem.title stringByReplacingOccurrencesOfString:@"APP_NAME"
                                                                withString:applicationName];
   }
+}
+
+- (void)applicationDidFinishLaunching:(NSNotification*)notification {
+  // Update UI elements to match the application name.
+  // NSLog(@"accessibility children for main %@", _mainFlutterWindow.accessibilityChildren);
+  // TODO: use a less aggressive way to attach accessibility, figure out why content view is not attach to window automatically
+  _mainFlutterWindow.accessibilityChildren = @[_mainFlutterWindow.contentView];
+  // [_mainFlutterWindow accessibilityAddChildElement:_mainFlutterWindow.contentView];
 }
 
 #pragma mark Private Methods

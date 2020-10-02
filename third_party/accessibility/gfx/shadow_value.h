@@ -1,0 +1,81 @@
+// Copyright (c) 2012 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#ifndef UI_GFX_SHADOW_VALUE_H_
+#define UI_GFX_SHADOW_VALUE_H_
+
+#include <string>
+#include <tuple>
+#include <vector>
+
+#include "third_party/skia/include/core/SkColor.h"
+#include "ui/gfx/geometry/vector2d.h"
+#include "ui/gfx/gfx_export.h"
+
+namespace gfx {
+
+class Insets;
+
+class ShadowValue;
+typedef std::vector<ShadowValue> ShadowValues;
+
+// ShadowValue encapsulates parameters needed to define a shadow, including the
+// shadow's offset, blur amount and color.
+class GFX_EXPORT ShadowValue {
+ public:
+  constexpr ShadowValue() = default;
+  constexpr ShadowValue(const gfx::Vector2d& offset, double blur, SkColor color)
+      : offset_(offset), blur_(blur), color_(color) {}
+
+  constexpr int x() const { return offset_.x(); }
+  constexpr int y() const { return offset_.y(); }
+  constexpr const gfx::Vector2d& offset() const { return offset_; }
+  constexpr double blur() const { return blur_; }
+  constexpr SkColor color() const { return color_; }
+
+  constexpr bool operator==(const ShadowValue& other) const {
+    return offset_ == other.offset_ && blur_ == other.blur_ &&
+           color_ == other.color_;
+  }
+
+  ShadowValue Scale(float scale) const;
+
+  std::string ToString() const;
+
+  // Gets margin space needed for shadows. Note that values in returned Insets
+  // are negative because shadow margins are outside a boundary.
+  static Insets GetMargin(const ShadowValues& shadows);
+
+  // Gets the area inside a rectangle that would be affected by shadow blur.
+  // This is similar to the margin except it's positive (the blur region is
+  // inside a hypothetical rectangle) and it accounts for the blur both inside
+  // and outside the bounding box. The region inside the "blur region" would be
+  // a uniform color.
+  static Insets GetBlurRegion(const ShadowValues& shadows);
+
+  // Makes ShadowValues matching MD or Refresh shadows for the given elevation
+  // and color.
+  static ShadowValues MakeRefreshShadowValues(int elevation, SkColor color);
+  static ShadowValues MakeMdShadowValues(int elevation,
+                                         SkColor color = SK_ColorBLACK);
+
+ private:
+  gfx::Vector2d offset_;
+
+  // Blur amount of the shadow in pixels. If underlying implementation supports
+  // (e.g. Skia), it can have fraction part such as 0.5 pixel. The value
+  // defines a range from full shadow color at the start point inside the
+  // shadow to fully transparent at the end point outside it. The range is
+  // perpendicular to and centered on the shadow edge. For example, a blur
+  // amount of 4.0 means to have a blurry shadow edge of 4 pixels that
+  // transitions from full shadow color to fully transparent and with 2 pixels
+  // inside the shadow and 2 pixels goes beyond the edge.
+  double blur_ = 0.;
+
+  SkColor color_ = SK_ColorTRANSPARENT;
+};
+
+}  // namespace gfx
+
+#endif  // UI_GFX_SHADOW_VALUE_H_

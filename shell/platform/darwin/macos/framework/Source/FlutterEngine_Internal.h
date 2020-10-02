@@ -7,6 +7,7 @@
 #import <Cocoa/Cocoa.h>
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridge.h"
 
 @interface FlutterEngine ()
 
@@ -20,6 +21,8 @@
  * engine should be created to share with this context.
  */
 @property(nonatomic, readonly, nullable) NSOpenGLContext* resourceContext;
+
+@property(nonatomic, readonly, nullable) flutter::AccessibilityBridge* accessibilityBridge;
 
 /**
  * Function pointers for interacting with the embedder.h API.
@@ -35,5 +38,9 @@
  * Dispatches the given pointer event data to engine.
  */
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event;
+
+- (void)updateSemanticsEnabled:(BOOL)enabled;
+
+- (void)updateSemanticsNode:(const FlutterSemanticsNode* _Nonnull)node;
 
 @end

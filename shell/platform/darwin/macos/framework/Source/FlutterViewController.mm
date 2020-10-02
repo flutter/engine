@@ -150,6 +150,11 @@ struct KeyboardState {
 - (void)onSettingsChanged:(NSNotification*)notification;
 
 /**
+ * Responds to updates in accessibility.
+ */
+- (void)onAccessibilityStatusChanged:(NSNotification*)notification;
+
+/**
  * Handles messages received from the Flutter engine on the _*Channel channels.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -198,6 +203,7 @@ struct KeyboardState {
 
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
+  BOOL _initialized;
 }
 
 @dynamic view;
@@ -211,6 +217,7 @@ static void CommonInit(FlutterViewController* controller) {
                                      allowHeadlessExecution:NO];
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
+  [controller performCommonViewControllerInitialization];
 }
 
 - (instancetype)initWithCoder:(NSCoder*)coder {
@@ -270,6 +277,44 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)dealloc {
   _engine.viewController = nil;
+}
+
+- (void)performCommonViewControllerInitialization {
+  if (_initialized)
+    return;
+
+  _initialized = YES;
+  [self setupNotificationCenterObservers];
+}
+
+- (void)setupNotificationCenterObservers {
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  // [center addObserverForName:nil 
+  //                           object:nil 
+  //                             queue:nil 
+  //                       usingBlock:^(NSNotification *notification){
+  //                           // Explore notification
+  //                           // if ([[notification name] containsString:@"ibility"])
+  //                           NSLog(@"Notification found with:%@",[notification name]);
+  //                       }];
+  [center addObserver:self
+             selector:@selector(onAccessibilityStatusChanged:)
+                 name:@"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification"
+               object:nil];
+  // [center addObserver:self
+  //            selector:@selector(onAccessibilityStatusChanged:)
+  //                name:UIAccessibilityVoiceOverStatusDidChangeNotification
+  //              object:nil];
+
+  // [center addObserver:self
+  //            selector:@selector(onAccessibilityStatusChanged:)
+  //                name:UIAccessibilitySwitchControlStatusDidChangeNotification
+  //              object:nil];
+
+  // [center addObserver:self
+  //            selector:@selector(onAccessibilityStatusChanged:)
+  //                name:UIAccessibilitySpeakScreenStatusDidChangeNotification
+  //              object:nil];
 }
 
 #pragma mark - Public methods
@@ -473,6 +518,17 @@ static void CommonInit(FlutterViewController* controller) {
     keyMessage[@"charactersIgnoringModifiers"] = event.charactersIgnoringModifiers;
   }
   [_keyEventChannel sendMessage:keyMessage];
+}
+
+- (void)onAccessibilityStatusChanged:(NSNotification*)notification {
+  if (!_engine) {
+    return;
+  }
+  if(@available(macOS 10.13, *)) {
+    NSWorkspace * ws = [NSWorkspace sharedWorkspace];
+    NSLog(@"got notification voiceover enabled ? %d",ws.voiceOverEnabled);
+    [_engine updateSemanticsEnabled:ws.voiceOverEnabled];
+  }
 }
 
 - (void)onSettingsChanged:(NSNotification*)notification {

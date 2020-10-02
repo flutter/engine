@@ -176,6 +176,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   // The embedding-API-level engine object.
   FLUTTER_API_SYMBOL(FlutterEngine) _engine;
 
+  // The Accessibilty bridge
+  std::unique_ptr<flutter::AccessibilityBridge> _bridge;
+
   // The project being run by this engine.
   FlutterDartProject* _project;
 
@@ -283,6 +286,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   flutterArguments.command_line_argc = static_cast<int>(argv.size());
   flutterArguments.command_line_argv = argv.size() > 0 ? argv.data() : nullptr;
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
+  flutterArguments.update_semantics_node_callback = [](const FlutterSemanticsNode* node, void* user_data) {
+            FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+            [engine updateSemanticsNode:node];
+          };
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
   flutterArguments.dart_entrypoint_argc = dartEntrypointArgs.size();
@@ -491,6 +498,21 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {
   _embedderAPI.SendPointerEvent(_engine, &event, 1);
+}
+
+- (void)updateSemanticsEnabled:(BOOL)enabled {
+  if (!enabled && _bridge) {
+    _bridge.reset(nullptr);
+  } else if (enabled && !_bridge){
+    _bridge.reset(new flutter::AccessibilityBridge(self));
+    // _bridge = std::make_unique<flutter::AccessibilityBridge>(self);
+  }
+  FlutterEngineUpdateSemanticsEnabled(_engine, enabled);
+}
+
+- (void)updateSemanticsNode:(const FlutterSemanticsNode*)node {
+  FML_DCHECK(_bridge);
+  _bridge->UpdateSemanticsNode(node);
 }
 
 #pragma mark - Private methods

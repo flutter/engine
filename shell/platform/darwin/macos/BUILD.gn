@@ -45,6 +45,10 @@ source_set("flutter_framework_source") {
   visibility = [ ":*" ]
 
   sources = [
+    "framework/Source/AccessibilityBridge.h",
+    "framework/Source/AccessibilityBridge.mm",
+    "framework/Source/AXPlatformNodeDelegateMac.h",
+    "framework/Source/AXPlatformNodeDelegateMac.mm",
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterBackingStoreData.h",
     "framework/Source/FlutterBackingStoreData.mm",
@@ -87,9 +91,13 @@ source_set("flutter_framework_source") {
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//third_party/skia",
+    "//flutter/third_party/accessibility",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [
+    "//flutter:config",
+    "//flutter/third_party/accessibility:accessibility_config",
+  ]
 
   defines = [
     "FLUTTER_FRAMEWORK",
