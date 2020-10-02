@@ -68,7 +68,7 @@ task:
       analyze_framework_script: |
         cd $FRAMEWORK_PATH/flutter
         rm -rf bin/cache/pkg/sky_engine
-        mkdir bin/cache/pkg/
+        mkdir -p bin/cache/pkg/
         cp -r $ENGINE_PATH/src/out/host_debug_unopt/gen/dart-pkg/sky_engine bin/cache/pkg/
         bin/flutter update-packages --local-engine=host_debug_unopt
         bin/flutter analyze --dartdocs --flutter-repo --local-engine=host_debug_unopt
