@@ -1,5 +1,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 #import "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/MacOSSwitchableGLContext.h"
 
 #include <OpenGL/gl.h>
 
@@ -33,19 +34,14 @@ enum {
     contentLayer = [[CALayer alloc] init];
     [layer_ addSublayer:contentLayer];
 
-    NSOpenGLContext* prev = [NSOpenGLContext currentContext];
-    [openGLContext makeCurrentContext];
+    flutter::GLContextSwitch context_switch(
+        std::make_unique<MacOSSwitchableGLContext>(opengLContext_));
+
     glGenFramebuffers(2, _frameBufferId);
     glGenTextures(2, _backingTexture);
 
     [self createFramebuffer:_frameBufferId[0] withBackingTexture:_backingTexture[0]];
     [self createFramebuffer:_frameBufferId[1] withBackingTexture:_backingTexture[1]];
-
-    if (prev) {
-      [prev makeCurrentContext];
-    } else {
-      [NSOpenGLContext clearCurrentContext];
-    }
   }
   return self;
 }
@@ -65,8 +61,9 @@ enum {
     return;
   }
   surfaceSize = size;
-  NSOpenGLContext* prev = [NSOpenGLContext currentContext];
-  [openGLContext makeCurrentContext];
+
+  flutter::GLContextSwitch context_switch(
+      std::make_unique<MacOSSwitchableGLContext>(openGLContext));
 
   for (int i = 0; i < kBufferCount; ++i) {
     if (_ioSurface[i]) {
@@ -100,11 +97,6 @@ enum {
                            _backingTexture[i], 0);
 
     FML_DCHECK(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-  }
-  if (prev) {
-    [prev makeCurrentContext];
-  } else {
-    [NSOpenGLContext clearCurrentContext];
   }
 }
 

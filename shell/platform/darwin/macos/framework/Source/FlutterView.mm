@@ -5,6 +5,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/MacOSSwitchableGLContext.h"
 
 #import <OpenGL/gl.h>
 #import <QuartzCore/QuartzCore.h>
@@ -44,9 +45,9 @@
 }
 
 - (void)resizeSynchronizerFlush:(FlutterResizeSynchronizer*)synchronizer {
-  [self.openGLContext makeCurrentContext];
+  flutter::GLContextSwitch context_switch(
+      std::make_unique<MacOSSwitchableGLContext>(self.openGLContext));
   glFlush();
-  [NSOpenGLContext clearCurrentContext];
 }
 
 - (void)resizeSynchronizerCommit:(FlutterResizeSynchronizer*)synchronizer {
