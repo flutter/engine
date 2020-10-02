@@ -213,6 +213,7 @@ static bool fl_engine_gl_make_resource_current(void* user_data) {
   return result;
 }
 
+// Called by the engine to retrieve an external texture.
 static bool fl_engine_gl_external_texture_frame_callback(
     void* user_data,
     int64_t texture_id,
@@ -597,18 +598,14 @@ gboolean fl_engine_mark_texture_frame_available(FlEngine* self,
                                                 int64_t texture_id) {
   g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
   return FlutterEngineMarkExternalTextureFrameAvailable(self->engine,
-                                                        texture_id) == kSuccess
-             ? TRUE
-             : FALSE;
+                                                        texture_id) == kSuccess;
 }
 
 gboolean fl_engine_register_external_texture(FlEngine* self,
                                              int64_t texture_id) {
   g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
   return FlutterEngineRegisterExternalTexture(self->engine, texture_id) ==
-                 kSuccess
-             ? TRUE
-             : FALSE;
+         kSuccess;
 }
 
 void fl_engine_unregister_external_texture(FlEngine* self, int64_t texture_id) {
