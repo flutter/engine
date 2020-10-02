@@ -34,5 +34,8 @@ git reset --hard $COMMIT_NO
 # Write the commit number to a file. This file will be read by the LUCI recipe.
 echo "$COMMIT_NO" >> flutter_ref.txt
 
+pwd
+ls -a
+
 # Print out the flutter version for troubleshooting
 $FLUTTER_CLONE_REPO_PATH/bin/flutter --version
