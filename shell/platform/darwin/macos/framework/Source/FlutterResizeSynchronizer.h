@@ -44,7 +44,7 @@
 // - requestCommit is called
 // All requestCommit calls before `shouldEnsureSurfaceForSize` is called with
 // expected size are ignored;
-// The notify block is invoked immediately after syncrhonizer mutex is acquired
+// The notify block is invoked immediately after synchronizer mutex is acquired
 - (void)beginResize:(CGSize)size notify:(dispatch_block_t)notify;
 
 // Returns whether the view should ensure surfaces with given size;
