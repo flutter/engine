@@ -209,6 +209,12 @@ void _frameTimingsOnRasterFinish() {
 
 /// Current timestamp in microseconds taken from the high-precision
 /// monotonically increasing timer.
+///
+/// See also:
+///
+/// * https://developer.mozilla.org/en-US/docs/Web/API/Performance/now,
+///   particularly notes about Firefox rounding to 1ms for security reasons,
+///   which can be bypassed in tests by setting certain browser options.
 int _nowMicros() {
   return (html.window.performance.now() * 1000).toInt();
 }
