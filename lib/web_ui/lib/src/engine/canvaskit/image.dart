@@ -47,6 +47,7 @@ class CkAnimatedImage implements ui.Image {
 
   CkAnimatedImage._(this._skAnimatedImage, SkiaObjectBox? boxToClone) {
     if (boxToClone != null) {
+      assert(boxToClone.skObject == _skAnimatedImage);
       box = boxToClone.clone(this);
     } else {
       box = SkiaObjectBox(this, _skAnimatedImage as SkDeletable);
@@ -130,6 +131,7 @@ class CkImage implements ui.Image {
 
   CkImage._(this.skImage, SkiaObjectBox? boxToClone) {
     if (boxToClone != null) {
+      assert(boxToClone.skObject == _skAnimatedImage);
       box = boxToClone.clone(this);
     } else {
       box = SkiaObjectBox(this, skImage as SkDeletable);
