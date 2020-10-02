@@ -1,4 +1,5 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
+#import "flutter/fml/logging.h"
 
 #include <OpenGL/gl.h>
 
@@ -90,6 +91,8 @@ enum {
     glBindFramebuffer(GL_FRAMEBUFFER, _frameBufferId[i]);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE_ARB,
                            _backingTexture[i], 0);
+
+    FML_DCHECK(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
   }
   if (prev) {
     [prev makeCurrentContext];
