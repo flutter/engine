@@ -23,7 +23,7 @@ void PictureLayer::Diff(DiffContext* context, const Layer* old_layer) {
   if (!context->IsSubtreeDirty()) {
     assert(old_layer);
     auto prev = old_layer->as_picture_layer();
-    if (!Compare(this, prev)) {
+    if (!Compare(context, this, prev)) {
       context->MarkSubtreeDirty(prev->paint_region());
     }
   }
@@ -32,21 +32,28 @@ void PictureLayer::Diff(DiffContext* context, const Layer* old_layer) {
   set_paint_region(context->CurrentSubtreeRegion());
 }
 
-bool PictureLayer::Compare(const PictureLayer* l1, const PictureLayer* l2) {
+bool PictureLayer::Compare(DiffContext* context,
+                           const PictureLayer* l1,
+                           const PictureLayer* l2) {
   const auto& pic1 = l1->picture_.get();
   const auto& pic2 = l2->picture_.get();
   if (pic1.get() == pic2.get()) {
+    context->statistics().AddSameInstancePicture();
     return true;
   }
   auto op_cnt_1 = pic1->approximateOpCount();
   auto op_cnt_2 = pic2->approximateOpCount();
   if (op_cnt_1 != op_cnt_2 || pic1->cullRect() != pic2->cullRect()) {
+    context->statistics().AddNewPicture();
     return false;
   }
 
   if (op_cnt_1 > 10) {
+    context->statistics().AddPictureTooComplexToCompare();
     return false;
   }
+
+  context->statistics().AddDeepComparePicture();
 
   // TODO(knopp) we don't actually need the data; this could be done without
   // allocations by implementing stream that calculates SHA hash and
@@ -54,6 +61,11 @@ bool PictureLayer::Compare(const PictureLayer* l1, const PictureLayer* l2) {
   auto d1 = l1->SerializedPicture();
   auto d2 = l2->SerializedPicture();
   auto res = d1->equals(d2.get());
+  if (res) {
+    context->statistics().AddDifferentInstanceButEqualPicture();
+  } else {
+    context->statistics().AddNewPicture();
+  }
   return res;
 }
 

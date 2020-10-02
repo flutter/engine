@@ -41,8 +41,7 @@ void DiffContext::PushTransform(const SkMatrix& transform) {
   }
 }
 
-Damage DiffContext::GetDamage(
-    const SkIRect& accumulated_buffer_damage) const {
+Damage DiffContext::GetDamage(const SkIRect& accumulated_buffer_damage) const {
   SkRect framebuffer = SkRect::Make(accumulated_buffer_damage);
   framebuffer.join(damage_);
   SkRect net(damage_);
@@ -117,6 +116,18 @@ void DiffContext::AddDamage(const PaintRegion& damage) {
 
 void DiffContext::AddDamage(const SkRect& rect) {
   damage_.join(rect);
+}
+
+void DiffContext::Statistics::LogStatistics() {
+#if !FLUTTER_RELEASE
+  FML_TRACE_COUNTER("flutter", "DiffContext", reinterpret_cast<int64_t>(this),
+                    "NewPictures", new_pictures_, "PicturesTooComplexToCompare",
+                    picture_too_complex_to_compare_, "DeepComparePictures",
+                    deep_compare_pictures_, "SameInstancePictures",
+                    same_instance_pictures_,
+                    "DifferentInstanceButEqualPictures",
+                    difference_instance_but_equal_pictures_);
+#endif  // !FLUTTER_RELEASE
 }
 
 }  // namespace flutter

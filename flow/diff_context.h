@@ -142,6 +142,40 @@ class DiffContext {
   // Adds the region to current damage
   void AddDamage(const PaintRegion& damage);
 
+  class Statistics {
+   public:
+    // Picture replaced by different picture
+    void AddNewPicture() { ++new_pictures_; }
+
+    // Picture that would require deep comparison but was considered too complex
+    // to serialize and thus was treated as new picture
+    void AddPictureTooComplexToCompare() { ++picture_too_complex_to_compare_; }
+
+    // Picture that has identical instance between frames
+    void AddSameInstancePicture() { ++same_instance_pictures_; };
+
+    // Pictures that had to be serialized to compare for equality
+    void AddDeepComparePicture() { ++deep_compare_pictures_; }
+
+    // Pictures that had to be serialized to compare (different instances),
+    // but were equal
+    void AddDifferentInstanceButEqualPicture() {
+      ++difference_instance_but_equal_pictures_;
+    };
+
+    // Logs the statistics to trace counter
+    void LogStatistics();
+
+   private:
+    int new_pictures_ = 0;
+    int picture_too_complex_to_compare_ = 0;
+    int same_instance_pictures_ = 0;
+    int deep_compare_pictures_ = 0;
+    int difference_instance_but_equal_pictures_ = 0;
+  };
+
+  Statistics& statistics() { return statistics_; }
+
  private:
   struct State {
     State();
@@ -167,6 +201,7 @@ class DiffContext {
   };
 
   std::vector<Readback> readbacks_;
+  Statistics statistics_;
 };
 
 }  // namespace flutter

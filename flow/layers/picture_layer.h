@@ -44,7 +44,9 @@ class PictureLayer : public Layer {
 
   sk_sp<SkData> SerializedPicture() const;
   mutable sk_sp<SkData> cached_serialized_picture_;
-  static bool Compare(const PictureLayer* l1, const PictureLayer* l2);
+  static bool Compare(DiffContext* context,
+                      const PictureLayer* l1,
+                      const PictureLayer* l2);
 
   FML_DISALLOW_COPY_AND_ASSIGN(PictureLayer);
 };

@@ -96,6 +96,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
 
     frame_damage->damage_out =
         context.GetDamage(frame_damage->additional_damage);
+    context.statistics().LogStatistics();
     clip_rect = SkRect::Make(frame_damage->damage_out.buffer_damage);
   }
 
