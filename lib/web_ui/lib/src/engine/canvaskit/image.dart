@@ -131,7 +131,7 @@ class CkImage implements ui.Image {
 
   CkImage._(this.skImage, SkiaObjectBox? boxToClone) {
     if (boxToClone != null) {
-      assert(boxToClone.skObject == _skAnimatedImage);
+      assert(boxToClone.skObject == skImage);
       box = boxToClone.clone(this);
     } else {
       box = SkiaObjectBox(this, skImage as SkDeletable);
