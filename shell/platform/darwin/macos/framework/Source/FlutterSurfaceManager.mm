@@ -30,17 +30,8 @@ enum {
     glGenFramebuffers(2, _frameBufferId);
     glGenTextures(2, _backingTexture);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, _frameBufferId[0]);
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, _backingTexture[0]);
-    glTexParameterf(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, _frameBufferId[1]);
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, _backingTexture[1]);
-    glTexParameterf(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
+    [self createFramebuffer:_frameBufferId[0] withBackingTexture:_backingTexture[0]];
+    [self createFramebuffer:_frameBufferId[1] withBackingTexture:_backingTexture[1]];
 
     if (prev) {
       [prev makeCurrentContext];
@@ -49,6 +40,16 @@ enum {
     }
   }
   return self;
+}
+
+- (void)createFramebuffer:(uint32_t)fbo withBackingTexture:(uint32_t)texture {
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture);
+  glTexParameterf(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
 }
 
 - (void)ensureSurfaceSize:(CGSize)size {
