@@ -112,10 +112,16 @@ bool Engine::UpdateAssetManager(
     return false;
   }
 
-  asset_manager_ = new_asset_manager;
+  auto old_asset_manager = asset_manager_ asset_manager_ = new_asset_manager;
 
   if (!asset_manager_) {
     return false;
+  }
+  // Add the original asset resolvers to the new manager so that unmodified
+  // assets bundled with the application specific format (APK, IPA) can be used
+  // without syncing to the Dart devFS.
+  if (old_asset_manager != nullptr) {
+    asset_manager->PushBack(old_asset_manager);
   }
 
   // Using libTXT as the text engine.

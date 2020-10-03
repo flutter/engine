@@ -613,10 +613,6 @@ class Shell final : public PlatformView::Delegate,
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
 
-  // Creates an asset bundle from the original settings asset path or
-  // directory.
-  std::unique_ptr<DirectoryAssetBundle> RestoreOriginalAssetResolver();
-
   // For accessing the Shell via the raster thread, necessary for various
   // rasterizer callbacks.
   std::unique_ptr<fml::TaskRunnerAffineWeakPtrFactory<Shell>> weak_factory_gpu_;
