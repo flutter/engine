@@ -121,7 +121,7 @@ class Keyboard {
       // See https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/getModifierState.
       if (event.key == 'CapsLock') {
         _lastMetaState |= modifierCapsLock;
-      } else if (event.key == 'NumLock') {
+      } else if (event.code == 'NumLock') {
         _lastMetaState |= modifierNumLock;
       } else if (event.key == 'ScrollLock') {
         _lastMetaState |= modifierScrollLock;
