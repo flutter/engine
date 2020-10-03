@@ -112,7 +112,8 @@ bool Engine::UpdateAssetManager(
     return false;
   }
 
-  auto old_asset_manager = asset_manager_ asset_manager_ = new_asset_manager;
+  auto old_asset_manager = asset_manager_;
+  asset_manager_ = new_asset_manager;
 
   if (!asset_manager_) {
     return false;
