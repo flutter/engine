@@ -122,7 +122,7 @@ bool Engine::UpdateAssetManager(
   // assets bundled with the application specific format (APK, IPA) can be used
   // without syncing to the Dart devFS.
   if (old_asset_manager != nullptr) {
-    asset_manager->PushBack(old_asset_manager);
+    asset_manager_->PushBack(old_asset_manager);
   }
 
   // Using libTXT as the text engine.
