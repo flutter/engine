@@ -34,6 +34,35 @@ void main() {
     );
   });
 
+  test('Fails with invalid data and can be caught with try catch', () async {
+    await Future<void>.delayed(const Duration(seconds: 10));
+    final Uint8List data = Uint8List.fromList(<int>[1, 2, 3]);
+
+    // Use try catch to prove it can be handled by "normal" code and not just
+    // package:test
+    try {
+      await ui.instantiateImageCodec(data);
+      fail('Should not have loaded');
+    } catch (err) {
+      expect(err.toString(), contains('Invalid image data'));
+    }
+  });
+
+  test('Fails with invalid data and can be caught with catch error', () async {
+    final Uint8List data = Uint8List.fromList(<int>[1, 2, 3]);
+
+    // Use catchError to prove it can be handled by "normal" code and not just
+    // package:test
+    await ui.instantiateImageCodec(data)
+      .then((ui.Codec codec) {
+        fail('Should not have loaded');
+      })
+      .catchError((dynamic err, StackTrace stackTrace) {
+        expect(err.toString(), contains('Invalid image data'));
+      });
+  });
+
+
   test('nextFrame', () async {
     final Uint8List data = await _getSkiaResource('test640x479.gif').readAsBytes();
     final ui.Codec codec = await ui.instantiateImageCodec(data);
