@@ -1126,6 +1126,14 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     }
   }
 
+  if (SAFE_ACCESS(args, dart_entrypoint_argc, 0)) {
+    std::vector<std::string> arguments(args->dart_entrypoint_argc);
+    for (int i = 0; i < args->dart_entrypoint_argc; ++i) {
+      arguments[i] = std::string{args->dart_entrypoint_argv[i]};
+    }
+    settings.dart_entrypoint_args = std::move(arguments);
+  }
+
   if (!run_configuration.IsValid()) {
     return LOG_EMBEDDER_ERROR(
         kInvalidArguments,
