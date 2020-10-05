@@ -80,6 +80,21 @@ def main():
 
   if args.strip_bitcode:
     subprocess.check_call(['xcrun', 'bitcode_strip', '-r', linker_out, '-o', linker_out])
+  else:
+    info_plist = os.path.join(fat_framework, 'Info.plist')
+    clang_version = subprocess.check_output(['xcrun', 'plutil', '-extract', 'ClangVersion', 'xml1', '-o', '-', info_plist])
+
+    # Xcode 11.0
+    clang_expected_version = '11.0.0'
+    if clang_expected_version not in clang_version:
+      # The version of clang compiling the frameworks must be
+      # the same as the one in the minimum Xcode version enforced
+      # by the Flutter tool, to prevent bitcode-related App Store rejections.
+      # This version should only be incremented after the tool's Xcode
+      # minimum has been incremented.
+      # See postmortem requiem/doc/postmortem126775 for details.
+      print('Clang version is too new, expected %s' % clang_expected_version)
+      return 1
 
   if args.dsym:
     dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
