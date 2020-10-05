@@ -20,7 +20,9 @@
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
-#include "flutter/shell/platform/windows/win32_platform_handler.h"
+#ifndef FLUTTER_WINUWP
+#include "flutter/shell/platform/windows/win32_platform_handler.h"  // nogncheck
+#endif
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 #include "flutter/shell/platform/windows/window_state.h"
@@ -198,8 +200,10 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   std::vector<std::unique_ptr<flutter::KeyboardHookHandler>>
       keyboard_hook_handlers_;
 
+#ifndef FLUTTER_WINUWP
   // Handler for the flutter/platform channel.
   std::unique_ptr<flutter::PlatformHandler> platform_handler_;
+#endif
 
   // Handler for cursor events.
   std::unique_ptr<flutter::CursorHandler> cursor_handler_;

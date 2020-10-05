@@ -13,8 +13,10 @@
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
-#include "flutter/shell/platform/windows/win32_task_runner.h"
-#include "flutter/shell/platform/windows/win32_window_proc_delegate_manager.h"
+#ifndef FLUTTER_WINUWP
+#include "flutter/shell/platform/windows/win32_task_runner.h"  // nogncheck
+#include "flutter/shell/platform/windows/win32_window_proc_delegate_manager.h"  // nogncheck
+#endif
 #include "flutter/shell/platform/windows/window_state.h"
 
 namespace flutter {
@@ -73,11 +75,13 @@ class FlutterWindowsEngine {
     return message_dispatcher_.get();
   }
 
+#ifndef FLUTTER_WINUWP
   Win32TaskRunner* task_runner() { return task_runner_.get(); }
 
   Win32WindowProcDelegateManager* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
   }
+#endif
 
   // Callback passed to Flutter engine for notifying window of platform
   // messages.
@@ -101,8 +105,10 @@ class FlutterWindowsEngine {
   // The view displaying the content running in this engine, if any.
   FlutterWindowsView* view_ = nullptr;
 
+#ifndef FLUTTER_WINUWP
   // Task runner for tasks posted from the engine.
   std::unique_ptr<Win32TaskRunner> task_runner_;
+#endif
 
   // The plugin messenger handle given to API clients.
   std::unique_ptr<FlutterDesktopMessenger> messenger_;
@@ -118,8 +124,10 @@ class FlutterWindowsEngine {
   FlutterDesktopOnPluginRegistrarDestroyed
       plugin_registrar_destruction_callback_;
 
+#ifndef FLUTTER_WINUWP
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<Win32WindowProcDelegateManager> window_proc_delegate_manager_;
+#endif
 };
 
 }  // namespace flutter

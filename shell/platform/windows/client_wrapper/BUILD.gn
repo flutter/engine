@@ -39,8 +39,10 @@ source_set("client_wrapper_windows") {
     "//flutter/shell/platform/windows:flutter_windows_headers",
   ]
 
-  configs +=
-      [ "//flutter/shell/platform/common/cpp:desktop_library_implementation" ]
+  configs += [
+    "//flutter/shell/platform/common/cpp:desktop_library_implementation",
+    "//flutter/shell/platform/windows:flutter_windows_winuwp_defs",
+  ]
 
   public_configs = [
     ":relative_core_wrapper_headers",

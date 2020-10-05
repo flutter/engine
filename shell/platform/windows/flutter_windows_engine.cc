@@ -91,6 +91,7 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
     : project_(std::make_unique<FlutterProjectBundle>(project)) {
+#ifndef FLUTTER_WINUWP
   task_runner_ = std::make_unique<Win32TaskRunner>(
       GetCurrentThreadId(), [this](const auto* task) {
         if (!engine_) {
@@ -102,6 +103,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
           std::cerr << "Failed to post an engine task." << std::endl;
         }
       });
+#endif
 
   // Set up the legacy structs backing the API handles.
   messenger_ = std::make_unique<FlutterDesktopMessenger>();
@@ -111,8 +113,10 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
 
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_.get());
+#ifndef FLUTTER_WINUWP
   window_proc_delegate_manager_ =
       std::make_unique<Win32WindowProcDelegateManager>();
+#endif
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -143,6 +147,7 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
       switches.begin(), switches.end(), std::back_inserter(argv),
       [](const std::string& arg) -> const char* { return arg.c_str(); });
 
+#ifndef FLUTTER_WINUWP
   // Configure task runners.
   FlutterTaskRunnerDescription platform_task_runner = {};
   platform_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
@@ -159,6 +164,7 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
+#endif
 
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
@@ -172,7 +178,9 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     return host->HandlePlatformMessage(engine_message);
   };
+#ifndef FLUTTER_WINUWP
   args.custom_task_runners = &custom_task_runners;
+#endif
   if (aot_data_) {
     args.aot_data = aot_data_.get();
   }

@@ -21,6 +21,11 @@ config("relative_flutter_windows_headers") {
   include_dirs = [ "public" ]
 }
 
+# When OS target is WinUWP use FLUTTER_WINUWP as the preprocessor flag to conditionalize
+config("flutter_windows_winuwp_defs") {
+  defines = [ "FLUTTER_WINUWP 1" ]
+}
+
 # The headers are a separate source set since the client wrapper is allowed
 # to depend on the public headers, but none of the rest of the code.
 source_set("flutter_windows_headers") {
@@ -29,8 +34,15 @@ source_set("flutter_windows_headers") {
   public_deps =
       [ "//flutter/shell/platform/common/cpp:common_cpp_library_headers" ]
 
-  configs +=
-      [ "//flutter/shell/platform/common/cpp:desktop_library_implementation" ]
+  if (target_os == "winuwp") {
+    configs += [
+      "//flutter/shell/platform/common/cpp:desktop_library_implementation",
+      ":flutter_windows_winuwp_defs",
+    ]
+  } else {
+    configs +=
+        [ "//flutter/shell/platform/common/cpp:desktop_library_implementation" ]
+  }
 
   public_configs =
       [ "//flutter/shell/platform/common/cpp:relative_flutter_library_headers" ]
@@ -100,6 +112,59 @@ source_set("flutter_windows_source") {
   ]
 }
 
+source_set("flutter_winuwp_source") {
+  sources = [
+    "angle_surface_manager.cc",
+    "angle_surface_manager.h",
+    "cursor_handler.cc",
+    "cursor_handler.h",
+    "flutter_project_bundle.cc",
+    "flutter_project_bundle.h",
+    "flutter_windows.cc",
+    "flutter_windows_engine.cc",
+    "flutter_windows_engine.h",
+    "flutter_windows_view.cc",
+    "flutter_windows_view.h",
+    "key_event_handler.cc",
+    "key_event_handler.h",
+    "keyboard_hook_handler.h",
+    "string_conversion.cc",
+    "string_conversion.h",
+    "system_utils.h",
+    "system_utils_winuwp.cc",
+    "text_input_plugin.cc",
+    "text_input_plugin.h",
+    "window_binding_handler.h",
+    "window_binding_handler_delegate.h",
+    "window_state.h",
+  ]
+
+  configs += [
+    "//flutter/shell/platform/common/cpp:desktop_library_implementation",
+    "//third_party/angle:gl_prototypes",
+    ":flutter_windows_winuwp_defs",
+  ]
+
+  public_configs = [ ":relative_angle_headers" ]
+
+  deps = [
+    ":flutter_windows_headers",
+    "//flutter/shell/platform/common/cpp:common_cpp",
+    "//flutter/shell/platform/common/cpp:common_cpp_input",
+    "//flutter/shell/platform/common/cpp:common_cpp_switches",
+    "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows",
+    "//third_party/angle:libEGL_static",  # the order of libEGL_static and
+                                          # libGLESv2_static is important.. if
+                                          # reversed, will cause a linker error
+                                          # DllMain already defined in
+                                          # LIBCMTD.lib
+    "//third_party/angle:libGLESv2_static",
+    "//third_party/rapidjson",
+  ]
+}
+
 copy("publish_headers_windows") {
   sources = _public_headers
   outputs = [ "$root_out_dir/{{source_file_part}}" ]
@@ -114,36 +179,67 @@ shared_library("flutter_windows") {
   public_configs = [ "//flutter:config" ]
 }
 
+shared_library("flutter_windows_winuwp") {
+  deps = [ ":flutter_winuwp_source" ]
+  libs = [ "windowsapp.lib" ]
+  public_configs = [ "//flutter:config" ]
+}
+
 test_fixtures("flutter_windows_fixtures") {
   fixtures = []
 }
 
-executable("flutter_windows_unittests") {
-  testonly = true
+if (target_os == "winuwp") {
+  # disabled until the uwp implementation is present
+  # executable("flutter_windows_unittests_winrt") {
+  #   testonly = true
 
-  sources = [
-    "flutter_project_bundle_unittests.cc",
-    "string_conversion_unittests.cc",
-    "system_utils_unittests.cc",
-    "testing/mock_win32_window.cc",
-    "testing/mock_win32_window.h",
-    "testing/win32_flutter_window_test.cc",
-    "testing/win32_flutter_window_test.h",
-    "win32_dpi_utils_unittests.cc",
-    "win32_flutter_window_unittests.cc",
-    "win32_window_proc_delegate_manager_unittests.cc",
-    "win32_window_unittests.cc",
-  ]
+  #   sources = [
+  #     "flutter_project_bundle_unittests.cc",
+  #     "string_conversion_unittests.cc",
+  #     "system_utils_unittests.cc",
+  #   ]
 
-  public_configs = [ "//flutter:config" ]
+  #   public_configs = [ "//flutter:config" ]
 
-  deps = [
-    ":flutter_windows_fixtures",
-    ":flutter_windows_headers",
-    ":flutter_windows_source",
-    "//flutter/testing",
-    "//third_party/rapidjson",
-  ]
+  #     libs = [ "windowsapp.lib" ]
+
+  #   deps = [
+  #     ":flutter_windows_fixtures",
+  #     ":flutter_windows_headers",
+  #     ":flutter_windows_source",
+  #     "//flutter/testing",
+  #     "//third_party/rapidjson",
+  #   ]
+  # }
+} else {
+  executable("flutter_windows_unittests") {
+    testonly = true
+
+    sources = [
+      "flutter_project_bundle_unittests.cc",
+      "string_conversion_unittests.cc",
+      "system_utils_unittests.cc",
+      "testing/mock_win32_window.cc",
+      "testing/mock_win32_window.h",
+      "testing/win32_flutter_window_test.cc",
+      "testing/win32_flutter_window_test.h",
+      "win32_dpi_utils_unittests.cc",
+      "win32_flutter_window_unittests.cc",
+      "win32_window_proc_delegate_manager_unittests.cc",
+      "win32_window_unittests.cc",
+    ]
+
+    public_configs = [ "//flutter:config" ]
+
+    deps = [
+      ":flutter_windows_fixtures",
+      ":flutter_windows_headers",
+      ":flutter_windows_source",
+      "//flutter/testing",
+      "//third_party/rapidjson",
+    ]
+  }
 }
 
 shared_library("flutter_windows_glfw") {
@@ -162,11 +258,20 @@ group("windows_glfw") {
 }
 
 group("windows") {
-  deps = [
-    ":flutter_windows",
-    ":publish_headers_windows",
-    "//flutter/shell/platform/windows/client_wrapper:publish_wrapper_windows",
-  ]
+  if (target_os == "winuwp") {
+    deps = [
+      ":flutter_windows_winuwp",
+      ":publish_headers_windows",
+      "//flutter/shell/platform/windows/client_wrapper:publish_wrapper_windows",
+    ]
+  } else {
+    deps = [
+      ":flutter_windows",
+      ":publish_headers_windows",
+      "//flutter/shell/platform/windows/client_wrapper:publish_wrapper_windows",
+    ]
+  }
+
   if (build_glfw_shell) {
     deps += [ ":windows_glfw" ]
   }

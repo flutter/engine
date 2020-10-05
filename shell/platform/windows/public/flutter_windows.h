@@ -85,6 +85,7 @@ FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
 FLUTTER_EXPORT FlutterDesktopViewRef
 FlutterDesktopViewControllerGetView(FlutterDesktopViewControllerRef controller);
 
+  #ifndef FLUTTER_WINUWP
 // Allows the Flutter engine and any interested plugins an opportunity to
 // handle the given message.
 //
@@ -97,6 +98,7 @@ FLUTTER_EXPORT bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
     WPARAM wparam,
     LPARAM lparam,
     LRESULT* result);
+#endif
 
 // ========== Engine ==========
 

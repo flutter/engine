@@ -22,9 +22,11 @@
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
-#include "flutter/shell/platform/windows/win32_dpi_utils.h"
-#include "flutter/shell/platform/windows/win32_flutter_window.h"
-#include "flutter/shell/platform/windows/win32_task_runner.h"
+#ifndef FLUTTER_WINUWP
+#include "flutter/shell/platform/windows/win32_dpi_utils.h"       // nogncheck
+#include "flutter/shell/platform/windows/win32_flutter_window.h"  // nogncheck
+#include "flutter/shell/platform/windows/win32_task_runner.h"     // nogncheck
+#endif
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_state.h"
 
@@ -56,6 +58,7 @@ FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
     int width,
     int height,
     FlutterDesktopEngineRef engine) {
+#ifndef FLUTTER_WINUWP
   std::unique_ptr<flutter::WindowBindingHandler> window_wrapper =
       std::make_unique<flutter::Win32FlutterWindow>(width, height);
 
@@ -76,6 +79,9 @@ FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
   // Must happen after engine is running.
   state->view->SendInitialBounds();
   return state.release();
+#else
+  return nullptr;
+#endif
 }
 
 void FlutterDesktopViewControllerDestroy(
@@ -93,6 +99,7 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
   return HandleForView(controller->view.get());
 }
 
+#ifndef FLUTTER_WINUWP
 bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
     FlutterDesktopViewControllerRef controller,
     HWND hwnd,
@@ -109,6 +116,7 @@ bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
   }
   return delegate_result.has_value();
 }
+#endif
 
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
     const FlutterDesktopEngineProperties& engine_properties) {
@@ -133,7 +141,11 @@ bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
 }
 
 uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
+#ifndef FLUTTER_WINUWP
   return EngineFromHandle(engine)->task_runner()->ProcessTasks().count();
+#else
+  return 0;
+#endif
 }
 
 void FlutterDesktopEngineReloadSystemFonts(FlutterDesktopEngineRef engine) {
@@ -168,17 +180,22 @@ void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(
     FlutterDesktopPluginRegistrarRef registrar,
     FlutterDesktopWindowProcCallback delegate,
     void* user_data) {
+#ifndef FLUTTER_WINUWP
   registrar->engine->window_proc_delegate_manager()
       ->RegisterTopLevelWindowProcDelegate(delegate, user_data);
+#endif
 }
 
 void FlutterDesktopPluginRegistrarUnregisterTopLevelWindowProcDelegate(
     FlutterDesktopPluginRegistrarRef registrar,
     FlutterDesktopWindowProcCallback delegate) {
+#ifndef FLUTTER_WINUWP
   registrar->engine->window_proc_delegate_manager()
       ->UnregisterTopLevelWindowProcDelegate(delegate);
+#endif
 }
 
+#ifndef FLUTTER_WINUWP
 UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
   return flutter::GetDpiForHWND(hwnd);
 }
@@ -186,6 +203,7 @@ UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
 UINT FlutterDesktopGetDpiForMonitor(HMONITOR monitor) {
   return flutter::GetDpiForMonitor(monitor);
 }
+#endif
 
 void FlutterDesktopResyncOutputStreams() {
   FILE* unused;
