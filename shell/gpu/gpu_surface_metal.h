@@ -32,7 +32,10 @@ class GPUSurfaceMetal : public Surface {
   fml::scoped_nsobject<CAMetalLayer> layer_;
   sk_sp<GrDirectContext> context_;
   fml::scoped_nsprotocol<id<MTLCommandQueue>> command_queue_;
-  GrMTLHandle next_drawable_ = nullptr;
+
+  // Accumulated damage for each framebuffer; Key is address of underlying
+  // MTLTexture for each drawable
+  std::map<uintptr_t, SkIRect> damage_;
 
   // |Surface|
   bool IsValid() override;
@@ -51,8 +54,6 @@ class GPUSurfaceMetal : public Surface {
 
   // |Surface|
   std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
-
-  void ReleaseUnusedDrawableIfNecessary();
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetal);
 };
