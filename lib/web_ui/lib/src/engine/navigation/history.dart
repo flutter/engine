@@ -22,10 +22,6 @@ part of engine;
 ///  * [MultiEntriesBrowserHistory]: which creates a set of states that records
 ///    the navigating events happened in the framework.
 abstract class BrowserHistory {
-  static BrowserHistory defaultImpl({required UrlStrategy? urlStrategy}) {
-    return MultiEntriesBrowserHistory(urlStrategy: urlStrategy);
-  }
-
   late ui.VoidCallback _unsubscribe;
 
   /// The strategy to interact with html browser history.
@@ -50,11 +46,8 @@ abstract class BrowserHistory {
   }
 
   /// This method does the same thing as the browser back button.
-  Future<void> back() {
-    if (urlStrategy != null) {
-      return urlStrategy!.go(-1);
-    }
-    return Future<void>.value();
+  Future<void> back() async {
+    return urlStrategy?.go(-1);
   }
 
   /// The path of the current location of the user's browser.
@@ -120,7 +113,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     return 0;
   }
 
-  Object? _tagWithSerialCount(Object? originialState, int count) {
+  Object _tagWithSerialCount(Object? originialState, int count) {
     return <dynamic, dynamic>{
       'serialCount': count,
       'state': originialState,
@@ -223,12 +216,11 @@ class SingleEntryBrowserHistory extends BrowserHistory {
     _setupStrategy(strategy);
 
     final String path = currentPath;
-    if (_isFlutterEntry(html.window.history.state)) {
-      // This could happen if the user, for example, refreshes the page. They
-      // will land directly on the "flutter" entry, so there's no need to setup
-      // the "origin" and "flutter" entries, we can safely assume they are
-      // already setup.
-    } else {
+    if (!_isFlutterEntry(html.window.history.state)) {
+      // An entry may not have come from Flutter, for example, when the user
+      // refreshes the page. They land directly on the "flutter" entry, so
+      // there's no need to setup the "origin" and "flutter" entries, we can
+      // safely assume they are already setup.
       _setupOriginEntry(strategy);
       _setupFlutterEntry(strategy, replace: false, path: path);
     }

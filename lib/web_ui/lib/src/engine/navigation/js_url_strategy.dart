@@ -18,24 +18,6 @@ typedef _StateOperation = void Function(
 
 typedef _HistoryMove = Future<void> Function(int count);
 
-/// Given a Dart implementation of URL strategy, it converts it to a JavaScript
-/// URL strategy that be passed through JS interop.
-JsUrlStrategy? convertToJsUrlStrategy(UrlStrategy? strategy) {
-  if (strategy == null) {
-    return null;
-  }
-
-  return JsUrlStrategy(
-    getPath: allowInterop(strategy.getPath),
-    getState: allowInterop(strategy.getState),
-    addPopStateListener: allowInterop(strategy.addPopStateListener),
-    prepareExternalUrl: allowInterop(strategy.prepareExternalUrl),
-    pushState: allowInterop(strategy.pushState),
-    replaceState: allowInterop(strategy.replaceState),
-    go: allowInterop(strategy.go),
-  );
-}
-
 /// The JavaScript representation of a URL strategy.
 ///
 /// This is used to pass URL strategy implementations across a JS-interop

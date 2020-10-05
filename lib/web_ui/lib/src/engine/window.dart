@@ -17,8 +17,9 @@ typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
 
 /// A JavaScript hook to customize the URL strategy of a Flutter app.
 //
-// KEEP THIS JS NAME IN SYNC WITH flutter_web_plugins.
-// Find it at: https://github.com/flutter/flutter/blob/custom_location_strategy/packages/flutter_web_plugins/lib/src/history/js_url_strategy.dart
+// Keep this js name in sync with flutter_web_plugins. Find it at:
+// https://github.com/flutter/flutter/blob/custom_location_strategy/packages/flutter_web_plugins/lib/src/navigation/js_url_strategy.dart
+//
 // TODO: Add integration test https://github.com/flutter/flutter/issues/66852
 @JS('_flutter_web_set_location_strategy')
 external set _jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
@@ -163,7 +164,7 @@ class EngineWindow extends ui.Window {
   @visibleForTesting
   BrowserHistory get browserHistory {
     return _browserHistory ??=
-        BrowserHistory.defaultImpl(urlStrategy: const HashUrlStrategy());
+        MultiEntriesBrowserHistory(urlStrategy: const HashUrlStrategy());
   }
 
   BrowserHistory? _browserHistory;
@@ -648,16 +649,10 @@ class EngineWindow extends ui.Window {
     bool? useSingle,
   }) async {
     await _browserHistory?.tearDown();
-    switch (useSingle) {
-      case true:
-        _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
-        break;
-      case false:
-        _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
-        break;
-      default:
-        _browserHistory = BrowserHistory.defaultImpl(urlStrategy: strategy);
-        break;
+    if (useSingle == true) {
+      _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
+    } else {
+      _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
     }
   }
 
@@ -773,7 +768,7 @@ class EngineWindow extends ui.Window {
       );
       final UrlStrategy? strategy =
           jsStrategy == null ? null : CustomUrlStrategy.fromJs(jsStrategy);
-      _browserHistory = BrowserHistory.defaultImpl(urlStrategy: strategy);
+      _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
     });
     registerHotRestartListener(() {
       _jsSetUrlStrategy = null;

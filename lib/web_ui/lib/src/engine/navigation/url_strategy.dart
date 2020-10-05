@@ -9,14 +9,13 @@ part of engine;
 ///
 /// By default, the [HashUrlStrategy] subclass is used if the app doesn't
 /// specify one.
-///
-/// This is used by [BrowserHistory] to interact with browser history APIs.
 abstract class UrlStrategy {
-  /// This constructor is here only to allow subclasses to be const.
+  /// Abstract const constructor. This constructor enables subclasses to provide
+  /// const constructors so that they can be used in const expressions.
   const UrlStrategy();
 
-  /// Subscribes to popstate events and returns a function that could be used to
-  /// unsubscribe from popstate events.
+  /// Adds a listener to the `popstate` event and returns a function that, when
+  /// invoked, removes the listener.
   ui.VoidCallback addPopStateListener(html.EventListener fn);
 
   /// Returns the active path in the browser.
@@ -70,8 +69,8 @@ abstract class UrlStrategy {
 class HashUrlStrategy extends UrlStrategy {
   /// Creates an instance of [HashUrlStrategy].
   ///
-  /// The [PlatformLocation] parameter is useful for testing to avoid
-  /// interacting with the actual browser.
+  /// The [PlatformLocation] parameter is useful for testing to mock out browser
+  /// interations.
   const HashUrlStrategy(
       [this._platformLocation = const BrowserPlatformLocation()]);
 
@@ -130,7 +129,7 @@ class HashUrlStrategy extends UrlStrategy {
 
   /// Waits until the next popstate event is fired.
   ///
-  /// This is useful for example to wait until the browser has handled the
+  /// This is useful, for example, to wait until the browser has handled the
   /// `history.back` transition.
   Future<void> _waitForPopState() {
     final Completer<void> completer = Completer<void>();
@@ -146,6 +145,7 @@ class HashUrlStrategy extends UrlStrategy {
 /// Wraps a custom implementation of [UrlStrategy] that was previously converted
 /// to a [JsUrlStrategy].
 class CustomUrlStrategy extends UrlStrategy {
+  /// Wraps the [delegate] in a [CustomUrlStrategy] instance.
   CustomUrlStrategy.fromJs(this.delegate);
 
   final JsUrlStrategy delegate;
@@ -176,14 +176,14 @@ class CustomUrlStrategy extends UrlStrategy {
   Future<void> go(int count) => delegate.go(count);
 }
 
-/// [PlatformLocation] encapsulates all calls to DOM apis, which allows the
-/// [UrlStrategy] classes to be platform agnostic and testable.
+/// Encapsulates all calls to DOM apis, which allows the [UrlStrategy] classes
+/// to be platform agnostic and testable.
 ///
-/// The [PlatformLocation] class is used directly by all implementations of
-/// [UrlStrategy] when they need to interact with the DOM apis like
-/// pushState, popState, etc.
+/// For convenience, the [PlatformLocation] class can be used by implementations
+/// of [UrlStrategy] to interact with DOM apis like pushState, popState, etc.
 abstract class PlatformLocation {
-  /// This constructor is here only to allow subclasses to be const.
+  /// Abstract const constructor. This constructor enables subclasses to provide
+  /// const constructors so that they can be used in const expressions.
   const PlatformLocation();
 
   /// Registers an event listener for the `popstate` event.
@@ -191,7 +191,8 @@ abstract class PlatformLocation {
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
   void addPopStateListener(html.EventListener fn);
 
-  /// Unregisters the given listener from the `popstate` event.
+  /// Unregisters the given listener (added by [addPopStateListener]) from the
+  /// `popstate` event.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onpopstate
   void removePopStateListener(html.EventListener fn);
@@ -208,7 +209,7 @@ abstract class PlatformLocation {
 
   /// The `hash]` part of the URL in the browser address bar.
   ///
-  /// See: ttps://developer.mozilla.org/en-US/docs/Web/API/Location/hash
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/Location/hash
   String? get hash;
 
   /// The `state` in the current history entry.
@@ -245,7 +246,7 @@ abstract class PlatformLocation {
   String? getBaseHref();
 }
 
-/// An implementation of [PlatformLocation] for the browser.
+/// Delegates to real browser APIs to provide platform location functionality.
 class BrowserPlatformLocation extends PlatformLocation {
   /// Default constructor for [BrowserPlatformLocation].
   const BrowserPlatformLocation();
