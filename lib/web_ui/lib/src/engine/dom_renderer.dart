@@ -307,6 +307,18 @@ flt-glass-pane * {
 ''', sheet.cssRules.length);
     }
 
+    if(browserHasAutofillOverlay()) {
+        sheet.insertRule('''
+.transparentTextEditing:-webkit-autofill,
+.transparentTextEditing:-webkit-autofill:hover,
+.transparentTextEditing:-webkit-autofill:focus,
+.transparentTextEditing:-webkit-autofill:active {
+    -webkit-transition-delay: 99999s;
+}
+''', sheet.cssRules.length);
+    }
+
+
     final html.BodyElement bodyElement = html.document.body!;
     setElementStyle(bodyElement, 'position', 'fixed');
     setElementStyle(bodyElement, 'top', '0');
