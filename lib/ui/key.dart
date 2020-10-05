@@ -66,7 +66,7 @@ class LogicalKeyData {
 class KeyData {
   /// Creates an object that represents the change of a key.
   const KeyData({
-    this.timeStamp,
+    required this.timeStamp,
     required this.lockFlags,
     required this.change,
     required this.key,
@@ -77,7 +77,7 @@ class KeyData {
   ///
   /// For [KeyChange.synchronize] and [KeyChange.cancel] events, the [timeStamp]
   /// might not be the actual time that the key press or release happens.
-  final Duration? timeStamp;
+  final Duration timeStamp;
 
   /// The locking state after this event.
   final int lockFlags;
