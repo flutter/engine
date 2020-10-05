@@ -43,8 +43,15 @@ class CkAnimatedImage implements ui.Image {
   // being garbage-collected, or by an explicit call to [delete].
   late final SkiaObjectBox box;
 
-  CkAnimatedImage(this._skAnimatedImage) {
-    box = SkiaObjectBox(this, _skAnimatedImage as SkDeletable);
+  CkAnimatedImage(SkAnimatedImage skAnimatedImage) : this._(skAnimatedImage, null);
+
+  CkAnimatedImage._(this._skAnimatedImage, SkiaObjectBox? boxToClone) {
+    if (boxToClone != null) {
+      assert(boxToClone.skObject == _skAnimatedImage);
+      box = boxToClone.clone(this);
+    } else {
+      box = SkiaObjectBox(this, _skAnimatedImage as SkDeletable);
+    }
   }
 
   bool _disposed = false;
@@ -56,23 +63,23 @@ class CkAnimatedImage implements ui.Image {
 
   @override
   bool get debugDisposed {
-    bool? disposed;
-    assert(() {
-      disposed = _disposed;
-      return true;
-    }());
-    return disposed ?? (throw StateError('Image.debugDisposed is only available when asserts are enabled.'));
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Image.debugDisposed is only available when asserts are enabled.');
   }
 
+  ui.Image clone() => CkAnimatedImage._(_skAnimatedImage, box);
 
   @override
-  ui.Image clone() => this;
+  bool isCloneOf(ui.Image other) {
+    return other is CkAnimatedImage
+        && other._skAnimatedImage.isAliasOf(_skAnimatedImage);
+  }
 
   @override
-  bool isCloneOf(ui.Image other) => other == this;
+  List<StackTrace>? debugGetOpenHandleStackTraces() => box.debugGetStackTraces();
 
-  @override
-  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
   int get frameCount => _skAnimatedImage.getFrameCount();
 
   /// Decodes the next frame and returns the frame duration.
@@ -129,8 +136,15 @@ class CkImage implements ui.Image {
   // being garbage-collected, or by an explicit call to [delete].
   late final SkiaObjectBox box;
 
-  CkImage(this.skImage) {
-    box = SkiaObjectBox(this, skImage as SkDeletable);
+  CkImage(SkImage skImage) : this._(skImage, null);
+
+  CkImage._(this.skImage, SkiaObjectBox? boxToClone) {
+    if (boxToClone != null) {
+      assert(boxToClone.skObject == skImage);
+      box = boxToClone.clone(this);
+    } else {
+      box = SkiaObjectBox(this, skImage as SkDeletable);
+    }
   }
 
   bool _disposed = false;
@@ -145,22 +159,23 @@ class CkImage implements ui.Image {
 
   @override
   bool get debugDisposed {
-    bool? disposed;
-    assert(() {
-      disposed = _disposed;
-      return true;
-    }());
-    return disposed ?? (throw StateError('Image.debugDisposed is only available when asserts are enabled.'));
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Image.debugDisposed is only available when asserts are enabled.');
   }
 
   @override
-  ui.Image clone() => this;
+  ui.Image clone() => CkImage._(skImage, box);
 
   @override
-  bool isCloneOf(ui.Image other) => other == this;
+  bool isCloneOf(ui.Image other) {
+    return other is CkImage
+        && other.skImage.isAliasOf(skImage);
+  }
 
   @override
-  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
+  List<StackTrace>? debugGetOpenHandleStackTraces() => box.debugGetStackTraces();
 
   @override
   int get width => skImage.width();

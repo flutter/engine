@@ -121,20 +121,17 @@ class HtmlImage implements ui.Image {
   void dispose() {
     // Do nothing. The codec that owns this image should take care of
     // releasing the object url.
-    assert(() {
+    if (assertionsEnabled) {
       _disposed = true;
-      return true;
-    }());
+    }
   }
 
   @override
   bool get debugDisposed {
-    bool? disposed;
-    assert(() {
-      disposed = _disposed;
-      return true;
-    }());
-    return disposed ?? (throw StateError('Image.debugDisposed is only available when asserts are enabled.'));
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    return throw StateError('Image.debugDisposed is only available when asserts are enabled.');
   }
 
 
