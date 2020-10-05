@@ -4,7 +4,6 @@
 
 // @dart = 2.6
 import 'dart:html' as html;
-import 'dart:io';
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
