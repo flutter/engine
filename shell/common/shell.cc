@@ -1401,10 +1401,10 @@ bool Shell::OnServiceProtocolRunInView(
   configuration.SetEntrypointAndLibrary(engine_->GetLastEntrypoint(),
                                         engine_->GetLastEntrypointLibrary());
 
-  configuration.AddAssetResolver(
-      std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
-          asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
-  configuration.AddAssetResolver(RestoreOriginalAssetResolver());
+  configuration.AddAssetResolver(std::make_unique<DirectoryAssetBundle>(
+      fml::OpenDirectory(asset_directory_path.c_str(), false,
+                         fml::FilePermission::kRead),
+      false));
 
   auto& allocator = response->GetAllocator();
   response->SetObject();
@@ -1517,10 +1517,10 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 
   auto asset_manager = std::make_shared<AssetManager>();
 
-  asset_manager->PushFront(RestoreOriginalAssetResolver());
   asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
       fml::OpenDirectory(params.at("assetDirectory").data(), false,
-                         fml::FilePermission::kRead)));
+                         fml::FilePermission::kRead),
+      false));
 
   if (engine_->UpdateAssetManager(std::move(asset_manager))) {
     response->AddMember("type", "Success", allocator);
@@ -1623,17 +1623,5 @@ void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
                              std::vector<Display> displays) {
   display_manager_->HandleDisplayUpdates(update_type, displays);
 }
-
-// Add the original asset directory to the resolvers so that unmodified assets
-// bundled with the application specific format (APK, IPA) can be used without
-// syncing to the Dart devFS.
-std::unique_ptr<DirectoryAssetBundle> Shell::RestoreOriginalAssetResolver() {
-  if (fml::UniqueFD::traits_type::IsValid(settings_.assets_dir)) {
-    return std::make_unique<DirectoryAssetBundle>(
-        fml::Duplicate(settings_.assets_dir));
-  }
-  return std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
-      settings_.assets_path.c_str(), false, fml::FilePermission::kRead));
-};
 
 }  // namespace flutter

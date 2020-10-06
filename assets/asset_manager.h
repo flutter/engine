@@ -25,8 +25,13 @@ class AssetManager final : public AssetResolver {
 
   void PushBack(std::unique_ptr<AssetResolver> resolver);
 
+  void TakeResolvers(std::shared_ptr<AssetManager> manager);
+
   // |AssetResolver|
   bool IsValid() const override;
+
+  // |AssetResolver|
+  bool ShouldPreserve() const override;
 
   // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(

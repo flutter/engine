@@ -112,10 +112,14 @@ bool Engine::UpdateAssetManager(
     return false;
   }
 
+  auto old_asset_manager = asset_manager_;
   asset_manager_ = new_asset_manager;
 
   if (!asset_manager_) {
     return false;
+  }
+  if (old_asset_manager != nullptr) {
+    asset_manager_->TakeResolvers(old_asset_manager);
   }
 
   // Using libTXT as the text engine.

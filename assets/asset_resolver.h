@@ -21,6 +21,17 @@ class AssetResolver {
 
   virtual bool IsValid() const = 0;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Certain asset resolvers need to be preserved when the asset
+  ///             directory is updated or the isolate recreated. While some
+  ///             could be recated from the settings object, the Android
+  ///             specific asset resolvers require a reference to the JNI to
+  ///             create.
+  ///
+  /// @return     Returns whether this resolver should be preserved.
+  ///
+  virtual bool ShouldPreserve() const = 0;
+
   [[nodiscard]] virtual std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const = 0;
 
