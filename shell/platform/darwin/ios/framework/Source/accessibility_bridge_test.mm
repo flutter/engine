@@ -328,9 +328,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
 
   XCTAssertEqual([accessibility_notifications count], 1ul);
-  SemanticsObject* focusObject = accessibility_notifications[0][@"argument"];
-  XCTAssertEqual([focusObject uid], 3);
-  XCTAssertEqualObjects([focusObject accessibilityLabel], @"node3");
+  XCTAssertEqualObjects(accessibility_notifications[0][@"argument"], @"route");
   XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
                  UIAccessibilityScreenChangedNotification);
 }
