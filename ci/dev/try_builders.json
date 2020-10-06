@@ -28,7 +28,8 @@
       {
          "name":"Linux Web Engine",
          "repo":"engine",
-         "enabled": true
+         "enabled": true,
+         "run_if": ["DEPS", "lib/web_ui/**", "web_sdk/**"]
       },
       {
         "name":"Linux Web Framework tests",
@@ -59,7 +60,8 @@
       {
          "name":"Mac Web Engine",
          "repo":"engine",
-         "enabled": true
+         "enabled": true,
+         "run_if": ["DEPS", "lib/web_ui/**", "web_sdk/**"]
       },
       {
          "name":"Windows Android AOT Engine",
@@ -74,7 +76,8 @@
       {
          "name":"Windows Web Engine",
          "repo":"engine",
-         "enabled": true
+         "enabled": true,
+         "run_if": ["DEPS", "lib/web_ui/**", "web_sdk/**"]
       }
    ]
 }
