@@ -1019,12 +1019,12 @@ class SkPath {
   external SkPath([SkPath? other]);
   external void setFillType(SkFillType fillType);
   external void addArc(
-    SkRect oval,
+    List<double> oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
   );
   external void addOval(
-    SkRect oval,
+    List<double> oval,
     bool counterClockWise,
     int startIndex,
   );
@@ -1045,16 +1045,15 @@ class SkPath {
     Float32List points,
     bool close,
   );
-  external void addRoundRect(
-    SkRect outerRect,
-    Float32List radii,
+  external void addRRect(
+    List<double> rrect,
     bool counterClockWise,
   );
   external void addRect(
-    SkRect rect,
+    List<double> rect,
   );
   external void arcToOval(
-    SkRect oval,
+    List<double> oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
     bool forceMoveTo,
@@ -1088,7 +1087,7 @@ class SkPath {
     double x3,
     double y3,
   );
-  external SkRect getBounds();
+  external List<double> getBounds();
   external void lineTo(double x, double y);
   external void moveTo(double x, double y);
   external void quadTo(
@@ -1160,88 +1159,36 @@ class SkContourMeasure {
   external double length();
 }
 
-@JS()
-@anonymous
-class SkRect {
-  external factory SkRect({
-    required double fLeft,
-    required double fTop,
-    required double fRight,
-    required double fBottom,
-  });
-  external double get fLeft;
-  external double get fTop;
-  external double get fRight;
-  external double get fBottom;
+// TODO(hterkelsen): Use a shared malloc'ed array for performance.
+List<double> toSkRect(ui.Rect rect) {
+  return <double>[rect.left, rect.top, rect.right, rect.bottom];
 }
 
-extension SkRectExtensions on SkRect {
-  ui.Rect toRect() {
-    return ui.Rect.fromLTRB(
-      this.fLeft,
-      this.fTop,
-      this.fRight,
-      this.fBottom,
-    );
-  }
+ui.Rect fromSkRect(List<double> skRect) {
+  return ui.Rect.fromLTRB(skRect[0], skRect[1], skRect[2], skRect[3]);
 }
 
-SkRect toSkRect(ui.Rect rect) {
-  return SkRect(
-    fLeft: rect.left,
-    fTop: rect.top,
-    fRight: rect.right,
-    fBottom: rect.bottom,
-  );
+// TODO(hterkelsen): Use a shared malloc'ed array for performance.
+List<double> toSkRRect(ui.RRect rrect) {
+  return <double>[
+    rrect.left,
+    rrect.top,
+    rrect.right,
+    rrect.bottom,
+    rrect.tlRadiusX,
+    rrect.tlRadiusY,
+    rrect.trRadiusX,
+    rrect.trRadiusY,
+    rrect.brRadiusX,
+    rrect.brRadiusY,
+    rrect.blRadiusX,
+    rrect.blRadiusY,
+  ];
 }
 
-@JS()
-@anonymous
-class SkRRect {
-  external factory SkRRect({
-    required SkRect rect,
-    required double rx1,
-    required double ry1,
-    required double rx2,
-    required double ry2,
-    required double rx3,
-    required double ry3,
-    required double rx4,
-    required double ry4,
-  });
-
-  external SkRect get rect;
-  external double get rx1;
-  external double get ry1;
-  external double get rx2;
-  external double get ry2;
-  external double get rx3;
-  external double get ry3;
-  external double get rx4;
-  external double get ry4;
-}
-
-SkRRect toSkRRect(ui.RRect rrect) {
-  return SkRRect(
-    rect: toOuterSkRect(rrect),
-    rx1: rrect.tlRadiusX,
-    ry1: rrect.tlRadiusY,
-    rx2: rrect.trRadiusX,
-    ry2: rrect.trRadiusY,
-    rx3: rrect.brRadiusX,
-    ry3: rrect.brRadiusY,
-    rx4: rrect.blRadiusX,
-    ry4: rrect.blRadiusY,
-  );
-}
-
-SkRect toOuterSkRect(ui.RRect rrect) {
-  return SkRect(
-    fLeft: rrect.left,
-    fTop: rrect.top,
-    fRight: rrect.right,
-    fBottom: rrect.bottom,
-  );
+// TODO(hterkelsen): Use a shared malloc'ed array for performance.
+List<double> toOuterSkRect(ui.RRect rrect) {
+  return <double>[rrect.left, rrect.top, rrect.right, rrect.bottom];
 }
 
 /// Encodes a list of offsets to CanvasKit-compatible point array.
@@ -1303,7 +1250,7 @@ Uint16List toUint16List(List<int> ints) {
 @JS('window.flutterCanvasKit.SkPictureRecorder')
 class SkPictureRecorder {
   external SkPictureRecorder();
-  external SkCanvas beginRecording(SkRect bounds);
+  external SkCanvas beginRecording(List<double> bounds);
   external SkPicture finishRecordingAsPicture();
   external void delete();
 }
@@ -1323,17 +1270,17 @@ class SkCanvas {
     bool doAntiAlias,
   );
   external void clipRRect(
-    SkRRect rrect,
+    List<double> rrect,
     SkClipOp clipOp,
     bool doAntiAlias,
   );
   external void clipRect(
-    SkRect rrect,
+    List<double> rrect,
     SkClipOp clipOp,
     bool doAntiAlias,
   );
   external void drawArc(
-    SkRect oval,
+    List<double> oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
     bool useCenter,
@@ -1358,8 +1305,8 @@ class SkCanvas {
     SkBlendMode blendMode,
   );
   external void drawDRRect(
-    SkRRect outer,
-    SkRRect inner,
+    List<double> outer,
+    List<double> inner,
     SkPaint paint,
   );
   external void drawImage(
@@ -1370,15 +1317,15 @@ class SkCanvas {
   );
   external void drawImageRect(
     SkImage image,
-    SkRect src,
-    SkRect dst,
+    List<double> src,
+    List<double> dst,
     SkPaint paint,
     bool fastSample,
   );
   external void drawImageNine(
     SkImage image,
-    SkRect center,
-    SkRect dst,
+    List<double> center,
+    List<double> dst,
     SkPaint paint,
   );
   external void drawLine(
@@ -1389,7 +1336,7 @@ class SkCanvas {
     SkPaint paint,
   );
   external void drawOval(
-    SkRect rect,
+    List<double> rect,
     SkPaint paint,
   );
   external void drawPaint(
@@ -1405,11 +1352,11 @@ class SkCanvas {
     SkPaint paint,
   );
   external void drawRRect(
-    SkRRect rrect,
+    List<double> rrect,
     SkPaint paint,
   );
   external void drawRect(
-    SkRect rrect,
+    List<double> rrect,
     SkPaint paint,
   );
   external void drawShadow(
@@ -1429,8 +1376,10 @@ class SkCanvas {
   external int save();
   external int getSaveCount();
   external void saveLayer(
-    SkRect bounds,
-    SkPaint paint,
+    SkPaint? paint,
+    List<double>? bounds,
+    SkImageFilter? backdrop,
+    int? flags,
   );
   external void restore();
   external void restoreToCount(int count);
@@ -1449,23 +1398,6 @@ class SkCanvas {
     SkParagraph paragraph,
     double x,
     double y,
-  );
-}
-
-@JS()
-@anonymous
-class SkCanvasSaveLayerWithoutBoundsOverload {
-  external void saveLayer(SkPaint paint);
-}
-
-@JS()
-@anonymous
-class SkCanvasSaveLayerWithFilterOverload {
-  external void saveLayer(
-    SkPaint? paint,
-    SkImageFilter? imageFilter,
-    int flags,
-    SkRect rect,
   );
 }
 
@@ -1770,13 +1702,13 @@ class SkParagraph {
   external double getMaxIntrinsicWidth();
   external double getMinIntrinsicWidth();
   external double getMaxWidth();
-  external List<SkRect> getRectsForRange(
+  external List<List<double>> getRectsForRange(
     int start,
     int end,
     SkRectHeightStyle heightStyle,
     SkRectWidthStyle widthStyle,
   );
-  external List<SkRect> getRectsForPlaceholders();
+  external List<List<double>> getRectsForPlaceholders();
   external SkTextPosition getGlyphPositionAtCoordinate(
     double x,
     double y,
@@ -1829,9 +1761,8 @@ class TypefaceFontProviderNamespace {
 Timer? _skObjectCollector;
 List<SkDeletable> _skObjectDeleteQueue = <SkDeletable>[];
 
-final SkObjectFinalizationRegistry<SkDeletable> skObjectFinalizationRegistry =
-    SkObjectFinalizationRegistry<SkDeletable>(
-        js.allowInterop((SkDeletable deletable) {
+final SkObjectFinalizationRegistry skObjectFinalizationRegistry =
+    SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
   _skObjectDeleteQueue.add(deletable);
   _skObjectCollector ??= _scheduleSkObjectCollection();
 }));
@@ -1864,8 +1795,6 @@ Timer _scheduleSkObjectCollection() => Timer(Duration.zero, () {
       html.window.performance.measure('SkObject collection',
           'SkObject collection-start', 'SkObject collection-end');
     });
-
-typedef SkObjectFinalizer<T> = void Function(T key);
 
 /// Any Skia object that has a `delete` method.
 @JS()
@@ -1927,7 +1856,7 @@ class SkImageInfo {
   external int get height;
   external bool get isEmpty;
   external bool get isOpaque;
-  external SkRect get bounds;
+  external List<double> get bounds;
   external int get width;
   external SkImageInfo makeAlphaType(SkAlphaType alphaType);
   external SkImageInfo makeColorSpace(SkColorSpace colorSpace);

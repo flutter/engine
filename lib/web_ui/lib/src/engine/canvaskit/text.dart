@@ -498,10 +498,9 @@ class CkParagraph extends ManagedSkiaObject<SkParagraph>
   @override
   double get width => skiaObject.getMaxWidth();
 
-  // TODO(hterkelsen): Implement placeholders once it's in CanvasKit
   @override
   List<ui.TextBox> getBoxesForPlaceholders() {
-    List<SkRect> skRects = skiaObject.getRectsForPlaceholders();
+    List<List<double>> skRects = skiaObject.getRectsForPlaceholders();
     return skRectsToTextBoxes(skRects);
   }
 
@@ -516,7 +515,7 @@ class CkParagraph extends ManagedSkiaObject<SkParagraph>
       return const <ui.TextBox>[];
     }
 
-    List<SkRect> skRects = skiaObject.getRectsForRange(
+    List<List<double>> skRects = skiaObject.getRectsForRange(
       start,
       end,
       toSkRectHeightStyle(boxHeightStyle),
@@ -526,16 +525,16 @@ class CkParagraph extends ManagedSkiaObject<SkParagraph>
     return skRectsToTextBoxes(skRects);
   }
 
-  List<ui.TextBox> skRectsToTextBoxes(List<SkRect> skRects) {
+  List<ui.TextBox> skRectsToTextBoxes(List<List<double>> skRects) {
     List<ui.TextBox> result = <ui.TextBox>[];
 
     for (int i = 0; i < skRects.length; i++) {
-      final SkRect rect = skRects[i];
+      final List<double> rect = skRects[i];
       result.add(ui.TextBox.fromLTRBD(
-        rect.fLeft,
-        rect.fTop,
-        rect.fRight,
-        rect.fBottom,
+          rect[0],
+          rect[1],
+          rect[2],
+          rect[3],
         _paragraphStyle._textDirection!,
       ));
     }
