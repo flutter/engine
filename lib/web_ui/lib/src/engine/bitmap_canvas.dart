@@ -929,8 +929,8 @@ class BitmapCanvas extends EngineCanvas {
   ui.Rect _computeScreenBounds(Matrix4 targetTransform) {
     final Matrix4 inverted = targetTransform.clone()..invert();
     final double dpr = ui.window.devicePixelRatio;
-    final double width = ui.window.physicalSize.width;
-    final double height = ui.window.physicalSize.height;
+    final double width = ui.window.physicalSize.width * dpr;
+    final double height = ui.window.physicalSize.height * dpr;
     Vector3 topLeft = inverted.perspectiveTransform(Vector3(0, 0, 0));
     Vector3 topRight = inverted.perspectiveTransform(Vector3(width, 0, 0));
     Vector3 bottomRight =
