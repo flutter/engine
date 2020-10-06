@@ -103,8 +103,8 @@ enum {
 - (void)swapBuffers {
   contentLayer.frame = layer.bounds;
   // OpengL texture is rendered upside down
-  contentLayer.transform =
-      CATransform3DTranslate(CATransform3DMakeScale(1, -1, 1), 0, -layer.frame.size.height, 0);
+  layer.sublayerTransform =
+      CATransform3DTranslate(CATransform3DMakeScale(1, -1, 1), 0, -layer.bounds.size.height, 0);
 
   [contentLayer setContents:(__bridge id)_ioSurface[kBack]];
 
