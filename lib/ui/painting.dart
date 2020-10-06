@@ -5102,20 +5102,14 @@ typedef _Callbacker<T> = String? Function(_Callback<T> callback);
 /// ```
 Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
-  bool syncResult = true;
   final String? error = callbacker((T t) {
-    if (t == null && !syncResult) {
-      // If an error is thrown before the caller has a chance to attach a listener
-      // to the resulting future, it will instead end up being thrown to the
-      // Zones uncaught exception handler.
+    if (t == null) {
       completer.completeError(Exception('operation failed'));
     } else {
       completer.complete(t);
     }
   });
-  if (error != null) {
+  if (error != null)
     throw Exception(error);
-  }
-  syncResult = false;
   return completer.future;
 }
