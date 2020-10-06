@@ -129,7 +129,7 @@ struct Settings {
   // Whether to publish the observatory URL over mDNS.
   // On iOS 14 this prompts a local network permission dialog,
   // which cannot be accepted or dismissed in a CI environment.
-  bool enable_observatory_publication = false;
+  bool enable_observatory_publication = true;
 
   // The IP address to which the Dart VM service is bound.
   std::string observatory_host;
