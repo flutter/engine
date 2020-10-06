@@ -618,27 +618,15 @@ void _pathTests() {
     freeFloat32List(encodedPoints);
   });
 
-  test('addRoundRect', () {
+  test('addRRect', () {
     final ui.RRect rrect = ui.RRect.fromRectAndRadius(
       ui.Rect.fromLTRB(10, 10, 20, 20),
       ui.Radius.circular(3),
     );
-    final SkFloat32List skRadii = mallocFloat32List(8);
-    final Float32List radii = skRadii.toTypedArray();
-    radii[0] = rrect.tlRadiusX;
-    radii[1] = rrect.tlRadiusY;
-    radii[2] = rrect.trRadiusX;
-    radii[3] = rrect.trRadiusY;
-    radii[4] = rrect.brRadiusX;
-    radii[5] = rrect.brRadiusY;
-    radii[6] = rrect.blRadiusX;
-    radii[7] = rrect.blRadiusY;
     path.addRRect(
-      toOuterSkRect(rrect),
-      radii,
+      toSkRRect(rrect),
       false,
     );
-    freeFloat32List(skRadii);
   });
 
   test('addRect', () {
