@@ -3,12 +3,14 @@
 // found in the LICENSE file.
 
 import 'dart:io' as io;
+import 'dart:math';
 
 import 'package:flutter_driver/flutter_driver.dart';
 import 'package:integration_test/integration_test_driver_extended.dart' as test;
 
 import 'package:web_test_utils/goldens.dart';
 import 'package:web_test_utils/image_compare.dart';
+import 'package:webdriver/src/async/window.dart';
 
 import 'package:image/image.dart';
 
@@ -19,6 +21,9 @@ import 'package:image/image.dart';
 /// more components on the screen which are not related to the functionality
 /// under test ex: a blinking cursor.
 const double kMaxDiffRateFailure = 0.5 / 100; // 0.5%
+
+const int kMaxScreenshotWidth = 1024;
+const int kMaxScreenshotHeight = 1024;
 
 /// Used for calling `integration_test` package.
 ///
@@ -32,12 +37,17 @@ const double kMaxDiffRateFailure = 0.5 / 100; // 0.5%
 /// It provides an `onScreenshot` callback to the `integrationDriver` method.
 /// It also includes options for updating the golden files.
 Future<void> runTestWithScreenshots(
-    {double diffRateFailure = kMaxDiffRateFailure}) async {
+    {double diffRateFailure = kMaxDiffRateFailure,
+     int browserWidth = kMaxScreenshotWidth,
+     int browserHeight = kMaxScreenshotHeight}) async {
   final WebFlutterDriver driver =
       await FlutterDriver.connect() as WebFlutterDriver;
 
   // Learn the browser in use from the webDriver.
   final String browser = driver.webDriver.capabilities['browserName'] as String;
+
+  final Window window = await driver.webDriver.window;
+  window.setSize(Rectangle<int>(0, 0, browserWidth, browserHeight));
 
   bool updateGoldens = false;
   final String updateGoldensFlag = io.Platform.environment['UPDATE_GOLDENS'];
