@@ -29,13 +29,29 @@
          "name":"Linux Web Engine",
          "repo":"engine",
          "enabled": true,
-         "run_if": ["DEPS", "lib/web_ui/**", "web_sdk/**"]
+         "run_if": [
+            "DEPS",
+            "lib/web_ui/**",
+            "web_sdk/**",
+            "e2etests/web/**",
+            "tools/**",
+            "ci/**",
+            "flutter_frontend_server/**"
+         ]
       },
       {
         "name":"Linux Web Framework tests",
         "repo":"engine",
         "enabled": true,
-        "run_if": ["DEPS", "lib/web_ui/**", "web_sdk/**"]
+        "run_if": [
+            "DEPS",
+            "lib/web_ui/**",
+            "web_sdk/**",
+            "e2etests/web/**",
+            "tools/**",
+            "ci/**",
+            "flutter_frontend_server/**"
+        ]
       },
       {
          "name":"Mac Android AOT Engine",
@@ -61,7 +77,15 @@
          "name":"Mac Web Engine",
          "repo":"engine",
          "enabled": true,
-         "run_if": ["DEPS", "lib/web_ui/**", "web_sdk/**"]
+         "run_if": [
+             "DEPS",
+             "lib/web_ui/**",
+             "web_sdk/**",
+             "e2etests/web/**",
+             "tools/**",
+             "ci/**",
+             "flutter_frontend_server/**"
+         ]
       },
       {
          "name":"Windows Android AOT Engine",
