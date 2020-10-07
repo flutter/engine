@@ -1408,9 +1408,12 @@ bool Shell::OnServiceProtocolRunInView(
 
   // Preserve any original asset resolvers to avoid syncing unchanged assets
   // over the DevFS connection.
-  for (auto& old_resolver : engine_->GetAssetManager()->TakeResolvers())
-    if (old_resolver->ShouldPreserve()) {
-      configuration.AddAssetResolver(std::move(old_resolver));
+  auto old_asset_manager = engine_->GetAssetManager();
+  if (old_asset_manager != nullptr) {
+    for (auto& old_resolver : old_asset_manager->TakeResolvers()) {
+      if (old_resolver->ShouldPreserve()) {
+        configuration.AddAssetResolver(std::move(old_resolver));
+      }
     }
   }
 
@@ -1532,9 +1535,12 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 
   // Preserve any original asset resolvers to avoid syncing unchanged assets
   // over the DevFS connection.
-  for (auto& old_resolver : engine_->GetAssetManager()->TakeResolvers())
-    if (old_resolver->ShouldPreserve()) {
-      asset_manager->PushBack(std::move(old_resolver));
+  auto old_asset_manager = engine_->GetAssetManager();
+  if (old_asset_manager != nullptr) {
+    for (auto& old_resolver : old_asset_manager->TakeResolvers()) {
+      if (old_resolver->ShouldPreserve()) {
+        asset_manager->PushBack(std::move(old_resolver));
+      }
     }
   }
 
