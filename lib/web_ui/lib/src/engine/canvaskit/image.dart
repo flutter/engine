@@ -43,14 +43,33 @@ class CkAnimatedImage implements ui.Image {
   // being garbage-collected, or by an explicit call to [delete].
   late final SkiaObjectBox box;
 
-  CkAnimatedImage(this._skAnimatedImage) {
-    box = SkiaObjectBox(this, _skAnimatedImage as SkDeletable);
+  CkAnimatedImage(SkAnimatedImage skAnimatedImage) : this._(skAnimatedImage, null);
+
+  CkAnimatedImage._(this._skAnimatedImage, SkiaObjectBox? boxToClone) {
+    if (boxToClone != null) {
+      assert(boxToClone.skObject == _skAnimatedImage);
+      box = boxToClone.clone(this);
+    } else {
+      box = SkiaObjectBox(this, _skAnimatedImage as SkDeletable);
+    }
   }
 
   @override
   void dispose() {
     box.delete();
   }
+
+  @override
+  ui.Image clone() => CkAnimatedImage._(_skAnimatedImage, box);
+
+  @override
+  bool isCloneOf(ui.Image other) {
+    return other is CkAnimatedImage
+        && other._skAnimatedImage.isAliasOf(_skAnimatedImage);
+  }
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => box.debugGetStackTraces();
 
   int get frameCount => _skAnimatedImage.getFrameCount();
 
@@ -75,8 +94,29 @@ class CkAnimatedImage implements ui.Image {
   @override
   Future<ByteData> toByteData(
       {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    throw 'unimplemented';
+    Uint8List bytes;
+
+    if (format == ui.ImageByteFormat.rawRgba) {
+      final SkImageInfo imageInfo = SkImageInfo(
+        alphaType: canvasKit.AlphaType.Premul,
+        colorType: canvasKit.ColorType.RGBA_8888,
+        colorSpace: SkColorSpaceSRGB,
+        width: width,
+        height: height,
+      );
+      bytes = _skAnimatedImage.readPixels(imageInfo, 0, 0);
+    } else {
+      final SkData skData = _skAnimatedImage.encodeToData(); //defaults to PNG 100%
+      // make a copy that we can return
+      bytes = Uint8List.fromList(canvasKit.getSkDataBytes(skData));
+    }
+
+    final ByteData data = bytes.buffer.asByteData(0, bytes.length);
+    return Future<ByteData>.value(data);
   }
+
+  @override
+  String toString() => '[$width\u00D7$height]';
 }
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
@@ -87,14 +127,33 @@ class CkImage implements ui.Image {
   // being garbage-collected, or by an explicit call to [delete].
   late final SkiaObjectBox box;
 
-  CkImage(this.skImage) {
-    box = SkiaObjectBox(this, skImage as SkDeletable);
+  CkImage(SkImage skImage) : this._(skImage, null);
+
+  CkImage._(this.skImage, SkiaObjectBox? boxToClone) {
+    if (boxToClone != null) {
+      assert(boxToClone.skObject == skImage);
+      box = boxToClone.clone(this);
+    } else {
+      box = SkiaObjectBox(this, skImage as SkDeletable);
+    }
   }
 
   @override
   void dispose() {
     box.delete();
   }
+
+  @override
+  ui.Image clone() => CkImage._(skImage, box);
+
+  @override
+  bool isCloneOf(ui.Image other) {
+    return other is CkImage
+        && other.skImage.isAliasOf(skImage);
+  }
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => box.debugGetStackTraces();
 
   @override
   int get width => skImage.width();
@@ -105,8 +164,29 @@ class CkImage implements ui.Image {
   @override
   Future<ByteData> toByteData(
       {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    throw 'unimplemented';
+    Uint8List bytes;
+
+    if (format == ui.ImageByteFormat.rawRgba) {
+      final SkImageInfo imageInfo = SkImageInfo(
+        alphaType: canvasKit.AlphaType.Premul,
+        colorType: canvasKit.ColorType.RGBA_8888,
+        colorSpace: SkColorSpaceSRGB,
+        width: width,
+        height: height,
+      );
+      bytes = skImage.readPixels(imageInfo, 0, 0);
+    } else {
+      final SkData skData = skImage.encodeToData(); //defaults to PNG 100%
+      // make a copy that we can return
+      bytes = Uint8List.fromList(canvasKit.getSkDataBytes(skData));
+    }
+
+    final ByteData data = bytes.buffer.asByteData(0, bytes.length);
+    return Future<ByteData>.value(data);
   }
+
+  @override
+  String toString() => '[$width\u00D7$height]';
 }
 
 /// A [Codec] that wraps an `SkAnimatedImage`.

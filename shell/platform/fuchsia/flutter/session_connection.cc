@@ -17,10 +17,12 @@ SessionConnection::SessionConnection(
     fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
     fml::closure session_error_callback,
     on_frame_presented_event on_frame_presented_callback,
-    zx_handle_t vsync_event_handle)
+    zx_handle_t vsync_event_handle,
+    uint64_t max_frames_in_flight)
     : session_wrapper_(session.Bind(), nullptr),
       on_frame_presented_callback_(std::move(on_frame_presented_callback)),
-      vsync_event_handle_(vsync_event_handle) {
+      vsync_event_handle_(vsync_event_handle),
+      kMaxFramesInFlight(max_frames_in_flight) {
   session_wrapper_.set_error_handler(
       [callback = session_error_callback](zx_status_t status) { callback(); });
 
@@ -36,6 +38,9 @@ SessionConnection::SessionConnection(
         // A frame was presented: Update our |frames_in_flight| to match the
         // updated unfinalized present requests.
         frames_in_flight_ -= num_presents_handled;
+        TRACE_EVENT2("gfx", "OnFramePresented", "frames_in_flight",
+                     frames_in_flight_, "max_frames_in_flight",
+                     kMaxFramesInFlight);
         FML_DCHECK(frames_in_flight_ >= 0);
 
         VsyncRecorder::GetInstance().UpdateFramePresentedInfo(
@@ -76,7 +81,8 @@ SessionConnection::SessionConnection(
 SessionConnection::~SessionConnection() = default;
 
 void SessionConnection::Present() {
-  TRACE_EVENT0("gfx", "SessionConnection::Present");
+  TRACE_EVENT2("gfx", "SessionConnection::Present", "frames_in_flight",
+               frames_in_flight_, "max_frames_in_flight", kMaxFramesInFlight);
 
   TRACE_FLOW_BEGIN("gfx", "SessionConnection::PresentSession",
                    next_present_session_trace_id_);

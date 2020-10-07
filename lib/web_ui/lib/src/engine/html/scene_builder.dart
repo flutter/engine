@@ -528,6 +528,15 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// cannot be used further.
   @override
   SurfaceScene build() {
+    // "Build finish" and "raster start" happen back-to-back because we
+    // render on the same thread, so there's no overhead from hopping to
+    // another thread.
+    //
+    // In the HTML renderer we time the beginning of the rasterization phase
+    // (counter-intuitively) in SceneBuilder.build because DOM updates happen
+    // here. This is different from CanvasKit.
+    _frameTimingsOnBuildFinish();
+    _frameTimingsOnRasterStart();
     timeAction<void>(kProfilePrerollFrame, () {
       while (_surfaceStack.length > 1) {
         // Auto-pop layers that were pushed without a corresponding pop.
@@ -563,9 +572,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   }
 }
 
-// TODO(yjbanov): in HTML the blur looks too aggressive. The current
-//                implementation was copied from the existing backdrop-filter
-//                but probably needs a revision.
+// HTML only supports a single radius, but Flutter ImageFilter supports separate
+// horizontal and vertical radii. The best approximation we can provide is to
+// average the two radii together for a single compromise value.
 String _imageFilterToCss(EngineImageFilter filter) {
-  return 'blur(${math.max(filter.sigmaX, filter.sigmaY) * 2}px)';
+  return 'blur(${(filter.sigmaX + filter.sigmaY) / 2}px)';
 }

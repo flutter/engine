@@ -2,18 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+
+#import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-#import "third_party/ocmock/Source/OCMock/OCMock.h"
 
 FLUTTER_ASSERT_ARC
 
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
 
-- (BOOL)setTextInputState:(NSDictionary*)state;
+- (void)setEditableTransform:(NSArray*)matrix;
+- (void)setTextInputState:(NSDictionary*)state;
+- (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
 @end
@@ -27,6 +31,9 @@ FLUTTER_ASSERT_ARC
 @property(nonatomic, assign) FlutterTextInputView* activeView;
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
+
+- (void)collectGarbageInputViews;
+- (UIView*)textInputParentView;
 @end
 
 @interface FlutterTextInputPluginTest : XCTestCase
@@ -81,12 +88,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (NSArray<FlutterTextInputView*>*)installedInputViews {
-  UIWindow* keyWindow =
-      [[[UIApplication sharedApplication] windows]
-          filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isKeyWindow == YES"]]
-          .firstObject;
-
-  return [keyWindow.subviews
+  return [textInputPlugin.textInputParentView.subviews
       filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self isKindOfClass: %@",
                                                                    [FlutterTextInputView class]]];
 }
@@ -170,6 +172,12 @@ FLUTTER_ASSERT_ARC
   XCTAssert([[passwordView.textField description] containsString:@"TextField"]);
 }
 
+- (void)ensureOnlyActiveViewCanBecomeFirstResponder {
+  for (FlutterTextInputView* inputView in self.installedInputViews) {
+    XCTAssertEqual(inputView.canBecomeFirstResponder, inputView == textInputPlugin.activeView);
+  }
+}
+
 #pragma mark - EditingState tests
 
 - (void)testUITextInputCallsUpdateEditingStateOnce {
@@ -203,72 +211,68 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(updateCount, 6);
 }
 
-- (void)testTextChangesTriggerUpdateEditingClient {
+- (void)testTextChangesDoNotTriggerUpdateEditingClient {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
+
+  __block int updateCount = 0;
+  OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
 
   [inputView.text setString:@"BEFORE"];
+  XCTAssertEqual(updateCount, 0);
+
   inputView.markedTextRange = nil;
   inputView.selectedTextRange = nil;
+  XCTAssertEqual(updateCount, 1);
 
-  // Text changes trigger update.
-  XCTAssertTrue([inputView setTextInputState:@{@"text" : @"AFTER"}]);
+  // Text changes don't trigger an update.
+  XCTAssertEqual(updateCount, 1);
+  [inputView setTextInputState:@{@"text" : @"AFTER"}];
+  XCTAssertEqual(updateCount, 1);
+  [inputView setTextInputState:@{@"text" : @"AFTER"}];
+  XCTAssertEqual(updateCount, 1);
 
-  // Don't send anything if there's nothing new.
-  XCTAssertFalse([inputView setTextInputState:@{@"text" : @"AFTER"}]);
-}
-
-- (void)testSelectionChangeTriggersUpdateEditingClient {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
-
-  [inputView.text setString:@"SELECTION"];
-  inputView.markedTextRange = nil;
-  inputView.selectedTextRange = nil;
-
-  BOOL shouldUpdate = [inputView
+  // Selection changes don't trigger an update.
+  [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @3}];
-  XCTAssertTrue(shouldUpdate);
-
-  shouldUpdate = [inputView
+  XCTAssertEqual(updateCount, 1);
+  [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @3}];
-  XCTAssertTrue(shouldUpdate);
+  XCTAssertEqual(updateCount, 1);
 
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @2}];
-  XCTAssertTrue(shouldUpdate);
-
-  // Don't send anything if there's nothing new.
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @2}];
-  XCTAssertFalse(shouldUpdate);
+  // Composing region changes don't trigger an update.
+  [inputView
+      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
+  XCTAssertEqual(updateCount, 1);
+  [inputView
+      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
+  XCTAssertEqual(updateCount, 1);
 }
 
-- (void)testComposingChangeTriggersUpdateEditingClient {
+- (void)testUITextInputAvoidUnnecessaryUndateEditingClientCalls {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
-  // Reset to test marked text.
-  [inputView.text setString:@"COMPOSING"];
-  inputView.markedTextRange = nil;
-  inputView.selectedTextRange = nil;
+  __block int updateCount = 0;
+  OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
 
-  BOOL shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @0, @"composingExtent" : @3}];
-  XCTAssertTrue(shouldUpdate);
+  [inputView unmarkText];
+  // updateEditingClient shouldn't fire as the text is already unmarked.
+  XCTAssertEqual(updateCount, 0);
 
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
-  XCTAssertTrue(shouldUpdate);
+  [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+  // updateEditingClient fires in response to setMarkedText.
+  XCTAssertEqual(updateCount, 1);
 
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
-  XCTAssertTrue(shouldUpdate);
-
-  // Don't send anything if there's nothing new.
-  shouldUpdate = [inputView
-      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
-  XCTAssertFalse(shouldUpdate);
+  [inputView unmarkText];
+  // updateEditingClient fires in response to unmarkText.
+  XCTAssertEqual(updateCount, 2);
 }
 
 - (void)testUpdateEditingClientNegativeSelection {
@@ -367,6 +371,53 @@ FLUTTER_ASSERT_ARC
                               }]]);
 }
 
+#pragma mark - UITextInput methods - Tests
+
+- (void)testUpdateFirstRectForRange {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  [inputView
+      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
+
+  CGRect kInvalidFirstRect = CGRectMake(-1, -1, 9999, 9999);
+  FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
+  // yOffset = 200.
+  NSArray* yOffsetMatrix = @[ @1, @0, @0, @0, @0, @1, @0, @0, @0, @0, @1, @0, @0, @200, @0, @1 ];
+  NSArray* zeroMatrix = @[ @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0 ];
+
+  // Invalid since we don't have the transform or the rect.
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+
+  [inputView setEditableTransform:yOffsetMatrix];
+  // Invalid since we don't have the rect.
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+
+  // Valid rect and transform.
+  CGRect testRect = CGRectMake(0, 0, 100, 100);
+  [inputView setMarkedRect:testRect];
+
+  CGRect finalRect = CGRectOffset(testRect, 0, 200);
+  XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
+  // Idempotent.
+  XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
+
+  // Use an invalid matrix:
+  [inputView setEditableTransform:zeroMatrix];
+  // Invalid matrix is invalid.
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+
+  // Revert the invalid matrix change.
+  [inputView setEditableTransform:yOffsetMatrix];
+  [inputView setMarkedRect:testRect];
+  XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
+
+  // Use an invalid rect:
+  [inputView setMarkedRect:kInvalidFirstRect];
+  // Invalid marked rect is invalid.
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+}
+
 #pragma mark - Autofill - Utilities
 
 - (NSMutableDictionary*)mutablePasswordTemplateCopy {
@@ -434,8 +485,11 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 2);
 
   XCTAssertEqual(textInputPlugin.autofillContext.count, 2);
+
+  [textInputPlugin collectGarbageInputViews];
   XCTAssertEqual(self.installedInputViews.count, 2);
   XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // The configuration changes.
   NSMutableDictionary* field3 = self.mutablePasswordTemplateCopy;
@@ -454,8 +508,11 @@ FLUTTER_ASSERT_ARC
 
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 2);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
+
+  [textInputPlugin collectGarbageInputViews];
   XCTAssertEqual(self.installedInputViews.count, 3);
   XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // Old autofill input fields are still installed and reused.
   for (NSString* key in oldContext.allKeys) {
@@ -467,9 +524,12 @@ FLUTTER_ASSERT_ARC
 
   oldContext = textInputPlugin.autofillContext;
   [self setClientId:124 configuration:config];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 1);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
+
+  [textInputPlugin collectGarbageInputViews];
   XCTAssertEqual(self.installedInputViews.count, 4);
 
   // Old autofill input fields are still installed and reused.
@@ -478,6 +538,7 @@ FLUTTER_ASSERT_ARC
   }
   // The active view should change.
   XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // Switch to a similar password field, the previous field should be reused.
   oldContext = textInputPlugin.autofillContext;
@@ -486,6 +547,8 @@ FLUTTER_ASSERT_ARC
   // Reuse the input view instance from the last time.
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 1);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
+
+  [textInputPlugin collectGarbageInputViews];
   XCTAssertEqual(self.installedInputViews.count, 4);
 
   // Old autofill input fields are still installed and reused.
@@ -493,6 +556,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertEqual(oldContext[key], textInputPlugin.autofillContext[key]);
   }
   XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 }
 
 - (void)testCommitAutofillContext {
@@ -526,21 +590,27 @@ FLUTTER_ASSERT_ARC
   [self setClientId:123 configuration:config];
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 2);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 2);
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
   XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // Install the password field again.
   [self setClientId:123 configuration:config];
   // Switch to a regular autofill group.
   [self setClientId:124 configuration:field3];
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 1);
+
+  [textInputPlugin collectGarbageInputViews];
   XCTAssertEqual(self.installedInputViews.count, 3);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 2);
   XCTAssertNotEqual(textInputPlugin.textInputView, nil);
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
   XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // Now switch to an input field that does not autofill.
   [self setClientId:125 configuration:self.mutableTemplateCopy];
@@ -549,11 +619,15 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   // The active view should still be installed so it doesn't get
   // deallocated.
+
+  [textInputPlugin collectGarbageInputViews];
   XCTAssertEqual(self.installedInputViews.count, 1);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 0);
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
   XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 }
 
 - (void)testAutofillInputViews {
@@ -577,6 +651,7 @@ FLUTTER_ASSERT_ARC
   [config setValue:@[ field1, field2 ] forKey:@"fields"];
 
   [self setClientId:123 configuration:config];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // Find all the FlutterTextInputViews we created.
   NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
@@ -589,6 +664,7 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inactiveView = inputFields[1];
   [inactiveView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 0)]
                     withText:@"Autofilled!"];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // Verify behavior.
   OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil] withTag:@"field2"]);
@@ -608,6 +684,63 @@ FLUTTER_ASSERT_ARC
   // FlutterSecureTextInputView does not respond to font,
   // but it should return the default UITextField.font.
   XCTAssertNotEqual([inputView performSelector:@selector(font)], nil);
+}
+
+- (void)testClearAutofillContextClearsSelection {
+  NSMutableDictionary* regularField = self.mutableTemplateCopy;
+  NSDictionary* editingValue = @{
+    @"text" : @"REGULAR_TEXT_FIELD",
+    @"composingBase" : @0,
+    @"composingExtent" : @3,
+    @"selectionBase" : @1,
+    @"selectionExtent" : @4
+  };
+  [regularField setValue:@{
+    @"uniqueIdentifier" : @"field2",
+    @"hints" : @[ @"hint2" ],
+    @"editingValue" : editingValue,
+  }
+                  forKey:@"autofill"];
+  [regularField addEntriesFromDictionary:editingValue];
+  [self setClientId:123 configuration:regularField];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  XCTAssertEqual(self.installedInputViews.count, 1);
+
+  FlutterTextInputView* oldInputView = self.installedInputViews[0];
+  XCTAssert([oldInputView.text isEqualToString:@"REGULAR_TEXT_FIELD"]);
+  FlutterTextRange* selectionRange = (FlutterTextRange*)oldInputView.selectedTextRange;
+  XCTAssert(NSEqualRanges(selectionRange.range, NSMakeRange(1, 3)));
+
+  // Replace the original password field with new one. This should remove
+  // the old password field, but not immediately.
+  [self setClientId:124 configuration:self.mutablePasswordTemplateCopy];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+
+  XCTAssertEqual(self.installedInputViews.count, 2);
+
+  [textInputPlugin collectGarbageInputViews];
+  XCTAssertEqual(self.installedInputViews.count, 1);
+
+  // Verify the old input view is properly cleaned up.
+  XCTAssert([oldInputView.text isEqualToString:@""]);
+  selectionRange = (FlutterTextRange*)oldInputView.selectedTextRange;
+  XCTAssert(NSEqualRanges(selectionRange.range, NSMakeRange(0, 0)));
+}
+
+- (void)testGarbageInputViewsAreNotRemovedImmediately {
+  // Add a password field that should autofill.
+  [self setClientId:123 configuration:self.mutablePasswordTemplateCopy];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+
+  XCTAssertEqual(self.installedInputViews.count, 1);
+  // Add an input field that doesn't autofill. This should remove the password
+  // field, but not immediately.
+  [self setClientId:124 configuration:self.mutableTemplateCopy];
+  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+
+  XCTAssertEqual(self.installedInputViews.count, 2);
+
+  [self commitAutofillContextAndVerify];
 }
 
 @end

@@ -16,6 +16,7 @@ import android.text.Selection;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewStructure;
+import android.view.WindowInsets;
 import android.view.autofill.AutofillId;
 import android.view.autofill.AutofillManager;
 import android.view.autofill.AutofillValue;
@@ -46,6 +47,7 @@ public class TextInputPlugin {
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
   private final boolean restartAlwaysRequired;
+  private ImeSyncDeferringInsetsCallback imeSyncCallback;
 
   // When true following calls to createInputConnection will return the cached lastInputConnection
   // if the input
@@ -53,6 +55,7 @@ public class TextInputPlugin {
   // details.
   private boolean isInputConnectionLocked;
 
+  @SuppressLint("NewApi")
   public TextInputPlugin(
       View view,
       @NonNull TextInputChannel textInputChannel,
@@ -63,6 +66,26 @@ public class TextInputPlugin {
       afm = view.getContext().getSystemService(AutofillManager.class);
     } else {
       afm = null;
+    }
+
+    // Sets up syncing ime insets with the framework, allowing
+    // the Flutter view to grow and shrink to accomodate Android
+    // controlled keyboard animations.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      int mask = 0;
+      if ((View.SYSTEM_UI_FLAG_HIDE_NAVIGATION & mView.getWindowSystemUiVisibility()) == 0) {
+        mask = mask | WindowInsets.Type.navigationBars();
+      }
+      if ((View.SYSTEM_UI_FLAG_FULLSCREEN & mView.getWindowSystemUiVisibility()) == 0) {
+        mask = mask | WindowInsets.Type.statusBars();
+      }
+      imeSyncCallback =
+          new ImeSyncDeferringInsetsCallback(
+              view,
+              mask, // Overlay, insets that should be merged with the deferred insets
+              WindowInsets.Type.ime() // Deferred, insets that will animate
+              );
+      imeSyncCallback.install();
     }
 
     this.textInputChannel = textInputChannel;
@@ -144,6 +167,11 @@ public class TextInputPlugin {
     return mEditable;
   }
 
+  @VisibleForTesting
+  ImeSyncDeferringInsetsCallback getImeSyncCallback() {
+    return imeSyncCallback;
+  }
+
   /**
    * Use the current platform view input connection until unlockPlatformViewInputConnection is
    * called.
@@ -177,9 +205,13 @@ public class TextInputPlugin {
    *
    * <p>The TextInputPlugin instance should not be used after calling this.
    */
+  @SuppressLint("NewApi")
   public void destroy() {
     platformViewsController.detachTextInputPlugin();
     textInputChannel.setTextInputMethodHandler(null);
+    if (imeSyncCallback != null) {
+      imeSyncCallback.remove();
+    }
   }
 
   private static int inputTypeFromTextInputType(

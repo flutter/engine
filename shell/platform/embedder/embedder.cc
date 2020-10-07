@@ -7,8 +7,10 @@
 #define FML_USED_ON_EMBEDDER
 #define RAPIDJSON_HAS_STDSTRING 1
 
+#include <cstring>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -56,6 +58,10 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/writer.h"
+
+#ifdef SHELL_ENABLE_GL
+#include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
+#endif
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
@@ -155,6 +161,7 @@ InferOpenGLPlatformViewCreationCallback(
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
+#ifdef SHELL_ENABLE_GL
   if (config->type != kOpenGL) {
     return nullptr;
   }
@@ -265,6 +272,9 @@ InferOpenGLPlatformViewCreationCallback(
             std::move(external_view_embedder)  // external view embedder
         );
       });
+#else
+  return nullptr;
+#endif
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -335,6 +345,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterOpenGLTexture* texture) {
+#ifdef SHELL_ENABLE_GL
   GrGLTextureInfo texture_info;
   texture_info.fTarget = texture->target;
   texture_info.fID = texture->name;
@@ -346,8 +357,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
                                    texture_info         //
   );
 
-  SkSurfaceProps surface_properties(
-      SkSurfaceProps::InitType::kLegacyFontHost_InitType);
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
   auto surface = SkSurface::MakeFromBackendTexture(
       context,                      // context
@@ -369,12 +379,16 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   }
 
   return surface;
+#else
+  return nullptr;
+#endif
 }
 
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterOpenGLFramebuffer* framebuffer) {
+#ifdef SHELL_ENABLE_GL
   GrGLFramebufferInfo framebuffer_info = {};
   framebuffer_info.fFormat = framebuffer->target;
   framebuffer_info.fFBOID = framebuffer->name;
@@ -387,8 +401,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       framebuffer_info     // framebuffer info
   );
 
-  SkSurfaceProps surface_properties(
-      SkSurfaceProps::InitType::kLegacyFontHost_InitType);
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
   auto surface = SkSurface::MakeFromBackendRenderTarget(
       context,                      //  context
@@ -408,6 +421,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     return nullptr;
   }
   return surface;
+#else
+  return nullptr;
+#endif
 }
 
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
@@ -602,6 +618,11 @@ FlutterEngineResult FlutterEngineCreateAOTData(
       auto aot_data = std::make_unique<_FlutterEngineAOTData>();
       const char* error = nullptr;
 
+#if OS_FUCHSIA
+      // TODO(gw280): https://github.com/flutter/flutter/issues/50285
+      // Dart doesn't implement Dart_LoadELF on Fuchsia
+      Dart_LoadedElf* loaded_elf = nullptr;
+#else
       Dart_LoadedElf* loaded_elf = Dart_LoadELF(
           source->elf_path,               // file path
           0,                              // file offset
@@ -611,6 +632,7 @@ FlutterEngineResult FlutterEngineCreateAOTData(
           &aot_data->vm_isolate_data,     // vm isolate data (out)
           &aot_data->vm_isolate_instrs    // vm isolate instr (out)
       );
+#endif
 
       if (loaded_elf == nullptr) {
         return LOG_EMBEDDER_ERROR(kInvalidArguments, error);
@@ -1016,6 +1038,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         return std::make_unique<flutter::Rasterizer>(shell);
       };
 
+#ifdef SHELL_ENABLE_GL
   // TODO(chinmaygarde): This is the wrong spot for this. It belongs in the
   // platform view jump table.
   flutter::EmbedderExternalTextureGL::ExternalTextureCallback
@@ -1074,6 +1097,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
       };
     }
   }
+#endif
 
   auto thread_host =
       flutter::EmbedderThreadHost::CreateEmbedderOrEngineManagedThreadHost(
@@ -1115,8 +1139,11 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
       std::move(settings),           //
       std::move(run_configuration),  //
       on_create_platform_view,       //
-      on_create_rasterizer,          //
-      external_texture_callback      //
+      on_create_rasterizer           //
+#ifdef SHELL_ENABLE_GL
+      ,
+      external_texture_callback  //
+#endif
   );
 
   // Release the ownership of the embedder engine to the caller.
@@ -1953,4 +1980,59 @@ FlutterEngineResult FlutterEnginePostCallbackOnAllNativeThreads(
              : LOG_EMBEDDER_ERROR(kInvalidArguments,
                                   "Internal error while attempting to post "
                                   "tasks to all threads.");
+}
+
+namespace {
+static bool ValidDisplayConfiguration(const FlutterEngineDisplay* displays,
+                                      size_t display_count) {
+  std::set<FlutterEngineDisplayId> display_ids;
+  for (size_t i = 0; i < display_count; i++) {
+    if (displays[i].single_display && display_count != 1) {
+      return false;
+    }
+    display_ids.insert(displays[i].display_id);
+  }
+
+  return display_ids.size() == display_count;
+}
+}  // namespace
+
+FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
+    FLUTTER_API_SYMBOL(FlutterEngine) raw_engine,
+    const FlutterEngineDisplaysUpdateType update_type,
+    const FlutterEngineDisplay* embedder_displays,
+    size_t display_count) {
+  if (raw_engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (!ValidDisplayConfiguration(embedder_displays, display_count)) {
+    return LOG_EMBEDDER_ERROR(
+        kInvalidArguments,
+        "Invalid FlutterEngineDisplay configuration specified.");
+  }
+
+  auto engine = reinterpret_cast<flutter::EmbedderEngine*>(raw_engine);
+
+  switch (update_type) {
+    case kFlutterEngineDisplaysUpdateTypeStartup: {
+      std::vector<flutter::Display> displays;
+      for (size_t i = 0; i < display_count; i++) {
+        flutter::Display display =
+            flutter::Display(embedder_displays[i].refresh_rate);
+        if (!embedder_displays[i].single_display) {
+          display = flutter::Display(embedder_displays[i].display_id,
+                                     embedder_displays[i].refresh_rate);
+        }
+        displays.push_back(display);
+      }
+      engine->GetShell().OnDisplayUpdates(flutter::DisplayUpdateType::kStartup,
+                                          displays);
+      return kSuccess;
+    }
+    default:
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Invalid FlutterEngineDisplaysUpdateType type specified.");
+  }
 }

@@ -5,6 +5,7 @@
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/fml/raster_thread_merger.h"
+
 #include "flutter/fml/message_loop_impl.h"
 
 namespace fml {
@@ -21,6 +22,10 @@ RasterThreadMerger::RasterThreadMerger(fml::TaskQueueId platform_queue_id,
   FML_CHECK(!task_queues_->Owns(platform_queue_id_, gpu_queue_id_));
 }
 
+void RasterThreadMerger::SetMergeUnmergeCallback(const fml::closure& callback) {
+  merge_unmerge_callback_ = callback;
+}
+
 void RasterThreadMerger::MergeWithLease(size_t lease_term) {
   std::scoped_lock lock(lease_term_mutex_);
   if (TaskQueuesAreSame()) {
@@ -30,11 +35,19 @@ void RasterThreadMerger::MergeWithLease(size_t lease_term) {
     return;
   }
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
-  if (!IsMergedUnSafe()) {
-    bool success = task_queues_->Merge(platform_queue_id_, gpu_queue_id_);
-    FML_CHECK(success) << "Unable to merge the raster and platform threads.";
-    lease_term_ = lease_term;
+
+  if (IsMergedUnSafe()) {
+    merged_condition_.notify_one();
+    return;
   }
+
+  bool success = task_queues_->Merge(platform_queue_id_, gpu_queue_id_);
+  if (success && merge_unmerge_callback_ != nullptr) {
+    merge_unmerge_callback_();
+  }
+  FML_CHECK(success) << "Unable to merge the raster and platform threads.";
+  lease_term_ = lease_term;
+
   merged_condition_.notify_one();
 }
 
@@ -48,6 +61,9 @@ void RasterThreadMerger::UnMergeNow() {
   }
   lease_term_ = 0;
   bool success = task_queues_->Unmerge(platform_queue_id_);
+  if (success && merge_unmerge_callback_ != nullptr) {
+    merge_unmerge_callback_();
+  }
   FML_CHECK(success) << "Unable to un-merge the raster and platform threads.";
 }
 

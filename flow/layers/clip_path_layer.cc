@@ -3,11 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/clip_path_layer.h"
+#include "flutter/flow/paint_utils.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-
 #include "lib/ui/scenic/cpp/commands.h"
-
 #endif
 
 namespace flutter {
@@ -72,6 +71,9 @@ void ClipPathLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
   if (UsesSaveLayer()) {
     context.internal_nodes_canvas->restore();
+    if (context.checkerboard_offscreen_layers) {
+      DrawCheckerboard(context.internal_nodes_canvas, paint_bounds());
+    }
   }
 }
 

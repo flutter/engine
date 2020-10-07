@@ -327,11 +327,13 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
       settings_(std::move(settings)),
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch()),
-      weak_factory_(this),
-      weak_factory_gpu_(nullptr) {
+      weak_factory_gpu_(nullptr),
+      weak_factory_(this) {
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  display_manager_ = std::make_unique<DisplayManager>();
 
   // Generate a WeakPtrFactory for use with the raster thread. This does not
   // need to wait on a latch because it can only ever be used from the raster
@@ -400,13 +402,12 @@ Shell::~Shell() {
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetRasterTaskRunner(),
-      fml::MakeCopyable([rasterizer = std::move(rasterizer_),
-                         weak_factory_gpu = std::move(weak_factory_gpu_),
-                         &gpu_latch]() mutable {
-        rasterizer.reset();
-        weak_factory_gpu.reset();
-        gpu_latch.Signal();
-      }));
+      fml::MakeCopyable(
+          [this, rasterizer = std::move(rasterizer_), &gpu_latch]() mutable {
+            rasterizer.reset();
+            this->weak_factory_gpu_.reset();
+            gpu_latch.Signal();
+          }));
   gpu_latch.Wait();
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -575,14 +576,6 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
     PersistentCache::GetCacheForProcess()->Purge();
   }
 
-  // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
-  // same thread as it was created on. Shell is constructed on the platform
-  // thread but we need to call into the Engine on the UI thread, so we need
-  // to use getUnsafe() here to avoid failing the assertion.
-  //
-  // https://github.com/flutter/flutter/issues/42947
-  display_refresh_rate_ = weak_engine_.getUnsafe()->GetDisplayRefreshRate();
-
   return true;
 }
 
@@ -607,6 +600,11 @@ fml::WeakPtr<Engine> Shell::GetEngine() {
 fml::WeakPtr<PlatformView> Shell::GetPlatformView() {
   FML_DCHECK(is_setup_);
   return weak_platform_view_;
+}
+
+fml::WeakPtr<ShellIOManager> Shell::GetIOManager() {
+  FML_DCHECK(is_setup_);
+  return io_manager_->GetWeakPtr();
 }
 
 DartVM* Shell::GetDartVM() {
@@ -641,9 +639,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // signals the latch and the platform/raster thread follows with executing
   // raster_task.
   const bool should_post_raster_task =
-      !fml::TaskRunnerChecker::RunsOnTheSameThread(
-          task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
-          task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
+      !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on
@@ -746,9 +742,7 @@ void Shell::OnPlatformViewDestroyed() {
   // thread just signals the latch and the platform/raster thread follows with
   // executing raster_task.
   const bool should_post_raster_task =
-      !fml::TaskRunnerChecker::RunsOnTheSameThread(
-          task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
-          task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
+      !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on
@@ -816,6 +810,16 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  if (metrics.device_pixel_ratio <= 0 || metrics.physical_width <= 0 ||
+      metrics.physical_height <= 0) {
+    FML_DLOG(ERROR)
+        << "Embedding reported invalid ViewportMetrics, ignoring update."
+        << "\nphysical_width: " << metrics.physical_width
+        << "\nphysical_height: " << metrics.physical_height
+        << "\ndevice_pixel_ratio: " << metrics.device_pixel_ratio;
+    return;
+  }
+
   // This is the formula Android uses.
   // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
   size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
@@ -832,6 +836,12 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
           engine->SetViewportMetrics(metrics);
         }
       });
+
+  {
+    std::scoped_lock<std::mutex> lock(resize_mutex_);
+    expected_frame_size_ =
+        SkISize::Make(metrics.physical_width, metrics.physical_height);
+  }
 }
 
 // |PlatformView::Delegate|
@@ -1021,13 +1031,19 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
     }
   }
 
+  auto discard_callback = [this](flutter::LayerTree& tree) {
+    std::scoped_lock<std::mutex> lock(resize_mutex_);
+    return !expected_frame_size_.isEmpty() &&
+           tree.frame_size() != expected_frame_size_;
+  };
+
   task_runners_.GetRasterTaskRunner()->PostTask(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
-       rasterizer = rasterizer_->GetWeakPtr(),
-       pipeline = std::move(pipeline)]() {
+       rasterizer = rasterizer_->GetWeakPtr(), pipeline = std::move(pipeline),
+       discard_callback = std::move(discard_callback)]() {
         if (rasterizer) {
-          rasterizer->Draw(pipeline);
+          rasterizer->Draw(pipeline, std::move(discard_callback));
 
           if (waiting_for_first_frame.load()) {
             waiting_for_first_frame.store(false);
@@ -1225,7 +1241,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     frame_timings_report_scheduled_ = true;
     task_runners_.GetRasterTaskRunner()->PostDelayedTask(
         [self = weak_factory_gpu_->GetWeakPtr()]() {
-          if (!self.get()) {
+          if (!self) {
             return;
           }
           self->frame_timings_report_scheduled_ = false;
@@ -1238,8 +1254,9 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
 }
 
 fml::Milliseconds Shell::GetFrameBudget() {
-  if (display_refresh_rate_ > 0) {
-    return fml::RefreshRateToFrameBudget(display_refresh_rate_.load());
+  double display_refresh_rate = display_manager_->GetMainDisplayRefreshRate();
+  if (display_refresh_rate > 0) {
+    return fml::RefreshRateToFrameBudget(display_refresh_rate);
   } else {
     return fml::kDefaultFrameBudget;
   }
@@ -1387,6 +1404,7 @@ bool Shell::OnServiceProtocolRunInView(
   configuration.AddAssetResolver(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
           asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
+  configuration.AddAssetResolver(RestoreOriginalAssetResolver());
 
   auto& allocator = response->GetAllocator();
   response->SetObject();
@@ -1430,9 +1448,13 @@ bool Shell::OnServiceProtocolGetDisplayRefreshRate(
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   response->SetObject();
   response->AddMember("type", "DisplayRefreshRate", response->GetAllocator());
-  response->AddMember("fps", engine_->GetDisplayRefreshRate(),
+  response->AddMember("fps", display_manager_->GetMainDisplayRefreshRate(),
                       response->GetAllocator());
   return true;
+}
+
+double Shell::GetMainDisplayRefreshRate() {
+  return display_manager_->GetMainDisplayRefreshRate();
 }
 
 bool Shell::OnServiceProtocolGetSkSLs(
@@ -1495,6 +1517,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 
   auto asset_manager = std::make_shared<AssetManager>();
 
+  asset_manager->PushFront(RestoreOriginalAssetResolver());
   asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
       fml::OpenDirectory(params.at("assetDirectory").data(), false,
                          fml::FilePermission::kRead)));
@@ -1595,5 +1618,22 @@ bool Shell::ReloadSystemFonts() {
 std::shared_ptr<fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch() const {
   return is_gpu_disabled_sync_switch_;
 }
+
+void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
+                             std::vector<Display> displays) {
+  display_manager_->HandleDisplayUpdates(update_type, displays);
+}
+
+// Add the original asset directory to the resolvers so that unmodified assets
+// bundled with the application specific format (APK, IPA) can be used without
+// syncing to the Dart devFS.
+std::unique_ptr<DirectoryAssetBundle> Shell::RestoreOriginalAssetResolver() {
+  if (fml::UniqueFD::traits_type::IsValid(settings_.assets_dir)) {
+    return std::make_unique<DirectoryAssetBundle>(
+        fml::Duplicate(settings_.assets_dir));
+  }
+  return std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
+      settings_.assets_path.c_str(), false, fml::FilePermission::kRead));
+};
 
 }  // namespace flutter

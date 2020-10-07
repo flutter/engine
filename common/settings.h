@@ -6,9 +6,9 @@
 #define FLUTTER_COMMON_SETTINGS_H_
 
 #include <fcntl.h>
-#include <stdint.h>
 
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -222,15 +222,6 @@ struct Settings {
   /// on the clock used by the Dart timeline APIs. This timestamp is used
   /// to log a timeline event that tracks the latency of engine startup.
   std::chrono::microseconds engine_start_timestamp = {};
-
-  /// Whether the application claims that it uses the android embedded view for
-  /// platform views.
-  ///
-  /// A `true` value will result the raster task runner always run on the
-  /// platform thread.
-  // TODO(cyanlaz): Remove this when dynamic thread merging is done.
-  // https://github.com/flutter/flutter/issues/59930
-  bool use_embedded_view = false;
 
   std::string ToString() const;
 };

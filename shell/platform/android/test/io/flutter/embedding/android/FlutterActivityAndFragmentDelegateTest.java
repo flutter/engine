@@ -17,11 +17,13 @@ import android.content.Context;
 import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
+import io.flutter.FlutterInjector;
 import io.flutter.embedding.android.FlutterActivityAndFragmentDelegate.Host;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
@@ -51,6 +53,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
   @Before
   public void setup() {
+    FlutterInjector.reset();
     // Create a mocked FlutterEngine for the various interactions required by the delegate
     // being tested.
     mockFlutterEngine = mockFlutterEngine();
@@ -307,6 +310,35 @@ public class FlutterActivityAndFragmentDelegateTest {
     verify(mockFlutterEngine.getDartExecutor(), times(1)).executeDartEntrypoint(eq(dartEntrypoint));
   }
 
+  @Test
+  public void itUsesDefaultFlutterLoaderAppBundlePathWhenUnspecified() {
+    // ---- Test setup ----
+    FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
+    when(mockFlutterLoader.findAppBundlePath()).thenReturn("default_flutter_assets/path");
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
+
+    // Set Dart entrypoint parameters on fake host.
+    when(mockHost.getAppBundlePath()).thenReturn(null);
+    when(mockHost.getDartEntrypointFunctionName()).thenReturn("myEntrypoint");
+
+    // Create the DartEntrypoint that we expect to be executed.
+    DartExecutor.DartEntrypoint dartEntrypoint =
+        new DartExecutor.DartEntrypoint("default_flutter_assets/path", "myEntrypoint");
+
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // Dart is executed in onStart().
+    delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null);
+    delegate.onStart();
+
+    // Verify that the host's Dart entrypoint was used.
+    verify(mockFlutterEngine.getDartExecutor(), times(1)).executeDartEntrypoint(eq(dartEntrypoint));
+  }
+
   // "Attaching" to the surrounding Activity refers to Flutter being able to control
   // system chrome and other Activity-level details. If Flutter is not attached to the
   // surrounding Activity, it cannot control those details. This includes plugins.
@@ -325,7 +357,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the ActivityControlSurface was told to attach to an Activity.
     verify(mockFlutterEngine.getActivityControlSurface(), times(1))
-        .attachToActivity(any(Activity.class), any(Lifecycle.class));
+        .attachToActivity(any(ExclusiveAppComponent.class), any(Lifecycle.class));
 
     // Flutter is detached from the surrounding Activity in onDetach.
     delegate.onDetach();

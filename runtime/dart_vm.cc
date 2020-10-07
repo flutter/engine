@@ -24,7 +24,7 @@
 #include "flutter/lib/ui/dart_ui.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_service_isolate.h"
-#include "flutter/runtime/ptrace_ios.h"
+#include "flutter/runtime/ptrace_check.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/skia/include/core/SkExecutor.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -329,7 +329,12 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   PushBackAll(&args, kDartWriteProtectCodeArgs,
               fml::size(kDartWriteProtectCodeArgs));
 #else
-  EnsureDebuggedIOS(settings_);
+  const bool tracing_result = EnableTracingIfNecessary(settings_);
+  // This check should only trip if the embedding made no attempts to enable
+  // tracing. At this point, it is too late display user visible messages. Just
+  // log and die.
+  FML_CHECK(tracing_result)
+      << "Tracing not enabled before attempting to run JIT mode VM.";
 #if TARGET_CPU_ARM
   // Tell Dart in JIT mode to not use integer division on armv7
   // Ideally, this would be detected at runtime by Dart.
@@ -378,8 +383,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     args.push_back(old_gen_heap_size_args.c_str());
   }
 
-#if defined(OS_FUCHSIA) && \
-    (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_PROFILE)
+#if defined(OS_FUCHSIA)
   PushBackAll(&args, kDartFuchsiaTraceArgs, fml::size(kDartFuchsiaTraceArgs));
   PushBackAll(&args, kDartTraceStreamsArgs, fml::size(kDartTraceStreamsArgs));
 #endif

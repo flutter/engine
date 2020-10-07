@@ -532,7 +532,7 @@ class InputConfiguration {
   final bool readOnly;
 
   /// Whether to hide the text being edited.
-  final bool? obscureText;
+  final bool obscureText;
 
   /// Whether to enable autocorrection.
   ///
@@ -667,12 +667,6 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
     _geometry?.applyToDomElement(domElement);
     if (hasAutofillGroup) {
       placeForm();
-      // Set the last editing state if it exists, this is critical for a
-      // users ongoing work to continue uninterrupted when there is an update to
-      // the transform.
-      if (_lastEditingState != null) {
-        _lastEditingState!.applyToDomElement(domElement);
-      }
       // On Safari Desktop, when a form is focused, it opens an autofill menu
       // immediately.
       // Flutter framework sends `setEditableSizeAndTransform` for informing
@@ -682,6 +676,15 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
       // form only after placing it to the correct position and only once after
       // that. Calling focus multiple times causes flickering.
       focusedFormElement!.focus();
+
+      // Set the last editing state if it exists, this is critical for a
+      // users ongoing work to continue uninterrupted when there is an update to
+      // the transform.
+      // If domElement is not focused cursor location will not be correct.
+      domElement.focus();
+      if (_lastEditingState != null) {
+        _lastEditingState!.applyToDomElement(domElement);
+      }
     }
   }
 
@@ -759,20 +762,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   }) {
     assert(!isEnabled);
 
-    this._inputConfiguration = inputConfig;
-
     _domElement = inputConfig.inputType.createDomElement();
-    if (inputConfig.readOnly) {
-      domElement.setAttribute('readonly', 'readonly');
-    }
-    if (inputConfig.obscureText!) {
-      domElement.setAttribute('type', 'password');
-    }
-
-    inputConfig.autofill?.applyToDomElement(domElement, focusedElement: true);
-
-    final String autocorrectValue = inputConfig.autocorrect ? 'on' : 'off';
-    domElement.setAttribute('autocorrect', autocorrectValue);
+    _applyConfiguration(inputConfig);
 
     _setStaticStyleAttributes(domElement);
     _style?.applyToDomElement(domElement);
@@ -791,6 +782,25 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     isEnabled = true;
     _onChange = onChange;
     _onAction = onAction;
+  }
+
+  void _applyConfiguration(InputConfiguration config) {
+    _inputConfiguration = config;
+
+    if (config.readOnly) {
+      domElement.setAttribute('readonly', 'readonly');
+    } else {
+      domElement.removeAttribute('readonly');
+    }
+
+    if (config.obscureText) {
+      domElement.setAttribute('type', 'password');
+    }
+
+    config.autofill?.applyToDomElement(domElement, focusedElement: true);
+
+    final String autocorrectValue = config.autocorrect ? 'on' : 'off';
+    domElement.setAttribute('autocorrect', autocorrectValue);
   }
 
   @override
@@ -1278,6 +1288,11 @@ class TextEditingChannel {
         );
         break;
 
+      case 'TextInput.updateConfig':
+        final config = InputConfiguration.fromFrameworkMessage(call.arguments);
+        implementation.updateConfig(config);
+        break;
+
       case 'TextInput.setEditingState':
         implementation
             .setEditingState(EditingState.fromFrameworkMessage(call.arguments));
@@ -1319,6 +1334,11 @@ class TextEditingChannel {
         }
         // Clean the forms from DOM after submitting them.
         cleanForms();
+        break;
+
+      case 'TextInput.setMarkedTextRect':
+        // No-op: this message is currently only used on iOS to implement
+        // UITextInput.firstRecForRange.
         break;
 
       default:
@@ -1450,7 +1470,7 @@ class HybridTextEditing {
   ///
   /// It uses an HTML element to manage editing state when a custom element is
   /// not provided via [useCustomEditableElement]
-  DefaultTextEditingStrategy? _defaultEditingElement;
+  late final DefaultTextEditingStrategy _defaultEditingElement;
 
   /// The HTML element used to manage editing state.
   ///
@@ -1458,11 +1478,8 @@ class HybridTextEditing {
   /// [_defaultEditingElement] is used instead.
   DefaultTextEditingStrategy? _customEditingElement;
 
-  DefaultTextEditingStrategy? get editingElement {
-    if (_customEditingElement != null) {
-      return _customEditingElement;
-    }
-    return _defaultEditingElement;
+  DefaultTextEditingStrategy get editingElement {
+    return _customEditingElement ?? _defaultEditingElement;
   }
 
   /// Responds to the 'TextInput.setClient' message.
@@ -1475,9 +1492,14 @@ class HybridTextEditing {
     _configuration = configuration;
   }
 
+  void updateConfig(InputConfiguration configuration) {
+    _configuration = configuration;
+    editingElement._applyConfiguration(_configuration);
+  }
+
   /// Responds to the 'TextInput.setEditingState' message.
   void setEditingState(EditingState state) {
-    editingElement!.setEditingState(state);
+    editingElement.setEditingState(state);
   }
 
   /// Responds to the 'TextInput.show' message.
@@ -1489,12 +1511,12 @@ class HybridTextEditing {
 
   /// Responds to the 'TextInput.setEditableSizeAndTransform' message.
   void setEditableSizeAndTransform(EditableTextGeometry geometry) {
-    editingElement!.updateElementPlacement(geometry);
+    editingElement.updateElementPlacement(geometry);
   }
 
   /// Responds to the 'TextInput.setStyle' message.
   void setStyle(EditableTextStyle style) {
-    editingElement!.updateElementStyle(style);
+    editingElement.updateElementStyle(style);
   }
 
   /// Responds to the 'TextInput.clearClient' message.
@@ -1549,7 +1571,7 @@ class HybridTextEditing {
   void _startEditing() {
     assert(!isEditing);
     isEditing = true;
-    editingElement!.enable(
+    editingElement.enable(
       _configuration,
       onChange: (EditingState? editingState) {
         channel.updateEditingState(_clientId, editingState);
@@ -1563,7 +1585,7 @@ class HybridTextEditing {
   void stopEditing() {
     assert(isEditing);
     isEditing = false;
-    editingElement!.disable();
+    editingElement.disable();
   }
 
   void sendTextConnectionClosedToFrameworkIfAny() {

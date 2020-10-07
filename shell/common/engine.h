@@ -12,6 +12,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/lib/ui/hint_freed_delegate.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
@@ -23,6 +24,7 @@
 #include "flutter/runtime/runtime_controller.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/rasterizer.h"
@@ -68,7 +70,9 @@ namespace flutter {
 ///           name and it does happen to be one of the older classes in the
 ///           repository.
 ///
-class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
+class Engine final : public RuntimeDelegate,
+                     public HintFreedDelegate,
+                     PointerDataDispatcher::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Indicates the result of the call to `Engine::Run`.
@@ -326,30 +330,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ~Engine() override;
 
   //----------------------------------------------------------------------------
-  /// @brief      Gets the refresh rate in frames per second of the vsync waiter
-  ///             used by the animator managed by this engine. This information
-  ///             is purely advisory and is not used by any component. It is
-  ///             only used by the tooling to visualize frame performance.
-  ///
-  /// @attention  The display refresh rate is useless for frame scheduling
-  ///             because it can vary and more accurate frame specific
-  ///             information is given to the engine by the vsync waiter
-  ///             already. However, this call is used by the tooling to ask very
-  ///             high level questions about display refresh rate. For example,
-  ///             "Is the display 60 or 120Hz?". This information is quite
-  ///             unreliable (not available immediately on launch on some
-  ///             platforms), variable and advisory. It must not be used by any
-  ///             component that claims to use it to perform accurate frame
-  ///             scheduling.
-  ///
-  /// @return     The display refresh rate in frames per second. This may change
-  ///             from frame to frame, throughout the lifecycle of the
-  ///             application, and, may not be available immediately upon
-  ///             application launch.
-  ///
-  float GetDisplayRefreshRate() const;
-
-  //----------------------------------------------------------------------------
   /// @return     The pointer to this instance of the engine. The engine may
   ///             only be accessed safely on the UI task runner.
   ///
@@ -464,6 +444,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                         physics simulations, etc..
   ///
   void BeginFrame(fml::TimePoint frame_time);
+
+  // |HintFreedDelegate|
+  void HintFreed(size_t size) override;
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the UI task runner is not expected to
@@ -797,6 +780,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   FontCollection font_collection_;
   ImageDecoder image_decoder_;
   TaskRunners task_runners_;
+  size_t hint_freed_bytes_since_last_idle_ = 0;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|

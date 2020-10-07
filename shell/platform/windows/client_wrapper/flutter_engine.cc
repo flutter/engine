@@ -16,15 +16,6 @@ FlutterEngine::FlutterEngine(const DartProject& project) {
   c_engine_properties.assets_path = project.assets_path().c_str();
   c_engine_properties.icu_data_path = project.icu_data_path().c_str();
   c_engine_properties.aot_library_path = project.aot_library_path().c_str();
-  std::vector<const char*> engine_switches;
-  std::transform(
-      project.engine_switches().begin(), project.engine_switches().end(),
-      std::back_inserter(engine_switches),
-      [](const std::string& arg) -> const char* { return arg.c_str(); });
-  if (engine_switches.size() > 0) {
-    c_engine_properties.switches = &engine_switches[0];
-    c_engine_properties.switches_count = engine_switches.size();
-  }
 
   engine_ = FlutterDesktopEngineCreate(c_engine_properties);
 
@@ -62,6 +53,10 @@ void FlutterEngine::ShutDown() {
 
 std::chrono::nanoseconds FlutterEngine::ProcessMessages() {
   return std::chrono::nanoseconds(FlutterDesktopEngineProcessMessages(engine_));
+}
+
+void FlutterEngine::ReloadSystemFonts() {
+  FlutterDesktopEngineReloadSystemFonts(engine_);
 }
 
 FlutterDesktopPluginRegistrarRef FlutterEngine::GetRegistrarForPlugin(

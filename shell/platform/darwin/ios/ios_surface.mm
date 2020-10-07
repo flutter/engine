@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
-#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 
 #if FLUTTER_SHELL_ENABLE_METAL
-#include "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
 namespace flutter {
@@ -71,9 +71,6 @@ void IOSSurface::CancelFrame() {
   TRACE_EVENT0("flutter", "IOSSurface::CancelFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   platform_views_controller_->CancelFrame();
-  // Committing the current transaction as |BeginFrame| will create a nested
-  // CATransaction otherwise.
-  [CATransaction commit];
 }
 
 // |ExternalViewEmbedder|
@@ -84,7 +81,6 @@ void IOSSurface::BeginFrame(SkISize frame_size,
   TRACE_EVENT0("flutter", "IOSSurface::BeginFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   platform_views_controller_->SetFrameSize(frame_size);
-  [CATransaction begin];
 }
 
 // |ExternalViewEmbedder|
@@ -101,7 +97,8 @@ PostPrerollResult IOSSurface::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::PostPrerollAction");
   FML_CHECK(platform_views_controller_ != nullptr);
-  return platform_views_controller_->PostPrerollAction(raster_thread_merger);
+  PostPrerollResult result = platform_views_controller_->PostPrerollAction(raster_thread_merger);
+  return result;
 }
 
 // |ExternalViewEmbedder|
@@ -121,13 +118,8 @@ SkCanvas* IOSSurface::CompositeEmbeddedView(int view_id) {
 void IOSSurface::SubmitFrame(GrDirectContext* context, std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "IOSSurface::SubmitFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  bool submitted =
-      platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame));
-
-  if (submitted) {
-    TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
-    [CATransaction commit];
-  }
+  platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame));
+  TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
 }
 
 // |ExternalViewEmbedder|

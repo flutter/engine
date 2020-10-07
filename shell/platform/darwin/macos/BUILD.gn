@@ -67,6 +67,7 @@ source_set("flutter_framework_source") {
   sources += _flutter_framework_headers
 
   deps = [
+    "//flutter/shell/platform/common/cpp:common_cpp_switches",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
   ]
@@ -101,7 +102,10 @@ test_fixtures("flutter_desktop_darwin_fixtures") {
 executable("flutter_desktop_darwin_unittests") {
   testonly = true
 
-  sources = [ "framework/Source/FlutterEngineUnittests.mm" ]
+  sources = [
+    "framework/Source/FlutterEngineUnittests.mm",
+    "framework/Source/FlutterViewControllerTest.mm",
+  ]
 
   cflags_objcc = [ "-fobjc-arc" ]
 
@@ -114,6 +118,7 @@ executable("flutter_desktop_darwin_unittests") {
     "//flutter/testing:dart",
     "//flutter/testing:skia",
     "//flutter/testing:testing_lib",
+    "//third_party/ocmock:ocmock",
   ]
 }
 

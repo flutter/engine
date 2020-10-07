@@ -6,6 +6,7 @@
 
 #include <android/native_window_jni.h>
 #include <jni.h>
+
 #include <utility>
 
 #include "unicode/uchar.h"
@@ -1312,6 +1313,23 @@ PlatformViewAndroidJNIImpl::FlutterViewComputePlatformResolvedLocale(
         env, (jstring)env->GetObjectArrayElement(result, i)));
   }
   return out;
+}
+
+double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return kUnknownDisplayRefreshRate;
+  }
+
+  jclass clazz = env->GetObjectClass(java_object.obj());
+  if (clazz == nullptr) {
+    return kUnknownDisplayRefreshRate;
+  }
+
+  jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
+  return static_cast<double>(env->GetStaticFloatField(clazz, fid));
 }
 
 }  // namespace flutter

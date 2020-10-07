@@ -10,7 +10,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -37,7 +37,6 @@ class IOSContextMetal final : public IOSContext {
   sk_sp<GrDirectContext> main_context_;
   sk_sp<GrDirectContext> resource_context_;
   fml::CFRef<CVMetalTextureCacheRef> texture_cache_;
-  bool is_valid_ = false;
 
   // |IOSContext|
   sk_sp<GrDirectContext> CreateResourceContext() override;

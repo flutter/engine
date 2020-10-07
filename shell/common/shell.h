@@ -10,6 +10,7 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/surface.h"
@@ -30,6 +31,7 @@
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/service_protocol.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
@@ -274,6 +276,13 @@ class Shell final : public PlatformView::Delegate,
   ///
   fml::WeakPtr<PlatformView> GetPlatformView();
 
+  //----------------------------------------------------------------------------
+  /// @brief      The IO Manager may only be accessed on the IO task runner.
+  ///
+  /// @return     A weak pointer to the IO manager.
+  ///
+  fml::WeakPtr<ShellIOManager> GetIOManager();
+
   // Embedders should call this under low memory conditions to free up
   // internal caches used.
   //
@@ -362,6 +371,17 @@ class Shell final : public PlatformView::Delegate,
   ///
   DartVM* GetDartVM();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the display manager of the updates.
+  ///
+  void OnDisplayUpdates(DisplayUpdateType update_type,
+                        std::vector<Display> displays);
+
+  //----------------------------------------------------------------------------
+  /// @brief Queries the `DisplayManager` for the main display refresh rate.
+  ///
+  double GetMainDisplayRefreshRate();
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
@@ -411,12 +431,16 @@ class Shell final : public PlatformView::Delegate,
   // here for easier conversions to Dart objects.
   std::vector<int64_t> unreported_timings_;
 
-  // A cache of `Engine::GetDisplayRefreshRate` (only callable in the UI thread)
-  // so we can access it from `Rasterizer` (in the raster thread).
-  //
-  // The atomic is for extra thread safety as this is written in the UI thread
-  // and read from the raster thread.
-  std::atomic<float> display_refresh_rate_ = 0.0f;
+  /// Manages the displays. This class is thread safe, can be accessed from any
+  /// of the threads.
+  std::unique_ptr<DisplayManager> display_manager_;
+
+  // protects expected_frame_size_ which is set on platform thread and read on
+  // raster thread
+  std::mutex resize_mutex_;
+
+  // used to discard wrong size layer tree produced during interactive resizing
+  SkISize expected_frame_size_ = SkISize::MakeEmpty();
 
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
@@ -589,12 +613,15 @@ class Shell final : public PlatformView::Delegate,
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
 
-  fml::WeakPtrFactory<Shell> weak_factory_;
+  // Creates an asset bundle from the original settings asset path or
+  // directory.
+  std::unique_ptr<DirectoryAssetBundle> RestoreOriginalAssetResolver();
 
   // For accessing the Shell via the raster thread, necessary for various
   // rasterizer callbacks.
   std::unique_ptr<fml::TaskRunnerAffineWeakPtrFactory<Shell>> weak_factory_gpu_;
 
+  fml::WeakPtrFactory<Shell> weak_factory_;
   friend class testing::ShellTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Shell);

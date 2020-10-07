@@ -28,8 +28,6 @@ static PlatformData GetDefaultPlatformData() {
   return platform_data;
 }
 
-bool AndroidShellHolder::use_embedded_view;
-
 AndroidShellHolder::AndroidShellHolder(
     flutter::Settings settings,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
@@ -77,6 +75,8 @@ AndroidShellHolder::AndroidShellHolder(
           );
         }
         weak_platform_view = platform_view_android->GetWeakPtr();
+        shell.OnDisplayUpdates(DisplayUpdateType::kStartup,
+                               {Display(jni_facade->GetDisplayRefreshRate())});
         return platform_view_android;
       };
 
@@ -102,72 +102,42 @@ AndroidShellHolder::AndroidShellHolder(
     ui_runner = thread_host_.ui_thread->GetTaskRunner();
     io_runner = thread_host_.io_thread->GetTaskRunner();
   }
-  if (settings.use_embedded_view) {
-    use_embedded_view = true;
-    // Embedded views requires the gpu and the platform views to be the same.
-    // The plan is to eventually dynamically merge the threads when there's a
-    // platform view in the layer tree.
-    // For now we use a fixed thread configuration with the same thread used as
-    // the gpu and platform task runner.
-    // TODO(amirh/chinmaygarde): remove this, and dynamically change the thread
-    // configuration. https://github.com/flutter/flutter/issues/23975
-    // https://github.com/flutter/flutter/issues/59930
-    flutter::TaskRunners task_runners(thread_label,     // label
-                                      platform_runner,  // platform
-                                      platform_runner,  // raster
-                                      ui_runner,        // ui
-                                      io_runner         // io
-    );
 
-    shell_ =
-        Shell::Create(task_runners,              // task runners
-                      GetDefaultPlatformData(),  // window data
-                      settings_,                 // settings
-                      on_create_platform_view,  // platform view create callback
-                      on_create_rasterizer      // rasterizer create callback
-        );
-  } else {
-    use_embedded_view = false;
-    flutter::TaskRunners task_runners(thread_label,     // label
-                                      platform_runner,  // platform
-                                      gpu_runner,       // raster
-                                      ui_runner,        // ui
-                                      io_runner         // io
-    );
+  flutter::TaskRunners task_runners(thread_label,     // label
+                                    platform_runner,  // platform
+                                    gpu_runner,       // raster
+                                    ui_runner,        // ui
+                                    io_runner         // io
+  );
+  task_runners.GetRasterTaskRunner()->PostTask([]() {
+    // Android describes -8 as "most important display threads, for
+    // compositing the screen and retrieving input events". Conservatively
+    // set the raster thread to slightly lower priority than it.
+    if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
+      // Defensive fallback. Depending on the OEM, it may not be possible
+      // to set priority to -5.
+      if (::setpriority(PRIO_PROCESS, gettid(), -2) != 0) {
+        FML_LOG(ERROR) << "Failed to set GPU task runner priority";
+      }
+    }
+  });
+  task_runners.GetUITaskRunner()->PostTask([]() {
+    if (::setpriority(PRIO_PROCESS, gettid(), -1) != 0) {
+      FML_LOG(ERROR) << "Failed to set UI task runner priority";
+    }
+  });
 
-    shell_ =
-        Shell::Create(task_runners,              // task runners
-                      GetDefaultPlatformData(),  // window data
-                      settings_,                 // settings
-                      on_create_platform_view,  // platform view create callback
-                      on_create_rasterizer      // rasterizer create callback
-        );
-  }
+  shell_ =
+      Shell::Create(task_runners,              // task runners
+                    GetDefaultPlatformData(),  // window data
+                    settings_,                 // settings
+                    on_create_platform_view,   // platform view create callback
+                    on_create_rasterizer       // rasterizer create callback
+      );
 
   platform_view_ = weak_platform_view;
   FML_DCHECK(platform_view_);
-
   is_valid_ = shell_ != nullptr;
-
-  if (is_valid_) {
-    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([]() {
-      // Android describes -8 as "most important display threads, for
-      // compositing the screen and retrieving input events". Conservatively
-      // set the raster thread to slightly lower priority than it.
-      if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
-        // Defensive fallback. Depending on the OEM, it may not be possible
-        // to set priority to -5.
-        if (::setpriority(PRIO_PROCESS, gettid(), -2) != 0) {
-          FML_LOG(ERROR) << "Failed to set GPU task runner priority";
-        }
-      }
-    });
-    shell_->GetTaskRunners().GetUITaskRunner()->PostTask([]() {
-      if (::setpriority(PRIO_PROCESS, gettid(), -1) != 0) {
-        FML_LOG(ERROR) << "Failed to set UI task runner priority";
-      }
-    });
-  }
 }
 
 AndroidShellHolder::~AndroidShellHolder() {

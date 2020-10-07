@@ -123,19 +123,37 @@ class HtmlImage implements ui.Image {
   }
 
   @override
+  ui.Image clone() => this;
+
+  @override
+  bool isCloneOf(ui.Image other) => other == this;
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
+
+  @override
   final int width;
 
   @override
   final int height;
 
   @override
-  Future<ByteData?> toByteData(
-      {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    return futurize((Callback<ByteData?> callback) {
-      return _toByteData(format.index, (Uint8List? encoded) {
-        callback(encoded?.buffer.asByteData());
-      });
-    });
+  Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
+    if (format == ui.ImageByteFormat.rawRgba) {
+      final html.CanvasElement canvas = html.CanvasElement()
+        ..width = width
+        ..height = height;
+      final html.CanvasRenderingContext2D ctx = canvas.context2D;
+      ctx.drawImage(imgElement, 0, 0);
+      final html.ImageData imageData = ctx.getImageData(0, 0, width, height);
+      return Future.value(imageData.data.buffer.asByteData());
+    }
+    if (imgElement.src?.startsWith('data:') == true) {
+      final data = UriData.fromUri(Uri.parse(imgElement.src!));
+      return Future.value(data.contentAsBytes().buffer.asByteData());
+    } else {
+      return Future.value(null);
+    }
   }
 
   // Returns absolutely positioned actual image element on first call and
@@ -150,11 +168,6 @@ class HtmlImage implements ui.Image {
     }
   }
 
-  // TODO(het): Support this for asset images and images generated from
-  // `Picture`s.
-  /// Returns an error message on failure, null on success.
-  String _toByteData(int format, Callback<Uint8List?> callback) {
-    callback(null);
-    return 'Image.toByteData is not supported in Flutter for Web';
-  }
+  @override
+  String toString() => '[$width\u00D7$height]';
 }

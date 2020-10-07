@@ -137,6 +137,7 @@ if (enable_unittests) {
       "flow_test_utils.h",
       "gl_context_switch_unittests.cc",
       "layers/backdrop_filter_layer_unittests.cc",
+      "layers/checkerboard_layertree_unittests.cc",
       "layers/clip_path_layer_unittests.cc",
       "layers/clip_rect_layer_unittests.cc",
       "layers/clip_rrect_layer_unittests.cc",
@@ -173,6 +174,14 @@ if (enable_unittests) {
       "//third_party/googletest:gtest",
       "//third_party/skia",
     ]
+
+    if (!defined(defines)) {
+      defines = []
+    }
+    if (is_win) {
+      # Required for M_PI and others.
+      defines += [ "_USE_MATH_DEFINES" ]
+    }
 
     if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
       sources += [ "layers/fuchsia_layer_unittests.cc" ]
