@@ -32,7 +32,7 @@ IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
   if (force_software) {
     return IOSRenderingAPI::kSoftware;
   }
-#elif !FLUTTER_RELEASE
+#else
   if (force_software) {
     FML_LOG(WARNING) << "The --enable-software-rendering is only supported on Simulator targets "
                         "and will be ignored.";

@@ -160,7 +160,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // Need the project to get settings for the view. Initializing it here means
   // the Engine class won't initialize it later.
   if (!project) {
-    project = [[FlutterDartProject alloc] init];
+    project = [[[FlutterDartProject alloc] init] autorelease];
   }
   FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
