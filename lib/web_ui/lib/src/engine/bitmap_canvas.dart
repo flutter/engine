@@ -100,6 +100,10 @@ class BitmapCanvas extends EngineCanvas {
   /// used for each child to force correct rendering order.
   bool _contains3dTransform = false;
 
+  /// Indicates that contents should be rendered into canvas so a dataUrl
+  /// can be constructed from contents.
+  bool _preserveImageData = false;
+
   /// Allocates a canvas with enough memory to paint a picture within the given
   /// [bounds].
   ///
@@ -121,6 +125,13 @@ class BitmapCanvas extends EngineCanvas {
     _updateRootElementTransform();
     _canvasPool.allocateCanvas(rootElement as html.HtmlElement);
     _setupInitialTransform();
+  }
+
+  /// Constructs bitmap canvas to capture image data.
+  factory BitmapCanvas.imageData(ui.Rect bounds) {
+    BitmapCanvas bitmapCanvas = BitmapCanvas(bounds);
+    bitmapCanvas._preserveImageData = true;
+    return bitmapCanvas;
   }
 
   /// Setup cache for reusing DOM elements across frames.
@@ -304,11 +315,12 @@ class BitmapCanvas extends EngineCanvas {
   /// - Pictures typically have large rect/rounded rectangles as background
   ///   prefer DOM if canvas has not been allocated yet.
   bool _useDomForRendering(SurfacePaintData paint) =>
+      _preserveImageData == false && (
       _contains3dTransform ||
       (_canvasPool._canvas == null &&
           paint.maskFilter == null &&
           paint.shader == null &&
-          paint.style != ui.PaintingStyle.stroke);
+          paint.style != ui.PaintingStyle.stroke));
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {

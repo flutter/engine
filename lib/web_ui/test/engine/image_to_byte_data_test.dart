@@ -26,7 +26,6 @@ void testMain() async {
     final EnginePictureRecorder recorder = PictureRecorder();
     final RecordingCanvas canvas =
         recorder.beginRecording(Rect.fromLTRB(0, 0, 2, 2));
-    canvas.clipRect(Rect.fromLTRB(0, 0, 2, 2), ClipOp.intersect)
     canvas.drawColor(Color(0xFFCCDD00), BlendMode.srcOver);
     final Picture testPicture = recorder.endRecording();
     final Image testImage = await testPicture.toImage(2, 2);
