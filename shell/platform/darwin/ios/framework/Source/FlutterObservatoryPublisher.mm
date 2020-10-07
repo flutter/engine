@@ -105,7 +105,8 @@
                      << "to the 'NSBonjourServices' key in your Info.plist for the Debug/"
                      << "Profile configurations. "
                      << "For more information, see "
-                     << "https://flutter.dev/docs/development/add-to-app/ios/project-setup#local-network-privacy-permissions";
+                     << "https://flutter.dev/docs/development/add-to-app/ios/"
+                        "project-setup#local-network-privacy-permissions";
     }
   } else {
     DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
