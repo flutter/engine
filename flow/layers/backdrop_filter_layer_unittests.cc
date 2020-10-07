@@ -184,7 +184,8 @@ TEST_F(BackdropFilterLayerTest, Nested) {
                2, MockCanvas::ClipRectData{clip_rect, SkClipOp::kIntersect,
                                            MockCanvas::kHard_ClipEdgeStyle}},
            MockCanvas::DrawCall{
-               2, MockCanvas::SaveLayerData{clip_rect, SkPaint(), layer_filter2, 3}},
+               2, MockCanvas::SaveLayerData{clip_rect, SkPaint(), layer_filter2,
+                                            3}},
            MockCanvas::DrawCall{
                3, MockCanvas::DrawPathData{child_path2, child_paint2}},
            MockCanvas::DrawCall{3, MockCanvas::RestoreData{2}},
