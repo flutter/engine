@@ -51,12 +51,16 @@ void testMain() {
     _toSkPointTests();
     _toSkColorStopsTests();
     _toSkMatrixFromFloat32Tests();
+    _toSkRectTests();
     _skVerticesTests();
     group('SkPath', () {
       _pathTests();
     });
     group('SkCanvas', () {
       _canvasTests();
+    });
+    group('SkParagraph', () {
+      _textStyleTests();
     });
     // TODO: https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
@@ -569,6 +573,33 @@ void _toSkMatrixFromFloat32Tests() {
   });
 }
 
+void _toSkRectTests() {
+  test('toSkRect', () {
+    expect(toSkRect(ui.Rect.fromLTRB(1, 2, 3, 4)), [1, 2, 3, 4]);
+  });
+
+  test('fromSkRect', () {
+    expect(fromSkRect(Float32List.fromList([1, 2, 3, 4])),
+        ui.Rect.fromLTRB(1, 2, 3, 4));
+  });
+
+  test('toSkRRect', () {
+    expect(
+      toSkRRect(ui.RRect.fromLTRBAndCorners(
+        1,
+        2,
+        3,
+        4,
+        topLeft: ui.Radius.elliptical(5, 6),
+        topRight: ui.Radius.elliptical(7, 8),
+        bottomRight: ui.Radius.elliptical(9, 10),
+        bottomLeft: ui.Radius.elliptical(11, 12),
+      )),
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    );
+  });
+}
+
 SkPath _testClosedSkPath() {
   return SkPath()
     ..moveTo(10, 10)
@@ -591,7 +622,7 @@ void _pathTests() {
 
   test('addArc', () {
     path.addArc(
-      [10, 20, 30, 40],
+      toSkRect(ui.Rect.fromLTRB(10, 20, 30, 40)),
       1,
       5,
     );
@@ -599,7 +630,7 @@ void _pathTests() {
 
   test('addOval', () {
     path.addOval(
-      [10, 20, 30, 40],
+      toSkRect(ui.Rect.fromLTRB(10, 20, 30, 40)),
       false,
       1,
     );
@@ -630,12 +661,12 @@ void _pathTests() {
   });
 
   test('addRect', () {
-    path.addRect([1, 2, 3, 4]);
+    path.addRect(toSkRect(ui.Rect.fromLTRB(1, 2, 3, 4)));
   });
 
   test('arcTo', () {
     path.arcToOval(
-      [1, 2, 3, 4],
+      toSkRect(ui.Rect.fromLTRB(1, 2, 3, 4)),
       5,
       40,
       false,
@@ -826,7 +857,8 @@ void _canvasTests() {
 
   setUp(() {
     recorder = SkPictureRecorder();
-    canvas = recorder.beginRecording([0, 0, 100, 100]);
+    canvas =
+        recorder.beginRecording(toSkRect(ui.Rect.fromLTRB(0, 0, 100, 100)));
   });
 
   tearDown(() {
@@ -848,20 +880,20 @@ void _canvasTests() {
   test('saveLayer', () {
     canvas.saveLayer(
       SkPaint(),
-      [0, 0, 100, 100],
+      toSkRect(ui.Rect.fromLTRB(0, 0, 100, 100)),
       null,
       null,
     );
   });
 
-  test('SkCanvasSaveLayerWithoutBoundsOverload.saveLayer', () {
+  test('saveLayer without bounds', () {
     canvas.saveLayer(SkPaint(), null, null, null);
   });
 
-  test('SkCanvasSaveLayerWithFilterOverload.saveLayer', () {
+  test('saveLayer with filter', () {
     canvas.saveLayer(
       SkPaint(),
-      [0, 0, 100, 100],
+      toSkRect(ui.Rect.fromLTRB(0, 0, 100, 100)),
       canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
       0,
     );
@@ -881,7 +913,7 @@ void _canvasTests() {
 
   test('clipRRect', () {
     canvas.clipRRect(
-      [0, 0, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8],
+      Float32List.fromList([0, 0, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8]),
       canvasKit.ClipOp.Intersect,
       true,
     );
@@ -889,7 +921,7 @@ void _canvasTests() {
 
   test('clipRect', () {
     canvas.clipRect(
-      [0, 0, 100, 100],
+      Float32List.fromList([0, 0, 100, 100]),
       canvasKit.ClipOp.Intersect,
       true,
     );
@@ -897,7 +929,7 @@ void _canvasTests() {
 
   test('drawArc', () {
     canvas.drawArc(
-      [0, 0, 100, 50],
+      Float32List.fromList([0, 0, 100, 50]),
       0,
       100,
       true,
@@ -931,8 +963,8 @@ void _canvasTests() {
 
   test('drawDRRect', () {
     canvas.drawDRRect(
-      [0, 0, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8],
-      [20, 20, 80, 80, 1, 2, 3, 4, 5, 6, 7, 8],
+      Float32List.fromList([0, 0, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8]),
+      Float32List.fromList([20, 20, 80, 80, 1, 2, 3, 4, 5, 6, 7, 8]),
       SkPaint(),
     );
   });
@@ -953,8 +985,8 @@ void _canvasTests() {
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
     canvas.drawImageRect(
       image.getCurrentFrame(),
-      [0, 0, 1, 1],
-      [0, 0, 1, 1],
+      Float32List.fromList([0, 0, 1, 1]),
+      Float32List.fromList([0, 0, 1, 1]),
       SkPaint(),
       false,
     );
@@ -965,8 +997,8 @@ void _canvasTests() {
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
     canvas.drawImageNine(
       image.getCurrentFrame(),
-      [0, 0, 1, 1],
-      [0, 0, 1, 1],
+      Float32List.fromList([0, 0, 1, 1]),
+      Float32List.fromList([0, 0, 1, 1]),
       SkPaint(),
     );
   });
@@ -976,7 +1008,7 @@ void _canvasTests() {
   });
 
   test('drawOval', () {
-    canvas.drawOval([0, 0, 1, 1], SkPaint());
+    canvas.drawOval(Float32List.fromList([0, 0, 1, 1]), SkPaint());
   });
 
   test('drawPaint', () {
@@ -1000,14 +1032,14 @@ void _canvasTests() {
 
   test('drawRRect', () {
     canvas.drawRRect(
-      [0, 0, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8],
+      Float32List.fromList([0, 0, 100, 100, 1, 2, 3, 4, 5, 6, 7, 8]),
       SkPaint(),
     );
   });
 
   test('drawRect', () {
     canvas.drawRect(
-      [0, 0, 100, 100],
+      Float32List.fromList([0, 0, 100, 100]),
       SkPaint(),
     );
   });
@@ -1086,7 +1118,8 @@ void _canvasTests() {
 
   test('drawPicture', () {
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
-    final SkCanvas otherCanvas = otherRecorder.beginRecording([0, 0, 100, 100]);
+    final SkCanvas otherCanvas =
+        otherRecorder.beginRecording(Float32List.fromList([0, 0, 100, 100]));
     otherCanvas.drawLine(0, 0, 10, 10, SkPaint());
     canvas.drawPicture(otherRecorder.finishRecordingAsPicture());
   });
@@ -1107,9 +1140,10 @@ void _canvasTests() {
 
   test('toImage.toByteData', () async {
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
-    final SkCanvas otherCanvas = otherRecorder.beginRecording([0,0,1,1]);
+    final SkCanvas otherCanvas =
+        otherRecorder.beginRecording(Float32List.fromList([0, 0, 1, 1]));
     otherCanvas.drawRect(
-      [0,0,1,1],
+      Float32List.fromList([0, 0, 1, 1]),
       SkPaint(),
     );
     final CkPicture picture =
@@ -1121,5 +1155,64 @@ void _canvasTests() {
     final ByteData pngData =
         await image.toByteData(format: ui.ImageByteFormat.png);
     expect(pngData, isNotNull);
+  });
+}
+
+void _textStyleTests() {
+  test('SkTextDecorationStyle mapping is correct', () {
+    expect(canvasKit.DecorationStyle.Solid.value,
+        ui.TextDecorationStyle.solid.index);
+    expect(canvasKit.DecorationStyle.Double.value,
+        ui.TextDecorationStyle.double.index);
+    expect(canvasKit.DecorationStyle.Dotted.value,
+        ui.TextDecorationStyle.dotted.index);
+    expect(canvasKit.DecorationStyle.Dashed.value,
+        ui.TextDecorationStyle.dashed.index);
+    expect(canvasKit.DecorationStyle.Wavy.value,
+        ui.TextDecorationStyle.wavy.index);
+  });
+
+  test('ui.TextDecorationStyle converts to SkTextDecorationStyle', () {
+    for (ui.TextDecorationStyle decorationStyle
+        in ui.TextDecorationStyle.values) {
+      expect(toSkTextDecorationStyle(decorationStyle).value,
+          decorationStyle.index);
+    }
+  });
+
+  test('SkTextBaseline mapping is correct', () {
+    expect(canvasKit.TextBaseline.Alphabetic.value,
+        ui.TextBaseline.alphabetic.index);
+    expect(canvasKit.TextBaseline.Ideographic.value,
+        ui.TextBaseline.ideographic.index);
+  });
+
+  test('ui.TextBaseline converts to SkTextBaseline', () {
+    for (ui.TextBaseline textBaseline in ui.TextBaseline.values) {
+      expect(toSkTextBaseline(textBaseline).value, textBaseline.index);
+    }
+  });
+
+  test('SkPlaceholderAlignment mapping is correct', () {
+    expect(canvasKit.PlaceholderAlignment.Baseline.value,
+        ui.PlaceholderAlignment.baseline.index);
+    expect(canvasKit.PlaceholderAlignment.AboveBaseline.value,
+        ui.PlaceholderAlignment.aboveBaseline.index);
+    expect(canvasKit.PlaceholderAlignment.BelowBaseline.value,
+        ui.PlaceholderAlignment.belowBaseline.index);
+    expect(canvasKit.PlaceholderAlignment.Top.value,
+        ui.PlaceholderAlignment.top.index);
+    expect(canvasKit.PlaceholderAlignment.Bottom.value,
+        ui.PlaceholderAlignment.bottom.index);
+    expect(canvasKit.PlaceholderAlignment.Middle.value,
+        ui.PlaceholderAlignment.middle.index);
+  });
+
+  test('ui.PlaceholderAlignment converts to SkPlaceholderAlignment', () {
+    for (ui.PlaceholderAlignment placeholderAlignment
+        in ui.PlaceholderAlignment.values) {
+      expect(toSkPlaceholderAlignment(placeholderAlignment).value,
+          placeholderAlignment.index);
+    }
   });
 }

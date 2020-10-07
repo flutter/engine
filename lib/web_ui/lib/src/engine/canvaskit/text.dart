@@ -297,9 +297,9 @@ class CkTextStyle implements ui.TextStyle {
     }
 
     if (shadows != null) {
-      var ckShadows = <SkTextShadow>[];
-      for (var shadow in shadows) {
-        var ckShadow = SkTextShadow();
+      List<SkTextShadow> ckShadows = <SkTextShadow>[];
+      for (ui.Shadow shadow in shadows) {
+        final ckShadow = SkTextShadow();
         ckShadow.color = makeFreshSkColor(shadow.color);
         ckShadow.offset = toSkPoint(shadow.offset);
         ckShadow.blurRadius = shadow.blurRadius;
@@ -309,9 +309,9 @@ class CkTextStyle implements ui.TextStyle {
     }
 
     if (fontFeatures != null) {
-      var ckFontFeatures = <SkFontFeature>[];
-      for (var fontFeature in fontFeatures) {
-        var ckFontFeature = SkFontFeature();
+      List<SkFontFeature> ckFontFeatures = <SkFontFeature>[];
+      for (ui.FontFeature fontFeature in fontFeatures) {
+        SkFontFeature ckFontFeature = SkFontFeature();
         ckFontFeature.name = fontFeature.feature;
         ckFontFeature.value = fontFeature.value;
         ckFontFeatures.add(ckFontFeature);
@@ -617,7 +617,6 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
           skiaFontCollection.fontProvider,
         );
 
-  // TODO(hterkelsen): Implement placeholders.
   @override
   void addPlaceholder(
     double width,
@@ -636,7 +635,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
     _placeholderCount++;
     _placeholderScales.add(scale);
-    var placeholderStyle = toSkPlaceholderStyle(
+    SkPlaceholderStyleProperties placeholderStyle = toSkPlaceholderStyle(
       width * scale,
       height * scale,
       alignment,

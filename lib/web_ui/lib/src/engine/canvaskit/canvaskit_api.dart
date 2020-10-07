@@ -1019,12 +1019,12 @@ class SkPath {
   external SkPath([SkPath? other]);
   external void setFillType(SkFillType fillType);
   external void addArc(
-    List<double> oval,
+    Float32List oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
   );
   external void addOval(
-    List<double> oval,
+    Float32List oval,
     bool counterClockWise,
     int startIndex,
   );
@@ -1046,14 +1046,14 @@ class SkPath {
     bool close,
   );
   external void addRRect(
-    List<double> rrect,
+    Float32List rrect,
     bool counterClockWise,
   );
   external void addRect(
-    List<double> rect,
+    Float32List rect,
   );
   external void arcToOval(
-    List<double> oval,
+    Float32List oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
     bool forceMoveTo,
@@ -1087,7 +1087,7 @@ class SkPath {
     double x3,
     double y3,
   );
-  external List<double> getBounds();
+  external Float32List getBounds();
   external void lineTo(double x, double y);
   external void moveTo(double x, double y);
   external void quadTo(
@@ -1160,35 +1160,45 @@ class SkContourMeasure {
 }
 
 // TODO(hterkelsen): Use a shared malloc'ed array for performance.
-List<double> toSkRect(ui.Rect rect) {
-  return <double>[rect.left, rect.top, rect.right, rect.bottom];
+Float32List toSkRect(ui.Rect rect) {
+  final Float32List skRect = Float32List(4);
+  skRect[0] = rect.left;
+  skRect[1] = rect.top;
+  skRect[2] = rect.right;
+  skRect[3] = rect.bottom;
+  return skRect;
 }
 
-ui.Rect fromSkRect(List<double> skRect) {
+ui.Rect fromSkRect(Float32List skRect) {
   return ui.Rect.fromLTRB(skRect[0], skRect[1], skRect[2], skRect[3]);
 }
 
 // TODO(hterkelsen): Use a shared malloc'ed array for performance.
-List<double> toSkRRect(ui.RRect rrect) {
-  return <double>[
-    rrect.left,
-    rrect.top,
-    rrect.right,
-    rrect.bottom,
-    rrect.tlRadiusX,
-    rrect.tlRadiusY,
-    rrect.trRadiusX,
-    rrect.trRadiusY,
-    rrect.brRadiusX,
-    rrect.brRadiusY,
-    rrect.blRadiusX,
-    rrect.blRadiusY,
-  ];
+Float32List toSkRRect(ui.RRect rrect) {
+  final Float32List skRRect = Float32List(12);
+  skRRect[0] = rrect.left;
+  skRRect[1] = rrect.top;
+  skRRect[2] = rrect.right;
+  skRRect[3] = rrect.bottom;
+  skRRect[4] = rrect.tlRadiusX;
+  skRRect[5] = rrect.tlRadiusY;
+  skRRect[6] = rrect.trRadiusX;
+  skRRect[7] = rrect.trRadiusY;
+  skRRect[8] = rrect.brRadiusX;
+  skRRect[9] = rrect.brRadiusY;
+  skRRect[10] = rrect.blRadiusX;
+  skRRect[11] = rrect.blRadiusY;
+  return skRRect;
 }
 
 // TODO(hterkelsen): Use a shared malloc'ed array for performance.
-List<double> toOuterSkRect(ui.RRect rrect) {
-  return <double>[rrect.left, rrect.top, rrect.right, rrect.bottom];
+Float32List toOuterSkRect(ui.RRect rrect) {
+  final Float32List skRect = Float32List(4);
+  skRect[0] = rrect.left;
+  skRect[1] = rrect.top;
+  skRect[2] = rrect.right;
+  skRect[3] = rrect.bottom;
+  return skRect;
 }
 
 /// Encodes a list of offsets to CanvasKit-compatible point array.
@@ -1214,9 +1224,9 @@ List<Float32List> rawPointsToSkPoints2d(Float32List points) {
   assert(points.length % 2 == 0);
   final int pointLength = points.length ~/ 2;
   final List<Float32List> result = <Float32List>[];
-  for (var i = 0; i < pointLength; i++) {
-    var x = i * 2;
-    var y = x + 1;
+  for (int i = 0; i < pointLength; i++) {
+    int x = i * 2;
+    int y = x + 1;
     final Float32List skPoint = Float32List(2);
     skPoint[0] = points[x];
     skPoint[1] = points[y];
@@ -1228,7 +1238,7 @@ List<Float32List> rawPointsToSkPoints2d(Float32List points) {
 List<Float32List> toSkPoints2d(List<ui.Offset> offsets) {
   final int len = offsets.length;
   final List<Float32List> result = <Float32List>[];
-  for (var i = 0; i < len; i++) {
+  for (int i = 0; i < len; i++) {
     final ui.Offset offset = offsets[i];
     final Float32List skPoint = Float32List(2);
     skPoint[0] = offset.dx;
@@ -1250,7 +1260,7 @@ Uint16List toUint16List(List<int> ints) {
 @JS('window.flutterCanvasKit.SkPictureRecorder')
 class SkPictureRecorder {
   external SkPictureRecorder();
-  external SkCanvas beginRecording(List<double> bounds);
+  external SkCanvas beginRecording(Float32List bounds);
   external SkPicture finishRecordingAsPicture();
   external void delete();
 }
@@ -1270,17 +1280,17 @@ class SkCanvas {
     bool doAntiAlias,
   );
   external void clipRRect(
-    List<double> rrect,
+    Float32List rrect,
     SkClipOp clipOp,
     bool doAntiAlias,
   );
   external void clipRect(
-    List<double> rrect,
+    Float32List rrect,
     SkClipOp clipOp,
     bool doAntiAlias,
   );
   external void drawArc(
-    List<double> oval,
+    Float32List oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
     bool useCenter,
@@ -1305,8 +1315,8 @@ class SkCanvas {
     SkBlendMode blendMode,
   );
   external void drawDRRect(
-    List<double> outer,
-    List<double> inner,
+    Float32List outer,
+    Float32List inner,
     SkPaint paint,
   );
   external void drawImage(
@@ -1317,15 +1327,15 @@ class SkCanvas {
   );
   external void drawImageRect(
     SkImage image,
-    List<double> src,
-    List<double> dst,
+    Float32List src,
+    Float32List dst,
     SkPaint paint,
     bool fastSample,
   );
   external void drawImageNine(
     SkImage image,
-    List<double> center,
-    List<double> dst,
+    Float32List center,
+    Float32List dst,
     SkPaint paint,
   );
   external void drawLine(
@@ -1336,7 +1346,7 @@ class SkCanvas {
     SkPaint paint,
   );
   external void drawOval(
-    List<double> rect,
+    Float32List rect,
     SkPaint paint,
   );
   external void drawPaint(
@@ -1352,11 +1362,11 @@ class SkCanvas {
     SkPaint paint,
   );
   external void drawRRect(
-    List<double> rrect,
+    Float32List rrect,
     SkPaint paint,
   );
   external void drawRect(
-    List<double> rrect,
+    Float32List rrect,
     SkPaint paint,
   );
   external void drawShadow(
@@ -1377,7 +1387,7 @@ class SkCanvas {
   external int getSaveCount();
   external void saveLayer(
     SkPaint? paint,
-    List<double>? bounds,
+    Float32List? bounds,
     SkImageFilter? backdrop,
     int? flags,
   );
@@ -1702,13 +1712,13 @@ class SkParagraph {
   external double getMaxIntrinsicWidth();
   external double getMinIntrinsicWidth();
   external double getMaxWidth();
-  external List<List<double>> getRectsForRange(
+  external List<Float32List> getRectsForRange(
     int start,
     int end,
     SkRectHeightStyle heightStyle,
     SkRectWidthStyle widthStyle,
   );
-  external List<List<double>> getRectsForPlaceholders();
+  external List<Float32List> getRectsForPlaceholders();
   external SkTextPosition getGlyphPositionAtCoordinate(
     double x,
     double y,
@@ -1856,7 +1866,7 @@ class SkImageInfo {
   external int get height;
   external bool get isEmpty;
   external bool get isOpaque;
-  external List<double> get bounds;
+  external Float32List get bounds;
   external int get width;
   external SkImageInfo makeAlphaType(SkAlphaType alphaType);
   external SkImageInfo makeColorSpace(SkColorSpace colorSpace);
