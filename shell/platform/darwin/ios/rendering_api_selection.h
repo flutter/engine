@@ -25,8 +25,11 @@ Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api);
 
 }  // namespace flutter
 
-// Metal support was added for simulators in iOS 13.
-// Otherwise, the lowest supported version in Skia is iOS 10.
+// Flutter supports Metal on all devices with Apple A7 SoC or above that have
+// been updated to or past iOS 10.0. The processor was selected as it is the
+// first version at which Metal was supported. The iOS version floor was
+// selected due to the availability of features used by Skia.
+// Support for Metal on simulators was added by Apple in the SDK for iOS 13.
 #if TARGET_OS_SIMULATOR
 #define METAL_IOS_VERSION_BASELINE 13.0
 #else
