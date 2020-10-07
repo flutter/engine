@@ -29,7 +29,11 @@ bool ShouldUseMetalRenderer() {
 }
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
-IOSRenderingAPI GetRenderingAPIForProcess() {
+IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
+  if (force_software) {
+    return IOSRenderingAPI::kSoftware;
+  }
+
 #if FLUTTER_SHELL_ENABLE_METAL
   static bool should_use_metal = ShouldUseMetalRenderer();
   if (should_use_metal) {

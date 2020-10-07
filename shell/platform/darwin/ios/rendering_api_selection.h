@@ -17,10 +17,9 @@ enum class IOSRenderingAPI {
   kMetal,
 };
 
-IOSRenderingAPI GetRenderingAPIForProcess();
+IOSRenderingAPI GetRenderingAPIForProcess(bool force_software);
 
-Class GetCoreAnimationLayerClassForRenderingAPI(
-    IOSRenderingAPI rendering_api = GetRenderingAPIForProcess());
+Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api);
 
 }  // namespace flutter
 
