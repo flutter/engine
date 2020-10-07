@@ -25,7 +25,7 @@ class AssetManager final : public AssetResolver {
 
   void PushBack(std::unique_ptr<AssetResolver> resolver);
 
-  void TakeResolvers(std::shared_ptr<AssetManager> manager);
+  std::deque<std::unique_ptr<AssetResolver>> TakeResolvers();
 
   // |AssetResolver|
   bool IsValid() const override;

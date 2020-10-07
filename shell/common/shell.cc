@@ -1406,6 +1406,16 @@ bool Shell::OnServiceProtocolRunInView(
                          fml::FilePermission::kRead),
       false));
 
+  // Preserve any original asset resolvers to avoid syncing unchanged assets
+  // over the DevFS connection.
+  auto old_resolvers = engine_->GetAssetManager()->TakeResolvers();
+  for (uint64_t i = 0; i < old_resolvers.size(); i++) {
+    auto old_resolver = std::move(old_resolvers[i]);
+    if (old_resolver->ShouldPreserve()) {
+      configuration.AddAssetResolver(std::move(old_resolver));
+    }
+  }
+
   auto& allocator = response->GetAllocator();
   response->SetObject();
   if (engine_->Restart(std::move(configuration))) {
@@ -1521,6 +1531,16 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
       fml::OpenDirectory(params.at("assetDirectory").data(), false,
                          fml::FilePermission::kRead),
       false));
+
+  // Preserve any original asset resolvers to avoid syncing unchanged assets
+  // over the DevFS connection.
+  auto old_resolvers = engine_->GetAssetManager()->TakeResolvers();
+  for (uint64_t i = 0; i < old_resolvers.size(); i++) {
+    auto old_resolver = std::move(old_resolvers[i]);
+    if (old_resolver->ShouldPreserve()) {
+      asset_manager->PushBack(std::move(old_resolver));
+    }
+  }
 
   if (engine_->UpdateAssetManager(std::move(asset_manager))) {
     response->AddMember("type", "Success", allocator);

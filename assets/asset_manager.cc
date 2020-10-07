@@ -29,15 +29,8 @@ void AssetManager::PushBack(std::unique_ptr<AssetResolver> resolver) {
   resolvers_.push_back(std::move(resolver));
 }
 
-void AssetManager::TakeResolvers(std::shared_ptr<AssetManager> manager) {
-  if (manager->resolvers_.size() > 0) {
-    for (unsigned long i = 0; i < manager->resolvers_.size(); i++) {
-      auto resolver = std::move(manager->resolvers_[i]);
-      if (resolver->ShouldPreserve()) {
-        resolvers_.push_back(std::move(resolver));
-      }
-    }
-  }
+std::deque<std::unique_ptr<AssetResolver>> AssetManager::TakeResolvers() {
+  return std::move(resolvers_);
 }
 
 // |AssetResolver|
