@@ -17,12 +17,16 @@ enum class IOSRenderingAPI {
   kMetal,
 };
 
+// Pass force_software to force software rendering. This is only respected on
+// simulators.
 IOSRenderingAPI GetRenderingAPIForProcess(bool force_software);
 
 Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api);
 
 }  // namespace flutter
 
+// Metal support was added for simulators in iOS 13.
+// Otherwise, the lowest supported version in Skia is iOS 10.
 #if TARGET_OS_SIMULATOR
 #define METAL_IOS_VERSION_BASELINE 13.0
 #else

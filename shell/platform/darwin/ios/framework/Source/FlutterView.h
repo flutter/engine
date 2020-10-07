@@ -35,7 +35,7 @@
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:(std::shared_ptr<flutter::IOSContext>)context;
 
 // Set by FlutterEngine or FlutterViewController to override software rendering.
-@property(class, nonatomic, readwrite) BOOL forceSoftwareRendering;
+@property(class, nonatomic) BOOL forceSoftwareRendering;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_

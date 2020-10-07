@@ -10,6 +10,7 @@
 #if FLUTTER_SHELL_ENABLE_METAL
 #include <Metal/Metal.h>
 #endif  // FLUTTER_SHELL_ENABLE_METAL
+#import <TargetConditionals.h>
 
 #include "flutter/fml/logging.h"
 
@@ -30,9 +31,16 @@ bool ShouldUseMetalRenderer() {
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
 IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
+#if TARGET_OS_SIMULATOR
   if (force_software) {
     return IOSRenderingAPI::kSoftware;
   }
+#elif !FLUTTER_RELEASE
+  if (force_software) {
+    FML_LOG(WARNING) << "The --enable-software-rendering is only supported on Simulator targets, "
+                        "and will be ignored.";
+  }
+#endif  // TARGET_OS_SIMULATOR
 
 #if FLUTTER_SHELL_ENABLE_METAL
   static bool should_use_metal = ShouldUseMetalRenderer();
@@ -43,11 +51,11 @@ IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
 
   // OpenGL will be emulated using software rendering by Apple on the simulator, so we use the
   // Skia software rendering since it performs a little better than the emulated OpenGL.
-#if TARGET_IPHONE_SIMULATOR
+#if TARGET_OS_SIMULATOR
   return IOSRenderingAPI::kSoftware;
 #else
   return IOSRenderingAPI::kOpenGLES;
-#endif  // TARGET_IPHONE_SIMULATOR
+#endif  // TARGET_OS_SIMULATOR
 }
 
 Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
