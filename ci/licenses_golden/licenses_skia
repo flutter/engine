@@ -1,4 +1,4 @@
-Signature: bccba30d609a717c651fc7cde834d3d2
+Signature: 060ea7af4bf33613ab47bda621964bd2
 
 UNUSED LICENSES:
 
@@ -4010,6 +4010,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSampleUsage.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLTinyUnorderedMap.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLInlineMarker.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLSymbolAlias.h
 FILE: ../../../third_party/skia/src/utils/SkCustomTypeface.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC
@@ -6594,11 +6595,13 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/example.html
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/extra.html
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/node.example.js
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/package-lock.json
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/package.json
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/shaping.html
-FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/types/bin/canvaskit.d.ts
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/types/canvaskit-wasm-tests.ts
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/types/index.d.ts
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/types/tsconfig.json
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/types/tslint.json
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/viewer.html
 FILE: ../../../third_party/skia/modules/pathkit/npm-asmjs/example.html
 FILE: ../../../third_party/skia/modules/pathkit/npm-asmjs/package.json
