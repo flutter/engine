@@ -19,14 +19,14 @@
 
 - (void)testSoftwareRendering {
   self.application.launchArguments =
-      @[ @"--animated-color-sqaure", @"--assert-ca-layer-type", @"--enable-software-rendering" ];
+      @[ @"--animated-color-square", @"--assert-ca-layer-type", @"--enable-software-rendering" ];
   [self.application launch];
 
   // App asserts that the rendering API is CALayer
 }
 
 - (void)testMetalRendering {
-  self.application.launchArguments = @[ @"--animated-color-sqaure", @"--assert-ca-layer-type" ];
+  self.application.launchArguments = @[ @"--animated-color-square", @"--assert-ca-layer-type" ];
   [self.application launch];
 
   // App asserts that the rendering API is CAMetalLayer
