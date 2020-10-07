@@ -646,10 +646,10 @@ class EngineWindow extends ui.Window {
   @visibleForTesting
   Future<void> debugInitializeHistory(
     UrlStrategy? strategy, {
-    bool? useSingle,
+    required bool useSingle,
   }) async {
     await _browserHistory?.tearDown();
-    if (useSingle == true) {
+    if (useSingle) {
       _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
     } else {
       _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);

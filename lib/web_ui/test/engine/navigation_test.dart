@@ -23,7 +23,7 @@ void main() {
 void testMain() {
   setUp(() async {
     _strategy = engine.TestUrlStrategy();
-    await engine.window.debugInitializeHistory(_strategy);
+    await engine.window.debugInitializeHistory(_strategy, useSingle: true);
   });
 
   tearDown(() async {
