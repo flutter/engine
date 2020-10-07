@@ -6,6 +6,11 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 
+#include <memory>
+#include <string>
+#include <sstream>
+#include <iostream>
+
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
@@ -14,6 +19,67 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
+
+#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViews_Internal.h"
+#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViews.h"
+
+// Hardcoding platform view.
+
+@class MockPlatformView;
+static MockPlatformView* gMockPlatformView = nil;
+
+@interface MockPlatformView : NSView
+@end
+@implementation MockPlatformView
+
+- (instancetype)init {
+  self = [super init];
+  [[NSColor redColor] setFill];
+  if (self) {
+    gMockPlatformView = self;
+  }
+  return self;
+}
+
+- (void)dealloc {
+  gMockPlatformView = nil;
+  // [super dealloc];
+}
+
+@end
+
+@interface MockFlutterPlatformView : NSObject <FlutterPlatformView>
+@property(nonatomic, strong) NSView* view;
+@end
+
+@implementation MockFlutterPlatformView
+
+- (instancetype)init {
+  if (self = [super init]) {
+    _view = [[MockPlatformView alloc] init];
+  }
+  return self;
+}
+
+- (void)dealloc {
+  // [_view release];
+  _view = nil;
+  // [super dealloc];
+}
+
+@end
+
+@interface MockFlutterPlatformFactory : NSObject <FlutterPlatformViewFactory>
+@end
+
+@implementation MockFlutterPlatformFactory
+- (NSObject<FlutterPlatformView>*)createWithFrame:(CGRect)frame
+                                   viewIdentifier:(int64_t)viewId
+                                        arguments:(id _Nullable)args {
+  return [[MockFlutterPlatformView alloc] init];
+}
+
+@end
 
 namespace {
 
@@ -194,6 +260,14 @@ struct KeyboardState {
 
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
+
+    // A method channel for platform view functionality.
+  FlutterMethodChannel* _platformViewsChannel;
+
+  std::unique_ptr<flutter::FlutterPlatformViewsControllerMacOS> _platformViewsController;
+
+
+  // flutter::FlutterPlatformViewsControllerMacOS* _platformViewsController;
 }
 
 @dynamic view;
@@ -207,6 +281,8 @@ static void CommonInit(FlutterViewController* controller) {
                                      allowHeadlessExecution:NO];
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
+
+  controller->_platformViewsController.reset(new flutter::FlutterPlatformViewsControllerMacOS());
 }
 
 - (instancetype)initWithCoder:(NSCoder*)coder {
@@ -266,6 +342,10 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)dealloc {
   _engine.viewController = nil;
+}
+
+- (flutter::FlutterPlatformViewsControllerMacOS*)platformViewsController {
+  return _platformViewsController.get();
 }
 
 #pragma mark - Public methods
@@ -373,10 +453,44 @@ static void CommonInit(FlutterViewController* controller) {
       [FlutterMethodChannel methodChannelWithName:@"flutter/platform"
                                   binaryMessenger:_engine.binaryMessenger
                                             codec:[FlutterJSONMethodCodec sharedInstance]];
+
+  NSLog(@"create platform views channel for mac");
+  _platformViewsChannel =
+      [FlutterMethodChannel methodChannelWithName:@"flutter/platform_views"
+                                  binaryMessenger:_engine.binaryMessenger
+                                            codec:[FlutterStandardMethodCodec sharedInstance]];
   __weak FlutterViewController* weakSelf = self;
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [weakSelf handleMethodCall:call result:result];
   }];
+
+  [_platformViewsChannel
+      setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+        // Create FlutterPlatformView Delegate protocol.
+        // Objective C to implement protocol.
+        // FlutterViewController can implement protocol for now as well.
+        // NSLog(@"hello world");
+        
+        // Try hardcoding this method call to render textview for now.
+        NSLog(@"platform-view-call");
+
+        NSDictionary<NSString*, id>* args = [call arguments];
+
+        // long viewId = [args[@"id"] longValue];
+        std::string viewType([args[@"viewType"] UTF8String]);
+
+        printf("view type: %s", viewType.c_str());
+
+        MockFlutterPlatformFactory* factory = [MockFlutterPlatformFactory new];
+        printf("%d", factory == nil);
+
+        NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectZero
+                                                           viewIdentifier:0
+                                                                arguments:nil];
+
+        printf("embedded_view: %d", embedded_view == nil);
+        result(nil);
+      }];
 }
 
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event {

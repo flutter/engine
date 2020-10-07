@@ -62,6 +62,7 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
     "framework/Source/FlutterViewController_Internal.h",
+    "framework/Source/FlutterPlatformViews_Internal.mm",
   ]
 
   sources += _flutter_framework_headers

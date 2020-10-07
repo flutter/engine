@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
-
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
 @interface FlutterViewController ()
