@@ -265,7 +265,7 @@ void AndroidExternalViewEmbedder::BeginFrame(
 
   // The surface size changed. Therefore, destroy existing surfaces as
   // the existing surfaces in the pool can't be recycled.
-  if (frame_size_ != frame_size) {
+  if (frame_size_ != frame_size && raster_thread_merger->IsOnPlatformThread()) {
     surface_pool_->DestroyLayers(jni_facade_);
   }
   frame_size_ = frame_size;
