@@ -1,4 +1,4 @@
-Signature: bccba30d609a717c651fc7cde834d3d2
+Signature: c84e3d3c67fa6bef407cd05a1ef95287
 
 UNUSED LICENSES:
 
@@ -4010,6 +4010,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSampleUsage.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLTinyUnorderedMap.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLInlineMarker.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLSymbolAlias.h
 FILE: ../../../third_party/skia/src/utils/SkCustomTypeface.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC
