@@ -82,7 +82,10 @@ source_set("flutter_framework_source") {
 
   public_configs = [ "//flutter:config" ]
 
-  defines = [ "FLUTTER_FRAMEWORK" ]
+  defines = [
+    "FLUTTER_FRAMEWORK",
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+  ]
 
   cflags_objcc = [ "-fobjc-arc" ]
 

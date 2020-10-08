@@ -218,6 +218,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   _messageHandlers = [[NSMutableDictionary alloc] init];
   _textures = [[NSMutableDictionary alloc] init];
   _allowHeadlessExecution = allowHeadlessExecution;
+  _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
+  FlutterEngineGetProcAddresses(&_embedderAPI);
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -306,14 +308,14 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     flutterArguments.aot_data = _aotData.get();
   }
 
-  FlutterEngineResult result = FlutterEngineInitialize(
+  FlutterEngineResult result = _embedderAPI.Initialize(
       FLUTTER_ENGINE_VERSION, &rendererConfig, &flutterArguments, (__bridge void*)(self), &_engine);
   if (result != kSuccess) {
     NSLog(@"Failed to initialize Flutter engine: error %d", result);
     return NO;
   }
 
-  result = FlutterEngineRunInitialized(_engine);
+  result = _embedderAPI.RunInitialized(_engine);
   if (result != kSuccess) {
     NSLog(@"Failed to run an initialized engine: error %d", result);
     return NO;
@@ -409,7 +411,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     display.refresh_rate = round(refreshRate);
 
     std::vector<FlutterEngineDisplay> displays = {display};
-    FlutterEngineNotifyDisplayUpdate(_engine, kFlutterEngineDisplaysUpdateTypeStartup,
+    _embedderAPI.NotifyDisplayUpdate(_engine, kFlutterEngineDisplaysUpdateTypeStartup,
                                      displays.data(), displays.size());
   }
 
@@ -433,11 +435,11 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .left = static_cast<size_t>(scaledBounds.origin.x),
       .top = static_cast<size_t>(scaledBounds.origin.y),
   };
-  FlutterEngineSendWindowMetricsEvent(_engine, &windowMetricsEvent);
+  _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
 }
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {
-  FlutterEngineSendPointerEvent(_engine, &event, 1);
+  _embedderAPI.SendPointerEvent(_engine, &event, 1);
 }
 
 #pragma mark - Private methods
@@ -462,7 +464,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   std::transform(
       flutterLocales.begin(), flutterLocales.end(), std::back_inserter(flutterLocaleList),
       [](const auto& arg) -> const auto* { return &arg; });
-  FlutterEngineUpdateLocales(_engine, flutterLocaleList.data(), flutterLocaleList.size());
+  _embedderAPI.UpdateLocales(_engine, flutterLocaleList.data(), flutterLocaleList.size());
 }
 
 - (bool)engineCallbackOnMakeCurrent {
@@ -500,7 +502,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
   FlutterBinaryReply binaryResponseHandler = ^(NSData* response) {
     if (responseHandle) {
-      FlutterEngineSendPlatformMessageResponse(self->_engine, responseHandle,
+      _embedderAPI.SendPlatformMessageResponse(self->_engine, responseHandle,
                                                static_cast<const uint8_t*>(response.bytes),
                                                response.length);
       responseHandle = NULL;
@@ -527,7 +529,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     return;
   }
 
-  FlutterEngineResult result = FlutterEngineDeinitialize(_engine);
+  FlutterEngineResult result = _embedderAPI.Deinitialize(_engine);
   if (result != kSuccess) {
     NSLog(@"Could not de-initialize the Flutter engine: error %d", result);
   }
@@ -535,7 +537,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   // Balancing release for the retain in the task runner dispatch table.
   CFRelease((CFTypeRef)self);
 
-  result = FlutterEngineShutdown(_engine);
+  result = _embedderAPI.Shutdown(_engine);
   if (result != kSuccess) {
     NSLog(@"Failed to shut down Flutter engine: error %d", result);
   }
@@ -568,7 +570,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       delete captures;
     };
 
-    FlutterEngineResult create_result = FlutterPlatformMessageCreateResponseHandle(
+    FlutterEngineResult create_result = _embedderAPI.PlatformMessageCreateResponseHandle(
         _engine, message_reply, captures.get(), &response_handle);
     if (create_result != kSuccess) {
       NSLog(@"Failed to create a FlutterPlatformMessageResponseHandle (%d)", create_result);
@@ -585,7 +587,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .response_handle = response_handle,
   };
 
-  FlutterEngineResult message_result = FlutterEngineSendPlatformMessage(_engine, &platformMessage);
+  FlutterEngineResult message_result = _embedderAPI.SendPlatformMessage(_engine, &platformMessage);
   if (message_result != kSuccess) {
     NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel,
           message_result);
@@ -593,7 +595,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
   if (response_handle != nullptr) {
     FlutterEngineResult release_result =
-        FlutterPlatformMessageReleaseResponseHandle(_engine, response_handle);
+        _embedderAPI.PlatformMessageReleaseResponseHandle(_engine, response_handle);
     if (release_result != kSuccess) {
       NSLog(@"Failed to release the response handle (%d).", release_result);
     };
@@ -628,30 +630,30 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   FlutterExternalTextureGL* FlutterTexture =
       [[FlutterExternalTextureGL alloc] initWithFlutterTexture:texture];
   int64_t textureID = [FlutterTexture textureID];
-  FlutterEngineRegisterExternalTexture(_engine, textureID);
+  _embedderAPI.RegisterExternalTexture(_engine, textureID);
   _textures[@(textureID)] = FlutterTexture;
   return textureID;
 }
 
 - (void)textureFrameAvailable:(int64_t)textureID {
-  FlutterEngineMarkExternalTextureFrameAvailable(_engine, textureID);
+  _embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID);
 }
 
 - (void)unregisterTexture:(int64_t)textureID {
-  FlutterEngineUnregisterExternalTexture(_engine, textureID);
+  _embedderAPI.UnregisterExternalTexture(_engine, textureID);
   [_textures removeObjectForKey:@(textureID)];
 }
 
 #pragma mark - Task runner integration
 
 - (void)postMainThreadTask:(FlutterTask)task targetTimeInNanoseconds:(uint64_t)targetTime {
-  const auto engine_time = FlutterEngineGetCurrentTime();
+  const auto engine_time = _embedderAPI.GetCurrentTime();
 
   __weak FlutterEngine* weak_self = self;
   auto worker = ^{
     FlutterEngine* strong_self = weak_self;
     if (strong_self && strong_self->_engine) {
-      auto result = FlutterEngineRunTask(strong_self->_engine, &task);
+      auto result = _embedderAPI.RunTask(strong_self->_engine, &task);
       if (result != kSuccess) {
         NSLog(@"Could not post a task to the Flutter engine.");
       }

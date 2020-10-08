@@ -22,6 +22,11 @@
 @property(nonatomic, readonly, nullable) NSOpenGLContext* resourceContext;
 
 /**
+ * Function pointers for interacting with the embedder.h API.
+ */
+@property(nonatomic) FlutterEngineProcTable embedderAPI;
+
+/**
  * Informs the engine that the associated view controller's view size has changed.
  */
 - (void)updateWindowMetrics;
