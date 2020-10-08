@@ -158,12 +158,12 @@ class AndroidEGLSurfaceDamage {
   bool SwapBuffersWithDamage(EGLDisplay display,
                              EGLSurface surface,
                              std::vector<SkIRect> damage) {
+    auto rects = RectsToInts(display, surface, damage);
+    damage_history_.push_back(std::move(damage));
+    if (damage_history_.size() > 2) {
+      damage_history_.pop_front();
+    }
     if (swap_buffers_with_damage) {
-      auto rects = RectsToInts(display, surface, damage);
-      damage_history_.push_back(std::move(damage));
-      if (damage_history_.size() > 2) {
-        damage_history_.pop_front();
-      }
       return swap_buffers_with_damage(display, surface, rects.data(),
                                       damage.size());
 
