@@ -197,7 +197,6 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
   // We should send out only one notification per semantics update.
   if (routeChanged) {
-
     if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {
       NSString* routeName = [lastAdded routeName];
       ios_delegate_->PostAccessibilityNotification(UIAccessibilityScreenChangedNotification,
