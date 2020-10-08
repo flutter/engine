@@ -77,7 +77,12 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   SkRect clip_rect = kGiantRect;
 
   if (frame_damage) {
-    DiffContext context(layer_tree.device_pixel_ratio());
+    PaintRegionMap empty_paint_region_map;
+    DiffContext context(layer_tree.device_pixel_ratio(),
+                        layer_tree.paint_region_map(),
+                        frame_damage->prev_layer_tree
+                            ? frame_damage->prev_layer_tree->paint_region_map()
+                            : empty_paint_region_map);
     context.PushCullRect(SkRect::MakeIWH(layer_tree.frame_size().width(),
                                          layer_tree.frame_size().height()));
 

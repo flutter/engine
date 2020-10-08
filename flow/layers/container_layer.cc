@@ -14,7 +14,14 @@ void ContainerLayer::Diff(DiffContext* context, const Layer* old_layer) {
   auto old_container = static_cast<const ContainerLayer*>(old_layer);
   DiffContext::AutoSubtreeRestore subtree(context);
   DiffChildren(context, old_container);
-  set_paint_region(context->CurrentSubtreeRegion());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
+void ContainerLayer::PreservePaintRegion(DiffContext* context) {
+  Layer::PreservePaintRegion(context);
+  for (auto& layer : layers_) {
+    layer->PreservePaintRegion(context);
+  }
 }
 
 void ContainerLayer::DiffChildren(DiffContext* context,
@@ -60,7 +67,7 @@ void ContainerLayer::DiffChildren(DiffContext* context,
   // old layers that don't match
   for (int i = old_children_top; i <= old_children_bottom; ++i) {
     auto layer = prev_layers[i];
-    context->AddDamage(layer->paint_region());
+    context->AddDamage(context->GetOldLayerPaintRegion(layer.get()));
   }
 
   for (int i = 0; i < static_cast<int>(layers_.size()); ++i) {
@@ -69,14 +76,20 @@ void ContainerLayer::DiffChildren(DiffContext* context,
           i < new_children_top ? i : prev_layers.size() - (layers_.size() - i);
       auto layer = layers_[i];
       auto prev_layer = prev_layers[i_prev];
-      if (layer == prev_layer && !layer->paint_region().has_readback()) {
+      auto paint_region = context->GetOldLayerPaintRegion(layer.get());
+      if (layer == prev_layer && !paint_region.has_readback()) {
         // for retained layers, stop processing the subtree and add existing
         // region; We know current subtree is not dirty (every ancestor up to
         // here matches) so the retained subtree will render identically to
         // previous frame; We can only do this if there is no readback in the
         // subtree. Layers that do readback must be able to register readback
         // inside Diff
-        context->AddPaintRegion(layer->paint_region());
+        context->AddPaintRegion(paint_region);
+
+        // While we don't need to diff retained layers, we still need to
+        // associate their paint region with current layer tree so that we can
+        // retrieve it in next frame diff
+        layer->PreservePaintRegion(context);
       } else {
         layer->Diff(context, prev_layer.get());
       }

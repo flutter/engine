@@ -19,13 +19,13 @@ void ClipRRectLayer::Diff(DiffContext* context, const Layer* old_layer) {
     assert(prev);
     if (clip_behavior_ != prev->clip_behavior_ ||
         clip_rrect_ != prev->clip_rrect_) {
-      context->MarkSubtreeDirty(old_layer->paint_region());
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
   if (context->PushCullRect(clip_rrect_.getBounds())) {
     DiffChildren(context, prev);
   }
-  set_paint_region(context->CurrentSubtreeRegion());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {

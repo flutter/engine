@@ -18,13 +18,13 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
     assert(prev);
     if (shader_ != prev->shader_ || mask_rect_ != prev->mask_rect_ ||
         blend_mode_ != prev->blend_mode_) {
-      context->MarkSubtreeDirty(old_layer->paint_region());
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
 
   DiffChildren(context, prev);
 
-  set_paint_region(context->CurrentSubtreeRegion());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {

@@ -26,11 +26,11 @@ void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
     auto prev = old_layer->as_texture_layer();
     // TODO(knopp) It would be nice to be able to determine that a texture is
     // dirty
-    context->MarkSubtreeDirty(prev->paint_region());
+    context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(prev));
   }
   context->AddPaintRegion(SkRect::MakeXYWH(offset_.x(), offset_.y(),
                                            size_.width(), size_.height()));
-  set_paint_region(context->CurrentSubtreeRegion());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {

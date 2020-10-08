@@ -18,12 +18,12 @@ void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   if (!context->IsSubtreeDirty()) {
     assert(prev);
     if (alpha_ != prev->alpha_ || offset_ != prev->offset_) {
-      context->MarkSubtreeDirty(old_layer->paint_region());
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
   context->PushTransform(SkMatrix::Translate(offset_.fX, offset_.fY));
   DiffChildren(context, prev);
-  set_paint_region(context->CurrentSubtreeRegion());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {

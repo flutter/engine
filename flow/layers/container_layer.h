@@ -16,6 +16,7 @@ class ContainerLayer : public Layer {
   ContainerLayer();
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
+  void PreservePaintRegion(DiffContext* context) override;
 
   virtual void Add(std::shared_ptr<Layer> layer);
 

@@ -88,6 +88,13 @@ class Layer {
 
   virtual void Diff(DiffContext* context, const Layer* old_layer) {}
 
+  // Used when diffing retained layer; In case the layer is identical, it
+  // doesn't need to be diffed, but the paint region needs to be stored in diff
+  // context so that it can be used in next frame
+  virtual void PreservePaintRegion(DiffContext* context) {
+    context->SetLayerPaintRegion(this, context->GetOldLayerPaintRegion(this));
+  }
+
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
 
   // Used during Preroll by layers that employ a saveLayer to manage the
@@ -186,12 +193,6 @@ class Layer {
     paint_bounds_ = paint_bounds;
   }
 
-  void set_paint_region(const PaintRegion& paint_region) {
-    paint_region_ = paint_region;
-  }
-
-  const PaintRegion& paint_region() const { return paint_region_; }
-
   bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
   // Propagated unique_id of the first layer in "chain" of replacement layers
@@ -216,8 +217,6 @@ class Layer {
   uint64_t unique_id_;
   uint64_t original_layer_id_;
   bool needs_system_composite_;
-
-  PaintRegion paint_region_;
 
   static uint64_t NextUniqueID();
 

@@ -11,9 +11,13 @@ SkRect PaintRegion::GetBounds() const {
   return res;
 }
 
-DiffContext::DiffContext(double frame_device_pixel_ratio)
+DiffContext::DiffContext(double frame_device_pixel_ratio,
+                         PaintRegionMap& this_frame_paint_region_map,
+                         const PaintRegionMap& last_frame_paint_region_map)
     : rects_(std::make_shared<std::vector<SkRect>>()),
-      frame_device_pixel_ratio_(frame_device_pixel_ratio) {}
+      frame_device_pixel_ratio_(frame_device_pixel_ratio),
+      this_frame_paint_region_map_(this_frame_paint_region_map),
+      last_frame_paint_region_map_(last_frame_paint_region_map) {}
 
 void DiffContext::BeginSubtree() {
   state_stack_.push_back(state_);
@@ -66,7 +70,7 @@ bool DiffContext::PushCullRect(const SkRect& clip) {
 }
 
 void DiffContext::MarkSubtreeDirty(const PaintRegion& previous_paint_region) {
-  assert(!IsSubtreeDirty());
+  FML_DCHECK(!IsSubtreeDirty());
   if (previous_paint_region.is_valid()) {
     AddDamage(previous_paint_region);
   }
@@ -87,6 +91,7 @@ void DiffContext::AddPaintRegion(const SkRect& rect) {
 }
 
 void DiffContext::AddPaintRegion(const PaintRegion& region) {
+  FML_DCHECK(region.is_valid());
   rects_->insert(rects_->end(), region.begin(), region.end());
 }
 
@@ -109,6 +114,7 @@ PaintRegion DiffContext::CurrentSubtreeRegion() const {
 }
 
 void DiffContext::AddDamage(const PaintRegion& damage) {
+  FML_DCHECK(damage.is_valid());
   for (const auto& r : damage) {
     damage_.join(r);
   }
@@ -116,6 +122,20 @@ void DiffContext::AddDamage(const PaintRegion& damage) {
 
 void DiffContext::AddDamage(const SkRect& rect) {
   damage_.join(rect);
+}
+
+void DiffContext::SetLayerPaintRegion(const Layer* layer,
+                                      const PaintRegion& region) {
+  this_frame_paint_region_map_[layer->unique_id()] = region;
+}
+
+PaintRegion DiffContext::GetOldLayerPaintRegion(const Layer* layer) const {
+  auto i = last_frame_paint_region_map_.find(layer->unique_id());
+  if (i != last_frame_paint_region_map_.end()) {
+    return i->second;
+  } else {
+    return PaintRegion();
+  }
 }
 
 void DiffContext::Statistics::LogStatistics() {

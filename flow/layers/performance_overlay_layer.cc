@@ -80,10 +80,10 @@ void PerformanceOverlayLayer::Diff(DiffContext* context,
   if (!context->IsSubtreeDirty()) {
     assert(old_layer);
     auto prev = old_layer->as_performance_overlay_layer();
-    context->MarkSubtreeDirty(prev->paint_region());
+    context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(prev));
   }
   context->AddPaintRegion(paint_bounds());
-  set_paint_region(context->CurrentSubtreeRegion());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void PerformanceOverlayLayer::Paint(PaintContext& context) const {

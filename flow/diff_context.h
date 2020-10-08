@@ -1,12 +1,15 @@
 #ifndef FLUTTER_FLOW_DIFF_CONTEXT_H_
 #define FLUTTER_FLOW_DIFF_CONTEXT_H_
 
+#include <map>
 #include <vector>
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkRect.h"
 
 namespace flutter {
+
+class Layer;
 
 struct Damage {
   // This is the damage between current and previous frame;
@@ -66,10 +69,14 @@ class PaintRegion {
   bool has_readback_ = false;
 };
 
+using PaintRegionMap = std::map<uint64_t, PaintRegion>;
+
 // Tracks state during tree diffing process and computes resulting damage
 class DiffContext {
  public:
-  explicit DiffContext(double device_pixel_aspect_ratio);
+  explicit DiffContext(double device_pixel_aspect_ratio,
+                       PaintRegionMap& this_frame_paint_region_map,
+                       const PaintRegionMap& last_frame_paint_region_map);
 
   // Starts a new subtree.
   void BeginSubtree();
@@ -142,6 +149,10 @@ class DiffContext {
   // Adds the region to current damage
   void AddDamage(const PaintRegion& damage);
 
+  void SetLayerPaintRegion(const Layer* layer, const PaintRegion& region);
+
+  PaintRegion GetOldLayerPaintRegion(const Layer* layer) const;
+
   class Statistics {
    public:
     // Picture replaced by different picture
@@ -192,6 +203,9 @@ class DiffContext {
   std::vector<State> state_stack_;
 
   SkRect damage_ = SkRect::MakeEmpty();
+
+  PaintRegionMap& this_frame_paint_region_map_;
+  const PaintRegionMap& last_frame_paint_region_map_;
 
   void AddDamage(const SkRect& rect);
 

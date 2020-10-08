@@ -24,12 +24,12 @@ void PictureLayer::Diff(DiffContext* context, const Layer* old_layer) {
     assert(old_layer);
     auto prev = old_layer->as_picture_layer();
     if (!Compare(context, this, prev)) {
-      context->MarkSubtreeDirty(prev->paint_region());
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(prev));
     }
   }
   context->PushTransform(SkMatrix::Translate(offset_.x(), offset_.y()));
   context->AddPaintRegion(picture()->cullRect());
-  set_paint_region(context->CurrentSubtreeRegion());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 bool PictureLayer::Compare(DiffContext* context,

@@ -17,7 +17,7 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   if (!context->IsSubtreeDirty()) {
     assert(prev);
     if (filter_ != prev->filter_) {
-      context->MarkSubtreeDirty(old_layer->paint_region());
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
 
@@ -33,7 +33,7 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
     context->AddReadbackRegion(paint_bounds);
   }
 
-  set_paint_region(context->CurrentSubtreeRegion());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void ImageFilterLayer::Preroll(PrerollContext* context,

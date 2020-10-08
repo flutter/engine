@@ -31,7 +31,7 @@ void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
     if (color_ != prev->color_ || shadow_color_ != prev->shadow_color_ ||
         elevation_ != prev->elevation() || path_ != prev->path_ ||
         clip_behavior_ != prev->clip_behavior_) {
-      context->MarkSubtreeDirty(old_layer->paint_region());
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
   }
 
@@ -48,7 +48,7 @@ void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
   if (context->PushCullRect(bounds)) {
     DiffChildren(context, prev);
   }
-  set_paint_region(context->CurrentSubtreeRegion());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void PhysicalShapeLayer::Preroll(PrerollContext* context,
