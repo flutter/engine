@@ -96,12 +96,3 @@ analyze \
 # Check that dart libraries conform.
 (cd "$FLUTTER_DIR/web_sdk"; pub get)
 (cd "$FLUTTER_DIR"; dart "web_sdk/test/api_conform_test.dart")
-
-echo "Checking shell/platform/android/**/*.java for incorrect usage of android.util.Log..."
-set +e
-grep -r --include \*.java --exclude Log.java "android.util.Log" "$FLUTTER_DIR/shell/platform/android"
-if [[ $? == 0 ]]; then
-  echo "Modify the above source locations to use io.flutter.Log."
-  exit 1;
-fi
-set -e
