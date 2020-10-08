@@ -6,6 +6,7 @@
 
 #include "flutter/lib/ui/painting/matrix.h"
 #include "third_party/skia/include/effects/SkBlurImageFilter.h"
+#include "third_party/skia/include/effects/SkImageFilters.h"
 #include "third_party/skia/include/effects/SkImageSource.h"
 #include "third_party/skia/include/effects/SkPictureImageFilter.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -26,7 +27,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, ImageFilter);
   V(ImageFilter, initImage)   \
   V(ImageFilter, initPicture) \
   V(ImageFilter, initBlur)    \
-  V(ImageFilter, initMatrix)
+  V(ImageFilter, initMatrix)  \
+  V(ImageFilter, initMatrixConvolution)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -62,6 +64,22 @@ void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
   filter_ = SkImageFilter::MakeMatrixFilter(
       ToSkMatrix(matrix4), static_cast<SkFilterQuality>(filterQuality),
       nullptr);
+}
+
+void ImageFilter::initMatrixConvolution(uint32_t kernelWidth, uint32_t kernelHeight, const tonic::Float64List& kernelList) {
+  const SkISize kernelSize = SkISize::Make(kernelWidth, kernelHeight);
+  const SkIPoint canvasOffset = SkIPoint::Make(0, 0);
+  const SkScalar gain = 1;
+  const SkScalar bias = 0;
+
+  SkScalar kernel[9];
+  for (int i = 0; i < kernelList.num_elements(); i++) {
+    kernel[i] = SkIntToScalar(kernelList[i]);
+  }
+  filter_ = SkImageFilters::MatrixConvolution(
+      kernelSize, kernel, gain, bias, canvasOffset, SkTileMode::kRepeat,
+      /*convolveAlpha=*/false, /*input=*/nullptr,
+      /*cropRect=*/nullptr);
 }
 
 }  // namespace flutter

@@ -25,6 +25,7 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   void initPicture(Picture*);
   void initBlur(double sigma_x, double sigma_y);
   void initMatrix(const tonic::Float64List& matrix4, int filter_quality);
+  void initMatrixConvolution(uint32_t kernelWidth, uint32_t kernelHeight, const tonic::Float64List& kernelList);
 
   const sk_sp<SkImageFilter>& filter() const { return filter_; }
 
