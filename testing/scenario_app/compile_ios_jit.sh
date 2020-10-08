@@ -85,7 +85,7 @@ echo "Compiling JIT Snapshot..."
 
 cp "$DEVICE_TOOLS/../gen/flutter/lib/snapshot/vm_isolate_snapshot.bin" "$OUTDIR/App.framework/flutter_assets/vm_snapshot_data"
 
-SYSROOT=$(xcrun --sdk iphonesimulator13.0 --show-sdk-path)
+SYSROOT=$(xcrun --sdk iphonesimulator --show-sdk-path)
 echo "Using $SYSROOT as sysroot."
 
 echo "Creating stub App using $SYSROOT..."
@@ -93,6 +93,7 @@ echo "Creating stub App using $SYSROOT..."
 echo "static const int Moo = 88;" | xcrun clang -x c \
   -arch x86_64 \
   -fembed-bitcode-marker \
+  -fuse-ld=`which ld` \
   -isysroot "$SYSROOT" \
   -miphoneos-version-min=8.0 \
   -dynamiclib \
