@@ -89,6 +89,7 @@ part 'engine/html/render_vertices.dart';
 part 'engine/html/scene.dart';
 part 'engine/html/scene_builder.dart';
 part 'engine/html/shaders/shader.dart';
+part 'engine/html/shaders/shader_builder.dart';
 part 'engine/html/surface.dart';
 part 'engine/html/surface_stats.dart';
 part 'engine/html/transform.dart';
