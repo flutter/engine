@@ -98,16 +98,27 @@ void main() {
     final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     _resize(buffers, channel, 3);
-    expect(buffers.push(channel, one, callback), equals(false));
-    expect(buffers.push(channel, two, callback), equals(false));
-    expect(buffers.push(channel, three, callback), equals(false));
-    expect(buffers.push(channel, four, callback), equals(true));
+    buffers.push(channel, one, callback);
+    buffers.push(channel, two, callback);
+    buffers.push(channel, three, callback);
+    buffers.push(channel, four, callback);
     int counter = 0;
     await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
-      if (counter++ == 0) {
-        expect(drainedData, equals(two));
-        expect(drainedCallback, equals(callback));
+      switch (counter) {
+        case 0:
+          expect(drainedData, equals(two));
+          expect(drainedCallback, equals(callback));
+          break;
+        case 1:
+          expect(drainedData, equals(three));
+          expect(drainedCallback, equals(callback));
+          break;
+        case 2:
+          expect(drainedData, equals(four));
+          expect(drainedCallback, equals(callback));
+          break;
       }
+      counter += 1;
       return;
     });
     expect(counter, equals(3));
@@ -120,15 +131,17 @@ void main() {
     final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     _resize(buffers, channel, 100);
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
-    expect(buffers.push(channel, one, callback), equals(false));
-    expect(buffers.push(channel, two, callback), equals(false));
+    buffers.push(channel, one, callback);
+    buffers.push(channel, two, callback);
     _resize(buffers, channel, 1);
     int counter = 0;
     await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
-      if (counter++ == 0) {
-        expect(drainedData, equals(two));
-        expect(drainedCallback, equals(callback));
+      switch (counter) {
+        case 0:
+          expect(drainedData, equals(two));
+          expect(drainedCallback, equals(callback));
       }
+      counter += 1;
       return;
     });
     expect(counter, equals(1));
@@ -141,12 +154,16 @@ void main() {
     final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     bool didCallCallback = false;
     final ui.PlatformMessageResponseCallback oneCallback = (ByteData responseData) {
+      expect(responseData, isNull);
       didCallCallback = true;
     };
-    final ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {};
+    final ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {
+      throw TestFailure('wrong callback called');
+    };
     _resize(buffers, channel, 100);
-    expect(buffers.push(channel, one, oneCallback), equals(false));
-    expect(buffers.push(channel, two, twoCallback), equals(false));
+    buffers.push(channel, one, oneCallback);
+    buffers.push(channel, two, twoCallback);
+    expect(didCallCallback, equals(false));
     _resize(buffers, channel, 1);
     expect(didCallCallback, equals(true));
   });
@@ -158,12 +175,15 @@ void main() {
     final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     bool didCallCallback = false;
     final ui.PlatformMessageResponseCallback oneCallback = (ByteData responseData) {
+      expect(responseData, isNull);
       didCallCallback = true;
     };
-    final ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {};
+    final ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {
+      throw TestFailure('wrong callback called');
+    };
     _resize(buffers, channel, 1);
-    expect(buffers.push(channel, one, oneCallback), equals(false));
-    expect(buffers.push(channel, two, twoCallback), equals(true));
+    buffers.push(channel, one, oneCallback);
+    buffers.push(channel, two, twoCallback);
     expect(didCallCallback, equals(true));
   });
 
@@ -287,4 +307,38 @@ void main() {
       '-7',
     ]);
   });
+
+  test('ChannelBuffers.handleMessage for resize', () async {
+    final List<String> log = <String>[];
+    final ui.ChannelBuffers buffers = _TestChannelBuffers(log);
+    // Created as follows:
+    //   print(StandardMethodCodec().encodeMethodCall(MethodCall('resize', ['abcdef', 12345])).buffer.asUint8List());
+    // ...with three 0xFF bytes on either side to ensure the method works with an offer on the underlying buffer.
+    buffers.handleMessage(ByteData.sublistView(Uint8List.fromList(<int>[255, 255, 255, 7, 6, 114, 101, 115, 105, 122, 101, 12, 2, 7, 6, 97, 98, 99, 100, 101, 102, 3, 57, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255]), 3, 27));
+    expect(log, const <String>['resize abcdef 12345']);
+  });
+
+  test('ChannelBuffers.handleMessage for overflow', () async {
+    final List<String> log = <String>[];
+    final ui.ChannelBuffers buffers = _TestChannelBuffers(log);
+    // Created as follows:
+    //   print(StandardMethodCodec().encodeMethodCall(MethodCall('overflow', ['abcdef', false])).buffer.asUint8List());
+    // ...with three 0xFF bytes on either side to ensure the method works with an offer on the underlying buffer.
+    buffers.handleMessage(ByteData.sublistView(Uint8List.fromList(<int>[255, 255, 255, 7, 8, 111, 118, 101, 114, 102, 108, 111, 119, 12, 2, 7, 6, 97, 98, 99, 100, 101, 102, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255]), 3, 24));
+    expect(log, const <String>['allowOverflow abcdef false']);
+  });
+}
+
+class _TestChannelBuffers extends ui.ChannelBuffers {
+  _TestChannelBuffers(this.log);
+
+  final List<String> log;
+
+  void resize(String name, int newSize) {
+    log.add('resize $name $newSize');
+  }
+
+  void allowOverflow(String name, bool allowed) {
+    log.add('allowOverflow $name $allowed');
+  }
 }

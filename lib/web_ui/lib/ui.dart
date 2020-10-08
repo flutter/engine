@@ -10,6 +10,7 @@ library ui;
 
 import 'dart:async';
 import 'dart:collection' as collection;
+import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';

@@ -25,19 +25,19 @@ class _StoredMessage {
 }
 
 class _Channel {
-  _Channel(this._capacity)
+  _Channel([ this._capacity = ui.ChannelBuffers.kDefaultBufferSize ])
     : _queue = ListQueue<_StoredMessage>(_capacity);
 
   final ListQueue<_StoredMessage> _queue;
 
   int get length => _queue.length;
+  bool debugEnableDiscardWarnings = true;
 
-  int _capacity;
   int get capacity => _capacity;
-
-  int resize(int newSize) {
+  int _capacity;
+  set capacity(int newSize) {
     _capacity = newSize;
-    return _dropOverflowMessages(newSize);
+    _dropOverflowMessages(newSize);
   }
 
   bool _draining = false;
@@ -49,21 +49,21 @@ class _Channel {
       return false;
     }
     if (_capacity <= 0) {
-      return true;
+      return debugEnableDiscardWarnings;
     }
-    final int overflowCount = _dropOverflowMessages(_capacity - 1);
+    final bool result = _dropOverflowMessages(_capacity - 1);
     _queue.addLast(message);
-    return overflowCount > 0;
+    return result;
   }
 
   _StoredMessage pop() => _queue.removeFirst();
 
-  int _dropOverflowMessages(int lengthLimit) {
-    int result = 0;
+  bool _dropOverflowMessages(int lengthLimit) {
+    bool result = false;
     while (_queue.length > lengthLimit) {
       final _StoredMessage message = _queue.removeFirst();
       message.callback(null); // send empty reply to the plugin side
-      result += 1;
+      result = true;
     }
     return result;
   }
@@ -103,14 +103,26 @@ class EngineChannelBuffers extends ui.ChannelBuffers {
   final Map<String, _Channel> _channels = <String, _Channel>{};
 
   @override
-  bool push(String name, ByteData? data, ui.PlatformMessageResponseCallback callback) {
-    final _Channel channel = _channels.putIfAbsent(name, () => _Channel(ui.ChannelBuffers.kDefaultBufferSize));
-    return channel.push(_StoredMessage(data, callback));
+  void push(String name, ByteData? data, ui.PlatformMessageResponseCallback callback) {
+    final _Channel channel = _channels.putIfAbsent(name, () => _Channel());
+    if (channel.push(_StoredMessage(data, callback))) {
+      assert(() {
+        print(
+          'A message on the $name channel was discarded before it could be handled.\n'
+          'This happens when a plugin sends messages to the framework side before the '
+          'framework has had an opportunity to register a listener. See the ChannelBuffers '
+          'API documentation for details on how to configure the channel to expect more '
+          'messages, or to expect messages to get discarded:\n'
+          '  https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html'
+        );
+        return true;
+      }());
+    }
   }
 
   @override
   void setListener(String name, ui.ChannelCallback callback) {
-    final _Channel channel = _channels.putIfAbsent(name, () => _Channel(ui.ChannelBuffers.kDefaultBufferSize));
+    final _Channel channel = _channels.putIfAbsent(name, () => _Channel());
     channel.setListener(callback);
   }
 
@@ -130,30 +142,26 @@ class EngineChannelBuffers extends ui.ChannelBuffers {
     }
   }
 
-  String _getString(ByteData data) {
-    final ByteBuffer buffer = data.buffer;
-    final Uint8List list = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-    return utf8.decode(list);
-  }
-
-  @override
-  void handleMessage(ByteData data) {
-    final List<String> command = _getString(data).split('\r');
-    if (command.length == 1 + /*arity=*/2 && command[0] == 'resize') {
-      _resize(command[1], int.parse(command[2]));
-    } else {
-      throw Exception('Unrecognized command $command sent to ${ui.ChannelBuffers.kControlChannelName}.');
-    }
-  }
-
-  void _resize(String name, int newSize) {
+  void resize(String name, int newSize) {
     _Channel? channel = _channels[name];
     if (channel == null) {
       channel = _Channel(newSize);
       _channels[name] = channel;
     } else {
-      channel.resize(newSize);
+      channel.capacity = newSize;
     }
+  }
+
+  void allowOverflow(String name, bool allowed) {
+    assert(() {
+      _Channel? channel = _channels[name];
+      if (channel == null && allowed) {
+        channel = _Channel();
+        _channels[name] = channel;
+      }
+      channel?.debugEnableDiscardWarnings = !allowed;
+      return true;
+    }());
   }
 }
 

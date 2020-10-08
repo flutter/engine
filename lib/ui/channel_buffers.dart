@@ -64,7 +64,7 @@ class _StoredMessage {
 /// This consists of a fixed-size circular queue of [_StoredMessage]s,
 /// and the channel's callback, if any has been registered.
 class _Channel {
-  _Channel(this._capacity)
+  _Channel([ this._capacity = ChannelBuffers.kDefaultBufferSize ])
     : _queue = collection.ListQueue<_StoredMessage>(_capacity);
 
   /// The underlying data for the buffered messages.
@@ -75,6 +75,12 @@ class _Channel {
   /// This is equal to or less than the [capacity].
   int get length => _queue.length;
 
+  /// Whether to dump messages to the console when a message is
+  /// discarded due to the channel overflowing.
+  ///
+  /// Has no effect in release builds.
+  bool debugEnableDiscardWarnings = true;
+
   /// The number of messages that _can_ be stored in the [_Channel].
   ///
   /// When additional messages are stored, earlier ones are discarded,
@@ -84,7 +90,9 @@ class _Channel {
   /// Set the [capacity] of the channel to the given size.
   ///
   /// If the new size is smaller than the [length], the oldest
-  /// messages are discarded until the capacity is reached.
+  /// messages are discarded until the capacity is reached. No
+  /// message is shown in case of overflow, regardless of the
+  /// value of [debugEnableDiscardWarnings].
   set capacity(int newSize) {
     _capacity = newSize;
     _dropOverflowMessages(newSize);
@@ -105,8 +113,11 @@ class _Channel {
 
   /// Adds a message to the channel.
   ///
-  /// Returns true on overflow. Earlier messages are discarded,
-  /// in a first-in-first-out fashion. See [capacity].
+  /// If the channel overflows, earlier messages are discarded, in a
+  /// first-in-first-out fashion. See [capacity]. If
+  /// [debugEnableDiscardWarnings] is true, this method returns true
+  /// on overflow. It is the responsibility of the caller to show the
+  /// warning message.
   bool push(_StoredMessage message) {
     if (!_draining && _channelCallbackRecord != null) {
       assert(_queue.isEmpty);
@@ -114,11 +125,11 @@ class _Channel {
       return false;
     }
     if (_capacity <= 0) {
-      return true;
+      return debugEnableDiscardWarnings;
     }
-    final int overflowCount = _dropOverflowMessages(_capacity - 1);
+    final bool result = _dropOverflowMessages(_capacity - 1);
     _queue.addLast(message);
-    return overflowCount > 0;
+    return result;
   }
 
   /// Returns the first message in the channel and removes it.
@@ -126,14 +137,20 @@ class _Channel {
   /// Throws when empty.
   _StoredMessage pop() => _queue.removeFirst();
 
-  /// Removes messages until [length] reaches `lengthLimit`, and returns
-  /// the number of messages removed.
-  int _dropOverflowMessages(int lengthLimit) {
-    int result = 0;
+  /// Removes messages until [length] reaches `lengthLimit`.
+  ///
+  /// The callback of each removed message is invoked with null
+  /// as its argument.
+  ///
+  /// If any messages are removed, and [debugEnableDiscardWarnings] is
+  /// true, then returns true. The caller is responsible for showing
+  /// the warning message in that case.
+  bool _dropOverflowMessages(int lengthLimit) {
+    bool result = false;
     while (_queue.length > lengthLimit) {
       final _StoredMessage message = _queue.removeFirst();
       message.callback(null); // send empty reply to the plugin side
-      result += 1;
+      result = true;
     }
     return result;
   }
@@ -211,11 +228,67 @@ class _Channel {
 /// Messages for a channel are stored until a listener is provided for that channel,
 /// using [setListener]. Only one listener may be configured per channel.
 ///
+/// Typically these buffers are drained once a callback is setup on
+/// the [BinaryMessenger] in the Flutter framework. (See [setListener].)
+///
+/// ## Buffer capacity and overflow
+///
 /// Each channel has a finite buffer capacity and messages will
 /// be deleted in a first-in-first-out (FIFO) manner if the capacity is exceeded.
 ///
-/// Typically these buffers are drained once a callback is setup on
-/// the [BinaryMessenger] in the Flutter framework. (See [setListener].)
+/// By default buffers store one message per channel, and when a
+/// message overflows, in debug mode, a message is printed to the
+/// console. The message looks like the following:
+///
+/// ```
+/// A message on the com.example channel was discarded before it could be
+/// handled.
+/// This happens when a plugin sends messages to the framework side before the
+/// framework has had an opportunity to register a listener. See the
+/// ChannelBuffers API documentation for details on how to configure the channel
+/// to expect more messages, or to expect messages to get discarded:
+///   https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html
+/// ```
+///
+/// There are tradeoffs associated with any size. The correct size
+/// should be chosen for the semantics of the channel. To change the
+/// size a plugin can send a message using the control channel,
+/// as described below.
+///
+/// Size 0 is appropriate for channels where channels sent before
+/// the engine and framework are ready should be ignored. For
+/// example, a plugin that notifies the framework any time a
+/// radiation sensor detects an ionization event might set its size
+/// to zero since past ionization events are typically not
+/// interesting, only instantaneous readings are worth tracking.
+///
+/// Size 1 is appropriate for level-triggered plugins. For example,
+/// a plugin that notifies the framework of the current value of a
+/// pressure sensor might leave its size at one (the default), while
+/// sending messages continually; once the framework side of the plugin
+/// registers with the channel, it will immediately receive the most
+/// up to date value and earlier messages will have been discarded.
+///
+/// Sizes greater than one are appropriate for plugins where every
+/// message is important. For example, a plugin that itself
+/// registers with another system that has been buffering events,
+/// and immediately forwards all the previously-buffered events,
+/// would likely wish to avoid having any messages dropped on the
+/// floor. In such situations, it is important to select a size that
+/// will avoid overflows. It is also important to consider the
+/// potential for the framework side to never fully initialize (e.g. if
+/// the user starts the application, but terminates it soon
+/// afterwards, leaving time for the platform side of a plugin to
+/// run but not the framework side).
+///
+/// ## The control channel
+///
+/// A plugin can configure its channel's buffers by sending messages to the
+/// control channel, `dev.flutter/channel-buffers` (see [kControlChannelName]).
+///
+/// There are two messages that can be sent to this control channel, to adjust
+/// the buffer size and to disable the overflow warnings. See [handleMessage]
+/// for details on these messages.
 class ChannelBuffers {
   /// Create a buffer pool for platform messages.
   ///
@@ -224,39 +297,6 @@ class ChannelBuffers {
   ChannelBuffers();
 
   /// The number of messages that channel buffers will store by default.
-  ///
-  /// By default buffers store one message per channel.
-  ///
-  /// There are tradeoffs associated with any size. The correct size
-  /// should be chosen for the semantics of the channel. To change the
-  /// size a plugin can send a message using the control channel,
-  /// whose name is given by [kControlChannelName].
-  ///
-  /// Size 0 is appropriate for channels where channels sent before
-  /// the engine and framework are ready should be ignored. For
-  /// example, a plugin that notifies the framework any time a
-  /// radiation sensor detects an ionization event might set its size
-  /// to zero since past ionization events are typically not
-  /// interesting, only instantaneous readings are worth tracking.
-  ///
-  /// Size 1 is appropriate for level-triggered plugins. For example,
-  /// a plugin that notifies the framework of the current value of a
-  /// pressure sensor might leave its size at one (the default), while
-  /// sending messages continually; once the framework side of the plugin
-  /// registers with the channel, it will immediately receive the most
-  /// up to date value and earlier messages will have been discarded.
-  ///
-  /// Sizes greater than one are appropriate for plugins where every
-  /// message is important. For example, a plugin that itself
-  /// registers with another system that has been buffering events,
-  /// and immediately forwards all the previously-buffered events,
-  /// would likely wish to avoid having any messages dropped on the
-  /// floor. In such situations, it is important to select a size that
-  /// will avoid overflows. It is also important to consider the
-  /// potential for the framework side to never fully initialize (e.g. if
-  /// the user starts the application, but terminates it soon
-  /// afterwards, leaving time for the platform side of a plugin to
-  /// run but not the framework side).
   static const int kDefaultBufferSize = 1;
 
   /// The name of the channel that plugins can use to communicate with the
@@ -273,10 +313,21 @@ class ChannelBuffers {
   /// The `callback` argument is a closure that, when called, will send messages
   /// back to the plugin.
   ///
-  /// Returns true on overflow.
-  bool push(String name, ByteData? data, PlatformMessageResponseCallback callback) {
-    final _Channel channel = _channels.putIfAbsent(name, () => _Channel(kDefaultBufferSize));
-    return channel.push(_StoredMessage(data, callback));
+  /// If a message overflows the channel, and the channel has not been
+  /// configured to expect overflow, then, in debug mode, a message
+  /// will be printed to the console warning about the overflow.
+  void push(String name, ByteData? data, PlatformMessageResponseCallback callback) {
+    final _Channel channel = _channels.putIfAbsent(name, () => _Channel());
+    if (channel.push(_StoredMessage(data, callback))) {
+      _printDebug(
+        'A message on the $name channel was discarded before it could be handled.\n'
+        'This happens when a plugin sends messages to the framework side before the '
+        'framework has had an opportunity to register a listener. See the ChannelBuffers '
+        'API documentation for details on how to configure the channel to expect more '
+        'messages, or to expect messages to get discarded:\n'
+        '  https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html'
+      );
+    }
   }
 
   /// Sets the listener for the specified channel.
@@ -303,7 +354,7 @@ class ChannelBuffers {
   ///
   /// The draining stops if the listener is removed.
   void setListener(String name, ChannelCallback callback) {
-    final _Channel channel = _channels.putIfAbsent(name, () => _Channel(kDefaultBufferSize));
+    final _Channel channel = _channels.putIfAbsent(name, () => _Channel());
     channel.setListener(callback);
   }
 
@@ -335,35 +386,109 @@ class ChannelBuffers {
     }
   }
 
-  String _getString(ByteData data) {
-    final ByteBuffer buffer = data.buffer;
-    final Uint8List list = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-    return utf8.decode(list);
-  }
-
   /// Handle a control message.
   ///
-  /// This is intended to be called by the platform messages dispatcher.
+  /// This is intended to be called by the platform messages dispatcher, forwarding
+  /// messages from plugins to the [kControlChannelName] channel.
   ///
-  /// Available messages are listed below.
+  /// Messages use the [StandardMethodCodec] format. There are two methods
+  /// supported: `resize` and `overflow`. The `resize` method changes the size
+  /// of the buffer, and the `overflow` method controls whether overflow is
+  /// expected or not.
   ///
   /// ## `resize`
   ///
-  /// **Name:** `resize`
+  /// The `resize` method takes as its argument a list with two values, first
+  /// the channel name (a UTF-8 string less than 254 bytes long), and second the
+  /// allowed size of the channel buffer (an integer between 0 and 2147483647).
   ///
-  /// **Arity:** 2 parameters
+  /// Upon receiving the message, the channel's buffer is resized. If necessary,
+  /// messages are silently discarded to ensure the buffer is no bigger than
+  /// specified.
   ///
-  /// **Format:** `resize\r<channel name>\r<new size>`
+  /// For historical reasons, this message can also be sent using a bespoke
+  /// format consisting of a UTF-8-encoded string with three parts separated
+  /// from each other by U+000D CARRIAGE RETURN (CR) characters, the three parts
+  /// being the string `resize`, the string giving the channel name, and then
+  /// the string giving the decimal serialization of the new channel buffer
+  /// size. For example: `resize\rchannel\r1`
   ///
-  /// **Description:** Allows you to set the size of a channel's buffer.
+  /// ## `overflow`
+  ///
+  /// The `overflow` method takes as its argument a list with two values, first
+  /// the channel name (a UTF-8 string less than 254 bytes long), and second a
+  /// boolean which is true if overflow is expected and false if it is not.
+  ///
+  /// This sets a flag on the channel in debug mode. In release mode the message
+  /// is silently ignored. The flag indicates whether overflow is expected on this
+  /// channel. When the flag is set, messages are discarded silently. When the
+  /// flag is cleared (the default), any overflow on the channel causes a message
+  /// to be printed to the console, warning that a message was lost.
   void handleMessage(ByteData data) {
-    final List<String> message = _getString(data).split('\r');
-    if (message.length == 1 + /*arity=*/2 && message[0] == 'resize') {
-      _resize(message[1], int.parse(message[2]));
+    // We hard-code the deserialization here because the StandardMethodCodec class
+    // is part of the framework, not dart:ui.
+    final Uint8List bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    if (bytes[0] == 0x07) { // 7 = value code for string
+      final int methodNameLength = bytes[1];
+      if (methodNameLength >= 254) // lengths greater than 253 have more elaborate encoding
+        throw Exception('Unrecognized message sent to $kControlChannelName (method name too long)');
+      int index = 2; // where we are in reading the bytes
+      final String methodName = utf8.decode(bytes.sublist(index, index + methodNameLength));
+      index += methodNameLength;
+      switch (methodName) {
+        case 'resize':
+          if (bytes[index] != 0x0C) // 12 = value code for list
+            throw Exception('Invalid arguments for \'resize\' method sent to $kControlChannelName (arguments must be a two-element list, channel name and new capacity)');
+          index += 1;
+          if (bytes[index] < 0x02) // We ignore extra arguments, in case we need to support them in the future, hence <2 rather than !=2.
+            throw Exception('Invalid arguments for \'resize\' method sent to $kControlChannelName (arguments must be a two-element list, channel name and new capacity)');
+          index += 1;
+          if (bytes[index] != 0x07) // 7 = value code for string
+            throw Exception('Invalid arguments for \'resize\' method sent to $kControlChannelName (first argument must be a string)');
+          index += 1;
+          final int channelNameLength = bytes[index];
+          if (channelNameLength >= 254) // lengths greater than 253 have more elaborate encoding
+            throw Exception('Invalid arguments for \'resize\' method sent to $kControlChannelName (channel name must be less than 254 characters long)');
+          index += 1;
+          final String channelName = utf8.decode(bytes.sublist(index, index + channelNameLength));
+          index += channelNameLength;
+          if (bytes[index] != 0x03) // 3 = value code for uint32
+            throw Exception('Invalid arguments for \'resize\' method sent to $kControlChannelName (second argument must be an integer in the range 0 to 2147483647)');
+          index += 1;
+          resize(channelName, data.getUint32(index, Endian.host));
+          break;
+        case 'overflow':
+          if (bytes[index] != 0x0C) // 12 = value code for list
+            throw Exception('Invalid arguments for \'overflow\' method sent to $kControlChannelName (arguments must be a two-element list, channel name and flag state)');
+          index += 1;
+          if (bytes[index] < 0x02) // We ignore extra arguments, in case we need to support them in the future, hence <2 rather than !=2.
+            throw Exception('Invalid arguments for \'overflow\' method sent to $kControlChannelName (arguments must be a two-element list, channel name and flag state)');
+          index += 1;
+          if (bytes[index] != 0x07) // 7 = value code for string
+            throw Exception('Invalid arguments for \'overflow\' method sent to $kControlChannelName (first argument must be a string)');
+          index += 1;
+          final int channelNameLength = bytes[index];
+          if (channelNameLength >= 254) // lengths greater than 253 have more elaborate encoding
+            throw Exception('Invalid arguments for \'overflow\' method sent to $kControlChannelName (channel name must be less than 254 characters long)');
+          index += 1;
+          final String channelName = utf8.decode(bytes.sublist(index, index + channelNameLength));
+          index += channelNameLength;
+          if (bytes[index] != 0x01 && bytes[index] != 0x02) // 1 = value code for true, 2 = value code for false
+            throw Exception('Invalid arguments for \'overflow\' method sent to $kControlChannelName (second argument must be a boolean)');
+          allowOverflow(channelName, bytes[index] == 0x01);
+          break;
+        default:
+          throw Exception('Unrecognized method \'$methodName\' sent to $kControlChannelName');
+      }
     } else {
-      // If the message couldn't be decoded as UTF-8, a FormatException will
-      // have been thrown by _getString.
-      throw Exception('Unrecognized message $message sent to $kControlChannelName.');
+      final List<String> parts = utf8.decode(bytes).split('\r');
+      if (parts.length == 1 + /*arity=*/2 && parts[0] == 'resize') {
+        resize(parts[1], int.parse(parts[2]));
+      } else {
+        // If the message couldn't be decoded as UTF-8, a FormatException will
+        // have been thrown by utf8.decode() above.
+        throw Exception('Unrecognized message $parts sent to $kControlChannelName.');
+      }
     }
   }
 
@@ -371,7 +496,15 @@ class ChannelBuffers {
   ///
   /// This could result in the dropping of messages if newSize is less
   /// than the current length of the queue.
-  void _resize(String name, int newSize) {
+  ///
+  /// This is expected to be called by platform-specific plugin code (indirectly
+  /// via the control channel), not by code on the framework side. See
+  /// [handleMessage].
+  ///
+  /// Calling this from framework code is redundant since by the time framework
+  /// code can be running, it can just subscribe to the relevant channel and
+  /// there is therefore no need for any buffering.
+  void resize(String name, int newSize) {
     _Channel? channel = _channels[name];
     if (channel == null) {
       channel = _Channel(newSize);
@@ -379,6 +512,30 @@ class ChannelBuffers {
     } else {
       channel.capacity = newSize;
     }
+  }
+
+  /// Toggles whether the channel should show warning messages when discarding
+  /// messages due to overflow.
+  ///
+  /// This is expected to be called by platform-specific plugin code (indirectly
+  /// via the control channel), not by code on the framework side. See
+  /// [handleMessage].
+  ///
+  /// Calling this from framework code is redundant since by the time framework
+  /// code can be running, it can just subscribe to the relevant channel and
+  /// there is therefore no need for any messages to overflow.
+  ///
+  /// This method has no effect in release builds.
+  void allowOverflow(String name, bool allowed) {
+    assert(() {
+      _Channel? channel = _channels[name];
+      if (channel == null && allowed) {
+        channel = _Channel();
+        _channels[name] = channel;
+      }
+      channel?.debugEnableDiscardWarnings = !allowed;
+      return true;
+    }());
   }
 }
 
