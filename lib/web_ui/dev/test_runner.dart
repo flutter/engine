@@ -158,6 +158,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   }
 
   Future<bool> runIntegrationTests() async {
+    await _prepare();
     return IntegrationTestsManager(browser, useSystemFlutter).runTests();
   }
 
@@ -192,6 +193,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
     // If screenshot tests are available, fetch the screenshot goldens.
     if (isScreenshotTestsAvailable) {
+      print('screenshot tests available');
       final GoldensRepoFetcher goldensRepoFetcher = GoldensRepoFetcher(
           environment.webUiGoldensRepositoryDirectory,
           path.join(environment.webUiDevDir.path, 'goldens_lock.yaml'));
