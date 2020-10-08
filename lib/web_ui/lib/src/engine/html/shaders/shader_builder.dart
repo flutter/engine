@@ -1,12 +1,249 @@
 // @dart = 2.10
 part of engine;
 
+/// Creates shader program for target webgl version.
+///
+/// Differences in WebGL2 vs WebGL1.
+///   - WebGL2 needs '#version 300 es' to enable the new shading language
+///   - vertex attributes have the qualifier 'in' instead of 'attribute'
+///   - GLSL 3.00 defines texture and other new and future reserved words.
+///   - varying is now called in
+///   - GLSL 1.00 has a predefined variable gl_FragColor which needs to be
+///     defined as `out vec4 fragmentColor`.
+///   - Texture lookup functions texture2D and textureCube have now been
+///     replaced with texture.
+///
+///
+///  Example usage:
+///  ShaderBuilder builder = ShaderBuilder(WebGlVersion.webgl2);
+///  builder.add
+///  source = builder.build();
+class ShaderBuilder {
+  /// WebGL version.
+  final int version;
+  final List<ShaderDeclaration> declarations = [];
+  final List<ShaderMethod> _methods = [];
+
+  /// Precision for integer variables.
+  int? integerPrecision;
+
+  /// Precision floating point variables.
+  int? floatPrecision;
+
+  /// Counter for generating unique name if name is not specified for attribute.
+  int _attribCounter = 0;
+
+  /// Counter for generating unique name if name is not specified for varying.
+  int _varyingCounter = 0;
+
+  /// Counter for generating unique name if name is not specified for uniform.
+  int _uniformCounter = 0;
+
+  /// Counter for generating unique name if name is not specified for constant.
+  int _constCounter = 0;
+
+  final bool isWebGl2;
+
+  static const String kOpenGlEs3Header = '#version 300 es';
+
+  /// Lazily allocated fragment color output.
+  ShaderDeclaration? _fragmentColorDeclaration;
+
+  ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2;
+
+  /// Returns fragment color declaration for fragment shader.
+  ///
+  /// This is hard coded for webgl1 as gl_FragColor.
+  ShaderDeclaration get fragmentColor {
+    _fragmentColorDeclaration ??= ShaderDeclaration(
+        isWebGl2 ? 'gFragColor' : 'gl_FragColor',
+        ShaderType.kVec4,
+        ShaderStorageQualifier.kVarying);
+    return _fragmentColorDeclaration!;
+  }
+
+  /// Adds an attribute.
+  ///
+  /// The attribute variable is assigned a value from a object buffer as a
+  /// series of graphics primitives are rendered. The value is only accessible
+  /// in the vertex shader.
+  ShaderDeclaration addIn(int dataType, {String? name}) {
+    ShaderDeclaration attrib = ShaderDeclaration(
+        name ?? 'attr_${_attribCounter++}',
+        dataType,
+        ShaderStorageQualifier.kAttribute);
+    declarations.add(attrib);
+    return attrib;
+  }
+
+  /// Adds a constant.
+  ShaderDeclaration addConst(int dataType, String value, {String? name}) {
+    ShaderDeclaration declaration = ShaderDeclaration.constant(
+        name ?? 'c_${_constCounter++}', dataType, value);
+    declarations.add(declaration);
+    return declaration;
+  }
+
+  /// Adds a uniform variable.
+  ///
+  /// The variable is assigned a value before a gl.draw call.
+  /// It is accessible in both the vertex and fragment shaders.
+  ///
+  ShaderDeclaration addUniform(int dataType, {String? name}) {
+    ShaderDeclaration uniform = ShaderDeclaration(
+        name ?? 'uni_${_uniformCounter++}',
+        dataType,
+        ShaderStorageQualifier.kUniform);
+    declarations.add(uniform);
+    return uniform;
+  }
+
+  /// Adds a varying variable.
+  ///
+  /// The variable is assigned a value by a vertex shader and
+  /// interpolated across the surface of a graphics primitive for each
+  /// input to a fragment shader.
+  /// It can be used in a fragment shader, but not changed.
+  ShaderDeclaration addOut(int dataType, {String? name}) {
+    ShaderDeclaration varying = ShaderDeclaration(
+        name ?? 'output_${_varyingCounter++}',
+        dataType,
+        ShaderStorageQualifier.kVarying);
+    declarations.add(varying);
+    return varying;
+  }
+
+  void _writeVariableDeclaration(StringBuffer sb, ShaderDeclaration variable) {
+    switch (variable.storage) {
+      case ShaderStorageQualifier.kConst:
+        _buffer.write('const ');
+        break;
+      case ShaderStorageQualifier.kAttribute:
+        _buffer.write(isWebGl2 ? 'in ' : 'attribute ');
+        break;
+      case ShaderStorageQualifier.kUniform:
+        _buffer.write('uniform ');
+        break;
+      case ShaderStorageQualifier.kVarying:
+        _buffer.write(isWebGl2 ? 'out ' : 'varying ');
+        break;
+    }
+    _buffer.write('${typeToString(variable.dataType)} ${variable.name}');
+    if (variable.storage == ShaderStorageQualifier.kConst) {
+      _buffer.write(' = ${variable.constValue}');
+    }
+    _buffer.writeln(';');
+  }
+
+  final StringBuffer _buffer = StringBuffer();
+
+  static String typeToString(int dataType) {
+    switch (dataType) {
+      case ShaderType.kBool:
+        return 'bool';
+      case ShaderType.kInt:
+        return 'int';
+      case ShaderType.kFloat:
+        return 'float';
+      case ShaderType.kBVec2:
+        return 'bvec2';
+      case ShaderType.kBVec3:
+        return 'bvec3';
+      case ShaderType.kBVec4:
+        return 'bvec4';
+      case ShaderType.kIVec2:
+        return 'ivec2';
+      case ShaderType.kIVec3:
+        return 'ivec3';
+      case ShaderType.kIVec4:
+        return 'ivec4';
+      case ShaderType.kVec2:
+        return 'vec2';
+      case ShaderType.kVec3:
+        return 'vec3';
+      case ShaderType.kVec4:
+        return 'vec4';
+      case ShaderType.kMat2:
+        return 'mat2';
+      case ShaderType.kMat3:
+        return 'mat3';
+      case ShaderType.kMat4:
+        return 'mat4';
+      case ShaderType.kSampler1D:
+        return 'sampler1D';
+      case ShaderType.kSampler2D:
+        return 'sampler2D';
+      case ShaderType.kSampler3D:
+        return 'sampler3D';
+      case ShaderType.kVoid:
+        return 'void';
+    }
+    throw ArgumentError();
+  }
+
+  ShaderMethod addMethod(String name) {
+    final ShaderMethod method = ShaderMethod(name);
+    _methods.add(method);
+    return method;
+  }
+
+  String build() {
+    // Write header.
+    if (isWebGl2) {
+      _buffer.writeln(kOpenGlEs3Header);
+    }
+    // Write optional precision.
+    if (integerPrecision != null) {
+      _buffer
+          .writeln('precision ${_precisionToString(integerPrecision!)} int;');
+    }
+    if (floatPrecision != null) {
+      _buffer
+          .writeln('precision ${_precisionToString(floatPrecision!)} float;');
+    }
+    if (isWebGl2 && _fragmentColorDeclaration != null) {
+      _writeVariableDeclaration(_buffer, _fragmentColorDeclaration!);
+    }
+    for (ShaderDeclaration decl in declarations) {
+      _writeVariableDeclaration(_buffer, decl);
+    }
+    for (ShaderMethod method in _methods) {
+      method.write(_buffer);
+    }
+    return _buffer.toString();
+  }
+
+  String _precisionToString(int precision) => precision == ShaderPrecision.kLow
+      ? 'lowp'
+      : precision == ShaderPrecision.kMedium ? 'mediump' : 'highp';
+}
+
+class ShaderMethod {
+  ShaderMethod(this.name);
+
+  final String returnType = 'void';
+  final String name;
+  final List<String> _statements = [];
+
+  void addStatement(String statement) {
+    _statements.add(statement);
+  }
+
+  void write(StringBuffer buffer) {
+    buffer.writeln('$returnType $name() {');
+    for (String statement in _statements) {
+      buffer.writeln(statement);
+    }
+    buffer.writeln('}');
+  }
+}
+
 /// html webgl version qualifier constants.
-abstract class WebGlVersion {
+abstract class WebGLVersion {
   // WebGL 1.0 is based on OpenGL ES 2.0 / GLSL 1.00
-  static const String webgl1 = 'webgl';
+  static const int webgl1 = 1;
   // WebGL 2.0 is based on OpenGL ES 3.0 / GLSL 3.00
-  static const String webgl2 = 'webgl2';
+  static const int webgl2 = 2;
 }
 
 /// WebGl Shader data types.
@@ -60,154 +297,13 @@ class ShaderDeclaration {
   final int dataType;
   final int storage;
   final String constValue;
-  ShaderDeclaration(this.name, this.dataType, this.storage) :
-      assert(!_isGLSLReservedWord(name)), constValue = '';
+  ShaderDeclaration(this.name, this.dataType, this.storage)
+      : assert(!_isGLSLReservedWord(name)),
+        constValue = '';
+
   /// Constructs a constant.
-  ShaderDeclaration.constant(this.name, this.dataType,
-      this.constValue) : storage = ShaderStorageQualifier.kConst;
-}
-
-/// Creates shader program for target webgl version.
-///
-/// Differences in WebGL2 vs WebGL1.
-///   - WebGL2 needs '#version 300 es' to enable the new shading language
-///   - vertex attributes have the qualifier 'in' instead of 'attribute'
-///   - GLSL 3.00 defines texture and other new and future reserved words.
-///   - varying is now called in
-///   - GLSL 1.00 has a predefined variable gl_FragColor which needs to be
-///     defined as `out vec4 fragmentColor`.
-///   - Texture lookup functions texture2D and textureCube have now been
-///     replaced with texture.
-///
-class ShaderBuilder {
-  final String webGlVersion;
-  final List<ShaderDeclaration> declarations = [];
-  /// Precision for integer variables.
-  int integerPrecision = ShaderPrecision.kMedium;
-  /// Precision floating point variables.
-  int floatPrecision = ShaderPrecision.kMedium;
-  /// Counter for generating unique name if name is not specified for attribute.
-  int _attribCounter = 0;
-  /// Counter for generating unique name if name is not specified for varying.
-  int _varyingCounter = 0;
-  /// Counter for generating unique name if name is not specified for uniform.
-  int _uniformCounter = 0;
-  /// Counter for generating unique name if name is not specified for constant.
-  int _constCounter = 0;
-
-  final bool isWebGl2;
-
-  static const String kOpenGlEs3Header = '#version 300 es';
-
-  ShaderBuilder(this.webGlVersion)
-      : isWebGl2 = webGlVersion == WebGlVersion.webgl2;
-
-  /// Adds an attribute.
-  ///
-  /// The attribute variable is assigned a value from a object buffer as a
-  /// series of graphics primitives are rendered. The value is only accessible
-  /// in the vertex shader.
-  ShaderDeclaration addIn(int dataType, {String? name}) {
-    ShaderDeclaration attrib =  ShaderDeclaration(name ??
-        'attr_${_attribCounter++}', dataType,
-        ShaderStorageQualifier.kAttribute);
-    declarations.add(attrib);
-    return attrib;
-  }
-
-  /// Adds a constant.
-  ShaderDeclaration addConst(int dataType, String value, {String? name}) {
-    ShaderDeclaration declaration =  ShaderDeclaration.constant(name ??
-        'c_${_constCounter++}', dataType,
-        value);
-    declarations.add(declaration);
-    return declaration;
-  }
-
-  /// Adds a uniform variable.
-  ///
-  /// The variable is assigned a value before a gl.draw call.
-  /// It is accessible in both the vertex and fragment shaders.
-  ///
-  ShaderDeclaration addUniform(int dataType, {String? name}) {
-    ShaderDeclaration uniform =  ShaderDeclaration(name ??
-        'uni_${_uniformCounter++}', dataType, ShaderStorageQualifier.kUniform);
-    declarations.add(uniform);
-    return uniform;
-  }
-
-  /// Adds a varying variable.
-  ///
-  /// The variable is assigned a value by a vertex shader and
-  /// interpolated across the surface of a graphics primitive for each
-  /// input to a fragment shader.
-  /// It can be used in a fragment shader, but not changed.
-  ShaderDeclaration addOut(int dataType, {String? name}) {
-    ShaderDeclaration varying =  ShaderDeclaration(name ??
-        'output_${_varyingCounter++}', dataType,
-        ShaderStorageQualifier.kVarying);
-    declarations.add(varying);
-    return varying;
-  }
-
-  void _writeVariableDeclaration(StringBuffer sb, ShaderDeclaration variable) {
-    switch(variable.storage) {
-      case ShaderStorageQualifier.kConst:
-        _buffer.write('const ');
-        break;
-      case ShaderStorageQualifier.kAttribute:
-        _buffer.write(isWebGl2 ? 'in ' : 'attribute ');
-        break;
-      case ShaderStorageQualifier.kUniform:
-        _buffer.write('uniform ');
-        break;
-      case ShaderStorageQualifier.kVarying:
-        _buffer.write(isWebGl2 ? 'out ' : 'varying ');
-        break;
-    }
-    _buffer.write('${typeToString(variable.dataType)} ${variable.name}');
-    if (variable.storage == ShaderStorageQualifier.kConst) {
-      _buffer.write(' = ${variable.constValue}');
-    }
-    _buffer.writeln(';');
-  }
-
-  final StringBuffer _buffer = StringBuffer();
-
-  static String typeToString(int dataType) {
-    switch(dataType) {
-      case ShaderType.kBool: return 'bool';
-      case ShaderType.kInt: return 'int';
-      case ShaderType.kFloat: return 'float';
-      case ShaderType.kBVec2: return 'bvec2';
-      case ShaderType.kBVec3: return 'bvec3';
-      case ShaderType.kBVec4: return 'bvec4';
-      case ShaderType.kIVec2: return 'ivec2';
-      case ShaderType.kIVec3: return 'ivec3';
-      case ShaderType.kIVec4: return 'ivec4';
-      case ShaderType.kVec2: return 'vec2';
-      case ShaderType.kVec3: return 'vec3';
-      case ShaderType.kVec4: return 'vec4';
-      case ShaderType.kMat2: return 'mat2';
-      case ShaderType.kMat3: return 'mat3';
-      case ShaderType.kMat4: return 'mat4';
-      case ShaderType.kSampler1D: return 'sampler1D';
-      case ShaderType.kSampler2D: return 'sampler2D';
-      case ShaderType.kSampler3D: return 'sampler3D';
-      case ShaderType.kVoid: return 'void';
-    }
-    throw ArgumentError();
-  }
-
-  String build() {
-    if (isWebGl2) {
-      _buffer.writeln(kOpenGlEs3Header);
-    }
-    for (ShaderDeclaration decl in declarations) {
-      _writeVariableDeclaration(_buffer, decl);
-    }
-    return _buffer.toString();
-  }
+  ShaderDeclaration.constant(this.name, this.dataType, this.constValue)
+      : storage = ShaderStorageQualifier.kConst;
 }
 
 // These are used only in debug mode to assert if used as variable name.
@@ -258,71 +354,18 @@ const List<String> _kReservedWords = [
 
   // Reserved for future use, see
   // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.10.pdf
-  'active',
-  'asm',
-  'cast',
-  'class',
-  'common',
-  'enum',
-  'extern',
-  'external',
-  'filter',
-  'fixed',
-  'fvec2',
-  'fvec3',
-  'fvec4',
-  'goto',
-  'half',
-  'hvec2',
-  'hvec3',
-  'hvec4',
-  'iimage1D',
-  'iimage1DArray',
-  'iimage2D',
-  'iimage2DArray',
-  'iimage3D',
-  'iimageBuffer',
-  'iimageCube',
-  'image1D',
-  'image1DArray',
-  'image1DArrayShadow',
-  'image1DShadow',
-  'image2D',
-  'image2DArray',
-  'image2DArrayShadow',
-  'image2DShadow',
-  'image3D',
-  'imageBuffer',
-  'imageCube',
-  'inline',
-  'input',
-  'interface',
-  'long',
-  'namespace',
-  'noinline',
-  'output',
-  'packed',
-  'partition',
-  'public',
-  'row_majo',
-  'short',
-  'sizeof',
-  'static',
-  'superp',
-  'template',
-  'this',
-  'typedef',
-  'uimage1D',
-  'uimage1DArray',
-  'uimage2D',
-  'uimage2DArray',
-  'uimage3D',
-  'uimageBuffer',
-  'uimageCube',
-  'union',
-  'unsigned',
-  'using',
-  'volatile',
+  'active', 'asm', 'cast', 'class', 'common', 'enum', 'extern', 'external',
+  'filter', 'fixed', 'fvec2', 'fvec3', 'fvec4', 'goto', 'half', 'hvec2',
+  'hvec3', 'hvec4', 'iimage1D', 'iimage1DArray', 'iimage2D', 'iimage2DArray',
+  'iimage3D', 'iimageBuffer', 'iimageCube', 'image1D', 'image1DArray',
+  'image1DArrayShadow', 'image1DShadow', 'image2D', 'image2DArray',
+  'image2DArrayShadow', 'image2DShadow', 'image3D', 'imageBuffer',
+  'imageCube', 'inline', 'input', 'interface', 'long',
+  'namespace', 'noinline', 'output', 'packed', 'partition', 'public',
+  'row_majo', 'short', 'sizeof', 'static', 'superp', 'template', 'this',
+  'typedef', 'uimage1D', 'uimage1DArray', 'uimage2D', 'uimage2DArray',
+  'uimage3D', 'uimageBuffer', 'uimageCube', 'union', 'unsigned',
+  'using', 'volatile',
 ];
 
 bool _isGLSLReservedWord(String name) {
