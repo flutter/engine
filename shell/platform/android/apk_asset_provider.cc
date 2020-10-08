@@ -27,7 +27,7 @@ bool APKAssetProvider::IsValid() const {
   return true;
 }
 
-bool APKAssetProvider::ShouldPreserve() const {
+bool APKAssetProvider::IsValidAfterAssetManagerChange() const {
   return true;
 }
 

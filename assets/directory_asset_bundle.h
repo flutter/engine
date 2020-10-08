@@ -14,20 +14,20 @@ namespace flutter {
 
 class DirectoryAssetBundle : public AssetResolver {
  public:
-  explicit DirectoryAssetBundle(fml::UniqueFD descriptor, bool should_preserve);
+  DirectoryAssetBundle(fml::UniqueFD descriptor, bool should_preserve);
 
   ~DirectoryAssetBundle() override;
 
  private:
   const fml::UniqueFD descriptor_;
   bool is_valid_ = false;
-  bool should_preserve_ = false;
+  bool is_valid_after_asset_manager_change_ = false;
 
   // |AssetResolver|
   bool IsValid() const override;
 
   // |AssetResolver|
-  bool ShouldPreserve() const override;
+  bool IsValidAfterAssetManagerChange() const override;
 
   // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(

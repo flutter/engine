@@ -12,13 +12,14 @@
 
 namespace flutter {
 
-DirectoryAssetBundle::DirectoryAssetBundle(fml::UniqueFD descriptor,
-                                           bool should_preserve)
+DirectoryAssetBundle::DirectoryAssetBundle(
+    fml::UniqueFD descriptor,
+    bool is_valid_after_asset_manager_change)
     : descriptor_(std::move(descriptor)) {
   if (!fml::IsDirectory(descriptor_)) {
     return;
   }
-  should_preserve_ = should_preserve;
+  is_valid_after_asset_manager_change_ = is_valid_after_asset_manager_change;
   is_valid_ = true;
 }
 
@@ -30,7 +31,7 @@ bool DirectoryAssetBundle::IsValid() const {
 }
 
 // |AssetResolver|
-bool DirectoryAssetBundle::ShouldPreserve() const {
+bool DirectoryAssetBundle::IsValidAfterAssetManagerChange() const {
   return should_preserve_;
 }
 

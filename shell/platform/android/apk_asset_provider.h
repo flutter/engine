@@ -30,7 +30,7 @@ class APKAssetProvider final : public AssetResolver {
   bool IsValid() const override;
 
   // |flutter::AssetResolver|
-  bool ShouldPreserve() const override;
+  bool IsValidAfterAssetManagerChange() const override;
 
   // |flutter::AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(
