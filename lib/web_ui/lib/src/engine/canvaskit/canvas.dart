@@ -245,9 +245,9 @@ class CkCanvas {
     final CkImageFilter skImageFilter = filter as CkImageFilter;
     return override.saveLayer(
       null,
+      toSkRect(bounds),
       skImageFilter.skiaObject,
       0,
-      toSkRect(bounds),
     );
   }
 

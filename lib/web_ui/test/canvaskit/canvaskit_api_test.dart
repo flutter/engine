@@ -288,7 +288,7 @@ void _imageTests() {
     expect(nonAnimated.width(), 1);
     expect(nonAnimated.height(), 1);
 
-    final SkImage frame = nonAnimated.getCurrentFrame();
+    final SkImage frame = nonAnimated.makeImageAtCurrentFrame();
     expect(frame.width(), 1);
     expect(frame.height(), 1);
 
@@ -310,7 +310,7 @@ void _imageTests() {
     expect(animated.width(), 1);
     expect(animated.height(), 1);
     for (int i = 0; i < 100; i++) {
-      final SkImage frame = animated.getCurrentFrame();
+      final SkImage frame = animated.makeImageAtCurrentFrame();
       expect(frame.width(), 1);
       expect(frame.height(), 1);
       expect(animated.decodeNextFrame(), 100);
@@ -608,27 +608,29 @@ void _pathTests() {
     freeFloat32List(encodedPoints);
   });
 
-  test('addRoundRect', () {
+  test('addRRect', () {
     final ui.RRect rrect = ui.RRect.fromRectAndRadius(
       ui.Rect.fromLTRB(10, 10, 20, 20),
       ui.Radius.circular(3),
     );
-    final SkFloat32List skRadii = mallocFloat32List(8);
-    final Float32List radii = skRadii.toTypedArray();
-    radii[0] = rrect.tlRadiusX;
-    radii[1] = rrect.tlRadiusY;
-    radii[2] = rrect.trRadiusX;
-    radii[3] = rrect.trRadiusY;
-    radii[4] = rrect.brRadiusX;
-    radii[5] = rrect.brRadiusY;
-    radii[6] = rrect.blRadiusX;
-    radii[7] = rrect.blRadiusY;
-    path.addRoundRect(
-      toOuterSkRect(rrect),
-      radii,
-      false,
+    path.addRRect(
+      SkRRect(
+        rect: SkRect(
+          fLeft: rrect.left,
+          fTop: rrect.top,
+          fRight: rrect.right,
+          fBottom: rrect.bottom,
+        ),
+        rx1: rrect.tlRadiusX,
+        ry1: rrect.tlRadiusY,
+        rx2: rrect.trRadiusX,
+        ry2: rrect.trRadiusY,
+        rx3: rrect.brRadiusX,
+        ry3: rrect.brRadiusY,
+        rx4: rrect.blRadiusX,
+        ry4: rrect.blRadiusY,
+      ),
     );
-    freeFloat32List(skRadii);
   });
 
   test('addRect', () {
@@ -885,14 +887,14 @@ void _canvasTests() {
     final SkCanvasSaveLayerWithFilterOverload override = canvas as SkCanvasSaveLayerWithFilterOverload;
     override.saveLayer(
       SkPaint(),
-      canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
-      0,
       SkRect(
         fLeft: 0,
         fTop: 0,
         fRight: 100,
         fBottom: 100,
       ),
+      canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
+      0,
     );
   });
 
@@ -962,7 +964,7 @@ void _canvasTests() {
   test('drawAtlas', () {
     final SkAnimatedImage image = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
     canvas.drawAtlas(
-      image.getCurrentFrame(),
+      image.makeImageAtCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([1, 0, 2, 3]),
       SkPaint(),
@@ -1023,7 +1025,7 @@ void _canvasTests() {
   test('drawImage', () {
     final SkAnimatedImage image = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
     canvas.drawImage(
-      image.getCurrentFrame(),
+      image.makeImageAtCurrentFrame(),
       10,
       20,
       SkPaint(),
@@ -1033,7 +1035,7 @@ void _canvasTests() {
   test('drawImageRect', () {
     final SkAnimatedImage image = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
     canvas.drawImageRect(
-      image.getCurrentFrame(),
+      image.makeImageAtCurrentFrame(),
       SkRect(fLeft: 0, fTop: 0, fRight: 1, fBottom: 1),
       SkRect(fLeft: 0, fTop: 0, fRight: 1, fBottom: 1),
       SkPaint(),
@@ -1044,7 +1046,7 @@ void _canvasTests() {
   test('drawImageNine', () {
     final SkAnimatedImage image = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
     canvas.drawImageNine(
-      image.getCurrentFrame(),
+      image.makeImageAtCurrentFrame(),
       SkRect(fLeft: 0, fTop: 0, fRight: 1, fBottom: 1),
       SkRect(fLeft: 0, fTop: 0, fRight: 1, fBottom: 1),
       SkPaint(),

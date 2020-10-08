@@ -89,22 +89,24 @@ class CkPath implements ui.Path {
 
   @override
   void addRRect(ui.RRect rrect) {
-    final SkFloat32List skRadii = mallocFloat32List(8);
-    final Float32List radii = skRadii.toTypedArray();
-    radii[0] = rrect.tlRadiusX;
-    radii[1] = rrect.tlRadiusY;
-    radii[2] = rrect.trRadiusX;
-    radii[3] = rrect.trRadiusY;
-    radii[4] = rrect.brRadiusX;
-    radii[5] = rrect.brRadiusY;
-    radii[6] = rrect.blRadiusX;
-    radii[7] = rrect.blRadiusY;
-    _skPath.addRoundRect(
-      toOuterSkRect(rrect),
-      radii,
-      false,
+    _skPath.addRRect(
+      SkRRect(
+        rect: SkRect(
+          fLeft: rrect.left,
+          fTop: rrect.top,
+          fRight: rrect.right,
+          fBottom: rrect.bottom,
+        ),
+        rx1: rrect.tlRadiusX,
+        ry1: rrect.tlRadiusY,
+        rx2: rrect.trRadiusX,
+        ry2: rrect.trRadiusY,
+        rx3: rrect.brRadiusX,
+        ry3: rrect.brRadiusY,
+        rx4: rrect.blRadiusX,
+        ry4: rrect.blRadiusY,
+      ),
     );
-    freeFloat32List(skRadii);
   }
 
   @override

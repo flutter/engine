@@ -60,14 +60,14 @@ void testMain() {
     });
 
     test('CkImage toString', () {
-      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage).getCurrentFrame();
+      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage).makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       expect(image.toString(), '[1×1]');
       image.dispose();
     });
 
     test('CkImage can be explicitly disposed of', () {
-      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage).getCurrentFrame();
+      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage).makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       expect(image.box.isDeleted, false);
       image.dispose();
@@ -77,7 +77,7 @@ void testMain() {
     });
 
     test('CkImage can be explicitly disposed of when cloned', () async {
-      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage).getCurrentFrame();
+      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage).makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       final CkImage imageClone = image.clone();
 

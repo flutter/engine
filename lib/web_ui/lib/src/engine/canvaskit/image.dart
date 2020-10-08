@@ -82,7 +82,7 @@ class CkAnimatedImage implements ui.Image {
   int get repetitionCount => _skAnimatedImage.getRepetitionCount();
 
   CkImage get currentFrameAsImage {
-    return CkImage(_skAnimatedImage.getCurrentFrame());
+    return CkImage(_skAnimatedImage.makeImageAtCurrentFrame());
   }
 
   @override

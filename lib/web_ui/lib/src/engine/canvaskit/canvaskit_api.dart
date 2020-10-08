@@ -120,7 +120,7 @@ external SkColorSpace get SkColorSpaceSRGB;
 @JS()
 class SkColorSpace {}
 
-@JS()
+@JS('window.flutterCanvasKit.WebGLContextOptions')
 @anonymous
 class SkWebGLContextOptions {
   external factory SkWebGLContextOptions({
@@ -140,7 +140,7 @@ class SkSurface {
   external SkImage makeImageSnapshot();
 }
 
-@JS()
+@JS('window.flutterCanvasKit.GrContext')
 @anonymous
 class SkGrContext {
   external void setResourceCacheLimitBytes(int limit);
@@ -665,7 +665,7 @@ class SkColorType {
   external int get value;
 }
 
-@JS()
+@JS('window.flutterCanvasKit.AnimatedImage')
 @anonymous
 class SkAnimatedImage {
   external int getFrameCount();
@@ -673,7 +673,7 @@ class SkAnimatedImage {
   /// Returns duration in milliseconds.
   external int getRepetitionCount();
   external int decodeNextFrame();
-  external SkImage getCurrentFrame();
+  external SkImage makeImageAtCurrentFrame();
   external int width();
   external int height();
   external Uint8List readPixels(SkImageInfo imageInfo, int srcX, int srcY);
@@ -687,7 +687,7 @@ class SkAnimatedImage {
   external bool isDeleted();
 }
 
-@JS()
+@JS('window.flutterCanvasKit.Image')
 @anonymous
 class SkImage {
   external void delete();
@@ -749,7 +749,7 @@ class SkShaderNamespace {
   );
 }
 
-@JS()
+@JS('window.flutterCanvasKit.Shader')
 @anonymous
 class SkShader {
   external void delete();
@@ -759,7 +759,7 @@ class SkShader {
 // with `new`. Also in Dart you can't write this:
 //
 //     external SkPaint SkPaint();
-@JS('window.flutterCanvasKit.SkPaint')
+@JS('window.flutterCanvasKit.Paint')
 class SkPaint {
   // TODO(yjbanov): implement invertColors, see paint.cc
   external SkPaint();
@@ -779,7 +779,7 @@ class SkPaint {
   external void delete();
 }
 
-@JS()
+@JS('window.flutterCanvasKit.MaskFilter')
 @anonymous
 class SkMaskFilter {
   external void delete();
@@ -795,7 +795,7 @@ class SkColorFilterNamespace {
   external SkColorFilter MakeSRGBToLinearGamma();
 }
 
-@JS()
+@JS('window.flutterCanvasKit.ColorFilter')
 @anonymous
 class SkColorFilter {
   external void delete();
@@ -817,7 +817,7 @@ class SkImageFilterNamespace {
   );
 }
 
-@JS()
+@JS('window.flutterCanvasKit.ImageFilter')
 @anonymous
 class SkImageFilter {
   external void delete();
@@ -1041,10 +1041,8 @@ class SkPath {
     Float32List points,
     bool close,
   );
-  external void addRoundRect(
-    SkRect outerRect,
-    Float32List radii,
-    bool counterClockWise,
+  external void addRRect(
+    SkRRect rrect,
   );
   external void addRect(
     SkRect rect,
@@ -1156,7 +1154,7 @@ class SkContourMeasure {
   external double length();
 }
 
-@JS()
+@JS('window.flutterCanvasKit.Rect')
 @anonymous
 class SkRect {
   external factory SkRect({
@@ -1191,7 +1189,7 @@ SkRect toSkRect(ui.Rect rect) {
   );
 }
 
-@JS()
+@JS('window.flutterCanvasKit.RRect')
 @anonymous
 class SkRRect {
   external factory SkRRect({
@@ -1309,7 +1307,7 @@ class SkPictureRecorder {
 /// By Skia coding convention raw pointers should always be treated as
 /// "borrowed", i.e. their memory is managed by other objects. In the case of
 /// [SkCanvas] it is managed by [SkPictureRecorder].
-@JS()
+@JS('window.flutterCanvasKit.Canvas')
 @anonymous
 class SkCanvas {
   external void clear(Float32List color);
@@ -1448,30 +1446,30 @@ class SkCanvas {
   );
 }
 
-@JS()
+@JS('window.flutterCanvasKit.CanvasSaveLayerWithoutBoundsOverload')
 @anonymous
 class SkCanvasSaveLayerWithoutBoundsOverload {
   external void saveLayer(SkPaint paint);
 }
 
-@JS()
+@JS('window.flutterCanvasKit.CanvasSaveLayerWithFilterOverload')
 @anonymous
 class SkCanvasSaveLayerWithFilterOverload {
   external void saveLayer(
     SkPaint? paint,
+    SkRect bounds,
     SkImageFilter? imageFilter,
     int flags,
-    SkRect rect,
   );
 }
 
-@JS()
+@JS('window.flutterCanvasKit.Picture')
 @anonymous
 class SkPicture {
   external void delete();
 }
 
-@JS()
+@JS('window.flutterCanvasKit.ParagraphBuilderNamespace')
 @anonymous
 class SkParagraphBuilderNamespace {
   external SkParagraphBuilder Make(
@@ -1485,7 +1483,7 @@ class SkParagraphBuilderNamespace {
   );
 }
 
-@JS()
+@JS('window.flutterCanvasKit.ParagraphBuilder')
 @anonymous
 class SkParagraphBuilder {
   external void addText(String text);
@@ -1497,11 +1495,11 @@ class SkParagraphBuilder {
   external void delete();
 }
 
-@JS()
+@JS('window.flutterCanvasKit.ParagraphStyle')
 @anonymous
 class SkParagraphStyle {}
 
-@JS()
+@JS('window.flutterCanvasKit.ParagraphStyleProperties')
 @anonymous
 class SkParagraphStyleProperties {
   external SkTextAlign? get textAlign;
@@ -1529,7 +1527,7 @@ class SkParagraphStyleProperties {
 @JS()
 class SkTextStyle {}
 
-@JS()
+@JS('window.flutterCanvasKit.TextStyleProperties')
 @anonymous
 class SkTextStyleProperties {
   external Float32List? get backgroundColor;
@@ -1557,7 +1555,7 @@ class SkTextStyleProperties {
   external set fontStyle(SkFontStyle? value);
 }
 
-@JS()
+@JS('window.flutterCanvasKit.FontStyle')
 @anonymous
 class SkFontStyle {
   external SkFontWeight? get weight;
@@ -1567,7 +1565,7 @@ class SkFontStyle {
   external set slant(SkFontSlant? value);
 }
 
-@JS()
+@JS('window.flutterCanvasKit.FontMgr')
 @anonymous
 class SkFontMgr {
   external String? getFamilyName(int fontId);
@@ -1580,7 +1578,7 @@ class TypefaceFontProvider extends SkFontMgr {
   external void registerFont(Uint8List font, String family);
 }
 
-@JS()
+@JS('window.flutterCanvasKit.Paragraph')
 @anonymous
 class SkParagraph {
   external double getAlphabeticBaseline();
@@ -1618,13 +1616,13 @@ class SkTextRange {
   external int get end;
 }
 
-@JS()
+@JS('window.flutterCanvasKit.Vertices')
 @anonymous
 class SkVertices {
   external void delete();
 }
 
-@JS()
+@JS('window.flutterCanvasKit.TonalColors')
 @anonymous
 class SkTonalColors {
   external factory SkTonalColors({
@@ -1683,7 +1681,7 @@ Timer _scheduleSkObjectCollection() => Timer(Duration.zero, () {
 });
 
 /// Any Skia object that has a `delete` method.
-@JS()
+@JS('window.flutterCanvasKit.Deletable')
 @anonymous
 class SkDeletable {
   /// Deletes the C++ side object.
@@ -1725,7 +1723,7 @@ class SkData {
   external Uint8List bytes();
 }
 
-@JS()
+@JS('window.flutterCanvasKit.ImageInfo')
 @anonymous
 class SkImageInfo {
   external factory SkImageInfo({
