@@ -85,6 +85,7 @@ echo "Compiling JIT Snapshot..."
 
 cp "$DEVICE_TOOLS/../gen/flutter/lib/snapshot/vm_isolate_snapshot.bin" "$OUTDIR/App.framework/flutter_assets/vm_snapshot_data"
 
+LLVM_BIN_PATH="../../../buildtools/mac-x64/clang/bin"
 SYSROOT=$(xcrun --sdk iphonesimulator --show-sdk-path)
 echo "Using $SYSROOT as sysroot."
 
@@ -96,10 +97,9 @@ echo "Creating stub App using $SYSROOT..."
 # When linking against a newer iOS SDK (newer SYSROOT) with an older version of
 # clang, the linker from the old toolchain may refuse to link against new TAPI
 # files provided in the new SDK. See: https://github.com/flutter/flutter/issues/65901
-echo "static const int Moo = 88;" | xcrun clang -x c \
+echo "static const int Moo = 88;" | $LLVM_BIN_PATH/clang -x c \
   -arch x86_64 \
   -fembed-bitcode-marker \
-  -fuse-ld=$(which ld) \
   -isysroot "$SYSROOT" \
   -miphoneos-version-min=8.0 \
   -dynamiclib \
