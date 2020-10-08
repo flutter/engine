@@ -4,12 +4,15 @@
 
 #include "flutter/lib/ui/painting/fragment_shader.h"
 
+#include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/spirv/transpiler.h"
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 using tonic::ToDart;
 
@@ -31,6 +34,20 @@ FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 void FragmentShader::initWithSource(const std::string& source) {
   initEffect(SkString(source.c_str()));
   setShader();
+}
+
+void FragmentShader::initWithSKSL(Dart_NativeArguments args) {
+  tonic::Uint8List data = tonic::Uint8List(Dart_GetNativeArgument(args, 1));
+  auto transpiler = spirv::Transpiler::create();
+  auto result = transpiler->Transpile(
+    reinterpret_cast<const char*>(data.data()),
+    data.num_elements());
+  if (result.status != spirv::kSuccess) {
+    FML_DLOG(ERROR) << "Invalid SPIR-V: " << result.message;
+    return;
+  }
+  auto sksl = transpiler->GetSkSL();
+  initWithSource(sksl);
 }
 
 void FragmentShader::setTime(float time) {
@@ -85,6 +102,10 @@ void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register(
       {{"FragmentShader_constructor", FragmentShader_constructor, 1, true},
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
+  
+  natives->Register(
+    {{"FragmentShader_initWithSPIRV", FragmentShader::initWithSPIRV, 2, true},
+      FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
 fml::RefPtr<FragmentShader> FragmentShader::Create() {

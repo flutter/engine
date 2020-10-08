@@ -3480,15 +3480,24 @@ class Gradient extends Shader {
 // TODO(clocksmith): this will eventually take in the byte format rather than a string.
 class FragmentShader extends Shader {
   @pragma('vm:entry-point')
-  FragmentShader(String source) : 
+  FragmentShader.sksl(String source) :
     assert(source != null), // ignore: unnecessary_null_comparison
     super._() {
     _constructor();
     _initWithSource(source);
   }
 
+  @pragma('vm:entry-point')
+  FragmentShader.spirv(Uint8List spirv) :
+    assert(spirv != null), // ignore: unnecessary_null_comparison
+    super._() {
+    _constructor();
+    _initWithSPIRV(spirv);
+  }
+
   void _constructor() native 'FragmentShader_constructor';
   void _initWithSource(String source) native 'FragmentShader_initWithSource';
+  void _initWithSPIRV(Uint8List spirv) native 'FragmentShader_initWithSPIRV';
 
   /// TODO(clocksmith): Public docs.
   void setTime(double time) native 'FragmentShader_setTime';  

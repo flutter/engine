@@ -9,6 +9,7 @@
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_shader.h"
 #include "flutter/lib/ui/painting/shader.h"
+#include "third_party/tonic/dart_library_natives.h"
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
 #include "third_party/skia/include/core/SkShader.h"
 
@@ -29,6 +30,7 @@ class FragmentShader : public Shader {
   static fml::RefPtr<FragmentShader> Create();
 
   void initWithSource(const std::string& source);
+  void initWithSPIRV(Dart_NativeArguments args);
 
   void setTime(float time);
 

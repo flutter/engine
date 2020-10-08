@@ -81,6 +81,8 @@ source_set("ui") {
     "semantics/semantics_update_builder.cc",
     "semantics/semantics_update_builder.h",
     "snapshot_delegate.h",
+    "spirv/transpiler.h",
+    "spirv/transpiler.cc",
     "text/asset_manager_font_provider.cc",
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
@@ -127,6 +129,8 @@ source_set("ui") {
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//third_party/spirv-tools:spvtools",
+    "//third_party/spirv-headers:spv-headers",
   ]
 
   if (!defined(defines)) {
