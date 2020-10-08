@@ -997,22 +997,6 @@ typedef enum {
   kFlutterEngineDisplaysUpdateTypeCount,
 } FlutterEngineDisplaysUpdateType;
 
-//------------------------------------------------------------------------------
-/// @brief    Posts updates corresponding to display changes to a running engine
-///           instance.
-///
-/// @param[in] update_type      The type of update pushed to the engine.
-/// @param[in] displays         The displays affected by this update.
-/// @param[in] display_count    Size of the displays array, must be at least 1.
-///
-/// @return the result of the call made to the engine.
-///
-FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
-    FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    FlutterEngineDisplaysUpdateType update_type,
-    const FlutterEngineDisplay* displays,
-    size_t display_count);
-
 typedef int64_t FlutterEngineDartPort;
 
 typedef enum {
@@ -1129,38 +1113,6 @@ typedef struct {
 /// An opaque object that describes the AOT data that can be used to launch a
 /// FlutterEngine instance in AOT mode.
 typedef struct _FlutterEngineAOTData* FlutterEngineAOTData;
-
-//------------------------------------------------------------------------------
-/// @brief      Creates the necessary data structures to launch a Flutter Dart
-///             application in AOT mode. The data may only be collected after
-///             all FlutterEngine instances launched using this data have been
-///             terminated.
-///
-/// @param[in]  source    The source of the AOT data.
-/// @param[out] data_out  The AOT data on success. Unchanged on failure.
-///
-/// @return     Returns if the AOT data could be successfully resolved.
-///
-FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineCreateAOTData(
-    const FlutterEngineAOTDataSource* source,
-    FlutterEngineAOTData* data_out);
-
-//------------------------------------------------------------------------------
-/// @brief      Collects the AOT data.
-///
-/// @warning    The embedder must ensure that this call is made only after all
-///             FlutterEngine instances launched using this data have been
-///             terminated, and that all of those instances were launched with
-///             the FlutterProjectArgs::shutdown_dart_vm_when_done flag set to
-///             true.
-///
-/// @param[in]  data   The data to collect.
-///
-/// @return     Returns if the AOT data was successfully collected.
-///
-FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterProjectArgs).
@@ -1382,6 +1334,40 @@ typedef struct {
   const char* const* dart_entrypoint_argv;
 
 } FlutterProjectArgs;
+
+#ifndef FLUTTER_ENGINE_NO_PROTOTYPES
+
+//------------------------------------------------------------------------------
+/// @brief      Creates the necessary data structures to launch a Flutter Dart
+///             application in AOT mode. The data may only be collected after
+///             all FlutterEngine instances launched using this data have been
+///             terminated.
+///
+/// @param[in]  source    The source of the AOT data.
+/// @param[out] data_out  The AOT data on success. Unchanged on failure.
+///
+/// @return     Returns if the AOT data could be successfully resolved.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineCreateAOTData(
+    const FlutterEngineAOTDataSource* source,
+    FlutterEngineAOTData* data_out);
+
+//------------------------------------------------------------------------------
+/// @brief      Collects the AOT data.
+///
+/// @warning    The embedder must ensure that this call is made only after all
+///             FlutterEngine instances launched using this data have been
+///             terminated, and that all of those instances were launched with
+///             the FlutterProjectArgs::shutdown_dart_vm_when_done flag set to
+///             true.
+///
+/// @param[in]  data   The data to collect.
+///
+/// @return     Returns if the AOT data was successfully collected.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 
 //------------------------------------------------------------------------------
 /// @brief      Initialize and run a Flutter engine instance and return a handle
@@ -1965,6 +1951,143 @@ FlutterEngineResult FlutterEnginePostCallbackOnAllNativeThreads(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     FlutterNativeThreadCallback callback,
     void* user_data);
+
+//------------------------------------------------------------------------------
+/// @brief    Posts updates corresponding to display changes to a running engine
+///           instance.
+///
+/// @param[in] update_type      The type of update pushed to the engine.
+/// @param[in] displays         The displays affected by this update.
+/// @param[in] display_count    Size of the displays array, must be at least 1.
+///
+/// @return the result of the call made to the engine.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterEngineDisplaysUpdateType update_type,
+    const FlutterEngineDisplay* displays,
+    size_t display_count);
+
+#endif  // !FLUTTER_ENGINE_NO_PROTOTYPES
+
+/// Function-pointer-based versions of the APIs above.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterEngineProcs).
+  size_t struct_size;
+
+  FlutterEngineResult (*create_aot_data)(
+      const FlutterEngineAOTDataSource* source,
+      FlutterEngineAOTData* data_out);
+  FlutterEngineResult (*collect_aot_data)(FlutterEngineAOTData data);
+  FlutterEngineResult (*run)(size_t version,
+                             const FlutterRendererConfig* config,
+                             const FlutterProjectArgs* args,
+                             void* user_data,
+                             FLUTTER_API_SYMBOL(FlutterEngine) * engine_out);
+  FlutterEngineResult (*shutdown)(FLUTTER_API_SYMBOL(FlutterEngine) engine);
+  FlutterEngineResult (*initialize)(size_t version,
+                                    const FlutterRendererConfig* config,
+                                    const FlutterProjectArgs* args,
+                                    void* user_data,
+                                    FLUTTER_API_SYMBOL(FlutterEngine) *
+                                        engine_out);
+  FlutterEngineResult (*deinitialize)(FLUTTER_API_SYMBOL(FlutterEngine) engine);
+  FlutterEngineResult (*run_initialized)(FLUTTER_API_SYMBOL(FlutterEngine)
+                                             engine);
+  FlutterEngineResult (*send_window_metrics_event)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      const FlutterWindowMetricsEvent* event);
+  FlutterEngineResult (*send_pointer_event)(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                engine,
+                                            const FlutterPointerEvent* events,
+                                            size_t events_count);
+  FlutterEngineResult (*send_platform_message)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      const FlutterPlatformMessage* message);
+  FlutterEngineResult (*platform_message_create_response_handle)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      FlutterDataCallback data_callback,
+      void* user_data,
+      FlutterPlatformMessageResponseHandle** response_out);
+  FlutterEngineResult (*platform_message_release_response_handle)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      FlutterPlatformMessageResponseHandle* response);
+  FlutterEngineResult (*send_platform_message_response)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      const FlutterPlatformMessageResponseHandle* handle,
+      const uint8_t* data,
+      size_t data_length);
+  FlutterEngineResult (*register_external_texture)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      int64_t texture_identifier);
+  FlutterEngineResult (*unregister_external_texture)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      int64_t texture_identifier);
+  FlutterEngineResult (*mark_external_texture_frame_available)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      int64_t texture_identifier);
+  FlutterEngineResult (*update_semantics_enabled)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      bool enabled);
+  FlutterEngineResult (*update_accessibility_features)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      FlutterAccessibilityFeature features);
+  FlutterEngineResult (*dispatch_semantics_action)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      uint64_t id,
+      FlutterSemanticsAction action,
+      const uint8_t* data,
+      size_t data_length);
+  FlutterEngineResult (*on_vsync)(FLUTTER_API_SYMBOL(FlutterEngine) engine,
+                                  intptr_t baton,
+                                  uint64_t frame_start_time_nanos,
+                                  uint64_t frame_target_time_nanos);
+  FlutterEngineResult (*reload_system_fonts)(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                 engine);
+  void (*trace_event_duration_begin)(const char* name);
+  void (*trace_event_duration_end)(const char* name);
+  void (*trace_event_instant)(const char* name);
+  FlutterEngineResult (*post_render_thread_task)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      VoidCallback callback,
+      void* callback_data);
+  uint64_t (*get_current_time)();
+  FlutterEngineResult (*run_task)(FLUTTER_API_SYMBOL(FlutterEngine) engine,
+                                  const FlutterTask* task);
+  FlutterEngineResult (*update_locales)(FLUTTER_API_SYMBOL(FlutterEngine)
+                                            engine,
+                                        const FlutterLocale** locales,
+                                        size_t locales_count);
+  bool (*runs_aot_compiled_dart_code)(void);
+  FlutterEngineResult (*post_dart_object)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      FlutterEngineDartPort port,
+      const FlutterEngineDartObject* object);
+  FlutterEngineResult (*notify_low_memory_warning)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine);
+  FlutterEngineResult (*post_callback_on_all_native_threads)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      FlutterNativeThreadCallback callback,
+      void* user_data);
+  FlutterEngineResult (*notify_display_update)(
+      FLUTTER_API_SYMBOL(FlutterEngine) engine,
+      FlutterEngineDisplaysUpdateType update_type,
+      const FlutterEngineDisplay* displays,
+      size_t display_count);
+} FlutterEngineProcTable;
+
+//------------------------------------------------------------------------------
+/// @brief      Gets the table of engine function pointers.
+///
+/// @param[out] table   The table to fill with pointers. This should be
+///                     zero-initialized, except for struct_size.
+///
+/// @return     Returns whether the table was successfully populated.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineGetProcAddresses(
+    FlutterEngineProcTable* table);
 
 #if defined(__cplusplus)
 }  // extern "C"

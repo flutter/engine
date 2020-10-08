@@ -2050,3 +2050,54 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
           "Invalid FlutterEngineDisplaysUpdateType type specified.");
   }
 }
+
+FlutterEngineResult FlutterEngineGetProcAddresses(
+    FlutterEngineProcTable* table) {
+#define SET_PROC(member, function)        \
+  if (STRUCT_HAS_MEMBER(table, member)) { \
+    table->member = &function;            \
+  }
+
+  SET_PROC(create_aot_data, FlutterEngineCreateAOTData);
+  SET_PROC(collect_aot_data, FlutterEngineCollectAOTData);
+  SET_PROC(run, FlutterEngineRun);
+  SET_PROC(shutdown, FlutterEngineShutdown);
+  SET_PROC(initialize, FlutterEngineInitialize);
+  SET_PROC(deinitialize, FlutterEngineDeinitialize);
+  SET_PROC(run_initialized, FlutterEngineRunInitialized);
+  SET_PROC(send_window_metrics_event, FlutterEngineSendWindowMetricsEvent);
+  SET_PROC(send_pointer_event, FlutterEngineSendPointerEvent);
+  SET_PROC(send_platform_message, FlutterEngineSendPlatformMessage);
+  SET_PROC(platform_message_create_response_handle,
+           FlutterPlatformMessageCreateResponseHandle);
+  SET_PROC(platform_message_release_response_handle,
+           FlutterPlatformMessageReleaseResponseHandle);
+  SET_PROC(send_platform_message_response,
+           FlutterEngineSendPlatformMessageResponse);
+  SET_PROC(register_external_texture, FlutterEngineRegisterExternalTexture);
+  SET_PROC(unregister_external_texture, FlutterEngineUnregisterExternalTexture);
+  SET_PROC(mark_external_texture_frame_available,
+           FlutterEngineMarkExternalTextureFrameAvailable);
+  SET_PROC(update_semantics_enabled, FlutterEngineUpdateSemanticsEnabled);
+  SET_PROC(update_accessibility_features,
+           FlutterEngineUpdateAccessibilityFeatures);
+  SET_PROC(dispatch_semantics_action, FlutterEngineDispatchSemanticsAction);
+  SET_PROC(on_vsync, FlutterEngineOnVsync);
+  SET_PROC(reload_system_fonts, FlutterEngineReloadSystemFonts);
+  SET_PROC(trace_event_duration_begin, FlutterEngineTraceEventDurationBegin);
+  SET_PROC(trace_event_duration_end, FlutterEngineTraceEventDurationEnd);
+  SET_PROC(trace_event_instant, FlutterEngineTraceEventInstant);
+  SET_PROC(post_render_thread_task, FlutterEnginePostRenderThreadTask);
+  SET_PROC(get_current_time, FlutterEngineGetCurrentTime);
+  SET_PROC(run_task, FlutterEngineRunTask);
+  SET_PROC(update_locales, FlutterEngineUpdateLocales);
+  SET_PROC(runs_aot_compiled_dart_code, FlutterEngineRunsAOTCompiledDartCode);
+  SET_PROC(post_dart_object, FlutterEnginePostDartObject);
+  SET_PROC(notify_low_memory_warning, FlutterEngineNotifyLowMemoryWarning);
+  SET_PROC(post_callback_on_all_native_threads,
+           FlutterEnginePostCallbackOnAllNativeThreads);
+  SET_PROC(notify_display_update, FlutterEngineNotifyDisplayUpdate);
+#undef HAS_PROC
+
+  return kSuccess;
+}
