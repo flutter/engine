@@ -14,7 +14,8 @@ namespace flutter {
 
 class DirectoryAssetBundle : public AssetResolver {
  public:
-  DirectoryAssetBundle(fml::UniqueFD descriptor, bool should_preserve);
+  DirectoryAssetBundle(fml::UniqueFD descriptor,
+                       bool is_valid_after_asset_manager_change);
 
   ~DirectoryAssetBundle() override;
 

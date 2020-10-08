@@ -32,7 +32,7 @@ bool DirectoryAssetBundle::IsValid() const {
 
 // |AssetResolver|
 bool DirectoryAssetBundle::IsValidAfterAssetManagerChange() const {
-  return should_preserve_;
+  return is_valid_after_asset_manager_change_;
 }
 
 // |AssetResolver|
