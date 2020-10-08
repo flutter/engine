@@ -38,6 +38,12 @@ bool TestWindowProcCallback2(HWND hwnd,
                              LPARAM lparam,
                              void* user_data,
                              LRESULT* result) {
+  // This line exists so that this function is not just a straight passthrough,
+  // since in some cases the compiler was optimizing it away and causing the two
+  // registrations in RegisterMultiple to actually have the same function
+  // address.
+  EXPECT_NE(reinterpret_cast<unsigned long>(TestWindowProcCallback),
+            reinterpret_cast<unsigned long>(TestWindowProcCallback2));
   return TestWindowProcCallback(hwnd, message, wparam, lparam, user_data,
                                 result);
 }
