@@ -24,6 +24,12 @@ typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
 @JS('_flutter_web_set_location_strategy')
 external set _jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
 
+UrlStrategy? _createDefaultUrlStrategy() {
+  return ui.debugEmulateFlutterTesterEnvironment
+      ? null
+      : const HashUrlStrategy();
+}
+
 /// The Web implementation of [ui.Window].
 class EngineWindow extends ui.Window {
   EngineWindow() {
@@ -164,7 +170,7 @@ class EngineWindow extends ui.Window {
   @visibleForTesting
   BrowserHistory get browserHistory {
     return _browserHistory ??=
-        MultiEntriesBrowserHistory(urlStrategy: const HashUrlStrategy());
+        MultiEntriesBrowserHistory(urlStrategy: _createDefaultUrlStrategy());
   }
 
   BrowserHistory? _browserHistory;
