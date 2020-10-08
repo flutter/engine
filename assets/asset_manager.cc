@@ -57,7 +57,7 @@ bool AssetManager::IsValid() const {
 }
 
 // |AssetResolver|
-bool AssetManager::ShouldPreserve() const {
+bool AssetManager::IsValidAfterAssetManagerChange() const {
   return false;
 }
 

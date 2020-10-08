@@ -31,7 +31,7 @@ class AssetManager final : public AssetResolver {
   bool IsValid() const override;
 
   // |AssetResolver|
-  bool ShouldPreserve() const override;
+  bool IsValidAfterAssetManagerChange() const override;
 
   // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(
