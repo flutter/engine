@@ -123,7 +123,7 @@ void testMain() async {
     rc.restore();
     await _checkScreenshot(rc, 'canvas_blend_image_multiply',
         maxDiffRatePercent: operatingSystem == OperatingSystem.macOs ? 2.95 :
-        operatingSystem == OperatingSystem.iOs ? 2.0 : 0, write: true);
+        operatingSystem == OperatingSystem.iOs ? 2.0 : 0);
   });
 }
 

@@ -40,7 +40,7 @@ void testMain() async {
         .build()
         .webOnlyRootElement);
 
-    await matchGoldenFile('canvas_draw_color.png', region: region, write: true);
+    await matchGoldenFile('canvas_draw_color.png', region: region);
   });
 
   test('drawPaint should cover entire viewport', () async {
@@ -54,7 +54,7 @@ void testMain() async {
         .build()
         .webOnlyRootElement);
 
-    await matchGoldenFile('canvas_draw_paint.png', region: region, write: true);
+    await matchGoldenFile('canvas_draw_paint.png', region: region);
   });
 }
 
