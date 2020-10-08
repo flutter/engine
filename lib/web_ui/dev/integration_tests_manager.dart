@@ -165,7 +165,7 @@ class IntegrationTestsManager {
         IntegrationArguments.fromBrowser(_browser);
     final int exitCode = await runProcess(
       executable,
-      arguments.getTestArguments(testName, 'release'),
+      arguments.getTestArguments(testName, 'debug'),
       workingDirectory: directory.path,
     );
 
@@ -173,7 +173,7 @@ class IntegrationTestsManager {
       io.stderr
           .writeln('ERROR: Failed to run test. Exited with exit code $exitCode'
               '. To run $testName locally use the following command:'
-              '\n\n${arguments.getCommandToRun(testName, 'release')}');
+              '\n\n${arguments.getCommandToRun(testName, 'debug')}');
       return false;
     } else {
       return true;
@@ -334,14 +334,14 @@ class ChromeIntegrationArguments extends IntegrationArguments {
       '--$mode',
       '--browser-name=chrome',
       if (isLuci) '--chrome-binary=${preinstalledChromeExecutable()}',
-      if (isLuci) '--headless',
+      '--headless',
       '--local-engine=host_debug_unopt',
     ];
   }
 
   String getCommandToRun(String testName, String mode) {
     String statementToRun = 'flutter drive '
-        '--target=test_driver/${testName} -d web-server --release '
+        '--target=test_driver/${testName} -d web-server --debug '
         '--browser-name=chrome --local-engine=host_debug_unopt';
     if (isLuci) {
       statementToRun = '$statementToRun --chrome-binary='
@@ -359,7 +359,7 @@ class FirefoxIntegrationArguments extends IntegrationArguments {
       '--target=test_driver/${testName}',
       '-d',
       'web-server',
-      '--$mode',
+      '--release', // Keep running Firefox on release mode.
       '--browser-name=firefox',
       '--headless',
       '--local-engine=host_debug_unopt',
@@ -380,7 +380,7 @@ class SafariIntegrationArguments extends IntegrationArguments {
       '--target=test_driver/${testName}',
       '-d',
       'web-server',
-      '--$mode',
+      '--release', // Keep running Safari on release mode.
       '--browser-name=safari',
       '--local-engine=host_debug_unopt',
     ];
