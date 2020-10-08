@@ -13,11 +13,17 @@ FLUTTER_LOG_CLASS = 'io.flutter.Log'
 
 def main():
   parser = argparse.ArgumentParser(description='Checks Flutter Android library for forbidden imports')
+  parser.add_argument('--stamp', type=str, required=True)
   parser.add_argument('--files', type=str, required=True, nargs='+')
   args = parser.parse_args()
 
+  open(args.stamp, 'wa').close()
+
   bad_files = []
+
   for file in args.files:
+    if file.endswith(os.path.join('io', 'flutter', 'Log.java')):
+      continue
     with open(file) as f:
       if ANDROID_LOG_CLASS in f.read():
         bad_files.append(file)

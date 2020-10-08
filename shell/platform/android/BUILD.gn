@@ -256,11 +256,16 @@ action("check_imports") {
 
   sources = android_java_sources
 
-  # File does not actually get created, but GN expects us to have an output here.
-  outputs = [ "$root_out_dir/check_android_imports" ]
+  stamp_file = "$root_out_dir/check_android_imports"
 
-  args = [ "--files" ] +
-         rebase_path(android_java_sources - [ "io/flutter/Log.java" ])
+  # File does not actually get created, but GN expects us to have an output here.
+  outputs = [ stamp_file ]
+
+  args = [
+           "--stamp",
+           rebase_path(stamp_file),
+           "--files",
+         ] + rebase_path(android_java_sources)
 }
 
 action("flutter_shell_java") {
