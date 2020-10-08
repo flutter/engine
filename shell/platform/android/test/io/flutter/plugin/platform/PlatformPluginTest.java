@@ -20,6 +20,7 @@ import android.view.Window;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,7 +51,7 @@ public class PlatformPluginTest {
 
   @Config(sdk = 29)
   @Test
-  public void platformPlugin_getClipboardData() {
+  public void platformPlugin_getClipboardData() throws IOException {
     ClipboardManager clipboardManager =
         RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
 
