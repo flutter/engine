@@ -8,9 +8,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -22,6 +19,8 @@ import android.view.View;
 import android.view.Window;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -81,7 +80,8 @@ public class PlatformPluginTest {
             RuntimeEnvironment.application.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
     clip = ClipData.newUri(contentResolver, "URI", uri);
     clipboardManager.setPrimaryClip(clip);
-    String uriData = platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat).toString();
+    String uriData =
+        platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat).toString();
     InputStream uriInputStream = contentResolver.openInputStream(uri);
     InputStream dataInputStream = new ByteArrayInputStream(uriData.getBytes());
     assertEquals(dataInputStream.read(), uriInputStream.read());
