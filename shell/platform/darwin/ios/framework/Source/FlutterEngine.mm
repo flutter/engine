@@ -27,6 +27,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/connection_collection.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
@@ -473,6 +474,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.initialRoute = initialRoute;
 
   auto settings = [_dartProject.get() settings];
+  FlutterView.forceSoftwareRendering = settings.enable_software_rendering;
+
   auto platformData = [_dartProject.get() defaultPlatformData];
 
   if (libraryURI) {
@@ -512,7 +515,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
       [](flutter::Shell& shell) {
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, flutter::GetRenderingAPIForProcess(), shell.GetTaskRunners());
+            shell, flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering),
+            shell.GetTaskRunners());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
@@ -539,6 +543,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   } else {
     [self setupChannels];
     [self onLocaleUpdated:nil];
+    [self initializeDisplays];
     if (!_platformViewsController) {
       _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
     }
@@ -551,6 +556,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   }
 
   return _shell != nullptr;
+}
+
+- (void)initializeDisplays {
+  double refresh_rate = [[[DisplayLinkManager alloc] init] displayRefreshRate];
+  auto display = flutter::Display(refresh_rate);
+  _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, {display});
 }
 
 - (BOOL)run {

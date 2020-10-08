@@ -23,7 +23,9 @@
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-
+  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--maskview-blocking"]) {
+    self.window.tintColor = UIColor.systemPinkColor;
+  }
   NSDictionary<NSString*, NSString*>* launchArgsMap = @{
     // The Platform view golden test args should match `PlatformViewGoldenTestManager`.
     @"--locale-initialization" : @"locale_initialization",
@@ -48,7 +50,8 @@
     @"--gesture-reject-eager" : @"platform_view_gesture_reject_eager",
     @"--gesture-accept" : @"platform_view_gesture_accept",
     @"--tap-status-bar" : @"tap_status_bar",
-    @"--text-semantics-focus" : @"text_semantics_focus"
+    @"--text-semantics-focus" : @"text_semantics_focus",
+    @"--animated-color-square" : @"animated_color_square",
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap
@@ -58,7 +61,6 @@
           *stop = YES;
         }
       }];
-
   if (flutterViewControllerTestName) {
     [self setupFlutterViewControllerTest:flutterViewControllerTestName];
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
@@ -118,6 +120,16 @@
       gestureRecognizersBlockingPolicy:
           FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded];
   self.window.rootViewController = flutterViewController;
+
+  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--assert-ca-layer-type"]) {
+    if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--enable-software-rendering"]) {
+      NSAssert([flutterViewController.view.layer isKindOfClass:[CALayer class]],
+               @"Expected CALayer for software rendering.");
+    } else {
+      NSAssert([flutterViewController.view.layer isKindOfClass:[CAMetalLayer class]],
+               @"Expected CAMetalLayer for non-software rendering.");
+    }
+  }
 }
 
 @end

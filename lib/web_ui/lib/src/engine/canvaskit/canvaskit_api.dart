@@ -84,7 +84,7 @@ class CanvasKit {
   external int GetWebGLContext(
       html.CanvasElement canvas, SkWebGLContextOptions options);
   external SkGrContext MakeGrContext(int glContext);
-  external SkSurface MakeOnScreenGLSurface(
+  external SkSurface? MakeOnScreenGLSurface(
     SkGrContext grContext,
     int width,
     int height,
@@ -683,6 +683,8 @@ class SkAnimatedImage {
   ///
   /// This object is no longer usable after calling this method.
   external void delete();
+  external bool isAliasOf(SkAnimatedImage other);
+  external bool isDeleted();
 }
 
 @JS()
@@ -698,6 +700,8 @@ class SkImage {
   );
   external Uint8List readPixels(SkImageInfo imageInfo, int srcX, int srcY);
   external SkData encodeToData();
+  external bool isAliasOf(SkImage other);
+  external bool isDeleted();
 }
 
 @JS()
@@ -1306,6 +1310,7 @@ class SkPictureRecorder {
 /// "borrowed", i.e. their memory is managed by other objects. In the case of
 /// [SkCanvas] it is managed by [SkPictureRecorder].
 @JS()
+@anonymous
 class SkCanvas {
   external void clear(Float32List color);
   external void clipPath(
@@ -1444,11 +1449,13 @@ class SkCanvas {
 }
 
 @JS()
+@anonymous
 class SkCanvasSaveLayerWithoutBoundsOverload {
   external void saveLayer(SkPaint paint);
 }
 
 @JS()
+@anonymous
 class SkCanvasSaveLayerWithFilterOverload {
   external void saveLayer(
     SkPaint? paint,
@@ -1465,6 +1472,7 @@ class SkPicture {
 }
 
 @JS()
+@anonymous
 class SkParagraphBuilderNamespace {
   external SkParagraphBuilder Make(
     SkParagraphStyle paragraphStyle,
@@ -1490,6 +1498,7 @@ class SkParagraphBuilder {
 }
 
 @JS()
+@anonymous
 class SkParagraphStyle {}
 
 @JS()

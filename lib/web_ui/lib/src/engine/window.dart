@@ -603,6 +603,11 @@ class EngineWindow extends ui.Window {
         }
         break;
 
+      // Dispatched by the bindings to delay service worker initialization.
+      case 'flutter/service_worker':
+        html.window.dispatchEvent(html.Event('flutter-first-frame'));
+        return;
+
       case 'flutter/textinput':
         textEditing.channel.handleTextInput(data, callback);
         return;
@@ -643,11 +648,11 @@ class EngineWindow extends ui.Window {
       case 'flutter/navigation':
         const MethodCodec codec = JSONMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
-        final Map<String, dynamic>? message = decoded.arguments;
+        final Map<String, dynamic> message = decoded.arguments as Map<String, dynamic>;
         switch (decoded.method) {
           case 'routeUpdated':
             _useSingleEntryBrowserHistory().then((void data) {
-              _browserHistory.setRouteName(message!['routeName']);
+              _browserHistory.setRouteName(message['routeName']);
               _replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(true));
             });
@@ -655,7 +660,7 @@ class EngineWindow extends ui.Window {
           case 'routeInformationUpdated':
             assert(_browserHistory is MultiEntriesBrowserHistory);
             _browserHistory.setRouteName(
-              message!['location'],
+              message['location'],
               state: message['state'],
             );
             _replyToPlatformMessage(
@@ -674,14 +679,10 @@ class EngineWindow extends ui.Window {
       return;
     }
 
-    // TODO(flutter_web): Some Flutter widgets send platform messages that we
-    // don't handle on web. So for now, let's just ignore them. In the future,
-    // we should consider uncommenting the following "callback(null)" line.
-
     // Passing [null] to [callback] indicates that the platform message isn't
     // implemented. Look at [MethodChannel.invokeMethod] to see how [null] is
     // handled.
-    // callback(null);
+    _replyToPlatformMessage(callback, null);
   }
 
   int _getHapticFeedbackDuration(String? type) {
@@ -764,12 +765,23 @@ class EngineWindow extends ui.Window {
   @override
   void render(ui.Scene scene) {
     if (experimentalUseSkia) {
+      // "Build finish" and "raster start" happen back-to-back because we
+      // render on the same thread, so there's no overhead from hopping to
+      // another thread.
+      //
+      // CanvasKit works differently from the HTML renderer in that in HTML
+      // we update the DOM in SceneBuilder.build, which is these function calls
+      // here are CanvasKit-only.
+      _frameTimingsOnBuildFinish();
+      _frameTimingsOnRasterStart();
+
       final LayerScene layerScene = scene as LayerScene;
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
       domRenderer.renderScene(surfaceScene.webOnlyRootElement);
     }
+    _frameTimingsOnRasterFinish();
   }
 
   @visibleForTesting

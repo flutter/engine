@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_CPP_TEXT_INPUT_MODEL_H_
 #define FLUTTER_SHELL_PLATFORM_CPP_TEXT_INPUT_MODEL_H_
 
+#include <algorithm>
 #include <memory>
 #include <string>
 
@@ -17,13 +18,15 @@ class TextInputModel {
   TextInputModel();
   virtual ~TextInputModel();
 
-  // Attempts to set the text state.
+  // Sets the text.
   //
-  // Returns false if the state is not valid (base or extent are out of
-  // bounds, or base is less than extent).
-  bool SetEditingState(size_t selection_base,
-                       size_t selection_extent,
-                       const std::string& text);
+  // Resets the selection base and extent.
+  void SetText(const std::string& text);
+
+  // Attempts to set the text selection.
+  //
+  // Returns false if the base or extent are out of bounds.
+  bool SetSelection(size_t base, size_t extent);
 
   // Adds a Unicode code point.
   //
@@ -101,32 +104,26 @@ class TextInputModel {
   int GetCursorOffset() const;
 
   // The position where the selection starts.
-  int selection_base() const {
-    return static_cast<int>(selection_base_ - text_.begin());
-  }
+  int selection_base() const { return selection_base_; }
 
   // The position of the cursor.
-  int selection_extent() const {
-    return static_cast<int>(selection_extent_ - text_.begin());
-  }
+  int selection_extent() const { return selection_extent_; }
 
  private:
   void DeleteSelected();
 
   std::u16string text_;
-  std::u16string::iterator selection_base_;
-  std::u16string::iterator selection_extent_;
+  size_t selection_base_ = 0;
+  size_t selection_extent_ = 0;
 
   // Returns the left hand side of the selection.
-  std::u16string::iterator selection_start() {
-    return selection_base_ < selection_extent_ ? selection_base_
-                                               : selection_extent_;
+  size_t selection_start() const {
+    return std::min(selection_base_, selection_extent_);
   }
 
   // Returns the right hand side of the selection.
-  std::u16string::iterator selection_end() {
-    return selection_base_ > selection_extent_ ? selection_base_
-                                               : selection_extent_;
+  size_t selection_end() const {
+    return std::max(selection_base_, selection_extent_);
   }
 };
 

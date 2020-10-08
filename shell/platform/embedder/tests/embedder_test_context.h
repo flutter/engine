@@ -19,7 +19,6 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor.h"
 #include "flutter/testing/elf_loader.h"
 #include "flutter/testing/test_dart_native_resolver.h"
-#include "flutter/testing/test_gl_surface.h"
 #include "third_party/skia/include/core/SkImage.h"
 
 namespace flutter {
@@ -131,7 +130,7 @@ class EmbedderTestContext {
 
   void SetNextSceneCallback(const NextSceneCallback& next_scene_callback);
 
-  virtual void SetupOpenGLSurface(SkISize surface_size) = 0;
+  virtual void SetupSurface(SkISize surface_size) = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestContext);
 };

@@ -3,16 +3,18 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
-#include "flutter/shell/platform/linux/fl_engine_private.h"
+
+#include <gmodule.h>
+
+#include <cstring>
 
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
+#include "flutter/shell/platform/linux/fl_dart_project_private.h"
+#include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_renderer_headless.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
-
-#include <gmodule.h>
-#include <cstring>
 
 static constexpr int kMicrosecondsPerNanosecond = 1000;
 
@@ -52,7 +54,7 @@ G_DEFINE_TYPE_WITH_CODE(
 // Subclass of GSource that integrates Flutter tasks into the GLib main loop.
 typedef struct {
   GSource parent;
-  FlEngine* self;
+  FlEngine* engine;
   FlutterTask task;
 } FlutterSource;
 
@@ -138,7 +140,7 @@ static gboolean flutter_source_dispatch(GSource* source,
                                         GSourceFunc callback,
                                         gpointer user_data) {
   FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  FlEngine* self = fl_source->self;
+  FlEngine* self = fl_source->engine;
 
   FlutterEngineResult result =
       FlutterEngineRunTask(self->engine, &fl_source->task);
@@ -149,12 +151,29 @@ static gboolean flutter_source_dispatch(GSource* source,
   return G_SOURCE_REMOVE;
 }
 
+// Called when the engine is disposed.
+static void engine_weak_notify_cb(gpointer user_data, GObject* object) {
+  FlutterSource* source = reinterpret_cast<FlutterSource*>(user_data);
+  source->engine = nullptr;
+  g_source_destroy(reinterpret_cast<GSource*>(source));
+}
+
+// Called when a flutter source completes.
+static void flutter_source_finalize(GSource* source) {
+  FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
+  if (fl_source->engine != nullptr) {
+    g_object_weak_unref(G_OBJECT(fl_source->engine), engine_weak_notify_cb,
+                        fl_source);
+    fl_source->engine = nullptr;
+  }
+}
+
 // Table of functions for Flutter GLib main loop integration.
 static GSourceFuncs flutter_source_funcs = {
     nullptr,                  // prepare
     nullptr,                  // check
     flutter_source_dispatch,  // dispatch
-    nullptr,                  // finalize
+    flutter_source_finalize,  // finalize
     nullptr,
     nullptr  // Internal usage
 };
@@ -226,7 +245,8 @@ static void fl_engine_post_task(FlutterTask task,
   g_autoptr(GSource) source =
       g_source_new(&flutter_source_funcs, sizeof(FlutterSource));
   FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  fl_source->self = self;
+  fl_source->engine = self;
+  g_object_weak_ref(G_OBJECT(self), engine_weak_notify_cb, fl_source);
   fl_source->task = task;
   g_source_set_ready_time(source,
                           target_time_nanos / kMicrosecondsPerNanosecond);
@@ -355,15 +375,11 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   custom_task_runners.platform_task_runner = &platform_task_runner;
 
   g_autoptr(GPtrArray) command_line_args =
-      g_ptr_array_new_with_free_func(g_free);
-  g_ptr_array_add(command_line_args, g_strdup("flutter"));
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  gboolean enable_mirrors = fl_dart_project_get_enable_mirrors(self->project);
-  G_GNUC_END_IGNORE_DEPRECATIONS
-  if (enable_mirrors) {
-    g_ptr_array_add(command_line_args,
-                    g_strdup("--dart-flags=--enable_mirrors=true"));
-  }
+      fl_dart_project_get_switches(self->project);
+  // FlutterProjectArgs expects a full argv, so when processing it for flags
+  // the first item is treated as the executable and ignored. Add a dummy value
+  // so that all switches are used.
+  g_ptr_array_insert(command_line_args, 0, g_strdup("flutter"));
 
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);

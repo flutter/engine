@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_GL_H_
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
+#include "flutter/testing/test_gl_surface.h"
 
 namespace flutter {
 namespace testing {
@@ -62,7 +63,7 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   GLGetFBOCallback gl_get_fbo_callback_;
   GLPresentCallback gl_present_callback_;
 
-  void SetupOpenGLSurface(SkISize surface_size) override;
+  void SetupSurface(SkISize surface_size) override;
 
   bool GLMakeCurrent();
 
