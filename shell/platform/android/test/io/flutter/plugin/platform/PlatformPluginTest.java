@@ -1,11 +1,15 @@
 package io.flutter.plugin.platform;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 import android.app.Activity;
 import android.content.ClipData;
@@ -77,7 +81,10 @@ public class PlatformPluginTest {
             RuntimeEnvironment.application.getApplicationContext(), RingtoneManager.TYPE_RINGTONE);
     clip = ClipData.newUri(contentResolver, "URI", uri);
     clipboardManager.setPrimaryClip(clip);
-    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    String uriData = platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat).toString();
+    InputStream uriInputStream = contentResolver.openInputStream(uri);
+    InputStream dataInputStream = new ByteArrayInputStream(uriData.getBytes());
+    assertEquals(dataInputStream.read(), uriInputStream.read());
   }
 
   @Test
