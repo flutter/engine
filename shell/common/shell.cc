@@ -1411,7 +1411,7 @@ bool Shell::OnServiceProtocolRunInView(
   auto old_asset_manager = engine_->GetAssetManager();
   if (old_asset_manager != nullptr) {
     for (auto& old_resolver : old_asset_manager->TakeResolvers()) {
-      if (old_resolver->ShouldPreserve()) {
+      if (old_resolver->IsValidAfterAssetManagerChange()) {
         configuration.AddAssetResolver(std::move(old_resolver));
       }
     }
@@ -1538,7 +1538,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
   auto old_asset_manager = engine_->GetAssetManager();
   if (old_asset_manager != nullptr) {
     for (auto& old_resolver : old_asset_manager->TakeResolvers()) {
-      if (old_resolver->ShouldPreserve()) {
+      if (old_resolver->IsValidAfterAssetManagerChange()) {
         asset_manager->PushBack(std::move(old_resolver));
       }
     }
