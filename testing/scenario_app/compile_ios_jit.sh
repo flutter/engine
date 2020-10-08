@@ -90,10 +90,16 @@ echo "Using $SYSROOT as sysroot."
 
 echo "Creating stub App using $SYSROOT..."
 
+# Use the ld specified in PATH instead of the one from the active xcode
+# toolchain (the default).
+#
+# When linking against a newer iOS SDK (newer SYSROOT) with an older version of
+# clang, the linker from the old toolchain may refuse to link against new TAPI
+# files provided in the new SDK. See: https://github.com/flutter/flutter/issues/65901
 echo "static const int Moo = 88;" | xcrun clang -x c \
   -arch x86_64 \
   -fembed-bitcode-marker \
-  -fuse-ld=`which ld` \
+  -fuse-ld=$(which ld) \
   -isysroot "$SYSROOT" \
   -miphoneos-version-min=8.0 \
   -dynamiclib \
