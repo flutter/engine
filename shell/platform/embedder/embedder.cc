@@ -1126,8 +1126,13 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     }
   }
 
-  if (SAFE_ACCESS(args, dart_entrypoint_argc, 0) > 0 &&
-      SAFE_ACCESS(args, dart_entrypoint_argv, nullptr) != nullptr) {
+  if (SAFE_ACCESS(args, dart_entrypoint_argc, 0) > 0) {
+    if (SAFE_ACCESS(args, dart_entrypoint_argv, nullptr) == nullptr) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Could not determine Dart entrypoint arguments "
+                                "as dart_entrypoint_argc "
+                                "was set, but dart_entrypoint_argv was null.");
+    }
     std::vector<std::string> arguments(args->dart_entrypoint_argc);
     for (int i = 0; i < args->dart_entrypoint_argc; ++i) {
       arguments[i] = std::string{args->dart_entrypoint_argv[i]};

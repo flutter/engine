@@ -1377,7 +1377,8 @@ typedef struct {
   /// strings must be `NULL` terminated.
   ///
   /// The strings will be copied out and so any strings passed in here can
-  /// be safely collected after initializing the engine with `FlutterProjectArgs`.
+  /// be safely collected after initializing the engine with
+  /// `FlutterProjectArgs`.
   const char* const* dart_entrypoint_argv;
 
 } FlutterProjectArgs;
