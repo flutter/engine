@@ -5,7 +5,10 @@ import static org.mockito.Mockito.*;
 
 import android.graphics.Matrix;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.accessibility.AccessibilityEvent;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.plugin.platform.AccessibilityEventsDelegate;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -75,5 +78,23 @@ public class FlutterMutatorViewTest {
       screenMatrix.postTranslate(7, 8);
       assertTrue(matrixCaptor.getValue().equals(screenMatrix));
     }
+  }
+
+  @Test
+  public void requestSendAccessibilityEvent_delegates() {
+    final AndroidTouchProcessor touchProcessor = mock(AndroidTouchProcessor.class);
+    final AccessibilityEventsDelegate delegate = mock(AccessibilityEventsDelegate.class);
+
+    final FlutterMutatorView mutatorView =
+        new FlutterMutatorView(RuntimeEnvironment.systemContext, 1.0f, touchProcessor, delegate);
+
+    final View platformView = mock(View.class);
+    mutatorView.addView(platformView);
+
+    final View childView = mock(View.class);
+    final AccessibilityEvent event = mock(AccessibilityEvent.class);
+
+    mutatorView.requestSendAccessibilityEvent(childView, event);
+    verify(delegate).requestSendAccessibilityEvent(platformView, childView, event);
   }
 }
