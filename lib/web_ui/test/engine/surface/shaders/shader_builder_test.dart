@@ -158,8 +158,7 @@ void testMain() {
     test('Float precision', () {
       ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
       builder.floatPrecision = ShaderPrecision.kLow;
-      ShaderDeclaration variable =
-          builder.addUniform(ShaderType.kFloat, name: 'f1');
+      builder.addUniform(ShaderType.kFloat, name: 'f1');
       expect(
           builder.build(),
           '#version 300 es\n'
@@ -169,14 +168,13 @@ void testMain() {
 
     test('Integer precision', () {
       ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
-      builder.floatPrecision = ShaderPrecision.kLow;
-      ShaderDeclaration variable =
-          builder.addUniform(ShaderType.kInt, name: 'i1');
+      builder.integerPrecision = ShaderPrecision.kLow;
+      builder.addUniform(ShaderType.kInt, name: 'i1');
       expect(
           builder.build(),
           '#version 300 es\n'
           'precision lowp int;\n'
-          'uniform int f1;\n');
+          'uniform int i1;\n');
     });
 
     test('Method', () {
@@ -190,7 +188,7 @@ void testMain() {
           builder.build(),
           '#version 300 es\n'
           'precision mediump float;\n'
-          'uniform float f1;\n'
+          'uniform float ${variable.name};\n'
           'void main() {\n'
           'f1 = 5.0;\n'
           '}\n');
