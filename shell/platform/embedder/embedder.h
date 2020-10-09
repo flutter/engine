@@ -1375,6 +1375,9 @@ typedef struct {
 
   /// The command line arguments passed through to the Dart entrypoint. The
   /// strings must be `NULL` terminated.
+  ///
+  /// The strings will be copied out and so any strings passed in here can
+  /// be safely collected after initializing the engine with `FlutterProjectArgs`.
   const char* const* dart_entrypoint_argv;
 
 } FlutterProjectArgs;

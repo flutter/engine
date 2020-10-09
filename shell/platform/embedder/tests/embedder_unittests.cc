@@ -479,26 +479,25 @@ TEST_F(EmbedderTest, DartEntrypointArgs) {
   auto& context = GetEmbedderContext(ContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
-  builder.GetProjectArgs().dart_entrypoint_argc = 2;
-  std::vector<const char*> args = {"foo", "bar"};
-  builder.GetProjectArgs().dart_entrypoint_argv = args.data();
+  builder.AddDartEntrypointArgument("foo");
+  builder.AddDartEntrypointArgument("bar");
   builder.SetDartEntrypoint("dart_entrypoint_args");
-  fml::AutoResetWaitableEvent callbackLatch;
-  std::vector<std::string> callbackArgs;
-  auto nativeArgumentsCallback = [&callbackArgs,
-                                  &callbackLatch](Dart_NativeArguments args) {
+  fml::AutoResetWaitableEvent callback_latch;
+  std::vector<std::string> callback_args;
+  auto nativeArgumentsCallback = [&callback_args,
+                                  &callback_latch](Dart_NativeArguments args) {
     Dart_Handle exception = nullptr;
-    callbackArgs =
+    callback_args =
         tonic::DartConverter<std::vector<std::string>>::FromArguments(
             args, 0, exception);
-    callbackLatch.Signal();
+    callback_latch.Signal();
   };
   context.AddNativeCallback("NativeArgumentsCallback",
                             CREATE_NATIVE_ENTRY(nativeArgumentsCallback));
   auto engine = builder.LaunchEngine();
-  callbackLatch.Wait();
-  ASSERT_EQ(callbackArgs[0], "foo");
-  ASSERT_EQ(callbackArgs[1], "bar");
+  callback_latch.Wait();
+  ASSERT_EQ(callback_args[0], "foo");
+  ASSERT_EQ(callback_args[1], "bar");
 }
 
 //------------------------------------------------------------------------------
