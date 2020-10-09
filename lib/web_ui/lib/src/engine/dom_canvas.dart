@@ -236,6 +236,9 @@ html.Element _pathToSvgElement(SurfacePath path, SurfacePaintData paint,
   } else if (paint.color != null) {
     sb.write('fill="${colorToCssString(paint.color)}" ');
   }
+  if (path.fillType == ui.PathFillType.evenOdd) {
+    sb.write('fill-rule="evenodd" ');
+  }
   sb.write('d="');
   pathToSvg(path, sb);
   sb.write('"></path>');
