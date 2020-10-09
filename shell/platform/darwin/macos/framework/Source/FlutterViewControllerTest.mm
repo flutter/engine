@@ -49,8 +49,8 @@ TEST(FlutterViewController, HasStringsWhenPasteboardEmpty) {
   FlutterMethodCall* methodCallAfterClear =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
   [viewControllerMock handleMethodCall:methodCallAfterClear result:resultAfterClear];
-  ASSERT_TRUE(calledAfterClear);
-  ASSERT_FALSE(valueAfterClear);
+  EXPECT_TRUE(calledAfterClear);
+  EXPECT_FALSE(valueAfterClear);
 }
 
 TEST(FlutterViewController, HasStringsWhenPasteboardFull) {
@@ -69,8 +69,8 @@ TEST(FlutterViewController, HasStringsWhenPasteboardFull) {
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
   [viewControllerMock handleMethodCall:methodCall result:result];
-  ASSERT_TRUE(called);
-  ASSERT_TRUE(value);
+  EXPECT_TRUE(called);
+  EXPECT_TRUE(value);
 }
 
 }  // flutter::testing

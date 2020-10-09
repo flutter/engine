@@ -17,8 +17,8 @@ TEST(FlutterEngine, CanLaunch) {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test"
                                                       project:project
                                        allowHeadlessExecution:true];
-  ASSERT_TRUE([engine runWithEntrypoint:@"main"]);
-  ASSERT_TRUE(engine.running);
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+  EXPECT_TRUE(engine.running);
   [engine shutDownEngine];
 }
 
