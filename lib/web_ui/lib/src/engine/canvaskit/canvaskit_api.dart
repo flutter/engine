@@ -114,7 +114,7 @@ class CanvasKitInitPromise {
   external void then(CanvasKitInitCallback callback);
 }
 
-@JS('window.flutterCanvasKit.SkColorSpace.SRGB')
+@JS('window.flutterCanvasKit.ColorSpace.SRGB')
 external SkColorSpace get SkColorSpaceSRGB;
 
 @JS()
@@ -1010,7 +1010,7 @@ List<Float32List> encodeRawColorList(Int32List rawColors) {
   return toSkFloatColorList(colors);
 }
 
-@JS('window.flutterCanvasKit.SkPath')
+@JS('window.flutterCanvasKit.Path')
 class SkPath {
   external SkPath([SkPath? other]);
   external void setFillType(SkFillType fillType);
@@ -1140,7 +1140,7 @@ class SkPath {
   );
 }
 
-@JS('window.flutterCanvasKit.SkContourMeasureIter')
+@JS('window.flutterCanvasKit.ContourMeasureIter')
 class SkContourMeasureIter {
   external SkContourMeasureIter(SkPath path, bool forceClosed, int startIndex);
   external SkContourMeasure? next();
@@ -1294,7 +1294,7 @@ Uint16List toUint16List(List<int> ints) {
   return result;
 }
 
-@JS('window.flutterCanvasKit.SkPictureRecorder')
+@JS('window.flutterCanvasKit.PictureRecorder')
 class SkPictureRecorder {
   external SkPictureRecorder();
   external SkCanvas beginRecording(SkRect bounds);
