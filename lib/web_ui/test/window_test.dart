@@ -31,7 +31,7 @@ void testMain() {
     final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
       TestHistoryEntry('initial state', null, '/initial'),
     );
-    await EnginePlatformDispatcher.instance.debugInitializeHistory(strategy, useSingle: true);
+    await window.debugInitializeHistory(strategy, useSingle: true);
     expect(window.defaultRouteName, '/initial');
 
     // Changing the URL in the address bar later shouldn't affect [window.defaultRouteName].
@@ -41,7 +41,7 @@ void testMain() {
 
   test('window.defaultRouteName should reset after navigation platform message',
       () async {
-    await EnginePlatformDispatcher.instance.debugInitializeHistory(TestUrlStrategy.fromEntry(
+    await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
       TestHistoryEntry('initial state', null, '/initial'),
     ), useSingle: true);
     // Reading it multiple times should return the same value.
@@ -64,16 +64,16 @@ void testMain() {
     // Disable URL strategy.
     expect(() => jsSetUrlStrategy(null), returnsNormally);
     // History should be initialized.
-    expect(EnginePlatformDispatcher.instance.browserHistory, isNotNull);
+    expect(window.browserHistory, isNotNull);
     // But without a URL strategy.
-    expect(EnginePlatformDispatcher.instance.browserHistory.urlStrategy, isNull);
+    expect(window.browserHistory.urlStrategy, isNull);
     // Current path is always "/" in this case.
-    expect(EnginePlatformDispatcher.instance.browserHistory.currentPath, '/');
+    expect(window.browserHistory.currentPath, '/');
 
     // Perform some navigation operations.
     routeInformationUpdated('/foo/bar', null);
     // Path should not be updated because URL strategy is disabled.
-    expect(EnginePlatformDispatcher.instance.browserHistory.currentPath, '/');
+    expect(window.browserHistory.currentPath, '/');
   });
 
   test('js interop throws on wrong type', () {
