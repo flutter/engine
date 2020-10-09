@@ -7,7 +7,7 @@ import static org.mockito.Mockito.*;
 
 import android.content.Context;
 import android.content.res.AssetManager;
-import android.graphics.Rect;
+import android.graphics.Point;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -552,8 +552,9 @@ public class PlatformViewsControllerTest {
     createPlatformView(jni, platformViewsController, platformViewId, "testType");
     platformViewsController.initializePlatformViewIfNeeded(platformViewId);
 
-    final Rect windowRect = platformViewsController.getPlatformViewWindowRect(platformViewId);
-    assertTrue(windowRect.isEmpty());
+    final Point windowOffset = platformViewsController.getPlatformViewWindowOffset(platformViewId);
+    assertEquals(windowOffset.x, 0);
+    assertEquals(windowOffset.y, 0);
   }
 
   private static byte[] encodeMethodCall(MethodCall call) {

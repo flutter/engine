@@ -5,6 +5,7 @@
 package io.flutter.view;
 
 import android.annotation.SuppressLint;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
@@ -58,11 +59,11 @@ class AccessibilityViewEmbedder {
   // Maps a platform view and originId to a corresponding flutterID.
   private final Map<ViewAndId, Integer> originToFlutterId;
 
-  // Maps an embedded view to it's screen bounds.
+  // Maps an embedded view to it's display offset.
   // This is used to translate the coordinates of the accessibility node subtree to the main
   // display's coordinate
   // system.
-  private final Map<View, Rect> embeddedViewToDisplayBounds;
+  private final Map<View, Point> embeddedViewToDisplayOffset;
 
   private int nextFlutterId;
 
@@ -72,23 +73,23 @@ class AccessibilityViewEmbedder {
     this.rootAccessibilityView = rootAccessibiiltyView;
     nextFlutterId = firstVirtualNodeId;
     originToFlutterId = new HashMap<>();
-    embeddedViewToDisplayBounds = new HashMap<>();
+    embeddedViewToDisplayOffset = new HashMap<>();
   }
 
   /**
    * Returns the root accessibility node for an embedded platform view.
    *
    * @param flutterId the virtual accessibility ID for the node in flutter accessibility tree
-   * @param displayBounds the display bounds for the node in screen coordinates
+   * @param offsetBounds the display offset for the node in screen coordinates
    */
   public AccessibilityNodeInfo getRootNode(
-      @NonNull View embeddedView, int flutterId, @NonNull Rect displayBounds) {
+      @NonNull View embeddedView, int flutterId, @NonNull Point offsetBounds) {
     AccessibilityNodeInfo originNode = embeddedView.createAccessibilityNodeInfo();
     Long originPackedId = reflectionAccessors.getSourceNodeId(originNode);
     if (originPackedId == null) {
       return null;
     }
-    embeddedViewToDisplayBounds.put(embeddedView, displayBounds);
+    embeddedViewToDisplayOffset.put(embeddedView, offsetBounds);
     int originId = ReflectionAccessors.getVirtualNodeId(originPackedId);
     cacheVirtualIdMappings(embeddedView, originId, flutterId);
     return convertToFlutterNode(originNode, flutterId, embeddedView);
@@ -101,7 +102,7 @@ class AccessibilityViewEmbedder {
     if (origin == null) {
       return null;
     }
-    if (!embeddedViewToDisplayBounds.containsKey(origin.view)) {
+    if (!embeddedViewToDisplayOffset.containsKey(origin.view)) {
       // This might happen if the embedded view is sending accessibility event before the first
       // Flutter semantics
       // tree was sent to the accessibility bridge. In this case we don't return a node as we do not
@@ -138,10 +139,10 @@ class AccessibilityViewEmbedder {
     result.setSource(rootAccessibilityView, flutterId);
     result.setClassName(originNode.getClassName());
 
-    Rect displayBounds = embeddedViewToDisplayBounds.get(embeddedView);
+    Point displayOffset = embeddedViewToDisplayOffset.get(embeddedView);
 
     copyAccessibilityFields(originNode, result);
-    setFlutterNodesTranslateBounds(originNode, displayBounds, result);
+    setFlutterNodesTranslateOffset(originNode, displayOffset, result);
     addChildrenToFlutterNode(originNode, embeddedView, result);
     setFlutterNodeParent(originNode, embeddedView, result);
 
@@ -198,9 +199,9 @@ class AccessibilityViewEmbedder {
   // AccessibilityNodeInfo#getBoundsinParent as we are copying the platform view's
   // accessibility node and we should not lose any available bounds information.
   @SuppressWarnings("deprecation")
-  private void setFlutterNodesTranslateBounds(
+  private void setFlutterNodesTranslateOffset(
       @NonNull AccessibilityNodeInfo originNode,
-      @NonNull Rect displayBounds,
+      @NonNull Point displayOffset,
       @NonNull AccessibilityNodeInfo resultNode) {
     Rect boundsInParent = new Rect();
     originNode.getBoundsInParent(boundsInParent);
@@ -208,7 +209,7 @@ class AccessibilityViewEmbedder {
 
     Rect boundsInScreen = new Rect();
     originNode.getBoundsInScreen(boundsInScreen);
-    boundsInScreen.offset(displayBounds.left, displayBounds.top);
+    boundsInScreen.offset(displayOffset.x, displayOffset.y);
     resultNode.setBoundsInScreen(boundsInScreen);
   }
 
@@ -352,7 +353,7 @@ class AccessibilityViewEmbedder {
     if (origin == null) {
       return false;
     }
-    Rect displayBounds = embeddedViewToDisplayBounds.get(origin.view);
+    Point displayOffset = embeddedViewToDisplayOffset.get(origin.view);
     int pointerCount = event.getPointerCount();
     MotionEvent.PointerProperties[] pointerProperties =
         new MotionEvent.PointerProperties[pointerCount];
@@ -365,8 +366,8 @@ class AccessibilityViewEmbedder {
       event.getPointerCoords(i, originCoords);
 
       pointerCoords[i] = new MotionEvent.PointerCoords(originCoords);
-      pointerCoords[i].x -= displayBounds.left;
-      pointerCoords[i].y -= displayBounds.top;
+      pointerCoords[i].x -= displayOffset.x;
+      pointerCoords[i].y -= displayOffset.y;
     }
     MotionEvent translatedEvent =
         MotionEvent.obtain(

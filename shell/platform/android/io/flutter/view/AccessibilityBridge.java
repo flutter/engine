@@ -8,6 +8,7 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.database.ContentObserver;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.opengl.Matrix;
@@ -545,10 +546,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       // For platform views we delegate the node creation to the accessibility view embedder.
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
-      Rect bounds =
-          platformViewsAccessibilityDelegate.getPlatformViewWindowRect(
+      Point offset =
+          platformViewsAccessibilityDelegate.getPlatformViewWindowOffset(
               semanticsNode.platformViewId);
-      return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
+      return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, offset);
     }
 
     AccessibilityNodeInfo result =

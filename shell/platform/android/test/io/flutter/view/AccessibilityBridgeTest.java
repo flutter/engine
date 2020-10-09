@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.graphics.Rect;
+import android.graphics.Point;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewParent;
@@ -220,14 +220,14 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = platformView.toUpdate();
     accessibilityBridge.updateSemantics(testSemanticsUpdate.buffer, testSemanticsUpdate.strings);
 
-    Rect windowRect = new Rect(1, 2, 3, 4);
-    when(accessibilityDelegate.getPlatformViewWindowRect(1)).thenReturn(windowRect);
+    Point windowOffset = new Point(1, 2);
+    when(accessibilityDelegate.getPlatformViewWindowOffset(1)).thenReturn(windowOffset);
 
     View embeddedView = mock(View.class);
     when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
 
     accessibilityBridge.createAccessibilityNodeInfo(0);
-    verify(accessibilityViewEmbedder).getRootNode(embeddedView, 0, windowRect);
+    verify(accessibilityViewEmbedder).getRootNode(embeddedView, 0, windowOffset);
   }
 
   @Test
