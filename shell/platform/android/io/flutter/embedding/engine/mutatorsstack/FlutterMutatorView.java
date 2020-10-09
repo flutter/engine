@@ -5,10 +5,14 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
+import android.view.accessibility.AccessibilityEvent;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.plugin.platform.AccessibilityEventsDelegate;
 
 /**
  * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.MutatorsStack} to its
@@ -22,7 +26,8 @@ public class FlutterMutatorView extends FrameLayout {
   private int prevLeft;
   private int prevTop;
 
-  private final AndroidTouchProcessor androidTouchProcessor;
+  @Nullable private final AndroidTouchProcessor androidTouchProcessor;
+  @Nullable private final AccessibilityEventsDelegate accessibilityEventsDelegate;
 
   /**
    * Initialize the FlutterMutatorView. Use this to set the screenDensity, which will be used to
@@ -31,17 +36,17 @@ public class FlutterMutatorView extends FrameLayout {
   public FlutterMutatorView(
       @NonNull Context context,
       float screenDensity,
-      @NonNull AndroidTouchProcessor androidTouchProcessor) {
+      @Nullable AndroidTouchProcessor androidTouchProcessor,
+      @Nullable AccessibilityEventsDelegate accessibilityEventsDelegate) {
     super(context, null);
     this.screenDensity = screenDensity;
     this.androidTouchProcessor = androidTouchProcessor;
+    this.accessibilityEventsDelegate = accessibilityEventsDelegate;
   }
 
   /** Initialize the FlutterMutatorView. */
   public FlutterMutatorView(@NonNull Context context) {
-    super(context, null);
-    this.screenDensity = 1;
-    this.androidTouchProcessor = null;
+    this(context, 1, /*androidTouchProcessor=*/ null, /*accessibilityEventsDelegate=*/ null);
   }
 
   /**
@@ -145,5 +150,13 @@ public class FlutterMutatorView extends FrameLayout {
         break;
     }
     return androidTouchProcessor.onTouchEvent(event, screenMatrix);
+  }
+
+  @Override
+  public boolean requestSendAccessibilityEvent(@NonNull View child, @NonNull AccessibilityEvent event) {
+    if (accessibilityEventsDelegate == null || getChildCount() == 0) {
+      return super.requestSendAccessibilityEvent(child, event);
+    }
+    return accessibilityEventsDelegate.requestSendAccessibilityEvent(getChildAt(0), child, event);
   }
 }

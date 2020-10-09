@@ -14,6 +14,7 @@ import android.util.DisplayMetrics;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
+import android.graphics.Rect;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -589,6 +590,19 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return controller.getView();
   }
 
+  @Override
+  public Rect getPlatformViewWindowRect(Integer id) {
+    final Rect rect = new Rect();
+    final VirtualDisplayController controller = vdControllers.get(id);
+    // In virtual displays the surface view rect is the window rect.
+    if (controller != null) {
+      controller.getView().getGlobalVisibleRect(rect);
+    }
+    // In hybrid composition, the platform view's window rect is the
+    // Activity's windows rect.
+    return rect;
+  }
+
   private void lockInputConnection(@NonNull VirtualDisplayController controller) {
     if (textInputPlugin == null) {
       return;
@@ -711,7 +725,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     final FlutterMutatorView parentView =
         new FlutterMutatorView(
-            context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
+            context, context.getResources().getDisplayMetrics().density, androidTouchProcessor, accessibilityEventsDelegate);
     platformViewParent.put(viewId, parentView);
     parentView.addView(view);
     ((FlutterView) flutterView).addView(parentView);
