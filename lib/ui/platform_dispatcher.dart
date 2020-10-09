@@ -155,8 +155,6 @@ class PlatformDispatcher {
   void _updateWindowMetrics(
     Object id,
     double devicePixelRatio,
-    double left,
-    double top,
     double width,
     double height,
     double viewPaddingTop,
@@ -180,7 +178,7 @@ class PlatformDispatcher {
     _viewConfigurations[id] = previousConfiguration.copyWith(
       window: _views[id],
       devicePixelRatio: devicePixelRatio,
-      geometry: Rect.fromLTWH(left, top, width, height),
+      geometry: Rect.fromLTWH(0.0, 0.0, width, height),
       viewPadding: WindowPadding._(
         top: viewPaddingTop,
         right: viewPaddingRight,

@@ -236,11 +236,7 @@ public class FlutterRenderer implements TextureRegistry {
     Log.v(
         TAG,
         "Setting viewport metrics\n"
-            + "Location: ("
-            + viewportMetrics.left
-            + ", "
-            + viewportMetrics.top
-            + "), Size: "
+            + "Size: "
             + viewportMetrics.width
             + " x "
             + viewportMetrics.height
@@ -274,8 +270,6 @@ public class FlutterRenderer implements TextureRegistry {
 
     flutterJNI.setViewportMetrics(
         viewportMetrics.devicePixelRatio,
-        viewportMetrics.left,
-        viewportMetrics.top,
         viewportMetrics.width,
         viewportMetrics.height,
         viewportMetrics.paddingTop,
@@ -347,8 +341,6 @@ public class FlutterRenderer implements TextureRegistry {
    */
   public static final class ViewportMetrics {
     public float devicePixelRatio = 1.0f;
-    public int left = 0;
-    public int top = 0;
     public int width = 0;
     public int height = 0;
     public int paddingTop = 0;

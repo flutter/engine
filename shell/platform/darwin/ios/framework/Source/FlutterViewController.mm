@@ -935,8 +935,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   _viewportMetrics.device_pixel_ratio = scale;
   _viewportMetrics.physical_width = viewBounds.size.width * scale;
   _viewportMetrics.physical_height = viewBounds.size.height * scale;
-  _viewportMetrics.physical_left = viewBounds.origin.x * scale;
-  _viewportMetrics.physical_top = viewBounds.origin.y * scale;
 
   [self updateViewportPadding];
   [self updateViewportMetrics];

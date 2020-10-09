@@ -383,8 +383,6 @@ public class FlutterJNI {
   @UiThread
   public void setViewportMetrics(
       float devicePixelRatio,
-      int physicalLeft,
-      int physicalTop,
       int physicalWidth,
       int physicalHeight,
       int physicalPaddingTop,
@@ -404,8 +402,6 @@ public class FlutterJNI {
     nativeSetViewportMetrics(
         nativePlatformViewId,
         devicePixelRatio,
-        physicalLeft,
-        physicalTop,
         physicalWidth,
         physicalHeight,
         physicalPaddingTop,
@@ -425,8 +421,6 @@ public class FlutterJNI {
   private native void nativeSetViewportMetrics(
       long nativePlatformViewId,
       float devicePixelRatio,
-      int physicalLeft,
-      int physicalTop,
       int physicalWidth,
       int physicalHeight,
       int physicalPaddingTop,

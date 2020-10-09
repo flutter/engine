@@ -18,7 +18,7 @@
 namespace flutter {
 class Window final {
  public:
-  explicit Window(int64_t window_id, ViewportMetrics metrics);
+  Window(int64_t window_id, ViewportMetrics metrics);
 
   ~Window();
 

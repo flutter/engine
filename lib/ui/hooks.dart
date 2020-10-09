@@ -13,8 +13,6 @@ part of dart.ui;
 void _updateWindowMetrics(
   Object id,
   double devicePixelRatio,
-  double left,
-  double top,
   double width,
   double height,
   double viewPaddingTop,
@@ -33,8 +31,6 @@ void _updateWindowMetrics(
   PlatformDispatcher.instance._updateWindowMetrics(
     id,
     devicePixelRatio,
-    left,
-    top,
     width,
     height,
     viewPaddingTop,

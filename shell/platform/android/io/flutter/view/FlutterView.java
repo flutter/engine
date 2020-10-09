@@ -97,8 +97,6 @@ public class FlutterView extends SurfaceView
 
   static final class ViewportMetrics {
     float devicePixelRatio = 1.0f;
-    int physicalLeft = 0;
-    int physicalTop = 0;
     int physicalWidth = 0;
     int physicalHeight = 0;
     int physicalPaddingTop = 0;
@@ -755,8 +753,6 @@ public class FlutterView extends SurfaceView
         .getFlutterJNI()
         .setViewportMetrics(
             mMetrics.devicePixelRatio,
-            mMetrics.physicalLeft,
-            mMetrics.physicalTop,
             mMetrics.physicalWidth,
             mMetrics.physicalHeight,
             mMetrics.physicalPaddingTop,

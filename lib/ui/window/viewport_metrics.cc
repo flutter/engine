@@ -18,8 +18,6 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
       physical_height(p_physical_height) {}
 
 ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
-                                 double p_physical_left,
-                                 double p_physical_top,
                                  double p_physical_width,
                                  double p_physical_height,
                                  double p_physical_padding_top,
@@ -35,8 +33,6 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_system_gesture_inset_bottom,
                                  double p_physical_system_gesture_inset_left)
     : device_pixel_ratio(p_device_pixel_ratio),
-      physical_left(p_physical_left),
-      physical_top(p_physical_top),
       physical_width(p_physical_width),
       physical_height(p_physical_height),
       physical_padding_top(p_physical_padding_top),
@@ -55,21 +51,8 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
       physical_system_gesture_inset_left(p_physical_system_gesture_inset_left) {
 }
 
-ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
-                                 double p_physical_left,
-                                 double p_physical_top,
-                                 double p_physical_width,
-                                 double p_physical_height)
-    : device_pixel_ratio(p_device_pixel_ratio),
-      physical_left(p_physical_left),
-      physical_top(p_physical_top),
-      physical_width(p_physical_width),
-      physical_height(p_physical_height) {}
-
 bool operator==(const ViewportMetrics& a, const ViewportMetrics& b) {
   return a.device_pixel_ratio == b.device_pixel_ratio &&
-         a.physical_left == b.physical_left &&
-         a.physical_top == b.physical_top &&
          a.physical_width == b.physical_width &&
          a.physical_height == b.physical_height &&
          a.physical_padding_top == b.physical_padding_top &&
@@ -92,7 +75,6 @@ bool operator==(const ViewportMetrics& a, const ViewportMetrics& b) {
 
 std::ostream& operator<<(std::ostream& os, const ViewportMetrics& a) {
   os << "DPR: " << a.device_pixel_ratio << " "
-     << "Location: [" << a.physical_left << "L, " << a.physical_top << "T] "
      << "Size: [" << a.physical_width << "W " << a.physical_height << "H] "
      << "Padding: [" << a.physical_padding_top << "T "
      << a.physical_padding_right << "R " << a.physical_padding_bottom << "B "
