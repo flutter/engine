@@ -110,19 +110,25 @@ class AndroidEGLSurfaceDamage {
  public:
   void init(EGLDisplay display, EGLContext context) {
     const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
-    if (HasExtension(extensions, "EGL_KHR_partial_update")) {
-      set_damage_region = reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
-          eglGetProcAddress("eglSetDamageRegionKHR"));
-    }
 
-    if (HasExtension(extensions, "EGL_EXT_swap_buffers_with_damage")) {
-      swap_buffers_with_damage =
-          reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
-              eglGetProcAddress("eglSwapBuffersWithDamageEXT"));
-    } else if (HasExtension(extensions, "EGL_KHR_swap_buffers_with_damage")) {
-      swap_buffers_with_damage =
-          reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
-              eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
+    has_buffer_age_ = HasExtension(extensions, "EGL_EXT_buffer_age");
+
+    // EGL_EXT_buffer_age extension is reqired for partial repaint
+    if (has_buffer_age_) {
+      if (HasExtension(extensions, "EGL_KHR_partial_update")) {
+        set_damage_region = reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
+            eglGetProcAddress("eglSetDamageRegionKHR"));
+      }
+
+      if (HasExtension(extensions, "EGL_EXT_swap_buffers_with_damage")) {
+        swap_buffers_with_damage =
+            reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
+                eglGetProcAddress("eglSwapBuffersWithDamageEXT"));
+      } else if (HasExtension(extensions, "EGL_KHR_swap_buffers_with_damage")) {
+        swap_buffers_with_damage =
+            reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
+                eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
+      }
     }
   }
 
@@ -136,10 +142,14 @@ class AndroidEGLSurfaceDamage {
   }
 
   std::vector<SkIRect> InitialDamage(EGLDisplay display, EGLSurface surface) {
+    std::vector<SkIRect> res;
+    if (!has_buffer_age_) {
+      return res;
+    }
+
     EGLint age;
     eglQuerySurface(display, surface, EGL_BUFFER_AGE_EXT, &age);
 
-    std::vector<SkIRect> res;
     // age == 0 - full repaint (empty res)
     if (age == 1) {
       // no initial damage
@@ -191,6 +201,7 @@ class AndroidEGLSurfaceDamage {
 
   PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region = nullptr;
   PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC swap_buffers_with_damage = nullptr;
+  bool has_buffer_age_;
 
   bool HasExtension(const char* extensions, const char* name) {
     const char* r = strstr(extensions, name);
