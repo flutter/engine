@@ -101,9 +101,9 @@ void testMain() async {
     );
     builder2.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
         oldLayer: oldBackdropFilterLayer);
+    builder2.pop();
+    builder2.pop();
     builder2.addPicture(Offset.zero, circles2);
-    builder2.pop();
-    builder2.pop();
     builder2.pop();
 
     html.document.body.append(builder2
