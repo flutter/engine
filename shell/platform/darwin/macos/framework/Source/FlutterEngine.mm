@@ -7,6 +7,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <vector>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
@@ -26,6 +27,16 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
   flutterLocale.script_code = [[locale objectForKey:NSLocaleScriptCode] UTF8String];
   flutterLocale.variant_code = [[locale objectForKey:NSLocaleVariantCode] UTF8String];
   return flutterLocale;
+}
+
+namespace {
+
+struct AotDataDeleter {
+  void operator()(FlutterEngineAOTData aot_data) { FlutterEngineCollectAOTData(aot_data); }
+};
+
+using UniqueAotDataPtr = std::unique_ptr<_FlutterEngineAOTData, AotDataDeleter>;
+
 }
 
 /**
@@ -74,6 +85,12 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
  * time is in the clock used by the Flutter engine.
  */
 - (void)postMainThreadTask:(FlutterTask)task targetTimeInNanoseconds:(uint64_t)targetTime;
+
+/**
+ * Loads the AOT snapshots and instructions from the elf bundle (app_elf_snapshot.so) if it is
+ * present in the assets directory.
+ */
+- (UniqueAotDataPtr)loadAOTData:(NSString*)assetsDir;
 
 @end
 
@@ -184,6 +201,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
   // A mapping of textureID to internal FlutterExternalTextureGL adapter.
   NSMutableDictionary<NSNumber*, FlutterExternalTextureGL*>* _textures;
+
+  // Pointer to the Dart AOT snapshot and instruction data.
+  UniqueAotDataPtr _aotData;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -253,6 +273,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   flutterArguments.command_line_argv = argv.size() > 0 ? argv.data() : nullptr;
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
+  flutterArguments.shutdown_dart_vm_when_done = true;
   static size_t sTaskRunnerIdentifiers = 0;
   const FlutterTaskRunnerDescription cocoa_task_runner_description = {
       .struct_size = sizeof(FlutterTaskRunnerDescription),
@@ -274,6 +295,11 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   };
   flutterArguments.custom_task_runners = &custom_task_runners;
 
+  _aotData = [self loadAOTData:_project.assetsPath];
+  if (_aotData) {
+    flutterArguments.aot_data = _aotData.get();
+  }
+
   FlutterEngineResult result = FlutterEngineInitialize(
       FLUTTER_ENGINE_VERSION, &rendererConfig, &flutterArguments, (__bridge void*)(self), &_engine);
   if (result != kSuccess) {
@@ -291,6 +317,35 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   [self updateWindowMetrics];
   [self updateDisplayConfig];
   return YES;
+}
+
+- (UniqueAotDataPtr)loadAOTData:(NSString*)assetsDir {
+  if (!FlutterEngineRunsAOTCompiledDartCode()) {
+    return nullptr;
+  }
+
+  // This is the location where the test fixture places the snapshot file.
+  // For applications built by Flutter tool, this is in "App.framework".
+  std::filesystem::path assetsFsDir(assetsDir.UTF8String);
+  std::filesystem::path elfFile("app_elf_snapshot.so");
+  auto fullElfPath = assetsFsDir / elfFile;
+
+  if (!std::filesystem::exists(fullElfPath)) {
+    return nullptr;
+  }
+
+  FlutterEngineAOTDataSource source = {};
+  source.type = kFlutterEngineAOTDataSourceTypeElfPath;
+  source.elf_path = fullElfPath.c_str();
+
+  FlutterEngineAOTData data = nullptr;
+  auto result = FlutterEngineCreateAOTData(&source, &data);
+  if (result != kSuccess) {
+    NSLog(@"Failed to load AOT data from: %@", @(fullElfPath.c_str()));
+    return nullptr;
+  }
+
+  return UniqueAotDataPtr(data);
 }
 
 - (void)setViewController:(FlutterViewController*)controller {
