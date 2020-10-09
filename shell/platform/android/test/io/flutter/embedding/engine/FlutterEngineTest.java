@@ -159,6 +159,7 @@ public class FlutterEngineTest {
         /*automaticallyRegisterPlugins=*/ false);
 
     verify(packageContext, atLeast(1)).getAssets();
+    verify(context, times(0)).getAssets();
   }
 
   @Test
