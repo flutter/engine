@@ -63,8 +63,9 @@ mixin _DomClip on PersistedContainerSurface {
 class PersistedClipRect extends PersistedContainerSurface
     with _DomClip
     implements ui.ClipRectEngineLayer {
-  PersistedClipRect(PersistedClipRect? oldLayer, this.rect) : super(oldLayer);
-
+  PersistedClipRect(PersistedClipRect? oldLayer, this.rect, this.clipBehavior)
+      : super(oldLayer);
+  final ui.Clip? clipBehavior;
   final ui.Rect rect;
 
   @override
@@ -82,11 +83,15 @@ class PersistedClipRect extends PersistedContainerSurface
 
   @override
   void apply() {
+    html.CssStyleDeclaration style = rootElement!.style;
     rootElement!.style
       ..left = '${rect.left}px'
       ..top = '${rect.top}px'
       ..width = '${rect.right - rect.left}px'
       ..height = '${rect.bottom - rect.top}px';
+    if (clipBehavior != ui.Clip.none) {
+      style.overflow = 'hidden';
+    }
 
     // Translate the child container in the opposite direction to compensate for
     // the shift in the coordinate system introduced by the translation of the
@@ -134,7 +139,8 @@ class PersistedClipRRect extends PersistedContainerSurface
 
   @override
   void apply() {
-    rootElement!.style
+    html.CssStyleDeclaration style = rootElement!.style;
+    style
       ..left = '${rrect.left}px'
       ..top = '${rrect.top}px'
       ..width = '${rrect.width}px'
@@ -143,6 +149,9 @@ class PersistedClipRRect extends PersistedContainerSurface
       ..borderTopRightRadius = '${rrect.trRadiusX}px'
       ..borderBottomRightRadius = '${rrect.brRadiusX}px'
       ..borderBottomLeftRadius = '${rrect.blRadiusX}px';
+    if (clipBehavior != ui.Clip.none) {
+      style.overflow = 'hidden';
+    }
 
     // Translate the child container in the opposite direction to compensate for
     // the shift in the coordinate system introduced by the translation of the

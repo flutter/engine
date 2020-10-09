@@ -133,7 +133,8 @@ void testMain() {
         () {
       final PersistedScene scene1 = PersistedScene(null);
       final PersistedClipRect clip1 =
-          PersistedClipRect(null, const Rect.fromLTRB(10, 10, 20, 20));
+          PersistedClipRect(null, const Rect.fromLTRB(10, 10, 20, 20),
+              Clip.antiAlias);
       final PersistedOpacity opacity = PersistedOpacity(null, 100, Offset.zero);
       final MockPersistedPicture picture = MockPersistedPicture();
 
@@ -158,7 +159,8 @@ void testMain() {
       // because the clip didn't change no repaints should happen.
       final PersistedScene scene2 = PersistedScene(scene1);
       final PersistedClipRect clip2 =
-          PersistedClipRect(clip1, const Rect.fromLTRB(10, 10, 20, 20));
+          PersistedClipRect(clip1, const Rect.fromLTRB(10, 10, 20, 20),
+              Clip.antiAlias);
       clip1.state = PersistedSurfaceState.pendingUpdate;
       scene2.appendChild(clip2);
       opacity.state = PersistedSurfaceState.pendingRetention;
@@ -176,7 +178,8 @@ void testMain() {
       // This should cause the picture to repaint despite being retained.
       final PersistedScene scene3 = PersistedScene(scene2);
       final PersistedClipRect clip3 =
-          PersistedClipRect(clip2, const Rect.fromLTRB(10, 10, 50, 50));
+          PersistedClipRect(clip2, const Rect.fromLTRB(10, 10, 50, 50),
+          Clip.antiAlias);
       clip2.state = PersistedSurfaceState.pendingUpdate;
       scene3.appendChild(clip3);
       opacity.state = PersistedSurfaceState.pendingRetention;
