@@ -4,6 +4,8 @@
 
 // @dart = 2.6
 
+// KEEP THIS SYNCHRONIZED WITH ../../lib/web_ui/test/channel_buffers_test.dart
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -11,18 +13,17 @@ import 'dart:ui' as ui;
 
 import 'package:test/test.dart';
 
+ByteData _makeByteData(String str) {
+  final Uint8List list = utf8.encode(str) as Uint8List;
+  final ByteBuffer buffer = list is Uint8List ? list.buffer : Uint8List.fromList(list).buffer;
+  return ByteData.view(buffer);
+}
+
+void _resize(ui.ChannelBuffers buffers, String name, int newSize) {
+  buffers.handleMessage(_makeByteData('resize\r$name\r$newSize'));
+}
+
 void main() {
-
-  ByteData _makeByteData(String str) {
-    final Uint8List list = utf8.encode(str) as Uint8List;
-    final ByteBuffer buffer = list is Uint8List ? list.buffer : Uint8List.fromList(list).buffer;
-    return ByteData.view(buffer);
-  }
-
-  void _resize(ui.ChannelBuffers buffers, String name, int newSize) {
-    buffers.handleMessage(_makeByteData('resize\r$name\r$newSize'));
-  }
-
   test('push drain', () async {
     const String channel = 'foo';
     final ByteData data = _makeByteData('bar');
@@ -334,10 +335,12 @@ class _TestChannelBuffers extends ui.ChannelBuffers {
 
   final List<String> log;
 
+  @override
   void resize(String name, int newSize) {
     log.add('resize $name $newSize');
   }
 
+  @override
   void allowOverflow(String name, bool allowed) {
     log.add('allowOverflow $name $allowed');
   }

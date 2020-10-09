@@ -216,7 +216,7 @@ class EngineWindow extends ui.Window {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnTextScaleFactorChanged() {
-    _invoke(_onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
+    invoke(_onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
   }
 
   @override
@@ -233,7 +233,7 @@ class EngineWindow extends ui.Window {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnPlatformBrightnessChanged() {
-    _invoke(_onPlatformBrightnessChanged, _onPlatformBrightnessChangedZone);
+    invoke(_onPlatformBrightnessChanged, _onPlatformBrightnessChangedZone);
   }
 
   @override
@@ -250,7 +250,7 @@ class EngineWindow extends ui.Window {
   /// Otherwise zones won't work properly.
   void invokeOnMetricsChanged() {
     if (window._onMetricsChanged != null) {
-      _invoke(_onMetricsChanged, _onMetricsChangedZone);
+      invoke(_onMetricsChanged, _onMetricsChangedZone);
     }
   }
 
@@ -321,7 +321,7 @@ class EngineWindow extends ui.Window {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnLocaleChanged() {
-    _invoke(_onLocaleChanged, _onLocaleChangedZone);
+    invoke(_onLocaleChanged, _onLocaleChangedZone);
   }
 
   @override
@@ -337,7 +337,7 @@ class EngineWindow extends ui.Window {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnBeginFrame(Duration duration) {
-    _invoke1<Duration>(_onBeginFrame, _onBeginFrameZone, duration);
+    invoke1<Duration>(_onBeginFrame, _onBeginFrameZone, duration);
   }
 
   @override
@@ -353,7 +353,7 @@ class EngineWindow extends ui.Window {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnReportTimings(List<ui.FrameTiming> timings) {
-    _invoke1<List<ui.FrameTiming>>(
+    invoke1<List<ui.FrameTiming>>(
         _onReportTimings, _onReportTimingsZone, timings);
   }
 
@@ -370,7 +370,7 @@ class EngineWindow extends ui.Window {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnDrawFrame() {
-    _invoke(_onDrawFrame, _onDrawFrameZone);
+    invoke(_onDrawFrame, _onDrawFrameZone);
   }
 
   @override
@@ -386,7 +386,7 @@ class EngineWindow extends ui.Window {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnPointerDataPacket(ui.PointerDataPacket packet) {
-    _invoke1<ui.PointerDataPacket>(
+    invoke1<ui.PointerDataPacket>(
         _onPointerDataPacket, _onPointerDataPacketZone, packet);
   }
 
@@ -403,7 +403,7 @@ class EngineWindow extends ui.Window {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnSemanticsEnabledChanged() {
-    _invoke(_onSemanticsEnabledChanged, _onSemanticsEnabledChangedZone);
+    invoke(_onSemanticsEnabledChanged, _onSemanticsEnabledChangedZone);
   }
 
   @override
@@ -420,7 +420,7 @@ class EngineWindow extends ui.Window {
   /// Otherwise zones won't work properly.
   void invokeOnSemanticsAction(
       int id, ui.SemanticsAction action, ByteData? args) {
-    _invoke3<int, ui.SemanticsAction, ByteData?>(
+    invoke3<int, ui.SemanticsAction, ByteData?>(
         _onSemanticsAction, _onSemanticsActionZone, id, action, args);
   }
 
@@ -438,7 +438,7 @@ class EngineWindow extends ui.Window {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnAccessibilityFeaturesChanged() {
-    _invoke(
+    invoke(
         _onAccessibilityFeaturesChanged, _onAccessibilityFeaturesChangedZone);
   }
 
@@ -464,12 +464,12 @@ class EngineWindow extends ui.Window {
     if (name == ui.ChannelBuffers.kControlChannelName) {
       // TODO(ianh): move this logic into ChannelBuffers once we remove onPlatformMessage
       try {
-        channelBuffers.handleMessage(data!);
+        ui.channelBuffers.handleMessage(data!);
       } finally {
         callback(null);
       }
     } else if (_onPlatformMessage != null) {
-      _invoke3<String, ByteData?, ui.PlatformMessageResponseCallback>(
+      invoke3<String, ByteData?, ui.PlatformMessageResponseCallback>(
         _onPlatformMessage,
         _onPlatformMessageZone,
         name,
@@ -477,7 +477,7 @@ class EngineWindow extends ui.Window {
         callback,
       );
     } else {
-      channelBuffers.push(name, data, callback);
+      ui.channelBuffers.push(name, data, callback);
     }
   }
 
@@ -843,7 +843,7 @@ bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
 }
 
 /// Invokes [callback] inside the given [zone].
-void _invoke(void callback()?, Zone? zone) {
+void invoke(void callback()?, Zone? zone) {
   if (callback == null) {
     return;
   }
@@ -858,7 +858,7 @@ void _invoke(void callback()?, Zone? zone) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg].
-void _invoke1<A>(void callback(A a)?, Zone? zone, A arg) {
+void invoke1<A>(void callback(A a)?, Zone? zone, A arg) {
   if (callback == null) {
     return;
   }
@@ -873,7 +873,7 @@ void _invoke1<A>(void callback(A a)?, Zone? zone, A arg) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
-void _invoke2<A1, A2>(
+void invoke2<A1, A2>(
     void callback(A1 a1, A2 a2)?, Zone? zone, A1 arg1, A2 arg2) {
   if (callback == null) {
     return;
@@ -891,7 +891,7 @@ void _invoke2<A1, A2>(
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
-void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3)?, Zone? zone,
+void invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3)?, Zone? zone,
     A1 arg1, A2 arg2, A3 arg3) {
   if (callback == null) {
     return;

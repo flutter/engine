@@ -4,32 +4,41 @@
 
 // @dart = 2.6
 
+// This is identical to
+// ../../../testing/dart/channel_buffers_test.dart except for:
+//
+//  * The imports are a bit different.
+//  * The main method has been renamed testMain.
+//  * A new main method here bootstraps the web tests.
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
 
-  ByteData _makeByteData(String str) {
-    final Uint8List list = utf8.encode(str) as Uint8List;
-    final ByteBuffer buffer = list is Uint8List ? list.buffer : Uint8List.fromList(list).buffer;
-    return ByteData.view(buffer);
-  }
+ByteData _makeByteData(String str) {
+  final Uint8List list = utf8.encode(str) as Uint8List;
+  final ByteBuffer buffer = list is Uint8List ? list.buffer : Uint8List.fromList(list).buffer;
+  return ByteData.view(buffer);
+}
 
-  void _resize(ui.ChannelBuffers buffers, String name, int newSize) {
-    buffers.handleMessage(_makeByteData('resize\r$name\r$newSize'));
-  }
+void _resize(ui.ChannelBuffers buffers, String name, int newSize) {
+  buffers.handleMessage(_makeByteData('resize\r$name\r$newSize'));
+}
 
+void testMain() {
   test('push drain', () async {
     const String channel = 'foo';
     final ByteData data = _makeByteData('bar');
-    final ui.ChannelBuffers buffers = EngineChannelBuffers();
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     buffers.push(channel, data, callback);
     await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
@@ -39,10 +48,10 @@ void main() {
     });
   });
 
-  test('deprecated drain is sync', () async {
+  test('drain is sync', () async {
     const String channel = 'foo';
     final ByteData data = _makeByteData('message');
-    final ui.ChannelBuffers buffers = EngineChannelBuffers();
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     buffers.push(channel, data, callback);
     final List<String> log = <String>[];
@@ -69,7 +78,7 @@ void main() {
     const String channel = 'foo';
     final ByteData data = _makeByteData('bar');
     final
-    ui.ChannelBuffers buffers = EngineChannelBuffers();
+    ui.ChannelBuffers buffers = ui.ChannelBuffers();
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     _resize(buffers, channel, 0);
     buffers.push(channel, data, callback);
@@ -81,9 +90,9 @@ void main() {
     expect(didCall, equals(false));
   });
 
-  test('empty', () async {
+  test('drain when empty', () async {
     const String channel = 'foo';
-    final ui.ChannelBuffers buffers = EngineChannelBuffers();
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     bool didCall = false;
     await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
       didCall = true;
@@ -98,19 +107,30 @@ void main() {
     final ByteData two = _makeByteData('two');
     final ByteData three = _makeByteData('three');
     final ByteData four = _makeByteData('four');
-    final ui.ChannelBuffers buffers = EngineChannelBuffers();
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     _resize(buffers, channel, 3);
-    expect(buffers.push(channel, one, callback), equals(false));
-    expect(buffers.push(channel, two, callback), equals(false));
-    expect(buffers.push(channel, three, callback), equals(false));
-    expect(buffers.push(channel, four, callback), equals(true));
+    buffers.push(channel, one, callback);
+    buffers.push(channel, two, callback);
+    buffers.push(channel, three, callback);
+    buffers.push(channel, four, callback);
     int counter = 0;
     await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
-      if (counter++ == 0) {
-        expect(drainedData, equals(two));
-        expect(drainedCallback, equals(callback));
+      switch (counter) {
+        case 0:
+          expect(drainedData, equals(two));
+          expect(drainedCallback, equals(callback));
+          break;
+        case 1:
+          expect(drainedData, equals(three));
+          expect(drainedCallback, equals(callback));
+          break;
+        case 2:
+          expect(drainedData, equals(four));
+          expect(drainedCallback, equals(callback));
+          break;
       }
+      counter += 1;
       return;
     });
     expect(counter, equals(3));
@@ -120,18 +140,20 @@ void main() {
     const String channel = 'foo';
     final ByteData one = _makeByteData('one');
     final ByteData two = _makeByteData('two');
-    final ui.ChannelBuffers buffers = EngineChannelBuffers();
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     _resize(buffers, channel, 100);
     final ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
-    expect(buffers.push(channel, one, callback), equals(false));
-    expect(buffers.push(channel, two, callback), equals(false));
+    buffers.push(channel, one, callback);
+    buffers.push(channel, two, callback);
     _resize(buffers, channel, 1);
     int counter = 0;
     await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
-      if (counter++ == 0) {
-        expect(drainedData, equals(two));
-        expect(drainedCallback, equals(callback));
+      switch (counter) {
+        case 0:
+          expect(drainedData, equals(two));
+          expect(drainedCallback, equals(callback));
       }
+      counter += 1;
       return;
     });
     expect(counter, equals(1));
@@ -141,15 +163,19 @@ void main() {
     const String channel = 'foo';
     final ByteData one = _makeByteData('one');
     final ByteData two = _makeByteData('two');
-    final ui.ChannelBuffers buffers = EngineChannelBuffers();
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     bool didCallCallback = false;
     final ui.PlatformMessageResponseCallback oneCallback = (ByteData responseData) {
+      expect(responseData, isNull);
       didCallCallback = true;
     };
-    final ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {};
+    final ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {
+      throw TestFailure('wrong callback called');
+    };
     _resize(buffers, channel, 100);
-    expect(buffers.push(channel, one, oneCallback), equals(false));
-    expect(buffers.push(channel, two, twoCallback), equals(false));
+    buffers.push(channel, one, oneCallback);
+    buffers.push(channel, two, twoCallback);
+    expect(didCallCallback, equals(false));
     _resize(buffers, channel, 1);
     expect(didCallCallback, equals(true));
   });
@@ -158,33 +184,36 @@ void main() {
     const String channel = 'foo';
     final ByteData one = _makeByteData('one');
     final ByteData two = _makeByteData('two');
-    final ui.ChannelBuffers buffers = EngineChannelBuffers();
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     bool didCallCallback = false;
     final ui.PlatformMessageResponseCallback oneCallback = (ByteData responseData) {
+      expect(responseData, isNull);
       didCallCallback = true;
     };
-    final ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {};
+    final ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {
+      throw TestFailure('wrong callback called');
+    };
     _resize(buffers, channel, 1);
-    expect(buffers.push(channel, one, oneCallback), equals(false));
-    expect(buffers.push(channel, two, twoCallback), equals(true));
+    buffers.push(channel, one, oneCallback);
+    buffers.push(channel, two, twoCallback);
     expect(didCallCallback, equals(true));
   });
 
   test('handle garbage', () async {
-    final ui.ChannelBuffers buffers = EngineChannelBuffers();
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     expect(() => buffers.handleMessage(_makeByteData('asdfasdf')),
            throwsException);
   });
 
   test('handle resize garbage', () async {
-    final ui.ChannelBuffers buffers = EngineChannelBuffers();
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     expect(() => buffers.handleMessage(_makeByteData('resize\rfoo\rbar')),
            throwsException);
   });
 
   test('ChannelBuffers.setListener', () async {
     final List<String> log = <String>[];
-    final ui.ChannelBuffers buffers = EngineChannelBuffers();
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     final ByteData one = _makeByteData('one');
     final ByteData two = _makeByteData('two');
     final ByteData three = _makeByteData('three');
@@ -243,4 +272,87 @@ void main() {
       '-9',
     ]);
   });
+
+  test('ChannelBuffers.clearListener', () async {
+    final List<String> log = <String>[];
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    final ByteData one = _makeByteData('one');
+    final ByteData two = _makeByteData('two');
+    final ByteData three = _makeByteData('three');
+    final ByteData four = _makeByteData('four');
+    buffers.handleMessage(_makeByteData('resize\ra\r10'));
+    buffers.push('a', one, (ByteData data) { });
+    buffers.push('a', two, (ByteData data) { });
+    buffers.push('a', three, (ByteData data) { });
+    log.add('-1');
+    buffers.setListener('a', (ByteData data, ui.PlatformMessageResponseCallback callback) {
+      log.add('a1: ${utf8.decode(data.buffer.asUint8List())}');
+    });
+    await null; // handles one
+    log.add('-2');
+    buffers.clearListener('a');
+    await null;
+    log.add('-3');
+    buffers.setListener('a', (ByteData data, ui.PlatformMessageResponseCallback callback) {
+      log.add('a2: ${utf8.decode(data.buffer.asUint8List())}');
+    });
+    log.add('-4');
+    await null;
+    buffers.push('a', four, (ByteData data) { });
+    log.add('-5');
+    await null;
+    log.add('-6');
+    await null;
+    log.add('-7');
+    await null;
+    expect(log, <String>[
+      '-1',
+      'a1: one',
+      '-2',
+      '-3',
+      '-4',
+      'a2: two',
+      '-5',
+      'a2: three',
+      '-6',
+      'a2: four',
+      '-7',
+    ]);
+  });
+
+  test('ChannelBuffers.handleMessage for resize', () async {
+    final List<String> log = <String>[];
+    final ui.ChannelBuffers buffers = _TestChannelBuffers(log);
+    // Created as follows:
+    //   print(StandardMethodCodec().encodeMethodCall(MethodCall('resize', ['abcdef', 12345])).buffer.asUint8List());
+    // ...with three 0xFF bytes on either side to ensure the method works with an offer on the underlying buffer.
+    buffers.handleMessage(ByteData.sublistView(Uint8List.fromList(<int>[255, 255, 255, 7, 6, 114, 101, 115, 105, 122, 101, 12, 2, 7, 6, 97, 98, 99, 100, 101, 102, 3, 57, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255]), 3, 27));
+    expect(log, const <String>['resize abcdef 12345']);
+  });
+
+  test('ChannelBuffers.handleMessage for overflow', () async {
+    final List<String> log = <String>[];
+    final ui.ChannelBuffers buffers = _TestChannelBuffers(log);
+    // Created as follows:
+    //   print(StandardMethodCodec().encodeMethodCall(MethodCall('overflow', ['abcdef', false])).buffer.asUint8List());
+    // ...with three 0xFF bytes on either side to ensure the method works with an offer on the underlying buffer.
+    buffers.handleMessage(ByteData.sublistView(Uint8List.fromList(<int>[255, 255, 255, 7, 8, 111, 118, 101, 114, 102, 108, 111, 119, 12, 2, 7, 6, 97, 98, 99, 100, 101, 102, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255]), 3, 24));
+    expect(log, const <String>['allowOverflow abcdef false']);
+  });
+}
+
+class _TestChannelBuffers extends ui.ChannelBuffers {
+  _TestChannelBuffers(this.log);
+
+  final List<String> log;
+
+  @override
+  void resize(String name, int newSize) {
+    log.add('resize $name $newSize');
+  }
+
+  @override
+  void allowOverflow(String name, bool allowed) {
+    log.add('allowOverflow $name $allowed');
+  }
 }

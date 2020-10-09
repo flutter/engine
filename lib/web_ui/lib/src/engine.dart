@@ -8,7 +8,7 @@ library engine;
 
 import 'dart:async';
 import 'dart:collection'
-    show ListBase, ListQueue, IterableBase, DoubleLinkedQueue, DoubleLinkedQueueEntry;
+    show ListBase, IterableBase, DoubleLinkedQueue, DoubleLinkedQueueEntry;
 import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
 import 'dart:html' as html;
@@ -56,7 +56,6 @@ part 'engine/canvaskit/util.dart';
 part 'engine/canvaskit/vertices.dart';
 part 'engine/canvaskit/viewport_metrics.dart';
 part 'engine/canvas_pool.dart';
-part 'engine/channel_buffers.dart';
 part 'engine/clipboard.dart';
 part 'engine/color_filter.dart';
 part 'engine/dom_canvas.dart';
