@@ -116,10 +116,8 @@ class _WebGlRenderer implements _GlRenderer {
     if (widthInPixels == 0 || heightInPixels == 0) {
       return;
     }
-    String vertexShader = _writeVerticesVertexShader();
-    String fragmentShader = _writeVerticesFragmentShader();
-    print(vertexShader);
-    print(fragmentShader);
+    final String vertexShader = _writeVerticesVertexShader();
+    final String fragmentShader = _writeVerticesFragmentShader();
     _GlContext gl =
         _OffscreenCanvas.createGlContext(widthInPixels, heightInPixels)!;
     _GlProgram glProgram = gl.useAndCacheProgram(vertexShader, fragmentShader)!;
@@ -146,7 +144,8 @@ class _WebGlRenderer implements _GlRenderer {
     Object? positionLoc = gl.getAttribLocation(glProgram.program, 'position');
     js_util.callMethod(
         gl.glContext!, 'vertexAttribPointer', <dynamic>[
-          positionLoc, 2, gl.kFloat, false, 0, 0]);
+          positionLoc, 2, gl.kFloat, false, 0, 0,
+    ]);
     gl.enableVertexAttribArray(0);
 
     // Setup color buffer.
