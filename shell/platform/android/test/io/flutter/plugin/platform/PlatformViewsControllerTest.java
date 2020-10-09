@@ -7,7 +7,6 @@ import static org.mockito.Mockito.*;
 
 import android.content.Context;
 import android.content.res.AssetManager;
-import android.graphics.Point;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -525,36 +524,6 @@ public class PlatformViewsControllerTest {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
     boolean shouldProxying = platformViewsController.checkInputConnectionProxy(null);
     assertFalse(shouldProxying);
-  }
-
-  @Test
-  @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void getPlatformViewWindowRect__empty() {
-    final PlatformViewsController platformViewsController = new PlatformViewsController();
-
-    final int platformViewId = 0;
-    assertNull(platformViewsController.getPlatformViewById(platformViewId));
-
-    final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
-    final PlatformView platformView = mock(PlatformView.class);
-    final View androidView = mock(View.class);
-    when(platformView.getView()).thenReturn(androidView);
-    when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
-
-    platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
-
-    final FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
-
-    final FlutterView flutterView = attach(jni, platformViewsController);
-
-    // Simulate create call from the framework.
-    createPlatformView(jni, platformViewsController, platformViewId, "testType");
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
-
-    final Point windowOffset = platformViewsController.getPlatformViewWindowOffset(platformViewId);
-    assertEquals(windowOffset.x, 0);
-    assertEquals(windowOffset.y, 0);
   }
 
   private static byte[] encodeMethodCall(MethodCall call) {

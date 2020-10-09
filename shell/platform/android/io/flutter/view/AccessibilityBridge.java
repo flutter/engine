@@ -8,7 +8,6 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.database.ContentObserver;
-import android.graphics.Point;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.opengl.Matrix;
@@ -29,6 +28,7 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.BuildConfig;
 import io.flutter.Log;
+import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
@@ -543,17 +543,23 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     if (semanticsNode.platformViewId != -1) {
-      // For platform views we delegate the node creation to the accessibility view embedder.
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
-      Point offset =
-          platformViewsAccessibilityDelegate.getPlatformViewWindowOffset(
-              semanticsNode.platformViewId);
-      return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, offset);
+
+      if (embeddedView.getContext() instanceof FlutterActivity) {
+        // In hybrid composition, just return the accessibility node for the view attached
+        // to Activity's view hierarchy.
+        AccessibilityNodeInfo originNode = embeddedView.createAccessibilityNodeInfo();
+        originNode.setParent(rootAccessibilityView);
+        return originNode;
+      }
+      Rect bounds = semanticsNode.getGlobalRect();
+      return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
     }
 
     AccessibilityNodeInfo result =
-        AccessibilityNodeInfo.obtain(rootAccessibilityView, virtualViewId);
+        AccessibilityNodeInfo.obtain(rootAccessibilityView, semanticsNode.id);
+
     // Work around for https://github.com/flutter/flutter/issues/2101
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       result.setViewIdResourceName("");

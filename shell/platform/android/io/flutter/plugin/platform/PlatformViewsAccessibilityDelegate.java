@@ -4,7 +4,6 @@
 
 package io.flutter.plugin.platform;
 
-import android.graphics.Point;
 import android.view.View;
 import io.flutter.view.AccessibilityBridge;
 
@@ -15,14 +14,6 @@ public interface PlatformViewsAccessibilityDelegate {
    * there is no corresponding view.
    */
   View getPlatformViewById(Integer id);
-
-  /**
-   * Returns the offset of the window hosting the platform view.
-   *
-   * <p>This is used by the accessibility bridge to add an offset to the child nodes of the platform
-   * view.
-   */
-  Point getPlatformViewWindowOffset(Integer id);
 
   /**
    * Attaches an accessibility bridge for this platform views accessibility delegate.

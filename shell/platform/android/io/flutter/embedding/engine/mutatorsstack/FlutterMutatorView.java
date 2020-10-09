@@ -6,13 +6,9 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
 import android.view.MotionEvent;
-import android.view.View;
-import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import io.flutter.embedding.android.AndroidTouchProcessor;
-import io.flutter.plugin.platform.AccessibilityEventsDelegate;
 
 /**
  * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.MutatorsStack} to its
@@ -26,8 +22,7 @@ public class FlutterMutatorView extends FrameLayout {
   private int prevLeft;
   private int prevTop;
 
-  @Nullable private final AndroidTouchProcessor androidTouchProcessor;
-  @Nullable private final AccessibilityEventsDelegate accessibilityEventsDelegate;
+  private final AndroidTouchProcessor androidTouchProcessor;
 
   /**
    * Initialize the FlutterMutatorView. Use this to set the screenDensity, which will be used to
@@ -36,17 +31,17 @@ public class FlutterMutatorView extends FrameLayout {
   public FlutterMutatorView(
       @NonNull Context context,
       float screenDensity,
-      @Nullable AndroidTouchProcessor androidTouchProcessor,
-      @Nullable AccessibilityEventsDelegate accessibilityEventsDelegate) {
+      @NonNull AndroidTouchProcessor androidTouchProcessor) {
     super(context, null);
     this.screenDensity = screenDensity;
     this.androidTouchProcessor = androidTouchProcessor;
-    this.accessibilityEventsDelegate = accessibilityEventsDelegate;
   }
 
   /** Initialize the FlutterMutatorView. */
   public FlutterMutatorView(@NonNull Context context) {
-    this(context, 1, /*androidTouchProcessor=*/ null, /*accessibilityEventsDelegate=*/ null);
+    super(context, null);
+    this.screenDensity = 1;
+    this.androidTouchProcessor = null;
   }
 
   /**
@@ -150,14 +145,5 @@ public class FlutterMutatorView extends FrameLayout {
         break;
     }
     return androidTouchProcessor.onTouchEvent(event, screenMatrix);
-  }
-
-  @Override
-  public boolean requestSendAccessibilityEvent(
-      @NonNull View child, @NonNull AccessibilityEvent event) {
-    if (accessibilityEventsDelegate == null || getChildCount() == 0) {
-      return super.requestSendAccessibilityEvent(child, event);
-    }
-    return accessibilityEventsDelegate.requestSendAccessibilityEvent(getChildAt(0), child, event);
   }
 }

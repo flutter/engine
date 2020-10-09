@@ -13,7 +13,7 @@ import io.flutter.view.AccessibilityBridge;
 /**
  * Delegates accessibility events to the currently attached accessibility bridge if one is attached.
  */
-public class AccessibilityEventsDelegate {
+class AccessibilityEventsDelegate {
   private AccessibilityBridge accessibilityBridge;
 
   /**

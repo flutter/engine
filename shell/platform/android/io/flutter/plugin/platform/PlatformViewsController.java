@@ -9,8 +9,6 @@ import static android.view.MotionEvent.PointerProperties;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.Point;
-import android.graphics.Rect;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
@@ -591,20 +589,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return controller.getView();
   }
 
-  @Override
-  public Point getPlatformViewWindowOffset(Integer id) {
-    final Point offset = new Point(0, 0);
-    final VirtualDisplayController controller = vdControllers.get(id);
-    // In virtual displays the window offset is the view offset.
-    if (controller != null) {
-      final Rect visibleRect = new Rect();
-      controller.getView().getGlobalVisibleRect(visibleRect);
-      offset.set(visibleRect.top, visibleRect.left);
-    }
-    // In hybrid composition, the window offset is (0, 0).
-    return offset;
-  }
-
   private void lockInputConnection(@NonNull VirtualDisplayController controller) {
     if (textInputPlugin == null) {
       return;
@@ -727,10 +711,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     final FlutterMutatorView parentView =
         new FlutterMutatorView(
-            context,
-            context.getResources().getDisplayMetrics().density,
-            androidTouchProcessor,
-            accessibilityEventsDelegate);
+            context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
     platformViewParent.put(viewId, parentView);
     parentView.addView(view);
     ((FlutterView) flutterView).addView(parentView);

@@ -16,15 +16,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.graphics.Point;
+import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewParent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
+import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import java.nio.ByteBuffer;
@@ -34,6 +36,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
@@ -200,11 +203,46 @@ public class AccessibilityBridgeTest {
   }
 
   @Test
-  public void itProducesPlatformViewNodeInfoConsideringWindowRect() {
+  public void itProducesPlatformViewNodeForHybridComposition() {
+    PlatformViewsAccessibilityDelegate accessibilityDelegate =
+        mock(PlatformViewsAccessibilityDelegate.class);
+
+    Context content = RuntimeEnvironment.application.getApplicationContext();
+    View rootAccessibilityView = new View(content);
+    AccessibilityViewEmbedder accessibilityViewEmbedder = mock(AccessibilityViewEmbedder.class);
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(
+            rootAccessibilityView,
+            /*accessibilityChannel=*/ null,
+            /*accessibilityManager=*/ null,
+            /*contentResolver=*/ null,
+            accessibilityViewEmbedder,
+            accessibilityDelegate);
+
+    TestSemanticsNode platformView = new TestSemanticsNode();
+    platformView.platformViewId = 1;
+
+    TestSemanticsUpdate testSemanticsUpdate = platformView.toUpdate();
+    accessibilityBridge.updateSemantics(testSemanticsUpdate.buffer, testSemanticsUpdate.strings);
+
+    View embeddedView = mock(View.class);
+    when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
+
+    when(embeddedView.getContext()).thenReturn(mock(FlutterActivity.class));
+
+    AccessibilityNodeInfo nodeInfo = mock(AccessibilityNodeInfo.class);
+    when(embeddedView.createAccessibilityNodeInfo()).thenReturn(nodeInfo);
+
+    AccessibilityNodeInfo result = accessibilityBridge.createAccessibilityNodeInfo(0);
+    verify(nodeInfo).setParent(rootAccessibilityView);
+    assertEquals(result, nodeInfo);
+  }
+
+  @Test
+  public void itProducesPlatformViewNodeForVirtualDisplay() {
     PlatformViewsAccessibilityDelegate accessibilityDelegate =
         mock(PlatformViewsAccessibilityDelegate.class);
     AccessibilityViewEmbedder accessibilityViewEmbedder = mock(AccessibilityViewEmbedder.class);
-
     AccessibilityBridge accessibilityBridge =
         setUpBridge(
             /*rootAccessibilityView=*/ null,
@@ -220,14 +258,12 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = platformView.toUpdate();
     accessibilityBridge.updateSemantics(testSemanticsUpdate.buffer, testSemanticsUpdate.strings);
 
-    Point windowOffset = new Point(1, 2);
-    when(accessibilityDelegate.getPlatformViewWindowOffset(1)).thenReturn(windowOffset);
-
     View embeddedView = mock(View.class);
     when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
+    when(embeddedView.getContext()).thenReturn(mock(Activity.class));
 
     accessibilityBridge.createAccessibilityNodeInfo(0);
-    verify(accessibilityViewEmbedder).getRootNode(embeddedView, 0, windowOffset);
+    verify(accessibilityViewEmbedder).getRootNode(eq(embeddedView), eq(0), any(Rect.class));
   }
 
   @Test
