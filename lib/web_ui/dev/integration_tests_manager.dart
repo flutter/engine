@@ -359,7 +359,8 @@ class FirefoxIntegrationArguments extends IntegrationArguments {
       '--target=test_driver/${testName}',
       '-d',
       'web-server',
-      '--release', // Keep running Firefox on release mode.
+      // Keep running Firefox on release mode.
+      '--release',
       '--browser-name=firefox',
       '--headless',
       '--local-engine=host_debug_unopt',
