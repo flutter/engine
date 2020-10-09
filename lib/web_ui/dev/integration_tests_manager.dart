@@ -165,7 +165,7 @@ class IntegrationTestsManager {
         IntegrationArguments.fromBrowser(_browser);
     final int exitCode = await runProcess(
       executable,
-      arguments.getTestArguments(testName, 'debug'),
+      arguments.getTestArguments(testName, 'profile'),
       workingDirectory: directory.path,
     );
 
@@ -173,7 +173,7 @@ class IntegrationTestsManager {
       io.stderr
           .writeln('ERROR: Failed to run test. Exited with exit code $exitCode'
               '. To run $testName locally use the following command:'
-              '\n\n${arguments.getCommandToRun(testName, 'debug')}');
+              '\n\n${arguments.getCommandToRun(testName, 'profile')}');
       return false;
     } else {
       return true;
@@ -341,7 +341,7 @@ class ChromeIntegrationArguments extends IntegrationArguments {
 
   String getCommandToRun(String testName, String mode) {
     String statementToRun = 'flutter drive '
-        '--target=test_driver/${testName} -d web-server --debug '
+        '--target=test_driver/${testName} -d web-server --profile '
         '--browser-name=chrome --local-engine=host_debug_unopt';
     if (isLuci) {
       statementToRun = '$statementToRun --chrome-binary='
@@ -359,8 +359,7 @@ class FirefoxIntegrationArguments extends IntegrationArguments {
       '--target=test_driver/${testName}',
       '-d',
       'web-server',
-      // Keep running Firefox on release mode.
-      '--release',
+      '--$mode',
       '--browser-name=firefox',
       '--headless',
       '--local-engine=host_debug_unopt',
@@ -381,7 +380,7 @@ class SafariIntegrationArguments extends IntegrationArguments {
       '--target=test_driver/${testName}',
       '-d',
       'web-server',
-      '--release', // Keep running Safari on release mode.
+      '--$mode',
       '--browser-name=safari',
       '--local-engine=host_debug_unopt',
     ];
