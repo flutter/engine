@@ -9,7 +9,7 @@
 
 namespace flutter::testing {
 
-TEST(FlutterEngineTest, FlutterEngineCanLaunch) {
+TEST(FlutterEngine, CanLaunch) {
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures

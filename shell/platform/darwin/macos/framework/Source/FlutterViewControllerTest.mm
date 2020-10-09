@@ -34,7 +34,7 @@ id mockViewController(NSString* pasteboardString) {
   return viewControllerMock;
 }
 
-TEST(FlutterViewControllerTest, HasStringsWhenPasteboardEmpty) {
+TEST(FlutterViewController, HasStringsWhenPasteboardEmpty) {
   // Mock FlutterViewController so that it behaves like the pasteboard is empty.
   id viewControllerMock = mockViewController(nil);
 
@@ -53,7 +53,7 @@ TEST(FlutterViewControllerTest, HasStringsWhenPasteboardEmpty) {
   ASSERT_FALSE(valueAfterClear);
 }
 
-TEST(FlutterViewControllerTest, HasStringsWhenPasteboardFull) {
+TEST(FlutterViewController, HasStringsWhenPasteboardFull) {
   // Mock FlutterViewController so that it behaves like the pasteboard has a
   // valid string.
   id viewControllerMock = mockViewController(@"some string");
