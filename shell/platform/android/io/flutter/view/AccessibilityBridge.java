@@ -545,7 +545,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       // For platform views we delegate the node creation to the accessibility view embedder.
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
-      Rect bounds = platformViewsAccessibilityDelegate.getPlatformViewWindowRect(semanticsNode.platformViewId);
+      Rect bounds =
+          platformViewsAccessibilityDelegate.getPlatformViewWindowRect(
+              semanticsNode.platformViewId);
       return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
     }
 

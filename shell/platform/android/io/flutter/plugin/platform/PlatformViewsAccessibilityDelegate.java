@@ -19,7 +19,8 @@ public interface PlatformViewsAccessibilityDelegate {
   /**
    * Returns the rect of the window hosting the platform view.
    *
-   * <p>This is used by the accesibility bridge to add an offset to the child nodes of the platform view.
+   * <p>This is used by the accesibility bridge to add an offset to the child nodes of the platform
+   * view.
    */
   Rect getPlatformViewWindowRect(Integer id);
 

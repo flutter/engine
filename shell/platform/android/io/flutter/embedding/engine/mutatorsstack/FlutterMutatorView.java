@@ -5,9 +5,9 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
-import android.view.accessibility.AccessibilityEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -153,7 +153,8 @@ public class FlutterMutatorView extends FrameLayout {
   }
 
   @Override
-  public boolean requestSendAccessibilityEvent(@NonNull View child, @NonNull AccessibilityEvent event) {
+  public boolean requestSendAccessibilityEvent(
+      @NonNull View child, @NonNull AccessibilityEvent event) {
     if (accessibilityEventsDelegate == null || getChildCount() == 0) {
       return super.requestSendAccessibilityEvent(child, event);
     }

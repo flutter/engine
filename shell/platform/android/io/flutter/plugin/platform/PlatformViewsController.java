@@ -9,12 +9,12 @@ import static android.view.MotionEvent.PointerProperties;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.Rect;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
-import android.graphics.Rect;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -725,7 +725,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     final FlutterMutatorView parentView =
         new FlutterMutatorView(
-            context, context.getResources().getDisplayMetrics().density, androidTouchProcessor, accessibilityEventsDelegate);
+            context,
+            context.getResources().getDisplayMetrics().density,
+            androidTouchProcessor,
+            accessibilityEventsDelegate);
     platformViewParent.put(viewId, parentView);
     parentView.addView(view);
     ((FlutterView) flutterView).addView(parentView);
