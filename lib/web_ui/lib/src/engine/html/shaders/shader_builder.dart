@@ -50,13 +50,19 @@ class ShaderBuilder {
   int _constCounter = 0;
 
   final bool isWebGl2;
+  final bool _isFragmentShader;
 
   static const String kOpenGlEs3Header = '#version 300 es';
 
   /// Lazily allocated fragment color output.
   ShaderDeclaration? _fragmentColorDeclaration;
 
-  ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2;
+  ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2,
+    _isFragmentShader = false;
+
+  ShaderBuilder.fragment(this.version) :
+        isWebGl2 = version == WebGLVersion.webgl2,
+        _isFragmentShader = true;
 
   /// Returns fragment color declaration for fragment shader.
   ///
@@ -126,7 +132,8 @@ class ShaderBuilder {
         _buffer.write('const ');
         break;
       case ShaderStorageQualifier.kAttribute:
-        _buffer.write(isWebGl2 ? 'in ' : 'attribute ');
+        _buffer.write(isWebGl2 ? 'in '
+            : _isFragmentShader ? 'varying ' : 'attribute ');
         break;
       case ShaderStorageQualifier.kUniform:
         _buffer.write('uniform ');

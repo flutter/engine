@@ -204,7 +204,7 @@ class _WebGlRenderer implements _GlRenderer {
   ///       fragColor = vColor;
   ///     }
   String _writeVerticesFragmentShader() {
-    ShaderBuilder builder = ShaderBuilder(webGLVersion);
+    ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
     builder.floatPrecision = ShaderPrecision.kMedium;
     builder.addIn(ShaderType.kVec4, name:'v_color');
     ShaderMethod method = builder.addMethod('main');

@@ -115,6 +115,17 @@ void testMain() {
           'attribute vec4 position;\n'
           'attribute vec4 attr_0;\n');
     });
+
+    test('in declaration WebGL1', () {
+      ShaderBuilder builder = ShaderBuilder.fragment(WebGLVersion.webgl1);
+      builder.addIn(ShaderType.kVec4, name: 'position');
+      builder.addIn(ShaderType.kVec4);
+      expect(
+          builder.build(),
+          'varying vec4 position;\n'
+          'varying vec4 attr_0;\n');
+    });
+
     test('Attribute declaration WebGL2', () {
       ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
       builder.addIn(ShaderType.kVec4, name: 'position');
