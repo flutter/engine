@@ -3,20 +3,23 @@ part of engine;
 
 /// Creates shader program for target webgl version.
 ///
+/// See spec at https://www.khronos.org/registry/webgl/specs/latest/1.0/.
+///
 /// Differences in WebGL2 vs WebGL1.
 ///   - WebGL2 needs '#version 300 es' to enable the new shading language
 ///   - vertex attributes have the qualifier 'in' instead of 'attribute'
 ///   - GLSL 3.00 defines texture and other new and future reserved words.
-///   - varying is now called in
-///   - GLSL 1.00 has a predefined variable gl_FragColor which needs to be
+///   - varying is now called `in`.
+///   - GLSL 1.00 has a predefined variable gl_FragColor which now needs to be
 ///     defined as `out vec4 fragmentColor`.
 ///   - Texture lookup functions texture2D and textureCube have now been
 ///     replaced with texture.
 ///
-///
 ///  Example usage:
 ///  ShaderBuilder builder = ShaderBuilder(WebGlVersion.webgl2);
-///  builder.add
+///  ShaderDeclaration u1 = builder.addUniform(ShaderType.kVec4);
+///  ShaderMethod method = builder.addMethod('main');
+///  method.addStatement('${u1.name} = vec4(1.0, 1.0, 1.0, 0.0);');
 ///  source = builder.build();
 class ShaderBuilder {
   /// WebGL version.

@@ -167,19 +167,19 @@ class _WebGlRenderer implements _GlRenderer {
     context.restore();
   }
 
-  // Vertex shader transforms pixel space [Vertices.positions] to
-  // final clipSpace -1..1 coordinates with inverted Y Axis.
-  //     #version 300 es
-  //     layout (location=0) in vec4 position;
-  //     layout (location=1) in vec4 color;
-  //     uniform mat4 u_ctransform;
-  //     uniform vec4 u_scale;
-  //     uniform vec4 u_shift;
-  //     out vec4 vColor;
-  //     void main() {
-  //       gl_Position = ((u_ctransform * position) * u_scale) + u_shift;
-  //       v_color = color.zyxw;
-  //     }
+  /// Vertex shader transforms pixel space [Vertices.positions] to
+  /// final clipSpace -1..1 coordinates with inverted Y Axis.
+  ///     #version 300 es
+  ///     layout (location=0) in vec4 position;
+  ///     layout (location=1) in vec4 color;
+  ///     uniform mat4 u_ctransform;
+  ///     uniform vec4 u_scale;
+  ///     uniform vec4 u_shift;
+  ///     out vec4 vColor;
+  ///     void main() {
+  ///       gl_Position = ((u_ctransform * position) * u_scale) + u_shift;
+  ///       v_color = color.zyxw;
+  ///     }
   String _writeVerticesVertexShader() {
     ShaderBuilder builder = ShaderBuilder(webGLVersion);
     builder.addIn(ShaderType.kVec4, name: 'position');
@@ -194,15 +194,15 @@ class _WebGlRenderer implements _GlRenderer {
     return builder.build();
   }
 
-  // This fragment shader enables Int32List of colors to be passed directly
-  // to gl context buffer for rendering by decoding RGBA8888.
-  //     #version 300 es
-  //     precision mediump float;
-  //     in vec4 vColor;
-  //     out vec4 fragColor;
-  //     void main() {
-  //       fragColor = vColor;
-  //     }
+  /// This fragment shader enables Int32List of colors to be passed directly
+  /// to gl context buffer for rendering by decoding RGBA8888.
+  ///     #version 300 es
+  ///     precision mediump float;
+  ///     in vec4 vColor;
+  ///     out vec4 fragColor;
+  ///     void main() {
+  ///       fragColor = vColor;
+  ///     }
   String _writeVerticesFragmentShader() {
     ShaderBuilder builder = ShaderBuilder(webGLVersion);
     builder.floatPrecision = ShaderPrecision.kMedium;
