@@ -1150,6 +1150,9 @@ void Shell::OnPreEngineRestart() {
 
 // |Engine::Delegate|
 void Shell::OnRootIsolateCreated() {
+  if (is_added_to_service_protocol_) {
+    return;
+  }
   auto description = GetServiceProtocolDescription();
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetPlatformTaskRunner(),
@@ -1159,6 +1162,7 @@ void Shell::OnRootIsolateCreated() {
           self->vm_->GetServiceProtocol()->AddHandler(self.get(), description);
         }
       });
+  is_added_to_service_protocol_ = true;
 }
 
 // |Engine::Delegate|

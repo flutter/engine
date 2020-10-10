@@ -411,6 +411,7 @@ class Shell final : public PlatformView::Delegate,
                      >
       service_protocol_handlers_;
   bool is_setup_ = false;
+  bool is_added_to_service_protocol_ = false;
   uint64_t next_pointer_flow_id_ = 0;
 
   bool first_frame_rasterized_ = false;
