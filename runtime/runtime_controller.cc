@@ -74,8 +74,8 @@ RuntimeController::RuntimeController(
                 self->isolate_snapshot_,                              //
                 self->task_runners_,                                  //
                 std::make_unique<PlatformConfiguration>(self.get()),  //
-                self->hint_freed_delegate_,                           //
                 self->snapshot_delegate_,                             //
+                self->hint_freed_delegate_,                           //
                 self->io_manager_,                                    //
                 self->unref_queue_,                                   //
                 self->image_decoder_,                                 //
