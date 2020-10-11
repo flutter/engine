@@ -123,8 +123,7 @@ class PersistedShaderMask extends PersistedContainerSurface
         lines.add(
             '<stop stop-color=\'${colorToCssString(color)}\' offset=\'${(stop * 100).round()}%\'/>');
       }
-      lines.add(
-          '</radialGradient></defs><rect x=\'0%\' y=\'0%\' '
+      lines.add('</radialGradient></defs><rect x=\'0%\' y=\'0%\' '
           'width=\'100%\' height=\'100%\' fill=\'url(#gradient)\'></rect></svg>');
       inputImageSvg = lines.join('');
     } else {
@@ -293,7 +292,7 @@ String _srcInImageToSvg(String imageUrl) {
   _maskFilterIdCounter += 1;
   return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
       '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      'filterUnits="objectBoundingBox">'
       '<feColorMatrix values="0 0 0 0 1 ' // Ignore input, set it to absolute.
       '0 0 0 0 1 '
       '0 0 0 0 1 '
@@ -310,7 +309,7 @@ String _srcOutImageToSvg(String imageUrl) {
   _maskFilterIdCounter += 1;
   return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
       '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      'filterUnits="objectBoundingBox">'
       '<feImage xlink:href="$imageUrl" result="image">'
       '</feImage>'
       '<feComposite in="image" in2="SourceGraphic" operator="out" result="comp">'
@@ -322,7 +321,7 @@ String _xorImageToSvg(String imageUrl) {
   _maskFilterIdCounter += 1;
   return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
       '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      'filterUnits="objectBoundingBox">'
       '<feImage xlink:href="$imageUrl" result="image">'
       '</feImage>'
       '<feComposite in="image" in2="SourceGraphic" operator="xor" result="comp">'
@@ -337,7 +336,7 @@ String _compositeImageToSvg(
   _maskFilterIdCounter += 1;
   return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
       '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      'filterUnits="objectBoundingBox">'
       '<feImage xlink:href="$imageUrl" result="image">'
       '</feImage>'
       '<feComposite in="image" in2="SourceGraphic" '
@@ -353,7 +352,7 @@ String _modulateImageToSvg(String imageUrl) {
   _maskFilterIdCounter += 1;
   return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
       '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      'filterUnits="objectBoundingBox">'
       '<feImage xlink:href="$imageUrl" result="image">'
       '</feImage>'
       '<feComposite in="image" in2="SourceGraphic" '
@@ -367,8 +366,7 @@ String _blendImageToSvg(String imageUrl, String? feBlend,
     {bool swapLayers = false}) {
   _maskFilterIdCounter += 1;
   return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
-          '<filter id="_fmf$_maskFilterIdCounter" filterUnits="objectBoundingBox" '
-          'x="0%" y="0%" width="100%" height="100%">'
+          '<filter id="_fmf$_maskFilterIdCounter" filterUnits="objectBoundingBox">'
           '<feImage xlink:href="$imageUrl" result="image">'
           '</feImage>' +
       (swapLayers
