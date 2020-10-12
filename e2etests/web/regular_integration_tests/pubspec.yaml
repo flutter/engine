@@ -21,3 +21,8 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/
+  fonts:
+    - family: RobotoMono
+      fonts:
+        - asset: fonts/RobotoMono-Bold.ttf
+        - asset: fonts/RobotoMono-Regular.ttf
