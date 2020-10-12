@@ -1,4 +1,4 @@
-Signature: e1e238bf83ff046e90191a5521ba595f
+Signature: db8df3052525cf4a9a53228f10bc3d16
 
 UNUSED LICENSES:
 
@@ -8115,6 +8115,7 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination_test.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_base.h
+FILE: ../../../third_party/dart/runtime/vm/datastream_test.cc
 FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
 FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
 FILE: ../../../third_party/dart/runtime/vm/field_table.cc
