@@ -1099,6 +1099,7 @@ FILE: ../../../flutter/shell/platform/embedder/fixtures/verifyb143464703.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/verifyb143464703_soft_noxform.png
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.h
+FILE: ../../../flutter/shell/platform/embedder/test_utils/proc_table_replacement.h
 FILE: ../../../flutter/shell/platform/embedder/vsync_waiter_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/vsync_waiter_embedder.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/fuchsia/lib/fuchsia.dart

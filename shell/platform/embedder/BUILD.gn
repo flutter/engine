@@ -110,6 +110,14 @@ source_set("embedder_headers") {
   public_configs = [ "//flutter:config" ]
 }
 
+source_set("embedder_test_utils") {
+  public = [ "test_utils/proc_table_replacement.h" ]
+
+  deps = [ ":embedder_headers" ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
 # For using the embedder API as internal implementation detail of an
 # embedding.
 config("embedder_internal_library_config") {
