@@ -105,6 +105,7 @@ using UniqueAotDataPtr = std::unique_ptr<_FlutterEngineAOTData, AotDataDeleter>;
 @implementation FlutterEngineRegistrar {
   NSString* _pluginKey;
   FlutterEngine* _flutterEngine;
+  FlutterEngineProcTable _embedderAPI;
 }
 
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine {
@@ -416,6 +417,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   }
 
   CVDisplayLinkRelease(displayLinkRef);
+}
+
+- (FlutterEngineProcTable&)embedderAPI {
+  return _embedderAPI;
 }
 
 - (void)updateWindowMetrics {

@@ -6,7 +6,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterEngine ()
 
@@ -24,7 +24,7 @@
 /**
  * Function pointers for interacting with the embedder.h API.
  */
-@property(nonatomic) FlutterEngineProcTable embedderAPI;
+@property(nonatomic) FlutterEngineProcTable& embedderAPI;
 
 /**
  * Informs the engine that the associated view controller's view size has changed.
