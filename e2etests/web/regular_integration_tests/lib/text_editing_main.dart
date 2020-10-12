@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       key: const Key('mainapp'),
+      theme: ThemeData(fontFamily: 'RobotoMono'),
       title: 'Integration Test App',
       home: MyHomePage(title: 'Integration Test App'),
     );
@@ -97,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
               child: SelectableText(
                 'Lorem ipsum dolor sit amet',
                 key: Key('selectable'),
-                style: TextStyle(fontFamily: 'Roboto', fontSize: 20.0),
+                style: TextStyle(fontFamily: 'RobotoMono', fontSize: 20.0),
               ),
             ),
           ],
