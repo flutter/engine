@@ -12,8 +12,10 @@
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
 #include "third_party/skia/include/core/SkShader.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 #include <string>
+#include <vector>
 
 namespace tonic {
 class DartLibraryNatives;
@@ -30,7 +32,7 @@ class FragmentShader : public Shader {
   static fml::RefPtr<FragmentShader> Create();
 
   void initWithSource(const std::string& source);
-  void initWithSPIRV(Dart_NativeArguments args);
+  void initWithSPIRV(const tonic::Uint8List& data);
 
   void setTime(float time);
 

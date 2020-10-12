@@ -26,6 +26,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentShader);
 
 #define FOR_EACH_BINDING(V) \
   V(FragmentShader, initWithSource) \
+  V(FragmentShader, initWithSPIRV) \
   V(FragmentShader, setTime) \
   V(FragmentShader, setImage)
 
@@ -36,8 +37,7 @@ void FragmentShader::initWithSource(const std::string& source) {
   setShader();
 }
 
-void FragmentShader::initWithSKSL(Dart_NativeArguments args) {
-  tonic::Uint8List data = tonic::Uint8List(Dart_GetNativeArgument(args, 1));
+void FragmentShader::initWithSPIRV(const tonic::Uint8List& data) {
   auto transpiler = spirv::Transpiler::create();
   auto result = transpiler->Transpile(
     reinterpret_cast<const char*>(data.data()),
@@ -102,10 +102,6 @@ void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register(
       {{"FragmentShader_constructor", FragmentShader_constructor, 1, true},
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-  
-  natives->Register(
-    {{"FragmentShader_initWithSPIRV", FragmentShader::initWithSPIRV, 2, true},
-      FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
 fml::RefPtr<FragmentShader> FragmentShader::Create() {

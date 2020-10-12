@@ -77,7 +77,6 @@ class TranspilerImpl : public Transpiler {
   uint32_t vec2_uniform_type_ = 0;
   uint32_t vec3_uniform_type_ = 0;
   uint32_t vec4_uniform_type_ = 0;
-  uint32_t sampler_uniform_type_ = 0;
   uint32_t main_function_ = 0;
   uint32_t frag_position_param_ = 0;
   uint32_t return_ = 0;
@@ -221,7 +220,7 @@ spv_result_t parse_instruction(
 }  // namespace
 
 std::unique_ptr<Transpiler> Transpiler::create() {
-  return std::make_unique<TranspilerImpl>());
+  return std::make_unique<TranspilerImpl>();
 }
 
 TranspilerImpl::TranspilerImpl()
@@ -616,7 +615,7 @@ spv_result_t TranspilerImpl::HandleFunctionParameter(
 
   frag_position_param_ = inst->result_id;
 
-  sksl_ << "half2 " << ResolveName(frag_position_param_);
+  sksl_ << "float2 " << ResolveName(frag_position_param_);
 
   return SPV_SUCCESS;
 }
@@ -899,3 +898,4 @@ std::string TranspilerImpl::ResolveGLSLName(uint32_t id) {
 
 }  // namespace spirv
 }  // namespace flutter
+
