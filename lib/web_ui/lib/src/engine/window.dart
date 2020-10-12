@@ -413,6 +413,27 @@ class EngineWindow extends ui.Window {
         _onPointerDataPacket, _onPointerDataPacketZone, packet);
   }
 
+  /// A callback that is invoked when key data is available.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  @override
+  ui.KeyDataCallback? get onKeyData => _onKeyData;
+  ui.KeyDataCallback? _onKeyData;
+  Zone _onKeyDataZone = Zone.root;
+  @override
+  set onKeyData(ui.KeyDataCallback? callback) {
+    _onKeyData = callback;
+    _onKeyDataZone = Zone.current;
+  }
+
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
+  void invokeOnKeyData(ui.KeyData data) {
+    _invoke1<ui.KeyData>(
+        _onKeyData, _onKeyDataZone, data);
+  }
+
   @override
   ui.VoidCallback? get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
   ui.VoidCallback? _onSemanticsEnabledChanged;

@@ -10,6 +10,7 @@ typedef VoidCallback = void Function();
 typedef FrameCallback = void Function(Duration duration);
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
+typedef KeyDataCallback = void Function(KeyData data);
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
@@ -229,6 +230,8 @@ abstract class Window {
   set onDrawFrame(VoidCallback? callback);
   PointerDataPacketCallback? get onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback);
+  KeyDataCallback? get onKeyData;
+  set onKeyData(KeyDataCallback? callback);
   String get defaultRouteName;
   bool get semanticsEnabled => engine.EngineSemanticsOwner.instance.semanticsEnabled;
   VoidCallback? get onSemanticsEnabledChanged;

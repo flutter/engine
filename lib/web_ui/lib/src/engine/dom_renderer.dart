@@ -400,6 +400,7 @@ flt-glass-pane * {
         .insertBefore(_accesibilityPlaceholder, _sceneHostElement);
 
     PointerBinding.initInstance(glassPaneElement);
+    KeyboardBinding.initInstance(glassPaneElement);
 
     // Hide the DOM nodes used to render the scene from accessibility, because
     // the accessibility tree is built from the SemanticsNode tree as a parallel
