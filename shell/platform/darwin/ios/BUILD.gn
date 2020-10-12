@@ -158,7 +158,6 @@ source_set("flutter_framework_source") {
   }
 }
 
-# ios_test_flutter_path = rebase_path("$root_out_dir/libios_test_flutter.dylib")
 platform_frameworks_path =
     rebase_path("$ios_sdk_path/../../Library/Frameworks/")
 
