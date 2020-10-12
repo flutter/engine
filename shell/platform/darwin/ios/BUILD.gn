@@ -181,7 +181,7 @@ source_set("ios_test_flutter_mrc") {
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
-    "//third_party/ocmock:ocmock",
+    "//third_party/ocmock:ocmock_shared",
     "//third_party/rapidjson",
     "//third_party/skia",
   ]
@@ -200,8 +200,10 @@ shared_library("ios_test_flutter") {
   ]
   ldflags = [
     "-F$platform_frameworks_path",
-    "-Wl,-framework,XCTest",
     "-Wl,-install_name,$ios_test_flutter_path",
+  ]
+  libs = [
+    "XCTest.framework",
   ]
   configs -= [
     "//build/config/gcc:symbol_visibility_hidden",
@@ -223,7 +225,7 @@ shared_library("ios_test_flutter") {
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
-    "//third_party/ocmock:ocmock",
+    "//third_party/ocmock:ocmock_shared",
     "//third_party/rapidjson",
     "//third_party/skia",
   ]
