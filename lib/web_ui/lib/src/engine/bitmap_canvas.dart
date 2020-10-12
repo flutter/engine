@@ -208,8 +208,8 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   /// Sets the global paint styles to correspond to [paint].
-  void _setUpPaint(SurfacePaintData paint) {
-    _canvasPool.contextHandle.setUpPaint(paint);
+  void _setUpPaint(SurfacePaintData paint, ui.Rect? shaderBounds) {
+    _canvasPool.contextHandle.setUpPaint(paint, shaderBounds);
   }
 
   void _tearDownPaint() {
@@ -292,56 +292,61 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaintData paint) {
-    _setUpPaint(paint);
+    ui.Rect? shaderBounds = (paint.shader != null) ?
+        ui.Rect.fromPoints(p1, p2) : null;
+    _setUpPaint(paint, shaderBounds);
     _canvasPool.strokeLine(p1, p2);
     _tearDownPaint();
   }
 
   @override
   void drawPaint(SurfacePaintData paint) {
-    _setUpPaint(paint);
+    ui.Rect? shaderBounds = (paint.shader != null) ?
+        _computeScreenBounds(_canvasPool._currentTransform) : null;
+    _setUpPaint(paint, shaderBounds);
     _canvasPool.fill();
     _tearDownPaint();
   }
 
   @override
   void drawRect(ui.Rect rect, SurfacePaintData paint) {
-    _setUpPaint(paint);
+    _setUpPaint(paint, rect);
     _canvasPool.drawRect(rect, paint.style);
     _tearDownPaint();
   }
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    _setUpPaint(paint);
+    _setUpPaint(paint, rrect.outerRect);
     _canvasPool.drawRRect(rrect, paint.style);
     _tearDownPaint();
   }
 
   @override
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaintData paint) {
-    _setUpPaint(paint);
+    _setUpPaint(paint, outer.outerRect);
     _canvasPool.drawDRRect(outer, inner, paint.style);
     _tearDownPaint();
   }
 
   @override
   void drawOval(ui.Rect rect, SurfacePaintData paint) {
-    _setUpPaint(paint);
+    _setUpPaint(paint, rect);
     _canvasPool.drawOval(rect, paint.style);
     _tearDownPaint();
   }
 
   @override
   void drawCircle(ui.Offset c, double radius, SurfacePaintData paint) {
-    _setUpPaint(paint);
+    _setUpPaint(paint, paint.shader != null
+        ? ui.Rect.fromCircle(center: c, radius: radius) : null);
     _canvasPool.drawCircle(c, radius, paint.style);
     _tearDownPaint();
   }
 
   @override
   void drawPath(ui.Path path, SurfacePaintData paint) {
-    _setUpPaint(paint);
+    _setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
     _canvasPool.drawPath(path, paint.style);
     _tearDownPaint();
   }
@@ -655,7 +660,7 @@ class BitmapCanvas extends EngineCanvas {
         ctx.font = style.cssFontString;
         _cachedLastStyle = style;
       }
-      _setUpPaint(paragraph._paint!.paintData);
+      _setUpPaint(paragraph._paint!.paintData, null);
       double y = offset.dy + paragraph.alphabeticBaseline;
       final int len = lines.length;
       for (int i = 0; i < len; i++) {
@@ -761,7 +766,7 @@ class BitmapCanvas extends EngineCanvas {
     _drawPointsPaint.strokeWidth = paint.strokeWidth;
     _drawPointsPaint.maskFilter = paint.maskFilter;
 
-    _setUpPaint(_drawPointsPaint);
+    _setUpPaint(_drawPointsPaint, null);
     _canvasPool.drawPoints(pointMode, points, paint.strokeWidth! / 2.0);
     _tearDownPaint();
   }
@@ -770,6 +775,34 @@ class BitmapCanvas extends EngineCanvas {
   void endOfPaint() {
     _canvasPool.endOfPaint();
     _elementCache?.commitFrame();
+  }
+
+  /// Computes paint bounds given [targetTransform] to completely cover window
+  /// viewport.
+  ui.Rect _computeScreenBounds(Matrix4 targetTransform) {
+    final Matrix4 inverted = targetTransform.clone()..invert();
+    final double dpr = ui.window.devicePixelRatio;
+    final double width = ui.window.physicalSize.width * dpr;
+    final double height = ui.window.physicalSize.height * dpr;
+    Vector3 topLeft = inverted.perspectiveTransform(Vector3(0, 0, 0));
+    Vector3 topRight = inverted.perspectiveTransform(Vector3(width, 0, 0));
+    Vector3 bottomRight =
+    inverted.perspectiveTransform(Vector3(width, height, 0));
+    Vector3 bottomLeft = inverted.perspectiveTransform(Vector3(0, height, 0));
+    return ui.Rect.fromLTRB(
+      math.min(topLeft.x,
+          math.min(topRight.x, math.min(bottomRight.x, bottomLeft.x))) -
+          bounds.left,
+      math.min(topLeft.y,
+          math.min(topRight.y, math.min(bottomRight.y, bottomLeft.y))) -
+          bounds.top,
+      math.max(topLeft.x,
+          math.max(topRight.x, math.max(bottomRight.x, bottomLeft.x))) -
+          bounds.left,
+      math.max(topLeft.y,
+          math.max(topRight.y, math.max(bottomRight.y, bottomLeft.y))) -
+          bounds.top,
+    );
   }
 }
 
@@ -965,4 +998,5 @@ String _maskFilterToCanvasFilter(ui.MaskFilter? maskFilter) {
     return 'none';
   }
 }
+
 

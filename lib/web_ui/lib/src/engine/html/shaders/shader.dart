@@ -10,26 +10,53 @@ abstract class EngineGradient implements ui.Gradient {
   EngineGradient._();
 
   /// Creates a fill style to be used in painting.
-  Object createPaintStyle(html.CanvasRenderingContext2D? ctx);
+  Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds);
 }
 
 class GradientSweep extends EngineGradient {
   GradientSweep(this.center, this.colors, this.colorStops, this.tileMode,
-      this.startAngle, this.endAngle, this.matrix4)
+      this.startAngle, this.endAngle, Float64List? matrix)
       : assert(_offsetIsValid(center)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
         assert(startAngle != null), // ignore: unnecessary_null_comparison
         assert(endAngle != null), // ignore: unnecessary_null_comparison
         assert(startAngle < endAngle),
-        assert(matrix4 == null || _matrix4IsValid(matrix4)),
+        this.matrix4 = matrix == null ? null : _FastMatrix64(matrix),
         super._() {
     _validateColorStops(colors, colorStops);
   }
 
   @override
-  Object createPaintStyle(html.CanvasRenderingContext2D? ctx) {
-    throw UnimplementedError();
+  Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds)
+  {
+    _FastMatrix64? matrix4 = this.matrix4;
+    html.CanvasGradient gradient;
+
+    if (matrix4 != null) {
+      matrix4.transform(1, 1);
+      double width = matrix4.transformedX;
+      double height = matrix4.transformedY;
+      gradient = ctx!.createLinearGradient(shaderBounds!.left, shaderBounds.top,
+          shaderBounds.right, shaderBounds.top);
+    } else {
+      gradient = ctx!.createLinearGradient(shaderBounds!.left, shaderBounds.top,
+        shaderBounds.right, shaderBounds.top);
+    }
+
+    final List<double>? colorStops = this.colorStops;
+    if (colorStops == null) {
+      assert(colors.length == 2);
+      gradient.addColorStop(0, colorToCssString(colors[0])!);
+      gradient.addColorStop(1, colorToCssString(colors[1])!);
+      return gradient;
+    }
+    for (int i = 0; i < colors.length; i++) {
+      gradient.addColorStop(colorStops[i], colorToCssString(colors[i])!);
+    }
+    return gradient;
   }
 
   final ui.Offset center;
@@ -38,7 +65,7 @@ class GradientSweep extends EngineGradient {
   final ui.TileMode tileMode;
   final double startAngle;
   final double endAngle;
-  final Float32List? matrix4;
+  final _FastMatrix64? matrix4;
 }
 
 class GradientLinear extends EngineGradient {
@@ -68,7 +95,8 @@ class GradientLinear extends EngineGradient {
   final _FastMatrix64? matrix4;
 
   @override
-  html.CanvasGradient createPaintStyle(html.CanvasRenderingContext2D? ctx) {
+  html.CanvasGradient createPaintStyle(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds) {
     _FastMatrix64? matrix4 = this.matrix4;
     html.CanvasGradient gradient;
     if (matrix4 != null) {
@@ -115,7 +143,8 @@ class GradientRadial extends EngineGradient {
   final Float32List? matrix4;
 
   @override
-  Object createPaintStyle(html.CanvasRenderingContext2D? ctx) {
+  Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds) {
     if (!experimentalUseSkia) {
       if (tileMode != ui.TileMode.clamp) {
         throw UnimplementedError(
@@ -154,7 +183,8 @@ class GradientConical extends EngineGradient {
   final Float32List? matrix4;
 
   @override
-  Object createPaintStyle(html.CanvasRenderingContext2D? ctx) {
+  Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds) {
     throw UnimplementedError();
   }
 }
