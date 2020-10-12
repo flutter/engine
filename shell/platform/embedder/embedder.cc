@@ -1,8 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
-// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 #define RAPIDJSON_HAS_STDSTRING 1
@@ -661,8 +659,9 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
   return kSuccess;
 }
 
-void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
-                                      flutter::Settings& settings) {
+void PopulateSnapshotMappingCallbacks(
+    const FlutterProjectArgs* args,
+    flutter::Settings& settings) {  // NOLINT(google-runtime-references)
   // There are no ownership concerns here as all mappings are owned by the
   // embedder and not the engine.
   auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
@@ -1124,6 +1123,20 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     if (dart_entrypoint.size() != 0) {
       run_configuration.SetEntrypoint(std::move(dart_entrypoint));
     }
+  }
+
+  if (SAFE_ACCESS(args, dart_entrypoint_argc, 0) > 0) {
+    if (SAFE_ACCESS(args, dart_entrypoint_argv, nullptr) == nullptr) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Could not determine Dart entrypoint arguments "
+                                "as dart_entrypoint_argc "
+                                "was set, but dart_entrypoint_argv was null.");
+    }
+    std::vector<std::string> arguments(args->dart_entrypoint_argc);
+    for (int i = 0; i < args->dart_entrypoint_argc; ++i) {
+      arguments[i] = std::string{args->dart_entrypoint_argv[i]};
+    }
+    settings.dart_entrypoint_args = std::move(arguments);
   }
 
   if (!run_configuration.IsValid()) {
