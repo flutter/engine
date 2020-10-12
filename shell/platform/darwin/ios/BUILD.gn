@@ -202,9 +202,7 @@ shared_library("ios_test_flutter") {
     "-F$platform_frameworks_path",
     "-Wl,-install_name,$ios_test_flutter_path",
   ]
-  libs = [
-    "XCTest.framework",
-  ]
+  libs = [ "XCTest.framework" ]
   configs -= [
     "//build/config/gcc:symbol_visibility_hidden",
     "//build/config:symbol_visibility_hidden",
