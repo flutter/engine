@@ -158,7 +158,7 @@ source_set("flutter_framework_source") {
   }
 }
 
-ios_test_flutter_path = rebase_path("$root_out_dir/libios_test_flutter.dylib")
+# ios_test_flutter_path = rebase_path("$root_out_dir/libios_test_flutter.dylib")
 platform_frameworks_path =
     rebase_path("$ios_sdk_path/../../Library/Frameworks/")
 
@@ -187,9 +187,6 @@ source_set("ios_test_flutter_mrc") {
   ]
 }
 
-# NOTE: This currently only supports simulator targets because of the install_name.
-# TODO(54504): Switch the install_name and make the test runner copy the dynamic
-#              library into the testing bundle.
 shared_library("ios_test_flutter") {
   visibility = [ ":*" ]
   cflags = [
@@ -200,7 +197,7 @@ shared_library("ios_test_flutter") {
   ]
   ldflags = [
     "-F$platform_frameworks_path",
-    "-Wl,-install_name,$ios_test_flutter_path",
+    "-Wl,-install_name,@rpath/Frameworks/libios_test_flutter.dylib",
   ]
   libs = [ "XCTest.framework" ]
   configs -= [
