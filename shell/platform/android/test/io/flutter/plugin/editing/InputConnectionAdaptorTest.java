@@ -950,14 +950,12 @@ public class InputConnectionAdaptorTest {
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
     int inputTargetId = 0;
     TestTextInputChannel textInputChannel = new TestTextInputChannel(dartExecutor);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     Editable mEditable = Editable.Factory.getInstance().newEditable("");
     EditorInfo outAttrs = new EditorInfo();
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
 
     InputConnectionAdaptor inputConnectionAdaptor =
-        new InputConnectionAdaptor(
-            testView, inputTargetId, textInputChannel, mockKeyProcessor, mEditable, outAttrs);
+        new InputConnectionAdaptor(testView, inputTargetId, textInputChannel, mEditable, outAttrs);
 
     inputConnectionAdaptor.setComposingText("initial text", 1);
     assertEquals(textInputChannel.text, "initial text");
