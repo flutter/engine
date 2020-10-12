@@ -22,8 +22,9 @@ import 'package:image/image.dart';
 /// under test ex: a blinking cursor.
 const double kMaxDiffRateFailure = 0.5 / 100; // 0.5%
 
-const int kMaxScreenshotWidth = 1024;
-const int kMaxScreenshotHeight = 1024;
+/// SBrowser screen dimensions for the Flutter Driver test.
+const int _kScreenshotWidth = 1024;
+const int _kScreenshotHeight = 1024;
 
 /// Used for calling `integration_test` package.
 ///
@@ -38,8 +39,8 @@ const int kMaxScreenshotHeight = 1024;
 /// It also includes options for updating the golden files.
 Future<void> runTestWithScreenshots(
     {double diffRateFailure = kMaxDiffRateFailure,
-     int browserWidth = kMaxScreenshotWidth,
-     int browserHeight = kMaxScreenshotHeight}) async {
+    int browserWidth = _kScreenshotWidth,
+    int browserHeight = _kScreenshotHeight}) async {
   final WebFlutterDriver driver =
       await FlutterDriver.connect() as WebFlutterDriver;
 
@@ -50,16 +51,20 @@ Future<void> runTestWithScreenshots(
   window.setSize(Rectangle<int>(0, 0, browserWidth, browserHeight));
 
   bool updateGoldens = false;
+  // We are using an environment variable instead of an argument, since
+  // this code is not invoked from the shell but from the `flutter drive`
+  // tool itself. Therefore we do not have control on the command line
+  // arguments.
+  // Please read the README, further info on how to update the goldens.
   final String updateGoldensFlag = io.Platform.environment['UPDATE_GOLDENS'];
-  if (updateGoldensFlag == null || updateGoldensFlag.toLowerCase() != 'true') {
-    // We are using an environment variable since instead of an argument, since
-    // this code is not invoked from the shell but from the `flutter drive`
-    // tool itself. Therefore we do not have control on the command line
-    // arguments.
-    // Please read the README, further info on how to update the goldens.
-    print('INFO: Goldens will not be updated. Please set `UPDATE_GOLDENS` '
-        'environment variable to `true` for updating them.');
-  } else {
+  // Validate if the environment variable is set correctly.
+  if (updateGoldensFlag != null &&
+      !(updateGoldensFlag.toLowerCase() == 'true' ||
+          updateGoldensFlag.toLowerCase() == 'false')) {
+    throw StateError(
+        'UPDATE_GOLDENS environment variable is not set correctly');
+  }
+  if (updateGoldensFlag != null && updateGoldensFlag.toLowerCase() == 'true') {
     updateGoldens = true;
   }
 
@@ -77,10 +82,12 @@ Future<void> runTestWithScreenshots(
           forIntegrationTests: true,
           write: updateGoldens,
         );
-        if (result != 'OK') {
-          print('ERROR: $result');
+        if (result == 'OK') {
+          return true;
+        } else {
+          io.stderr.writeln('ERROR: $result');
+          return false;
         }
-        return result == 'OK';
       } else {
         return true;
       }

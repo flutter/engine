@@ -159,7 +159,9 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   Future<bool> runIntegrationTests() async {
     await _prepare();
-    return IntegrationTestsManager(browser, useSystemFlutter).runTests();
+    return IntegrationTestsManager(
+            browser, useSystemFlutter, doUpdateScreenshotGoldens)
+        .runTests();
   }
 
   Future<bool> runUnitTests() async {

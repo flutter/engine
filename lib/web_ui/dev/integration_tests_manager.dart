@@ -24,7 +24,10 @@ class IntegrationTestsManager {
 
   final DriverManager _driverManager;
 
-  IntegrationTestsManager(this._browser, this._useSystemFlutter)
+  final bool _doUpdateScreenshotGoldens;
+
+  IntegrationTestsManager(
+      this._browser, this._useSystemFlutter, this._doUpdateScreenshotGoldens)
       : _driverManager = DriverManager.chooseDriver(_browser);
 
   Future<bool> runTests() async {
@@ -159,14 +162,19 @@ class IntegrationTestsManager {
 
   Future<bool> _runTestsInProfileMode(
       io.Directory directory, String testName) async {
-    final String executable =
+    String executable =
         _useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
+    Map<String, String> enviroment = Map<String, String>();
+    if (_doUpdateScreenshotGoldens) {
+      enviroment['UPDATE_GOLDENS'] = 'true';
+    }
     final IntegrationArguments arguments =
         IntegrationArguments.fromBrowser(_browser);
     final int exitCode = await runProcess(
       executable,
       arguments.getTestArguments(testName, 'profile'),
       workingDirectory: directory.path,
+      environment: enviroment,
     );
 
     if (exitCode != 0) {
