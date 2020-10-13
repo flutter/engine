@@ -47,7 +47,6 @@ TEST(FlutterEngine, MessengerSend) {
   [engine.binaryMessenger sendOnChannel:@"test" message:test_message];
   EXPECT_TRUE(called);
 
-  // s_send_platform_message_validator = nullptr;
   [engine shutDownEngine];
 }
 
