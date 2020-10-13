@@ -105,7 +105,11 @@ sk_sp<SkImage> ImageFromCompressedData(fml::RefPtr<ImageDescriptor> descriptor,
 
   if (!descriptor->should_resize(target_width, target_height)) {
     // No resizing requested. Just decode & rasterize the image.
-    return descriptor->image()->makeRasterImage();
+    auto image = descriptor->image();
+    if (!image) {
+      return nullptr;
+    }
+    return image->makeRasterImage();
   }
 
   const SkISize source_dimensions = descriptor->image_info().dimensions();
