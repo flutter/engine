@@ -668,7 +668,10 @@ public class FlutterView extends SurfaceView
           zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
               ? 0
               : insets.getSystemWindowInsetRight();
-      mMetrics.physicalPaddingBottom = 0;
+      mMetrics.physicalPaddingBottom =
+          navigationBarVisible && guessBottomKeyboardInset(insets) == 0
+              ? insets.getSystemWindowInsetBottom()
+              : 0;
       mMetrics.physicalPaddingLeft =
           zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
               ? 0
@@ -677,10 +680,7 @@ public class FlutterView extends SurfaceView
       // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
       mMetrics.physicalViewInsetTop = 0;
       mMetrics.physicalViewInsetRight = 0;
-      mMetrics.physicalViewInsetBottom =
-          navigationBarVisible
-              ? insets.getSystemWindowInsetBottom()
-              : guessBottomKeyboardInset(insets);
+      mMetrics.physicalViewInsetBottom = guessBottomKeyboardInset(insets);
       mMetrics.physicalViewInsetLeft = 0;
     }
 
