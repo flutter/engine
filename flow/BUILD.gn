@@ -10,6 +10,8 @@ source_set("flow") {
   sources = [
     "compositor_context.cc",
     "compositor_context.h",
+    "diff_context.cc",
+    "diff_context.h",
     "embedded_views.cc",
     "embedded_views.h",
     "instrumentation.cc",

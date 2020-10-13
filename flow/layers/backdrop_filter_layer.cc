@@ -9,6 +9,30 @@ namespace flutter {
 BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
     : filter_(std::move(filter)) {}
 
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  auto* prev = static_cast<const BackdropFilterLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    assert(prev);
+    if (filter_ != prev->filter_) {
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
+    }
+  }
+
+  // Backdrop filter paints everywhere in cull rect
+  auto paint_bounds = filter_->computeFastBounds(context->GetCullRect());
+  context->AddPaintRegion(paint_bounds);
+  context->AddReadbackRegion(paint_bounds);
+
+  DiffChildren(context, prev);
+
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
+
 void BackdropFilterLayer::Preroll(PrerollContext* context,
                                   const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
