@@ -208,6 +208,36 @@ if (enable_unittests) {
       deps += [ "//flutter/testing:opengl" ]
     }
   }
+
+  # Tests the build in FLUTTER_ENGINE_NO_PROTOTYPES mode.
+  executable("embedder_proctable_unittests") {
+    testonly = true
+
+    configs += [
+      ":embedder_gpu_configuration_config",
+      "//flutter:export_dynamic_symbols",
+    ]
+
+    sources = [
+      "tests/embedder_unittests_proctable.cc",
+    ]
+
+    defines = [
+      "FLUTTER_ENGINE_NO_PROTOTYPES",
+    ]
+
+    deps = [
+      ":embedder",
+      ":embedder_gpu_configuration",
+      ":fixtures",
+      "//flutter/testing",
+      #"//flutter/testing:dart",
+      #"//flutter/testing:skia",
+      #"//flutter/third_party/tonic",
+      #"//third_party/dart/runtime/bin:elf_loader",
+      #"//third_party/skia",
+    ]
+  }
 }
 
 shared_library("flutter_engine_library") {
