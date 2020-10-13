@@ -129,7 +129,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
 
   // Handles `Error` objects which are not supposed to be caught.
   //
-  // We forward them to threads uncaught exception handler if there is one. If not, they
+  // We forward them to the thread's uncaught exception handler if there is one. If not, they
   // are rethrown.
   private static void handleError(Error err) {
     Thread currentThread = Thread.currentThread();
