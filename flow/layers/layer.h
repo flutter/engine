@@ -241,7 +241,7 @@ class Layer {
     return nullptr;
   }
 
-#endif // FLUTTER_ENABLE_DIFF_CONTEXT
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
  protected:
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
