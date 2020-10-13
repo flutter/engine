@@ -20,24 +20,24 @@ FlutterRunnerProductConfiguration::FlutterRunnerProductConfiguration(
   // Parse out all values we're expecting.
   if (document.HasMember("vsync_offset_in_us")) {
     auto& val = document["vsync_offset_in_us"];
-    ZX_ASSERT(val.IsInt());
-    vsync_offset_ = fml::TimeDelta::FromMicroseconds(val.GetInt());
+    if (val.IsInt())
+      vsync_offset_ = fml::TimeDelta::FromMicroseconds(val.GetInt());
   }
   if (document.HasMember("max_frames_in_flight")) {
     auto& val = document["max_frames_in_flight"];
-    ZX_ASSERT(val.IsInt());
-    max_frames_in_flight_ = val.GetInt();
+    if (val.IsInt())
+      max_frames_in_flight_ = val.GetInt();
   }
   if (document.HasMember("intercept_all_input")) {
     auto& val = document["intercept_all_input"];
-    ZX_ASSERT(val.IsBool());
-    intercept_all_input_ = val.GetBool();
+    if (val.IsBool())
+      intercept_all_input_ = val.GetBool();
   }
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   if (document.HasMember("use_legacy_renderer")) {
     auto& val = document["use_legacy_renderer"];
-    ZX_ASSERT(val.IsBool());
-    use_legacy_renderer_ = val.GetBool();
+    if (val.IsBool())
+      use_legacy_renderer_ = val.GetBool();
   }
 #endif
 }
