@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include <algorithm>
 #include <iomanip>
@@ -41,6 +42,8 @@ struct SwitchDesc {
 
 // clang-format off
 static const std::string gAllowedDartFlags[] = {
+    "--enable-isolate-groups",
+    "--no-enable-isolate-groups",
     "--no-causal_async_stacks",
     "--lazy_async_stacks",
 };
@@ -50,6 +53,8 @@ static const std::string gAllowedDartFlags[] = {
 
 // clang-format off
 static const std::string gAllowedDartFlags[] = {
+    "--enable-isolate-groups",
+    "--no-enable-isolate-groups",
     "--enable_mirrors",
     "--enable-service-port-fallback",
     "--lazy_async_stacks",
@@ -61,6 +66,7 @@ static const std::string gAllowedDartFlags[] = {
     "--trace-reload",
     "--trace-reload-verbose",
     "--write-service-info",
+    "--null_assertions",
 };
 // clang-format on
 
@@ -227,9 +233,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                                                             : "127.0.0.1";
   }
 
-  settings.use_embedded_view =
-      command_line.HasOption(FlagForSwitch(Switch::UseEmbeddedView));
-
   // Set Observatory Port
   if (command_line.HasOption(FlagForSwitch(Switch::DeviceObservatoryPort))) {
     if (!GetSwitchValue(command_line, Switch::DeviceObservatoryPort,
@@ -240,8 +243,11 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     }
   }
 
-  settings.disable_http =
-      command_line.HasOption(FlagForSwitch(Switch::DisableHttp));
+  settings.may_insecurely_connect_to_all_domains = !command_line.HasOption(
+      FlagForSwitch(Switch::DisallowInsecureConnections));
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::DomainNetworkPolicy),
+                              &settings.domain_network_policy);
 
   // Disable need for authentication codes for VM service communication, if
   // specified.
@@ -391,6 +397,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.cache_sksl =
       command_line.HasOption(FlagForSwitch(Switch::CacheSkSL));
+
+  settings.purge_persistent_cache =
+      command_line.HasOption(FlagForSwitch(Switch::PurgePersistentCache));
 
   return settings;
 }

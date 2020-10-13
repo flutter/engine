@@ -1,4 +1,4 @@
-Signature: a56d6bbdec23954f9cf69a9a3300d035
+Signature: 4f38a8a9ed9b09a6bd9f88ed98a9fe08
 
 UNUSED LICENSES:
 
@@ -65,6 +65,33 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+ORIGIN: ../../../third_party/harfbuzz/src/ms-use/COPYING
+TYPE: LicenseType.mit
+----------------------------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) Microsoft Corporation.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE
 ====================================================================================================
 
 ====================================================================================================
@@ -394,10 +421,10 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/WindowSurfaceEGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/android/DisplayAndroid.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/android/DisplayAndroid.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/functionsegl_typedefs.h
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/ozone/DisplayOzone.cpp
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/ozone/DisplayOzone.h
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/ozone/SurfaceOzone.cpp
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/ozone/SurfaceOzone.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/gbm/DisplayGbm.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/gbm/DisplayGbm.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/gbm/SurfaceGbm.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/gbm/SurfaceGbm.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/SurfaceGLX.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/null/BufferNULL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/null/BufferNULL.h
@@ -645,6 +672,7 @@ FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/ang
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/Receiver.java
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/SearchProvider.java
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/vk_ext_provoking_vertex.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/vk_google_filtering_precision.h
 FILE: ../../../third_party/angle/util/android/third_party/android_native_app_glue.c
 FILE: ../../../third_party/angle/util/android/third_party/android_native_app_glue.h
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/METADATA
@@ -1287,7 +1315,6 @@ FILE: ../../../third_party/angle/src/common/system_utils_unittest.cpp
 FILE: ../../../third_party/angle/src/common/system_utils_win32.cpp
 FILE: ../../../third_party/angle/src/common/system_utils_winuwp.cpp
 FILE: ../../../third_party/angle/src/common/third_party/xxhash/xxhash_fuzzer.cpp
-FILE: ../../../third_party/angle/src/common/uniform_type_info_autogen.cpp
 FILE: ../../../third_party/angle/src/compiler/preprocessor/preprocessor.l
 FILE: ../../../third_party/angle/src/compiler/preprocessor/preprocessor.y
 FILE: ../../../third_party/angle/src/compiler/preprocessor/preprocessor_lex_autogen.cpp
@@ -1415,8 +1442,6 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_state_cache.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_state_cache.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_utils.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_utils.mm
-FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/serial_utils.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/serial_utils_unittest.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/DisplayVk_api.h
@@ -1892,15 +1917,6 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/Conver
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000005.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000006.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000007.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000008.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000009.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000A.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000B.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000C.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000D.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000E.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.0000000F.inc
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ConvertVertex.comp.00000010.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/FullScreenQuad.vert.00000000.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ImageClear.frag.00000000.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/ImageClear.frag.00000001.inc
@@ -2175,10 +2191,14 @@ FILE: ../../../third_party/angle/include/GLES2/gl2ext_explicit_context_autogen.i
 FILE: ../../../third_party/angle/include/GLES3/gl31ext_explicit_context_autogen.inc
 FILE: ../../../third_party/angle/include/GLES3/gl32ext_explicit_context_autogen.inc
 FILE: ../../../third_party/angle/include/GLES3/gl3ext_explicit_context_autogen.inc
+FILE: ../../../third_party/angle/include/platform/Platform.h
 FILE: ../../../third_party/angle/src/common/PackedEGLEnums_autogen.cpp
 FILE: ../../../third_party/angle/src/common/PackedEGLEnums_autogen.h
 FILE: ../../../third_party/angle/src/common/PackedGLEnums_autogen.cpp
 FILE: ../../../third_party/angle/src/common/PackedGLEnums_autogen.h
+FILE: ../../../third_party/angle/src/common/uniform_type_info_autogen.cpp
+FILE: ../../../third_party/angle/src/common/vulkan/vulkan_icd.cpp
+FILE: ../../../third_party/angle/src/common/vulkan/vulkan_icd.h
 FILE: ../../../third_party/angle/src/compiler/translator/ImmutableString_ESSL_autogen.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/ImmutableString_autogen.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/ParseContext_ESSL_autogen.h
@@ -2269,10 +2289,18 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/RendererEAGL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/RendererEAGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.mm
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/PixmapSurfaceGLX.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/PixmapSurfaceGLX.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/glx_utils.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/glx_utils.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/null_functions.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/null_functions.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/load_functions_table_autogen.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_format_table_autogen.mm
+FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/compiled/mtl_default_shaders.inc
+FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_default_shaders_src_autogen.inc
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/CommandProcessor.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/CommandProcessor.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/ProgramExecutableVk.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/ProgramExecutableVk.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/mac/IOSurfaceSurfaceVkMac.h
@@ -2374,6 +2402,8 @@ FILE: ../../../third_party/angle/util/egl_loader_autogen.h
 FILE: ../../../third_party/angle/util/frame_capture_utils.h
 FILE: ../../../third_party/angle/util/gles_loader_autogen.cpp
 FILE: ../../../third_party/angle/util/gles_loader_autogen.h
+FILE: ../../../third_party/angle/util/png_utils.cpp
+FILE: ../../../third_party/angle/util/png_utils.h
 FILE: ../../../third_party/angle/util/windows/wgl_loader_autogen.cpp
 FILE: ../../../third_party/angle/util/windows/wgl_loader_autogen.h
 ----------------------------------------------------------------------------------------------------
@@ -2939,7 +2969,7 @@ ORIGIN: ../../../third_party/angle/include/platform/FeaturesD3D.h + ../../../thi
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/include/platform/FeaturesD3D.h
 FILE: ../../../third_party/angle/include/platform/FeaturesGL.h
-FILE: ../../../third_party/angle/include/platform/Platform.h
+FILE: ../../../third_party/angle/include/platform/PlatformMethods.h
 FILE: ../../../third_party/angle/samples/WindowTest/WindowTest.cpp
 FILE: ../../../third_party/angle/samples/multi_window/MultiWindow.cpp
 FILE: ../../../third_party/angle/src/common/Optional.h
@@ -3389,6 +3419,48 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: angle
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/DmaBufImageSiblingEGL.cpp + ../../../third_party/angle/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/DmaBufImageSiblingEGL.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/DmaBufImageSiblingEGL.h
+FILE: ../../../third_party/angle/util/fuchsia/FuchsiaPixmap.cpp
+FILE: ../../../third_party/angle/util/fuchsia/FuchsiaPixmap.h
+----------------------------------------------------------------------------------------------------
+Copyright The ANGLE Project Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+    Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+    Redistributions in binary form must reproduce the above
+    copyright notice, this list of conditions and the following
+    disclaimer in the documentation and/or other materials provided
+    with the distribution.
+
+    Neither the name of TransGaming Inc., Google Inc., 3DLabs Inc.
+    Ltd., nor the names of their contributors may be used to endorse
+    or promote products derived from this software without specific
+    prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: angle
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/blit.metal + ../../../third_party/angle/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/blit.metal
@@ -3588,6 +3660,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: base
 LIBRARY: icu
+LIBRARY: zlib
 ORIGIN: ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/numerics/safe_conversions.h
@@ -3595,6 +3668,9 @@ FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/numerics/
 FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/numerics/safe_math.h
 FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/numerics/safe_math_impl.h
 FILE: ../../../third_party/icu/icu.isolate
+FILE: ../../../third_party/zlib/google/compression_utils.cc
+FILE: ../../../third_party/zlib/google/compression_utils.h
+FILE: ../../../third_party/zlib/google/compression_utils_unittest.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2014 The Chromium Authors. All rights reserved.
 
@@ -3671,9 +3747,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: base
+LIBRARY: zlib
 ORIGIN: ../../../third_party/angle/src/common/third_party/base/anglebase/no_destructor.h + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/src/common/third_party/base/anglebase/no_destructor.h
+FILE: ../../../third_party/zlib/contrib/bench/zlib_bench.cc
+FILE: ../../../third_party/zlib/contrib/optimizations/slide_hash_neon.h
+FILE: ../../../third_party/zlib/cpu_features.c
+FILE: ../../../third_party/zlib/cpu_features.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Chromium Authors. All rights reserved.
 
@@ -7946,6 +8027,148 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
+LIBRARY: wasmer
+ORIGIN: ../../../third_party/dart/benchmarks/Dynamic/dart/Dynamic.dart + ../../../third_party/dart/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/benchmarks/Dynamic/dart/Dynamic.dart
+FILE: ../../../third_party/dart/benchmarks/Dynamic/dart2/Dynamic.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson/dart/EventLoopLatencyJson.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson/dart/json_benchmark.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson/dart/latency.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson/dart2/EventLoopLatencyJson.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson/dart2/json_benchmark.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson/dart2/latency.dart
+FILE: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart
+FILE: ../../../third_party/dart/benchmarks/ListCopy/dart2/ListCopy.dart
+FILE: ../../../third_party/dart/benchmarks/MD5/dart/md5.dart
+FILE: ../../../third_party/dart/benchmarks/MD5/dart2/md5.dart
+FILE: ../../../third_party/dart/benchmarks/RuntimeType/dart/RuntimeType.dart
+FILE: ../../../third_party/dart/benchmarks/RuntimeType/dart2/RuntimeType.dart
+FILE: ../../../third_party/dart/benchmarks/SHA1/dart/sha1.dart
+FILE: ../../../third_party/dart/benchmarks/SHA1/dart2/sha1.dart
+FILE: ../../../third_party/dart/benchmarks/SHA256/dart/sha256.dart
+FILE: ../../../third_party/dart/benchmarks/SHA256/dart2/sha256.dart
+FILE: ../../../third_party/dart/benchmarks/SkeletalAnimation/dart/SkeletalAnimation.dart
+FILE: ../../../third_party/dart/benchmarks/SkeletalAnimation/dart2/SkeletalAnimation.dart
+FILE: ../../../third_party/dart/benchmarks/SkeletalAnimationSIMD/dart/SkeletalAnimationSIMD.dart
+FILE: ../../../third_party/dart/benchmarks/SkeletalAnimationSIMD/dart2/SkeletalAnimationSIMD.dart
+FILE: ../../../third_party/dart/benchmarks/TypedDataDuplicate/dart/TypedDataDuplicate.dart
+FILE: ../../../third_party/dart/benchmarks/TypedDataDuplicate/dart2/TypedDataDuplicate.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/Utf8Decode.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart2/Utf8Decode.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart/Utf8Encode.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/Utf8Encode.dart
+FILE: ../../../third_party/dart/runtime/bin/dartdev_isolate.cc
+FILE: ../../../third_party/dart/runtime/bin/dartdev_isolate.h
+FILE: ../../../third_party/dart/runtime/bin/exe_utils.cc
+FILE: ../../../third_party/dart/runtime/bin/exe_utils.h
+FILE: ../../../third_party/dart/runtime/bin/file_win.h
+FILE: ../../../third_party/dart/runtime/bin/platform_macos.h
+FILE: ../../../third_party/dart/runtime/bin/platform_macos_test.cc
+FILE: ../../../third_party/dart/runtime/include/dart_api_dl.c
+FILE: ../../../third_party/dart/runtime/include/dart_api_dl.h
+FILE: ../../../third_party/dart/runtime/include/dart_version.h
+FILE: ../../../third_party/dart/runtime/include/internal/dart_api_dl_impl.h
+FILE: ../../../third_party/dart/runtime/observatory/bin/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/process_snapshot.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/bin/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/process_snapshot.dart
+FILE: ../../../third_party/dart/runtime/platform/leak_sanitizer.h
+FILE: ../../../third_party/dart/runtime/platform/unaligned.h
+FILE: ../../../third_party/dart/runtime/platform/undefined_behavior_sanitizer.h
+FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/bin/main.dart
+FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/cquery_driver.dart
+FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/xref_extractor.dart
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler_tracer.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler_tracer.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/deopt_id.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/print_filter.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/print_filter.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/type_check_mode.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_base.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/constant_propagator_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/reachability_fence_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/call.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/call.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/callback.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/callback.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/frame_rebase.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/frame_rebase.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/marshaller.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/marshaller.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_calling_convention.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_calling_convention.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_location.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_location.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_binary_flowgraph_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/multiple_entrypoints_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination_test.cc
+FILE: ../../../third_party/dart/runtime/vm/constants_base.h
+FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
+FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
+FILE: ../../../third_party/dart/runtime/vm/field_table.cc
+FILE: ../../../third_party/dart/runtime/vm/field_table.h
+FILE: ../../../third_party/dart/runtime/vm/port_set.h
+FILE: ../../../third_party/dart/runtime/vm/tagged_pointer.h
+FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.h
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/visitor.cc
+FILE: ../../../third_party/dart/samples/ffi/async/async_test.dart
+FILE: ../../../third_party/dart/samples/ffi/async/sample_async_callback.dart
+FILE: ../../../third_party/dart/samples/ffi/async/sample_native_port_call.dart
+FILE: ../../../third_party/dart/samples/ffi/sample_ffi_functions_callbacks_closures.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_struct_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/internal/lowering.dart
+FILE: ../../../third_party/dart/sdk/lib/io/network_policy.dart
+FILE: ../../../third_party/dart/third_party/wasmer/wasmer_wrapper.cc
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
+for details. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: dart
 ORIGIN: ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/.gitconfig
@@ -7973,6 +8196,18 @@ FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart2/netext_3_10k.dart
 FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart2/rutext_2_10k.dart
 FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart2/sktext_10k.dart
 FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart2/zhtext_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart/datext_latin1_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart/entext_ascii_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart/netext_3_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart/rutext_2_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart/sktext_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart/zhtext_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/datext_latin1_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/entext_ascii_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/netext_3_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/rutext_2_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/sktext_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/zhtext_10k.dart
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
@@ -8016,6 +8251,14 @@ FILE: ../../../third_party/dart/runtime/observatory/web/favicon.ico
 FILE: ../../../third_party/dart/runtime/observatory/web/index.html
 FILE: ../../../third_party/dart/runtime/observatory/web/third_party/trace_viewer_full.html
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.html
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/elements.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/img/chromium_icon.png
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/img/dart_icon.png
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/img/isolate_icon.png
+FILE: ../../../third_party/dart/runtime/observatory_2/web/favicon.ico
+FILE: ../../../third_party/dart/runtime/observatory_2/web/index.html
+FILE: ../../../third_party/dart/runtime/observatory_2/web/third_party/trace_viewer_full.html
+FILE: ../../../third_party/dart/runtime/observatory_2/web/timeline.html
 FILE: ../../../third_party/dart/runtime/tools/wiki/styles/style.scss
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/includes/auto-refresh.html
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/includes/favicon.html
@@ -8102,8 +8345,6 @@ FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/SoundSplayTr
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/sound_splay_tree.dart
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart2/SoundSplayTreeSieve.dart
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart2/sound_splay_tree.dart
-FILE: ../../../third_party/dart/runtime/bin/abi_version.h
-FILE: ../../../third_party/dart/runtime/bin/abi_version_in.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.h
 FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension.cc
@@ -8131,6 +8372,11 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/isola
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/repositories/isolate_group.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/isolate_group.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/timeline_base.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/tree_map.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/isolate_group.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/isolate_group.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/isolate_group.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/timeline_base.dart
 FILE: ../../../third_party/dart/runtime/platform/elf.h
 FILE: ../../../third_party/dart/runtime/platform/thread_sanitizer.h
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz_api_table.dart
@@ -8263,115 +8509,6 @@ FILE: ../../../third_party/dart/sdk/lib/internal/errors.dart
 FILE: ../../../third_party/dart/sdk/lib/wasm/wasm.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: dart
-ORIGIN: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart + ../../../third_party/dart/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart
-FILE: ../../../third_party/dart/benchmarks/ListCopy/dart2/ListCopy.dart
-FILE: ../../../third_party/dart/benchmarks/RuntimeType/dart/RuntimeType.dart
-FILE: ../../../third_party/dart/benchmarks/RuntimeType/dart2/RuntimeType.dart
-FILE: ../../../third_party/dart/benchmarks/TypedDataDuplicate/dart/TypedDataDuplicate.dart
-FILE: ../../../third_party/dart/benchmarks/TypedDataDuplicate/dart2/TypedDataDuplicate.dart
-FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/Utf8Decode.dart
-FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart2/Utf8Decode.dart
-FILE: ../../../third_party/dart/runtime/bin/dartdev_utils.cc
-FILE: ../../../third_party/dart/runtime/bin/dartdev_utils.h
-FILE: ../../../third_party/dart/runtime/bin/exe_utils.cc
-FILE: ../../../third_party/dart/runtime/bin/exe_utils.h
-FILE: ../../../third_party/dart/runtime/include/dart_api_dl.cc
-FILE: ../../../third_party/dart/runtime/include/dart_api_dl.h
-FILE: ../../../third_party/dart/runtime/include/dart_version.h
-FILE: ../../../third_party/dart/runtime/include/internal/dart_api_dl_impl.h
-FILE: ../../../third_party/dart/runtime/observatory/bin/heap_snapshot.dart
-FILE: ../../../third_party/dart/runtime/platform/leak_sanitizer.h
-FILE: ../../../third_party/dart/runtime/platform/unaligned.h
-FILE: ../../../third_party/dart/runtime/platform/undefined_behavior_sanitizer.h
-FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/bin/main.dart
-FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/cquery_driver.dart
-FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/xref_extractor.dart
-FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/api/deopt_id.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/api/print_filter.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/api/print_filter.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/api/type_check_mode.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_base.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/backend/constant_propagator_test.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/backend/reachability_fence_test.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/call.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/call.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/callback.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/callback.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/frame_rebase.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/frame_rebase.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/marshaller.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/marshaller.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_calling_convention.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_calling_convention.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_location.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_location.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination_test.cc
-FILE: ../../../third_party/dart/runtime/vm/constants_base.h
-FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
-FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
-FILE: ../../../third_party/dart/runtime/vm/field_table.cc
-FILE: ../../../third_party/dart/runtime/vm/field_table.h
-FILE: ../../../third_party/dart/runtime/vm/port_set.h
-FILE: ../../../third_party/dart/runtime/vm/tagged_pointer.h
-FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.h
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm64.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_x64.cc
-FILE: ../../../third_party/dart/runtime/vm/visitor.cc
-FILE: ../../../third_party/dart/samples/ffi/async/async_test.dart
-FILE: ../../../third_party/dart/samples/ffi/async/sample_async_callback.dart
-FILE: ../../../third_party/dart/samples/ffi/async/sample_native_port_call.dart
-FILE: ../../../third_party/dart/samples/ffi/sample_ffi_functions_callbacks_closures.dart
-FILE: ../../../third_party/dart/sdk/lib/_http/embedder_config.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_struct_patch.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -8740,7 +8877,6 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_array.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_number.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_string.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/math_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/mirrors_patch_cfe.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/native_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/regexp_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/string_helper.dart
@@ -8884,7 +9020,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/cli.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/debugger.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/sample_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/allocation_profile/allocation_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/app/analytics.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/cli/command.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/debugger/debugger.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/debugger/debugger_location.dart
@@ -8899,6 +9034,26 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/timeline_pa
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/view_footer.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/sample_profile/sample_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.js
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/cli.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/debugger.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/sample_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/allocation_profile/allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/app/analytics.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/cli/command.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/debugger/debugger.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/debugger/debugger_location.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/logging.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/logging_list.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/megamorphiccache_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/objectpool_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/persistent_handles.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/ports.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/timeline_page.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/view_footer.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/sample_profile/sample_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/web/timeline.js
 FILE: ../../../third_party/dart/runtime/vm/atomic_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler.h
@@ -9059,6 +9214,30 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/subtype
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/timeline.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/unlinked_call.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/vm.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/containers/search_bar.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/reload.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/singletargetcache_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/singletargetcache_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/subtypetestcache_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/subtypetestcache_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/timeline/dashboard.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/unlinkedcall_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/unlinkedcall_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/service.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/single_target_cache.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/subtype_test_cache.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/timeline.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/unlinked_call.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/single_target_cache.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/subtype_test_cache.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/timeline.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/unlinked_call.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/vm.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/single_target_cache.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/subtype_test_cache.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/timeline.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/unlinked_call.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/vm.dart
 FILE: ../../../third_party/dart/runtime/platform/allocation.h
 FILE: ../../../third_party/dart/runtime/platform/growable_array.h
 FILE: ../../../third_party/dart/runtime/vm/compilation_trace.cc
@@ -9323,11 +9502,11 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/containers/
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/containers/virtual_tree.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/error_ref.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/general_error.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/helpers/custom_element.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/helpers/nav_bar.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/helpers/nav_menu.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/helpers/rendering_queue.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/helpers/rendering_scheduler.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/helpers/tag.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/helpers/uris.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/inbound_references.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/isolate/counter_chart.dart
@@ -9460,9 +9639,157 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/strongl
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/target.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/type_arguments.dart
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline_message_handler.js
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/event.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/models.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/repositories.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/app/notification.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/class_allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/containers/virtual_collection.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/containers/virtual_tree.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/error_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/general_error.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/helpers/custom_element.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/helpers/nav_bar.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/helpers/nav_menu.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/helpers/rendering_queue.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/helpers/rendering_scheduler.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/helpers/tag.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/helpers/uris.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/inbound_references.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/isolate/counter_chart.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/isolate/location.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/isolate/run_state.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/isolate/shared_summary.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/isolate/summary.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/metric/details.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/metric/graph.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/class_menu.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/isolate_menu.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/library_menu.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/menu_item.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/notify.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/notify_event.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/notify_exception.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/refresh.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/top_menu.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/nav/vm_menu.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/retaining_path.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/source_link.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/strongly_reachable_instances.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/vm_connect_target.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/exceptions.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/breakpoint.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/class.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/code.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/context.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/error.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/event.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/extension_data.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/field.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/flag.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/frame.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/function.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/guarded.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/heap_space.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/icdata.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/inbound_references.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/instance.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/isolate.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/library.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/local_var_descriptors.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/map_association.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/megamorphiccache.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/metric.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/notification.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/object.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/objectpool.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/objectstore.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/pc_descriptors.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/persistent_handles.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/ports.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/retaining_path.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/sample_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/script.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/sentinel.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/source_location.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/target.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/thread.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/timeline_event.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/type_arguments.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/unknown.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/vm.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/zone.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/breakpoint.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/class.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/context.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/editor.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/eval.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/event.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/field.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/flag.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/function.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/icdata.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/inbound_references.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/instance.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/isolate.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/library.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/megamorphiccache.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/metric.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/notification.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/object.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/objectpool.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/objectstore.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/persistent_handles.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/ports.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/reachable_size.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/retained_size.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/retaining_path.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/sample_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/script.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/strongly_reachable_instances.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/target.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/type_arguments.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/breakpoint.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/class.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/context.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/editor.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/eval.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/event.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/field.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/flag.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/function.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/icdata.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/inbound_references.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/instance.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/isolate.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/library.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/megamorphiccache.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/metric.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/notification.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/object.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/objectpool.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/objectstore.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/persistent_handles.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/ports.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/reachable_size.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/retained_size.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/retaining_path.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/sample_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/script.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/settings.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/strongly_reachable_instances.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/target.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/repositories/type_arguments.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/web/timeline_message_handler.js
 FILE: ../../../third_party/dart/runtime/platform/syslog_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/platform/utils_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/platform/utils_fuchsia.h
+FILE: ../../../third_party/dart/runtime/vm/canonical_tables.h
 FILE: ../../../third_party/dart/runtime/vm/clustered_snapshot.cc
 FILE: ../../../third_party/dart/runtime/vm/clustered_snapshot.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/branch_optimizer.cc
@@ -9499,7 +9826,6 @@ FILE: ../../../third_party/dart/runtime/vm/signal_handler_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_interrupter_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/vm/token_position.cc
 FILE: ../../../third_party/dart/runtime/vm/token_position.h
-FILE: ../../../third_party/dart/runtime/vm/type_table.h
 FILE: ../../../third_party/dart/runtime/vm/uri.cc
 FILE: ../../../third_party/dart/runtime/vm/uri.h
 FILE: ../../../third_party/dart/runtime/vm/uri_test.cc
@@ -9634,6 +9960,58 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/type_argume
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/unknown_ref.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/vm_view.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/tracer.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/app/application.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/app/location_manager.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/class_instances.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/class_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/class_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/code_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/code_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/context_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/context_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/cpu_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/cpu_profile/virtual_tree.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/cpu_profile_table.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/curly_block.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/error_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/eval_box.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/field_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/field_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/flag_list.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/function_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/function_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/helpers/any_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/icdata_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/icdata_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/instance_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/instance_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/isolate_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/isolate_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/json_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/library_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/library_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/local_var_descriptors_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/megamorphiccache_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/native_memory_profiler.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/object_common.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/object_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/objectpool_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/objectstore_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/observatory_application.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/pc_descriptors_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/sample_buffer_control.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/script_inset.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/script_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/script_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/sentinel_value.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/sentinel_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/source_inset.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/stack_trace_tree_config.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/type_arguments_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/unknown_ref.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/vm_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/tracer.dart
 FILE: ../../../third_party/dart/runtime/platform/atomic.h
 FILE: ../../../third_party/dart/runtime/platform/signal_blocker.h
 FILE: ../../../third_party/dart/runtime/vm/allocation.h
@@ -9811,10 +10189,10 @@ FILE: ../../../third_party/dart/sdk/lib/core/null.dart
 FILE: ../../../third_party/dart/sdk/lib/core/stacktrace.dart
 FILE: ../../../third_party/dart/sdk/lib/core/string_sink.dart
 FILE: ../../../third_party/dart/sdk/lib/core/symbol.dart
+FILE: ../../../third_party/dart/sdk/lib/internal/bytes_builder.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/list.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/print.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/symbol.dart
-FILE: ../../../third_party/dart/sdk/lib/io/bytes_builder.dart
 FILE: ../../../third_party/dart/sdk/lib/io/data_transformer.dart
 FILE: ../../../third_party/dart/sdk/lib/io/file.dart
 FILE: ../../../third_party/dart/sdk/lib/io/file_impl.dart
@@ -10018,6 +10396,26 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/vm_connect.
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/service/object.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/utils.dart
 FILE: ../../../third_party/dart/runtime/observatory/web/main.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/bin/shell.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/app.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/object_graph.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/service.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/service_common.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/service_html.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/service_io.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/app/page.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/app/settings.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/app/view_model.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/class_tree.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/debugger.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/heap_map.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/isolate_reconnect.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/metrics.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/vm_connect.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/service/object.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/utils.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/web/main.dart
 FILE: ../../../third_party/dart/runtime/platform/address_sanitizer.h
 FILE: ../../../third_party/dart/runtime/platform/memory_sanitizer.h
 FILE: ../../../third_party/dart/runtime/platform/safe_stack.h
@@ -10136,6 +10534,7 @@ LIBRARY: dart
 ORIGIN: ../../../third_party/dart/runtime/observatory/web/third_party/webcomponents.min.js
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/observatory/web/third_party/webcomponents.min.js
+FILE: ../../../third_party/dart/runtime/observatory_2/web/third_party/webcomponents.min.js
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2014 The Polymer Authors. All rights reserved.
 
@@ -12000,20 +12399,21 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/COPYING
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/.circleci/config.yml
+FILE: ../../../third_party/harfbuzz/.codecov.yml
 FILE: ../../../third_party/harfbuzz/.editorconfig
 FILE: ../../../third_party/harfbuzz/THANKS
 FILE: ../../../third_party/harfbuzz/TODO
-FILE: ../../../third_party/harfbuzz/appveyor.yml
-FILE: ../../../third_party/harfbuzz/azure-pipelines.yml
 FILE: ../../../third_party/harfbuzz/docs/HarfBuzz.png
 FILE: ../../../third_party/harfbuzz/docs/HarfBuzz.svg
 FILE: ../../../third_party/harfbuzz/docs/harfbuzz-docs.xml
+FILE: ../../../third_party/harfbuzz/docs/meson.build
 FILE: ../../../third_party/harfbuzz/docs/usermanual-buffers-language-script-and-direction.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-clusters.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-fonts-and-faces.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-getting-started.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-glyph-information.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-install-harfbuzz.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-integration.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-object-model.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-opentype-features.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-shaping-concepts.xml
@@ -12021,6 +12421,18 @@ FILE: ../../../third_party/harfbuzz/docs/usermanual-utilities.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-what-is-harfbuzz.xml
 FILE: ../../../third_party/harfbuzz/docs/version.xml.in
 FILE: ../../../third_party/harfbuzz/harfbuzz.doap
+FILE: ../../../third_party/harfbuzz/meson-cc-tests/intel-atomic-primitives-test.c
+FILE: ../../../third_party/harfbuzz/meson-cc-tests/solaris-atomic-operations.c
+FILE: ../../../third_party/harfbuzz/meson.build
+FILE: ../../../third_party/harfbuzz/perf/fonts/Amiri-Regular.ttf
+FILE: ../../../third_party/harfbuzz/perf/fonts/NotoNastaliqUrdu-Regular.ttf
+FILE: ../../../third_party/harfbuzz/perf/fonts/NotoSansDevanagari-Regular.ttf
+FILE: ../../../third_party/harfbuzz/perf/fonts/Roboto-Regular.ttf
+FILE: ../../../third_party/harfbuzz/perf/meson.build
+FILE: ../../../third_party/harfbuzz/perf/perf-draw.hh
+FILE: ../../../third_party/harfbuzz/perf/perf-extents.hh
+FILE: ../../../third_party/harfbuzz/perf/perf-shaping.hh
+FILE: ../../../third_party/harfbuzz/perf/perf.cc
 FILE: ../../../third_party/harfbuzz/src/Makefile.sources
 FILE: ../../../third_party/harfbuzz/src/harfbuzz-config.cmake.in
 FILE: ../../../third_party/harfbuzz/src/harfbuzz-gobject.pc.in
@@ -12028,6 +12440,7 @@ FILE: ../../../third_party/harfbuzz/src/harfbuzz-icu.pc.in
 FILE: ../../../third_party/harfbuzz/src/harfbuzz-subset.pc.in
 FILE: ../../../third_party/harfbuzz/src/harfbuzz.cc
 FILE: ../../../third_party/harfbuzz/src/harfbuzz.pc.in
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-joining-list.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-table.cc
@@ -12035,13 +12448,28 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-tag-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ucd-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-unicode-emoji-table.hh
+FILE: ../../../third_party/harfbuzz/src/meson.build
+FILE: ../../../third_party/harfbuzz/src/update-unicode-tables.make
+FILE: ../../../third_party/harfbuzz/subprojects/cairo.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/expat.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/fontconfig.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/freetype2.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/glib.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/google-benchmark.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/libffi.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/libpng.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/pixman.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/proxy-libintl.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/ttf-parser.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/zlib.wrap
 ----------------------------------------------------------------------------------------------------
 HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
 files names COPYING in subdirectories where applicable.
 
-Copyright © 2010,2011,2012,2013,2014,2015,2016,2017,2018,2019  Google, Inc.
-Copyright © 2019  Facebook, Inc.
+Copyright © 2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020  Google, Inc.
+Copyright © 2018,2019,2020  Ebrahim Byagowi
+Copyright © 2019,2020  Facebook, Inc.
 Copyright © 2012  Mozilla Foundation
 Copyright © 2011  Codethink Limited
 Copyright © 2008,2010  Nokia Corporation and/or its subsidiary(-ies)
@@ -12136,19 +12564,45 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-fdsc-table.hh
+ORIGIN: ../../../third_party/harfbuzz/src/failing-alloc.c
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-aat-fdsc-table.hh
+FILE: ../../../third_party/harfbuzz/src/failing-alloc.c
+FILE: ../../../third_party/harfbuzz/src/hb-draw.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2020  Ebrahim Byagowi
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-layout-ankr-table.hh
+TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-ankr-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-bsln-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-feat-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-just-table.hh
-FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-lcar-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-aat-layout.h
 FILE: ../../../third_party/harfbuzz/src/hb-aat-ltag-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-aat.h
-FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-color-sbix-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-svg-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-gasp-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-metrics.h
@@ -12265,6 +12719,8 @@ FILE: ../../../third_party/harfbuzz/src/hb-number.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-meta-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-meta.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-meta.h
+FILE: ../../../third_party/harfbuzz/src/hb-style.cc
+FILE: ../../../third_party/harfbuzz/src/hb-style.h
 FILE: ../../../third_party/harfbuzz/src/test-number.cc
 FILE: ../../../third_party/harfbuzz/src/test-ot-meta.cc
 ----------------------------------------------------------------------------------------------------
@@ -12546,7 +13002,6 @@ FILE: ../../../third_party/harfbuzz/src/hb-buffer-deserialize-json.rl
 FILE: ../../../third_party/harfbuzz/src/hb-buffer-deserialize-text.hh
 FILE: ../../../third_party/harfbuzz/src/hb-buffer-deserialize-text.rl
 FILE: ../../../third_party/harfbuzz/src/hb-deprecated.h
-FILE: ../../../third_party/harfbuzz/src/hb-gobject-enums.h.tmpl
 FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-jstf-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-hangul.cc
 ----------------------------------------------------------------------------------------------------
@@ -12683,7 +13138,6 @@ FILE: ../../../third_party/harfbuzz/src/hb-shaper-impl.hh
 FILE: ../../../third_party/harfbuzz/src/hb-shaper-list.hh
 FILE: ../../../third_party/harfbuzz/src/hb-shaper.cc
 FILE: ../../../third_party/harfbuzz/src/hb-shaper.hh
-FILE: ../../../third_party/harfbuzz/src/hb-warning.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2012  Google, Inc.
 
@@ -12969,6 +13423,36 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-draw.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-draw.cc
+FILE: ../../../third_party/harfbuzz/src/hb-draw.h
+----------------------------------------------------------------------------------------------------
+Copyright © 2019-2020  Ebrahim Byagowi
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-face.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-face.cc
@@ -13040,10 +13524,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-fallback-shape.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-fallback-shape.cc
-FILE: ../../../third_party/harfbuzz/src/hb-gobject-enums.cc.tmpl
 FILE: ../../../third_party/harfbuzz/src/hb-gobject-structs.cc
-FILE: ../../../third_party/harfbuzz/src/hb-gobject-structs.h
-FILE: ../../../third_party/harfbuzz/src/hb-gobject.h
 FILE: ../../../third_party/harfbuzz/src/hb-uniscribe.h
 FILE: ../../../third_party/harfbuzz/src/hb-version.h
 FILE: ../../../third_party/harfbuzz/src/hb-version.h.in
@@ -13110,6 +13591,66 @@ FILE: ../../../third_party/harfbuzz/src/hb-ft.h
 ----------------------------------------------------------------------------------------------------
 Copyright © 2009  Red Hat, Inc.
 Copyright © 2015  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-gobject-enums.cc.tmpl
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-gobject-enums.cc.tmpl
+FILE: ../../../third_party/harfbuzz/src/hb-gobject-structs.h
+FILE: ../../../third_party/harfbuzz/src/hb-gobject.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2011  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-gobject-enums.h.tmpl
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-gobject-enums.h.tmpl
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2013  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -13316,6 +13857,37 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-cff1-std-str.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-cff1-std-str.hh
+FILE: ../../../third_party/harfbuzz/src/test-bimap.cc
+FILE: ../../../third_party/harfbuzz/src/test-ot-glyphname.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2019  Adobe, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-cmap-table.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-cmap-table.hh
@@ -13353,6 +13925,37 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-color-cbdt-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-post-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2016  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color-sbix-table.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2018  Ebrahim Byagowi
+Copyright © 2020  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -13820,7 +14423,6 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-layout.h
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-layout.h
-FILE: ../../../third_party/harfbuzz/src/main.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2007,2008,2009  Red Hat, Inc.
 
@@ -14470,11 +15072,42 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/test-bimap.cc
+ORIGIN: ../../../third_party/harfbuzz/src/main.cc
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/test-bimap.cc
+FILE: ../../../third_party/harfbuzz/src/main.cc
 ----------------------------------------------------------------------------------------------------
-Copyright © 2019  Adobe, Inc.
+Copyright © 2007,2008,2009  Red Hat, Inc.
+Copyright © 2018,2019,2020  Ebrahim Byagowi
+Copyright © 2018  Khaled Hosny
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/test-array.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/test-array.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2020  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -14535,36 +15168,6 @@ FILE: ../../../third_party/harfbuzz/src/test-gsub-would-substitute.cc
 FILE: ../../../third_party/harfbuzz/src/test.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2010,2011  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/test-ot-color.cc
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/test-ot-color.cc
-----------------------------------------------------------------------------------------------------
-Copyright © 2018  Ebrahim Byagowi
-Copyright © 2018  Khaled Hosny
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -21760,7 +22363,7 @@ FILE: ../../../third_party/dart/third_party/wasmer/wasmer.rs
 ----------------------------------------------------------------------------------------------------
 MIT License
 
-Copyright (c) 2019 Wasmer, Inc. and its affiliates.
+Copyright (c) 2019-present Wasmer, Inc. and its affiliates.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22041,6 +22644,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/LICENSE
 TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/DEPS
 FILE: ../../../third_party/zlib/contrib/minizip/ChangeLogUnzip
 FILE: ../../../third_party/zlib/contrib/minizip/crypt.h
 FILE: ../../../third_party/zlib/contrib/minizip/ioapi.c
@@ -22054,17 +22658,19 @@ FILE: ../../../third_party/zlib/contrib/minizip/mztools.h
 FILE: ../../../third_party/zlib/contrib/minizip/unzip.c
 FILE: ../../../third_party/zlib/contrib/minizip/zip.c
 FILE: ../../../third_party/zlib/crc32.h
-FILE: ../../../third_party/zlib/google.patch
 FILE: ../../../third_party/zlib/google/DEPS
 FILE: ../../../third_party/zlib/inffixed.h
-FILE: ../../../third_party/zlib/mixed-source.patch
-FILE: ../../../third_party/zlib/mozzconf.h
+FILE: ../../../third_party/zlib/patches/0000-build.patch
+FILE: ../../../third_party/zlib/patches/0001-simd.patch
+FILE: ../../../third_party/zlib/patches/0002-uninitializedcheck.patch
+FILE: ../../../third_party/zlib/patches/0003-uninitializedjump.patch
+FILE: ../../../third_party/zlib/patches/0004-fix-uwp.patch
+FILE: ../../../third_party/zlib/patches/0005-infcover-gtest.patch
 FILE: ../../../third_party/zlib/trees.h
 ----------------------------------------------------------------------------------------------------
-zlib.h -- interface of the 'zlib' general purpose compression library
-version 1.2.4, March 14th, 2010
+version 1.2.11, January 15th, 2017
 
-Copyright (C) 1995-2010 Jean-loup Gailly and Mark Adler
+Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22081,9 +22687,6 @@ freely, subject to the following restrictions:
 2. Altered source versions must be plainly marked as such, and must not be
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
-
-Jean-loup Gailly
-Mark Adler
 ====================================================================================================
 
 ====================================================================================================
@@ -22092,7 +22695,7 @@ ORIGIN: ../../../third_party/zlib/adler32.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/adler32.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2007 Mark Adler
+Copyright (C) 1995-2011, 2016 Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22117,7 +22720,7 @@ ORIGIN: ../../../third_party/zlib/compress.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/compress.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2005 Jean-loup Gailly.
+Copyright (C) 1995-2005, 2014, 2016 Jean-loup Gailly, Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22205,11 +22808,165 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/chunkcopy.h + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/zlib/contrib/optimizations/chunkcopy.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2017 ARM, Inc.
+Copyright 2017 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.c + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.c
+FILE: ../../../third_party/zlib/inffast.c
+FILE: ../../../third_party/zlib/inftrees.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2017 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.h + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/contrib/optimizations/inffast_chunk.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2003, 2010 Mark Adler
+Copyright (C) 2017 ARM, Inc.
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/inflate.c + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/contrib/optimizations/inflate.c
+FILE: ../../../third_party/zlib/infback.c
+FILE: ../../../third_party/zlib/inflate.c
+FILE: ../../../third_party/zlib/inflate.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 1995-2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/contrib/optimizations/insert_string.h + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/zlib/contrib/optimizations/insert_string.h
+FILE: ../../../third_party/zlib/google/compression_utils_portable.cc
+FILE: ../../../third_party/zlib/google/compression_utils_portable.h
+----------------------------------------------------------------------------------------------------
+Copyright 2019 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/crc32.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/crc32.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2006, 2010 Mark Adler
+Copyright (C) 1995-2006, 2010, 2011, 2012, 2016 Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22265,7 +23022,7 @@ ORIGIN: ../../../third_party/zlib/deflate.h + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/deflate.h
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2010 Jean-loup Gailly
+Copyright (C) 1995-2016 Jean-loup Gailly
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22314,42 +23071,6 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/google/compression_utils_portable.cc + ../../../LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/zlib/google/compression_utils_portable.cc
-FILE: ../../../third_party/zlib/google/compression_utils_portable.h
-----------------------------------------------------------------------------------------------------
-Copyright 2019 The Chromium Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/google/zip.cc + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/zlib/google/zip.cc
@@ -22386,10 +23107,50 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/google/zip_writer.cc + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/zlib/adler32_simd.c
+FILE: ../../../third_party/zlib/adler32_simd.h
+FILE: ../../../third_party/zlib/chromeconf.h
+FILE: ../../../third_party/zlib/crc32_simd.c
+FILE: ../../../third_party/zlib/crc32_simd.h
+FILE: ../../../third_party/zlib/google/zip_writer.cc
+FILE: ../../../third_party/zlib/google/zip_writer.h
+----------------------------------------------------------------------------------------------------
+Copyright 2017 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/gzclose.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/gzclose.c
-FILE: ../../../third_party/zlib/gzlib.c
 ----------------------------------------------------------------------------------------------------
 Copyright (C) 2004, 2010 Mark Adler
 
@@ -22416,60 +23177,34 @@ ORIGIN: ../../../third_party/zlib/gzguts.h + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/gzguts.h
 FILE: ../../../third_party/zlib/gzread.c
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013, 2016 Mark Adler
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: zlib
+ORIGIN: ../../../third_party/zlib/gzlib.c + ../../../third_party/zlib/zlib.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/zlib/gzlib.c
 FILE: ../../../third_party/zlib/gzwrite.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 2004, 2005, 2010 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/infback.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/infback.c
-FILE: ../../../third_party/zlib/inflate.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2009 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/inffast.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/inffast.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2008, 2010 Mark Adler
+Copyright (C) 2004-2017 Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22515,32 +23250,6 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/inflate.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/inflate.c
-FILE: ../../../third_party/zlib/inftrees.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2010 Mark Adler
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/inftrees.h + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/inftrees.h
@@ -22566,36 +23275,11 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/simd_stub.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/simd_stub.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 2014 Intel Corporation
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
 ORIGIN: ../../../third_party/zlib/trees.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/trees.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2010 Jean-loup Gailly
+Copyright (C) 1995-2017 Jean-loup Gailly
 detect_data_type() function provided freely by Cosmin Truta, 2006
 
 This software is provided 'as-is', without any express or implied
@@ -22621,59 +23305,7 @@ ORIGIN: ../../../third_party/zlib/uncompr.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/uncompr.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2003, 2010 Jean-loup Gailly.
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/x86.c + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/x86.c
-----------------------------------------------------------------------------------------------------
-Copyright (C) 2013 Intel Corporation. All rights reserved.
-Author:
- Jim Kukunas
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: zlib
-ORIGIN: ../../../third_party/zlib/x86.h + ../../../third_party/zlib/zlib.h
-TYPE: LicenseType.zlib
-FILE: ../../../third_party/zlib/x86.h
-----------------------------------------------------------------------------------------------------
-Copyright (C) 2013 Intel Corporation Jim Kukunas
+Copyright (C) 1995-2003, 2010, 2014, 2016 Jean-loup Gailly, Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22699,7 +23331,7 @@ TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/zconf.h
 FILE: ../../../third_party/zlib/zutil.h
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2010 Jean-loup Gailly.
+Copyright (C) 1995-2016 Jean-loup Gailly, Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22725,7 +23357,7 @@ TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/deflate.c
 FILE: ../../../third_party/zlib/zlib.h
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2010 Jean-loup Gailly and Mark Adler
+Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22750,7 +23382,7 @@ ORIGIN: ../../../third_party/zlib/zutil.c + ../../../third_party/zlib/zlib.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/zlib/zutil.c
 ----------------------------------------------------------------------------------------------------
-Copyright (C) 1995-2005, 2010 Jean-loup Gailly.
+Copyright (C) 1995-2017 Jean-loup Gailly
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22768,4 +23400,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 359
+Total license count: 367

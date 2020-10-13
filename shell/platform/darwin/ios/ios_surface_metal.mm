@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
 
 #include "flutter/shell/gpu/gpu_surface_metal.h"
-#include "flutter/shell/platform/darwin/ios/ios_context_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_context_metal.h"
 
 namespace flutter {
 
@@ -43,7 +43,7 @@ void IOSSurfaceMetal::UpdateStorageSizeIfNecessary() {
 }
 
 // |IOSSurface|
-std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrContext* /* unused */) {
+std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrDirectContext* /* unused */) {
   auto metal_context = CastToMetalContext(GetContext());
 
   return std::make_unique<GPUSurfaceMetal>(this,    // Metal surface delegate
@@ -55,7 +55,7 @@ std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrContext* /* unused 
 
 // |GPUSurfaceDelegate|
 ExternalViewEmbedder* IOSSurfaceMetal::GetExternalViewEmbedder() {
-  return GetExternalViewEmbedderIfEnabled();
+  return this;
 }
 
 }  // namespace flutter

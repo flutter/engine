@@ -6,6 +6,7 @@
 
 #include <vector>
 
+#include "flutter/common/constants.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/fml/logging.h"
@@ -14,6 +15,7 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -87,7 +89,7 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
 
 /// @note Procedure doesn't copy all closures.
 static std::unique_ptr<RasterCacheResult> Rasterize(
-    GrContext* context,
+    GrDirectContext* context,
     const SkMatrix& ctm,
     SkColorSpace* dst_color_space,
     bool checkerboard,
@@ -124,7 +126,7 @@ static std::unique_ptr<RasterCacheResult> Rasterize(
 
 std::unique_ptr<RasterCacheResult> RasterCache::RasterizePicture(
     SkPicture* picture,
-    GrContext* context,
+    GrDirectContext* context,
     const SkMatrix& ctm,
     SkColorSpace* dst_color_space,
     bool checkerboard) const {
@@ -158,16 +160,16 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
                                            canvas_size.height());
         internal_nodes_canvas.addCanvas(canvas);
         Layer::PaintContext paintContext = {
-            (SkCanvas*)&internal_nodes_canvas,  // internal_nodes_canvas
-            canvas,                             // leaf_nodes_canvas
-            context->gr_context,                // gr_context
-            nullptr,                            // view_embedder
+            /* internal_nodes_canvas= */ static_cast<SkCanvas*>(
+                &internal_nodes_canvas),
+            /* leaf_nodes_canvas= */ canvas,
+            /* gr_context= */ context->gr_context,
+            /* view_embedder= */ nullptr,
             context->raster_time,
             context->ui_time,
             context->texture_registry,
             context->has_platform_view ? nullptr : context->raster_cache,
             context->checkerboard_offscreen_layers,
-            context->frame_physical_depth,
             context->frame_device_pixel_ratio};
         if (layer->needs_painting()) {
           layer->Paint(paintContext);
@@ -175,7 +177,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
       });
 }
 
-bool RasterCache::Prepare(GrContext* context,
+bool RasterCache::Prepare(GrDirectContext* context,
                           SkPicture* picture,
                           const SkMatrix& transformation_matrix,
                           SkColorSpace* dst_color_space,
@@ -231,7 +233,7 @@ bool RasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {
   entry.used_this_frame = true;
 
   if (entry.image) {
-    entry.image->draw(canvas);
+    entry.image->draw(canvas, nullptr);
     return true;
   }
 
@@ -297,35 +299,33 @@ void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
 
 void RasterCache::TraceStatsToTimeline() const {
 #if !FLUTTER_RELEASE
+  FML_TRACE_COUNTER("flutter", "RasterCache", reinterpret_cast<int64_t>(this),
+                    "LayerCount", layer_cache_.size(), "LayerMBytes",
+                    EstimateLayerCacheByteSize() / kMegaByteSizeInBytes,
+                    "PictureCount", picture_cache_.size(), "PictureMBytes",
+                    EstimatePictureCacheByteSize() / kMegaByteSizeInBytes);
 
-  size_t layer_cache_count = 0;
+#endif  // !FLUTTER_RELEASE
+}
+
+size_t RasterCache::EstimateLayerCacheByteSize() const {
   size_t layer_cache_bytes = 0;
-  size_t picture_cache_count = 0;
-  size_t picture_cache_bytes = 0;
-
   for (const auto& item : layer_cache_) {
-    layer_cache_count++;
     if (item.second.image) {
       layer_cache_bytes += item.second.image->image_bytes();
     }
   }
+  return layer_cache_bytes;
+}
 
+size_t RasterCache::EstimatePictureCacheByteSize() const {
+  size_t picture_cache_bytes = 0;
   for (const auto& item : picture_cache_) {
-    picture_cache_count++;
     if (item.second.image) {
       picture_cache_bytes += item.second.image->image_bytes();
     }
   }
-
-  FML_TRACE_COUNTER("flutter", "RasterCache",
-                    reinterpret_cast<int64_t>(this),             //
-                    "LayerCount", layer_cache_count,             //
-                    "LayerMBytes", layer_cache_bytes * 1e-6,     //
-                    "PictureCount", picture_cache_count,         //
-                    "PictureMBytes", picture_cache_bytes * 1e-6  //
-  );
-
-#endif  // !FLUTTER_RELEASE
+  return picture_cache_bytes;
 }
 
 }  // namespace flutter

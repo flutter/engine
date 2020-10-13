@@ -6,9 +6,9 @@ package io.flutter.view;
 
 import android.app.Activity;
 import android.content.Context;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
+import io.flutter.Log;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -17,6 +17,11 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.common.*;
 import java.nio.ByteBuffer;
 
+/**
+ * @deprecated {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
+ *     this class. See https://flutter.dev/go/android-project-migration for more migration details.
+ */
+@Deprecated
 public class FlutterNativeView implements BinaryMessenger {
   private static final String TAG = "FlutterNativeView";
 

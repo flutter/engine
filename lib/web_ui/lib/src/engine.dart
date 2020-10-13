@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
+@JS()
 library engine;
 
 import 'dart:async';
-import 'dart:collection' show ListBase, IterableBase;
+import 'dart:collection'
+    show ListBase, IterableBase, DoubleLinkedQueue, DoubleLinkedQueueEntry;
 import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
 import 'dart:html' as html;
@@ -15,6 +17,7 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 
 import '../ui.dart' as ui;
@@ -23,48 +26,80 @@ part 'engine/alarm_clock.dart';
 part 'engine/assets.dart';
 part 'engine/bitmap_canvas.dart';
 part 'engine/browser_detection.dart';
-part 'engine/browser_location.dart';
+part 'engine/canvaskit/canvas.dart';
+part 'engine/canvaskit/canvaskit_canvas.dart';
+part 'engine/canvaskit/canvaskit_api.dart';
+part 'engine/canvaskit/color_filter.dart';
+part 'engine/canvaskit/embedded_views.dart';
+part 'engine/canvaskit/fonts.dart';
+part 'engine/canvaskit/image.dart';
+part 'engine/canvaskit/image_filter.dart';
+part 'engine/canvaskit/initialization.dart';
+part 'engine/canvaskit/layer.dart';
+part 'engine/canvaskit/layer_scene_builder.dart';
+part 'engine/canvaskit/layer_tree.dart';
+part 'engine/canvaskit/mask_filter.dart';
+part 'engine/canvaskit/n_way_canvas.dart';
+part 'engine/canvaskit/path.dart';
+part 'engine/canvaskit/painting.dart';
+part 'engine/canvaskit/path_metrics.dart';
+part 'engine/canvaskit/picture.dart';
+part 'engine/canvaskit/picture_recorder.dart';
+part 'engine/canvaskit/platform_message.dart';
+part 'engine/canvaskit/raster_cache.dart';
+part 'engine/canvaskit/rasterizer.dart';
+part 'engine/canvaskit/shader.dart';
+part 'engine/canvaskit/skia_object_cache.dart';
+part 'engine/canvaskit/surface.dart';
+part 'engine/canvaskit/text.dart';
+part 'engine/canvaskit/util.dart';
+part 'engine/canvaskit/vertices.dart';
+part 'engine/canvaskit/viewport_metrics.dart';
 part 'engine/canvas_pool.dart';
 part 'engine/clipboard.dart';
 part 'engine/color_filter.dart';
-part 'engine/compositor/canvas.dart';
-part 'engine/compositor/canvas_kit_canvas.dart';
-part 'engine/compositor/color_filter.dart';
-part 'engine/compositor/embedded_views.dart';
-part 'engine/compositor/fonts.dart';
-part 'engine/compositor/image.dart';
-part 'engine/compositor/image_filter.dart';
-part 'engine/compositor/initialization.dart';
-part 'engine/compositor/layer.dart';
-part 'engine/compositor/layer_scene_builder.dart';
-part 'engine/compositor/layer_tree.dart';
-part 'engine/compositor/n_way_canvas.dart';
-part 'engine/compositor/path.dart';
-part 'engine/compositor/painting.dart';
-part 'engine/compositor/path_metrics.dart';
-part 'engine/compositor/picture.dart';
-part 'engine/compositor/picture_recorder.dart';
-part 'engine/compositor/platform_message.dart';
-part 'engine/compositor/raster_cache.dart';
-part 'engine/compositor/rasterizer.dart';
-part 'engine/compositor/surface.dart';
-part 'engine/compositor/text.dart';
-part 'engine/compositor/util.dart';
-part 'engine/compositor/vertices.dart';
-part 'engine/compositor/viewport_metrics.dart';
-part 'engine/conic.dart';
 part 'engine/dom_canvas.dart';
 part 'engine/dom_renderer.dart';
 part 'engine/engine_canvas.dart';
 part 'engine/frame_reference.dart';
-part 'engine/history.dart';
-part 'engine/houdini_canvas.dart';
+part 'engine/navigation/history.dart';
+part 'engine/navigation/js_url_strategy.dart';
+part 'engine/navigation/url_strategy.dart';
+part 'engine/html/backdrop_filter.dart';
+part 'engine/html/canvas.dart';
+part 'engine/html/clip.dart';
+part 'engine/html/color_filter.dart';
+part 'engine/html/debug_canvas_reuse_overlay.dart';
+part 'engine/html/image_filter.dart';
+part 'engine/html/offset.dart';
+part 'engine/html/opacity.dart';
+part 'engine/html/painting.dart';
+part 'engine/html/path/conic.dart';
+part 'engine/html/path/cubic.dart';
+part 'engine/html/path/path.dart';
+part 'engine/html/path/path_metrics.dart';
+part 'engine/html/path/path_ref.dart';
+part 'engine/html/path/path_to_svg.dart';
+part 'engine/html/path/path_utils.dart';
+part 'engine/html/path/path_windings.dart';
+part 'engine/html/path/tangent.dart';
+part 'engine/html/picture.dart';
+part 'engine/html/platform_view.dart';
+part 'engine/html/recording_canvas.dart';
+part 'engine/html/render_vertices.dart';
+part 'engine/html/scene.dart';
+part 'engine/html/scene_builder.dart';
+part 'engine/html/shaders/shader.dart';
+part 'engine/html/shaders/shader_builder.dart';
+part 'engine/html/surface.dart';
+part 'engine/html/surface_stats.dart';
+part 'engine/html/transform.dart';
 part 'engine/html_image_codec.dart';
 part 'engine/keyboard.dart';
 part 'engine/mouse_cursor.dart';
 part 'engine/onscreen_logging.dart';
-part 'engine/path_to_svg.dart';
 part 'engine/picture.dart';
+part 'engine/platform_dispatcher.dart';
 part 'engine/platform_views.dart';
 part 'engine/plugins.dart';
 part 'engine/pointer_binding.dart';
@@ -86,27 +121,7 @@ part 'engine/services/buffers.dart';
 part 'engine/services/message_codec.dart';
 part 'engine/services/message_codecs.dart';
 part 'engine/services/serialization.dart';
-part 'engine/shader.dart';
 part 'engine/shadow.dart';
-part 'engine/surface/backdrop_filter.dart';
-part 'engine/surface/canvas.dart';
-part 'engine/surface/clip.dart';
-part 'engine/surface/debug_canvas_reuse_overlay.dart';
-part 'engine/surface/image_filter.dart';
-part 'engine/surface/offset.dart';
-part 'engine/surface/opacity.dart';
-part 'engine/surface/painting.dart';
-part 'engine/surface/path_metrics.dart';
-part 'engine/surface/picture.dart';
-part 'engine/surface/platform_view.dart';
-part 'engine/surface/recording_canvas.dart';
-part 'engine/surface/render_vertices.dart';
-part 'engine/surface/scene.dart';
-part 'engine/surface/scene_builder.dart';
-part 'engine/surface/surface.dart';
-part 'engine/surface/path.dart';
-part 'engine/surface/surface_stats.dart';
-part 'engine/surface/transform.dart';
 part 'engine/test_embedding.dart';
 part 'engine/text/font_collection.dart';
 part 'engine/text/line_break_properties.dart';
@@ -119,7 +134,9 @@ part 'engine/text/word_break_properties.dart';
 part 'engine/text/word_breaker.dart';
 part 'engine/text_editing/autofill_hint.dart';
 part 'engine/text_editing/input_type.dart';
+part 'engine/text_editing/text_capitalization.dart';
 part 'engine/text_editing/text_editing.dart';
+part 'engine/ulps.dart';
 part 'engine/util.dart';
 part 'engine/validators.dart';
 part 'engine/vector_math.dart';
@@ -150,8 +167,6 @@ void registerHotRestartListener(ui.VoidCallback listener) {
 ///
 /// This is only available on the Web, as native Flutter configures the
 /// environment in the native embedder.
-// TODO(yjbanov): we should refactor the code such that the framework does not
-//                call this method directly.
 void initializeEngine() {
   if (_engineInitialized) {
     return;
@@ -191,6 +206,8 @@ void initializeEngine() {
     if (!waitingForAnimation) {
       waitingForAnimation = true;
       html.window.requestAnimationFrame((num highResTime) {
+        _frameTimingsOnVsync();
+
         // Reset immediately, because `frameHandler` can schedule more frames.
         waitingForAnimation = false;
 
@@ -201,17 +218,24 @@ void initializeEngine() {
         // microsecond precision, and only then convert to `int`.
         final int highResTimeMicroseconds = (1000 * highResTime).toInt();
 
-        if (window._onBeginFrame != null) {
-          window.invokeOnBeginFrame(
+        // In Flutter terminology "building a frame" consists of "beginning
+        // frame" and "drawing frame".
+        //
+        // We do not call `_frameTimingsOnBuildFinish` from here because
+        // part of the rasterization process, particularly in the HTML
+        // renderer, takes place in the `SceneBuilder.build()`.
+        _frameTimingsOnBuildStart();
+        if (EnginePlatformDispatcher.instance._onBeginFrame != null) {
+          EnginePlatformDispatcher.instance.invokeOnBeginFrame(
               Duration(microseconds: highResTimeMicroseconds));
         }
 
-        if (window._onDrawFrame != null) {
+        if (EnginePlatformDispatcher.instance._onDrawFrame != null) {
           // TODO(yjbanov): technically Flutter flushes microtasks between
           //                onBeginFrame and onDrawFrame. We don't, which hasn't
           //                been an issue yet, but eventually we'll have to
           //                implement it properly.
-          window.invokeOnDrawFrame();
+          EnginePlatformDispatcher.instance.invokeOnDrawFrame();
         }
       });
     }

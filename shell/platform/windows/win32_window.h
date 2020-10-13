@@ -13,22 +13,6 @@
 
 namespace flutter {
 
-// Struct holding the mouse state. The engine doesn't keep track of which mouse
-// buttons have been pressed, so it's the embedding's responsibility.
-struct MouseState {
-  // True if the last event sent to Flutter had at least one mouse button
-  // pressed.
-  bool flutter_state_is_down = false;
-
-  // True if kAdd has been sent to Flutter. Used to determine whether
-  // to send a kAdd event before sending an incoming mouse event, since Flutter
-  // expects pointers to be added before events are sent for them.
-  bool flutter_state_is_added = false;
-
-  // The currently pressed buttons, as represented in FlutterPointerEvent.
-  uint64_t buttons = 0;
-};
-
 // A class abstraction for a high DPI aware Win32 Window.  Intended to be
 // inherited from by classes that wish to specialize with custom
 // rendering and input handling.
@@ -68,10 +52,9 @@ class Win32Window {
   // size change and DPI.  Delegates handling of these to member overloads that
   // inheriting classes can handle.
   LRESULT
-  MessageHandler(HWND window,
-                 UINT const message,
-                 WPARAM const wparam,
-                 LPARAM const lparam) noexcept;
+  HandleMessage(UINT const message,
+                WPARAM const wparam,
+                LPARAM const lparam) noexcept;
 
   // When WM_DPICHANGE process it using |hWnd|, |wParam|.  If
   // |top_level| is set, extract the suggested new size from |lParam| and resize
@@ -102,6 +85,9 @@ class Win32Window {
   // Called when the mouse leaves the window.
   virtual void OnPointerLeave() = 0;
 
+  // Called when the cursor should be set for the client area.
+  virtual void OnSetCursor() = 0;
+
   // Called when text input occurs.
   virtual void OnText(const std::u16string& text) = 0;
 
@@ -111,35 +97,11 @@ class Win32Window {
   // Called when mouse scrollwheel input occurs.
   virtual void OnScroll(double delta_x, double delta_y) = 0;
 
-  // Called when the system font change.
-  virtual void OnFontChange() = 0;
-
   UINT GetCurrentDPI();
 
   UINT GetCurrentWidth();
 
   UINT GetCurrentHeight();
-
-  // Gets the current mouse state.
-  MouseState GetMouseState() { return mouse_state_; }
-
-  // Resets the mouse state to its default values.
-  void ResetMouseState() { mouse_state_ = MouseState(); }
-
-  // Updates the mouse state to whether the last event to Flutter had at least
-  // one mouse button pressed.
-  void SetMouseFlutterStateDown(bool is_down) {
-    mouse_state_.flutter_state_is_down = is_down;
-  }
-
-  // Updates the mouse state to whether the last event to Flutter was a kAdd
-  // event.
-  void SetMouseFlutterStateAdded(bool is_added) {
-    mouse_state_.flutter_state_is_added = is_added;
-  }
-
-  // Updates the currently pressed buttons.
-  void SetMouseButtons(uint64_t buttons) { mouse_state_.buttons = buttons; }
 
  private:
   // Release OS resources asociated with window.
@@ -169,9 +131,6 @@ class Win32Window {
 
   // Set to true to be notified when the mouse leaves the window.
   bool tracking_mouse_leave_ = false;
-
-  // Keeps track of mouse state in relation to the window.
-  MouseState mouse_state_;
 
   // Keeps track of the last key code produced by a WM_KEYDOWN or WM_SYSKEYDOWN
   // message.

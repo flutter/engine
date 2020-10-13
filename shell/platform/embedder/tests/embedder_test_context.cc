@@ -160,60 +160,16 @@ EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook() {
   };
 }
 
-void EmbedderTestContext::SetupOpenGLSurface(SkISize surface_size) {
-  FML_CHECK(!gl_surface_);
-  gl_surface_ = std::make_unique<TestGLSurface>(surface_size);
-}
-
-bool EmbedderTestContext::GLMakeCurrent() {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->MakeCurrent();
-}
-
-bool EmbedderTestContext::GLClearCurrent() {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->ClearCurrent();
-}
-
-bool EmbedderTestContext::GLPresent() {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  gl_surface_present_count_++;
-
-  FireRootSurfacePresentCallbackIfPresent(
-      [&]() { return gl_surface_->GetRasterSurfaceSnapshot(); });
-
-  if (!gl_surface_->Present()) {
-    return false;
-  }
-
-  return true;
-}
-
-uint32_t EmbedderTestContext::GLGetFramebuffer() {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->GetFramebuffer();
-}
-
-bool EmbedderTestContext::GLMakeResourceCurrent() {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->MakeResourceCurrent();
-}
-
-void* EmbedderTestContext::GLGetProcAddress(const char* name) {
-  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
-  return gl_surface_->GetProcAddress(name);
+FlutterComputePlatformResolvedLocaleCallback
+EmbedderTestContext::GetComputePlatformResolvedLocaleCallbackHook() {
+  return [](const FlutterLocale** supported_locales,
+            size_t length) -> const FlutterLocale* {
+    return supported_locales[0];
+  };
 }
 
 FlutterTransformation EmbedderTestContext::GetRootSurfaceTransformation() {
   return FlutterTransformationMake(root_surface_transformation_);
-}
-
-void EmbedderTestContext::SetupCompositor() {
-  FML_CHECK(!compositor_) << "Already ssetup a compositor in this context.";
-  FML_CHECK(gl_surface_)
-      << "Setup the GL surface before setting up a compositor.";
-  compositor_ = std::make_unique<EmbedderTestCompositor>(
-      gl_surface_->GetSurfaceSize(), gl_surface_->GetGrContext());
 }
 
 EmbedderTestCompositor& EmbedderTestContext::GetCompositor() {
@@ -240,22 +196,6 @@ std::future<sk_sp<SkImage>> EmbedderTestContext::GetNextSceneImage() {
         promise.set_value(image);
       }));
   return future;
-}
-
-bool EmbedderTestContext::SofwarePresent(sk_sp<SkImage> image) {
-  software_surface_present_count_++;
-
-  FireRootSurfacePresentCallbackIfPresent([image] { return image; });
-
-  return true;
-}
-
-size_t EmbedderTestContext::GetGLSurfacePresentCount() const {
-  return gl_surface_present_count_;
-}
-
-size_t EmbedderTestContext::GetSoftwareSurfacePresentCount() const {
-  return software_surface_present_count_;
 }
 
 /// @note Procedure doesn't copy all closures.

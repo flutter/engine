@@ -5,6 +5,7 @@
 assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
+import("//build/toolchain/clang.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
@@ -74,6 +75,8 @@ source_set("flutter_framework_source") {
     "framework/Source/accessibility_bridge.mm",
     "framework/Source/accessibility_text_entry.h",
     "framework/Source/accessibility_text_entry.mm",
+    "framework/Source/connection_collection.h",
+    "framework/Source/connection_collection.mm",
     "framework/Source/platform_message_response_darwin.h",
     "framework/Source/platform_message_response_darwin.mm",
     "framework/Source/platform_message_router.h",
@@ -156,7 +159,8 @@ source_set("flutter_framework_source") {
 }
 
 ios_test_flutter_path = rebase_path("$root_out_dir/libios_test_flutter.dylib")
-platform_frameworks_path = "$ios_sdk_path/../../Library/Frameworks/"
+platform_frameworks_path =
+    rebase_path("$ios_sdk_path/../../Library/Frameworks/")
 
 # For tests that rely on manual reference counting.
 source_set("ios_test_flutter_mrc") {
@@ -167,6 +171,9 @@ source_set("ios_test_flutter_mrc") {
     "-mios-simulator-version-min=$ios_testing_deployment_target",
   ]
   sources = [
+    "framework/Source/FlutterEnginePlatformViewTest.mm",
+    "framework/Source/FlutterPlatformPluginTest.mm",
+    "framework/Source/FlutterPlatformViewsTest.mm",
     "framework/Source/accessibility_bridge_test.mm",
   ]
   deps = [
@@ -202,11 +209,13 @@ shared_library("ios_test_flutter") {
   ]
   sources = [
     "framework/Source/FlutterBinaryMessengerRelayTest.mm",
+    "framework/Source/FlutterDartProjectTest.mm",
     "framework/Source/FlutterEngineTest.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.m",
     "framework/Source/FlutterTextInputPluginTest.m",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
+    "framework/Source/connection_collection_test.mm",
   ]
   deps = [
     ":flutter_framework_source",
@@ -230,9 +239,7 @@ shared_library("create_flutter_framework_dylib") {
 
   public = _flutter_framework_headers
 
-  deps = [
-    ":flutter_framework_source",
-  ]
+  deps = [ ":flutter_framework_source" ]
 
   public_configs = [ "//flutter:config" ]
 }
@@ -240,42 +247,28 @@ shared_library("create_flutter_framework_dylib") {
 copy("copy_dylib") {
   visibility = [ ":*" ]
 
-  sources = [
-    "$root_out_dir/libFlutter.dylib",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/Flutter",
-  ]
+  sources = [ "$root_out_dir/libFlutter.dylib" ]
+  outputs = [ "$_flutter_framework_dir/Flutter" ]
 
-  deps = [
-    ":create_flutter_framework_dylib",
-  ]
+  deps = [ ":create_flutter_framework_dylib" ]
 }
 
 action("copy_framework_info_plist") {
   script = "//flutter/build/copy_info_plist.py"
   visibility = [ ":*" ]
-  sources = [
-    "framework/Info.plist",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/Info.plist",
-  ]
+  sources = [ "framework/Info.plist" ]
+  outputs = [ "$_flutter_framework_dir/Info.plist" ]
   args = [
     rebase_path(sources[0]),
     rebase_path(outputs[0]),
-    "--bitcode=$flutter_enable_bitcode",
+    "--bitcode=$enable_bitcode",
   ]
 }
 
 copy("copy_framework_module_map") {
   visibility = [ ":*" ]
-  sources = [
-    "framework/module.modulemap",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/Modules/module.modulemap",
-  ]
+  sources = [ "framework/module.modulemap" ]
+  outputs = [ "$_flutter_framework_dir/Modules/module.modulemap" ]
 }
 
 action("copy_framework_headers") {
@@ -297,49 +290,42 @@ action("copy_framework_headers") {
 
 copy("copy_framework_icu") {
   visibility = [ ":*" ]
-  sources = [
-    "//third_party/icu/flutter/icudtl.dat",
-  ]
-  outputs = [
-    "$_flutter_framework_dir/{{source_file_part}}",
-  ]
+  sources = [ "//third_party/icu/flutter/icudtl.dat" ]
+  outputs = [ "$_flutter_framework_dir/{{source_file_part}}" ]
 }
 
 copy("copy_framework_podspec") {
   visibility = [ ":*" ]
-  sources = [
-    "framework/Flutter.podspec",
-  ]
-  outputs = [
-    "$root_out_dir/Flutter.podspec",
-  ]
+  sources = [ "framework/Flutter.podspec" ]
+  outputs = [ "$root_out_dir/Flutter.podspec" ]
 }
 
 copy("copy_license") {
   visibility = [ ":*" ]
-  sources = [
-    "//LICENSE",
-  ]
-  outputs = [
-    "$root_out_dir/LICENSE",
-  ]
+  sources = [ "//LICENSE" ]
+  outputs = [ "$root_out_dir/LICENSE" ]
 }
 
-shared_library("copy_and_verify_framework_headers") {
+shared_library("copy_and_verify_framework_module") {
+  framework_search_path = rebase_path("$root_out_dir")
   visibility = [ ":*" ]
-  include_dirs = [ "$_flutter_framework_headers_copy_dir" ]
-
-  sources = [
-    "framework/Source/FlutterUmbrellaImport.m",
+  cflags_objc = [
+    "-F$framework_search_path",
+    "-fmodules",
+    "-Wnon-modular-include-in-framework-module",
   ]
+
+  sources = [ "framework/Source/FlutterUmbrellaImport.m" ]
   deps = [
     ":copy_framework_headers",
+    ":copy_framework_info_plist",
+    ":copy_framework_module_map",
   ]
 }
 
 group("flutter_framework") {
   deps = [
-    ":copy_and_verify_framework_headers",
+    ":copy_and_verify_framework_module",
     ":copy_dylib",
     ":copy_framework_icu",
     ":copy_framework_info_plist",

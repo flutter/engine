@@ -8,13 +8,14 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 
-#if OS_ANDROID
-#include "flutter/fml/platform/android/jni_weak_ref.h"
-#endif
-
+#include "flutter/flow/embedded_views.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "third_party/skia/include/core/SkMatrix.h"
+
+#if OS_ANDROID
+#include "flutter/fml/platform/android/jni_weak_ref.h"
+#endif
 
 namespace flutter {
 
@@ -115,11 +116,15 @@ class PlatformViewAndroidJNI {
   ///
   /// @note       Must be called from the platform thread.
   ///
-  virtual void FlutterViewOnDisplayPlatformView(int view_id,
-                                                int x,
-                                                int y,
-                                                int width,
-                                                int height) = 0;
+  virtual void FlutterViewOnDisplayPlatformView(
+      int view_id,
+      int x,
+      int y,
+      int width,
+      int height,
+      int viewWidth,
+      int viewHeight,
+      MutatorsStack mutators_stack) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Positions and sizes an overlay surface in hybrid composition.
@@ -176,11 +181,20 @@ class PlatformViewAndroidJNI {
   FlutterViewCreateOverlaySurface() = 0;
 
   //----------------------------------------------------------------------------
+  /// @brief      Destroys the overlay surfaces.
+  ///
+  /// @note       Must be called from the platform thread.
+  ///
+  virtual void FlutterViewDestroyOverlaySurfaces() = 0;
+
+  //----------------------------------------------------------------------------
   /// @brief      Computes the locale Android would select.
   ///
   virtual std::unique_ptr<std::vector<std::string>>
   FlutterViewComputePlatformResolvedLocale(
       std::vector<std::string> supported_locales_data) = 0;
+
+  virtual double GetDisplayRefreshRate() = 0;
 };
 
 }  // namespace flutter

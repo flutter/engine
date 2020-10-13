@@ -9,6 +9,39 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// This file defines an Application Binary Interface (ABI), which requires more
+// stability than regular code to remain functional for exchanging messages
+// between different versions of the embedding and the engine, to allow for both
+// forward and backward compatibility.
+//
+// Specifically,
+// - The order, type, and size of the struct members below must remain the same,
+//   and members should not be removed.
+// - New structures that are part of the ABI must be defined with "size_t
+//   struct_size;" as their first member, which should be initialized using
+//   "sizeof(Type)".
+// - Enum values must not change or be removed.
+// - Enum members without explicit values must not be reordered.
+// - Function signatures (names, argument counts, argument order, and argument
+//   type) cannot change.
+// - The core behavior of existing functions cannot change.
+//
+// These changes are allowed:
+// - Adding new struct members at the end of a structure.
+// - Adding new enum members with a new value.
+// - Renaming a struct member as long as its type, size, and intent remain the
+//   same.
+// - Renaming an enum member as long as its value and intent remains the same.
+//
+// It is expected that struct members and implicitly-valued enums will not
+// always be declared in an order that is optimal for the reader, since members
+// will be added over time, and they can't be reordered.
+//
+// Existing functions should continue to appear from the caller's point of view
+// to operate as they did when they were first introduced, so introduce a new
+// function instead of modifying the core behavior of a function (and continue
+// to support the existing function with the previous behavior).
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -273,12 +306,88 @@ typedef bool (*TextureFrameCallback)(void* /* user data */,
                                      FlutterOpenGLTexture* /* texture out */);
 typedef void (*VsyncCallback)(void* /* user data */, intptr_t /* baton */);
 
+/// A structure to represent the width and height.
+typedef struct {
+  double width;
+  double height;
+} FlutterSize;
+
+/// A structure to represent the width and height.
+///
+/// See: \ref FlutterSize when the value are not integers.
+typedef struct {
+  uint32_t width;
+  uint32_t height;
+} FlutterUIntSize;
+
+/// A structure to represent a rectangle.
+typedef struct {
+  double left;
+  double top;
+  double right;
+  double bottom;
+} FlutterRect;
+
+/// A structure to represent a 2D point.
+typedef struct {
+  double x;
+  double y;
+} FlutterPoint;
+
+/// A structure to represent a rounded rectangle.
+typedef struct {
+  FlutterRect rect;
+  FlutterSize upper_left_corner_radius;
+  FlutterSize upper_right_corner_radius;
+  FlutterSize lower_right_corner_radius;
+  FlutterSize lower_left_corner_radius;
+} FlutterRoundedRect;
+
+/// This information is passed to the embedder when requesting a frame buffer
+/// object.
+///
+/// See: \ref FlutterOpenGLRendererConfig.fbo_with_frame_info_callback.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterFrameInfo).
+  size_t struct_size;
+  /// The size of the surface that will be backed by the fbo.
+  FlutterUIntSize size;
+} FlutterFrameInfo;
+
+/// Callback for when a frame buffer object is requested.
+typedef uint32_t (*UIntFrameInfoCallback)(
+    void* /* user data */,
+    const FlutterFrameInfo* /* frame info */);
+
+/// This information is passed to the embedder when a surface is presented.
+///
+/// See: \ref FlutterOpenGLRendererConfig.present_with_info.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterFrameInfo).
+  size_t struct_size;
+  /// Id of the fbo backing the surface that was presented.
+  uint32_t fbo_id;
+} FlutterPresentInfo;
+
+/// Callback for when a surface is presented.
+typedef bool (*BoolPresentInfoCallback)(
+    void* /* user data */,
+    const FlutterPresentInfo* /* present info */);
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterOpenGLRendererConfig).
   size_t struct_size;
   BoolCallback make_current;
   BoolCallback clear_current;
+  /// Specifying one (and only one) of `present` or `present_with_info` is
+  /// required. Specifying both is an error and engine initialization will be
+  /// terminated. The return value indicates success of the present call.
   BoolCallback present;
+  /// Specifying one (and only one) of the `fbo_callback` or
+  /// `fbo_with_frame_info_callback` is required. Specifying both is an error
+  /// and engine intialization will be terminated. The return value indicates
+  /// the id of the frame buffer object that flutter will obtain the gl surface
+  /// from.
   UIntCallback fbo_callback;
   /// This is an optional callback. Flutter will ask the emebdder to create a GL
   /// context current on a background thread. If the embedder is able to do so,
@@ -309,6 +418,20 @@ typedef struct {
   /// that external texture details can be supplied to the engine for subsequent
   /// composition.
   TextureFrameCallback gl_external_texture_frame_callback;
+  /// Specifying one (and only one) of the `fbo_callback` or
+  /// `fbo_with_frame_info_callback` is required. Specifying both is an error
+  /// and engine intialization will be terminated. The return value indicates
+  /// the id of the frame buffer object (fbo) that flutter will obtain the gl
+  /// surface from. When using this variant, the embedder is passed a
+  /// `FlutterFrameInfo` struct that indicates the properties of the surface
+  /// that flutter will acquire from the returned fbo.
+  UIntFrameInfoCallback fbo_with_frame_info_callback;
+  /// Specifying one (and only one) of `present` or `present_with_info` is
+  /// required. Specifying both is an error and engine initialization will be
+  /// terminated. When using this variant, the embedder is passed a
+  /// `FlutterPresentInfo` struct that the embedder can use to release any
+  /// resources. The return value indicates success of the present call.
+  BoolPresentInfoCallback present_with_info;
 } FlutterOpenGLRendererConfig;
 
 typedef struct {
@@ -338,6 +461,10 @@ typedef struct {
   size_t height;
   /// Scale factor for the physical screen.
   double pixel_ratio;
+  /// Horizontal physical location of the left side of the window on the screen.
+  size_t left;
+  /// Vertical physical location of the top of the window on the screen.
+  size_t top;
 } FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
@@ -457,31 +584,6 @@ typedef void (*FlutterDataCallback)(const uint8_t* /* data */,
                                     size_t /* size */,
                                     void* /* user data */);
 
-typedef struct {
-  double left;
-  double top;
-  double right;
-  double bottom;
-} FlutterRect;
-
-typedef struct {
-  double x;
-  double y;
-} FlutterPoint;
-
-typedef struct {
-  double width;
-  double height;
-} FlutterSize;
-
-typedef struct {
-  FlutterRect rect;
-  FlutterSize upper_left_corner_radius;
-  FlutterSize upper_right_corner_radius;
-  FlutterSize lower_right_corner_radius;
-  FlutterSize lower_left_corner_radius;
-} FlutterRoundedRect;
-
 /// The identifier of the platform view. This identifier is specified by the
 /// application when a platform view is added to the scene via the
 /// `SceneBuilder.addPlatformView` call.
@@ -559,7 +661,7 @@ typedef struct {
   /// Has length `custom_accessibility_actions_count`.
   const int32_t* custom_accessibility_actions;
   /// Identifier of the platform view associated with this semantics node, or
-  /// zero if none.
+  /// -1 if none.
   FlutterPlatformViewIdentifier platform_view_id;
 } FlutterSemanticsNode;
 
@@ -860,6 +962,60 @@ typedef struct {
   /// specified.
   const char* variant_code;
 } FlutterLocale;
+
+typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
+    const FlutterLocale** /* supported_locales*/,
+    size_t /* Number of locales*/);
+
+/// Display refers to a graphics hardware system consisting of a framebuffer,
+/// typically a monitor or a screen. This ID is unique per display and is
+/// stable until the Flutter application restarts.
+typedef uint64_t FlutterEngineDisplayId;
+
+typedef struct {
+  /// This size of this struct. Must be sizeof(FlutterDisplay).
+  size_t struct_size;
+
+  FlutterEngineDisplayId display_id;
+
+  /// This is set to true if the embedder only has one display. In cases where
+  /// this is set to true, the value of display_id is ignored. In cases where
+  /// this is not set to true, it is expected that a valid display_id be
+  /// provided.
+  bool single_display;
+
+  /// This represents the refresh period in frames per second. This value may be
+  /// zero if the device is not running or unavaliable or unknown.
+  double refresh_rate;
+} FlutterEngineDisplay;
+
+/// The update type parameter that is passed to
+/// `FlutterEngineNotifyDisplayUpdate`.
+typedef enum {
+  /// `FlutterEngineDisplay`s that were active during start-up. A display is
+  /// considered active if:
+  ///    1. The frame buffer hardware is connected.
+  ///    2. The display is drawable, e.g. it isn't being mirrored from another
+  ///    connected display or sleeping.
+  kFlutterEngineDisplaysUpdateTypeStartup,
+  kFlutterEngineDisplaysUpdateTypeCount,
+} FlutterEngineDisplaysUpdateType;
+
+//------------------------------------------------------------------------------
+/// @brief    Posts updates corresponding to display changes to a running engine
+///           instance.
+///
+/// @param[in] update_type      The type of update pushed to the engine.
+/// @param[in] displays         The displays affected by this update.
+/// @param[in] display_count    Size of the displays array, must be at least 1.
+///
+/// @return the result of the call made to the engine.
+///
+FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterEngineDisplaysUpdateType update_type,
+    const FlutterEngineDisplay* displays,
+    size_t display_count);
 
 typedef int64_t FlutterEngineDartPort;
 
@@ -1205,6 +1361,30 @@ typedef struct {
   ///
   /// Embedders can provide either snapshot buffers or aot_data, but not both.
   FlutterEngineAOTData aot_data;
+
+  /// A callback that computes the locale the platform would natively resolve
+  /// to.
+  ///
+  /// The input parameter is an array of FlutterLocales which represent the
+  /// locales supported by the app. One of the input supported locales should
+  /// be selected and returned to best match with the user/device's preferred
+  /// locale. The implementation should produce a result that as closely
+  /// matches what the platform would natively resolve to as possible.
+  FlutterComputePlatformResolvedLocaleCallback
+      compute_platform_resolved_locale_callback;
+
+  /// The command line argument count for arguments passed through to the Dart
+  /// entrypoint.
+  int dart_entrypoint_argc;
+
+  /// The command line arguments passed through to the Dart entrypoint. The
+  /// strings must be `NULL` terminated.
+  ///
+  /// The strings will be copied out and so any strings passed in here can
+  /// be safely collected after initializing the engine with
+  /// `FlutterProjectArgs`.
+  const char* const* dart_entrypoint_argv;
+
 } FlutterProjectArgs;
 
 //------------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.text.DynamicLayout;
 import android.text.Editable;
@@ -343,10 +344,10 @@ class InputConnectionAdaptor extends BaseInputConnection {
         int selStart = Selection.getSelectionStart(mEditable);
         int selEnd = Selection.getSelectionEnd(mEditable);
         if (selStart == selEnd && !event.isShiftPressed()) {
-          int newSel = Math.max(selStart - 1, 0);
+          int newSel = Math.max(flutterTextUtils.getOffsetBefore(mEditable, selStart), 0);
           setSelection(newSel, newSel);
         } else {
-          int newSelEnd = Math.max(selEnd - 1, 0);
+          int newSelEnd = Math.max(flutterTextUtils.getOffsetBefore(mEditable, selEnd), 0);
           setSelection(selStart, newSelEnd);
         }
         return true;
@@ -354,10 +355,12 @@ class InputConnectionAdaptor extends BaseInputConnection {
         int selStart = Selection.getSelectionStart(mEditable);
         int selEnd = Selection.getSelectionEnd(mEditable);
         if (selStart == selEnd && !event.isShiftPressed()) {
-          int newSel = Math.min(selStart + 1, mEditable.length());
+          int newSel =
+              Math.min(flutterTextUtils.getOffsetAfter(mEditable, selStart), mEditable.length());
           setSelection(newSel, newSel);
         } else {
-          int newSelEnd = Math.min(selEnd + 1, mEditable.length());
+          int newSelEnd =
+              Math.min(flutterTextUtils.getOffsetAfter(mEditable, selEnd), mEditable.length());
           setSelection(selStart, newSelEnd);
         }
         return true;
@@ -399,15 +402,16 @@ class InputConnectionAdaptor extends BaseInputConnection {
       } else {
         // Enter a character.
         int character = event.getUnicodeChar();
-        if (character != 0) {
-          int selStart = Math.max(0, Selection.getSelectionStart(mEditable));
-          int selEnd = Math.max(0, Selection.getSelectionEnd(mEditable));
-          int selMin = Math.min(selStart, selEnd);
-          int selMax = Math.max(selStart, selEnd);
-          if (selMin != selMax) mEditable.delete(selMin, selMax);
-          mEditable.insert(selMin, String.valueOf((char) character));
-          setSelection(selMin + 1, selMin + 1);
+        if (character == 0) {
+          return false;
         }
+        int selStart = Math.max(0, Selection.getSelectionStart(mEditable));
+        int selEnd = Math.max(0, Selection.getSelectionEnd(mEditable));
+        int selMin = Math.min(selStart, selEnd);
+        int selMax = Math.max(selStart, selEnd);
+        if (selMin != selMax) mEditable.delete(selMin, selMax);
+        mEditable.insert(selMin, String.valueOf((char) character));
+        setSelection(selMin + 1, selMin + 1);
         return true;
       }
     }
@@ -473,6 +477,12 @@ class InputConnectionAdaptor extends BaseInputConnection {
       return true;
     }
     return false;
+  }
+
+  @Override
+  public boolean performPrivateCommand(String action, Bundle data) {
+    textInputChannel.performPrivateCommand(mClient, action, data);
+    return true;
   }
 
   @Override

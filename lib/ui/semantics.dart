@@ -2,16 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
+// @dart = 2.10
 
 part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
 /// accessibility APIs to a semantics node.
-//
-// When changes are made to this class, the equivalent APIs in
-// `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
-// updated.
+///
+/// \warning When changes are made to this class, the equivalent APIs in
+///         `lib/ui/semantics/semantics_node.h` and in each of the embedders
+///         *must* be updated.
+/// See also:
+///   - file://./../../lib/ui/semantics/semantics_node.h
 class SemanticsAction {
   const SemanticsAction._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
@@ -167,7 +169,7 @@ class SemanticsAction {
 
   /// A request that the node should be dismissed.
   ///
-  /// A [Snackbar], for example, may have a dismiss action to indicate to the
+  /// A [SnackBar], for example, may have a dismiss action to indicate to the
   /// user that it can be removed after it is no longer relevant. On Android,
   /// (with TalkBack) special hint text is spoken when focusing the node and
   /// a custom action is available in the local context menu. On iOS,
@@ -298,8 +300,12 @@ class SemanticsFlag {
   static const int _kIsReadOnlyIndex = 1 << 20;
   static const int _kIsFocusableIndex = 1 << 21;
   static const int _kIsLinkIndex = 1 << 22;
+  static const int _kIsSliderIndex = 1 << 23;
   // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
-  // value in testing/dart/semantics_test.dart, or tests will fail.
+  // value in testing/dart/semantics_test.dart, or tests will fail. Also,
+  // please update the Flag enum in
+  // flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java,
+  // and the SemanticsFlag class in lib/web_ui/lib/src/ui/semantics.dart.
 
   const SemanticsFlag._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
@@ -352,6 +358,9 @@ class SemanticsFlag {
   /// Text fields are announced as such and allow text input via accessibility
   /// affordances.
   static const SemanticsFlag isTextField = SemanticsFlag._(_kIsTextFieldIndex);
+
+  /// Whether the semantic node represents a slider.
+  static const SemanticsFlag isSlider = SemanticsFlag._(_kIsSliderIndex);
 
   /// Whether the semantic node is read only.
   ///
@@ -470,6 +479,10 @@ class SemanticsFlag {
   /// the semantics tree altogether. Hidden elements are only included in the
   /// semantics tree to work around platform limitations and they are mainly
   /// used to implement accessibility scrolling on iOS.
+  ///
+  /// See also:
+  ///
+  /// * [RenderObject.describeSemanticsClip]
   static const SemanticsFlag isHidden = SemanticsFlag._(_kIsHiddenIndex);
 
   /// Whether the semantics node represents an image.
@@ -549,7 +562,8 @@ class SemanticsFlag {
     _kIsReadOnlyIndex: isReadOnly,
     _kIsFocusableIndex: isFocusable,
     _kIsLinkIndex: isLink,
-  };
+    _kIsSliderIndex: isSlider,
+};
 
   @override
   String toString() {
@@ -600,6 +614,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.isFocusable';
       case _kIsLinkIndex:
         return 'SemanticsFlag.isLink';
+      case _kIsSliderIndex:
+        return 'SemanticsFlag.isSlider';
     }
     assert(false, 'Unhandled index: $index');
     return '';
@@ -609,7 +625,8 @@ class SemanticsFlag {
 /// An object that creates [SemanticsUpdate] objects.
 ///
 /// Once created, the [SemanticsUpdate] objects can be passed to
-/// [Window.updateSemantics] to update the semantics conveyed to the user.
+/// [PlatformDispatcher.updateSemantics] to update the semantics conveyed to the
+/// user.
 @pragma('vm:entry-point')
 class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SemanticsUpdateBuilder] object.
@@ -637,10 +654,10 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The `actions` are a bit field of [SemanticsAction]s that can be undertaken
   /// by this node. If the user wishes to undertake one of these actions on this
-  /// node, the [Window.onSemanticsAction] will be called with `id` and one of
-  /// the possible [SemanticsAction]s. Because the semantics tree is maintained
-  /// asynchronously, the [Window.onSemanticsAction] callback might be called
-  /// with an action that is no longer possible.
+  /// node, the [PlatformDispatcher.onSemanticsAction] will be called with `id`
+  /// and one of the possible [SemanticsAction]s. Because the semantics tree is
+  /// maintained asynchronously, the [PlatformDispatcher.onSemanticsAction]
+  /// callback might be called with an action that is no longer possible.
   ///
   /// The `label` is a string that describes this node. The `value` property
   /// describes the current value of the node as a string. The `increasedValue`
@@ -816,8 +833,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
-  /// The returned object can be passed to [Window.updateSemantics] to actually
-  /// update the semantics retained by the system.
+  /// The returned object can be passed to [PlatformDispatcher.updateSemantics]
+  /// to actually update the semantics retained by the system.
   SemanticsUpdate build() {
     final SemanticsUpdate semanticsUpdate = SemanticsUpdate._();
     _build(semanticsUpdate);
@@ -831,7 +848,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 /// To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
 ///
 /// Semantics updates can be applied to the system's retained semantics tree
-/// using the [Window.updateSemantics] method.
+/// using the [PlatformDispatcher.updateSemantics] method.
 @pragma('vm:entry-point')
 class SemanticsUpdate extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated

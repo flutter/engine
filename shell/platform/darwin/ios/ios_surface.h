@@ -34,18 +34,16 @@ class IOSSurface : public ExternalViewEmbedder {
 
   std::shared_ptr<IOSContext> GetContext() const;
 
-  ExternalViewEmbedder* GetExternalViewEmbedderIfEnabled();
-
   virtual bool IsValid() const = 0;
 
   virtual void UpdateStorageSizeIfNecessary() = 0;
 
-  // Creates a GPU surface. If no GrContext is supplied and the rendering mode
+  // Creates a GPU surface. If no GrDirectContext is supplied and the rendering mode
   // supports one, a new one will be created; otherwise, the software backend
   // will be used.
   //
-  // If a GrContext is supplied, creates a secondary surface.
-  virtual std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context = nullptr) = 0;
+  // If a GrDirectContext is supplied, creates a secondary surface.
+  virtual std::unique_ptr<Surface> CreateGPUSurface(GrDirectContext* gr_context = nullptr) = 0;
 
  protected:
   IOSSurface(std::shared_ptr<IOSContext> ios_context,
@@ -63,7 +61,7 @@ class IOSSurface : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void BeginFrame(SkISize frame_size,
-                  GrContext* context,
+                  GrDirectContext* context,
                   double device_pixel_ratio,
                   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
@@ -82,11 +80,14 @@ class IOSSurface : public ExternalViewEmbedder {
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  bool SubmitFrame(GrContext* context, std::unique_ptr<SurfaceFrame> frame) override;
+  void SubmitFrame(GrDirectContext* context, std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
   void EndFrame(bool should_resubmit_frame,
                 fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+
+  // |ExternalViewEmbedder|
+  bool SupportsDynamicThreadMerging() override;
 
  public:
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurface);

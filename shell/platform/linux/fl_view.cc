@@ -4,17 +4,20 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
+#include <gdk/gdkwayland.h>
+#include <gdk/gdkx.h>
+#include <cstring>
+
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
+#include "flutter/shell/platform/linux/fl_renderer_wayland.h"
 #include "flutter/shell/platform/linux/fl_renderer_x11.h"
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
-
-#include <gdk/gdkx.h>
 
 static constexpr int kMicrosecondsPerMillisecond = 1000;
 
@@ -25,7 +28,7 @@ struct _FlView {
   FlDartProject* project;
 
   // Rendering output.
-  FlRendererX11* renderer;
+  FlRenderer* renderer;
 
   // Engine running @project.
   FlEngine* engine;
@@ -70,25 +73,28 @@ static gboolean fl_view_send_pointer_button_event(FlView* self,
       return FALSE;
   }
   int old_button_state = self->button_state;
-  FlutterPointerPhase phase;
+  FlutterPointerPhase phase = kMove;
   if (event->type == GDK_BUTTON_PRESS) {
     // Drop the event if Flutter already thinks the button is down.
-    if ((self->button_state & button) != 0)
+    if ((self->button_state & button) != 0) {
       return FALSE;
+    }
     self->button_state ^= button;
 
     phase = old_button_state == 0 ? kDown : kMove;
   } else if (event->type == GDK_BUTTON_RELEASE) {
     // Drop the event if Flutter already thinks the button is up.
-    if ((self->button_state & button) == 0)
+    if ((self->button_state & button) == 0) {
       return FALSE;
+    }
     self->button_state ^= button;
 
     phase = self->button_state == 0 ? kUp : kMove;
   }
 
-  if (self->engine == nullptr)
+  if (self->engine == nullptr) {
     return FALSE;
+  }
 
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
   fl_engine_send_mouse_pointer_event(
@@ -100,13 +106,14 @@ static gboolean fl_view_send_pointer_button_event(FlView* self,
 }
 
 // Updates the engine with the current window metrics.
-static void fl_view_send_window_metrics(FlView* self) {
+static void fl_view_geometry_changed(FlView* self) {
   GtkAllocation allocation;
   gtk_widget_get_allocation(GTK_WIDGET(self), &allocation);
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
   fl_engine_send_window_metrics_event(
       self->engine, allocation.width * scale_factor,
       allocation.height * scale_factor, scale_factor);
+  fl_renderer_set_geometry(self->renderer, &allocation, scale_factor);
 }
 
 // Implements FlPluginRegistry::get_registrar_for_plugin.
@@ -127,8 +134,15 @@ static void fl_view_plugin_registry_iface_init(
 static void fl_view_constructed(GObject* object) {
   FlView* self = FL_VIEW(object);
 
-  self->renderer = fl_renderer_x11_new();
-  self->engine = fl_engine_new(self->project, FL_RENDERER(self->renderer));
+  GdkDisplay* display = gtk_widget_get_display(GTK_WIDGET(self));
+  if (GDK_IS_X11_DISPLAY(display)) {
+    self->renderer = FL_RENDERER(fl_renderer_x11_new());
+  } else if (GDK_IS_WAYLAND_DISPLAY(display)) {
+    self->renderer = FL_RENDERER(fl_renderer_wayland_new());
+  } else {
+    g_error("Unsupported GDK backend");
+  }
+  self->engine = fl_engine_new(self->project, self->renderer);
 
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
@@ -175,11 +189,12 @@ static void fl_view_notify(GObject* object, GParamSpec* pspec) {
   FlView* self = FL_VIEW(object);
 
   if (strcmp(pspec->name, "scale-factor") == 0) {
-    fl_view_send_window_metrics(self);
+    fl_view_geometry_changed(self);
   }
 
-  if (G_OBJECT_CLASS(fl_view_parent_class)->notify != nullptr)
+  if (G_OBJECT_CLASS(fl_view_parent_class)->notify != nullptr) {
     G_OBJECT_CLASS(fl_view_parent_class)->notify(object, pspec);
+  }
 }
 
 static void fl_view_dispose(GObject* object) {
@@ -199,40 +214,19 @@ static void fl_view_dispose(GObject* object) {
 // Implements GtkWidget::realize.
 static void fl_view_realize(GtkWidget* widget) {
   FlView* self = FL_VIEW(widget);
+  g_autoptr(GError) error = nullptr;
 
   gtk_widget_set_realized(widget, TRUE);
 
-  GtkAllocation allocation;
-  gtk_widget_get_allocation(widget, &allocation);
+  if (!fl_renderer_start(self->renderer, widget, &error)) {
+    g_warning("Failed to start Flutter renderer: %s", error->message);
+    return;
+  }
 
-  GdkWindowAttr window_attributes;
-  window_attributes.window_type = GDK_WINDOW_CHILD;
-  window_attributes.x = allocation.x;
-  window_attributes.y = allocation.y;
-  window_attributes.width = allocation.width;
-  window_attributes.height = allocation.height;
-  window_attributes.wclass = GDK_INPUT_OUTPUT;
-  window_attributes.visual = gtk_widget_get_visual(widget);
-  window_attributes.event_mask =
-      gtk_widget_get_events(widget) | GDK_EXPOSURE_MASK |
-      GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK |
-      GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK | GDK_SMOOTH_SCROLL_MASK |
-      GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK;
-
-  gint window_attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL;
-
-  GdkWindow* window =
-      gdk_window_new(gtk_widget_get_parent_window(widget), &window_attributes,
-                     window_attributes_mask);
-  gtk_widget_register_window(widget, window);
-  gtk_widget_set_window(widget, window);
-
-  Window xid = gdk_x11_window_get_xid(gtk_widget_get_window(GTK_WIDGET(self)));
-  fl_renderer_x11_set_xid(self->renderer, xid);
-
-  g_autoptr(GError) error = nullptr;
-  if (!fl_engine_start(self->engine, &error))
+  if (!fl_engine_start(self->engine, &error)) {
     g_warning("Failed to start Flutter engine: %s", error->message);
+    return;
+  }
 }
 
 // Implements GtkWidget::size-allocate.
@@ -248,7 +242,7 @@ static void fl_view_size_allocate(GtkWidget* widget,
                            allocation->height);
   }
 
-  fl_view_send_window_metrics(self);
+  fl_view_geometry_changed(self);
 }
 
 // Implements GtkWidget::button_press_event.
@@ -258,8 +252,9 @@ static gboolean fl_view_button_press_event(GtkWidget* widget,
 
   // Flutter doesn't handle double and triple click events.
   if (event->type == GDK_DOUBLE_BUTTON_PRESS ||
-      event->type == GDK_TRIPLE_BUTTON_PRESS)
+      event->type == GDK_TRIPLE_BUTTON_PRESS) {
     return FALSE;
+  }
 
   return fl_view_send_pointer_button_event(self, event);
 }
@@ -293,8 +288,8 @@ static gboolean fl_view_scroll_event(GtkWidget* widget, GdkEventScroll* event) {
     scroll_delta_x = 1;
   }
 
-  // TODO: See if this can be queried from the OS; this value is chosen
-  // arbitrarily to get something that feels reasonable.
+  // TODO(robert-ancell): See if this can be queried from the OS; this value is
+  // chosen arbitrarily to get something that feels reasonable.
   const int kScrollOffsetMultiplier = 20;
   scroll_delta_x *= kScrollOffsetMultiplier;
   scroll_delta_y *= kScrollOffsetMultiplier;
@@ -314,8 +309,9 @@ static gboolean fl_view_motion_notify_event(GtkWidget* widget,
                                             GdkEventMotion* event) {
   FlView* self = FL_VIEW(widget);
 
-  if (self->engine == nullptr)
+  if (self->engine == nullptr) {
     return FALSE;
+  }
 
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
   fl_engine_send_mouse_pointer_event(

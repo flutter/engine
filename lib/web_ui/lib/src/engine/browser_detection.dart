@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 /// The HTML engine used by the current browser.
@@ -28,7 +28,7 @@ enum BrowserEngine {
 }
 
 /// Lazily initialized current browser engine.
-BrowserEngine _browserEngine;
+late final BrowserEngine _browserEngine = _detectBrowserEngine();
 
 /// Override the value of [browserEngine].
 ///
@@ -36,16 +36,13 @@ BrowserEngine _browserEngine;
 /// app is running on.
 ///
 /// This is intended to be used for testing and debugging only.
-BrowserEngine debugBrowserEngineOverride;
+BrowserEngine? debugBrowserEngineOverride;
 
 /// Returns the [BrowserEngine] used by the current browser.
 ///
 /// This is used to implement browser-specific behavior.
 BrowserEngine get browserEngine {
-  if (debugBrowserEngineOverride != null) {
-    return debugBrowserEngineOverride;
-  }
-  return _browserEngine ??= _detectBrowserEngine();
+  return debugBrowserEngineOverride ?? _browserEngine;
 }
 
 BrowserEngine _detectBrowserEngine() {
@@ -99,17 +96,14 @@ enum OperatingSystem {
 }
 
 /// Lazily initialized current operating system.
-OperatingSystem _operatingSystem;
+late final OperatingSystem _operatingSystem = _detectOperatingSystem();
 
 /// Returns the [OperatingSystem] the current browsers works on.
 ///
 /// This is used to implement operating system specific behavior such as
 /// soft keyboards.
 OperatingSystem get operatingSystem {
-  if (debugOperatingSystemOverride != null) {
-    return debugOperatingSystemOverride;
-  }
-  return _operatingSystem ??= _detectOperatingSystem();
+  return debugOperatingSystemOverride ?? _operatingSystem;
 }
 
 /// Override the value of [operatingSystem].
@@ -118,10 +112,10 @@ OperatingSystem get operatingSystem {
 /// app is running on.
 ///
 /// This is intended to be used for testing and debugging only.
-OperatingSystem debugOperatingSystemOverride;
+OperatingSystem? debugOperatingSystemOverride;
 
 OperatingSystem _detectOperatingSystem() {
-  final String platform = html.window.navigator.platform;
+  final String platform = html.window.navigator.platform!;
   final String userAgent = html.window.navigator.userAgent;
 
   if (platform.startsWith('Mac')) {
@@ -165,3 +159,32 @@ bool get isDesktop => _desktopOperatingSystems.contains(operatingSystem);
 /// See [_desktopOperatingSystems].
 /// See [isDesktop].
 bool get isMobile => !isDesktop;
+
+int? _cachedWebGLVersion;
+
+/// The highest WebGL version supported by the current browser, or -1 if WebGL
+/// is not supported.
+int get webGLVersion => _cachedWebGLVersion ?? (_cachedWebGLVersion = _detectWebGLVersion());
+
+/// Detects the highest WebGL version supported by the current browser, or
+/// -1 if WebGL is not supported.
+///
+/// Chrome reports that `WebGL2RenderingContext` is available even when WebGL 2 is
+/// disabled due hardware-specific issues. This happens, for example, on Chrome on
+/// Moto E5. Therefore checking for the presence of `WebGL2RenderingContext` or
+/// using the current [browserEngine] is insufficient.
+///
+/// Our CanvasKit backend is affected due to: https://github.com/emscripten-core/emscripten/issues/11819
+int _detectWebGLVersion() {
+  final html.CanvasElement canvas = html.CanvasElement(
+    width: 1,
+    height: 1,
+  );
+  if (canvas.getContext('webgl2') != null) {
+    return 2;
+  }
+  if (canvas.getContext('webgl') != null) {
+    return 1;
+  }
+  return -1;
+}

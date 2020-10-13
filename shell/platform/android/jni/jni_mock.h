@@ -63,7 +63,14 @@ class JNIMock final : public PlatformViewAndroidJNI {
 
   MOCK_METHOD(void,
               FlutterViewOnDisplayPlatformView,
-              (int view_id, int x, int y, int width, int height),
+              (int view_id,
+               int x,
+               int y,
+               int width,
+               int height,
+               int viewWidth,
+               int viewHeight,
+               MutatorsStack mutators_stack),
               (override));
 
   MOCK_METHOD(void,
@@ -80,10 +87,14 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (),
               (override));
 
+  MOCK_METHOD(void, FlutterViewDestroyOverlaySurfaces, (), (override));
+
   MOCK_METHOD(std::unique_ptr<std::vector<std::string>>,
               FlutterViewComputePlatformResolvedLocale,
               (std::vector<std::string> supported_locales_data),
               (override));
+
+  MOCK_METHOD(double, GetDisplayRefreshRate, (), (override));
 };
 
 }  // namespace flutter

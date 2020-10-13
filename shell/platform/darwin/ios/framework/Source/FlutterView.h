@@ -5,16 +5,15 @@
 #ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_
 #define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_
 
-#include <UIKit/UIKit.h>
+#import <UIKit/UIKit.h>
 
 #include <memory>
 
-#import "FlutterPlatformViews_Internal.h"
-
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/shell.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @protocol FlutterViewEngineDelegate <NSObject>
 
@@ -22,7 +21,6 @@
                                   asBase64Encoded:(BOOL)base64Encode;
 
 - (flutter::FlutterPlatformViewsController*)platformViewsController;
-
 @end
 
 @interface FlutterView : UIView
@@ -36,6 +34,8 @@
                           opaque:(BOOL)opaque NS_DESIGNATED_INITIALIZER;
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:(std::shared_ptr<flutter::IOSContext>)context;
 
+// Set by FlutterEngine or FlutterViewController to override software rendering.
+@property(class, nonatomic) BOOL forceSoftwareRendering;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_

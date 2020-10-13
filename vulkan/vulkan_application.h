@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "flutter/fml/macros.h"
 #include "vulkan_debug_report.h"
 #include "vulkan_handle.h"
@@ -24,7 +25,7 @@ class VulkanProcTable;
 /// create a VkInstance (with debug reporting optionally enabled).
 class VulkanApplication {
  public:
-  VulkanApplication(VulkanProcTable& vk,
+  VulkanApplication(VulkanProcTable& vk,  // NOLINT
                     const std::string& application_name,
                     std::vector<std::string> enabled_extensions,
                     uint32_t application_version = VK_MAKE_VERSION(1, 0, 0),

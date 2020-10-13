@@ -8,7 +8,6 @@
 #include <memory>
 #include <unordered_map>
 
-#include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache_key.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
@@ -23,16 +22,14 @@ class RasterCacheResult {
 
   virtual ~RasterCacheResult() = default;
 
-  virtual void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const;
+  virtual void draw(SkCanvas& canvas, const SkPaint* paint) const;
 
   virtual SkISize image_dimensions() const {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);
   };
 
   virtual int64_t image_bytes() const {
-    return image_ ? image_->dimensions().area() *
-                        image_->imageInfo().bytesPerPixel()
-                  : 0;
+    return image_ ? image_->imageInfo().computeMinByteSize() : 0;
   };
 
  private:
@@ -61,7 +58,7 @@ class RasterCache {
    * to be stored in the cache.
    *
    * @param picture the SkPicture object to be cached.
-   * @param context the GrContext used for rendering.
+   * @param context the GrDirectContext used for rendering.
    * @param ctm the transformation matrix used for rendering.
    * @param dst_color_space the destination color space that the cached
    *        rendering will be drawn into
@@ -73,7 +70,7 @@ class RasterCache {
    */
   virtual std::unique_ptr<RasterCacheResult> RasterizePicture(
       SkPicture* picture,
-      GrContext* context,
+      GrDirectContext* context,
       const SkMatrix& ctm,
       SkColorSpace* dst_color_space,
       bool checkerboard) const;
@@ -135,7 +132,7 @@ class RasterCache {
   // 3. The picture is accessed too few times
   // 4. There are too many pictures to be cached in the current frame.
   //    (See also kDefaultPictureCacheLimitPerFrame.)
-  bool Prepare(GrContext* context,
+  bool Prepare(GrDirectContext* context,
                SkPicture* picture,
                const SkMatrix& transformation_matrix,
                SkColorSpace* dst_color_space,
@@ -170,6 +167,26 @@ class RasterCache {
   size_t GetLayerCachedEntriesCount() const;
 
   size_t GetPictureCachedEntriesCount() const;
+
+  /**
+   * @brief Estimate how much memory is used by picture raster cache entries in
+   * bytes.
+   *
+   * Only SkImage's memory usage is counted as other objects are often much
+   * smaller compared to SkImage. SkImageInfo::computeMinByteSize is used to
+   * estimate the SkImage memory usage.
+   */
+  size_t EstimatePictureCacheByteSize() const;
+
+  /**
+   * @brief Estimate how much memory is used by layer raster cache entries in
+   * bytes.
+   *
+   * Only SkImage's memory usage is counted as other objects are often much
+   * smaller compared to SkImage. SkImageInfo::computeMinByteSize is used to
+   * estimate the SkImage memory usage.
+   */
+  size_t EstimateLayerCacheByteSize() const;
 
  private:
   struct Entry {

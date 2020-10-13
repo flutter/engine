@@ -56,7 +56,7 @@ TEST(BasicMessageChannelTest, Registration) {
         callback_called = true;
         // Ensure that the wrapper recieved a correctly decoded message and a
         // reply.
-        EXPECT_EQ(message.StringValue(), message_value);
+        EXPECT_EQ(std::get<std::string>(message), message_value);
         EXPECT_NE(reply, nullptr);
       });
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);

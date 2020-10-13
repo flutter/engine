@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
 /// This class downloads assets over the network.
@@ -17,10 +17,10 @@ class AssetManager {
 
   const AssetManager({this.assetsDir = _defaultAssetsDir});
 
-  String get _baseUrl {
+  String? get _baseUrl {
     return html.window.document
         .querySelectorAll('meta')
-        .whereType<html.MetaElement>()
+        .whereType<html.MetaElement?>()
         .firstWhere((dynamic e) => e.name == 'assetBase', orElse: () => null)
         ?.content;
   }
@@ -58,16 +58,17 @@ class AssetManager {
       final ByteBuffer response = request.response;
       return response.asByteData();
     } on html.ProgressEvent catch (e) {
-      final html.EventTarget target = e.target;
+      final html.EventTarget? target = e.target;
       if (target is html.HttpRequest) {
         if (target.status == 404 && asset == 'AssetManifest.json') {
           html.window.console
               .warn('Asset manifest does not exist at `$url` – ignoring.');
           return Uint8List.fromList(utf8.encode('{}')).buffer.asByteData();
         }
-        throw AssetManagerException(url, target.status);
+        throw AssetManagerException(url, target.status!);
       }
 
+      html.window.console.warn('Caught ProgressEvent with target: $target');
       rethrow;
     }
   }

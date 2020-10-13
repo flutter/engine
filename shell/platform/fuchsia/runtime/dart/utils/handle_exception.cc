@@ -9,10 +9,11 @@
 #include <lib/syslog/global.h>
 #include <lib/zx/vmo.h>
 #include <sys/types.h>
-#include <third_party/tonic/converter/dart_converter.h>
 #include <zircon/status.h>
 
 #include <string>
+
+#include "third_party/tonic/converter/dart_converter.h"
 
 #include "logging.h"
 

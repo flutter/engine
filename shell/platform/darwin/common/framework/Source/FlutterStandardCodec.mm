@@ -1,8 +1,9 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
-#include "FlutterStandardCodec_Internal.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h"
 
 #pragma mark - Codec for basic message channel
 

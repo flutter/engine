@@ -1,10 +1,11 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
-#include "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
-#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #include "flutter/testing/testing.h"
 
 namespace flutter::testing {

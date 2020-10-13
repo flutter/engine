@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/embedded_views.h"
-
 #include "gtest/gtest.h"
 
 namespace flutter {
@@ -22,6 +21,26 @@ TEST(MutatorsStack, CopyConstructor) {
   stack.PushClipRRect(rrect);
   MutatorsStack copy = MutatorsStack(stack);
   ASSERT_TRUE(copy == stack);
+}
+
+TEST(MutatorsStack, CopyAndUpdateTheCopy) {
+  MutatorsStack stack;
+  auto rrect = SkRRect::MakeEmpty();
+  auto rect = SkRect::MakeEmpty();
+  stack.PushClipRect(rect);
+  stack.PushClipRRect(rrect);
+  MutatorsStack copy = MutatorsStack(stack);
+  copy.Pop();
+  copy.Pop();
+  ASSERT_TRUE(copy != stack);
+  ASSERT_TRUE(copy.is_empty());
+  ASSERT_TRUE(!stack.is_empty());
+  auto iter = stack.Bottom();
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rrect);
+  ASSERT_TRUE(iter->get()->GetRRect() == rrect);
+  ++iter;
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_rect);
+  ASSERT_TRUE(iter->get()->GetRect() == rect);
 }
 
 TEST(MutatorsStack, PushClipRect) {

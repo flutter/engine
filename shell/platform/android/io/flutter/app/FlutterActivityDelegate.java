@@ -19,12 +19,12 @@ import android.content.res.Resources.NotFoundException;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager.LayoutParams;
+import io.flutter.Log;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.Preconditions;
@@ -35,7 +35,8 @@ import io.flutter.view.FlutterView;
 import java.util.ArrayList;
 
 /**
- * Class that performs the actual work of tying Android {@link Activity} instances to Flutter.
+ * Deprecated class that performs the actual work of tying Android {@link Activity} instances to
+ * Flutter.
  *
  * <p>This exists as a dedicated class (as opposed to being integrated directly into {@link
  * FlutterActivity}) to facilitate applications that don't wish to subclass {@code FlutterActivity}.
@@ -48,7 +49,12 @@ import java.util.ArrayList;
  * FlutterActivityEvents} from your activity to an instance of this class. Optionally, you can make
  * your activity implement {@link PluginRegistry} and/or {@link
  * io.flutter.view.FlutterView.Provider} and forward those methods to this class as well.
+ *
+ * @deprecated {@link io.flutter.embedding.android.FlutterActivity} is the new API that now replaces
+ *     this class and {@link io.flutter.app.FlutterActivity}. See
+ *     https://flutter.dev/go/android-project-migration for more migration details.
  */
+@Deprecated
 public final class FlutterActivityDelegate
     implements FlutterActivityEvents, FlutterView.Provider, PluginRegistry {
   private static final String SPLASH_SCREEN_META_DATA_KEY =
@@ -306,6 +312,9 @@ public final class FlutterActivityDelegate
     }
     if (intent.getBooleanExtra("cache-sksl", false)) {
       args.add("--cache-sksl");
+    }
+    if (intent.getBooleanExtra("purge-persistent-cache", false)) {
+      args.add("--purge-persistent-cache");
     }
     if (intent.getBooleanExtra("verbose-logging", false)) {
       args.add("--verbose-logging");

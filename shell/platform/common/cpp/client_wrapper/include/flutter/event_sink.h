@@ -7,9 +7,11 @@
 
 namespace flutter {
 
+class EncodableValue;
+
 // Event callback. Events to be sent to Flutter application
 // act as clients of this interface for sending events.
-template <typename T>
+template <typename T = EncodableValue>
 class EventSink {
  public:
   EventSink() = default;
@@ -19,14 +21,23 @@ class EventSink {
   EventSink(EventSink const&) = delete;
   EventSink& operator=(EventSink const&) = delete;
 
+  // Consumes a successful event
+  void Success(const T& event) { SuccessInternal(&event); }
+
   // Consumes a successful event.
-  void Success(T* event = nullptr) { SuccessInternal(event); }
+  void Success() { SuccessInternal(nullptr); }
 
   // Consumes an error event.
   void Error(const std::string& error_code,
-             const std::string& error_message = "",
-             T* error_details = nullptr) {
-    ErrorInternal(error_code, error_message, error_details);
+             const std::string& error_message,
+             const T& error_details) {
+    ErrorInternal(error_code, error_message, &error_details);
+  }
+
+  // Consumes an error event.
+  void Error(const std::string& error_code,
+             const std::string& error_message = "") {
+    ErrorInternal(error_code, error_message, nullptr);
   }
 
   // Consumes end of stream. Ensuing calls to Success() or
@@ -35,12 +46,12 @@ class EventSink {
 
  protected:
   // Implementation of the public interface, to be provided by subclasses.
-  virtual void SuccessInternal(T* event = nullptr) = 0;
+  virtual void SuccessInternal(const T* event = nullptr) = 0;
 
   // Implementation of the public interface, to be provided by subclasses.
   virtual void ErrorInternal(const std::string& error_code,
                              const std::string& error_message,
-                             T* error_details) = 0;
+                             const T* error_details) = 0;
 
   // Implementation of the public interface, to be provided by subclasses.
   virtual void EndOfStreamInternal() = 0;

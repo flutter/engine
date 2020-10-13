@@ -8,6 +8,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.InputType;
@@ -15,6 +16,7 @@ import android.text.Selection;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewStructure;
+import android.view.WindowInsets;
 import android.view.autofill.AutofillId;
 import android.view.autofill.AutofillManager;
 import android.view.autofill.AutofillValue;
@@ -45,6 +47,7 @@ public class TextInputPlugin {
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
   private final boolean restartAlwaysRequired;
+  private ImeSyncDeferringInsetsCallback imeSyncCallback;
 
   // When true following calls to createInputConnection will return the cached lastInputConnection
   // if the input
@@ -52,6 +55,7 @@ public class TextInputPlugin {
   // details.
   private boolean isInputConnectionLocked;
 
+  @SuppressLint("NewApi")
   public TextInputPlugin(
       View view,
       @NonNull TextInputChannel textInputChannel,
@@ -62,6 +66,26 @@ public class TextInputPlugin {
       afm = view.getContext().getSystemService(AutofillManager.class);
     } else {
       afm = null;
+    }
+
+    // Sets up syncing ime insets with the framework, allowing
+    // the Flutter view to grow and shrink to accomodate Android
+    // controlled keyboard animations.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      int mask = 0;
+      if ((View.SYSTEM_UI_FLAG_HIDE_NAVIGATION & mView.getWindowSystemUiVisibility()) == 0) {
+        mask = mask | WindowInsets.Type.navigationBars();
+      }
+      if ((View.SYSTEM_UI_FLAG_FULLSCREEN & mView.getWindowSystemUiVisibility()) == 0) {
+        mask = mask | WindowInsets.Type.statusBars();
+      }
+      imeSyncCallback =
+          new ImeSyncDeferringInsetsCallback(
+              view,
+              mask, // Overlay, insets that should be merged with the deferred insets
+              WindowInsets.Type.ime() // Deferred, insets that will animate
+              );
+      imeSyncCallback.install();
     }
 
     this.textInputChannel = textInputChannel;
@@ -80,6 +104,18 @@ public class TextInputPlugin {
           @Override
           public void requestAutofill() {
             notifyViewEntered();
+          }
+
+          @Override
+          public void finishAutofillContext(boolean shouldSave) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null) {
+              return;
+            }
+            if (shouldSave) {
+              afm.commit();
+            } else {
+              afm.cancel();
+            }
           }
 
           @Override
@@ -107,6 +143,11 @@ public class TextInputPlugin {
           public void clearClient() {
             clearTextInputClient();
           }
+
+          @Override
+          public void sendAppPrivateCommand(String action, Bundle data) {
+            sendTextInputAppPrivateCommand(action, data);
+          }
         });
 
     textInputChannel.requestExistingInputState();
@@ -126,8 +167,13 @@ public class TextInputPlugin {
     return mEditable;
   }
 
+  @VisibleForTesting
+  ImeSyncDeferringInsetsCallback getImeSyncCallback() {
+    return imeSyncCallback;
+  }
+
   /**
-   * * Use the current platform view input connection until unlockPlatformViewInputConnection is
+   * Use the current platform view input connection until unlockPlatformViewInputConnection is
    * called.
    *
    * <p>The current input connection instance is cached and any following call to @{link
@@ -159,9 +205,13 @@ public class TextInputPlugin {
    *
    * <p>The TextInputPlugin instance should not be used after calling this.
    */
+  @SuppressLint("NewApi")
   public void destroy() {
     platformViewsController.detachTextInputPlugin();
     textInputChannel.setTextInputMethodHandler(null);
+    if (imeSyncCallback != null) {
+      imeSyncCallback.remove();
+    }
   }
 
   private static int inputTypeFromTextInputType(
@@ -289,6 +339,10 @@ public class TextInputPlugin {
       mImm.restartInput(mView);
       mRestartInputPending = false;
     }
+  }
+
+  public void sendTextInputAppPrivateCommand(String action, Bundle data) {
+    mImm.sendAppPrivateCommand(mView, action, data);
   }
 
   private void showTextInput(View view) {

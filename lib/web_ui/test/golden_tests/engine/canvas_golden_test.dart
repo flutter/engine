@@ -6,15 +6,20 @@
 import 'dart:html' as html;
 import 'dart:math' as math;
 
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
-import 'package:test/test.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
 import 'scuba.dart';
 
-void main() async {
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() async {
   final Rect region = Rect.fromLTWH(0, 0, 500, 100);
 
   BitmapCanvas canvas;
@@ -222,8 +227,8 @@ void main() async {
     );
 
     final SceneBuilder sb = SceneBuilder();
-    sb.pushTransform(Matrix4.diagonal3Values(EngineWindow.browserDevicePixelRatio,
-        EngineWindow.browserDevicePixelRatio, 1.0).toFloat64());
+    sb.pushTransform(Matrix4.diagonal3Values(EnginePlatformDispatcher.browserDevicePixelRatio,
+        EnginePlatformDispatcher.browserDevicePixelRatio, 1.0).toFloat64());
     sb.pushTransform(Matrix4.rotationZ(math.pi / 2).toFloat64());
     sb.pushOffset(0, -500);
     sb.pushClipRect(canvasSize);

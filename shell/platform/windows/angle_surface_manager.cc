@@ -169,46 +169,80 @@ void AngleSurfaceManager::CleanUp() {
   }
 }
 
-EGLSurface AngleSurfaceManager::CreateSurface(HWND window) {
-  if (!window || !initialize_succeeded_) {
-    return EGL_NO_SURFACE;
+bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
+                                        EGLint width,
+                                        EGLint height) {
+  if (!render_target || !initialize_succeeded_) {
+    return false;
   }
 
   EGLSurface surface = EGL_NO_SURFACE;
 
-  const EGLint surfaceAttributes[] = {EGL_NONE};
+  // Disable Angle's automatic surface sizing logic and provide and exlicit
+  // size.  AngleSurfaceManager is responsible for initiating Angle surface size
+  // changes to avoid race conditions with rendering when automatic mode is
+  // used.
+  const EGLint surfaceAttributes[] = {
+      EGL_FIXED_SIZE_ANGLE, EGL_TRUE, EGL_WIDTH, width,
+      EGL_HEIGHT,           height,   EGL_NONE};
 
-  surface = eglCreateWindowSurface(egl_display_, egl_config_,
-                                   static_cast<EGLNativeWindowType>(window),
-                                   surfaceAttributes);
+  surface = eglCreateWindowSurface(
+      egl_display_, egl_config_,
+      static_cast<EGLNativeWindowType>(std::get<HWND>(*render_target)),
+      surfaceAttributes);
   if (surface == EGL_NO_SURFACE) {
     std::cerr << "Surface creation failed." << std::endl;
   }
 
-  return surface;
+  render_surface_ = surface;
+  return true;
 }
 
-void AngleSurfaceManager::GetSurfaceDimensions(const EGLSurface surface,
-                                               EGLint* width,
-                                               EGLint* height) {
-  if (surface == EGL_NO_SURFACE || !initialize_succeeded_) {
+void AngleSurfaceManager::ResizeSurface(WindowsRenderTarget* render_target,
+                                        EGLint width,
+                                        EGLint height) {
+  EGLint existing_width, existing_height;
+  GetSurfaceDimensions(&existing_width, &existing_height);
+  if (width != existing_width || height != existing_height) {
+    // Destroy existing surface with previous stale dimensions and create new
+    // surface at new size. Since the Windows compositor retains the front
+    // buffer until the new surface has been presented, no need to manually
+    // preserve the previous surface contents. This resize approach could be
+    // further optimized if Angle exposed a public entrypoint for
+    // SwapChain11::reset or SwapChain11::resize.
+    DestroySurface();
+    if (!CreateSurface(render_target, width, height)) {
+      std::cerr << "AngleSurfaceManager::ResizeSurface failed to create surface"
+                << std::endl;
+    }
+  }
+}
+
+void AngleSurfaceManager::GetSurfaceDimensions(EGLint* width, EGLint* height) {
+  if (render_surface_ == EGL_NO_SURFACE || !initialize_succeeded_) {
     width = 0;
     height = 0;
     return;
   }
 
-  eglQuerySurface(egl_display_, surface, EGL_WIDTH, width);
-  eglQuerySurface(egl_display_, surface, EGL_HEIGHT, height);
+  eglQuerySurface(egl_display_, render_surface_, EGL_WIDTH, width);
+  eglQuerySurface(egl_display_, render_surface_, EGL_HEIGHT, height);
 }
 
-void AngleSurfaceManager::DestroySurface(const EGLSurface surface) {
-  if (egl_display_ != EGL_NO_DISPLAY && surface != EGL_NO_SURFACE) {
-    eglDestroySurface(egl_display_, surface);
+void AngleSurfaceManager::DestroySurface() {
+  if (egl_display_ != EGL_NO_DISPLAY && render_surface_ != EGL_NO_SURFACE) {
+    eglDestroySurface(egl_display_, render_surface_);
   }
+  render_surface_ = EGL_NO_SURFACE;
 }
 
-bool AngleSurfaceManager::MakeCurrent(const EGLSurface surface) {
-  return (eglMakeCurrent(egl_display_, surface, surface, egl_context_) ==
+bool AngleSurfaceManager::MakeCurrent() {
+  return (eglMakeCurrent(egl_display_, render_surface_, render_surface_,
+                         egl_context_) == EGL_TRUE);
+}
+
+bool AngleSurfaceManager::ClearContext() {
+  return (eglMakeCurrent(egl_display_, nullptr, nullptr, egl_context_) ==
           EGL_TRUE);
 }
 
@@ -217,8 +251,8 @@ bool AngleSurfaceManager::MakeResourceCurrent() {
                          egl_resource_context_) == EGL_TRUE);
 }
 
-EGLBoolean AngleSurfaceManager::SwapBuffers(const EGLSurface surface) {
-  return (eglSwapBuffers(egl_display_, surface));
+EGLBoolean AngleSurfaceManager::SwapBuffers() {
+  return (eglSwapBuffers(egl_display_, render_surface_));
 }
 
 }  // namespace flutter

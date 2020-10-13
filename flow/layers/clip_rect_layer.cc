@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/clip_rect_layer.h"
+#include "flutter/flow/paint_utils.h"
 
 namespace flutter {
 
@@ -33,7 +34,7 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->cull_rect = previous_cull_rect;
 }
 
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 
 void ClipRectLayer::UpdateScene(SceneUpdateContext& context) {
   TRACE_EVENT0("flutter", "ClipRectLayer::UpdateScene");
@@ -44,7 +45,7 @@ void ClipRectLayer::UpdateScene(SceneUpdateContext& context) {
   UpdateSceneChildren(context);
 }
 
-#endif  // defined(OS_FUCHSIA)
+#endif
 
 void ClipRectLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipRectLayer::Paint");
@@ -65,6 +66,9 @@ void ClipRectLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
   if (UsesSaveLayer()) {
     context.internal_nodes_canvas->restore();
+    if (context.checkerboard_offscreen_layers) {
+      DrawCheckerboard(context.internal_nodes_canvas, clip_rect_);
+    }
   }
 }
 

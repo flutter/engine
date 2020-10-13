@@ -65,7 +65,7 @@ bool AndroidSurfaceSoftware::ResourceContextClearCurrent() {
 }
 
 std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface(
-    GrContext* gr_context) {
+    GrDirectContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }
@@ -146,9 +146,6 @@ bool AndroidSurfaceSoftware::PresentBackingStore(
 
 // |GPUSurfaceSoftwareDelegate|
 ExternalViewEmbedder* AndroidSurfaceSoftware::GetExternalViewEmbedder() {
-  if (!AndroidShellHolder::use_embedded_view) {
-    return nullptr;
-  }
   return external_view_embedder_.get();
 }
 

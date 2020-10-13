@@ -17,207 +17,17 @@ static constexpr char kModifiersKey[] = "modifiers";
 static constexpr char kToolkitKey[] = "toolkit";
 static constexpr char kUnicodeScalarValuesKey[] = "unicodeScalarValues";
 
-static constexpr char kGLFWToolkit[] = "glfw";
+static constexpr char kGtkToolkit[] = "gtk";
 static constexpr char kLinuxKeymap[] = "linux";
 
 struct _FlKeyEventPlugin {
   GObject parent_instance;
 
-  FlBasicMessageChannel* channel;
+  FlBasicMessageChannel* channel = nullptr;
+  GAsyncReadyCallback response_callback = nullptr;
 };
 
 G_DEFINE_TYPE(FlKeyEventPlugin, fl_key_event_plugin, G_TYPE_OBJECT)
-
-// Converts a Gdk key code to its GLFW equivalent.
-// TODO(robert-ancell) Create a "gtk" toolkit in Flutter so we don't have to
-// convert values. https://github.com/flutter/flutter/issues/57603
-static int gdk_keyval_to_glfw_key_code(guint keyval) {
-  switch (keyval) {
-    case GDK_KEY_space:
-      return 32;
-    case GDK_KEY_apostrophe:
-      return 39;
-    case GDK_KEY_comma:
-      return 44;
-    case GDK_KEY_minus:
-      return 45;
-    case GDK_KEY_period:
-      return 46;
-    case GDK_KEY_slash:
-      return 47;
-    case GDK_KEY_0:
-      return 48;
-    case GDK_KEY_1:
-      return 49;
-    case GDK_KEY_2:
-      return 50;
-    case GDK_KEY_3:
-      return 51;
-    case GDK_KEY_4:
-      return 52;
-    case GDK_KEY_5:
-      return 53;
-    case GDK_KEY_6:
-      return 54;
-    case GDK_KEY_7:
-      return 55;
-    case GDK_KEY_8:
-      return 56;
-    case GDK_KEY_9:
-      return 57;
-    case GDK_KEY_semicolon:
-      return 59;
-    case GDK_KEY_equal:
-      return 61;
-    case GDK_KEY_a:
-    case GDK_KEY_A:
-      return 65;
-    case GDK_KEY_b:
-    case GDK_KEY_B:
-      return 66;
-    case GDK_KEY_c:
-    case GDK_KEY_C:
-      return 67;
-    case GDK_KEY_d:
-    case GDK_KEY_D:
-      return 68;
-    case GDK_KEY_e:
-    case GDK_KEY_E:
-      return 69;
-    case GDK_KEY_f:
-    case GDK_KEY_F:
-      return 70;
-    case GDK_KEY_g:
-    case GDK_KEY_G:
-      return 71;
-    case GDK_KEY_h:
-    case GDK_KEY_H:
-      return 72;
-    case GDK_KEY_i:
-    case GDK_KEY_I:
-      return 73;
-    case GDK_KEY_j:
-    case GDK_KEY_J:
-      return 74;
-    case GDK_KEY_k:
-    case GDK_KEY_K:
-      return 75;
-    case GDK_KEY_l:
-    case GDK_KEY_L:
-      return 76;
-    case GDK_KEY_m:
-    case GDK_KEY_M:
-      return 77;
-    case GDK_KEY_n:
-    case GDK_KEY_N:
-      return 78;
-    case GDK_KEY_o:
-    case GDK_KEY_O:
-      return 79;
-    case GDK_KEY_p:
-    case GDK_KEY_P:
-      return 80;
-    case GDK_KEY_q:
-    case GDK_KEY_Q:
-      return 81;
-    case GDK_KEY_r:
-    case GDK_KEY_R:
-      return 82;
-    case GDK_KEY_s:
-    case GDK_KEY_S:
-      return 83;
-    case GDK_KEY_t:
-    case GDK_KEY_T:
-      return 84;
-    case GDK_KEY_u:
-    case GDK_KEY_U:
-      return 85;
-    case GDK_KEY_v:
-    case GDK_KEY_V:
-      return 86;
-    case GDK_KEY_w:
-    case GDK_KEY_W:
-      return 87;
-    case GDK_KEY_x:
-    case GDK_KEY_X:
-      return 88;
-    case GDK_KEY_y:
-    case GDK_KEY_Y:
-      return 89;
-    case GDK_KEY_z:
-    case GDK_KEY_Z:
-      return 90;
-    case GDK_KEY_bracketleft:
-      return 91;
-    case GDK_KEY_bracketright:
-      return 92;
-    case GDK_KEY_grave:
-      return 96;
-    case GDK_KEY_Escape:
-      return 256;
-    case GDK_KEY_Return:
-      return 257;
-    case GDK_KEY_Tab:
-    case GDK_KEY_ISO_Left_Tab:
-      return 258;
-    case GDK_KEY_BackSpace:
-      return 259;
-    case GDK_KEY_Insert:
-      return 260;
-    case GDK_KEY_Delete:
-      return 261;
-    case GDK_KEY_Right:
-      return 262;
-    case GDK_KEY_Left:
-      return 263;
-    case GDK_KEY_Down:
-      return 264;
-    case GDK_KEY_Up:
-      return 265;
-    case GDK_KEY_Page_Up:
-      return 266;
-    case GDK_KEY_Page_Down:
-      return 267;
-    case GDK_KEY_Home:
-      return 268;
-    case GDK_KEY_End:
-      return 269;
-    case GDK_KEY_Shift_L:
-      return 340;
-    case GDK_KEY_Control_L:
-      return 341;
-    case GDK_KEY_Alt_L:
-      return 342;
-    case GDK_KEY_Super_L:
-      return 343;
-    case GDK_KEY_Shift_R:
-      return 344;
-    case GDK_KEY_Control_R:
-      return 345;
-    case GDK_KEY_Alt_R:
-      return 346;
-    case GDK_KEY_Super_R:
-      return 347;
-    default:
-      return 0;
-  }
-}
-
-// Converts a Gdk key state to its GLFW equivalent.
-int64_t gdk_state_to_glfw_modifiers(guint8 state) {
-  int64_t modifiers = 0;
-
-  if ((state & GDK_SHIFT_MASK) != 0)
-    modifiers |= 0x0001;
-  if ((state & GDK_CONTROL_MASK) != 0)
-    modifiers |= 0x0002;
-  if ((state & GDK_MOD1_MASK) != 0)
-    modifiers |= 0x0004;
-  if ((state & GDK_SUPER_MASK) != 0)
-    modifiers |= 0x0008;
-
-  return modifiers;
-}
 
 static void fl_key_event_plugin_dispose(GObject* object) {
   FlKeyEventPlugin* self = FL_KEY_EVENT_PLUGIN(object);
@@ -233,36 +43,91 @@ static void fl_key_event_plugin_class_init(FlKeyEventPluginClass* klass) {
 
 static void fl_key_event_plugin_init(FlKeyEventPlugin* self) {}
 
-FlKeyEventPlugin* fl_key_event_plugin_new(FlBinaryMessenger* messenger) {
+FlKeyEventPlugin* fl_key_event_plugin_new(FlBinaryMessenger* messenger,
+                                          GAsyncReadyCallback response_callback,
+                                          const char* channel_name) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
   FlKeyEventPlugin* self = FL_KEY_EVENT_PLUGIN(
       g_object_new(fl_key_event_plugin_get_type(), nullptr));
 
   g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
-  self->channel = fl_basic_message_channel_new(messenger, kChannelName,
-                                               FL_MESSAGE_CODEC(codec));
+  self->channel = fl_basic_message_channel_new(
+      messenger, channel_name == nullptr ? kChannelName : channel_name,
+      FL_MESSAGE_CODEC(codec));
+  self->response_callback = response_callback;
 
   return self;
 }
 
 void fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
-                                        GdkEventKey* event) {
+                                        GdkEventKey* event,
+                                        gpointer user_data) {
   g_return_if_fail(FL_IS_KEY_EVENT_PLUGIN(self));
   g_return_if_fail(event != nullptr);
 
   const gchar* type;
-  if (event->type == GDK_KEY_PRESS)
-    type = kTypeValueDown;
-  else if (event->type == GDK_KEY_RELEASE)
-    type = kTypeValueUp;
-  else
-    return;
+  switch (event->type) {
+    case GDK_KEY_PRESS:
+      type = kTypeValueDown;
+      break;
+    case GDK_KEY_RELEASE:
+      type = kTypeValueUp;
+      break;
+    default:
+      return;
+  }
 
   int64_t scan_code = event->hardware_keycode;
-  int64_t key_code = gdk_keyval_to_glfw_key_code(event->keyval);
-  int64_t modifiers = gdk_state_to_glfw_modifiers(event->state);
   int64_t unicodeScalarValues = gdk_keyval_to_unicode(event->keyval);
+
+  // For most modifier keys, GTK keeps track of the "pressed" state of the
+  // modifier keys. Flutter uses this information to keep modifier keys from
+  // being "stuck" when a key-up event is lost because it happens after the app
+  // loses focus.
+  //
+  // For Lock keys (ShiftLock, CapsLock, NumLock), however, GTK keeps track of
+  // the state of the locks themselves, not the "pressed" state of the key.
+  //
+  // Since Flutter expects the "pressed" state of the modifier keys, the lock
+  // state for these keys is discarded here, and it is substituted for the
+  // pressed state of the key.
+  //
+  // This code has the flaw that if a key event is missed due to the app losing
+  // focus, then this state will still think the key is pressed when it isn't,
+  // but that is no worse than for "regular" keys until we implement the
+  // sync/cancel events on app focus changes.
+  //
+  // This is necessary to do here instead of in the framework because Flutter
+  // does modifier key syncing in the framework, and will turn on/off these keys
+  // as being "pressed" whenever the lock is on, which breaks a lot of
+  // interactions (for example, if shift-lock is on, tab traversal is broken).
+  //
+  // TODO(gspencergoog): get rid of this tracked state when we are tracking the
+  // state of all keys and sending sync/cancel events when focus is gained/lost.
+
+  // Remove lock states from state mask.
+  guint state = event->state & ~(GDK_LOCK_MASK | GDK_MOD2_MASK);
+
+  static bool shift_lock_pressed = false;
+  static bool caps_lock_pressed = false;
+  static bool num_lock_pressed = false;
+  switch (event->keyval) {
+    case GDK_KEY_Num_Lock:
+      num_lock_pressed = event->type == GDK_KEY_PRESS;
+      break;
+    case GDK_KEY_Caps_Lock:
+      caps_lock_pressed = event->type == GDK_KEY_PRESS;
+      break;
+    case GDK_KEY_Shift_Lock:
+      shift_lock_pressed = event->type == GDK_KEY_PRESS;
+      break;
+  }
+
+  // Add back in the state matching the actual pressed state of the lock keys,
+  // not the lock states.
+  state |= (shift_lock_pressed || caps_lock_pressed) ? GDK_LOCK_MASK : 0x0;
+  state |= num_lock_pressed ? GDK_MOD2_MASK : 0x0;
 
   g_autoptr(FlValue) message = fl_value_new_map();
   fl_value_set_string_take(message, kTypeKey, fl_value_new_string(type));
@@ -270,14 +135,15 @@ void fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
                            fl_value_new_string(kLinuxKeymap));
   fl_value_set_string_take(message, kScanCodeKey, fl_value_new_int(scan_code));
   fl_value_set_string_take(message, kToolkitKey,
-                           fl_value_new_string(kGLFWToolkit));
-  fl_value_set_string_take(message, kKeyCodeKey, fl_value_new_int(key_code));
-  fl_value_set_string_take(message, kModifiersKey, fl_value_new_int(modifiers));
+                           fl_value_new_string(kGtkToolkit));
+  fl_value_set_string_take(message, kKeyCodeKey,
+                           fl_value_new_int(event->keyval));
+  fl_value_set_string_take(message, kModifiersKey, fl_value_new_int(state));
   if (unicodeScalarValues != 0) {
     fl_value_set_string_take(message, kUnicodeScalarValuesKey,
                              fl_value_new_int(unicodeScalarValues));
   }
 
-  fl_basic_message_channel_send(self->channel, message, nullptr, nullptr,
-                                nullptr);
+  fl_basic_message_channel_send(self->channel, message, nullptr,
+                                self->response_callback, user_data);
 }

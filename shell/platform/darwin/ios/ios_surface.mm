@@ -2,25 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
-#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+
+#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 
 #if FLUTTER_SHELL_ENABLE_METAL
-#include "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
 namespace flutter {
-
-// The name of the Info.plist flag to enable the embedded iOS views preview.
-constexpr const char* kEmbeddedViewsPreview = "io.flutter.embedded_views_preview";
-
-bool IsIosEmbeddedViewsPreviewEnabled() {
-  static bool preview_enabled =
-      [[[NSBundle mainBundle] objectForInfoDictionaryKey:@(kEmbeddedViewsPreview)] boolValue];
-  return preview_enabled;
-}
 
 std::unique_ptr<IOSSurface> IOSSurface::Create(
     std::shared_ptr<IOSContext> context,
@@ -39,13 +32,15 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(
   }
 
 #if FLUTTER_SHELL_ENABLE_METAL
-  if ([layer.get() isKindOfClass:[CAMetalLayer class]]) {
-    return std::make_unique<IOSSurfaceMetal>(
-        fml::scoped_nsobject<CAMetalLayer>(
-            reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
-        std::move(context),                                          // context
-        platform_views_controller                                    // platform views controller
-    );
+  if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
+    if ([layer.get() isKindOfClass:[CAMetalLayer class]]) {
+      return std::make_unique<IOSSurfaceMetal>(
+          fml::scoped_nsobject<CAMetalLayer>(
+              reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
+          std::move(context),                                          // context
+          platform_views_controller                                    // platform views controller
+      );
+    }
   }
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
@@ -75,33 +70,21 @@ SkCanvas* IOSSurface::GetRootCanvas() {
   return nullptr;
 }
 
-ExternalViewEmbedder* IOSSurface::GetExternalViewEmbedderIfEnabled() {
-  if (IsIosEmbeddedViewsPreviewEnabled()) {
-    return this;
-  } else {
-    return nullptr;
-  }
-}
-
 // |ExternalViewEmbedder|
 void IOSSurface::CancelFrame() {
   TRACE_EVENT0("flutter", "IOSSurface::CancelFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   platform_views_controller_->CancelFrame();
-  // Committing the current transaction as |BeginFrame| will create a nested
-  // CATransaction otherwise.
-  [CATransaction commit];
 }
 
 // |ExternalViewEmbedder|
 void IOSSurface::BeginFrame(SkISize frame_size,
-                            GrContext* context,
+                            GrDirectContext* context,
                             double device_pixel_ratio,
                             fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::BeginFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   platform_views_controller_->SetFrameSize(frame_size);
-  [CATransaction begin];
 }
 
 // |ExternalViewEmbedder|
@@ -118,7 +101,8 @@ PostPrerollResult IOSSurface::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::PostPrerollAction");
   FML_CHECK(platform_views_controller_ != nullptr);
-  return platform_views_controller_->PostPrerollAction(raster_thread_merger);
+  PostPrerollResult result = platform_views_controller_->PostPrerollAction(raster_thread_merger);
+  return result;
 }
 
 // |ExternalViewEmbedder|
@@ -135,17 +119,11 @@ SkCanvas* IOSSurface::CompositeEmbeddedView(int view_id) {
 }
 
 // |ExternalViewEmbedder|
-bool IOSSurface::SubmitFrame(GrContext* context, std::unique_ptr<SurfaceFrame> frame) {
+void IOSSurface::SubmitFrame(GrDirectContext* context, std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "IOSSurface::SubmitFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  bool submitted =
-      platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame));
-
-  if (submitted) {
-    TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
-    [CATransaction commit];
-  }
-  return submitted;
+  platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame));
+  TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
 }
 
 // |ExternalViewEmbedder|
@@ -154,6 +132,11 @@ void IOSSurface::EndFrame(bool should_resubmit_frame,
   TRACE_EVENT0("flutter", "IOSSurface::EndFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   return platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger);
+}
+
+// |ExternalViewEmbedder|
+bool IOSSurface::SupportsDynamicThreadMerging() {
+  return true;
 }
 
 }  // namespace flutter

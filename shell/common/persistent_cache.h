@@ -15,6 +15,10 @@
 #include "flutter/fml/unique_fd.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
+namespace testing {
+class ShellTest;
+}
+
 namespace flutter {
 
 /// A cache of SkData that gets stored to disk.
@@ -57,6 +61,10 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   void DumpSkp(const SkData& data);
   bool IsDumpingSkp() const { return is_dumping_skp_; }
   void SetIsDumpingSkp(bool value) { is_dumping_skp_ = value; }
+
+  // Remove all files inside the persistent cache directory.
+  // Return whether the purge is successful.
+  bool Purge();
 
   // |GrContextOptions::PersistentCache|
   sk_sp<SkData> load(const SkData& key) override;
@@ -115,6 +123,8 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   void store(const SkData& key, const SkData& data) override;
 
   fml::RefPtr<fml::TaskRunner> GetWorkerTaskRunner() const;
+
+  friend class testing::ShellTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PersistentCache);
 };

@@ -1,4 +1,4 @@
-// Copyright 2020 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -12,9 +12,9 @@ import 'scenario.dart';
 /// Sends the recieved locale data back as semantics information.
 class LocaleInitialization extends Scenario {
   /// Constructor
-  LocaleInitialization(Window window)
-      : assert(window != null),
-        super(window);
+  LocaleInitialization(PlatformDispatcher dispatcher)
+      : assert(dispatcher != null),
+        super(dispatcher);
 
   int _tapCount = 0;
 
@@ -60,9 +60,16 @@ class LocaleInitialization extends Scenario {
         currentValueLength: 0,
         scrollChildren: 0,
         scrollIndex: 0,
+        scrollPosition: 0.0,
+        scrollExtentMax: 0.0,
+        scrollExtentMin: 0.0,
         transform: Matrix4.identity().storage,
         elevation: 0.0,
         thickness: 0.0,
+        hint: '',
+        value: '',
+        increasedValue: '',
+        decreasedValue: '',
         childrenInTraversalOrder: Int32List(0),
         childrenInHitTestOrder: Int32List(0),
         additionalActions: Int32List(0),
@@ -75,10 +82,11 @@ class LocaleInitialization extends Scenario {
   /// Send changing information via semantics on each successive tap.
   @override
   void onPointerDataPacket(PointerDataPacket packet) {
-    String label;
+    String label = '';
     switch(_tapCount) {
       case 1: {
         // Set label to string data we wish to pass on first frame.
+        label = '1';
         break;
       }
       // Expand for other test cases.
@@ -101,9 +109,16 @@ class LocaleInitialization extends Scenario {
         currentValueLength: 0,
         scrollChildren: 0,
         scrollIndex: 0,
+        scrollPosition: 0.0,
+        scrollExtentMax: 0.0,
+        scrollExtentMin: 0.0,
         transform: Matrix4.identity().storage,
         elevation: 0.0,
         thickness: 0.0,
+        hint: '',
+        value: '',
+        increasedValue: '',
+        decreasedValue: '',
         childrenInTraversalOrder: Int32List(0),
         childrenInHitTestOrder: Int32List(0),
         additionalActions: Int32List(0),

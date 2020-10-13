@@ -4,11 +4,11 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
 
+#include <gmodule.h>
+
 #include "flutter/shell/platform/linux/fl_method_call_private.h"
 #include "flutter/shell/platform/linux/fl_method_channel_private.h"
 #include "flutter/shell/platform/linux/fl_method_codec_private.h"
-
-#include <gmodule.h>
 
 struct _FlMethodChannel {
   GObject parent_instance;
@@ -44,8 +44,9 @@ static void message_cb(FlBinaryMessenger* messenger,
                        gpointer user_data) {
   FlMethodChannel* self = FL_METHOD_CHANNEL(user_data);
 
-  if (self->method_call_handler == nullptr)
+  if (self->method_call_handler == nullptr) {
     return;
+  }
 
   g_autofree gchar* method = nullptr;
   g_autoptr(FlValue) args = nullptr;
@@ -76,8 +77,9 @@ static void channel_closed_cb(gpointer user_data) {
   self->channel_closed = TRUE;
 
   // Disconnect handler.
-  if (self->method_call_handler_destroy_notify != nullptr)
+  if (self->method_call_handler_destroy_notify != nullptr) {
     self->method_call_handler_destroy_notify(self->method_call_handler_data);
+  }
   self->method_call_handler = nullptr;
   self->method_call_handler_data = nullptr;
   self->method_call_handler_destroy_notify = nullptr;
@@ -95,8 +97,9 @@ static void fl_method_channel_dispose(GObject* object) {
   g_clear_pointer(&self->name, g_free);
   g_clear_object(&self->codec);
 
-  if (self->method_call_handler_destroy_notify != nullptr)
+  if (self->method_call_handler_destroy_notify != nullptr) {
     self->method_call_handler_destroy_notify(self->method_call_handler_data);
+  }
   self->method_call_handler = nullptr;
   self->method_call_handler_data = nullptr;
   self->method_call_handler_destroy_notify = nullptr;
@@ -145,13 +148,15 @@ G_MODULE_EXPORT void fl_method_channel_set_method_call_handler(
       g_warning(
           "Attempted to set method call handler on a closed FlMethodChannel");
     }
-    if (destroy_notify != nullptr)
+    if (destroy_notify != nullptr) {
       destroy_notify(user_data);
+    }
     return;
   }
 
-  if (self->method_call_handler_destroy_notify != nullptr)
+  if (self->method_call_handler_destroy_notify != nullptr) {
     self->method_call_handler_destroy_notify(self->method_call_handler_data);
+  }
 
   self->method_call_handler = handler;
   self->method_call_handler_data = user_data;
@@ -176,8 +181,9 @@ G_MODULE_EXPORT void fl_method_channel_invoke_method(
   g_autoptr(GBytes) message =
       fl_method_codec_encode_method_call(self->codec, method, args, &error);
   if (message == nullptr) {
-    if (task != nullptr)
+    if (task != nullptr) {
       g_task_return_error(task, error);
+    }
     return;
   }
 
@@ -199,8 +205,9 @@ G_MODULE_EXPORT FlMethodResponse* fl_method_channel_invoke_method_finish(
 
   g_autoptr(GBytes) response =
       fl_binary_messenger_send_on_channel_finish(self->messenger, r, error);
-  if (response == nullptr)
+  if (response == nullptr) {
     return nullptr;
+  }
 
   return fl_method_codec_decode_response(self->codec, response, error);
 }
@@ -223,12 +230,18 @@ gboolean fl_method_channel_respond(
     FlMethodSuccessResponse* r = FL_METHOD_SUCCESS_RESPONSE(response);
     message = fl_method_codec_encode_success_envelope(
         self->codec, fl_method_success_response_get_result(r), error);
+    if (message == nullptr) {
+      return FALSE;
+    }
   } else if (FL_IS_METHOD_ERROR_RESPONSE(response)) {
     FlMethodErrorResponse* r = FL_METHOD_ERROR_RESPONSE(response);
     message = fl_method_codec_encode_error_envelope(
         self->codec, fl_method_error_response_get_code(r),
         fl_method_error_response_get_message(r),
         fl_method_error_response_get_details(r), error);
+    if (message == nullptr) {
+      return FALSE;
+    }
   } else if (FL_IS_METHOD_NOT_IMPLEMENTED_RESPONSE(response)) {
     message = nullptr;
   } else {

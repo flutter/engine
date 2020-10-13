@@ -13,7 +13,7 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter_runner {
 
@@ -104,7 +104,7 @@ bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
 }
 
 VulkanSurface::VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
-                             sk_sp<GrContext> context,
+                             sk_sp<GrDirectContext> context,
                              scenic::Session* session,
                              const SkISize& size)
     : vulkan_provider_(vulkan_provider), session_(session), wait_(this) {
@@ -226,7 +226,7 @@ bool VulkanSurface::CreateFences() {
   return true;
 }
 
-bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
+bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrDirectContext> context,
                                          const SkISize& size,
                                          zx::vmo& exported_vmo) {
   if (size.isEmpty()) {
@@ -323,7 +323,7 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
                           image_create_info, memory_reqs);
 }
 
-bool VulkanSurface::SetupSkiaSurface(sk_sp<GrContext> context,
+bool VulkanSurface::SetupSkiaSurface(sk_sp<GrDirectContext> context,
                                      const SkISize& size,
                                      SkColorType color_type,
                                      const VkImageCreateInfo& image_create_info,
@@ -332,20 +332,24 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrContext> context,
     return false;
   }
 
-  const GrVkImageInfo image_info = {
-      vulkan_image_.vk_image,                // image
-      {vk_memory_, 0, memory_reqs.size, 0},  // alloc
-      image_create_info.tiling,              // tiling
-      image_create_info.initialLayout,       // layout
-      image_create_info.format,              // format
-      image_create_info.mipLevels,           // level count
-  };
+  GrVkAlloc alloc;
+  alloc.fMemory = vk_memory_;
+  alloc.fOffset = 0;
+  alloc.fSize = memory_reqs.size;
+  alloc.fFlags = 0;
+
+  GrVkImageInfo image_info;
+  image_info.fImage = vulkan_image_.vk_image;
+  image_info.fAlloc = alloc;
+  image_info.fImageTiling = image_create_info.tiling;
+  image_info.fImageLayout = image_create_info.initialLayout;
+  image_info.fFormat = image_create_info.format;
+  image_info.fLevelCount = image_create_info.mipLevels;
 
   GrBackendRenderTarget sk_render_target(size.width(), size.height(), 0,
                                          image_info);
 
-  SkSurfaceProps sk_surface_props(
-      SkSurfaceProps::InitType::kLegacyFontHost_InitType);
+  SkSurfaceProps sk_surface_props(0, kUnknown_SkPixelGeometry);
 
   auto sk_surface =
       SkSurface::MakeFromBackendRenderTarget(context.get(),             //
@@ -407,7 +411,7 @@ sk_sp<SkSurface> VulkanSurface::GetSkiaSurface() const {
   return valid_ ? sk_surface_ : nullptr;
 }
 
-bool VulkanSurface::BindToImage(sk_sp<GrContext> context,
+bool VulkanSurface::BindToImage(sk_sp<GrDirectContext> context,
                                 VulkanImage vulkan_image) {
   FML_DCHECK(vulkan_image.vk_memory_requirements.size <=
              vk_memory_info_.allocationSize);

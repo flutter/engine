@@ -33,9 +33,7 @@ config("disable_fatal_link_warnings") {
 
 if (build_glfw_shell) {
   shared_library("flutter_linux_glfw") {
-    deps = [
-      "//flutter/shell/platform/glfw:flutter_glfw",
-    ]
+    deps = [ "//flutter/shell/platform/glfw:flutter_glfw" ]
 
     configs += [ ":disable_fatal_link_warnings" ]
 
@@ -71,11 +69,21 @@ config("relative_flutter_linux_headers") {
 }
 
 source_set("flutter_linux_sources") {
-  public = _public_headers
+  public = _public_headers + [
+             "fl_binary_messenger_private.h",
+             "fl_dart_project_private.h",
+             "fl_engine_private.h",
+             "fl_method_call_private.h",
+             "fl_method_channel_private.h",
+             "fl_method_codec_private.h",
+             "fl_plugin_registrar_private.h",
+             "fl_standard_message_codec_private.h",
+           ]
 
   configs += [ "//flutter/shell/platform/linux/config:gtk" ]
 
   sources = [
+    "egl_utils.cc",
     "fl_basic_message_channel.cc",
     "fl_binary_codec.cc",
     "fl_binary_messenger.cc",
@@ -95,6 +103,7 @@ source_set("flutter_linux_sources") {
     "fl_plugin_registry.cc",
     "fl_renderer.cc",
     "fl_renderer_headless.cc",
+    "fl_renderer_wayland.cc",
     "fl_renderer_x11.cc",
     "fl_standard_message_codec.cc",
     "fl_standard_method_codec.cc",
@@ -109,6 +118,7 @@ source_set("flutter_linux_sources") {
 
   deps = [
     "//flutter/shell/platform/common/cpp:common_cpp_input",
+    "//flutter/shell/platform/common/cpp:common_cpp_switches",
     "//flutter/shell/platform/embedder:embedder_headers",
     "//third_party/rapidjson",
   ]
@@ -118,16 +128,13 @@ source_set("flutter_linux") {
   configs += [
     "//flutter/shell/platform/linux/config:gtk",
     "//flutter/shell/platform/linux/config:egl",
+    "//flutter/shell/platform/linux/config:wayland-egl",
     "//third_party/khronos:khronos_headers",
   ]
 
-  public_deps = [
-    ":flutter_linux_sources",
-  ]
+  public_deps = [ ":flutter_linux_sources" ]
 
-  deps = [
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
-  ]
+  deps = [ "//flutter/shell/platform/embedder:embedder_as_internal_library" ]
 }
 
 test_fixtures("flutter_linux_fixtures") {
@@ -138,12 +145,14 @@ executable("flutter_linux_unittests") {
   testonly = true
 
   sources = [
+    "egl_utils_test.cc",
     "fl_basic_message_channel_test.cc",
     "fl_binary_codec_test.cc",
     "fl_binary_messenger_test.cc",
     "fl_dart_project_test.cc",
     "fl_json_message_codec_test.cc",
     "fl_json_method_codec_test.cc",
+    "fl_key_event_plugin_test.cc",
     "fl_message_codec_test.cc",
     "fl_method_channel_test.cc",
     "fl_method_codec_test.cc",
@@ -160,7 +169,10 @@ executable("flutter_linux_unittests") {
 
   public_configs = [ "//flutter:config" ]
 
-  configs += [ "//flutter/shell/platform/linux/config:gtk" ]
+  configs += [
+    "//flutter/shell/platform/linux/config:gtk",
+    "//flutter/shell/platform/linux/config:wayland-egl",
+  ]
 
   # Set flag to allow public headers to be directly included (library users should not do this)
   defines = [ "FLUTTER_LINUX_COMPILATION" ]
@@ -175,16 +187,12 @@ executable("flutter_linux_unittests") {
 }
 
 shared_library("flutter_linux_gtk") {
-  deps = [
-    ":flutter_linux",
-  ]
+  deps = [ ":flutter_linux" ]
 
   public_configs = [ "//flutter:config" ]
 }
 
 copy("publish_headers_linux") {
   sources = _public_headers
-  outputs = [
-    "$root_out_dir/flutter_linux/{{source_file_part}}",
-  ]
+  outputs = [ "$root_out_dir/flutter_linux/{{source_file_part}}" ]
 }

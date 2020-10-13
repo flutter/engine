@@ -52,7 +52,7 @@ class SurfacePool {
   // Finally, it marks the layer as used. That is, it increments
   // `available_layer_index_`.
   std::shared_ptr<OverlayLayer> GetLayer(
-      GrContext* gr_context,
+      GrDirectContext* gr_context,
       std::shared_ptr<AndroidContext> android_context,
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
       const AndroidSurface::Factory& surface_factory);
@@ -63,6 +63,14 @@ class SurfacePool {
 
   // Marks the layers in the pool as available for reuse.
   void RecycleLayers();
+
+  // Destroys all the layers in the pool.
+  void DestroyLayers(std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+
+  // Sets the frame size used by the layers in the pool.
+  // If the current layers in the pool have a different frame size,
+  // then they are deallocated as soon as |GetLayer| is called.
+  void SetFrameSize(SkISize frame_size);
 
  private:
   // The index of the entry in the layers_ vector that determines the beginning
@@ -78,7 +86,15 @@ class SurfacePool {
   //  This indicates that entries starting from 1 can be reused meanwhile the
   //  entry at position 0 cannot be reused.
   size_t available_layer_index_ = 0;
+
+  // The layers in the pool.
   std::vector<std::shared_ptr<OverlayLayer>> layers_;
+
+  // The frame size of the layers in the pool.
+  SkISize current_frame_size_;
+
+  // The frame size to be used by future layers.
+  SkISize requested_frame_size_;
 };
 
 }  // namespace flutter

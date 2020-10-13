@@ -24,7 +24,10 @@ class IntegrationTestsManager {
 
   final DriverManager _driverManager;
 
-  IntegrationTestsManager(this._browser, this._useSystemFlutter)
+  final bool _doUpdateScreenshotGoldens;
+
+  IntegrationTestsManager(
+      this._browser, this._useSystemFlutter, this._doUpdateScreenshotGoldens)
       : _driverManager = DriverManager.chooseDriver(_browser);
 
   Future<bool> runTests() async {
@@ -159,14 +162,19 @@ class IntegrationTestsManager {
 
   Future<bool> _runTestsInProfileMode(
       io.Directory directory, String testName) async {
-    final String executable =
+    String executable =
         _useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
+    Map<String, String> enviroment = Map<String, String>();
+    if (_doUpdateScreenshotGoldens) {
+      enviroment['UPDATE_GOLDENS'] = 'true';
+    }
     final IntegrationArguments arguments =
         IntegrationArguments.fromBrowser(_browser);
     final int exitCode = await runProcess(
       executable,
       arguments.getTestArguments(testName, 'profile'),
       workingDirectory: directory.path,
+      environment: enviroment,
     );
 
     if (exitCode != 0) {
@@ -334,7 +342,7 @@ class ChromeIntegrationArguments extends IntegrationArguments {
       '--$mode',
       '--browser-name=chrome',
       if (isLuci) '--chrome-binary=${preinstalledChromeExecutable()}',
-      if (isLuci) '--headless',
+      '--headless',
       '--local-engine=host_debug_unopt',
     ];
   }
@@ -409,24 +417,26 @@ String getBlockedTestsListMapKey(String browser) =>
 /// Note that integration tests are only running on chrome for now.
 const Map<String, List<String>> blockedTestsListsMap = <String, List<String>>{
   'chrome-linux': [
-    'target_platform_ios_e2e.dart',
-    'target_platform_macos_e2e.dart',
+    'target_platform_android_integration.dart',
+    'target_platform_ios_integration.dart',
+    'target_platform_macos_integration.dart',
   ],
   'chrome-macos': [
-    'target_platform_ios_e2e.dart',
-    'target_platform_android_e2e.dart',
+    'target_platform_ios_integration.dart',
+    'target_platform_android_integration.dart',
   ],
   'safari-macos': [
-    'target_platform_ios_e2e.dart',
-    'target_platform_android_e2e.dart',
-    'image_loading_e2e.dart',
+    'target_platform_ios_integration.dart',
+    'target_platform_android_integration.dart',
+    'image_loading_integration.dart',
   ],
   'firefox-linux': [
-    'target_platform_ios_e2e.dart',
-    'target_platform_macos_e2e.dart',
+    'target_platform_android_integration.dart',
+    'target_platform_ios_integration.dart',
+    'target_platform_macos_integration.dart',
   ],
   'firefox-macos': [
-    'target_platform_android_e2e.dart',
-    'target_platform_ios_e2e.dart',
+    'target_platform_android_integration.dart',
+    'target_platform_ios_integration.dart',
   ],
 };

@@ -4,16 +4,22 @@
 
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
+
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
-#include "FlutterBinaryMessenger.h"
-
 FLUTTER_ASSERT_ARC
 
 @interface FlutterEngine ()
-- (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI;
+- (BOOL)createShell:(NSString*)entrypoint
+         libraryURI:(NSString*)libraryURI
+       initialRoute:(NSString*)initialRoute;
+@end
+
+@interface FlutterEngine (TestLowMemory)
+- (void)notifyLowMemory;
 @end
 
 extern NSNotificationName const FlutterViewControllerWillDealloc;
@@ -509,7 +515,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)testDoesntLoadViewInInit {
   FlutterDartProject* project = [[FlutterDartProject alloc] init];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
-  [engine createShell:@"" libraryURI:@""];
+  [engine createShell:@"" libraryURI:@"" initialRoute:nil];
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
                                                                         nibName:nil
                                                                          bundle:nil];
@@ -519,7 +525,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)testHideOverlay {
   FlutterDartProject* project = [[FlutterDartProject alloc] init];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
-  [engine createShell:@"" libraryURI:@""];
+  [engine createShell:@"" libraryURI:@"" initialRoute:nil];
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
                                                                         nibName:nil
                                                                          bundle:nil];
@@ -527,6 +533,20 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerHideHomeIndicator
                                                       object:nil];
   XCTAssertTrue(realVC.prefersHomeIndicatorAutoHidden, @"");
+}
+
+- (void)testNotifyLowMemory {
+  id engine = OCMClassMock([FlutterEngine class]);
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  OCMStub([engine viewController]).andReturn(viewController);
+  id viewControllerMock = OCMPartialMock(viewController);
+  OCMStub([viewControllerMock surfaceUpdated:NO]);
+
+  [viewController beginAppearanceTransition:NO animated:NO];
+  [viewController endAppearanceTransition];
+  OCMVerify([engine notifyLowMemory]);
 }
 
 @end

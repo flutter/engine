@@ -2,15 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 part of engine;
 
-enum _FindBreakDirection {
-  /// Indicates to find the word break by looking forward.
-  forward,
+class _FindBreakDirection {
+  static const _FindBreakDirection forward = _FindBreakDirection(step: 1);
+  static const _FindBreakDirection backward = _FindBreakDirection(step: -1);
 
-  /// Indicates to find the word break by looking backward.
-  backward,
+  const _FindBreakDirection({required this.step});
+
+  final int step;
 }
 
 /// [WordBreaker] exposes static methods to identify word boundaries.
@@ -29,34 +30,23 @@ abstract class WordBreaker {
     String text,
     int index,
   ) {
-    int step, min, max;
-    if (direction == _FindBreakDirection.forward) {
-      step = 1;
-      min = 0;
-      max = text.length - 1;
-    } else {
-      step = -1;
-      min = 1;
-      max = text.length;
-    }
-
     int i = index;
-    while (i >= min && i <= max) {
-      i += step;
+    while (i >= 0 && i <= text.length) {
+      i += direction.step;
       if (_isBreak(text, i)) {
         break;
       }
     }
-    return i;
+    return clampInt(i, 0, text.length);
   }
 
   /// Find out if there's a word break between [index - 1] and [index].
   /// http://unicode.org/reports/tr29/#Word_Boundary_Rules
-  static bool _isBreak(String text, int index) {
+  static bool _isBreak(String? text, int index) {
     // Break at the start and end of text.
     // WB1: sot ÷ Any
     // WB2: Any ÷ eot
-    if (index <= 0 || index >= text.length) {
+    if (index <= 0 || index >= text!.length) {
       return true;
     }
 
@@ -65,8 +55,8 @@ abstract class WordBreaker {
       return false;
     }
 
-    final WordCharProperty immediateRight = wordLookup.find(text, index);
-    WordCharProperty immediateLeft = wordLookup.find(text, index - 1);
+    final WordCharProperty? immediateRight = wordLookup.find(text, index);
+    WordCharProperty? immediateLeft = wordLookup.find(text, index - 1);
 
     // Do not break within CRLF.
     // WB3: CR × LF
@@ -145,7 +135,7 @@ abstract class WordBreaker {
 
     // Skip all Format, Extend and ZWJ to the right.
     int r = 0;
-    WordCharProperty nextRight;
+    WordCharProperty? nextRight;
     do {
       r++;
       nextRight = wordLookup.find(text, index + r);
@@ -157,7 +147,7 @@ abstract class WordBreaker {
     ));
 
     // Skip all Format, Extend and ZWJ to the left.
-    WordCharProperty nextLeft;
+    WordCharProperty? nextLeft;
     do {
       l++;
       nextLeft = wordLookup.find(text, index - l - 1);
@@ -306,12 +296,12 @@ abstract class WordBreaker {
   }
 
   static bool _oneOf(
-    WordCharProperty value,
+    WordCharProperty? value,
     WordCharProperty choice1,
     WordCharProperty choice2, [
-    WordCharProperty choice3,
-    WordCharProperty choice4,
-    WordCharProperty choice5,
+    WordCharProperty? choice3,
+    WordCharProperty? choice4,
+    WordCharProperty? choice5,
   ]) {
     if (value == choice1) {
       return true;
@@ -331,7 +321,7 @@ abstract class WordBreaker {
     return false;
   }
 
-  static bool _isAHLetter(WordCharProperty property) {
+  static bool _isAHLetter(WordCharProperty? property) {
     return _oneOf(property, WordCharProperty.ALetter, WordCharProperty.HebrewLetter);
   }
 }

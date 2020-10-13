@@ -18,6 +18,9 @@ template("runner") {
   invoker_output_name = invoker.output_name
   extra_defines = invoker.extra_defines
   extra_deps = invoker.extra_deps
+  if (is_debug) {
+    extra_defines += [ "DEBUG" ]  # Needed due to direct dart dependencies.
+  }
 
   executable(target_name) {
     output_name = invoker_output_name
@@ -40,13 +43,13 @@ template("runner") {
     dart_deps = []
     if (!invoker.product) {
       dart_deps += [
-        "//third_party/dart/runtime/bin:dart_io_api",
         "//flutter/shell/platform/fuchsia/runtime/dart/utils:utils",
+        "//third_party/dart/runtime/bin:dart_io_api",
       ]
     } else {
       dart_deps += [
-        "//third_party/dart/runtime/bin:dart_io_api_product",
         "//flutter/shell/platform/fuchsia/runtime/dart/utils:utils_product",
+        "//third_party/dart/runtime/bin:dart_io_api_product",
       ]
     }
 
@@ -90,8 +93,8 @@ runner("dart_jit_product_runner_bin") {
   product = true
   extra_defines = [ "DART_PRODUCT" ]
   extra_deps = [
-    "//third_party/dart/runtime:libdart_jit_product",
-    "//third_party/dart/runtime/platform:libdart_platform_jit_product",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
   ]
 }
 
@@ -118,8 +121,8 @@ runner("dart_aot_product_runner_bin") {
   ]
   extra_deps = [
     "embedder:dart_aot_product_snapshot_cc",
-    "//third_party/dart/runtime:libdart_precompiled_runtime_product",
-    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime_product",
+    "//third_party/dart/runtime:libdart_precompiled_runtime",
+    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
   ]
 }
 
@@ -130,9 +133,7 @@ template("aot_runner_package") {
     product_suffix = "_product"
   }
   fuchsia_archive(target_name) {
-    deps = [
-      ":dart_aot${product_suffix}_runner_bin",
-    ]
+    deps = [ ":dart_aot${product_suffix}_runner_bin" ]
     if (!invoker.product) {
       deps += [
         "vmservice:vmservice_snapshot",

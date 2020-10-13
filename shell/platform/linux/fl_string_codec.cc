@@ -6,6 +6,8 @@
 
 #include <gmodule.h>
 
+#include <cstring>
+
 G_DEFINE_QUARK(fl_string_codec_error_quark, fl_string_codec_error)
 
 struct _FlStringCodec {
@@ -14,7 +16,7 @@ struct _FlStringCodec {
 
 G_DEFINE_TYPE(FlStringCodec, fl_string_codec, fl_message_codec_get_type())
 
-// Implments FlMessageCodec::encode_message.
+// Implements FlMessageCodec::encode_message.
 static GBytes* fl_string_codec_encode_message(FlMessageCodec* codec,
                                               FlValue* value,
                                               GError** error) {
@@ -29,7 +31,7 @@ static GBytes* fl_string_codec_encode_message(FlMessageCodec* codec,
   return g_bytes_new(text, strlen(text));
 }
 
-// Implments FlMessageCodec::decode_message.
+// Implements FlMessageCodec::decode_message.
 static FlValue* fl_string_codec_decode_message(FlMessageCodec* codec,
                                                GBytes* message,
                                                GError** error) {

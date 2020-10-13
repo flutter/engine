@@ -191,8 +191,9 @@ VulkanDebugReport::VulkanDebugReport(
   }
 
   VkDebugReportFlagsEXT flags = kVulkanErrorFlags;
-  if (ValidationLayerInfoMessagesEnabled())
+  if (ValidationLayerInfoMessagesEnabled()) {
     flags |= kVulkanInfoFlags;
+  }
   const VkDebugReportCallbackCreateInfoEXT create_info = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
       .pNext = nullptr,

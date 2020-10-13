@@ -8,7 +8,7 @@
 
 #include "flutter/shell/platform/embedder/embedder_layers.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -49,7 +49,7 @@ void EmbedderExternalViewEmbedder::CancelFrame() {
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::BeginFrame(
     SkISize frame_size,
-    GrContext* context,
+    GrDirectContext* context,
     double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   Reset();
@@ -131,8 +131,8 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 }
 
 // |ExternalViewEmbedder|
-bool EmbedderExternalViewEmbedder::SubmitFrame(
-    GrContext* context,
+void EmbedderExternalViewEmbedder::SubmitFrame(
+    GrDirectContext* context,
     std::unique_ptr<SurfaceFrame> frame) {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
@@ -185,7 +185,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(
 
     if (!render_target) {
       FML_LOG(ERROR) << "Embedder did not return a valid render target.";
-      return false;
+      return;
     }
     matched_render_targets[pending_key] = std::move(render_target);
   }
@@ -204,7 +204,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(
              ->Render(*render_target.second)) {
       FML_LOG(ERROR)
           << "Could not render into the embedder supplied render target.";
-      return false;
+      return;
     }
   }
 
@@ -266,7 +266,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(
                                            std::move(render_target.second));
   }
 
-  return frame->Submit();
+  frame->Submit();
 }
 
 }  // namespace flutter

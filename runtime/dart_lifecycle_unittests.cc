@@ -8,12 +8,12 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
-#include "flutter/runtime/runtime_test.h"
+#include "flutter/testing/fixture_test.h"
 
 namespace flutter {
 namespace testing {
 
-using DartLifecycleTest = RuntimeTest;
+using DartLifecycleTest = FixtureTest;
 
 TEST_F(DartLifecycleTest, CanStartAndShutdownVM) {
   auto settings = CreateSettingsForFixture();
@@ -56,6 +56,7 @@ static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
       runners,                            // task_runners
       {},                                 // window
       {},                                 // snapshot_delegate
+      {},                                 // hint_freed_delegate
       {},                                 // io_manager
       {},                                 // unref_queue
       {},                                 // image_decoder

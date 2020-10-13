@@ -38,7 +38,9 @@ TEST(WeakPtrTest, MoveConstruction) {
   WeakPtrFactory<int> factory(&data);
   WeakPtr<int> ptr = factory.GetWeakPtr();
   WeakPtr<int> ptr2(std::move(ptr));
-  EXPECT_EQ(nullptr, ptr.get());
+  // The clang linter flags the method called on the moved-from reference, but
+  // this is testing the move implementation, so it is marked NOLINT.
+  EXPECT_EQ(nullptr, ptr.get());  // NOLINT
   EXPECT_EQ(&data, ptr2.get());
 }
 
@@ -60,7 +62,9 @@ TEST(WeakPtrTest, MoveAssignment) {
   WeakPtr<int> ptr2;
   EXPECT_EQ(nullptr, ptr2.get());
   ptr2 = std::move(ptr);
-  EXPECT_EQ(nullptr, ptr.get());
+  // The clang linter flags the method called on the moved-from reference, but
+  // this is testing the move implementation, so it is marked NOLINT.
+  EXPECT_EQ(nullptr, ptr.get());  // NOLINT
   EXPECT_EQ(&data, ptr2.get());
 }
 

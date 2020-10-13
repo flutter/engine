@@ -6,10 +6,10 @@
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_RENDERER_H_
 
 #include <EGL/egl.h>
-
-#include <glib-object.h>
+#include <gtk/gtk.h>
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 G_BEGIN_DECLS
 
@@ -35,27 +35,87 @@ G_DECLARE_DERIVABLE_TYPE(FlRenderer, fl_renderer, FL, RENDERER, GObject)
 struct _FlRendererClass {
   GObjectClass parent_class;
 
-  // Virtual method called when Flutter has set up EGL and is ready for the
-  // renderer to start.
-  gboolean (*start)(FlRenderer* renderer, GError** error);
+  /**
+   * Virtual method called before creating a GdkWindow for the widget.
+   * Does not need to be implemented.
+   * @renderer: an #FlRenderer.
+   * @widget: the widget being rendered on.
+   * @display: display to create surfaces on.
+   * @config: EGL configuration.
+   * @window_attributes: window attributes to modify.
+   * @mask: (out): the window mask to use.
+   * @error: (allow-none): #GError location to store the error occurring, or
+   * %NULL to ignore.
+   *
+   * Returns: %TRUE if the window is successfully set up.
+   */
+  gboolean (*setup_window_attr)(FlRenderer* renderer,
+                                GtkWidget* widget,
+                                EGLDisplay display,
+                                EGLConfig config,
+                                GdkWindowAttr* window_attributes,
+                                gint* mask,
+                                GError** error);
 
-  // Virtual method called when flutter needs a surface to render to.
-  EGLSurface (*create_surface)(FlRenderer* renderer,
-                               EGLDisplay display,
-                               EGLConfig config);
+  /**
+   * Virtual method to create a new EGL display.
+   */
+  EGLDisplay (*create_display)(FlRenderer* renderer);
+
+  /**
+   * Virtual method called when Flutter needs surfaces to render to.
+   * @renderer: an #FlRenderer.
+   * @widget: the widget being rendered on.
+   * @display: display to create surfaces on.
+   * @config: EGL configuration.
+   * @visible: (out): the visible surface that is created.
+   * @resource: (out): the resource surface that is created.
+   * @error: (allow-none): #GError location to store the error occurring, or
+   * %NULL to ignore.
+   *
+   * Returns: %TRUE if both surfaces were created, %FALSE if there was an error.
+   */
+  gboolean (*create_surfaces)(FlRenderer* renderer,
+                              GtkWidget* widget,
+                              EGLDisplay display,
+                              EGLConfig config,
+                              EGLSurface* visible,
+                              EGLSurface* resource,
+                              GError** error);
+
+  /**
+   * Virtual method called when the EGL window needs to be resized.
+   * Does not need to be implemented.
+   */
+  void (*set_geometry)(FlRenderer* renderer,
+                       GdkRectangle* geometry,
+                       gint scale);
 };
 
 /**
  * fl_renderer_start:
  * @renderer: an #FlRenderer.
+ * @widget: the widget Flutter is renderering to.
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
  *
- * Start the renderer. EGL must be set up before this call.
+ * Start the renderer.
  *
  * Returns: %TRUE if successfully started.
  */
-gboolean fl_renderer_start(FlRenderer* self, GError** error);
+gboolean fl_renderer_start(FlRenderer* renderer,
+                           GtkWidget* widget,
+                           GError** error);
+
+/**
+ * fl_renderer_set_geometry:
+ * @renderer: an #FlRenderer.
+ * @geometry: New size and position (unscaled) of the EGL window.
+ * @scale: Scale of the window.
+ */
+void fl_renderer_set_geometry(FlRenderer* renderer,
+                              GdkRectangle* geometry,
+                              gint scale);
 
 /**
  * fl_renderer_get_proc_address:

@@ -18,7 +18,8 @@ class Fixture : public testing::FixtureTest {
   void TestBody() override{};
 };
 
-static void BM_PlatformMessageResponseDartComplete(benchmark::State& state) {
+static void BM_PlatformMessageResponseDartComplete(
+    benchmark::State& state) {  // NOLINT
   ThreadHost thread_host("test",
                          ThreadHost::Type::Platform | ThreadHost::Type::GPU |
                              ThreadHost::Type::IO | ThreadHost::Type::UI);
