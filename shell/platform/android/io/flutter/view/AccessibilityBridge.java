@@ -542,17 +542,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       return null;
     }
 
+    // Generate accessibility node for platform views using virtual display.
     if (semanticsNode.platformViewId != -1) {
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
-
-      if (embeddedView.getContext() instanceof FlutterActivity) {
-        // In hybrid composition, just return the accessibility node for the view attached
-        // to Activity's view hierarchy.
-        AccessibilityNodeInfo originNode = embeddedView.createAccessibilityNodeInfo();
-        originNode.setParent(rootAccessibilityView);
-        return originNode;
-      }
       Rect bounds = semanticsNode.getGlobalRect();
       return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
     }
@@ -832,11 +825,20 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     for (SemanticsNode child : semanticsNode.childrenInTraversalOrder) {
-      if (!child.hasFlag(Flag.IS_HIDDEN)) {
-        result.addChild(rootAccessibilityView, child.id);
+      if (child.hasFlag(Flag.IS_HIDDEN)) {
+        continue;
       }
+      if (child.platformViewId != -1) {
+        View embeddedView =
+            platformViewsAccessibilityDelegate.getPlatformViewById(child.platformViewId);
+        boolean childUsesHybridComposition = embeddedView.getContext() instanceof FlutterActivity;
+        if (childUsesHybridComposition) {
+          result.addChild(embeddedView);
+          continue;
+        }
+      }
+      result.addChild(rootAccessibilityView, child.id);
     }
-
     return result;
   }
 
