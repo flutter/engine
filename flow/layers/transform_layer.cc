@@ -32,7 +32,7 @@ void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const TransformLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
-    assert(prev);
+    FML_DCHECK(prev);
     if (transform_ != prev->transform_) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }

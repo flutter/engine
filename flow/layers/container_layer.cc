@@ -34,7 +34,7 @@ void ContainerLayer::DiffChildren(DiffContext* context,
     }
     return;
   }
-  assert(old_layer);
+  FML_DCHECK(old_layer);
 
   const auto& prev_layers = old_layer->layers_;
 

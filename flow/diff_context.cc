@@ -27,7 +27,7 @@ void DiffContext::BeginSubtree() {
 }
 
 void DiffContext::EndSubtree() {
-  assert(!state_stack_.empty());
+  FML_DCHECK(!state_stack_.empty());
   state_ = std::move(state_stack_.back());
   state_stack_.pop_back();
 }

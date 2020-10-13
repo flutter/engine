@@ -18,7 +18,7 @@ void ClipRectLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const ClipRectLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
-    assert(prev);
+    FML_DCHECK(prev);
     if (clip_behavior_ != prev->clip_behavior_ ||
         clip_rect_ != prev->clip_rect_) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));

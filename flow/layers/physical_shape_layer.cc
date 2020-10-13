@@ -29,7 +29,7 @@ void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const PhysicalShapeLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
-    assert(prev);
+    FML_DCHECK(prev);
     if (color_ != prev->color_ || shadow_color_ != prev->shadow_color_ ||
         elevation_ != prev->elevation() || path_ != prev->path_ ||
         clip_behavior_ != prev->clip_behavior_) {

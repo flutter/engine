@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkRect.h"
@@ -51,12 +52,12 @@ class PaintRegion {
       : rects_(rects), from_(from), to_(to), has_readback_(has_readback) {}
 
   std::vector<SkRect>::const_iterator begin() const {
-    assert(is_valid());
+    FML_DCHECK(is_valid());
     return rects_->begin() + from_;
   }
 
   std::vector<SkRect>::const_iterator end() const {
-    assert(is_valid());
+    FML_DCHECK(is_valid());
     return rects_->begin() + to_;
   }
 

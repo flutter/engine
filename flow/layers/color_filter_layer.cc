@@ -15,7 +15,7 @@ void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const ColorFilterLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
-    assert(prev);
+    FML_DCHECK(prev);
     if (filter_ != prev->filter_) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }

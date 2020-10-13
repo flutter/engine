@@ -24,7 +24,7 @@ TextureLayer::TextureLayer(const SkPoint& offset,
 void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   if (!context->IsSubtreeDirty()) {
-    assert(old_layer);
+    FML_DCHECK(old_layer);
     auto prev = old_layer->as_texture_layer();
     // TODO(knopp) It would be nice to be able to determine that a texture is
     // dirty

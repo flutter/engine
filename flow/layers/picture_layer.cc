@@ -23,7 +23,7 @@ PictureLayer::PictureLayer(const SkPoint& offset,
 void PictureLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   if (!context->IsSubtreeDirty()) {
-    assert(old_layer);
+    FML_DCHECK(old_layer);
     auto prev = old_layer->as_picture_layer();
     if (prev->offset_ != offset_ || !Compare(context, this, prev)) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(prev));

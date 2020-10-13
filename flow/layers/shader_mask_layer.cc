@@ -17,7 +17,7 @@ void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const ShaderMaskLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
-    assert(prev);
+    FML_DCHECK(prev);
     if (shader_ != prev->shader_ || mask_rect_ != prev->mask_rect_ ||
         blend_mode_ != prev->blend_mode_) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
