@@ -50,11 +50,7 @@ static gboolean fl_renderer_x11_setup_window_attr(
 
 // Implements FlRenderer::create_display.
 static EGLDisplay fl_renderer_x11_create_display(FlRenderer* renderer) {
-  // Note the use of EGL_DEFAULT_DISPLAY rather than sharing the existing
-  // display connection from GTK. This is because this EGL display is going to
-  // be accessed by a thread from Flutter. The GTK/X11 display connection is not
-  // thread safe and would cause a crash.
-  return eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  return eglGetDisplay(gdk_x11_get_default_xdisplay());
 }
 
 // Implements FlRenderer::create_surfaces.
