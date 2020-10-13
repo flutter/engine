@@ -243,8 +243,7 @@ public class FlutterViewTest {
     // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
-    // Padding bottom is always 0.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(100, viewportMetricsCaptor.getValue().paddingBottom);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
   }
@@ -281,8 +280,7 @@ public class FlutterViewTest {
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is reported as-is.
     assertEquals(100, viewportMetricsCaptor.getValue().paddingTop);
-    // Padding bottom is always 0.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(100, viewportMetricsCaptor.getValue().paddingBottom);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
   }
@@ -327,7 +325,7 @@ public class FlutterViewTest {
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is removed due to full screen.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
-    // Padding bottom is always 0.
+    // Bottom padding is removed due to hide navigation.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
     // Right padding is zero because the rotation is 90deg
@@ -374,7 +372,7 @@ public class FlutterViewTest {
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is removed due to full screen.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
-    // Padding bottom is always 0.
+    // Bottom padding is removed due to hide navigation.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
     // Left padding is zero because the rotation is 270deg
     assertEquals(0, viewportMetricsCaptor.getValue().paddingLeft);
@@ -477,7 +475,7 @@ public class FlutterViewTest {
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is removed due to full screen.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
-    // Padding bottom is always 0.
+    // Bottom padding is removed due to hide navigation.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
     // Left padding is zero because the rotation is 270deg
     assertEquals(0, viewportMetricsCaptor.getValue().paddingLeft);
