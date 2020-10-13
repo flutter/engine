@@ -1,4 +1,4 @@
-Signature: 0e37b78cb41eb39347005863f24626d0
+Signature: 9df0575298a5e271282886b62c0d7b8c
 
 UNUSED LICENSES:
 
@@ -926,6 +926,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/exception.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/clock.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/internal/cdecls.inc
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/scheduler.h
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/utc.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/Scrt1.o
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libc.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libdl.so
@@ -1133,6 +1134,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/exception.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/clock.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/internal/cdecls.inc
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/scheduler.h
+FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/utc.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/Scrt1.o
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libc.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libdl.so
