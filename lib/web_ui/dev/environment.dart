@@ -168,6 +168,20 @@ class Environment {
         'goldens',
       ));
 
+  /// Directory to add test results which would later be uploaded to a gcs
+  /// bucket by LUCI.
+  io.Directory get webUiTestResultsDirectory => io.Directory(pathlib.join(
+        webUiDartToolDir.path,
+        'test_results',
+      ));
+
+  /// Path to the screenshots taken by iOS simulator.
+  io.Directory get webUiSimulatorScreenshotsDirectory =>
+      io.Directory(pathlib.join(
+        webUiDartToolDir.path,
+        'ios_screenshots',
+      ));
+
   /// Path to the script that clones the Flutter repo.
   io.File get cloneFlutterScript => io.File(pathlib.join(
         engineToolsDir.path,

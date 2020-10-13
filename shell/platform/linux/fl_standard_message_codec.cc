@@ -7,6 +7,8 @@
 
 #include <gmodule.h>
 
+#include <cstring>
+
 // See lib/src/services/message_codecs.dart in Flutter source for description of
 // encoding.
 

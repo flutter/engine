@@ -16,13 +16,13 @@ then
 fi
 GCLIENT_PATH=`which gclient`
 
-if [ -z "`which ninja`" ]
+if [ -z "`which autoninja`" ]
 then
-  echo "ERROR: ninja is not in your PATH"
+  echo "ERROR: autoninja is not in your PATH"
   echo "Fix: add the path to your installation of depot_tools to your PATH"
   exit 1
 fi
-NINJA_PATH=`which ninja`
+NINJA_PATH=`which autoninja`
 
 ENGINE_SRC_DIR="$(dirname $(dirname $(dirname $(dirname ${FELT_DIR}))))"
 FLUTTER_DIR="${ENGINE_SRC_DIR}/flutter"
@@ -34,17 +34,18 @@ DART_SDK_DIR="${ENGINE_SRC_DIR}/out/host_debug_unopt/dart-sdk"
 GN="${FLUTTER_DIR}/tools/gn"
 DART_TOOL_DIR="${WEB_UI_DIR}/.dart_tool"
 PUB_PATH="$DART_SDK_DIR/bin/pub"
+DART2JS_PATH="$DART_SDK_DIR/bin/dart2js"
 SNAPSHOT_PATH="${DART_TOOL_DIR}/felt.snapshot"
 STAMP_PATH="${DART_TOOL_DIR}/felt.snapshot.stamp"
 SCRIPT_PATH="${DEV_DIR}/felt.dart"
 REVISION="$(cd "$FLUTTER_DIR"; git rev-parse HEAD)"
 
-if [ ! -f "${PUB_PATH}" ]
+if [ ! -f "${PUB_PATH}" -o ! -f "${DART2JS_PATH}" ]
 then
   echo "Compiling the Dart SDK."
   gclient sync
   $GN --unoptimized --full-dart-sdk
-  ninja -C $HOST_DEBUG_UNOPT_DIR -j 100
+  "$NINJA_PATH" -C "$HOST_DEBUG_UNOPT_DIR"
 fi
 
 install_deps() {

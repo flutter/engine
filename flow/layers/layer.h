@@ -28,11 +28,9 @@
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-
 #include "flutter/flow/scene_update_context.h"  //nogncheck
 #include "lib/ui/scenic/cpp/resources.h"        //nogncheck
 #include "lib/ui/scenic/cpp/session.h"          //nogncheck
-
 #endif
 
 namespace flutter {
@@ -61,7 +59,6 @@ struct PrerollContext {
   // These allow us to track properties like elevation, opacity, and the
   // prescence of a platform view during Preroll.
   bool has_platform_view = false;
-  bool is_opaque = true;
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   // True if, during the traversal so far, we have seen a child_scene_layer.
   // Informs whether a layer needs to be system composited.

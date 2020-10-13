@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #import "GoldenPlatformViewTests.h"
+
 #include <sys/sysctl.h>
+
 #import "PlatformViewGoldenTestManager.h"
 
 static const NSInteger kSecondsToWaitForPlatformView = 30;
@@ -30,7 +32,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
   self.continueAfterFailure = NO;
 
   self.application = [[XCUIApplication alloc] init];
-  self.application.launchArguments = @[ self.manager.launchArg ];
+  self.application.launchArguments = @[ self.manager.launchArg, @"--enable-software-rendering" ];
   [self.application launch];
 }
 

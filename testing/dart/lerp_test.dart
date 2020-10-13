@@ -9,6 +9,8 @@ import 'package:test/test.dart';
 
 import 'test_util.dart';
 
+// These tests should be kept in sync with the web tests in
+// lib/web_ui/test/lerp_test.dart.
 void main() {
   test('lerpDouble should return null if and only if both inputs are null', () {
     expect(lerpDouble(null, null, 1.0), isNull);

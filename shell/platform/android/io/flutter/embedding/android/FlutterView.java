@@ -967,7 +967,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   public void detachFromFlutterEngine() {
     Log.v(TAG, "Detaching from a FlutterEngine: " + flutterEngine);
     if (!isAttachedToFlutterEngine()) {
-      Log.v(TAG, "Not attached to an engine. Doing nothing.");
+      Log.v(TAG, "FlutterView not attached to an engine. Not detaching.");
       return;
     }
 
@@ -991,6 +991,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // TODO(mattcarroll): once this is proven to work, move this line ot TextInputPlugin
     textInputPlugin.getInputMethodManager().restartInput(this);
     textInputPlugin.destroy();
+
+    androidKeyProcessor.destroy();
 
     if (mouseCursorPlugin != null) {
       mouseCursorPlugin.destroy();

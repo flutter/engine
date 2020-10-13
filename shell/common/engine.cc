@@ -97,10 +97,6 @@ Engine::Engine(Delegate& delegate,
 
 Engine::~Engine() = default;
 
-float Engine::GetDisplayRefreshRate() const {
-  return animator_->GetDisplayRefreshRate();
-}
-
 fml::WeakPtr<Engine> Engine::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }
@@ -108,6 +104,10 @@ fml::WeakPtr<Engine> Engine::GetWeakPtr() const {
 void Engine::SetupDefaultFontManager() {
   TRACE_EVENT0("flutter", "Engine::SetupDefaultFontManager");
   font_collection_.SetupDefaultFontManager();
+}
+
+std::shared_ptr<AssetManager> Engine::GetAssetManager() {
+  return asset_manager_;
 }
 
 bool Engine::UpdateAssetManager(
@@ -499,6 +499,10 @@ void Engine::HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) {
   } else {
     delegate_.OnEngineHandlePlatformMessage(std::move(message));
   }
+}
+
+void Engine::OnRootIsolateCreated() {
+  delegate_.OnRootIsolateCreated();
 }
 
 void Engine::UpdateIsolateDescription(const std::string isolate_name,

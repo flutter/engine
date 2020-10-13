@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -728,4 +732,11 @@ void render_targets_are_recycled() {
     }
   };
   window.scheduleFrame();
+}
+
+void nativeArgumentsCallback(List<String> args) native 'NativeArgumentsCallback';
+
+@pragma('vm:entry-point')
+void dart_entrypoint_args(List<String> args) {
+  nativeArgumentsCallback(args);
 }

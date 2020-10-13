@@ -157,6 +157,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 - (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
                   initialRoute:(nullable NSString*)initialRoute {
+  // Need the project to get settings for the view. Initializing it here means
+  // the Engine class won't initialize it later.
+  if (!project) {
+    project = [[[FlutterDartProject alloc] init] autorelease];
+  }
+  FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
@@ -326,7 +332,11 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
   auto placeholder = [[[UIView alloc] init] autorelease];
 
   placeholder.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-  placeholder.backgroundColor = UIColor.whiteColor;
+  if (@available(iOS 13.0, *)) {
+    placeholder.backgroundColor = UIColor.systemBackgroundColor;
+  } else {
+    placeholder.backgroundColor = UIColor.whiteColor;
+  }
   placeholder.autoresizesSubviews = YES;
 
   // Only add the label when we know we have failed to enable tracing (and it was necessary).
@@ -339,9 +349,9 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
     messageLabel.autoresizingMask =
         UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     messageLabel.text =
-        @"In iOS 14+, Flutter application in debug mode can only be launched from Flutter tooling, "
+        @"In iOS 14+, debug mode Flutter apps can only be launched from Flutter tooling, "
         @"IDEs with Flutter plugins or from Xcode.\n\nAlternatively, build in profile or release "
-        @"modes to enable re-launching from the home screen.";
+        @"modes to enable launching from the home screen.";
     [placeholder addSubview:messageLabel];
   }
 

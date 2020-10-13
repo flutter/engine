@@ -336,9 +336,9 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario with _BaseP
   MultiPlatformViewBackgroundForegroundScenario(Window window, {this.firstId, this.secondId})
       : assert(window != null),
         super(window) {
+    _nextFrame = _firstFrame;
     createPlatformView(window, 'platform view 1', firstId);
     createPlatformView(window, 'platform view 2', secondId);
-    _nextFrame = _firstFrame;
   }
 
   /// The platform view identifier to use for the first platform view.
@@ -532,6 +532,8 @@ class PlatformViewForTouchIOSScenario extends Scenario
 
   int _viewId;
   bool _accept;
+
+  VoidCallback _nextFrame;
   /// Creates the PlatformView scenario.
   ///
   /// The [window] parameter must not be null.
@@ -545,14 +547,24 @@ class PlatformViewForTouchIOSScenario extends Scenario
     } else {
       createPlatformView(window, text, id);
     }
+    _nextFrame = _firstFrame;
   }
 
   @override
   void onBeginFrame(Duration duration) {
-    final SceneBuilder builder = SceneBuilder();
+    _nextFrame();
+  }
 
-    builder.pushOffset(0, 0);
-    finishBuilderByAddingPlatformViewAndPicture(builder, _viewId);
+  @override
+  void onDrawFrame() {
+    // Some iOS gesture recognizers bugs are introduced in the second frame (with a different platform view rect) after laying out the platform view.
+    // So in this test, we load 2 frames to ensure that we cover those cases.
+    // See https://github.com/flutter/flutter/issues/66044
+    if (_nextFrame == _firstFrame) {
+      _nextFrame = _secondFrame;
+      window.scheduleFrame();
+    }
+    super.onDrawFrame();
   }
 
   @override
@@ -584,6 +596,20 @@ class PlatformViewForTouchIOSScenario extends Scenario
     );
     }
 
+  }
+
+  void _firstFrame() {
+    final SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0, 0);
+    finishBuilderByAddingPlatformViewAndPicture(builder, _viewId);
+  }
+
+  void _secondFrame() {
+    final SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(5, 5);
+    finishBuilderByAddingPlatformViewAndPicture(builder, _viewId);
   }
 }
 
@@ -681,21 +707,15 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     SceneBuilder sceneBuilder,
     int viewId,
     double width,
-    double height, {
-    Offset overlayOffset,
-  }) {
-    overlayOffset ??= const Offset(50, 50);
+    double height,
+  ) {
     if (Platform.isIOS) {
-      sceneBuilder.addPlatformView(viewId, offset: overlayOffset, width: width, height: height);
+      sceneBuilder.addPlatformView(viewId, width: width, height: height);
     } else if (Platform.isAndroid) {
       if (usesAndroidHybridComposition) {
-        // Hybrid composition does not support `offset`.
-        // https://github.com/flutter/flutter/issues/60630
-        sceneBuilder.pushOffset(overlayOffset.dx, overlayOffset.dy);
         sceneBuilder.addPlatformView(viewId, width: width, height: height);
-        sceneBuilder.pop();
       } else if (_textureId != null) {
-        sceneBuilder.addTexture(_textureId, offset: overlayOffset, width: width, height: height);
+        sceneBuilder.addTexture(_textureId, width: width, height: height);
       }
     } else {
       throw UnsupportedError('Platform ${Platform.operatingSystem} is not supported');
@@ -714,7 +734,6 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
       viewId,
       500,
       500,
-      overlayOffset: overlayOffset,
     );
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);

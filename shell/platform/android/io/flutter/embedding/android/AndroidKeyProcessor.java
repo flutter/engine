@@ -4,12 +4,12 @@
 
 package io.flutter.embedding.android;
 
-import android.util.Log;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -68,6 +68,15 @@ public class AndroidKeyProcessor {
     this.textInputPlugin = textInputPlugin;
     this.eventResponder = new EventResponder(view);
     this.keyEventChannel.setEventResponseHandler(eventResponder);
+  }
+
+  /**
+   * Detaches the key processor from the Flutter engine.
+   *
+   * <p>The AndroidKeyProcessor instance should not be used after calling this.
+   */
+  public void destroy() {
+    keyEventChannel.setEventResponseHandler(null);
   }
 
   /**

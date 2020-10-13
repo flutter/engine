@@ -101,8 +101,7 @@ class AndroidContextGL : public AndroidContext {
 
   //----------------------------------------------------------------------------
   /// @return     Whether the current context is valid. That is, if the EGL
-  /// contexts
-  ///             were successfully created.
+  ///             contexts were successfully created.
   ///
   bool IsValid() const;
 
@@ -110,6 +109,13 @@ class AndroidContextGL : public AndroidContext {
   /// @return     Whether the current context was successfully clear.
   ///
   bool ClearCurrent();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Create a new EGLContext using the same EGLConfig.
+  ///
+  /// @return     The EGLContext.
+  ///
+  EGLContext CreateNewContext() const;
 
  private:
   fml::RefPtr<AndroidEnvironmentGL> environment_;

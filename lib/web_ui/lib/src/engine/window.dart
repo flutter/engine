@@ -13,20 +13,33 @@ const bool _debugPrintPlatformMessages = false;
 /// This may be overridden in tests, for example, to pump fake frames.
 ui.VoidCallback? scheduleFrameCallback;
 
+typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
+
+/// A JavaScript hook to customize the URL strategy of a Flutter app.
+//
+// Keep this js name in sync with flutter_web_plugins. Find it at:
+// https://github.com/flutter/flutter/blob/custom_location_strategy/packages/flutter_web_plugins/lib/src/navigation/js_url_strategy.dart
+//
+// TODO: Add integration test https://github.com/flutter/flutter/issues/66852
+@JS('_flutter_web_set_location_strategy')
+external set _jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
+
+UrlStrategy? _createDefaultUrlStrategy() {
+  return ui.debugEmulateFlutterTesterEnvironment
+      ? null
+      : const HashUrlStrategy();
+}
+
 /// The Web implementation of [ui.Window].
 class EngineWindow extends ui.Window {
   EngineWindow() {
     _addBrightnessMediaQueryListener();
-    js.context['_flutter_web_set_location_strategy'] = (LocationStrategy strategy) {
-      locationStrategy = strategy;
-    };
-    registerHotRestartListener(() {
-      js.context['_flutter_web_set_location_strategy'] = null;
-    });
+    _addUrlStrategyListener();
   }
 
   @override
-  double get devicePixelRatio => _debugDevicePixelRatio ?? browserDevicePixelRatio;
+  double get devicePixelRatio =>
+      _debugDevicePixelRatio ?? browserDevicePixelRatio;
 
   /// Returns device pixel ratio returned by browser.
   static double get browserDevicePixelRatio {
@@ -117,7 +130,8 @@ class EngineWindow extends ui.Window {
     double height = 0;
     double width = 0;
     if (html.window.visualViewport != null) {
-      height = html.window.visualViewport!.height!.toDouble() * devicePixelRatio;
+      height =
+          html.window.visualViewport!.height!.toDouble() * devicePixelRatio;
       width = html.window.visualViewport!.width!.toDouble() * devicePixelRatio;
     } else {
       height = html.window.innerHeight! * devicePixelRatio;
@@ -126,7 +140,7 @@ class EngineWindow extends ui.Window {
 
     // This method compares the new dimensions with the previous ones.
     // Return false if the previous dimensions are not set.
-    if(_physicalSize != null) {
+    if (_physicalSize != null) {
       // First confirm both height and width are effected.
       if (_physicalSize!.height != height && _physicalSize!.width != width) {
         // If prior to rotation height is bigger than width it should be the
@@ -153,40 +167,41 @@ class EngineWindow extends ui.Window {
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
-  final BrowserHistory _browserHistory = BrowserHistory();
+  @visibleForTesting
+  BrowserHistory get browserHistory {
+    return _browserHistory ??=
+        MultiEntriesBrowserHistory(urlStrategy: _createDefaultUrlStrategy());
+  }
 
-  /// Simulates clicking the browser's back button.
-  Future<void> webOnlyBack() => _browserHistory.back();
+  BrowserHistory? _browserHistory;
+
+  Future<void> _useSingleEntryBrowserHistory() async {
+    if (_browserHistory is SingleEntryBrowserHistory) {
+      return;
+    }
+    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    await _browserHistory?.tearDown();
+    _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
+  }
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.
   ///
-  /// The reason for the lazy initialization is to give enough time for the app to set [locationStrategy]
+  /// The reason for the lazy initialization is to give enough time for the app to set [urlStrategy]
   /// in `lib/src/ui/initialization.dart`.
   String? _defaultRouteName;
 
   @override
-  String get defaultRouteName => _defaultRouteName ??= _browserHistory.currentPath;
+  String get defaultRouteName {
+    return _defaultRouteName ??= browserHistory.currentPath;
+  }
 
   @override
   void scheduleFrame() {
     if (scheduleFrameCallback == null) {
-      throw new Exception(
-          'scheduleFrameCallback must be initialized first.');
+      throw new Exception('scheduleFrameCallback must be initialized first.');
     }
     scheduleFrameCallback!();
   }
-
-  /// Change the strategy to use for handling browser history location.
-  /// Setting this member will automatically update [_browserHistory].
-  ///
-  /// By setting this to null, the browser history will be disabled.
-  set locationStrategy(LocationStrategy? strategy) {
-    _browserHistory.locationStrategy = strategy;
-  }
-
-  /// Returns the currently active location strategy.
-  @visibleForTesting
-  LocationStrategy? get locationStrategy => _browserHistory.locationStrategy;
 
   @override
   ui.VoidCallback? get onTextScaleFactorChanged => _onTextScaleFactorChanged;
@@ -439,8 +454,8 @@ class EngineWindow extends ui.Window {
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnPlatformMessage(
-      String name, ByteData? data, ui.PlatformMessageResponseCallback callback) {
+  void invokeOnPlatformMessage(String name, ByteData? data,
+      ui.PlatformMessageResponseCallback callback) {
     _invoke3<String, ByteData?, ui.PlatformMessageResponseCallback>(
       _onPlatformMessage,
       _onPlatformMessageZone,
@@ -462,7 +477,9 @@ class EngineWindow extends ui.Window {
 
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
-  static ui.PlatformMessageResponseCallback? _zonedPlatformMessageResponseCallback(ui.PlatformMessageResponseCallback? callback) {
+  static ui.PlatformMessageResponseCallback?
+      _zonedPlatformMessageResponseCallback(
+          ui.PlatformMessageResponseCallback? callback) {
     if (callback == null) {
       return null;
     }
@@ -526,7 +543,7 @@ class EngineWindow extends ui.Window {
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
           case 'SystemNavigator.pop':
-            _browserHistory.exit().then((_) {
+            browserHistory.exit().then((_) {
               _replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(true));
             });
@@ -547,8 +564,8 @@ class EngineWindow extends ui.Window {
           case 'SystemChrome.setPreferredOrientations':
             final List<dynamic>? arguments = decoded.arguments;
             domRenderer.setPreferredOrientation(arguments).then((bool success) {
-              _replyToPlatformMessage(callback,
-                codec.encodeSuccessEnvelope(success));
+              _replyToPlatformMessage(
+                  callback, codec.encodeSuccessEnvelope(success));
             });
             return;
           case 'SystemSound.play':
@@ -564,6 +581,11 @@ class EngineWindow extends ui.Window {
             return;
         }
         break;
+
+      // Dispatched by the bindings to delay service worker initialization.
+      case 'flutter/service_worker':
+        html.window.dispatchEvent(html.Event('flutter-first-frame'));
+        return;
 
       case 'flutter/textinput':
         textEditing.channel.handleTextInput(data, callback);
@@ -589,7 +611,8 @@ class EngineWindow extends ui.Window {
 
       case 'flutter/platform_views':
         if (experimentalUseSkia) {
-          rasterizer!.surface.viewEmbedder.handlePlatformViewCall(data, callback);
+          rasterizer!.surface.viewEmbedder
+              .handlePlatformViewCall(data, callback);
         } else {
           ui.handlePlatformViewCall(data!, callback!);
         }
@@ -603,23 +626,11 @@ class EngineWindow extends ui.Window {
         return;
 
       case 'flutter/navigation':
-        const MethodCodec codec = JSONMethodCodec();
-        final MethodCall decoded = codec.decodeMethodCall(data);
-        final Map<String, dynamic>? message = decoded.arguments;
-        switch (decoded.method) {
-          case 'routeUpdated':
-          case 'routePushed':
-          case 'routeReplaced':
-            _browserHistory.setRouteName(message!['routeName']);
-            _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
-            break;
-          case 'routePopped':
-            _browserHistory.setRouteName(message!['previousRouteName']);
-            _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
-            break;
-        }
+        _handleNavigationMessage(data, callback).then((handled) {
+          if (!handled && callback != null) {
+            callback(null);
+          }
+        });
         // As soon as Flutter starts taking control of the app navigation, we
         // should reset [_defaultRouteName] to "/" so it doesn't have any
         // further effect after this point.
@@ -632,14 +643,55 @@ class EngineWindow extends ui.Window {
       return;
     }
 
-    // TODO(flutter_web): Some Flutter widgets send platform messages that we
-    // don't handle on web. So for now, let's just ignore them. In the future,
-    // we should consider uncommenting the following "callback(null)" line.
-
     // Passing [null] to [callback] indicates that the platform message isn't
     // implemented. Look at [MethodChannel.invokeMethod] to see how [null] is
     // handled.
-    // callback(null);
+    _replyToPlatformMessage(callback, null);
+  }
+
+  @visibleForTesting
+  Future<void> debugInitializeHistory(
+    UrlStrategy? strategy, {
+    required bool useSingle,
+  }) async {
+    await _browserHistory?.tearDown();
+    if (useSingle) {
+      _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
+    } else {
+      _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
+    }
+  }
+
+  @visibleForTesting
+  Future<void> debugResetHistory() async {
+    await _browserHistory?.tearDown();
+    _browserHistory = null;
+  }
+
+  Future<bool> _handleNavigationMessage(
+    ByteData? data,
+    ui.PlatformMessageResponseCallback? callback,
+  ) async {
+    const MethodCodec codec = JSONMethodCodec();
+    final MethodCall decoded = codec.decodeMethodCall(data);
+    final Map<String, dynamic> arguments = decoded.arguments;
+
+    switch (decoded.method) {
+      case 'routeUpdated':
+        await _useSingleEntryBrowserHistory();
+        browserHistory.setRouteName(arguments['routeName']);
+        _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+        return true;
+      case 'routeInformationUpdated':
+        assert(browserHistory is MultiEntriesBrowserHistory);
+        browserHistory.setRouteName(
+          arguments['location'],
+          state: arguments['state'],
+        );
+        _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+        return true;
+    }
+    return false;
   }
 
   int _getHapticFeedbackDuration(String? type) {
@@ -703,13 +755,29 @@ class EngineWindow extends ui.Window {
         : ui.Brightness.light);
 
     _brightnessMediaQueryListener = (html.Event event) {
-      final html.MediaQueryListEvent mqEvent = event as html.MediaQueryListEvent;
+      final html.MediaQueryListEvent mqEvent =
+          event as html.MediaQueryListEvent;
       _updatePlatformBrightness(
           mqEvent.matches! ? ui.Brightness.dark : ui.Brightness.light);
     };
     _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
     registerHotRestartListener(() {
       _removeBrightnessMediaQueryListener();
+    });
+  }
+
+  void _addUrlStrategyListener() {
+    _jsSetUrlStrategy = allowInterop((JsUrlStrategy? jsStrategy) {
+      assert(
+        _browserHistory == null,
+        'Cannot set URL strategy more than once.',
+      );
+      final UrlStrategy? strategy =
+          jsStrategy == null ? null : CustomUrlStrategy.fromJs(jsStrategy);
+      _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
+    });
+    registerHotRestartListener(() {
+      _jsSetUrlStrategy = null;
     });
   }
 
@@ -722,16 +790,28 @@ class EngineWindow extends ui.Window {
   @override
   void render(ui.Scene scene) {
     if (experimentalUseSkia) {
+      // "Build finish" and "raster start" happen back-to-back because we
+      // render on the same thread, so there's no overhead from hopping to
+      // another thread.
+      //
+      // CanvasKit works differently from the HTML renderer in that in HTML
+      // we update the DOM in SceneBuilder.build, which is these function calls
+      // here are CanvasKit-only.
+      _frameTimingsOnBuildFinish();
+      _frameTimingsOnRasterStart();
+
       final LayerScene layerScene = scene as LayerScene;
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
       domRenderer.renderScene(surfaceScene.webOnlyRootElement);
     }
+    _frameTimingsOnRasterFinish();
   }
 
   @visibleForTesting
-  late Rasterizer? rasterizer = experimentalUseSkia ? Rasterizer(Surface(HtmlViewEmbedder())) : null;
+  late Rasterizer? rasterizer =
+      experimentalUseSkia ? Rasterizer(Surface(HtmlViewEmbedder())) : null;
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
@@ -777,8 +857,8 @@ void _invoke1<A>(void callback(A a)?, Zone? zone, A arg) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
-void _invoke3<A1, A2, A3>(
-    void callback(A1 a1, A2 a2, A3 a3)?, Zone? zone, A1 arg1, A2 arg2, A3 arg3) {
+void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3)?, Zone? zone,
+    A1 arg1, A2 arg2, A3 arg3) {
   if (callback == null) {
     return;
   }

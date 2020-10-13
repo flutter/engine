@@ -6,6 +6,8 @@
 
 #include <gmodule.h>
 
+#include <cstring>
+
 struct _FlValue {
   FlValueType type;
   int ref_count;

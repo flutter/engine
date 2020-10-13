@@ -19,7 +19,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.DisplayCutout;
 import android.view.KeyEvent;
@@ -41,6 +40,7 @@ import android.view.inputmethod.InputMethodManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
+import io.flutter.Log;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
@@ -71,9 +71,10 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Deprecated Android view containing a Flutter app.
  *
- * <p>Deprecation: {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
- * this class. See https://flutter.dev/go/android-project-migration for more migration details.
+ * @deprecated {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
+ *     this class. See https://flutter.dev/go/android-project-migration for more migration details.
  */
+@Deprecated
 public class FlutterView extends SurfaceView
     implements BinaryMessenger, TextureRegistry, MouseCursorPlugin.MouseCursorViewDelegate {
   /**

@@ -24,6 +24,7 @@
 #include "flutter/runtime/runtime_controller.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/rasterizer.h"
@@ -189,6 +190,15 @@ class Engine final : public RuntimeDelegate,
     virtual void OnPreEngineRestart() = 0;
 
     //--------------------------------------------------------------------------
+    /// @brief      Notifies the shell that the root isolate is created.
+    ///             Currently, this information is to add to the service
+    ///             protocol list of available root isolates running in the VM
+    ///             and their names so that the appropriate isolate can be
+    ///             selected in the tools for debugging and instrumentation.
+    ///
+    virtual void OnRootIsolateCreated() = 0;
+
+    //--------------------------------------------------------------------------
     /// @brief      Notifies the shell of the name of the root isolate and its
     ///             port when that isolate is launched, restarted (in the
     ///             cold-restart scenario) or the application itself updates the
@@ -327,30 +337,6 @@ class Engine final : public RuntimeDelegate,
   ///             needed.
   ///
   ~Engine() override;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Gets the refresh rate in frames per second of the vsync waiter
-  ///             used by the animator managed by this engine. This information
-  ///             is purely advisory and is not used by any component. It is
-  ///             only used by the tooling to visualize frame performance.
-  ///
-  /// @attention  The display refresh rate is useless for frame scheduling
-  ///             because it can vary and more accurate frame specific
-  ///             information is given to the engine by the vsync waiter
-  ///             already. However, this call is used by the tooling to ask very
-  ///             high level questions about display refresh rate. For example,
-  ///             "Is the display 60 or 120Hz?". This information is quite
-  ///             unreliable (not available immediately on launch on some
-  ///             platforms), variable and advisory. It must not be used by any
-  ///             component that claims to use it to perform accurate frame
-  ///             scheduling.
-  ///
-  /// @return     The display refresh rate in frames per second. This may change
-  ///             from frame to frame, throughout the lifecycle of the
-  ///             application, and, may not be available immediately upon
-  ///             application launch.
-  ///
-  float GetDisplayRefreshRate() const;
 
   //----------------------------------------------------------------------------
   /// @return     The pointer to this instance of the engine. The engine may
@@ -757,6 +743,9 @@ class Engine final : public RuntimeDelegate,
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
+  // Return the asset manager associated with the current engine, or nullptr.
+  std::shared_ptr<AssetManager> GetAssetManager();
+
   // |PointerDataDispatcher::Delegate|
   void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                         uint64_t trace_flow_id) override;
@@ -818,6 +807,9 @@ class Engine final : public RuntimeDelegate,
 
   // |RuntimeDelegate|
   void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
+
+  // |RuntimeDelegate|
+  void OnRootIsolateCreated() override;
 
   // |RuntimeDelegate|
   void UpdateIsolateDescription(const std::string isolate_name,

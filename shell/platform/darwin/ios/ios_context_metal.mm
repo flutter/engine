@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_context_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_context_metal.h"
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/common/persistent_cache.h"
-#include "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
+#import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
 namespace flutter {
@@ -65,8 +65,6 @@ IOSContextMetal::IOSContextMetal() {
     return;
   }
   texture_cache_.Reset(texture_cache_raw);
-
-  is_valid_ = false;
 }
 
 IOSContextMetal::~IOSContextMetal() = default;

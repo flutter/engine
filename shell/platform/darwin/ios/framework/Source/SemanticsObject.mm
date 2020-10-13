@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
 namespace {
 
@@ -282,21 +282,20 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return YES;
 }
 
-- (SemanticsObject*)routeFocusObject {
-  // Returns the first SemanticObject in this branch that has
-  // the NamesRoute flag with a non-nil semantic label. Otherwise
-  // returns nil.
+- (NSString*)routeName {
+  // Returns the first non-null and non-empty semantic label of a child
+  // with an NamesRoute flag. Otherwise returns nil.
   if ([self node].HasFlag(flutter::SemanticsFlags::kNamesRoute)) {
     NSString* newName = [self accessibilityLabel];
     if (newName != nil && [newName length] > 0) {
-      return self;
+      return newName;
     }
   }
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      SemanticsObject* focusObject = [child routeFocusObject];
-      if (focusObject != nil) {
-        return focusObject;
+      NSString* newName = [child routeName];
+      if (newName != nil && [newName length] > 0) {
+        return newName;
       }
     }
   }
@@ -453,7 +452,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (void)accessibilityElementDidBecomeFocused {
   if (![self isAccessibilityBridgeAlive])
     return;
-  [self bridge]->AccessibilityFocusDidChange([self uid]);
+  [self bridge]->AccessibilityObjectDidBecomeFocused([self uid]);
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsHidden) ||
       [self node].HasFlag(flutter::SemanticsFlags::kIsHeader)) {
     [self bridge]->DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
@@ -467,6 +466,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (void)accessibilityElementDidLoseFocus {
   if (![self isAccessibilityBridgeAlive])
     return;
+  [self bridge]->AccessibilityObjectDidLoseFocus([self uid]);
   if ([self node].HasAction(flutter::SemanticsAction::kDidLoseAccessibilityFocus)) {
     [self bridge]->DispatchSemanticsAction([self uid],
                                            flutter::SemanticsAction::kDidLoseAccessibilityFocus);
