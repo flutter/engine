@@ -43,9 +43,6 @@
 // The `path` is transformed with the `matrix` before adding to the queue.
 - (void)clipPath:(const SkPath&)path matrix:(const CATransform3D&)matrix;
 
-// Prevent the touch sequence from ever arriving to the embedded view.
-- (void)blockGesture;
-
 // Get embedded view
 - (UIView*)embeddedView;
 @end
