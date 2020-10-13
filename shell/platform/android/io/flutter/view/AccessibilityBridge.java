@@ -543,6 +543,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     // Generate accessibility node for platform views using a virtual display.
+    //
+    // In this case, register the accessibility node in the view embedder,
+    // so the accessibility tree can be mirrored as a subtree of the Flutter accessibility tree.
+    // This is in constrast to hybrid composition where the embeded view is in the view hiearchy,
+    // so it doesn't need to be mirrored.
+    //
+    // See the case down below for how hybrid composition is handled.
     if (semanticsNode.platformViewId != -1) {
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
@@ -833,6 +840,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       if (child.platformViewId != -1) {
         View embeddedView =
             platformViewsAccessibilityDelegate.getPlatformViewById(child.platformViewId);
+
+        // Add the embeded view as a child of the current accessibility node if it's using
+        // hybrid composition.
+        //
+        // In this case, the view is in the Activity's view hierarchy, so it doesn't need to be
+        // mirrored.
+        //
+        // See the case above for how virtual displays are handled.
         boolean childUsesHybridComposition = embeddedView.getContext() instanceof FlutterActivity;
         if (childUsesHybridComposition) {
           result.addChild(embeddedView);

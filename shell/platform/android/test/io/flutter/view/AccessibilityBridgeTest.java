@@ -208,8 +208,8 @@ public class AccessibilityBridgeTest {
     PlatformViewsAccessibilityDelegate accessibilityDelegate =
         mock(PlatformViewsAccessibilityDelegate.class);
 
-    Context content = RuntimeEnvironment.application.getApplicationContext();
-    View rootAccessibilityView = new View(content);
+    Context context = RuntimeEnvironment.application.getApplicationContext();
+    View rootAccessibilityView = new View(context);
     AccessibilityViewEmbedder accessibilityViewEmbedder = mock(AccessibilityViewEmbedder.class);
     AccessibilityBridge accessibilityBridge =
         setUpBridge(
