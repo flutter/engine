@@ -542,12 +542,15 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       return null;
     }
 
-    // Generate accessibility node for platform views using virtual display.
+    // Generate accessibility node for platform views using a virtual display.
     if (semanticsNode.platformViewId != -1) {
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
-      Rect bounds = semanticsNode.getGlobalRect();
-      return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
+      boolean childUsesVirtualDisplay = !(embeddedView.getContext() instanceof FlutterActivity);
+      if (childUsesVirtualDisplay) {
+        Rect bounds = semanticsNode.getGlobalRect();
+        return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
+      }
     }
 
     AccessibilityNodeInfo result =

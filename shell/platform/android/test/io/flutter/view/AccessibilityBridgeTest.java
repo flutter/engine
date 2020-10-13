@@ -5,6 +5,7 @@
 package io.flutter.view;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
@@ -219,11 +220,21 @@ public class AccessibilityBridgeTest {
             accessibilityViewEmbedder,
             accessibilityDelegate);
 
-    TestSemanticsNode platformView = new TestSemanticsNode();
-    platformView.platformViewId = 1;
+    TestSemanticsNode root = new TestSemanticsNode();
+    root.id = 0;
 
-    TestSemanticsUpdate testSemanticsUpdate = platformView.toUpdate();
-    accessibilityBridge.updateSemantics(testSemanticsUpdate.buffer, testSemanticsUpdate.strings);
+    TestSemanticsNode platformView = new TestSemanticsNode();
+    platformView.id = 1;
+    platformView.platformViewId = 1;
+    root.addChild(platformView);
+
+    TestSemanticsUpdate testSemanticsRootUpdate = root.toUpdate();
+    accessibilityBridge.updateSemantics(
+        testSemanticsRootUpdate.buffer, testSemanticsRootUpdate.strings);
+
+    TestSemanticsUpdate testSemanticsPlatformViewUpdate = platformView.toUpdate();
+    accessibilityBridge.updateSemantics(
+        testSemanticsPlatformViewUpdate.buffer, testSemanticsPlatformViewUpdate.strings);
 
     View embeddedView = mock(View.class);
     when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
@@ -234,8 +245,9 @@ public class AccessibilityBridgeTest {
     when(embeddedView.createAccessibilityNodeInfo()).thenReturn(nodeInfo);
 
     AccessibilityNodeInfo result = accessibilityBridge.createAccessibilityNodeInfo(0);
-    verify(nodeInfo).setParent(rootAccessibilityView);
-    assertEquals(result, nodeInfo);
+    assertNotNull(result);
+    assertEquals(result.getChildCount(), 1);
+    assertEquals(result.getClassName(), "android.view.View");
   }
 
   @Test
@@ -385,6 +397,10 @@ public class AccessibilityBridgeTest {
     float right = 0.0f;
     float bottom = 0.0f;
     final List<TestSemanticsNode> children = new ArrayList<TestSemanticsNode>();
+
+    public void addChild(TestSemanticsNode child) {
+      children.add(child);
+    }
     // custom actions not supported.
 
     TestSemanticsUpdate toUpdate() {
