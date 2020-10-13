@@ -218,19 +218,16 @@ if (enable_unittests) {
       "//flutter:export_dynamic_symbols",
     ]
 
-    sources = [
-      "tests/embedder_unittests_proctable.cc",
-    ]
+    sources = [ "tests/embedder_unittests_proctable.cc" ]
 
-    defines = [
-      "FLUTTER_ENGINE_NO_PROTOTYPES",
-    ]
+    defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
     deps = [
       ":embedder",
       ":embedder_gpu_configuration",
       ":fixtures",
       "//flutter/testing",
+
       #"//flutter/testing:dart",
       #"//flutter/testing:skia",
       #"//flutter/third_party/tonic",
