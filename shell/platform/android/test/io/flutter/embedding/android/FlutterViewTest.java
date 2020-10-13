@@ -330,7 +330,7 @@ public class FlutterViewTest {
     // Padding bottom is always 0.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
-    // Right padding is zero because the rotation is 270deg
+    // Right padding is zero because the rotation is 90deg
     assertEquals(0, viewportMetricsCaptor.getValue().paddingRight);
   }
 
