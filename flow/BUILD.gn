@@ -105,6 +105,8 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
+      "testing/diff_context_test.cc",
+      "testing/diff_context_test.h",
       "testing/gl_context_switch_test.cc",
       "testing/gl_context_switch_test.h",
       "testing/layer_test.h",
@@ -133,6 +135,7 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
+      "diff_context_unittests.cc",
       "embedded_view_params_unittests.cc",
       "flow_run_all_unittests.cc",
       "flow_test_utils.cc",
