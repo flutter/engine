@@ -4,10 +4,12 @@
 
 // @dart = 2.10
 
+import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:meta/meta.dart' show isTest;
 
 const int kPhysicalKeyA = 0x00070004;
 const int kPhysicalKeyE = 0x00070008;
@@ -319,7 +321,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift'));
   });
 
-  test('Duplicate down/ups are skipped', () {
+  test('Duplicate down cancels the previous one physically', () {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
@@ -331,9 +333,25 @@ void testMain() {
 
     keyDataList.clear();
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
-    expect(keyDataList, isEmpty);
+    expect(keyDataList, hasLength(2));
+    expectKeyData(keyDataList.first,
+      change: ui.KeyChange.cancel,
+      key: kPhysicalShiftLeft,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalShift),
+      ],
+    );
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalShiftLeft,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalShift),
+      ],
+    );
+    keyDataList.clear();
 
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift'));
+    expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
       key: kPhysicalShiftLeft,
@@ -341,8 +359,15 @@ void testMain() {
         ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalShift),
       ],
     );
+  });
 
-    keyDataList.clear();
+  test('Duplicate ups are skipped', () {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    });
+
     // A KeyDown of ShiftRight is missed due to loss of focus.
     converter.handleEvent(keyUpEvent('ShiftRight', 'Shift'));
     expect(keyDataList, isEmpty);
@@ -484,4 +509,13 @@ void expectKeyData(
     expect(target.logicalEvents[i].key, logical[i].key);
     expect(target.logicalEvents[i].character, logical[i].character);
   }
+}
+
+typedef FakeAsyncTest = void Function(FakeAsync);
+
+@isTest
+void testFakeAsync(String description, FakeAsyncTest fn) {
+  test(description, () {
+    FakeAsync().run(fn);
+  });
 }

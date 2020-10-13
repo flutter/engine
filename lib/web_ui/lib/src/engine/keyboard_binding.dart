@@ -158,10 +158,7 @@ class KeyboardConverter {
     final bool altDown = event.altKey;
     final bool ctrlDown = event.ctrlKey;
     final bool shiftDown = event.shiftKey;
-    // "Win" key might not be considered meta in some cases; "OS" covers the
-    // other cases. See
-    // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/getModifierState
-    final bool metaDown = event.metaKey || event.getModifierState("OS");
+    final bool metaDown = event.metaKey;
     return (altDown ? kDeadKeyAlt : 0) +
            (ctrlDown ? kDeadKeyCtrl : 0) +
            (shiftDown ? kDeadKeyShift : 0) +
@@ -247,10 +244,15 @@ class KeyboardConverter {
 
     final int? nextLogicalKey = isPhysicalDown ? logicalKey : null;
     final int? lastLogicalKeyForThisPhysical = _pressedKeys[physicalKey];
-    // final bool? trueLogicalPressingState = _logicalModifierStateByFlag(eventKey, event);
+
+    // Possible synthesized key event to synchronize some events.
+    ui.KeyData? synthesizedKeyData;
 
     if (lastLogicalKeyForThisPhysical != nextLogicalKey) {
-      // Remove the physical key to see if the logical key is still pressed after that.
+      // Case 1: The physical key becomes a different case from before. Could be
+      // null to non-null, non-null to null, or non-null to a different non-null.
+
+      // First remove the physical key to see if the logical key is still pressed after that.
       _pressedKeys.remove(physicalKey);
       if (lastLogicalKeyForThisPhysical != null && !_pressedKeys.containsValue(lastLogicalKeyForThisPhysical)) {
         logicalKeyDataList.add(ui.LogicalKeyData(
@@ -265,18 +267,45 @@ class KeyboardConverter {
           character: character,
         ));
       }
-    } else {
+    } else if (nextLogicalKey != null) {
+      // Case 2: The physical key is in a same non-null state as before, but
+      // received an event anyway. Could be repeated or non-repeated.
+      assert(isPhysicalDown);
+
       if (event.repeat ?? false) {
-        assert(nextLogicalKey != null);
         logicalKeyDataList.add(ui.LogicalKeyData(
           change: ui.KeyChange.repeatedDown,
-          key: nextLogicalKey!,
+          key: nextLogicalKey,
           character: character,
         ));
       } else {
-        // The same key from being pressed to being pressed. Skip.
-        return false;
+        // This happens when the up event was omitted, usually due to loss of
+        // focus or shortcuts. A physical cancel must be synthesized, otherwise
+        // the physical press can not be represented.
+        final List<ui.LogicalKeyData> cancelLogicalData = <ui.LogicalKeyData>[
+          ui.LogicalKeyData(
+            change: ui.KeyChange.cancel,
+            key: nextLogicalKey,
+          ),
+        ];
+        synthesizedKeyData = ui.KeyData(
+          timeStamp: timeStamp,
+          change: ui.KeyChange.cancel,
+          key: physicalKey,
+          lockFlags: 0,
+          logicalEvents: cancelLogicalData,
+        );
+
+        logicalKeyDataList.add(ui.LogicalKeyData(
+          change: ui.KeyChange.down,
+          key: nextLogicalKey,
+          character: character,
+        ));
       }
+    } else {
+      // Case 3: The physical key is in a same null state as before, indicating
+      // an omitted down event, usually due to loss of focus. Skip.
+      return false;
     }
     // Update _pressedKeys. It might have been updated before if necessary, but
     // the update is done here anywaay.
@@ -296,6 +325,9 @@ class KeyboardConverter {
       logicalEvents: logicalKeyDataList,
     );
 
+    if (synthesizedKeyData != null) {
+      dispatchKeyData(synthesizedKeyData);
+    }
     return dispatchKeyData(keyData);
   }
 }
