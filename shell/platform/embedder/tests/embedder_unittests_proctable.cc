@@ -16,9 +16,9 @@ TEST(EmbedderProcTable, AllPointersProvided) {
   FlutterEngineGetProcAddresses(&procs);
 
   void (**proc)() = reinterpret_cast<void (**)()>(&procs.create_aot_data);
-  const unsigned long long end_address =
-      reinterpret_cast<unsigned long long>(&procs) + procs.struct_size;
-  while (reinterpret_cast<unsigned long long>(proc) < end_address) {
+  const uint64_t end_address =
+      reinterpret_cast<uint64_t>(&procs) + procs.struct_size;
+  while (reinterpret_cast<uint64_t>(proc) < end_address) {
     EXPECT_NE(*proc, nullptr);
     ++proc;
   }
@@ -32,12 +32,12 @@ TEST(EmbedderProcTable, NoDuplicatePointers) {
   FlutterEngineGetProcAddresses(&procs);
 
   void (**proc)() = reinterpret_cast<void (**)()>(&procs.create_aot_data);
-  const unsigned long long end_address =
-      reinterpret_cast<unsigned long long>(&procs) + procs.struct_size;
-  while (reinterpret_cast<unsigned long long>(proc) < end_address) {
+  const uint64_t end_address =
+      reinterpret_cast<uint64_t>(&procs) + procs.struct_size;
+  while (reinterpret_cast<uint64_t>(proc) < end_address) {
     void (**other_proc)() =
         reinterpret_cast<void (**)()>(&procs.create_aot_data);
-    while (reinterpret_cast<unsigned long long>(other_proc) < end_address) {
+    while (reinterpret_cast<uint64_t>(other_proc) < end_address) {
       if (other_proc != proc) {
         EXPECT_NE(*proc, *other_proc);
       }
