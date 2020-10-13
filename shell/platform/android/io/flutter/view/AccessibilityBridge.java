@@ -552,7 +552,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     AccessibilityNodeInfo result =
         AccessibilityNodeInfo.obtain(rootAccessibilityView, virtualViewId);
-
     // Work around for https://github.com/flutter/flutter/issues/2101
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       result.setViewIdResourceName("");
