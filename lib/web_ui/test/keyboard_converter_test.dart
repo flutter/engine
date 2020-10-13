@@ -18,6 +18,7 @@ const int kPhysicalTab = 0x0007002b;
 
 const int kLogicalLowerA = 0x00000000061;
 const int kLogicalUpperA = 0x00000000041;
+const int kLogicalLowerU = 0x00000000075;
 const int kLogicalShift = 0x000000010d;
 const int kLogicalTab = 0x0000000009;
 
@@ -101,7 +102,7 @@ void testMain() {
       return true;
     });
 
-    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift'));
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
       key: kPhysicalShiftLeft,
@@ -173,7 +174,7 @@ void testMain() {
       return true;
     });
 
-    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift'));
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
       key: kPhysicalShiftLeft,
@@ -245,14 +246,15 @@ void testMain() {
       return true;
     });
 
+    // The absolute values of the following logical keys are not guaranteed.
     const int kLogicalAltE = 0x410800070008;
     const int kLogicalAltU = 0x410800070018;
     const int kLogicalAltShiftE = 0x610800070008;
-    // The absolute values are not guaranteed, but they are guaranteed distinguishable.
+    // The values must be distinguishable.
     expect(kLogicalAltE, isNot(equals(kLogicalAltU)));
     expect(kLogicalAltE, isNot(equals(kLogicalAltShiftE)));
 
-    converter.handleEvent(keyDownEvent('AltLeft', 'Alt'));
+    converter.handleEvent(keyDownEvent('AltLeft', 'Alt', kAlt));
 
     converter.handleEvent(keyDownEvent('KeyE', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
@@ -290,7 +292,7 @@ void testMain() {
       ],
     );
 
-    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift'));
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kAlt | kShift));
 
     // This does not actually produce a Dead key on macOS (US layout); just for
     // testing.
@@ -315,6 +317,75 @@ void testMain() {
     );
 
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift'));
+  });
+
+  test('Duplicate down/ups are skipped', () {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    });
+
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
+    // A KeyUp of ShiftLeft is missed due to loss of focus.
+
+    keyDataList.clear();
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
+    expect(keyDataList, isEmpty);
+
+    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift'));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.up,
+      key: kPhysicalShiftLeft,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalShift),
+      ],
+    );
+
+    keyDataList.clear();
+    // A KeyDown of ShiftRight is missed due to loss of focus.
+    converter.handleEvent(keyUpEvent('ShiftRight', 'Shift'));
+    expect(keyDataList, isEmpty);
+  });
+
+  test('Conflict from multiple keyboards do not crash', () {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    });
+
+    // Same layout
+    converter.handleEvent(keyDownEvent('KeyA', 'a'));
+    converter.handleEvent(keyDownEvent('KeyA', 'a'));
+    converter.handleEvent(keyUpEvent('KeyA', 'a'));
+    converter.handleEvent(keyUpEvent('KeyA', 'a'));
+
+    // Different layout
+    converter.handleEvent(keyDownEvent('KeyA', 'a'));
+    converter.handleEvent(keyDownEvent('KeyA', 'u'));
+    converter.handleEvent(keyUpEvent('KeyA', 'u'));
+    converter.handleEvent(keyUpEvent('KeyA', 'a'));
+
+    // Passes if there's no crash, and states are reset after everything is released.
+    keyDataList.clear();
+    converter.handleEvent(keyDownEvent('KeyA', 'a'));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
+      ],
+    );
+
+    converter.handleEvent(keyDownEvent('KeyU', 'u'));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalKeyU,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerU, character: 'u'),
+      ],
+    );
   });
 }
 
@@ -350,14 +421,15 @@ class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
   VoidCallback? onPreventDefault;
 }
 
-// Utility functions to make code more concise.
-//
-// To add timeStamp or onPreventDefault, use syntax like `..timeStamp = `.
-
+// Flags used for the `modifiers` argument of `key___Event` functions.
 const kAlt = 0x1;
 const kCtrl = 0x2;
 const kShift = 0x4;
 const kMeta = 0x8;
+
+// Utility functions to make code more concise.
+//
+// To add timeStamp or onPreventDefault, use syntax like `..timeStamp = `.
 MockKeyboardEvent keyDownEvent(String code, String key, [int modifiers = 0]) {
   return MockKeyboardEvent(
     type: 'keydown',
