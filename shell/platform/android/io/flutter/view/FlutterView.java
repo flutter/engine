@@ -661,7 +661,7 @@ public class FlutterView extends SurfaceView
         zeroSides = calculateShouldZeroSides();
       }
 
-      // Status bar (top) and left/right system insets should partially obscure the content
+      // Status bar (top), navigation bar (bottom) and left/right system insets should partially obscure the content
       // (padding).
       mMetrics.physicalPaddingTop = statusBarVisible ? insets.getSystemWindowInsetTop() : 0;
       mMetrics.physicalPaddingRight =
