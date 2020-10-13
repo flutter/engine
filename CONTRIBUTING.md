@@ -26,6 +26,7 @@ The Flutter engine follows Google style for the languages it uses:
     E.g., do not use STL collections or std::string. Exceptions:
       - C-style casts are forbidden; use C++ casts.
       - Use `nullptr` rather than `NULL`.
+      - Avoid `#define`; for internal constants use `static constexpr` instead.
 - [Objective-C](https://google.github.io/styleguide/objcguide.html) (including
   [Objective-C++](https://google.github.io/styleguide/objcguide.html#objective-c))
 - [Java](https://google.github.io/styleguide/javaguide.html)
