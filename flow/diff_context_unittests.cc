@@ -223,6 +223,31 @@ TEST_F(DiffContextTest, ReplaceLayer) {
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(100, 0, 50, 150));
 }
 
+TEST_F(DiffContextTest, DieIfOldLayerWasNeverDiffed) {
+  auto pic1 = CreatePicture(SkRect::MakeXYWH(0, 0, 50, 50), 1);
+  auto c1 = CreateContainerLayer(CreatePictureLayer(pic1));
+
+  LayerTree t1;
+  t1.root()->Add(c1);
+
+  LayerTree t2;
+  t2.root()->Add(c1);
+
+  // t1 is used as old_layer_tree, but it was never used used during diffing as
+  // current layer tree
+  // i.e.
+  // DiffLayerTree(t1, LayerTree())
+  // That means it contains layers for which the paint regions are not known
+  EXPECT_DEATH_IF_SUPPORTED(DiffLayerTree(t2, t1), " region.is_valid\\(\\)");
+
+  // Diff t1 with empty layer tree to determine paint regions
+  DiffLayerTree(t1, LayerTree());
+
+  // Now we can diff t2 and t1
+  auto damage = DiffLayerTree(t2, t1);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeEmpty());
+}
+
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 }  // namespace testing
