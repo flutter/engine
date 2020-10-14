@@ -22,9 +22,9 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   }
 
   // Backdrop filter paints everywhere in cull rect
-  auto paint_bounds = filter_->computeFastBounds(context->GetCullRect());
+  auto paint_bounds = context->GetCullRect();
   context->AddPaintRegion(paint_bounds);
-  context->AddReadbackRegion(paint_bounds);
+  context->AddReadbackRegion(filter_->computeFastBounds(paint_bounds));
 
   DiffChildren(context, prev);
 
