@@ -5,8 +5,28 @@
 // @dart = 2.10
 part of engine;
 
-/// EXPERIMENTAL: Enable the Skia-based rendering backend.
-const bool experimentalUseSkia =
+@JS('window.flutterWebRenderer')
+external String get customRenderer;
+
+bool get useCanvasKit =>
+    _autoDetect ? _detectRenderer() : _useSkia;
+
+// Returns true if canvaskit is used. Otherwise, returns false.
+bool _detectRenderer() {
+  if (customRenderer != null) {
+    return customRenderer == 'canvaskit';
+  }
+  // If customRenderer is not specified, use canvaskit for desktop and html for
+  // mobile.
+  return isDesktop;
+}
+
+/// Auto detect which rendering backend to use.
+const bool _autoDetect =
+    bool.fromEnvironment('FLUTTER_WEB_AUTO_DETECT', defaultValue: false);
+
+/// Enable the Skia-based rendering backend.
+const bool _useSkia =
     bool.fromEnvironment('FLUTTER_WEB_USE_SKIA', defaultValue: false);
 
 // If set to true, forces CPU-only rendering (i.e. no WebGL).
