@@ -17,12 +17,14 @@ const int kPhysicalKeyU = 0x00070018;
 const int kPhysicalShiftLeft = 0x000700e1;
 const int kPhysicalShiftRight = 0x000700e5;
 const int kPhysicalTab = 0x0007002b;
+const int kPhysicalCapsLock = 0x00070039;
 
 const int kLogicalLowerA = 0x00000000061;
 const int kLogicalUpperA = 0x00000000041;
 const int kLogicalLowerU = 0x00000000075;
 const int kLogicalShift = 0x000000010d;
 const int kLogicalTab = 0x0000000009;
+const int kLogicalCapsLock = 0x00000000104;
 
 typedef VoidCallback = void Function();
 
@@ -411,6 +413,75 @@ void testMain() {
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerU, character: 'u'),
       ],
     );
+  });
+
+  testFakeAsync('CapsLock down synthesizes an immediate cancel on macOS', (FakeAsync async) {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    }, onMacOs: true);
+
+    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalCapsLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
+      ],
+    );
+    keyDataList.clear();
+
+    async.elapse(Duration(microseconds: 1));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.cancel,
+      key: kPhysicalCapsLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalCapsLock),
+      ],
+    );
+    keyDataList.clear();
+
+    // Another key down works
+    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalCapsLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
+      ],
+    );
+    keyDataList.clear();
+
+    // Schedules are canceled after disposal
+    converter.dispose();
+    async.elapse(Duration(seconds: 10));
+    expect(keyDataList, isEmpty);
+  });
+
+  testFakeAsync('CapsLock behaves normally on non-macOS', (FakeAsync async) {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    }, onMacOs: false);
+
+    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalCapsLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
+      ],
+    );
+    keyDataList.clear();
+
+    async.elapse(Duration(microseconds: 1));
+    expect(keyDataList, isEmpty);
   });
 }
 
