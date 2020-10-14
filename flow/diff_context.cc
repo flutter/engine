@@ -136,6 +136,7 @@ PaintRegion DiffContext::GetOldLayerPaintRegion(const Layer* layer) const {
   if (i != last_frame_paint_region_map_.end()) {
     return i->second;
   } else {
+    FML_CHECK(false) << "Old layer doesn't have paint region";
     return PaintRegion();
   }
 }

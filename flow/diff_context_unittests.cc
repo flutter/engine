@@ -277,7 +277,7 @@ TEST_F(DiffContextTest, DieIfOldLayerWasNeverDiffed) {
   // i.e.
   // DiffLayerTree(t1, LayerTree())
   // That means it contains layers for which the paint regions are not known
-  EXPECT_DEATH_IF_SUPPORTED(DiffLayerTree(t2, t1), " region.is_valid\\(\\)");
+  EXPECT_DEATH_IF_SUPPORTED(DiffLayerTree(t2, t1), "Old layer doesn't have paint region");
 
   // Diff t1 with empty layer tree to determine paint regions
   DiffLayerTree(t1, LayerTree());
