@@ -82,6 +82,8 @@ source_set("flutter_windows_source") {
 
   public_configs = [ ":relative_angle_headers" ]
 
+  defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
+
   deps = [
     ":flutter_windows_headers",
     "//flutter/shell/platform/common/cpp:common_cpp",
