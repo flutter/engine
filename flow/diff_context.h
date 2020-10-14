@@ -134,8 +134,8 @@ class DiffContext {
   // Add paint region for layer; rect is in "local" (layer) coordinates
   void AddPaintRegion(const SkRect& rect);
 
-  // Add entire paint region for current subtree
-  void AddPaintRegion(const PaintRegion& region);
+  // Add entire paint region of retained layer for current subtree
+  void AddExistingPaintRegion(const PaintRegion& region);
 
   // The idea of readback region is that if any part of the readback region
   // needs to be repainted, then the whole readback region must be repainted;

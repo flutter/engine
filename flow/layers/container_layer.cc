@@ -86,7 +86,7 @@ void ContainerLayer::DiffChildren(DiffContext* context,
         // previous frame; We can only do this if there is no readback in the
         // subtree. Layers that do readback must be able to register readback
         // inside Diff
-        context->AddPaintRegion(paint_region);
+        context->AddExistingPaintRegion(paint_region);
 
         // While we don't need to diff retained layers, we still need to
         // associate their paint region with current layer tree so that we can
