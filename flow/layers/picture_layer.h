@@ -24,9 +24,7 @@ class PictureLayer : public Layer {
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-  bool CanDiff(const Layer* layer) const override {
-    return layer->as_picture_layer() != nullptr;
-  }
+  bool CanDiff(DiffContext* context, const Layer* layer) const override;
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
@@ -50,7 +48,7 @@ class PictureLayer : public Layer {
 
   sk_sp<SkData> SerializedPicture() const;
   mutable sk_sp<SkData> cached_serialized_picture_;
-  static bool Compare(DiffContext* context,
+  static bool Compare(DiffContext::Statistics& statistics,
                       const PictureLayer* l1,
                       const PictureLayer* l2);
 

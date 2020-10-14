@@ -61,6 +61,7 @@ TEST_F(DiffContextTest, PictureCompare) {
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(20, 20, 50, 50));
 }
 
+// Insert PictureLayer amongst container layers
 TEST_F(DiffContextTest, PictureLayerInsertion) {
   auto pic1 = CreatePicture(SkRect::MakeXYWH(0, 0, 50, 50), 1);
   auto pic2 = CreatePicture(SkRect::MakeXYWH(100, 0, 50, 50), 1);
@@ -109,6 +110,44 @@ TEST_F(DiffContextTest, PictureLayerInsertion) {
   t2.root()->Add(t2_c2);
   t2.root()->Add(CreatePictureLayer(pic3));
   damage = DiffLayerTree(t2, t1);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
+}
+
+// Insert picture layer amongst other picture layers
+TEST_F(DiffContextTest, PictureInsertion) {
+  auto pic1 = CreatePicture(SkRect::MakeXYWH(0, 0, 50, 50), 1);
+  auto pic2 = CreatePicture(SkRect::MakeXYWH(100, 0, 50, 50), 1);
+  auto pic3 = CreatePicture(SkRect::MakeXYWH(200, 0, 50, 50), 1);
+
+  LayerTree t1;
+  t1.root()->Add(CreatePictureLayer(pic1));
+  t1.root()->Add(CreatePictureLayer(pic2));
+
+  auto damage = DiffLayerTree(t1, LayerTree());
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 150, 50));
+
+  LayerTree t2;
+  t2.root()->Add(CreatePictureLayer(pic3));
+  t2.root()->Add(CreatePictureLayer(pic1));
+  t2.root()->Add(CreatePictureLayer(pic2));
+
+  damage = DiffLayerTree(t2, t1);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
+
+  LayerTree t3;
+  t3.root()->Add(CreatePictureLayer(pic1));
+  t3.root()->Add(CreatePictureLayer(pic3));
+  t3.root()->Add(CreatePictureLayer(pic2));
+
+  damage = DiffLayerTree(t3, t1);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
+
+  LayerTree t4;
+  t4.root()->Add(CreatePictureLayer(pic1));
+  t4.root()->Add(CreatePictureLayer(pic2));
+  t4.root()->Add(CreatePictureLayer(pic3));
+
+  damage = DiffLayerTree(t4, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
 }
 

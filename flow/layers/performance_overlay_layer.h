@@ -28,7 +28,7 @@ class PerformanceOverlayLayer : public Layer {
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-  bool CanDiff(const Layer* layer) const override {
+  bool CanDiff(DiffContext* context, const Layer* layer) const override {
     return layer->as_performance_overlay_layer() != nullptr;
   }
 

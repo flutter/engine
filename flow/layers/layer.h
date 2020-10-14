@@ -87,7 +87,7 @@ class Layer {
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-  virtual bool CanDiff(const Layer* layer) const {
+  virtual bool CanDiff(DiffContext* context, const Layer* layer) const {
     return original_layer_id_ == layer->original_layer_id_;
   }
 

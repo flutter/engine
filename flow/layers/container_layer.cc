@@ -49,7 +49,7 @@ void ContainerLayer::DiffChildren(DiffContext* context,
   while ((old_children_top <= old_children_bottom) &&
          (new_children_top <= new_children_bottom)) {
     if (!layers_[new_children_top]->CanDiff(
-            prev_layers[old_children_top].get())) {
+            context, prev_layers[old_children_top].get())) {
       break;
     }
     ++new_children_top;
@@ -59,7 +59,7 @@ void ContainerLayer::DiffChildren(DiffContext* context,
   while ((old_children_top <= old_children_bottom) &&
          (new_children_top <= new_children_bottom)) {
     if (!layers_[new_children_bottom]->CanDiff(
-            prev_layers[old_children_bottom].get())) {
+            context, prev_layers[old_children_bottom].get())) {
       break;
     }
     --new_children_bottom;
