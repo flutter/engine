@@ -80,6 +80,7 @@ class PlatformViewAndroid final : public PlatformView {
 
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
+  std::shared_ptr<AndroidSurfaceFactory> surface_factory_;
 
   PlatformViewAndroidDelegate platform_view_android_delegate_;
 
