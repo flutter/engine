@@ -341,7 +341,7 @@ def AssertExpectedXcodeVersion():
 
 def RunJavaTests(filter, android_variant='android_debug_unopt'):
   """Runs the Java JUnit unit tests for the Android embedding"""
-  #AssertExpectedJavaVersion()
+  AssertExpectedJavaVersion()
   android_out_dir = os.path.join(out_dir, android_variant)
   EnsureJavaTestsAreBuilt(android_out_dir)
 
