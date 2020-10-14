@@ -139,7 +139,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, err);
   }
 
-  private static class Reply implements BinaryMessenger.BinaryReply {
+  static class Reply implements BinaryMessenger.BinaryReply {
     @NonNull private final FlutterJNI flutterJNI;
     private final int replyId;
     private final AtomicBoolean done = new AtomicBoolean(false);
