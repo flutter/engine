@@ -444,6 +444,28 @@ void testMain() {
     );
     keyDataList.clear();
 
+    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalCapsLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
+      ],
+    );
+    keyDataList.clear();
+
+    async.elapse(Duration(microseconds: 1));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.cancel,
+      key: kPhysicalCapsLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalCapsLock),
+      ],
+    );
+    keyDataList.clear();
+
     // Another key down works
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
@@ -455,6 +477,7 @@ void testMain() {
       ],
     );
     keyDataList.clear();
+
 
     // Schedules are canceled after disposal
     converter.dispose();
@@ -476,6 +499,20 @@ void testMain() {
       key: kPhysicalCapsLock,
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
+      ],
+    );
+    keyDataList.clear();
+
+    async.elapse(Duration(microseconds: 1));
+    expect(keyDataList, isEmpty);
+
+    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.up,
+      key: kPhysicalCapsLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalCapsLock),
       ],
     );
     keyDataList.clear();
