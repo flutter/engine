@@ -11,7 +11,7 @@
 
 import 'dart:async' show Completer;
 import 'dart:convert' show jsonDecode, utf8, LineSplitter;
-import 'dart:io' show File, exit, Directory, FileSystemEntity, Platform, stderr;
+import 'dart:io' show File, exit, Directory, FileSystemEntity, Platform, stderr, exitCode;
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
@@ -223,7 +223,6 @@ void main(List<String> arguments) async {
         'commands associated with them and can be lint checked.');
   }
 
-  int exitCode = 0;
   final List<WorkerJob> jobs = <WorkerJob>[];
   for (Command command in changedFileBuildCommands) {
     final String relativePath = path.relative(command.file.path, from: repoPath.parent.path);
@@ -249,7 +248,9 @@ void main(List<String> arguments) async {
       continue;
     }
     if (job.result == null) {
-      print('❗ The clang-tidy job failed to run:\n${job.exception}');
+      print('\n❗ A clang-tidy job failed to run, aborting:\n${job.exception}');
+      exitCode = 1;
+      break;
     } else {
       print('❌ Failures for ${job.name}:');
       print(job.result.stdout);
@@ -260,5 +261,4 @@ void main(List<String> arguments) async {
   if (exitCode == 0) {
     print('No lint problems found.');
   }
-  exit(exitCode);
 }
