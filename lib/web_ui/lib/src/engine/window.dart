@@ -631,7 +631,7 @@ class EngineWindow extends ui.Window {
         return;
 
       case 'flutter/platform_views':
-        if (experimentalUseSkia) {
+        if (useCanvasKit) {
           rasterizer!.surface.viewEmbedder.handlePlatformViewCall(data, callback);
         } else {
           ui.handlePlatformViewCall(data!, callback!);
@@ -764,7 +764,7 @@ class EngineWindow extends ui.Window {
 
   @override
   void render(ui.Scene scene) {
-    if (experimentalUseSkia) {
+    if (useCanvasKit) {
       // "Build finish" and "raster start" happen back-to-back because we
       // render on the same thread, so there's no overhead from hopping to
       // another thread.
@@ -785,7 +785,7 @@ class EngineWindow extends ui.Window {
   }
 
   @visibleForTesting
-  late Rasterizer? rasterizer = experimentalUseSkia ? Rasterizer(Surface(HtmlViewEmbedder())) : null;
+  late Rasterizer? rasterizer = useCanvasKit ? Rasterizer(Surface(HtmlViewEmbedder())) : null;
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
