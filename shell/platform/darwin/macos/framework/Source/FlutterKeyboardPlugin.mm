@@ -222,6 +222,8 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 }
 
 - (void)updateLockFlag:(uint64_t)lockBit asOn:(BOOL)isOn {
+  // This method is only called on CapsLock, because macOS does not seem to
+  // process ScrollLock and NumLock at all.
   if (isOn) {
     _lockFlags |= lockBit;
   } else {

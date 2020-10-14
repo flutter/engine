@@ -16,7 +16,8 @@ const bool _debugLogKeyEvents = false;
 ///
 /// On Linux and Windows, the typical ranges for keyboard repeat delay go up to
 /// 1000ms. On Mac, the range goes up to 2000ms.
-// const Duration _keydownCancelDuration = Duration(milliseconds: 1000);
+const Duration _kKeydownCancelDurationNormal = Duration(milliseconds: 1000);
+const Duration _kKeydownCancelDurationMacOs = Duration(milliseconds: 2000);
 
 late final int _kCharLowerA = 'a'.codeUnitAt(0);
 late final int _kCharLowerZ = 'z'.codeUnitAt(0);
@@ -113,7 +114,7 @@ class KeyboardBinding {
     _addEventListener('keyup', (html.Event event) {
       return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as html.KeyboardEvent));
     });
-    _converter = KeyboardConverter(_dispatchKeyData);
+    _converter = KeyboardConverter(_dispatchKeyData, onMacOs: operatingSystem == OperatingSystem.macOs);
   }
 
   void _reset() {
@@ -168,10 +169,14 @@ class KeyboardConverter {
 
   // On macOS, CapsLock behaves differently in that, a keydown event occurs when
   // the key is pressed and the light turns on, while a keyup event occurs when the
-  // key is pressed and the light turns off. Flutter synthesize sync/cancel events for them.
+  // key is pressed and the light turns off. Flutter considers both events as
+  // key down, and synthesizes immediate cancel events following them. The state
+  // of "whether CapsLock is on" should be accessed by "lockFlags".
   bool _shouldSynthesizeCapsLockCancel() {
     return onMacOs;
   }
+
+  Duration get _keydownCancelDuration => onMacOs ? _kKeydownCancelDurationMacOs : _kKeydownCancelDurationNormal;
 
   bool _shouldPreventDefault(FlutterHtmlKeyboardEvent event) {
     switch (event.key) {
@@ -272,23 +277,44 @@ class KeyboardConverter {
     return () { canceled = true; };
   }
 
-  // void _addKeyReleaseGuard(Duration delayedTime, int physicalKey, int logicalKey, Duration ) {
-  //   final VoidCallback callback = _scheduleAsyncEvent(
-  //     _keydownCancelDuration,
-  //     () => ui.KeyData(
-  //         timeStamp: timeStamp,
-  //         change: ui.KeyChange.cancel,
-  //         key: physicalKey,
-  //         lockFlags: 0,
-  //         logicalEvents: <ui.LogicalKeyData>[
-  //           ui.LogicalKeyData(
-  //             change: ui.KeyChange.cancel,
-  //             key: nextLogicalKey!,
-  //           ),
-  //         ],
-  //       )
-  //   )
-  // }
+  // ## About Key guards
+  //
+  // When the user enters a browser/system shortcut (e.g. `cmd+alt+i`) the
+  // browser doesn't send a keyup for it. This puts the framework in a corrupt
+  // state because it thinks the key was never released.
+  //
+  // To avoid this, we rely on the fact that browsers send repeat events
+  // while the key is held down by the user. If we don't receive a repeat
+  // event within a specific duration ([_keydownCancelDuration]) we assume
+  // the user has released the key and we synthesize a keyup event.
+  final Map<int, VoidCallback> _keyGuards = <int, VoidCallback>{};
+  // Call this method on the down or repeated event of a non-modifier key.
+  void _startGuardingKey(int physicalKey, int logicalKey, Duration currentTimeStamp) {
+    final VoidCallback cancelingCallback = _scheduleAsyncEvent(
+      _keydownCancelDuration,
+      () => ui.KeyData(
+        timeStamp: currentTimeStamp + _keydownCancelDuration,
+        change: ui.KeyChange.cancel,
+        key: physicalKey,
+        lockFlags: 0,
+        logicalEvents: <ui.LogicalKeyData>[
+          ui.LogicalKeyData(
+            change: ui.KeyChange.cancel,
+            key: logicalKey,
+          ),
+        ],
+      ),
+      () {
+        _pressedKeys.remove(physicalKey);
+      }
+    );
+    _keyGuards.remove(physicalKey)?.call();
+    _keyGuards[physicalKey] = cancelingCallback;
+  }
+  // Call this method on an up event event of a non-modifier key.
+  void _stopGuardingKey(int physicalKey) {
+    _keyGuards.remove(physicalKey)?.call();
+  }
 
   bool handleEvent(FlutterHtmlKeyboardEvent event) {
     final List<ui.LogicalKeyData> logicalKeyDataList = <ui.LogicalKeyData>[];
@@ -312,6 +338,8 @@ class KeyboardConverter {
       // followed by an immediate cancel event.
       (_shouldSynthesizeCapsLockCancel() && event.code! == _kPhysicalCapsLock);
 
+    // The value of _pressedKeys[physicalKey] after calculating the events.
+    // See `_pressedKeys` for its meaning.
     final int? nextLogicalKey = isPhysicalDown ? logicalKey : null;
     final int? lastLogicalKeyForThisPhysical = _pressedKeys[physicalKey];
 
@@ -418,6 +446,14 @@ class KeyboardConverter {
       lockFlags: 0,
       logicalEvents: logicalKeyDataList,
     );
+
+    if (logicalKeyIsCharacter) {
+      if (keyData.change == ui.KeyChange.down || keyData.change == ui.KeyChange.repeatedDown) {
+        _startGuardingKey(physicalKey, logicalKey, timeStamp);
+      } else if (keyData.change == ui.KeyChange.up) {
+        _stopGuardingKey(physicalKey);
+      }
+    }
 
     if (preSynthesizedKeyData != null) {
       dispatchKeyData(preSynthesizedKeyData);

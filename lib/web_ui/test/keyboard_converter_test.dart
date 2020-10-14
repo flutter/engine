@@ -16,6 +16,7 @@ const int kPhysicalKeyE = 0x00070008;
 const int kPhysicalKeyU = 0x00070018;
 const int kPhysicalShiftLeft = 0x000700e1;
 const int kPhysicalShiftRight = 0x000700e5;
+const int kPhysicalMetaLeft = 0x000700e3;
 const int kPhysicalTab = 0x0007002b;
 const int kPhysicalCapsLock = 0x00070039;
 
@@ -23,6 +24,7 @@ const int kLogicalLowerA = 0x00000000061;
 const int kLogicalUpperA = 0x00000000041;
 const int kLogicalLowerU = 0x00000000075;
 const int kLogicalShift = 0x000000010d;
+const int kLogicalMeta = 0x00000000109;
 const int kLogicalTab = 0x0000000009;
 const int kLogicalCapsLock = 0x00000000104;
 
@@ -503,7 +505,7 @@ void testMain() {
     );
     keyDataList.clear();
 
-    async.elapse(Duration(microseconds: 1));
+    async.elapse(Duration(seconds: 10));
     expect(keyDataList, isEmpty);
 
     converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
@@ -517,11 +519,205 @@ void testMain() {
     );
     keyDataList.clear();
 
-    async.elapse(Duration(microseconds: 1));
+    async.elapse(Duration(seconds: 10));
     expect(keyDataList, isEmpty);
   });
-}
 
+  testFakeAsync('Key guards: key down events are guarded', (FakeAsync async) {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    });
+
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta')..timeStamp = 100);
+    async.elapse(Duration(milliseconds: 100));
+
+    converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 200),
+      change: ui.KeyChange.down,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
+      ],
+    );
+    keyDataList.clear();
+
+    // Keyup of KeyA is omitted due to being a shortcut.
+
+    async.elapse(Duration(milliseconds: 2500));
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 1200),
+      change: ui.KeyChange.cancel,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalLowerA),
+      ],
+    );
+    keyDataList.clear();
+
+    converter.handleEvent(keyUpEvent('MetaLeft', 'Meta')..timeStamp = 2700);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 2700),
+      change: ui.KeyChange.up,
+      key: kPhysicalMetaLeft,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalMeta),
+      ],
+    );
+    async.elapse(Duration(milliseconds: 100));
+
+    // Key A states are cleared
+    converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 2800);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 2800),
+      change: ui.KeyChange.down,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
+      ],
+    );
+    async.elapse(Duration(milliseconds: 100));
+
+    converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2900);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 2900),
+      change: ui.KeyChange.up,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalLowerA),
+      ],
+    );
+  });
+
+  testFakeAsync('Key guards: key repeated down events refreshes guards', (FakeAsync async) {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    });
+
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta')..timeStamp = 100);
+    async.elapse(Duration(milliseconds: 100));
+
+    converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
+    async.elapse(Duration(milliseconds: 400));
+
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 600);
+    async.elapse(Duration(milliseconds: 50));
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 650);
+    async.elapse(Duration(milliseconds: 50));
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 700);
+
+    // Keyup of KeyA is omitted due to being a shortcut.
+
+    async.elapse(Duration(milliseconds: 2500));
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 1700),
+      change: ui.KeyChange.cancel,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalLowerA),
+      ],
+    );
+    keyDataList.clear();
+
+    converter.handleEvent(keyUpEvent('MetaLeft', 'Meta')..timeStamp = 3200);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 3200),
+      change: ui.KeyChange.up,
+      key: kPhysicalMetaLeft,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalMeta),
+      ],
+    );
+    async.elapse(Duration(milliseconds: 100));
+
+    // Key A states are cleared
+    converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 3300);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 3300),
+      change: ui.KeyChange.down,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
+      ],
+    );
+    async.elapse(Duration(milliseconds: 100));
+
+    converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 3400);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 3400),
+      change: ui.KeyChange.up,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalLowerA),
+      ],
+    );
+  });
+
+  testFakeAsync('Key guards: cleared by keyups', (FakeAsync async) {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    });
+
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta')..timeStamp = 100);
+    async.elapse(Duration(milliseconds: 100));
+
+    converter.handleEvent(keyDownEvent('KeyA', 'a', kCtrl)..timeStamp = 200);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 200),
+      change: ui.KeyChange.down,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
+      ],
+    );
+    keyDataList.clear();
+    async.elapse(Duration(milliseconds: 500));
+
+    converter.handleEvent(keyUpEvent('MetaLeft', 'Meta')..timeStamp = 700);
+    async.elapse(Duration(milliseconds: 100));
+
+    converter.handleEvent(keyUpEvent('KeyA', 'a', kCtrl)..timeStamp = 800);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 800),
+      change: ui.KeyChange.up,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalLowerA),
+      ],
+    );
+    keyDataList.clear();
+    async.elapse(Duration(milliseconds: 2000));
+    expect(keyDataList, isEmpty);
+
+    // Key A states are cleared
+    converter.handleEvent(keyDownEvent('KeyA', 'a', kCtrl)..timeStamp = 2800);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 2800),
+      change: ui.KeyChange.down,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
+      ],
+    );
+    async.elapse(Duration(milliseconds: 100));
+
+    converter.handleEvent(keyUpEvent('KeyA', 'a', kCtrl)..timeStamp = 2900);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 2900),
+      change: ui.KeyChange.up,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalLowerA),
+      ],
+    );
+  });
+}
 
 class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
   MockKeyboardEvent({
