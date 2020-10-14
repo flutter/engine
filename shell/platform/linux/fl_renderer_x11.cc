@@ -12,7 +12,7 @@
 struct _FlRendererX11 {
   FlRenderer parent_instance;
 
-  /// Connection to the X server.
+  // Connection to the X server.
   Display* display;
 };
 
@@ -68,9 +68,9 @@ static gboolean fl_renderer_x11_setup_window_attr(
 static EGLDisplay fl_renderer_x11_create_display(FlRenderer* renderer) {
   FlRendererX11* self = FL_RENDERER_X11(renderer);
 
-  // We make our own connection to the X server because the EGL calls are made
-  // from Flutter on a different thread to GTK. If we re-used the existing GTK
-  // connection then this would crash as Xlib is not thread safe.
+  // Create a dedicated connection to the X server because the EGL calls are
+  // made from Flutter on a different thread to GTK. Re-using the existing
+  // GTK X11 connection would crash as Xlib is not thread safe.
   if (self->display == nullptr) {
     Display* display = gdk_x11_get_default_xdisplay();
     self->display = XOpenDisplay(DisplayString(display));
