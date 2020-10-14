@@ -158,6 +158,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
                                                            viewIdentifier:viewId
                                                                 arguments:params];
   UIView* platform_view = [embedded_view view];
+  FML_DCHECK(platform_view == [embedded_view view]) << "The [view] method of FlutterPlatformView should not return a new instance of UIView during the same frame.";
   // Set a unique view identifier, so the platform view can be identified in unit tests.
   platform_view.accessibilityIdentifier = [NSString stringWithFormat:@"platform_view[%ld]", viewId];
   views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
