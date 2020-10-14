@@ -245,11 +245,15 @@ void main(List<String> arguments) async {
   final ProcessPool pool = ProcessPool();
 
   await for (final WorkerJob job in pool.startWorkers(jobs)) {
-    if (job.result?.stdout.isEmpty ?? true) {
+    if (job.result?.exitCode == 0) {
       continue;
     }
-    print('❌ Failures for ${job.name}:');
-    print(job.result.stdout);
+    if (job.result == null) {
+      print('❗ The clang-tidy job failed to run:\n${job.exception}');
+    } else {
+      print('❌ Failures for ${job.name}:');
+      print(job.result.stdout);
+    }
     exitCode = 1;
   }
   print('\n');
