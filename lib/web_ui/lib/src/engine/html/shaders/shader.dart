@@ -52,14 +52,14 @@ class GradientSweep extends EngineGradient {
         _WebGlRenderer.writeBaseVertexShader(),
         _createSweepFragmentShader(normalizedGradient, tileMode))!;
 
-    Object? tileOffset = gl.getUniformLocation(glProgram.program, 'u_tile_offset');
+    Object tileOffset = gl.getUniformLocation(glProgram.program, 'u_tile_offset');
     double centerX = (center.dx - shaderBounds.left) / (shaderBounds.width);
     double centerY = (center.dy - shaderBounds.top) / (shaderBounds.height);
-    gl.setUniform2f(tileOffset!,
+    gl.setUniform2f(tileOffset,
         shaderBounds.left + 2 * (shaderBounds.width * (centerX - 0.5)),
         -shaderBounds.top - 2 * (shaderBounds.height * (centerY - 0.5)));
-    Object? angleRange = gl.getUniformLocation(glProgram.program, 'angle_range');
-    gl.setUniform2f(angleRange!, startAngle, endAngle);
+    Object angleRange = gl.getUniformLocation(glProgram.program, 'angle_range');
+    gl.setUniform2f(angleRange, startAngle, endAngle);
     normalizedGradient.setupUniforms(gl, glProgram);
     if (matrix4 != null) {
       Object gradientMatrix = gl.getUniformLocation(
