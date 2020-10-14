@@ -98,13 +98,13 @@ class NormalizedGradient {
   /// Sets uniforms for threshold, bias and scale for program.
   void setupUniforms(_GlContext gl, _GlProgram glProgram) {
     for (int i = 0; i < thresholdCount; i++) {
-      Object? biasId = gl.getUniformLocation(glProgram.program, 'bias_$i');
+      Object biasId = gl.getUniformLocation(glProgram.program, 'bias_$i');
       gl.setUniform4f(biasId, _bias[i * 4], _bias[i * 4 + 1], _bias[i * 4 + 2], _bias[i * 4 + 3]);
-      Object? scaleId = gl.getUniformLocation(glProgram.program, 'scale_$i');
+      Object scaleId = gl.getUniformLocation(glProgram.program, 'scale_$i');
       gl.setUniform4f(scaleId, _scale[i * 4], _scale[i * 4 + 1], _scale[i * 4 + 2], _scale[i * 4 + 3]);
     }
     for (int i = 0; i < _thresholds.length; i += 4) {
-      Object? thresId = gl.getUniformLocation(glProgram.program, 'threshold_${i ~/ 4}');
+      Object thresId = gl.getUniformLocation(glProgram.program, 'threshold_${i ~/ 4}');
       gl.setUniform4f(thresId, _thresholds[i], _thresholds[i + 1], _thresholds[i + 2], _thresholds[i + 3]);
     }
   }
@@ -117,4 +117,45 @@ class NormalizedGradient {
 
   /// Returns threshold at index.
   double thresholdAt(int index) => _thresholds[index];
+}
+
+/// Writes code to search for probe value in source data and set
+/// bias and scale to be used for computation.
+///
+/// Source data for thresholds is provided using ceil(count/4) packed vec4
+/// uniforms.
+/// bias and scale data are vec4 uniforms that hold color data.
+void _writeUnrolledBinarySearch(ShaderMethod method, int start, int end,
+    {required String probe,
+      required String sourcePrefix, required String biasName,
+      required String scaleName}) {
+  if (start == end) {
+    String biasSource = '${biasName}_${start}';
+    method.addStatement('${biasName} = ${biasSource};');
+    String scaleSource = '${scaleName}_${start}';
+    method.addStatement('${scaleName} = ${scaleSource};');
+  } else {
+    // Add probe check.
+    int mid = (start + end) ~/ 2;
+    String thresholdAtMid = '${sourcePrefix}_${(mid + 1)~/4}';
+    thresholdAtMid += '.${_vectorComponentIndexToName((mid + 1) % 4)}';
+    method.addStatement('if ($probe < $thresholdAtMid) {');
+    method.indent();
+    _writeUnrolledBinarySearch(method, start, mid,
+        probe: probe, sourcePrefix: sourcePrefix, biasName: biasName,
+        scaleName: scaleName);
+    method.unindent();
+    method.addStatement('} else {');
+    method.indent();
+    _writeUnrolledBinarySearch(method, mid + 1, end,
+        probe: probe, sourcePrefix: sourcePrefix, biasName: biasName,
+        scaleName: scaleName);
+    method.unindent();
+    method.addStatement('}');
+  }
+}
+
+String _vectorComponentIndexToName(int index) {
+  assert(index >=0 && index <= 4);
+  return 'xyzw'[index];
 }

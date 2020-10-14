@@ -321,7 +321,7 @@ abstract class Gradient extends Shader {
     ? engine.CkGradientSweep(center, colors, colorStops, tileMode, startAngle,
           endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null)
     : engine.GradientSweep(center, colors, colorStops, tileMode, startAngle,
-          endAngle, matrix4);
+          endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null);
 }
 
 abstract class Image {
