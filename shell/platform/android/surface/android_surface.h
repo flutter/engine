@@ -39,20 +39,11 @@ class AndroidSurface {
 
 class AndroidSurfaceFactory {
  public:
-  AndroidSurfaceFactory(std::shared_ptr<AndroidContext> context,
-                        std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+  AndroidSurfaceFactory() = default;
 
-  ~AndroidSurfaceFactory();
+  virtual ~AndroidSurfaceFactory() = default;
 
-  void SetExternalViewEmbedder(
-      std::shared_ptr<AndroidExternalViewEmbedder> external_view_embedder);
-
-  std::unique_ptr<AndroidSurface> CreateSurface();
-
- private:
-  std::shared_ptr<AndroidContext> android_context_;
-  std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
-  std::shared_ptr<AndroidExternalViewEmbedder> external_view_embedder_;
+  virtual std::unique_ptr<AndroidSurface> CreateSurface() = 0;
 };
 
 }  // namespace flutter

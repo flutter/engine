@@ -28,21 +28,21 @@
 
 namespace flutter {
 
-AndroidSurfaceFactory::AndroidSurfaceFactory(
+AndroidSurfaceFactoryImpl::AndroidSurfaceFactoryImpl(
     std::shared_ptr<AndroidContext> context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
   android_context_ = context;
   jni_facade_ = jni_facade;
 }
 
-AndroidSurfaceFactory::~AndroidSurfaceFactory() = default;
+AndroidSurfaceFactoryImpl::~AndroidSurfaceFactoryImpl() = default;
 
-void AndroidSurfaceFactory::SetExternalViewEmbedder(
+void AndroidSurfaceFactoryImpl::SetExternalViewEmbedder(
     std::shared_ptr<AndroidExternalViewEmbedder> external_view_embedder) {
   external_view_embedder_ = external_view_embedder;
 }
 
-std::unique_ptr<AndroidSurface> AndroidSurfaceFactory::CreateSurface() {
+std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
   FML_CHECK(external_view_embedder_);
   switch (android_context_->RenderingApi()) {
     case AndroidRenderingAPI::kSoftware:
@@ -88,7 +88,7 @@ PlatformViewAndroid::PlatformViewAndroid(
       << "Could not create an Android context.";
 
   surface_factory_ =
-      std::make_shared<AndroidSurfaceFactory>(android_context, jni_facade);
+      std::make_shared<AndroidSurfaceFactoryImpl>(android_context, jni_facade);
   surface_factory_->SetExternalViewEmbedder(
       std::make_shared<AndroidExternalViewEmbedder>(android_context, jni_facade,
                                                     surface_factory_));
