@@ -7,6 +7,7 @@ part of engine;
 
 typedef VoidCallback = void Function();
 typedef ValueGetter<T> = T Function();
+typedef _ModifierGetter = bool Function(FlutterHtmlKeyboardEvent event);
 
 // Set this flag to true to see all the fired events in the console.
 const bool _debugLogKeyEvents = false;
@@ -16,10 +17,24 @@ const bool _debugLogKeyEvents = false;
 const int _kLockFlagCapsLock = 0x01;
 const int _kLockFlagNumLock = 0x02;
 const int _kLockFlagScrollLock = 0x04;
+// Map physical keys for lock keys to their flags.
 const Map<String, int> _kPhysicalKeyToLockFlag = {
   _kPhysicalCapsLock: _kLockFlagCapsLock,
   _kPhysicalNumLock: _kLockFlagNumLock,
   _kPhysicalScrollLock: _kLockFlagScrollLock,
+};
+
+const int _kLogicalAlt = 0x00000000102;
+const int _kLogicalControl = 0x00000000105;
+const int _kLogicalShift = 0x0000000010d;
+const int _kLogicalMeta = 0x00000000109;
+// Map logical keys for modifier keys to the functions that can get their
+// modifier flag out of an event.
+final Map<int, _ModifierGetter> _kLogicalKeyToModifierGetter = {
+  _kLogicalAlt: (FlutterHtmlKeyboardEvent event) => event.altKey,
+  _kLogicalControl: (FlutterHtmlKeyboardEvent event) => event.ctrlKey,
+  _kLogicalShift: (FlutterHtmlKeyboardEvent event) => event.shiftKey,
+  _kLogicalMeta: (FlutterHtmlKeyboardEvent event) => event.metaKey,
 };
 
 // After a keydown is received, this is the duration we wait for a repeat event
@@ -273,24 +288,6 @@ class KeyboardConverter {
     _updateLockFlag(bit, (_lockFlags & bit) == 0);
   }
 
-  // Return the pressing state of modifier keys extracted from event flags
-  // (ctrlKey, shiftKey, etc.).
-  bool? _logicalModifierStateByFlag(String key, FlutterHtmlKeyboardEvent event) {
-    switch(key) {
-      case 'Shift':
-        return event.shiftKey;
-      case 'Control':
-        return event.ctrlKey;
-      case 'Meta':
-        return event.metaKey;
-      case 'Meta':
-        return event.metaKey;
-      case 'Alt':
-        return event.altKey;
-    }
-    return null;
-  }
-
   // Schedule the dispatching of an event in the future. The `callback` will
   // invoked before that.
   //
@@ -357,7 +354,7 @@ class KeyboardConverter {
   //  * Some key data might be synthesized to update states after the main key
   //    data. They are always scheduled asynchronously with results discarded.
   bool handleEvent(FlutterHtmlKeyboardEvent event) {
-    final List<ui.LogicalKeyData> logicalKeyDataList = <ui.LogicalKeyData>[];
+    final Duration timeStamp = _eventTimeStampToDuration(event.timeStamp!);
 
     if (_shouldPreventDefault(event)) {
       event.preventDefault();
@@ -369,7 +366,6 @@ class KeyboardConverter {
     final int logicalKey = logicalKeyIsCharacter ? _characterToLogicalKey(eventKey)
         : eventKey == _kLogicalDead ? _deadKeyToLogicalKey(physicalKey, event)
         : _otherLogicalKey(eventKey);
-    final Duration timeStamp = _eventTimeStampToDuration(event.timeStamp!);
     final String? character = logicalKeyIsCharacter ? eventKey : null;
 
     assert(event.type == 'keydown' || event.type == 'keyup');
@@ -385,6 +381,7 @@ class KeyboardConverter {
 
     // Possible synthesized key event to synchronize states before the main event.
     ui.KeyData? preSynthesizedKeyData;
+    final List<ui.LogicalKeyData> logicalKeyDataList = <ui.LogicalKeyData>[];
 
     if (lastLogicalRecord != nextLogicalRecord) {
       // Case 1: The pressing record for the physical key becomes a different
@@ -485,6 +482,37 @@ class KeyboardConverter {
     } else {
       _pressingRecords[physicalKey] = nextLogicalRecord;
     }
+
+    // After updating _pressingRecords, synchronize modifier states. The
+    // `event.***Key` fields can be used to reduce some omitted modifier key
+    // events. We can deduce key cancel events if they are false. Key sync
+    // events can not be deduced since we don't know which physical key they
+    // represent.
+    _kLogicalKeyToModifierGetter.forEach((int logicalKey, _ModifierGetter getModifier) {
+      if (_pressingRecords.containsValue(logicalKey) && !getModifier(event)) {
+        bool hasRemovedLogicalRecord = false;
+        _pressingRecords.removeWhere((int physicalKey, int logicalRecord) {
+          if (logicalRecord != logicalKey)
+            return false;
+
+          dispatchKeyData(ui.KeyData(
+            timeStamp: timeStamp,
+            change: ui.KeyChange.cancel,
+            key: physicalKey,
+            lockFlags: _lockFlags,
+            logicalEvents: <ui.LogicalKeyData>[
+              if (!hasRemovedLogicalRecord) ui.LogicalKeyData(
+                change: ui.KeyChange.cancel,
+                key: logicalKey,
+              ),
+            ],
+          ));
+
+          hasRemovedLogicalRecord = true;
+          return true;
+        });
+      }
+    });
 
     // Update lock flags
     if (!logicalKeyIsCharacter) {

@@ -559,7 +559,7 @@ void testMain() {
       return true;
     });
 
-    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta')..timeStamp = 100);
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta)..timeStamp = 100);
     async.elapse(Duration(milliseconds: 100));
 
     converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
@@ -627,7 +627,7 @@ void testMain() {
       return true;
     });
 
-    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta')..timeStamp = 100);
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta)..timeStamp = 100);
     async.elapse(Duration(milliseconds: 100));
 
     converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
@@ -799,6 +799,57 @@ void testMain() {
         ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalScrollLock),
       ],
       lockFlags: 0,
+    );
+  });
+
+  test('Deduce modifier key cancel from modifier field', () {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    }, onMacOs: false);
+
+    converter.handleEvent(keyDownEvent('ShiftRight', 'Shift', kShift));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalShiftRight,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalShift),
+      ],
+    );
+
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalShiftLeft,
+      logical: <ui.LogicalKeyData>[],
+    );
+    keyDataList.clear();
+
+    // The release of the shift keys are omitted
+
+    converter.handleEvent(keyDownEvent('KeyA', 'a'));
+    expect(keyDataList, hasLength(3));
+    expectKeyData(keyDataList[0],
+      change: ui.KeyChange.cancel,
+      // If this event becomes left and the next event becomes right, it's an
+      // acceptable (while unexpected) change.
+      key: kPhysicalShiftRight,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalShift),
+      ],
+    );
+    expectKeyData(keyDataList[1],
+      change: ui.KeyChange.cancel,
+      key: kPhysicalShiftLeft,
+      logical: <ui.LogicalKeyData>[],
+    );
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalKeyA,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
+      ],
     );
   });
 }
