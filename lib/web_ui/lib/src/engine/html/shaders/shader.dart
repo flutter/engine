@@ -42,7 +42,7 @@ class GradientSweep extends EngineGradient {
     _GlContext gl = _OffScreenCanvas.supported
         ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
         : _GlContext.fromCanvas(offScreenCanvas._glCanvas!,
-            (browserEngine == BrowserEngine.webkit));
+            webGLVersion == 1);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     NormalizedGradient normalizedGradient = NormalizedGradient(

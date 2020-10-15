@@ -449,6 +449,7 @@ class _GlContext {
   dynamic _kUnsignedByte;
   dynamic _kUnsignedShort;
   dynamic _kRGBA;
+  dynamic _kUnpackFlipYWebGl;
   Object? _canvas;
   int? _widthInPixels;
   int? _heightInPixels;
@@ -659,6 +660,9 @@ class _GlContext {
   dynamic get kColorBufferBit =>
       _kColorBufferBit ??= js_util.getProperty(glContext, 'COLOR_BUFFER_BIT');
 
+  dynamic get kUnpackFlipYWebGl =>
+      _kUnpackFlipYWebGl ??= js_util.getProperty(glContext, 'UNPACK_FLIP_Y_WEBGL');
+
   /// Returns reference to uniform in program.
   Object getUniformLocation(Object program, String uniformName) {
     Object? res = js_util
@@ -711,6 +715,15 @@ class _GlContext {
   int? get drawingBufferHeight =>
       js_util.getProperty(glContext, 'drawingBufferWidth');
 
+  /// Flips the y axis when uploading a texture (for webgl1).
+  void pixelStoreFlip(bool flip) {
+    js_util.callMethod(glContext, 'pixelStorei',
+        <dynamic>[kUnpackFlipYWebGl, flip]);
+  }
+
+  /// Reads gl contents as image data.
+  ///
+  /// Warning: data is read bottom up (flipped).
   html.ImageData readImageData() {
     if (browserEngine == BrowserEngine.webkit ||
         browserEngine == BrowserEngine.firefox) {
@@ -718,7 +731,7 @@ class _GlContext {
       final int bufferWidth = _widthInPixels!;
       final int bufferHeight = _heightInPixels!;
       final Uint8List pixels =
-      Uint8List(bufferWidth * bufferHeight * kBytesPerPixel);
+          Uint8List(bufferWidth * bufferHeight * kBytesPerPixel);
       js_util.callMethod(glContext, 'readPixels',
           <dynamic>[0, 0, bufferWidth, bufferHeight, kRGBA, kUnsignedByte, pixels]);
       return html.ImageData(
@@ -748,10 +761,9 @@ class _GlContext {
           <dynamic>[]);
       return imageBitmap;
     } else {
-      html.ImageData imageData = readImageData();
       html.CanvasElement canvas = html.CanvasElement(width: _widthInPixels, height: _heightInPixels);
       final html.CanvasRenderingContext2D ctx = canvas.context2D;
-      ctx.putImageData(imageData, 0 , 0);
+      drawImage(ctx, 0, 0);
       return canvas;
     }
   }
