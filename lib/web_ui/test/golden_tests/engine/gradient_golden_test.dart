@@ -298,7 +298,6 @@ void testMain() async {
 }
 
 Shader engineGradientToShader(GradientSweep gradient, Rect rect) {
-  TextDirection textDirection = TextDirection.ltr;
   return Gradient.sweep(
       Offset(rect.left + gradient.center.dx * rect.width,
           rect.top + gradient.center.dy * rect.height),

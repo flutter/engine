@@ -184,22 +184,16 @@ class _WebGlRenderer implements _GlRenderer {
           targetRect.right, targetRect.bottom,
           targetRect.left, targetRect.bottom,
         ]);
+    // Form 2 triangles for rectangle.
     final Uint16List indices = Uint16List.fromList(
         <int>[
           0, 1, 2, 2, 3, 0
         ]
     );
 
-    Matrix4 transform = Matrix4.identity();
-
-    double offsetX = 0,
-        offsetY = 0;
-
     Object transformUniform = gl.getUniformLocation(
         glProgram.program, 'u_ctransform');
-    Matrix4 transformAtOffset = transform.clone()
-      ..translate(-offsetX, -offsetY);
-    gl.setUniformMatrix4fv(transformUniform, false, transformAtOffset.storage);
+    gl.setUniformMatrix4fv(transformUniform, false, Matrix4.identity().storage);
 
     // Set uniform to scale 0..width/height pixels coordinates to -1..1
     // clipspace range and flip the Y axis.
@@ -236,8 +230,6 @@ class _WebGlRenderer implements _GlRenderer {
     gl.bindElementArrayBuffer(indexBuffer);
     gl.bufferElementData(indices, gl.kStaticDraw);
 
-    // Object uTime = gl.getUniformLocation(glProgram.program, 'u_time');
-    // gl.setUniform1f(uTime, timeValue);
     Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
     gl.setUniform2f(uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
 
