@@ -1,6 +1,7 @@
 package io.flutter.embedding.engine.dart;
 
 import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 
