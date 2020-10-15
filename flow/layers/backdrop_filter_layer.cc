@@ -24,7 +24,11 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   // Backdrop filter paints everywhere in cull rect
   auto paint_bounds = context->GetCullRect();
   context->AddPaintRegion(paint_bounds);
-  context->AddReadbackRegion(filter_->computeFastBounds(paint_bounds));
+
+  auto filter_bounds =  // in screen coordinates
+      filter_->filterBounds(context->MapToScreen(paint_bounds), SkMatrix::I(),
+                            SkImageFilter::kReverse_MapDirection);
+  context->AddReadbackRegion(context->MapToLayer(filter_bounds));
 
   DiffChildren(context, prev);
 

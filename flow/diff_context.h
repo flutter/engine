@@ -119,6 +119,14 @@ class DiffContext {
   // Return cull rect for current subtree (in local coordinates)
   SkRect GetCullRect() const { return state_.cull_rect; }
 
+  // Maps given rect from screen (global) coordinates to layer (local)
+  // coordinates
+  SkRect MapToLayer(const SkIRect& screen_rect);
+
+  // Maps given rect from layer (local) coordinates to screen (global)
+  // coordinates
+  SkIRect MapToScreen(const SkRect& layer_rect);
+
   // Sets the dirty flag on current subtree;
   //
   // previous_paint_region, which should represent region of previous subtree
