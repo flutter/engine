@@ -147,7 +147,7 @@ class _WebGlRenderer implements _GlRenderer {
     assert(positionsBuffer != null); // ignore: unnecessary_null_comparison
     gl.bindArrayBuffer(positionsBuffer);
     gl.bufferData(positions, gl.kStaticDraw);
-    Object? positionLoc = gl.getUniformLocation(glProgram.program, 'position');
+    Object? positionLoc = gl.getAttributeLocation(glProgram.program, 'position');
     js_util.callMethod(
         gl.glContext, 'vertexAttribPointer', <dynamic>[
           positionLoc, 2, gl.kFloat, false, 0, 0,
@@ -159,7 +159,7 @@ class _WebGlRenderer implements _GlRenderer {
     gl.bindArrayBuffer(colorsBuffer);
     // Buffer kBGRA_8888.
     gl.bufferData(vertices._colors, gl.kStaticDraw);
-    Object colorLoc = gl.getUniformLocation(glProgram.program, 'color');
+    Object colorLoc = gl.getAttributeLocation(glProgram.program, 'color');
     js_util.callMethod(gl.glContext, 'vertexAttribPointer',
         <dynamic>[colorLoc, 4, gl.kUnsignedByte, true, 0, 0]);
     gl.enableVertexAttribArray(1);
@@ -661,6 +661,17 @@ class _GlContext {
         .callMethod(glContext, 'getUniformLocation', <dynamic>[program, uniformName]);
     if (res == null) {
       throw Exception('$uniformName not found');
+    } else {
+      return res;
+    }
+  }
+
+  /// Returns reference to uniform in program.
+  Object getAttributeLocation(Object program, String attribName) {
+    Object? res = js_util
+        .callMethod(glContext, 'getAttribLocation', <dynamic>[program, attribName]);
+    if (res == null) {
+      throw Exception('$attribName not found');
     } else {
       return res;
     }
