@@ -85,7 +85,7 @@ for i in {1..10}; do
       -c "echo up" && break || sleep 15;
 done
 rm -rf /tmp/fuchsia_log.txt
-fuchsia_ctl ssh --timeout-seconds 1800 --identity-file $pkey -c "log_listener" > /tmp/log.txt 2>&1 &
+fuchsia_ctl ssh --timeout-seconds 1800 --identity-file $pkey -c "log_listener" --log-file /tmp/log.txt &
 PID=$!
 echo "$(date) END:WAIT_DEVICE_READY ---------------------------------"
 
