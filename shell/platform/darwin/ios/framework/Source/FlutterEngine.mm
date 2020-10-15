@@ -557,7 +557,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     [self setupChannels];
     [self onLocaleUpdated:nil];
     [self initializeDisplays];
-    _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
+    _publisher.reset([[FlutterObservatoryPublisher alloc]
+        initWithEnableObservatoryPublication:settings.enable_observatory_publication]);
     [self maybeSetupPlatformViewChannels];
     _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
     if (profilerEnabled) {
