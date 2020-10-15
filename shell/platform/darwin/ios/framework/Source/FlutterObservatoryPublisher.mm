@@ -9,6 +9,9 @@
 #if FLUTTER_RELEASE
 
 @implementation FlutterObservatoryPublisher
+- (instancetype)initWithEnableObservatoryPublication:(BOOL)enableObservatoryPublication {
+  return [super init];
+}
 @end
 
 #else  // FLUTTER_RELEASE
