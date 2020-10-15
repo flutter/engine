@@ -471,79 +471,83 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   DisposeViews();
 
-  SkCanvas* background_canvas = frame->SkiaCanvas();
-
-  // Resolve all pending GPU operations before allocating a new surface.
-  background_canvas->flush();
-  // Clipping the background canvas before drawing the picture recorders requires to
-  // save and restore the clip context.
-  SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
-  // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
-  LayersMap platform_view_layers;
-
   auto did_submit = true;
   auto num_platform_views = composition_order_.size();
 
-  for (size_t i = 0; i < num_platform_views; i++) {
-    int64_t platform_view_id = composition_order_[i];
-    sk_sp<RTree> rtree = platform_view_rtrees_[platform_view_id];
-    sk_sp<SkPicture> picture = picture_recorders_[platform_view_id]->finishRecordingAsPicture();
+  // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
+  LayersMap platform_view_layers;
 
-    // Check if the current picture contains overlays that intersect with the
-    // current platform view or any of the previous platform views.
-    for (size_t j = i + 1; j > 0; j--) {
-      int64_t current_platform_view_id = composition_order_[j - 1];
-      SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
-      std::list<SkRect> intersection_rects =
-          rtree->searchNonOverlappingDrawnRects(platform_view_rect);
-      auto allocation_size = intersection_rects.size();
+  if (num_platform_views > 0) {
+    SkCanvas* background_canvas = frame->SkiaCanvas();
 
-      // For testing purposes, the overlay id is used to find the overlay view.
-      // This is the index of the layer for the current platform view.
-      auto overlay_id = platform_view_layers[current_platform_view_id].size();
+    // Resolve all pending GPU operations before allocating a new surface.
+    background_canvas->flush();
+    // Clipping the background canvas before drawing the picture recorders requires to
+    // save and restore the clip context.
+    SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
 
-      // If the max number of allocations per platform view is exceeded,
-      // then join all the rects into a single one.
-      //
-      // TODO(egarciad): Consider making this configurable.
-      // https://github.com/flutter/flutter/issues/52510
-      if (allocation_size > kMaxLayerAllocations) {
-        SkRect joined_rect;
-        for (const SkRect& rect : intersection_rects) {
-          joined_rect.join(rect);
+    for (size_t i = 0; i < num_platform_views; i++) {
+      int64_t platform_view_id = composition_order_[i];
+      sk_sp<RTree> rtree = platform_view_rtrees_[platform_view_id];
+      sk_sp<SkPicture> picture = picture_recorders_[platform_view_id]->finishRecordingAsPicture();
+
+      // Check if the current picture contains overlays that intersect with the
+      // current platform view or any of the previous platform views.
+      for (size_t j = i + 1; j > 0; j--) {
+        int64_t current_platform_view_id = composition_order_[j - 1];
+        SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
+        std::list<SkRect> intersection_rects =
+        rtree->searchNonOverlappingDrawnRects(platform_view_rect);
+        auto allocation_size = intersection_rects.size();
+
+        // For testing purposes, the overlay id is used to find the overlay view.
+        // This is the index of the layer for the current platform view.
+        auto overlay_id = platform_view_layers[current_platform_view_id].size();
+
+        // If the max number of allocations per platform view is exceeded,
+        // then join all the rects into a single one.
+        //
+        // TODO(egarciad): Consider making this configurable.
+        // https://github.com/flutter/flutter/issues/52510
+        if (allocation_size > kMaxLayerAllocations) {
+          SkRect joined_rect;
+          for (const SkRect& rect : intersection_rects) {
+            joined_rect.join(rect);
+          }
+          // Replace the rects in the intersection rects list for a single rect that is
+          // the union of all the rects in the list.
+          intersection_rects.clear();
+          intersection_rects.push_back(joined_rect);
         }
-        // Replace the rects in the intersection rects list for a single rect that is
-        // the union of all the rects in the list.
-        intersection_rects.clear();
-        intersection_rects.push_back(joined_rect);
+        for (SkRect& joined_rect : intersection_rects) {
+          // Get the intersection rect between the current rect
+          // and the platform view rect.
+          joined_rect.intersect(platform_view_rect);
+          // Subpixels in the platform may not align with the canvas subpixels.
+          // To workaround it, round the floating point bounds and make the rect slighly larger.
+          // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
+          joined_rect.setLTRB(std::floor(joined_rect.left()), std::floor(joined_rect.top()),
+                              std::ceil(joined_rect.right()), std::ceil(joined_rect.bottom()));
+          // Clip the background canvas, so it doesn't contain any of the pixels drawn
+          // on the overlay layer.
+          background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
+          // Get a new host layer.
+          std::shared_ptr<FlutterPlatformViewLayer> layer = GetLayer(gr_context,                //
+                                                                     ios_context,               //
+                                                                     picture,                   //
+                                                                     joined_rect,               //
+                                                                     current_platform_view_id,  //
+                                                                     overlay_id                 //
+                                                                     );
+          did_submit &= layer->did_submit_last_frame;
+          platform_view_layers[current_platform_view_id].push_back(layer);
+          overlay_id++;
+        }
       }
-      for (SkRect& joined_rect : intersection_rects) {
-        // Get the intersection rect between the current rect
-        // and the platform view rect.
-        joined_rect.intersect(platform_view_rect);
-        // Subpixels in the platform may not align with the canvas subpixels.
-        // To workaround it, round the floating point bounds and make the rect slighly larger.
-        // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
-        joined_rect.setLTRB(std::floor(joined_rect.left()), std::floor(joined_rect.top()),
-                            std::ceil(joined_rect.right()), std::ceil(joined_rect.bottom()));
-        // Clip the background canvas, so it doesn't contain any of the pixels drawn
-        // on the overlay layer.
-        background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
-        // Get a new host layer.
-        std::shared_ptr<FlutterPlatformViewLayer> layer = GetLayer(gr_context,                //
-                                                                   ios_context,               //
-                                                                   picture,                   //
-                                                                   joined_rect,               //
-                                                                   current_platform_view_id,  //
-                                                                   overlay_id                 //
-        );
-        did_submit &= layer->did_submit_last_frame;
-        platform_view_layers[current_platform_view_id].push_back(layer);
-        overlay_id++;
-      }
+      background_canvas->drawPicture(picture);
     }
-    background_canvas->drawPicture(picture);
   }
+
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
   RemoveUnusedLayers();
