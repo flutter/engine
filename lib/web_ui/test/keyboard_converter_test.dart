@@ -19,6 +19,7 @@ const int kPhysicalShiftRight = 0x000700e5;
 const int kPhysicalMetaLeft = 0x000700e3;
 const int kPhysicalTab = 0x0007002b;
 const int kPhysicalCapsLock = 0x00070039;
+const int kPhysicalScrollLock = 0x00070047;
 
 const int kLogicalLowerA = 0x00000000061;
 const int kLogicalUpperA = 0x00000000041;
@@ -27,6 +28,7 @@ const int kLogicalShift = 0x000000010d;
 const int kLogicalMeta = 0x00000000109;
 const int kLogicalTab = 0x0000000009;
 const int kLogicalCapsLock = 0x00000000104;
+const int kLogicalScrollLock = 0x0000000010c;
 
 typedef VoidCallback = void Function();
 
@@ -432,6 +434,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
       ],
+      lockFlags: kCapsLock,
     );
     keyDataList.clear();
 
@@ -443,6 +446,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalCapsLock),
       ],
+      lockFlags: kCapsLock,
     );
     keyDataList.clear();
 
@@ -454,6 +458,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
       ],
+      lockFlags: 0,
     );
     keyDataList.clear();
 
@@ -465,6 +470,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalCapsLock),
       ],
+      lockFlags: 0,
     );
     keyDataList.clear();
 
@@ -477,6 +483,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
       ],
+      lockFlags: kCapsLock,
     );
     keyDataList.clear();
 
@@ -502,6 +509,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
       ],
+      lockFlags: kCapsLock,
     );
     keyDataList.clear();
 
@@ -516,6 +524,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalCapsLock),
       ],
+      lockFlags: 0,
     );
     keyDataList.clear();
 
@@ -717,6 +726,41 @@ void testMain() {
       ],
     );
   });
+
+  testFakeAsync('Lock flags of other keys', (FakeAsync async) {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    }, onMacOs: false);
+
+    converter.handleEvent(keyDownEvent('ScrollLock', 'ScrollLock'));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalScrollLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalScrollLock),
+      ],
+      lockFlags: kScrollLock,
+    );
+    keyDataList.clear();
+
+    async.elapse(Duration(seconds: 10));
+    expect(keyDataList, isEmpty);
+
+    converter.handleEvent(keyUpEvent('ScrollLock', 'ScrollLock'));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.up,
+      key: kPhysicalScrollLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalScrollLock),
+      ],
+      lockFlags: 0,
+    );
+    keyDataList.clear();
+  });
 }
 
 class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
@@ -750,7 +794,7 @@ class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
   VoidCallback? onPreventDefault;
 }
 
-// Flags used for the `modifiers` argument of `key___Event` functions.
+// Flags used for the `modifiers` argument of `key***Event` functions.
 const kAlt = 0x1;
 const kCtrl = 0x2;
 const kShift = 0x4;
@@ -796,17 +840,25 @@ MockKeyboardEvent keyRepeatedDownEvent(String code, String key, [int modifiers =
   );
 }
 
+// Flags used for the `lockFlags` argument of expectKeyData.
+const kCapsLock = 0x1;
+const kNumlLock = 0x2;
+const kScrollLock = 0x4;
+
 void expectKeyData(
   ui.KeyData target, {
-  Duration? timeStamp,
   required ui.KeyChange change,
   required int key,
   required List<ui.LogicalKeyData> logical,
+  Duration? timeStamp,
+  int? lockFlags,
 }) {
   expect(target.change, change);
   expect(target.key, key);
   if (timeStamp != null)
     expect(target.timeStamp, equals(timeStamp));
+  if (lockFlags != null)
+    expect(target.lockFlags, equals(lockFlags));
   expect(target.logicalEvents.length, logical.length);
   for (int i = 0; i < logical.length; i++) {
     expect(target.logicalEvents[i].change, logical[i].change);

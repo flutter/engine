@@ -8,14 +8,25 @@ part of engine;
 typedef VoidCallback = void Function();
 typedef ValueGetter<T> = T Function();
 
-/// Set this flag to true to see all the fired events in the console.
+// Set this flag to true to see all the fired events in the console.
 const bool _debugLogKeyEvents = false;
 
-/// After a keydown is received, this is the duration we wait for a repeat event
-/// before we decide to synthesize a keyup event.
-///
-/// On Linux and Windows, the typical ranges for keyboard repeat delay go up to
-/// 1000ms. On Mac, the range goes up to 2000ms.
+// Bitmask for lock flags. Must be kept up-to-date with FlutterKeyLockFlags in
+// embedder.h.
+const int _kLockFlagCapsLock = 0x01;
+const int _kLockFlagNumLock = 0x02;
+const int _kLockFlagScrollLock = 0x04;
+const Map<String, int> _kPhysicalKeyToLockFlag = {
+  _kPhysicalCapsLock: _kLockFlagCapsLock,
+  _kPhysicalNumLock: _kLockFlagNumLock,
+  _kPhysicalScrollLock: _kLockFlagScrollLock,
+};
+
+// After a keydown is received, this is the duration we wait for a repeat event
+// before we decide to synthesize a keyup event.
+//
+// On Linux and Windows, the typical ranges for keyboard repeat delay go up to
+// 1000ms. On Mac, the range goes up to 2000ms.
 const Duration _kKeydownCancelDurationNormal = Duration(milliseconds: 1000);
 const Duration _kKeydownCancelDurationMacOs = Duration(milliseconds: 2000);
 
@@ -29,6 +40,8 @@ bool isAlphabet(int charCode) {
 }
 
 const String _kPhysicalCapsLock = 'CapsLock';
+const String _kPhysicalNumLock = 'NumLock';
+const String _kPhysicalScrollLock = 'ScrollLock';
 
 const String _kLogicalDead = 'Dead';
 
@@ -248,6 +261,18 @@ class KeyboardConverter {
   // to positioned keys (left/right/numpad) or multiple keyboards.
   final Map<int, int> _pressingRecords = <int, int>{};
 
+  int _lockFlags = 0;
+  void _updateLockFlag(int bit, bool value) {
+    if (value) {
+      _lockFlags |= bit;
+    } else {
+      _lockFlags &= ~bit;
+    }
+  }
+  void _toggleLockFlag(int bit) {
+    _updateLockFlag(bit, (_lockFlags & bit) == 0);
+  }
+
   // Return the pressing state of modifier keys extracted from event flags
   // (ctrlKey, shiftKey, etc.).
   bool? _logicalModifierStateByFlag(String key, FlutterHtmlKeyboardEvent event) {
@@ -321,6 +346,16 @@ class KeyboardConverter {
     _keyGuards.remove(physicalKey)?.call();
   }
 
+  // Parse the HTML event, update states, and dispatch Flutter key data through
+  // [dispatchKeyData].
+  //
+  //  * The method might dispatch some synthesized key data first to update states,
+  //    results discarded.
+  //  * Then it dispatches exactly one non-synthesized key data that corresponds
+  //    to the `event`, i.e. the main key data. The result of this dispatching is
+  //    returned to indicate whether the event is processed by Flutter.
+  //  * Some key data might be synthesized to update states after the main key
+  //    data. They are always scheduled asynchronously with results discarded.
   bool handleEvent(FlutterHtmlKeyboardEvent event) {
     final List<ui.LogicalKeyData> logicalKeyDataList = <ui.LogicalKeyData>[];
 
@@ -421,7 +456,7 @@ class KeyboardConverter {
           timeStamp: timeStamp,
           change: ui.KeyChange.cancel,
           key: physicalKey,
-          lockFlags: 0,
+          lockFlags: _lockFlags,
           logicalEvents: <ui.LogicalKeyData>[
             ui.LogicalKeyData(
               change: ui.KeyChange.cancel,
@@ -451,23 +486,37 @@ class KeyboardConverter {
       _pressingRecords[physicalKey] = nextLogicalRecord;
     }
 
+    // Update lock flags
+    if (!logicalKeyIsCharacter) {
+      if (_shouldSynthesizeCapsLockCancel() && physicalKey == _kPhysicalCapsLock) {
+        // If `_shouldSynthesizeCapsLockCancel` is false, CapsLock is handled in
+        // the next else clause.
+        _updateLockFlag(_kLockFlagCapsLock, event != '');
+      } else if (nextLogicalRecord != null) {
+        final int? lockFlag = _kPhysicalKeyToLockFlag[physicalKey];
+        if (lockFlag != null)
+          _toggleLockFlag(lockFlag);
+      }
+    }
+
+    // Update key guards
+    if (logicalKeyIsCharacter) {
+      if (nextLogicalRecord != null) {
+        _startGuardingKey(physicalKey, logicalKey, timeStamp);
+      } else {
+        _stopGuardingKey(physicalKey);
+      }
+    }
+
     final ui.KeyData keyData = ui.KeyData(
       timeStamp: timeStamp,
       change: isPhysicalDown
         ? (event.repeat ?? false ? ui.KeyChange.repeatedDown : ui.KeyChange.down)
         : ui.KeyChange.up,
       key: physicalKey,
-      lockFlags: 0,
+      lockFlags: _lockFlags,
       logicalEvents: logicalKeyDataList,
     );
-
-    if (logicalKeyIsCharacter) {
-      if (keyData.change == ui.KeyChange.down || keyData.change == ui.KeyChange.repeatedDown) {
-        _startGuardingKey(physicalKey, logicalKey, timeStamp);
-      } else if (keyData.change == ui.KeyChange.up) {
-        _stopGuardingKey(physicalKey);
-      }
-    }
 
     if (preSynthesizedKeyData != null) {
       dispatchKeyData(preSynthesizedKeyData);
