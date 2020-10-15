@@ -6,7 +6,7 @@
 part of engine;
 
 @JS('window.flutterWebRenderer')
-external String get customRenderer;
+external String? get customRenderer;
 
 bool get useCanvasKit =>
     _autoDetect ? _detectRenderer() : _useSkia;
@@ -14,7 +14,7 @@ bool get useCanvasKit =>
 // Returns true if canvaskit is used. Otherwise, returns false.
 bool _detectRenderer() {
   if (customRenderer != null) {
-    return customRenderer == 'canvaskit';
+    return customRenderer! == 'canvaskit';
   }
   // If customRenderer is not specified, use canvaskit for desktop and html for
   // mobile.
