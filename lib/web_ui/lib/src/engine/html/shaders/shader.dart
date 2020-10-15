@@ -127,7 +127,6 @@ class GradientSweep extends EngineGradient {
       biasName: 'bias', scaleName: 'scale');
     method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
     String shader = builder.build();
-    print(shader);
     return shader;
   }
 
