@@ -15,7 +15,7 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
-public class DartExecutorTest {
+public class DartMessengerTest {
   private static class ReportingUncaughtExceptionHandler
       implements Thread.UncaughtExceptionHandler {
     public Throwable latestException;
