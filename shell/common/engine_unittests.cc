@@ -27,7 +27,6 @@ class MockDelegate : public Engine::Delegate {
   MOCK_METHOD1(OnEngineHandlePlatformMessage,
                void(fml::RefPtr<PlatformMessage>));
   MOCK_METHOD0(OnPreEngineRestart, void());
-  MOCK_METHOD0(OnRootIsolateCreated, void());
   MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
   MOCK_METHOD1(SetNeedsReportTimings, void(bool));
   MOCK_METHOD1(ComputePlatformResolvedLocale,
@@ -50,7 +49,6 @@ class MockRuntimeDelegate : public RuntimeDelegate {
                void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
   MOCK_METHOD1(HandlePlatformMessage, void(fml::RefPtr<PlatformMessage>));
   MOCK_METHOD0(GetFontCollection, FontCollection&());
-  MOCK_METHOD0(OnRootIsolateCreated, void());
   MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
   MOCK_METHOD1(SetNeedsReportTimings, void(bool));
   MOCK_METHOD1(ComputePlatformResolvedLocale,
@@ -62,7 +60,7 @@ class MockRuntimeController : public RuntimeController {
  public:
   MockRuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners)
       : RuntimeController(client, p_task_runners) {}
-  MOCK_METHOD0(IsRootIsolateRunning, bool());
+  MOCK_CONST_METHOD0(IsRootIsolateRunning, bool());
   MOCK_METHOD1(DispatchPlatformMessage, bool(fml::RefPtr<PlatformMessage>));
 };
 
