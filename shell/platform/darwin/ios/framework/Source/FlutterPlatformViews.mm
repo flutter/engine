@@ -497,7 +497,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
         int64_t current_platform_view_id = composition_order_[j - 1];
         SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
         std::list<SkRect> intersection_rects =
-        rtree->searchNonOverlappingDrawnRects(platform_view_rect);
+            rtree->searchNonOverlappingDrawnRects(platform_view_rect);
         auto allocation_size = intersection_rects.size();
 
         // For testing purposes, the overlay id is used to find the overlay view.
@@ -538,7 +538,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                                      joined_rect,               //
                                                                      current_platform_view_id,  //
                                                                      overlay_id                 //
-                                                                     );
+          );
           did_submit &= layer->did_submit_last_frame;
           platform_view_layers[current_platform_view_id].push_back(layer);
           overlay_id++;
