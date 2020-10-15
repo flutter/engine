@@ -325,9 +325,6 @@ class FlutterPlatformViewsController {
 
 // Prevent the touch sequence from ever arriving to the embedded view.
 - (void)blockGesture;
-
-// Get embedded view
-- (UIView*)embeddedView;
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
