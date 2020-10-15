@@ -156,6 +156,11 @@ class FlutterHtmlKeyboardEvent {
   void preventDefault() => _event.preventDefault();
 }
 
+// Reads [html.KeyboardEvent], then [dispatches ui.KeyData] accordingly.
+//
+// The events are read through [handleEvent], and dispatched through the
+// [dispatchKeyData] as given in the constructor. Some key data might be
+// dispatched asynchronously.
 class KeyboardConverter {
   KeyboardConverter(this.dispatchKeyData, {this.onMacOs = false});
 
@@ -241,7 +246,7 @@ class KeyboardConverter {
   //
   // Multiple physical keys can be mapped to the same logical key, usually due
   // to positioned keys (left/right/numpad) or multiple keyboards.
-  final Map<int, int> _pressedKeys = <int, int>{};
+  final Map<int, int> _pressingRecords = <int, int>{};
 
   // Return the pressing state of modifier keys extracted from event flags
   // (ctrlKey, shiftKey, etc.).
@@ -305,7 +310,7 @@ class KeyboardConverter {
         ],
       ),
       () {
-        _pressedKeys.remove(physicalKey);
+        _pressingRecords.remove(physicalKey);
       }
     );
     _keyGuards.remove(physicalKey)?.call();
@@ -338,30 +343,35 @@ class KeyboardConverter {
       // followed by an immediate cancel event.
       (_shouldSynthesizeCapsLockCancel() && event.code! == _kPhysicalCapsLock);
 
-    // The value of _pressedKeys[physicalKey] after calculating the events.
-    // See `_pressedKeys` for its meaning.
-    final int? nextLogicalKey = isPhysicalDown ? logicalKey : null;
-    final int? lastLogicalKeyForThisPhysical = _pressedKeys[physicalKey];
+    // The value of _pressingRecords[physicalKey] before and after calculating the events.
+    // See `_pressingRecords` for its meaning.
+    final int? lastLogicalRecord = _pressingRecords[physicalKey];
+    final int? nextLogicalRecord = isPhysicalDown ? logicalKey : null;
 
-    // Possible synthesized key event to synchronize some events.
+    // Possible synthesized key event to synchronize states before the main event.
     ui.KeyData? preSynthesizedKeyData;
 
-    if (lastLogicalKeyForThisPhysical != nextLogicalKey) {
-      // Case 1: The physical key becomes a different case from before. Could be
-      // null to non-null, non-null to null, or non-null to a different non-null.
+    if (lastLogicalRecord != nextLogicalRecord) {
+      // Case 1: The pressing record for the physical key becomes a different
+      // record from before.
+      //
+      //  * From null to non-null: Simple keydown
+      //  * From non-null to null: Simple keyup
+      //  * From non-null to a different non-null: The physical key starts to map
+      //    to a different logical key. Cancel the previous one and sync the new one.
 
       // First remove the physical key to see if the logical key is still pressed after that.
-      _pressedKeys.remove(physicalKey);
-      if (lastLogicalKeyForThisPhysical != null && !_pressedKeys.containsValue(lastLogicalKeyForThisPhysical)) {
+      _pressingRecords.remove(physicalKey);
+      if (lastLogicalRecord != null && !_pressingRecords.containsValue(lastLogicalRecord)) {
         logicalKeyDataList.add(ui.LogicalKeyData(
-          change: nextLogicalKey == null ? ui.KeyChange.up : ui.KeyChange.cancel,
-          key: lastLogicalKeyForThisPhysical,
+          change: nextLogicalRecord == null ? ui.KeyChange.up : ui.KeyChange.cancel,
+          key: lastLogicalRecord,
         ));
       }
-      if (nextLogicalKey != null && !_pressedKeys.containsValue(nextLogicalKey)) {
+      if (nextLogicalRecord != null && !_pressingRecords.containsValue(nextLogicalRecord)) {
         logicalKeyDataList.add(ui.LogicalKeyData(
-          change: lastLogicalKeyForThisPhysical == null ? ui.KeyChange.down : ui.KeyChange.synchronize,
-          key: nextLogicalKey,
+          change: lastLogicalRecord == null ? ui.KeyChange.down : ui.KeyChange.synchronize,
+          key: nextLogicalRecord,
           character: character,
         ));
       }
@@ -384,20 +394,23 @@ class KeyboardConverter {
             ],
           ),
           () {
-            _pressedKeys.remove(physicalKey);
+            _pressingRecords.remove(physicalKey);
           }
         );
       }
 
-    } else if (nextLogicalKey != null) {
-      // Case 2: The physical key is in a same non-null state as before, but
-      // received an event anyway. Could be repeated or non-repeated.
+    } else if (nextLogicalRecord != null) {
+      // Case 2: The pressing record for the physical key is a same non-null
+      // record as before, but received an event anyway.
+      //
+      //  * Repeated: A normal repeated event
+      //  * Non-repeated: Indicates an up event has been omitted
       assert(isPhysicalDown);
 
       if (event.repeat ?? false) {
         logicalKeyDataList.add(ui.LogicalKeyData(
           change: ui.KeyChange.repeatedDown,
-          key: nextLogicalKey,
+          key: nextLogicalRecord,
           character: character,
         ));
       } else {
@@ -412,29 +425,30 @@ class KeyboardConverter {
           logicalEvents: <ui.LogicalKeyData>[
             ui.LogicalKeyData(
               change: ui.KeyChange.cancel,
-              key: nextLogicalKey,
+              key: nextLogicalRecord,
             ),
           ],
         );
 
         logicalKeyDataList.add(ui.LogicalKeyData(
           change: ui.KeyChange.down,
-          key: nextLogicalKey,
+          key: nextLogicalRecord,
           character: character,
         ));
       }
     } else {
-      // Case 3: The physical key is in a same null state as before, indicating
-      // an omitted down event, usually due to loss of focus. Skip.
+      // Case 3: The physical record for the physical key is a same null state
+      // as before, indicating an omitted down event, usually due to loss of
+      // focus. Skip.
       return false;
     }
 
-    // Update _pressedKeys. It might have been updated before if necessary, but
-    // the update is done here anywaay.
-    if (nextLogicalKey == null) {
-      _pressedKeys.remove(physicalKey);
+    // Update _pressingRecords. It might have been updated before if necessary,
+    // but the update is done here anywaay.
+    if (nextLogicalRecord == null) {
+      _pressingRecords.remove(physicalKey);
     } else {
-      _pressedKeys[physicalKey] = nextLogicalKey;
+      _pressingRecords[physicalKey] = nextLogicalRecord;
     }
 
     final ui.KeyData keyData = ui.KeyData(
