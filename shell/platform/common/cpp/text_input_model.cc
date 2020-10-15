@@ -78,7 +78,7 @@ void TextInputModel::UpdateComposingText(const std::string& composing_text) {
   }
   DeleteSelected();
   text_.replace(composing_range_.start(), composing_range_.length(), text);
-  SetComposingLength(text.length());
+  composing_range_.set_end(composing_range_.start() + text.length());
   selection_ = TextRange(composing_range_.end());
 }
 
@@ -110,16 +110,6 @@ bool TextInputModel::DeleteSelected() {
   return true;
 }
 
-void TextInputModel::SetComposingLength(size_t length) {
-  if (composing_range_.reversed()) {
-    size_t extent = composing_range_.extent();
-    composing_range_ = TextRange(extent + length, extent);
-  } else {
-    size_t base = composing_range_.base();
-    composing_range_ = TextRange(base, base + length);
-  }
-}
-
 void TextInputModel::AddCodePoint(char32_t c) {
   if (c <= 0xFFFF) {
     AddText(std::u16string({static_cast<char16_t>(c)}));
@@ -140,7 +130,7 @@ void TextInputModel::AddText(const std::u16string& text) {
     // Delete the current composing text, set the cursor to composing start.
     text_.erase(composing_range_.start(), composing_range_.length());
     selection_ = TextRange(composing_range_.start());
-    SetComposingLength(text.length());
+    composing_range_.set_end(composing_range_.start() + text.length());
   }
   size_t position = selection_.position();
   text_.insert(position, text);
@@ -164,7 +154,7 @@ bool TextInputModel::Backspace() {
     text_.erase(position - count, count);
     selection_ = TextRange(position - count);
     if (composing_) {
-      SetComposingLength(composing_range_.length() - count);
+      composing_range_.set_end(composing_range_.end() - count);
     }
     return true;
   }
@@ -181,7 +171,7 @@ bool TextInputModel::Delete() {
     int count = IsLeadingSurrogate(text_.at(position)) ? 2 : 1;
     text_.erase(position, count);
     if (composing_) {
-      SetComposingLength(composing_range_.length() - count);
+      composing_range_.set_end(composing_range_.end() - count);
     }
     return true;
   }
@@ -224,7 +214,7 @@ bool TextInputModel::DeleteSurrounding(int offset_from_cursor, int count) {
 
   // Adjust composing range.
   if (composing_) {
-    SetComposingLength(composing_range_.length() - deleted_length);
+    composing_range_.set_end(composing_range_.end() - deleted_length);
   }
   return true;
 }

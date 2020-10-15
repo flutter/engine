@@ -172,9 +172,6 @@ class TextInputModel {
   // reset to the start of the selected range.
   bool DeleteSelected();
 
-  // Adjusts the composing range to |length|.
-  void SetComposingLength(size_t length);
-
   // Returns the currently editable text range.
   //
   // In composing mode, returns the composing range; otherwise, returns a range
