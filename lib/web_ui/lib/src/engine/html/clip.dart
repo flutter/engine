@@ -25,18 +25,6 @@ mixin _DomClip on PersistedContainerSurface {
   @override
   html.Element createElement() {
     final html.Element element = defaultCreateElement('flt-clip');
-    if (!debugShowClipLayers) {
-      // Hide overflow in production mode. When debugging we want to see the
-      // clipped picture in full.
-      element.style
-        ..overflow = 'hidden'
-        ..zIndex = '0';
-    } else {
-      // Display the outline of the clipping region. When debugShowClipLayers is
-      // `true` we don't hide clip overflow (see above). This outline helps
-      // visualizing clip areas.
-      element.style.boxShadow = 'inset 0 0 10px green';
-    }
     _childContainer = html.Element.tag('flt-clip-interior');
     if (_debugExplainSurfaceStats) {
       // This creates an additional interior element. Count it too.
@@ -56,6 +44,21 @@ mixin _DomClip on PersistedContainerSurface {
     // attached. The elements are reused together and are detached from the DOM
     // together.
     _childContainer = null;
+  }
+
+  void applyOverflow(html.Element element, ui.Clip? clipBehaviour) {
+    if (!debugShowClipLayers) {
+      // Hide overflow in production mode. When debugging we want to see the
+      // clipped picture in full.
+      element.style
+        ..overflow = 'hidden'
+        ..zIndex = '0';
+    } else {
+      // Display the outline of the clipping region. When debugShowClipLayers is
+      // `true` we don't hide clip overflow (see above). This outline helps
+      // visualizing clip areas.
+      element.style.boxShadow = 'inset 0 0 10px green';
+    }
   }
 }
 
@@ -83,15 +86,12 @@ class PersistedClipRect extends PersistedContainerSurface
 
   @override
   void apply() {
-    html.CssStyleDeclaration style = rootElement!.style;
     rootElement!.style
       ..left = '${rect.left}px'
       ..top = '${rect.top}px'
       ..width = '${rect.right - rect.left}px'
       ..height = '${rect.bottom - rect.top}px';
-    if (clipBehavior != ui.Clip.none) {
-      style.overflow = 'hidden';
-    }
+    applyOverflow(rootElement!, clipBehavior);
 
     // Translate the child container in the opposite direction to compensate for
     // the shift in the coordinate system introduced by the translation of the
@@ -104,7 +104,7 @@ class PersistedClipRect extends PersistedContainerSurface
   @override
   void update(PersistedClipRect oldSurface) {
     super.update(oldSurface);
-    if (rect != oldSurface.rect) {
+    if (rect != oldSurface.rect || clipBehavior != oldSurface.clipBehavior) {
       apply();
     }
   }
@@ -149,9 +149,7 @@ class PersistedClipRRect extends PersistedContainerSurface
       ..borderTopRightRadius = '${rrect.trRadiusX}px'
       ..borderBottomRightRadius = '${rrect.brRadiusX}px'
       ..borderBottomLeftRadius = '${rrect.blRadiusX}px';
-    if (clipBehavior != ui.Clip.none) {
-      style.overflow = 'hidden';
-    }
+    applyOverflow(rootElement!, clipBehavior);
 
     // Translate the child container in the opposite direction to compensate for
     // the shift in the coordinate system introduced by the translation of the
@@ -164,7 +162,7 @@ class PersistedClipRRect extends PersistedContainerSurface
   @override
   void update(PersistedClipRRect oldSurface) {
     super.update(oldSurface);
-    if (rrect != oldSurface.rrect) {
+    if (rrect != oldSurface.rrect || clipBehavior != oldSurface.clipBehavior) {
       apply();
     }
   }
