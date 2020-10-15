@@ -950,17 +950,13 @@ class BitmapCanvas extends EngineCanvas {
     Vector3 bottomLeft = inverted.perspectiveTransform(Vector3(0, height, 0));
     return ui.Rect.fromLTRB(
       math.min(topLeft.x,
-              math.min(topRight.x, math.min(bottomRight.x, bottomLeft.x))) -
-          bounds.left,
+              math.min(topRight.x, math.min(bottomRight.x, bottomLeft.x))),
       math.min(topLeft.y,
-              math.min(topRight.y, math.min(bottomRight.y, bottomLeft.y))) -
-          bounds.top,
+              math.min(topRight.y, math.min(bottomRight.y, bottomLeft.y))),
       math.max(topLeft.x,
-              math.max(topRight.x, math.max(bottomRight.x, bottomLeft.x))) -
-          bounds.left,
+              math.max(topRight.x, math.max(bottomRight.x, bottomLeft.x))),
       math.max(topLeft.y,
-              math.max(topRight.y, math.max(bottomRight.y, bottomLeft.y))) -
-          bounds.top,
+              math.max(topRight.y, math.max(bottomRight.y, bottomLeft.y))),
     );
   }
 }
