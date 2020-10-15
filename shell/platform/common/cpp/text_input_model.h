@@ -5,11 +5,13 @@
 #ifndef FLUTTER_SHELL_PLATFORM_CPP_TEXT_INPUT_MODEL_H_
 #define FLUTTER_SHELL_PLATFORM_CPP_TEXT_INPUT_MODEL_H_
 
-#include <algorithm>
 #include <memory>
 #include <string>
 
+#include "flutter/shell/platform/common/cpp/text_range.h"
+
 namespace flutter {
+
 // Handles underlying text input state, using a simple ASCII model.
 //
 // Ignores special states like "insert mode" for now.
@@ -25,8 +27,8 @@ class TextInputModel {
 
   // Attempts to set the text selection.
   //
-  // Returns false if the base or extent are out of bounds.
-  bool SetSelection(size_t base, size_t extent);
+  // Returns false if the selection is not within the bounds of the text.
+  bool SetSelection(const TextRange& range);
 
   // Adds a Unicode code point.
   //
@@ -103,11 +105,8 @@ class TextInputModel {
   // GetText().
   int GetCursorOffset() const;
 
-  // The position where the selection starts.
-  int selection_base() const { return selection_base_; }
-
-  // The position of the cursor.
-  int selection_extent() const { return selection_extent_; }
+  // The current selection.
+  TextRange selection() const { return selection_; }
 
  private:
   // Deletes the current selection, if any.
@@ -116,19 +115,11 @@ class TextInputModel {
   // reset to the start of the selected range.
   bool DeleteSelected();
 
+  // Returns a range covering the entire text.
+  TextRange text_range() const { return TextRange(0, text_.length()); }
+
   std::u16string text_;
-  size_t selection_base_ = 0;
-  size_t selection_extent_ = 0;
-
-  // Returns the left hand side of the selection.
-  size_t selection_start() const {
-    return std::min(selection_base_, selection_extent_);
-  }
-
-  // Returns the right hand side of the selection.
-  size_t selection_end() const {
-    return std::max(selection_base_, selection_extent_);
-  }
+  TextRange selection_ = TextRange(0);
 };
 
 }  // namespace flutter

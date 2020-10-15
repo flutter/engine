@@ -15,6 +15,7 @@ import 'package:test_core/src/runner/hack_register_platform.dart'
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
+import 'package:web_test_utils/goldens.dart';
 
 import 'common.dart';
 import 'environment.dart';
@@ -102,6 +103,13 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// How many dart2js build tasks are running at the same time.
   final Pool _pool = Pool(8);
 
+  /// Checks if test harness preparation (such as fetching the goldens,
+  /// creating test_results directory or starting ios-simulator) has been done.
+  ///
+  /// If unit tests already did these steps, integration tests do not have to
+  /// repeat them.
+  bool _testPreparationReady = false;
+
   /// Check the flags to see what type of tests are requested.
   TestTypesRequested findTestType() {
     if (boolArg('unit-tests-only') && boolArg('integration-tests-only')) {
@@ -157,7 +165,12 @@ class TestCommand extends Command<bool> with ArgUtils {
   }
 
   Future<bool> runIntegrationTests() async {
-    return IntegrationTestsManager(browser, useSystemFlutter).runTests();
+    if(!_testPreparationReady) {
+      await _prepare();
+    }
+    return IntegrationTestsManager(
+            browser, useSystemFlutter, doUpdateScreenshotGoldens)
+        .runTests();
   }
 
   Future<bool> runUnitTests() async {
@@ -189,11 +202,21 @@ class TestCommand extends Command<bool> with ArgUtils {
     }
     environment.webUiTestResultsDirectory.createSync(recursive: true);
 
+    // If screenshot tests are available, fetch the screenshot goldens.
+    if (isScreenshotTestsAvailable) {
+      print('screenshot tests available');
+      final GoldensRepoFetcher goldensRepoFetcher = GoldensRepoFetcher(
+          environment.webUiGoldensRepositoryDirectory,
+          path.join(environment.webUiDevDir.path, 'goldens_lock.yaml'));
+      await goldensRepoFetcher.fetch();
+    }
+
     // In order to run iOS Safari unit tests we need to make sure iOS Simulator
     // is booted.
     if (isSafariIOS) {
       await IosSafariArgParser.instance.initIosSimulator();
     }
+    _testPreparationReady = true;
   }
 
   /// Builds all test targets that will be run.
@@ -371,6 +394,15 @@ class TestCommand extends Command<bool> with ArgUtils {
       isFirefoxIntegrationTestAvailable ||
       isSafariIntegrationTestAvailable;
 
+  // Whether the tests will do screenshot testing.
+  bool get isScreenshotTestsAvailable =>
+      isIntegrationTestsAvailable || isUnitTestsScreenshotsAvailable;
+
+  // For unit tests screenshot tests and smoke tests only run on:
+  // "Chrome/iOS" for LUCI/local.
+  bool get isUnitTestsScreenshotsAvailable =>
+      isChrome && (io.Platform.isLinux || !isLuci) || isSafariIOS;
+
   /// Use system flutter instead of cloning the repository.
   ///
   /// Read the flag help for more details. Uses PATH to locate flutter.
@@ -397,13 +429,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       'test',
     ));
 
-    // Screenshot tests and smoke tests only run on: "Chrome/iOS Safari"
-    // locally and on LUCI. They are not available on Windows bots:
-    // TODO: https://github.com/flutter/flutter/issues/63710
-    if ((isChrome && isLuci && io.Platform.isLinux) ||
-        ((isChrome || isSafariIOS) && !isLuci) ||
-        (isSafariIOS && isLuci)) {
-      print('INFO: Also running the screenshot tests.');
+    if (isUnitTestsScreenshotsAvailable) {
       // Separate screenshot tests from unit-tests. Screenshot tests must run
       // one at a time. Otherwise, they will end up screenshotting each other.
       // This is not an issue for unit-tests.
@@ -621,7 +647,8 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   /// Runs a batch of tests.
   ///
-  /// Unless [expectFailure] is set to false, sets [io.exitCode] to a non-zero value if any tests fail.
+  /// Unless [expectFailure] is set to false, sets [io.exitCode] to a non-zero
+  /// value if any tests fail.
   Future<void> _runTestBatch(
     List<FilePath> testFiles, {
     @required int concurrency,
@@ -644,7 +671,8 @@ class TestCommand extends Command<bool> with ArgUtils {
       return BrowserPlatform.start(
         browser,
         root: io.Directory.current.path,
-        // It doesn't make sense to update a screenshot for a test that is expected to fail.
+        // It doesn't make sense to update a screenshot for a test that is
+        // expected to fail.
         doUpdateScreenshotGoldens: !expectFailure && doUpdateScreenshotGoldens,
       );
     });

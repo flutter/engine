@@ -1,4 +1,4 @@
-Signature: 5631ff969ea0de3e53374d25f5256624
+Signature: 819d3bc919ec6336e402246f10c994a1
 
 UNUSED LICENSES:
 
@@ -435,7 +435,6 @@ FILE: ../../../third_party/skia/bench/StreamBench.cpp
 FILE: ../../../third_party/skia/bench/SwizzleBench.cpp
 FILE: ../../../third_party/skia/bench/TileImageFilterBench.cpp
 FILE: ../../../third_party/skia/bench/VertexColorSpaceBench.cpp
-FILE: ../../../third_party/skia/experimental/svg/model/SkPEG.h
 FILE: ../../../third_party/skia/experimental/svg/model/SkSVGAttribute.cpp
 FILE: ../../../third_party/skia/experimental/svg/model/SkSVGAttribute.h
 FILE: ../../../third_party/skia/experimental/svg/model/SkSVGAttributeParser.cpp
@@ -619,7 +618,7 @@ FILE: ../../../third_party/skia/src/gpu/GrClipStackClip.cpp
 FILE: ../../../third_party/skia/src/gpu/GrClipStackClip.h
 FILE: ../../../third_party/skia/src/gpu/GrColorSpaceXform.cpp
 FILE: ../../../third_party/skia/src/gpu/GrColorSpaceXform.h
-FILE: ../../../third_party/skia/src/gpu/GrContextPriv.h
+FILE: ../../../third_party/skia/src/gpu/GrDirectContextPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrFixedClip.h
 FILE: ../../../third_party/skia/src/gpu/GrImageTextureMaker.cpp
 FILE: ../../../third_party/skia/src/gpu/GrImageTextureMaker.h
@@ -2781,7 +2780,6 @@ FILE: ../../../third_party/skia/src/core/SkDrawLooper.cpp
 FILE: ../../../third_party/skia/src/core/SkFontStream.h
 FILE: ../../../third_party/skia/src/core/SkGpuBlurUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkGpuBlurUtils.h
-FILE: ../../../third_party/skia/src/core/SkLegacyGpuBlurUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixUtils.h
 FILE: ../../../third_party/skia/src/core/SkMessageBus.h
 FILE: ../../../third_party/skia/src/core/SkMipmap.cpp
@@ -2919,7 +2917,7 @@ FILE: ../../../third_party/skia/modules/particles/src/SkParticleEffect.cpp
 FILE: ../../../third_party/skia/modules/particles/src/SkReflected.cpp
 FILE: ../../../third_party/skia/modules/skresources/include/SkResources.h
 FILE: ../../../third_party/skia/modules/skresources/src/SkResources.cpp
-FILE: ../../../third_party/skia/samplecode/SampleBackdropBounds.cpp
+FILE: ../../../third_party/skia/samplecode/SampleFilterBounds.cpp
 FILE: ../../../third_party/skia/samplecode/SampleImageFilterDAG.cpp
 FILE: ../../../third_party/skia/src/core/SkImageFilterTypes.cpp
 FILE: ../../../third_party/skia/src/core/SkImageFilterTypes.h
@@ -3116,12 +3114,12 @@ FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferUtils.h
 FILE: ../../../third_party/skia/src/gpu/GrBaseContextPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrBuffer.h
-FILE: ../../../third_party/skia/src/gpu/GrContextPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/GrContextThreadSafeProxy.cpp
 FILE: ../../../third_party/skia/src/gpu/GrContext_Base.cpp
 FILE: ../../../third_party/skia/src/gpu/GrCpuBuffer.h
 FILE: ../../../third_party/skia/src/gpu/GrDataUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDataUtils.h
+FILE: ../../../third_party/skia/src/gpu/GrDirectContextPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.h
 FILE: ../../../third_party/skia/src/gpu/GrImageContext.cpp
@@ -4067,6 +4065,7 @@ FILE: ../../../third_party/skia/experimental/skrive/src/reader/BinaryReader.cpp
 FILE: ../../../third_party/skia/experimental/skrive/src/reader/JsonReader.cpp
 FILE: ../../../third_party/skia/experimental/skrive/src/reader/StreamReader.cpp
 FILE: ../../../third_party/skia/experimental/skrive/src/reader/StreamReader.h
+FILE: ../../../third_party/skia/experimental/svg/utils/SvgTool.cpp
 FILE: ../../../third_party/skia/gm/3d.cpp
 FILE: ../../../third_party/skia/gm/bc1_transparency.cpp
 FILE: ../../../third_party/skia/gm/bicubic.cpp
@@ -6481,6 +6480,7 @@ FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/task_builder.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/canary/canary.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/cifuzz/cifuzz.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/cifuzz/cifuzz_test.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/compile_wasm_gm_tests/compile_wasm_gm_tests.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/fm_driver/fm_driver.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/g3_canary/g3_canary.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_canvas/perf_puppeteer_canvas.go

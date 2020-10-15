@@ -371,7 +371,6 @@ FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
 FILE: ../../../flutter/lib/ui/painting/vertices_unittests.cc
-FILE: ../../../flutter/lib/ui/platform_dispatcher.dart
 FILE: ../../../flutter/lib/ui/plugins.dart
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.cc
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.h
@@ -500,7 +499,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/mouse_cursor.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
@@ -555,7 +553,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/ui/natives.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/path.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/path_metrics.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/ui/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/pointer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/semantics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/test_embedding.dart
@@ -769,6 +766,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugin
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/FlutterRenderer.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/FlutterUiDisplayListener.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/RenderSurface.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/SurfaceTextureWrapper.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyEventChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LifecycleChannel.java
@@ -1006,6 +1004,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_metal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_metal.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_view_embedder.h
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_view_embedder.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_render_target_gl.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_render_target_gl.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface.h
@@ -1514,6 +1514,10 @@ FILE: ../../../flutter/vulkan/vulkan_window.cc
 FILE: ../../../flutter/vulkan/vulkan_window.h
 FILE: ../../../flutter/web_sdk/libraries.json
 FILE: ../../../flutter/web_sdk/sdk_rewriter.dart
+FILE: ../../../flutter/web_sdk/web_test_utils/lib/environment.dart
+FILE: ../../../flutter/web_sdk/web_test_utils/lib/exceptions.dart
+FILE: ../../../flutter/web_sdk/web_test_utils/lib/goldens.dart
+FILE: ../../../flutter/web_sdk/web_test_utils/lib/image_compare.dart
 ----------------------------------------------------------------------------------------------------
 Copyright 2013 The Flutter Authors. All rights reserved.
 
