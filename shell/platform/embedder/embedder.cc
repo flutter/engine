@@ -651,13 +651,13 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 }
 
 FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
-  if (data) {
-    data->loaded_elf = nullptr;
-    data->vm_snapshot_data = nullptr;
-    data->vm_snapshot_instrs = nullptr;
-    data->vm_isolate_data = nullptr;
-    data->vm_isolate_instrs = nullptr;
+  if (!data) {
+    // Deleting a null object should be a no-op.
+    return kSuccess;
   }
+
+  // Created in a unique pointer in `FlutterEngineCreateAOTData`.
+  delete data;
   return kSuccess;
 }
 
@@ -1124,6 +1124,20 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     if (dart_entrypoint.size() != 0) {
       run_configuration.SetEntrypoint(std::move(dart_entrypoint));
     }
+  }
+
+  if (SAFE_ACCESS(args, dart_entrypoint_argc, 0) > 0) {
+    if (SAFE_ACCESS(args, dart_entrypoint_argv, nullptr) == nullptr) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Could not determine Dart entrypoint arguments "
+                                "as dart_entrypoint_argc "
+                                "was set, but dart_entrypoint_argv was null.");
+    }
+    std::vector<std::string> arguments(args->dart_entrypoint_argc);
+    for (int i = 0; i < args->dart_entrypoint_argc; ++i) {
+      arguments[i] = std::string{args->dart_entrypoint_argv[i]};
+    }
+    settings.dart_entrypoint_args = std::move(arguments);
   }
 
   if (!run_configuration.IsValid()) {
