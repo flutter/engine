@@ -130,7 +130,7 @@ void testMain() async {
     canvas.drawRect(rectBounds, borderPaint);
 
     canvas.restore();
-    await _checkScreenshot(canvas, 'sweep_gradient_rect_clamp');
+    await _checkScreenshot(canvas, 'sweep_gradient_rect');
   });
 
   test('Paints sweep gradient ovals', () async {
@@ -209,7 +209,7 @@ void testMain() async {
     canvas.drawRect(rectBounds, borderPaint);
 
     canvas.restore();
-    await _checkScreenshot(canvas, 'sweep_gradient_oval_clamp');
+    await _checkScreenshot(canvas, 'sweep_gradient_oval');
   });
 
   test('Paints sweep gradient paths', () async {
@@ -293,7 +293,7 @@ void testMain() async {
     canvas.drawRect(rectBounds, borderPaint);
 
     canvas.restore();
-    await _checkScreenshot(canvas, 'sweep_gradient_path_clamp');
+    await _checkScreenshot(canvas, 'sweep_gradient_path');
   });
 }
 
