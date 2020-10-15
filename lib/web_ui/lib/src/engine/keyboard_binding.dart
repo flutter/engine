@@ -420,7 +420,7 @@ class KeyboardConverter {
             timeStamp: timeStamp,
             change: ui.KeyChange.cancel,
             key: physicalKey,
-            lockFlags: 0,
+            lockFlags: _lockFlags,
             logicalEvents: <ui.LogicalKeyData>[
               ui.LogicalKeyData(
                 change: ui.KeyChange.cancel,
@@ -488,12 +488,13 @@ class KeyboardConverter {
 
     // Update lock flags
     if (!logicalKeyIsCharacter) {
-      if (_shouldSynthesizeCapsLockCancel() && physicalKey == _kPhysicalCapsLock) {
+      assert(event.repeat == false);
+      if (_shouldSynthesizeCapsLockCancel() && event.code! == _kPhysicalCapsLock) {
         // If `_shouldSynthesizeCapsLockCancel` is false, CapsLock is handled in
         // the next else clause.
-        _updateLockFlag(_kLockFlagCapsLock, event != '');
+        _updateLockFlag(_kLockFlagCapsLock, event.type != 'keyup');
       } else if (nextLogicalRecord != null) {
-        final int? lockFlag = _kPhysicalKeyToLockFlag[physicalKey];
+        final int? lockFlag = _kPhysicalKeyToLockFlag[event.code!];
         if (lockFlag != null)
           _toggleLockFlag(lockFlag);
       }

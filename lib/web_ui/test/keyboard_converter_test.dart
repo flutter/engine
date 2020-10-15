@@ -524,12 +524,32 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalCapsLock),
       ],
-      lockFlags: 0,
+      lockFlags: kCapsLock,
     );
     keyDataList.clear();
 
     async.elapse(Duration(seconds: 10));
     expect(keyDataList, isEmpty);
+
+    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalCapsLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
+      ],
+      lockFlags: 0,
+    );
+
+    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.up,
+      key: kPhysicalCapsLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalCapsLock),
+      ],
+      lockFlags: 0,
+    );
   });
 
   testFakeAsync('Key guards: key down events are guarded', (FakeAsync async) {
@@ -757,9 +777,29 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalScrollLock),
       ],
-      lockFlags: 0,
+      lockFlags: kScrollLock,
     );
     keyDataList.clear();
+
+    converter.handleEvent(keyDownEvent('ScrollLock', 'ScrollLock'));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.down,
+      key: kPhysicalScrollLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalScrollLock),
+      ],
+      lockFlags: 0,
+    );
+
+    converter.handleEvent(keyUpEvent('ScrollLock', 'ScrollLock'));
+    expectKeyData(keyDataList.last,
+      change: ui.KeyChange.up,
+      key: kPhysicalScrollLock,
+      logical: <ui.LogicalKeyData>[
+        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalScrollLock),
+      ],
+      lockFlags: 0,
+    );
   });
 }
 
