@@ -106,6 +106,9 @@ class FlutterWindowsEngine {
   void ReloadSystemFonts();
 
  private:
+  // Allows swapping out embedder_api_ calls in tests.
+  friend class EngineEmbedderApiModifier;
+
   // Sends system settings (e.g., locale) to the engine.
   //
   // Should be called just after the engine is run, and after any relevant
