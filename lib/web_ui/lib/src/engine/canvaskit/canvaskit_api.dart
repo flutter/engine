@@ -1451,28 +1451,13 @@ class SkParagraphStyle {}
 @JS()
 @anonymous
 class SkParagraphStyleProperties {
-  external SkTextAlign? get textAlign;
   external set textAlign(SkTextAlign? value);
-
-  external SkTextDirection? get textDirection;
   external set textDirection(SkTextDirection? value);
-
-  external double? get heightMultiplier;
   external set heightMultiplier(double? value);
-
-  external int? get textHeightBehavior;
   external set textHeightBehavior(int? value);
-
-  external int? get maxLines;
   external set maxLines(int? value);
-
-  external String? get ellipsis;
   external set ellipsis(String? value);
-
-  external SkTextStyleProperties? get textStyle;
   external set textStyle(SkTextStyleProperties? value);
-
-  external SkStrutStyleProperties? get strutStyle;
   external set strutStyle(SkStrutStyleProperties? strutStyle);
 }
 
@@ -1559,132 +1544,66 @@ SkPlaceholderAlignment toSkPlaceholderAlignment(
 @JS()
 @anonymous
 class SkTextStyleProperties {
-  external Float32List? get backgroundColor;
   external set backgroundColor(Float32List? value);
-
-  external Float32List? get color;
   external set color(Float32List? value);
-
-  external Float32List? get foregroundColor;
   external set foregroundColor(Float32List? value);
-
-  external int? get decoration;
   external set decoration(int? value);
-
-  external double? get decorationThickness;
   external set decorationThickness(double? value);
-
-  external Float32List? get decorationColor;
   external set decorationColor(Float32List? value);
-
-  external SkTextDecorationStyle? get decorationStyle;
   external set decorationStyle(SkTextDecorationStyle? value);
-
-  external SkTextBaseline? get textBaseline;
   external set textBaseline(SkTextBaseline? value);
-
-  external double? get fontSize;
   external set fontSize(double? value);
-
-  external double? get letterSpacing;
   external set letterSpacing(double? value);
-
-  external double? get wordSpacing;
   external set wordSpacing(double? value);
-
-  external double? get heightMultiplier;
   external set heightMultiplier(double? value);
-
-  external String? get locale;
   external set locale(String? value);
-
-  external List<String>? get fontFamilies;
   external set fontFamilies(List<String>? value);
-
-  external SkFontStyle? get fontStyle;
   external set fontStyle(SkFontStyle? value);
-
-  external List<SkTextShadow>? get shadows;
   external set shadows(List<SkTextShadow>? value);
-
-  external List<SkFontFeature>? get fontFeatures;
   external set fontFeatures(List<SkFontFeature>? value);
 }
 
 @JS()
 @anonymous
 class SkStrutStyleProperties {
-  external List<String>? get fontFamilies;
   external set fontFamilies(List<String>? value);
-
-  external SkFontStyle? get fontStyle;
   external set fontStyle(SkFontStyle? value);
-
-  external double? get fontSize;
   external set fontSize(double? value);
-
-  external double? get heightMultiplier;
   external set heightMultiplier(double? value);
-
-  external double? get leading;
   external set leading(double? value);
-
-  external bool? get strutEnabled;
   external set strutEnabled(bool? value);
-
-  external bool? get forceStrutHeight;
   external set forceStrutHeight(bool? value);
 }
 
 @JS()
 @anonymous
 class SkPlaceholderStyleProperties {
-  external double? get width;
   external set width(double? value);
-
-  external double? get height;
   external set height(double? value);
-
-  external SkPlaceholderAlignment? get alignment;
   external set alignment(SkPlaceholderAlignment? value);
-
-  external double? get offset;
   external set offset(double? value);
-
-  external SkTextBaseline? get baseline;
   external set baseline(SkTextBaseline? value);
 }
 
 @JS()
 @anonymous
 class SkFontStyle {
-  external SkFontWeight? get weight;
   external set weight(SkFontWeight? value);
-
-  external SkFontSlant? get slant;
   external set slant(SkFontSlant? value);
 }
 
 @JS()
 @anonymous
 class SkTextShadow {
-  external Float32List? get color;
   external set color(Float32List? value);
-
-  external Float32List? get offset;
   external set offset(Float32List? value);
-
-  external double? get blurRadius;
   external set blurRadius(double? value);
 }
 
 @JS()
 @anonymous
 class SkFontFeature {
-  external String? get name;
   external set name(String? value);
-
-  external int? get value;
   external set value(int? value);
 }
 
