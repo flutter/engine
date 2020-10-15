@@ -24,6 +24,7 @@ class TranspilerImpl : public Transpiler {
 
   virtual Result Transpile(const char* data, size_t length) override;
   virtual std::string GetSkSL() override;
+  virtual size_t GetUniformBufferSize() override;
 
   void set_last_op(uint32_t op);
   void set_last_msg(std::string msg);
@@ -81,6 +82,8 @@ class TranspilerImpl : public Transpiler {
   uint32_t frag_position_param_ = 0;
   uint32_t return_ = 0;
   uint32_t last_op_ = 0;
+
+  size_t uniform_buffer_size_ = 0;
 
   std::unordered_map<uint32_t, std::string> imported_functions_;
 
@@ -268,6 +271,10 @@ std::string TranspilerImpl::GetSkSL() {
   return sksl_.str();
 }
 
+size_t TranspilerImpl::GetUniformBufferSize() {
+  return uniform_buffer_size_;
+}
+
 void TranspilerImpl::set_last_op(uint32_t op) {
   last_op_ = op;
 }
@@ -291,6 +298,19 @@ std::string TranspilerImpl::ResolveType(uint32_t id) {
     return "float4";
   }
   return "";
+}
+
+size_t TranspilerImpl::ResolveTypeFloatCount(uint32_t id) {
+  if (id == float_type_ || id == float_uniform_type_) {
+    return 1;
+  } else if (id == vec2_type_ || id == vec2_uniform_type_) {
+    return 2;
+  } else if (id == vec3_type_ || id == vec3_uniform_type_) {
+    return 3;
+  } else if (id == vec4_type_ || id == vec4_uniform_type_) {
+    return 4;
+  }
+  return 0;
 }
 
 spv_result_t TranspilerImpl::HandleCapability(
@@ -556,6 +576,8 @@ spv_result_t TranspilerImpl::HandleVariable(
     last_error_msg_ = "OpVariable: Must use SSIR-valid type.";
     return SPV_UNSUPPORTED;
   }
+
+  uniform_buffer_size_ += ResolveTypeFloatCount(inst->type_id);
 
   sksl_ << "uniform " << ResolveType(inst->type_id) << " "
         << ResolveName(inst->result_id) << ";\n";

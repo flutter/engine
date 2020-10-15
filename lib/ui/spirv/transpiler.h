@@ -5,6 +5,7 @@
 #ifndef SSIR_TRANSPILER_TRANSPILER_H_
 #define SSIR_TRANSPILER_TRANSPILER_H_
 
+#include <cstddef>
 #include <memory>
 #include <string>
 
@@ -35,6 +36,10 @@ class Transpiler {
   virtual Result Transpile(const char* data, size_t length) = 0;
 
   virtual std::string GetSkSL() = 0;
+
+  // Return the number of float32 values that should be 
+  // included in the uniform value buffer.
+  virtual size_t GetUniformBufferSize() = 0;
 
  protected:
   Transpiler() = default;
