@@ -391,6 +391,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.platform_message_callback = fl_engine_platform_message_cb;
   args.custom_task_runners = &custom_task_runners;
   args.shutdown_dart_vm_when_done = true;
+  args.dart_entrypoint_argv = fl_dart_project_get_dart_entrypoint_arguments(self->project, &args.dart_entrypoint_argc);
 
   if (FlutterEngineRunsAOTCompiledDartCode()) {
     FlutterEngineAOTDataSource source = {};

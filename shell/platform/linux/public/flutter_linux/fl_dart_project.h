@@ -96,6 +96,34 @@ const gchar* fl_dart_project_get_assets_path(FlDartProject* project);
  */
 const gchar* fl_dart_project_get_icu_data_path(FlDartProject* project);
 
+/**
+ * fl_dart_project_set_dart_entrypoint_arguments:
+ * @project: an #FlDartProject.
+ * @argc: the number of command line arguments in @argv
+ * @argv: a pointer to an array of C strings containing the command line arguments.
+ *
+ * Sets the command line arguments to be passed through to the Dart
+ * entrypoint function.
+ *
+ * FlDartProject will not keep a deep copy nor ownership of these arguments;
+ * the caller is responsible for ensuring that they are not freed before the
+ * Flutter Engine is initialized, at which point they will be copied and can
+ * be safely freed.
+ */
+void fl_dart_project_set_dart_entrypoint_arguments(FlDartProject* project, int argc, const char** argv);
+
+/**
+ * fl_dart_project_get_dart_entrypoint_arguments:
+ * @project: an #FlDartProject.
+ * @argc: a pointer to an int which will be set to the number of command line arguments
+ *
+ * Gets the command line arguments to be passed through to the Dart entrypoint function.
+ *
+ * Returns: a pointer to an array of C strings containing the command line arguments. This
+ * should not be deallocated by the caller.
+ */
+const char** fl_dart_project_get_dart_entrypoint_arguments(FlDartProject* project, int* argc);
+
 G_END_DECLS
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_DART_PROJECT_H_
