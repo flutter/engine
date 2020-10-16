@@ -1,4 +1,4 @@
-Signature: d3af201134539fd4e7afdc554e2523e9
+Signature: 529f6aae626a387923b176d149bb4397
 
 UNUSED LICENSES:
 
@@ -4111,6 +4111,7 @@ FILE: ../../../third_party/skia/include/core/SkM44.h
 FILE: ../../../third_party/skia/include/effects/SkStrokeAndFillPathEffect.h
 FILE: ../../../third_party/skia/include/gpu/GrDirectContext.h
 FILE: ../../../third_party/skia/include/private/SkOpts_spi.h
+FILE: ../../../third_party/skia/include/private/SkTPin.h
 FILE: ../../../third_party/skia/modules/audioplayer/SkAudioPlayer.cpp
 FILE: ../../../third_party/skia/modules/audioplayer/SkAudioPlayer.h
 FILE: ../../../third_party/skia/modules/audioplayer/SkAudioPlayer_mac.mm
