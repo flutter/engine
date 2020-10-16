@@ -9,7 +9,7 @@ import 'package:ui/src/engine.dart';
 import 'package:web_engine_tester/golden_tester.dart';
 import 'package:test/test.dart';
 
-// Commit a recording canvas to a bitmap, and compare with the expected
+/// Commit a recording canvas to a bitmap, and compare with the expected.
 Future<void> canvasScreenshot(RecordingCanvas rc, String fileName,
     {ui.Rect region = const ui.Rect.fromLTWH(0, 0, 600, 800),
       double maxDiffRatePercent = 0.0, bool write: false}) async {

@@ -275,7 +275,7 @@ class BitmapCanvas extends EngineCanvas {
     if (op == ui.ClipOp.difference) {
       // Create 2 rectangles inside each other that represents
       // clip area difference using even-odd fill rule.
-      SurfacePath path = new SurfacePath();
+      final SurfacePath path = new SurfacePath();
       path.fillType = ui.PathFillType.evenOdd;
       path.addRect(ui.Rect.fromLTWH(0, 0, _bounds.width, _bounds.height));
       path.addRect(rect);

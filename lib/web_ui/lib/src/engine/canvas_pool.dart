@@ -210,7 +210,7 @@ class _CanvasPool extends _SaveStackTracking {
         } else if (clipEntry.rrect != null) {
           _clipRRect(ctx, clipEntry.rrect!);
         } else if (clipEntry.path != null) {
-          SurfacePath path = clipEntry.path as SurfacePath;
+          final SurfacePath path = clipEntry.path as SurfacePath;
           _runPath(ctx, path);
           if (path.fillType == ui.PathFillType.nonZero) {
             ctx.clip();

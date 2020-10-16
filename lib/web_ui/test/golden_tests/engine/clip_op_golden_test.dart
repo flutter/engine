@@ -18,8 +18,6 @@ void testMain() async {
     debugEmulateFlutterTesterEnvironment = true;
   });
 
-  // setUpStableTestFonts();
-
   /// Regression test for https://github.com/flutter/flutter/issues/64734.
   test('Clips using difference', () async {
     final Rect region = const Rect.fromLTRB(0, 0, 400, 300);
