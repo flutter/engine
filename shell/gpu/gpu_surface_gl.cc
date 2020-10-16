@@ -154,6 +154,7 @@ static SkColorType FirstSupportedColorType(GrDirectContext* context,
 
 static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
                                             const SkISize& size,
+                                            SkPixelGeometry pixel_geometry,
                                             intptr_t fbo) {
   GrGLenum format;
   const SkColorType color_type = FirstSupportedColorType(context, &format);
@@ -170,7 +171,7 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
   );
 
   sk_sp<SkColorSpace> colorspace = SkColorSpace::MakeSRGB();
-  SkSurfaceProps surface_props(0, kUnknown_SkPixelGeometry);
+  SkSurfaceProps surface_props(0, pixel_geometry);
 
   return SkSurface::MakeFromBackendRenderTarget(
       context,                                       // gr context
@@ -185,7 +186,9 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
 bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   if (onscreen_surface_ != nullptr &&
       size == SkISize::Make(onscreen_surface_->width(),
-                            onscreen_surface_->height())) {
+                            onscreen_surface_->height()) &&
+      delegate_->GetPixelGeometry() ==
+          onscreen_surface_->props().pixelGeometry()) {
     // Surface size appears unchanged. So bail.
     return true;
   }
@@ -207,10 +210,12 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
                             static_cast<uint32_t>(size.height())};
   const uint32_t fbo_id = delegate_->GLContextFBO(frame_info);
-  onscreen_surface = WrapOnscreenSurface(context_.get(),  // GL context
-                                         size,            // root surface size
-                                         fbo_id           // window FBO ID
-  );
+  onscreen_surface =
+      WrapOnscreenSurface(context_.get(),                 // GL context
+                          size,                           // root surface size
+                          delegate_->GetPixelGeometry(),  // pixel geometry
+                          fbo_id                          // window FBO ID
+      );
 
   if (onscreen_surface == nullptr) {
     // If the onscreen surface could not be wrapped. There is absolutely no
@@ -297,9 +302,10 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     // re-wrap.
     const uint32_t fbo_id = delegate_->GLContextFBO(frame_info);
     auto new_onscreen_surface =
-        WrapOnscreenSurface(context_.get(),  // GL context
-                            current_size,    // root surface size
-                            fbo_id           // window FBO ID
+        WrapOnscreenSurface(context_.get(),                 // GL context
+                            current_size,                   // root surface size
+                            delegate_->GetPixelGeometry(),  // pixel geometry
+                            fbo_id                          // window FBO ID
         );
 
     if (!new_onscreen_surface) {

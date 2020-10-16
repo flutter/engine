@@ -61,6 +61,8 @@ void PlatformView::SetViewportMetrics(const ViewportMetrics& metrics) {
   delegate_.OnPlatformViewSetViewportMetrics(metrics);
 }
 
+void PlatformView::SetPixelGeometry(SkPixelGeometry pixel_geometry) {}
+
 void PlatformView::NotifyCreated() {
   std::unique_ptr<Surface> surface;
 

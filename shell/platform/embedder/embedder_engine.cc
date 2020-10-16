@@ -121,6 +121,20 @@ bool EmbedderEngine::SetViewportMetrics(flutter::ViewportMetrics metrics) {
   return true;
 }
 
+bool EmbedderEngine::SetPixelGeometry(SkPixelGeometry pixel_geometry) {
+  if (!IsValid()) {
+    return false;
+  }
+
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
+
+  platform_view->SetPixelGeometry(pixel_geometry);
+  return true;
+}
+
 bool EmbedderEngine::DispatchPointerDataPacket(
     std::unique_ptr<flutter::PointerDataPacket> packet) {
   if (!IsValid() || !packet) {

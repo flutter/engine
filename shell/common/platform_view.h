@@ -381,6 +381,16 @@ class PlatformView {
   ///
   void SetViewportMetrics(const ViewportMetrics& metrics);
 
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to specify the updated pixel geometry. In
+  ///             response to this call, the rendering surface will be updated
+  ///             with the new geometry.
+  ///
+  /// @param[in]  pixel_geometry The updated pixel geometry.
+  ///
+  virtual void SetPixelGeometry(SkPixelGeometry pixel_geometry);
+
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to notify the shell that a platform view
   ///             has been created. This notification is used to create a

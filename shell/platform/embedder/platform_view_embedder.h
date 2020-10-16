@@ -20,6 +20,10 @@
 
 namespace flutter {
 
+namespace testing {
+class EmbedderTest;
+}
+
 class PlatformViewEmbedder final : public PlatformView {
  public:
   using UpdateSemanticsNodesCallback =
@@ -59,7 +63,8 @@ class PlatformViewEmbedder final : public PlatformView {
       EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
       bool fbo_reset_after_present,
       PlatformDispatchTable platform_dispatch_table,
-      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder,
+      SkPixelGeometry initial_pixel_geometry);
 #endif
 
   ~PlatformViewEmbedder() override;
@@ -78,6 +83,9 @@ class PlatformViewEmbedder final : public PlatformView {
   PlatformDispatchTable platform_dispatch_table_;
 
   // |PlatformView|
+  void SetPixelGeometry(SkPixelGeometry pixel_geometry) override;
+
+  // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|
@@ -90,6 +98,7 @@ class PlatformViewEmbedder final : public PlatformView {
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data) override;
 
+  friend class testing::EmbedderTest;
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewEmbedder);
 };
 

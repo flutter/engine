@@ -23,6 +23,9 @@ class EmbedderSurface {
 
   virtual sk_sp<GrDirectContext> CreateResourceContext() const = 0;
 
+  // The software backend ignores this, but the GL backend tracks it.
+  virtual void SetPixelGeometry(SkPixelGeometry pixel_geometry) {}
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurface);
 };

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/embedder/tests/embedder_test.h"
+#include "flutter/shell/platform/embedder/platform_view_embedder.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_software.h"
 
 #ifdef SHELL_ENABLE_GL
@@ -42,6 +43,20 @@ EmbedderTestContext& EmbedderTest::GetEmbedderContext(ContextType type) {
 
   return *embedder_contexts_[type];
 }
+
+#if SHELL_ENABLE_GL
+EmbedderSurfaceGL* EmbedderTest::GetGLSurface(
+    fml::WeakPtr<PlatformView> platform_view) {
+  auto embedder_platform_view =
+      reinterpret_cast<PlatformViewEmbedder*>(platform_view.get());
+  return reinterpret_cast<EmbedderSurfaceGL*>(
+      embedder_platform_view->embedder_surface_.get());
+}
+
+SkPixelGeometry EmbedderTest::GetPixelGeometry(EmbedderSurfaceGL* surface) {
+  return surface->GetPixelGeometry();
+}
+#endif  // SHELL_ENABLE_GL
 
 }  // namespace testing
 }  // namespace flutter

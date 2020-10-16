@@ -11,10 +11,12 @@ namespace flutter {
 EmbedderSurfaceGL::EmbedderSurfaceGL(
     GLDispatchTable gl_dispatch_table,
     bool fbo_reset_after_present,
-    std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
+    std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder,
+    SkPixelGeometry pixel_geometry)
     : gl_dispatch_table_(gl_dispatch_table),
       fbo_reset_after_present_(fbo_reset_after_present),
-      external_view_embedder_(std::move(external_view_embedder)) {
+      external_view_embedder_(std::move(external_view_embedder)),
+      pixel_geometry_(pixel_geometry) {
   // Make sure all required members of the dispatch table are checked.
   if (!gl_dispatch_table_.gl_make_current_callback ||
       !gl_dispatch_table_.gl_clear_current_callback ||
@@ -22,7 +24,6 @@ EmbedderSurfaceGL::EmbedderSurfaceGL(
       !gl_dispatch_table_.gl_fbo_callback) {
     return;
   }
-
   valid_ = true;
 }
 
@@ -31,6 +32,16 @@ EmbedderSurfaceGL::~EmbedderSurfaceGL() = default;
 // |EmbedderSurface|
 bool EmbedderSurfaceGL::IsValid() const {
   return valid_;
+}
+
+// |GPUSurfaceDelegate|
+SkPixelGeometry EmbedderSurfaceGL::GetPixelGeometry() const {
+  return pixel_geometry_;
+}
+
+// |EmbedderSurface|
+void EmbedderSurfaceGL::SetPixelGeometry(SkPixelGeometry pixel_geometry) {
+  pixel_geometry_ = pixel_geometry;
 }
 
 // |GPUSurfaceGLDelegate|

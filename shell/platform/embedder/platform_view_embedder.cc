@@ -25,12 +25,14 @@ PlatformViewEmbedder::PlatformViewEmbedder(
     EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
     bool fbo_reset_after_present,
     PlatformDispatchTable platform_dispatch_table,
-    std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
+    std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder,
+    SkPixelGeometry initial_pixel_geometry)
     : PlatformView(delegate, std::move(task_runners)),
-      embedder_surface_(std::make_unique<EmbedderSurfaceGL>(
-          gl_dispatch_table,
-          fbo_reset_after_present,
-          std::move(external_view_embedder))),
+      embedder_surface_(
+          std::make_unique<EmbedderSurfaceGL>(gl_dispatch_table,
+                                              fbo_reset_after_present,
+                                              std::move(external_view_embedder),
+                                              initial_pixel_geometry)),
       platform_dispatch_table_(platform_dispatch_table) {}
 #endif
 
@@ -64,6 +66,15 @@ void PlatformViewEmbedder::HandlePlatformMessage(
 
   platform_dispatch_table_.platform_message_response_callback(
       std::move(message));
+}
+
+// |PlatformView|
+void PlatformViewEmbedder::SetPixelGeometry(SkPixelGeometry pixel_geometry) {
+  if (!embedder_surface_) {
+    return;
+  }
+  embedder_surface_->SetPixelGeometry(pixel_geometry);
+  PlatformView::SetPixelGeometry(pixel_geometry);
 }
 
 // |PlatformView|

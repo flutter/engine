@@ -12,6 +12,9 @@
 
 namespace flutter {
 
+namespace testing {
+class EmbedderTest;
+}
 class EmbedderSurfaceGL final : public EmbedderSurface,
                                 public GPUSurfaceGLDelegate {
  public:
@@ -29,7 +32,8 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   EmbedderSurfaceGL(
       GLDispatchTable gl_dispatch_table,
       bool fbo_reset_after_present,
-      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder,
+      SkPixelGeometry pixel_geometry);
 
   ~EmbedderSurfaceGL() override;
 
@@ -37,8 +41,8 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   bool valid_ = false;
   GLDispatchTable gl_dispatch_table_;
   bool fbo_reset_after_present_;
-
   std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
+  SkPixelGeometry pixel_geometry_;
 
   // |EmbedderSurface|
   bool IsValid() const override;
@@ -48,6 +52,12 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
 
   // |EmbedderSurface|
   sk_sp<GrDirectContext> CreateResourceContext() const override;
+
+  // |GPUSurfaceDelegate|
+  SkPixelGeometry GetPixelGeometry() const override;
+
+  // |EmbedderSurface|
+  void SetPixelGeometry(SkPixelGeometry pixel_geometry) override;
 
   // |GPUSurfaceGLDelegate|
   std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
@@ -73,6 +83,7 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
 
+  friend class testing::EmbedderTest;
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceGL);
 };
 

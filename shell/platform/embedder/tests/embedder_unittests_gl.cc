@@ -3353,5 +3353,37 @@ TEST_F(EmbedderTest, MultipleDisplaysWithSameDisplayIdIsInvalid) {
   latch.Wait();
 }
 
+TEST_F(EmbedderTest, CanSetPixelGeometry) {
+  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+
+  builder.SetDartEntrypoint("main");
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
+
+  auto surface = GetGLSurface(shell.GetPlatformView());
+  ASSERT_TRUE(surface);
+
+  ASSERT_EQ(GetPixelGeometry(surface), kUnknown_SkPixelGeometry);
+
+  FlutterEngineSetPixelGeometry(engine.get(), kFlutterPixelGeometryRGBHorizontal);
+  ASSERT_EQ(GetPixelGeometry(surface), kRGB_H_SkPixelGeometry);
+  FlutterEngineSetPixelGeometry(engine.get(), kFlutterPixelGeometryRGBVertical);
+  ASSERT_EQ(GetPixelGeometry(surface), kRGB_V_SkPixelGeometry);
+
+  FlutterEngineSetPixelGeometry(engine.get(), kFlutterPixelGeometryBGRVertical);
+  ASSERT_EQ(GetPixelGeometry(surface), kBGR_V_SkPixelGeometry);
+  FlutterEngineSetPixelGeometry(engine.get(), kFlutterPixelGeometryBGRVertical);
+  ASSERT_EQ(GetPixelGeometry(surface), kBGR_V_SkPixelGeometry);
+
+  FlutterEngineSetPixelGeometry(engine.get(), kFlutterPixelGeometryUnknown);
+  ASSERT_EQ(GetPixelGeometry(surface), kUnknown_SkPixelGeometry);
+}
+
 }  // namespace testing
 }  // namespace flutter

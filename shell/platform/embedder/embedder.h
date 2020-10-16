@@ -374,6 +374,26 @@ typedef bool (*BoolPresentInfoCallback)(
     void* /* user data */,
     const FlutterPresentInfo* /* present info */);
 
+
+typedef enum {
+  /// Specifies that the arrangement of LCD strips for each pixel is unknown, or
+  /// that the backing store will be rendered to a device with portable pixels
+  /// that may be transformed before being drawn to a device.
+  kFlutterPixelGeometryUnknown,
+  /// Specifies that the arrangment of LCD strips for each pixel is horizontal
+  /// and in RGB format.
+  kFlutterPixelGeometryRGBHorizontal,
+  /// Specifies that the arrangment of LCD strips for each pixel is vertical
+  /// and in RGB format.
+  kFlutterPixelGeometryRGBVertical,
+  /// Specifies that the arrangment of LCD strips for each pixel is horizontal
+  /// and in BGR format.
+  kFlutterPixelGeometryBGRHorizontal,
+  /// Specifies that the arrangment of LCD strips for each pixel is vertical
+  /// and in BGR format.
+  kFlutterPixelGeometryBGRVertical,
+} FlutterPixelGeometry;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterOpenGLRendererConfig).
   size_t struct_size;
@@ -432,6 +452,11 @@ typedef struct {
   /// `FlutterPresentInfo` struct that the embedder can use to release any
   /// resources. The return value indicates success of the present call.
   BoolPresentInfoCallback present_with_info;
+  /// Specifies the initial pixel geometry of the display.
+  ///
+  /// If or when the geometry changes, use the SetPixelGeometry method to update
+  /// the engine.
+  FlutterPixelGeometry initial_pixel_geometry;
 } FlutterOpenGLRendererConfig;
 
 typedef struct {
@@ -1496,6 +1521,20 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* event);
+
+//----------------------------------------------------------------------------
+/// @brief      Update the pixel geometry used by the rendering surface, for
+///             example when first creating a view or when the view is shown on
+///             a different display after creation.
+///
+/// @param[in]  pixel_geometry The updated pixel geometry.
+///
+/// @return     The result of the call to update the pixel geometry.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSetPixelGeometry(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterPixelGeometry pixel_geometry);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPointerEvent(

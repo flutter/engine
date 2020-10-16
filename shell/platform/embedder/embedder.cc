@@ -153,6 +153,24 @@ static void* DefaultGLProcResolver(const char* name) {
 }
 #endif  // OS_LINUX || OS_WIN
 
+static std::optional<SkPixelGeometry> FlutterPixelGeometryToSkia(
+    FlutterPixelGeometry pixel_geometry) {
+  switch (pixel_geometry) {
+    case kFlutterPixelGeometryUnknown:
+      return kUnknown_SkPixelGeometry;
+    case kFlutterPixelGeometryRGBHorizontal:
+      return kRGB_H_SkPixelGeometry;
+    case kFlutterPixelGeometryRGBVertical:
+      return kRGB_V_SkPixelGeometry;
+    case kFlutterPixelGeometryBGRHorizontal:
+      return kBGR_H_SkPixelGeometry;
+    case kFlutterPixelGeometryBGRVertical:
+      return kBGR_V_SkPixelGeometry;
+    default:
+      return std::nullopt;
+  }
+}
+
 static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
@@ -259,8 +277,14 @@ InferOpenGLPlatformViewCreationCallback(
       gl_proc_resolver,                    // gl_proc_resolver
   };
 
+  auto pixel_geometry = FlutterPixelGeometryToSkia(
+                            SAFE_ACCESS(open_gl_config, initial_pixel_geometry,
+                                        kFlutterPixelGeometryUnknown))
+                            .value_or(kUnknown_SkPixelGeometry);
+
   return fml::MakeCopyable(
       [gl_dispatch_table, fbo_reset_after_present, platform_dispatch_table,
+       pixel_geometry,
        external_view_embedder =
            std::move(external_view_embedder)](flutter::Shell& shell) mutable {
         return std::make_unique<flutter::PlatformViewEmbedder>(
@@ -269,7 +293,8 @@ InferOpenGLPlatformViewCreationCallback(
             gl_dispatch_table,        // embedder GL dispatch table
             fbo_reset_after_present,  // fbo reset after present
             platform_dispatch_table,  // embedder platform dispatch table
-            std::move(external_view_embedder)  // external view embedder
+            std::move(external_view_embedder),  // external view embedder
+            pixel_geometry                      // initial pixel geometry
         );
       });
 #else
@@ -1252,6 +1277,26 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInvalidArguments,
                                   "Viewport metrics were invalid.");
+}
+
+FlutterEngineResult FlutterEngineSetPixelGeometry(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterPixelGeometry pixel_geometry) {
+  if (!engine) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+
+  std::optional<SkPixelGeometry> skia_pixel_geometry =
+      FlutterPixelGeometryToSkia(pixel_geometry);
+  if (!skia_pixel_geometry.has_value()) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Pixel geometry was invalid.");
+  }
+
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetPixelGeometry(
+             skia_pixel_geometry.value())
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                  "Pixel geometry was invalid.");
 }
 
 // Returns the flutter::PointerData::Change for the given FlutterPointerPhase.
