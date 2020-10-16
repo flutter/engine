@@ -229,6 +229,8 @@ abstract class _BaseAdapter {
 }
 
 mixin _WheelEventListenerMixin on _BaseAdapter {
+  static double? _defaultScrollLineHeight;
+
   List<ui.PointerData> _convertWheelEventToPointerData(
     html.WheelEvent event
   ) {
@@ -242,8 +244,9 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     double deltaY = event.deltaY as double;
     switch (event.deltaMode) {
       case domDeltaLine:
-        deltaX *= 32.0;
-        deltaY *= 32.0;
+        _defaultScrollLineHeight ??= _computeDefaultScrollLineHeight();
+        deltaX *= _defaultScrollLineHeight!;
+        deltaY *= _defaultScrollLineHeight!;
         break;
       case domDeltaPage:
         deltaX *= ui.window.physicalSize.width;
@@ -253,6 +256,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       default:
         break;
     }
+    print(deltaY);
     final List<ui.PointerData> data = <ui.PointerData>[];
     _pointerDataConverter.convert(
       data,
@@ -286,6 +290,24 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         eventOptions
       ]
     );
+  }
+
+  /// For browsers that report delta line instead of pixels such as FireFox
+  /// compute line height using the default font size.
+  double _computeDefaultScrollLineHeight() {
+    const double kFallbackFontHeight = 16.0;
+    final html.DivElement probe = html.DivElement();
+    probe.style
+        ..fontSize = 'initial'
+        ..display = 'none';
+    html.document.body!.append(probe);
+    String fontSize = probe.getComputedStyle().fontSize;
+    double? res;
+    if (fontSize.contains('px')) {
+       fontSize = fontSize.replaceAll('px', '');
+       res = double.tryParse(fontSize);
+    }
+    return res == null ? kFallbackFontHeight : res! / 4.0;
   }
 }
 
