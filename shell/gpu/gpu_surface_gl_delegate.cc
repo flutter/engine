@@ -103,4 +103,8 @@ ExternalViewEmbedder* GPUSurfaceGLDelegate::GetExternalViewEmbedder() {
   return nullptr;
 }
 
+SkPixelGeometry GPUSurfaceGLDelegate::GetPixelGeometry() const {
+  return kUnknown_SkPixelGeometry;
+}
+
 }  // namespace flutter

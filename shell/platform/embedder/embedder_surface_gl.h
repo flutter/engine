@@ -33,7 +33,7 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
       GLDispatchTable gl_dispatch_table,
       bool fbo_reset_after_present,
       std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder,
-      SkPixelGeometry pixel_geometry);
+      SkPixelGeometry pixel_geometry = kUnknown_SkPixelGeometry);
 
   ~EmbedderSurfaceGL() override;
 

@@ -277,14 +277,8 @@ InferOpenGLPlatformViewCreationCallback(
       gl_proc_resolver,                    // gl_proc_resolver
   };
 
-  auto pixel_geometry = FlutterPixelGeometryToSkia(
-                            SAFE_ACCESS(open_gl_config, initial_pixel_geometry,
-                                        kFlutterPixelGeometryUnknown))
-                            .value_or(kUnknown_SkPixelGeometry);
-
   return fml::MakeCopyable(
       [gl_dispatch_table, fbo_reset_after_present, platform_dispatch_table,
-       pixel_geometry,
        external_view_embedder =
            std::move(external_view_embedder)](flutter::Shell& shell) mutable {
         return std::make_unique<flutter::PlatformViewEmbedder>(
@@ -293,8 +287,7 @@ InferOpenGLPlatformViewCreationCallback(
             gl_dispatch_table,        // embedder GL dispatch table
             fbo_reset_after_present,  // fbo reset after present
             platform_dispatch_table,  // embedder platform dispatch table
-            std::move(external_view_embedder),  // external view embedder
-            pixel_geometry                      // initial pixel geometry
+            std::move(external_view_embedder)  // external view embedder
         );
       });
 #else

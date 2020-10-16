@@ -180,6 +180,7 @@ if (enable_unittests) {
       "//flutter/flow",
       "//flutter/lib/ui",
       "//flutter/runtime",
+      "//flutter/shell/common",
       "//flutter/testing",
       "//flutter/testing:dart",
       "//flutter/testing:skia",

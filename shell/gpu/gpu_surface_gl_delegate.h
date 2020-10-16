@@ -26,6 +26,9 @@ class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
   ~GPUSurfaceGLDelegate() override;
 
   // |GPUSurfaceDelegate|
+  SkPixelGeometry GetPixelGeometry() const override;
+
+  // |GPUSurfaceDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // Called to make the main GL context current on the current thread.

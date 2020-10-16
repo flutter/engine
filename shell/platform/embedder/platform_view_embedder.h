@@ -64,8 +64,7 @@ class PlatformViewEmbedder final : public PlatformView {
       EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
       bool fbo_reset_after_present,
       PlatformDispatchTable platform_dispatch_table,
-      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder,
-      SkPixelGeometry initial_pixel_geometry);
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 #endif
 
   ~PlatformViewEmbedder() override;

@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_DELEGATE_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_DELEGATE_H_
 
@@ -7,7 +11,7 @@ namespace flutter {
 
 class GPUSurfaceDelegate {
  public:
-  virtual ~GPUSurfaceDelegate() {}
+  virtual ~GPUSurfaceDelegate();
 
   //----------------------------------------------------------------------------
   /// @brief      Gets the pixel geometry of the surface, i.e. whether the
@@ -22,9 +26,7 @@ class GPUSurfaceDelegate {
   ///             displays with differing pixel geometry, it is up to the
   ///             platform to pick which one to use.
   ///
-  virtual SkPixelGeometry GetPixelGeometry() const {
-    return kUnknown_SkPixelGeometry;
-  }
+  virtual SkPixelGeometry GetPixelGeometry() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Gets the view embedder that controls how the Flutter layer
