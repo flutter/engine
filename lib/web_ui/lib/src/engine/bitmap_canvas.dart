@@ -777,32 +777,9 @@ class BitmapCanvas extends EngineCanvas {
     _elementCache?.commitFrame();
   }
 
-  /// Computes paint bounds given [targetTransform] to completely cover window
-  /// viewport.
+  /// Computes paint bounds given [targetTransform] to completely cover picture.
   ui.Rect _computeScreenBounds(Matrix4 targetTransform) {
-    final Matrix4 inverted = targetTransform.clone()..invert();
-    final double dpr = ui.window.devicePixelRatio;
-    final double width = ui.window.physicalSize.width * dpr;
-    final double height = ui.window.physicalSize.height * dpr;
-    Vector3 topLeft = inverted.perspectiveTransform(Vector3(0, 0, 0));
-    Vector3 topRight = inverted.perspectiveTransform(Vector3(width, 0, 0));
-    Vector3 bottomRight =
-    inverted.perspectiveTransform(Vector3(width, height, 0));
-    Vector3 bottomLeft = inverted.perspectiveTransform(Vector3(0, height, 0));
-    return ui.Rect.fromLTRB(
-      math.min(topLeft.x,
-          math.min(topRight.x, math.min(bottomRight.x, bottomLeft.x))) -
-          bounds.left,
-      math.min(topLeft.y,
-          math.min(topRight.y, math.min(bottomRight.y, bottomLeft.y))) -
-          bounds.top,
-      math.max(topLeft.x,
-          math.max(topRight.x, math.max(bottomRight.x, bottomLeft.x))) -
-          bounds.left,
-      math.max(topLeft.y,
-          math.max(topRight.y, math.max(bottomRight.y, bottomLeft.y))) -
-          bounds.top,
-    );
+    return ui.Rect.fromLTRB(0, 0, _bounds.width, _bounds.height);
   }
 }
 
