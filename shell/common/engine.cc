@@ -106,6 +106,10 @@ void Engine::SetupDefaultFontManager() {
   font_collection_.SetupDefaultFontManager();
 }
 
+std::shared_ptr<AssetManager> Engine::GetAssetManager() {
+  return asset_manager_;
+}
+
 bool Engine::UpdateAssetManager(
     std::shared_ptr<AssetManager> new_asset_manager) {
   if (asset_manager_ == new_asset_manager) {
@@ -495,6 +499,10 @@ void Engine::HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) {
   } else {
     delegate_.OnEngineHandlePlatformMessage(std::move(message));
   }
+}
+
+void Engine::OnRootIsolateCreated() {
+  delegate_.OnRootIsolateCreated();
 }
 
 void Engine::UpdateIsolateDescription(const std::string isolate_name,
