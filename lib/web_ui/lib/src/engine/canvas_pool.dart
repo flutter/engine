@@ -212,10 +212,10 @@ class _CanvasPool extends _SaveStackTracking {
         } else if (clipEntry.path != null) {
           SurfacePath path = clipEntry.path as SurfacePath;
           _runPath(ctx, path);
-          if (path.fillType == ui.PathFillType.evenOdd) {
-            ctx.clip('evenodd');
-          } else {
+          if (path.fillType == ui.PathFillType.nonZero) {
             ctx.clip();
+          } else {
+            ctx.clip('evenodd');
           }
         }
       }
