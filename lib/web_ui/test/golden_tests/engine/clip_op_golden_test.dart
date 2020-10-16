@@ -39,6 +39,6 @@ void testMain() async {
     }
     canvas..drawRect(titleRect, paint);
     await canvasScreenshot(canvas, 'clip_op_difference',
-        region: region.inflate(20));
+        region: const Rect.fromLTRB(0, 0, 420, 360));
   });
 }
