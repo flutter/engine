@@ -44,7 +44,7 @@ class Safari extends Browser {
           '${url.toString()}'
         ]);
 
-        return process;
+        return BrowserProcess(process, url.toString());
       } else {
         // Desktop-Safari
         // TODO(nurhan): Configure info log for LUCI.
@@ -71,10 +71,10 @@ class Safari extends Browser {
           '${url.toString()}'
         ]);
 
-        return process;
+        return BrowserProcess(process, url.toString());
       }
     });
   }
 
-  Safari._(Future<Process> startBrowser()) : super(startBrowser);
+  Safari._(Future<BrowserProcess> startBrowser()) : super(startBrowser);
 }

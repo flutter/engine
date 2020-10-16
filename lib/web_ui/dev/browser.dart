@@ -63,13 +63,13 @@ abstract class Browser {
   /// which asynchronously returns the browser process. Any errors in
   /// [startBrowser] (even those raised asynchronously after it returns) are
   /// piped to [onExit] and will cause the browser to be killed.
-  Browser(Future<Process> startBrowser()) {
+  Browser(Future<BrowserProcess> startBrowser()) {
     // Don't return a Future here because there's no need for the caller to wait
     // for the process to actually start. They should just wait for the HTTP
     // request instead.
     runZoned(() async {
-      var process = await startBrowser();
-      _processCompleter.complete(process);
+      BrowserProcess browserProcess = await startBrowser();
+      _processCompleter.complete(browserProcess.process);
 
       var output = Uint8Buffer();
       void drainOutput(Stream<List<int>> stream) {
@@ -80,10 +80,10 @@ abstract class Browser {
       }
 
       // If we don't drain the stdout and stderr the process can hang.
-      drainOutput(process.stdout);
-      drainOutput(process.stderr);
+      drainOutput(browserProcess.process.stdout);
+      drainOutput(browserProcess.process.stderr);
 
-      var exitCode = await process.exitCode;
+      var exitCode = await browserProcess.process.exitCode;
 
       // This hack dodges an otherwise intractable race condition. When the user
       // presses Control-C, the signal is sent to the browser and the test
@@ -103,6 +103,11 @@ abstract class Browser {
         var outputString = utf8.decode(output);
         var message = '$name failed with exit code $exitCode.';
         if (outputString.isNotEmpty) {
+          final bool isFlake =
+              knownFlakes.any((element) => outputString.contains(element));
+          //if (isFlake) {
+            flakedTestPaths.add(browserProcess.test);
+          //}
           message += '\nStandard output:\n$outputString';
         }
 
@@ -151,3 +156,21 @@ abstract class Browser {
     return onExit.catchError((dynamic _) {});
   }
 }
+
+class BrowserProcess {
+  final Process process;
+  final String test;
+  BrowserProcess(this.process, this.test);
+}
+
+/// Output strings collected from the known flakes.
+///
+/// Browsers we use migh have flakes. Check the failure outputs with these
+/// strings to make sure it's not one of the frequently detected outputs.
+///
+/// Please add strings repeated in the flakes to this set.
+const Set<String> knownFlakes = {
+  'Assertion `listp->slotinfo[cnt].gen <= GL(dl_tls_generation)'
+};
+
+const Set<String> flakedTestPaths = {};

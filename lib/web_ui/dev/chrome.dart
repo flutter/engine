@@ -84,10 +84,10 @@ class Chrome extends Browser {
       unawaited(process.exitCode
           .then((_) => Directory(dir).deleteSync(recursive: true)));
 
-      return process;
+      return BrowserProcess(process, url.toString());
     }, remoteDebuggerCompleter.future);
   }
 
-  Chrome._(Future<Process> startBrowser(), this.remoteDebuggerUrl)
+  Chrome._(Future<BrowserProcess> startBrowser(), this.remoteDebuggerUrl)
       : super(startBrowser);
 }
