@@ -256,7 +256,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       default:
         break;
     }
-    print(deltaY);
+
     final List<ui.PointerData> data = <ui.PointerData>[];
     _pointerDataConverter.convert(
       data,
@@ -294,6 +294,8 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
 
   /// For browsers that report delta line instead of pixels such as FireFox
   /// compute line height using the default font size.
+  ///
+  /// Use Firefox to test this code path.
   double _computeDefaultScrollLineHeight() {
     const double kFallbackFontHeight = 16.0;
     final html.DivElement probe = html.DivElement();
