@@ -41,7 +41,7 @@ void testMain() async {
         .webOnlyRootElement);
 
     await matchGoldenFile('canvas_draw_color.png', region: region);
-  });
+  }, skip: true); // TODO: matchGolden fails when a div covers viewport.
 
   test('drawPaint should cover entire viewport', () async {
     final Rect region = Rect.fromLTWH(0, 0, 400, 400);
@@ -55,7 +55,7 @@ void testMain() async {
         .webOnlyRootElement);
 
     await matchGoldenFile('canvas_draw_paint.png', region: region);
-  });
+  }, skip: true); // TODO: matchGolden fails when a div covers viewport.);
 }
 
 Picture _drawTestPicture(Rect region, {bool useColor = false}) {
