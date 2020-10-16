@@ -648,9 +648,9 @@ class PlatformDispatcher {
   }
 
   // Called from the engine, via hooks.dart
-  String? _localeClosure() {
+  String _localeClosure() {
     if (locale == null) {
-      return null;
+      return '';
     }
     return locale.toString();
   }

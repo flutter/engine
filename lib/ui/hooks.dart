@@ -48,13 +48,6 @@ void _updateWindowMetrics(
   );
 }
 
-String _localeClosure() {
-  if (window.locale == null) {
-    return '';
-  }
-  return window.locale.toString();
-}
-
 typedef _LocaleClosure = String Function();
 
 @pragma('vm:entry-point')
