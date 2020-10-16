@@ -55,6 +55,11 @@ String matrix4ToCssTransform(Matrix4 matrix) {
   return float64ListToCssTransform(matrix.storage);
 }
 
+/// Converts [matrix] to CSS top/left values.
+Position2D matrix4ToCssTransformForSemantics(Matrix4 matrix) {
+  return float64ListToCss2dPositionSemantics(matrix.storage);
+}
+
 /// Applies a transform to the [element].
 ///
 /// See [float64ListToCssTransform] for details on how the CSS value is chosen.
@@ -84,6 +89,19 @@ String float64ListToCssTransform(Float32List matrix) {
     assert(transformKind == TransformKind.identity);
     return 'none';
   }
+}
+
+/// Converts [matrix] to coordinates on 2 dimensional space.
+///
+/// Only used by semantics node styling calculations, since semantics
+/// node does not receive 3D transforms, only tx and ty values of the matrix
+/// is used.
+Position2D float64ListToCss2dPositionSemantics(Float32List matrix) {
+  assert(transformKindOf(matrix) != TransformKind.transform2d);
+  assert(matrix.length == 16);
+  final Float32List m = matrix;
+  print('top left: ${matrix[13]} ${matrix[12]} semantics');
+  return Position2D('${matrix[13]}px', '${matrix[12]}px');
 }
 
 /// The kind of effect a transform matrix performs.
@@ -595,4 +613,16 @@ int clampInt(int value, int min, int max) {
   } else {
     return value;
   }
+}
+
+/// Position of a node in 2 dimensional space.
+class Position2D {
+  /// The position on y-axis.
+  final String top;
+
+  /// The position on x-axis.
+  final String left;
+
+  /// Position2D default constructor.
+  Position2D(this.top, this.left);
 }

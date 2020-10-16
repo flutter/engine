@@ -882,9 +882,11 @@ class SemanticsObject {
     }
 
     if (!effectiveTransformIsIdentity) {
+      final Position2D position2d =
+        matrix4ToCssTransformForSemantics(effectiveTransform);
       element.style
-        ..transformOrigin = '0 0 0'
-        ..transform = matrix4ToCssTransform(effectiveTransform);
+        ..top = position2d.top
+        ..left = position2d.left;
     } else {
       element.style
         ..removeProperty('transform-origin')
