@@ -309,7 +309,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
        fontSize = fontSize.replaceAll('px', '');
        res = double.tryParse(fontSize);
     }
-    return res == null ? kFallbackFontHeight : res! / 4.0;
+    return res == null ? kFallbackFontHeight : res / 4.0;
   }
 }
 
