@@ -374,22 +374,21 @@ typedef bool (*BoolPresentInfoCallback)(
     void* /* user data */,
     const FlutterPresentInfo* /* present info */);
 
-
 typedef enum {
   /// Specifies that the arrangement of LCD strips for each pixel is unknown, or
   /// that the backing store will be rendered to a device with portable pixels
   /// that may be transformed before being drawn to a device.
   kFlutterPixelGeometryUnknown,
-  /// Specifies that the arrangment of LCD strips for each pixel is horizontal
+  /// Specifies that the arranegment of LCD strips for each pixel is horizontal
   /// and in RGB format.
   kFlutterPixelGeometryRGBHorizontal,
-  /// Specifies that the arrangment of LCD strips for each pixel is vertical
+  /// Specifies that the arranegment of LCD strips for each pixel is vertical
   /// and in RGB format.
   kFlutterPixelGeometryRGBVertical,
-  /// Specifies that the arrangment of LCD strips for each pixel is horizontal
+  /// Specifies that the arranegment of LCD strips for each pixel is horizontal
   /// and in BGR format.
   kFlutterPixelGeometryBGRHorizontal,
-  /// Specifies that the arrangment of LCD strips for each pixel is vertical
+  /// Specifies that the arrangeament of LCD strips for each pixel is vertical
   /// and in BGR format.
   kFlutterPixelGeometryBGRVertical,
 } FlutterPixelGeometry;
