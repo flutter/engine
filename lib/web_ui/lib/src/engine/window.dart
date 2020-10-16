@@ -185,10 +185,6 @@ class EngineFlutterWindow extends ui.Window {
       width = html.window.innerWidth! * devicePixelRatio;
     }
 
-      final int height2 = html.window.innerHeight ?? 0;
-      final int width2 = html.window.innerWidth ?? 0;
-      print('height width: $height2 $width2 semantics windowww $devicePixelRatio');
-
     // This method compares the new dimensions with the previous ones.
     // Return false if the previous dimensions are not set.
     if (_physicalSize != null) {
