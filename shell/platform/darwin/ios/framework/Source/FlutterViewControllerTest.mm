@@ -566,8 +566,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                     nibName:nil
                                                                      bundle:nil];
 
-  id testSet = [self fakeUiPressSet:
-                  UIPressPhaseBegan:UIKeyboardHIDUsageKeyboardA:UIKeyModifierShift:@"a":@"A"];
+  id testSet = [self fakeUiPressSetForPhase:UIPressPhaseBegan
+                                    keyCode:UIKeyboardHIDUsageKeyboardA
+                              modifierFlags:UIKeyModifierShift
+                                 characters:@"a"
+                charactersIgnoringModifiers:@"A"];
 
   // Exercise behavior under test.
   [vc dispatchPresses:testSet];
@@ -604,8 +607,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                     nibName:nil
                                                                      bundle:nil];
 
-  id testSet = [self fakeUiPressSet:
-                  UIPressPhaseEnded:UIKeyboardHIDUsageKeyboardA:UIKeyModifierShift:@"a":@"A"];
+  id testSet = [self fakeUiPressSetForPhase:UIPressPhaseEnded
+                                    keyCode:UIKeyboardHIDUsageKeyboardA
+                              modifierFlags:UIKeyModifierShift
+                                 characters:@"a"
+                charactersIgnoringModifiers:@"A"];
 
   // Exercise behavior under test.
   [vc dispatchPresses:testSet];
@@ -643,8 +649,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                      bundle:nil];
 
   id emptySet = [NSSet set];
-  id ignoredSet = [self fakeUiPressSet:
-                UIPressPhaseStationary:UIKeyboardHIDUsageKeyboardA:UIKeyModifierShift:@"a":@"A"];
+  id ignoredSet = [self fakeUiPressSetForPhase:UIPressPhaseStationary
+                                       keyCode:UIKeyboardHIDUsageKeyboardA
+                                 modifierFlags:UIKeyModifierShift
+                                    characters:@"a"
+                   charactersIgnoringModifiers:@"A"];
 
   id mockUiPress = OCMClassMock([UIPress class]);
   OCMStub([mockUiPress phase]).andReturn(UIPressPhaseBegan);
@@ -662,11 +671,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [keyEventChannel stopMocking];
 }
 
-- (NSSet<UIPress*>*)fakeUiPressSet:(UIPressPhase)
-                             phase:(UIKeyboardHIDUsage)keyCode
-                                  :(UIKeyModifierFlags)modifierFlags
-                                  :(NSString*)characters
-                                  :(NSString*)charactersIgnoringModifiers API_AVAILABLE(ios(13.4)) {
+- (NSSet<UIPress*>*)fakeUiPressSetForPhase:(UIPressPhase)phase
+                                   keyCode:(UIKeyboardHIDUsage)keyCode
+                             modifierFlags:(UIKeyModifierFlags)modifierFlags
+                                characters:(NSString*)characters
+               charactersIgnoringModifiers:(NSString*)charactersIgnoringModifiers
+    API_AVAILABLE(ios(13.4)) {
   if (@available(iOS 13.4, *)) {
     // noop
   } else {
