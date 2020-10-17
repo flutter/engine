@@ -19,8 +19,7 @@ struct _FlDartProject {
   gchar* aot_library_path;
   gchar* assets_path;
   gchar* icu_data_path;
-  int dart_entrypoint_argc;
-  const char** dart_entrypoint_argv;
+  GPtrArray* dart_entrypoint_args;
 };
 
 G_DEFINE_TYPE(FlDartProject, fl_dart_project, G_TYPE_OBJECT)
@@ -44,9 +43,7 @@ static void fl_dart_project_dispose(GObject* object) {
   g_clear_pointer(&self->aot_library_path, g_free);
   g_clear_pointer(&self->assets_path, g_free);
   g_clear_pointer(&self->icu_data_path, g_free);
-
-  // We don't have ownership of this, so can just null it out
-  self->dart_entrypoint_argv = nullptr;
+  g_ptr_array_unref(self->dart_entrypoint_args);
 
   G_OBJECT_CLASS(fl_dart_project_parent_class)->dispose(object);
 }
@@ -69,8 +66,7 @@ G_MODULE_EXPORT FlDartProject* fl_dart_project_new() {
   self->icu_data_path =
       g_build_filename(executable_dir, "data", "icudtl.dat", nullptr);
 
-  self->dart_entrypoint_argc = 0;
-  self->dart_entrypoint_argv = nullptr;
+  self->dart_entrypoint_args = g_ptr_array_new_with_free_func(g_free);
 
   return self;
 }
@@ -106,18 +102,19 @@ G_MODULE_EXPORT const gchar* fl_dart_project_get_icu_data_path(
   return self->icu_data_path;
 }
 
-G_MODULE_EXPORT const char** fl_dart_project_get_dart_entrypoint_arguments(
-    FlDartProject* self, int* argc) {
-  g_return_if_fail(FL_IS_DART_PROJECT(self));
-  *argc = self->dart_entrypoint_argc;
-  return self->dart_entrypoint_argv;
+G_MODULE_EXPORT GPtrArray* fl_dart_project_get_dart_entrypoint_arguments(
+    FlDartProject* self) {
+  g_return_val_if_fail(FL_IS_DART_PROJECT(self), nullptr);
+  return g_ptr_array_ref(self->dart_entrypoint_args);
 }
 
 G_MODULE_EXPORT void fl_dart_project_set_dart_entrypoint_arguments(
     FlDartProject* self, int argc, const char** argv) {
   g_return_if_fail(FL_IS_DART_PROJECT(self));
-  self->dart_entrypoint_argc = argc;
-  self->dart_entrypoint_argv = argv;
+  g_ptr_array_remove_range(self->dart_entrypoint_args, 0, self->dart_entrypoint_args->len);
+  for (int i = 0; i < argc; ++i) {
+    g_ptr_array_add(self->dart_entrypoint_args, g_strdup(argv[i]));
+  }
 }
 
 GPtrArray* fl_dart_project_get_switches(FlDartProject* self) {

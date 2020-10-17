@@ -381,6 +381,9 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   // so that all switches are used.
   g_ptr_array_insert(command_line_args, 0, g_strdup("flutter"));
 
+  g_autoptr(GPtrArray) dart_entrypoint_args =
+      fl_dart_project_get_dart_entrypoint_arguments(self->project);
+
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
   args.assets_path = fl_dart_project_get_assets_path(self->project);
@@ -391,7 +394,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.platform_message_callback = fl_engine_platform_message_cb;
   args.custom_task_runners = &custom_task_runners;
   args.shutdown_dart_vm_when_done = true;
-  args.dart_entrypoint_argv = fl_dart_project_get_dart_entrypoint_arguments(self->project, &args.dart_entrypoint_argc);
+  args.dart_entrypoint_argc = dart_entrypoint_args->len;
+  args.dart_entrypoint_argv = reinterpret_cast<const char* const*>(dart_entrypoint_args->pdata);
 
   if (FlutterEngineRunsAOTCompiledDartCode()) {
     FlutterEngineAOTDataSource source = {};
