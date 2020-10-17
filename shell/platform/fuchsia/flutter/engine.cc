@@ -400,11 +400,11 @@ Engine::~Engine() {
   }
 }
 
-std::pair<bool, uint32_t> Engine::GetEngineReturnCode() const {
-  std::pair<bool, uint32_t> code(false, 0);
+std::optional<uint32_t> Engine::GetEngineReturnCode() const {
   if (!shell_) {
-    return code;
+    return std::nullopt;
   }
+  std::optional<uint32_t> code;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       shell_->GetTaskRunners().GetUITaskRunner(),

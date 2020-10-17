@@ -137,6 +137,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   auto bridge =
       std::make_unique<flutter::AccessibilityBridge>(/*view=*/nil,
@@ -156,6 +157,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
@@ -182,6 +184,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
@@ -224,9 +227,12 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                                  /*raster=*/thread_task_runner,
                                  /*ui=*/thread_task_runner,
                                  /*io=*/thread_task_runner);
+
+    auto surfaceFactory = flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware);
     auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
         /*delegate=*/mock_delegate,
         /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+        /*ios_surface_factory=*/surfaceFactory,
         /*task_runners=*/runners);
     id mockFlutterView = OCMClassMock([FlutterView class]);
     id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
@@ -234,8 +240,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     std::string label = "some label";
 
     auto flutterPlatformViewsController =
-        std::make_unique<flutter::FlutterPlatformViewsController>();
+        std::make_unique<flutter::FlutterPlatformViewsController>(surfaceFactory);
     flutterPlatformViewsController->SetFlutterView(mockFlutterView);
+    surfaceFactory->SetPlatformViewsController(flutterPlatformViewsController.get());
 
     MockFlutterPlatformFactory* factory = [[MockFlutterPlatformFactory new] autorelease];
     flutterPlatformViewsController->RegisterViewFactory(
@@ -279,6 +286,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
@@ -328,9 +336,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
 
   XCTAssertEqual([accessibility_notifications count], 1ul);
-  SemanticsObject* focusObject = accessibility_notifications[0][@"argument"];
-  XCTAssertEqual([focusObject uid], 3);
-  XCTAssertEqualObjects([focusObject accessibilityLabel], @"node3");
+  XCTAssertEqualObjects(accessibility_notifications[0][@"argument"], @"node3");
   XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
                  UIAccessibilityScreenChangedNotification);
 }
@@ -346,6 +352,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
@@ -373,7 +380,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::SemanticsNode node1;
   node1.id = 1;
   node1.label = "node1";
-  node1.flags = static_cast<int32_t>(flutter::SemanticsFlags::kScopesRoute);
+  node1.flags = static_cast<int32_t>(flutter::SemanticsFlags::kScopesRoute) |
+                static_cast<int32_t>(flutter::SemanticsFlags::kNamesRoute);
   node1.childrenInTraversalOrder = {2, 3};
   node1.childrenInHitTestOrder = {2, 3};
   nodes[node1.id] = node1;
@@ -394,9 +402,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   // Notification should focus first focusable node, which is node1.
   XCTAssertEqual([accessibility_notifications count], 1ul);
-  SemanticsObject* focusObject = accessibility_notifications[0][@"argument"];
-  XCTAssertEqual([focusObject uid], 2);
-  XCTAssertEqualObjects([focusObject accessibilityLabel], @"node2");
+  id focusObject = accessibility_notifications[0][@"argument"];
+  XCTAssertTrue([focusObject isKindOfClass:[NSString class]]);
+  XCTAssertEqualObjects(focusObject, @"node1");
   XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
                  UIAccessibilityScreenChangedNotification);
 }
@@ -412,6 +420,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   id mockFlutterView = OCMClassMock([FlutterView class]);
@@ -478,6 +487,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   id mockFlutterView = OCMClassMock([FlutterView class]);
@@ -550,6 +560,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   id mockFlutterView = OCMClassMock([FlutterView class]);
@@ -624,6 +635,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   id mockFlutterView = OCMClassMock([FlutterView class]);
@@ -694,6 +706,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
@@ -761,6 +774,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
       /*task_runners=*/runners);
   fml::AutoResetWaitableEvent latch;
   thread_task_runner->PostTask([&] {
