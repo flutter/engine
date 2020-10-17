@@ -90,9 +90,18 @@ SceneBuilder::SceneBuilder() {
 SceneBuilder::~SceneBuilder() = default;
 
 void SceneBuilder::pushTransform(Dart_Handle layer_handle,
-                                 tonic::Float64List& matrix4) {
+                                 tonic::Float64List& matrix4,
+                                 tonic::Float64List& cache_matrix4) {
   SkMatrix sk_matrix = ToSkMatrix(matrix4);
-  auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
+  SkMatrix sk_cache_matrix;
+  SkMatrix* sk_cache_matrix_ptr;
+  if (cache_matrix4.num_elements() != 0) {
+    sk_cache_matrix = ToSkMatrix(cache_matrix4);
+    sk_cache_matrix_ptr = &sk_cache_matrix;
+  } else {
+    sk_cache_matrix_ptr = nullptr;
+  }
+  auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix, sk_cache_matrix_ptr);
   PushLayer(layer);
   // matrix4 has to be released before we can return another Dart object
   matrix4.Release();

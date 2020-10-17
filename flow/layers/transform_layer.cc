@@ -8,7 +8,7 @@
 
 namespace flutter {
 
-TransformLayer::TransformLayer(const SkMatrix& transform)
+TransformLayer::TransformLayer(const SkMatrix& transform, const SkMatrix* cache_transform)
     : transform_(transform) {
   // Checks (in some degree) that SkMatrix transform_ is valid and initialized.
   //
@@ -24,24 +24,36 @@ TransformLayer::TransformLayer(const SkMatrix& transform)
     FML_LOG(ERROR) << "TransformLayer is constructed with an invalid matrix.";
     transform_.setIdentity();
   }
+  if (cache_transform) {
+    FML_DCHECK(cache_transform->isFinite());
+    if (!cache_transform->isFinite() || !cache_transform->invert(nullptr)) {
+      FML_LOG(ERROR) << "TransformLayer is constructed with an invalid cache matrix.";
+      cache_requested_ = false;
+    } else {
+      cache_transform_ = *cache_transform;
+      cache_requested_ = true;
+    }
+  } else {
+    cache_requested_ = false;
+  }
 }
 
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "TransformLayer::Preroll");
 
+  SkMatrix& child_transform = cache_requested_ ? cache_transform_ : transform_;
   SkMatrix child_matrix;
-  child_matrix.setConcat(matrix, transform_);
-  context->mutators_stack.PushTransform(transform_);
+  child_matrix.setConcat(matrix, child_transform);
+  context->mutators_stack.PushTransform(child_transform);
   SkRect previous_cull_rect = context->cull_rect;
   SkMatrix inverse_transform_;
   // Perspective projections don't produce rectangles that are useful for
   // culling for some reason.
-  if (!transform_.hasPerspective() && transform_.invert(&inverse_transform_)) {
+  if (!child_transform.hasPerspective() && child_transform.invert(&inverse_transform_)) {
     inverse_transform_.mapRect(&context->cull_rect);
   } else {
     context->cull_rect = kGiantRect;
   }
-
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, child_matrix, &child_paint_bounds);
 
@@ -50,6 +62,10 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   context->cull_rect = previous_cull_rect;
   context->mutators_stack.Pop();
+
+  if (cache_requested_) {
+    TryToPrepareRasterCache(context, GetCacheableChild(), child_matrix);
+  }
 }
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
@@ -71,6 +87,12 @@ void TransformLayer::UpdateScene(SceneUpdateContext& context) {
 void TransformLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FML_DCHECK(needs_painting());
+
+  if (cache_requested_ && context.raster_cache &&
+      context.raster_cache->Draw(GetCacheableChild(), *context.internal_nodes_canvas, cache_transform_, transform_)) {
+    TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
+    return;
+  }
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->concat(transform_);

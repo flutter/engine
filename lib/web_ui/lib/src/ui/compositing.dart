@@ -47,6 +47,7 @@ abstract class SceneBuilder {
   });
   TransformEngineLayer? pushTransform(
     Float64List matrix4, {
+    Float64List? cacheMatrix4,
     TransformEngineLayer? oldLayer,
   });
   ClipRectEngineLayer? pushClipRect(

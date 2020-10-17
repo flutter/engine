@@ -210,6 +210,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   @override
   ui.TransformEngineLayer? pushTransform(
     Float64List matrix4, {
+    Float64List? cacheMatrix4,
     ui.EngineLayer? oldLayer,
   }) {
     final Matrix4 matrix = Matrix4.fromFloat32List(toMatrix32(matrix4));

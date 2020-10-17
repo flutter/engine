@@ -11,9 +11,9 @@ namespace flutter {
 
 // Be careful that SkMatrix's default constructor doesn't initialize the matrix
 // at all. Hence |set_transform| must be called with an initialized SkMatrix.
-class TransformLayer : public ContainerLayer {
+class TransformLayer : public MergedContainerLayer {
  public:
-  TransformLayer(const SkMatrix& transform);
+  TransformLayer(const SkMatrix& transform, const SkMatrix* cache_transform = nullptr);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
@@ -25,6 +25,8 @@ class TransformLayer : public ContainerLayer {
 
  private:
   SkMatrix transform_;
+  SkMatrix cache_transform_;
+  bool cache_requested_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TransformLayer);
 };
