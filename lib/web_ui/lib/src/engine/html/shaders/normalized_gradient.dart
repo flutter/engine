@@ -119,12 +119,13 @@ class NormalizedGradient {
   double thresholdAt(int index) => _thresholds[index];
 }
 
-/// Writes code to search for probe value in source data and set
+/// Writes fragment shader code to search for probe value in source data and set
 /// bias and scale to be used for computation.
 ///
 /// Source data for thresholds is provided using ceil(count/4) packed vec4
 /// uniforms.
-/// bias and scale data are vec4 uniforms that hold color data.
+///
+/// Bias and scale data are vec4 uniforms that hold color data.
 void _writeUnrolledBinarySearch(ShaderMethod method, int start, int end,
     {required String probe,
       required String sourcePrefix, required String biasName,

@@ -250,7 +250,11 @@ class ShaderMethod {
   }
 
   void addStatement(String statement) {
-    _statements.add('  ' * _indentLevel + statement);
+    if (assertionsEnabled) {
+      _statements.add('  ' * _indentLevel + statement);
+    } else {
+      _statements.add(statement);
+    }
   }
 
   void write(StringBuffer buffer) {

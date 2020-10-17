@@ -173,23 +173,33 @@ class _WebGlRenderer implements _GlRenderer {
     context.restore();
   }
 
+  static final Uint16List _vertexIndicesForRect = Uint16List.fromList(
+      <int>[
+        0, 1, 2, 2, 3, 0
+      ]
+  );
+
   /// Renders a rectangle using given program into an image resource.
+  ///
+  /// Browsers that support OffscreenCanvas and the transferToImageBitmap api
+  /// will return ImageBitmap, otherwise will return CanvasElement.
   Object? drawRect(ui.Rect targetRect, _GlContext gl, _GlProgram glProgram,
       NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
     // Setup rectangle coordinates.
-    final Float32List coordinates = Float32List.fromList(
-        <double>[
-          targetRect.left, targetRect.top,
-          targetRect.right, targetRect.top,
-          targetRect.right, targetRect.bottom,
-          targetRect.left, targetRect.bottom,
-        ]);
+    final double left = targetRect.left;
+    final double top = targetRect.top;
+    final double right = targetRect.right;
+    final double bottom = targetRect.bottom;
     // Form 2 triangles for rectangle.
-    final Uint16List indices = Uint16List.fromList(
-        <int>[
-          0, 1, 2, 2, 3, 0
-        ]
-    );
+    final Float32List vertices = Float32List(8);
+    vertices[0] = left;
+    vertices[1] = top;
+    vertices[2] = right;
+    vertices[3] = top;
+    vertices[4] = right;
+    vertices[5] = bottom;
+    vertices[6] = left;
+    vertices[7] = bottom;
 
     Object transformUniform = gl.getUniformLocation(
         glProgram.program, 'u_ctransform');
@@ -207,7 +217,7 @@ class _WebGlRenderer implements _GlRenderer {
     Object positionsBuffer = gl.createBuffer()!;
     assert(positionsBuffer != null); // ignore: unnecessary_null_comparison
     gl.bindArrayBuffer(positionsBuffer);
-    gl.bufferData(coordinates, gl.kStaticDraw);
+    gl.bufferData(vertices, gl.kStaticDraw);
     // Point an attribute to the currently bound vertex buffer object.
     js_util.callMethod(
         gl.glContext, 'vertexAttribPointer',
@@ -228,7 +238,7 @@ class _WebGlRenderer implements _GlRenderer {
 
     Object? indexBuffer = gl.createBuffer();
     gl.bindElementArrayBuffer(indexBuffer);
-    gl.bufferElementData(indices, gl.kStaticDraw);
+    gl.bufferElementData(_vertexIndicesForRect, gl.kStaticDraw);
 
     Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
     gl.setUniform2f(uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
@@ -236,7 +246,7 @@ class _WebGlRenderer implements _GlRenderer {
     gl.clear();
     gl.viewport(0, 0, widthInPixels.toDouble(), heightInPixels.toDouble());
 
-    gl.drawElements(gl.kTriangles, indices.length, gl.kUnsignedShort);
+    gl.drawElements(gl.kTriangles, _vertexIndicesForRect.length, gl.kUnsignedShort);
 
     Object? image = gl.readPatternData();
 
@@ -835,7 +845,7 @@ class _GlContextCache {
           _GlContext.fromOffscreenCanvas(_offScreenCanvas!._canvas!);
     } else {
       _cachedContext ??= _GlContext.fromCanvas(_offScreenCanvas!._glCanvas!,
-          (browserEngine == BrowserEngine.webkit));
+          webGLVersion == 1);
     }
     _cachedContext!.setViewportSize(widthInPixels, heightInPixels);
     return _cachedContext;

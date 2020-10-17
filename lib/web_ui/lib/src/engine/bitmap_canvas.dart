@@ -975,5 +975,3 @@ String _maskFilterToCanvasFilter(ui.MaskFilter? maskFilter) {
     return 'none';
   }
 }
-
-
