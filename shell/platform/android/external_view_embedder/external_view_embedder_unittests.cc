@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 
@@ -10,6 +9,7 @@
 #include "flutter/fml/raster_thread_merger.h"
 #include "flutter/fml/thread.h"
 #include "flutter/shell/platform/android/jni/jni_mock.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
 #include "flutter/shell/platform/android/surface/android_surface_mock.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -20,6 +20,24 @@ namespace testing {
 
 using ::testing::ByMove;
 using ::testing::Return;
+
+class TestAndroidSurfaceFactory : public AndroidSurfaceFactory {
+ public:
+  using TestSurfaceProducer =
+      std::function<std::unique_ptr<AndroidSurface>(void)>;
+  explicit TestAndroidSurfaceFactory(TestSurfaceProducer&& surface_producer) {
+    surface_producer_ = surface_producer;
+  }
+
+  ~TestAndroidSurfaceFactory() override = default;
+
+  std::unique_ptr<AndroidSurface> CreateSurface() override {
+    return surface_producer_();
+  }
+
+ private:
+  TestSurfaceProducer surface_producer_;
+};
 
 class SurfaceMock : public Surface {
  public:
@@ -263,10 +281,8 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
-  auto surface_factory =
-      [gr_context, window, frame_size](
-          std::shared_ptr<AndroidContext> android_context,
-          std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
+  auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
+      [gr_context, window, frame_size]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
             SkSurface::MakeNull(1000, 1000), false,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
@@ -293,7 +309,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
         EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
 
         return android_surface_mock;
-      };
+      });
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, surface_factory);
 
@@ -482,10 +498,8 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
-  auto surface_factory =
-      [gr_context, window, frame_size](
-          std::shared_ptr<AndroidContext> android_context,
-          std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
+  auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
+      [gr_context, window, frame_size]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
             SkSurface::MakeNull(1000, 1000), false,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
@@ -505,7 +519,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
         EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
 
         return android_surface_mock;
-      };
+      });
 
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, surface_factory);
@@ -565,10 +579,8 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
-  auto surface_factory =
-      [gr_context, window, frame_size](
-          std::shared_ptr<AndroidContext> android_context,
-          std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
+  auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
+      [gr_context, window, frame_size]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
             SkSurface::MakeNull(1000, 1000), false,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
@@ -588,7 +600,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
         EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
 
         return android_surface_mock;
-      };
+      });
 
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, surface_factory);

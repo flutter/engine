@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
@@ -264,6 +263,11 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   std::transform(switches.begin(), switches.end(), std::back_inserter(argv),
                  [](const std::string& arg) -> const char* { return arg.c_str(); });
 
+  std::vector<const char*> dartEntrypointArgs;
+  for (NSString* argument in [_project dartEntrypointArguments]) {
+    dartEntrypointArgs.push_back([argument UTF8String]);
+  }
+
   FlutterProjectArgs flutterArguments = {};
   flutterArguments.struct_size = sizeof(FlutterProjectArgs);
   flutterArguments.assets_path = _project.assetsPath.UTF8String;
@@ -273,6 +277,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
+  flutterArguments.dart_entrypoint_argc = dartEntrypointArgs.size();
+  flutterArguments.dart_entrypoint_argv = dartEntrypointArgs.data();
+
   static size_t sTaskRunnerIdentifiers = 0;
   const FlutterTaskRunnerDescription cocoa_task_runner_description = {
       .struct_size = sizeof(FlutterTaskRunnerDescription),
