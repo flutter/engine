@@ -302,7 +302,7 @@ class BitmapCanvas extends EngineCanvas {
   @override
   void drawPaint(SurfacePaintData paint) {
     ui.Rect? shaderBounds = (paint.shader != null) ?
-        _computeScreenBounds(_canvasPool._currentTransform) : null;
+        _computePictureBounds() : null;
     _setUpPaint(paint, shaderBounds);
     _canvasPool.fill();
     _tearDownPaint();
@@ -777,8 +777,8 @@ class BitmapCanvas extends EngineCanvas {
     _elementCache?.commitFrame();
   }
 
-  /// Computes paint bounds given [targetTransform] to completely cover picture.
-  ui.Rect _computeScreenBounds(Matrix4 targetTransform) {
+  /// Computes paint bounds to completely cover picture.
+  ui.Rect _computePictureBounds() {
     return ui.Rect.fromLTRB(0, 0, _bounds.width, _bounds.height);
   }
 }
