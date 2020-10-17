@@ -111,7 +111,8 @@ TEST_F(TransformLayerTest, Cached) {
   EXPECT_TRUE(cache_transform.invert(&inverse_layer_transform));
 
   auto mock_layer = std::make_shared<MockLayer>(child_path, SkPaint());
-  auto layer = std::make_shared<TransformLayer>(layer_transform, &cache_transform);
+  auto layer =
+      std::make_shared<TransformLayer>(layer_transform, &cache_transform);
   layer->Add(mock_layer);
 
   preroll_context()->cull_rect = cull_rect;

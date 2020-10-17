@@ -24,7 +24,9 @@ class RasterCacheResult {
 
   virtual void draw(SkCanvas& canvas, const SkPaint* paint) const;
 
-  virtual void drawTransformed(SkCanvas& canvas, const SkMatrix& cache_matrix, const SkMatrix& render_matrix) const;
+  virtual void drawTransformed(SkCanvas& canvas,
+                               const SkMatrix& cache_matrix,
+                               const SkMatrix& render_matrix) const;
 
   virtual SkISize image_dimensions() const {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);

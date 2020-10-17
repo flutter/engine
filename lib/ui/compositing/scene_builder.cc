@@ -101,7 +101,8 @@ void SceneBuilder::pushTransform(Dart_Handle layer_handle,
   } else {
     sk_cache_matrix_ptr = nullptr;
   }
-  auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix, sk_cache_matrix_ptr);
+  auto layer =
+      std::make_shared<flutter::TransformLayer>(sk_matrix, sk_cache_matrix_ptr);
   PushLayer(layer);
   // matrix4 has to be released before we can return another Dart object
   matrix4.Release();

@@ -8,7 +8,8 @@
 
 namespace flutter {
 
-TransformLayer::TransformLayer(const SkMatrix& transform, const SkMatrix* cache_transform)
+TransformLayer::TransformLayer(const SkMatrix& transform,
+                               const SkMatrix* cache_transform)
     : transform_(transform) {
   // Checks (in some degree) that SkMatrix transform_ is valid and initialized.
   //
@@ -27,7 +28,8 @@ TransformLayer::TransformLayer(const SkMatrix& transform, const SkMatrix* cache_
   if (cache_transform) {
     FML_DCHECK(cache_transform->isFinite());
     if (!cache_transform->isFinite() || !cache_transform->invert(nullptr)) {
-      FML_LOG(ERROR) << "TransformLayer is constructed with an invalid cache matrix.";
+      FML_LOG(ERROR)
+          << "TransformLayer is constructed with an invalid cache matrix.";
       cache_requested_ = false;
     } else {
       cache_transform_ = *cache_transform;
@@ -49,7 +51,8 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkMatrix inverse_transform_;
   // Perspective projections don't produce rectangles that are useful for
   // culling for some reason.
-  if (!child_transform.hasPerspective() && child_transform.invert(&inverse_transform_)) {
+  if (!child_transform.hasPerspective() &&
+      child_transform.invert(&inverse_transform_)) {
     inverse_transform_.mapRect(&context->cull_rect);
   } else {
     context->cull_rect = kGiantRect;
@@ -89,7 +92,9 @@ void TransformLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting());
 
   if (cache_requested_ && context.raster_cache &&
-      context.raster_cache->Draw(GetCacheableChild(), *context.internal_nodes_canvas, cache_transform_, transform_)) {
+      context.raster_cache->Draw(GetCacheableChild(),
+                                 *context.internal_nodes_canvas,
+                                 cache_transform_, transform_)) {
     TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
     return;
   }
