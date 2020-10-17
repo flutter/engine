@@ -87,7 +87,7 @@ void testCanLaunchSecondaryIsolate() {
 
 @pragma('vm:entry-point')
 void testSkiaResourceCacheSendsResponse() {
-  final PlatformMessageResponseCallback callback = (ByteData data) {
+  final PlatformMessageResponseCallback callback = (ByteData? data) {
     if (data == null) {
       throw 'Response must not be null.';
     }
@@ -130,7 +130,7 @@ void canCreateImageFromDecompressedData() {
 
 @pragma('vm:entry-point')
 void canAccessIsolateLaunchData() {
-  notifyMessage(utf8.decode(window.getPersistentIsolateData().buffer.asUint8List()));
+  notifyMessage(utf8.decode(window.getPersistentIsolateData()!.buffer.asUint8List()));
 }
 
 void notifyMessage(String string) native 'NotifyMessage';
@@ -162,4 +162,20 @@ void localtimesMatch() {
   // Forward only "$y-$m-$d $h" for timestamp comparison.  Not using DateTime
   // formatting since package:intl is not available.
   notifyLocalTime(timeStr.split(":")[0]);
+}
+
+void notifyCanAccessResource(bool success) native 'NotifyCanAccessResource';
+
+void notifySetAssetBundlePath() native 'NotifySetAssetBundlePath';
+
+@pragma('vm:entry-point')
+void canAccessResourceFromAssetDir() async {
+  notifySetAssetBundlePath();
+  window.sendPlatformMessage(
+    'flutter/assets',
+    Uint8List.fromList(utf8.encode('kernel_blob.bin')).buffer.asByteData(),
+    (ByteData? byteData) {
+      notifyCanAccessResource(byteData != null);
+    },
+  );
 }
