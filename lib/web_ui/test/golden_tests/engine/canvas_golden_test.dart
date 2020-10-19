@@ -98,7 +98,8 @@ void testMain() async {
 
     appendToScene();
 
-    await matchGoldenFile('misaligned_canvas_test.png', region: region);
+    await matchGoldenFile('misaligned_canvas_test.png', region: region,
+      maxDiffRatePercent: 1.0);
   });
 
   test('fill the whole canvas with color even when transformed', () async {
