@@ -448,7 +448,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // Emulate app start.
     delegate.onStart();
 
-    // Verify that the navigation channel was given the push route message.
+    // Verify that the navigation channel was given the initial route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
         .setInitialRoute("http://myApp/custom/route");
   }
