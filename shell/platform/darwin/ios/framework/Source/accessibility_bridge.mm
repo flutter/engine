@@ -167,7 +167,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     }
     NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
     [root collectRoutes:newRoutes];
-    // Finds the first route that are not in the previous routes.
+    // Finds the last route that is not in the previous routes.
     for (SemanticsObject* route in newRoutes) {
       if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) ==
           previous_routes_.end()) {

@@ -1357,7 +1357,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
     // previously cached route id.
 
-    // Finds the first route that are not in the previous routes.
+    // Finds the last route that is not in the previous routes.
     SemanticsNode lastAdded = null;
     for (SemanticsNode semanticsNode : newRoutes) {
       if (!flutterNavigationStack.contains(semanticsNode.id)) {
