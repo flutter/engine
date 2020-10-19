@@ -44,6 +44,8 @@ bool _offsetIsValid(Offset offset) {
   return true;
 }
 
+bool _matrix4IsValidOrNull(Float64List? matrix4) => matrix4 == null || _matrix4IsValid(matrix4);
+
 bool _matrix4IsValid(Float64List matrix4) {
   assert(matrix4 != null, 'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');

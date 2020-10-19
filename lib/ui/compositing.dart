@@ -285,6 +285,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     TransformEngineLayer? oldLayer,
   }) {
     assert(_matrix4IsValid(matrix4));
+    assert(_matrix4IsValidOrNull(cacheMatrix4));
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushTransform'));
     final EngineLayer engineLayer = EngineLayer._();
     _pushTransform(engineLayer, matrix4, cacheMatrix4);
