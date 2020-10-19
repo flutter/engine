@@ -406,17 +406,6 @@ Application::Application(
   // addressed.
   settings_.dart_flags = {"--no_causal_async_stacks"};
 
-  // Disable code collection as it interferes with JIT code warmup
-  // by decreasing usage counters and flushing code which is still useful.
-  settings_.dart_flags.push_back("--no-collect_code");
-
-  if (!flutter::DartVM::IsRunningPrecompiledCode()) {
-    // The interpreter is enabled unconditionally in JIT mode. If an app is
-    // built for debugging (that is, with no bytecode), the VM will fall back on
-    // ASTs.
-    settings_.dart_flags.push_back("--enable_interpreter");
-  }
-
   // Don't collect CPU samples from Dart VM C++ code.
   settings_.dart_flags.push_back("--no_profile_vm");
 
@@ -617,8 +606,8 @@ void Application::OnEngineTerminate(const Engine* shell_holder) {
   // terminate when the last shell goes away. The error code return to the
   // application controller will be the last isolate that had an error.
   auto return_code = shell_holder->GetEngineReturnCode();
-  if (return_code.first) {
-    last_return_code_ = return_code;
+  if (return_code.has_value()) {
+    last_return_code_ = {true, return_code.value()};
   }
 
   shell_holders_.erase(found);
