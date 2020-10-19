@@ -109,7 +109,7 @@ Picture _drawTestPictureWithImage(ColorFilter filter) {
       PictureRecorder() as EnginePictureRecorder;
   final RecordingCanvas canvas =
       recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
-  Image testImage = createTestImage();
+  final Image testImage = createTestImage();
   canvas.drawImageRect(
       testImage,
       Rect.fromLTWH(0, 0, 200, 150),

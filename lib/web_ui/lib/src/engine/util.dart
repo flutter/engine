@@ -503,7 +503,7 @@ final ByteData? _fontChangeMessage =
 bool _fontChangeScheduled = false;
 
 FutureOr<void> sendFontChangeMessage() async {
-  if (window._onPlatformMessage != null) if (!_fontChangeScheduled) {
+  if (window._onPlatformMessage != null && !_fontChangeScheduled) {
     _fontChangeScheduled = true;
     // Batch updates into next animationframe.
     html.window.requestAnimationFrame((num _) {
