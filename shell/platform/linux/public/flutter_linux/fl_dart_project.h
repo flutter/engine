@@ -99,16 +99,12 @@ const gchar* fl_dart_project_get_icu_data_path(FlDartProject* project);
 /**
  * fl_dart_project_set_dart_entrypoint_arguments:
  * @project: an #FlDartProject.
- * @argc: the number of command line arguments in @argv
- * @argv: a pointer to an array of C strings containing the command line arguments.
+ * @argv: a pointer to a NULL-terminated array of C strings containing the command line arguments.
  *
  * Sets the command line arguments to be passed through to the Dart
  * entrypoint function.
- *
- * FlDartProject makes a deep copy of the arguments passed in here. The caller can
- * safely deallocate their copy as soon as this call returns.
  */
-void fl_dart_project_set_dart_entrypoint_arguments(FlDartProject* project, int argc, const char** argv);
+void fl_dart_project_set_dart_entrypoint_arguments(FlDartProject* project, char** argv);
 
 /**
  * fl_dart_project_get_dart_entrypoint_arguments:
@@ -116,10 +112,10 @@ void fl_dart_project_set_dart_entrypoint_arguments(FlDartProject* project, int a
  *
  * Gets the command line arguments to be passed through to the Dart entrypoint function.
  *
- * Returns: a GPtrArray containing the command line arguments to be passed to the Dart
- * entrypoint.
+ * Returns: a NULL-terminated array of strings containing the command line arguments
+ * to be passed to the Dart entrypoint.
  */
-GPtrArray* fl_dart_project_get_dart_entrypoint_arguments(FlDartProject* project);
+gchar** fl_dart_project_get_dart_entrypoint_arguments(FlDartProject* project);
 
 G_END_DECLS
 
