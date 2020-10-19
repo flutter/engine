@@ -107,7 +107,8 @@ G_MODULE_EXPORT gchar** fl_dart_project_get_dart_entrypoint_arguments(
 }
 
 G_MODULE_EXPORT void fl_dart_project_set_dart_entrypoint_arguments(
-    FlDartProject* self, char** argv) {
+    FlDartProject* self,
+    char** argv) {
   g_return_if_fail(FL_IS_DART_PROJECT(self));
   g_clear_pointer(&self->dart_entrypoint_args, g_strfreev);
   self->dart_entrypoint_args = g_strdupv(argv);

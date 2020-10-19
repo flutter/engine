@@ -395,7 +395,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.custom_task_runners = &custom_task_runners;
   args.shutdown_dart_vm_when_done = true;
   args.dart_entrypoint_argc = g_strv_length(dart_entrypoint_args);
-  args.dart_entrypoint_argv = reinterpret_cast<const char* const*>(dart_entrypoint_args);
+  args.dart_entrypoint_argv =
+      reinterpret_cast<const char* const*>(dart_entrypoint_args);
 
   if (FlutterEngineRunsAOTCompiledDartCode()) {
     FlutterEngineAOTDataSource source = {};
