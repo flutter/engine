@@ -549,16 +549,12 @@ bool isUnsoundNull(dynamic object) {
 }
 
 bool _offsetIsValid(ui.Offset offset) {
-  assert(offset != null,
-      'Offset argument was null.'); // ignore: unnecessary_null_comparison
   assert(!offset.dx.isNaN && !offset.dy.isNaN,
       'Offset argument contained a NaN value.');
   return true;
 }
 
 bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4 != null,
-      'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
 }
