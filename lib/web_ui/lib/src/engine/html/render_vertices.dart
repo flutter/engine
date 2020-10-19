@@ -228,7 +228,7 @@ class _WebGlRenderer implements _GlRenderer {
     Object? colorsBuffer = gl.createBuffer();
     gl.bindArrayBuffer(colorsBuffer);
     // Buffer kBGRA_8888.
-    Int32List colors = Int32List.fromList(<int>[
+    final Int32List colors = Int32List.fromList(<int>[
       0xFF00FF00, 0xFF0000FF, 0xFFFFFF00, 0xFF00FFFF,
     ]);
     gl.bufferData(colors, gl.kStaticDraw);
@@ -451,7 +451,7 @@ class _GlContext {
   dynamic _kUnsignedByte;
   dynamic _kUnsignedShort;
   dynamic _kRGBA;
-  dynamic _kUnpackFlipYWebGl;
+
   Object? _canvas;
   int? _widthInPixels;
   int? _heightInPixels;
@@ -662,9 +662,6 @@ class _GlContext {
   dynamic get kColorBufferBit =>
       _kColorBufferBit ??= js_util.getProperty(glContext, 'COLOR_BUFFER_BIT');
 
-  dynamic get kUnpackFlipYWebGl =>
-      _kUnpackFlipYWebGl ??= js_util.getProperty(glContext, 'UNPACK_FLIP_Y_WEBGL');
-
   /// Returns reference to uniform in program.
   Object getUniformLocation(Object program, String uniformName) {
     Object? res = js_util
@@ -728,21 +725,15 @@ class _GlContext {
   int? get drawingBufferHeight =>
       js_util.getProperty(glContext, 'drawingBufferWidth');
 
-  /// Flips the y axis when uploading a texture (for webgl1).
-  void pixelStoreFlip(bool flip) {
-    js_util.callMethod(glContext, 'pixelStorei',
-        <dynamic>[kUnpackFlipYWebGl, flip]);
-  }
-
   /// Reads gl contents as image data.
   ///
   /// Warning: data is read bottom up (flipped).
   html.ImageData readImageData() {
+    const int kBytesPerPixel = 4;
+    final int bufferWidth = _widthInPixels!;
+    final int bufferHeight = _heightInPixels!;
     if (browserEngine == BrowserEngine.webkit ||
         browserEngine == BrowserEngine.firefox) {
-      const int kBytesPerPixel = 4;
-      final int bufferWidth = _widthInPixels!;
-      final int bufferHeight = _heightInPixels!;
       final Uint8List pixels =
           Uint8List(bufferWidth * bufferHeight * kBytesPerPixel);
       js_util.callMethod(glContext, 'readPixels',
@@ -750,11 +741,8 @@ class _GlContext {
       return html.ImageData(
           Uint8ClampedList.fromList(pixels), bufferWidth, bufferHeight);
     } else {
-      const int kBytesPerPixel = 4;
-      final int bufferWidth = _widthInPixels!;
-      final int bufferHeight = _heightInPixels!;
       final Uint8ClampedList pixels =
-      Uint8ClampedList(bufferWidth * bufferHeight * kBytesPerPixel);
+          Uint8ClampedList(bufferWidth * bufferHeight * kBytesPerPixel);
       js_util.callMethod(glContext, 'readPixels',
           <dynamic>[0, 0, bufferWidth, bufferHeight, kRGBA, kUnsignedByte, pixels]);
       return html.ImageData(pixels, bufferWidth, bufferHeight);
