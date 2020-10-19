@@ -249,7 +249,7 @@ void testMain() async {
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',
       region: canvasSize,
-      maxDiffRatePercent: 0.0,
+      maxDiffRatePercent: 1.0,
       pixelComparison: PixelComparison.precise,
     );
   });
