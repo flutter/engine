@@ -52,7 +52,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
-#include "flutter/shell/platform/embedder/embedder_safe_access.h"
+#include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
@@ -2053,51 +2053,54 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
 
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table) {
+  if (!table) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Null table specified.");
+  }
 #define SET_PROC(member, function)        \
   if (STRUCT_HAS_MEMBER(table, member)) { \
     table->member = &function;            \
   }
 
-  SET_PROC(create_aot_data, FlutterEngineCreateAOTData);
-  SET_PROC(collect_aot_data, FlutterEngineCollectAOTData);
-  SET_PROC(run, FlutterEngineRun);
-  SET_PROC(shutdown, FlutterEngineShutdown);
-  SET_PROC(initialize, FlutterEngineInitialize);
-  SET_PROC(deinitialize, FlutterEngineDeinitialize);
-  SET_PROC(run_initialized, FlutterEngineRunInitialized);
-  SET_PROC(send_window_metrics_event, FlutterEngineSendWindowMetricsEvent);
-  SET_PROC(send_pointer_event, FlutterEngineSendPointerEvent);
-  SET_PROC(send_platform_message, FlutterEngineSendPlatformMessage);
-  SET_PROC(platform_message_create_response_handle,
+  SET_PROC(CreateAOTData, FlutterEngineCreateAOTData);
+  SET_PROC(CollectAOTData, FlutterEngineCollectAOTData);
+  SET_PROC(Run, FlutterEngineRun);
+  SET_PROC(Shutdown, FlutterEngineShutdown);
+  SET_PROC(Initialize, FlutterEngineInitialize);
+  SET_PROC(Deinitialize, FlutterEngineDeinitialize);
+  SET_PROC(RunInitialized, FlutterEngineRunInitialized);
+  SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
+  SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
+  SET_PROC(SendPlatformMessage, FlutterEngineSendPlatformMessage);
+  SET_PROC(PlatformMessageCreateResponseHandle,
            FlutterPlatformMessageCreateResponseHandle);
-  SET_PROC(platform_message_release_response_handle,
+  SET_PROC(PlatformMessageReleaseResponseHandle,
            FlutterPlatformMessageReleaseResponseHandle);
-  SET_PROC(send_platform_message_response,
+  SET_PROC(SendPlatformMessageResponse,
            FlutterEngineSendPlatformMessageResponse);
-  SET_PROC(register_external_texture, FlutterEngineRegisterExternalTexture);
-  SET_PROC(unregister_external_texture, FlutterEngineUnregisterExternalTexture);
-  SET_PROC(mark_external_texture_frame_available,
+  SET_PROC(RegisterExternalTexture, FlutterEngineRegisterExternalTexture);
+  SET_PROC(UnregisterExternalTexture, FlutterEngineUnregisterExternalTexture);
+  SET_PROC(MarkExternalTextureFrameAvailable,
            FlutterEngineMarkExternalTextureFrameAvailable);
-  SET_PROC(update_semantics_enabled, FlutterEngineUpdateSemanticsEnabled);
-  SET_PROC(update_accessibility_features,
+  SET_PROC(UpdateSemanticsEnabled, FlutterEngineUpdateSemanticsEnabled);
+  SET_PROC(UpdateAccessibilityFeatures,
            FlutterEngineUpdateAccessibilityFeatures);
-  SET_PROC(dispatch_semantics_action, FlutterEngineDispatchSemanticsAction);
-  SET_PROC(on_vsync, FlutterEngineOnVsync);
-  SET_PROC(reload_system_fonts, FlutterEngineReloadSystemFonts);
-  SET_PROC(trace_event_duration_begin, FlutterEngineTraceEventDurationBegin);
-  SET_PROC(trace_event_duration_end, FlutterEngineTraceEventDurationEnd);
-  SET_PROC(trace_event_instant, FlutterEngineTraceEventInstant);
-  SET_PROC(post_render_thread_task, FlutterEnginePostRenderThreadTask);
-  SET_PROC(get_current_time, FlutterEngineGetCurrentTime);
-  SET_PROC(run_task, FlutterEngineRunTask);
-  SET_PROC(update_locales, FlutterEngineUpdateLocales);
-  SET_PROC(runs_aot_compiled_dart_code, FlutterEngineRunsAOTCompiledDartCode);
-  SET_PROC(post_dart_object, FlutterEnginePostDartObject);
-  SET_PROC(notify_low_memory_warning, FlutterEngineNotifyLowMemoryWarning);
-  SET_PROC(post_callback_on_all_native_threads,
+  SET_PROC(DispatchSemanticsAction, FlutterEngineDispatchSemanticsAction);
+  SET_PROC(OnVsync, FlutterEngineOnVsync);
+  SET_PROC(ReloadSystemFonts, FlutterEngineReloadSystemFonts);
+  SET_PROC(TraceEventDurationBegin, FlutterEngineTraceEventDurationBegin);
+  SET_PROC(TraceEventDurationEnd, FlutterEngineTraceEventDurationEnd);
+  SET_PROC(TraceEventInstant, FlutterEngineTraceEventInstant);
+  SET_PROC(PostRenderThreadTask, FlutterEnginePostRenderThreadTask);
+  SET_PROC(GetCurrentTime, FlutterEngineGetCurrentTime);
+  SET_PROC(RunTask, FlutterEngineRunTask);
+  SET_PROC(UpdateLocales, FlutterEngineUpdateLocales);
+  SET_PROC(RunsAOTCompiledDartCode, FlutterEngineRunsAOTCompiledDartCode);
+  SET_PROC(PostDartObject, FlutterEnginePostDartObject);
+  SET_PROC(NotifyLowMemoryWarning, FlutterEngineNotifyLowMemoryWarning);
+  SET_PROC(PostCallbackOnAllNativeThreads,
            FlutterEnginePostCallbackOnAllNativeThreads);
-  SET_PROC(notify_display_update, FlutterEngineNotifyDisplayUpdate);
-#undef HAS_PROC
+  SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
+#undef SET_PROC
 
   return kSuccess;
 }

@@ -1071,7 +1071,7 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.h
-FILE: ../../../flutter/shell/platform/embedder/embedder_safe_access.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.cc

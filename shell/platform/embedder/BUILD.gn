@@ -48,7 +48,7 @@ template("embedder_source_set") {
       "embedder_render_target.h",
       "embedder_render_target_cache.cc",
       "embedder_render_target_cache.h",
-      "embedder_safe_access.h",
+      "embedder_struct_macros.h",
       "embedder_surface.cc",
       "embedder_surface.h",
       "embedder_surface_software.cc",

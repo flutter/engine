@@ -15,12 +15,12 @@ namespace testing {
 TEST(EmbedderProcTable, AllPointersProvided) {
   FlutterEngineProcTable procs = {};
   procs.struct_size = sizeof(FlutterEngineProcTable);
-  FlutterEngineGetProcAddresses(&procs);
+  ASSERT_EQ(FlutterEngineGetProcAddresses(&procs), kSuccess);
 
-  void (**proc)() = reinterpret_cast<void (**)()>(&procs.create_aot_data);
-  const uint64_t end_address =
-      reinterpret_cast<uint64_t>(&procs) + procs.struct_size;
-  while (reinterpret_cast<uint64_t>(proc) < end_address) {
+  void (**proc)() = reinterpret_cast<void (**)()>(&procs.CreateAOTData);
+  const uintptr_t end_address =
+      reinterpret_cast<uintptr_t>(&procs) + procs.struct_size;
+  while (reinterpret_cast<uintptr_t>(proc) < end_address) {
     EXPECT_NE(*proc, nullptr);
     ++proc;
   }
@@ -31,13 +31,13 @@ TEST(EmbedderProcTable, AllPointersProvided) {
 TEST(EmbedderProcTable, NoDuplicatePointers) {
   FlutterEngineProcTable procs = {};
   procs.struct_size = sizeof(FlutterEngineProcTable);
-  FlutterEngineGetProcAddresses(&procs);
+  ASSERT_EQ(FlutterEngineGetProcAddresses(&procs), kSuccess);
 
-  void (**proc)() = reinterpret_cast<void (**)()>(&procs.create_aot_data);
-  const uint64_t end_address =
-      reinterpret_cast<uint64_t>(&procs) + procs.struct_size;
+  void (**proc)() = reinterpret_cast<void (**)()>(&procs.CreateAOTData);
+  const uintptr_t end_address =
+      reinterpret_cast<uintptr_t>(&procs) + procs.struct_size;
   std::set<void (*)()> seen_procs;
-  while (reinterpret_cast<uint64_t>(proc) < end_address) {
+  while (reinterpret_cast<uintptr_t>(proc) < end_address) {
     auto result = seen_procs.insert(*proc);
     EXPECT_TRUE(result.second);
     ++proc;
@@ -48,9 +48,9 @@ TEST(EmbedderProcTable, NoDuplicatePointers) {
 TEST(EmbedderProcTable, CallProc) {
   FlutterEngineProcTable procs = {};
   procs.struct_size = sizeof(FlutterEngineProcTable);
-  FlutterEngineGetProcAddresses(&procs);
+  ASSERT_EQ(FlutterEngineGetProcAddresses(&procs), kSuccess);
 
-  EXPECT_NE(procs.get_current_time(), 0ULL);
+  EXPECT_NE(procs.GetCurrentTime(), 0ULL);
 }
 
 }  // namespace testing
