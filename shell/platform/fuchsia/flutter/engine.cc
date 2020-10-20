@@ -123,14 +123,16 @@ Engine::Engine(Delegate& delegate,
   };
 
   // Set up the session connection and other Scenic helpers on the raster
-  // thread.
+  // thread. We also need to wait for the external view embedder to be setup
+  // before creating the shell.
+  fml::AutoResetWaitableEvent view_embedder_latch;
   task_runners.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [this, session = std::move(session),
        session_error_callback = std::move(session_error_callback),
        view_token = std::move(view_token),
        view_ref_pair = std::move(view_ref_pair),
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
-       vsync_handle = vsync_event_.get()]() mutable {
+       vsync_handle = vsync_event_.get(), &view_embedder_latch]() mutable {
         session_connection_.emplace(
             thread_label_, std::move(session),
             std::move(session_error_callback), [](auto) {}, vsync_handle,
@@ -151,7 +153,9 @@ Engine::Engine(Delegate& delegate,
                   std::move(view_ref_pair), session_connection_.value(),
                   surface_producer_.value());
         }
+        view_embedder_latch.Signal();
       }));
+  view_embedder_latch.Wait();
 
   // Grab the parent environment services. The platform view may want to
   // access some of these services.
