@@ -18,7 +18,7 @@ std::shared_ptr<IOSSurfaceFactory> IOSSurfaceFactory::Create(IOSRenderingAPI ren
 IOSSurfaceFactory::~IOSSurfaceFactory() = default;
 
 void IOSSurfaceFactory::SetPlatformViewsController(
-    FlutterPlatformViewsController* platform_views_controller) {
+    const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller) {
   platform_views_controller_ = platform_views_controller;
 }
 

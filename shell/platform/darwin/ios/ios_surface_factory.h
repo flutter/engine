@@ -22,13 +22,14 @@ class IOSSurfaceFactory {
   ~IOSSurfaceFactory();
 
   void SetPlatformViewsController(
-      FlutterPlatformViewsController* platform_views_controller);
+      const std::shared_ptr<FlutterPlatformViewsController>&
+          platform_views_controller);
 
   std::unique_ptr<IOSSurface> CreateSurface(
       fml::scoped_nsobject<CALayer> ca_layer);
 
  private:
-  FlutterPlatformViewsController* platform_views_controller_;
+  std::shared_ptr<FlutterPlatformViewsController> platform_views_controller_;
   std::shared_ptr<IOSContext> ios_context_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceFactory);
