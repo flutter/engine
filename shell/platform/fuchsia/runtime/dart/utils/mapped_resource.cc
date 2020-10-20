@@ -83,7 +83,7 @@ bool MappedResource::LoadFromVmo(const std::string& path,
   }
   uintptr_t addr;
   zx_status_t status = zx::vmar::root_self()->map(
-      0, resource_vmo.vmo, 0, resource_vmo.size, flags, &addr);
+      flags, 0, resource_vmo.vmo, 0, resource_vmo.size, &addr);
   if (status != ZX_OK) {
     FX_LOGF(ERROR, LOG_TAG, "Failed to map: %s", zx_status_get_string(status));
     return false;
