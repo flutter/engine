@@ -37,7 +37,7 @@ class Scene extends NativeFieldWrapperClass2 {
     );
   }
 
-  String _toImage(int width, int height, _Callback<_Image> callback) native 'Scene_toImage';
+  String? _toImage(int width, int height, _Callback<_Image> callback) native 'Scene_toImage';
 
   /// Releases the resources used by this scene.
   ///
@@ -538,7 +538,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     return layer;
   }
 
-  EngineLayer _pushShaderMask(
+  void _pushShaderMask(
       EngineLayer engineLayer,
       Shader shader,
       double maskRectLeft,
@@ -587,7 +587,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     return layer;
   }
 
-  EngineLayer _pushPhysicalShape(EngineLayer outEngineLayer, Path path, double elevation, int color, int shadowColor,
+  void _pushPhysicalShape(EngineLayer outEngineLayer, Path path, double elevation, int color, int shadowColor,
       int clipBehavior) native 'SceneBuilder_pushPhysicalShape';
 
   /// Ends the effect of the most recently pushed operation.
