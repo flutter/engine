@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
@@ -1327,7 +1326,7 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-static size_t GetRasterizerResourceCacheBytesSync(const Shell& shell) {
+static size_t GetRasterizerResourceCacheBytesSync(Shell& shell) {
   size_t bytes = 0;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(

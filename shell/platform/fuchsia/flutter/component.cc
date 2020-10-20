@@ -606,8 +606,8 @@ void Application::OnEngineTerminate(const Engine* shell_holder) {
   // terminate when the last shell goes away. The error code return to the
   // application controller will be the last isolate that had an error.
   auto return_code = shell_holder->GetEngineReturnCode();
-  if (return_code.first) {
-    last_return_code_ = return_code;
+  if (return_code.has_value()) {
+    last_return_code_ = {true, return_code.value()};
   }
 
   shell_holders_.erase(found);

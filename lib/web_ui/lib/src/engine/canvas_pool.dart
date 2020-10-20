@@ -33,8 +33,6 @@ class _CanvasPool extends _SaveStackTracking {
 
   html.HtmlElement? _rootElement;
   int _saveContextCount = 0;
-  // Number of elements that have been added to flt-canvas.
-  int _activeElementCount = 0;
 
   _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
 
@@ -76,7 +74,6 @@ class _CanvasPool extends _SaveStackTracking {
       _context = null;
       _contextHandle = null;
     }
-    _activeElementCount++;
   }
 
   void allocateCanvas(html.HtmlElement rootElement) {
@@ -99,9 +96,9 @@ class _CanvasPool extends _SaveStackTracking {
       // * To make sure that when we scale the canvas by devicePixelRatio (see
       //   _initializeViewport below) the pixels line up.
       final double cssWidth =
-          _widthInBitmapPixels / EnginePlatformDispatcher.browserDevicePixelRatio;
+          _widthInBitmapPixels / EngineWindow.browserDevicePixelRatio;
       final double cssHeight =
-          _heightInBitmapPixels / EnginePlatformDispatcher.browserDevicePixelRatio;
+          _heightInBitmapPixels / EngineWindow.browserDevicePixelRatio;
       canvas = html.CanvasElement(
         width: _widthInBitmapPixels,
         height: _heightInBitmapPixels,
@@ -134,15 +131,12 @@ class _CanvasPool extends _SaveStackTracking {
       _rootElement!.append(canvas);
     }
 
-    if (_activeElementCount == 0) {
-      canvas.style.zIndex = '-1';
-    } else if (reused) {
-      // If a canvas is the first element we set z-index = -1 to workaround
-      // blink compositing bug. To make sure this does not leak when reused
-      // reset z-index.
+    if (reused) {
+      // If a canvas is the first element we set z-index = -1 in [BitmapCanvas]
+      // endOfPaint to workaround blink compositing bug. To make sure this
+      // does not leak when reused reset z-index.
       canvas.style.removeProperty('z-index');
     }
-    ++_activeElementCount;
 
     final html.CanvasRenderingContext2D context = _context = canvas.context2D;
     _contextHandle = ContextStateHandle(this, context);
@@ -194,7 +188,7 @@ class _CanvasPool extends _SaveStackTracking {
             clipTimeTransform[5] != prevTransform[5] ||
             clipTimeTransform[12] != prevTransform[12] ||
             clipTimeTransform[13] != prevTransform[13]) {
-          final double ratio = EnginePlatformDispatcher.browserDevicePixelRatio;
+          final double ratio = EngineWindow.browserDevicePixelRatio;
           ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
           ctx.transform(
               clipTimeTransform[0],
@@ -210,8 +204,13 @@ class _CanvasPool extends _SaveStackTracking {
         } else if (clipEntry.rrect != null) {
           _clipRRect(ctx, clipEntry.rrect!);
         } else if (clipEntry.path != null) {
-          _runPath(ctx, clipEntry.path as SurfacePath);
-          ctx.clip();
+          final SurfacePath path = clipEntry.path as SurfacePath;
+          _runPath(ctx, path);
+          if (path.fillType == ui.PathFillType.nonZero) {
+            ctx.clip();
+          } else {
+            ctx.clip('evenodd');
+          }
         }
       }
     }
@@ -223,7 +222,7 @@ class _CanvasPool extends _SaveStackTracking {
         transform[5] != prevTransform[5] ||
         transform[12] != prevTransform[12] ||
         transform[13] != prevTransform[13]) {
-      final double ratio = EnginePlatformDispatcher.browserDevicePixelRatio;
+      final double ratio = EngineWindow.browserDevicePixelRatio;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ctx.transform(transform[0], transform[1], transform[4], transform[5],
           transform[12], transform[13]);
@@ -265,7 +264,6 @@ class _CanvasPool extends _SaveStackTracking {
     _canvas = null;
     _context = null;
     _contextHandle = null;
-    _activeElementCount = 0;
   }
 
   void endOfPaint() {
@@ -307,8 +305,8 @@ class _CanvasPool extends _SaveStackTracking {
 
     // This scale makes sure that 1 CSS pixel is translated to the correct
     // number of bitmap pixels.
-    ctx.scale(EnginePlatformDispatcher.browserDevicePixelRatio,
-        EnginePlatformDispatcher.browserDevicePixelRatio);
+    ctx.scale(EngineWindow.browserDevicePixelRatio,
+        EngineWindow.browserDevicePixelRatio);
   }
 
   void resetTransform() {
@@ -321,7 +319,7 @@ class _CanvasPool extends _SaveStackTracking {
 
   // Returns a "data://" URI containing a representation of the image in this
   // canvas in PNG format.
-  String toDataUrl() => _canvas!.toDataUrl();
+  String toDataUrl() => _canvas?.toDataUrl() ?? '';
 
   @override
   void save() {
@@ -443,7 +441,11 @@ class _CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       html.CanvasRenderingContext2D ctx = context;
       _runPath(ctx, path as SurfacePath);
-      ctx.clip();
+      if (path.fillType == ui.PathFillType.nonZero) {
+        ctx.clip();
+      } else {
+        ctx.clip('evenodd');
+      }
     }
   }
 
