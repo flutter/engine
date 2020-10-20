@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 
+#include <set>
+
 #include "flutter/testing/testing.h"
 
 namespace flutter {
@@ -34,15 +36,10 @@ TEST(EmbedderProcTable, NoDuplicatePointers) {
   void (**proc)() = reinterpret_cast<void (**)()>(&procs.create_aot_data);
   const uint64_t end_address =
       reinterpret_cast<uint64_t>(&procs) + procs.struct_size;
+  std::set<void (*)()> seen_procs;
   while (reinterpret_cast<uint64_t>(proc) < end_address) {
-    void (**other_proc)() =
-        reinterpret_cast<void (**)()>(&procs.create_aot_data);
-    while (reinterpret_cast<uint64_t>(other_proc) < end_address) {
-      if (other_proc != proc) {
-        EXPECT_NE(*proc, *other_proc);
-      }
-      ++other_proc;
-    }
+    auto result = seen_procs.insert(*proc);
+    EXPECT_TRUE(result.second);
     ++proc;
   }
 }
