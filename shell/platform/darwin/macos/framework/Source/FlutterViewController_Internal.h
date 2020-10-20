@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <map>
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
@@ -9,6 +10,8 @@
 
 // The FlutterView for this view controller.
 @property(nonatomic, readonly, nullable) FlutterView* flutterView;
+@property() NSView* _Nullable leafView;
+@property() std::map<int, NSView*> view_map;
 
 /**
  * Adds a responder for keyboard events. Key up and key down events are forwarded to all added

@@ -116,7 +116,7 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
   if (!pixmap_image) {
     return false;
   }
-
+  
   layer_.get().contents = reinterpret_cast<id>(static_cast<CGImageRef>(pixmap_image));
 
   return true;

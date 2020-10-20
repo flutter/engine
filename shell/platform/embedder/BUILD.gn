@@ -58,6 +58,9 @@ template("embedder_source_set") {
       "platform_view_embedder.h",
       "vsync_waiter_embedder.cc",
       "vsync_waiter_embedder.h",
+
+      "macos_compositor.h",
+      "macos_compositor.cc",
     ]
 
     deps = [

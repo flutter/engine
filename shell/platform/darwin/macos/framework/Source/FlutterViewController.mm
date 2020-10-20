@@ -28,13 +28,29 @@
 @class MockPlatformView;
 static MockPlatformView* gMockPlatformView = nil;
 
-@interface MockPlatformView : NSView
+@interface MockFlutterPlatformView : NSObject <FlutterPlatformView>
+@property(nonatomic, strong) NSView* view;
+@property(nonatomic) int64_t test_view_id;
 @end
+
+@interface MockPlatformView : NSTextView
+@end
+
+@interface MockFlutterPlatformFactory : NSObject <FlutterPlatformViewFactory>
+@end
+
 @implementation MockPlatformView
+
+- (instancetype)initWithFrame:(CGRect) frame {
+   self = [super initWithFrame: frame];
+   [super setString:@"hello1"];
+   [super setTextColor:[NSColor blueColor]];
+   return self;
+}
 
 - (instancetype)init {
   self = [super init];
-  [[NSColor redColor] setFill];
+  [[NSColor blueColor] setFill];
   if (self) {
     gMockPlatformView = self;
   }
@@ -48,15 +64,24 @@ static MockPlatformView* gMockPlatformView = nil;
 
 @end
 
-@interface MockFlutterPlatformView : NSObject <FlutterPlatformView>
-@property(nonatomic, strong) NSView* view;
-@end
-
 @implementation MockFlutterPlatformView
 
 - (instancetype)init {
   if (self = [super init]) {
     _view = [[MockPlatformView alloc] init];
+    _test_view_id = 1;
+  }
+  return self;
+}
+
+- (instancetype)initWithFrame:(CGRect) frame
+                arguments:(id _Nullable) args {
+  if (self = [super init]) {
+    _view = [[NSTextField alloc] initWithFrame:frame];
+    [(NSTextField*)_view setStringValue:@"hello2"];
+    // [(NSTextField*)_view setStringValue:args];
+    [(NSTextField*)_view setTextColor:[NSColor blueColor]];
+    _test_view_id = 1;
   }
   return self;
 }
@@ -67,16 +92,21 @@ static MockPlatformView* gMockPlatformView = nil;
   // [super dealloc];
 }
 
-@end
+- (int64_t) GetTestViewID {
+  return _test_view_id;
+}
 
-@interface MockFlutterPlatformFactory : NSObject <FlutterPlatformViewFactory>
 @end
 
 @implementation MockFlutterPlatformFactory
 - (NSObject<FlutterPlatformView>*)createWithFrame:(CGRect)frame
                                    viewIdentifier:(int64_t)viewId
                                         arguments:(id _Nullable)args {
-  return [[MockFlutterPlatformView alloc] init];
+  return [[MockFlutterPlatformView alloc] initWithFrame:frame arguments: args];
+}
+
+- (NSObject<FlutterMessageCodec>*)createArgsCodec {
+  return [FlutterStandardMessageCodec sharedInstance];
 }
 
 @end
@@ -265,9 +295,6 @@ struct KeyboardState {
   FlutterMethodChannel* _platformViewsChannel;
 
   std::unique_ptr<flutter::FlutterPlatformViewsControllerMacOS> _platformViewsController;
-
-
-  // flutter::FlutterPlatformViewsControllerMacOS* _platformViewsController;
 }
 
 @dynamic view;
@@ -454,7 +481,6 @@ static void CommonInit(FlutterViewController* controller) {
                                   binaryMessenger:_engine.binaryMessenger
                                             codec:[FlutterJSONMethodCodec sharedInstance]];
 
-  NSLog(@"create platform views channel for mac");
   _platformViewsChannel =
       [FlutterMethodChannel methodChannelWithName:@"flutter/platform_views"
                                   binaryMessenger:_engine.binaryMessenger
@@ -465,30 +491,32 @@ static void CommonInit(FlutterViewController* controller) {
   }];
 
   [_platformViewsChannel
-      setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-        // Create FlutterPlatformView Delegate protocol.
-        // Objective C to implement protocol.
-        // FlutterViewController can implement protocol for now as well.
-        // NSLog(@"hello world");
-        
-        // Try hardcoding this method call to render textview for now.
-        NSLog(@"platform-view-call");
-
+      setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {                
+        // This is hardcoded to create an NSTextView.
         NSDictionary<NSString*, id>* args = [call arguments];
-
-        // long viewId = [args[@"id"] longValue];
+        long viewId = [args[@"id"] longValue];
         std::string viewType([args[@"viewType"] UTF8String]);
 
-        printf("view type: %s", viewType.c_str());
-
         MockFlutterPlatformFactory* factory = [MockFlutterPlatformFactory new];
-        printf("%d", factory == nil);
+        
+        // Get params.
+        NSObject<FlutterMessageCodec>* codec = [factory createArgsCodec];
+        FlutterStandardTypedData* paramsData = args[@"params"];
+        id params = [codec decode:paramsData.data];
 
-        NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectZero
-                                                           viewIdentifier:0
-                                                                arguments:nil];
+        NSDictionary *nsdict = (NSDictionary*)params;
 
-        printf("embedded_view: %d", embedded_view == nil);
+        CGFloat x = [nsdict[@"offset_x"] floatValue];
+        CGFloat y = [nsdict[@"offset_y"] floatValue];
+        CGFloat width = [nsdict[@"width"] floatValue];
+        CGFloat height = [nsdict[@"height"] floatValue];
+
+        NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectMake(x, y, width, height)
+                                                           viewIdentifier:viewId
+                                                                arguments:nil];                                     
+
+        // Hard coded right now to store one platform view in the dict.
+        self->_view_map[1] = [embedded_view view];
         result(nil);
       }];
 }

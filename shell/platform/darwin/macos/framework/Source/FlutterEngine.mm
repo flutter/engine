@@ -7,11 +7,21 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
  
 #include <vector>
+#include <map>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
+
+// Imports for creating surface (embedder).
+#include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
+#include "third_party/skia/include/utils/mac/SkCGUtils.h"
+#include "third_party/skia/include/core/SkCanvas.h"
+
+#import "flutter/shell/platform/embedder/macos_compositor.h"
+
 
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
@@ -245,6 +255,120 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   flutterArguments.command_line_argv = &arguments[0];
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
+
+  GrContextOptions options;
+
+  // if (PersistentCache::cache_sksl()) {
+  //   FML_LOG(INFO) << "Cache SkSL";
+  //   options.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kSkSL;
+  // }
+  // PersistentCache::MarkStrategySet();
+  // options.fPersistentCache = PersistentCache::GetCacheForProcess();
+
+  options.fAvoidStencilBuffers = true;
+
+  // To get video playback on the widest range of devices, we limit Skia to
+  // ES2 shading language when the ES3 external image extension is missing.
+  options.fPreferExternalImagesOverES3 = true;
+
+  // TODO(goderbauer): remove option when skbug.com/7523 is fixed.
+  // A similar work-around is also used in shell/common/io_manager.cc.
+  options.fDisableGpuYUVConversion = true;
+
+    [_mainOpenGLContext makeCurrentContext];
+
+    auto interface = GrGLMakeNativeInterface();
+    auto context = GrDirectContext::MakeGL(GrGLMakeNativeInterface(), options);
+
+    flutter::MacOSCompositor* mc = new flutter::MacOSCompositor(SkISize::Make(300, 300), context);
+    mc->SetRenderTargetType(flutter::MacOSCompositor::RenderTargetType::kOpenGLFramebuffer);
+
+    FlutterCompositor fc = {};
+    fc.struct_size = sizeof(FlutterCompositor);
+    fc.user_data = mc;
+
+    NSView* view = _viewController.view;
+    FlutterViewController* vc = _viewController;
+
+    mc->SetPresentCallback([view, vc](const FlutterLayer** layers, size_t layers_count) {
+      for (size_t i = 0; i < layers_count; ++i) {
+        const auto* layer = layers[i];
+        
+        sk_sp<SkImage> layer_image;
+        SkPixmap pixmap;
+        CGImageRef imageRef;
+        
+        switch (layer->type) {
+          case kFlutterLayerContentTypeBackingStore:
+            layer_image =
+                reinterpret_cast<SkSurface*>(layer->backing_store->user_data)
+                    ->makeImageSnapshot();
+
+            if (!layer_image->peekPixels(&pixmap)) {
+              // Should raise an error here.
+              printf("cannot peekPixels");
+            }
+
+            [view setWantsLayer:YES];
+
+            imageRef =  CGImageCreate(pixmap.width(),     // width
+                                      pixmap.height(),    // height
+                                      8,                  // bits per component
+                                      32,                 // bits per pixel
+                                      pixmap.rowBytes(),  // bytes per row
+                                      CGColorSpaceCreateDeviceRGB(),         // colorspace
+                                      kCGImageAlphaPremultipliedLast,  // bitmap info
+                                      CGDataProviderCreateWithData(
+                                        nullptr,          // info
+                                        pixmap.addr32(),  // data
+                                        pixmap.computeByteSize(),      // size
+                                        nullptr           // release callback
+                                        ),      // data provider
+                                      nullptr,                   // decode array
+                                      false,                     // should interpolate
+                                      kCGRenderingIntentDefault  // rendering intent
+                                      );
+
+            vc.leafView = [[NSView alloc] initWithFrame: CGRectMake(0, 0, pixmap.width(), pixmap.height())];
+            [vc.leafView setWantsLayer:YES];
+
+            vc.leafView.layer.contents = (__bridge id) imageRef;
+            [view addSubview: vc.leafView];
+
+            break;
+          case kFlutterLayerContentTypePlatformView:            
+            [vc.leafView addSubview: vc.view_map.at(1)];
+            break;
+        };
+      }
+    }, false);
+
+    fc.create_backing_store_callback = [](const FlutterBackingStoreConfig* config,  //
+           FlutterBackingStore* backing_store_out,   //
+           void* user_data                           //
+        ) {
+              return reinterpret_cast<flutter::MacOSCompositor*>(user_data)
+          ->CreateBackingStore(config, backing_store_out);
+    };
+
+    fc.collect_backing_store_callback = 
+          [](const FlutterBackingStore* backing_store,  //
+           void* user_data                            //
+        ) {
+              return reinterpret_cast<flutter::MacOSCompositor*>(user_data)
+          ->CollectBackingStore(backing_store);
+        };
+
+    fc.present_layers_callback = 
+          [](const FlutterLayer** layers,  //
+              size_t layers_count,          //
+              void* user_data               //
+          ) {
+            return reinterpret_cast<flutter::MacOSCompositor*>(user_data)
+          ->Present(layers, layers_count);
+    };
+    flutterArguments.compositor = &fc;
+
   static size_t sTaskRunnerIdentifiers = 0;
   const FlutterTaskRunnerDescription cocoa_task_runner_description = {
       .struct_size = sizeof(FlutterTaskRunnerDescription),

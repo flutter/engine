@@ -7,6 +7,8 @@
 #define FML_USED_ON_EMBEDDER
 #define RAPIDJSON_HAS_STDSTRING 1
 
+#include <assert.h>
+
 #include <cstring>
 #include <iostream>
 #include <memory>
@@ -992,7 +994,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     return LOG_EMBEDDER_ERROR(kInvalidArguments,
                               "Compositor arguments were invalid.");
   }
-
+  
   flutter::PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table =
       {
           update_semantics_nodes_callback,            //
