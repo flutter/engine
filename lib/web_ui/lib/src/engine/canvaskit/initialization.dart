@@ -15,6 +15,7 @@ bool get useCanvasKit =>
     _autoDetect ? _detectRenderer() : _useSkia;
 
 /// Returns true if CanvasKit is used.
+///
 /// Otherwise, returns false.
 bool _detectRenderer() {
   if (requestedRendererType != null) {
@@ -34,7 +35,7 @@ const bool _autoDetect =
 
 /// Enable the Skia-based rendering backend.
 ///
-/// Using flutter tools option "--web-render=cavanskit" would set the value to
+/// Using flutter tools option "--web-render=canvaskit" would set the value to
 /// true.
 /// Using flutter tools option "--web-render=html" would set the value to false.
 const bool _useSkia =
