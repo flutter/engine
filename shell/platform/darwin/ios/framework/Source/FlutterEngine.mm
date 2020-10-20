@@ -66,6 +66,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
 
   std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
+  flutter::IOSRenderingAPI _renderingApi;
   std::shared_ptr<flutter::IOSSurfaceFactory> _surfaceFactory;
   std::unique_ptr<flutter::ProfilerMetricsIOS> _profiler_metrics;
   std::unique_ptr<flutter::SamplingProfiler> _profiler;
@@ -131,7 +132,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _pluginPublications = [NSMutableDictionary new];
   _registrars = [[NSMutableDictionary alloc] init];
-  [self ensurePlatformViewController];
+  [self recreatePlatformViewController];
 
   _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
   _connections.reset(new flutter::ConnectionCollection());
@@ -165,14 +166,16 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return self;
 }
 
-- (void)ensurePlatformViewController {
-  if (!_platformViewsController) {
-    auto renderingApi = flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering);
-    _surfaceFactory = flutter::IOSSurfaceFactory::Create(renderingApi);
-    auto pvc = new flutter::FlutterPlatformViewsController(_surfaceFactory);
-    _surfaceFactory->SetPlatformViewsController(pvc);
-    _platformViewsController.reset(pvc);
-  }
+- (void)recreatePlatformViewController {
+  _renderingApi = flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering);
+  _surfaceFactory = flutter::IOSSurfaceFactory::Create(_renderingApi);
+  auto pvc = new flutter::FlutterPlatformViewsController(_surfaceFactory);
+  _surfaceFactory->SetPlatformViewsController(pvc);
+  _platformViewsController.reset(pvc);
+}
+
+- (flutter::IOSRenderingAPI)platformViewsRenderingAPI {
+  return _renderingApi;
 }
 
 - (void)dealloc {
@@ -498,6 +501,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   auto settings = [_dartProject.get() settings];
   FlutterView.forceSoftwareRendering = settings.enable_software_rendering;
+  NSLog(@"software!!! > %@", @(FlutterView.forceSoftwareRendering));
 
   auto platformData = [_dartProject.get() defaultPlatformData];
 
@@ -536,10 +540,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   // create call is synchronous.
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
       [self](flutter::Shell& shell) {
-        [self ensurePlatformViewController];
+        [self recreatePlatformViewController];
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering),
-            self->_surfaceFactory, shell.GetTaskRunners());
+            shell, self->_renderingApi, self->_surfaceFactory, shell.GetTaskRunners());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
