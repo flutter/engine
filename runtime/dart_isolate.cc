@@ -697,6 +697,8 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
                                 nullptr, nullptr, nullptr, nullptr);
 
   flags->load_vmservice_library = true;
+  flags->null_safety =
+      vm_data->GetIsolateSnapshot()->IsNullSafetyEnabled(nullptr);
 
   std::weak_ptr<DartIsolate> weak_service_isolate =
       DartIsolate::CreateRootIsolate(
@@ -737,6 +739,10 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
     // Error is populated by call to startup.
     FML_DLOG(ERROR) << *error;
     return nullptr;
+  }
+
+  if (auto callback = vm_data->GetSettings().service_isolate_create_callback) {
+    callback();
   }
 
   if (auto service_protocol = DartVMRef::GetServiceProtocol()) {
