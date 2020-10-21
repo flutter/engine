@@ -675,17 +675,23 @@ public class TextInputChannel {
       return new TextEditState(
           textEditState.getString("text"),
           textEditState.getInt("selectionBase"),
-          textEditState.getInt("selectionExtent"));
+          textEditState.getInt("selectionExtent"),
+          textEditState.getInt("composingBase"),
+          textEditState.getInt("composingExtent"));
     }
 
     @NonNull public final String text;
     public final int selectionStart;
     public final int selectionEnd;
+    public final int composingStart;
+    public final int composingEnd;
 
-    public TextEditState(@NonNull String text, int selectionStart, int selectionEnd) {
+    public TextEditState(@NonNull String text, int selectionStart, int selectionEnd, int composingStart, int composingEnd) {
       this.text = text;
       this.selectionStart = selectionStart;
       this.selectionEnd = selectionEnd;
+      this.composingStart = composingStart;
+      this.composingEnd = composingEnd;
     }
   }
 }

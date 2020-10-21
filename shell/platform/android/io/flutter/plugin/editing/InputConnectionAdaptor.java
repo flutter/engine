@@ -54,6 +54,14 @@ class InputConnectionAdaptor extends BaseInputConnection {
     public int composingEnd;
     public String text;
 
+    public TextEditingValue(TextInputChannel.TextEditState state) {
+      text = state.text;
+      selectionStart = state.selectionStart;
+      selectionEnd = state.selectionEnd;
+      composingStart = state.composingStart;
+      composingEnd = state.composingEnd;
+    }
+
     public TextEditingValue(Editable editable) {
       selectionStart = Selection.getSelectionStart(editable);
       selectionEnd = Selection.getSelectionEnd(editable);
@@ -139,10 +147,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
     TextEditingValue currentValue = new TextEditingValue(mEditable);
 
-    // Return if this data has already been sent and no meaningful changes have
-    // occurred to mark this as dirty. This prevents duplicate remote updates of
-    // the same data, which can break formatters that change the length of the
-    // contents.
+    // Return if no meaningful changes have occurred.
     if (currentValue.equals(mLastKnownTextEditingValue)) {
       return;
     }

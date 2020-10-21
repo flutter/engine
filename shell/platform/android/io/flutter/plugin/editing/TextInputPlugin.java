@@ -44,6 +44,7 @@ public class TextInputPlugin {
   @Nullable private Editable mEditable;
   private boolean mRestartInputPending;
   @Nullable private InputConnection lastInputConnection;
+  @Nullable private BaseInputConnection mFakeBaseInputConnection;
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
   private final boolean restartAlwaysRequired;
@@ -165,6 +166,19 @@ public class TextInputPlugin {
   @VisibleForTesting
   Editable getEditable() {
     return mEditable;
+  }
+
+  BaseInputConnection getFakeBaseInputConnection() {
+    if (mFakeBaseInputConnection != null) {
+      return mFakeBaseInputConnection;
+    }
+    mFakeBaseInputConnection = new BaseInputConnection(mView, false) {
+      @Override
+      public Editable getEditable() {
+        return mEditable;
+      }
+    };
+    return mFakeBaseInputConnection;
   }
 
   @VisibleForTesting
@@ -445,6 +459,11 @@ public class TextInputPlugin {
     // Always apply state to selection which handles updating the selection if needed.
     applyStateToSelection(state);
 
+    if (state.composingEnd < 0)
+      BaseInputConnection.removeComposingSpans(mEditable);
+    else
+      getFakeBaseInputConnection().setComposingRegion(state.composingStart, state.composingEnd);
+
     // Use updateSelection to update imm on selection if it is not necessary to restart.
     if (!restartAlwaysRequired && !mRestartInputPending) {
       mImm.updateSelection(
@@ -605,7 +624,7 @@ public class TextInputPlugin {
       final TextInputChannel.Configuration.Autofill autofill = config.autofill;
       final String value = values.valueAt(i).getTextValue().toString();
       final TextInputChannel.TextEditState newState =
-          new TextInputChannel.TextEditState(value, value.length(), value.length());
+          new TextInputChannel.TextEditState(value, value.length(), value.length(), -1, -1);
 
       // The value of the currently focused text field needs to be updated.
       if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier)) {
