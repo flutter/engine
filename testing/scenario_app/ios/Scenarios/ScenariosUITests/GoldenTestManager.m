@@ -53,9 +53,10 @@ NSDictionary* launchArgsMap;
     [test addAttachment:attachment];
     // Instead of XCTFail because that definition changed between Xcode 11 and 12 whereas this impl
     // is stable.
-    _XCTPrimitiveFail(test, @"This test will fail - no golden named %@ found. "
-            @"Follow the steps in the README to add a new golden.",
-            _goldenImage.goldenName);
+    _XCTPrimitiveFail(test,
+                      @"This test will fail - no golden named %@ found. "
+                      @"Follow the steps in the README to add a new golden.",
+                      _goldenImage.goldenName);
   }
 
   if (![_goldenImage compareGoldenToImage:screenshot.image]) {
@@ -64,9 +65,10 @@ NSDictionary* launchArgsMap;
     screenshotAttachment.lifetime = XCTAttachmentLifetimeKeepAlways;
     [test addAttachment:screenshotAttachment];
 
-    _XCTPrimitiveFail(test, @"Goldens do not match. Follow the steps in the "
-            @"README to update golden named %@ if needed.",
-            _goldenImage.goldenName);
+    _XCTPrimitiveFail(test,
+                      @"Goldens do not match. Follow the steps in the "
+                      @"README to update golden named %@ if needed.",
+                      _goldenImage.goldenName);
   }
 }
 
