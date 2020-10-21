@@ -1,4 +1,4 @@
-Signature: 7f326261c9b549c71075b56457ec5db5
+Signature: 21a625c5aac8a4670ca27c7afaa27b29
 
 UNUSED LICENSES:
 
@@ -2510,6 +2510,7 @@ FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/message.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/struct.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/table.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/types.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/unknown_data.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia/lib/src/fakes/fuchsia_fakes.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/logger.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/internal/_fuchsia_log_writer.dart
