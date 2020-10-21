@@ -8,6 +8,11 @@
 
 #include "flutter/testing/testing.h"
 
+#ifdef _WIN32
+// winbase.h defines GetCurrentTime as a macro.
+#undef GetCurrentTime
+#endif
+
 namespace flutter {
 namespace testing {
 
