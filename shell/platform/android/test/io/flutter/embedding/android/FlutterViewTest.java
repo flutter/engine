@@ -262,7 +262,7 @@ public class FlutterViewTest {
         FlutterViewTest.ShadowFullscreenView.class,
         FlutterViewTest.ShadowFullscreenViewGroup.class
       })
-  public void setPaddingTopToZeroForFullscreenMode() {
+  public void setPaddingTopToZeroForFullscreenModeLegacy() {
     FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
@@ -340,7 +340,7 @@ public class FlutterViewTest {
   @Test
   @TargetApi(29)
   @Config(sdk = 29)
-  public void reportSystemInsetWhenNotFullscreen() {
+  public void reportSystemInsetWhenNotFullscreenLegacy() {
     // Without custom shadows, the default system ui visibility flags is 0.
     FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
     assertEquals(0, flutterView.getSystemUiVisibility());
