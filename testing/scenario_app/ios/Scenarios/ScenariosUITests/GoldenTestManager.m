@@ -48,22 +48,23 @@ NSDictionary* launchArgsMap;
   XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
   if (!_goldenImage.image) {
     XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];
-    attachment.name = @"new_golden";
+    attachment.name = [_goldenImage.goldenName stringByAppendingString:@"_new"];
     attachment.lifetime = XCTAttachmentLifetimeKeepAlways;
     [test addAttachment:attachment];
-    XCTFail(@"This test will fail - no golden named %@ found. Follow the steps in the "
-            @"README to add a new golden.",
+    // Instead of XCTFail because that definition changed between Xcode 11 and 12 whereas this impl
+    // is stable.
+    _XCTPrimitiveFail(test, @"This test will fail - no golden named %@ found. "
+            @"Follow the steps in the README to add a new golden.",
             _goldenImage.goldenName);
   }
 
   if (![_goldenImage compareGoldenToImage:screenshot.image]) {
-    XCTAttachment* screenshotAttachment;
-    screenshotAttachment = [XCTAttachment attachmentWithImage:screenshot.image];
-    screenshotAttachment.name = _goldenImage.goldenName;
+    XCTAttachment* screenshotAttachment = [XCTAttachment attachmentWithImage:screenshot.image];
+    screenshotAttachment.name = [_goldenImage.goldenName stringByAppendingString:@"_actual"];
     screenshotAttachment.lifetime = XCTAttachmentLifetimeKeepAlways;
     [test addAttachment:screenshotAttachment];
 
-    XCTFail(@"Goldens to not match. Follow the steps in the "
+    _XCTPrimitiveFail(test, @"Goldens do not match. Follow the steps in the "
             @"README to update golden named %@ if needed.",
             _goldenImage.goldenName);
   }

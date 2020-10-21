@@ -80,7 +80,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--bogus-font-text"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--text-semantics-focus"
