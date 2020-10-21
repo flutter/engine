@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/testing/mock_canvas.h"
 
@@ -190,8 +189,8 @@ void MockCanvas::onDrawPatch(const SkPoint[12],
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawPaint(const SkPaint&) {
-  FML_DCHECK(false);
+void MockCanvas::onDrawPaint(const SkPaint& skPaint) {
+  draw_calls_.emplace_back(DrawCall{current_layer_, DrawPaint{skPaint}});
 }
 
 void MockCanvas::onDrawBehind(const SkPaint&) {
@@ -448,6 +447,15 @@ bool operator==(const MockCanvas::DrawCall& a, const MockCanvas::DrawCall& b) {
 
 std::ostream& operator<<(std::ostream& os, const MockCanvas::DrawCall& draw) {
   return os << "[Layer: " << draw.layer << ", Data: " << draw.data << "]";
+}
+
+bool operator==(const MockCanvas::DrawPaint& a,
+                const MockCanvas::DrawPaint& b) {
+  return a.paint == b.paint;
+}
+
+std::ostream& operator<<(std::ostream& os, const MockCanvas::DrawPaint& data) {
+  return os << data.paint;
 }
 
 }  // namespace testing

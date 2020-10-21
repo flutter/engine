@@ -157,6 +157,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 - (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
                   initialRoute:(nullable NSString*)initialRoute {
+  // Need the project to get settings for the view. Initializing it here means
+  // the Engine class won't initialize it later.
+  if (!project) {
+    project = [[[FlutterDartProject alloc] init] autorelease];
+  }
+  FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
@@ -1016,6 +1022,58 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
   _viewportMetrics.physical_view_inset_bottom = 0;
   [self updateViewportMetrics];
+}
+
+- (void)dispatchPresses:(NSSet<UIPress*>*)presses API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
+    for (UIPress* press in presses) {
+      if (press.key == nil || press.phase == UIPressPhaseStationary ||
+          press.phase == UIPressPhaseChanged) {
+        continue;
+      }
+      NSMutableDictionary* keyMessage = [[@{
+        @"keymap" : @"ios",
+        @"type" : @"unknown",
+        @"keyCode" : @(press.key.keyCode),
+        @"modifiers" : @(press.key.modifierFlags),
+        @"characters" : press.key.characters,
+        @"charactersIgnoringModifiers" : press.key.charactersIgnoringModifiers
+      } mutableCopy] autorelease];
+
+      if (press.phase == UIPressPhaseBegan) {
+        keyMessage[@"type"] = @"keydown";
+      } else if (press.phase == UIPressPhaseEnded || press.phase == UIPressPhaseCancelled) {
+        keyMessage[@"type"] = @"keyup";
+      }
+
+      [[_engine.get() keyEventChannel] sendMessage:keyMessage];
+    }
+  }
+}
+
+- (void)pressesBegan:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
+- (void)pressesChanged:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
+- (void)pressesEnded:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
+- (void)pressesCancelled:(NSSet<UIPress*>*)presses
+               withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
 }
 
 #pragma mark - Orientation updates

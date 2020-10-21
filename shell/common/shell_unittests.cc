@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
@@ -317,6 +316,8 @@ TEST_F(ShellTest, AllowedDartVMFlag) {
   std::vector<const char*> flags = {
       "--enable-isolate-groups",
       "--no-enable-isolate-groups",
+      "--lazy_async_stacks",
+      "--no-causal_async_stacks",
   };
 #if !FLUTTER_RELEASE
   flags.push_back("--max_profile_depth 1");
@@ -2062,6 +2063,124 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
 
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
   ASSERT_EQ(expected_size, external_view_embedder->GetLastSubmittedFrameSize());
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, IgnoresInvalidMetrics) {
+  fml::AutoResetWaitableEvent latch;
+  double last_device_pixel_ratio;
+  double last_width;
+  double last_height;
+  auto native_report_device_pixel_ratio = [&](Dart_NativeArguments args) {
+    auto dpr_handle = Dart_GetNativeArgument(args, 0);
+    ASSERT_TRUE(Dart_IsDouble(dpr_handle));
+    Dart_DoubleValue(dpr_handle, &last_device_pixel_ratio);
+    ASSERT_FALSE(last_device_pixel_ratio == 0.0);
+
+    auto width_handle = Dart_GetNativeArgument(args, 1);
+    ASSERT_TRUE(Dart_IsDouble(width_handle));
+    Dart_DoubleValue(width_handle, &last_width);
+    ASSERT_FALSE(last_width == 0.0);
+
+    auto height_handle = Dart_GetNativeArgument(args, 2);
+    ASSERT_TRUE(Dart_IsDouble(height_handle));
+    Dart_DoubleValue(height_handle, &last_height);
+    ASSERT_FALSE(last_height == 0.0);
+
+    latch.Signal();
+  };
+
+  Settings settings = CreateSettingsForFixture();
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+
+  AddNativeCallback("ReportMetrics",
+                    CREATE_NATIVE_ENTRY(native_report_device_pixel_ratio));
+
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("reportMetrics");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  task_runner->PostTask([&]() {
+    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200});
+    task_runner->PostTask([&]() {
+      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200});
+      task_runner->PostTask([&]() {
+        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0});
+        task_runner->PostTask([&]() {
+          shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 200.0});
+        });
+      });
+    });
+  });
+  latch.Wait();
+  ASSERT_EQ(last_device_pixel_ratio, 0.8);
+  ASSERT_EQ(last_width, 400.0);
+  ASSERT_EQ(last_height, 200.0);
+  latch.Reset();
+
+  task_runner->PostTask([&]() {
+    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300});
+  });
+  latch.Wait();
+  ASSERT_EQ(last_device_pixel_ratio, 1.2);
+  ASSERT_EQ(last_width, 600.0);
+  ASSERT_EQ(last_height, 300.0);
+
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+TEST_F(ShellTest, OnServiceProtocolSetAssetBundlePathWorks) {
+  Settings settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  RunConfiguration configuration =
+      RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("canAccessResourceFromAssetDir");
+
+  // Verify isolate can load a known resource with the
+  // default asset directory - kernel_blob.bin
+  fml::AutoResetWaitableEvent latch;
+
+  // Callback used to signal whether the resource was loaded successfully.
+  bool can_access_resource = false;
+  auto native_can_access_resource = [&can_access_resource,
+                                     &latch](Dart_NativeArguments args) {
+    Dart_Handle exception = nullptr;
+    can_access_resource =
+        tonic::DartConverter<bool>::FromArguments(args, 0, exception);
+    latch.Signal();
+  };
+  AddNativeCallback("NotifyCanAccessResource",
+                    CREATE_NATIVE_ENTRY(native_can_access_resource));
+
+  // Callback used to delay the asset load until after the service
+  // protocol method has finished.
+  auto native_notify_set_asset_bundle_path =
+      [&shell](Dart_NativeArguments args) {
+        // Update the asset directory to a bonus path.
+        ServiceProtocol::Handler::ServiceProtocolMap params;
+        params["assetDirectory"] = "assetDirectory";
+        rapidjson::Document document;
+        OnServiceProtocol(shell.get(), ServiceProtocolEnum::kSetAssetBundlePath,
+                          shell->GetTaskRunners().GetUITaskRunner(), params,
+                          &document);
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        document.Accept(writer);
+      };
+  AddNativeCallback("NotifySetAssetBundlePath",
+                    CREATE_NATIVE_ENTRY(native_notify_set_asset_bundle_path));
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  latch.Wait();
+  ASSERT_TRUE(can_access_resource);
 
   DestroyShell(std::move(shell));
 }

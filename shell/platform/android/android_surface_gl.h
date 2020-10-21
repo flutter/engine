@@ -22,9 +22,10 @@ namespace flutter {
 class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
                                public AndroidSurface {
  public:
-  AndroidSurfaceGL(std::shared_ptr<AndroidContext> android_context,
-                   std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-                   const AndroidSurface::Factory& surface_factory);
+  AndroidSurfaceGL(
+      std::shared_ptr<AndroidContext> android_context,
+      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+      std::shared_ptr<AndroidExternalViewEmbedder> external_view_embedder);
 
   ~AndroidSurfaceGL() override;
 
@@ -65,8 +66,11 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
+  // |GPUSurfaceGLDelegate|
+  sk_sp<const GrGLInterface> GetGLInterface() const override;
+
  private:
-  const std::unique_ptr<AndroidExternalViewEmbedder> external_view_embedder_;
+  const std::shared_ptr<AndroidExternalViewEmbedder> external_view_embedder_;
   const std::shared_ptr<AndroidContextGL> android_context_;
 
   fml::RefPtr<AndroidNativeWindow> native_window_;

@@ -113,7 +113,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   }) {
     assert(clipBehavior != null); // ignore: unnecessary_null_comparison
     assert(clipBehavior != ui.Clip.none);
-    return _pushSurface(PersistedClipRect(oldLayer as PersistedClipRect?, rect)) as ui.ClipRectEngineLayer;
+    return _pushSurface(PersistedClipRect(oldLayer as PersistedClipRect?, rect, clipBehavior))
+        as ui.ClipRectEngineLayer;
   }
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
@@ -528,6 +529,15 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// cannot be used further.
   @override
   SurfaceScene build() {
+    // "Build finish" and "raster start" happen back-to-back because we
+    // render on the same thread, so there's no overhead from hopping to
+    // another thread.
+    //
+    // In the HTML renderer we time the beginning of the rasterization phase
+    // (counter-intuitively) in SceneBuilder.build because DOM updates happen
+    // here. This is different from CanvasKit.
+    _frameTimingsOnBuildFinish();
+    _frameTimingsOnRasterStart();
     timeAction<void>(kProfilePrerollFrame, () {
       while (_surfaceStack.length > 1) {
         // Auto-pop layers that were pushed without a corresponding pop.

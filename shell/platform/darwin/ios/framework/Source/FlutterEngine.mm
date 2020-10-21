@@ -27,6 +27,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/connection_collection.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
@@ -77,6 +78,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
+  fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
 
   int64_t _nextTextureId;
 
@@ -336,6 +338,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterBasicMessageChannel*)settingsChannel {
   return _settingsChannel.get();
 }
+- (FlutterBasicMessageChannel*)keyEventChannel {
+  return _keyEventChannel.get();
+}
 
 - (NSURL*)observatoryUrl {
   return [_publisher.get() url];
@@ -350,6 +355,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
+  _keyEventChannel.reset();
 }
 
 - (void)startProfiler:(NSString*)threadLabel {
@@ -422,6 +428,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
+  _keyEventChannel.reset([[FlutterBasicMessageChannel alloc]
+         initWithName:@"flutter/keyevent"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterJSONMessageCodec sharedInstance]]);
+
   _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
   _textInputPlugin.get().textInputDelegate = self;
 
@@ -473,6 +484,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.initialRoute = initialRoute;
 
   auto settings = [_dartProject.get() settings];
+  FlutterView.forceSoftwareRendering = settings.enable_software_rendering;
+
   auto platformData = [_dartProject.get() defaultPlatformData];
 
   if (libraryURI) {
@@ -512,7 +525,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
       [](flutter::Shell& shell) {
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, flutter::GetRenderingAPIForProcess(), shell.GetTaskRunners());
+            shell, flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering),
+            shell.GetTaskRunners());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
@@ -539,10 +553,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   } else {
     [self setupChannels];
     [self onLocaleUpdated:nil];
+    [self initializeDisplays];
     if (!_platformViewsController) {
       _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
     }
-    _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
+    _publisher.reset([[FlutterObservatoryPublisher alloc]
+        initWithEnableObservatoryPublication:settings.enable_observatory_publication]);
     [self maybeSetupPlatformViewChannels];
     _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
     if (profilerEnabled) {
@@ -551,6 +567,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   }
 
   return _shell != nullptr;
+}
+
+- (void)initializeDisplays {
+  double refresh_rate = [[[DisplayLinkManager alloc] init] displayRefreshRate];
+  auto display = flutter::Display(refresh_rate);
+  _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, {display});
 }
 
 - (BOOL)run {

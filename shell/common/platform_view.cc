@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/shell/common/platform_view.h"
 
@@ -72,9 +71,16 @@ void PlatformView::NotifyCreated() {
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch]() {
         surface = platform_view->CreateRenderingSurface();
+        if (surface && !surface->IsValid()) {
+          surface.reset();
+        }
         latch.Signal();
       });
   latch.Wait();
+  if (!surface) {
+    FML_LOG(ERROR) << "Failed to create platform view rendering surface";
+    return;
+  }
   delegate_.OnPlatformViewCreated(std::move(surface));
 }
 

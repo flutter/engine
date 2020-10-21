@@ -963,6 +963,56 @@ typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
     const FlutterLocale** /* supported_locales*/,
     size_t /* Number of locales*/);
 
+/// Display refers to a graphics hardware system consisting of a framebuffer,
+/// typically a monitor or a screen. This ID is unique per display and is
+/// stable until the Flutter application restarts.
+typedef uint64_t FlutterEngineDisplayId;
+
+typedef struct {
+  /// This size of this struct. Must be sizeof(FlutterDisplay).
+  size_t struct_size;
+
+  FlutterEngineDisplayId display_id;
+
+  /// This is set to true if the embedder only has one display. In cases where
+  /// this is set to true, the value of display_id is ignored. In cases where
+  /// this is not set to true, it is expected that a valid display_id be
+  /// provided.
+  bool single_display;
+
+  /// This represents the refresh period in frames per second. This value may be
+  /// zero if the device is not running or unavaliable or unknown.
+  double refresh_rate;
+} FlutterEngineDisplay;
+
+/// The update type parameter that is passed to
+/// `FlutterEngineNotifyDisplayUpdate`.
+typedef enum {
+  /// `FlutterEngineDisplay`s that were active during start-up. A display is
+  /// considered active if:
+  ///    1. The frame buffer hardware is connected.
+  ///    2. The display is drawable, e.g. it isn't being mirrored from another
+  ///    connected display or sleeping.
+  kFlutterEngineDisplaysUpdateTypeStartup,
+  kFlutterEngineDisplaysUpdateTypeCount,
+} FlutterEngineDisplaysUpdateType;
+
+//------------------------------------------------------------------------------
+/// @brief    Posts updates corresponding to display changes to a running engine
+///           instance.
+///
+/// @param[in] update_type      The type of update pushed to the engine.
+/// @param[in] displays         The displays affected by this update.
+/// @param[in] display_count    Size of the displays array, must be at least 1.
+///
+/// @return the result of the call made to the engine.
+///
+FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterEngineDisplaysUpdateType update_type,
+    const FlutterEngineDisplay* displays,
+    size_t display_count);
+
 typedef int64_t FlutterEngineDartPort;
 
 typedef enum {
@@ -1318,6 +1368,19 @@ typedef struct {
   /// matches what the platform would natively resolve to as possible.
   FlutterComputePlatformResolvedLocaleCallback
       compute_platform_resolved_locale_callback;
+
+  /// The command line argument count for arguments passed through to the Dart
+  /// entrypoint.
+  int dart_entrypoint_argc;
+
+  /// The command line arguments passed through to the Dart entrypoint. The
+  /// strings must be `NULL` terminated.
+  ///
+  /// The strings will be copied out and so any strings passed in here can
+  /// be safely collected after initializing the engine with
+  /// `FlutterProjectArgs`.
+  const char* const* dart_entrypoint_argv;
+
 } FlutterProjectArgs;
 
 //------------------------------------------------------------------------------
