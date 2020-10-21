@@ -210,8 +210,54 @@ public class FlutterViewTest {
     assertEquals(SettingsChannel.PlatformBrightness.dark, reportedBrightness.get());
   }
 
+  // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
+  // set to -1 values, so it is clear if the wrong algorithm is used.
   @Test
+  @TargetApi(30)
   @Config(
+      sdk = 30,
+      shadows = {
+        FlutterViewTest.ShadowFullscreenView.class,
+        FlutterViewTest.ShadowFullscreenViewGroup.class
+      })
+  public void setPaddingTopToZeroForFullscreenMode() {
+    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets, the viewport
+    // metrics
+    // default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
+    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(100);
+    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(100);
+    when(windowInsets.getSystemWindowInsetRight()).thenReturn(100);
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    // Verify.
+    verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    // Padding bottom is always 0.
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
+    assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
+  }
+
+  // This test uses the pre-API 30 Algorithm for window insets.
+  @Test
+  @TargetApi(29)
+  @Config(
+      sdk = 29,
       shadows = {
         FlutterViewTest.ShadowFullscreenView.class,
         FlutterViewTest.ShadowFullscreenViewGroup.class
@@ -248,7 +294,11 @@ public class FlutterViewTest {
     assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
   }
 
+  // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
+  // set to -1 values, so it is clear if the wrong algorithm is used.
   @Test
+  @TargetApi(30)
+  @Config(sdk = 30)
   public void reportSystemInsetWhenNotFullscreen() {
     // Without custom shadows, the default system ui visibility flags is 0.
     FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
@@ -280,7 +330,48 @@ public class FlutterViewTest {
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is reported as-is.
     assertEquals(100, viewportMetricsCaptor.getValue().paddingTop);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingBottom);
+    // Padding bottom is always 0.
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
+    assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
+  }
+
+  // This test uses the pre-API 30 Algorithm for window insets.
+  @Test
+  @TargetApi(29)
+  @Config(sdk = 29)
+  public void reportSystemInsetWhenNotFullscreen() {
+    // Without custom shadows, the default system ui visibility flags is 0.
+    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    assertEquals(0, flutterView.getSystemUiVisibility());
+
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets, the viewport
+    // metrics
+    // default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
+    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(100);
+    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(100);
+    when(windowInsets.getSystemWindowInsetRight()).thenReturn(100);
+    flutterView.onApplyWindowInsets(windowInsets);
+
+    // Verify.
+    verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
+    // Top padding is reported as-is.
+    assertEquals(100, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
   }
