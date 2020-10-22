@@ -12,10 +12,10 @@ import 'scenario.dart';
 class BogusFontText extends Scenario {
   /// Creates the BogusFontText scenario.
   ///
-  /// The [window] parameter must not be null.
-  BogusFontText(Window window)
-      : assert(window != null),
-        super(window);
+  /// The [dispatcher] parameter must not be null.
+  BogusFontText(PlatformDispatcher dispatcher)
+      : assert(dispatcher != null),
+        super(dispatcher);
 
   // Semi-arbitrary.
   double _screenWidth = 700;
