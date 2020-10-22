@@ -47,6 +47,7 @@ abstract class SceneBuilder {
   });
   TransformEngineLayer? pushTransform(
     Float64List matrix4, {
+    TransformMethod transformMethod = TransformMethod.render,
     TransformEngineLayer? oldLayer,
   });
   ClipRectEngineLayer? pushClipRect(
