@@ -3504,6 +3504,9 @@ class FragmentShader extends Shader {
 
   /// TODO(clocksmith): Public Docs. 
   void setImage(Image image, TileMode tmx, TileMode tmy, Float64List matrix4) native 'FragmentShader_setImage';
+
+  /// TODO(clocksmith): Public Docs. 
+  void refresh() native 'FragmentShader_refresh';
 }
 
 /// A shader (as used by [Paint.shader]) that tiles an image.
@@ -4719,7 +4722,7 @@ class Picture extends NativeFieldWrapperClass2 {
     );
   }
 
-  String _toImage(int width, int height, _Callback<_Image> callback) native 'Picture_toImage';
+  String? _toImage(int width, int height, _Callback<_Image> callback) native 'Picture_toImage';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.

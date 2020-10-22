@@ -58,6 +58,7 @@ class TranspilerImpl : public Transpiler {
  private:
   std::string ResolveName(uint32_t id);
   std::string ResolveType(uint32_t id);
+  size_t ResolveTypeFloatCount(uint32_t id);
   std::string ResolveGLSLName(uint32_t id);
 
   const spv_context spv_context_;

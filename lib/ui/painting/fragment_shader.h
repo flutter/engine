@@ -41,6 +41,10 @@ class FragmentShader : public Shader {
                 SkTileMode tmy,
                 const tonic::Float64List& matrix4);
 
+  void refresh();
+  
+  // uniformData();
+
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
@@ -52,6 +56,8 @@ class FragmentShader : public Shader {
   // Variables that require setShader() to be called when changed.
   float t_;
   sk_sp<SkShader> input_;
+
+  std::unique_ptr<tonic::Float32List> uniformData_;
 
   // Since the sksl cannot be updated, the effect can be
   // created once and re-used.

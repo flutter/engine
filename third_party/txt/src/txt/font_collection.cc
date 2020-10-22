@@ -27,6 +27,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "font_skia.h"
+#include "minikin/Layout.h"
 #include "txt/platform.h"
 #include "txt/text_style.h"
 
@@ -82,7 +83,15 @@ class TxtFallbackFontProvider
 
 FontCollection::FontCollection() : enable_font_fallback_(true) {}
 
-FontCollection::~FontCollection() = default;
+FontCollection::~FontCollection() {
+  minikin::Layout::purgeCaches();
+
+#if FLUTTER_ENABLE_SKSHAPER
+  if (skt_collection_) {
+    skt_collection_->clearCaches();
+  }
+#endif
+}
 
 size_t FontCollection::GetFontManagersCount() const {
   return GetFontManagerOrder().size();
@@ -124,6 +133,12 @@ std::vector<sk_sp<SkFontMgr>> FontCollection::GetFontManagerOrder() const {
 
 void FontCollection::DisableFontFallback() {
   enable_font_fallback_ = false;
+
+#if FLUTTER_ENABLE_SKSHAPER
+  if (skt_collection_) {
+    skt_collection_->disableFontFallback();
+  }
+#endif
 }
 
 std::shared_ptr<minikin::FontCollection>
@@ -343,8 +358,13 @@ FontCollection::GetFallbackFontFamily(const sk_sp<SkFontMgr>& manager,
 
 void FontCollection::ClearFontFamilyCache() {
   font_collections_cache_.clear();
-}
 
+#if FLUTTER_ENABLE_SKSHAPER
+  if (skt_collection_) {
+    skt_collection_->clearCaches();
+  }
+#endif
+}
 #if FLUTTER_ENABLE_SKSHAPER
 
 sk_sp<skia::textlayout::FontCollection>

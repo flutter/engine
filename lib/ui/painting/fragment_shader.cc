@@ -28,7 +28,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentShader);
   V(FragmentShader, initWithSource) \
   V(FragmentShader, initWithSPIRV) \
   V(FragmentShader, setTime) \
-  V(FragmentShader, setImage)
+  V(FragmentShader, setImage) \
+  V(FragmentShader, refresh)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -47,6 +48,7 @@ void FragmentShader::initWithSPIRV(const tonic::Uint8List& data) {
     return;
   }
   auto sksl = transpiler->GetSkSL();
+  uniformData_ = std::make_unique<tonic::Float32List>(Dart_NewTypedData(Dart_TypedData_kFloat32, transpiler->GetUniformBufferSize()));
   initWithSource(sksl);
 }
 
@@ -64,11 +66,23 @@ void FragmentShader::setImage(CanvasImage* image,
   setShader();
 }
 
+void FragmentShader::refresh() {
+  sk_sp<SkData> uniforms = SkData::MakeWithoutCopy(uniformData_->data(), uniformData_->num_elements() * 4);
+  set_shader(UIDartState::CreateGPUObject(runtime_effect_->makeShader(uniforms, nullptr, 0, nullptr, false)));
+  // set_shader(UIDartState::CreateGPUObject(builder_->makeShader(nullptr, false)));
+}
+
+// FragmentShader::uniformData() {
+//   return _uniformData;
+// }
+
 void FragmentShader::initEffect(SkString sksl) {
   SkString err;
   std::tie(runtime_effect_, err) = SkRuntimeEffect::Make(sksl);
   if (!runtime_effect_) {
     FML_DLOG(ERROR) << "Invalid SKSL:\n" << sksl.c_str() << "\nSKSL Error:\n" << err.c_str();
+  } else {
+    FML_DLOG(ERROR) << "Valid SKSL:\n" << sksl.c_str();
   }
 }
 

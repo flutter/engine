@@ -33,8 +33,6 @@ class _CanvasPool extends _SaveStackTracking {
 
   html.HtmlElement? _rootElement;
   int _saveContextCount = 0;
-  // Number of elements that have been added to flt-canvas.
-  int _activeElementCount = 0;
 
   _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
 
@@ -76,7 +74,6 @@ class _CanvasPool extends _SaveStackTracking {
       _context = null;
       _contextHandle = null;
     }
-    _activeElementCount++;
   }
 
   void allocateCanvas(html.HtmlElement rootElement) {
@@ -134,15 +131,12 @@ class _CanvasPool extends _SaveStackTracking {
       _rootElement!.append(canvas);
     }
 
-    if (_activeElementCount == 0) {
-      canvas.style.zIndex = '-1';
-    } else if (reused) {
-      // If a canvas is the first element we set z-index = -1 to workaround
-      // blink compositing bug. To make sure this does not leak when reused
-      // reset z-index.
+    if (reused) {
+      // If a canvas is the first element we set z-index = -1 in [BitmapCanvas]
+      // endOfPaint to workaround blink compositing bug. To make sure this
+      // does not leak when reused reset z-index.
       canvas.style.removeProperty('z-index');
     }
-    ++_activeElementCount;
 
     final html.CanvasRenderingContext2D context = _context = canvas.context2D;
     _contextHandle = ContextStateHandle(this, context);
@@ -210,8 +204,13 @@ class _CanvasPool extends _SaveStackTracking {
         } else if (clipEntry.rrect != null) {
           _clipRRect(ctx, clipEntry.rrect!);
         } else if (clipEntry.path != null) {
-          _runPath(ctx, clipEntry.path as SurfacePath);
-          ctx.clip();
+          final SurfacePath path = clipEntry.path as SurfacePath;
+          _runPath(ctx, path);
+          if (path.fillType == ui.PathFillType.nonZero) {
+            ctx.clip();
+          } else {
+            ctx.clip('evenodd');
+          }
         }
       }
     }
@@ -265,7 +264,6 @@ class _CanvasPool extends _SaveStackTracking {
     _canvas = null;
     _context = null;
     _contextHandle = null;
-    _activeElementCount = 0;
   }
 
   void endOfPaint() {
@@ -321,7 +319,7 @@ class _CanvasPool extends _SaveStackTracking {
 
   // Returns a "data://" URI containing a representation of the image in this
   // canvas in PNG format.
-  String toDataUrl() => _canvas!.toDataUrl();
+  String toDataUrl() => _canvas?.toDataUrl() ?? '';
 
   @override
   void save() {
@@ -443,7 +441,11 @@ class _CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       html.CanvasRenderingContext2D ctx = context;
       _runPath(ctx, path as SurfacePath);
-      ctx.clip();
+      if (path.fillType == ui.PathFillType.nonZero) {
+        ctx.clip();
+      } else {
+        ctx.clip('evenodd');
+      }
     }
   }
 
@@ -761,7 +763,7 @@ class ContextStateHandle {
   /// Sets paint properties on the current canvas.
   ///
   /// [tearDownPaint] must be called after calling this method.
-  void setUpPaint(SurfacePaintData paint) {
+  void setUpPaint(SurfacePaintData paint, ui.Rect? shaderBounds) {
     if (assertionsEnabled) {
       assert(!_debugIsPaintSetUp);
       _debugIsPaintSetUp = true;
@@ -776,7 +778,7 @@ class ContextStateHandle {
     if (paint.shader != null) {
       final EngineGradient engineShader = paint.shader as EngineGradient;
       final Object paintStyle =
-          engineShader.createPaintStyle(_canvasPool.context);
+          engineShader.createPaintStyle(_canvasPool.context, shaderBounds);
       fillStyle = paintStyle;
       strokeStyle = paintStyle;
     } else if (paint.color != null) {
