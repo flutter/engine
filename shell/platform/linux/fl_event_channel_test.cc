@@ -14,6 +14,12 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
 
+// Data required in SendEvents test.
+typedef struct {
+  GMainLoop* loop;
+  int count;
+} SendEventsData;
+
 // Creates a mock engine that responds to platform messages.
 static FlEngine* make_mock_engine() {
   g_autoptr(FlDartProject) project = fl_dart_project_new();
@@ -324,7 +330,7 @@ static void send_events_events_cb(
     GBytes* message,
     FlBinaryMessengerResponseHandle* response_handle,
     gpointer user_data) {
-  static int expected_value = 0;
+  SendEventsData* data = static_cast<SendEventsData*>(user_data);
 
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   g_autoptr(GError) error = nullptr;
@@ -338,21 +344,24 @@ static void send_events_events_cb(
   EXPECT_EQ(error, nullptr);
 
   EXPECT_EQ(fl_value_get_type(result), FL_VALUE_TYPE_INT);
-  EXPECT_EQ(fl_value_get_int(result), expected_value);
-  expected_value++;
+  EXPECT_EQ(fl_value_get_int(result), data->count);
+  data->count++;
 
   fl_binary_messenger_send_response(messenger, response_handle, nullptr,
                                     nullptr);
 
   // Got all the results!
-  if (expected_value == 5) {
-    g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+  if (data->count == 5) {
+    g_main_loop_quit(data->loop);
   }
 }
 
 // Checks can send events.
 TEST(FlEventChannelTest, SendEvents) {
   g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
+  SendEventsData data;
+  data.loop = loop;
+  data.count = 0;
 
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
@@ -360,11 +369,11 @@ TEST(FlEventChannelTest, SendEvents) {
   FlEventChannel* channel = fl_event_channel_new(
       messenger, "test/standard-event", FL_METHOD_CODEC(codec));
   fl_event_channel_set_stream_handlers(channel, send_events_listen_cb, nullptr,
-                                       loop, nullptr);
+                                       &data, nullptr);
 
   // Listen for events from the engine.
   fl_binary_messenger_set_message_handler_on_channel(
-      messenger, "test/events", send_events_events_cb, loop, nullptr);
+      messenger, "test/events", send_events_events_cb, &data, nullptr);
 
   listen_channel(messenger, nullptr);
   cancel_channel(messenger, nullptr);
