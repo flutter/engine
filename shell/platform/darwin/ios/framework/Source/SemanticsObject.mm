@@ -560,7 +560,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     flutter::FlutterPlatformViewsController* controller =
         object.bridge->GetPlatformViewsController();
     if (controller) {
-      _platformView = [[controller->GetPlatformViewByID(object.node.platformViewId) view] retain];
+      _platformView = [controller->GetPlatformViewByID(object.node.platformViewId) retain];
     }
   }
   return self;

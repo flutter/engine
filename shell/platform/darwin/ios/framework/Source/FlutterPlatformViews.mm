@@ -158,7 +158,6 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
                                                            viewIdentifier:viewId
                                                                 arguments:params];
   UIView* platform_view = [embedded_view view];
-  FML_DCHECK(platform_view == [embedded_view view]) << "The [view] method of FlutterPlatformView should not return a new instance of UIView during the same frame.";
   // Set a unique view identifier, so the platform view can be identified in unit tests.
   platform_view.accessibilityIdentifier = [NSString stringWithFormat:@"platform_view[%ld]", viewId];
   views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
@@ -312,11 +311,11 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
   views_to_recomposite_.insert(view_id);
 }
 
-NSObject<FlutterPlatformView>* FlutterPlatformViewsController::GetPlatformViewByID(int view_id) {
+UIView* FlutterPlatformViewsController::GetPlatformViewByID(int view_id) {
   if (views_.empty()) {
     return nil;
   }
-  return views_[view_id].get();
+  return [touch_interceptors_[view_id].get() embeddedView];
 }
 
 std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
@@ -449,7 +448,7 @@ void FlutterPlatformViewsController::Reset() {
 }
 
 SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
-  UIView* platform_view = [views_[view_id].get() view];
+  UIView* platform_view = GetPlatformViewByID(view_id);
   UIScreen* screen = [UIScreen mainScreen];
   CGRect platform_view_cgrect = [platform_view convertRect:platform_view.bounds
                                                     toView:flutter_view_];
@@ -732,6 +731,7 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
 @implementation FlutterTouchInterceptingView {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
   FlutterPlatformViewGestureRecognizersBlockingPolicy _blockingPolicy;
+  UIView* _embeddedView;
 }
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
              platformViewsController:
@@ -741,6 +741,7 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
   self = [super initWithFrame:embeddedView.frame];
   if (self) {
     self.multipleTouchEnabled = YES;
+    _embeddedView = embeddedView;
     embeddedView.autoresizingMask =
         (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
 
@@ -760,6 +761,10 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
     [self addGestureRecognizer:forwardingRecognizer];
   }
   return self;
+}
+
+- (UIView*)embeddedView {
+  return [[_embeddedView retain] autorelease];
 }
 
 - (void)releaseGesture {

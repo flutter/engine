@@ -17,6 +17,7 @@ FLUTTER_ASSERT_NOT_ARC
 @class FlutterPlatformViewsTestMockPlatformView;
 static FlutterPlatformViewsTestMockPlatformView* gMockPlatformView = nil;
 const float kFloatCompareEpsilon = 0.001;
+BOOL enableViewCreateOnceCheck = NO;
 
 @interface FlutterPlatformViewsTestMockPlatformView : UIView
 @end
@@ -48,6 +49,21 @@ const float kFloatCompareEpsilon = 0.001;
     _view = [[FlutterPlatformViewsTestMockPlatformView alloc] init];
   }
   return self;
+}
+
+- (UIView*)view {
+  [self checkViewCreatedOnce];
+  return _view;
+}
+
+- (void)checkViewCreatedOnce {
+  if (enableViewCreateOnceCheck) {
+    static bool created = false;
+    if (created) {
+      abort();
+    }
+    created = true;
+  }
 }
 
 - (void)dealloc {
@@ -112,6 +128,62 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 @end
 
 @implementation FlutterPlatformViewsTest
+
+- (void)testFlutterViewOnlyCreateOnceInOneFrame {
+  enableViewCreateOnceCheck = YES;
+  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*task_runners=*/runners);
+
+  auto flutterPlatformViewsController = std::make_unique<flutter::FlutterPlatformViewsController>();
+
+  FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
+  flutterPlatformViewsController->RegisterViewFactory(
+      factory, @"MockFlutterPlatformView",
+      FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+  FlutterResult result = ^(id result) {
+  };
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall
+          methodCallWithMethodName:@"create"
+                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
+      result);
+  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  flutterPlatformViewsController->SetFlutterView(mockFlutterView);
+  // Create embedded view params
+  flutter::MutatorsStack stack;
+  // Layer tree always pushes a screen scale factor to the stack
+  SkMatrix screenScaleMatrix =
+      SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+  stack.PushTransform(screenScaleMatrix);
+  // Push a translate matrix
+  SkMatrix translateMatrix = SkMatrix::MakeTrans(100, 100);
+  stack.PushTransform(translateMatrix);
+  SkMatrix finalMatrix;
+  finalMatrix.setConcat(screenScaleMatrix, translateMatrix);
+
+  auto embeddedViewParams =
+      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
+
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
+  flutterPlatformViewsController->CompositeEmbeddedView(2);
+
+  flutterPlatformViewsController->GetPlatformViewRect(2);
+
+  XCTAssertNotNil(gMockPlatformView);
+
+  flutterPlatformViewsController->Reset();
+  enableViewCreateOnceCheck = NO;
+}
 
 - (void)testCanCreatePlatformViewWithoutFlutterView {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
