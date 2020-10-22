@@ -494,8 +494,7 @@ class BitmapCanvas extends EngineCanvas {
           surfacePath, paint, '${pathBounds.right}', '${pathBounds.bottom}');
       if (!_canvasPool.isClipped) {
         html.CssStyleDeclaration style = svgElm.style;
-        style
-          ..position = 'absolute';
+        style.position = 'absolute';
         if (!transform.isIdentity()) {
           style
             ..transform = matrix4ToCssTransform(transform)
