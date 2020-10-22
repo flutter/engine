@@ -40,6 +40,9 @@ static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 // This should be an exact copy of the Clip enum in painting.dart.
 enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
+// This should be an exact copy of the TransformMethod enum in painting.dart.
+enum TransformMethod { render, bitmapTransform };
+
 struct PrerollContext {
   RasterCache* raster_cache;
   GrDirectContext* gr_context;

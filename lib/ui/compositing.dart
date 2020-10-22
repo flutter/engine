@@ -281,18 +281,19 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// See [pop] for details about the operation stack.
   TransformEngineLayer? pushTransform(
     Float64List matrix4, {
+    TransformMethod transformMethod = TransformMethod.render,
     TransformEngineLayer? oldLayer,
   }) {
     assert(_matrix4IsValid(matrix4));
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushTransform'));
     final EngineLayer engineLayer = EngineLayer._();
-    _pushTransform(engineLayer, matrix4);
+    _pushTransform(engineLayer, matrix4, transformMethod.index);
     final TransformEngineLayer layer = TransformEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  void _pushTransform(EngineLayer layer, Float64List matrix4) native 'SceneBuilder_pushTransform';
+  void _pushTransform(EngineLayer layer, Float64List matrix4, int method) native 'SceneBuilder_pushTransform';
 
   /// Pushes an offset operation onto the operation stack.
   ///

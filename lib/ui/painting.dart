@@ -1038,6 +1038,17 @@ enum Clip {
   antiAliasWithSaveLayer,
 }
 
+/// A suggestion on how to apply a matrix transform to widget contents.
+enum TransformMethod {
+  /// The contents will be rendered with the transform matrix.
+  render,
+
+  /// The contents will be rendered under some other more general transform
+  /// (typical an identity transform) and then the resulting rendered
+  /// bitmap will be transformed into place using a texture operation.
+  bitmapTransform,
+}
+
 /// A description of the style to use when drawing on a [Canvas].
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style

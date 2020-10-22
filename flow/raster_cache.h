@@ -24,6 +24,8 @@ class RasterCacheResult {
 
   virtual void draw(SkCanvas& canvas, const SkPaint* paint) const;
 
+  virtual void drawTransformed(SkCanvas& canvas, const SkMatrix& matrix) const;
+
   virtual SkISize image_dimensions() const {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);
   };
@@ -139,7 +141,7 @@ class RasterCache {
                bool is_complex,
                bool will_change);
 
-  void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
+  bool Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
 
   // Find the raster cache for the picture and draw it to the canvas.
   //
@@ -155,6 +157,14 @@ class RasterCache {
   bool Draw(const Layer* layer,
             SkCanvas& canvas,
             SkPaint* paint = nullptr) const;
+
+  // Find the raster cache for the layer and draw it to the canvas with the
+  // specified transform.
+  //
+  // Return true if the layer raster cache is found and drawn.
+  bool DrawTransformed(const Layer* layer,
+                       SkCanvas& canvas,
+                       const SkMatrix& matrix) const;
 
   void SweepAfterFrame();
 

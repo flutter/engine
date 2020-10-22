@@ -43,10 +43,12 @@ class ContainerLayer : public Layer {
   // 2. The context does not have a valid raster cache.
   // 3. The layer's paint bounds does not intersect with the cull rect.
   //
+  // The function returns true iff the rasterization succeeded.
+  //
   // We make this a static function instead of a member function that directy
   // uses the "this" pointer as the layer because we sometimes need to raster
   // cache a child layer and one can't access its child's protected method.
-  static void TryToPrepareRasterCache(PrerollContext* context,
+  static bool TryToPrepareRasterCache(PrerollContext* context,
                                       Layer* layer,
                                       const SkMatrix& matrix);
 

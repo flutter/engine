@@ -26,7 +26,7 @@ TEST_F(TransformLayerTest, PaintingEmptyLayerDies) {
                             "needs_painting\\(\\)");
 }
 
-TEST_F(TransformLayerTest, PaintBeforePreollDies) {
+TEST_F(TransformLayerTest, PaintBeforePrerollDies) {
   SkPath child_path;
   child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
   auto mock_layer = std::make_shared<MockLayer>(child_path, SkPaint());
@@ -98,6 +98,42 @@ TEST_F(TransformLayerTest, Simple) {
                    MockCanvas::DrawCall{
                        1, MockCanvas::DrawPathData{child_path, SkPaint()}},
                    MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+}
+
+TEST_F(TransformLayerTest, Cached) {
+  SkPath child_path;
+  child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  SkRect cull_rect = SkRect::MakeXYWH(2.0f, 2.0f, 14.0f, 14.0f);
+  SkMatrix initial_transform = SkMatrix::Translate(-0.5f, -0.5f);
+  SkMatrix layer_transform = SkMatrix::Translate(2.5f, 2.5f);
+
+  auto mock_layer = std::make_shared<MockLayer>(child_path, SkPaint());
+  auto layer = std::make_shared<TransformLayer>(
+      layer_transform, flutter::TransformMethod::bitmapTransform);
+  layer->Add(mock_layer);
+
+  use_skia_raster_cache();
+  preroll_context()->cull_rect = cull_rect;
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
+  EXPECT_EQ(layer->paint_bounds(),
+            layer_transform.mapRect(mock_layer->paint_bounds()));
+  EXPECT_TRUE(mock_layer->needs_painting());
+  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
+  EXPECT_EQ(mock_layer->parent_cull_rect(), kGiantRect);
+  EXPECT_EQ(mock_layer->parent_mutators(), std::vector<Mutator>());
+
+  // The MockCanvas does not implement drawImage calls yet...
+  //   layer->Paint(paint_context());
+  //   EXPECT_EQ(
+  //       mock_canvas().draw_calls(),
+  //       std::vector({MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
+  //                    MockCanvas::DrawCall{
+  //                        1, MockCanvas::ConcatMatrixData{layer_transform}},
+  //                    MockCanvas::DrawCall{
+  //                        1, MockCanvas::DrawPathData{child_path, SkPaint()}},
+  //                    MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(TransformLayerTest, Nested) {

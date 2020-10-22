@@ -229,6 +229,11 @@ enum Clip {
   antiAliasWithSaveLayer,
 }
 
+enum TransformMethod {
+  render,
+  bitmapTransform,
+}
+
 abstract class Paint {
   factory Paint() => engine.experimentalUseSkia ? engine.CkPaint() : engine.SurfacePaint();
   static bool enableDithering = false;
