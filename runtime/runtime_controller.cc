@@ -111,7 +111,7 @@ bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
   platform_data_.viewport_metrics = metrics;
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->window()->UpdateWindowMetrics(metrics);
+    platform_configuration->get_window(0)->UpdateWindowMetrics(metrics);
     return true;
   }
 
@@ -233,7 +233,7 @@ bool RuntimeController::DispatchPointerDataPacket(
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
                  "mode", "basic");
-    platform_configuration->window()->DispatchPointerDataPacket(packet);
+    platform_configuration->get_window(0)->DispatchPointerDataPacket(packet);
     return true;
   }
 
@@ -342,6 +342,7 @@ tonic::DartErrorHandleType RuntimeController::GetLastError() {
 }
 
 bool RuntimeController::LaunchRootIsolate(
+    const Settings& settings,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
     std::unique_ptr<IsolateConfiguration> isolate_configuration) {
@@ -352,7 +353,7 @@ bool RuntimeController::LaunchRootIsolate(
 
   auto strong_root_isolate =
       DartIsolate::CreateRunningRootIsolate(
-          vm_->GetVMData()->GetSettings(),                //
+          settings,                                       //
           isolate_snapshot_,                              //
           task_runners_,                                  //
           std::make_unique<PlatformConfiguration>(this),  //
