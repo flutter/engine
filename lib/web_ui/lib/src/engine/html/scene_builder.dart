@@ -76,6 +76,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   @override
   ui.TransformEngineLayer pushTransform(
     Float64List matrix4, {
+    ui.TransformMethod transformMethod = ui.TransformMethod.render,
     ui.TransformEngineLayer? oldLayer,
   }) {
     if (matrix4.length != 16) {
