@@ -190,16 +190,26 @@ class Engine final : public RuntimeDelegate,
     virtual void OnPreEngineRestart() = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      Notifies the shell of the name of the root isolate and its
-    ///             port when that isolate is launched, restarted (in the
-    ///             cold-restart scenario) or the application itself updates the
-    ///             name of the root isolate (via `Window.setIsolateDebugName`
-    ///             in `window.dart`). The name of the isolate is meaningless to
-    ///             the engine but is used in instrumentation and tooling.
-    ///             Currently, this information is to update the service
+    /// @brief      Notifies the shell that the root isolate is created.
+    ///             Currently, this information is to add to the service
     ///             protocol list of available root isolates running in the VM
     ///             and their names so that the appropriate isolate can be
     ///             selected in the tools for debugging and instrumentation.
+    ///
+    virtual void OnRootIsolateCreated() = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Notifies the shell of the name of the root isolate and its
+    ///             port when that isolate is launched, restarted (in the
+    ///             cold-restart scenario) or the application itself updates the
+    ///             name of the root isolate (via
+    ///             `PlatformDispatcher.setIsolateDebugName` in
+    ///             `platform_dispatcher.dart`). The name of the isolate is
+    ///             meaningless to the engine but is used in instrumentation and
+    ///             tooling. Currently, this information is to update the
+    ///             service protocol list of available root isolates running in
+    ///             the VM and their names so that the appropriate isolate can
+    ///             be selected in the tools for debugging and instrumentation.
     ///
     /// @param[in]  isolate_name  The isolate name
     /// @param[in]  isolate_port  The isolate port
@@ -543,8 +553,8 @@ class Engine final : public RuntimeDelegate,
   ///             "main.dart", the entrypoint is "main" and the port name
   ///             "1234". Once launched, the isolate may re-christen itself
   ///             using a name it selects via `setIsolateDebugName` in
-  ///             `window.dart`. This name is purely advisory and only used by
-  ///             instrumentation and reporting purposes.
+  ///             `platform_dispatcher.dart`. This name is purely advisory and
+  ///             only used by instrumentation and reporting purposes.
   ///
   /// @return     The debug name of the root isolate.
   ///
@@ -599,14 +609,9 @@ class Engine final : public RuntimeDelegate,
   ///
   /// @see        `UIIsolateHasLivePorts`
   ///
-  //  TODO(chinmaygarde): Use std::optional instead of the pair now that it is
-  //  available.
+  /// @return     The return code (if specified) by the isolate.
   ///
-  /// @return     A pair containing a boolean value indicating if the isolate
-  ///             set a "return value" and that value if present. When the first
-  ///             item of the pair is false, second item is meaningless.
-  ///
-  std::pair<bool, uint32_t> GetUIIsolateReturnCode();
+  std::optional<uint32_t> GetUIIsolateReturnCode();
 
   //----------------------------------------------------------------------------
   /// @brief      Indicates to the Flutter application that it has obtained a
@@ -734,6 +739,9 @@ class Engine final : public RuntimeDelegate,
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
+  // Return the asset manager associated with the current engine, or nullptr.
+  std::shared_ptr<AssetManager> GetAssetManager();
+
   // |PointerDataDispatcher::Delegate|
   void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                         uint64_t trace_flow_id) override;
@@ -797,6 +805,9 @@ class Engine final : public RuntimeDelegate,
   void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
 
   // |RuntimeDelegate|
+  void OnRootIsolateCreated() override;
+
+  // |RuntimeDelegate|
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
 
@@ -821,8 +832,6 @@ class Engine final : public RuntimeDelegate,
   void HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message);
 
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
-
-  RunStatus PrepareAndLaunchIsolate(RunConfiguration configuration);
 
   friend class testing::ShellTest;
 

@@ -36,9 +36,8 @@ namespace {
 
 const char* kDartVMArgs[] = {
     // clang-format off
-    // TODO(FL-117): Re-enable causal async stack traces when this issue is
-    // addressed.
     "--no_causal_async_stacks",
+    "--lazy_async_stacks",
 
     "--systrace_timeline",
     "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM",
@@ -47,10 +46,6 @@ const char* kDartVMArgs[] = {
     "--precompilation",
 #else
     "--enable_mirrors=false",
-
-    // The interpreter is enabled unconditionally. If an app is built for
-    // debugging (that is, with no bytecode), the VM will fall back on ASTs.
-    "--enable_interpreter",
 #endif
 
     // No asserts in debug or release product.

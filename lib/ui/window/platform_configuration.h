@@ -6,32 +6,16 @@
 #define FLUTTER_LIB_UI_WINDOW_PLATFORM_CONFIGURATION_H_
 
 #include <memory>
-#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
-#include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
 #include "third_party/tonic/dart_persistent_value.h"
-
-namespace tonic {
-class DartLibraryNatives;
-
-// So tonic::ToDart<std::vector<int64_t>> returns List<int> instead of
-// List<dynamic>.
-template <>
-struct DartListFactory<int64_t> {
-  static Dart_Handle NewList(intptr_t length) {
-    return Dart_NewListOf(Dart_CoreType_Int, length);
-  }
-};
-
-}  // namespace tonic
 
 namespace flutter {
 class FontCollection;
@@ -378,11 +362,14 @@ class PlatformConfiguration final {
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
   //----------------------------------------------------------------------------
-  /// @brief      Retrieves the Window managed by the PlatformConfiguration.
+  /// @brief      Retrieves the Window with the given ID managed by the
+  ///             `PlatformConfiguration`.
+  ///
+  /// @param[in] window_id The id of the window to find and return.
   ///
   /// @return     a pointer to the Window.
   ///
-  Window* window() const { return window_.get(); }
+  Window* get_window(int window_id) { return windows_[window_id].get(); }
 
   //----------------------------------------------------------------------------
   /// @brief      Responds to a previous platform message to the engine from the
@@ -408,7 +395,7 @@ class PlatformConfiguration final {
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue library_;
 
-  std::unique_ptr<Window> window_;
+  std::unordered_map<int64_t, std::unique_ptr<Window>> windows_;
 
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;

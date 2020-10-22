@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
@@ -471,6 +470,33 @@ TEST_F(EmbedderTest, VMShutsDownWhenNoEnginesInProcess) {
     auto engine = builder.LaunchEngine();
     ASSERT_EQ(launch_count + 2u, DartVM::GetVMLaunchCount());
   }
+}
+
+//------------------------------------------------------------------------------
+///
+TEST_F(EmbedderTest, DartEntrypointArgs) {
+  auto& context = GetEmbedderContext(ContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.AddDartEntrypointArgument("foo");
+  builder.AddDartEntrypointArgument("bar");
+  builder.SetDartEntrypoint("dart_entrypoint_args");
+  fml::AutoResetWaitableEvent callback_latch;
+  std::vector<std::string> callback_args;
+  auto nativeArgumentsCallback = [&callback_args,
+                                  &callback_latch](Dart_NativeArguments args) {
+    Dart_Handle exception = nullptr;
+    callback_args =
+        tonic::DartConverter<std::vector<std::string>>::FromArguments(
+            args, 0, exception);
+    callback_latch.Signal();
+  };
+  context.AddNativeCallback("NativeArgumentsCallback",
+                            CREATE_NATIVE_ENTRY(nativeArgumentsCallback));
+  auto engine = builder.LaunchEngine();
+  callback_latch.Wait();
+  ASSERT_EQ(callback_args[0], "foo");
+  ASSERT_EQ(callback_args[1], "bar");
 }
 
 //------------------------------------------------------------------------------

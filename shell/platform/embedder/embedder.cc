@@ -1,8 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
-// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 #define RAPIDJSON_HAS_STDSTRING 1
@@ -651,18 +649,19 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 }
 
 FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
-  if (data) {
-    data->loaded_elf = nullptr;
-    data->vm_snapshot_data = nullptr;
-    data->vm_snapshot_instrs = nullptr;
-    data->vm_isolate_data = nullptr;
-    data->vm_isolate_instrs = nullptr;
+  if (!data) {
+    // Deleting a null object should be a no-op.
+    return kSuccess;
   }
+
+  // Created in a unique pointer in `FlutterEngineCreateAOTData`.
+  delete data;
   return kSuccess;
 }
 
-void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
-                                      flutter::Settings& settings) {
+void PopulateSnapshotMappingCallbacks(
+    const FlutterProjectArgs* args,
+    flutter::Settings& settings) {  // NOLINT(google-runtime-references)
   // There are no ownership concerns here as all mappings are owned by the
   // embedder and not the engine.
   auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
@@ -843,9 +842,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   if (SAFE_ACCESS(args, root_isolate_create_callback, nullptr) != nullptr) {
     VoidCallback callback =
         SAFE_ACCESS(args, root_isolate_create_callback, nullptr);
-    settings.root_isolate_create_callback = [callback, user_data]() {
-      callback(user_data);
-    };
+    settings.root_isolate_create_callback =
+        [callback, user_data](const auto& isolate) { callback(user_data); };
   }
 
   flutter::PlatformViewEmbedder::UpdateSemanticsNodesCallback
@@ -1124,6 +1122,20 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     if (dart_entrypoint.size() != 0) {
       run_configuration.SetEntrypoint(std::move(dart_entrypoint));
     }
+  }
+
+  if (SAFE_ACCESS(args, dart_entrypoint_argc, 0) > 0) {
+    if (SAFE_ACCESS(args, dart_entrypoint_argv, nullptr) == nullptr) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Could not determine Dart entrypoint arguments "
+                                "as dart_entrypoint_argc "
+                                "was set, but dart_entrypoint_argv was null.");
+    }
+    std::vector<std::string> arguments(args->dart_entrypoint_argc);
+    for (int i = 0; i < args->dart_entrypoint_argc; ++i) {
+      arguments[i] = std::string{args->dart_entrypoint_argv[i]};
+    }
+    settings.dart_entrypoint_args = std::move(arguments);
   }
 
   if (!run_configuration.IsValid()) {

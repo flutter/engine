@@ -222,8 +222,8 @@ def to_gn_args(args):
       gn_args['use_goma'] = False
       gn_args['goma_dir'] = None
 
-    # Enable Metal on non-simulator iOS builds.
-    if args.target_os == 'ios' and not args.simulator:
+    # Enable Metal on iOS builds.
+    if args.target_os == 'ios':
       gn_args['skia_use_metal'] = True
       gn_args['shell_enable_metal'] = True
       # Bitcode enabled builds using the current version of the toolchain leak
@@ -398,6 +398,8 @@ def main(argv):
   elif sys.platform == 'darwin':
     # On the Mac, generate an Xcode project by default.
     command.append('--ide=xcode')
+    command.append('--xcode-project=flutter_engine')
+    command.append('--xcode-build-system=new')
   elif sys.platform.startswith('win'):
     # On Windows, generate a Visual Studio project.
     command.append('--ide=vs')

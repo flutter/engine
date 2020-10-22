@@ -482,13 +482,13 @@ final ByteData? _fontChangeMessage = JSONMessageCodec().encodeMessage(<String, d
 bool _fontChangeScheduled = false;
 
 FutureOr<void> sendFontChangeMessage() async {
-  if (window._onPlatformMessage != null)
+  if (EnginePlatformDispatcher.instance._onPlatformMessage != null)
     if (!_fontChangeScheduled) {
       _fontChangeScheduled = true;
       // Batch updates into next animationframe.
       html.window.requestAnimationFrame((num _) {
         _fontChangeScheduled = false;
-        window.invokeOnPlatformMessage(
+        EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
           'flutter/system',
           _fontChangeMessage,
               (_) {},
@@ -507,6 +507,12 @@ class _FastMatrix64 {
     transformedX = matrix[12] + (matrix[0] * x) + (matrix[4] * y);
     transformedY = matrix[13] + (matrix[1] * x) + (matrix[5] * y);
   }
+
+  String debugToString() =>
+      '${matrix[0].toStringAsFixed(3)}, ${matrix[4].toStringAsFixed(3)}, ${matrix[8].toStringAsFixed(3)}, ${matrix[12].toStringAsFixed(3)}\n'
+      '${matrix[1].toStringAsFixed(3)}, ${matrix[5].toStringAsFixed(3)}, ${matrix[9].toStringAsFixed(3)}, ${matrix[13].toStringAsFixed(3)}\n'
+      '${matrix[2].toStringAsFixed(3)}, ${matrix[6].toStringAsFixed(3)}, ${matrix[10].toStringAsFixed(3)}, ${matrix[14].toStringAsFixed(3)}\n'
+      '${matrix[3].toStringAsFixed(3)}, ${matrix[7].toStringAsFixed(3)}, ${matrix[11].toStringAsFixed(3)}, ${matrix[15].toStringAsFixed(3)}\n';
 }
 
 /// Roughly the inverse of [ui.Shadow.convertRadiusToSigma].
