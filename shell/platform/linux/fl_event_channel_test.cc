@@ -14,11 +14,11 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
 
-// Data required in SendEvents test.
+// Data passed in tests.
 typedef struct {
   GMainLoop* loop;
   int count;
-} SendEventsData;
+} TestData;
 
 // Creates a mock engine that responds to platform messages.
 static FlEngine* make_mock_engine() {
@@ -209,13 +209,13 @@ static void cancel_exception_response_cb(
     GBytes* message,
     FlBinaryMessengerResponseHandle* response_handle,
     gpointer user_data) {
-  static int response_count = 0;
+  TestData* data = static_cast<TestData*>(user_data);
 
   fl_binary_messenger_send_response(messenger, response_handle, nullptr,
                                     nullptr);
 
-  response_count++;
-  if (response_count == 2) {
+  data->count++;
+  if (data->count == 2) {
     g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
     g_autoptr(GError) error = nullptr;
     g_autoptr(FlMethodResponse) response = fl_method_codec_decode_response(
@@ -231,13 +231,16 @@ static void cancel_exception_response_cb(
                      FL_METHOD_ERROR_RESPONSE(response)),
                  "CANCEL-ERROR-MESSAGE");
 
-    g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+    g_main_loop_quit(data->loop);
   }
 }
 
 // Checks we can generate a cancel exception.
 TEST(FlEventChannelTest, CancelException) {
   g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
+  TestData data;
+  data.loop = loop;
+  data.count = 0;
 
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
@@ -245,11 +248,12 @@ TEST(FlEventChannelTest, CancelException) {
   FlEventChannel* channel = fl_event_channel_new(
       messenger, "test/standard-event", FL_METHOD_CODEC(codec));
   fl_event_channel_set_stream_handlers(
-      channel, nullptr, cancel_exception_cancel_cb, loop, nullptr);
+      channel, nullptr, cancel_exception_cancel_cb, &data, nullptr);
 
   // Listen for response to the engine.
   fl_binary_messenger_set_message_handler_on_channel(
-      messenger, "test/responses", cancel_exception_response_cb, loop, nullptr);
+      messenger, "test/responses", cancel_exception_response_cb, &data,
+      nullptr);
 
   listen_channel(messenger, nullptr);
   cancel_channel(messenger, nullptr);
@@ -323,14 +327,14 @@ static FlMethodErrorResponse* send_events_listen_cb(FlEventChannel* channel,
 }
 
 // Called when a the test engine notifies us what event we sent in the
-// SendEvents test.
+// Test test.
 static void send_events_events_cb(
     FlBinaryMessenger* messenger,
     const gchar* channel,
     GBytes* message,
     FlBinaryMessengerResponseHandle* response_handle,
     gpointer user_data) {
-  SendEventsData* data = static_cast<SendEventsData*>(user_data);
+  TestData* data = static_cast<TestData*>(user_data);
 
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   g_autoptr(GError) error = nullptr;
@@ -357,9 +361,9 @@ static void send_events_events_cb(
 }
 
 // Checks can send events.
-TEST(FlEventChannelTest, SendEvents) {
+TEST(FlEventChannelTest, Test) {
   g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
-  SendEventsData data;
+  TestData data;
   data.loop = loop;
   data.count = 0;
 
