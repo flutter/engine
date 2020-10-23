@@ -20,7 +20,7 @@ class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDel
  public:
   IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
                      std::shared_ptr<IOSContext> context,
-                     FlutterPlatformViewsController* platform_views_controller);
+                     std::shared_ptr<FlutterPlatformViewsController> platform_views_controller);
 
   ~IOSSurfaceSoftware() override;
 

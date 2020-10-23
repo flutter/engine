@@ -20,7 +20,7 @@ class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
  public:
   IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
                std::shared_ptr<IOSContext> context,
-               FlutterPlatformViewsController* platform_views_controller = nullptr);
+               std::shared_ptr<FlutterPlatformViewsController> platform_views_controller = nullptr);
 
   ~IOSSurfaceGL() override;
 
