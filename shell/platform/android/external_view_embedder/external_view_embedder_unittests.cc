@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 
@@ -10,10 +9,10 @@
 #include "flutter/fml/raster_thread_merger.h"
 #include "flutter/fml/thread.h"
 #include "flutter/shell/platform/android/jni/jni_mock.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
 #include "flutter/shell/platform/android/surface/android_surface_mock.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "shell/platform/android/surface/android_surface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {

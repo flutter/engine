@@ -34,6 +34,7 @@ part 'key.dart';
 part 'lerp.dart';
 part 'natives.dart';
 part 'painting.dart';
+part 'platform_dispatcher.dart';
 part 'plugins.dart';
 part 'pointer.dart';
 part 'semantics.dart';
