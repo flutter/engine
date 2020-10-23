@@ -42,10 +42,10 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 // Returns the key window's rootViewController, if it's a FlutterViewController.
 // Otherwise, returns nil.
-+ (FlutterViewController*)rootFlutterViewController {
-  UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
-  if ([viewController isKindOfClass:[FlutterViewController class]]) {
-    return (FlutterViewController*)viewController;
+- (FlutterViewController*)rootFlutterViewController {
+  UIViewController* rootViewController = _window.rootViewController;
+  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
+    return (FlutterViewController*)rootViewController;
   }
   return nil;
 }
@@ -128,9 +128,8 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
   if ([_lifeCycleDelegate application:application openURL:url options:options]) {
     return YES;
   } else {
-    UIViewController* rootViewController = _window.rootViewController;
-    if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-      FlutterViewController* flutterViewController = (FlutterViewController*)rootViewController;
+    FlutterViewController* flutterViewController = [self rootFlutterViewController];
+    if (flutterViewController) {
       [flutterViewController.engine
           waitForFirstFrame:3.0
                    callback:^(BOOL didTimeout) {
@@ -198,27 +197,25 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
 
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
-  UIViewController* rootViewController = _window.rootViewController;
-  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return
-        [[(FlutterViewController*)rootViewController pluginRegistry] registrarForPlugin:pluginKey];
+  FlutterViewController* flutterRootViewController = [self rootFlutterViewController];
+  if (flutterRootViewController) {
+    return [[flutterRootViewController pluginRegistry] registrarForPlugin:pluginKey];
   }
   return nil;
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {
-  UIViewController* rootViewController = _window.rootViewController;
-  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return [[(FlutterViewController*)rootViewController pluginRegistry] hasPlugin:pluginKey];
+  FlutterViewController* flutterRootViewController = [self rootFlutterViewController];
+  if (flutterRootViewController) {
+    return [[flutterRootViewController pluginRegistry] hasPlugin:pluginKey];
   }
   return false;
 }
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
-  UIViewController* rootViewController = _window.rootViewController;
-  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return [[(FlutterViewController*)rootViewController pluginRegistry]
-        valuePublishedByPlugin:pluginKey];
+  FlutterViewController* flutterRootViewController = [self rootFlutterViewController];
+  if (flutterRootViewController) {
+    return [[flutterRootViewController pluginRegistry] valuePublishedByPlugin:pluginKey];
   }
   return nil;
 }
