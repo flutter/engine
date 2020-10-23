@@ -311,7 +311,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterPlatformPlugin*)platformPlugin {
   return _platformPlugin.get();
 }
-- (std::shared_ptr<flutter::FlutterPlatformViewsController>)platformViewsController {
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController {
   return _platformViewsController;
 }
 - (FlutterTextInputPlugin*)textInputPlugin {

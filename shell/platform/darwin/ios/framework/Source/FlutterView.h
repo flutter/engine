@@ -20,7 +20,7 @@
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
                                   asBase64Encoded:(BOOL)base64Encode;
 
-- (std::shared_ptr<flutter::FlutterPlatformViewsController>)platformViewsController;
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 @end
 
 @interface FlutterView : UIView
