@@ -75,7 +75,8 @@ void testMain() async {
     html.document.body!.append(builder2.build().webOnlyRootElement!);
 
     await matchGoldenFile('color_filter_blendMode_overlay.png',
-        region: region);
+        region: region,
+        maxDiffRatePercent: 12.0);
   });
 }
 
