@@ -478,24 +478,30 @@ void Engine::ScheduleSecondaryVsyncCallback(const fml::closure& callback) {
 }
 
 void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
-  fml::RefPtr<PlatformMessageResponse> response = message->response();
-  if (!response) {
-    return;
-  }
-  const auto& data = message->data();
-  std::string asset_name(reinterpret_cast<const char*>(data.data()),
-                         data.size());
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetIOTaskRunner(),
+      fml::MakeCopyable([message = std::move(message),
+                         asset_manager = asset_manager_]() mutable {
+        fml::RefPtr<PlatformMessageResponse> response = message->response();
+        if (!response) {
+          return;
+        }
 
-  if (asset_manager_) {
-    std::unique_ptr<fml::Mapping> asset_mapping =
-        asset_manager_->GetAsMapping(asset_name);
-    if (asset_mapping) {
-      response->Complete(std::move(asset_mapping));
-      return;
-    }
-  }
+        const auto& data = message->data();
+        std::string asset_name(reinterpret_cast<const char*>(data.data()),
+                               data.size());
 
-  response->CompleteEmpty();
+        if (asset_manager) {
+          std::unique_ptr<fml::Mapping> asset_mapping =
+              asset_manager->GetAsMapping(asset_name);
+          if (asset_mapping) {
+            response->Complete(std::move(asset_mapping));
+            return;
+          }
+        }
+
+        response->CompleteEmpty();
+      }));
 }
 
 const std::string& Engine::GetLastEntrypoint() const {
