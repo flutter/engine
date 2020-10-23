@@ -72,7 +72,7 @@ const int _kDeadKeyShift = 0x200000000000;
 const int _kDeadKeyAlt = 0x400000000000;
 const int _kDeadKeyMeta = 0x800000000000;
 
-typedef DispatchKeyData = bool Function(ui.KeyData data);
+typedef DispatchKeyData = void Function(ui.KeyData data);
 
 /// Converts a floating number timestamp (in milliseconds) to a [Duration] by
 /// splitting it into two integer components: milliseconds + microseconds.
@@ -126,13 +126,8 @@ class KeyboardBinding {
     });
     _listeners.clear();
   }
-
-  bool _dispatchKeyData(ui.KeyData data) {
-    if (window._onKeyData != null) {
-      window.invokeOnKeyData(data);
-      return true;
-    }
-    return false;
+  void _onKeyData(ui.KeyData data) {
+    EnginePlatformDispatcher.instance.invokeOnKeyData(data);
   }
 
   void _setup() {
@@ -142,7 +137,7 @@ class KeyboardBinding {
     _addEventListener('keyup', (html.Event event) {
       return _converter.handleEvent(FlutterHtmlKeyboardEvent(event as html.KeyboardEvent));
     });
-    _converter = KeyboardConverter(_dispatchKeyData, onMacOs: operatingSystem == OperatingSystem.macOs);
+    _converter = KeyboardConverter(_onKeyData, onMacOs: operatingSystem == OperatingSystem.macOs);
   }
 
   void _reset() {

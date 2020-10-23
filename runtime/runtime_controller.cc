@@ -245,7 +245,7 @@ bool RuntimeController::DispatchKeyDataPacket(
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT1("flutter", "RuntimeController::DispatchKeyDataPacket",
                  "mode", "basic");
-    platform_configuration->window()->DispatchKeyDataPacket(packet);
+    platform_configuration->get_window(0)->DispatchKeyDataPacket(packet);
     return true;
   }
   return false;
