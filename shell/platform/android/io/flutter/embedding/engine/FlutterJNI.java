@@ -958,13 +958,6 @@ public class FlutterJNI {
     this.dynamicFeatureContext = context;
   }
 
-  // Called by the engine upon invocation of dart loadLibrary request
-  @SuppressWarnings("unused")
-  @UiThread
-  public void downloadDynamicFeature(@NonNull String moduleName, int loadingUnitId) {
-    dynamicFeatureManager.downloadModule(moduleName, loadingUnitId);
-  }
-
   @SuppressWarnings("unused")
   @UiThread
   public void downloadDynamicFeature(int loadingUnitId) {
@@ -972,36 +965,58 @@ public class FlutterJNI {
     downloadDynamicFeature(loadingUnitIdResName, loadingUnitId);
   }
 
-  // This should be called for every loading unit to be loaded into the dart isolate.
+  // Called by the engine upon invocation of dart loadLibrary() request
+  @SuppressWarnings("unused")
+  @UiThread
+  public void downloadDynamicFeature(String moduleName, int loadingUnitId) {
+    dynamicFeatureManager.downloadFeature(moduleName, loadingUnitId);
+  }
+
+  /**
+   * This should be called for every loading unit to be loaded into the dart isolate.
+   * 
+   * abi, libName, and apkPaths are used together to search the installed apks for the
+   * desired .so library. If not found, soPath may be provided as a fallback if a
+   * pre-extracted .so exists, especially on older devices with libs compressed in the
+   * apk.
+   *
+   * assetManager and asserBundlePath are used to specify a new AssetManager that has
+   * access to the dynamic feature's assets in addition to the base assets.
+   */
   @UiThread
   public void loadDartLibrary(
       int loadingUnitId,
-      @NonNull String abi,
       @NonNull String libName,
+      @NonNull String[] apkPaths,
+      @NonNull String abi,
+      @NonNull String soPath,
       @NonNull AssetManager assetManager,
-      @NonNull String[] apkPaths) {
+      @NonNull String assetBundlePath) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeLoadDartLibrary(
         nativePlatformViewId,
         loadingUnitId,
-        abi,
         libName,
+        apkPaths,
+        abi,
+        soPath,
         assetManager,
-        apkPaths);
-    Log.e("flutter", "loadDartLibrary FlutterJNI");
+        assetBundlePath);
   }
   private native void nativeLoadDartLibrary(
       long nativePlatformViewId,
       int loadingUnitId,
-      @NonNull String abi,
       @NonNull String libName,
+      @NonNull String[] apkPaths,
+      @NonNull String abi,
+      @NonNull String soPath,
       @NonNull AssetManager assetManager,
-      @NonNull String[] apkPaths);
+      @NonNull String assetBundlePath);
 
   // Called when an install encounters a failure during the Android portion of installing a module.
-  // When transient is false, new attempts to install will automatically result in same error in dart before
-  // the request is passed to Android.
+  // When transient is false, new attempts to install will automatically result in same error in
+  // dart before the request is passed to Android.
   @SuppressWarnings("unused")
   @UiThread
   public void dynamicFeatureInstallFailure(@NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans) {

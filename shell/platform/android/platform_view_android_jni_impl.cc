@@ -520,17 +520,17 @@ static void LoadDartLibrary(JNIEnv* env,
                             jobject obj,
                             jlong shell_holder,
                             jint jLoadingUnitId,
-                            jstring jAbi,
                             jstring jLibName,
+                            jobjectArray jApkPaths,
+                            jstring jAbi,
+                            jstring jSoPath,
                             jobject jAssetManager,
-                            jobjectArray jApkPaths) {
-  // see RunBundleAndSnapshotFromLibrary above for dart loading code
+                            jstring jAssetBundlePath) {
   auto asset_manager = std::make_shared<flutter::AssetManager>();
-
   asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
-      env,               // jni environment
-      jAssetManager,     // asset manager
-      "flutter_assets")  // apk asset dir TODO: Pass in as parameter
+      env,                                                  // jni environment
+      jAssetManager,                                        // asset manager
+      fml::jni::JavaStringToString(env, jAssetBundlePath))  // apk asset dir
   );
 
   std::string abi = fml::jni::JavaStringToString(env, jAbi);
@@ -543,14 +543,7 @@ static void LoadDartLibrary(JNIEnv* env,
       fml::jni::JavaStringToString(env, jLibName), apkPaths, abi,
       std::move(asset_manager));
 
-  // asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
-  //     env,                                             // jni environment
-  //     jAssetManager,                                   // asset manager
-  //     fml::jni::JavaStringToString(env, jBundlePath))  // apk asset dir
-  // );
-
-  // RunConfiguration config(std::move(isolate_configuration),
-  //                         std::move(asset_manager));
+  // TODO(garyq): fallback on soPath.
 }
 
 static void DynamicFeatureInstallFailure(JNIEnv* env,
@@ -559,8 +552,9 @@ static void DynamicFeatureInstallFailure(JNIEnv* env,
                                          jint loadigUnitId,
                                          jobject error,
                                          jboolean transient) {
-  // TODO: Implement
+  // TODO(garyq): Implement
 }
+
 bool RegisterApi(JNIEnv* env) {
   static const JNINativeMethod flutter_jni_methods[] = {
       // Start of methods from FlutterJNI
