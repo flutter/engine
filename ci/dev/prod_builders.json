@@ -26,17 +26,7 @@
       },
       {
          "name":"Linux Web Framework tests",
-         "repo":"engine",
-         "enabled": true,
-         "run_if": [
-             "DEPS",
-             "lib/web_ui/**",
-             "web_sdk/**",
-             "e2etests/web/**",
-             "tools/**",
-             "ci/**",
-             "flutter_frontend_server/**"
-         ]
+         "repo":"engine"
        },
        {
          "name":"Mac Android AOT Engine",
