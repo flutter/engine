@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 
+@class FlutterBinaryMessengerRelay;
+
 // Category to add test-only visibility.
 @interface FlutterEngine (Test) <FlutterBinaryMessenger>
 - (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger;

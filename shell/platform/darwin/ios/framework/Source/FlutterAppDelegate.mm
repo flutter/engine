@@ -7,12 +7,17 @@
 #import "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate_Test.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
 
 static NSString* kUIBackgroundMode = @"UIBackgroundModes";
 static NSString* kRemoteNotificationCapabitiliy = @"remote-notification";
 static NSString* kBackgroundFetchCapatibility = @"fetch";
+
+@interface FlutterAppDelegate ()
+@property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
+@end
 
 @implementation FlutterAppDelegate {
   FlutterPluginAppLifeCycleDelegate* _lifeCycleDelegate;
@@ -27,6 +32,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 - (void)dealloc {
   [_lifeCycleDelegate release];
+  [_rootFlutterViewControllerGetter release];
   [super dealloc];
 }
 
@@ -43,6 +49,9 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 // Returns the key window's rootViewController, if it's a FlutterViewController.
 // Otherwise, returns nil.
 - (FlutterViewController*)rootFlutterViewController {
+  if (_rootFlutterViewControllerGetter != nil) {
+    return _rootFlutterViewControllerGetter();
+  }
   UIViewController* rootViewController = _window.rootViewController;
   if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
     return (FlutterViewController*)rootViewController;
