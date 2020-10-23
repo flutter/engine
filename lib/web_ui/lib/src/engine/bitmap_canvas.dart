@@ -71,7 +71,7 @@ class BitmapCanvas extends EngineCanvas {
 
   /// Keeps track of what device pixel ratio was used when this [BitmapCanvas]
   /// was created.
-  final double _devicePixelRatio = EngineWindow.browserDevicePixelRatio;
+  final double _devicePixelRatio = EnginePlatformDispatcher.browserDevicePixelRatio;
 
   // Compensation for [_initializeViewport] snapping canvas position to 1 pixel.
   int? _canvasPositionX, _canvasPositionY;
@@ -168,13 +168,13 @@ class BitmapCanvas extends EngineCanvas {
 
   static int _widthToPhysical(double width) {
     final double boundsWidth = width + 1;
-    return (boundsWidth * EngineWindow.browserDevicePixelRatio).ceil() +
+    return (boundsWidth * EnginePlatformDispatcher.browserDevicePixelRatio).ceil() +
         2 * kPaddingPixels;
   }
 
   static int _heightToPhysical(double height) {
     final double boundsHeight = height + 1;
-    return (boundsHeight * EngineWindow.browserDevicePixelRatio).ceil() +
+    return (boundsHeight * EnginePlatformDispatcher.browserDevicePixelRatio).ceil() +
         2 * kPaddingPixels;
   }
 
@@ -217,7 +217,7 @@ class BitmapCanvas extends EngineCanvas {
   /// * [PersistedPicture._recycleCanvas] which also uses this method
   ///   for the same reason.
   bool isReusable() {
-    return _devicePixelRatio == EngineWindow.browserDevicePixelRatio;
+    return _devicePixelRatio == EnginePlatformDispatcher.browserDevicePixelRatio;
   }
 
   /// Returns a "data://" URI containing a representation of the image in this
@@ -227,8 +227,8 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   /// Sets the global paint styles to correspond to [paint].
-  void _setUpPaint(SurfacePaintData paint) {
-    _canvasPool.contextHandle.setUpPaint(paint);
+  void _setUpPaint(SurfacePaintData paint, ui.Rect? shaderBounds) {
+    _canvasPool.contextHandle.setUpPaint(paint, shaderBounds);
   }
 
   void _tearDownPaint() {
@@ -352,7 +352,9 @@ class BitmapCanvas extends EngineCanvas {
         ..lineTo(p2.dx, p2.dy);
       drawPath(path, paint);
     } else {
-      _setUpPaint(paint);
+      ui.Rect? shaderBounds = (paint.shader != null) ?
+      ui.Rect.fromPoints(p1, p2) : null;
+      _setUpPaint(paint, shaderBounds);
       _canvasPool.strokeLine(p1, p2);
       _tearDownPaint();
     }
@@ -363,7 +365,9 @@ class BitmapCanvas extends EngineCanvas {
     if (_useDomForRendering(paint)) {
       drawRect(_computeScreenBounds(_canvasPool._currentTransform), paint);
     } else {
-      _setUpPaint(paint);
+      ui.Rect? shaderBounds = (paint.shader != null) ?
+      _computePictureBounds() : null;
+      _setUpPaint(paint, shaderBounds);
       _canvasPool.fill();
       _tearDownPaint();
     }
@@ -380,7 +384,7 @@ class BitmapCanvas extends EngineCanvas {
               math.min(rect.left, rect.right), math.min(rect.top, rect.bottom)),
           paint);
     } else {
-      _setUpPaint(paint);
+      _setUpPaint(paint, rect);
       _canvasPool.drawRect(rect, paint.style);
       _tearDownPaint();
     }
@@ -423,15 +427,15 @@ class BitmapCanvas extends EngineCanvas {
               math.min(rect.left, rect.right), math.min(rect.top, rect.bottom)),
           paint);
     } else {
-      _setUpPaint(paint);
-      _canvasPool.drawRRect(rrect, paint.style);
+    _setUpPaint(paint, rrect.outerRect);
+    _canvasPool.drawRRect(rrect, paint.style);
       _tearDownPaint();
     }
   }
 
   @override
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaintData paint) {
-    _setUpPaint(paint);
+    _setUpPaint(paint, outer.outerRect);
     _canvasPool.drawDRRect(outer, inner, paint.style);
     _tearDownPaint();
   }
@@ -449,7 +453,7 @@ class BitmapCanvas extends EngineCanvas {
       element.style.borderRadius =
           '${(rect.width / 2.0)}px / ${(rect.height / 2.0)}px';
     } else {
-      _setUpPaint(paint);
+      _setUpPaint(paint, rect);
       _canvasPool.drawOval(rect, paint.style);
       _tearDownPaint();
     }
@@ -468,7 +472,8 @@ class BitmapCanvas extends EngineCanvas {
           paint);
       element.style.borderRadius = '50%';
     } else {
-      _setUpPaint(paint);
+      _setUpPaint(paint, paint.shader != null
+          ? ui.Rect.fromCircle(center: c, radius: radius) : null);
       _canvasPool.drawCircle(c, radius, paint.style);
       _tearDownPaint();
     }
@@ -490,7 +495,7 @@ class BitmapCanvas extends EngineCanvas {
       }
       _drawElement(svgElm, ui.Offset(0, 0), paint);
     } else {
-      _setUpPaint(paint);
+      _setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
       _canvasPool.drawPath(path, paint.style);
       _tearDownPaint();
     }
@@ -813,7 +818,7 @@ class BitmapCanvas extends EngineCanvas {
         ctx.font = style.cssFontString;
         _cachedLastStyle = style;
       }
-      _setUpPaint(paragraph._paint!.paintData);
+      _setUpPaint(paragraph._paint!.paintData, null);
       double y = offset.dy + paragraph.alphabeticBaseline;
       final int len = lines.length;
       for (int i = 0; i < len; i++) {
@@ -920,7 +925,7 @@ class BitmapCanvas extends EngineCanvas {
     _drawPointsPaint.strokeWidth = paint.strokeWidth;
     _drawPointsPaint.maskFilter = paint.maskFilter;
 
-    _setUpPaint(_drawPointsPaint);
+    _setUpPaint(_drawPointsPaint, null);
     _canvasPool.drawPoints(pointMode, points, paint.strokeWidth! / 2.0);
     _tearDownPaint();
   }
@@ -968,6 +973,11 @@ class BitmapCanvas extends EngineCanvas {
       math.max(topLeft.y,
               math.max(topRight.y, math.max(bottomRight.y, bottomLeft.y))),
     );
+  }
+
+  /// Computes paint bounds to completely cover picture.
+  ui.Rect _computePictureBounds() {
+    return ui.Rect.fromLTRB(0, 0, _bounds.width, _bounds.height);
   }
 }
 
