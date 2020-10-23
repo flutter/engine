@@ -125,15 +125,30 @@ class _CanvasPool extends _SaveStackTracking {
       _rootElement!.append(canvas!);
     }
 
-    if (reused) {
-      // If a canvas is the first element we set z-index = -1 in [BitmapCanvas]
-      // endOfPaint to workaround blink compositing bug. To make sure this
-      // does not leak when reused reset z-index.
-      canvas.style.removeProperty('z-index');
+    try {
+      if (reused) {
+        // If a canvas is the first element we set z-index = -1 in [BitmapCanvas]
+        // endOfPaint to workaround blink compositing bug. To make sure this
+        // does not leak when reused reset z-index.
+        canvas.style.removeProperty('z-index');
+      }
+      _context = canvas.context2D;
+    } catch (e) {
+      // Handle OOM.
     }
-
-    final html.CanvasRenderingContext2D context = _context = canvas.context2D;
-    _contextHandle = ContextStateHandle(this, context);
+    if (_context == null) {
+      _reduceCanvasMemoryUsage();
+      _context = canvas.context2D;
+    }
+    if (_context == null) {
+      /// Browser ran out of memory, try to recover current allocation
+      /// and bail.
+      _canvas?.width = 0;
+      _canvas?.height = 0;
+      _canvas = null;
+      return;
+    }
+    _contextHandle = ContextStateHandle(this, _context!);
     _initializeViewport(requiresClearRect);
     _replayClipStack();
   }
