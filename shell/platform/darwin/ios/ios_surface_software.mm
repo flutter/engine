@@ -18,7 +18,7 @@ namespace flutter {
 IOSSurfaceSoftware::IOSSurfaceSoftware(
     fml::scoped_nsobject<CALayer> layer,
     std::shared_ptr<IOSContext> context,
-    std::shared_ptr<FlutterPlatformViewsController> platform_views_controller)
+    const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller)
     : IOSSurface(std::move(context), platform_views_controller), layer_(std::move(layer)) {}
 
 IOSSurfaceSoftware::~IOSSurfaceSoftware() = default;
