@@ -83,7 +83,7 @@ class _CanvasPool extends _SaveStackTracking {
   void _createCanvas() {
     bool requiresClearRect = false;
     bool reused = false;
-    html.CanvasElement canvas;
+    html.CanvasElement? canvas;
     if (_reusablePool != null && _reusablePool!.isNotEmpty) {
       canvas = _canvas = _reusablePool!.removeAt(0);
       requiresClearRect = true;
@@ -99,10 +99,7 @@ class _CanvasPool extends _SaveStackTracking {
           _widthInBitmapPixels / EnginePlatformDispatcher.browserDevicePixelRatio;
       final double cssHeight =
           _heightInBitmapPixels / EnginePlatformDispatcher.browserDevicePixelRatio;
-      canvas = html.CanvasElement(
-        width: _widthInBitmapPixels,
-        height: _heightInBitmapPixels,
-      );
+      canvas = _allocCanvas(_widthInBitmapPixels, _heightInBitmapPixels);
       _canvas = canvas;
 
       // Why is this null check here, even though we just allocated a canvas element above?
@@ -113,12 +110,9 @@ class _CanvasPool extends _SaveStackTracking {
       if (_canvas == null) {
         // Evict BitmapCanvas(s) and retry.
         _reduceCanvasMemoryUsage();
-        canvas = html.CanvasElement(
-          width: _widthInBitmapPixels,
-          height: _heightInBitmapPixels,
-        );
+        canvas = _allocCanvas(_widthInBitmapPixels, _heightInBitmapPixels);
       }
-      canvas.style
+      canvas!.style
         ..position = 'absolute'
         ..width = '${cssWidth}px'
         ..height = '${cssHeight}px';
@@ -128,7 +122,7 @@ class _CanvasPool extends _SaveStackTracking {
     // optimization prevents DOM .append call when a PersistentSurface is
     // reused. Reading lastChild is faster than append call.
     if (_rootElement!.lastChild != canvas) {
-      _rootElement!.append(canvas);
+      _rootElement!.append(canvas!);
     }
 
     if (reused) {
@@ -142,6 +136,27 @@ class _CanvasPool extends _SaveStackTracking {
     _contextHandle = ContextStateHandle(this, context);
     _initializeViewport(requiresClearRect);
     _replayClipStack();
+  }
+
+  html.CanvasElement? _allocCanvas(int width, int height) {
+    final dynamic canvas =
+      js_util.callMethod(html.document, 'createElement', <dynamic>['CANVAS']);
+    if (canvas != null) {
+      try {
+        canvas.width = width;
+        canvas.height = height;
+      } catch (e) {
+        return null;
+      }
+      return canvas as html.CanvasElement;
+    }
+    return null;
+    // !!! We don't use the code below since NNBD assumes it can never return
+    // null and optimizes out code.
+    // return canvas = html.CanvasElement(
+    //   width: _widthInBitmapPixels,
+    //   height: _heightInBitmapPixels,
+    // );
   }
 
   @override
