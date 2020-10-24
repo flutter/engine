@@ -478,10 +478,8 @@ void Engine::ScheduleSecondaryVsyncCallback(const fml::closure& callback) {
 }
 
 void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetIOTaskRunner(),
-      fml::MakeCopyable([message = std::move(message),
-                         asset_manager = asset_manager_]() mutable {
+  task_runners_.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
+      [message = std::move(message), asset_manager = asset_manager_]() mutable {
         fml::RefPtr<PlatformMessageResponse> response = message->response();
         if (!response) {
           return;
