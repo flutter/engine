@@ -46,6 +46,11 @@ typedef struct {
   // containing the executable. This can be nullptr for a non-AOT build, as
   // it will be ignored in that case.
   const wchar_t* aot_library_path;
+
+  // nullptr-terminated array of Dart entrypoint arguments. This is deep copied
+  // during the call to FlutterDesktopEngineCreate.
+  int dart_entrypoint_argc;
+  const char** dart_entrypoint_argv;
 } FlutterDesktopEngineProperties;
 
 // ========== View Controller ==========
