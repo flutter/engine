@@ -6,6 +6,9 @@
 #
 # This script is expected to run from $ENGINE_PATH/src/flutter/testing/benchmark
 # it is currently used only by automation to collect and upload metrics.
+
+set -ex
+
 pub get
 dart bin/parse_and_send.dart ../../../out/host_release/txt_benchmarks.json
 dart bin/parse_and_send.dart ../../../out/host_release/fml_benchmarks.json

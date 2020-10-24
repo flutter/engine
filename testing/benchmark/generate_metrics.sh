@@ -7,6 +7,8 @@
 # This script is expected to run from $ENGINE_PATH/src/out/host_release/
 # it is currently used only by automation to collect and upload metrics.
 
+set -ex
+
 ./txt_benchmarks --benchmark_format=json > txt_benchmarks.json
 ./fml_benchmarks --benchmark_format=json > fml_benchmarks.json
 ./shell_benchmarks --benchmark_format=json > shell_benchmarks.json
