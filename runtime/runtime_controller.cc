@@ -452,8 +452,6 @@ void RuntimeController::CompleteDartLoadLibrary(
     for (std::string paths : searchPaths) {
       FML_LOG(ERROR) << "    " << paths;
     }
-    // FML_LOG(ERROR) << "Opening lib \"" << lib_name
-    //                << "\" failed: " + std::string(::dlerror());
     return;
   }
 

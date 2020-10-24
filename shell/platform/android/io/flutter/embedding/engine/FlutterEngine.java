@@ -277,7 +277,6 @@ public class FlutterEngine {
       assetManager = context.getAssets();
     }
     this.dartExecutor = new DartExecutor(flutterJNI, assetManager);
-
     this.dartExecutor.onAttachedToJNI();
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
@@ -293,7 +292,6 @@ public class FlutterEngine {
     textInputChannel = new TextInputChannel(dartExecutor);
 
     this.localizationPlugin = new LocalizationPlugin(context, localizationChannel);
-
 
     this.flutterJNI = flutterJNI;
     dynamicFeatureManager = new PlayStoreDynamicFeatureManager(context, flutterJNI);

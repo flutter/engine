@@ -52,43 +52,25 @@ static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
   FML_CHECK(entrypoint.size() > 0);
   TaskRunners runners("io.flutter.test", task_runner, task_runner, task_runner,
                       task_runner);
-  auto isolate_weak = DartIsolate::CreateRootIsolate(
-      vm.GetSettings(),         // settings
-      vm.GetIsolateSnapshot(),  // isolate_snapshot
-      runners,                  // task_runners
-      {},                       // window
-      {},                       // snapshot_delegate
-      {},                       // hint_freed_delegate
-      {},                       // io_manager
-      {},                       // unref_queue
-      {},                       // image_decoder
-      "main.dart",              // advisory_script_uri
-      entrypoint.c_str(),       // advisory_script_entrypoint
-      nullptr,                  // flags
-      DartDeferredLoadHandler::empty_dart_deferred_load_handler,
-      settings.isolate_create_callback,   // isolate create callback
-      settings.isolate_shutdown_callback  // isolate shutdown callback
-  );
-
-  auto isolate = isolate_weak.lock();
 
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
   auto isolate =
       DartIsolate::CreateRunningRootIsolate(
-          vm.GetSettings(),                    // settings
-          vm.GetIsolateSnapshot(),             // isolate_snapshot
-          runners,                             // task_runners
-          {},                                  // window
-          {},                                  // snapshot_delegate
-          {},                                  // hint_freed_delegate
-          {},                                  // io_manager
-          {},                                  // unref_queue
-          {},                                  // image_decoder
-          "main.dart",                         // advisory_script_uri
-          entrypoint.c_str(),                  // advisory_script_entrypoint
-          DartIsolate::Flags{},                // flags
+          vm.GetSettings(),         // settings
+          vm.GetIsolateSnapshot(),  // isolate_snapshot
+          runners,                  // task_runners
+          {},                       // window
+          {},                       // snapshot_delegate
+          {},                       // hint_freed_delegate
+          {},                       // io_manager
+          {},                       // unref_queue
+          {},                       // image_decoder
+          "main.dart",              // advisory_script_uri
+          entrypoint.c_str(),       // advisory_script_entrypoint
+          DartIsolate::Flags{},     // flags
+          DartDeferredLoadHandler::empty_dart_deferred_load_handler,
           settings.isolate_create_callback,    // isolate create callback
           settings.isolate_shutdown_callback,  // isolate shutdown callback,
           entrypoint,                          // dart entrypoint

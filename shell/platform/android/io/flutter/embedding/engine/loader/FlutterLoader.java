@@ -143,7 +143,7 @@ public class FlutterLoader {
             if (resourceExtractor != null) {
               resourceExtractor.waitForCompletion();
             }
-            Log.e("flutter", "PATHS: " + PathUtils.getFilesDir(appContext) + "|" + PathUtils.getCacheDirectory(appContext) + "|" + PathUtils.getDataDirectory(appContext));
+
             return new InitResult(
                 PathUtils.getFilesDir(appContext),
                 PathUtils.getCacheDirectory(appContext),

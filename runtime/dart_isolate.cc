@@ -292,13 +292,6 @@ std::string DartIsolate::GetServiceId() {
   return service_id;
 }
 
-// Dart_Handle DartDeferredLoadHandler(intptr_t loading_unit_id) {
-//   FML_LOG(ERROR) << "LOAD REQUEST CALLED FOR ID: " << loading_unit_id;
-//   // Temporary call for prototyping.
-//   return
-//   Engine::GetEngineDelegateTemp()->OnDartLoadLibrary(loading_unit_id);
-// }
-
 bool DartIsolate::Initialize(Dart_Isolate dart_isolate,
                              Dart_DeferredLoadHandler& deferred_load_handler) {
   TRACE_EVENT0("flutter", "DartIsolate::Initialize");
@@ -709,8 +702,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
 
   if (!vm_data) {
     *error = fml::strdup(
-        "Could not access VM data to initialize isolates. This may be "
-        "because "
+        "Could not access VM data to initialize isolates. This may be because "
         "the VM has initialized shutdown on another thread already.");
     return nullptr;
   }
@@ -728,8 +720,8 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
 
 #if (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DEBUG)
   // TODO(68663): The service isolate in debug mode is always launched without
-  // sound null safety. Fix after the isolate snapshot data is created with
-  // the right flags.
+  // sound null safety. Fix after the isolate snapshot data is created with the
+  // right flags.
   flags->null_safety =
       vm_data->GetIsolateSnapshot()->IsNullSafetyEnabled(nullptr);
 #endif

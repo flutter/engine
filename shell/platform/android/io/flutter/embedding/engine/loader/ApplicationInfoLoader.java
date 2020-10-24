@@ -11,7 +11,6 @@ import android.content.res.XmlResourceParser;
 import android.os.Bundle;
 import android.security.NetworkSecurityPolicy;
 import androidx.annotation.NonNull;
-import io.flutter.Log;
 import java.io.IOException;
 import org.json.JSONArray;
 import org.xmlpull.v1.XmlPullParserException;
@@ -143,6 +142,7 @@ final class ApplicationInfoLoader {
     if (android.os.Build.VERSION.SDK_INT >= 23) {
       clearTextPermitted = NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted();
     }
+
     return new FlutterApplicationInfo(
         getString(appInfo.metaData, PUBLIC_AOT_SHARED_LIBRARY_NAME),
         getString(appInfo.metaData, PUBLIC_VM_SNAPSHOT_DATA_KEY),
