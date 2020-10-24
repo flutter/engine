@@ -487,7 +487,7 @@ FutureOr<void> sendFontChangeMessage() async {
     // Batch updates into next animationframe.
     html.window.requestAnimationFrame((num _) {
       _fontChangeScheduled = false;
-      window.invokeOnPlatformMessage(
+      EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
         'flutter/system',
         _fontChangeMessage,
         (_) {},

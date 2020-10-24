@@ -144,6 +144,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             runtime controller, `Clone`  this runtime controller and
   ///             Launch an isolate in that runtime controller instead.
   ///
+  /// @param[in]  settings                 The per engine instance settings.
   /// @param[in]  dart_entrypoint          The dart entrypoint. If
   ///                                      `std::nullopt` or empty, `main` will
   ///                                      be attempted.
@@ -156,6 +157,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             `DartIsolate::Phase::Running` phase.
   ///
   [[nodiscard]] bool LaunchRootIsolate(
+      const Settings& settings,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
       std::unique_ptr<IsolateConfiguration> isolate_configuration);
@@ -176,7 +178,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             If the isolate is not running, these metrics will be saved and
   ///             flushed to the isolate when it starts.
   ///
-  /// @param[in]  metrics  The viewport metrics.
+  /// @param[in]  metrics  The window's viewport metrics.
   ///
   /// @return     If the window metrics were forwarded to the running isolate.
   ///

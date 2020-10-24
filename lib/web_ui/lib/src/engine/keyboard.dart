@@ -131,7 +131,7 @@ class Keyboard {
       'metaState': _lastMetaState,
     };
 
-    window.invokeOnPlatformMessage('flutter/keyevent',
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
         _messageCodec.encodeMessage(eventData), _noopCallback);
   }
 
@@ -153,7 +153,7 @@ class Keyboard {
       'metaState': _lastMetaState,
     };
 
-    window.invokeOnPlatformMessage('flutter/keyevent',
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
         _messageCodec.encodeMessage(eventData), _noopCallback);
   }
 }

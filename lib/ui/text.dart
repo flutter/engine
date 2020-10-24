@@ -2276,8 +2276,8 @@ FutureOr<void> _sendFontChangeMessage() async {
   const String kSystemChannelName = 'flutter/system';
   if (window.onPlatformMessage != null) {
     _invoke3<String, ByteData?, PlatformMessageResponseCallback>(
-      window.onPlatformMessage,
-      window._onPlatformMessageZone,
+      PlatformDispatcher.instance.onPlatformMessage,
+      PlatformDispatcher.instance._onPlatformMessageZone,
       kSystemChannelName,
       _fontChangeMessage,
       (ByteData? responseData) { },
