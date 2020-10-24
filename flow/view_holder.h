@@ -68,11 +68,45 @@ class ViewHolder {
   void set_focusable(bool value) { focusable_ = value; }
 
  private:
+  // Helper class for setting up an invisible rectangle to catch all input. Rejected input will then
+  // be re-injected into the scene below us.
+  class InputInterceptor {
+   public:
+    InputInterceptor(scenic::Session* session) : opacity_node_(session), shape_node_(session) {
+      opacity_node_.SetLabel("Flutter::InputInterceptor");
+      opacity_node_.SetOpacity(0.f);
+
+      // Set the shape node to capture all input. Any unwanted input will be reinjected.
+      shape_node_.SetHitTestBehavior(fuchsia::ui::gfx::HitTestBehavior::kDefault);
+      shape_node_.SetSemanticVisibility(false);
+
+
+   scenic::Material material(session);
+    material.SetColor(0xff, 0xff, 0xff, 0xff);  // White
+    shape_node_.SetMaterial(material);
+
+      opacity_node_.AddChild(shape_node_);
+    }
+
+    void UpdateDimensions(scenic::Session* session, float width, float height, float elevation) {
+      opacity_node_.SetTranslation(width * 0.5f, height * 0.5f, elevation);
+      shape_node_.SetShape(scenic::Rectangle(session, width, height));
+    }
+
+    const scenic::Node& node() { return opacity_node_; }
+
+   private:
+    scenic::OpacityNodeHACK opacity_node_;
+    scenic::ShapeNode shape_node_;
+  };
+
   fml::RefPtr<fml::TaskRunner> ui_task_runner_;
 
   std::unique_ptr<scenic::EntityNode> entity_node_;
   std::unique_ptr<scenic::OpacityNodeHACK> opacity_node_;
   std::unique_ptr<scenic::ViewHolder> view_holder_;
+
+  std::unique_ptr<InputInterceptor> input_interceptor_;
 
   fuchsia::ui::views::ViewHolderToken pending_view_holder_token_;
   BindCallback pending_bind_callback_;

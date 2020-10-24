@@ -131,6 +131,37 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
     scenic::Material material;
   };
 
+  // Helper class for setting up an invisible rectangle to catch all input. Rejected input will then
+  // be re-injected into the scene below us.
+  class InputInterceptor {
+   public:
+    InputInterceptor(scenic::Session* session) : opacity_node_(session), shape_node_(session) {
+      opacity_node_.SetLabel("Flutter::InputInterceptor");
+      opacity_node_.SetOpacity(0.f);
+
+      // Set the shape node to capture all input. Any unwanted input will be reinjected.
+      shape_node_.SetHitTestBehavior(fuchsia::ui::gfx::HitTestBehavior::kDefault);
+      shape_node_.SetSemanticVisibility(false);
+
+  scenic::Material material(session);
+    material.SetColor(0xff, 0xff, 0xff, 0xff);  // White
+    shape_node_.SetMaterial(material);
+
+      opacity_node_.AddChild(shape_node_);
+    }
+
+    void UpdateDimensions(scenic::Session* session, float width, float height, float elevation) {
+      opacity_node_.SetTranslation(width * 0.5f, height * 0.5f, elevation);
+      shape_node_.SetShape(scenic::Rectangle(session, width, height));
+    }
+
+    const scenic::Node& node() { return opacity_node_; }
+
+   private:
+    scenic::OpacityNodeHACK opacity_node_;
+    scenic::ShapeNode shape_node_;
+  };
+
   using EmbedderLayerId = std::optional<uint32_t>;
   constexpr static EmbedderLayerId kRootLayerId = EmbedderLayerId{};
 
@@ -144,6 +175,8 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   std::unordered_map<uint64_t, std::vector<scenic::Rectangle>> scenic_rects_;
   std::unordered_map<int64_t, ScenicView> scenic_views_;
   std::vector<ScenicLayer> scenic_layers_;
+
+  std::optional<InputInterceptor> input_interceptor_;
 
   std::unordered_map<EmbedderLayerId, EmbedderLayer> frame_layers_;
   std::vector<EmbedderLayerId> frame_composition_order_;
