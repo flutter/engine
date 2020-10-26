@@ -1,4 +1,4 @@
-Signature: 5dc2e0ab64cbdb1da2ee2a1ab43ec2e4
+Signature: 08da629cc55657469fbc030dd104af1f
 
 UNUSED LICENSES:
 
@@ -8488,7 +8488,10 @@ FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
 FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
 FILE: ../../../third_party/dart/runtime/vm/field_table.cc
 FILE: ../../../third_party/dart/runtime/vm/field_table.h
+FILE: ../../../third_party/dart/runtime/vm/heap/become_test.cc
+FILE: ../../../third_party/dart/runtime/vm/heap/weak_table_test.cc
 FILE: ../../../third_party/dart/runtime/vm/port_set.h
+FILE: ../../../third_party/dart/runtime/vm/stub_code_test.cc
 FILE: ../../../third_party/dart/runtime/vm/tagged_pointer.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
 FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.cc
@@ -10204,7 +10207,6 @@ FILE: ../../../third_party/dart/sdk/lib/io/socket.dart
 FILE: ../../../third_party/dart/sdk/lib/io/stdio.dart
 FILE: ../../../third_party/dart/sdk/lib/io/string_transformer.dart
 FILE: ../../../third_party/dart/sdk/lib/js/js.dart
-FILE: ../../../third_party/dart/sdk/lib/math/jenkins_smi_hash.dart
 FILE: ../../../third_party/dart/sdk/lib/math/point.dart
 FILE: ../../../third_party/dart/sdk/lib/math/rectangle.dart
 FILE: ../../../third_party/dart/sdk/lib/mirrors/mirrors.dart

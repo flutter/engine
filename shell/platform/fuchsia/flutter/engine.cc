@@ -8,6 +8,7 @@
 #include <zircon/status.h>
 
 #include "../runtime/dart/utils/files.h"
+#include "flow/embedded_views.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -123,14 +124,16 @@ Engine::Engine(Delegate& delegate,
   };
 
   // Set up the session connection and other Scenic helpers on the raster
-  // thread.
+  // thread. We also need to wait for the external view embedder to be setup
+  // before creating the shell.
+  fml::AutoResetWaitableEvent view_embedder_latch;
   task_runners.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [this, session = std::move(session),
        session_error_callback = std::move(session_error_callback),
        view_token = std::move(view_token),
        view_ref_pair = std::move(view_ref_pair),
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
-       vsync_handle = vsync_event_.get()]() mutable {
+       vsync_handle = vsync_event_.get(), &view_embedder_latch]() mutable {
         session_connection_.emplace(
             thread_label_, std::move(session),
             std::move(session_error_callback), [](auto) {}, vsync_handle,
@@ -138,18 +141,23 @@ Engine::Engine(Delegate& delegate,
         surface_producer_.emplace(session_connection_->get());
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
         if (use_legacy_renderer_) {
-          legacy_external_view_embedder_.emplace(
-              thread_label_, std::move(view_token), std::move(view_ref_pair),
-              session_connection_.value(), intercept_all_input_);
+          legacy_external_view_embedder_ =
+              std::make_shared<flutter::SceneUpdateContext>(
+                  thread_label_, std::move(view_token),
+                  std::move(view_ref_pair), session_connection_.value(),
+                  intercept_all_input_);
         } else
 #endif
         {
-          external_view_embedder_.emplace(
-              thread_label_, std::move(view_token), std::move(view_ref_pair),
-              session_connection_.value(), surface_producer_.value(),
-              intercept_all_input_);
+          external_view_embedder_ =
+              std::make_shared<FuchsiaExternalViewEmbedder>(
+                  thread_label_, std::move(view_token),
+                  std::move(view_ref_pair), session_connection_.value(),
+                  surface_producer_.value(), intercept_all_input_);
         }
+        view_embedder_latch.Signal();
       }));
+  view_embedder_latch.Wait();
 
   // Grab the parent environment services. The platform view may want to
   // access some of these services.
@@ -207,6 +215,7 @@ Engine::Engine(Delegate& delegate,
            on_update_view_callback = std::move(on_update_view_callback),
            on_destroy_view_callback = std::move(on_destroy_view_callback),
            on_create_surface_callback = std::move(on_create_surface_callback),
+           external_view_embedder = GetExternalViewEmbedder(),
            vsync_offset = product_config.get_vsync_offset(),
            vsync_handle = vsync_event_.get()](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
@@ -224,6 +233,7 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_update_view_callback),
                 std::move(on_destroy_view_callback),
                 std::move(on_create_surface_callback),
+                external_view_embedder,   // external view embedder
                 std::move(vsync_offset),  // vsync offset
                 vsync_handle);
           });
@@ -240,7 +250,7 @@ Engine::Engine(Delegate& delegate,
       auto compositor_context =
           std::make_unique<flutter_runner::CompositorContext>(
               session_connection_.value(), surface_producer_.value(),
-              legacy_external_view_embedder_.value());
+              legacy_external_view_embedder_);
       return std::make_unique<flutter::Rasterizer>(
           shell, std::move(compositor_context));
     } else {
@@ -402,11 +412,11 @@ Engine::~Engine() {
   }
 }
 
-std::pair<bool, uint32_t> Engine::GetEngineReturnCode() const {
-  std::pair<bool, uint32_t> code(false, 0);
+std::optional<uint32_t> Engine::GetEngineReturnCode() const {
   if (!shell_) {
-    return code;
+    return std::nullopt;
   }
+  std::optional<uint32_t> code;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       shell_->GetTaskRunners().GetUITaskRunner(),
@@ -579,22 +589,28 @@ void Engine::DestroyView(int64_t view_id) {
 }
 
 std::unique_ptr<flutter::Surface> Engine::CreateSurface() {
-  flutter::ExternalViewEmbedder* external_view_embedder = nullptr;
+  return std::make_unique<Surface>(thread_label_, GetExternalViewEmbedder(),
+                                   surface_producer_->gr_context());
+}
+
+std::shared_ptr<flutter::ExternalViewEmbedder>
+Engine::GetExternalViewEmbedder() {
+  std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder =
+      nullptr;
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   if (use_legacy_renderer_) {
     FML_CHECK(legacy_external_view_embedder_);
-    external_view_embedder = &legacy_external_view_embedder_.value();
+    external_view_embedder = legacy_external_view_embedder_;
   } else
 #endif
   {
     FML_CHECK(external_view_embedder_);
-    external_view_embedder = &external_view_embedder_.value();
+    external_view_embedder = external_view_embedder_;
   }
   FML_CHECK(external_view_embedder);
 
-  return std::make_unique<Surface>(thread_label_, external_view_embedder,
-                                   surface_producer_->gr_context());
+  return external_view_embedder;
 }
 
 #if !defined(DART_PRODUCT)
