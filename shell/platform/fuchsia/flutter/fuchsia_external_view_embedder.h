@@ -132,26 +132,29 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
     scenic::Material material;
   };
 
-  // Helper class for setting up an invisible rectangle to catch all input. Rejected input will then
-  // be re-injected into the scene below us.
+  // Helper class for setting up an invisible rectangle to catch all input.
+  // Rejected input will then be re-injected into a suitable platform view
+  // controlled by this Engine instance.
   class InputInterceptor {
    public:
-    InputInterceptor(scenic::Session* session) : opacity_node_(session), shape_node_(session) {
+    InputInterceptor(scenic::Session* session)
+        : opacity_node_(session), shape_node_(session) {
       opacity_node_.SetLabel("Flutter::InputInterceptor");
-      opacity_node_.SetOpacity(0.f);
+      opacity_node_.SetOpacity(0.5f);
 
-      // Set the shape node to capture all input. Any unwanted input will be reinjected.
-      shape_node_.SetHitTestBehavior(fuchsia::ui::gfx::HitTestBehavior::kDefault);
+      // Set the shape node to capture all input. Any unwanted input will be
+      // reinjected.
+      shape_node_.SetHitTestBehavior(
+          fuchsia::ui::gfx::HitTestBehavior::kDefault);
       shape_node_.SetSemanticVisibility(false);
-
-  scenic::Material material(session);
-    material.SetColor(0xff, 0xff, 0xff, 0xff);  // White
-    shape_node_.SetMaterial(material);
 
       opacity_node_.AddChild(shape_node_);
     }
 
-    void UpdateDimensions(scenic::Session* session, float width, float height, float elevation) {
+    void UpdateDimensions(scenic::Session* session,
+                          float width,
+                          float height,
+                          float elevation) {
       opacity_node_.SetTranslation(width * 0.5f, height * 0.5f, elevation);
       shape_node_.SetShape(scenic::Rectangle(session, width, height));
     }

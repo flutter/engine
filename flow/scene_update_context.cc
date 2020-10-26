@@ -195,7 +195,7 @@ void SceneUpdateContext::CreateView(int64_t view_id,
   zx_handle_t handle = (zx_handle_t)view_id;
   flutter::ViewHolder::Create(handle, nullptr,
                               scenic::ToViewHolderToken(zx::eventpair(handle)),
-                              nullptr, intercept_all_input_);
+                              nullptr);
   auto* view_holder = ViewHolder::FromId(view_id);
   FML_DCHECK(view_holder);
 
@@ -317,6 +317,14 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
   // with opacity != 1. For now, clamp to a infinitesimally smaller value than
   // 1, which does not cause visual problems in practice.
   opacity_node_.SetOpacity(std::min(kOneMinusEpsilon, opacity_ / 255.0f));
+
+  if (context.intercept_all_input_) {
+    context.input_interceptor_.emplace(context.session_.get());
+    context.input_interceptor_->UpdateDimensions(
+        context.session_.get(), rrect.width(), rrect.height(),
+        -(local_elevation + kScenicZElevationBetweenLayers * 0.5f));
+    entity_node().AddChild(context.input_interceptor_->node());
+  }
 }
 
 SceneUpdateContext::Frame::~Frame() {

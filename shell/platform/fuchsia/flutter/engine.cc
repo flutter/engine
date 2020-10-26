@@ -146,7 +146,8 @@ Engine::Engine(Delegate& delegate,
         {
           external_view_embedder_.emplace(
               thread_label_, std::move(view_token), std::move(view_ref_pair),
-              session_connection_.value(), surface_producer_.value(), intercept_all_input_);
+              session_connection_.value(), surface_producer_.value(),
+              intercept_all_input_);
         }
       }));
 
