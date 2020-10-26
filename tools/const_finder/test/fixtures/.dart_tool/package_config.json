@@ -3,12 +3,12 @@
     "packages": [
         {
             "name": "const_finder_fixtures",
-            "rootUri": "lib/",
+            "rootUri": "../lib/",
             "languageVersion": "2.9"
         },
         {
             "name": "const_finder_fixtures_package",
-            "rootUri": "pkg/",
+            "rootUri": "../pkg/",
             "languageVersion": "2.9"
         }
     ]
