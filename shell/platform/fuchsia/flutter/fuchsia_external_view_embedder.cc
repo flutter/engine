@@ -29,7 +29,8 @@ FuchsiaExternalViewEmbedder::FuchsiaExternalViewEmbedder(
     fuchsia::ui::views::ViewToken view_token,
     scenic::ViewRefPair view_ref_pair,
     SessionConnection& session,
-    VulkanSurfaceProducer& surface_producer)
+    VulkanSurfaceProducer& surface_producer,
+    bool intercept_all_input)
     : session_(session),
       surface_producer_(surface_producer),
       root_view_(session_.get(),
@@ -38,7 +39,8 @@ FuchsiaExternalViewEmbedder::FuchsiaExternalViewEmbedder(
                  std::move(view_ref_pair.view_ref),
                  debug_label),
       metrics_node_(session_.get()),
-      root_node_(session_.get()) {
+      root_node_(session_.get()),
+      intercept_all_input_(intercept_all_input) {
   root_view_.AddChild(metrics_node_);
   metrics_node_.SetEventMask(fuchsia::ui::gfx::kMetricsEventMask);
   metrics_node_.SetLabel("Flutter::MetricsWatcher");
@@ -116,12 +118,13 @@ void FuchsiaExternalViewEmbedder::BeginFrame(
   frame_composition_order_.push_back(kRootLayerId);
 
   // Set up the input interceptor at the top of the scene, if applicable.
-  // TODO: if (intercept_all_input_)
-  // TODO: Don't hardcode this.
-  const float kMaximumElevation = -100.f;
-  input_interceptor_.emplace(session_.get());
-  input_interceptor_->UpdateDimensions(session_.get(), frame_size.width(), frame_size.height(), kMaximumElevation);
-  metrics_node_.AddChild(input_interceptor_->node());
+  if (intercept_all_input_) {
+    // TODO: Don't hardcode elevation.
+    const float kMaximumElevation = -100.f;
+    input_interceptor_.emplace(session_.get());
+    input_interceptor_->UpdateDimensions(session_.get(), frame_size.width(), frame_size.height(), kMaximumElevation);
+    metrics_node_.AddChild(input_interceptor_->node());
+  }
 }
 
 void FuchsiaExternalViewEmbedder::EndFrame(

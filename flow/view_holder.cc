@@ -53,7 +53,8 @@ namespace flutter {
 void ViewHolder::Create(zx_koid_t id,
                         fml::RefPtr<fml::TaskRunner> ui_task_runner,
                         fuchsia::ui::views::ViewHolderToken view_holder_token,
-                        const BindCallback& on_bind_callback) {
+                        const BindCallback& on_bind_callback,
+                        bool intercept_all_input) {
   // This raster thread contains at least 1 ViewHolder.  Initialize the
   // per-thread bindings.
   if (tls_view_holder_bindings.get() == nullptr) {
@@ -66,7 +67,8 @@ void ViewHolder::Create(zx_koid_t id,
 
   auto view_holder = std::make_unique<ViewHolder>(std::move(ui_task_runner),
                                                   std::move(view_holder_token),
-                                                  on_bind_callback);
+                                                  on_bind_callback,
+                                                  intercept_all_input);
   bindings->emplace(id, std::move(view_holder));
 }
 
@@ -93,10 +95,12 @@ ViewHolder* ViewHolder::FromId(zx_koid_t id) {
 
 ViewHolder::ViewHolder(fml::RefPtr<fml::TaskRunner> ui_task_runner,
                        fuchsia::ui::views::ViewHolderToken view_holder_token,
-                       const BindCallback& on_bind_callback)
+                       const BindCallback& on_bind_callback,
+                       bool intercept_all_input)
     : ui_task_runner_(std::move(ui_task_runner)),
       pending_view_holder_token_(std::move(view_holder_token)),
-      pending_bind_callback_(on_bind_callback) {
+      pending_bind_callback_(on_bind_callback),
+      intercept_all_input_(intercept_all_input) {
   FML_DCHECK(pending_view_holder_token_.value);
 }
 
@@ -115,8 +119,10 @@ void ViewHolder::UpdateScene(scenic::Session* session,
     opacity_node_->SetLabel("flutter::ViewHolder");
     entity_node_->Attach(*view_holder_);
 
-    input_interceptor_=std::make_unique<InputInterceptor>(session);
-    entity_node_->AddChild(input_interceptor_->node());
+    if (intercept_all_input_) {
+      input_interceptor_=std::make_unique<InputInterceptor>(session);
+      entity_node_->AddChild(input_interceptor_->node());
+    }
 
     if (ui_task_runner_ && pending_view_holder_token_.value) {
       ui_task_runner_->PostTask(
@@ -129,7 +135,7 @@ void ViewHolder::UpdateScene(scenic::Session* session,
   FML_DCHECK(entity_node_);
   FML_DCHECK(opacity_node_);
   FML_DCHECK(view_holder_);
-  FML_DCHECK(input_interceptor_);
+  FML_DCHECK(!intercept_all_input_ || input_interceptor_);
 
   container_node.AddChild(*opacity_node_);
   opacity_node_->SetOpacity(opacity / 255.0f);
@@ -138,11 +144,13 @@ void ViewHolder::UpdateScene(scenic::Session* session,
       hit_testable ? fuchsia::ui::gfx::HitTestBehavior::kDefault
                    : fuchsia::ui::gfx::HitTestBehavior::kSuppress);
   if (has_pending_properties_) {
-    const auto width = pending_properties_.bounding_box.max.x
-                       - pending_properties_.bounding_box.min.x;
-    const auto height = pending_properties_.bounding_box.max.y
-                        - pending_properties_.bounding_box.min.y;
-    input_interceptor_->UpdateDimensions(session, width, height, /*elevation*/-0.2f);
+    if (input_interceptor_) {
+      const auto width = pending_properties_.bounding_box.max.x
+                        - pending_properties_.bounding_box.min.x;
+      const auto height = pending_properties_.bounding_box.max.y
+                          - pending_properties_.bounding_box.min.y;
+      input_interceptor_->UpdateDimensions(session, width, height, /*elevation*/-0.2f);
+    }
 
     // TODO(dworsham): This should be derived from size and elevation.  We
     // should be able to Z-limit the view's box but otherwise it uses all of the

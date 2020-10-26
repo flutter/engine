@@ -120,7 +120,8 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   SceneUpdateContext(std::string debug_label,
                      fuchsia::ui::views::ViewToken view_token,
                      scenic::ViewRefPair view_ref_pair,
-                     SessionWrapper& session);
+                     SessionWrapper& session,
+                     bool intercept_all_input = false);
   ~SceneUpdateContext() = default;
 
   scenic::ContainerNode& root_node() { return root_node_; }
@@ -196,6 +197,8 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
 
   float next_elevation_ = 0.f;
   float alpha_ = 1.f;
+
+  bool intercept_all_input_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };

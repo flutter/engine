@@ -39,7 +39,8 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
                               fuchsia::ui::views::ViewToken view_token,
                               scenic::ViewRefPair view_ref_pair,
                               SessionConnection& session,
-                              VulkanSurfaceProducer& surface_producer);
+                              VulkanSurfaceProducer& surface_producer,
+                              bool intercept_all_input = false);
   ~FuchsiaExternalViewEmbedder();
 
   // |ExternalViewEmbedder|
@@ -182,6 +183,8 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   std::vector<EmbedderLayerId> frame_composition_order_;
   SkISize frame_size_ = SkISize::Make(0, 0);
   float frame_dpr_ = 1.f;
+
+  bool intercept_all_input_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FuchsiaExternalViewEmbedder);
 };

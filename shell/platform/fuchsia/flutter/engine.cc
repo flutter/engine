@@ -74,6 +74,7 @@ Engine::Engine(Delegate& delegate,
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
       use_legacy_renderer_(product_config.use_legacy_renderer()),
 #endif
+      intercept_all_input_(product_config.get_intercept_all_input()),
       weak_factory_(this) {
   if (zx::event::create(0, &vsync_event_) != ZX_OK) {
     FML_DLOG(ERROR) << "Could not create the vsync event.";
@@ -139,13 +140,13 @@ Engine::Engine(Delegate& delegate,
         if (use_legacy_renderer_) {
           legacy_external_view_embedder_.emplace(
               thread_label_, std::move(view_token), std::move(view_ref_pair),
-              session_connection_.value());
+              session_connection_.value(), intercept_all_input_);
         } else
 #endif
         {
           external_view_embedder_.emplace(
               thread_label_, std::move(view_token), std::move(view_ref_pair),
-              session_connection_.value(), surface_producer_.value());
+              session_connection_.value(), surface_producer_.value(), intercept_all_input_);
         }
       }));
 

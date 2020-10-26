@@ -68,14 +68,16 @@ void SetMaterialColor(scenic::Material& material,
 SceneUpdateContext::SceneUpdateContext(std::string debug_label,
                                        fuchsia::ui::views::ViewToken view_token,
                                        scenic::ViewRefPair view_ref_pair,
-                                       SessionWrapper& session)
+                                       SessionWrapper& session,
+                                       bool intercept_all_input)
     : session_(session),
       root_view_(session_.get(),
                  std::move(view_token),
                  std::move(view_ref_pair.control_ref),
                  std::move(view_ref_pair.view_ref),
                  debug_label),
-      root_node_(session_.get()) {
+      root_node_(session_.get()),
+      intercept_all_input_(intercept_all_input) {
   root_view_.AddChild(root_node_);
   root_node_.SetEventMask(fuchsia::ui::gfx::kMetricsEventMask);
 
@@ -193,7 +195,7 @@ void SceneUpdateContext::CreateView(int64_t view_id,
   zx_handle_t handle = (zx_handle_t)view_id;
   flutter::ViewHolder::Create(handle, nullptr,
                               scenic::ToViewHolderToken(zx::eventpair(handle)),
-                              nullptr);
+                              nullptr, intercept_all_input_);
   auto* view_holder = ViewHolder::FromId(view_id);
   FML_DCHECK(view_holder);
 
