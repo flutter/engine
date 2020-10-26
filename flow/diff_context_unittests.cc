@@ -2,6 +2,7 @@
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/testing/diff_context_test.h"
+#include "flutter/flow/testing/mock_layer.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
@@ -152,13 +153,13 @@ TEST_F(DiffContextTest, PictureInsertion) {
 }
 
 TEST_F(DiffContextTest, LayerDeletion) {
-  auto pic1 = CreatePicture(SkRect::MakeXYWH(0, 0, 50, 50), 1);
-  auto pic2 = CreatePicture(SkRect::MakeXYWH(100, 0, 50, 50), 1);
-  auto pic3 = CreatePicture(SkRect::MakeXYWH(200, 0, 50, 50), 1);
+  auto path1 = SkPath().addRect(SkRect::MakeXYWH(0, 0, 50, 50));
+  auto path2 = SkPath().addRect(SkRect::MakeXYWH(100, 0, 50, 50));
+  auto path3 = SkPath().addRect(SkRect::MakeXYWH(200, 0, 50, 50));
 
-  auto c1 = CreateContainerLayer(CreatePictureLayer(pic1));
-  auto c2 = CreateContainerLayer(CreatePictureLayer(pic2));
-  auto c3 = CreateContainerLayer(CreatePictureLayer(pic3));
+  auto c1 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
+  auto c2 = CreateContainerLayer(std::make_shared<MockLayer>(path2));
+  auto c3 = CreateContainerLayer(std::make_shared<MockLayer>(path3));
 
   LayerTree t1;
   t1.root()->Add(c1);
@@ -209,17 +210,17 @@ TEST_F(DiffContextTest, LayerDeletion) {
 }
 
 TEST_F(DiffContextTest, ReplaceLayer) {
-  auto pic1 = CreatePicture(SkRect::MakeXYWH(0, 0, 50, 50), 1);
-  auto pic2 = CreatePicture(SkRect::MakeXYWH(100, 0, 50, 50), 1);
-  auto pic3 = CreatePicture(SkRect::MakeXYWH(200, 0, 50, 50), 1);
+  auto path1 = SkPath().addRect(SkRect::MakeXYWH(0, 0, 50, 50));
+  auto path2 = SkPath().addRect(SkRect::MakeXYWH(100, 0, 50, 50));
+  auto path3 = SkPath().addRect(SkRect::MakeXYWH(200, 0, 50, 50));
 
-  auto pic1a = CreatePicture(SkRect::MakeXYWH(0, 100, 50, 50), 1);
-  auto pic2a = CreatePicture(SkRect::MakeXYWH(100, 100, 50, 50), 1);
-  auto pic3a = CreatePicture(SkRect::MakeXYWH(200, 100, 50, 50), 1);
+  auto path1a = SkPath().addRect(SkRect::MakeXYWH(0, 100, 50, 50));
+  auto path2a = SkPath().addRect(SkRect::MakeXYWH(100, 100, 50, 50));
+  auto path3a = SkPath().addRect(SkRect::MakeXYWH(200, 100, 50, 50));
 
-  auto c1 = CreateContainerLayer(CreatePictureLayer(pic1));
-  auto c2 = CreateContainerLayer(CreatePictureLayer(pic2));
-  auto c3 = CreateContainerLayer(CreatePictureLayer(pic3));
+  auto c1 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
+  auto c2 = CreateContainerLayer(std::make_shared<MockLayer>(path2));
+  auto c3 = CreateContainerLayer(std::make_shared<MockLayer>(path3));
 
   LayerTree t1;
   t1.root()->Add(c1);
@@ -238,7 +239,7 @@ TEST_F(DiffContextTest, ReplaceLayer) {
   EXPECT_TRUE(damage.surface_damage.isEmpty());
 
   LayerTree t3;
-  t3.root()->Add(CreateContainerLayer({CreatePictureLayer(pic1a)}));
+  t3.root()->Add(CreateContainerLayer({std::make_shared<MockLayer>(path1a)}));
   t3.root()->Add(c2);
   t3.root()->Add(c3);
 
@@ -247,7 +248,7 @@ TEST_F(DiffContextTest, ReplaceLayer) {
 
   LayerTree t4;
   t4.root()->Add(c1);
-  t4.root()->Add(CreateContainerLayer(CreatePictureLayer(pic2a)));
+  t4.root()->Add(CreateContainerLayer(std::make_shared<MockLayer>(path2a)));
   t4.root()->Add(c3);
 
   damage = DiffLayerTree(t4, t1);
@@ -256,15 +257,15 @@ TEST_F(DiffContextTest, ReplaceLayer) {
   LayerTree t5;
   t5.root()->Add(c1);
   t5.root()->Add(c2);
-  t5.root()->Add(CreateContainerLayer(CreatePictureLayer(pic3a)));
+  t5.root()->Add(CreateContainerLayer(std::make_shared<MockLayer>(path3a)));
 
   damage = DiffLayerTree(t4, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(100, 0, 50, 150));
 }
 
 TEST_F(DiffContextTest, DieIfOldLayerWasNeverDiffed) {
-  auto pic1 = CreatePicture(SkRect::MakeXYWH(0, 0, 50, 50), 1);
-  auto c1 = CreateContainerLayer(CreatePictureLayer(pic1));
+  auto path1 = SkPath().addRect(SkRect::MakeXYWH(0, 0, 50, 50));
+  auto c1 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
 
   LayerTree t1;
   t1.root()->Add(c1);
@@ -277,7 +278,8 @@ TEST_F(DiffContextTest, DieIfOldLayerWasNeverDiffed) {
   // i.e.
   // DiffLayerTree(t1, LayerTree())
   // That means it contains layers for which the paint regions are not known
-  EXPECT_DEATH_IF_SUPPORTED(DiffLayerTree(t2, t1), "Old layer doesn't have paint region");
+  EXPECT_DEATH_IF_SUPPORTED(DiffLayerTree(t2, t1),
+                            "Old layer doesn't have paint region");
 
   // Diff t1 with empty layer tree to determine paint regions
   DiffLayerTree(t1, LayerTree());

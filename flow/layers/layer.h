@@ -36,6 +36,10 @@
 
 namespace flutter {
 
+namespace testing {
+class MockLayer;
+}  // namespace testing
+
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
 // This should be an exact copy of the Clip enum in painting.dart.
@@ -240,6 +244,7 @@ class Layer {
   virtual const PerformanceOverlayLayer* as_performance_overlay_layer() const {
     return nullptr;
   }
+  virtual const testing::MockLayer* as_mock_layer() const { return nullptr; }
 
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
