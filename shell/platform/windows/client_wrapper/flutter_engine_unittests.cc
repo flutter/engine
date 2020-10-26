@@ -20,6 +20,7 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
   FlutterDesktopEngineRef EngineCreate(
       const FlutterDesktopEngineProperties& engine_properties) {
     create_called_ = true;
+    engine_properties_ = engine_properties;
     return reinterpret_cast<FlutterDesktopEngineRef>(1);
   }
 
@@ -49,11 +50,14 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
 
   bool reload_fonts_called() { return reload_fonts_called_; }
 
+  FlutterDesktopEngineProperties& engine_properties() { return engine_properties_; }
+
  private:
   bool create_called_ = false;
   bool run_called_ = false;
   bool destroy_called_ = false;
   bool reload_fonts_called_ = false;
+  FlutterDesktopEngineProperties engine_properties_;
 };
 
 }  // namespace
@@ -119,6 +123,22 @@ TEST(FlutterEngineTest, GetMessenger) {
 
   FlutterEngine engine(DartProject(L"fake/project/path"));
   EXPECT_NE(engine.messenger(), nullptr);
+}
+
+TEST(FlutterEngineTest, DartEntrypointArgs) {
+  DartProject project(L"data");
+  std::vector<std::string> arguments;
+  arguments.push_back("one");
+  arguments.push_back("two");
+  project.set_dart_entrypoint_arguments(arguments);
+  testing::ScopedStubFlutterWindowsApi scoped_api_stub(
+      std::make_unique<TestFlutterWindowsApi>());
+  auto test_api = static_cast<TestFlutterWindowsApi*>(scoped_api_stub.stub());
+
+  FlutterEngine engine(project);
+  EXPECT_TRUE(arguments[0] == test_api->engine_properties().dart_entrypoint_argv[0]);
+  EXPECT_TRUE(arguments[1] == test_api->engine_properties().dart_entrypoint_argv[1]);
+  EXPECT_EQ(2, test_api->engine_properties().dart_entrypoint_argc);
 }
 
 }  // namespace flutter
