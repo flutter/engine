@@ -47,9 +47,11 @@ typedef struct {
   // it will be ignored in that case.
   const wchar_t* aot_library_path;
 
-  // nullptr-terminated array of Dart entrypoint arguments. This is deep copied
-  // during the call to FlutterDesktopEngineCreate.
+  // Number of elements in the array passed in as dart_entrypoint_argv.
   int dart_entrypoint_argc;
+
+  // Array of Dart entrypoint arguments. This is deep copied during the call
+  // to FlutterDesktopEngineCreate.
   const char** dart_entrypoint_argv;
 } FlutterDesktopEngineProperties;
 
