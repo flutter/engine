@@ -103,6 +103,8 @@ enum {
 - (void)swapBuffers {
   contentLayer.frame = layer.bounds;
 
+  // The surface is an OpenGL texture, which means it has origin in bottom left corner
+  // and needs to be flipped vertically
   contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
   [contentLayer setContents:(__bridge id)_ioSurface[kBack]];
 
