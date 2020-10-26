@@ -69,8 +69,6 @@ source_set("common") {
     "display_manager.h",
     "engine.cc",
     "engine.h",
-    "isolate_configuration.cc",
-    "isolate_configuration.h",
     "persistent_cache.cc",
     "persistent_cache.h",
     "pipeline.cc",
@@ -257,5 +255,16 @@ if (enable_unittests) {
       "//flutter/shell/version",
       "//third_party/googletest:gmock",
     ]
+
+    if (is_fuchsia) {
+      sources += [ "shell_fuchsia_unittests.cc" ]
+
+      deps += [
+        "$fuchsia_sdk_root/fidl:fuchsia.intl",
+        "$fuchsia_sdk_root/fidl:fuchsia.settings",
+        "$fuchsia_sdk_root/pkg:fidl_cpp",
+        "$fuchsia_sdk_root/pkg:sys_cpp",
+      ]
+    }
   }
 }

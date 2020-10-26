@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_ENGINE_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_ENGINE_H_
 
+#include <optional>
+
 #include <fuchsia/intl/cpp/fidl.h>
 #include <fuchsia/io/cpp/fidl.h>
 #include <fuchsia/ui/gfx/cpp/fidl.h>
@@ -14,6 +16,7 @@
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/zx/event.h>
 
+#include "flow/embedded_views.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
@@ -55,7 +58,7 @@ class Engine final {
 
   // Returns the Dart return code for the root isolate if one is present. This
   // call is thread safe and synchronous. This call must be made infrequently.
-  std::pair<bool, uint32_t> GetEngineReturnCode() const;
+  std::optional<uint32_t> GetEngineReturnCode() const;
 
 #if !defined(DART_PRODUCT)
   void WriteProfileToTrace() const;
@@ -69,9 +72,9 @@ class Engine final {
 
   std::optional<SessionConnection> session_connection_;
   std::optional<VulkanSurfaceProducer> surface_producer_;
-  std::optional<FuchsiaExternalViewEmbedder> external_view_embedder_;
+  std::shared_ptr<FuchsiaExternalViewEmbedder> external_view_embedder_;
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-  std::optional<flutter::SceneUpdateContext> legacy_external_view_embedder_;
+  std::shared_ptr<flutter::SceneUpdateContext> legacy_external_view_embedder_;
 #endif
 
   std::unique_ptr<IsolateConfigurator> isolate_configurator_;
@@ -97,6 +100,7 @@ class Engine final {
   void CreateView(int64_t view_id, bool hit_testable, bool focusable);
   void UpdateView(int64_t view_id, bool hit_testable, bool focusable);
   void DestroyView(int64_t view_id);
+  std::shared_ptr<flutter::ExternalViewEmbedder> GetExternalViewEmbedder();
 
   std::unique_ptr<flutter::Surface> CreateSurface();
 
