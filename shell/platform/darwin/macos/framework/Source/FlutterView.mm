@@ -53,7 +53,6 @@
 - (void)resizeSynchronizerCommit:(FlutterResizeSynchronizer*)synchronizer {
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
-  self.layer.frame = self.bounds;
 
   [surfaceManager swapBuffers];
 
