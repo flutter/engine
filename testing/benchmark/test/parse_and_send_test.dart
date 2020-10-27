@@ -38,12 +38,13 @@ void main() {
     final String tokenPath =
         path.join(Directory.systemTemp.absolute.path, 'parse_and_send_token');
     File(tokenPath).writeAsStringSync(client.credentials.accessToken.data);
-    Process.runSync('dart', <String>[
+    final ProcessResult result = Process.runSync('dart', <String>[
       'bin/parse_and_send.dart',
       'example/txt_benchmarks.json',
     ], environment: <String, String>{
       'TOKEN_PATH': tokenPath,
       'GCP_PROJECT': testCred['project_id'] as String,
     });
+    expect(result.exitCode, 0);
   });
 }

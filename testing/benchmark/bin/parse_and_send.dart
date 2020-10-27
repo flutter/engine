@@ -44,12 +44,13 @@ Future<FlutterDestination> connectFlutterDestination() async {
   final Map<String, String> env = Platform.environment;
   if (env.containsKey(kTokenPath) && env.containsKey(kGcpProject)) {
     return FlutterDestination.makeFromAccessToken(
-      env[kTokenPath],
+      File(env[kTokenPath]).readAsStringSync(),
       env[kGcpProject],
     );
   }
   return await FlutterDestination.makeFromCredentialsJson(
-    jsonDecode(Platform.environment['BENCHMARK_GCP_CREDENTIALS']) as Map<String, dynamic>,
+    jsonDecode(Platform.environment['BENCHMARK_GCP_CREDENTIALS'])
+        as Map<String, dynamic>,
   );
 }
 
