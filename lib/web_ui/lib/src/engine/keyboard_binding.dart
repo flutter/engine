@@ -545,6 +545,7 @@ class KeyboardConverter {
     if (preSynthesizedKeyData != null) {
       dispatchKeyData(preSynthesizedKeyData);
     }
-    return dispatchKeyData(keyData);
+    dispatchKeyData(keyData);
+    return true;
   }
 }
