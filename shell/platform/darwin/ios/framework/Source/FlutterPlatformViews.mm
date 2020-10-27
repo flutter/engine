@@ -479,7 +479,6 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   if (num_platform_views > 0) {
     SkCanvas* background_canvas = frame->SkiaCanvas();
-
     // Resolve all pending GPU operations before allocating a new surface.
     background_canvas->flush();
     // Clipping the background canvas before drawing the picture recorders requires to
