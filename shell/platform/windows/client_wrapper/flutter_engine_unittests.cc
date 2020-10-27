@@ -23,7 +23,7 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
 
     // dart_entrypoint_argv is only guaranteed to exist until this method
     // returns, so copy it here for unit test validation
-    dart_entrypoint_argv.clear();
+    dart_entrypoint_arguments_.clear();
     for (int i = 0; i < engine_properties.dart_entrypoint_argc; i++) {
       dart_entrypoint_arguments_.push_back(
           std::string(engine_properties.dart_entrypoint_argv[i]));
