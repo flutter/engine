@@ -45,7 +45,8 @@ vars = {
   'dart_dart_style_tag': '1.3.8',
   'dart_http_retry_tag': '0.1.1',
   'dart_http_throttle_tag': '1.0.2',
-  'dart_intl_tag': '0.16.1',
+  "dart_intl_tag": "0.17.0-nullsafety",
+  "dart_clock_rev": "a494269254ba978e7ef8f192c5f7fec3fc05b9d3",
   'dart_linter_tag': '0.1.121',
   'dart_oauth2_tag': '1.6.0',
   'dart_protobuf_rev': '3746c8fd3f2b0147623a8e3db89c3ff4330de760',
@@ -178,6 +179,9 @@ deps = {
 
   'src/third_party/dart/third_party/pkg/collection':
    Var('dart_git') + '/collection.git' + '@' + Var('dart_collection_rev'),
+
+  'src/third_party/dart/third_party/pkg/clock':
+   Var('dart_git') + '/clock.git' + '@' + Var('dart_clock_rev'),
 
   'src/third_party/dart/third_party/pkg/convert':
    Var('dart_git') + '/convert.git@c1b01f832835d3d8a06b0b246a361c0eaab35d3c',
