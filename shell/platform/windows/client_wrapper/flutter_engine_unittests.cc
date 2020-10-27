@@ -21,10 +21,12 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
       const FlutterDesktopEngineProperties& engine_properties) {
     create_called_ = true;
 
-    // dart_entrypoint_argv is only guaranteed to exist until this method returns, so copy it here for unit test validation
+    // dart_entrypoint_argv is only guaranteed to exist until this method
+    // returns, so copy it here for unit test validation
     dart_entrypoint_argv.clear();
     for (int i = 0; i < engine_properties.dart_entrypoint_argc; i++) {
-      dart_entrypoint_arguments_.push_back(std::string(engine_properties.dart_entrypoint_argv[i]));
+      dart_entrypoint_arguments_.push_back(
+          std::string(engine_properties.dart_entrypoint_argv[i]));
     }
     return reinterpret_cast<FlutterDesktopEngineRef>(1);
   }
@@ -55,7 +57,9 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
 
   bool reload_fonts_called() { return reload_fonts_called_; }
 
-  const std::vector<std::string>& dart_entrypoint_arguments() { return dart_entrypoint_arguments_; }
+  const std::vector<std::string>& dart_entrypoint_arguments() {
+    return dart_entrypoint_arguments_;
+  }
 
  private:
   bool create_called_ = false;
@@ -136,11 +140,12 @@ TEST(FlutterEngineTest, DartEntrypointArgs) {
   auto test_api = static_cast<TestFlutterWindowsApi*>(scoped_api_stub.stub());
 
   DartProject project(L"data");
-  std::vector<std::string> arguments = { "one", "two" };
+  std::vector<std::string> arguments = {"one", "two"};
   project.set_dart_entrypoint_arguments(arguments);
 
   FlutterEngine engine(project);
-  const std::vector<std::string>& arguments_ref = test_api->dart_entrypoint_arguments();
+  const std::vector<std::string>& arguments_ref =
+      test_api->dart_entrypoint_arguments();
   ASSERT_EQ(2, arguments_ref.size());
   EXPECT_TRUE(arguments[0] == arguments_ref[0]);
   EXPECT_TRUE(arguments[1] == arguments_ref[1]);

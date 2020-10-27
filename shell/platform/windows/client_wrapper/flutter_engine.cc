@@ -25,7 +25,8 @@ FlutterEngine::FlutterEngine(const DartProject& project) {
       std::back_inserter(entrypoint_argv),
       [](const std::string& arg) -> const char* { return arg.c_str(); });
 
-  c_engine_properties.dart_entrypoint_argc = static_cast<int>(entrypoint_argv.size());
+  c_engine_properties.dart_entrypoint_argc =
+      static_cast<int>(entrypoint_argv.size());
   c_engine_properties.dart_entrypoint_argv =
       entrypoint_argv.size() > 0 ? entrypoint_argv.data() : nullptr;
 

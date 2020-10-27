@@ -21,7 +21,8 @@ FlutterProjectBundle::FlutterProjectBundle(
   }
 
   for (int i = 0; i < properties.dart_entrypoint_argc; i++) {
-    dart_entrypoint_arguments_.push_back(std::string(properties.dart_entrypoint_argv[i]));
+    dart_entrypoint_arguments_.push_back(
+        std::string(properties.dart_entrypoint_argv[i]));
   }
 
   // Resolve any relative paths.

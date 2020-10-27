@@ -51,8 +51,11 @@ class FlutterProjectBundle {
   // Logs and returns nullptr on failure.
   UniqueAotDataPtr LoadAotData();
 
-  // Returns the command line arguments to be passed through to the Dart entrypoint.
-  const std::vector<std::string>& dart_entrypoint_arguments() const { return dart_entrypoint_arguments_; }
+  // Returns the command line arguments to be passed through to the Dart
+  // entrypoint.
+  const std::vector<std::string>& dart_entrypoint_arguments() const {
+    return dart_entrypoint_arguments_;
+  }
 
  private:
   std::filesystem::path assets_path_;
