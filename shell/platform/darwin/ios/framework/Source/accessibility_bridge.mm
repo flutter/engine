@@ -36,10 +36,11 @@ class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
 };
 }  // namespace
 
-AccessibilityBridge::AccessibilityBridge(FlutterViewController* view_controller,
-                                         PlatformViewIOS* platform_view,
-                                         FlutterPlatformViewsController* platform_views_controller,
-                                         std::unique_ptr<IosDelegate> ios_delegate)
+AccessibilityBridge::AccessibilityBridge(
+    FlutterViewController* view_controller,
+    PlatformViewIOS* platform_view,
+    std::shared_ptr<FlutterPlatformViewsController> platform_views_controller,
+    std::unique_ptr<IosDelegate> ios_delegate)
     : view_controller_(view_controller),
       platform_view_(platform_view),
       platform_views_controller_(platform_views_controller),
@@ -126,7 +127,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     }
 
     if (object.node.IsPlatformViewNode()) {
-      FlutterPlatformViewsController* controller = GetPlatformViewsController();
+      auto controller = GetPlatformViewsController();
       if (controller) {
         object.platformViewSemanticsContainer = [[[FlutterPlatformViewSemanticsContainer alloc]
             initWithSemanticsObject:object] autorelease];
@@ -167,17 +168,27 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     }
     NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
     [root collectRoutes:newRoutes];
+    // Finds the last route that is not in the previous routes.
     for (SemanticsObject* route in newRoutes) {
-      if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) !=
+      if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) ==
           previous_routes_.end()) {
         lastAdded = route;
       }
     }
+    // If all the routes are in the previous route, get the last route.
     if (lastAdded == nil && [newRoutes count] > 0) {
       int index = [newRoutes count] - 1;
       lastAdded = [newRoutes objectAtIndex:index];
     }
-    if (lastAdded != nil && [lastAdded uid] != previous_route_id_) {
+    // There are two cases if lastAdded != nil
+    // 1. lastAdded is not in previous routes. In this case,
+    //    [lastAdded uid] != previous_route_id_
+    // 2. All new routes are in previous routes and
+    //    lastAdded = newRoutes.last.
+    // In the first case, we need to announce new route. In the second case,
+    // we need to announce if one list is shorter than the other.
+    if (lastAdded != nil &&
+        ([lastAdded uid] != previous_route_id_ || [newRoutes count] != previous_routes_.size())) {
       previous_route_id_ = [lastAdded uid];
       routeChanged = true;
     }
