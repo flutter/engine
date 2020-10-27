@@ -980,8 +980,8 @@ public class FlutterJNI {
    * pre-extracted .so exists, especially on older devices with libs compressed in the
    * apk.
    *
-   * assetManager and asserBundlePath are used to specify a new AssetManager that has
-   * access to the dynamic feature's assets in addition to the base assets.
+   * Successful loading of the dart library also completes the loadLibrary() future
+   * that triggered the install/load process.
    */
   @UiThread
   public void loadDartLibrary(
@@ -989,9 +989,7 @@ public class FlutterJNI {
       @NonNull String libName,
       @NonNull String[] apkPaths,
       @NonNull String abi,
-      @NonNull String soPath,
-      @NonNull AssetManager assetManager,
-      @NonNull String assetBundlePath) {
+      @NonNull String soPath) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeLoadDartLibrary(
@@ -1000,9 +998,7 @@ public class FlutterJNI {
         libName,
         apkPaths,
         abi,
-        soPath,
-        assetManager,
-        assetBundlePath);
+        soPath);
   }
   private native void nativeLoadDartLibrary(
       long nativePlatformViewId,
@@ -1010,9 +1006,29 @@ public class FlutterJNI {
       @NonNull String libName,
       @NonNull String[] apkPaths,
       @NonNull String abi,
-      @NonNull String soPath,
+      @NonNull String soPath);
+
+
+  /**
+   * Specifies a new AssetManager that has access to the dynamic feature's assets in addition
+   * to the base module's assets.
+   *
+   * assetBundlePath is the subdirectory that the flutter assets are stored in. The typical
+   * value is `flutter_assets`.
+   */
+  @UiThread
+  public void updateAssetManager(
       @NonNull AssetManager assetManager,
-      @NonNull String assetBundlePath);
+      @NonNull String assetBundlePath
+  ) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeUpdateAssetManager(assetManager, assetBundlePath);
+  }
+  private native void nativeUpdateAssetManager(
+      @NonNull AssetManager assetManager,
+      @NonNull String assetBundlePath
+  );
 
   // Called when an install encounters a failure during the Android portion of installing a module.
   // When transient is false, new attempts to install will automatically result in same error in

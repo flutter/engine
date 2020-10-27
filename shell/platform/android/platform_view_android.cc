@@ -355,10 +355,14 @@ void PlatformViewAndroid::CompleteDartLoadLibrary(
     intptr_t loading_unit_id,
     std::string lib_name,
     std::vector<std::string>& apkPaths,
-    std::string abi,
+    std::string abi) {
+  delegate_.CompleteDartLoadLibrary(loading_unit_id, lib_name, apkPaths, abi);
+}
+
+// |PlatformView|
+void PlatformViewAndroid::UpdateAssetManager(
     std::shared_ptr<AssetManager> asset_manager) {
-  delegate_.CompleteDartLoadLibrary(loading_unit_id, lib_name, apkPaths, abi,
-                                    std::move(asset_manager));
+  delegate_.UpdateAssetManager(std::move(asset_manager));
 }
 
 void PlatformViewAndroid::InstallFirstFrameCallback() {

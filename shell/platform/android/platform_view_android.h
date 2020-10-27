@@ -97,12 +97,13 @@ class PlatformViewAndroid final : public PlatformView {
       const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
 
   // |PlatformView|
-  void CompleteDartLoadLibrary(
-      intptr_t loading_unit_id,
-      std::string lib_name,
-      std::vector<std::string>& apkPaths,
-      std::string abi,
-      std::shared_ptr<AssetManager> asset_manager) override;
+  void CompleteDartLoadLibrary(intptr_t loading_unit_id,
+                               std::string lib_name,
+                               std::vector<std::string>& apkPaths,
+                               std::string abi) override;
+
+  // |PlatformView|
+  void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override;
 
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;

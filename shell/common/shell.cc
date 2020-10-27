@@ -1188,14 +1188,15 @@ Shell::ComputePlatformViewResolvedLocale(
   return platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
 }
 
-void Shell::CompleteDartLoadLibrary(
-    intptr_t loading_unit_id,
-    std::string lib_name,
-    std::vector<std::string>& apkPaths,
-    std::string abi,
-    std::shared_ptr<AssetManager> asset_manager) {
-  engine_->CompleteDartLoadLibrary(loading_unit_id, lib_name, apkPaths, abi,
-                                   std::move(asset_manager));
+void Shell::CompleteDartLoadLibrary(intptr_t loading_unit_id,
+                                    std::string lib_name,
+                                    std::vector<std::string>& apkPaths,
+                                    std::string abi) {
+  engine_->CompleteDartLoadLibrary(loading_unit_id, lib_name, apkPaths, abi);
+}
+
+void Shell::UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) {
+  engine_->UpdateAssetManager(std::move(asset_manager));
 }
 
 // |Engine::Delegate|

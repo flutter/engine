@@ -152,9 +152,17 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   public void extractFeature(@NonNull String moduleName, int loadingUnitId) {
     try {
       context = context.createPackageContext(context.getPackageName(), 0);
-      // We only load dart shared lib for the loading unit id requested. Other loading units in the
-      // dynamic feature module are not loaded, but can be loaded by calling again with their loading
-      // unit id.
+
+      AssetManager assetManager = context.getAssets();
+
+      flutterJNI.updateAssetManager(
+          assetManager,
+          // TODO(garyq): Made the "flutter_assets" directory dynamic based off of DartEntryPoint.
+          "flutter_assets");
+
+      // We only load dart shared lib for the loading unit id requested. Other loading units (if present)
+      // in the dynamic feature module are not loaded, but can be loaded by calling again with their
+      // loading unit id.
       loadDartLibrary(moduleName, loadingUnitId);
     } catch (NameNotFoundException e) {
       Log.d(TAG, "NameNotFoundException creating context for " + moduleName);
@@ -175,6 +183,9 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
         abi = Build.CPU_ABI;
     }
     String pathAbi = abi.replace("-", "_"); // abis are represented with underscores in paths.
+
+    // TODO(garyq): Optimize this apk/file discovery process to use less i/o and be more
+    // performant.
 
     // Search directly in APKs first
     List<String> apkPaths = new ArrayList();
@@ -199,19 +210,6 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
         soPath = file.getAbsolutePath();
       }
     }
-
-    // TODO(garyq): Handle assets in extractModule() above;
-    AssetManager assetManager = context.getAssets();
-
-    flutterJNI.loadDartLibrary(
-        loadingUnitId,
-        aotSharedLibraryName,
-        apkPaths.toArray(new String[apkPaths.size()]),
-        abi,
-        soPath,
-        assetManager,
-        // TODO(garyq): Made the "flutter_assets" directory dynamic based off of DartEntryPoint.
-        "flutter_assets");
   }
 
   public void uninstallFeature(String moduleName, int loadingUnitId) {

@@ -512,18 +512,14 @@ Dart_Handle Engine::OnDartLoadLibrary(intptr_t loading_unit_id) {
   return delegate_.OnDartLoadLibrary(loading_unit_id);
 }
 
-void Engine::CompleteDartLoadLibrary(
-    intptr_t loading_unit_id,
-    std::string lib_name,
-    std::vector<std::string>& apkPaths,
-    std::string abi,
-    std::shared_ptr<AssetManager> asset_manager) {
+void Engine::CompleteDartLoadLibrary(intptr_t loading_unit_id,
+                                     std::string lib_name,
+                                     std::vector<std::string>& apkPaths,
+                                     std::string abi) {
   if (runtime_controller_->IsRootIsolateRunning()) {
     runtime_controller_->CompleteDartLoadLibrary(loading_unit_id, lib_name,
                                                  apkPaths, abi);
   }
-
-  UpdateAssetManager(std::move(asset_manager));
 }
 
 }  // namespace flutter

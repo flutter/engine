@@ -523,16 +523,7 @@ static void LoadDartLibrary(JNIEnv* env,
                             jstring jLibName,
                             jobjectArray jApkPaths,
                             jstring jAbi,
-                            jstring jSoPath,
-                            jobject jAssetManager,
-                            jstring jAssetBundlePath) {
-  auto asset_manager = std::make_shared<flutter::AssetManager>();
-  asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
-      env,                                                  // jni environment
-      jAssetManager,                                        // asset manager
-      fml::jni::JavaStringToString(env, jAssetBundlePath))  // apk asset dir
-  );
-
+                            jstring jSoPath) {
   std::string abi = fml::jni::JavaStringToString(env, jAbi);
 
   std::vector<std::string> apkPaths =
@@ -540,10 +531,25 @@ static void LoadDartLibrary(JNIEnv* env,
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->CompleteDartLoadLibrary(
       static_cast<intptr_t>(jLoadingUnitId),
-      fml::jni::JavaStringToString(env, jLibName), apkPaths, abi,
-      std::move(asset_manager));
+      fml::jni::JavaStringToString(env, jLibName), apkPaths, abi);
 
   // TODO(garyq): fallback on soPath.
+}
+
+static void UpdateAssetManager(JNIEnv* env,
+                               jobject obj,
+                               jlong shell_holder,
+                               jobject jAssetManager,
+                               jstring jAssetBundlePath) {
+  auto asset_manager = std::make_shared<flutter::AssetManager>();
+  asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
+      env,                                                  // jni environment
+      jAssetManager,                                        // asset manager
+      fml::jni::JavaStringToString(env, jAssetBundlePath))  // apk asset dir
+  );
+
+  ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetManager(
+      std::move(asset_manager));
 }
 
 static void DynamicFeatureInstallFailure(JNIEnv* env,
@@ -713,10 +719,14 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeLoadDartLibrary",
-          .signature =
-              "(JILjava/lang/String;Ljava/lang/String;Landroid/content/"
-              "res/AssetManager;[Ljava/lang/String;)V",
+          .signature = "(JILjava/lang/String;[Ljava/lang/String;)V",
           .fnPtr = reinterpret_cast<void*>(&LoadDartLibrary),
+      },
+      {
+          .name = "nativeUpdateAssetManager",
+          .signature =
+              "(Landroid/content/res/AssetManager;Ljava/lang/String;)V",
+          .fnPtr = reinterpret_cast<void*>(&UpdateAssetManager),
       },
       {
           .name = "nativeDynamicFeatureInstallFailure",

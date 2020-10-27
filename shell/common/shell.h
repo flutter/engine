@@ -516,12 +516,13 @@ class Shell final : public PlatformView::Delegate,
   Dart_Handle OnPlatformViewDartLoadLibrary(intptr_t loading_unit_id) override;
 
   // |PlatformView::Delegate|
-  void CompleteDartLoadLibrary(
-      intptr_t loading_unit_id,
-      std::string lib_name,
-      std::vector<std::string>& apkPaths,
-      std::string abi,
-      std::shared_ptr<AssetManager> asset_manager) override;
+  void CompleteDartLoadLibrary(intptr_t loading_unit_id,
+                               std::string lib_name,
+                               std::vector<std::string>& apkPaths,
+                               std::string abi) override;
+
+  // |PlatformView::Delegate|
+  void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override;
 
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;
