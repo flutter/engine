@@ -1,4 +1,4 @@
-Signature: 710a7a4ae6cb8024d1cf981fa8ed7a8b
+Signature: 358c3055f33a91bff22d25103af58b74
 
 UNUSED LICENSES:
 
@@ -2747,7 +2747,6 @@ FILE: ../../../third_party/skia/gm/xfermodes2.cpp
 FILE: ../../../third_party/skia/gm/xfermodes3.cpp
 FILE: ../../../third_party/skia/include/core/SkDataTable.h
 FILE: ../../../third_party/skia/include/core/SkDocument.h
-FILE: ../../../third_party/skia/include/core/SkFontLCDConfig.h
 FILE: ../../../third_party/skia/include/core/SkFontMgr.h
 FILE: ../../../third_party/skia/include/core/SkFontStyle.h
 FILE: ../../../third_party/skia/include/core/SkImageGenerator.h
@@ -3569,7 +3568,6 @@ ORIGIN: ../../../third_party/skia/bench/ClipMaskBench.cpp + ../../../third_party
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/ClipMaskBench.cpp
 FILE: ../../../third_party/skia/bench/ClipStrategyBench.cpp
-FILE: ../../../third_party/skia/bench/CubicKLMBench.cpp
 FILE: ../../../third_party/skia/bench/PathTextBench.cpp
 FILE: ../../../third_party/skia/bench/ShadowBench.cpp
 FILE: ../../../third_party/skia/bin/gerrit-number
@@ -4138,6 +4136,7 @@ FILE: ../../../third_party/skia/samplecode/SampleAudio.cpp
 FILE: ../../../third_party/skia/samplecode/SampleFitCubicToCircle.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSimpleStroker.cpp
 FILE: ../../../third_party/skia/samplecode/SampleTiming.cpp
+FILE: ../../../third_party/skia/samplecode/SampleVariableWidthStroker.cpp
 FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
 FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.h
@@ -6730,7 +6729,6 @@ FILE: ../../../third_party/skia/src/core/SkCubicClipper.cpp
 FILE: ../../../third_party/skia/src/core/SkCubicClipper.h
 FILE: ../../../third_party/skia/src/core/SkEdgeClipper.cpp
 FILE: ../../../third_party/skia/src/core/SkEdgeClipper.h
-FILE: ../../../third_party/skia/src/core/SkFontLCDConfig.cpp
 FILE: ../../../third_party/skia/src/core/SkQuadClipper.cpp
 FILE: ../../../third_party/skia/src/core/SkQuadClipper.h
 FILE: ../../../third_party/skia/src/images/SkImageEncoder.cpp
