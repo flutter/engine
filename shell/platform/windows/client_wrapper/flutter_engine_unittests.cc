@@ -20,7 +20,11 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
   FlutterDesktopEngineRef EngineCreate(
       const FlutterDesktopEngineProperties& engine_properties) {
     create_called_ = true;
-    engine_properties_ = engine_properties;
+
+    // dart_entrypoint_argv is only guaranteed to exist until this method returns, so copy it here for unit test validation
+    for (int i = 0; i < engine_properties.dart_entrypoint_argc; i++) {
+      dart_entrypoint_arguments_.push_back(std::string(engine_properties.dart_entrypoint_argv[i]));
+    }
     return reinterpret_cast<FlutterDesktopEngineRef>(1);
   }
 
@@ -50,14 +54,14 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
 
   bool reload_fonts_called() { return reload_fonts_called_; }
 
-  FlutterDesktopEngineProperties& engine_properties() { return engine_properties_; }
+  const std::vector<std::string>& dart_entrypoint_arguments() { return dart_entrypoint_arguments_; }
 
  private:
   bool create_called_ = false;
   bool run_called_ = false;
   bool destroy_called_ = false;
   bool reload_fonts_called_ = false;
-  FlutterDesktopEngineProperties engine_properties_;
+  std::vector<std::string> dart_entrypoint_arguments_;
 };
 
 }  // namespace
@@ -127,18 +131,19 @@ TEST(FlutterEngineTest, GetMessenger) {
 
 TEST(FlutterEngineTest, DartEntrypointArgs) {
   DartProject project(L"data");
-  std::vector<std::string> arguments;
-  arguments.push_back("one");
-  arguments.push_back("two");
+  std::vector<std::string> arguments(2);
+  arguments[0] = "one";
+  arguments[1] = "two";
   project.set_dart_entrypoint_arguments(arguments);
   testing::ScopedStubFlutterWindowsApi scoped_api_stub(
       std::make_unique<TestFlutterWindowsApi>());
   auto test_api = static_cast<TestFlutterWindowsApi*>(scoped_api_stub.stub());
 
   FlutterEngine engine(project);
-  EXPECT_TRUE(arguments[0] == test_api->engine_properties().dart_entrypoint_argv[0]);
-  EXPECT_TRUE(arguments[1] == test_api->engine_properties().dart_entrypoint_argv[1]);
-  EXPECT_EQ(2, test_api->engine_properties().dart_entrypoint_argc);
+  const std::vector<std::string>& arguments_ref = test_api->dart_entrypoint_arguments();
+  EXPECT_TRUE(arguments[0] == arguments_ref[0]);
+  EXPECT_TRUE(arguments[1] == arguments_ref[1]);
+  EXPECT_EQ(2, arguments_ref.size());
 }
 
 }  // namespace flutter
