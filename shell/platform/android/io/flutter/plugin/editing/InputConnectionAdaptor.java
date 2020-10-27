@@ -31,11 +31,17 @@ import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 
 class InputConnectionAdaptor extends BaseInputConnection {
+  private static final String TAG = "flutter";
+
   private final View mFlutterView;
   private final int mClient;
   private final TextInputChannel textInputChannel;
   private final Editable mEditable;
   private final EditorInfo mEditorInfo;
+  private ExtractedTextRequest mExtractRequest;
+  private boolean mMonitorCursorUpdate = false;
+  private CursorAnchorInfo.Builder mCursorAnchorInfoBuilder;
+  private ExtractedText mExtractedText = new ExtractedText();
   private int mBatchCount;
   private InputMethodManager mImm;
   private final Layout mLayout;
@@ -43,6 +49,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
   // Used to determine if Samsung-specific hacks should be applied.
   private final boolean isSamsung;
 
+  private TextEditingValue mLastUpdatedImmEditingValue;
   private TextEditingValue mLastKnownTextEditingValue;
   // Data class used to get and store the last-sent values via updateEditingState to
   // the  framework. These are then compared against to prevent redundant messages
@@ -114,6 +121,9 @@ class InputConnectionAdaptor extends BaseInputConnection {
     mEditable = editable;
     mEditorInfo = editorInfo;
     mBatchCount = 0;
+    // Initialize the "last seen" text editing values to a non-null value.
+    mLastUpdatedImmEditingValue = new TextEditingValue(mEditable);
+    mLastKnownTextEditingValue = mLastUpdatedImmEditingValue;
     this.flutterTextUtils = new FlutterTextUtils(flutterJNI);
     // We create a dummy Layout with max width so that the selection
     // shifting acts as if all text were in one line.
@@ -143,7 +153,9 @@ class InputConnectionAdaptor extends BaseInputConnection {
   // Send the current state of the editable to Flutter.
   private void updateEditingState() {
     // If the IME is in the middle of a batch edit, then wait until it completes.
-    if (mBatchCount > 0) return;
+    if (mBatchCount > 0) {
+      return;
+    }
 
     TextEditingValue currentValue = new TextEditingValue(mEditable);
 
@@ -152,13 +164,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
       return;
     }
 
-    mImm.updateSelection(
-        mFlutterView,
-        currentValue.selectionStart,
-        currentValue.selectionEnd,
-        currentValue.composingStart,
-        currentValue.composingEnd);
-
+    Log.v(TAG, "send EditingState to flutter: " + currentValue.toString());
     textInputChannel.updateEditingState(
         mClient,
         currentValue.text,
@@ -170,10 +176,76 @@ class InputConnectionAdaptor extends BaseInputConnection {
     mLastKnownTextEditingValue = currentValue;
   }
 
-  // Called when the current text editing state held by the text input plugin is overwritten by a
-  // newly received value from the framework.
+  private ExtractedText getExtractedText(TextEditingValue editingValue) {
+    mExtractedText.startOffset = 0;
+    mExtractedText.partialStartOffset = -1;
+    mExtractedText.partialEndOffset = -1;
+    mExtractedText.selectionStart = editingValue.selectionStart;
+    mExtractedText.selectionEnd = editingValue.selectionEnd;
+    mExtractedText.text = editingValue.text;
+    return mExtractedText;
+  }
+
+  private CursorAnchorInfo getCursorAnchorInfo(TextEditingValue editingValue) {
+    if (mCursorAnchorInfoBuilder == null) {
+      mCursorAnchorInfoBuilder = new CursorAnchorInfo.Builder();
+    } else {
+      mCursorAnchorInfoBuilder.reset();
+    }
+
+    mCursorAnchorInfoBuilder.setSelectionRange(
+        editingValue.selectionStart, editingValue.selectionEnd);
+    final int composingStart = editingValue.composingStart;
+    final int composingEnd = editingValue.composingEnd;
+    if (composingStart >= 0 && composingEnd > composingStart) {
+      mCursorAnchorInfoBuilder.setComposingText(
+          composingStart, editingValue.text.subSequence(composingStart, composingEnd));
+    } else {
+      mCursorAnchorInfoBuilder.setComposingText(-1, "");
+    }
+    return mCursorAnchorInfoBuilder.build();
+  }
+
+  private void updateIMMIfNeeded() {
+    if (mBatchCount > 0) {
+      return;
+    }
+
+    TextEditingValue currentValue = new TextEditingValue(mEditable);
+
+    // Always send selection update. InputMethodManager#updateSelection skips sending the message
+    // if none of the parameters have changed since the last time we called it.
+    mImm.updateSelection(
+        mFlutterView,
+        currentValue.selectionStart,
+        currentValue.selectionEnd,
+        currentValue.composingStart,
+        currentValue.composingEnd);
+
+    if (currentValue == mLastUpdatedImmEditingValue) {
+      return;
+    }
+
+    if (mExtractRequest != null) {
+      mImm.updateExtractedText(mFlutterView, mExtractRequest.token, getExtractedText(currentValue));
+    }
+
+    if (mMonitorCursorUpdate) {
+      final CursorAnchorInfo info = getCursorAnchorInfo(currentValue);
+      mImm.updateCursorAnchorInfo(mFlutterView, info);
+      Log.v(TAG, "update CursorAnchorInfo: " + info.toString());
+    }
+
+    mLastUpdatedImmEditingValue = currentValue;
+  }
+
+  // Called when the current text editing state held by the text input plugin (in mEditable) is
+  // overwritten by a newly received value from the framework.
   public void didUpdateEditingValue() {
     mLastKnownTextEditingValue = new TextEditingValue(mEditable);
+    // Try to update the input method immediately after the internal state change. Or defer it to
+    // endBatchEdit if we're in a nested edit.
+    updateIMMIfNeeded();
   }
 
   @Override
@@ -191,13 +263,17 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean endBatchEdit() {
     boolean result = super.endBatchEdit();
     mBatchCount--;
+    // These 2 methods do nothing if mBatchCount > 0.
     updateEditingState();
+    updateIMMIfNeeded();
     return result;
   }
 
   @Override
   public boolean commitText(CharSequence text, int newCursorPosition) {
+    beginBatchEdit();
     boolean result = super.commitText(text, newCursorPosition);
+    endBatchEdit();
     return result;
   }
 
@@ -205,62 +281,82 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean deleteSurroundingText(int beforeLength, int afterLength) {
     if (Selection.getSelectionStart(mEditable) == -1) return true;
 
+    beginBatchEdit();
     boolean result = super.deleteSurroundingText(beforeLength, afterLength);
+    endBatchEdit();
     return result;
   }
 
   @Override
   public boolean deleteSurroundingTextInCodePoints(int beforeLength, int afterLength) {
+    beginBatchEdit();
     boolean result = super.deleteSurroundingTextInCodePoints(beforeLength, afterLength);
+    endBatchEdit();
     return result;
   }
 
   @Override
   public boolean setComposingRegion(int start, int end) {
+    beginBatchEdit();
+    Log.i("flutter", "engine: set CR: " + String.valueOf(start) + " - " + String.valueOf(end));
     boolean result = super.setComposingRegion(start, end);
+    endBatchEdit();
     return result;
   }
 
   @Override
   public boolean setComposingText(CharSequence text, int newCursorPosition) {
     boolean result;
+    beginBatchEdit();
+    Log.i("flutter", "engine: set CT: " + text + ", " + String.valueOf(newCursorPosition));
     if (text.length() == 0) {
       result = super.commitText(text, newCursorPosition);
     } else {
       result = super.setComposingText(text, newCursorPosition);
     }
+    endBatchEdit();
     return result;
   }
 
   @Override
   public boolean finishComposingText() {
+    Log.i("flutter", "engine: finish composing");
+    beginBatchEdit();
     boolean result = super.finishComposingText();
-
-    // Apply Samsung hacks. Samsung caches composing region data strangely, causing text
-    // duplication.
-    if (isSamsung) {
-      if (Build.VERSION.SDK_INT >= 21) {
-        // Samsung keyboards don't clear the composing region on finishComposingText.
-        // Update the keyboard with a reset/empty composing region. Critical on
-        // Samsung keyboards to prevent punctuation duplication.
-        CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
-        builder.setComposingText(/*composingTextStart*/ -1, /*composingText*/ "");
-        CursorAnchorInfo anchorInfo = builder.build();
-        mImm.updateCursorAnchorInfo(mFlutterView, anchorInfo);
-      }
-    }
-
+    endBatchEdit();
     return result;
   }
 
   // TODO(garyq): Implement a more feature complete version of getExtractedText
   @Override
   public ExtractedText getExtractedText(ExtractedTextRequest request, int flags) {
-    ExtractedText extractedText = new ExtractedText();
-    extractedText.selectionStart = Selection.getSelectionStart(mEditable);
-    extractedText.selectionEnd = Selection.getSelectionEnd(mEditable);
-    extractedText.text = mEditable.toString();
+    // Input methods may use this method to get the current content of the
+    final boolean textMonitor = (flags & GET_EXTRACTED_TEXT_MONITOR) != 0;
+    if (textMonitor == (mExtractRequest == null)) {
+      Log.d(TAG, "The input method toggled text monitoring " + (textMonitor ? "on" : "off"));
+    }
+    if (textMonitor) {
+      // Enables text monitoring. See updateIMMIfNeeded.
+      mExtractRequest = request;
+    } else {
+      mExtractRequest = null;
+    }
+    ExtractedText extractedText = getExtractedText(new TextEditingValue(mEditable));
     return extractedText;
+  }
+
+  @Override
+  public boolean requestCursorUpdates(int cursorUpdateMode) {
+    //
+
+    if ((cursorUpdateMode & CURSOR_UPDATE_IMMEDIATE) != 0) {
+      mImm.updateCursorAnchorInfo(
+          mFlutterView, getCursorAnchorInfo(new TextEditingValue(mEditable)));
+    }
+
+    // Enables cursor monitoring.
+    mMonitorCursorUpdate = (cursorUpdateMode & CURSOR_UPDATE_MONITOR) != 0;
+    return true;
   }
 
   @Override
@@ -292,8 +388,9 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean setSelection(int start, int end) {
+    beginBatchEdit();
     boolean result = super.setSelection(start, end);
-    updateEditingState();
+    endBatchEdit();
     return result;
   }
 
@@ -315,6 +412,13 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
+    beginBatchEdit();
+    final boolean result = doSendKeyEvent(event);
+    endBatchEdit();
+    return result;
+  }
+
+  private boolean doSendKeyEvent(KeyEvent event) {
     if (event.getAction() == KeyEvent.ACTION_DOWN) {
       if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
         int selStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
@@ -327,7 +431,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
           // Delete the selection.
           Selection.setSelection(mEditable, selStart);
           mEditable.delete(selStart, selEnd);
-          updateEditingState();
           return true;
         }
         return false;
@@ -418,6 +521,13 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean performContextMenuAction(int id) {
+    beginBatchEdit();
+    final boolean result = doPerformContextMenuAction(id);
+    endBatchEdit();
+    return result;
+  }
+
+  private boolean doPerformContextMenuAction(int id) {
     if (id == android.R.id.selectAll) {
       setSelection(0, mEditable.length());
       return true;

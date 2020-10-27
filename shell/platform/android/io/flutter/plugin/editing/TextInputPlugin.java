@@ -172,12 +172,13 @@ public class TextInputPlugin {
     if (mFakeBaseInputConnection != null) {
       return mFakeBaseInputConnection;
     }
-    mFakeBaseInputConnection = new BaseInputConnection(mView, false) {
-      @Override
-      public Editable getEditable() {
-        return mEditable;
-      }
-    };
+    mFakeBaseInputConnection =
+        new BaseInputConnection(mView, true) {
+          @Override
+          public Editable getEditable() {
+            return mEditable;
+          }
+        };
     return mFakeBaseInputConnection;
   }
 
@@ -459,30 +460,24 @@ public class TextInputPlugin {
     // Always apply state to selection which handles updating the selection if needed.
     applyStateToSelection(state);
 
-    if (state.composingEnd < 0)
+    if (state.composingEnd < 0) {
       BaseInputConnection.removeComposingSpans(mEditable);
-    else
-      getFakeBaseInputConnection().setComposingRegion(state.composingStart, state.composingEnd);
-
-    // Use updateSelection to update imm on selection if it is not necessary to restart.
-    if (!restartAlwaysRequired && !mRestartInputPending) {
-      mImm.updateSelection(
-          mView,
-          Math.max(Selection.getSelectionStart(mEditable), 0),
-          Math.max(Selection.getSelectionEnd(mEditable), 0),
-          BaseInputConnection.getComposingSpanStart(mEditable),
-          BaseInputConnection.getComposingSpanEnd(mEditable));
-      // Restart if there is a pending restart or the device requires a force restart
-      // (see isRestartAlwaysRequired). Restarting will also update the selection.
     } else {
-      mImm.restartInput(view);
-      mRestartInputPending = false;
+      getFakeBaseInputConnection().setComposingRegion(state.composingStart, state.composingEnd);
     }
 
-    // Notify the connection adaptor that the last known remote editing state has been updated.
+    // Notify the connection adaptor that the mEditable has been updated. The InputConnection is
+    // responsible for further notifying the input method.
     InputConnection connection = getLastInputConnection();
     if (connection != null && connection instanceof InputConnectionAdaptor) {
       ((InputConnectionAdaptor) connection).didUpdateEditingValue();
+    }
+
+    // Restart if there is a pending restart or the device requires a force restart
+    // (see isRestartAlwaysRequired). Restarting will also update the selection.
+    if (restartAlwaysRequired || mRestartInputPending) {
+      mImm.restartInput(view);
+      mRestartInputPending = false;
     }
   }
 

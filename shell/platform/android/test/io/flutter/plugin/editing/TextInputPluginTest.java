@@ -146,14 +146,15 @@ public class TextInputPluginTest {
             null));
 
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("initial input from framework", 0, 0));
+        testView, new TextInputChannel.TextEditState("initial input from framework", 0, 0, -1, -1));
     assertTrue(textInputPlugin.getEditable().toString().equals("initial input from framework"));
 
     verify(textInputChannel, times(0))
         .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
 
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("more update from the framwork", 1, 1));
+        testView,
+        new TextInputChannel.TextEditState("more update from the framwork", 1, 1, -1, -1));
 
     assertTrue(textInputPlugin.getEditable().toString().equals("more update from the framwork"));
     verify(textInputChannel, times(0))
@@ -186,12 +187,12 @@ public class TextInputPluginTest {
             null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0));
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
     // Move the cursor.
     assertEquals(1, testImm.getRestartCount(testView));
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0));
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
     // Verify that we haven't restarted the input.
     assertEquals(1, testImm.getRestartCount(testView));
@@ -225,13 +226,13 @@ public class TextInputPluginTest {
     // changed text, we should
     // always set the Editable contents.
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("hello", 0, 0));
+        testView, new TextInputChannel.TextEditState("hello", 0, 0, -1, -1));
     assertEquals(1, testImm.getRestartCount(testView));
     assertTrue(textInputPlugin.getEditable().toString().equals("hello"));
 
     // No pending restart, set Editable contents anyways.
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("Shibuyawoo", 0, 0));
+        testView, new TextInputChannel.TextEditState("Shibuyawoo", 0, 0, -1, -1));
     assertEquals(1, testImm.getRestartCount(testView));
     assertTrue(textInputPlugin.getEditable().toString().equals("Shibuyawoo"));
   }
@@ -272,12 +273,12 @@ public class TextInputPluginTest {
             null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0));
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
     // Move the cursor.
     assertEquals(1, testImm.getRestartCount(testView));
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0));
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
     // Verify that we've restarted the input.
     assertEquals(2, testImm.getRestartCount(testView));
@@ -315,12 +316,12 @@ public class TextInputPluginTest {
             null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0));
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
     // Move the cursor.
     assertEquals(1, testImm.getRestartCount(testView));
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0));
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
     // Verify that we've restarted the input.
     assertEquals(1, testImm.getRestartCount(testView));
@@ -351,7 +352,7 @@ public class TextInputPluginTest {
             null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0));
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
     assertEquals(1, testImm.getRestartCount(testView));
   }
 
@@ -393,7 +394,7 @@ public class TextInputPluginTest {
             null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0));
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
@@ -465,17 +466,16 @@ public class TextInputPluginTest {
             null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0));
+        testView, new TextInputChannel.TextEditState("text", 0, 0, -1, -1));
     InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
+    connection.requestCursorUpdates(
+        InputConnection.CURSOR_UPDATE_MONITOR | InputConnection.CURSOR_UPDATE_IMMEDIATE);
 
     connection.finishComposingText();
 
-    if (Build.VERSION.SDK_INT >= 21) {
-      CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
-      builder.setComposingText(-1, "");
-      CursorAnchorInfo anchorInfo = builder.build();
-      assertEquals(testImm.getLastCursorAnchorInfo(), anchorInfo);
-    }
+    System.out.println(testImm.getLastCursorAnchorInfo());
+    assertEquals(-1, testImm.getLastCursorAnchorInfo().getComposingTextStart());
+    assertEquals(0, testImm.getLastCursorAnchorInfo().getComposingText().length());
   }
 
   @Test
@@ -488,10 +488,12 @@ public class TextInputPluginTest {
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     final TextInputChannel.Configuration.Autofill autofill1 =
         new TextInputChannel.Configuration.Autofill(
-            "1", new String[] {"HINT1"}, new TextInputChannel.TextEditState("", 0, 0));
+            "1", new String[] {"HINT1"}, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
     final TextInputChannel.Configuration.Autofill autofill2 =
         new TextInputChannel.Configuration.Autofill(
-            "2", new String[] {"HINT2", "EXTRA"}, new TextInputChannel.TextEditState("", 0, 0));
+            "2",
+            new String[] {"HINT2", "EXTRA"},
+            new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
     final TextInputChannel.Configuration config1 =
         new TextInputChannel.Configuration(
@@ -561,7 +563,7 @@ public class TextInputPluginTest {
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     final TextInputChannel.Configuration.Autofill autofill =
         new TextInputChannel.Configuration.Autofill(
-            "1", new String[] {"HINT1"}, new TextInputChannel.TextEditState("", 0, 0));
+            "1", new String[] {"HINT1"}, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
     // Autofill should still work without AutofillGroup.
     textInputPlugin.setTextInputClient(

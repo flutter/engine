@@ -686,7 +686,12 @@ public class TextInputChannel {
     public final int composingStart;
     public final int composingEnd;
 
-    public TextEditState(@NonNull String text, int selectionStart, int selectionEnd, int composingStart, int composingEnd) {
+    public TextEditState(
+        @NonNull String text,
+        int selectionStart,
+        int selectionEnd,
+        int composingStart,
+        int composingEnd) {
       this.text = text;
       this.selectionStart = selectionStart;
       this.selectionEnd = selectionEnd;
