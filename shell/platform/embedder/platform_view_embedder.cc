@@ -74,6 +74,7 @@ std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
     FML_LOG(ERROR) << "Embedder surface was null.";
     return nullptr;
   }
+  printf("\nCreateRenderingSurface\n");
   return embedder_surface_->CreateGPUSurface();
 }
 

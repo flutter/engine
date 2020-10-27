@@ -40,6 +40,7 @@
 }
 
 - (void)reshape {
+  NSLog(@"reshape");
   [super reshape];
   [_reshapeListener viewDidReshape:self];
 }
@@ -49,6 +50,7 @@
 }
 
 - (void)viewDidChangeBackingProperties {
+  NSLog(@"\nviewDidChangeBackingProperties\n");
   [super viewDidChangeBackingProperties];
   [_reshapeListener viewDidReshape:self];
 }

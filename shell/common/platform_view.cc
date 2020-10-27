@@ -61,6 +61,7 @@ void PlatformView::SetViewportMetrics(const ViewportMetrics& metrics) {
 }
 
 void PlatformView::NotifyCreated() {
+  printf("\nNotifyCreated\n");
   std::unique_ptr<Surface> surface;
 
   // Threading: We want to use the platform view on the non-platform thread.

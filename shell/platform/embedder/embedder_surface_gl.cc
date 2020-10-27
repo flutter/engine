@@ -46,6 +46,7 @@ bool EmbedderSurfaceGL::GLContextClearCurrent() {
 
 // |GPUSurfaceGLDelegate|
 bool EmbedderSurfaceGL::GLContextPresent(uint32_t fbo_id) {
+  printf("\nGLContextPresent\n");
   return gl_dispatch_table_.gl_present_callback(fbo_id);
 }
 
@@ -82,6 +83,7 @@ EmbedderSurfaceGL::GLProcResolver EmbedderSurfaceGL::GetGLProcResolver() const {
 
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
+  printf("\nCreateGPUSurface\n");
   const bool render_to_surface = !external_view_embedder_;
   return std::make_unique<GPUSurfaceGL>(this,  // GPU surface GL delegate
                                         render_to_surface  // render to surface

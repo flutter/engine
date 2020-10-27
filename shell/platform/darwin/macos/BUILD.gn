@@ -52,6 +52,9 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterExternalTextureGL.h",
     "framework/Source/FlutterExternalTextureGL.mm",
+    "framework/Source/FlutterViewController_Internal.h",
+    "framework/Source/FlutterMacOSCompositor.h",
+    "framework/Source/FlutterMacOSCompositor.mm",
     "framework/Source/FlutterMouseCursorPlugin.h",
     "framework/Source/FlutterMouseCursorPlugin.mm",
     "framework/Source/FlutterTextInputModel.h",
@@ -70,6 +73,8 @@ source_set("flutter_framework_source") {
     "//flutter/shell/platform/common/cpp:common_cpp_switches",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//third_party/skia",
+    "//flutter/fml/",
   ]
 
   public_configs = [ "//flutter:config" ]

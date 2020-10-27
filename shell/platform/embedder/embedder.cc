@@ -174,8 +174,10 @@ InferOpenGLPlatformViewCreationCallback(
                      present_with_info = config->open_gl.present_with_info,
                      user_data](uint32_t fbo_id) -> bool {
     if (present) {
+      printf("\npresent\n");
       return present(user_data);
     } else {
+      printf("\npresent_with_info\n");
       FlutterPresentInfo present_info = {};
       present_info.struct_size = sizeof(FlutterPresentInfo);
       present_info.fbo_id = fbo_id;
@@ -343,6 +345,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterOpenGLTexture* texture) {
+    printf("\nMakeSkSurfaceFromBackingStore\n");
 #ifdef SHELL_ENABLE_GL
   GrGLTextureInfo texture_info;
   texture_info.fTarget = texture->target;
@@ -386,6 +389,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterOpenGLFramebuffer* framebuffer) {
+    printf("\nMakeSkSurfaceFromBackingStore\n");
 #ifdef SHELL_ENABLE_GL
   GrGLFramebufferInfo framebuffer_info = {};
   framebuffer_info.fFormat = framebuffer->target;
@@ -1012,6 +1016,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                               "Compositor arguments were invalid.");
   }
 
+  printf("\nInferExternalViewEmbedderFromArgs\n");
+
   flutter::PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table =
       {
           update_semantics_nodes_callback,            //
@@ -1045,6 +1051,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
     if (SAFE_ACCESS(open_gl_config, gl_external_texture_frame_callback,
                     nullptr) != nullptr) {
+      printf("\nexternal_texture_callback\n");
       external_texture_callback =
           [ptr = open_gl_config->gl_external_texture_frame_callback, user_data](
               int64_t texture_identifier, GrDirectContext* context,

@@ -520,6 +520,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 
 static sk_sp<SkSurface> CreateSnapshotSurface(GrDirectContext* surface_context,
                                               const SkISize& size) {
+  printf("\nCreateSnapshotSurface\n");
   const auto image_info = SkImageInfo::MakeN32Premul(
       size.width(), size.height(), SkColorSpace::MakeSRGB());
   if (surface_context) {
