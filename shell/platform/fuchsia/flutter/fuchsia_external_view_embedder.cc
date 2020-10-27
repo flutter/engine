@@ -47,6 +47,12 @@ FuchsiaExternalViewEmbedder::FuchsiaExternalViewEmbedder(
   metrics_node_.AddChild(root_node_);
   root_node_.SetLabel("Flutter::LayerTree");
 
+  // Set up the input interceptor at the top of the scene, if applicable.
+  if (intercept_all_input_) {
+    input_interceptor_.emplace(session_.get());
+    metrics_node_.AddChild(input_interceptor_->node());
+  }
+
   session_.Present();
 }
 
@@ -118,14 +124,12 @@ void FuchsiaExternalViewEmbedder::BeginFrame(
   frame_composition_order_.push_back(kRootLayerId);
 
   // Set up the input interceptor at the top of the scene, if applicable.
-  if (intercept_all_input_) {
+  if (input_interceptor_.has_value()) {
     // TODO: Don't hardcode elevation.
     const float kMaximumElevation = -100.f;
-    input_interceptor_.emplace(session_.get());
     input_interceptor_->UpdateDimensions(session_.get(), frame_size.width(),
                                          frame_size.height(),
                                          kMaximumElevation);
-    metrics_node_.AddChild(input_interceptor_->node());
   }
 }
 

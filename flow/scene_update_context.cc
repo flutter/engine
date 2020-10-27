@@ -320,12 +320,12 @@ SceneUpdateContext::Frame::Frame(std::shared_ptr<SceneUpdateContext> context,
   // 1, which does not cause visual problems in practice.
   opacity_node_.SetOpacity(std::min(kOneMinusEpsilon, opacity_ / 255.0f));
 
-  if (context.intercept_all_input_) {
-    context.input_interceptor_.emplace(context.session_.get());
-    context.input_interceptor_->UpdateDimensions(
-        context.session_.get(), rrect.width(), rrect.height(),
+  if (context->intercept_all_input_) {
+    context->input_interceptor_.emplace(context->session_.get());
+    context->input_interceptor_->UpdateDimensions(
+        context->session_.get(), rrect.width(), rrect.height(),
         -(local_elevation + kScenicZElevationBetweenLayers * 0.5f));
-    entity_node().AddChild(context.input_interceptor_->node());
+    entity_node().AddChild(context->input_interceptor_->node());
   }
 }
 
