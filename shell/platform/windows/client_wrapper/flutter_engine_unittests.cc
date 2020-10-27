@@ -22,6 +22,7 @@ class TestFlutterWindowsApi : public testing::StubFlutterWindowsApi {
     create_called_ = true;
 
     // dart_entrypoint_argv is only guaranteed to exist until this method returns, so copy it here for unit test validation
+    dart_entrypoint_argv.clear();
     for (int i = 0; i < engine_properties.dart_entrypoint_argc; i++) {
       dart_entrypoint_arguments_.push_back(std::string(engine_properties.dart_entrypoint_argv[i]));
     }
@@ -130,20 +131,19 @@ TEST(FlutterEngineTest, GetMessenger) {
 }
 
 TEST(FlutterEngineTest, DartEntrypointArgs) {
-  DartProject project(L"data");
-  std::vector<std::string> arguments(2);
-  arguments[0] = "one";
-  arguments[1] = "two";
-  project.set_dart_entrypoint_arguments(arguments);
   testing::ScopedStubFlutterWindowsApi scoped_api_stub(
       std::make_unique<TestFlutterWindowsApi>());
   auto test_api = static_cast<TestFlutterWindowsApi*>(scoped_api_stub.stub());
 
+  DartProject project(L"data");
+  std::vector<std::string> arguments = { "one", "two" };
+  project.set_dart_entrypoint_arguments(arguments);
+
   FlutterEngine engine(project);
   const std::vector<std::string>& arguments_ref = test_api->dart_entrypoint_arguments();
+  ASSERT_EQ(2, arguments_ref.size());
   EXPECT_TRUE(arguments[0] == arguments_ref[0]);
   EXPECT_TRUE(arguments[1] == arguments_ref[1]);
-  EXPECT_EQ(2, arguments_ref.size());
 }
 
 }  // namespace flutter
