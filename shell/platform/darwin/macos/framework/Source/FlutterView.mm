@@ -49,6 +49,7 @@
 }
 
 - (void)viewDidChangeBackingProperties {
+  printf("\nviewDidChangeBackingProperties\n");
   [super viewDidChangeBackingProperties];
   [_reshapeListener viewDidReshape:self];
 }

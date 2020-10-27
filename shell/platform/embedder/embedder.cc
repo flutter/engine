@@ -1007,6 +1007,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   auto external_view_embedder_result =
       InferExternalViewEmbedderFromArgs(SAFE_ACCESS(args, compositor, nullptr));
+  printf("\nInferExternalViewEmbedderFromArgs\n");
   if (external_view_embedder_result.second) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments,
                               "Compositor arguments were invalid.");

@@ -13,6 +13,10 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
+// Testing FlutterMacOSCompositor.
+#include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSCompositor.h"
+
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
  * the returned struct.
@@ -280,6 +284,51 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   flutterArguments.dart_entrypoint_argc = dartEntrypointArgs.size();
   flutterArguments.dart_entrypoint_argv = dartEntrypointArgs.data();
 
+  // Test FlutterMacOSCompositor.
+  [_mainOpenGLContext makeCurrentContext];
+
+  auto interface = GrGLMakeNativeInterface();
+  GrContextOptions options;
+  auto context = GrDirectContext::MakeGL(GrGLMakeNativeInterface(), options);
+
+  flutter::FlutterMacOSCompositor* mc = new flutter::FlutterMacOSCompositor(SkISize::Make(10, 10), context, _viewController);
+
+  FlutterCompositor fc = {};
+  fc.struct_size = sizeof(FlutterCompositor);
+  fc.user_data = mc;
+
+  fc.create_backing_store_callback = 
+    [](const FlutterBackingStoreConfig* config,  //
+        FlutterBackingStore* backing_store_out,   //
+        void* user_data                           //
+    ) {
+        printf("\nCREATE BACKING STORE\n");
+        return reinterpret_cast<flutter::FlutterMacOSCompositor*>(user_data)
+          ->CreateBackingStore(config, backing_store_out);
+  };
+
+  fc.collect_backing_store_callback = 
+    [](const FlutterBackingStore* backing_store,  //
+        void* user_data                            //
+    ) {
+        printf("\nCOLLECT BACKING STORE\n");
+        return reinterpret_cast<flutter::FlutterMacOSCompositor*>(user_data)
+          ->CollectBackingStore(backing_store);
+    };
+
+  fc.present_layers_callback = 
+    [](const FlutterLayer** layers,  //
+        size_t layers_count,          //
+        void* user_data               //
+      ) {
+        printf("\nPRESENT LAYERS\n");
+        return reinterpret_cast<flutter::FlutterMacOSCompositor*>(user_data)
+          ->Present(layers, layers_count);
+  };
+
+  printf("%p", &fc);
+  flutterArguments.compositor = &fc;
+
   static size_t sTaskRunnerIdentifiers = 0;
   const FlutterTaskRunnerDescription cocoa_task_runner_description = {
       .struct_size = sizeof(FlutterTaskRunnerDescription),
@@ -414,10 +463,12 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (void)updateWindowMetrics {
+  printf("\nupdateWindowMetrics\n");
   if (!_engine) {
     return;
   }
   NSView* view = _viewController.view;
+
   CGRect scaledBounds = [view convertRectToBacking:view.bounds];
   CGSize scaledSize = scaledBounds.size;
   double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
