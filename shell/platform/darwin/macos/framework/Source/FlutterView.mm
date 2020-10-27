@@ -54,6 +54,7 @@
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
 
+  [_surfaceManager setLayerContent];
   [_surfaceManager swapBuffers];
 
   [CATransaction commit];
