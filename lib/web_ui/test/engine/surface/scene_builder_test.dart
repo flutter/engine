@@ -27,7 +27,7 @@ void testMain() {
     await webOnlyInitializeEngine();
   });
 
-  group('SceneBuilder', () {
+ group('SceneBuilder', () {
     test('pushOffset implements surface lifecycle', () {
       testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
         return sceneBuilder.pushOffset(10, 20, oldLayer: oldLayer);
@@ -524,6 +524,39 @@ void testMain() {
     await testCase('bcde', 'remove as end', deletions: 1);
     await testCase('be', 'remove in the middle', deletions: 2);
     await testCase('', 'remove all', deletions: 2);
+  });
+
+  test('Canvas should allocate fewer pixels if scaled', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture picture1 = _drawPicture();
+    EngineLayer oldLayer = builder.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+    );
+    builder.addPicture(Offset.zero, picture1);
+    builder.pop();
+
+    html.HtmlElement content = builder.build().webOnlyRootElement;
+    html.CanvasElement canvas = content.querySelector('canvas');
+    final int unscaledWidth = canvas.width;
+    final int unscaledHeight = canvas.height;
+
+    // Force update to scene which will utilize reuse code path.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    builder2.pushOffset(0, 0);
+    builder2.pushTransform(Matrix4.identity().scaled(0.5, 0.5).toFloat64());
+    builder2.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+    );
+    builder2.addPicture(Offset.zero, picture1);
+    builder2.pop();
+    builder2.pop();
+    builder2.pop();
+
+    html.HtmlElement contentAfterScale = builder2.build().webOnlyRootElement;
+    html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas');
+    // Although we are drawing same picture, due to scaling the new canvas
+    // should have fewer pixels.
+    expect(canvas2.width < unscaledWidth, true);
   });
 }
 
