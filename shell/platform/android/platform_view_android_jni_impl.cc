@@ -1412,7 +1412,6 @@ double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
 
 bool PlatformViewAndroidJNIImpl::FlutterViewDownloadDynamicFeature(
     int loading_unit_id) {
-  FML_LOG(ERROR) << "PLFVJNIIMPL cALLING JNI";
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);

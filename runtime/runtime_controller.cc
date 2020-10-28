@@ -448,10 +448,12 @@ void RuntimeController::CompleteDartLoadLibrary(
     }
   }
   if (handle == nullptr) {
-    FML_LOG(ERROR) << "No libs Found for SearchPaths:";
-    for (std::string paths : searchPaths) {
-      FML_LOG(ERROR) << "    " << paths;
-    }
+    // FML_LOG(ERROR) << "No libs Found for SearchPaths:";
+    // for (std::string paths : searchPaths) {
+    //   FML_LOG(ERROR) << "    " << paths;
+    // }
+    root_isolate_.lock()->LoadLoadingUnitFailure(
+        loading_unit_id, "No lib .so found for provided search paths.", true);
     return;
   }
 
@@ -464,8 +466,10 @@ void RuntimeController::CompleteDartLoadLibrary(
     isolate_data = static_cast<uint8_t*>(
         ::dlsym(handle, underscore_symbol_name.str().c_str()));
     if (isolate_data == nullptr) {
-      FML_LOG(ERROR) << "Could not resolve symbol in library: "
-                     << DartSnapshot::kIsolateDataSymbol;
+      // FML_LOG(ERROR) << "Could not resolve symbol in library: "
+      //                << DartSnapshot::kIsolateDataSymbol;
+      root_isolate_.lock()->LoadLoadingUnitFailure(
+          loading_unit_id, "Could not resolve data symbol in library", true);
       return;
     }
   }
@@ -478,8 +482,11 @@ void RuntimeController::CompleteDartLoadLibrary(
     isolate_instructions = static_cast<uint8_t*>(
         ::dlsym(handle, underscore_symbol_name.str().c_str()));
     if (isolate_data == nullptr) {
-      FML_LOG(ERROR) << "Could not resolve symbol in library: "
-                     << DartSnapshot::kIsolateInstructionsSymbol;
+      // FML_LOG(ERROR) << "Could not resolve symbol in library: "
+      //                << DartSnapshot::kIsolateInstructionsSymbol;
+      root_isolate_.lock()->LoadLoadingUnitFailure(
+          loading_unit_id, "Could not resolve instructions symbol in library",
+          true);
       return;
     }
   }
@@ -489,7 +496,6 @@ void RuntimeController::CompleteDartLoadLibrary(
 }
 
 Dart_Handle RuntimeController::OnDartLoadLibrary(intptr_t loading_unit_id) {
-  FML_LOG(ERROR) << "RUNTIME CONTroLLER OnDartLoadLibrary";
   return client_.OnDartLoadLibrary(loading_unit_id);
 }
 

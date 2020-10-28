@@ -112,7 +112,6 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   }
 
   public void downloadFeature(String moduleName, int loadingUnitId) {
-    Log.e(TAG, "DOWNLOADING " + moduleName);
     if (moduleName == null) {
       Log.e(TAG, "Dynamic feature module name was null.");
       return;
@@ -208,6 +207,13 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
         soPath = file.getAbsolutePath();
       }
     }
+
+    flutterJNI.loadDartLibrary(
+        loadingUnitId,
+        aotSharedLibraryName,
+        apkPaths.toArray(new String[apkPaths.size()]),
+        abi,
+        soPath);
   }
 
   public void uninstallFeature(String moduleName, int loadingUnitId) {

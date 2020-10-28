@@ -356,6 +356,17 @@ bool DartIsolate::LoadLoadingUnit(intptr_t loading_unit_id,
   return true;
 }
 
+void DartIsolate::LoadLoadingUnitFailure(intptr_t loading_unit_id,
+                                         const std::string error_message,
+                                         bool transient) {
+  tonic::DartState::Scope scope(this);
+  Dart_Handle result = Dart_DeferredLoadCompleteError(
+      loading_unit_id, error_message.c_str(), transient);
+  if (Dart_IsApiError(result)) {
+    FML_LOG(ERROR) << "Dart error: " << Dart_GetError(result);
+  }
+}
+
 void DartIsolate::SetMessageHandlingTaskRunner(
     fml::RefPtr<fml::TaskRunner> runner) {
   if (!IsRootIsolate() || !runner) {

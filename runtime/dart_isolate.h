@@ -389,6 +389,10 @@ class DartIsolate : public UIDartState {
                        const uint8_t* snapshot_data,
                        const uint8_t* snapshot_instructions);
 
+  void LoadLoadingUnitFailure(intptr_t loading_unit_id,
+                              const std::string error_message,
+                              bool transient);
+
  private:
   friend class IsolateConfiguration;
   class AutoFireClosure {
