@@ -305,7 +305,6 @@ public class PlatformPlugin {
       return null;
     } catch (FileNotFoundException e) {
       return null;
->>>>>>> b2ace0ccc (SecurityException: Permission Denial (#21290))
     }
 
     return null;
