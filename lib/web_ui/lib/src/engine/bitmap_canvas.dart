@@ -37,6 +37,8 @@ class BitmapCanvas extends EngineCanvas {
 
   final _CanvasPool _canvasPool;
 
+  html.CanvasRenderingContext2D get context => _canvasPool.context;
+
   /// The size of the paint [bounds].
   ui.Size get size => _bounds.size;
 
@@ -771,70 +773,20 @@ class BitmapCanvas extends EngineCanvas {
     _childOverdraw = true;
   }
 
-  void _drawTextLine(
-    ParagraphGeometricStyle style,
-    EngineLineMetrics line,
-    double x,
-    double y,
-  ) {
-    html.CanvasRenderingContext2D ctx = _canvasPool.context;
-    x += line.left;
-    final double? letterSpacing = style.letterSpacing;
-    if (letterSpacing == null || letterSpacing == 0.0) {
-      ctx.fillText(line.displayText!, x, y);
-    } else {
-      // When letter-spacing is set, we go through a more expensive code path
-      // that renders each character separately with the correct spacing
-      // between them.
-      //
-      // We are drawing letter spacing like the web does it, by adding the
-      // spacing after each letter. This is different from Flutter which puts
-      // the spacing around each letter i.e. for a 10px letter spacing, Flutter
-      // would put 5px before each letter and 5px after it, but on the web, we
-      // put no spacing before the letter and 10px after it. This is how the DOM
-      // does it.
-      final int len = line.displayText!.length;
-      for (int i = 0; i < len; i++) {
-        final String char = line.displayText![i];
-        ctx.fillText(char, x, y);
-        x += letterSpacing + ctx.measureText(char).width!;
-      }
+  void setFontFromParagraphStyle(ParagraphGeometricStyle style) {
+    if (style != _cachedLastStyle) {
+      html.CanvasRenderingContext2D ctx = _canvasPool.context;
+      ctx.font = style.cssFontString;
+      _cachedLastStyle = style;
     }
   }
 
   @override
   void drawParagraph(EngineParagraph paragraph, ui.Offset offset) {
-    assert(paragraph._isLaidOut);
-    final ParagraphGeometricStyle style = paragraph._geometricStyle;
+    assert(paragraph.isLaidOut);
 
-    if (paragraph._drawOnCanvas && _childOverdraw == false) {
-      // !Do not move this assignment above this if clause since, accessing
-      // context will generate extra <canvas> tags.
-      final List<EngineLineMetrics> lines =
-          paragraph._measurementResult!.lines!;
-
-      final SurfacePaintData? backgroundPaint =
-          paragraph._background?.paintData;
-      if (backgroundPaint != null) {
-        final ui.Rect rect = ui.Rect.fromLTWH(
-            offset.dx, offset.dy, paragraph.width, paragraph.height);
-        drawRect(rect, backgroundPaint);
-      }
-
-      if (style != _cachedLastStyle) {
-        html.CanvasRenderingContext2D ctx = _canvasPool.context;
-        ctx.font = style.cssFontString;
-        _cachedLastStyle = style;
-      }
-      _setUpPaint(paragraph._paint!.paintData, null);
-      double y = offset.dy + paragraph.alphabeticBaseline;
-      final int len = lines.length;
-      for (int i = 0; i < len; i++) {
-        _drawTextLine(style, lines[i], offset.dx, y);
-        y += paragraph._lineHeight;
-      }
-      _tearDownPaint();
-
+    if (paragraph.drawOnCanvas && _childOverdraw == false) {
+      paragraph.paint(this, offset);
       return;
     }
 
