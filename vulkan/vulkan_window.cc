@@ -18,30 +18,22 @@
 
 namespace vulkan {
 
-VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
-                           std::unique_ptr<VulkanNativeSurface> native_surface,
-                           bool render_to_surface)
-    : valid_(false), vk(std::move(proc_table)) {
-  if (!vk || !vk->HasAcquiredMandatoryProcAddresses()) {
+VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> vk,
+                           std::optional<std::string> surface_extension)
+    : valid_(false), vk_(std::move(vk)) {
+  if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
     FML_DLOG(INFO) << "Proc table has not acquired mandatory proc addresses.";
     return;
   }
 
-  if (native_surface == nullptr || !native_surface->IsValid()) {
-    FML_DLOG(INFO) << "Native surface is invalid.";
-    return;
+  std::vector<std::string> instance_extensions;
+  if (surface_extension.has_value()) {
+    instance_extensions = {VK_KHR_SURFACE_EXTENSION_NAME, *surface_extension};
   }
 
   // Create the application instance.
-
-  std::vector<std::string> extensions = {
-      VK_KHR_SURFACE_EXTENSION_NAME,      // parent extension
-      native_surface->GetExtensionName()  // child extension
-  };
-
-  application_ = std::make_unique<VulkanApplication>(*vk, "Flutter",
-                                                     std::move(extensions));
-
+  application_ = std::make_unique<VulkanApplication>(
+      *vk_, "Flutter", std::move(instance_extensions));
   if (!application_->IsValid() || !vk->AreInstanceProcsSetup()) {
     // Make certain the application instance was created and it setup the
     // instance proc table entries.
@@ -50,9 +42,7 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
   }
 
   // Create the device.
-
   logical_device_ = application_->AcquireFirstCompatibleLogicalDevice();
-
   if (logical_device_ == nullptr || !logical_device_->IsValid() ||
       !vk->AreDeviceProcsSetup()) {
     // Make certain the device was created and it setup the device proc table
@@ -61,36 +51,27 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
     return;
   }
 
-  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
-  // external view embedder may want to render to the root surface.
-  if (!render_to_surface) {
-    return;
-  }
-
-  // Create the logical surface from the native platform surface.
-  surface_ = std::make_unique<VulkanSurface>(*vk, *application_,
-                                             std::move(native_surface));
-
-  if (!surface_->IsValid()) {
-    FML_DLOG(INFO) << "Vulkan surface is invalid.";
-    return;
-  }
-
   // Create the Skia GrDirectContext.
-
   if (!CreateSkiaGrContext()) {
     FML_DLOG(INFO) << "Could not create Skia context.";
     return;
   }
 
-  // Create the swapchain.
+  valid_ = true;
 
+  // Create the logical surface from the native platform surface.
+  surface_ = std::make_unique<VulkanSurface>(*vk, *application_,
+                                             std::move(native_surface));
+  if (!surface_->IsValid()) {
+    FML_DLOG(INFO) << "Vulkan surface is invalid.";
+    return;
+  }
+
+  // Create the swapchain.
   if (!RecreateSwapchain()) {
     FML_DLOG(INFO) << "Could not setup the swapchain initially.";
     return;
   }
-
-  valid_ = true;
 }
 
 VulkanWindow::~VulkanWindow() = default;

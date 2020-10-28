@@ -6,6 +6,8 @@
 #define FLUTTER_VULKAN_VULKAN_WINDOW_H_
 
 #include <memory>
+#include <optional>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -31,9 +33,8 @@ class VulkanBackbuffer;
 
 class VulkanWindow {
  public:
-  VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
-               std::unique_ptr<VulkanNativeSurface> native_surface,
-               bool render_to_surface);
+  VulkanWindow(fml::RefPtr<VulkanProcTable> vk,
+               std::optional<std::string> surface_extension);
 
   ~VulkanWindow();
 
@@ -47,11 +48,10 @@ class VulkanWindow {
 
  private:
   bool valid_;
-  fml::RefPtr<VulkanProcTable> vk;
-  std::unique_ptr<VulkanApplication> application_;
-  std::unique_ptr<VulkanDevice> logical_device_;
-  std::unique_ptr<VulkanSurface> surface_;
-  std::unique_ptr<VulkanSwapchain> swapchain_;
+  fml::RefPtr<VulkanProcTable> vk_;
+  std::shared_ptr<VulkanApplication> application_;
+  std::optional<VulkanSurface> surface_;
+  std::optional<VulkanSwapchain> swapchain_;
   sk_sp<GrDirectContext> skia_gr_context_;
 
   bool CreateSkiaGrContext();
