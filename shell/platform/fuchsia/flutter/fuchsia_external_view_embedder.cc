@@ -180,6 +180,7 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
     const float inv_dpr = 1.0f / frame_dpr_;
     root_node_.SetScale(inv_dpr, inv_dpr, 1.0f);
 
+    bool first_layer = true;
     for (const auto& layer_id : frame_composition_order_) {
       const auto& layer = frame_layers_.find(layer_id);
       FML_DCHECK(layer != frame_layers_.end());
@@ -340,13 +341,17 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
                                        SK_AlphaOPAQUE, SK_AlphaOPAQUE - 1);
         scenic_layer.material.SetTexture(*surface_image);
 
-        // Set the shape node to capture all input. Any unwanted input will be
-        // reinjected.
-        // TODO(): Reverse these properties when use of the full gesture
-        // disambiguation protocol is activated.
-        scenic_layer.shape_node.SetHitTestBehavior(
-            fuchsia::ui::gfx::HitTestBehavior::kDefault);
-        scenic_layer.shape_node.SetSemanticVisibility(false);
+        // Only the first (i.e. the bottom-most) layer should receive input.
+        // TODO: Workaround for invisible overlays stealing input. Remove when
+        // the underlying bug is fixed.
+        if (first_layer) {
+          scenic_layer.shape_node.SetHitTestBehavior(
+              fuchsia::ui::gfx::HitTestBehavior::kDefault);
+        } else {
+          scenic_layer.shape_node.SetHitTestBehavior(
+              fuchsia::ui::gfx::HitTestBehavior::kSuppress);
+        }
+        first_layer = false;
 
         // Attach the ScenicLayer to the main scene graph.
         root_node_.AddChild(scenic_layer.shape_node);
