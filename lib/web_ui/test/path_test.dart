@@ -548,7 +548,7 @@ void testMain() {
       Rect bounds = path2.pathRef.getBounds();
       SurfacePath transformedPath = path2.transform(
           Matrix4.identity().scaled(0.5, 0.5).toFloat64());
-      expect(bounds != transformedPath.pathRef.getBounds(), isTrue);
+      expect(transformedPath.pathRef.getBounds(), isNot(bounds));
     });
   });
 }
