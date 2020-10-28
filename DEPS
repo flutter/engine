@@ -387,7 +387,13 @@ deps = {
    Var('swiftshader_git') + '/SwiftShader.git' + '@' + '5d1e8540407c138f47028d64684f3da599430aa4',
 
    'src/third_party/angle':
-   Var('github_git') + '/google/angle.git' + '@' + 'f4e6ae915edaca2dd3b0efc555c1dbbb6b8abac4',
+   Var('github_git') + '/google/angle.git' + '@' + '5d0458fa5c2d2e8f35b58e345a0455c8d38cc13a',
+
+   'src/third_party/angle/third_party/vulkan-headers/src':
+   Var('fuchsia_git') + '/third_party/Vulkan-Headers.git' + '@' + '5de4e8fab88ef0bd6994d9ddbcc864e3179b9e79',
+
+   'src/third_party/abseil-cpp':
+   Var('chromium_git') + '/chromium/src/third_party/abseil-cpp.git' + '@' + 'd24a1910b91c3d002685e227bc9978bfb88bfebd',
 
   'src/third_party/pkg/when':
    Var('dart_git') + '/when.git' + '@' + '0.2.0',
