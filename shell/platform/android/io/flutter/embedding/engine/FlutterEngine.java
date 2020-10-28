@@ -294,7 +294,6 @@ public class FlutterEngine {
     this.localizationPlugin = new LocalizationPlugin(context, localizationChannel);
 
     this.flutterJNI = flutterJNI;
-    dynamicFeatureManager = new PlayStoreDynamicFeatureManager(context, flutterJNI);
     if (flutterLoader == null) {
       flutterLoader = FlutterInjector.instance().flutterLoader();
     }
@@ -304,8 +303,11 @@ public class FlutterEngine {
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
+
+    dynamicFeatureManager = new PlayStoreDynamicFeatureManager(context, flutterJNI);
     flutterJNI.setDynamicFeatureManager(dynamicFeatureManager);
     flutterJNI.setDynamicFeatureContext(context);
+
     attachToJni();
 
     // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if

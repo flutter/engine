@@ -4,19 +4,19 @@
 
 package io.flutter.embedding.engine.dynamicfeatures;
 
-// Flutter dynamic feature support is still in early developer preview, and should
+// Flutter dynamic feature support is still in early developer preview and should
 // not be used in production apps yet.
 
 /**
- * Basic interface that may be implemented to provide custom handling of dynamic features.
+ * Basic interface that handles downloading and loading of dynamic features.
  *
  * The Flutter default implementation is PlayStoreDynamicFeatureManager.
  *
  * The methods here may be called independently or in a sequence one after the other to perform
- * a full install cycle of download, extract, and load dart libs.
+ * a full install cycle of download, load assets, and load dart libs.
  *
  * A dynamic feature module is uniquely identified by a module name. Each feature module may
- * also contain one or more loading units, uniquely identified by the loading unit ID.
+ * contain one or more loading units, uniquely identified by the loading unit ID.
  */
 public interface DynamicFeatureManager {
   /**

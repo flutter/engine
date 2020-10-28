@@ -347,7 +347,7 @@ Dart_Handle PlatformViewAndroid::OnDartLoadLibrary(intptr_t loading_unit_id) {
   if (jni_facade_->FlutterViewDownloadDynamicFeature(loading_unit_id)) {
     return Dart_Null();
   }
-  return Dart_Null();  // TODO: RETURN ERROR
+  return Dart_Null();  // TODO(garyq): RETURN ERROR
 }
 
 // |PlatformView|

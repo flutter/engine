@@ -262,6 +262,17 @@ class Engine final : public RuntimeDelegate,
     ComputePlatformResolvedLocale(
         const std::vector<std::string>& supported_locale_data) = 0;
 
+    //--------------------------------------------------------------------------
+    /// @brief      Invoked when the dart VM requests that a deferred library
+    ///             be loaded. Notifies the engine that the requested loading
+    ///             unit should be downloaded and loaded.
+    ///
+    /// @param[in]  loading_unit_id  The unique id of the deferred library's
+    ///                              loading unit.
+    ///
+    /// @return     A Dart_Handle that is Dart_Null on success, and a dart error
+    ///             on failure.
+    ///
     virtual Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id) = 0;
   };
 
@@ -770,6 +781,23 @@ class Engine final : public RuntimeDelegate,
   ///
   const std::string& InitialRoute() const { return initial_route_; }
 
+  //--------------------------------------------------------------------------
+  /// @brief      Loads the dart shared library from disk and into the dart VM
+  ///             based off of the search parameters. When the dart library is
+  ///             loaded successfully, the dart future returned by the
+  ///             originating loadLibrary() call completes.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit.
+  ///
+  /// @param[in]  lib_name         The file name of the .so shared library
+  ///                              file.
+  ///
+  /// @param[in]  apkPaths         The paths of the APKs that may or may not
+  ///                              contain the lib_name file.
+  ///
+  /// @param[in]  abi              The abi of the library, eg, arm64-v8a
+  ///
   void CompleteDartLoadLibrary(intptr_t loading_unit_id,
                                std::string lib_name,
                                std::vector<std::string>& apkPaths,

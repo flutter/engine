@@ -439,7 +439,6 @@ void RuntimeController::CompleteDartLoadLibrary(
   void* handle = nullptr;
   while (handle == nullptr && !searchPaths.empty()) {
     std::string path = searchPaths.back();
-    FML_LOG(ERROR) << "Attempting to open " << path;
     handle = ::dlopen(path.c_str(), RTLD_NOW);
     searchPaths.pop_back();
     if (handle == nullptr) {
@@ -448,10 +447,6 @@ void RuntimeController::CompleteDartLoadLibrary(
     }
   }
   if (handle == nullptr) {
-    // FML_LOG(ERROR) << "No libs Found for SearchPaths:";
-    // for (std::string paths : searchPaths) {
-    //   FML_LOG(ERROR) << "    " << paths;
-    // }
     root_isolate_.lock()->LoadLoadingUnitFailure(
         loading_unit_id, "No lib .so found for provided search paths.", true);
     return;
