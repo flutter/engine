@@ -261,14 +261,14 @@ Engine::Engine(Delegate& delegate,
     }
   };
 #else
-  on_create_rasterizer = [this](flutter::Shell& shell) {
-    FML_DCHECK(surface_producer_);
-
-    WarmupSkps(
-        shell.GetDartVM()->GetConcurrentMessageLoop()->GetTaskRunner().get(),
-        shell.GetTaskRunners().GetRasterTaskRunner().get(),
-        surface_producer_.value());
-
+  on_create_rasterizer = [this, &product_config](flutter::Shell& shell) {
+    if (product_config.enable_shader_warmup()) {
+      FML_DCHECK(surface_producer_);
+      WarmupSkps(
+          shell.GetDartVM()->GetConcurrentMessageLoop()->GetTaskRunner().get(),
+          shell.GetTaskRunners().GetRasterTaskRunner().get(),
+          surface_producer_.value());
+    }
     return std::make_unique<flutter::Rasterizer>(shell);
   };
 #endif
