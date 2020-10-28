@@ -489,6 +489,7 @@ void RuntimeController::CompleteDartLoadLibrary(
 }
 
 Dart_Handle RuntimeController::OnDartLoadLibrary(intptr_t loading_unit_id) {
+  FML_LOG(ERROR) << "RUNTIME CONTroLLER OnDartLoadLibrary";
   return client_.OnDartLoadLibrary(loading_unit_id);
 }
 

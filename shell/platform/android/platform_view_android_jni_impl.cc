@@ -197,8 +197,6 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
       jAssetManager,                                   // asset manager
       fml::jni::JavaStringToString(env, jBundlePath))  // apk asset dir
   );
-  FML_LOG(ERROR) << "ASSETS DIR: "
-                 << fml::jni::JavaStringToString(env, jBundlePath);
 
   std::unique_ptr<IsolateConfiguration> isolate_configuration;
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
@@ -719,13 +717,14 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeLoadDartLibrary",
-          .signature = "(JILjava/lang/String;[Ljava/lang/String;)V",
+          .signature = "(JILjava/lang/String;[Ljava/lang/String;Ljava/lang/"
+                       "String;Ljava/lang/String;)V",
           .fnPtr = reinterpret_cast<void*>(&LoadDartLibrary),
       },
       {
           .name = "nativeUpdateAssetManager",
           .signature =
-              "(Landroid/content/res/AssetManager;Ljava/lang/String;)V",
+              "(JLandroid/content/res/AssetManager;Ljava/lang/String;)V",
           .fnPtr = reinterpret_cast<void*>(&UpdateAssetManager),
       },
       {
@@ -1413,6 +1412,7 @@ double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
 
 bool PlatformViewAndroidJNIImpl::FlutterViewDownloadDynamicFeature(
     int loading_unit_id) {
+  FML_LOG(ERROR) << "PLFVJNIIMPL cALLING JNI";
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);

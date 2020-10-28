@@ -28,8 +28,8 @@ import java.util.LinkedList;
 import java.io.File;
 
 /**
- * Flutter default implementation of DynamicFeatureManager that downloads dynamic features from the
- * Google Play store.
+ * Flutter default implementation of DynamicFeatureManager that downloads dynamic feature modules
+ * from the Google Play store.
  */
 public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   private static final String TAG = "flutter";
@@ -56,7 +56,11 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
           }
           case SplitInstallSessionStatus.INSTALLED: {
             Log.d(TAG, "Module \"" + sessionIdToName.get(state.sessionId()) + "\" (sessionId " + state.sessionId() + ") installed successfully.");
-            extractFeature(sessionIdToName.get(state.sessionId()), sessionIdToLoadingUnitId.get(state.sessionId()));
+            loadAssets(sessionIdToName.get(state.sessionId()), sessionIdToLoadingUnitId.get(state.sessionId()));
+            // We only load dart shared lib for the loading unit id requested. Other loading units (if present)
+            // in the dynamic feature module are not loaded, but can be loaded by calling again with their
+            // loading unit id.
+            loadDartLibrary(sessionIdToName.get(state.sessionId()), sessionIdToLoadingUnitId.get(state.sessionId()));
             sessionIdToName.remove(state.sessionId());
             sessionIdToLoadingUnitId.remove(state.sessionId());
             break;
@@ -108,6 +112,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   }
 
   public void downloadFeature(String moduleName, int loadingUnitId) {
+    Log.e(TAG, "DOWNLOADING " + moduleName);
     if (moduleName == null) {
       Log.e(TAG, "Dynamic feature module name was null.");
       return;
@@ -149,26 +154,19 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
         });
   }
 
-  public void extractFeature(@NonNull String moduleName, int loadingUnitId) {
+  public void loadAssets(@NonNull String moduleName, int loadingUnitId) {
     try {
       context = context.createPackageContext(context.getPackageName(), 0);
 
       AssetManager assetManager = context.getAssets();
-
       flutterJNI.updateAssetManager(
           assetManager,
           // TODO(garyq): Made the "flutter_assets" directory dynamic based off of DartEntryPoint.
           "flutter_assets");
-
-      // We only load dart shared lib for the loading unit id requested. Other loading units (if present)
-      // in the dynamic feature module are not loaded, but can be loaded by calling again with their
-      // loading unit id.
-      loadDartLibrary(moduleName, loadingUnitId);
     } catch (NameNotFoundException e) {
       Log.d(TAG, "NameNotFoundException creating context for " + moduleName);
       throw new RuntimeException(e);
     }
-    // TODO: Handle assets here.
   }
 
   public void loadDartLibrary(String moduleName, int loadingUnitId) {

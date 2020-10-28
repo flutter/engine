@@ -1023,9 +1023,10 @@ public class FlutterJNI {
   ) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeUpdateAssetManager(assetManager, assetBundlePath);
+    nativeUpdateAssetManager(nativePlatformViewId, assetManager, assetBundlePath);
   }
   private native void nativeUpdateAssetManager(
+      long nativePlatformViewId,
       @NonNull AssetManager assetManager,
       @NonNull String assetBundlePath
   );
