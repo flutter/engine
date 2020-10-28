@@ -529,9 +529,7 @@ void testMain() {
   test('Canvas should allocate fewer pixels if scaled', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     final Picture picture1 = _drawPicture();
-    EngineLayer oldLayer = builder.pushClipRect(
-      const Rect.fromLTRB(10, 10, 300, 300),
-    );
+    builder.pushClipRect(const Rect.fromLTRB(10, 10, 300, 300),);
     builder.addPicture(Offset.zero, picture1);
     builder.pop();
 
@@ -557,6 +555,7 @@ void testMain() {
     // Although we are drawing same picture, due to scaling the new canvas
     // should have fewer pixels.
     expect(canvas2.width < unscaledWidth, true);
+    expect(canvas2.height < unscaledHeight, true);
   });
 }
 

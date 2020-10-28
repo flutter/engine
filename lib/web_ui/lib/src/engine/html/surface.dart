@@ -654,7 +654,6 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
   @override
   void build() {
-    log.add('build');
     super.build();
     // Memoize length for efficiency.
     final int len = _children.length;
@@ -850,14 +849,6 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
       // Move the HTML node if necessary.
       if (oldLayer.rootElement!.parent != childContainer) {
-        assert(oldLayer != null);
-        if (childContainer == null) {
-          html.Element? elm = childContainer;
-          print(elm);
-        }
-        assert(childContainer != null);
-
-
         childContainer!.append(oldLayer.rootElement!);
       }
 
@@ -1141,11 +1132,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     return result;
   }
 
-  List<String> log = [];
-
   @override
   void retain() {
-    log.add('retain');
     super.retain();
     final int len = _children.length;
     for (int i = 0; i < len; i++) {
@@ -1155,7 +1143,6 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
   @override
   void revive() {
-    log.add('revive');
     super.revive();
     final int len = _children.length;
     for (int i = 0; i < len; i++) {
@@ -1165,7 +1152,6 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
   @override
   void discard() {
-    log.add('discard');
     super.discard();
     _discardActiveChildren(this);
   }
