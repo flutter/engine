@@ -437,6 +437,12 @@ void FlutterPlatformViewsController::Reset() {
   for (UIView* sub_view in [flutter_view subviews]) {
     [sub_view removeFromSuperview];
   }
+  // See: https://github.com/flutter/flutter/issues/69305
+  for (auto it = touch_interceptors_.begin(); it != touch_interceptors_.end(); it++) {
+    FlutterTouchInterceptingView* view = it->second.get();
+    [view removeFromSuperview];
+  }
+  touch_interceptors_.clear();
   views_.clear();
   composition_order_.clear();
   active_composition_order_.clear();
