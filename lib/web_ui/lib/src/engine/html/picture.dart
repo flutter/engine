@@ -649,9 +649,10 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
   double scaleX = ((xp * wp) - topLeftX).abs() / width;
   double scaleY = ((yp * wp) - topLeftY).abs() / height;
   double scale = math.min(scaleX, scaleY);
+  // kEpsilon guards against divide by zero below.
   if (scale < kEpsilon || scale == 1) {
     // Handle local paint bounds scaled to 0, typical when using
-    // transform animations.
+    // transform animations and nothing is drawn.
     return 1.0;
   }
   if (scale > 1) {

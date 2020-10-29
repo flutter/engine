@@ -819,13 +819,6 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
       // Move the HTML node if necessary.
       if (newChild.rootElement!.parent != childContainer) {
-        if (childContainer == null) {
-          html.Element? elm = childContainer;
-          print(elm);
-        }
-        if (newChild.rootElement == null) {
-          print(newChild);
-        }
         childContainer!.append(newChild.rootElement!);
       }
 
