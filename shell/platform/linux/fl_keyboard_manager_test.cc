@@ -25,8 +25,10 @@ static FlEngine* make_mock_engine() {
   return static_cast<FlEngine*>(g_object_ref(engine));
 }
 
-const char* expected_value = nullptr;
+static const char* expected_value = nullptr;
 
 // Test sending a letter "A";
-TEST(FlKeyEventPluginTest, SendKeyEvent) {
+TEST(FlKeyboardManagerTest, SendKeyEvent) {
+  make_mock_engine();
+  expected_value = nullptr;
 }

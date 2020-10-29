@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef KEYBOARD_MAP_H_
-#define KEYBOARD_MAP_H_
+#ifndef KEYBOARD_MAP_PRIVATE_H_
+#define KEYBOARD_MAP_PRIVATE_H_
 
 #include <gdk/gdk.h>
 
@@ -15,4 +15,4 @@ void initialize_xkb_to_physical_key(GHashTable* table);
 // Flutter's logical key code values.
 void initialize_gtk_keyval_to_logical_key(GHashTable* table);
 
-#endif  // KEYBOARD_MAP_H_
+#endif  // KEYBOARD_MAP_PRIVATE_H_

@@ -51,7 +51,6 @@ _public_headers = [
   "public/flutter_linux/fl_json_message_codec.h",
   "public/flutter_linux/fl_json_method_codec.h",
   "public/flutter_linux/fl_message_codec.h",
-  "public/flutter_linux/fl_keyboard_manager.h",
   "public/flutter_linux/fl_method_call.h",
   "public/flutter_linux/fl_method_channel.h",
   "public/flutter_linux/fl_method_codec.h",

@@ -15,7 +15,7 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
                      KEYBOARD_MANAGER,
                      GObject);
 
-FlKeyboardManager* fl_keyboard_manager_new();
+// FlKeyboardManager* fl_keyboard_manager_new();
 
 void fl_keyboard_manager_send_key_event(FlKeyboardManager* plugin,
                                         GdkEventKey* event);
