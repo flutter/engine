@@ -17,20 +17,20 @@ void skiaInstantiateImageCodec(Uint8List list, Callback<ui.Codec> callback,
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia after
 /// requesting from URI.
-Future<ui.Codec?> skiaInstantiateWebImageCodec(
+Future<ui.Codec> skiaInstantiateWebImageCodec(
     String src, WebOnlyImageCodecChunkCallback? chunkCallback) {
-  Completer<ui.Codec?> completer = Completer<ui.Codec?>();
-  chunkCallback?.call(0, 100);
+  Completer<ui.Codec> completer = Completer<ui.Codec>();
   //TODO: Switch to using MakeImageFromCanvasImageSource when animated images are supported.
-  html.HttpRequest.request(
-    src,
-    responseType: "arraybuffer",
-  ).then((html.HttpRequest response) {
-    if (response.status != 200) {
-      completer.completeError(
-          'Network image request failed with status: ${response.status}');
+  html.HttpRequest.request(src, responseType: "arraybuffer",
+      onProgress: (html.ProgressEvent event) {
+    if (event.lengthComputable) {
+      chunkCallback?.call(event.loaded!, event.total!);
     }
-    chunkCallback?.call(100, 100);
+  }).then((html.HttpRequest response) {
+    if (response.status != 200) {
+      completer.completeError(Exception(
+          'Network image request failed with status: ${response.status}'));
+    }
     final Uint8List list =
         new Uint8List.view((response.response as ByteBuffer));
     final SkAnimatedImage skAnimatedImage =
@@ -39,7 +39,7 @@ Future<ui.Codec?> skiaInstantiateWebImageCodec(
     final CkAnimatedImageCodec codec = CkAnimatedImageCodec(animatedImage);
     completer.complete(codec);
   }, onError: (dynamic error) {
-    completer.completeError(error.toString());
+    completer.completeError(error);
   });
   return completer.future;
 }
@@ -127,9 +127,9 @@ class CkAnimatedImage implements ui.Image {
       );
       bytes = _skAnimatedImage.readPixels(imageInfo, 0, 0);
     } else {
-      final SkData skData =
-          _skAnimatedImage.encodeToData(); //defaults to PNG 100%
-      // make a copy that we can return
+      // Defaults to PNG 100%.
+      final SkData skData = _skAnimatedImage.encodeToData();
+      // Make a copy that we can return.
       bytes = Uint8List.fromList(canvasKit.getSkDataBytes(skData));
     }
 
