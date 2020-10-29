@@ -8,10 +8,12 @@
 #include <algorithm>
 #include <vector>
 
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
 #import "flutter/shell/platform/embedder/embedder.h"
+#import "flutter/third_party/accessibility/accessibility_bridge.h"
 
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
@@ -176,8 +178,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   // The embedding-API-level engine object.
   FLUTTER_API_SYMBOL(FlutterEngine) _engine;
 
-  // The Accessibilty bridge
-  std::unique_ptr<flutter::AccessibilityBridge> _bridge;
+  // The private members for accessibility.
+  std::unique_ptr<ax::AccessibilityBridge> _bridge;
 
   // The project being run by this engine.
   FlutterDartProject* _project;
@@ -289,6 +291,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   flutterArguments.update_semantics_node_callback = [](const FlutterSemanticsNode* node, void* user_data) {
             FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
             [engine updateSemanticsNode:node];
+          };
+    flutterArguments.update_semantics_custom_action_callback = [](const FlutterSemanticsCustomAction* action, void* user_data) {
+            FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+            [engine updateSemanticsCustomActions:action];
           };
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
@@ -504,15 +510,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   if (!enabled && _bridge) {
     _bridge.reset(nullptr);
   } else if (enabled && !_bridge){
-    _bridge.reset(new flutter::AccessibilityBridge(self));
-    // _bridge = std::make_unique<flutter::AccessibilityBridge>(self);
+    _bridge.reset(new ax::AccessibilityBridge((void*)CFBridgingRetain(self)));
   }
   FlutterEngineUpdateSemanticsEnabled(_engine, enabled);
-}
-
-- (void)updateSemanticsNode:(const FlutterSemanticsNode*)node {
-  FML_DCHECK(_bridge);
-  _bridge->UpdateSemanticsNode(node);
 }
 
 #pragma mark - Private methods
@@ -720,6 +720,64 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 - (void)unregisterTexture:(int64_t)textureID {
   _embedderAPI.UnregisterExternalTexture(_engine, textureID);
   [_textures removeObjectForKey:@(textureID)];
+}
+
+- (void)updateSemanticsNode:(const FlutterSemanticsNode*)node {
+  FML_DCHECK(_bridge);
+  if (node->id == kFlutterSemanticsNodeIdBatchEnd) {
+    return;
+  }
+  _bridge->AddFlutterSemanticsNodeUpdate(node);
+}
+
+- (void)printTree:(NSAccessibilityElement*)element msgs:(std::vector<std::string>&)msgs level:(int)level {
+  msgs[level] += std::string([element.accessibilityRole UTF8String]) + "-";
+  if (element.isAccessibilityElement)
+    msgs[level] += "true,";
+  else
+    msgs[level] += "false,";
+  // for (id child in element.accessibilityChildren) {
+  //   NSLog(@"%@ has child %@", element, child);
+  // }
+  // NSLog(@"in print tree for level %d accessibilityValue %@, screen bound origin %@, size %@, enabled %d, accessibilityElement %d",level, element.accessibilityValue, NSStringFromPoint(element.accessibilityFrame.origin), NSStringFromSize(element.accessibilityFrame.size), element.accessibilityEnabled, element.accessibilityElement);
+  for (id child in element.accessibilityChildren) {
+    [self printTree:child msgs:msgs level:level+1];
+  }
+}
+
+- (void)updateSemanticsCustomActions:(const FlutterSemanticsCustomAction*)action {
+  FML_DCHECK(_bridge);
+  if (action->id == kFlutterSemanticsNodeIdBatchEnd) {
+    _bridge->CommitUpdates();
+    FML_DCHECK(_bridge->GetFlutterAccessibilityFromID(0));
+    NSAccessibilityElement* root = _bridge->GetFlutterAccessibilityFromID(0)->GetNativeViewAccessible();
+    // root.accessibilityParent = self.viewController.view;
+    self.viewController.view.accessibilityLabel = @"chun heng view";
+    self.viewController.view.accessibilityRole = NSAccessibilityGroupRole;
+    self.viewController.view.accessibilityChildren = @[root];
+    std::vector<std::string> msgs(10);
+    [self printTree:self.viewController.view.accessibilityChildren[0] msgs:msgs level:0];
+    for (auto msg : msgs) {
+      NSLog(@"%@", [NSString stringWithUTF8String:msg.data()]);
+    }
+  }
+  // The memory of input action does not persist in between these update calls,
+  // we need to save the value instead of the reference.
+  _bridge->AddFlutterSemanticsCustomActionUpdate(action);
+}
+
+- (NSAffineTransform*)getWindowTransform {
+    // TODO(chunhtai): we need to find a better way to get get the window transform
+  FlutterAppDelegate* appDelegate = (FlutterAppDelegate*)[NSApp delegate];
+  // NSRect rect = appDelegate.mainFlutterWindow.frame;
+  NSRect rect = [appDelegate.mainFlutterWindow contentRectForFrameRect:appDelegate.mainFlutterWindow.frame];
+  // NSRect frameRelativeToScreen = [myView.window convertRectToScreen:frameInWindow];
+  // NSLog(@"the viewController.view rect %@", self.viewController.view.window.frame);
+  NSLog(@"the appDelegate.mainFlutterWindow.frame rect %@", NSStringFromRect(appDelegate.mainFlutterWindow.frame));
+  NSLog(@"the appDelegate.mainFlutterWindow.frame contentView rect %@", NSStringFromRect([appDelegate.mainFlutterWindow contentRectForFrameRect:appDelegate.mainFlutterWindow.frame]));
+  NSAffineTransform* result = [[NSAffineTransform alloc] init];
+  [result translateXBy:rect.origin.x yBy:rect.origin.y];
+  return result;
 }
 
 #pragma mark - Task runner integration

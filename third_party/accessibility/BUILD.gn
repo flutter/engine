@@ -65,6 +65,8 @@ source_set("accessibility") {
     "ax/ax_enum_util.cc",
     "ax/ax_enum_util.h",
     "ax/ax_enums.h",
+    "ax/ax_event_generator.cc",
+    "ax/ax_event_generator.h",
     "ax/ax_event_intent.cc",
     "ax/ax_event_intent.h",
     "ax/ax_export.h",
@@ -103,6 +105,12 @@ source_set("accessibility") {
     "ax/ax_tree_update.h",
     "ax/ax_tree.cc",
     "ax/ax_tree.h",
+
+    # /
+    "accessibility_bridge.cc",
+    "accessibility_bridge.h",
+    "flutter_accessibility.cc",
+    "flutter_accessibility.h",
   ]
 
   if (is_mac) {
@@ -114,10 +122,14 @@ source_set("accessibility") {
 
   public_deps = [
     "//flutter/fml",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//third_party/skia",
   ]
 
-  public_configs = [ ":accessibility_config" ]
+  public_configs = [
+    "//flutter:config",
+    ":accessibility_config"
+  ]
 
   deps = [ "//third_party/skia" ]
 

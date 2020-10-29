@@ -33,9 +33,10 @@ class AX_EXPORT AXNode final {
   // Defines the type used for AXNode IDs.
   using AXID = int32_t;
 
+  // TODO(chunhtai): I modified this to be -1 so it can work with flutter.
   // If a node is not yet or no longer valid, its ID should have a value of
   // kInvalidAXID.
-  static constexpr AXID kInvalidAXID = 0;
+  static constexpr AXID kInvalidAXID = -1;
 
   // Interface to the tree class that owns an AXNode. We use this instead
   // of letting AXNode have a pointer to its AXTree directly so that we're

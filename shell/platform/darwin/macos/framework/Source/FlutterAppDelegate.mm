@@ -33,7 +33,7 @@
   // Update UI elements to match the application name.
   // NSLog(@"accessibility children for main %@", _mainFlutterWindow.accessibilityChildren);
   // TODO: use a less aggressive way to attach accessibility, figure out why content view is not attach to window automatically
-  _mainFlutterWindow.accessibilityChildren = @[_mainFlutterWindow.contentView];
+  // _mainFlutterWindow.accessibilityChildren = @[_mainFlutterWindow.contentView];
   // [_mainFlutterWindow accessibilityAddChildElement:_mainFlutterWindow.contentView];
 }
 

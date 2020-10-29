@@ -45,10 +45,8 @@ source_set("flutter_framework_source") {
   visibility = [ ":*" ]
 
   sources = [
-    "framework/Source/AccessibilityBridge.h",
-    "framework/Source/AccessibilityBridge.mm",
-    "framework/Source/AXPlatformNodeDelegateMac.h",
-    "framework/Source/AXPlatformNodeDelegateMac.mm",
+    "framework/Source/FlutterAccessibilityMac.h",
+    "framework/Source/FlutterAccessibilityMac.mm",
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterBackingStoreData.h",
     "framework/Source/FlutterBackingStoreData.mm",

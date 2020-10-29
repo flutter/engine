@@ -77,7 +77,7 @@ void AccessibilityBridge::FinalizeSemanticsUpdate() {
     objects_.erase(uid);
   }
   engine_.viewController.view.accessibilityChildren = @[it->second->GetNativeViewAccessible()];
-  NSAccessibilityElement* root = it->second->GetNativeViewAccessible();
+  // NSAccessibilityElement* root = it->second->GetNativeViewAccessible();
   // NSLog(@"root node: children count %d, children %@", it->second->GetChildCount(), root.accessibilityChildren);
   NSAccessibilityPostNotification(it->second->GetNativeViewAccessible(), NSAccessibilityLayoutChangedNotification);
   // std::vector<std::string> msg = {"", "", "", "", "", "","","","",""};

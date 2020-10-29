@@ -749,7 +749,7 @@ SkRect AXTree::RelativeToTreeBoundsInternal(const AXNode* node,
 
   const AXNode* original_node = node;
   while (node != nullptr) {
-    if (node->data().relative_bounds.transform.isIdentity())
+    if (!node->data().relative_bounds.transform.isIdentity())
       bounds = node->data().relative_bounds.transform.mapRect(bounds);
     // Apply any transforms and offsets for each node and then walk up to
     // its offset container. If no offset container is specified, coordinates
@@ -936,12 +936,10 @@ const std::set<AXTreeID> AXTree::GetAllChildTreeIds() const {
 }
 
 bool AXTree::Unserialize(const AXTreeUpdate& update) {
-  event_intents_ = update.event_intents;
-  event_intents_.clear();
+  // event_intents_ = update.event_intents;
   // base::ScopedClosureRunner clear_event_intents(base::BindOnce(
   //     [](std::vector<AXEventIntent>* event_intents) { event_intents->clear(); },
   //     &event_intents_));
-
   AXTreeUpdateState update_state(*this);
   const AXNode::AXID old_root_id = root_ ? root_->id() : AXNode::kInvalidAXID;
 

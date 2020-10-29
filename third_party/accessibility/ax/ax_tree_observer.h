@@ -28,7 +28,7 @@ struct AXTreeData;
 class AX_EXPORT AXTreeObserver {
  public:
   AXTreeObserver();
-  ~AXTreeObserver();
+  virtual ~AXTreeObserver();
 
   // Called before any tree modifications have occurred, notifying that a single
   // node will change its data. Its id and data will be valid, but its links to

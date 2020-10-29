@@ -22,8 +22,6 @@
  */
 @property(nonatomic, readonly, nullable) NSOpenGLContext* resourceContext;
 
-@property(nonatomic, readonly, nullable) flutter::AccessibilityBridge* accessibilityBridge;
-
 /**
  * Function pointers for interacting with the embedder.h API.
  */
@@ -39,8 +37,10 @@
  */
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event;
 
+/**
+ * Accessibility API.
+ */
 - (void)updateSemanticsEnabled:(BOOL)enabled;
-
-- (void)updateSemanticsNode:(const FlutterSemanticsNode* _Nonnull)node;
+- (NSAffineTransform* _Nonnull)getWindowTransform;
 
 @end

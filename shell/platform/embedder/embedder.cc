@@ -858,6 +858,9 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           for (const auto& value : update) {
             const auto& node = value.second;
             SkMatrix transform = node.transform.asM33();
+            for (auto child: node.childrenInTraversalOrder) {
+              FML_LOG(ERROR) << "in embedder child for " << node.id << " is " <<child;
+            }
             FlutterTransformation flutter_transform{
                 transform.get(SkMatrix::kMScaleX),
                 transform.get(SkMatrix::kMSkewX),
