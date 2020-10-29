@@ -811,7 +811,7 @@ import java.util.Set;
     /**
      * Invoked by the {@link FlutterEngine} that owns this {@code ActivityPluginBinding} when its
      * associated {@link Activity} has its {@code onCreate(Bundle)} method invoked, or its
-     * associated {@code Fragment} has its {@code onActivityCreated(Bundle)} method invoked.
+     * associated {@code Fragment} has its {@code onRestoreInstanceState(Bundle)} method invoked.
      */
     void onRestoreInstanceState(@Nullable Bundle bundle) {
       for (OnSaveInstanceStateListener listener : onSaveInstanceStateListeners) {
