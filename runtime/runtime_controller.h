@@ -95,7 +95,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///                                         code in isolate scope when the VM
   ///                                         is about to be notified that the
   ///                                         engine is going to be idle.
-  /// @param[in]  platform_data                 The window data (if exists).
+  /// @param[in]  platform_data               The window data (if exists).
   /// @param[in]  isolate_create_callback     The isolate create callback. This
   ///                                         allows callers to run native code
   ///                                         in isolate scope on the UI task
@@ -132,10 +132,41 @@ class RuntimeController : public PlatformConfigurationClient {
   ~RuntimeController() override;
 
   //----------------------------------------------------------------------------
-  /// @brief      Clone the the runtime controller. This re-creates the root
-  ///             isolate with the same snapshots and copies all window data to
-  ///             the new instance. This is usually only used in the debug
-  ///             runtime mode to support the cold-restart scenario.
+  /// @brief      Launches the isolate using the window data associated with
+  ///             this runtime controller. Before this call, the Dart isolate
+  ///             has not been initialized. On successful return, the caller can
+  ///             assume that the isolate is in the
+  ///             `DartIsolate::Phase::Running` phase.
+  ///
+  ///             This call will fail if a root isolate is already running. To
+  ///             re-create an isolate with the window data associated with this
+  ///             runtime controller, `Clone`  this runtime controller and
+  ///             Launch an isolate in that runtime controller instead.
+  ///
+  /// @param[in]  settings                 The per engine instance settings.
+  /// @param[in]  dart_entrypoint          The dart entrypoint. If
+  ///                                      `std::nullopt` or empty, `main` will
+  ///                                      be attempted.
+  /// @param[in]  dart_entrypoint_library  The dart entrypoint library. If
+  ///                                      `std::nullopt` or empty, the core
+  ///                                      library will be attempted.
+  /// @param[in]  isolate_configuration    The isolate configuration
+  ///
+  /// @return     If the isolate could be launched and guided to the
+  ///             `DartIsolate::Phase::Running` phase.
+  ///
+  [[nodiscard]] bool LaunchRootIsolate(
+      const Settings& settings,
+      std::optional<std::string> dart_entrypoint,
+      std::optional<std::string> dart_entrypoint_library,
+      std::unique_ptr<IsolateConfiguration> isolate_configuration);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Clone the the runtime controller. Launching an isolate with a
+  ///             cloned runtime controller will use the same snapshots and
+  ///             copies all window data to the new instance. This is usually
+  ///             only used in the debug runtime mode to support the
+  ///             cold-restart scenario.
   ///
   /// @return     A clone of the existing runtime controller.
   ///
@@ -146,7 +177,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             If the isolate is not running, these metrics will be saved and
   ///             flushed to the isolate when it starts.
   ///
-  /// @param[in]  metrics  The viewport metrics.
+  /// @param[in]  metrics  The window's viewport metrics.
   ///
   /// @return     If the window metrics were forwarded to the running isolate.
   ///
@@ -348,7 +379,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   /// @return     True if root isolate running, False otherwise.
   ///
-  virtual bool IsRootIsolateRunning() const;
+  virtual bool IsRootIsolateRunning();
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatch the specified platform message to running root
@@ -427,26 +458,20 @@ class RuntimeController : public PlatformConfigurationClient {
   tonic::DartErrorHandleType GetLastError();
 
   //----------------------------------------------------------------------------
-  /// @brief      Get a weak pointer to the root Dart isolate. This isolate may
-  ///             only be locked on the UI task runner. Callers use this
-  ///             accessor to transition to the root isolate to the running
-  ///             phase.
+  /// @brief      Get the service ID of the root isolate if the root isolate is
+  ///             running.
   ///
-  /// @return     The root isolate reference.
+  /// @return     The root isolate service id.
   ///
-  std::weak_ptr<DartIsolate> GetRootIsolate();
+  std::optional<std::string> GetRootIsolateServiceID() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Get the return code specified by the root isolate (if one is
   ///             present).
   ///
-  /// @bug        Change this method to return `std::optional<uint32_t>`
-  ///             instead.
+  /// @return     The root isolate return code if the isolate has specified one.
   ///
-  /// @return     The root isolate return code. The first argument in the pair
-  ///             indicates if one is specified by the root isolate.
-  ///
-  std::pair<bool, uint32_t> GetRootIsolateReturnCode();
+  std::optional<uint32_t> GetRootIsolateReturnCode();
 
  protected:
   /// Constructor for Mocks.
@@ -481,7 +506,7 @@ class RuntimeController : public PlatformConfigurationClient {
   std::function<void(int64_t)> idle_notification_callback_;
   PlatformData platform_data_;
   std::weak_ptr<DartIsolate> root_isolate_;
-  std::pair<bool, uint32_t> root_isolate_return_code_ = {false, 0};
+  std::optional<uint32_t> root_isolate_return_code_;
   const fml::closure isolate_create_callback_;
   const fml::closure isolate_shutdown_callback_;
   std::shared_ptr<const fml::Mapping> persistent_isolate_data_;

@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #define RAPIDJSON_HAS_STDSTRING 1
 #include "flutter/shell/common/shell.h"
@@ -563,8 +562,6 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
                                     });
 
   is_setup_ = true;
-
-  vm_->GetServiceProtocol()->AddHandler(this, GetServiceProtocolDescription());
 
   PersistentCache::GetCacheForProcess()->AddWorkerTaskRunner(
       task_runners_.GetIOTaskRunner());
@@ -1151,6 +1148,23 @@ void Shell::OnPreEngineRestart() {
 }
 
 // |Engine::Delegate|
+void Shell::OnRootIsolateCreated() {
+  if (is_added_to_service_protocol_) {
+    return;
+  }
+  auto description = GetServiceProtocolDescription();
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetPlatformTaskRunner(),
+      [self = weak_factory_.GetWeakPtr(),
+       description = std::move(description)]() {
+        if (self) {
+          self->vm_->GetServiceProtocol()->AddHandler(self.get(), description);
+        }
+      });
+  is_added_to_service_protocol_ = true;
+}
+
+// |Engine::Delegate|
 void Shell::UpdateIsolateDescription(const std::string isolate_name,
                                      int64_t isolate_port) {
   Handler::Description description(isolate_port, isolate_name);
@@ -1295,9 +1309,15 @@ bool Shell::HandleServiceProtocolMessage(
 // |ServiceProtocol::Handler|
 ServiceProtocol::Handler::Description Shell::GetServiceProtocolDescription()
     const {
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!weak_engine_) {
+    return ServiceProtocol::Handler::Description();
+  }
+
   return {
-      engine_->GetUIIsolateMainPort(),
-      engine_->GetUIIsolateName(),
+      weak_engine_->GetUIIsolateMainPort(),
+      weak_engine_->GetUIIsolateName(),
   };
 }
 

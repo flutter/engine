@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:integration_test/integration_test.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final IntegrationTestWidgetsFlutterBinding binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized() as IntegrationTestWidgetsFlutterBinding;
 
   testWidgets('Focused text field creates a native input element',
       (WidgetTester tester) async {
@@ -41,6 +41,8 @@ void main() {
     textFormField.controller.text = 'New Value';
     // DOM element's value also changes.
     expect(input.value, 'New Value');
+
+    await binding.takeScreenshot('focused_text_field');
   });
 
   testWidgets('Input field with no initial value works',
@@ -173,6 +175,21 @@ void main() {
     dispatchKeyboardEvent(input, 'keyup', <String, dynamic>{
       'key': 'CapsLock',
       'code': 'CapsLock',
+      'bubbles': true,
+      'cancelable': true,
+    });
+
+    // Press and release AltGr key.
+    // Regression test for https://github.com/flutter/flutter/issues/58979.
+    dispatchKeyboardEvent(input, 'keydown', <String, dynamic>{
+      'key': 'AltGraph',
+      'code': 'AltRight',
+      'bubbles': true,
+      'cancelable': true,
+    });
+    dispatchKeyboardEvent(input, 'keyup', <String, dynamic>{
+      'key': 'AltGraph',
+      'code': 'AltRight',
       'bubbles': true,
       'cancelable': true,
     });
