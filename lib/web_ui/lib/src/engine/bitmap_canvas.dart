@@ -71,7 +71,7 @@ class BitmapCanvas extends EngineCanvas {
 
   /// Keeps track of what device pixel ratio was used when this [BitmapCanvas]
   /// was created.
-  final double _devicePixelRatio = EngineWindow.browserDevicePixelRatio;
+  final double _devicePixelRatio = EnginePlatformDispatcher.browserDevicePixelRatio;
 
   // Compensation for [_initializeViewport] snapping canvas position to 1 pixel.
   int? _canvasPositionX, _canvasPositionY;
@@ -135,7 +135,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   /// Setup cache for reusing DOM elements across frames.
-  void setElementCache(CrossFrameCache<html.HtmlElement> cache) {
+  void setElementCache(CrossFrameCache<html.HtmlElement>? cache) {
     _elementCache = cache;
   }
 
@@ -168,13 +168,13 @@ class BitmapCanvas extends EngineCanvas {
 
   static int _widthToPhysical(double width) {
     final double boundsWidth = width + 1;
-    return (boundsWidth * EngineWindow.browserDevicePixelRatio).ceil() +
+    return (boundsWidth * EnginePlatformDispatcher.browserDevicePixelRatio).ceil() +
         2 * kPaddingPixels;
   }
 
   static int _heightToPhysical(double height) {
     final double boundsHeight = height + 1;
-    return (boundsHeight * EngineWindow.browserDevicePixelRatio).ceil() +
+    return (boundsHeight * EnginePlatformDispatcher.browserDevicePixelRatio).ceil() +
         2 * kPaddingPixels;
   }
 
@@ -217,7 +217,7 @@ class BitmapCanvas extends EngineCanvas {
   /// * [PersistedPicture._recycleCanvas] which also uses this method
   ///   for the same reason.
   bool isReusable() {
-    return _devicePixelRatio == EngineWindow.browserDevicePixelRatio;
+    return _devicePixelRatio == EnginePlatformDispatcher.browserDevicePixelRatio;
   }
 
   /// Returns a "data://" URI containing a representation of the image in this
@@ -324,13 +324,18 @@ class BitmapCanvas extends EngineCanvas {
   ///   DOM to render correctly.
   /// - Pictures typically have large rect/rounded rectangles as background
   ///   prefer DOM if canvas has not been allocated yet.
+  ///
+  /// Future optimization: The check below can be used to prevent excessive
+  /// canvas sandwiching (switching between dom and multiple canvas(s)).
+  /// Once RecordingCanvas is updated to detect switch count, this can be
+  /// enabled.
+  /// (_canvasPool._canvas == null &&
+  ///           paint.maskFilter == null &&
+  ///           paint.shader == null &&
+  ///           paint.style != ui.PaintingStyle.stroke)
+  ///
   bool _useDomForRendering(SurfacePaintData paint) =>
-      _preserveImageData == false && (
-      _contains3dTransform ||
-      (_canvasPool._canvas == null &&
-          paint.maskFilter == null &&
-          paint.shader == null &&
-          paint.style != ui.PaintingStyle.stroke));
+      _preserveImageData == false && _contains3dTransform;
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
@@ -488,10 +493,13 @@ class BitmapCanvas extends EngineCanvas {
       html.Element svgElm = _pathToSvgElement(
           surfacePath, paint, '${pathBounds.right}', '${pathBounds.bottom}');
       if (!_canvasPool.isClipped) {
-        svgElm.style
-          ..transform = matrix4ToCssTransform(transform)
-          ..transformOrigin = '0 0 0'
-          ..position = 'absolute';
+        html.CssStyleDeclaration style = svgElm.style;
+        style.position = 'absolute';
+        if (!transform.isIdentity()) {
+          style
+            ..transform = matrix4ToCssTransform(transform)
+            ..transformOrigin = '0 0 0';
+        }
       }
       _drawElement(svgElm, ui.Offset(0, 0), paint);
     } else {

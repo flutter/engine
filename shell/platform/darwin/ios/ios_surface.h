@@ -28,7 +28,11 @@ class IOSSurface {
   static std::unique_ptr<IOSSurface> Create(
       std::shared_ptr<IOSContext> context,
       fml::scoped_nsobject<CALayer> layer,
+<<<<<<< HEAD
       FlutterPlatformViewsController* platform_views_controller);
+=======
+      const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller);
+>>>>>>> e61e8c248271eedc94553733935e12726ef08dcc
 
   std::shared_ptr<IOSContext> GetContext() const;
 
@@ -49,7 +53,7 @@ class IOSSurface {
 
  protected:
   IOSSurface(std::shared_ptr<IOSContext> ios_context,
-             FlutterPlatformViewsController* platform_views_controller);
+             const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller);
 
  private:
   std::shared_ptr<IOSContext> ios_context_;

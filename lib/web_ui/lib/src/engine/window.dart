@@ -6,12 +6,7 @@
 part of engine;
 
 /// When set to true, all platform messages will be printed to the console.
-const bool _debugPrintPlatformMessages = false;
-
-/// Requests that the browser schedule a frame.
-///
-/// This may be overridden in tests, for example, to pump fake frames.
-ui.VoidCallback? scheduleFrameCallback;
+const bool/*!*/ _debugPrintPlatformMessages = false;
 
 typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
 
@@ -31,31 +26,100 @@ UrlStrategy? _createDefaultUrlStrategy() {
 }
 
 /// The Web implementation of [ui.Window].
-class EngineWindow extends ui.Window {
-  EngineWindow() {
-    _addBrightnessMediaQueryListener();
+// TODO(gspencergoog): Once the framework no longer uses ui.Window, make this extend
+// ui.SingletonFlutterWindow instead.
+class EngineFlutterWindow extends ui.Window {
+  EngineFlutterWindow(this._windowId, this.platformDispatcher) {
+    final EnginePlatformDispatcher engineDispatcher = platformDispatcher as EnginePlatformDispatcher;
+    engineDispatcher._windows[_windowId] = this;
+    engineDispatcher._windowConfigurations[_windowId] = ui.ViewConfiguration();
     _addUrlStrategyListener();
   }
 
+  final Object _windowId;
+  final ui.PlatformDispatcher platformDispatcher;
+
+  void _addUrlStrategyListener() {
+    _jsSetUrlStrategy = allowInterop((JsUrlStrategy? jsStrategy) {
+      assert(
+        _browserHistory == null,
+        'Cannot set URL strategy more than once.',
+      );
+      final UrlStrategy? strategy =
+          jsStrategy == null ? null : CustomUrlStrategy.fromJs(jsStrategy);
+      _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
+    });
+    registerHotRestartListener(() {
+      _jsSetUrlStrategy = null;
+    });
+  }
+
+  /// Handles the browser history integration to allow users to use the back
+  /// button, etc.
+  @visibleForTesting
+  BrowserHistory get browserHistory {
+    return _browserHistory ??=
+        MultiEntriesBrowserHistory(urlStrategy: _createDefaultUrlStrategy());
+  }
+
+  BrowserHistory? _browserHistory;
+
+  Future<void> _useSingleEntryBrowserHistory() async {
+    if (_browserHistory is SingleEntryBrowserHistory) {
+      return;
+    }
+    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    await _browserHistory?.tearDown();
+    _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
+  }
+
+  @visibleForTesting
+  Future<void> debugInitializeHistory(
+      UrlStrategy? strategy, {
+        required bool useSingle,
+      }) async {
+    await _browserHistory?.tearDown();
+    if (useSingle) {
+      _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
+    } else {
+      _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
+    }
+  }
+
+  @visibleForTesting
+  Future<void> debugResetHistory() async {
+    await _browserHistory?.tearDown();
+    _browserHistory = null;
+  }
+
+  Future<bool> handleNavigationMessage(
+      ByteData? data,
+      ) async {
+    final MethodCall decoded = JSONMethodCodec().decodeMethodCall(data);
+    final Map<String, dynamic> arguments = decoded.arguments;
+
+    switch (decoded.method) {
+      case 'routeUpdated':
+        await _useSingleEntryBrowserHistory();
+        browserHistory.setRouteName(arguments['routeName']);
+        return true;
+      case 'routeInformationUpdated':
+        assert(browserHistory is MultiEntriesBrowserHistory);
+        browserHistory.setRouteName(
+          arguments['location'],
+          state: arguments['state'],
+        );
+        return true;
+    }
+    return false;
+  }
+
   @override
-  double get devicePixelRatio =>
-      _debugDevicePixelRatio ?? browserDevicePixelRatio;
-
-  /// Returns device pixel ratio returned by browser.
-  static double get browserDevicePixelRatio {
-    double? ratio = html.window.devicePixelRatio as double?;
-    // Guard against WebOS returning 0 and other browsers returning null.
-    return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
+  ui.ViewConfiguration get viewConfiguration {
+    final EnginePlatformDispatcher engineDispatcher = platformDispatcher as EnginePlatformDispatcher;
+    assert(engineDispatcher._windowConfigurations.containsKey(_windowId));
+    return engineDispatcher._windowConfigurations[_windowId] ?? ui.ViewConfiguration();
   }
-
-  /// Overrides the default device pixel ratio.
-  ///
-  /// This is useful in tests to emulate screens of different dimensions.
-  void debugOverrideDevicePixelRatio(double value) {
-    _debugDevicePixelRatio = value;
-  }
-
-  double? _debugDevicePixelRatio;
 
   @override
   ui.Size get physicalSize {
@@ -164,7 +228,9 @@ class EngineWindow extends ui.Window {
 
   /// Overrides the value of [physicalSize] in tests.
   ui.Size? webOnlyDebugPhysicalSizeOverride;
+}
 
+<<<<<<< HEAD
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
   @visibleForTesting
@@ -708,43 +774,35 @@ class EngineWindow extends ui.Window {
         return DomRenderer.vibrateLongPress;
     }
   }
+=======
+typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
 
-  /// In Flutter, platform messages are exchanged between threads so the
-  /// messages and responses have to be exchanged asynchronously. We simulate
-  /// that by adding a zero-length delay to the reply.
-  void _replyToPlatformMessage(
-    ui.PlatformMessageResponseCallback? callback,
-    ByteData? data,
-  ) {
-    Future<void>.delayed(Duration.zero).then((_) {
-      if (callback != null) {
-        callback(data);
-      }
-    });
-  }
+/// A JavaScript hook to customize the URL strategy of a Flutter app.
+//
+// Keep this js name in sync with flutter_web_plugins. Find it at:
+// https://github.com/flutter/flutter/blob/custom_location_strategy/packages/flutter_web_plugins/lib/src/navigation/js_url_strategy.dart
+//
+// TODO: Add integration test https://github.com/flutter/flutter/issues/66852
+@JS('_flutter_web_set_location_strategy')
+external set _jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
+
+UrlStrategy? _createDefaultUrlStrategy() {
+  return ui.debugEmulateFlutterTesterEnvironment
+      ? null
+      : const HashUrlStrategy();
+}
+>>>>>>> e61e8c248271eedc94553733935e12726ef08dcc
+
+/// The Web implementation of [ui.Window].
+class EngineSingletonFlutterWindow extends EngineFlutterWindow {
+  EngineSingletonFlutterWindow(Object windowId, ui.PlatformDispatcher platformDispatcher) : super(windowId, platformDispatcher);
 
   @override
-  ui.Brightness get platformBrightness => _platformBrightness;
-  ui.Brightness _platformBrightness = ui.Brightness.light;
+  double get devicePixelRatio => _debugDevicePixelRatio ?? EnginePlatformDispatcher.browserDevicePixelRatio;
 
-  /// Updates [_platformBrightness] and invokes [onPlatformBrightnessChanged]
-  /// callback if [_platformBrightness] changed.
-  void _updatePlatformBrightness(ui.Brightness newPlatformBrightness) {
-    ui.Brightness previousPlatformBrightness = _platformBrightness;
-    _platformBrightness = newPlatformBrightness;
-
-    if (previousPlatformBrightness != _platformBrightness &&
-        onPlatformBrightnessChanged != null) {
-      invokeOnPlatformBrightnessChanged();
-    }
-  }
-
-  /// Reference to css media query that indicates the user theme preference on the web.
-  final html.MediaQueryList _brightnessMediaQuery =
-      html.window.matchMedia('(prefers-color-scheme: dark)');
-
-  /// A callback that is invoked whenever [_brightnessMediaQuery] changes value.
+  /// Overrides the default device pixel ratio.
   ///
+<<<<<<< HEAD
   /// Updates the [_platformBrightness] with the new user preference.
   html.EventListener? _brightnessMediaQueryListener;
 
@@ -830,47 +888,38 @@ bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
 void _invoke(void callback()?, Zone? zone) {
   if (callback == null) {
     return;
+=======
+  /// This is useful in tests to emulate screens of different dimensions.
+  void debugOverrideDevicePixelRatio(double value) {
+    _debugDevicePixelRatio = value;
+>>>>>>> e61e8c248271eedc94553733935e12726ef08dcc
   }
 
-  assert(zone != null);
-
-  if (identical(zone, Zone.current)) {
-    callback();
-  } else {
-    zone!.runGuarded(callback);
-  }
+  double? _debugDevicePixelRatio;
 }
 
-/// Invokes [callback] inside the given [zone] passing it [arg].
-void _invoke1<A>(void callback(A a)?, Zone? zone, A arg) {
-  if (callback == null) {
-    return;
-  }
+/// A type of [FlutterView] that can be hosted inside of a [FlutterWindow].
+class EngineFlutterWindowView extends ui.FlutterWindow {
+  EngineFlutterWindowView._(this._viewId, this.platformDispatcher);
 
-  assert(zone != null);
+  final Object _viewId;
 
-  if (identical(zone, Zone.current)) {
-    callback(arg);
-  } else {
-    zone!.runUnaryGuarded<A>(callback, arg);
-  }
-}
-
+<<<<<<< HEAD
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
 void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3)?, Zone? zone,
     A1 arg1, A2 arg2, A3 arg3) {
   if (callback == null) {
     return;
   }
+=======
+  final ui.PlatformDispatcher platformDispatcher;
+>>>>>>> e61e8c248271eedc94553733935e12726ef08dcc
 
-  assert(zone != null);
-
-  if (identical(zone, Zone.current)) {
-    callback(arg1, arg2, arg3);
-  } else {
-    zone!.runGuarded(() {
-      callback(arg1, arg2, arg3);
-    });
+  @override
+  ui.ViewConfiguration get viewConfiguration {
+    final EnginePlatformDispatcher engineDispatcher = platformDispatcher as EnginePlatformDispatcher;
+    assert(engineDispatcher._windowConfigurations.containsKey(_viewId));
+    return engineDispatcher._windowConfigurations[_viewId] ?? ui.ViewConfiguration();
   }
 }
 
@@ -879,7 +928,7 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3)?, Zone? zone,
 /// `dart:ui` window delegates to this value. However, this value has a wider
 /// API surface, providing Web-specific functionality that the standard
 /// `dart:ui` version does not.
-final EngineWindow window = EngineWindow();
+final EngineSingletonFlutterWindow window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
 
 /// The Web implementation of [ui.WindowPadding].
 class WindowPadding implements ui.WindowPadding {

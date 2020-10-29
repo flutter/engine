@@ -63,7 +63,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::WeakPtr<FlutterViewController> _viewController;
   fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
 
-  std::unique_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
+  std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
   std::unique_ptr<flutter::ProfilerMetricsIOS> _profiler_metrics;
   std::unique_ptr<flutter::SamplingProfiler> _profiler;
 
@@ -311,8 +311,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterPlatformPlugin*)platformPlugin {
   return _platformPlugin.get();
 }
-- (flutter::FlutterPlatformViewsController*)platformViewsController {
-  return _platformViewsController.get();
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController {
+  return _platformViewsController;
 }
 - (FlutterTextInputPlugin*)textInputPlugin {
   return _textInputPlugin.get();
@@ -881,6 +881,19 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     return;
   }
   [self.localizationChannel invokeMethod:@"setLocale" arguments:localeData];
+}
+
+- (void)waitForFirstFrame:(NSTimeInterval)timeout
+                 callback:(void (^_Nonnull)(BOOL didTimeout))callback {
+  dispatch_queue_t queue = dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0);
+  dispatch_async(queue, ^{
+    fml::TimeDelta waitTime = fml::TimeDelta::FromMilliseconds(timeout * 1000);
+    BOOL didTimeout =
+        self.shell.WaitForFirstFrame(waitTime).code() == fml::StatusCode::kDeadlineExceeded;
+    dispatch_async(dispatch_get_main_queue(), ^{
+      callback(didTimeout);
+    });
+  });
 }
 
 @end
