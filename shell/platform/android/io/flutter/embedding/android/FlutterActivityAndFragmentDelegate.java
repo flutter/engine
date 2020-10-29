@@ -306,7 +306,7 @@ import java.util.Arrays;
     return flutterSplashView;
   }
 
-  void onActivityCreated(@Nullable Bundle bundle) {
+  void onRestoreInstanceState(@Nullable Bundle bundle) {
     Log.v(TAG, "onActivityCreated. Giving framework and plugins an opportunity to restore state.");
     ensureAlive();
 
