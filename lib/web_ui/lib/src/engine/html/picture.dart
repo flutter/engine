@@ -649,6 +649,7 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
   double wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
   double xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
   double yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  print('$xp,$yp');
   minX = math.min(minX, xp);
   maxX = math.max(maxX, xp);
   minY = math.min(minY, yp);
@@ -657,6 +658,7 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
   wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
   xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
   yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  print('$xp,$yp');
   minX = math.min(minX, xp);
   maxX = math.max(maxX, xp);
   minY = math.min(minY, yp);
@@ -666,6 +668,7 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
   wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
   xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
   yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  print('$xp,$yp');
   minX = math.min(minX, xp);
   maxX = math.max(maxX, xp);
   minY = math.min(minY, yp);
@@ -686,13 +689,13 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
     // On a fullscreen high dpi device dpi*density*resolution will demand
     // too much memory, so clamp at 4.
     scale = math.min(4.0, ((scale / 2.0).ceil() * 2.0));
+    // Guard against webkit absolute limit.
+    const double kPixelLimit = 1024 * 1024 * 4;
+    if ((width * height * scale * scale) > kPixelLimit && scale > 2) {
+      scale = (kPixelLimit * 0.8) / (width * height);
+    }
   } else {
     scale = math.max(2.0 / (2.0 / scale).floor(), 0.0001);
-  }
-  // Guard against webkit absolute limit.
-  const double kPixelLimit = 1024 * 1024 * 4;
-  if ((width * height * scale * scale) > kPixelLimit) {
-    scale = (kPixelLimit * 0.8) / (width * height);
   }
   return scale;
 }
