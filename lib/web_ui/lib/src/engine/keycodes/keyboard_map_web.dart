@@ -323,7 +323,6 @@ const Map<String, int> kWebToLogicalKey = <String, int>{
 
 /// Maps Web KeyboardEvent codes to the matching PhysicalKeyboardKey USB HID code.
 const Map<String, int> kWebToPhysicalKey = <String, int>{
-  'None': 0x00000000,
   'Hyper': 0x00000010,
   'Super': 0x00000011,
   'FnLock': 0x00000013,

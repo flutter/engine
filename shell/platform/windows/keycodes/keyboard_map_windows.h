@@ -213,6 +213,7 @@ const std::map<int, uint64_t> g_windows_to_logical_key = {
   { 220, 0x000000005c },    // backslash
   { 186, 0x000000003b },    // semicolon
   { 222, 0x0000000027 },    // quote
+  { 192, 0x0000000060 },    // backquote
   { 188, 0x000000002c },    // comma
   { 190, 0x000000002e },    // period
   { 191, 0x000000002f },    // slash

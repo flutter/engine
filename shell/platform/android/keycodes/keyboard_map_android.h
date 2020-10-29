@@ -348,8 +348,10 @@ const std::map<int, int> g_android_to_physical_key = {
   { 100, 0x000700e6 },    // altRight
   { 126, 0x000700e7 },    // metaRight
   { 358, 0x000c0060 },    // info
+  { 370, 0x000c0061 },    // closedCaptionToggle
   { 225, 0x000c006f },    // brightnessUp
   { 224, 0x000c0070 },    // brightnessDown
+  { 405, 0x000c0083 },    // mediaLast
   { 174, 0x000c0094 },    // exit
   { 402, 0x000c009c },    // channelUp
   { 403, 0x000c009d },    // channelDown
@@ -371,6 +373,7 @@ const std::map<int, int> g_android_to_physical_key = {
   { 215, 0x000c018a },    // launchMail
   { 429, 0x000c018d },    // launchContacts
   { 397, 0x000c018e },    // launchCalendar
+  { 583, 0x000c01cb },    // launchAssistant
   { 181, 0x000c0201 },    // newKey
   { 160, 0x000c0203 },    // close
   { 206, 0x000c0203 },    // close
