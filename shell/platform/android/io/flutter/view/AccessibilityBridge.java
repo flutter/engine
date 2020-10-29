@@ -2180,7 +2180,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           return result;
         }
       }
-      return this;
+      return isFocusable() ? this : null;
     }
 
     // TODO(goderbauer): This should be decided by the framework once we have more information
