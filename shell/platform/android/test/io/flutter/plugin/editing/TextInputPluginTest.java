@@ -528,6 +528,9 @@ public class TextInputPluginTest {
 
   @Test
   public void inputConnection_finishComposingTextUpdatesIMM() throws JSONException {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+      return;
+    }
     ShadowBuild.setManufacturer("samsung");
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
@@ -561,19 +564,21 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("text", 0, 0, -1, -1));
     InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
+
     connection.requestCursorUpdates(
         InputConnection.CURSOR_UPDATE_MONITOR | InputConnection.CURSOR_UPDATE_IMMEDIATE);
 
     connection.finishComposingText();
 
-    System.out.println(testImm.getLastCursorAnchorInfo());
     assertEquals(-1, testImm.getLastCursorAnchorInfo().getComposingTextStart());
     assertEquals(0, testImm.getLastCursorAnchorInfo().getComposingText().length());
   }
 
   @Test
   public void autofill_onProvideVirtualViewStructure() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      return;
+    }
 
     FlutterView testView = new FlutterView(RuntimeEnvironment.application);
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));

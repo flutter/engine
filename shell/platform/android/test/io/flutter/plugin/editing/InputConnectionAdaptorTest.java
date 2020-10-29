@@ -899,6 +899,15 @@ public class InputConnectionAdaptorTest {
   }
 
   @Test
+  public void testExtractedText_monitoring() {
+    int selStart = 5;
+    ListenableEditingState editable = sampleEditable(selStart, selStart);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    ExtractedText extractedText = adaptor.getExtractedText(null, 0);
+  }
+
+  @Test
   public void testSendKeyEvent_delKeyDeletesBackward() {
     int selStart = 29;
     ListenableEditingState editable = sampleEditable(selStart, selStart, SAMPLE_RTL_TEXT);

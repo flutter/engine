@@ -691,14 +691,38 @@ public class TextInputChannel {
         int selectionStart,
         int selectionEnd,
         int composingStart,
-        int composingEnd) {
+        int composingEnd)
+        throws IndexOutOfBoundsException {
 
-      assert (selectionStart == -1 && selectionEnd == -1)
-          || (selectionStart >= 0 && selectionStart <= selectionEnd);
-      assert (composingStart == -1 && composingEnd == -1)
-          || (composingStart >= 0 && composingStart < composingEnd);
-      assert composingEnd <= text.length();
-      assert selectionEnd <= text.length();
+      if ((selectionStart != -1 || selectionEnd != -1)
+          && (selectionStart < 0 || selectionStart > selectionEnd)) {
+        throw new IndexOutOfBoundsException(
+            "invalid selection: ("
+                + String.valueOf(selectionStart)
+                + ", "
+                + String.valueOf(selectionEnd)
+                + ")");
+      }
+
+      if ((composingStart != -1 || composingEnd != -1)
+          && (composingStart < 0 || composingStart >= composingEnd)) {
+        throw new IndexOutOfBoundsException(
+            "invalid composing range: ("
+                + String.valueOf(composingStart)
+                + ", "
+                + String.valueOf(composingEnd)
+                + ")");
+      }
+
+      if (composingStart > text.length()) {
+        throw new IndexOutOfBoundsException(
+            "invalid composing start: " + String.valueOf(composingStart));
+      }
+
+      if (selectionStart > text.length()) {
+        throw new IndexOutOfBoundsException(
+            "invalid selection start: " + String.valueOf(selectionStart));
+      }
 
       this.text = text;
       this.selectionStart = selectionStart;

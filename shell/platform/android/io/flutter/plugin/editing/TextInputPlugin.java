@@ -639,6 +639,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   }
 
   private void updateAutofillConfigurationIfNeeded(TextInputChannel.Configuration configuration) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      return;
+    }
     notifyViewExited();
     this.configuration = configuration;
     final TextInputChannel.Configuration[] configurations = configuration.fields;

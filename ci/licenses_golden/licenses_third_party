@@ -1,4 +1,4 @@
-Signature: 32290c22f0ebd5322802b8512a00e00e
+Signature: df32ba1b81ccb800b01c3d2bf007a2a8
 
 UNUSED LICENSES:
 
@@ -8430,6 +8430,7 @@ FILE: ../../../third_party/dart/runtime/bin/dartdev_isolate.cc
 FILE: ../../../third_party/dart/runtime/bin/dartdev_isolate.h
 FILE: ../../../third_party/dart/runtime/bin/exe_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/exe_utils.h
+FILE: ../../../third_party/dart/runtime/bin/ffi_test/ffi_test_functions_generated.cc
 FILE: ../../../third_party/dart/runtime/bin/file_win.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos_test.cc
@@ -8488,7 +8489,10 @@ FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
 FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
 FILE: ../../../third_party/dart/runtime/vm/field_table.cc
 FILE: ../../../third_party/dart/runtime/vm/field_table.h
+FILE: ../../../third_party/dart/runtime/vm/heap/become_test.cc
+FILE: ../../../third_party/dart/runtime/vm/heap/weak_table_test.cc
 FILE: ../../../third_party/dart/runtime/vm/port_set.h
+FILE: ../../../third_party/dart/runtime/vm/stub_code_test.cc
 FILE: ../../../third_party/dart/runtime/vm/tagged_pointer.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
 FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.cc
