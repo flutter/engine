@@ -67,7 +67,7 @@ class KeyData {
   /// Creates an object that represents the change of a key.
   const KeyData({
     required this.timeStamp,
-    required this.lockFlags,
+    required this.activeLocks,
     required this.change,
     required this.key,
     required this.logicalEvents,
@@ -79,8 +79,9 @@ class KeyData {
   /// might not be the actual time that the key press or release happens.
   final Duration timeStamp;
 
-  /// The locking state after this event.
-  final int lockFlags;
+  /// A bitmask that represents lock keys (such as CapsLock) that are active
+  /// after this event.
+  final int activeLocks;
 
   /// How the key has changed since the last report.
   final KeyChange change;
@@ -92,7 +93,7 @@ class KeyData {
   final List<LogicalKeyData> logicalEvents;
 
   @override
-  String toString() => 'KeyData(timeStamp: $timeStamp, lockFlags: $lockFlags, change: $change, key: $key, logicalEvents: $logicalEvents)';
+  String toString() => 'KeyData(timeStamp: $timeStamp, activeLocks: $activeLocks, change: $change, key: $key, logicalEvents: $logicalEvents)';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {

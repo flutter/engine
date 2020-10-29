@@ -591,12 +591,12 @@ typedef struct {
   size_t logical_event_count;
   const FlutterLogicalKeyEvent* logical_events;
   const uint8_t* logical_characters_data;
-  // Timestamp in microseconds. Maybe 0 (sync or cancel).
+  // Timestamp in microseconds.
   double timestamp;
   // A bitmask indicating whether each lock is on after this event.
   //
   // See `FlutterKeyLockFlags` for possible bits.
-  uint64_t lockFlags;
+  uint64_t active_locks;
   // Physical event kind.
   FlutterKeyEventKind kind;
   // Physical key changed.

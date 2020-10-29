@@ -414,7 +414,7 @@ class PlatformDispatcher {
     int offset = logicalCount * _kLogicalKeyDataFieldCount;
     final KeyData keyData = KeyData(
       timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
-      lockFlags: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      activeLocks: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       change: KeyChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       key: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       logicalEvents: logicalKeyDataList,

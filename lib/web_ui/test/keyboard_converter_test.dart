@@ -434,7 +434,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
       ],
-      lockFlags: kCapsLock,
+      activeLocks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -446,7 +446,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalCapsLock),
       ],
-      lockFlags: kCapsLock,
+      activeLocks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -458,7 +458,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
       ],
-      lockFlags: 0,
+      activeLocks: 0,
     );
     keyDataList.clear();
 
@@ -470,7 +470,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalCapsLock),
       ],
-      lockFlags: 0,
+      activeLocks: 0,
     );
     keyDataList.clear();
 
@@ -483,7 +483,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
       ],
-      lockFlags: kCapsLock,
+      activeLocks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -509,7 +509,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
       ],
-      lockFlags: kCapsLock,
+      activeLocks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -524,7 +524,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalCapsLock),
       ],
-      lockFlags: kCapsLock,
+      activeLocks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -538,7 +538,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
       ],
-      lockFlags: 0,
+      activeLocks: 0,
     );
 
     converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
@@ -548,7 +548,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalCapsLock),
       ],
-      lockFlags: 0,
+      activeLocks: 0,
     );
   });
 
@@ -762,7 +762,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalScrollLock),
       ],
-      lockFlags: kScrollLock,
+      activeLocks: kScrollLock,
     );
     keyDataList.clear();
 
@@ -777,7 +777,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalScrollLock),
       ],
-      lockFlags: kScrollLock,
+      activeLocks: kScrollLock,
     );
     keyDataList.clear();
 
@@ -788,7 +788,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalScrollLock),
       ],
-      lockFlags: 0,
+      activeLocks: 0,
     );
 
     converter.handleEvent(keyUpEvent('ScrollLock', 'ScrollLock'));
@@ -798,7 +798,7 @@ void testMain() {
       logical: <ui.LogicalKeyData>[
         ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalScrollLock),
       ],
-      lockFlags: 0,
+      activeLocks: 0,
     );
   });
 
@@ -931,7 +931,7 @@ MockKeyboardEvent keyRepeatedDownEvent(String code, String key, [int modifiers =
   );
 }
 
-// Flags used for the `lockFlags` argument of expectKeyData.
+// Flags used for the `activeLocks` argument of expectKeyData.
 const kCapsLock = 0x1;
 const kNumlLock = 0x2;
 const kScrollLock = 0x4;
@@ -942,14 +942,14 @@ void expectKeyData(
   required int key,
   required List<ui.LogicalKeyData> logical,
   Duration? timeStamp,
-  int? lockFlags,
+  int? activeLocks,
 }) {
   expect(target.change, change);
   expect(target.key, key);
   if (timeStamp != null)
     expect(target.timeStamp, equals(timeStamp));
-  if (lockFlags != null)
-    expect(target.lockFlags, equals(lockFlags));
+  if (activeLocks != null)
+    expect(target.activeLocks, equals(activeLocks));
   expect(target.logicalEvents.length, logical.length);
   for (int i = 0; i < logical.length; i++) {
     expect(target.logicalEvents[i].change, logical[i].change);

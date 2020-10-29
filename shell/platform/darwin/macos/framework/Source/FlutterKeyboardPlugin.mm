@@ -153,7 +153,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 /**
  * A bitmask indicating whether each lock is on.
  */
-@property(nonatomic) NSUInteger lockFlags;
+@property(nonatomic) NSUInteger activeLocks;
 
 /**
  * Update the pressing state.
@@ -172,8 +172,8 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
  * Send a simple event that contains 1 logical event that has the same kind as
  * the physical event and no characters.
  *
- * The `lockFlags` must be updated before this method if necessary, since this
- * method sends `lockFlags` out.
+ * The `activeLocks` must be updated before this method if necessary, since this
+ * method sends `activeLocks` out.
  */
 - (void)sendSimpleEventWithKind:(FlutterKeyEventKind)kind
                     physicalKey:(uint64_t)physicalKey
@@ -225,9 +225,9 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   // This method is only called on CapsLock, because macOS does not seem to
   // process ScrollLock and NumLock at all.
   if (isOn) {
-    _lockFlags |= lockBit;
+    _activeLocks |= lockBit;
   } else {
-    _lockFlags &= ~lockBit;
+    _activeLocks &= ~lockBit;
   }
 }
 
@@ -248,7 +248,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
     .logical_events = logical_events,
     .logical_characters_data = kEmptyCharacterData,
     .timestamp = timestamp,
-    .lockFlags = _lockFlags,
+    .active_locks = _activeLocks,
     .kind = kind,
     .key = physicalKey,
     .repeated = false,
@@ -338,7 +338,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .logical_events = logical_events,
       .logical_characters_data = logical_characters_data,
       .timestamp = GetFlutterTimestampFrom(event),
-      .lockFlags = _lockFlags,
+      .active_locks = _activeLocks,
       .kind = kFlutterKeyEventKindDown,
       .key = physicalKey,
       .repeated = (event.isARepeat != NO),

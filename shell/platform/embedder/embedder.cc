@@ -1461,7 +1461,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   flutter::PhysicalKeyData physical_key;
   physical_key.Clear();
   physical_key.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
-  physical_key.lockFlags = (uint64_t)SAFE_ACCESS(event, lockFlags, 0);
+  physical_key.active_locks = (uint64_t)SAFE_ACCESS(event, active_locks, 0);
   physical_key.change = ToKeyChange(
       SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel),
       SAFE_ACCESS(event, repeated, false));

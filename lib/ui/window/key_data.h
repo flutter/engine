@@ -36,7 +36,7 @@ struct alignas(8) LogicalKeyData {
 struct alignas(8) PhysicalKeyData {
   // Timestamp in microseconds from an arbitrary and consistant start point
   uint64_t timestamp;
-  uint64_t lockFlags;
+  uint64_t active_locks;
   KeyChange change;
   uint64_t key;
 

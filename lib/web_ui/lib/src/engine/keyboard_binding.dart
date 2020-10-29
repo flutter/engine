@@ -199,7 +199,7 @@ class KeyboardConverter {
   // the key is pressed and the light turns on, while a keyup event occurs when the
   // key is pressed and the light turns off. Flutter considers both events as
   // key down, and synthesizes immediate cancel events following them. The state
-  // of "whether CapsLock is on" should be accessed by "lockFlags".
+  // of "whether CapsLock is on" should be accessed by "activeLocks".
   bool _shouldSynthesizeCapsLockCancel() {
     return onMacOs;
   }
@@ -271,16 +271,16 @@ class KeyboardConverter {
   // to positioned keys (left/right/numpad) or multiple keyboards.
   final Map<int, int> _pressingRecords = <int, int>{};
 
-  int _lockFlags = 0;
+  int _activeLocks = 0;
   void _updateLockFlag(int bit, bool value) {
     if (value) {
-      _lockFlags |= bit;
+      _activeLocks |= bit;
     } else {
-      _lockFlags &= ~bit;
+      _activeLocks &= ~bit;
     }
   }
   void _toggleLockFlag(int bit) {
-    _updateLockFlag(bit, (_lockFlags & bit) == 0);
+    _updateLockFlag(bit, (_activeLocks & bit) == 0);
   }
 
   // Schedule the dispatching of an event in the future. The `callback` will
@@ -318,7 +318,7 @@ class KeyboardConverter {
         timeStamp: currentTimeStamp + _keydownCancelDuration,
         change: ui.KeyChange.cancel,
         key: physicalKey,
-        lockFlags: 0,
+        activeLocks: 0,
         logicalEvents: <ui.LogicalKeyData>[
           ui.LogicalKeyData(
             change: ui.KeyChange.cancel,
@@ -412,7 +412,7 @@ class KeyboardConverter {
             timeStamp: timeStamp,
             change: ui.KeyChange.cancel,
             key: physicalKey,
-            lockFlags: _lockFlags,
+            activeLocks: _activeLocks,
             logicalEvents: <ui.LogicalKeyData>[
               ui.LogicalKeyData(
                 change: ui.KeyChange.cancel,
@@ -448,7 +448,7 @@ class KeyboardConverter {
           timeStamp: timeStamp,
           change: ui.KeyChange.cancel,
           key: physicalKey,
-          lockFlags: _lockFlags,
+          activeLocks: _activeLocks,
           logicalEvents: <ui.LogicalKeyData>[
             ui.LogicalKeyData(
               change: ui.KeyChange.cancel,
@@ -494,7 +494,7 @@ class KeyboardConverter {
             timeStamp: timeStamp,
             change: ui.KeyChange.cancel,
             key: physicalKey,
-            lockFlags: _lockFlags,
+            activeLocks: _activeLocks,
             logicalEvents: <ui.LogicalKeyData>[
               if (!hasRemovedLogicalRecord) ui.LogicalKeyData(
                 change: ui.KeyChange.cancel,
@@ -538,7 +538,7 @@ class KeyboardConverter {
         ? (event.repeat ?? false ? ui.KeyChange.repeatedDown : ui.KeyChange.down)
         : ui.KeyChange.up,
       key: physicalKey,
-      lockFlags: _lockFlags,
+      activeLocks: _activeLocks,
       logicalEvents: logicalKeyDataList,
     );
 
