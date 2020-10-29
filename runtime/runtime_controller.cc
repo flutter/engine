@@ -69,7 +69,7 @@ RuntimeController::~RuntimeController() {
 }
 
 bool RuntimeController::IsRootIsolateRunning() {
-  std::shared_ptr<DartIsolate> root_isolate = GetRootIsolate().lock();
+  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   if (root_isolate) {
     return root_isolate->GetPhase() == DartIsolate::Phase::Running;
   }
@@ -111,7 +111,7 @@ bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
   platform_data_.viewport_metrics = metrics;
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->window()->UpdateWindowMetrics(metrics);
+    platform_configuration->get_window(0)->UpdateWindowMetrics(metrics);
     return true;
   }
 
@@ -233,7 +233,7 @@ bool RuntimeController::DispatchPointerDataPacket(
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
                  "mode", "basic");
-    platform_configuration->window()->DispatchPointerDataPacket(packet);
+    platform_configuration->get_window(0)->DispatchPointerDataPacket(packet);
     return true;
   }
 
@@ -409,15 +409,6 @@ std::optional<std::string> RuntimeController::GetRootIsolateServiceID() const {
     return isolate->GetServiceId();
   }
   return std::nullopt;
-}
-
-std::weak_ptr<DartIsolate> RuntimeController::GetRootIsolate() {
-  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
-  if (root_isolate) {
-    return root_isolate_;
-  }
-
-  return root_isolate_;
 }
 
 std::optional<uint32_t> RuntimeController::GetRootIsolateReturnCode() {
