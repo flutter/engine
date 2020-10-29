@@ -69,7 +69,7 @@ task:
         cd $FRAMEWORK_PATH/flutter/packages/flutter
         ../../bin/flutter test --local-engine=host_debug_unopt --null-assertions --sound-null-safety --enable-experiment=non-nullable
     # TODO(fujino): remove this once ci/licenses.sh is run on LUCI
-    - name: build_test
+    - name: licenses_check
       build_script: |
         cd $ENGINE_PATH/src/flutter
-        ./ci/build.sh
+        ./ci/licenses.sh
