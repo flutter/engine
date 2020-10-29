@@ -5,5 +5,7 @@
 import 'package:regular_integration_tests/screenshot_support.dart' as test;
 
 Future<void> main() async {
-  await test.runTestWithScreenshots();
+  // TODO: switch to screenshot when
+  //  https://github.com/flutter/flutter/issues/68502 is resolved.
+  // await test.runTestWithScreenshots();
 }

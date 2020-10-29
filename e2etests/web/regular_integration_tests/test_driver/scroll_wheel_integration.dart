@@ -25,6 +25,8 @@ void main() {
     await tester.tap(find.byKey(const Key('scroll-button')));
     await tester.pumpAndSettle();
 
+    // TODO: enable screenshot when
+    //  https://github.com/flutter/flutter/issues/68502 is resolved.
     await binding.takeScreenshot('wheel_scroll_by_line');
   });
 }
