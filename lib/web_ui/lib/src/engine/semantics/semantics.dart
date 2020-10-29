@@ -852,12 +852,12 @@ class SemanticsObject {
         verticalContainerAdjustment == 0.0 &&
         horizontalContainerAdjustment == 0.0) {
       element.style
-        ..removeProperty('transform-origin')
-        ..removeProperty('transform');
+          ..removeProperty('top')
+          ..removeProperty('left');
       if (containerElement != null) {
         containerElement.style
-          ..removeProperty('transform-origin')
-          ..removeProperty('transform');
+          ..removeProperty('top')
+          ..removeProperty('left');
       }
       return;
     }
@@ -882,15 +882,14 @@ class SemanticsObject {
     }
 
     if (!effectiveTransformIsIdentity) {
-      final Position2D position2d =
-        matrix4ToCssTransformForSemantics(effectiveTransform);
+      final Vector3 translation = effectiveTransform.getTranslation();
       element.style
-        ..top = position2d.top
-        ..left = position2d.left;
+        ..top = '${translation.y}px'
+        ..left = '${translation.x}px';
     } else {
       element.style
-        ..removeProperty('transform-origin')
-        ..removeProperty('transform');
+        ..removeProperty('top')
+        ..removeProperty('left');
     }
 
     if (containerElement != null) {
@@ -900,12 +899,12 @@ class SemanticsObject {
         final double translateX = -_rect!.left + horizontalContainerAdjustment;
         final double translateY = -_rect!.top + verticalContainerAdjustment;
         containerElement.style
-          ..transformOrigin = '0 0 0'
-          ..transform = 'translate(${translateX}px, ${translateY}px)';
+          ..top = '${translateY}px'
+          ..left = '${translateX}px';
       } else {
         containerElement.style
-          ..removeProperty('transform-origin')
-          ..removeProperty('transform');
+          ..removeProperty('top')
+          ..removeProperty('left');
       }
     }
   }
