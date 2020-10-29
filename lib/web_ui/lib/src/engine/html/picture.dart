@@ -651,12 +651,16 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
   double yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
   minX = math.min(minX, xp);
   maxX = math.max(maxX, xp);
+  minY = math.min(minY, xp);
+  maxY = math.max(maxY, xp);
   x = 0;
   wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
   xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
   yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
   minX = math.min(minX, xp);
   maxX = math.max(maxX, xp);
+  minY = math.min(minY, xp);
+  maxY = math.max(maxY, xp);
   x = width;
   y = 0;
   wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
@@ -664,6 +668,8 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
   yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
   minX = math.min(minX, xp);
   maxX = math.max(maxX, xp);
+  minY = math.min(minY, xp);
+  maxY = math.max(maxY, xp);
   double scaleX = (maxX - minX) / width;
   double scaleY = (maxY - minY) / height;
   double scale = math.min(scaleX, scaleY);
