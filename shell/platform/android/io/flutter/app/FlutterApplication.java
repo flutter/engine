@@ -5,8 +5,8 @@
 package io.flutter.app;
 
 import android.app.Activity;
-import android.content.Context;
 import android.app.Application;
+import android.content.Context;
 import androidx.annotation.CallSuper;
 import com.google.android.play.core.splitcompat.SplitCompat;
 import io.flutter.FlutterInjector;

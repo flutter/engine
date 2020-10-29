@@ -994,6 +994,7 @@ public class FlutterJNI {
   }
 
   private Context dynamicFeatureContext;
+
   @UiThread
   public void setDynamicFeatureContext(@NonNull Context context) {
     ensureRunningOnMainThread();
@@ -1003,7 +1004,16 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @UiThread
   public void downloadDynamicFeature(int loadingUnitId) {
-    String loadingUnitIdResName = dynamicFeatureContext.getResources().getString(dynamicFeatureContext.getResources().getIdentifier("loadingUnit" + loadingUnitId, "string", dynamicFeatureContext.getPackageName()));
+    String loadingUnitIdResName =
+        dynamicFeatureContext
+            .getResources()
+            .getString(
+                dynamicFeatureContext
+                    .getResources()
+                    .getIdentifier(
+                        "loadingUnit" + loadingUnitId,
+                        "string",
+                        dynamicFeatureContext.getPackageName()));
     downloadDynamicFeature(loadingUnitIdResName, loadingUnitId);
   }
 
@@ -1016,14 +1026,13 @@ public class FlutterJNI {
 
   /**
    * This should be called for every loading unit to be loaded into the dart isolate.
-   * 
-   * abi, libName, and apkPaths are used together to search the installed apks for the
-   * desired .so library. If not found, soPath may be provided as a fallback if a
-   * pre-extracted .so exists, especially on older devices with libs compressed in the
-   * apk.
    *
-   * Successful loading of the dart library also completes the loadLibrary() future
-   * that triggered the install/load process.
+   * <p>abi, libName, and apkPaths are used together to search the installed apks for the desired
+   * .so library. If not found, soPath may be provided as a fallback if a pre-extracted .so exists,
+   * especially on older devices with libs compressed in the apk.
+   *
+   * <p>Successful loading of the dart library also completes the loadLibrary() future that
+   * triggered the install/load process.
    */
   @UiThread
   public void loadDartLibrary(
@@ -1034,14 +1043,9 @@ public class FlutterJNI {
       @NonNull String soPath) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeLoadDartLibrary(
-        nativePlatformViewId,
-        loadingUnitId,
-        libName,
-        apkPaths,
-        abi,
-        soPath);
+    nativeLoadDartLibrary(nativePlatformViewId, loadingUnitId, libName, apkPaths, abi, soPath);
   }
+
   private native void nativeLoadDartLibrary(
       long nativePlatformViewId,
       int loadingUnitId,
@@ -1050,39 +1054,39 @@ public class FlutterJNI {
       @NonNull String abi,
       @NonNull String soPath);
 
-
   /**
-   * Specifies a new AssetManager that has access to the dynamic feature's assets in addition
-   * to the base module's assets.
+   * Specifies a new AssetManager that has access to the dynamic feature's assets in addition to the
+   * base module's assets.
    *
-   * assetBundlePath is the subdirectory that the flutter assets are stored in. The typical
-   * value is `flutter_assets`.
+   * <p>assetBundlePath is the subdirectory that the flutter assets are stored in. The typical value
+   * is `flutter_assets`.
    */
   @UiThread
   public void updateAssetManager(
-      @NonNull AssetManager assetManager,
-      @NonNull String assetBundlePath
-  ) {
+      @NonNull AssetManager assetManager, @NonNull String assetBundlePath) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeUpdateAssetManager(nativePlatformViewId, assetManager, assetBundlePath);
   }
+
   private native void nativeUpdateAssetManager(
       long nativePlatformViewId,
       @NonNull AssetManager assetManager,
-      @NonNull String assetBundlePath
-  );
+      @NonNull String assetBundlePath);
 
   // Called when an install encounters a failure during the Android portion of installing a module.
   // When transient is false, new attempts to install will automatically result in same error in
   // dart before the request is passed to Android.
   @SuppressWarnings("unused")
   @UiThread
-  public void dynamicFeatureInstallFailure(@NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans) {
+  public void dynamicFeatureInstallFailure(
+      @NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans) {
     ensureRunningOnMainThread();
     nativeDynamicFeatureInstallFailure(moduleName, loadingUnitId, error, trans);
   }
-  private native void nativeDynamicFeatureInstallFailure(@NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans);
+
+  private native void nativeDynamicFeatureInstallFailure(
+      @NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans);
 
   // ----- End Dynamic Features Support ----
 
