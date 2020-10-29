@@ -30,88 +30,29 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 
-class InputConnectionAdaptor extends BaseInputConnection {
+class InputConnectionAdaptor extends BaseInputConnection
+    implements ListenableEditingState.EditingStateWatcher {
   private static final String TAG = "flutter";
 
   private final View mFlutterView;
   private final int mClient;
   private final TextInputChannel textInputChannel;
-  private final Editable mEditable;
+  private final ListenableEditingState mEditable;
   private final EditorInfo mEditorInfo;
   private ExtractedTextRequest mExtractRequest;
   private boolean mMonitorCursorUpdate = false;
   private CursorAnchorInfo.Builder mCursorAnchorInfoBuilder;
   private ExtractedText mExtractedText = new ExtractedText();
-  private int mBatchCount;
   private InputMethodManager mImm;
   private final Layout mLayout;
   private FlutterTextUtils flutterTextUtils;
-  // Used to determine if Samsung-specific hacks should be applied.
-  private final boolean isSamsung;
-
-  private TextEditingValue mLastUpdatedImmEditingValue;
-  private TextEditingValue mLastKnownTextEditingValue;
-  // Data class used to get and store the last-sent values via updateEditingState to
-  // the  framework. These are then compared against to prevent redundant messages
-  // with the same data before any valid operations were made to the contents.
-  private class TextEditingValue {
-    public int selectionStart;
-    public int selectionEnd;
-    public int composingStart;
-    public int composingEnd;
-    public String text;
-
-    public TextEditingValue(TextInputChannel.TextEditState state) {
-      text = state.text;
-      selectionStart = state.selectionStart;
-      selectionEnd = state.selectionEnd;
-      composingStart = state.composingStart;
-      composingEnd = state.composingEnd;
-    }
-
-    public TextEditingValue(Editable editable) {
-      selectionStart = Selection.getSelectionStart(editable);
-      selectionEnd = Selection.getSelectionEnd(editable);
-      composingStart = BaseInputConnection.getComposingSpanStart(editable);
-      composingEnd = BaseInputConnection.getComposingSpanEnd(editable);
-      text = editable.toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (o == this) {
-        return true;
-      }
-      if (!(o instanceof TextEditingValue)) {
-        return false;
-      }
-      TextEditingValue value = (TextEditingValue) o;
-      return selectionStart == value.selectionStart
-          && selectionEnd == value.selectionEnd
-          && composingStart == value.composingStart
-          && composingEnd == value.composingEnd
-          && text.equals(value.text);
-    }
-
-    @Override
-    public int hashCode() {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + selectionStart;
-      result = prime * result + selectionEnd;
-      result = prime * result + composingStart;
-      result = prime * result + composingEnd;
-      result = prime * result + text.hashCode();
-      return result;
-    }
-  }
 
   @SuppressWarnings("deprecation")
   public InputConnectionAdaptor(
       View view,
       int client,
       TextInputChannel textInputChannel,
-      Editable editable,
+      ListenableEditingState editable,
       EditorInfo editorInfo,
       FlutterJNI flutterJNI) {
     super(view, true);
@@ -119,11 +60,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
     mClient = client;
     this.textInputChannel = textInputChannel;
     mEditable = editable;
+    mEditable.addEditingStateListener(this);
     mEditorInfo = editorInfo;
-    mBatchCount = 0;
-    // Initialize the "last seen" text editing values to a non-null value.
-    mLastUpdatedImmEditingValue = new TextEditingValue(mEditable);
-    mLastKnownTextEditingValue = mLastUpdatedImmEditingValue;
     this.flutterTextUtils = new FlutterTextUtils(flutterJNI);
     // We create a dummy Layout with max width so that the selection
     // shifting acts as if all text were in one line.
@@ -137,56 +75,28 @@ class InputConnectionAdaptor extends BaseInputConnection {
             0.0f,
             false);
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-
-    isSamsung = isSamsung();
   }
 
   public InputConnectionAdaptor(
       View view,
       int client,
       TextInputChannel textInputChannel,
-      Editable editable,
+      ListenableEditingState editable,
       EditorInfo editorInfo) {
     this(view, client, textInputChannel, editable, editorInfo, new FlutterJNI());
   }
 
-  // Send the current state of the editable to Flutter.
-  private void updateEditingState() {
-    // If the IME is in the middle of a batch edit, then wait until it completes.
-    if (mBatchCount > 0) {
-      return;
-    }
-
-    TextEditingValue currentValue = new TextEditingValue(mEditable);
-
-    // Return if no meaningful changes have occurred.
-    if (currentValue.equals(mLastKnownTextEditingValue)) {
-      return;
-    }
-
-    Log.v(TAG, "send EditingState to flutter: " + currentValue.toString());
-    textInputChannel.updateEditingState(
-        mClient,
-        currentValue.text,
-        currentValue.selectionStart,
-        currentValue.selectionEnd,
-        currentValue.composingStart,
-        currentValue.composingEnd);
-
-    mLastKnownTextEditingValue = currentValue;
-  }
-
-  private ExtractedText getExtractedText(TextEditingValue editingValue) {
+  private ExtractedText getExtractedText() {
     mExtractedText.startOffset = 0;
     mExtractedText.partialStartOffset = -1;
     mExtractedText.partialEndOffset = -1;
-    mExtractedText.selectionStart = editingValue.selectionStart;
-    mExtractedText.selectionEnd = editingValue.selectionEnd;
-    mExtractedText.text = editingValue.text;
+    mExtractedText.selectionStart = mEditable.getSelecionStart();
+    mExtractedText.selectionEnd = mEditable.getSelecionEnd();
+    mExtractedText.text = mEditable.toString();
     return mExtractedText;
   }
 
-  private CursorAnchorInfo getCursorAnchorInfo(TextEditingValue editingValue) {
+  private CursorAnchorInfo getCursorAnchorInfo() {
     if (mCursorAnchorInfoBuilder == null) {
       mCursorAnchorInfoBuilder = new CursorAnchorInfo.Builder();
     } else {
@@ -194,58 +104,16 @@ class InputConnectionAdaptor extends BaseInputConnection {
     }
 
     mCursorAnchorInfoBuilder.setSelectionRange(
-        editingValue.selectionStart, editingValue.selectionEnd);
-    final int composingStart = editingValue.composingStart;
-    final int composingEnd = editingValue.composingEnd;
+        mEditable.getSelecionStart(), mEditable.getSelecionEnd());
+    final int composingStart = mEditable.getComposingStart();
+    final int composingEnd = mEditable.getComposingEnd();
     if (composingStart >= 0 && composingEnd > composingStart) {
       mCursorAnchorInfoBuilder.setComposingText(
-          composingStart, editingValue.text.subSequence(composingStart, composingEnd));
+          composingStart, mEditable.toString().subSequence(composingStart, composingEnd));
     } else {
       mCursorAnchorInfoBuilder.setComposingText(-1, "");
     }
     return mCursorAnchorInfoBuilder.build();
-  }
-
-  private void updateIMMIfNeeded() {
-    if (mBatchCount > 0) {
-      return;
-    }
-
-    TextEditingValue currentValue = new TextEditingValue(mEditable);
-
-    // Always send selection update. InputMethodManager#updateSelection skips sending the message
-    // if none of the parameters have changed since the last time we called it.
-    mImm.updateSelection(
-        mFlutterView,
-        currentValue.selectionStart,
-        currentValue.selectionEnd,
-        currentValue.composingStart,
-        currentValue.composingEnd);
-
-    if (currentValue == mLastUpdatedImmEditingValue) {
-      return;
-    }
-
-    if (mExtractRequest != null) {
-      mImm.updateExtractedText(mFlutterView, mExtractRequest.token, getExtractedText(currentValue));
-    }
-
-    if (mMonitorCursorUpdate) {
-      final CursorAnchorInfo info = getCursorAnchorInfo(currentValue);
-      mImm.updateCursorAnchorInfo(mFlutterView, info);
-      Log.v(TAG, "update CursorAnchorInfo: " + info.toString());
-    }
-
-    mLastUpdatedImmEditingValue = currentValue;
-  }
-
-  // Called when the current text editing state held by the text input plugin (in mEditable) is
-  // overwritten by a newly received value from the framework.
-  public void didUpdateEditingValue() {
-    mLastKnownTextEditingValue = new TextEditingValue(mEditable);
-    // Try to update the input method immediately after the internal state change. Or defer it to
-    // endBatchEdit if we're in a nested edit.
-    updateIMMIfNeeded();
   }
 
   @Override
@@ -255,75 +123,62 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean beginBatchEdit() {
-    mBatchCount++;
+    mEditable.beginBatchEdit();
     return super.beginBatchEdit();
   }
 
   @Override
   public boolean endBatchEdit() {
     boolean result = super.endBatchEdit();
-    mBatchCount--;
-    // These 2 methods do nothing if mBatchCount > 0.
-    updateEditingState();
-    updateIMMIfNeeded();
+    mEditable.endBatchEdit();
     return result;
   }
 
   @Override
   public boolean commitText(CharSequence text, int newCursorPosition) {
-    beginBatchEdit();
-    boolean result = super.commitText(text, newCursorPosition);
-    endBatchEdit();
+    final boolean result = super.commitText(text, newCursorPosition);
     return result;
   }
 
   @Override
   public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-    if (Selection.getSelectionStart(mEditable) == -1) return true;
+    if (Selection.getSelectionStart(mEditable) == -1) {
+      return true;
+    }
 
-    beginBatchEdit();
-    boolean result = super.deleteSurroundingText(beforeLength, afterLength);
-    endBatchEdit();
+    final boolean result = super.deleteSurroundingText(beforeLength, afterLength);
     return result;
   }
 
   @Override
   public boolean deleteSurroundingTextInCodePoints(int beforeLength, int afterLength) {
-    beginBatchEdit();
     boolean result = super.deleteSurroundingTextInCodePoints(beforeLength, afterLength);
-    endBatchEdit();
     return result;
   }
 
   @Override
   public boolean setComposingRegion(int start, int end) {
-    beginBatchEdit();
     Log.i("flutter", "engine: set CR: " + String.valueOf(start) + " - " + String.valueOf(end));
-    boolean result = super.setComposingRegion(start, end);
-    endBatchEdit();
+    final boolean result = super.setComposingRegion(start, end);
     return result;
   }
 
   @Override
   public boolean setComposingText(CharSequence text, int newCursorPosition) {
     boolean result;
-    beginBatchEdit();
     Log.i("flutter", "engine: set CT: " + text + ", " + String.valueOf(newCursorPosition));
     if (text.length() == 0) {
       result = super.commitText(text, newCursorPosition);
     } else {
       result = super.setComposingText(text, newCursorPosition);
     }
-    endBatchEdit();
     return result;
   }
 
   @Override
   public boolean finishComposingText() {
     Log.i("flutter", "engine: finish composing");
-    beginBatchEdit();
-    boolean result = super.finishComposingText();
-    endBatchEdit();
+    final boolean result = super.finishComposingText();
     return result;
   }
 
@@ -335,26 +190,19 @@ class InputConnectionAdaptor extends BaseInputConnection {
     if (textMonitor == (mExtractRequest == null)) {
       Log.d(TAG, "The input method toggled text monitoring " + (textMonitor ? "on" : "off"));
     }
-    if (textMonitor) {
-      // Enables text monitoring. See updateIMMIfNeeded.
-      mExtractRequest = request;
-    } else {
-      mExtractRequest = null;
-    }
-    ExtractedText extractedText = getExtractedText(new TextEditingValue(mEditable));
-    return extractedText;
+    // Enables text monitoring if the relevant flag is set. See
+    // InputConnectionAdaptor#didChangeEditingState.
+    mExtractRequest = textMonitor ? request : null;
+    return getExtractedText();
   }
 
   @Override
   public boolean requestCursorUpdates(int cursorUpdateMode) {
-    //
-
     if ((cursorUpdateMode & CURSOR_UPDATE_IMMEDIATE) != 0) {
-      mImm.updateCursorAnchorInfo(
-          mFlutterView, getCursorAnchorInfo(new TextEditingValue(mEditable)));
+      mImm.updateCursorAnchorInfo(mFlutterView, getCursorAnchorInfo());
     }
 
-    // Enables cursor monitoring.
+    // Enables cursor monitoring. See InputConnectionAdaptor#didChangeEditingState.
     mMonitorCursorUpdate = (cursorUpdateMode & CURSOR_UPDATE_MONITOR) != 0;
     return true;
   }
@@ -363,6 +211,12 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean clearMetaKeyStates(int states) {
     boolean result = super.clearMetaKeyStates(states);
     return result;
+  }
+
+  @Override
+  public void closeConnection() {
+    super.closeConnection();
+    mEditable.removeEditingStateListener(this);
   }
 
   // Detect if the keyboard is a Samsung keyboard, where we apply Samsung-specific hacks to
@@ -412,13 +266,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
-    beginBatchEdit();
-    final boolean result = doSendKeyEvent(event);
-    endBatchEdit();
-    return result;
-  }
-
-  private boolean doSendKeyEvent(KeyEvent event) {
     if (event.getAction() == KeyEvent.ACTION_DOWN) {
       if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
         int selStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
@@ -616,4 +463,28 @@ class InputConnectionAdaptor extends BaseInputConnection {
     }
     return true;
   }
+
+  // -------- Start: ListenableEditingState watcher implementation -------
+  @Override
+  public void didChangeEditingState(
+      boolean textChanged, boolean selectionChanged, boolean composingRegionChanged) {
+    // Always send selection update. InputMethodManager#updateSelection skips sending the message
+    // if none of the parameters have changed since the last time we called it.
+    mImm.updateSelection(
+        mFlutterView,
+        mEditable.getSelecionStart(),
+        mEditable.getSelecionEnd(),
+        mEditable.getComposingStart(),
+        mEditable.getComposingEnd());
+
+    if (mExtractRequest != null) {
+      mImm.updateExtractedText(mFlutterView, mExtractRequest.token, getExtractedText());
+    }
+    if (mMonitorCursorUpdate) {
+      final CursorAnchorInfo info = getCursorAnchorInfo();
+      mImm.updateCursorAnchorInfo(mFlutterView, info);
+      Log.v(TAG, "update CursorAnchorInfo: " + info.toString());
+    }
+  }
+  // -------- End: ListenableEditingState watcher implementation -------
 }

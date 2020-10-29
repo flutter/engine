@@ -692,6 +692,14 @@ public class TextInputChannel {
         int selectionEnd,
         int composingStart,
         int composingEnd) {
+
+      assert (selectionStart == -1 && selectionEnd == -1)
+          || (selectionStart >= 0 && selectionStart <= selectionEnd);
+      assert (composingStart == -1 && composingEnd == -1)
+          || (composingStart >= 0 && composingStart < composingEnd);
+      assert composingEnd <= text.length();
+      assert selectionEnd <= text.length();
+
       this.text = text;
       this.selectionStart = selectionStart;
       this.selectionEnd = selectionEnd;

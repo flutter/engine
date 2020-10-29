@@ -22,6 +22,8 @@ import android.graphics.Insets;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.InputType;
+import android.text.Selection;
 import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.view.View;
@@ -154,11 +156,102 @@ public class TextInputPluginTest {
 
     textInputPlugin.setTextInputEditingState(
         testView,
-        new TextInputChannel.TextEditState("more update from the framwork", 1, 1, -1, -1));
+        new TextInputChannel.TextEditState("more update from the framework", 1, 2, -1, -1));
 
-    assertTrue(textInputPlugin.getEditable().toString().equals("more update from the framwork"));
+    assertTrue(textInputPlugin.getEditable().toString().equals("more update from the framework"));
     verify(textInputChannel, times(0))
         .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+  }
+
+  @Test
+  public void inputConnectionAdaptor_RepeatFilter() throws NullPointerException {
+    // Initialize a general TextInputPlugin.
+    InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+    View testView = new View(RuntimeEnvironment.application);
+    EditorInfo outAttrs = new EditorInfo();
+    outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+
+    // Change InputTarget to FRAMEWORK_CLIENT.
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
+            null,
+            null,
+            null,
+            null));
+
+    // There's a pending restart since we initialized the text input client. Flush that now.
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+    verify(textInputChannel, times(0))
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+
+    InputConnectionAdaptor inputConnectionAdaptor =
+        (InputConnectionAdaptor) textInputPlugin.createInputConnection(testView, outAttrs);
+
+    inputConnectionAdaptor.beginBatchEdit();
+    verify(textInputChannel, times(0))
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+    inputConnectionAdaptor.setComposingText("I do not fear computers. I fear the lack of them.", 1);
+    verify(textInputChannel, times(0))
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+    inputConnectionAdaptor.endBatchEdit();
+    verify(textInputChannel, times(1))
+        .updateEditingState(
+            anyInt(),
+            eq("I do not fear computers. I fear the lack of them."),
+            eq(49),
+            eq(49),
+            eq(0),
+            eq(49));
+
+    inputConnectionAdaptor.beginBatchEdit();
+
+    verify(textInputChannel, times(1))
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+
+    inputConnectionAdaptor.endBatchEdit();
+
+    verify(textInputChannel, times(1))
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+
+    inputConnectionAdaptor.beginBatchEdit();
+
+    verify(textInputChannel, times(1))
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+
+    inputConnectionAdaptor.setSelection(3, 4);
+    assertEquals(Selection.getSelectionStart(textInputPlugin.getEditable()), 3);
+    assertEquals(Selection.getSelectionEnd(textInputPlugin.getEditable()), 4);
+
+    verify(textInputChannel, times(1))
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+
+    verify(textInputChannel, times(1))
+        .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+
+    inputConnectionAdaptor.endBatchEdit();
+
+    verify(textInputChannel, times(1))
+        .updateEditingState(
+            anyInt(),
+            eq("I do not fear computers. I fear the lack of them."),
+            eq(3),
+            eq(4),
+            eq(0),
+            eq(49));
   }
 
   @Test
