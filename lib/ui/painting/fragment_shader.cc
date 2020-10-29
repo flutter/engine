@@ -69,12 +69,7 @@ void FragmentShader::setImage(CanvasImage* image,
 void FragmentShader::refresh() {
   sk_sp<SkData> uniforms = SkData::MakeWithoutCopy(uniformData_->data(), uniformData_->num_elements() * 4);
   set_shader(UIDartState::CreateGPUObject(runtime_effect_->makeShader(uniforms, nullptr, 0, nullptr, false)));
-  // set_shader(UIDartState::CreateGPUObject(builder_->makeShader(nullptr, false)));
 }
-
-// FragmentShader::uniformData() {
-//   return _uniformData;
-// }
 
 void FragmentShader::initEffect(SkString sksl) {
   SkString err;
