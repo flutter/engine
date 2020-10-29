@@ -212,40 +212,28 @@ class PlatformView {
         int64_t texture_id) = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      Invoked when the dart VM requests that a deferred library
-    ///             be loaded. Notifies the engine that the requested loading
-    ///             unit should be downloaded and loaded.
+    /// @brief      Loads the dart shared library into the dart VM. When the
+    ///             dart library is loaded successfully, the dart future
+    ///             returned by the originating loadLibrary() call completes.
+    ///             Each shared library is a loading unit, which consists of
+    ///             deferred libraries that can be compiled split from the
+    ///             base dart library by gen_snapshot.
     ///
     /// @param[in]  loading_unit_id  The unique id of the deferred library's
-    ///                              loading unit.
+    ///                              loading unit. This is the same id as the
+    ///                              one passed in by the corresponding
+    ///                              RequestDartDeferredLibrary.
     ///
-    /// @return     A Dart_Handle that is Dart_Null on success, and a dart error
-    ///             on failure.
+    /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+    ///                              shared library.
     ///
-    virtual Dart_Handle OnPlatformViewDartLoadLibrary(
-        intptr_t loading_unit_id) = 0;
-
-    //--------------------------------------------------------------------------
-    /// @brief      Loads the dart shared library from disk and into the dart VM
-    ///             based off of the search parameters. When the dart library is
-    ///             loaded successfully, the dart future returned by the
-    ///             originating loadLibrary() call completes.
+    /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+    ///                              unit's shared library.
     ///
-    /// @param[in]  loading_unit_id  The unique id of the deferred library's
-    ///                              loading unit.
-    ///
-    /// @param[in]  lib_name         The file name of the .so shared library
-    ///                              file.
-    ///
-    /// @param[in]  apkPaths         The paths of the APKs that may or may not
-    ///                              contain the lib_name file.
-    ///
-    /// @param[in]  abi              The abi of the library, eg, arm64-v8a
-    ///
-    virtual void CompleteDartLoadLibrary(intptr_t loading_unit_id,
-                                         std::string lib_name,
-                                         std::vector<std::string>& apkPaths,
-                                         std::string abi) = 0;
+    virtual void LoadDartDeferredLibrary(
+        intptr_t loading_unit_id,
+        const uint8_t* snapshot_data,
+        const uint8_t* snapshot_instructions) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Sets the asset manager of the engine to asset_manager
@@ -617,33 +605,38 @@ class PlatformView {
   /// @param[in]  loading_unit_id  The unique id of the deferred library's
   ///                              loading unit.
   ///
-  /// @return     A Dart_Handle that is Dart_Null on success, and a dart error
-  ///             on failure.
-  ///
-  virtual Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id);
+  virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id);
 
   //--------------------------------------------------------------------------
-  /// @brief      Loads the dart shared library from disk and into the dart VM
-  ///             based off of the search parameters. When the dart library is
-  ///             loaded successfully, the dart future returned by the
-  ///             originating loadLibrary() call completes.
+  /// @brief      Loads the dart shared library into the dart VM. When the
+  ///             dart library is loaded successfully, the dart future
+  ///             returned by the originating loadLibrary() call completes.
+  ///             Each shared library is a loading unit, which consists of
+  ///             deferred libraries that can be compiled split from the
+  ///             base dart library by gen_snapshot.
   ///
   /// @param[in]  loading_unit_id  The unique id of the deferred library's
-  ///                              loading unit.
+  ///                              loading unit. This is the same id as the
+  ///                              one passed in by the corresponding
+  ///                              RequestDartDeferredLibrary.
   ///
-  /// @param[in]  lib_name         The file name of the .so shared library
-  ///                              file.
+  /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+  ///                              shared library.
   ///
-  /// @param[in]  apkPaths         The paths of the APKs that may or may not
-  ///                              contain the lib_name file.
+  /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+  ///                              unit's shared library.
   ///
-  /// @param[in]  abi              The abi of the library, eg, arm64-v8a
-  ///
-  virtual void CompleteDartLoadLibrary(intptr_t loading_unit_id,
-                                       std::string lib_name,
-                                       std::vector<std::string>& apkPaths,
-                                       std::string abi);
+  virtual void LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                                       const uint8_t* snapshot_data,
+                                       const uint8_t* snapshot_instructions);
 
+  // TODO(garyq): Implement a proper asset_resolver replacement instead of
+  // overwriting the entire asset manager.
+  //--------------------------------------------------------------------------
+  /// @brief      Sets the asset manager of the engine to asset_manager
+  ///
+  /// @param[in]  asset_manager  The asset manager to use.
+  ///
   virtual void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager);
 
  protected:

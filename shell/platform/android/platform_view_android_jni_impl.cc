@@ -5,7 +5,9 @@
 #include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
 
 #include <android/native_window_jni.h>
+#include <dlfcn.h>
 #include <jni.h>
+#include <sstream>
 #include <utility>
 
 #include "unicode/uchar.h"
@@ -100,7 +102,7 @@ static jmethodID g_detach_from_gl_context_method = nullptr;
 
 static jmethodID g_compute_platform_resolved_locale_method = nullptr;
 
-static jmethodID g_download_dynamic_feature_method = nullptr;
+static jmethodID g_install_dynamic_library_method = nullptr;
 
 // Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
@@ -511,26 +513,89 @@ static jboolean FlutterTextUtilsIsRegionalIndicator(JNIEnv* env,
   return u_hasBinaryProperty(codePoint, UProperty::UCHAR_REGIONAL_INDICATOR);
 }
 
-static void LoadDartLibrary(JNIEnv* env,
-                            jobject obj,
-                            jlong shell_holder,
-                            jint jLoadingUnitId,
-                            jstring jLibName,
-                            jobjectArray jApkPaths,
-                            jstring jAbi,
-                            jstring jSoPath) {
-  std::string abi = fml::jni::JavaStringToString(env, jAbi);
+static void LoadLoadingUnitFailure(intptr_t loading_unit_id,
+                                   std::string message,
+                                   bool transient) {
+  // TODO(garyq): Implement
+}
 
-  std::vector<std::string> apkPaths =
-      fml::jni::StringArrayToVector(env, jApkPaths);
+static void DynamicFeatureInstallFailure(JNIEnv* env,
+                                         jobject obj,
+                                         jint jLoadingUnitId,
+                                         jstring jError,
+                                         jboolean jTransient) {
+  LoadLoadingUnitFailure(static_cast<intptr_t>(jLoadingUnitId),
+                         fml::jni::JavaStringToString(env, jError),
+                         static_cast<bool>(jTransient));
+}
 
-  ANDROID_SHELL_HOLDER->GetPlatformView()->CompleteDartLoadLibrary(
-      static_cast<intptr_t>(jLoadingUnitId),
-      fml::jni::JavaStringToString(env, jLibName), apkPaths, abi);
+static void LoadDartDeferredLibrary(JNIEnv* env,
+                                    jobject obj,
+                                    jlong shell_holder,
+                                    jint jLoadingUnitId,
+                                    jobjectArray jSearchPaths) {
+  // Convert java->c++
+  intptr_t loading_unit_id = static_cast<intptr_t>(jLoadingUnitId);
+  std::vector<std::string> search_paths =
+      fml::jni::StringArrayToVector(env, jSearchPaths);
+
+  // TODO: Switch to using the NativeLibrary class, eg:
+  //
+  //      fml::RefPtr<fml::NativeLibrary> native_lib =
+  //          fml::NativeLibrary::Create(lib_name.c_str());
+  //
+  // Find and open the shared library.
+  void* handle = nullptr;
+  while (handle == nullptr && !search_paths.empty()) {
+    std::string path = search_paths.back();
+    handle = ::dlopen(path.c_str(), RTLD_NOW);
+    search_paths.pop_back();
+  }
+  if (handle == nullptr) {
+    LoadLoadingUnitFailure(loading_unit_id,
+                           "No lib .so found for provided search paths.", true);
+    return;
+  }
+
+  // Resolve symbols.
+  uint8_t* isolate_data =
+      static_cast<uint8_t*>(::dlsym(handle, DartSnapshot::kIsolateDataSymbol));
+  if (isolate_data == nullptr) {
+    // Mac sometimes requires an underscore prefix.
+    std::stringstream underscore_symbol_name;
+    underscore_symbol_name << "_" << DartSnapshot::kIsolateDataSymbol;
+    isolate_data = static_cast<uint8_t*>(
+        ::dlsym(handle, underscore_symbol_name.str().c_str()));
+    if (isolate_data == nullptr) {
+      LoadLoadingUnitFailure(loading_unit_id,
+                             "Could not resolve data symbol in library", true);
+      return;
+    }
+  }
+  uint8_t* isolate_instructions = static_cast<uint8_t*>(
+      ::dlsym(handle, DartSnapshot::kIsolateInstructionsSymbol));
+  if (isolate_instructions == nullptr) {
+    // Mac sometimes requires an underscore prefix.
+    std::stringstream underscore_symbol_name;
+    underscore_symbol_name << "_" << DartSnapshot::kIsolateInstructionsSymbol;
+    isolate_instructions = static_cast<uint8_t*>(
+        ::dlsym(handle, underscore_symbol_name.str().c_str()));
+    if (isolate_data == nullptr) {
+      LoadLoadingUnitFailure(loading_unit_id,
+                             "Could not resolve instructions symbol in library",
+                             true);
+      return;
+    }
+  }
+
+  ANDROID_SHELL_HOLDER->GetPlatformView()->LoadDartDeferredLibrary(
+      loading_unit_id, isolate_data, isolate_instructions);
 
   // TODO(garyq): fallback on soPath.
 }
 
+// TODO(garyq): persist additional asset resolvers by updating instead of
+// replacing with newly created asset_manager
 static void UpdateAssetManager(JNIEnv* env,
                                jobject obj,
                                jlong shell_holder,
@@ -542,18 +607,11 @@ static void UpdateAssetManager(JNIEnv* env,
       jAssetManager,                                        // asset manager
       fml::jni::JavaStringToString(env, jAssetBundlePath))  // apk asset dir
   );
+  // Create config to set persistent cache asset manager
+  RunConfiguration config(nullptr, std::move(asset_manager));
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetManager(
-      std::move(asset_manager));
-}
-
-static void DynamicFeatureInstallFailure(JNIEnv* env,
-                                         jobject obj,
-                                         jobject moduleName,
-                                         jint loadigUnitId,
-                                         jobject error,
-                                         jboolean transient) {
-  // TODO(garyq): Implement
+      config.GetAssetManager());
 }
 
 bool RegisterApi(JNIEnv* env) {
@@ -713,10 +771,9 @@ bool RegisterApi(JNIEnv* env) {
               reinterpret_cast<void*>(&FlutterTextUtilsIsRegionalIndicator),
       },
       {
-          .name = "nativeLoadDartLibrary",
-          .signature = "(JILjava/lang/String;[Ljava/lang/String;Ljava/lang/"
-                       "String;Ljava/lang/String;)V",
-          .fnPtr = reinterpret_cast<void*>(&LoadDartLibrary),
+          .name = "nativeLoadDartDeferredLibrary",
+          .signature = "(JI[Ljava/lang/String;)V",
+          .fnPtr = reinterpret_cast<void*>(&LoadDartDeferredLibrary),
       },
       {
           .name = "nativeUpdateAssetManager",
@@ -726,7 +783,7 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeDynamicFeatureInstallFailure",
-          .signature = "(Ljava/lang/String;ILjava/lang/String;Z)V",
+          .signature = "(ILjava/lang/String;Z)V",
           .fnPtr = reinterpret_cast<void*>(&DynamicFeatureInstallFailure),
       },
   };
@@ -972,10 +1029,10 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_download_dynamic_feature_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "downloadDynamicFeature", "(I)V");
+  g_install_dynamic_library_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "RequestDartDeferredLibrary", "(I)V");
 
-  if (g_download_dynamic_feature_method == nullptr) {
+  if (g_install_dynamic_library_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate downloadDynamicFeature method";
     return false;
   }
@@ -1407,7 +1464,7 @@ double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
   return static_cast<double>(env->GetStaticFloatField(clazz, fid));
 }
 
-bool PlatformViewAndroidJNIImpl::FlutterViewDownloadDynamicFeature(
+bool PlatformViewAndroidJNIImpl::RequestDartDeferredLibrary(
     int loading_unit_id) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
@@ -1416,7 +1473,7 @@ bool PlatformViewAndroidJNIImpl::FlutterViewDownloadDynamicFeature(
     return true;
   }
 
-  env->CallObjectMethod(java_object.obj(), g_download_dynamic_feature_method,
+  env->CallObjectMethod(java_object.obj(), g_install_dynamic_library_method,
                         loading_unit_id);
 
   FML_CHECK(CheckException(env));

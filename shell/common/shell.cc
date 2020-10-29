@@ -1185,11 +1185,11 @@ std::unique_ptr<std::vector<std::string>> Shell::ComputePlatformResolvedLocale(
   return platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
 }
 
-void Shell::CompleteDartLoadLibrary(intptr_t loading_unit_id,
-                                    std::string lib_name,
-                                    std::vector<std::string>& apkPaths,
-                                    std::string abi) {
-  engine_->CompleteDartLoadLibrary(loading_unit_id, lib_name, apkPaths, abi);
+void Shell::LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                                    const uint8_t* snapshot_data,
+                                    const uint8_t* snapshot_instructions) {
+  engine_->LoadDartDeferredLibrary(loading_unit_id, snapshot_data,
+                                   snapshot_instructions);
 }
 
 void Shell::UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) {
@@ -1197,13 +1197,8 @@ void Shell::UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) {
 }
 
 // |Engine::Delegate|
-Dart_Handle Shell::OnDartLoadLibrary(intptr_t loading_unit_id) {
-  return OnPlatformViewDartLoadLibrary(loading_unit_id);
-}
-
-// |PlatformView::Delegate|
-Dart_Handle Shell::OnPlatformViewDartLoadLibrary(intptr_t loading_unit_id) {
-  return platform_view_->OnDartLoadLibrary(loading_unit_id);
+void Shell::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  platform_view_->RequestDartDeferredLibrary(loading_unit_id);
 }
 
 void Shell::ReportTimings() {

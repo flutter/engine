@@ -103,6 +103,12 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
   void OnPlatformViewRegisterTexture(std::shared_ptr<Texture> texture) override {}
   void OnPlatformViewUnregisterTexture(int64_t texture_id) override {}
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) override {}
+
+  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                               std::string lib_name,
+                               const std::vector<std::string>& apkPaths,
+                               std::string abi) override {}
+  void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override {}
 };
 
 }  // namespace

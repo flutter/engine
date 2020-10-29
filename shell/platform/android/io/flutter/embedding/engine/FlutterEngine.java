@@ -261,7 +261,10 @@ public class FlutterEngine {
         false);
   }
 
-  /** Fully configurable {@code FlutterEngine} constructor. */
+  /**
+   * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[], boolean, boolean)}, plus the
+   * ability to control {@code waitForRestorationData}.
+   */
   public FlutterEngine(
       @NonNull Context context,
       @Nullable FlutterLoader flutterLoader,
@@ -270,6 +273,28 @@ public class FlutterEngine {
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins,
       boolean waitForRestorationData) {
+    this(
+        context,
+        flutterLoader,
+        flutterJNI,
+        platformViewsController,
+        dartVmArgs,
+        automaticallyRegisterPlugins,
+        waitForRestorationData,
+        null);
+  }
+
+  // TODO(garyq): Move this to a better injection system.
+  /** Fully configurable {@code FlutterEngine} constructor. */
+  public FlutterEngine(
+      @NonNull Context context,
+      @Nullable FlutterLoader flutterLoader,
+      @NonNull FlutterJNI flutterJNI,
+      @NonNull PlatformViewsController platformViewsController,
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins,
+      boolean waitForRestorationData,
+      @Nullable DynamicFeatureManager dynamicFeatureManager) {
     AssetManager assetManager;
     try {
       assetManager = context.createPackageContext(context.getPackageName(), 0).getAssets();
@@ -304,9 +329,9 @@ public class FlutterEngine {
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
 
-    dynamicFeatureManager = new PlayStoreDynamicFeatureManager(context, flutterJNI);
+    this.dynamicFeatureManager = dynamicFeatureManager != null ?
+        dynamicFeatureManager : new PlayStoreDynamicFeatureManager(context, flutterJNI);
     flutterJNI.setDynamicFeatureManager(dynamicFeatureManager);
-    flutterJNI.setDynamicFeatureContext(context);
 
     attachToJni();
 
@@ -383,6 +408,7 @@ public class FlutterEngine {
     platformViewsController.onDetachedFromJNI();
     dartExecutor.onDetachedFromJNI();
     flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
+    flutterJNI.removeDynamicFeatureManager();
     flutterJNI.detachFromNativeAndReleaseResources();
   }
 

@@ -13,7 +13,6 @@
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "third_party/dart/runtime/include/dart_api.h"
 
 ///\note Deprecated MOCK_METHOD macros used until this issue is resolved:
 // https://github.com/google/googletest/issues/2490
@@ -33,7 +32,7 @@ class MockDelegate : public Engine::Delegate {
   MOCK_METHOD1(ComputePlatformResolvedLocale,
                std::unique_ptr<std::vector<std::string>>(
                    const std::vector<std::string>&));
-  MOCK_METHOD1(OnDartLoadLibrary, Dart_Handle(intptr_t));
+  MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
 };
 
 class MockResponse : public PlatformMessageResponse {
@@ -57,7 +56,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
   MOCK_METHOD1(ComputePlatformResolvedLocale,
                std::unique_ptr<std::vector<std::string>>(
                    const std::vector<std::string>&));
-  MOCK_METHOD1(OnDartLoadLibrary, Dart_Handle(intptr_t));
+  MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
 };
 
 class MockRuntimeController : public RuntimeController {

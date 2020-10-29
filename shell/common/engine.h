@@ -30,7 +30,6 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
 namespace flutter {
@@ -270,10 +269,7 @@ class Engine final : public RuntimeDelegate,
     /// @param[in]  loading_unit_id  The unique id of the deferred library's
     ///                              loading unit.
     ///
-    /// @return     A Dart_Handle that is Dart_Null on success, and a dart error
-    ///             on failure.
-    ///
-    virtual Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id) = 0;
+    virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -782,26 +778,25 @@ class Engine final : public RuntimeDelegate,
   const std::string& InitialRoute() const { return initial_route_; }
 
   //--------------------------------------------------------------------------
-  /// @brief      Loads the dart shared library from disk and into the dart VM
-  ///             based off of the search parameters. When the dart library is
-  ///             loaded successfully, the dart future returned by the
-  ///             originating loadLibrary() call completes.
+  /// @brief      Loads the dart shared library into the dart VM. When the
+  ///             dart library is loaded successfully, the dart future
+  ///             returned by the originating loadLibrary() call completes.
+  ///             Each shared library is a loading unit, which consists of
+  ///             deferred libraries that can be compiled split from the
+  ///             base dart library by gen_snapshot.
   ///
   /// @param[in]  loading_unit_id  The unique id of the deferred library's
   ///                              loading unit.
   ///
-  /// @param[in]  lib_name         The file name of the .so shared library
-  ///                              file.
+  /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+  ///                              shared library.
   ///
-  /// @param[in]  apkPaths         The paths of the APKs that may or may not
-  ///                              contain the lib_name file.
+  /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+  ///                              unit's shared library.
   ///
-  /// @param[in]  abi              The abi of the library, eg, arm64-v8a
-  ///
-  void CompleteDartLoadLibrary(intptr_t loading_unit_id,
-                               std::string lib_name,
-                               std::vector<std::string>& apkPaths,
-                               std::string abi);
+  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                               const uint8_t* snapshot_data,
+                               const uint8_t* snapshot_instructions);
 
  private:
   Engine::Delegate& delegate_;
@@ -855,7 +850,7 @@ class Engine final : public RuntimeDelegate,
   // feature. Left commented out until it lands:
 
   // // |RuntimeDelegate|
-  // Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id) override;
+  // void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 
   void SetNeedsReportTimings(bool value) override;
 

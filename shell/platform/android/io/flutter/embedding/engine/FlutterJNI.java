@@ -993,73 +993,72 @@ public class FlutterJNI {
     this.dynamicFeatureManager = dynamicFeatureManager;
   }
 
-  private Context dynamicFeatureContext;
-
+  /** Sets the dynamic feature manager that is used to download and install split features. */
   @UiThread
-  public void setDynamicFeatureContext(@NonNull Context context) {
+  public void removeDynamicFeatureManager() {
     ensureRunningOnMainThread();
-    this.dynamicFeatureContext = context;
-  }
-
-  @SuppressWarnings("unused")
-  @UiThread
-  public void downloadDynamicFeature(int loadingUnitId) {
-    String loadingUnitIdResName =
-        dynamicFeatureContext
-            .getResources()
-            .getString(
-                dynamicFeatureContext
-                    .getResources()
-                    .getIdentifier(
-                        "loadingUnit" + loadingUnitId,
-                        "string",
-                        dynamicFeatureContext.getPackageName()));
-    downloadDynamicFeature(loadingUnitIdResName, loadingUnitId);
-  }
-
-  // Called by the engine upon invocation of dart loadLibrary() request
-  @SuppressWarnings("unused")
-  @UiThread
-  public void downloadDynamicFeature(String moduleName, int loadingUnitId) {
-    dynamicFeatureManager.downloadFeature(moduleName, loadingUnitId);
+    this.dynamicFeatureManager = null;
   }
 
   /**
-   * This should be called for every loading unit to be loaded into the dart isolate.
+   * Called by dart to request that a dart deferred library corresponding to loadingUnitId be
+   * downloaded (if necessary) and loaded into the dart vm.
    *
-   * <p>abi, libName, and apkPaths are used together to search the installed apks for the desired
-   * .so library. If not found, soPath may be provided as a fallback if a pre-extracted .so exists,
-   * especially on older devices with libs compressed in the apk.
+   * <p>This method delegates the task to DynamicFeatureManager, which handles the download and
+   * loading of the dart library and any assets.
    *
-   * <p>Successful loading of the dart library also completes the loadLibrary() future that
-   * triggered the install/load process.
+   * @param loadingUnitId The loadingUnitId is assigned during compile time by gen_snapshot and is
+   *                      automatically retrieved when loadLibrary() is called on a dart deferred
+   *                      library.
    */
+  @SuppressWarnings("unused")
   @UiThread
-  public void loadDartLibrary(
-      int loadingUnitId,
-      @NonNull String libName,
-      @NonNull String[] apkPaths,
-      @NonNull String abi,
-      @NonNull String soPath) {
-    ensureRunningOnMainThread();
-    ensureAttachedToNative();
-    nativeLoadDartLibrary(nativePlatformViewId, loadingUnitId, libName, apkPaths, abi, soPath);
+  public void RequestDartDeferredLibrary(int loadingUnitId) {
+    if (dynamicFeatureManager != null) {
+      dynamicFeatureManager.downloadDynamicFeature(loadingUnitId, null);
+    }
   }
 
-  private native void nativeLoadDartLibrary(
+  /**
+   * Searches each of the provided paths for a valid dart shared library .so file and resolves
+   * symbols to load into the dart VM.
+   *
+   * <p>Successful loading of the dart library completes the future returned by loadLibrary() that
+   * triggered the install/load process.
+   *
+   * @param loadingUnitId The loadingUnitId is assigned during compile time by gen_snapshot and is
+   *                      automatically retrieved when loadLibrary() is called on a dart deferred
+   *                      library. This is used to identify which dart deferred library the resolved
+   *                      correspond to.
+   *
+   * @param searchPaths   An array of paths in which to look for valid dart shared libraries. This
+   *                      supports paths within zipped apks as long as the apks are not compressed
+   *                      using the `path/to/apk.apk!path/inside/apk/lib.so` format. Paths will be
+   *                      tried first to last and ends when a library is sucessfully found. When the
+   *                      found library is invalid, no additional paths will be attempted.
+   */
+  @UiThread
+  public void loadDartDeferredLibrary(
+      int loadingUnitId,
+      @NonNull String[] searchPaths) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeLoadDartDeferredLibrary(nativePlatformViewId, loadingUnitId, searchPaths);
+  }
+
+  private native void nativeLoadDartDeferredLibrary(
       long nativePlatformViewId,
       int loadingUnitId,
-      @NonNull String libName,
-      @NonNull String[] apkPaths,
-      @NonNull String abi,
-      @NonNull String soPath);
+      @NonNull String[] searchPaths);
 
   /**
    * Specifies a new AssetManager that has access to the dynamic feature's assets in addition to the
    * base module's assets.
    *
-   * <p>assetBundlePath is the subdirectory that the flutter assets are stored in. The typical value
-   * is `flutter_assets`.
+   * @param assetManager    An android AssetManager that is able to access the newly downloaded assets.
+   *
+   * @param assetBundlePath The subdirectory that the flutter assets are stored in. The typical value
+   *                        is `flutter_assets`.
    */
   @UiThread
   public void updateAssetManager(
@@ -1074,19 +1073,31 @@ public class FlutterJNI {
       @NonNull AssetManager assetManager,
       @NonNull String assetBundlePath);
 
-  // Called when an install encounters a failure during the Android portion of installing a module.
-  // When transient is false, new attempts to install will automatically result in same error in
-  // dart before the request is passed to Android.
+  /**
+   * Indicates that a failure was encountered during the Android portion of downloading a dynamic
+   * feature module and loading a dart deferred library, which is typically done by
+   * DynamicFeatureManager.
+   *
+   * <p>This will inform dart that the future returned by loadLibrary() should complete with an error.
+   *
+   * @param loadingUnitId The loadingUnitId that corresponds to the dart deferred library that
+   *                      failed to install.
+   *
+   * @param error         The error message to display.
+   *
+   * @param isTransient   When isTransient is false, new attempts to install will automatically result in
+   *                      same error in dart before the request is passed to Android.
+   */
   @SuppressWarnings("unused")
   @UiThread
   public void dynamicFeatureInstallFailure(
-      @NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans) {
+      int loadingUnitId, @NonNull String error, boolean isTransient) {
     ensureRunningOnMainThread();
-    nativeDynamicFeatureInstallFailure(moduleName, loadingUnitId, error, trans);
+    nativeDynamicFeatureInstallFailure(loadingUnitId, error, isTransient);
   }
 
   private native void nativeDynamicFeatureInstallFailure(
-      @NonNull String moduleName, int loadingUnitId, @NonNull String error, boolean trans);
+      int loadingUnitId, @NonNull String error, boolean isTransient);
 
   // ----- End Dynamic Features Support ----
 

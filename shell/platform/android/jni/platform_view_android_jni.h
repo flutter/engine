@@ -196,7 +196,7 @@ class PlatformViewAndroidJNI {
 
   virtual double GetDisplayRefreshRate() = 0;
 
-  virtual bool FlutterViewDownloadDynamicFeature(int loading_unit_id) = 0;
+  virtual bool RequestDartDeferredLibrary(int loading_unit_id) = 0;
 };
 
 }  // namespace flutter

@@ -337,20 +337,20 @@ PlatformViewAndroid::ComputePlatformResolvedLocales(
 }
 
 // |PlatformView|
-Dart_Handle PlatformViewAndroid::OnDartLoadLibrary(intptr_t loading_unit_id) {
-  if (jni_facade_->FlutterViewDownloadDynamicFeature(loading_unit_id)) {
-    return Dart_Null();
+void PlatformViewAndroid::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  if (jni_facade_->RequestDartDeferredLibrary(loading_unit_id)) {
+    return;
   }
-  return Dart_Null();  // TODO(garyq): RETURN ERROR
+  return;  // TODO(garyq): Call LoadDartDeferredLibraryFailure()
 }
 
 // |PlatformView|
-void PlatformViewAndroid::CompleteDartLoadLibrary(
+void PlatformViewAndroid::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
-    std::string lib_name,
-    std::vector<std::string>& apkPaths,
-    std::string abi) {
-  delegate_.CompleteDartLoadLibrary(loading_unit_id, lib_name, apkPaths, abi);
+    const uint8_t* snapshot_data,
+    const uint8_t* snapshot_instructions) {
+  delegate_.LoadDartDeferredLibrary(loading_unit_id, snapshot_data,
+                                    snapshot_instructions);
 }
 
 // |PlatformView|

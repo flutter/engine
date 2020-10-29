@@ -511,17 +511,16 @@ const std::string& Engine::GetLastEntrypointLibrary() const {
 // feature. Left commented out until it lands:
 
 // // |RuntimeDelegate|
-// Dart_Handle Engine::OnDartLoadLibrary(intptr_t loading_unit_id) {
-//   return delegate_.OnDartLoadLibrary(loading_unit_id);
+// void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+//   return delegate_.RequestDartDeferredLibrary(loading_unit_id);
 // }
 
-void Engine::CompleteDartLoadLibrary(intptr_t loading_unit_id,
-                                     std::string lib_name,
-                                     std::vector<std::string>& apkPaths,
-                                     std::string abi) {
+void Engine::LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                                     const uint8_t* snapshot_data,
+                                     const uint8_t* snapshot_instructions) {
   if (runtime_controller_->IsRootIsolateRunning()) {
-    // runtime_controller_->CompleteDartLoadLibrary(loading_unit_id, lib_name,
-    //                                              apkPaths, abi);
+    // runtime_controller_->LoadDartDeferredLibrary(loading_unit_id,
+    //    snapshot_data, snapshot_instructions);
   }
 }
 

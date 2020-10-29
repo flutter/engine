@@ -159,14 +159,12 @@ PlatformView::ComputePlatformResolvedLocales(
   return out;
 }
 
-Dart_Handle PlatformView::OnDartLoadLibrary(intptr_t loading_unit_id) {
-  return Dart_Null();
-}
+void PlatformView::RequestDartDeferredLibrary(intptr_t loading_unit_id) {}
 
-void PlatformView::CompleteDartLoadLibrary(intptr_t loading_unit_id,
-                                           std::string lib_name,
-                                           std::vector<std::string>& apkPaths,
-                                           std::string abi) {}
+void PlatformView::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    const uint8_t* snapshot_data,
+    const uint8_t* snapshot_instructions) {}
 
 void PlatformView::UpdateAssetManager(
     std::shared_ptr<AssetManager> asset_manager) {}

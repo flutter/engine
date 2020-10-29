@@ -80,7 +80,7 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
 
   double GetDisplayRefreshRate() override;
 
-  bool FlutterViewDownloadDynamicFeature(int loading_unit_id) override;
+  bool RequestDartDeferredLibrary(int loading_unit_id) override;
 
  private:
   // Reference to FlutterJNI object.
