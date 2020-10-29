@@ -638,16 +638,34 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
     return 1.0;
   }
   final Float32List m = transform.storage;
-  // Apply perspective transform.
-  final double topLeftX = m[12] * m[15];
-  final double topLeftY = m[13] * m[15];
+  // Apply perspective transform to all 4 corners. Can't use left,top, bottom,
+  // right since for example rotating 45 degrees would yield inaccurate size.
+  double minX = m[12] * m[15];
+  double minY = m[13] * m[15];
+  double maxX = minX;
+  double maxY = minY;
   double x = width;
   double y = height;
-  final double xp = (m[0] * x) + (m[4] * y) + m[12];
-  final double yp = (m[1] * x) + (m[5] * y) + m[13];
-  final double wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-  double scaleX = ((xp * wp) - topLeftX).abs() / width;
-  double scaleY = ((yp * wp) - topLeftY).abs() / height;
+  double wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+  double xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+  double yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  minX = math.min(minX, xp);
+  maxX = math.max(maxX, xp);
+  x = 0;
+  wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+  xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+  yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  minX = math.min(minX, xp);
+  maxX = math.max(maxX, xp);
+  x = width;
+  y = 0;
+  wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+  xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+  yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  minX = math.min(minX, xp);
+  maxX = math.max(maxX, xp);
+  double scaleX = (maxX - minX) / width;
+  double scaleY = (maxY - minY) / height;
   double scale = math.min(scaleX, scaleY);
   // kEpsilon guards against divide by zero below.
   if (scale < kEpsilon || scale == 1) {
