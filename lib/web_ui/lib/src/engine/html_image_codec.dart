@@ -45,8 +45,9 @@ class HtmlCodec implements ui.Codec {
         if (naturalWidth == 0 && naturalHeight == 0 && (
             browserEngine == BrowserEngine.firefox ||
                 browserEngine == BrowserEngine.ie11)) {
-          naturalWidth = 300;
-          naturalHeight = 300;
+          const int kDefaultImageSizeFallback = 300;
+          naturalWidth = kDefaultImageSizeFallback;
+          naturalHeight = kDefaultImageSizeFallback;
         }
         final HtmlImage image = HtmlImage(
           imgElement,
