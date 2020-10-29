@@ -63,7 +63,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::WeakPtr<FlutterViewController> _viewController;
   fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
 
-  std::unique_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
+  std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
   std::unique_ptr<flutter::ProfilerMetricsIOS> _profiler_metrics;
   std::unique_ptr<flutter::SamplingProfiler> _profiler;
 
@@ -78,6 +78,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
+  fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
 
   int64_t _nextTextureId;
 
@@ -310,8 +311,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterPlatformPlugin*)platformPlugin {
   return _platformPlugin.get();
 }
-- (flutter::FlutterPlatformViewsController*)platformViewsController {
-  return _platformViewsController.get();
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController {
+  return _platformViewsController;
 }
 - (FlutterTextInputPlugin*)textInputPlugin {
   return _textInputPlugin.get();
@@ -337,6 +338,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterBasicMessageChannel*)settingsChannel {
   return _settingsChannel.get();
 }
+- (FlutterBasicMessageChannel*)keyEventChannel {
+  return _keyEventChannel.get();
+}
 
 - (NSURL*)observatoryUrl {
   return [_publisher.get() url];
@@ -351,6 +355,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
+  _keyEventChannel.reset();
 }
 
 - (void)startProfiler:(NSString*)threadLabel {
@@ -420,6 +425,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _settingsChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/settings"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterJSONMessageCodec sharedInstance]]);
+
+  _keyEventChannel.reset([[FlutterBasicMessageChannel alloc]
+         initWithName:@"flutter/keyevent"
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
@@ -547,7 +557,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     if (!_platformViewsController) {
       _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
     }
-    _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
+    _publisher.reset([[FlutterObservatoryPublisher alloc]
+        initWithEnableObservatoryPublication:settings.enable_observatory_publication]);
     [self maybeSetupPlatformViewChannels];
     _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
     if (profilerEnabled) {
@@ -870,6 +881,19 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     return;
   }
   [self.localizationChannel invokeMethod:@"setLocale" arguments:localeData];
+}
+
+- (void)waitForFirstFrame:(NSTimeInterval)timeout
+                 callback:(void (^_Nonnull)(BOOL didTimeout))callback {
+  dispatch_queue_t queue = dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0);
+  dispatch_async(queue, ^{
+    fml::TimeDelta waitTime = fml::TimeDelta::FromMilliseconds(timeout * 1000);
+    BOOL didTimeout =
+        self.shell.WaitForFirstFrame(waitTime).code() == fml::StatusCode::kDeadlineExceeded;
+    dispatch_async(dispatch_get_main_queue(), ^{
+      callback(didTimeout);
+    });
+  });
 }
 
 @end
