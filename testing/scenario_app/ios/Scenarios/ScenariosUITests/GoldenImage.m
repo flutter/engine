@@ -29,7 +29,6 @@ static const double kRmseThreshold = 0.5;
 }
 
 - (BOOL)compareGoldenToImage:(UIImage*)image {
-
   if (!self.image || !image) {
     os_log_error(OS_LOG_DEFAULT, "GOLDEN DIFF FAILED: image does not exists.");
     return NO;
