@@ -899,9 +899,13 @@ class SemanticsObject {
           ..transformOrigin = '0 0 0'
           ..transform = matrix4ToCssTransform(effectiveTransform);
       } else {
-        // Mobile screen readers observed have errors reading the semantics
-        // borders when css `transform` properties are used.
+        // Mobile screen readers observed to have errors while calculating the
+        // semantics focus borders if css `transform` properties are used.
         // See: https://github.com/flutter/flutter/issues/68225
+        // Therefore we are calculating a bounding rectangle for the
+        // effective transform and use that rectangle to set TLWH css style
+        // properties.
+        // Note: Identity matrix is not using this code path.
         final ui.Rect rect =
             computeBoundingRectangleFromMatrix(effectiveTransform, _rect!);
         element.style
