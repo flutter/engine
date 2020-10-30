@@ -395,7 +395,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     afm.notifyViewExited(mView, triggerIdentifier.hashCode());
   }
 
-  public void notifyValueChanged(String newValue) {
+  private void notifyValueChanged(String newValue) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null || !needsAutofill()) {
       return;
     }
