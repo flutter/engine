@@ -164,7 +164,6 @@ class InputConnectionAdaptor extends BaseInputConnection
 
   @Override
   public boolean setComposingRegion(int start, int end) {
-    Log.v("flutter", "engine: set CR: " + String.valueOf(start) + " - " + String.valueOf(end));
     final boolean result = super.setComposingRegion(start, end);
     return result;
   }
@@ -172,7 +171,6 @@ class InputConnectionAdaptor extends BaseInputConnection
   @Override
   public boolean setComposingText(CharSequence text, int newCursorPosition) {
     boolean result;
-    Log.v("flutter", "engine: set CT: " + text + ", " + String.valueOf(newCursorPosition));
     beginBatchEdit();
     if (text.length() == 0) {
       result = super.commitText(text, newCursorPosition);
@@ -185,7 +183,6 @@ class InputConnectionAdaptor extends BaseInputConnection
 
   @Override
   public boolean finishComposingText() {
-    Log.v("flutter", "engine: finish composing");
     final boolean result = super.finishComposingText();
     return result;
   }
@@ -193,7 +190,6 @@ class InputConnectionAdaptor extends BaseInputConnection
   // TODO(garyq): Implement a more feature complete version of getExtractedText
   @Override
   public ExtractedText getExtractedText(ExtractedTextRequest request, int flags) {
-    // Input methods may use this method to get the current content of the
     final boolean textMonitor = (flags & GET_EXTRACTED_TEXT_MONITOR) != 0;
     if (textMonitor == (mExtractRequest == null)) {
       Log.d(TAG, "The input method toggled text monitoring " + (textMonitor ? "on" : "off"));

@@ -14,12 +14,16 @@ import java.util.ArrayList;
 /// As the name implies, this class also notifies its listeners when the editing state (text,
 /// selection, composing region) changes. Change notifications will be deferred to the end of batch
 /// edits if there's one in progress. Listeners added during a batch end will be notified when all
-/// batch edits end (i.e. when the outmost batch edit ends), even if there's no real change.
+/// batch edits end (i.e. when the outermost batch edit ends), even if there's no real change.
+///
+/// Changing the editing state in a didChangeEditingState callback may cause unexpected behavior.
 //
 // Currently this class does not notify its listeners on spans-only changes (e.g.,
 // Selection.setSelection). Wrap them in a batch edit to trigger a change notification.
 class ListenableEditingState extends SpannableStringBuilder {
   interface EditingStateWatcher {
+    // Changing the editing state in a didChangeEditingState callback may cause unexpected
+    // behavior.
     void didChangeEditingState(
         boolean textChanged, boolean selectionChanged, boolean composingRegionChanged);
   }
@@ -27,6 +31,7 @@ class ListenableEditingState extends SpannableStringBuilder {
   private static final String TAG = "flutter";
 
   private int mBatchEditNestDepth = 0;
+  private int mChangeNotificationDepth = 0;
   private ArrayList<EditingStateWatcher> mListeners = new ArrayList<>();
   private ArrayList<EditingStateWatcher> mPendingListeners = new ArrayList<>();
 
@@ -64,6 +69,9 @@ class ListenableEditingState extends SpannableStringBuilder {
   /// Batch ends nest.
   public void beginBatchEdit() {
     mBatchEditNestDepth++;
+    if (mChangeNotificationDepth > 0) {
+      Log.e(TAG, "editing state should not be changed in a listener callback");
+    }
     if (mBatchEditNestDepth == 1 && !mListeners.isEmpty()) {
       mTextWhenBeginBatchEdit = toString();
       mSelectionStartWhenBeginBatchEdit = getSelecionStart();
@@ -81,8 +89,8 @@ class ListenableEditingState extends SpannableStringBuilder {
     }
 
     if (mBatchEditNestDepth == 1) {
-      for (final EditingStateWatcher watcher : mPendingListeners) {
-        watcher.didChangeEditingState(true, true, true);
+      for (final EditingStateWatcher listener : mPendingListeners) {
+        notifyListener(listener, true, true, true);
       }
 
       if (!mListeners.isEmpty()) {
@@ -94,13 +102,8 @@ class ListenableEditingState extends SpannableStringBuilder {
         final boolean composingRegionChanged =
             mComposingStartWhenBeginBatchEdit != getComposingStart()
                 || mComposingEndWhenBeginBatchEdit != getComposingEnd();
-        if (textChanged || selectionChanged || composingRegionChanged) {
-          for (int i = 0; i < mListeners.size(); i++) {
-            mListeners
-                .get(i)
-                .didChangeEditingState(textChanged, selectionChanged, composingRegionChanged);
-          }
-        }
+
+        notifyListenersIfNeeded(textChanged, selectionChanged, composingRegionChanged);
       }
     }
 
@@ -158,6 +161,11 @@ class ListenableEditingState extends SpannableStringBuilder {
   @Override
   public SpannableStringBuilder replace(
       int start, int end, CharSequence tb, int tbstart, int tbend) {
+
+    if (mChangeNotificationDepth > 0) {
+      Log.e(TAG, "editing state should not be changed in a listener callback");
+    }
+
     boolean textChanged = end - start != tbend - tbstart;
     for (int i = 0; i < end - start && !textChanged; i++) {
       textChanged |= charAt(start + i) != tb.charAt(tbstart + i);
@@ -180,14 +188,27 @@ class ListenableEditingState extends SpannableStringBuilder {
         getSelecionStart() != selectionStart || getSelecionEnd() != selectionEnd;
     final boolean composingRegionChanged =
         getComposingStart() != composingStart || getComposingEnd() != composingEnd;
-    if (textChanged || selectionChanged || composingRegionChanged) {
-      for (int i = 0; i < mListeners.size(); i++) {
-        mListeners
-            .get(i)
-            .didChangeEditingState(textChanged, selectionChanged, composingRegionChanged);
+    notifyListenersIfNeeded(textChanged, selectionChanged, composingRegionChanged);
+    return editable;
+  }
+
+  private void notifyListener(
+      EditingStateWatcher listener,
+      boolean textChanged,
+      boolean selectionChanged,
+      boolean composingChanged) {
+    mChangeNotificationDepth++;
+    listener.didChangeEditingState(textChanged, selectionChanged, composingChanged);
+    mChangeNotificationDepth--;
+  }
+
+  private void notifyListenersIfNeeded(
+      boolean textChanged, boolean selectionChanged, boolean composingChanged) {
+    if (textChanged || selectionChanged || composingChanged) {
+      for (final EditingStateWatcher listener : mListeners) {
+        notifyListener(listener, textChanged, selectionChanged, composingChanged);
       }
     }
-    return editable;
   }
 
   public final int getSelecionStart() {
