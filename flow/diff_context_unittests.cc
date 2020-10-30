@@ -1,9 +1,13 @@
 #include "diff_context.h"
+#include "flutter/flow/layers/backdrop_filter_layer.h"
+#include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
+#include "flutter/flow/layers/transform_layer.h"
 #include "flutter/flow/testing/diff_context_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "gtest/gtest.h"
+#include "third_party/skia/include/effects/SkBlurImageFilter.h"
 
 namespace flutter {
 namespace testing {
@@ -287,6 +291,164 @@ TEST_F(DiffContextTest, DieIfOldLayerWasNeverDiffed) {
   // Now we can diff t2 and t1
   auto damage = DiffLayerTree(t2, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeEmpty());
+}
+
+TEST_F(DiffContextTest, Transform) {
+  auto path1 = SkPath().addRect(SkRect::MakeXYWH(0, 0, 50, 50));
+  auto m1 = std::make_shared<MockLayer>(path1);
+
+  auto transform1 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeTrans(10, 10));
+  transform1->Add(m1);
+
+  LayerTree t1;
+  t1.root()->Add(transform1);
+
+  auto damage = DiffLayerTree(t1, LayerTree());
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 50, 50));
+
+  auto transform2 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeTrans(20, 20));
+  transform2->Add(m1);
+  transform2->AssignOldLayer(transform1.get());
+
+  LayerTree t2;
+  t2.root()->Add(transform2);
+
+  damage = DiffLayerTree(t2, t1);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 60, 60));
+
+  auto transform3 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeTrans(20, 20));
+  transform3->Add(m1);
+  transform3->AssignOldLayer(transform2.get());
+
+  LayerTree t3;
+  t3.root()->Add(transform3);
+
+  damage = DiffLayerTree(t3, t2);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeEmpty());
+}
+
+TEST_F(DiffContextTest, TransformNested) {
+  auto path1 = SkPath().addRect(SkRect::MakeXYWH(0, 0, 50, 50));
+  auto m1 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
+
+  auto transform1 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeScale(2.0, 2.0));
+
+  auto transform1_1 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeTrans(10, 10));
+  transform1_1->Add(m1);
+  transform1->Add(transform1_1);
+
+  auto transform1_2 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeTrans(100, 100));
+  transform1_2->Add(m1);
+  transform1->Add(transform1_2);
+
+  auto transform1_3 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeTrans(200, 200));
+  transform1_3->Add(m1);
+  transform1->Add(transform1_3);
+
+  LayerTree l1;
+  l1.root()->Add(transform1);
+
+  auto damage = DiffLayerTree(l1, LayerTree());
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(20, 20, 480, 480));
+
+  auto transform2 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeScale(2.0, 2.0));
+
+  auto transform2_1 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeTrans(10, 10));
+  transform2_1->Add(m1);
+  transform2_1->AssignOldLayer(transform1_1.get());
+  transform2->Add(transform2_1);
+
+  auto transform2_2 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeTrans(100, 101));
+  transform2_2->Add(m1);
+  transform2_2->AssignOldLayer(transform1_2.get());
+  transform2->Add(transform2_2);
+
+  auto transform2_3 =
+      std::make_shared<TransformLayer>(SkMatrix::MakeTrans(200, 200));
+  transform2_3->Add(m1);
+  transform2_3->AssignOldLayer(transform1_3.get());
+  transform2->Add(transform2_3);
+
+  LayerTree l2;
+  l2.root()->Add(transform2);
+
+  damage = DiffLayerTree(l2, l1);
+
+  // transform2 has not transform1 assigned as old layer, so it should be
+  // invalidated completely
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(20, 20, 480, 480));
+
+  // now diff the tree properly, the only difference being transform2_2 and
+  // transform_2_1
+  transform2->AssignOldLayer(transform1.get());
+  damage = DiffLayerTree(l2, l1);
+
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 200, 100, 102));
+}
+
+TEST_F(DiffContextTest, BackdropLayer) {
+  auto filter = SkBlurImageFilter::Make(10, 10, nullptr, nullptr,
+                                        SkBlurImageFilter::kClamp_TileMode);
+
+  {
+    // tests later assume 30px readback area, fail early if that's not the case
+    auto readback = filter->filterBounds(SkIRect::MakeWH(10, 10), SkMatrix::I(),
+                                         SkImageFilter::kReverse_MapDirection);
+    EXPECT_EQ(readback, SkIRect::MakeLTRB(-30, -30, 40, 40));
+  }
+
+  LayerTree l1(SkISize::Make(100, 100));
+  l1.root()->Add(std::make_shared<BackdropFilterLayer>(filter));
+
+  // no clip, effect over entire surface
+  auto damage = DiffLayerTree(l1, LayerTree(SkISize::Make(100, 100)));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeWH(100, 100));
+
+  LayerTree l2(SkISize::Make(100, 100));
+
+  auto clip = std::make_shared<ClipRectLayer>(SkRect::MakeXYWH(20, 20, 40, 40),
+                                              Clip::hardEdge);
+  clip->Add(std::make_shared<BackdropFilterLayer>(filter));
+  l2.root()->Add(clip);
+  damage = DiffLayerTree(l2, LayerTree(SkISize::Make(100, 100)));
+
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 90, 90));
+
+  LayerTree l3;
+  auto scale = std::make_shared<TransformLayer>(SkMatrix::MakeScale(2.0, 2.0));
+  scale->Add(clip);
+  l3.root()->Add(scale);
+
+  damage = DiffLayerTree(l3, LayerTree());
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 140, 140));
+
+  LayerTree l4;
+  l4.root()->Add(scale);
+
+  // path just outside of readback region, doesn't affect blur
+  auto path1 = SkPath().addRect(SkRect::MakeXYWH(150, 150, 10, 10));
+  l4.root()->Add(std::make_shared<MockLayer>(path1));
+  damage = DiffLayerTree(l4, l3);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(150, 150, 10, 10));
+
+  LayerTree l5;
+  l5.root()->Add(scale);
+
+  // path just inside of readback region, must trigger backdrop repaint
+  auto path2 = SkPath().addRect(SkRect::MakeXYWH(149, 149, 10, 10));
+  l5.root()->Add(std::make_shared<MockLayer>(path2));
+  damage = DiffLayerTree(l5, l4);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 150, 150));
 }
 
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT

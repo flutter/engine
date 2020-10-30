@@ -17,6 +17,8 @@ Damage DiffContextTest::DiffLayerTree(LayerTree& layer_tree,
 
   DiffContext dc(layer_tree.size(), 1, layer_tree.paint_region_map(),
                  old_layer_tree.paint_region_map());
+  dc.PushCullRect(
+      SkRect::MakeIWH(layer_tree.size().width(), layer_tree.size().height()));
   layer_tree.root()->Diff(&dc, old_layer_tree.root());
   return dc.GetDamage(additional_damage);
 }

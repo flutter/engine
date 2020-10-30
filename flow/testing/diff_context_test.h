@@ -11,7 +11,8 @@ namespace testing {
 
 class LayerTree {
  public:
-  LayerTree() : root_(std::make_shared<ContainerLayer>()) {}
+  explicit LayerTree(SkISize size = SkISize::Make(1000, 1000))
+      : root_(std::make_shared<ContainerLayer>()), size_(size) {}
 
   ContainerLayer* root() { return root_.get(); }
   const ContainerLayer* root() const { return root_.get(); }
@@ -19,9 +20,12 @@ class LayerTree {
   PaintRegionMap& paint_region_map() { return paint_region_map_; }
   const PaintRegionMap& paint_region_map() const { return paint_region_map_; }
 
+  const SkISize & size() const { return size_; }
+
  private:
   std::shared_ptr<ContainerLayer> root_;
   PaintRegionMap paint_region_map_;
+  SkISize size_;
 };
 
 class DiffContextTest : public ThreadTest {
