@@ -92,7 +92,10 @@ static const double kRmseThreshold = 0.5;
   }
   double rmse = sqrt(sum / size);
   if (rmse > kRmseThreshold) {
-    os_log_error(OS_LOG_DEFAULT, "GOLDEN DIFF FAILED: image diff greater than threshold. Current diff: %@, threshold: %@", @(rmse), @(kRmseThreshold));
+    os_log_error(
+        OS_LOG_DEFAULT,
+        "GOLDEN DIFF FAILED: image diff greater than threshold. Current diff: %@, threshold: %@",
+        @(rmse), @(kRmseThreshold));
     return NO;
   }
   return YES;
