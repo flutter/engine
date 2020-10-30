@@ -214,6 +214,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   public void destroy() {
     platformViewsController.detachTextInputPlugin();
     textInputChannel.setTextInputMethodHandler(null);
+    notifyViewExited();
     if (mEditable != null) {
       mEditable.removeEditingStateListener(this);
     }
@@ -405,6 +406,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
   @VisibleForTesting
   void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
+    // Call notifyViewExited on the previous field.
+    notifyViewExited();
     inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);
 
     if (mEditable != null) {
@@ -412,7 +415,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     }
     mEditable =
         new ListenableEditingState(
-            configuration.autofill != null ? configuration.autofill.editState : null);
+            configuration.autofill != null ? configuration.autofill.editState : null, mView);
     updateAutofillConfigurationIfNeeded(configuration);
 
     // setTextInputClient will be followed by a call to setTextInputEditingState.
@@ -518,7 +521,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     return keyboardName.contains("Samsung");
   }
 
-  private void clearTextInputClient() {
+  @VisibleForTesting
+  void clearTextInputClient() {
     if (inputTarget.type == InputTarget.Type.PLATFORM_VIEW) {
       // Focus changes in the framework tree have no guarantees on the order focus nodes are
       // notified. A node
@@ -543,9 +547,10 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       return;
     }
     mEditable.removeEditingStateListener(this);
+    notifyViewExited();
+    updateAutofillConfigurationIfNeeded(null);
     inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
     unlockPlatformViewInputConnection();
-    notifyViewExited();
     lastClientRect = null;
   }
 
@@ -597,27 +602,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     // Skip if we're currently setting
     if (!skipFrameworkUpdate) {
       Log.v(TAG, "send EditingState to flutter: " + mEditable.toString());
-      Log.i(TAG, mEditable.toString() + " == " + mLastKnownFrameworkTextEditingState.text);
-      Log.i(
-          TAG,
-          String.valueOf(selectionStart)
-              + " == "
-              + String.valueOf(mLastKnownFrameworkTextEditingState.selectionStart));
-      Log.i(
-          TAG,
-          String.valueOf(selectionEnd)
-              + " == "
-              + String.valueOf(mLastKnownFrameworkTextEditingState.selectionEnd));
-      Log.i(
-          TAG,
-          String.valueOf(composingStart)
-              + " == "
-              + String.valueOf(mLastKnownFrameworkTextEditingState.composingStart));
-      Log.i(
-          TAG,
-          String.valueOf(composingEnd)
-              + " == "
-              + String.valueOf(mLastKnownFrameworkTextEditingState.composingEnd));
       textInputChannel.updateEditingState(
           inputTarget.id,
           mEditable.toString(),
@@ -642,16 +626,15 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
       return;
     }
-    notifyViewExited();
-    this.configuration = configuration;
-    final TextInputChannel.Configuration[] configurations = configuration.fields;
 
-    if (configuration.autofill == null) {
+    this.configuration = configuration;
+    if (configuration == null || configuration.autofill == null) {
       // Disables autofill if the configuration doesn't have an autofill field.
       mAutofillConfigurations = null;
       return;
     }
 
+    final TextInputChannel.Configuration[] configurations = configuration.fields;
     mAutofillConfigurations = new SparseArray<>();
 
     if (configurations == null) {
@@ -704,7 +687,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
             0,
             lastClientRect.width(),
             lastClientRect.height());
-        child.setAutofillValue(AutofillValue.forText(mEditable.toString()));
+        child.setAutofillValue(AutofillValue.forText(mEditable));
       } else {
         child.setDimens(0, 0, 0, 0, 1, 1);
         child.setAutofillValue(AutofillValue.forText(autofill.editState.text));

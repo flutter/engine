@@ -16,8 +16,11 @@ class ListenableEditingState extends SpannableStringBuilder {
         boolean textChanged, boolean selectionChanged, boolean composingRegionChanged);
   }
 
+  private static final String TAG = "flutter";
+
   private int mBatchEditNestDepth = 0;
   private ArrayList<EditingStateWatcher> mListeners = new ArrayList<>();
+  private ArrayList<EditingStateWatcher> mPendingListeners = new ArrayList<>();
 
   private String mToStringCache;
 
@@ -27,61 +30,74 @@ class ListenableEditingState extends SpannableStringBuilder {
   private int mComposingStartWhenBeginBatchEdit;
   private int mComposingEndWhenBeginBatchEdit;
 
-  private static BaseInputConnection mDummyConnection;
+  private BaseInputConnection mDummyConnection;
 
-  public ListenableEditingState(TextInputChannel.TextEditState configuration) {
+  public ListenableEditingState(TextInputChannel.TextEditState configuration, View view) {
     super();
     if (configuration != null) {
       setEditingState(configuration);
     }
+
+    Editable self = this;
+    mDummyConnection =
+        new BaseInputConnection(view, true) {
+          @Override
+          public Editable getEditable() {
+            return self;
+          }
+        };
   }
 
   public void beginBatchEdit() {
     if (mBatchEditNestDepth == 0 && !mListeners.isEmpty()) {
       mTextWhenBeginBatchEdit = toString();
-      mSelectionStartWhenBeginBatchEdit = Selection.getSelectionStart(this);
-      mSelectionEndWhenBeginBatchEdit = Selection.getSelectionEnd(this);
-      mComposingStartWhenBeginBatchEdit = BaseInputConnection.getComposingSpanStart(this);
-      mComposingEndWhenBeginBatchEdit = BaseInputConnection.getComposingSpanEnd(this);
+      mSelectionStartWhenBeginBatchEdit = getSelecionStart();
+      mSelectionEndWhenBeginBatchEdit = getSelecionEnd();
+      mComposingStartWhenBeginBatchEdit = getComposingStart();
+      mComposingEndWhenBeginBatchEdit = getComposingEnd();
     }
     mBatchEditNestDepth++;
   }
 
   public void endBatchEdit() {
     mBatchEditNestDepth--;
-    if (mBatchEditNestDepth == 0 && !mListeners.isEmpty()) {
-      final boolean textChanged = toString().equals(mTextWhenBeginBatchEdit);
-      final boolean selectionChanged =
-          mSelectionStartWhenBeginBatchEdit == Selection.getSelectionStart(this)
-              && mSelectionEndWhenBeginBatchEdit == Selection.getSelectionEnd(this);
-      final boolean composingRegionChanged =
-          mComposingStartWhenBeginBatchEdit == BaseInputConnection.getComposingSpanStart(this)
-              && mComposingEndWhenBeginBatchEdit == BaseInputConnection.getComposingSpanEnd(this);
-      for (int i = 0; i < mListeners.size(); i++) {
-        mListeners
-            .get(i)
-            .didChangeEditingState(textChanged, selectionChanged, composingRegionChanged);
-      }
-    }
-  }
-
-  public static void setComposingRange(Editable editable, int composingStart, int composingEnd) {
-    if (composingStart < 0 || composingStart >= composingEnd) {
-      BaseInputConnection.removeComposingSpans(editable);
+    if (mBatchEditNestDepth != 0) {
+      mBatchEditNestDepth = mBatchEditNestDepth < 0 ? 0 : mBatchEditNestDepth;
       return;
     }
 
-    if (mDummyConnection == null || mDummyConnection.getEditable() != editable) {
-      mDummyConnection =
-          new BaseInputConnection(new View(null), true) {
-            @Override
-            public Editable getEditable() {
-              return editable;
-            }
-          };
+    for (final EditingStateWatcher watcher : mPendingListeners) {
+      watcher.didChangeEditingState(true, true, true);
     }
 
-    mDummyConnection.setComposingRegion(composingStart, composingEnd);
+    if (!mListeners.isEmpty()) {
+      Log.v(TAG, "didFinishBatchEdit with " + String.valueOf(mListeners.size()) + " listener(s)");
+      final boolean textChanged = !toString().equals(mTextWhenBeginBatchEdit);
+      final boolean selectionChanged =
+          mSelectionStartWhenBeginBatchEdit != getSelecionStart()
+              || mSelectionEndWhenBeginBatchEdit != getSelecionEnd();
+      final boolean composingRegionChanged =
+          mComposingStartWhenBeginBatchEdit != getComposingStart()
+              || mComposingEndWhenBeginBatchEdit != getComposingEnd();
+      if (textChanged || selectionChanged || composingRegionChanged) {
+        for (int i = 0; i < mListeners.size(); i++) {
+          mListeners
+              .get(i)
+              .didChangeEditingState(textChanged, selectionChanged, composingRegionChanged);
+        }
+      }
+    }
+
+    mListeners.addAll(mPendingListeners);
+    mPendingListeners.clear();
+  }
+
+  public void setComposingRange(int composingStart, int composingEnd) {
+    if (composingStart < 0 || composingStart >= composingEnd) {
+      BaseInputConnection.removeComposingSpans(this);
+    } else {
+      mDummyConnection.setComposingRegion(composingStart, composingEnd);
+    }
   }
 
   public void setEditingState(TextInputChannel.TextEditState newState) {
@@ -93,16 +109,27 @@ class ListenableEditingState extends SpannableStringBuilder {
     } else {
       Selection.removeSelection(this);
     }
-    setComposingRange(this, newState.composingStart, newState.composingEnd);
+    setComposingRange(newState.composingStart, newState.composingEnd);
     endBatchEdit();
   }
 
   public void addEditingStateListener(EditingStateWatcher listener) {
-    mListeners.add(listener);
+    // It is possible for a listener to get added during a batch edit. When that happens we always
+    // notify the new listeners.
+    // This does not check if the listener is already in the list of existing listeners.
+    if (mBatchEditNestDepth > 0) {
+      Log.w(TAG, "a listener was added to EditingState while a batch edit was in progress");
+      mPendingListeners.add(listener);
+    } else {
+      mListeners.add(listener);
+    }
   }
 
   public void removeEditingStateListener(EditingStateWatcher listener) {
     mListeners.remove(listener);
+    if (mBatchEditNestDepth > 0) {
+      mPendingListeners.remove(listener);
+    }
   }
 
   @Override
@@ -110,8 +137,7 @@ class ListenableEditingState extends SpannableStringBuilder {
       int start, int end, CharSequence tb, int tbstart, int tbend) {
     boolean textChanged = end - start != tbend - tbstart;
     for (int i = 0; i < end - start && !textChanged; i++) {
-      textChanged |= charAt(start + i) == tb.charAt(tbstart + i);
-      if (textChanged) break;
+      textChanged |= charAt(start + i) != tb.charAt(tbstart + i);
     }
     if (textChanged) {
       mToStringCache = null;
@@ -130,9 +156,9 @@ class ListenableEditingState extends SpannableStringBuilder {
     Log.i("flutter", editable.toString());
     Log.i("flutter", String.valueOf(getSelecionStart()) + " , " + String.valueOf(getSelecionEnd()));
     final boolean selectionChanged =
-        getSelecionStart() == selectionStart && getSelecionEnd() == selectionEnd;
+        getSelecionStart() != selectionStart || getSelecionEnd() != selectionEnd;
     final boolean composingRegionChanged =
-        getComposingStart() == composingStart && getComposingEnd() == composingEnd;
+        getComposingStart() != composingStart || getComposingEnd() != composingEnd;
     if (textChanged || selectionChanged || composingRegionChanged) {
       for (int i = 0; i < mListeners.size(); i++) {
         mListeners
@@ -141,21 +167,6 @@ class ListenableEditingState extends SpannableStringBuilder {
       }
     }
     return editable;
-  }
-
-  @Override
-  public void removeSpan(Object what) {
-    super.removeSpan(what);
-  }
-
-  @Override
-  public void clearSpans() {
-    super.clearSpans();
-  }
-
-  @Override
-  public void setSpan(Object what, int start, int end, int flags) {
-    super.setSpan(what, start, end, flags);
   }
 
   public final int getSelecionStart() {

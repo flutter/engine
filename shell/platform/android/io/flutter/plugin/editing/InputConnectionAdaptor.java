@@ -86,13 +86,16 @@ class InputConnectionAdaptor extends BaseInputConnection
     this(view, client, textInputChannel, editable, editorInfo, new FlutterJNI());
   }
 
-  private ExtractedText getExtractedText() {
+  private ExtractedText getExtractedText(ExtractedTextRequest request) {
     mExtractedText.startOffset = 0;
     mExtractedText.partialStartOffset = -1;
     mExtractedText.partialEndOffset = -1;
     mExtractedText.selectionStart = mEditable.getSelecionStart();
     mExtractedText.selectionEnd = mEditable.getSelecionEnd();
-    mExtractedText.text = mEditable.toString();
+    mExtractedText.text =
+        request == null || (request.flags & GET_TEXT_WITH_STYLES) == 0
+            ? mEditable.toString()
+            : mEditable;
     return mExtractedText;
   }
 
@@ -145,7 +148,7 @@ class InputConnectionAdaptor extends BaseInputConnection
 
   @Override
   public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-    if (Selection.getSelectionStart(mEditable) == -1) {
+    if (mEditable.getSelecionStart() == -1) {
       return true;
     }
 
@@ -161,7 +164,7 @@ class InputConnectionAdaptor extends BaseInputConnection
 
   @Override
   public boolean setComposingRegion(int start, int end) {
-    Log.i("flutter", "engine: set CR: " + String.valueOf(start) + " - " + String.valueOf(end));
+    Log.v("flutter", "engine: set CR: " + String.valueOf(start) + " - " + String.valueOf(end));
     final boolean result = super.setComposingRegion(start, end);
     return result;
   }
@@ -169,18 +172,20 @@ class InputConnectionAdaptor extends BaseInputConnection
   @Override
   public boolean setComposingText(CharSequence text, int newCursorPosition) {
     boolean result;
-    Log.i("flutter", "engine: set CT: " + text + ", " + String.valueOf(newCursorPosition));
+    Log.v("flutter", "engine: set CT: " + text + ", " + String.valueOf(newCursorPosition));
+    beginBatchEdit();
     if (text.length() == 0) {
       result = super.commitText(text, newCursorPosition);
     } else {
       result = super.setComposingText(text, newCursorPosition);
     }
+    endBatchEdit();
     return result;
   }
 
   @Override
   public boolean finishComposingText() {
-    Log.i("flutter", "engine: finish composing");
+    Log.v("flutter", "engine: finish composing");
     final boolean result = super.finishComposingText();
     return result;
   }
@@ -196,7 +201,7 @@ class InputConnectionAdaptor extends BaseInputConnection
     // Enables text monitoring if the relevant flag is set. See
     // InputConnectionAdaptor#didChangeEditingState.
     mExtractRequest = textMonitor ? request : null;
-    return getExtractedText();
+    return getExtractedText(request);
   }
 
   @Override
@@ -208,8 +213,13 @@ class InputConnectionAdaptor extends BaseInputConnection
       mImm.updateCursorAnchorInfo(mFlutterView, getCursorAnchorInfo());
     }
 
+    final boolean updated = (cursorUpdateMode & CURSOR_UPDATE_MONITOR) != 0;
+    if (updated != mMonitorCursorUpdate) {
+      Log.d(TAG, "The input method toggled cursor monitoring " + (updated ? "on" : "off"));
+    }
+
     // Enables cursor monitoring. See InputConnectionAdaptor#didChangeEditingState.
-    mMonitorCursorUpdate = (cursorUpdateMode & CURSOR_UPDATE_MONITOR) != 0;
+    mMonitorCursorUpdate = updated;
     return true;
   }
 
@@ -487,12 +497,12 @@ class InputConnectionAdaptor extends BaseInputConnection
       return;
     }
     if (mExtractRequest != null) {
-      mImm.updateExtractedText(mFlutterView, mExtractRequest.token, getExtractedText());
+      mImm.updateExtractedText(
+          mFlutterView, mExtractRequest.token, getExtractedText(mExtractRequest));
     }
     if (mMonitorCursorUpdate) {
       final CursorAnchorInfo info = getCursorAnchorInfo();
       mImm.updateCursorAnchorInfo(mFlutterView, info);
-      Log.v(TAG, "update CursorAnchorInfo: " + info.toString());
     }
   }
   // -------- End: ListenableEditingState watcher implementation -------

@@ -2,6 +2,7 @@ package io.flutter.plugin.editing;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -14,15 +15,21 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.text.Emoji;
 import android.text.InputType;
 import android.text.Selection;
+import android.text.SpannableStringBuilder;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
+import android.view.inputmethod.ExtractedTextRequest;
+import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -39,9 +46,15 @@ import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.Implementation;
+import org.robolectric.annotation.Implements;
+import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowClipboardManager;
+import org.robolectric.shadows.ShadowInputMethodManager;
 
-@Config(manifest = Config.NONE, shadows = ShadowClipboardManager.class)
+@Config(
+    manifest = Config.NONE,
+    shadows = {ShadowClipboardManager.class, InputConnectionAdaptorTest.TestImm.class})
 @RunWith(RobolectricTestRunner.class)
 public class InputConnectionAdaptorTest {
   // Verifies the method and arguments for a captured method call.
@@ -66,7 +79,7 @@ public class InputConnectionAdaptorTest {
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
     int inputTargetId = 0;
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
-    ListenableEditingState mEditable = new ListenableEditingState(null);
+    ListenableEditingState mEditable = new ListenableEditingState(null, testView);
     ListenableEditingState spyEditable = spy(mEditable);
     EditorInfo outAttrs = new EditorInfo();
     outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
@@ -888,6 +901,7 @@ public class InputConnectionAdaptorTest {
   @Test
   public void testMethod_getExtractedText() {
     int selStart = 5;
+
     ListenableEditingState editable = sampleEditable(selStart, selStart);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
@@ -900,11 +914,87 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testExtractedText_monitoring() {
-    int selStart = 5;
-    ListenableEditingState editable = sampleEditable(selStart, selStart);
-    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+    ListenableEditingState editable = sampleEditable(5, 5);
+    View testView = new View(RuntimeEnvironment.application);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, 1, mock(TextInputChannel.class), editable, new EditorInfo());
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
 
-    ExtractedText extractedText = adaptor.getExtractedText(null, 0);
+    testImm.resetStates();
+
+    ExtractedTextRequest request = new ExtractedTextRequest();
+    request.token = 123;
+
+    ExtractedText extractedText = adaptor.getExtractedText(request, 0);
+    assertEquals(5, extractedText.selectionStart);
+    assertEquals(5, extractedText.selectionEnd);
+    assertFalse(extractedText.text instanceof SpannableStringBuilder);
+
+    // Move the cursor. Should not report extracted text.
+    adaptor.setSelection(2, 3);
+    assertNull(testImm.lastExtractedText);
+
+    // Now request monitoring, and update the request text flag.
+    request.flags = InputConnection.GET_TEXT_WITH_STYLES;
+    extractedText = adaptor.getExtractedText(request, InputConnection.GET_EXTRACTED_TEXT_MONITOR);
+    assertEquals(2, extractedText.selectionStart);
+    assertEquals(3, extractedText.selectionEnd);
+    assertTrue(extractedText.text instanceof SpannableStringBuilder);
+
+    adaptor.setSelection(3, 5);
+    assertEquals(3, testImm.lastExtractedText.selectionStart);
+    assertEquals(5, testImm.lastExtractedText.selectionEnd);
+    assertTrue(testImm.lastExtractedText.text instanceof SpannableStringBuilder);
+
+    // Stop monitoring.
+    testImm.resetStates();
+    extractedText = adaptor.getExtractedText(request, 0);
+    assertEquals(3, extractedText.selectionStart);
+    assertEquals(5, extractedText.selectionEnd);
+    assertTrue(extractedText.text instanceof SpannableStringBuilder);
+
+    adaptor.setSelection(1, 3);
+    assertNull(testImm.lastExtractedText);
+  }
+
+  @Test
+  public void testCursorAnchorInfo() {
+    ListenableEditingState editable = sampleEditable(5, 5);
+    View testView = new View(RuntimeEnvironment.application);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, 1, mock(TextInputChannel.class), editable, new EditorInfo());
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+
+    testImm.resetStates();
+
+    // Monitoring only. Does not send update immediately.
+    adaptor.requestCursorUpdates(InputConnection.CURSOR_UPDATE_MONITOR);
+    assertNull(testImm.lastCursorAnchorInfo);
+
+    // Monitor selection changes.
+    adaptor.setSelection(0, 1);
+    CursorAnchorInfo cursorAnchorInfo = testImm.lastCursorAnchorInfo;
+    assertEquals(0, cursorAnchorInfo.getSelectionStart());
+    assertEquals(1, cursorAnchorInfo.getSelectionEnd());
+
+    // Turn monitoring off.
+    testImm.resetStates();
+    assertNull(testImm.lastCursorAnchorInfo);
+    adaptor.requestCursorUpdates(InputConnection.CURSOR_UPDATE_IMMEDIATE);
+    cursorAnchorInfo = testImm.lastCursorAnchorInfo;
+    assertEquals(0, cursorAnchorInfo.getSelectionStart());
+    assertEquals(1, cursorAnchorInfo.getSelectionEnd());
+
+    // No more updates.
+    testImm.resetStates();
+    adaptor.setSelection(1, 3);
+    assertNull(testImm.lastCursorAnchorInfo);
   }
 
   @Test
@@ -1107,14 +1197,16 @@ public class InputConnectionAdaptorTest {
   private static final String SAMPLE_RTL_TEXT = "متن ساختگی" + "\nبرای تستfor test😊";
 
   private static ListenableEditingState sampleEditable(int selStart, int selEnd) {
-    ListenableEditingState sample = new ListenableEditingState(null);
+    ListenableEditingState sample =
+        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
     sample.replace(0, 0, SAMPLE_TEXT);
     Selection.setSelection(sample, selStart, selEnd);
     return sample;
   }
 
   private static ListenableEditingState sampleEditable(int selStart, int selEnd, String text) {
-    ListenableEditingState sample = new ListenableEditingState(null);
+    ListenableEditingState sample =
+        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
     sample.replace(0, 0, text);
     Selection.setSelection(sample, selStart, selEnd);
     return sample;
@@ -1173,6 +1265,63 @@ public class InputConnectionAdaptorTest {
       this.composingStart = composingStart;
       this.composingEnd = composingEnd;
       updateEditingStateInvocations++;
+    }
+  }
+
+  @Implements(InputMethodManager.class)
+  public static class TestImm extends ShadowInputMethodManager {
+    public static int empty = -999;
+    // private InputMethodSubtype currentInputMethodSubtype;
+    CursorAnchorInfo lastCursorAnchorInfo;
+    int lastExtractedTextToken = empty;
+    ExtractedText lastExtractedText;
+
+    int lastSelectionStart = empty;
+    int lastSelectionEnd = empty;
+    int lastCandidatesStart = empty;
+    int lastCandidatesEnd = empty;
+
+    public TestImm() {}
+
+    // @Implementation
+    // public InputMethodSubtype getCurrentInputMethodSubtype() {
+    //  return currentInputMethodSubtype;
+    // }
+
+    // public void setCurrentInputMethodSubtype(InputMethodSubtype inputMethodSubtype) {
+    //  this.currentInputMethodSubtype = inputMethodSubtype;
+    // }
+
+    @Implementation
+    public void updateCursorAnchorInfo(View view, CursorAnchorInfo cursorAnchorInfo) {
+      lastCursorAnchorInfo = cursorAnchorInfo;
+    }
+
+    @Implementation
+    public void updateExtractedText(View view, int token, ExtractedText text) {
+      lastExtractedTextToken = token;
+      lastExtractedText = text;
+    }
+
+    @Implementation
+    public void updateSelection(
+        View view, int selStart, int selEnd, int candidatesStart, int candidatesEnd) {
+      lastSelectionStart = selStart;
+      lastSelectionEnd = selEnd;
+      lastCandidatesStart = candidatesStart;
+      lastCandidatesEnd = candidatesEnd;
+    }
+
+    public void resetStates() {
+      lastExtractedText = null;
+      lastExtractedTextToken = empty;
+
+      lastSelectionStart = empty;
+      lastSelectionEnd = empty;
+      lastCandidatesStart = empty;
+      lastCandidatesEnd = empty;
+
+      lastCursorAnchorInfo = null;
     }
   }
 }
