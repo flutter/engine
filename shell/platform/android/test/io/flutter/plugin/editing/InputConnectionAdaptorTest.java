@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Emoji;
 import android.text.InputType;
@@ -914,6 +915,9 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testExtractedText_monitoring() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+      return;
+    }
     ListenableEditingState editable = sampleEditable(5, 5);
     View testView = new View(RuntimeEnvironment.application);
     InputConnectionAdaptor adaptor =
@@ -962,6 +966,10 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testCursorAnchorInfo() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+      return;
+    }
+
     ListenableEditingState editable = sampleEditable(5, 5);
     View testView = new View(RuntimeEnvironment.application);
     InputConnectionAdaptor adaptor =

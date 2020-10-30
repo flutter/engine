@@ -10,6 +10,15 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import java.util.ArrayList;
 
 /// The current editing state (text, selection range, composing range) the text input plugin holds.
+///
+/// This class also notifies its listeners when the editing state (text, selection, composing
+// region)
+/// changes. Change notifications will be deferred to the end of batch edits if there's one is in
+/// progress. Listeners added during a batch end will be notified when batch edits end, even if
+/// there's no real change present.
+//
+// Currently this class does not notify its listeners when its spans change (e.g.,
+// Selection.setSelection). Wrap them in a batch edit to trigger a change notification.
 class ListenableEditingState extends SpannableStringBuilder {
   interface EditingStateWatcher {
     void didChangeEditingState(
@@ -48,6 +57,10 @@ class ListenableEditingState extends SpannableStringBuilder {
         };
   }
 
+  /// Starts a new batch edit during which change notifications will be put on hold until all batch
+  /// edits end.
+  ///
+  /// Batch ends nest.
   public void beginBatchEdit() {
     if (mBatchEditNestDepth == 0 && !mListeners.isEmpty()) {
       mTextWhenBeginBatchEdit = toString();
@@ -59,6 +72,8 @@ class ListenableEditingState extends SpannableStringBuilder {
     mBatchEditNestDepth++;
   }
 
+  /// Ends the current batch edit and flush pending change notifications if the current batch edit
+  /// is not nested (i.e. it was the last ongoing batch edit).
   public void endBatchEdit() {
     mBatchEditNestDepth--;
     if (mBatchEditNestDepth != 0) {
@@ -92,6 +107,9 @@ class ListenableEditingState extends SpannableStringBuilder {
     mPendingListeners.clear();
   }
 
+  /// Update the composing region of the current editing state.
+  ///
+  /// If the range is invalid or empty, the current composing region will be removed.
   public void setComposingRange(int composingStart, int composingEnd) {
     if (composingStart < 0 || composingStart >= composingEnd) {
       BaseInputConnection.removeComposingSpans(this);
@@ -100,6 +118,9 @@ class ListenableEditingState extends SpannableStringBuilder {
     }
   }
 
+  /// Called when the framework sends updates to the text input plugin.
+  ///
+  /// This method will also update the composing region if it has changed.
   public void setEditingState(TextInputChannel.TextEditState newState) {
     beginBatchEdit();
     replace(0, length(), new SpannableStringBuilder(newState.text));
@@ -153,8 +174,6 @@ class ListenableEditingState extends SpannableStringBuilder {
       return editable;
     }
 
-    Log.i("flutter", editable.toString());
-    Log.i("flutter", String.valueOf(getSelecionStart()) + " , " + String.valueOf(getSelecionEnd()));
     final boolean selectionChanged =
         getSelecionStart() != selectionStart || getSelecionEnd() != selectionEnd;
     final boolean composingRegionChanged =

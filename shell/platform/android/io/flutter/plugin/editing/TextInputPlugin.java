@@ -370,40 +370,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
   }
 
-  private void notifyViewEntered() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null || !needsAutofill()) {
-      return;
-    }
-
-    final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
-    final int[] offset = new int[2];
-    mView.getLocationOnScreen(offset);
-    Rect rect = new Rect(lastClientRect);
-    rect.offset(offset[0], offset[1]);
-    afm.notifyViewEntered(mView, triggerIdentifier.hashCode(), rect);
-  }
-
-  private void notifyViewExited() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
-        || afm == null
-        || configuration == null
-        || configuration.autofill == null) {
-      return;
-    }
-
-    final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
-    afm.notifyViewExited(mView, triggerIdentifier.hashCode());
-  }
-
-  private void notifyValueChanged(String newValue) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null || !needsAutofill()) {
-      return;
-    }
-
-    final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
-    afm.notifyValueChanged(mView, triggerIdentifier.hashCode(), AutofillValue.forText(newValue));
-  }
-
   @VisibleForTesting
   void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
     // Call notifyViewExited on the previous field.
@@ -441,6 +407,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @VisibleForTesting
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
     mLastKnownFrameworkTextEditingState = state;
+    //
     mEditable.setEditingState(state);
 
     // Restart if there is a pending restart or the device requires a force restart
@@ -618,8 +585,61 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   // -------- End: ListenableEditingState watcher implementation -------
 
   // -------- Start: Autofill -------
+  // ### Setup and provide the initial text values and hints.
+  //
+  // The TextInputConfiguration used to setup the current client is also used for populating
+  // "AutofillVirtualStructure" when requested by the autofill manager (AFM), See
+  // #onProvideAutofillVirtualStructure.
+  //
+  // ### Keep the AFM updated
+  //
+  // The autofill session connected to The AFM keeps a copy of the current state for each reported
+  // field in "AutofillVirtualStructure"(instead of holding a reference to those fields), so the AFM
+  // needs to be notified when text changes if the client was part of the "AutofillVirtualStructure"
+  // previously reported to the AFM. This step is essential for triggering autofill save. This is
+  // done in #didChangeEditingState by calling #notifyValueChanged.
+  //
+  // Additionally when the text input plugin receives a new TextInputConfiguration,
+  // AutofillManager#notifyValueChanged will be called on all the autofillable fields contained in
+  // the TextInputConfiguration, in case some of them are tracked by the session and their values
+  // have changed. However if the value of an unfocused EditableText is changed in the framework,
+  // such change will not be sent to the text input plugin until the next TextInput.attach call.
   private boolean needsAutofill() {
     return mAutofillConfigurations != null;
+  }
+
+  private void notifyViewEntered() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null || !needsAutofill()) {
+      return;
+    }
+
+    final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
+    final int[] offset = new int[2];
+    mView.getLocationOnScreen(offset);
+    Rect rect = new Rect(lastClientRect);
+    rect.offset(offset[0], offset[1]);
+    afm.notifyViewEntered(mView, triggerIdentifier.hashCode(), rect);
+  }
+
+  private void notifyViewExited() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+        || afm == null
+        || configuration == null
+        || configuration.autofill == null) {
+      return;
+    }
+
+    final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
+    afm.notifyViewExited(mView, triggerIdentifier.hashCode());
+  }
+
+  private void notifyValueChanged(String newValue) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null || !needsAutofill()) {
+      return;
+    }
+
+    final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
+    afm.notifyValueChanged(mView, triggerIdentifier.hashCode(), AutofillValue.forText(newValue));
   }
 
   private void updateAutofillConfigurationIfNeeded(TextInputChannel.Configuration configuration) {

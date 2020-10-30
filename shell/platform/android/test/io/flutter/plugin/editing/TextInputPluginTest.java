@@ -1174,6 +1174,9 @@ public class TextInputPluginTest {
     }
 
     public void notifyValueChanged(View view, int virtualId, AutofillValue value) {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        return;
+      }
       changeVirtualId = virtualId;
       changeString = value.getTextValue().toString();
     }
