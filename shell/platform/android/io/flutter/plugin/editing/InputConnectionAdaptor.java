@@ -484,6 +484,11 @@ class InputConnectionAdaptor extends BaseInputConnection
   @Override
   public void didChangeEditingState(
       boolean textChanged, boolean selectionChanged, boolean composingRegionChanged) {
+    // Notifies the input method that the editing state has changed. The input method may decide
+    // to modify/reject these changes and ends up calling TextInputChannel#updateEditingState to
+    // send the update to the framework. This could result in an infinite loop if the framework
+    // also rejects/modifies the new update.
+
     // Always send selection update. InputMethodManager#updateSelection skips sending the message
     // if none of the parameters have changed since the last time we called it.
     mImm.updateSelection(

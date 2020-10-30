@@ -407,7 +407,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @VisibleForTesting
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
     mLastKnownFrameworkTextEditingState = state;
-    //
     mEditable.setEditingState(state);
 
     // Restart if there is a pending restart or the device requires a force restart

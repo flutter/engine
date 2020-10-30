@@ -42,7 +42,7 @@ public class ListenableEditingStateTest {
     editingState.addEditingStateListener(listener);
 
     editingState.replace(0, editingState.length(), "update");
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertTrue(listener.textChanged);
     assertFalse(listener.selectionChanged);
     assertFalse(listener.composingRegionChanged);
@@ -55,24 +55,24 @@ public class ListenableEditingStateTest {
     // Batch edit depth = 1.
     editingState.beginBatchEdit();
     editingState.replace(0, editingState.length(), "update1");
-    assertFalse(listener.called);
+    assertFalse(listener.isCalled());
     // Batch edit depth = 2.
     editingState.beginBatchEdit();
     editingState.replace(0, editingState.length(), "update2");
     inputConnection.setComposingRegion(0, editingState.length());
-    assertFalse(listener.called);
+    assertFalse(listener.isCalled());
     // Batch edit depth = 1.
     editingState.endBatchEdit();
-    assertFalse(listener.called);
+    assertFalse(listener.isCalled());
 
     // Batch edit depth = 2.
     editingState.beginBatchEdit();
-    assertFalse(listener.called);
+    assertFalse(listener.isCalled());
     inputConnection.setSelection(0, 0);
-    assertFalse(listener.called);
+    assertFalse(listener.isCalled());
     // Batch edit depth = 1.
     editingState.endBatchEdit();
-    assertFalse(listener.called);
+    assertFalse(listener.isCalled());
 
     // Remove composing region.
     inputConnection.finishComposingText();
@@ -81,7 +81,7 @@ public class ListenableEditingStateTest {
     editingState.endBatchEdit();
 
     // Now notify the listener.
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertTrue(listener.textChanged);
     assertFalse(listener.composingRegionChanged);
   }
@@ -94,19 +94,19 @@ public class ListenableEditingStateTest {
     editingState.addEditingStateListener(listener);
 
     editingState.endBatchEdit();
-    assertFalse(listener.called);
+    assertFalse(listener.isCalled());
 
     editingState.replace(0, editingState.length(), "text");
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertTrue(listener.textChanged);
 
     listener.reset();
     // Does not disrupt the followup events.
     editingState.beginBatchEdit();
     editingState.replace(0, editingState.length(), "more text");
-    assertFalse(listener.called);
+    assertFalse(listener.isCalled());
     editingState.endBatchEdit();
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
   }
 
   @Test
@@ -121,13 +121,19 @@ public class ListenableEditingStateTest {
     editingState.endBatchEdit();
     editingState.removeEditingStateListener(listener);
 
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertTrue(listener.textChanged);
     assertTrue(listener.selectionChanged);
     assertTrue(listener.composingRegionChanged);
 
     listener.reset();
 
+    // Verifies the listener is officially added.
+    editingState.replace(0, editingState.length(), "more updates");
+    assertTrue(listener.isCalled());
+    assertTrue(listener.textChanged);
+
+    listener.reset();
     // Now remove before endBatchEdit();
     editingState.beginBatchEdit();
     editingState.addEditingStateListener(listener);
@@ -135,7 +141,7 @@ public class ListenableEditingStateTest {
     editingState.removeEditingStateListener(listener);
     editingState.endBatchEdit();
 
-    assertFalse(listener.called);
+    assertFalse(listener.isCalled());
   }
 
   @Test
@@ -150,7 +156,33 @@ public class ListenableEditingStateTest {
     editingState.removeEditingStateListener(listener);
     editingState.endBatchEdit();
 
-    assertFalse(listener.called);
+    assertFalse(listener.isCalled());
+  }
+
+  @Test
+  public void testBatchingEditing_listenerCallsReplaceWhenBatchEditEnds() {
+    final ListenableEditingState editingState =
+        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
+
+    final Listener listener =
+        new Listener() {
+          @Override
+          public void didChangeEditingState(
+              boolean textChanged, boolean selectionChanged, boolean composingRegionChanged) {
+            super.didChangeEditingState(textChanged, selectionChanged, composingRegionChanged);
+            editingState.replace(
+                0, editingState.length(), "one does not simply replace the text in the listener");
+          }
+        };
+    editingState.addEditingStateListener(listener);
+
+    editingState.beginBatchEdit();
+    editingState.replace(0, editingState.length(), "update");
+    editingState.endBatchEdit();
+
+    assertTrue(listener.isCalled());
+    assertEquals(1, listener.timesCalled);
+    assertEquals("one does not simply replace the text in the listener", editingState.toString());
   }
   // -------- End: Test BatchEditing   -------
 
@@ -200,7 +232,7 @@ public class ListenableEditingStateTest {
 
     inputConnection.setSelection(0, 0);
 
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertFalse(listener.textChanged);
     assertTrue(listener.selectionChanged);
     assertFalse(listener.composingRegionChanged);
@@ -209,7 +241,7 @@ public class ListenableEditingStateTest {
 
     inputConnection.setSelection(5, 5);
 
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertFalse(listener.textChanged);
     assertTrue(listener.selectionChanged);
     assertFalse(listener.composingRegionChanged);
@@ -230,7 +262,7 @@ public class ListenableEditingStateTest {
 
     // setComposingRegion test.
     inputConnection.setComposingRegion(1, 3);
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertFalse(listener.textChanged);
     assertFalse(listener.selectionChanged);
     assertTrue(listener.composingRegionChanged);
@@ -240,7 +272,7 @@ public class ListenableEditingStateTest {
 
     // setComposingText test: non-empty text, does not move cursor.
     inputConnection.setComposingText("composing", -1);
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertTrue(listener.textChanged);
     assertFalse(listener.selectionChanged);
     assertTrue(listener.composingRegionChanged);
@@ -248,7 +280,7 @@ public class ListenableEditingStateTest {
     listener.reset();
     // setComposingText test: non-empty text, moves cursor.
     inputConnection.setComposingText("composing2", 1);
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertTrue(listener.textChanged);
     assertTrue(listener.selectionChanged);
     assertTrue(listener.composingRegionChanged);
@@ -256,7 +288,7 @@ public class ListenableEditingStateTest {
     listener.reset();
     // setComposingText test: empty text.
     inputConnection.setComposingText("", 1);
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertTrue(listener.textChanged);
     assertTrue(listener.selectionChanged);
     assertTrue(listener.composingRegionChanged);
@@ -265,7 +297,7 @@ public class ListenableEditingStateTest {
     inputConnection.setComposingText("composing text", 1);
     listener.reset();
     inputConnection.finishComposingText();
-    assertTrue(listener.called);
+    assertTrue(listener.isCalled());
     assertFalse(listener.textChanged);
     assertFalse(listener.selectionChanged);
     assertTrue(listener.composingRegionChanged);
@@ -287,7 +319,11 @@ public class ListenableEditingStateTest {
   // -------- End: Test InputMethods actions   -------
 
   public static class Listener implements ListenableEditingState.EditingStateWatcher {
-    boolean called = false;
+    public boolean isCalled() {
+      return timesCalled > 0;
+    }
+
+    int timesCalled = 0;
     boolean textChanged = false;
     boolean selectionChanged = false;
     boolean composingRegionChanged = false;
@@ -295,14 +331,14 @@ public class ListenableEditingStateTest {
     @Override
     public void didChangeEditingState(
         boolean textChanged, boolean selectionChanged, boolean composingRegionChanged) {
-      called = true;
+      timesCalled++;
       this.textChanged = textChanged;
       this.selectionChanged = selectionChanged;
       this.composingRegionChanged = composingRegionChanged;
     }
 
     public void reset() {
-      called = false;
+      timesCalled = 0;
       textChanged = false;
       selectionChanged = false;
       composingRegionChanged = false;

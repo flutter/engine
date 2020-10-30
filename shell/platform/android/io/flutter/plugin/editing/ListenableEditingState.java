@@ -41,6 +41,8 @@ class ListenableEditingState extends SpannableStringBuilder {
 
   private BaseInputConnection mDummyConnection;
 
+  // The View is only use for creating a dummy BaseInputConnection which is used in
+  // setComposingRegion. The View needs to have a non-null Context.
   public ListenableEditingState(TextInputChannel.TextEditState configuration, View view) {
     super();
     if (configuration != null) {
@@ -62,49 +64,50 @@ class ListenableEditingState extends SpannableStringBuilder {
   ///
   /// Batch ends nest.
   public void beginBatchEdit() {
-    if (mBatchEditNestDepth == 0 && !mListeners.isEmpty()) {
+    mBatchEditNestDepth++;
+    if (mBatchEditNestDepth == 1 && !mListeners.isEmpty()) {
       mTextWhenBeginBatchEdit = toString();
       mSelectionStartWhenBeginBatchEdit = getSelecionStart();
       mSelectionEndWhenBeginBatchEdit = getSelecionEnd();
       mComposingStartWhenBeginBatchEdit = getComposingStart();
       mComposingEndWhenBeginBatchEdit = getComposingEnd();
     }
-    mBatchEditNestDepth++;
   }
 
   /// Ends the current batch edit and flush pending change notifications if the current batch edit
   /// is not nested (i.e. it was the last ongoing batch edit).
   public void endBatchEdit() {
-    mBatchEditNestDepth--;
-    if (mBatchEditNestDepth != 0) {
-      mBatchEditNestDepth = mBatchEditNestDepth < 0 ? 0 : mBatchEditNestDepth;
+    if (mBatchEditNestDepth == 0) {
       return;
     }
 
-    for (final EditingStateWatcher watcher : mPendingListeners) {
-      watcher.didChangeEditingState(true, true, true);
-    }
+    if (mBatchEditNestDepth == 1) {
+      for (final EditingStateWatcher watcher : mPendingListeners) {
+        watcher.didChangeEditingState(true, true, true);
+      }
 
-    if (!mListeners.isEmpty()) {
-      Log.v(TAG, "didFinishBatchEdit with " + String.valueOf(mListeners.size()) + " listener(s)");
-      final boolean textChanged = !toString().equals(mTextWhenBeginBatchEdit);
-      final boolean selectionChanged =
-          mSelectionStartWhenBeginBatchEdit != getSelecionStart()
-              || mSelectionEndWhenBeginBatchEdit != getSelecionEnd();
-      final boolean composingRegionChanged =
-          mComposingStartWhenBeginBatchEdit != getComposingStart()
-              || mComposingEndWhenBeginBatchEdit != getComposingEnd();
-      if (textChanged || selectionChanged || composingRegionChanged) {
-        for (int i = 0; i < mListeners.size(); i++) {
-          mListeners
-              .get(i)
-              .didChangeEditingState(textChanged, selectionChanged, composingRegionChanged);
+      if (!mListeners.isEmpty()) {
+        Log.v(TAG, "didFinishBatchEdit with " + String.valueOf(mListeners.size()) + " listener(s)");
+        final boolean textChanged = !toString().equals(mTextWhenBeginBatchEdit);
+        final boolean selectionChanged =
+            mSelectionStartWhenBeginBatchEdit != getSelecionStart()
+                || mSelectionEndWhenBeginBatchEdit != getSelecionEnd();
+        final boolean composingRegionChanged =
+            mComposingStartWhenBeginBatchEdit != getComposingStart()
+                || mComposingEndWhenBeginBatchEdit != getComposingEnd();
+        if (textChanged || selectionChanged || composingRegionChanged) {
+          for (int i = 0; i < mListeners.size(); i++) {
+            mListeners
+                .get(i)
+                .didChangeEditingState(textChanged, selectionChanged, composingRegionChanged);
+          }
         }
       }
     }
 
     mListeners.addAll(mPendingListeners);
     mPendingListeners.clear();
+    mBatchEditNestDepth--;
   }
 
   /// Update the composing region of the current editing state.
