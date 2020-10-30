@@ -92,6 +92,7 @@ part 'engine/html/scene_builder.dart';
 part 'engine/html/shader_mask.dart';
 part 'engine/html/shaders/shader.dart';
 part 'engine/html/shaders/shader_builder.dart';
+part 'engine/html/shaders/normalized_gradient.dart';
 part 'engine/html/surface.dart';
 part 'engine/html/surface_stats.dart';
 part 'engine/html/transform.dart';
@@ -153,10 +154,10 @@ const bool kReleaseMode = bool.fromEnvironment('dart.vm.product', defaultValue: 
 const bool kProfileMode = bool.fromEnvironment('dart.vm.profile', defaultValue: false);
 const bool kDebugMode = !kReleaseMode && !kProfileMode;
 String get buildMode => kReleaseMode
-  ? 'release'
-  : kProfileMode
-    ? 'profile'
-    : 'debug';
+    ? 'release'
+    : kProfileMode
+        ? 'profile'
+        : 'debug';
 
 /// A benchmark metric that includes frame-related computations prior to
 /// submitting layer and picture operations to the underlying renderer, such as

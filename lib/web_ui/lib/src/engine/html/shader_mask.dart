@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A surface that applies a [Shader] to its children.
@@ -67,69 +67,9 @@ class PersistedShaderMask extends PersistedContainerSurface
     if (!(shader is ui.Gradient)) {
       return;
     }
-    final gradient = shader as ui.Gradient;
-    // TODO(flutter-web): Support conical and sweep gradients for ShaderMask.
-    if (gradient is GradientConical || gradient is GradientSweep) {
-      return;
-    }
+    final gradient = (shader as ui.Gradient) as EngineGradient;
 
-    String inputImageSvg;
-    if (gradient is GradientLinear) {
-      // TODO(flutter-web): More accurate linear gradients for ShaderMask.
-      // This seems to be accurate enough, but currently it only uses the angle.
-      _FastMatrix64? matrix4 = gradient.matrix4;
-      double fromX = gradient.from.dx;
-      double fromY = gradient.from.dy;
-      double toX = gradient.to.dx;
-      double toY = gradient.to.dy;
-      if (matrix4 != null) {
-        final centerX = (gradient.from.dx + gradient.to.dx) / 2.0;
-        final centerY = (gradient.from.dy + gradient.to.dy) / 2.0;
-        matrix4.transform(
-          gradient.from.dx - centerX,
-          gradient.from.dy - centerY,
-        );
-        fromX = matrix4.transformedX + centerX;
-        fromY = matrix4.transformedY + centerY;
-        matrix4.transform(gradient.to.dx - centerX, gradient.to.dy - centerY);
-        toX = matrix4.transformedX + centerX;
-        toY = matrix4.transformedY + centerY;
-      }
-      final angle = math.atan2(toY - fromY, toX - fromX) * (180 / math.pi) + 90;
-      final lines = [
-        '<svg xmlns="http://www.w3.org/2000/svg" x=\'${maskRect.left}px\' y=\'${maskRect.top}px\' width=\'${maskRect.width}px\' height=\'${maskRect.height}px\'>'
-            '<defs><linearGradient id=\'gradient\' gradientTransform=\'rotate($angle)\'>'
-      ];
-      for (int i = 0; i < gradient.colors.length; i++) {
-        final stop =
-            gradient.colorStops?[i] ?? i / (gradient.colors.length - 1);
-        final color = gradient.colors[i];
-        lines.add(
-            '<stop stop-color=\'${colorToCssString(color)}\' offset=\'${(stop * 100).round()}%\'/>');
-      }
-      lines.add('</linearGradient></defs><rect x=\'0%\' y=\'0%\' '
-          'width=\'100%\' height=\'100%\' fill=\'url(#gradient)\'></rect></svg>');
-      inputImageSvg = lines.join('');
-    } else if (gradient is GradientRadial) {
-      final lines = [
-        '<svg xmlns="http://www.w3.org/2000/svg" x=\'${maskRect.left}px\' y=\'${maskRect.top}px\' width=\'${maskRect.width}px\' height=\'${maskRect.height}px\'><defs>'
-            '<radialGradient id=\'gradient\' '
-            'cx=\'${maskRect.left + gradient.center.dx}px\' cy=\'${maskRect.top + gradient.center.dy}px\' r=\'${gradient.radius}px\'>'
-      ];
-      for (int i = 0; i < gradient.colors.length; i++) {
-        final stop =
-            gradient.colorStops?[i] ?? i / (gradient.colors.length - 1);
-        final color = gradient.colors[i];
-        lines.add(
-            '<stop stop-color=\'${colorToCssString(color)}\' offset=\'${(stop * 100).round()}%\'/>');
-      }
-      lines.add('</radialGradient></defs><rect x=\'0%\' y=\'0%\' '
-          'width=\'100%\' height=\'100%\' fill=\'url(#gradient)\'></rect></svg>');
-      inputImageSvg = lines.join('');
-    } else {
-      // unreachable, just added to make analyzer happy
-      return;
-    }
+    String inputImageSvg = _gradientToSvgElement(gradient, maskRect);
     // This is required since Firefox doesn't support feImage pointing to
     // a fragment of the SVG yet.
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1538554
@@ -199,6 +139,66 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 }
 
+String _gradientToSvgElement(EngineGradient gradient, ui.Rect maskRect) {
+  if (gradient is GradientLinear) {
+    _FastMatrix32? matrix4 = gradient.matrix4;
+    double fromX = gradient.from.dx;
+    double fromY = gradient.from.dy;
+    double toX = gradient.to.dx;
+    double toY = gradient.to.dy;
+    if (matrix4 != null) {
+      final centerX = (gradient.from.dx + gradient.to.dx) / 2.0;
+      final centerY = (gradient.from.dy + gradient.to.dy) / 2.0;
+      matrix4.transform(
+        gradient.from.dx - centerX,
+        gradient.from.dy - centerY,
+      );
+      fromX = matrix4.transformedX + centerX;
+      fromY = matrix4.transformedY + centerY;
+      matrix4.transform(gradient.to.dx - centerX, gradient.to.dy - centerY);
+      toX = matrix4.transformedX + centerX;
+      toY = matrix4.transformedY + centerY;
+    }
+    // final angle = math.atan2(toY - fromY, toX - fromX) * (180 / math.pi) + 90;
+    final fromXPercent = '${(fromX / maskRect.width * 100).round()}%';
+    final fromYPercent = '${(fromY / maskRect.height * 100).round()}%';
+    final toXPercent = '${(toX / maskRect.width * 100).round()}%';
+    final toYPercent = '${(toY / maskRect.height * 100).round()}%';
+    final lines = [
+      // x=\'${maskRect.left}px\' y=\'${maskRect.top}px\'
+      '<svg xmlns="http://www.w3.org/2000/svg" x=\'${maskRect.left}px\' y=\'${maskRect.top}px\' width=\'${maskRect.width}px\' height=\'${maskRect.height}px\'>'
+          '<defs><linearGradient id=\'gradient\' x1=\'$fromXPercent\' y1=\'$fromYPercent\' x2=\'$toXPercent\' y2=\'$toYPercent\'>'
+    ];
+    for (int i = 0; i < gradient.colors.length; i++) {
+      final stop = gradient.colorStops?[i] ?? i / (gradient.colors.length - 1);
+      final color = gradient.colors[i];
+      lines.add(
+          '<stop stop-color=\'${colorToCssString(color)}\' offset=\'${(stop * 100).round()}%\'/>');
+    }
+    lines.add('</linearGradient></defs><rect x=\'0%\' y=\'0%\' '
+        'width=\'100%\' height=\'100%\' fill=\'url(#gradient)\'></rect></svg>');
+    return lines.join('');
+  } else if (gradient is GradientRadial) {
+    final lines = [
+      '<svg xmlns="http://www.w3.org/2000/svg" x=\'${maskRect.left}px\' y=\'${maskRect.top}px\' width=\'${maskRect.width}px\' height=\'${maskRect.height}px\'><defs>'
+          '<radialGradient id=\'gradient\' '
+          'cx=\'${maskRect.left + gradient.center.dx}px\' cy=\'${maskRect.top + gradient.center.dy}px\' r=\'${(gradient.radius / math.min(maskRect.width, maskRect.height) * 100).round()}px\'>'
+    ];
+    for (int i = 0; i < gradient.colors.length; i++) {
+      final stop = gradient.colorStops?[i] ?? i / (gradient.colors.length - 1);
+      final color = gradient.colors[i];
+      lines.add(
+          '<stop stop-color=\'${colorToCssString(color)}\' offset=\'${(stop * 100).round()}%\'/>');
+    }
+    lines.add('</radialGradient></defs><rect x=\'0%\' y=\'0%\' '
+        'width=\'100%\' height=\'100%\' fill=\'url(#gradient)\'></rect></svg>');
+    return lines.join('');
+  } else {
+    // TODO(flutter-web): Support conical and sweep gradients for ShaderMask.
+    throw ArgumentError('Unsupported gradient type');
+  }
+}
+
 String? svgMaskFilterFromImageAndBlendMode(
     String imageUrl, ui.BlendMode blendMode) {
   String? svgFilter;
@@ -264,16 +264,22 @@ String? svgMaskFilterFromImageAndBlendMode(
     case ui.BlendMode.dstOver:
     case ui.BlendMode.clear:
     case ui.BlendMode.srcOver:
-      assert(
-          false,
-          'Invalid svg filter request for blend-mode '
-          '$blendMode');
-      break;
+      throw UnsupportedError(
+          'Invalid svg filter request for blend-mode $blendMode');
   }
   return svgFilter;
 }
 
 int _maskFilterIdCounter = 0;
+
+String _svgFilterWrapper(String content) {
+  _maskFilterIdCounter++;
+  return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
+          '<filter id="_fmf$_maskFilterIdCounter" '
+          'filterUnits="objectBoundingBox">' +
+      content +
+      '</filter></svg>';
+}
 
 // The color matrix for feColorMatrix element changes colors based on
 // the following:
@@ -289,88 +295,66 @@ int _maskFilterIdCounter = 0;
 // B' = b1*R + b2*G + b3*B + b4*A + b5
 // A' = a1*R + a2*G + a3*B + a4*A + a5
 String _srcInImageToSvg(String imageUrl) {
-  _maskFilterIdCounter += 1;
-  return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
-      '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox">'
-      '<feColorMatrix values="0 0 0 0 1 ' // Ignore input, set it to absolute.
-      '0 0 0 0 1 '
-      '0 0 0 0 1 '
-      '0 0 0 1 0" result="destalpha"/>' // Just take alpha channel of destination
-      '<feImage xlink:href="$imageUrl" result="image">'
-      '</feImage>'
-      '<feComposite in="image" in2="destalpha" '
-      'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
-      '</feComposite>'
-      '</filter></svg>';
+  return _svgFilterWrapper(
+    '<feColorMatrix values="0 0 0 0 1 ' // Ignore input, set it to absolute.
+    '0 0 0 0 1 '
+    '0 0 0 0 1 '
+    '0 0 0 1 0" result="destalpha"/>' // Just take alpha channel of destination
+    '<feImage href="$imageUrl" result="image">'
+    '</feImage>'
+    '<feComposite in="image" in2="destalpha" '
+    'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
+    '</feComposite>',
+  );
 }
 
 String _srcOutImageToSvg(String imageUrl) {
-  _maskFilterIdCounter += 1;
-  return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
-      '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox">'
-      '<feImage xlink:href="$imageUrl" result="image">'
+  return _svgFilterWrapper('<feImage href="$imageUrl" result="image">'
       '</feImage>'
       '<feComposite in="image" in2="SourceGraphic" operator="out" result="comp">'
-      '</feComposite>'
-      '</filter></svg>';
+      '</feComposite>');
 }
 
 String _xorImageToSvg(String imageUrl) {
-  _maskFilterIdCounter += 1;
-  return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
-      '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox">'
-      '<feImage xlink:href="$imageUrl" result="image">'
+  return _svgFilterWrapper('<feImage href="$imageUrl" result="image">'
       '</feImage>'
       '<feComposite in="image" in2="SourceGraphic" operator="xor" result="comp">'
-      '</feComposite>'
-      '</filter></svg>';
+      '</feComposite>');
 }
 
 // The source image and color are composited using :
 // result = k1 *in*in2 + k2*in + k3*in2 + k4.
 String _compositeImageToSvg(
     String imageUrl, double k1, double k2, double k3, double k4) {
-  _maskFilterIdCounter += 1;
-  return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
-      '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox">'
-      '<feImage xlink:href="$imageUrl" result="image">'
-      '</feImage>'
-      '<feComposite in="image" in2="SourceGraphic" '
-      'operator="arithmetic" k1="$k1" k2="$k2" k3="$k3" k4="$k4" result="comp">'
-      '</feComposite>'
-      '</filter></svg>';
+  return _svgFilterWrapper(
+    '<feImage href="$imageUrl" result="image">'
+    '</feImage>'
+    '<feComposite in="image" in2="SourceGraphic" '
+    'operator="arithmetic" k1="$k1" k2="$k2" k3="$k3" k4="$k4" result="comp">'
+    '</feComposite>',
+  );
 }
 
 // Porter duff source * destination , keep source alpha.
 // First apply color filter to source to change it to [color], then
 // composite using multiplication.
 String _modulateImageToSvg(String imageUrl) {
-  _maskFilterIdCounter += 1;
-  return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
-      '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox">'
-      '<feImage xlink:href="$imageUrl" result="image">'
-      '</feImage>'
-      '<feComposite in="image" in2="SourceGraphic" '
-      'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
-      '</feComposite>'
-      '</filter></svg>';
+  return _svgFilterWrapper(
+    '<feImage href="$imageUrl" result="image">'
+    '</feImage>'
+    '<feComposite in="image" in2="SourceGraphic" '
+    'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
+    '</feComposite>',
+  );
 }
 
 // Uses feBlend element to blend source image with a color.
 String _blendImageToSvg(String imageUrl, String? feBlend,
     {bool swapLayers = false}) {
-  _maskFilterIdCounter += 1;
-  return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
-          '<filter id="_fmf$_maskFilterIdCounter" filterUnits="objectBoundingBox">'
-          '<feImage xlink:href="$imageUrl" result="image">'
-          '</feImage>' +
-      (swapLayers
-          ? '<feBlend in="SourceGraphic" in2="image" mode="$feBlend"/>'
-          : '<feBlend in="image" in2="SourceGraphic" mode="$feBlend"/>') +
-      '</filter></svg>';
+  return _svgFilterWrapper(
+    '<feImage href="$imageUrl" result="image"></feImage>' +
+        (swapLayers
+            ? '<feBlend in="SourceGraphic" in2="image" mode="$feBlend"/>'
+            : '<feBlend in="image" in2="SourceGraphic" mode="$feBlend"/>'),
+  );
 }
