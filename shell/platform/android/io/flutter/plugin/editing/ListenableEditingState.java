@@ -11,13 +11,12 @@ import java.util.ArrayList;
 
 /// The current editing state (text, selection range, composing range) the text input plugin holds.
 ///
-/// This class also notifies its listeners when the editing state (text, selection, composing
-// region)
-/// changes. Change notifications will be deferred to the end of batch edits if there's one is in
-/// progress. Listeners added during a batch end will be notified when batch edits end, even if
-/// there's no real change present.
+/// As the name implies, this class also notifies its listeners when the editing state (text,
+/// selection, composing region) changes. Change notifications will be deferred to the end of batch
+/// edits if there's one in progress. Listeners added during a batch end will be notified when all
+/// batch edits end (i.e. when the outmost batch edit ends), even if there's no real change.
 //
-// Currently this class does not notify its listeners when its spans change (e.g.,
+// Currently this class does not notify its listeners on spans-only changes (e.g.,
 // Selection.setSelection). Wrap them in a batch edit to trigger a change notification.
 class ListenableEditingState extends SpannableStringBuilder {
   interface EditingStateWatcher {
@@ -41,7 +40,7 @@ class ListenableEditingState extends SpannableStringBuilder {
 
   private BaseInputConnection mDummyConnection;
 
-  // The View is only use for creating a dummy BaseInputConnection which is used in
+  // The View is only use for creating a dummy BaseInputConnection which is only used in
   // setComposingRegion. The View needs to have a non-null Context.
   public ListenableEditingState(TextInputChannel.TextEditState configuration, View view) {
     super();

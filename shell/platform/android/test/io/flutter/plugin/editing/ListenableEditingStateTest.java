@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import java.util.ArrayList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -119,7 +120,6 @@ public class ListenableEditingStateTest {
     editingState.addEditingStateListener(listener);
     editingState.replace(0, editingState.length(), "update");
     editingState.endBatchEdit();
-    editingState.removeEditingStateListener(listener);
 
     assertTrue(listener.isCalled());
     assertTrue(listener.textChanged);
@@ -132,6 +132,7 @@ public class ListenableEditingStateTest {
     editingState.replace(0, editingState.length(), "more updates");
     assertTrue(listener.isCalled());
     assertTrue(listener.textChanged);
+    editingState.removeEditingStateListener(listener);
 
     listener.reset();
     // Now remove before endBatchEdit();
@@ -217,6 +218,41 @@ public class ListenableEditingStateTest {
   }
 
   // -------- Start: Test InputMethods actions   -------
+  @Test
+  public void inputMethod_batchEditingBeginAndEnd() {
+    final ArrayList<String> batchMarkers = new ArrayList<>();
+    final ListenableEditingState editingState =
+        new ListenableEditingState(null, new View(RuntimeEnvironment.application)) {
+          @Override
+          public final void beginBatchEdit() {
+            super.beginBatchEdit();
+            batchMarkers.add("begin");
+          }
+
+          @Override
+          public void endBatchEdit() {
+            super.endBatchEdit();
+            batchMarkers.add("end");
+          }
+        };
+
+    final Listener listener = new Listener();
+    final View testView = new View(RuntimeEnvironment.application);
+    final InputConnectionAdaptor inputConnection =
+        new InputConnectionAdaptor(
+            testView, 0, mock(TextInputChannel.class), editingState, new EditorInfo());
+
+    // Make sure begin/endBatchEdit is called on the Editable when the input method calls
+    // InputConnection#begin/endBatchEdit.
+    inputConnection.beginBatchEdit();
+    assertEquals(1, batchMarkers.size());
+    assertEquals("begin", batchMarkers.get(0));
+
+    inputConnection.endBatchEdit();
+    assertEquals(2, batchMarkers.size());
+    assertEquals("end", batchMarkers.get(1));
+  }
+
   @Test
   public void inputMethod_testSetSelection() {
     final ListenableEditingState editingState =
