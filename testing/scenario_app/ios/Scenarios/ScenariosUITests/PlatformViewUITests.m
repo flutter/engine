@@ -137,20 +137,6 @@
 
 @end
 
-@implementation PlatformViewMutationOpacityTests
-
-- (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-opacity"];
-  return [super initWithManager:manager invocation:invocation];
-}
-
-- (void)testPlatformView {
-  [self checkGolden];
-}
-
-@end
-
 @interface PlatformViewRotation : GoldenPlatformViewTests
 @end
 
