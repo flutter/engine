@@ -909,8 +909,6 @@ class SemanticsObject {
           ..left = '${rect.left}px'
           ..width = '${rect.width}px'
           ..height = '${rect.height}px';
-        print(
-            '** rectangle: ${rect.top}, ${rect.left}, ${rect.width}, ${rect.height}');
       }
     } else {
       if (isDesktop) {
