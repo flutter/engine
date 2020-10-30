@@ -38,7 +38,6 @@
 NSString* const FlutterDefaultDartEntrypoint = nil;
 NSString* const FlutterDefaultInitialRoute = nil;
 static constexpr int kNumProfilerSamplesPerSec = 5;
-static size_t g_shellCount = 0;
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
 @property(nonatomic, assign) FlutterEngine* flutterEngine;
@@ -511,7 +510,8 @@ static size_t g_shellCount = 0;
 }
 
 + (NSString*)generateThreadLabel:(NSString*)labelPrefix {
-  return [NSString stringWithFormat:@"%@.%zu", labelPrefix, ++g_shellCount];
+  static size_t s_shellCount = 0;
+  return [NSString stringWithFormat:@"%@.%zu", labelPrefix, ++s_shellCount];
 }
 
 + (flutter::ThreadHost)makeThreadHost:(NSString*)threadLabel {
