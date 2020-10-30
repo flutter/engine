@@ -851,13 +851,25 @@ class SemanticsObject {
         hasIdentityTransform &&
         verticalContainerAdjustment == 0.0 &&
         horizontalContainerAdjustment == 0.0) {
-      element.style
+      if (isDesktop) {
+        element.style
+          ..removeProperty('transform-origin')
+          ..removeProperty('transform');
+      } else {
+        element.style
           ..removeProperty('top')
           ..removeProperty('left');
+      }
       if (containerElement != null) {
-        containerElement.style
-          ..removeProperty('top')
-          ..removeProperty('left');
+        if (isDesktop) {
+          containerElement.style
+            ..removeProperty('transform-origin')
+            ..removeProperty('transform');
+        } else {
+          containerElement.style
+            ..removeProperty('top')
+            ..removeProperty('left');
+        }
       }
       return;
     }
@@ -882,14 +894,34 @@ class SemanticsObject {
     }
 
     if (!effectiveTransformIsIdentity) {
-      final Vector3 translation = effectiveTransform.getTranslation();
-      element.style
-        ..top = '${translation.y}px'
-        ..left = '${translation.x}px';
+      if (isDesktop) {
+        element.style
+          ..transformOrigin = '0 0 0'
+          ..transform = matrix4ToCssTransform(effectiveTransform);
+      } else {
+        // Mobile screen readers observed have errors reading the semantics
+        // borders when css `transform` properties are used.
+        // See: https://github.com/flutter/flutter/issues/68225
+        final ui.Rect rect =
+            computeBoundingRectangleFromMatrix(effectiveTransform, _rect!);
+        element.style
+          ..top = '${rect.top}px'
+          ..left = '${rect.left}px'
+          ..width = '${rect.width}px'
+          ..height = '${rect.height}px';
+        print(
+            '** rectangle: ${rect.top}, ${rect.left}, ${rect.width}, ${rect.height}');
+      }
     } else {
-      element.style
-        ..removeProperty('top')
-        ..removeProperty('left');
+      if (isDesktop) {
+        element.style
+          ..removeProperty('transform-origin')
+          ..removeProperty('transform');
+      } else {
+        element.style
+          ..removeProperty('top')
+          ..removeProperty('left');
+      }
     }
 
     if (containerElement != null) {
@@ -898,13 +930,25 @@ class SemanticsObject {
           horizontalContainerAdjustment != 0.0) {
         final double translateX = -_rect!.left + horizontalContainerAdjustment;
         final double translateY = -_rect!.top + verticalContainerAdjustment;
-        containerElement.style
-          ..top = '${translateY}px'
-          ..left = '${translateX}px';
+        if (isDesktop) {
+          containerElement.style
+            ..transformOrigin = '0 0 0'
+            ..transform = 'translate(${translateX}px, ${translateY}px)';
+        } else {
+          containerElement.style
+            ..top = '${translateY}px'
+            ..left = '${translateX}px';
+        }
       } else {
-        containerElement.style
-          ..removeProperty('top')
-          ..removeProperty('left');
+        if (isDesktop) {
+          containerElement.style
+            ..removeProperty('transform-origin')
+            ..removeProperty('transform');
+        } else {
+          containerElement.style
+            ..removeProperty('top')
+            ..removeProperty('left');
+        }
       }
     }
   }
