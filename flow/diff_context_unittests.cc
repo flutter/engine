@@ -2,6 +2,7 @@
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/image_filter_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/flow/testing/diff_context_test.h"
@@ -449,6 +450,55 @@ TEST_F(DiffContextTest, BackdropLayer) {
   l5.root()->Add(std::make_shared<MockLayer>(path2));
   damage = DiffLayerTree(l5, l4);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 150, 150));
+}
+
+TEST_F(DiffContextTest, ImageFilterLayer) {
+  auto filter = SkBlurImageFilter::Make(10, 10, nullptr, nullptr,
+                                        SkBlurImageFilter::kClamp_TileMode);
+
+  {
+    // tests later assume 30px paint area, fail early if that's not the case
+    auto paint_rect =
+        filter->filterBounds(SkIRect::MakeWH(10, 10), SkMatrix::I(),
+                             SkImageFilter::kForward_MapDirection);
+    EXPECT_EQ(paint_rect, SkIRect::MakeLTRB(-30, -30, 40, 40));
+  }
+
+  LayerTree l1;
+  auto filter_layer = std::make_shared<ImageFilterLayer>(filter);
+  auto path = SkPath().addRect(SkRect::MakeXYWH(100, 100, 10, 10));
+  filter_layer->Add(std::make_shared<MockLayer>(path));
+  l1.root()->Add(filter_layer);
+
+  auto damage = DiffLayerTree(l1, LayerTree());
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(70, 70, 70, 70));
+
+  // filter bounds are calculated in screen space, make sure scaling doesn't
+  // affect it
+  LayerTree l2;
+  auto scale = std::make_shared<TransformLayer>(SkMatrix::MakeScale(2.0, 2.0));
+  scale->Add(filter_layer);
+  l2.root()->Add(scale);
+
+  damage = DiffLayerTree(l2, LayerTree());
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(170, 170, 80, 80));
+
+  LayerTree l3;
+  l3.root()->Add(scale);
+
+  // path outside of ImageFilterLayer
+  auto path1 = SkPath().addRect(SkRect::MakeXYWH(160, 160, 10, 10));
+  l3.root()->Add(std::make_shared<MockLayer>(path1));
+  damage = DiffLayerTree(l3, l2);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(160, 160, 10, 10));
+
+  // path intersecting ImageFilterLayer, should trigger ImageFilterLayer repaint
+  LayerTree l4;
+  l4.root()->Add(scale);
+  auto path2 = SkPath().addRect(SkRect::MakeXYWH(160, 160, 11, 11));
+  l4.root()->Add(std::make_shared<MockLayer>(path2));
+  damage = DiffLayerTree(l4, l3);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(160, 160, 90, 90));
 }
 
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT
