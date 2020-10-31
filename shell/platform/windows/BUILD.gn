@@ -21,12 +21,6 @@ config("relative_flutter_windows_headers") {
   include_dirs = [ "public" ]
 }
 
-# TODO: Move to builtroot build/config/win/BUILD.gn when the UWP compliant change to that project lands.
-# When OS target is WinUWP use WINUWP as the preprocessor flag to conditionalize.
-config("flutter_windows_winuwp_defs") {
-  defines = [ "WINUWP" ]
-}
-
 # The headers are a separate source set since the client wrapper is allowed
 # to depend on the public headers, but none of the rest of the code.
 source_set("flutter_windows_headers") {
@@ -38,7 +32,7 @@ source_set("flutter_windows_headers") {
   if (target_os == "winuwp") {
     configs += [
       "//flutter/shell/platform/common/cpp:desktop_library_implementation",
-      ":flutter_windows_winuwp_defs",
+      "//build/config/win:flutter_windows_winuwp_defs",
     ]
   } else {
     configs +=
@@ -103,7 +97,7 @@ source_set("flutter_windows_source") {
   ]
 
   if (target_os == "winuwp") {
-    configs += [ ":flutter_windows_winuwp_defs" ]
+    configs += [ "//build/config/win:flutter_windows_winuwp_defs" ]
   }
 
   public_configs = [ ":relative_angle_headers" ]

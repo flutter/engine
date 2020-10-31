@@ -41,7 +41,7 @@ source_set("client_wrapper_windows") {
 
   configs += [
     "//flutter/shell/platform/common/cpp:desktop_library_implementation",
-    "//flutter/shell/platform/windows:flutter_windows_winuwp_defs",
+    "//build/config/win:flutter_windows_winuwp_defs",
   ]
 
   public_configs = [
