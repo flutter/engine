@@ -13,10 +13,12 @@ SkRect PaintRegion::GetBounds() const {
   return res;
 }
 
-DiffContext::DiffContext(double frame_device_pixel_ratio,
+DiffContext::DiffContext(SkISize frame_size,
+                         double frame_device_pixel_ratio,
                          PaintRegionMap& this_frame_paint_region_map,
                          const PaintRegionMap& last_frame_paint_region_map)
     : rects_(std::make_shared<std::vector<SkRect>>()),
+      frame_size_(frame_size),
       frame_device_pixel_ratio_(frame_device_pixel_ratio),
       this_frame_paint_region_map_(this_frame_paint_region_map),
       last_frame_paint_region_map_(last_frame_paint_region_map) {}
@@ -64,6 +66,10 @@ Damage DiffContext::GetDamage(const SkIRect& accumulated_buffer_damage) const {
   Damage res;
   framebuffer.roundOut(&res.buffer_damage);
   net.roundOut(&res.surface_damage);
+
+  SkIRect frame_clip = SkIRect::MakeSize(frame_size_);
+  res.buffer_damage.intersect(frame_clip);
+  res.surface_damage.intersect(frame_clip);
   return res;
 }
 

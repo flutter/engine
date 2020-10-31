@@ -82,7 +82,8 @@ using PaintRegionMap = std::map<uint64_t, PaintRegion>;
 // Tracks state during tree diffing process and computes resulting damage
 class DiffContext {
  public:
-  explicit DiffContext(double device_pixel_aspect_ratio,
+  explicit DiffContext(SkISize frame_size,
+                       double device_pixel_aspect_ratio,
                        PaintRegionMap& this_frame_paint_region_map,
                        const PaintRegionMap& last_frame_paint_region_map);
 
@@ -215,6 +216,7 @@ class DiffContext {
 
   std::shared_ptr<std::vector<SkRect>> rects_;
   State state_;
+  SkISize frame_size_;
   double frame_device_pixel_ratio_;
   std::vector<State> state_stack_;
 

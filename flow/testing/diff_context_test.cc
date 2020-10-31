@@ -13,7 +13,9 @@ DiffContextTest::DiffContextTest()
 Damage DiffContextTest::DiffLayerTree(LayerTree& layer_tree,
                                       const LayerTree& old_layer_tree,
                                       const SkIRect& additional_damage) {
-  DiffContext dc(1, layer_tree.paint_region_map(),
+  FML_CHECK(layer_tree.size() == old_layer_tree.size());
+
+  DiffContext dc(layer_tree.size(), 1, layer_tree.paint_region_map(),
                  old_layer_tree.paint_region_map());
   layer_tree.root()->Diff(&dc, old_layer_tree.root());
   return dc.GetDamage(additional_damage);
