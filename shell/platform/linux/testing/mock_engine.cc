@@ -214,6 +214,12 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
   return kSuccess;
 }
 
+FlutterEngineResult FlutterEngineSendKeyEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterKeyEvent* event) {
+  return kSuccess;
+}
+
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,

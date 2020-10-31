@@ -6,6 +6,35 @@
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_KEYBOARD_MANAGER_H_
 
 #include <gdk/gdk.h>
+#include <stdint.h>
+
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
+
+typedef enum {
+  kFlKeyDataKindUp = 1,
+  kFlKeyDataKindDown,
+  kFlKeyDataKindSync,
+  kFlKeyDataKindCancel,
+} FlKeyEventKind;
+
+typedef struct {
+  FlKeyEventKind kind;
+  uint64_t key;
+  const char* character;
+  bool repeated;
+} FlLogicalKeyDatum;
+
+typedef struct {
+  FlKeyEventKind kind;
+  uint64_t key;
+  bool repeated;
+  double timestamp;
+  uint32_t active_locks;
+  size_t logical_data_count;
+} FlKeyDatum;
+
+constexpr int kMaxConvertedKeyData = 3;
+constexpr int kMaxConvertedLogicalKeyData = 8;
 
 G_BEGIN_DECLS
 
@@ -15,10 +44,12 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
                      KEYBOARD_MANAGER,
                      GObject);
 
-// FlKeyboardManager* fl_keyboard_manager_new();
+FlKeyboardManager* fl_keyboard_manager_new(FlView* view);
 
-void fl_keyboard_manager_send_key_event(FlKeyboardManager* plugin,
-                                        GdkEventKey* event);
+size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
+                                             const GdkEventKey* event,
+                                             FlKeyDatum** result_physical,
+                                             FlLogicalKeyDatum** result_logical);
 
 G_END_DECLS
 

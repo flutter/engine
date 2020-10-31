@@ -12,6 +12,7 @@
 
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
+#include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
@@ -37,6 +38,8 @@ struct _FlView {
 
   // Pointer button state recorded for sending status updates.
   int64_t button_state;
+
+  FlKeyboardManager* keyboard_manager;
 
   // Flutter system channel handlers.
   FlKeyEventPlugin* key_event_plugin;
@@ -107,6 +110,56 @@ static gboolean fl_view_send_pointer_button_event(FlView* self,
   return TRUE;
 }
 
+static FlutterKeyEventKind convertKeyEventKind(FlKeyEventKind kind) {
+  switch (kind) {
+    case kFlKeyDataKindUp:
+      return kFlutterKeyEventKindUp;
+    case kFlKeyDataKindDown:
+      return kFlutterKeyEventKindDown;
+    case kFlKeyDataKindSync:
+      return kFlutterKeyEventKindSync;
+    case kFlKeyDataKindCancel:
+      return kFlutterKeyEventKindCancel;
+  }
+}
+
+// Sends a Flutter key event to the engine.
+static gboolean fl_view_send_key_event(FlView* self, const GdkEventKey* event) {
+  FlKeyDatum* physical_results[kMaxConvertedKeyData] = {};
+  FlLogicalKeyDatum* logical_results[kMaxConvertedLogicalKeyData] = {};
+  size_t result_count = fl_keyboard_manager_convert_key_event(
+      self->keyboard_manager, event, physical_results, logical_results);
+  size_t base_logical_index = 0;
+  for (size_t physical_index = 0; physical_index < result_count; physical_index++) {
+    FlKeyDatum* physical_datum = physical_results[physical_index];
+    FlutterKeyEvent fl_event = {};
+    fl_event.struct_size = sizeof(fl_event);
+    fl_event.timestamp = physical_datum->timestamp;
+    fl_event.active_locks = physical_datum->active_locks;
+    fl_event.kind = convertKeyEventKind(physical_datum->kind);
+    fl_event.key = physical_datum->key;
+    fl_event.repeated = physical_datum->repeated;
+    uint8_t logical_characters_data[] = {49};
+    fl_event.logical_characters_data = logical_characters_data;
+    fl_event.logical_event_count = physical_datum->logical_data_count;
+
+    FlutterLogicalKeyEvent logical_datum[fl_event.logical_event_count];
+    fl_event.logical_events = logical_datum;
+    for (size_t logical_index = 0; logical_index < fl_event.logical_event_count; logical_index++) {
+      FlLogicalKeyDatum *logical_source = logical_results[base_logical_index + logical_index];
+      logical_datum[logical_index].struct_size = sizeof(FlutterLogicalKeyEvent);
+      logical_datum[logical_index].character_size = 0;
+      logical_datum[logical_index].key = logical_source->key;
+      logical_datum[logical_index].kind = convertKeyEventKind(logical_source->kind);
+      logical_datum[logical_index].repeated = logical_source->repeated;
+    }
+
+    fl_engine_send_key_event(self->engine, &fl_event);
+    base_logical_index += fl_event.logical_event_count;
+  }
+  return TRUE;
+}
+
 // Updates the engine with the current window metrics.
 static void fl_view_geometry_changed(FlView* self) {
   GtkAllocation allocation;
@@ -162,6 +215,7 @@ static void fl_view_constructed(GObject* object) {
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
   self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
+  self->keyboard_manager = fl_keyboard_manager_new(self);
 }
 
 static void fl_view_set_property(GObject* object,
@@ -219,6 +273,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
   g_clear_object(&self->text_input_plugin);
+  g_clear_object(&self->keyboard_manager);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
 }
@@ -340,6 +395,7 @@ static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
 
   fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
   fl_text_input_plugin_filter_keypress(self->text_input_plugin, event);
+  fl_view_send_key_event(self, event);
 
   return TRUE;
 }
@@ -351,6 +407,7 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
 
   fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
   fl_text_input_plugin_filter_keypress(self->text_input_plugin, event);
+  fl_view_send_key_event(self, event);
 
   return TRUE;
 }

@@ -131,7 +131,7 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
  * Sends a key event to the engine.
  */
 void fl_engine_send_key_event(FlEngine* engine,
-                              const FlutterKeyEvent* phase);
+                              const FlutterKeyEvent* event);
 
 /**
  * fl_engine_send_platform_message_response:

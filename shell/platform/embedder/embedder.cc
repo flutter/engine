@@ -1470,6 +1470,9 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
 
   packet->SetCharacters(logical_characters_data);
 
+  printf("Physical, Logical %zu\n", logical_event_count);
+  fflush(stdout);
+
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
                  ->DispatchKeyDataPacket(std::move(packet))
              ? kSuccess
@@ -2153,6 +2156,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(RunInitialized, FlutterEngineRunInitialized);
   SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
   SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
+  SET_PROC(SendKeyEvent, FlutterEngineSendKeyEvent);
   SET_PROC(SendPlatformMessage, FlutterEngineSendPlatformMessage);
   SET_PROC(PlatformMessageCreateResponseHandle,
            FlutterPlatformMessageCreateResponseHandle);

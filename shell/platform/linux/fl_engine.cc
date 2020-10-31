@@ -594,6 +594,11 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   FlutterEngineSendPointerEvent(self->engine, &fl_event, 1);
 }
 
+void fl_engine_send_key_event(FlEngine* self,
+                              const FlutterKeyEvent* event) {
+  FlutterEngineSendKeyEvent(self->engine, event);
+}
+
 G_MODULE_EXPORT FlBinaryMessenger* fl_engine_get_binary_messenger(
     FlEngine* self) {
   g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);

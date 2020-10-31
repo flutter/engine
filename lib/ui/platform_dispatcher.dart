@@ -348,6 +348,7 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _dispatchKeyData(ByteData packet) {
+    print('dispatch: onKeyData $onKeyData');
     if (onKeyData != null) {
       _invoke1<KeyData>(
         onKeyData,
@@ -389,6 +390,7 @@ class PlatformDispatcher {
 
     final List<int> charLengths = _getLogicalCharacterLengths(packet);
     final int logicalCount = charLengths.length;
+    print('Dart logical $logicalCount');
     int currentCharOffset = (_kPhysicalKeyDataFieldCount + _kLogicalKeyDataFieldCount  * logicalCount) * kStride;
 
     final List<LogicalKeyData> logicalKeyDataList = <LogicalKeyData>[];
