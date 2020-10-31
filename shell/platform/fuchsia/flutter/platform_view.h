@@ -18,9 +18,9 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h"
 
 #include "accessibility_bridge.h"
-#include "shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h"
 
 namespace flutter_runner {
 

@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#import "flutter/shell/platform/darwin/ios/ios_external_view_embedder.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 
@@ -22,13 +23,16 @@ class IOSSurfaceFactory {
   ~IOSSurfaceFactory();
 
   void SetPlatformViewsController(
-      FlutterPlatformViewsController* platform_views_controller);
+      const std::shared_ptr<FlutterPlatformViewsController>&
+          platform_views_controller);
 
   std::unique_ptr<IOSSurface> CreateSurface(
       fml::scoped_nsobject<CALayer> ca_layer);
 
+  std::shared_ptr<IOSExternalViewEmbedder> GetExternalViewEmbedder();
+
  private:
-  FlutterPlatformViewsController* platform_views_controller_;
+  std::shared_ptr<IOSExternalViewEmbedder> external_view_embedder_;
   std::shared_ptr<IOSContext> ios_context_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceFactory);

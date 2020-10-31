@@ -129,8 +129,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
 
   auto flutterPlatformViewsController =
-      std::make_unique<flutter::FlutterPlatformViewsController>(surface_factory);
-  surface_factory->SetPlatformViewsController(flutterPlatformViewsController.get());
+      std::make_shared<flutter::FlutterPlatformViewsController>(surface_factory);
+  surface_factory->SetPlatformViewsController(flutterPlatformViewsController);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
@@ -187,8 +187,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
 
   auto flutterPlatformViewsController =
-      std::make_unique<flutter::FlutterPlatformViewsController>(surface_factory);
-  surface_factory->SetPlatformViewsController(flutterPlatformViewsController.get());
+      std::make_shared<flutter::FlutterPlatformViewsController>(surface_factory);
+  surface_factory->SetPlatformViewsController(flutterPlatformViewsController);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
@@ -246,8 +246,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
 
   auto flutterPlatformViewsController =
-      std::make_unique<flutter::FlutterPlatformViewsController>(surface_factory);
-  surface_factory->SetPlatformViewsController(flutterPlatformViewsController.get());
+      std::make_shared<flutter::FlutterPlatformViewsController>(surface_factory);
+  surface_factory->SetPlatformViewsController(flutterPlatformViewsController);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
@@ -321,8 +321,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
 
   auto flutterPlatformViewsController =
-      std::make_unique<flutter::FlutterPlatformViewsController>(surface_factory);
-  surface_factory->SetPlatformViewsController(flutterPlatformViewsController.get());
+      std::make_shared<flutter::FlutterPlatformViewsController>(surface_factory);
+  surface_factory->SetPlatformViewsController(flutterPlatformViewsController);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
@@ -397,8 +397,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
 
   auto flutterPlatformViewsController =
-      std::make_unique<flutter::FlutterPlatformViewsController>(surface_factory);
-  surface_factory->SetPlatformViewsController(flutterPlatformViewsController.get());
+      std::make_shared<flutter::FlutterPlatformViewsController>(surface_factory);
+  surface_factory->SetPlatformViewsController(flutterPlatformViewsController);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
@@ -473,8 +473,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
 
   auto flutterPlatformViewsController =
-      std::make_unique<flutter::FlutterPlatformViewsController>(surface_factory);
-  surface_factory->SetPlatformViewsController(flutterPlatformViewsController.get());
+      std::make_shared<flutter::FlutterPlatformViewsController>(surface_factory);
+  surface_factory->SetPlatformViewsController(flutterPlatformViewsController);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
@@ -550,8 +550,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
 
   auto flutterPlatformViewsController =
-      std::make_unique<flutter::FlutterPlatformViewsController>(surface_factory);
-  surface_factory->SetPlatformViewsController(flutterPlatformViewsController.get());
+      std::make_shared<flutter::FlutterPlatformViewsController>(surface_factory);
+  surface_factory->SetPlatformViewsController(flutterPlatformViewsController);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];

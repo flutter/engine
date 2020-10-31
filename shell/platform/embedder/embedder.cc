@@ -50,7 +50,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
-#include "flutter/shell/platform/embedder/embedder_safe_access.h"
+#include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
@@ -659,8 +659,9 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
   return kSuccess;
 }
 
-void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
-                                      flutter::Settings& settings) {
+void PopulateSnapshotMappingCallbacks(
+    const FlutterProjectArgs* args,
+    flutter::Settings& settings) {  // NOLINT(google-runtime-references)
   // There are no ownership concerns here as all mappings are owned by the
   // embedder and not the engine.
   auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
@@ -841,9 +842,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   if (SAFE_ACCESS(args, root_isolate_create_callback, nullptr) != nullptr) {
     VoidCallback callback =
         SAFE_ACCESS(args, root_isolate_create_callback, nullptr);
-    settings.root_isolate_create_callback = [callback, user_data]() {
-      callback(user_data);
-    };
+    settings.root_isolate_create_callback =
+        [callback, user_data](const auto& isolate) { callback(user_data); };
   }
 
   flutter::PlatformViewEmbedder::UpdateSemanticsNodesCallback
@@ -2047,4 +2047,58 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
           kInvalidArguments,
           "Invalid FlutterEngineDisplaysUpdateType type specified.");
   }
+}
+
+FlutterEngineResult FlutterEngineGetProcAddresses(
+    FlutterEngineProcTable* table) {
+  if (!table) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Null table specified.");
+  }
+#define SET_PROC(member, function)        \
+  if (STRUCT_HAS_MEMBER(table, member)) { \
+    table->member = &function;            \
+  }
+
+  SET_PROC(CreateAOTData, FlutterEngineCreateAOTData);
+  SET_PROC(CollectAOTData, FlutterEngineCollectAOTData);
+  SET_PROC(Run, FlutterEngineRun);
+  SET_PROC(Shutdown, FlutterEngineShutdown);
+  SET_PROC(Initialize, FlutterEngineInitialize);
+  SET_PROC(Deinitialize, FlutterEngineDeinitialize);
+  SET_PROC(RunInitialized, FlutterEngineRunInitialized);
+  SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
+  SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
+  SET_PROC(SendPlatformMessage, FlutterEngineSendPlatformMessage);
+  SET_PROC(PlatformMessageCreateResponseHandle,
+           FlutterPlatformMessageCreateResponseHandle);
+  SET_PROC(PlatformMessageReleaseResponseHandle,
+           FlutterPlatformMessageReleaseResponseHandle);
+  SET_PROC(SendPlatformMessageResponse,
+           FlutterEngineSendPlatformMessageResponse);
+  SET_PROC(RegisterExternalTexture, FlutterEngineRegisterExternalTexture);
+  SET_PROC(UnregisterExternalTexture, FlutterEngineUnregisterExternalTexture);
+  SET_PROC(MarkExternalTextureFrameAvailable,
+           FlutterEngineMarkExternalTextureFrameAvailable);
+  SET_PROC(UpdateSemanticsEnabled, FlutterEngineUpdateSemanticsEnabled);
+  SET_PROC(UpdateAccessibilityFeatures,
+           FlutterEngineUpdateAccessibilityFeatures);
+  SET_PROC(DispatchSemanticsAction, FlutterEngineDispatchSemanticsAction);
+  SET_PROC(OnVsync, FlutterEngineOnVsync);
+  SET_PROC(ReloadSystemFonts, FlutterEngineReloadSystemFonts);
+  SET_PROC(TraceEventDurationBegin, FlutterEngineTraceEventDurationBegin);
+  SET_PROC(TraceEventDurationEnd, FlutterEngineTraceEventDurationEnd);
+  SET_PROC(TraceEventInstant, FlutterEngineTraceEventInstant);
+  SET_PROC(PostRenderThreadTask, FlutterEnginePostRenderThreadTask);
+  SET_PROC(GetCurrentTime, FlutterEngineGetCurrentTime);
+  SET_PROC(RunTask, FlutterEngineRunTask);
+  SET_PROC(UpdateLocales, FlutterEngineUpdateLocales);
+  SET_PROC(RunsAOTCompiledDartCode, FlutterEngineRunsAOTCompiledDartCode);
+  SET_PROC(PostDartObject, FlutterEnginePostDartObject);
+  SET_PROC(NotifyLowMemoryWarning, FlutterEngineNotifyLowMemoryWarning);
+  SET_PROC(PostCallbackOnAllNativeThreads,
+           FlutterEnginePostCallbackOnAllNativeThreads);
+  SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
+#undef SET_PROC
+
+  return kSuccess;
 }

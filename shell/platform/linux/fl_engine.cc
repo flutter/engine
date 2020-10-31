@@ -152,7 +152,8 @@ static gboolean flutter_source_dispatch(GSource* source,
 }
 
 // Called when the engine is disposed.
-static void engine_weak_notify_cb(gpointer user_data, GObject* object) {
+static void engine_weak_notify_cb(gpointer user_data,
+                                  GObject* where_the_object_was) {
   FlutterSource* source = reinterpret_cast<FlutterSource*>(user_data);
   source->engine = nullptr;
   g_source_destroy(reinterpret_cast<GSource*>(source));
@@ -381,6 +382,9 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   // so that all switches are used.
   g_ptr_array_insert(command_line_args, 0, g_strdup("flutter"));
 
+  gchar** dart_entrypoint_args =
+      fl_dart_project_get_dart_entrypoint_arguments(self->project);
+
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
   args.assets_path = fl_dart_project_get_assets_path(self->project);
@@ -391,6 +395,10 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.platform_message_callback = fl_engine_platform_message_cb;
   args.custom_task_runners = &custom_task_runners;
   args.shutdown_dart_vm_when_done = true;
+  args.dart_entrypoint_argc =
+      dart_entrypoint_args != nullptr ? g_strv_length(dart_entrypoint_args) : 0;
+  args.dart_entrypoint_argv =
+      reinterpret_cast<const char* const*>(dart_entrypoint_args);
 
   if (FlutterEngineRunsAOTCompiledDartCode()) {
     FlutterEngineAOTDataSource source = {};

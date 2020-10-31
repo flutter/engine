@@ -75,6 +75,7 @@ Engine::Engine(Delegate& delegate,
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
       use_legacy_renderer_(product_config.use_legacy_renderer()),
 #endif
+      intercept_all_input_(product_config.get_intercept_all_input()),
       weak_factory_(this) {
   if (zx::event::create(0, &vsync_event_) != ZX_OK) {
     FML_DLOG(ERROR) << "Could not create the vsync event.";
@@ -123,14 +124,16 @@ Engine::Engine(Delegate& delegate,
   };
 
   // Set up the session connection and other Scenic helpers on the raster
-  // thread.
+  // thread. We also need to wait for the external view embedder to be setup
+  // before creating the shell.
+  fml::AutoResetWaitableEvent view_embedder_latch;
   task_runners.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [this, session = std::move(session),
        session_error_callback = std::move(session_error_callback),
        view_token = std::move(view_token),
        view_ref_pair = std::move(view_ref_pair),
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
-       vsync_handle = vsync_event_.get()]() mutable {
+       vsync_handle = vsync_event_.get(), &view_embedder_latch]() mutable {
         session_connection_.emplace(
             thread_label_, std::move(session),
             std::move(session_error_callback), [](auto) {}, vsync_handle,
@@ -141,7 +144,8 @@ Engine::Engine(Delegate& delegate,
           legacy_external_view_embedder_ =
               std::make_shared<flutter::SceneUpdateContext>(
                   thread_label_, std::move(view_token),
-                  std::move(view_ref_pair), session_connection_.value());
+                  std::move(view_ref_pair), session_connection_.value(),
+                  intercept_all_input_);
         } else
 #endif
         {
@@ -149,9 +153,11 @@ Engine::Engine(Delegate& delegate,
               std::make_shared<FuchsiaExternalViewEmbedder>(
                   thread_label_, std::move(view_token),
                   std::move(view_ref_pair), session_connection_.value(),
-                  surface_producer_.value());
+                  surface_producer_.value(), intercept_all_input_);
         }
+        view_embedder_latch.Signal();
       }));
+  view_embedder_latch.Wait();
 
   // Grab the parent environment services. The platform view may want to
   // access some of these services.
@@ -406,11 +412,11 @@ Engine::~Engine() {
   }
 }
 
-std::pair<bool, uint32_t> Engine::GetEngineReturnCode() const {
-  std::pair<bool, uint32_t> code(false, 0);
+std::optional<uint32_t> Engine::GetEngineReturnCode() const {
   if (!shell_) {
-    return code;
+    return std::nullopt;
   }
+  std::optional<uint32_t> code;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       shell_->GetTaskRunners().GetUITaskRunner(),

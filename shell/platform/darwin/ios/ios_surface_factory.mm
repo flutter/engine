@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/ios_surface_factory.h"
+
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/ios/ios_external_view_embedder.h"
 
 namespace flutter {
 
@@ -18,13 +20,18 @@ std::shared_ptr<IOSSurfaceFactory> IOSSurfaceFactory::Create(IOSRenderingAPI ren
 IOSSurfaceFactory::~IOSSurfaceFactory() = default;
 
 void IOSSurfaceFactory::SetPlatformViewsController(
-    FlutterPlatformViewsController* platform_views_controller) {
-  platform_views_controller_ = platform_views_controller;
+    const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller) {
+  external_view_embedder_.reset(
+      new IOSExternalViewEmbedder(platform_views_controller, ios_context_));
+}
+
+std::shared_ptr<IOSExternalViewEmbedder> IOSSurfaceFactory::GetExternalViewEmbedder() {
+  return external_view_embedder_;
 }
 
 std::unique_ptr<IOSSurface> IOSSurfaceFactory::CreateSurface(
     fml::scoped_nsobject<CALayer> ca_layer) {
-  return flutter::IOSSurface::Create(ios_context_, ca_layer, platform_views_controller_);
+  return flutter::IOSSurface::Create(ios_context_, ca_layer, external_view_embedder_);
 }
 
 }  // namespace flutter
