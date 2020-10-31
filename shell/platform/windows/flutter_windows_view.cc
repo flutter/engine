@@ -39,7 +39,7 @@ void FlutterWindowsView::SetEngine(
       std::make_unique<flutter::KeyEventHandler>(internal_plugin_messenger));
   keyboard_hook_handlers_.push_back(
       std::make_unique<flutter::TextInputPlugin>(internal_plugin_messenger));
-#ifndef FLUTTER_WINUWP
+#ifndef WINUWP
   platform_handler_ = std::make_unique<flutter::PlatformHandler>(
       internal_plugin_messenger, this);
 #endif

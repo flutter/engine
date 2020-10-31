@@ -13,7 +13,7 @@
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
-#ifndef FLUTTER_WINUWP
+#ifndef WINUWP
 #include "flutter/shell/platform/windows/win32_task_runner.h"  // nogncheck
 #include "flutter/shell/platform/windows/win32_window_proc_delegate_manager.h"  // nogncheck
 #endif
@@ -75,7 +75,7 @@ class FlutterWindowsEngine {
     return message_dispatcher_.get();
   }
 
-#ifndef FLUTTER_WINUWP
+#ifndef WINUWP
   Win32TaskRunner* task_runner() { return task_runner_.get(); }
 
   Win32WindowProcDelegateManager* window_proc_delegate_manager() {
@@ -105,7 +105,7 @@ class FlutterWindowsEngine {
   // The view displaying the content running in this engine, if any.
   FlutterWindowsView* view_ = nullptr;
 
-#ifndef FLUTTER_WINUWP
+#ifndef WINUWP
   // Task runner for tasks posted from the engine.
   std::unique_ptr<Win32TaskRunner> task_runner_;
 #endif
@@ -124,7 +124,7 @@ class FlutterWindowsEngine {
   FlutterDesktopOnPluginRegistrarDestroyed
       plugin_registrar_destruction_callback_;
 
-#ifndef FLUTTER_WINUWP
+#ifndef WINUWP
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<Win32WindowProcDelegateManager> window_proc_delegate_manager_;
 #endif

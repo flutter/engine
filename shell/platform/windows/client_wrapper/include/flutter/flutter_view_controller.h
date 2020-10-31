@@ -46,7 +46,7 @@ class FlutterViewController {
   // Returns the view managed by this controller.
   FlutterView* view() { return view_.get(); }
 
-#ifndef FLUTTER_WINUWP
+#ifndef WINUWP
   // Allows the Flutter engine and any interested plugins an opportunity to
   // handle the given message.
   //

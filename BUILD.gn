@@ -145,14 +145,16 @@ group("flutter") {
         public_deps += [ "//flutter/shell/platform/darwin/macos:flutter_desktop_darwin_unittests" ]
       }
 
-      if (is_win && target_os != "winuwp") {
-        public_deps += [
-          "//flutter/shell/platform/windows:flutter_windows_unittests",
-          "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
-        ]
-      } else if (is_win) {
-        # TODO once the UWP implmentation lands, reference future flutter_windows_unittests_winrt
-        # runner implementation from here
+      if (is_win) {
+        if (target_os == "winuwp") {
+          # TODO once the UWP implmentation lands, reference future flutter_windows_unittests_winrt
+          # runner implementation from here.
+        } else {
+          public_deps += [
+            "//flutter/shell/platform/windows:flutter_windows_unittests",
+            "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
+          ]
+        }
       }
     }
   }

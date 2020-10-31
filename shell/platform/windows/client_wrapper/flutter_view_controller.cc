@@ -29,7 +29,7 @@ FlutterViewController::~FlutterViewController() {
   }
 }
 
-#ifndef FLUTTER_WINUWP
+#ifndef WINUWP
 std::optional<LRESULT> FlutterViewController::HandleTopLevelWindowProc(
     HWND hwnd,
     UINT message,
