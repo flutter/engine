@@ -36,9 +36,9 @@ struct Damage {
 //
 // The area is used when adding damage of removed or dirty later.
 //
-// Because there is PaintRegion for each layer, it must be able to represent
+// Because there is a PaintRegion for each layer, it must be able to represent
 // the area with minimal overhead. This is accomplished by having one
-// vector of SkRect shared between all paint regions, and each paint region
+// vector<SkRect> shared between all paint regions, and each paint region
 // keeping begin and end index of rects relevant to particular subtree.
 //
 // All rects are in screen coordinates.
