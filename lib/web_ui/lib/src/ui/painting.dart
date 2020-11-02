@@ -463,13 +463,8 @@ String? _instantiateImageCodec(Uint8List list, engine.Callback<Codec> callback) 
 
 Future<Codec?> webOnlyInstantiateImageCodecFromUrl(Uri uri,
   {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) {
-  if (engine.useCanvasKit) {
-    return engine.skiaInstantiateWebImageCodec(
-      uri.toString(), chunkCallback);
-  } else {
     return _futurize<Codec?>((engine.Callback<Codec> callback) =>
       _instantiateImageCodecFromUrl(uri, chunkCallback, callback));
-  }
 }
 
 String? _instantiateImageCodecFromUrl(
