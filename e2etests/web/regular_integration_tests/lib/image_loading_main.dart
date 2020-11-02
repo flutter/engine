@@ -26,7 +26,10 @@ class MyAppState extends State<MyApp> {
     return MaterialApp(
         key: const Key('mainapp'),
         title: 'Integration Test App',
-        home: Image.asset('assets/images/sample_image1.png')
+        home: Column(children: <Widget>[
+          Image.asset('assets/images/sample_image1.png'),
+          Image.network('assets/images/sample_image1.png'),
+      ])
     );
   }
 }
