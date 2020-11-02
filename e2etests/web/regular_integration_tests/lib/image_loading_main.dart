@@ -6,8 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   const MethodChannel channel =
-  OptionalMethodChannel('flutter/web_test_e2e', JSONMethodCodec());
+      OptionalMethodChannel('flutter/web_test_e2e', JSONMethodCodec());
   await channel.invokeMethod<void>(
     'setDevicePixelRatio',
     '1.5',
