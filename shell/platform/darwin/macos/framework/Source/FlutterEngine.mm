@@ -27,16 +27,6 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
   return flutterLocale;
 }
 
-namespace {
-
-struct AotDataDeleter {
-  void operator()(FlutterEngineAOTData aot_data) { FlutterEngineCollectAOTData(aot_data); }
-};
-
-using UniqueAotDataPtr = std::unique_ptr<_FlutterEngineAOTData, AotDataDeleter>;
-
-}
-
 /**
  * Private interface declaration for FlutterEngine.
  */
@@ -85,10 +75,10 @@ using UniqueAotDataPtr = std::unique_ptr<_FlutterEngineAOTData, AotDataDeleter>;
 - (void)postMainThreadTask:(FlutterTask)task targetTimeInNanoseconds:(uint64_t)targetTime;
 
 /**
- * Loads the AOT snapshots and instructions from the elf bundle (app_elf_snapshot.so) if it is
- * present in the assets directory.
+ * Loads the AOT snapshots and instructions from the elf bundle (app_elf_snapshot.so) into _aotData,
+ * if it is present in the assets directory.
  */
-- (UniqueAotDataPtr)loadAOTData:(NSString*)assetsDir;
+- (void)loadAOTData:(NSString*)assetsDir;
 
 @end
 
@@ -202,7 +192,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   NSMutableDictionary<NSNumber*, FlutterExternalTextureGL*>* _textures;
 
   // Pointer to the Dart AOT snapshot and instruction data.
-  UniqueAotDataPtr _aotData;
+  _FlutterEngineAOTData* _aotData;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -233,6 +223,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (void)dealloc {
   [self shutDownEngine];
+  if (_aotData) {
+    _embedderAPI.CollectAOTData(_aotData);
+  }
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint {
@@ -304,9 +297,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   };
   flutterArguments.custom_task_runners = &custom_task_runners;
 
-  _aotData = [self loadAOTData:_project.assetsPath];
+  [self loadAOTData:_project.assetsPath];
   if (_aotData) {
-    flutterArguments.aot_data = _aotData.get();
+    flutterArguments.aot_data = _aotData;
   }
 
   FlutterEngineResult result = _embedderAPI.Initialize(
@@ -329,9 +322,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return YES;
 }
 
-- (UniqueAotDataPtr)loadAOTData:(NSString*)assetsDir {
-  if (!FlutterEngineRunsAOTCompiledDartCode()) {
-    return nullptr;
+- (void)loadAOTData:(NSString*)assetsDir {
+  if (!_embedderAPI.RunsAOTCompiledDartCode()) {
+    return;
   }
 
   BOOL isDirOut = false;  // required for NSFileManager fileExistsAtPath.
@@ -342,21 +335,17 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   NSString* elfPath = [NSString pathWithComponents:@[ assetsDir, @"app_elf_snapshot.so" ]];
 
   if (![fileManager fileExistsAtPath:elfPath isDirectory:&isDirOut]) {
-    return nullptr;
+    return;
   }
 
   FlutterEngineAOTDataSource source = {};
   source.type = kFlutterEngineAOTDataSourceTypeElfPath;
   source.elf_path = [elfPath cStringUsingEncoding:NSUTF8StringEncoding];
 
-  FlutterEngineAOTData data = nullptr;
-  auto result = FlutterEngineCreateAOTData(&source, &data);
+  auto result = _embedderAPI.CreateAOTData(&source, &_aotData);
   if (result != kSuccess) {
     NSLog(@"Failed to load AOT data from: %@", elfPath);
-    return nullptr;
   }
-
-  return UniqueAotDataPtr(data);
 }
 
 - (void)setViewController:(FlutterViewController*)controller {
