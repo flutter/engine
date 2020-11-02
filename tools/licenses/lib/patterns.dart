@@ -1559,7 +1559,8 @@ final List<RegExp> csLicenses = <RegExp>[
 
   // MIT-DERIVED LICENSES
 
-  // Seen in Mesa
+  // Seen in Mesa, among others.
+  // A version with "// -------" between sections seen in ffx_spd.
   RegExp(
     kIndent +
     (
@@ -1575,7 +1576,7 @@ final List<RegExp> csLicenses = <RegExp>[
     r'(?:'
     +
     (
-      r'(?:(?:\1\2? *)? *\n)*'
+      r'(?:(?:\1\2?(?: *| -*))? *\r?\n)*'
 
       +
 
