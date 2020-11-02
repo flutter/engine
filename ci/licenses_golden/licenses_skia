@@ -1,4 +1,4 @@
-Signature: 801073172844be73f22cf6570c46d92b
+Signature: 522dbeca72134ad2c9b2f0b11b5027bb
 
 UNUSED LICENSES:
 
@@ -5594,6 +5594,7 @@ FILE: ../../../third_party/skia/docs/examples/zero_off_dashing.cpp
 FILE: ../../../third_party/skia/gm/gpu_blur_utils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFinishCallbacks.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFinishCallbacks.h
+FILE: ../../../third_party/skia/src/gpu/GrVx.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrFillPathShader.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrFillPathShader.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathShader.h
