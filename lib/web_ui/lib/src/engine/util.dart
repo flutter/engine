@@ -333,9 +333,17 @@ String _pathToSvgClipPath(ui.Path path,
   sb.write('<defs>');
 
   final String clipId = 'svgClip$_clipIdCounter';
-  sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
 
-  sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
+  if (browserEngine == BrowserEngine.firefox) {
+    // Firefox objectBoundingBox fails to scale to 1x1 units, instead use
+    // no clipPathUnits but write the path in target units.
+    sb.write('<clipPath id=$clipId>');
+    sb.write('<path fill="#FFFFFF" d="');
+  } else {
+    sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
+    sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
+  }
+
   pathToSvg(path as SurfacePath, sb, offsetX: offsetX, offsetY: offsetY);
   sb.write('"></path></clipPath></defs></svg');
   return sb.toString();
@@ -588,3 +596,47 @@ int clampInt(int value, int min, int max) {
     return value;
   }
 }
+
+ui.Rect computeBoundingRectangleFromMatrix(Matrix4 transform, ui.Rect rect) {
+    final Float32List m = transform.storage;
+    // Apply perspective transform to all 4 corners. Can't use left,top, bottom,
+    // right since for example rotating 45 degrees would yield inaccurate size.
+    double x = rect.left;
+    double y = rect.top;
+    double wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+    double xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+    double yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+    double minX = xp, maxX = xp;
+    double minY =yp, maxY = yp;
+    x = rect.right;
+    y = rect.bottom;
+    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+
+    minX = math.min(minX, xp);
+    maxX = math.max(maxX, xp);
+    minY = math.min(minY, yp);
+    maxY = math.max(maxY, yp);
+
+    x = rect.left;
+    y = rect.bottom;
+    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+    minX = math.min(minX, xp);
+    maxX = math.max(maxX, xp);
+    minY = math.min(minY, yp);
+    maxY = math.max(maxY, yp);
+
+    x = rect.right;
+    y = rect.top;
+    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+    minX = math.min(minX, xp);
+    maxX = math.max(maxX, xp);
+    minY = math.min(minY, yp);
+    maxY = math.max(maxY, yp);
+    return ui.Rect.fromLTWH(minX, minY, maxX-minX, maxY-minY);
+  }
