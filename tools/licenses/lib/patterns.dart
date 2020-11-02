@@ -728,11 +728,11 @@ final List<MultipleVersionedLicenseReferencePattern> csReferencesByUrl = <Multip
       r'^(?:(?:\1\2? *)? *\n)*'
       r'^\1\2 *(https?://www\.apache\.org/licenses/LICENSE-2\.0) *\n'
       r'^(?:(?:\1\2? *)? *\n)*'
-      r'^\1\2Unless required by applicable law or agreed to in writing, software *\n'
-      r'^\1\2distributed under the License is distributed on an "AS IS" BASIS, *\n'
-      r'^\1\2WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\. *\n'
-      r'^\1\2See the License for the specific language governing permissions and *\n'
-      r'^\1\2limitations under the License\.',
+      r'^\1\2 *Unless required by applicable law or agreed to in writing, software *\n'
+      r'^\1\2 *distributed under the License is distributed on an "AS IS" BASIS, *\n'
+      r'^\1\2 *WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\. *\n'
+      r'^\1\2 *See the License for the specific language governing permissions and *\n'
+      r'^\1\2 *limitations under the License\.',
       multiLine: true,
       caseSensitive: false,
     )
