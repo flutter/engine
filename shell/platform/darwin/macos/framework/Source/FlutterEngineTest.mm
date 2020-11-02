@@ -36,8 +36,8 @@ TEST(FlutterEngine, MessengerSend) {
   NSData* test_message = [@"a message" dataUsingEncoding:NSUTF8StringEncoding];
   bool called = false;
 
-  engine.embedderAPI.send_platform_message = MOCK_ENGINE_PROC(
-      send_platform_message, ([&called, test_message](auto engine, auto message) {
+  engine.embedderAPI.SendPlatformMessage = MOCK_ENGINE_PROC(
+      SendPlatformMessage, ([&called, test_message](auto engine, auto message) {
         called = true;
         EXPECT_STREQ(message->channel, "test");
         EXPECT_EQ(memcmp(message->message, test_message.bytes, message->message_size), 0);
