@@ -7,6 +7,8 @@
 part of dart.ui;
 
 /// How the key has changed since the last report.
+///
+// Must match the KeyChange enum in ui/window/key_data.h.
 enum KeyChange {
   /// The key is pressed.
   down,

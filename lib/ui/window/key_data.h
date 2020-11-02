@@ -14,10 +14,10 @@ static constexpr int kPhysicalKeyDataFieldCount = 4;
 static constexpr int kLogicalKeyDataFieldCount = 3;
 static constexpr int kBytesPerKeyField = sizeof(int64_t);
 
-// Must match the KeyChange enum in hardware_keyboard.dart.
+// Must match the KeyChange enum in ui/key.dart.
 enum class KeyChange : int64_t {
-  kUp = 0,
-  kDown,
+  kDown = 0,
+  kUp,
   kSync,
   kCancel,
   kRepeatedDown,

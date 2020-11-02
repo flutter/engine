@@ -1470,9 +1470,6 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
 
   packet->SetCharacters(logical_characters_data);
 
-  printf("Physical, Logical %zu\n", logical_event_count);
-  fflush(stdout);
-
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
                  ->DispatchKeyDataPacket(std::move(packet))
              ? kSuccess
