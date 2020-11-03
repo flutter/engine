@@ -36,7 +36,7 @@ void main() async {
       (WidgetTester tester) async {
     int viewInstanceCount = 0;
 
-    final int currentViewId = platformViewsRegistry.getNextPlatformViewId();
+    platformViewsRegistry.getNextPlatformViewId();
     // ignore: undefined_prefixed_name
     ui.platformViewRegistry.registerViewFactory('MyView', (int viewId) {
       ++viewInstanceCount;
@@ -50,10 +50,7 @@ void main() async {
       'viewType': 'MyView',
     };
     await SystemChannels.platform_views.invokeMethod<void>('create', createArgs);
-    final Map<String, dynamic> disposeArgs = <String, dynamic>{
-      'id': 567,
-    };
-    await SystemChannels.platform_views.invokeMethod<void>('dispose', disposeArgs);
+    await SystemChannels.platform_views.invokeMethod<void>('dispose', 567);
     expect(viewInstanceCount, 1);
   });
 }
