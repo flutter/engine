@@ -437,6 +437,10 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   return TRUE;
 }
 
+FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* self) {
+  return &(self->embedder_api);
+}
+
 void fl_engine_set_platform_message_handler(
     FlEngine* self,
     FlEnginePlatformMessageHandler handler,

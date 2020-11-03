@@ -187,10 +187,11 @@ executable("flutter_linux_unittests") {
     "//flutter/shell/platform/linux/config:x11",
   ]
 
-  # Set flag to allow public headers to be directly included (library users should not do this)
   defines = [
-    "FLUTTER_LINUX_COMPILATION",
     "FLUTTER_ENGINE_NO_PROTOTYPES",
+    # Set flag to allow public headers to be directly included
+    # (library users should not do this)
+    "FLUTTER_LINUX_COMPILATION",
   ]
 
   deps = [
@@ -198,6 +199,7 @@ executable("flutter_linux_unittests") {
     ":flutter_linux_sources",
     "//flutter/runtime:libdart",
     "//flutter/shell/platform/embedder:embedder_headers",
+    "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",
   ]
 }
