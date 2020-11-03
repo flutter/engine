@@ -67,7 +67,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   void SendInitialBounds();
 
   // |WindowBindingHandlerDelegate|
-  void OnWindowSizeChanged(size_t width, size_t height) const override;
+  void OnWindowSizeChanged(size_t width, size_t height) override;
+
+  uint32_t GetFrameBufferId(size_t width, size_t height);
 
   // |WindowBindingHandlerDelegate|
   void OnPointerMove(double x, double y) override;
@@ -206,6 +208,16 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
 
   // Currently configured WindowBindingHandler for view.
   std::unique_ptr<flutter::WindowBindingHandler> binding_handler_;
+
+  // target size during resize event
+  size_t pending_width_, pending_height_;
+
+  // mutex and condition used during resize event
+  std::mutex resize_mutex_;
+  std::condition_variable resize_cond_;
+
+  // whether platform thread is being blocked during resize until frame is ready
+  bool resize_waiting_;
 };
 
 }  // namespace flutter

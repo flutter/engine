@@ -4,12 +4,14 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 
+#include <dwmapi.h>
 #include <chrono>
 
 namespace flutter {
 
 FlutterWindowsView::FlutterWindowsView(
-    std::unique_ptr<WindowBindingHandler> window_binding) {
+    std::unique_ptr<WindowBindingHandler> window_binding)
+    : pending_width_(0), pending_height_(0), resize_waiting_(false) {
   surface_manager_ = std::make_unique<AngleSurfaceManager>();
 
   // Take the binding handler, and give it a pointer back to self.
@@ -50,10 +52,29 @@ void FlutterWindowsView::SetEngine(
                     binding_handler_->GetDpiScale());
 }
 
-void FlutterWindowsView::OnWindowSizeChanged(size_t width,
-                                             size_t height) const {
-  surface_manager_->ResizeSurface(GetRenderTarget(), width, height);
+void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+  pending_width_ = width;
+  pending_height_ = height;
   SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+  resize_waiting_ = true;
+
+  if (width > 0 && height > 0) {
+    // for non empty frame block platform thread until GetFrameBufferId is
+    // called with requested size followed by SwapBuffers()
+    resize_cond_.wait(lock, [&] { return !resize_waiting_; });
+  }
+}
+
+uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  if (pending_width_ == width && pending_height_ == height) {
+    pending_width_ = pending_height_ = 0;
+    surface_manager_->ResizeSurface(GetRenderTarget(), width, height);
+    surface_manager_->MakeCurrent();
+  }
+  return 0;
 }
 
 void FlutterWindowsView::OnPointerMove(double x, double y) {
@@ -260,7 +281,24 @@ bool FlutterWindowsView::ClearContext() {
 }
 
 bool FlutterWindowsView::SwapBuffers() {
-  return surface_manager_->SwapBuffers();
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  // Ignore swap request during resize until surface with proper size is created
+  if (pending_width_ != 0 || pending_height_ != 0) {
+    return false;
+  }
+
+  auto res = surface_manager_->SwapBuffers();
+  if (resize_waiting_) {
+    resize_waiting_ = false;
+    resize_cond_.notify_all();
+    lock.unlock();
+    // Blocking the raster thread until DWM flushes seems to alleviate
+    // ocassional glitches where previous size surface is stretched over
+    // current size view
+    DwmFlush();
+  }
+  return res;
 }
 
 void FlutterWindowsView::CreateRenderSurface() {

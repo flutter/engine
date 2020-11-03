@@ -112,6 +112,10 @@ shared_library("flutter_windows") {
   deps = [ ":flutter_windows_source" ]
 
   public_configs = [ "//flutter:config" ]
+
+  libs = [
+    "dwmapi.lib"
+  ]
 }
 
 test_fixtures("flutter_windows_fixtures") {
@@ -143,6 +147,10 @@ executable("flutter_windows_unittests") {
     ":flutter_windows_source",
     "//flutter/testing",
     "//third_party/rapidjson",
+  ]
+
+  libs = [
+    "dwmapi.lib"
   ]
 }
 

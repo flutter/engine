@@ -13,7 +13,7 @@ class WindowBindingHandlerDelegate {
  public:
   // Notifies delegate that backing window size has changed.
   // Typically called by currently configured WindowBindingHandler
-  virtual void OnWindowSizeChanged(size_t width, size_t height) const = 0;
+  virtual void OnWindowSizeChanged(size_t width, size_t height) = 0;
 
   // Notifies delegate that backing window mouse has moved.
   // Typically called by currently configured WindowBindingHandler
