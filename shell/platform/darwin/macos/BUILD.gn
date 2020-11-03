@@ -125,7 +125,6 @@ executable("flutter_desktop_darwin_unittests") {
 
   sources = [
     "framework/Source/FlutterEngineTest.mm",
-    "framework/Source/FlutterEngineUnittests.mm",
     "framework/Source/FlutterMacOSGLCompositorUnittests.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/MockFlutterViewController.h",
