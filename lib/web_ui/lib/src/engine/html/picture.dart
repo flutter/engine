@@ -308,6 +308,7 @@ class PersistedPicture extends PersistedLeafSurface {
 
   void _applyPaint(PersistedPicture? oldSurface) {
     final EngineCanvas? oldCanvas = oldSurface?._canvas;
+    _requiresRepaint = false;
     if (!picture.recordingCanvas!.didDraw || _optimalLocalCullRect!.isEmpty) {
       // The picture is empty, or it has been completely clipped out. Skip
       // painting. This removes all the setup work and scaffolding objects
@@ -583,7 +584,6 @@ class PersistedPicture extends PersistedLeafSurface {
     _computeOptimalCullRect(this);
     if (_requiresRepaint) {
       _applyPaint(this);
-      _requiresRepaint = false;
     }
   }
 
