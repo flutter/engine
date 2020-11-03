@@ -1,8 +1,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/MacOSSwitchableGLContext.h"
-
 #include <OpenGL/gl.h>
+#import "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
 
 enum {
   kFront = 0,
@@ -35,8 +35,7 @@ enum {
     _contentLayer = [[CALayer alloc] init];
     [_containingLayer addSublayer:_contentLayer];
 
-    flutter::GLContextSwitch context_switch(
-        std::make_unique<MacOSSwitchableGLContext>(opengLContext));
+    MacOSGLContextSwitch context_switch(openGLContext);
 
     glGenFramebuffers(2, _frameBufferId);
     glGenTextures(2, _backingTexture);
@@ -63,8 +62,7 @@ enum {
   }
   _surfaceSize = size;
 
-  flutter::GLContextSwitch context_switch(
-      std::make_unique<MacOSSwitchableGLContext>(_openGLContext));
+  MacOSGLContextSwitch context_switch(_openGLContext);
 
   for (int i = 0; i < kBufferCount; ++i) {
     if (_ioSurface[i]) {
