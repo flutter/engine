@@ -245,7 +245,9 @@ void FlutterWindowsEngine::SendWindowMetricsEvent(
 }
 
 void FlutterWindowsEngine::SendPointerEvent(const FlutterPointerEvent& event) {
-  embedder_api_.SendPointerEvent(engine_, &event, 1);
+  if (engine_) {
+    embedder_api_.SendPointerEvent(engine_, &event, 1);
+  }
 }
 
 bool FlutterWindowsEngine::SendPlatformMessage(
