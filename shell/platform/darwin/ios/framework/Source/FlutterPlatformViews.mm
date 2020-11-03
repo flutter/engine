@@ -99,7 +99,7 @@ FlutterPlatformViewLayerPool::GetUnusedLayers() {
 }
 
 void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
-  flutter_view_.reset([flutter_view retain]);
+  [flutter_view_.exchange([flutter_view retain]) release];
 }
 
 void FlutterPlatformViewsController::SetFlutterViewController(
@@ -358,7 +358,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // `ChildClippingView`. Since the mask view's frame will be based on the `clipView`'s coordinate
   // system, we need to convert the flutter_view's frame to the clipView's coordinate system. The
   // mask view is not displayed on the screen.
-  CGRect maskViewFrame = [flutter_view_ convertRect:flutter_view_.get().frame toView:clipView];
+  CGRect maskViewFrame = [flutter_view_ convertRect:flutter_view_.load().frame toView:clipView];
   FlutterClippingMaskView* maskView =
       [[[FlutterClippingMaskView alloc] initWithFrame:maskViewFrame] autorelease];
   auto iter = mutators_stack.Begin();
@@ -433,7 +433,7 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
 }
 
 void FlutterPlatformViewsController::Reset() {
-  UIView* flutter_view = flutter_view_.get();
+  UIView* flutter_view = flutter_view_.load();
   for (UIView* sub_view in [flutter_view subviews]) {
     [sub_view removeFromSuperview];
   }
@@ -469,7 +469,19 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                  std::shared_ptr<IOSContext> ios_context,
                                                  std::unique_ptr<SurfaceFrame> frame) {
-  FML_DCHECK(flutter_view_);
+  // Warning: flutter_view_ could be deleted on the platform thread between load
+  // and retain.  Both are atomic but their composition isn't.
+  fml::scoped_nsobject<UIView> flutter_view([flutter_view_.load() retain]);
+  if (!flutter_view) {
+    // `flutter_view_` is set by the platform thread but read on the raster
+    // thread.  It is possible this is executing on the raster thread before the
+    // flutter_view_ has been set.  In such case we just submit the frame
+    // instead of crashing.  The may cause incorrect frames to render
+    // momentarily. @cyanglaz has reported this code will get refactored.
+    // See also: https://github.com/flutter/flutter/issues/69449
+    frame->Submit();
+    return true;
+  }
 
   // Any UIKit related code has to run on main thread.
   // When on a non-main thread, we only allow the rest of the method to run if there is no
@@ -542,7 +554,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                                    picture,                   //
                                                                    joined_rect,               //
                                                                    current_platform_view_id,  //
-                                                                   overlay_id                 //
+                                                                   overlay_id,                //
+                                                                   flutter_view               //
         );
         did_submit &= layer->did_submit_last_frame;
         platform_view_layers[current_platform_view_id].push_back(layer);
@@ -555,7 +568,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // then it can be removed from the scene.
   RemoveUnusedLayers();
   // Organize the layers by their z indexes.
-  BringLayersIntoView(platform_view_layers);
+  BringLayersIntoView(platform_view_layers, flutter_view);
   // Mark all layers as available, so they can be used in the next frame.
   layer_pool_->RecycleLayers();
   // Reset the composition order, so next frame starts empty.
@@ -570,9 +583,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   return did_submit;
 }
 
-void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
-  FML_DCHECK(flutter_view_);
-  UIView* flutter_view = flutter_view_.get();
+void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map,
+                                                         UIView* flutter_view) {
+  FML_DCHECK(flutter_view);
   auto zIndex = 0;
   // Clear the `active_composition_order_`, which will be populated down below.
   active_composition_order_.clear();
@@ -607,7 +620,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
     sk_sp<SkPicture> picture,
     SkRect rect,
     int64_t view_id,
-    int64_t overlay_id) {
+    int64_t overlay_id,
+    UIView* flutter_view) {
   FML_DCHECK(flutter_view_);
   std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, ios_context);
 
@@ -624,7 +638,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   UIView* overlay_view = layer->overlay_view.get();
   // Set the size of the overlay view.
   // This size is equal to the the device screen size.
-  overlay_view.frame = flutter_view_.get().bounds;
+  overlay_view.frame = flutter_view.bounds;
 
   std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(frame_size_);
   // If frame is null, AcquireFrame already printed out an error message.

@@ -5,16 +5,18 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
-#include "flutter/flow/embedded_views.h"
-#include "flutter/flow/rtree.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/shell.h"
+#import <atomic>
+
+#import "flutter/flow/embedded_views.h"
+#import "flutter/flow/rtree.h"
+#import "flutter/fml/platform/darwin/scoped_nsobject.h"
+#import "flutter/shell/common/shell.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
+#import "third_party/skia/include/core/SkPictureRecorder.h"
 
 @class FlutterTouchInterceptingView;
 
@@ -205,7 +207,7 @@ class FlutterPlatformViewsController {
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
-  fml::scoped_nsobject<UIView> flutter_view_;
+  std::atomic<UIView*> flutter_view_ = nil;
   fml::scoped_nsobject<UIViewController> flutter_view_controller_;
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
   std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
@@ -293,13 +295,14 @@ class FlutterPlatformViewsController {
                                                      sk_sp<SkPicture> picture,
                                                      SkRect rect,
                                                      int64_t view_id,
-                                                     int64_t overlay_id);
+                                                     int64_t overlay_id,
+                                                     UIView* flutter_view);
   // Removes overlay views and platform views that aren't needed in the current frame.
   // Must run on the platform thread.
   void RemoveUnusedLayers();
   // Appends the overlay views and platform view and sets their z index based on the composition
   // order.
-  void BringLayersIntoView(LayersMap layer_map);
+  void BringLayersIntoView(LayersMap layer_map, UIView* flutter_view);
 
   // Begin a CATransaction.
   // This transaction needs to be balanced with |CommitCATransactionIfNeeded|.

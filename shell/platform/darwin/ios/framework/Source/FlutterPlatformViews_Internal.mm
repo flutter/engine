@@ -28,7 +28,9 @@ FlutterPlatformViewsController::FlutterPlatformViewsController(
     : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>(surface_factory)),
       weak_factory_(std::make_unique<fml::WeakPtrFactory<FlutterPlatformViewsController>>(this)){};
 
-FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
+FlutterPlatformViewsController::~FlutterPlatformViewsController() {
+  [flutter_view_.load() release];
+}
 
 fml::WeakPtr<flutter::FlutterPlatformViewsController> FlutterPlatformViewsController::GetWeakPtr() {
   return weak_factory_->GetWeakPtr();
