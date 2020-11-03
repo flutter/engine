@@ -258,8 +258,7 @@ static void fl_view_size_allocate(GtkWidget* widget,
 }
 
 // Implements GtkWidget::draw.
-static gboolean fl_view_draw(GtkWidget* widget,
-                             cairo_t* cr) {
+static gboolean fl_view_draw(GtkWidget* widget, cairo_t* cr) {
   FlView* self = FL_VIEW(widget);
   // The engine doesn't support exposure events, so instead, force redraw by
   // sending a window metrics event of the same geometry. Since the geometry
