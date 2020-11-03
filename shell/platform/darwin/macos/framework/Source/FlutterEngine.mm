@@ -14,6 +14,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/MockFlutterPlatformView.h"
+
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
  * the returned struct.

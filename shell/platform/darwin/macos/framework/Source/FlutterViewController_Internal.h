@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <map>
+
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
@@ -11,6 +13,8 @@
 // The FlutterView for this view controller.
 @property(nonatomic, readonly, nullable) FlutterView* flutterView;
 
+// A map of view ids to views.
+@property() std::map<int, NSView*> view_map;
 /**
  * This just returns the NSPasteboard so that it can be mocked in the tests.
  */

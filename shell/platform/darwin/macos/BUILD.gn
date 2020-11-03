@@ -71,6 +71,9 @@ source_set("flutter_framework_source") {
     "framework/Source/MacOSSwitchableGLContext.h",
     "framework/Source/MacOSSwitchableGLContext.mm",
     "framework/Source/FlutterViewController_Internal.h",
+
+    "framework/Source/MockFlutterPlatformView.h",
+    "framework/Source/MockFlutterPlatformView.mm",
   ]
 
   sources += _flutter_framework_headers
