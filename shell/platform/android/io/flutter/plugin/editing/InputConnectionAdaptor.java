@@ -187,6 +187,10 @@ class InputConnectionAdaptor extends BaseInputConnection
     return result;
   }
 
+  // When there's not enough vertical screen space, the IME may enter fullscreen mode and this
+  // method will be used to get (a portion of) the currently edited text. Samsung keyboard seems
+  // to use this method instead of InputConnection#getText{Before,After}Cursor.
+  // See https://github.com/flutter/engine/pull/17426.
   // TODO(garyq): Implement a more feature complete version of getExtractedText
   @Override
   public ExtractedText getExtractedText(ExtractedTextRequest request, int flags) {

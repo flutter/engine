@@ -498,10 +498,10 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       // field's focus node will be notified that it lost focus after the AndroidView was notified
       // that it gained
       // focus. When this happens the text field will send a clearTextInput command which we ignore.
-      // By doing this we prevent the framework from clearing a platform view input client(the only
+      // By doing this we prevent the framework from clearing a platform view input client (the only
       // way to do so
       // is to set a new framework text client). I don't see an obvious use case for "clearing" a
-      // platform views
+      // platform view's
       // text input client, and it may be error prone as we don't know how the platform view manages
       // the input
       // connection and we probably shouldn't interfere.

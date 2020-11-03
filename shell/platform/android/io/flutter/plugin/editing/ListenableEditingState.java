@@ -11,12 +11,13 @@ import java.util.ArrayList;
 
 /// The current editing state (text, selection range, composing range) the text input plugin holds.
 ///
-/// As the name implies, this class also notifies its listeners when the editing state (text,
-/// selection, composing region) changes. Change notifications will be deferred to the end of batch
-/// edits if there's one in progress. Listeners added during a batch end will be notified when all
-/// batch edits end (i.e. when the outermost batch edit ends), even if there's no real change.
+/// As the name implies, this class also notifies its listeners when the editing state changes. When
+/// there're ongoing batch edits, change notifications will be deferred until all batch edits end
+/// (i.e. when the outermost batch edit ends). Listeners added during a batch edit will always be
+/// notified when all batch edits end, even if there's no real change.
 ///
-/// Changing the editing state in a didChangeEditingState callback may cause unexpected behavior.
+/// Adding/removing listeners or changing the editing state in a didChangeEditingState callback may
+/// cause unexpected behavior.
 //
 // Currently this class does not notify its listeners on spans-only changes (e.g.,
 // Selection.setSelection). Wrap them in a batch edit to trigger a change notification.
@@ -31,6 +32,8 @@ class ListenableEditingState extends SpannableStringBuilder {
   private static final String TAG = "flutter";
 
   private int mBatchEditNestDepth = 0;
+  // We don't support adding/removing listeners, or changing the editing state in a listener
+  // callback for now.
   private int mChangeNotificationDepth = 0;
   private ArrayList<EditingStateWatcher> mListeners = new ArrayList<>();
   private ArrayList<EditingStateWatcher> mPendingListeners = new ArrayList<>();
@@ -45,8 +48,8 @@ class ListenableEditingState extends SpannableStringBuilder {
 
   private BaseInputConnection mDummyConnection;
 
-  // The View is only use for creating a dummy BaseInputConnection which is only used in
-  // setComposingRegion. The View needs to have a non-null Context.
+  // The View is only use for creating a dummy BaseInputConnection for setComposingRegion. The View
+  // needs to have a non-null Context.
   public ListenableEditingState(TextInputChannel.TextEditState configuration, View view) {
     super();
     if (configuration != null) {
@@ -66,7 +69,7 @@ class ListenableEditingState extends SpannableStringBuilder {
   /// Starts a new batch edit during which change notifications will be put on hold until all batch
   /// edits end.
   ///
-  /// Batch ends nest.
+  /// Batch edits nest.
   public void beginBatchEdit() {
     mBatchEditNestDepth++;
     if (mChangeNotificationDepth > 0) {
@@ -82,12 +85,12 @@ class ListenableEditingState extends SpannableStringBuilder {
   }
 
   /// Ends the current batch edit and flush pending change notifications if the current batch edit
-  /// is not nested (i.e. it was the last ongoing batch edit).
+  /// is not nested (i.e. it is the last ongoing batch edit).
   public void endBatchEdit() {
     if (mBatchEditNestDepth == 0) {
+      Log.e(TAG, "endBatchEdit called without a matching beginBatchEdit");
       return;
     }
-
     if (mBatchEditNestDepth == 1) {
       for (final EditingStateWatcher listener : mPendingListeners) {
         notifyListener(listener, true, true, true);
@@ -128,7 +131,7 @@ class ListenableEditingState extends SpannableStringBuilder {
   /// This method will also update the composing region if it has changed.
   public void setEditingState(TextInputChannel.TextEditState newState) {
     beginBatchEdit();
-    replace(0, length(), new SpannableStringBuilder(newState.text));
+    replace(0, length(), newState.text);
 
     if (newState.selectionStart >= 0 && newState.selectionEnd >= newState.selectionStart) {
       Selection.setSelection(this, newState.selectionStart, newState.selectionEnd);
@@ -140,6 +143,9 @@ class ListenableEditingState extends SpannableStringBuilder {
   }
 
   public void addEditingStateListener(EditingStateWatcher listener) {
+    if (mChangeNotificationDepth > 0) {
+      Log.e(TAG, "adding a listener " + listener.toString() + " in a listener callback");
+    }
     // It is possible for a listener to get added during a batch edit. When that happens we always
     // notify the new listeners.
     // This does not check if the listener is already in the list of existing listeners.
@@ -152,6 +158,9 @@ class ListenableEditingState extends SpannableStringBuilder {
   }
 
   public void removeEditingStateListener(EditingStateWatcher listener) {
+    if (mChangeNotificationDepth > 0) {
+      Log.e(TAG, "removing a listener " + listener.toString() + " in a listener callback");
+    }
     mListeners.remove(listener);
     if (mBatchEditNestDepth > 0) {
       mPendingListeners.remove(listener);
