@@ -28,7 +28,7 @@ void main() async {
     await tester.tap(find.byKey(const Key('input')));
     // Focus in input, otherwise clipboard will fail with
     // 'document is not focused' platform exception.
-    html.document.querySelector('input').focus();
+    html.document.querySelector('input')?.focus();
     await Clipboard.setData(const ClipboardData(text: 'sample text'));
   }, skip: true); // https://github.com/flutter/flutter/issues/54296
 

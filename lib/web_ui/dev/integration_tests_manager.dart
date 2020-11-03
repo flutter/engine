@@ -144,13 +144,18 @@ class IntegrationTestsManager {
 
     int numberOfPassedTests = 0;
     int numberOfFailedTests = 0;
+    final Set<String> buildModes = {'debug', 'profile', 'release'};
     for (String fileName in e2eTestsToRun) {
-      final bool testResults =
-          await _runTestsInProfileMode(directory, fileName);
-      if (testResults) {
-        numberOfPassedTests++;
-      } else {
-        numberOfFailedTests++;
+      for (String mode in buildModes) {
+        if (!blockedTestsListsMapForModes[mode].contains(fileName)) {
+          final bool testResults =
+              await _runTestsInMode(directory, fileName, mode: mode);
+          if (testResults) {
+            numberOfPassedTests++;
+          } else {
+            numberOfFailedTests++;
+          }
+        }
       }
     }
     final int numberOfTestsRun = numberOfPassedTests + numberOfFailedTests;
@@ -160,8 +165,8 @@ class IntegrationTestsManager {
     return numberOfFailedTests == 0;
   }
 
-  Future<bool> _runTestsInProfileMode(
-      io.Directory directory, String testName) async {
+  Future<bool> _runTestsInMode(io.Directory directory, String testName,
+      {String mode = 'profile'}) async {
     String executable =
         _useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
     Map<String, String> enviroment = Map<String, String>();
@@ -172,16 +177,17 @@ class IntegrationTestsManager {
         IntegrationArguments.fromBrowser(_browser);
     final int exitCode = await runProcess(
       executable,
-      arguments.getTestArguments(testName, 'profile'),
+      arguments.getTestArguments(testName, mode),
       workingDirectory: directory.path,
       environment: enviroment,
     );
 
     if (exitCode != 0) {
+      final String command = arguments.getCommandToRun(testName, mode);
       io.stderr
           .writeln('ERROR: Failed to run test. Exited with exit code $exitCode'
               '. To run $testName locally use the following command:'
-              '\n\n${arguments.getCommandToRun(testName, 'profile')}');
+              '\n\n$command');
       return false;
     } else {
       return true;
@@ -349,7 +355,7 @@ class ChromeIntegrationArguments extends IntegrationArguments {
 
   String getCommandToRun(String testName, String mode) {
     String statementToRun = 'flutter drive '
-        '--target=test_driver/${testName} -d web-server --profile '
+        '--target=test_driver/${testName} -d web-server --$mode '
         '--browser-name=chrome --local-engine=host_debug_unopt';
     if (isLuci) {
       statementToRun = '$statementToRun --chrome-binary='
@@ -439,4 +445,15 @@ const Map<String, List<String>> blockedTestsListsMap = <String, List<String>>{
     'target_platform_android_integration.dart',
     'target_platform_ios_integration.dart',
   ],
+};
+
+/// Tests blocked for one of the build modes.
+const Map<String, List<String>> blockedTestsListsMapForModes =
+    <String, List<String>>{
+  'debug': [
+    'treeshaking_integration.dart',
+    'text_editing_integration.dart',
+  ],
+  'profile': [],
+  'release': [],
 };
