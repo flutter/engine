@@ -21,7 +21,7 @@
 @interface FlutterView : NSView
 
 /**
- * Returns the OpenGL context of backing surface.
+ * The OpenGL context of backing surface.
  */
 @property(readwrite, nonatomic, nonnull) NSOpenGLContext* openGLContext;
 

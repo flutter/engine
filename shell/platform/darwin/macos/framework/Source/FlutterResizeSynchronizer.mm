@@ -7,27 +7,27 @@
 #include <mutex>
 
 @interface FlutterResizeSynchronizer () {
-  // counter to detect stale callbacks
+  // Counter to detect stale callbacks.
   uint32_t _cookie;
 
   std::mutex _mutex;
 
-  // used to block [beginResize:]
+  // Used to block [beginResize:].
   std::condition_variable _condBlockBeginResize;
-  // used to block [requestCommit]
+  // Used to block [requestCommit].
   std::condition_variable _condBlockRequestCommit;
 
-  // if NO, requestCommit calls are ignored until shouldEnsureSurfaceForSize is called with
-  // proper size
+  // If NO, requestCommit calls are ignored until shouldEnsureSurfaceForSize is called with
+  // proper size.
   BOOL _acceptingCommit;
 
-  // waiting for resize to finish
+  // Waiting for resize to finish.
   BOOL _waiting;
 
-  // requestCommit was called and [delegate commit:] must be performed on platform thread
+  // RequestCommit was called and [delegate commit:] must be performed on platform thread.
   BOOL _pendingCommit;
 
-  // target size for resizing
+  // Target size for resizing.
   CGSize _newSize;
 
   __weak id<FlutterResizeSynchronizerDelegate> _delegate;
@@ -77,7 +77,7 @@
   _waiting = NO;
 }
 
-- (bool)shouldEnsureSurfaceForSize:(CGSize)size {
+- (BOOL)shouldEnsureSurfaceForSize:(CGSize)size {
   std::unique_lock<std::mutex> lock(_mutex);
   if (!_acceptingCommit) {
     if (CGSizeEqualToSize(_newSize, size)) {

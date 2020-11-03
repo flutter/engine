@@ -5,12 +5,13 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 
 #include <OpenGL/gl.h>
+
 #import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
 
 enum {
-  kFrontBuffer = 0,
-  kBackBuffer = 1,
-  kBufferCount,
+  kFlutterSurfaceManagerFrontBuffer = 0,
+  kFlutterSurfaceManagerBackBuffer = 1,
+  kFlutterSurfaceManagerBufferCount,
 };
 
 @interface FlutterSurfaceManager () {
@@ -19,9 +20,9 @@ enum {
   CALayer* _contentLayer;
 
   NSOpenGLContext* _openGLContext;
-  uint32_t _frameBufferId[kBufferCount];
-  uint32_t _backingTexture[kBufferCount];
-  IOSurfaceRef _ioSurface[kBufferCount];
+  uint32_t _frameBufferId[kFlutterSurfaceManagerBufferCount];
+  uint32_t _backingTexture[kFlutterSurfaceManagerBufferCount];
+  IOSurfaceRef _ioSurface[kFlutterSurfaceManagerBufferCount];
 }
 @end
 
@@ -67,7 +68,7 @@ enum {
 
   MacOSGLContextSwitch context_switch(_openGLContext);
 
-  for (int i = 0; i < kBufferCount; ++i) {
+  for (int i = 0; i < kFlutterSurfaceManagerBufferCount; ++i) {
     if (_ioSurface[i]) {
       CFRelease(_ioSurface[i]);
     }
@@ -109,19 +110,22 @@ enum {
   // The surface is an OpenGL texture, which means it has origin in bottom left corner
   // and needs to be flipped vertically
   _contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
-  [_contentLayer setContents:(__bridge id)_ioSurface[kBackBuffer]];
+  [_contentLayer setContents:(__bridge id)_ioSurface[kFlutterSurfaceManagerBackBuffer]];
 
-  std::swap(_ioSurface[kBackBuffer], _ioSurface[kFrontBuffer]);
-  std::swap(_frameBufferId[kBackBuffer], _frameBufferId[kFrontBuffer]);
-  std::swap(_backingTexture[kBackBuffer], _backingTexture[kFrontBuffer]);
+  std::swap(_ioSurface[kFlutterSurfaceManagerBackBuffer],
+            _ioSurface[kFlutterSurfaceManagerFrontBuffer]);
+  std::swap(_frameBufferId[kFlutterSurfaceManagerBackBuffer],
+            _frameBufferId[kFlutterSurfaceManagerFrontBuffer]);
+  std::swap(_backingTexture[kFlutterSurfaceManagerBackBuffer],
+            _backingTexture[kFlutterSurfaceManagerFrontBuffer]);
 }
 
 - (uint32_t)glFrameBufferId {
-  return _frameBufferId[kBackBuffer];
+  return _frameBufferId[kFlutterSurfaceManagerBackBuffer];
 }
 
 - (void)dealloc {
-  for (int i = 0; i < kBufferCount; ++i) {
+  for (int i = 0; i < kFlutterSurfaceManagerBufferCount; ++i) {
     if (_ioSurface[i]) {
       CFRelease(_ioSurface[i]);
     }

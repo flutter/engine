@@ -17,5 +17,5 @@ class MacOSGLContextSwitch {
   MacOSGLContextSwitch(MacOSGLContextSwitch&&) = delete;
 
  private:
-  NSOpenGLContext* prev_;
+  NSOpenGLContext* previous_;
 };

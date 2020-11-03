@@ -67,7 +67,7 @@
  * This will be false during resizing for any size other than size specified
  * during beginResize.
  */
-- (bool)shouldEnsureSurfaceForSize:(CGSize)size;
+- (BOOL)shouldEnsureSurfaceForSize:(CGSize)size;
 
 /**
  * Called from rasterizer thread, will block until delegate resizeSynchronizerCommit:
