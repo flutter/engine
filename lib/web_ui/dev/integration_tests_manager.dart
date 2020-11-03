@@ -144,7 +144,9 @@ class IntegrationTestsManager {
 
     int numberOfPassedTests = 0;
     int numberOfFailedTests = 0;
-    final Set<String> buildModes = {'debug', 'profile', 'release'};
+    final Set<String> buildModes = _browser == 'chrome'
+        ? {'debug', 'profile', 'release'}
+        : {'profile', 'release'};
     for (String fileName in e2eTestsToRun) {
       for (String mode in buildModes) {
         if (!blockedTestsListsMapForModes[mode].contains(fileName)) {
