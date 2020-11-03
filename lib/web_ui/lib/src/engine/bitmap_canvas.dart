@@ -37,8 +37,6 @@ class BitmapCanvas extends EngineCanvas {
 
   final _CanvasPool _canvasPool;
 
-  html.CanvasRenderingContext2D get context => _canvasPool.context;
-
   /// The size of the paint [bounds].
   ui.Size get size => _bounds.size;
 
@@ -779,6 +777,23 @@ class BitmapCanvas extends EngineCanvas {
       ctx.font = style.cssFontString;
       _cachedLastStyle = style;
     }
+  }
+
+  /// Measures the given [text] and returns a [html.TextMetrics] object that
+  /// contains information about the measurement.
+  ///
+  /// The text is measured using the font set by the most recent call to
+  /// [setFontFromParagraphStyle].
+  html.TextMetrics measureText(String text) {
+    return _canvasPool.context.measureText(text);
+  }
+
+  /// Draws text to the canvas starting at coordinate ([x], [y]).
+  ///
+  /// The text is drawn starting at coordinates ([x], [y]). It uses the current
+  /// font set by the most recent call to [setFontFromParagraphStyle].
+  void fillText(String text, double x, double y) {
+    _canvasPool.context.fillText(text, x, y);
   }
 
   @override

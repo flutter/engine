@@ -368,11 +368,10 @@ class EngineParagraph implements ui.Paragraph {
     double x,
     double y,
   ) {
-    html.CanvasRenderingContext2D ctx = canvas.context;
     x += line.left;
     final double? letterSpacing = _geometricStyle.letterSpacing;
     if (letterSpacing == null || letterSpacing == 0.0) {
-      ctx.fillText(line.displayText!, x, y);
+      canvas.fillText(line.displayText!, x, y);
     } else {
       // When letter-spacing is set, we go through a more expensive code path
       // that renders each character separately with the correct spacing
@@ -390,8 +389,8 @@ class EngineParagraph implements ui.Paragraph {
       final int len = line.displayText!.length;
       for (int i = 0; i < len; i++) {
         final String char = line.displayText![i];
-        ctx.fillText(char, x, y);
-        x += letterSpacing + ctx.measureText(char).width!;
+        canvas.fillText(char, x, y);
+        x += letterSpacing + canvas.measureText(char).width!;
       }
     }
   }
