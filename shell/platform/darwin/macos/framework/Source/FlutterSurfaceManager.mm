@@ -8,8 +8,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
 
 enum {
-  kFront = 0,
-  kBack = 1,
+  kFrontBuffer = 0,
+  kBackBuffer = 1,
   kBufferCount,
 };
 
@@ -109,15 +109,15 @@ enum {
   // The surface is an OpenGL texture, which means it has origin in bottom left corner
   // and needs to be flipped vertically
   _contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
-  [_contentLayer setContents:(__bridge id)_ioSurface[kBack]];
+  [_contentLayer setContents:(__bridge id)_ioSurface[kBackBuffer]];
 
-  std::swap(_ioSurface[kBack], _ioSurface[kFront]);
-  std::swap(_frameBufferId[kBack], _frameBufferId[kFront]);
-  std::swap(_backingTexture[kBack], _backingTexture[kFront]);
+  std::swap(_ioSurface[kBackBuffer], _ioSurface[kFrontBuffer]);
+  std::swap(_frameBufferId[kBackBuffer], _frameBufferId[kFrontBuffer]);
+  std::swap(_backingTexture[kBackBuffer], _backingTexture[kFrontBuffer]);
 }
 
 - (uint32_t)glFrameBufferId {
-  return _frameBufferId[kBack];
+  return _frameBufferId[kBackBuffer];
 }
 
 - (void)dealloc {
