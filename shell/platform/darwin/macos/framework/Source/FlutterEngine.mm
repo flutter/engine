@@ -308,9 +308,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     flutterArguments.aot_data = _aotData;
   }
 
-<<<<<<< HEAD
-  FlutterEngineResult result = _embedderAPI.Initialize(
-=======
   // Only create a Compositor if we have a ViewController.
   if (_viewController) {
     FlutterCompositor compositor = {};
@@ -318,8 +315,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     flutterArguments.compositor = &compositor;
   }
 
-  FlutterEngineResult result = FlutterEngineInitialize(
->>>>>>> 08e7313a3 (Refactor MacOS to use MacOSCompositor for creating backing stores.)
+  FlutterEngineResult result = _embedderAPI.Initialize(
       FLUTTER_ENGINE_VERSION, &rendererConfig, &flutterArguments, (__bridge void*)(self), &_engine);
   if (result != kSuccess) {
     NSLog(@"Failed to initialize Flutter engine: error %d", result);
