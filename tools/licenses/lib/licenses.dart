@@ -243,6 +243,7 @@ abstract class License implements Comparable<License> {
     LicenseType type = LicenseType.unknown;
     switch (url) {
       case 'Apache:2.0':
+      case 'Apache-2.0':  // SPDX ID
       case 'http://www.apache.org/licenses/LICENSE-2.0':
       case 'https://www.apache.org/licenses/LICENSE-2.0':
         body = system.File('data/apache-license-2.0').readAsStringSync();

@@ -675,6 +675,19 @@ final List<MultipleVersionedLicenseReferencePattern> csReferencesByUrl = <Multip
 
   // used with _tryReferenceByUrl
 
+  // SPDX
+  MultipleVersionedLicenseReferencePattern(
+    firstPrefixIndex: 1,
+    indentPrefixIndex: 2,
+    licenseIndices: const <int>[3],
+    checkLocalFirst: false,
+    pattern: RegExp(
+      kIndent + r'SPDX-License-Identifier: (.*)',
+      multiLine: true,
+      caseSensitive: false,
+    )
+  ),
+
   // AFL
   MultipleVersionedLicenseReferencePattern(
     firstPrefixIndex: 1,
