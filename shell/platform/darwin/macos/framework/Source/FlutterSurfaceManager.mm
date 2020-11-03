@@ -1,5 +1,5 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
-#import "flutter/fml/logging.h"
+
 #import "flutter/shell/platform/darwin/macos/framework/Source/MacOSSwitchableGLContext.h"
 
 #include <OpenGL/gl.h>
@@ -11,11 +11,11 @@ enum {
 };
 
 @interface FlutterSurfaceManager () {
-  CGSize surfaceSize;
-  CALayer* layer;  // provided (parent layer)
-  CALayer* contentLayer;
+  CGSize _surfaceSize;
+  CALayer* _containingLayer;  // provided (parent layer)
+  CALayer* _contentLayer;
 
-  NSOpenGLContext* openGLContext;
+  NSOpenGLContext* _openGLContext;
   uint32_t _frameBufferId[kBufferCount];
   uint32_t _backingTexture[kBufferCount];
   IOSurfaceRef _ioSurface[kBufferCount];
@@ -24,18 +24,19 @@ enum {
 
 @implementation FlutterSurfaceManager
 
-- (instancetype)initWithLayer:(CALayer*)layer_ openGLContext:(NSOpenGLContext*)opengLContext_ {
+- (instancetype)initWithLayer:(CALayer*)containingLayer
+                openGLContext:(NSOpenGLContext*)openGLContext {
   if (self = [super init]) {
-    layer = layer_;
-    openGLContext = opengLContext_;
+    _containingLayer = containingLayer;
+    _openGLContext = openGLContext;
 
     // Layer for content. This is separate from provided layer, because it needs to be flipped
     // vertically if we render to OpenGL texture
-    contentLayer = [[CALayer alloc] init];
-    [layer_ addSublayer:contentLayer];
+    _contentLayer = [[CALayer alloc] init];
+    [_containingLayer addSublayer:_contentLayer];
 
     flutter::GLContextSwitch context_switch(
-        std::make_unique<MacOSSwitchableGLContext>(opengLContext_));
+        std::make_unique<MacOSSwitchableGLContext>(opengLContext));
 
     glGenFramebuffers(2, _frameBufferId);
     glGenTextures(2, _backingTexture);
@@ -57,13 +58,13 @@ enum {
 }
 
 - (void)ensureSurfaceSize:(CGSize)size {
-  if (CGSizeEqualToSize(size, surfaceSize)) {
+  if (CGSizeEqualToSize(size, _surfaceSize)) {
     return;
   }
-  surfaceSize = size;
+  _surfaceSize = size;
 
   flutter::GLContextSwitch context_switch(
-      std::make_unique<MacOSSwitchableGLContext>(openGLContext));
+      std::make_unique<MacOSSwitchableGLContext>(_openGLContext));
 
   for (int i = 0; i < kBufferCount; ++i) {
     if (_ioSurface[i]) {
@@ -101,12 +102,12 @@ enum {
 }
 
 - (void)swapBuffers {
-  contentLayer.frame = layer.bounds;
+  _contentLayer.frame = _containingLayer.bounds;
 
   // The surface is an OpenGL texture, which means it has origin in bottom left corner
   // and needs to be flipped vertically
-  contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
-  [contentLayer setContents:(__bridge id)_ioSurface[kBack]];
+  _contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
+  [_contentLayer setContents:(__bridge id)_ioSurface[kBack]];
 
   std::swap(_ioSurface[kBack], _ioSurface[kFront]);
   std::swap(_frameBufferId[kBack], _frameBufferId[kFront]);

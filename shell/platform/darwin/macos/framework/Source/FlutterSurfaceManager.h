@@ -3,7 +3,8 @@
 // Manages the IOSurfaces for FlutterView
 @interface FlutterSurfaceManager : NSObject
 
-- (instancetype)initWithLayer:(CALayer*)layer openGLContext:(NSOpenGLContext*)opengLContext;
+- (instancetype)initWithLayer:(CALayer*)containingLayer
+                openGLContext:(NSOpenGLContext*)opengLContext;
 
 - (void)ensureSurfaceSize:(CGSize)size;
 - (void)swapBuffers;
