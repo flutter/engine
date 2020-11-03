@@ -46,12 +46,12 @@ void main() async {
     app.main();
     await tester.pumpAndSettle();
     final Map<String, dynamic> createArgs = <String, dynamic>{
-      'id': '567',
+      'id': 567,
       'viewType': 'MyView',
     };
     await SystemChannels.platform_views.invokeMethod<void>('create', createArgs);
     final Map<String, dynamic> disposeArgs = <String, dynamic>{
-      'id': '567',
+      'id': 567,
     };
     await SystemChannels.platform_views.invokeMethod<void>('dispose', disposeArgs);
     expect(viewInstanceCount, 1);
