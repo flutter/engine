@@ -5,6 +5,7 @@
 // @dart = 2.6
 
 import 'dart:io' as io;
+import 'package:args/args.dart';
 import 'package:path/path.dart' as pathlib;
 
 import 'chrome_installer.dart';
@@ -144,9 +145,20 @@ class IntegrationTestsManager {
 
     int numberOfPassedTests = 0;
     int numberOfFailedTests = 0;
-    final Set<String> buildModes = _browser == 'chrome'
-        ? {'debug', 'profile', 'release'}
-        : {'profile', 'release'};
+
+    Set<String> buildModes;
+    if (_buildModeSelected) {
+      final String mode = IntegrationTestsArgumentParser.instance.buildMode;
+      if (mode == 'debug' && _browser != 'chrome') {
+        throw ToolException('Debug mode is only supported for Chrome.');
+      } else {
+        buildModes = <String>{mode};
+      }
+    } else {
+      buildModes = _browser == 'chrome'
+          ? {'debug', 'profile', 'release'}
+          : {'profile', 'release'};
+    }
     for (String fileName in e2eTestsToRun) {
       for (String mode in buildModes) {
         if (!blockedTestsListsMapForModes[mode].contains(fileName)) {
@@ -298,9 +310,19 @@ class IntegrationTestsManager {
     }
   }
 
+  bool get _buildModeSelected =>
+      !IntegrationTestsArgumentParser.instance.buildMode.isEmpty;
+
   /// Validate the given `browser`, `platform` combination is suitable for
   /// integration tests to run.
   bool validateIfTestsShouldRun() {
+    if (_buildModeSelected) {
+      final String mode = IntegrationTestsArgumentParser.instance.buildMode;
+      if (mode == 'debug' && _browser != 'chrome') {
+        throw ToolException('Debug mode is only supported for Chrome.');
+      }
+    }
+
     // Chrome tests should run at all Platforms (Linux, macOS, Windows).
     // They can also run successfully on CI and local.
     if (_browser == 'chrome') {
@@ -404,6 +426,71 @@ class SafariIntegrationArguments extends IntegrationArguments {
 
   String getCommandToRun(String testName, String mode) =>
       'flutter ${getTestArguments(testName, mode).join(' ')}';
+}
+
+/// Parses additional options that can be used when running integration tests.
+class IntegrationTestsArgumentParser {
+  static final IntegrationTestsArgumentParser _singletonInstance =
+      IntegrationTestsArgumentParser._();
+
+  /// The [IntegrationTestsArgumentParser] singleton.
+  static IntegrationTestsArgumentParser get instance => _singletonInstance;
+
+  IntegrationTestsArgumentParser._();
+
+  /// If target name is provided integration tests can run that one test
+  /// instead of running all the tests.
+  String testTarget;
+
+  /// The build mode to run the integration tests.
+  ///
+  /// If not specified, these tests will run using 'debug, profile, release'
+  /// modes on Chrome and will run using 'profile, release' on other browsers.
+  ///
+  ///
+  String buildMode;
+
+  /// Whether the rendering backend to be used is html.
+  ///
+  /// If set to false canvaskit rendering backend will be used.
+  bool useHtmlBackend;
+
+  void populateOptions(ArgParser argParser) {
+    argParser
+      ..addOption(
+        'target',
+        help: 'By default integration tests are run for all the tests under'
+            'flutter/e2etests/web directory. If a test name is specified, that '
+            'only that test will run. The test name will be the name of the '
+            'integration test (e2e test) file. For example: '
+            'text_editing_integration.dart or '
+            'profile_diagnostics_integration.dart',
+      )
+      ..addOption('build-mode',
+          defaultsTo: '',
+          help: 'Flutter supports three modes when building your app. The By '
+              'default debug, profile, release modes will be used one by one '
+              'on Chrome and profile, release modes will be used for other '
+              'browsers. If a build mode is selected tests will only be run '
+              'using that mode. ')
+      ..addFlag('html-backend',
+          defaultsTo: true,
+          help: 'Default rendering backend is HTML. If this flag is set to '
+              'false canvaskit backend will be used for rendering when running '
+              'integration tests.');
+  }
+
+  /// Populate browser with results of the arguments passed.
+  void parseOptions(ArgResults argResults) {
+    testTarget = argResults['target'] as String;
+    buildMode = argResults['build-mode'] as String;
+    if (buildMode.toLowerCase() != 'debug' &&
+        buildMode.toLowerCase() != 'profile' &&
+        buildMode.toLowerCase() != 'release') {
+      throw ArgumentError('Unexpected build mode: $buildMode');
+    }
+    useHtmlBackend = argResults['html-backend'] as bool;
+  }
 }
 
 /// Prepares a key for the [blackList] map.
