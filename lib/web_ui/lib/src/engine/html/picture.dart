@@ -271,7 +271,6 @@ class PersistedPicture extends PersistedLeafSurface {
 
     _requiresRepaint = _optimalLocalCullRect != newLocalCullRect;
     _optimalLocalCullRect = newLocalCullRect;
-    return;
   }
 
   /// Predicts the delta a particular side of a clip rect will move given the
