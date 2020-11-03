@@ -125,13 +125,13 @@ static FlutterKeyEventKind convertKeyEventKind(FlKeyEventKind kind) {
 
 // Sends a Flutter key event to the engine.
 static gboolean fl_view_send_key_event(FlView* self, const GdkEventKey* event) {
-  FlKeyDatum* physical_results[kMaxConvertedKeyData] = {};
-  FlLogicalKeyDatum* logical_results[kMaxConvertedLogicalKeyData] = {};
+  FlKeyDatum physical_results[kMaxConvertedKeyData] = {};
+  FlLogicalKeyDatum logical_results[kMaxConvertedLogicalKeyData] = {};
   size_t result_count = fl_keyboard_manager_convert_key_event(
       self->keyboard_manager, event, physical_results, logical_results);
   size_t base_logical_index = 0;
   for (size_t physical_index = 0; physical_index < result_count; physical_index++) {
-    FlKeyDatum* physical_datum = physical_results[physical_index];
+    FlKeyDatum* physical_datum = physical_results + physical_index;
     FlutterKeyEvent fl_event = {};
     fl_event.struct_size = sizeof(fl_event);
     fl_event.timestamp = physical_datum->timestamp;
@@ -146,7 +146,7 @@ static gboolean fl_view_send_key_event(FlView* self, const GdkEventKey* event) {
     FlutterLogicalKeyEvent logical_datum[fl_event.logical_event_count];
     fl_event.logical_events = logical_datum;
     for (size_t logical_index = 0; logical_index < fl_event.logical_event_count; logical_index++) {
-      FlLogicalKeyDatum *logical_source = logical_results[base_logical_index + logical_index];
+      FlLogicalKeyDatum *logical_source = logical_results + (base_logical_index + logical_index);
       logical_datum[logical_index].struct_size = sizeof(FlutterLogicalKeyEvent);
       logical_datum[logical_index].character_size = 0;
       logical_datum[logical_index].key = logical_source->key;
