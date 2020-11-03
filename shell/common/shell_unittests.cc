@@ -1054,8 +1054,11 @@ TEST_F(ShellTest,
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-        external_view_embedder->UpdatePostPrerollResult(
-            PostPrerollResult::kSuccess);
+        if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
+          raster_thread_merger->MergeWithLease(10);
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
+        }
         end_frame_latch.Signal();
       };
   external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
@@ -1063,7 +1066,6 @@ TEST_F(ShellTest,
 
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
                            false, external_view_embedder);
-
   PlatformViewNotifyCreated(shell.get());
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -1074,12 +1076,16 @@ TEST_F(ShellTest,
 
   PumpOneFrame(shell.get());
   // `EndFrame` changed the post preroll result to `kSuccess`.
+  // First frame hasn't merged the threads yet, no
+  // `external_view_embedder->GetSubmittedFrameCount()` is called.
+  end_frame_latch.Wait();
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  // This is the resubmitted frame, which threads are also merged.
   end_frame_latch.Wait();
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
 
-  end_frame_latch.Wait();
-  ASSERT_EQ(2, external_view_embedder->GetSubmittedFrameCount());
-
+  PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
 }
 
@@ -2019,14 +2025,24 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   SkISize expected_size = SkISize::Make(400, 200);
 
   fml::AutoResetWaitableEvent end_frame_latch;
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
+  auto end_frame_callback =
+      [&](bool should_merge_thread,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        if (should_merge_thread) {
+          // TODO(cyanglaz): This test used external_view_embedder so we need to
+          // merge the threads here. However, the scenario it is testing is
+          // unrelated to platform views. We should consider to update this test
+          // so it doesn't require external_view_embedder.
+          raster_thread_merger->MergeWithLease(10);
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
+        }
+        end_frame_latch.Signal();
+      };
 
-  auto end_frame_callback = [&](bool, fml::RefPtr<fml::RasterThreadMerger>) {
-    end_frame_latch.Signal();
-  };
-
-  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder =
-      std::make_shared<ShellTestExternalViewEmbedder>(
-          std::move(end_frame_callback), PostPrerollResult::kSuccess, true);
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      std::move(end_frame_callback), PostPrerollResult::kResubmitFrame, true);
 
   std::unique_ptr<Shell> shell = CreateShell(
       settings, GetTaskRunnersForFixture(), false, external_view_embedder);
@@ -2047,8 +2063,6 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->GetEngine();
-
   PumpOneFrame(shell.get(), static_cast<double>(wrong_size.width()),
                static_cast<double>(wrong_size.height()));
 
@@ -2060,10 +2074,14 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
                static_cast<double>(expected_size.height()));
 
   end_frame_latch.Wait();
+  // Threads not merged.
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
+  end_frame_latch.Wait();
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
   ASSERT_EQ(expected_size, external_view_embedder->GetLastSubmittedFrameSize());
 
+  PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
 }
 
