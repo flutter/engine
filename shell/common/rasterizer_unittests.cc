@@ -16,67 +16,49 @@ namespace flutter {
 namespace {
 class MockDelegate : public Rasterizer::Delegate {
  public:
-  MOCK_METHOD(void,
-              OnFrameRasterized,
-              (const FrameTiming& frame_timing),
-              (override));
-  MOCK_METHOD(fml::Milliseconds, GetFrameBudget, (), (override));
-  MOCK_METHOD(fml::TimePoint, GetLatestFrameTargetTime, (), (const, override));
-  MOCK_METHOD(const TaskRunners&, GetTaskRunners, (), (const, override));
-  MOCK_METHOD(std::shared_ptr<fml::SyncSwitch>,
-              GetIsGpuDisabledSyncSwitch,
-              (),
-              (const, override));
+  MOCK_METHOD1(OnFrameRasterized, void(const FrameTiming& frame_timing));
+  MOCK_METHOD0(GetFrameBudget, fml::Milliseconds());
+  MOCK_CONST_METHOD0(GetLatestFrameTargetTime, fml::TimePoint());
+  MOCK_CONST_METHOD0(GetTaskRunners, const TaskRunners&());
+  MOCK_CONST_METHOD0(GetIsGpuDisabledSyncSwitch,
+                     std::shared_ptr<fml::SyncSwitch>());
 };
 
 class MockSurface : public Surface {
  public:
-  MOCK_METHOD(bool, IsValid, (), (override));
-  MOCK_METHOD(std::unique_ptr<SurfaceFrame>,
-              AcquireFrame,
-              (const SkISize& size),
-              (override));
-  MOCK_METHOD(SkMatrix, GetRootTransformation, (), (const, override));
-  MOCK_METHOD(GrDirectContext*, GetContext, (), (override));
-  MOCK_METHOD(ExternalViewEmbedder*, GetExternalViewEmbedder, (), (override));
-  MOCK_METHOD(std::unique_ptr<GLContextResult>,
-              MakeRenderContextCurrent,
-              (),
-              (override));
-  MOCK_METHOD(bool, ClearRenderContext, (), (override));
+  MOCK_METHOD0(IsValid, bool());
+  MOCK_METHOD1(AcquireFrame,
+               std::unique_ptr<SurfaceFrame>(const SkISize& size));
+  MOCK_CONST_METHOD0(GetRootTransformation, SkMatrix());
+  MOCK_METHOD0(GetContext, GrDirectContext*());
+  MOCK_METHOD0(GetExternalViewEmbedder, ExternalViewEmbedder*());
+  MOCK_METHOD0(MakeRenderContextCurrent, std::unique_ptr<GLContextResult>());
+  MOCK_METHOD0(ClearRenderContext, bool());
 };
 
 class MockExternalViewEmbedder : public ExternalViewEmbedder {
  public:
-  MOCK_METHOD(SkCanvas*, GetRootCanvas, (), (override));
-  MOCK_METHOD(void, CancelFrame, (), (override));
-  MOCK_METHOD(void,
-              BeginFrame,
-              (SkISize frame_size,
-               GrDirectContext* context,
-               double device_pixel_ratio,
-               fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger),
-              (override));
-  MOCK_METHOD(void,
-              PrerollCompositeEmbeddedView,
-              (int view_id, std::unique_ptr<EmbeddedViewParams> params),
-              (override));
-  MOCK_METHOD(PostPrerollResult,
-              PostPrerollAction,
-              (fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger),
-              (override));
-  MOCK_METHOD(std::vector<SkCanvas*>, GetCurrentCanvases, (), (override));
-  MOCK_METHOD(SkCanvas*, CompositeEmbeddedView, (int view_id), (override));
-  MOCK_METHOD(void,
-              SubmitFrame,
-              (GrDirectContext * context, std::unique_ptr<SurfaceFrame> frame),
-              (override));
-  MOCK_METHOD(void,
-              EndFrame,
-              (bool should_resubmit_frame,
-               fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger),
-              (override));
-  MOCK_METHOD(bool, SupportsDynamicThreadMerging, (), (override));
+  MOCK_METHOD0(GetRootCanvas, SkCanvas*());
+  MOCK_METHOD0(CancelFrame, void());
+  MOCK_METHOD4(BeginFrame,
+               void(SkISize frame_size,
+                    GrDirectContext* context,
+                    double device_pixel_ratio,
+                    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
+  MOCK_METHOD2(PrerollCompositeEmbeddedView,
+               void(int view_id, std::unique_ptr<EmbeddedViewParams> params));
+  MOCK_METHOD1(PostPrerollAction,
+               PostPrerollResult(
+                   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
+  MOCK_METHOD0(GetCurrentCanvases, std::vector<SkCanvas*>());
+  MOCK_METHOD1(CompositeEmbeddedView, SkCanvas*(int view_id));
+  MOCK_METHOD2(SubmitFrame,
+               void(GrDirectContext* context,
+                    std::unique_ptr<SurfaceFrame> frame));
+  MOCK_METHOD2(EndFrame,
+               void(bool should_resubmit_frame,
+                    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
+  MOCK_METHOD0(SupportsDynamicThreadMerging, bool());
 };
 }  // namespace
 
