@@ -8,6 +8,7 @@
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "gtest/gtest.h"
 
+// TODO (kaushik): move to /flutter/common/graphics
 namespace flutter {
 namespace testing {
 

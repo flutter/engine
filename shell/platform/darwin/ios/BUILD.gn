@@ -85,48 +85,21 @@ source_set("flutter_framework_source") {
     "framework/Source/profiler_metrics_ios.mm",
     "framework/Source/vsync_waiter_ios.h",
     "framework/Source/vsync_waiter_ios.mm",
-    "ios_context.h",
-    "ios_context.mm",
-    "ios_context_gl.h",
-    "ios_context_gl.mm",
-    "ios_context_software.h",
-    "ios_context_software.mm",
-    "ios_external_texture_gl.h",
-    "ios_external_texture_gl.mm",
     "ios_external_view_embedder.h",
     "ios_external_view_embedder.mm",
-    "ios_render_target_gl.h",
-    "ios_render_target_gl.mm",
     "ios_surface.h",
     "ios_surface.mm",
     "ios_surface_gl.h",
     "ios_surface_gl.mm",
     "ios_surface_software.h",
     "ios_surface_software.mm",
-    "ios_switchable_gl_context.h",
-    "ios_switchable_gl_context.mm",
     "platform_view_ios.h",
     "platform_view_ios.mm",
-    "rendering_api_selection.h",
-    "rendering_api_selection.mm",
   ]
 
   sources += _flutter_framework_headers
 
   defines = [ "FLUTTER_FRAMEWORK=1" ]
-
-  if (shell_enable_metal) {
-    defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
-
-    sources += [
-      "ios_context_metal.h",
-      "ios_context_metal.mm",
-      "ios_external_texture_metal.h",
-      "ios_external_texture_metal.mm",
-      "ios_surface_metal.h",
-      "ios_surface_metal.mm",
-    ]
-  }
 
   deps = [
     ":ios_gpu_configuration",
@@ -140,6 +113,7 @@ source_set("flutter_framework_source") {
     "//flutter/shell/common",
     "//flutter/shell/platform/darwin/common",
     "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/platform/darwin/graphics:flutter_ios_graphics",
     "//flutter/shell/profiling:profiling",
     "//third_party/skia",
   ]
@@ -148,10 +122,6 @@ source_set("flutter_framework_source") {
 
   libs = [
     "AudioToolbox.framework",
-    "CoreMedia.framework",
-    "CoreVideo.framework",
-    "OpenGLES.framework",
-    "QuartzCore.framework",
     "UIKit.framework",
   ]
   if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "debug") {

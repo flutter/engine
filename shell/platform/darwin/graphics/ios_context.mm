@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context.h"
 
 #include "flutter/fml/logging.h"
-#import "flutter/shell/platform/darwin/ios/ios_context_gl.h"
-#import "flutter/shell/platform/darwin/ios/ios_context_software.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context_gl.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context_software.h"
 
 #if FLUTTER_SHELL_ENABLE_METAL
-#import "flutter/shell/platform/darwin/ios/ios_context_metal.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context_metal.h"
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
 namespace flutter {

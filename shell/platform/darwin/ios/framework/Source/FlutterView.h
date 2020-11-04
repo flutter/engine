@@ -11,8 +11,8 @@
 
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/shell.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
-#import "flutter/shell/platform/darwin/ios/ios_context.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @protocol FlutterViewEngineDelegate <NSObject>

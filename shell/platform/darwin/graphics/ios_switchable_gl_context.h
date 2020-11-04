@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SWITCHABLE_GL_CONTEXT_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SWITCHABLE_GL_CONTEXT_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_SWITCHABLE_GL_CONTEXT_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_SWITCHABLE_GL_CONTEXT_H_
 
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/fml/macros.h"

@@ -6,7 +6,7 @@
 
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
-#import "flutter/shell/platform/darwin/ios/ios_context_gl.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context_gl.h"
 
 namespace flutter {
 

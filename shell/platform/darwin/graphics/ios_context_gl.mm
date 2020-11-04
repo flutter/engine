@@ -2,15 +2,47 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/ios/ios_context_gl.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context_gl.h"
 
 #import <OpenGLES/EAGL.h>
 
-#include "flutter/shell/common/shell_io_manager.h"
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
-#import "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
+#import "flutter/shell/platform/darwin/graphics/ios_external_texture_gl.h"
 
 namespace flutter {
+
+static sk_sp<GrDirectContext> CreateCompatibleResourceLoadingContext(
+    sk_sp<const GrGLInterface> gl_interface) {
+  GrContextOptions options = {};
+  if (PersistentCache::cache_sksl()) {
+    FML_LOG(INFO) << "Cache SkSL";
+    options.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kSkSL;
+  }
+  PersistentCache::MarkStrategySet();
+
+  options.fPersistentCache = PersistentCache::GetCacheForProcess();
+
+  // There is currently a bug with doing GPU YUV to RGB conversions on the IO
+  // thread. The necessary work isn't being flushed or synchronized with the
+  // other threads correctly, so the textures end up blank.  For now, suppress
+  // that feature, which will cause texture uploads to do CPU YUV conversion.
+  // A similar work-around is also used in shell/gpu/gpu_surface_gl.cc.
+  options.fDisableGpuYUVConversion = true;
+
+  // To get video playback on the widest range of devices, we limit Skia to
+  // ES2 shading language when the ES3 external image extension is missing.
+  options.fPreferExternalImagesOverES3 = true;
+
+  if (auto context = GrDirectContext::MakeGL(gl_interface, options)) {
+    // Do not cache textures created by the image decoder.  These textures
+    // should be deleted when they are no longer referenced by an SkImage.
+    context->setResourceCacheLimits(0, 0);
+    return context;
+  }
+
+  return nullptr;
+}
 
 IOSContextGL::IOSContextGL() {
   resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3]);
@@ -39,8 +71,8 @@ sk_sp<GrDirectContext> IOSContextGL::CreateResourceContext() {
     return nullptr;
   }
 
-  return ShellIOManager::CreateCompatibleResourceLoadingContext(
-      GrBackend::kOpenGL_GrBackend, GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
+  return CreateCompatibleResourceLoadingContext(
+      GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
 }
 
 // |IOSContext|

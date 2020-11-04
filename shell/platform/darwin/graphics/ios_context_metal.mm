@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/ios/ios_context_metal.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context_metal.h"
 
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
-#import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
+#import "flutter/shell/platform/darwin/graphics/ios_external_texture_metal.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
 namespace flutter {

@@ -2,17 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_RESOURCE_CONTEXT_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_RESOURCE_CONTEXT_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_RESOURCE_CONTEXT_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_RESOURCE_CONTEXT_H_
 
 #include <memory>
 
-#include "flutter/common/graphics/gl_context_switch.h"
-#include "flutter/common/graphics/texture.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
-#import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+#import "flutter/shell/platform/darwin/graphics/rendering_api_selection.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -115,4 +113,4 @@ class IOSContext {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_RESOURCE_CONTEXT_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_RESOURCE_CONTEXT_H_

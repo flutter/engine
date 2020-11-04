@@ -8,8 +8,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
-#import "flutter/shell/platform/darwin/ios/ios_context.h"
-#import "flutter/shell/platform/darwin/ios/ios_render_target_gl.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context.h"
+#import "flutter/shell/platform/darwin/graphics/ios_render_target_gl.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @class CAEAGLLayer;
