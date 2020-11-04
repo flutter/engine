@@ -88,6 +88,7 @@ class TranspilerImpl : public Transpiler {
 
   std::unordered_map<uint32_t, std::string> imported_functions_;
 
+	std::stringstream constants_;
   std::stringstream sksl_;
 };
 
@@ -534,7 +535,7 @@ spv_result_t TranspilerImpl::HandleConstant(
 
   float value = *reinterpret_cast<const float*>(get_literal(inst, kValueIndex));
 
-  sksl_ << "const float " << ResolveName(inst->result_id) << " = " << value
+  constants_ << "  const float " << ResolveName(inst->result_id) << " = " << value
         << ";\n";
 
   return SPV_SUCCESS;
@@ -545,17 +546,17 @@ spv_result_t TranspilerImpl::HandleConstantComposite(
   static constexpr int kValueIndex = 2;
   int opcount = inst->num_operands - kValueIndex;
 
-  sksl_ << "const float" << opcount << " " << ResolveName(inst->result_id)
+  constants_ << "  const float" << opcount << " " << ResolveName(inst->result_id)
         << " = float" << opcount << "(";
 
   for (int i = 0; i < opcount; i++) {
-    sksl_ << ResolveName(get_operand(inst, kValueIndex + i));
+    constants_ << ResolveName(get_operand(inst, kValueIndex + i));
     if (i < opcount - 1) {
-      sksl_ << ", ";
+      constants_ << ", ";
     }
   }
 
-  sksl_ << ");\n";
+  constants_ << ");\n";
 
   return SPV_SUCCESS;
 }
@@ -672,6 +673,7 @@ spv_result_t TranspilerImpl::HandleLabel(const spv_parsed_instruction_t* inst) {
     return SPV_UNSUPPORTED;
   }
   sksl_ << ") {\n";
+	sksl_ << constants_.str();
   return SPV_SUCCESS;
 }
 
