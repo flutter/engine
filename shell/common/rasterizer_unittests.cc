@@ -97,7 +97,7 @@ TEST(RasterizerTest, drawEmptyPipeline) {
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   MockDelegate delegate;
-  EXPECT_CALL(delegate, GetTaskRunners()).WillOnce(ReturnRef(task_runners));
+  ON_CALL(delegate, GetTaskRunners()).WillByDefault(ReturnRef(task_runners));
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
   auto surface = std::make_unique<MockSurface>();
   rasterizer->Setup(std::move(surface));
