@@ -189,6 +189,7 @@ executable("flutter_linux_unittests") {
 
   defines = [
     "FLUTTER_ENGINE_NO_PROTOTYPES",
+
     # Set flag to allow public headers to be directly included
     # (library users should not do this)
     "FLUTTER_LINUX_COMPILATION",
