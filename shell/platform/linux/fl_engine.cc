@@ -152,7 +152,8 @@ static gboolean flutter_source_dispatch(GSource* source,
 }
 
 // Called when the engine is disposed.
-static void engine_weak_notify_cb(gpointer user_data, GObject* object) {
+static void engine_weak_notify_cb(gpointer user_data,
+                                  GObject* where_the_object_was) {
   FlutterSource* source = reinterpret_cast<FlutterSource*>(user_data);
   source->engine = nullptr;
   g_source_destroy(reinterpret_cast<GSource*>(source));
@@ -394,7 +395,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.platform_message_callback = fl_engine_platform_message_cb;
   args.custom_task_runners = &custom_task_runners;
   args.shutdown_dart_vm_when_done = true;
-  args.dart_entrypoint_argc = g_strv_length(dart_entrypoint_args);
+  args.dart_entrypoint_argc =
+      dart_entrypoint_args != nullptr ? g_strv_length(dart_entrypoint_args) : 0;
   args.dart_entrypoint_argv =
       reinterpret_cast<const char* const*>(dart_entrypoint_args);
 
