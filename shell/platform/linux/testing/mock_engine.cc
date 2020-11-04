@@ -436,7 +436,8 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
       &FlutterPlatformMessageCreateResponseHandle;
   table->PlatformMessageReleaseResponseHandle =
       &FlutterPlatformMessageReleaseResponseHandle;
-  table->SendPlatformMessageResponse = &FlutterEngineSendPlatformMessageResponse;
+  table->SendPlatformMessageResponse =
+      &FlutterEngineSendPlatformMessageResponse;
   table->RunTask = &FlutterEngineRunTask;
   table->UpdateLocales = &FlutterEngineUpdateLocales;
   table->RunsAOTCompiledDartCode = &FlutterEngineRunsAOTCompiledDartCode;
