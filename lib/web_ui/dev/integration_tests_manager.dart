@@ -110,6 +110,9 @@ class IntegrationTestsManager {
     return testResults;
   }
 
+  int _numberOfPassedTests = 0;
+  int _numberOfFailedTests = 0;
+
   Future<bool> _runTestsInDirectory(io.Directory directory) async {
     final io.Directory testDirectory =
         io.Directory(pathlib.join(directory.path, 'test_driver'));
@@ -123,7 +126,7 @@ class IntegrationTestsManager {
         blockedTestsListsMap[getBlockedTestsListMapKey(_browser)] ?? <String>[];
 
     // If no target is specified run all the tests.
-    if (IntegrationTestsArgumentParser.instance.testTarget.isEmpty) {
+    if (_runAllTestTargets) {
       // The following loops over the contents of the directory and saves an
       // expected driver file name for each e2e test assuming any dart file
       // not ending with `_test.dart` is an e2e test.
@@ -173,16 +176,11 @@ class IntegrationTestsManager {
     return numberOfFailedTests == 0;
   }
 
-  int _numberOfPassedTests = 0;
-  int _numberOfFailedTests = 0;
-
   Future<void> _runTestsTarget(
       io.Directory directory, String target, Set<String> buildModes) async {
     for (String mode in buildModes) {
       if (!blockedTestsListsMapForModes[mode].contains(target)) {
-        // Run tests on html backend if no backend is selected or only
-        // `html` backend is selected.
-        if (!_renderingBackendSelected || _renderingBackendHtml) {
+        if (!_skipHtmlBackendTesting(target)) {
           final bool htmlTestResults =
               await _runTestsInMode(directory, target, mode: mode);
           if (htmlTestResults) {
@@ -191,9 +189,8 @@ class IntegrationTestsManager {
             _numberOfFailedTests++;
           }
         }
-        // Run the same test with canvaskit rendering backend if `html`
-        // backend is not specifically selected.
-        if (!_renderingBackendSelected || !_renderingBackendHtml) {
+        // Run the same test with canvaskit rendering backend.
+        if (!_skipCanvaskitBackendTesting(target)) {
           final bool canvaskitTestResults = await _runTestsInMode(
               directory, target,
               mode: mode, canvaskitBackend: true);
@@ -365,6 +362,21 @@ class IntegrationTestsManager {
   bool get _renderingBackendHtml =>
       IntegrationTestsArgumentParser.instance.renderingBackend == 'html';
 
+  bool get _runAllTestTargets =>
+      IntegrationTestsArgumentParser.instance.testTarget.isEmpty;
+
+  // Skip tests on html backend if backend is selected and selection is not
+  // `html` backend or if the test target is in the blocked list.
+  bool _skipHtmlBackendTesting(String testName) =>
+      (_renderingBackendSelected && !_renderingBackendHtml) ||
+      blockedTestsListsMapForRenderBackends['html'].contains(testName);
+
+  // Skip tests on canvaskit backend if backend is selected and selection is
+  // `html` backend or if the test target is in the blocked list.
+  bool _skipCanvaskitBackendTesting(String testName) =>
+      (_renderingBackendSelected && _renderingBackendHtml) ||
+      blockedTestsListsMapForRenderBackends['canvaskit'].contains(testName);
+
   /// Validate the given `browser`, `platform` combination is suitable for
   /// integration tests to run.
   bool validateIfTestsShouldRun() {
@@ -522,6 +534,7 @@ class IntegrationTestsArgumentParser {
     argParser
       ..addOption(
         'target',
+        defaultsTo: '',
         help: 'By default integration tests are run for all the tests under'
             'flutter/e2etests/web directory. If a test name is specified, that '
             'only that test will run. The test name will be the name of the '
@@ -623,4 +636,15 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
   ],
   'profile': [],
   'release': [],
+};
+
+/// Tests blocked for one of the build modes.
+///
+/// If a test is not suppose to run for one of the modes also add that test
+/// to the corresponding list.
+// TODO(nurhan): Remove the failing test after fixing.
+const Map<String, List<String>> blockedTestsListsMapForRenderBackends =
+    <String, List<String>>{
+  'html': [],
+  'canvaskit': [],
 };
