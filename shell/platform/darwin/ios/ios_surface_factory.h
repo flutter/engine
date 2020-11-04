@@ -7,9 +7,9 @@
 
 #include <memory>
 
+#import "flutter/shell/platform/darwin/graphics/rendering_api_selection.h"
 #import "flutter/shell/platform/darwin/ios/ios_external_view_embedder.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
-#import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 
 namespace flutter {
 

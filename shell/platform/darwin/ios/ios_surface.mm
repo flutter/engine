@@ -7,7 +7,7 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 
-#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+#include "flutter/shell/platform/darwin/graphics/rendering_api_selection.h"
 
 #if FLUTTER_SHELL_ENABLE_METAL
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal.h"

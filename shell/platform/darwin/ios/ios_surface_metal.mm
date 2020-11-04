@@ -5,7 +5,7 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
 
 #include "flutter/shell/gpu/gpu_surface_metal.h"
-#import "flutter/shell/platform/darwin/ios/ios_context_metal.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context_metal.h"
 
 namespace flutter {
 

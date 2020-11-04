@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_CONTEXT_METAL_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_CONTEXT_METAL_H_
 
 #include <Metal/Metal.h>
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#import "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -54,4 +54,4 @@ class IOSContextMetal final : public IOSContext {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_CONTEXT_METAL_H_

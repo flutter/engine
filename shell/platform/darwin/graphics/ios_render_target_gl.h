@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_RENDER_TARGET_GL_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_RENDER_TARGET_GL_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_RENDER_TARGET_GL_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_RENDER_TARGET_GL_H_
 
 #import <OpenGLES/EAGL.h>
 #import <OpenGLES/ES2/gl.h>
@@ -12,8 +12,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/platform_view.h"
-#import "flutter/shell/platform/darwin/ios/ios_switchable_gl_context.h"
+#import "flutter/shell/platform/darwin/graphics/ios_switchable_gl_context.h"
 
 namespace flutter {
 
@@ -46,4 +45,4 @@ class IOSRenderTargetGL {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_RENDER_TARGET_GL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_GRAPHICS_IOS_RENDER_TARGET_GL_H_

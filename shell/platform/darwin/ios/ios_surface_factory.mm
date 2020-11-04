@@ -4,7 +4,7 @@
 
 #import "flutter/shell/platform/darwin/ios/ios_surface_factory.h"
 
-#import "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/graphics/ios_context.h"
 #import "flutter/shell/platform/darwin/ios/ios_external_view_embedder.h"
 
 namespace flutter {
