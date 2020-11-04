@@ -152,6 +152,7 @@ size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
                                              const GdkEventKey* event,
                                              FlKeyDatum* result_physical,
                                              FlLogicalKeyDatum* result_logical) {
+  printf("===START=== state %d\n", event->state);
   if (self->character_to_free != nullptr) {
     g_free(self->character_to_free);
     self->character_to_free = nullptr;
@@ -168,7 +169,7 @@ size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
   char* character_to_free = nullptr;
   bool is_repeated = false;
 
-  printf("last %lu next %lu down %d\n", last_logical_record, next_logical_record, is_physical_down);
+  printf("last %lu next %lu down %d type %d\n", last_logical_record, next_logical_record, is_physical_down, event->type);
   fflush(stdout);
 
   if (last_logical_record != next_logical_record) {

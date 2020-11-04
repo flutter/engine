@@ -390,7 +390,6 @@ class PlatformDispatcher {
 
     final List<int> charLengths = _getLogicalCharacterLengths(packet);
     final int logicalCount = charLengths.length;
-    print('Dart logical $logicalCount');
     int currentCharOffset = (_kPhysicalKeyDataFieldCount + _kLogicalKeyDataFieldCount  * logicalCount) * kStride;
 
     final List<LogicalKeyData> logicalKeyDataList = <LogicalKeyData>[];
