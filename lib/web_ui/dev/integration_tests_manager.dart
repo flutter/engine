@@ -160,19 +160,8 @@ class IntegrationTestsManager {
     int numberOfPassedTests = 0;
     int numberOfFailedTests = 0;
 
-    Set<String> buildModes;
-    if (_buildModeSelected) {
-      final String mode = IntegrationTestsArgumentParser.instance.buildMode;
-      if (mode == 'debug' && _browser != 'chrome') {
-        throw ToolException('Debug mode is only supported for Chrome.');
-      } else {
-        buildModes = <String>{mode};
-      }
-    } else {
-      buildModes = _browser == 'chrome'
-          ? {'debug', 'profile', 'release'}
-          : {'profile', 'release'};
-    }
+    final Set<String> buildModes = _getBuildModes();
+
     for (String fileName in e2eTestsToRun) {
       await _runTestsTarget(directory, fileName, buildModes);
     }
@@ -228,13 +217,10 @@ class IntegrationTestsManager {
     }
     final IntegrationArguments arguments =
         IntegrationArguments.fromBrowser(_browser);
-    final List<String> testArgs = arguments.getTestArguments(testName, mode);
-    if (canvaskitBackend) {
-      testArgs.add('--web-renderer=canvaskit');
-    }
     final int exitCode = await runProcess(
       executable,
-      arguments.getTestArguments(testName, mode),
+      arguments.getTestArguments(testName, mode,
+          isCanvaskitBackend: canvaskitBackend),
       workingDirectory: directory.path,
       environment: enviroment,
     );
@@ -249,6 +235,23 @@ class IntegrationTestsManager {
     } else {
       return true;
     }
+  }
+
+  Set<String> _getBuildModes() {
+    Set<String> buildModes;
+    if (_buildModeSelected) {
+      final String mode = IntegrationTestsArgumentParser.instance.buildMode;
+      if (mode == 'debug' && _browser != 'chrome') {
+        throw ToolException('Debug mode is only supported for Chrome.');
+      } else {
+        buildModes = <String>{mode};
+      }
+    } else {
+      buildModes = _browser == 'chrome'
+          ? {'debug', 'profile', 'release'}
+          : {'profile', 'release'};
+    }
+    return buildModes;
   }
 
   /// Validate the directory has a `pubspec.yaml` file and a `test_driver`
@@ -405,14 +408,16 @@ abstract class IntegrationArguments {
     }
   }
 
-  List<String> getTestArguments(String testName, String mode);
+  List<String> getTestArguments(String testName, String mode,
+      {bool isCanvaskitBackend = false});
 
   String getCommandToRun(String testName, String mode);
 }
 
 /// Arguments to give `flutter drive` to run the integration tests on Chrome.
 class ChromeIntegrationArguments extends IntegrationArguments {
-  List<String> getTestArguments(String testName, String mode) {
+  List<String> getTestArguments(String testName, String mode,
+      {bool isCanvaskitBackend = false}) {
     return <String>[
       'drive',
       '--target=test_driver/${testName}',
@@ -423,10 +428,12 @@ class ChromeIntegrationArguments extends IntegrationArguments {
       if (isLuci) '--chrome-binary=${preinstalledChromeExecutable()}',
       '--headless',
       '--local-engine=host_debug_unopt',
+      if (isCanvaskitBackend) '--web-renderer=canvaskit',
     ];
   }
 
-  String getCommandToRun(String testName, String mode) {
+  String getCommandToRun(String testName, String mode,
+      {bool isCanvaskitBackend = false}) {
     String statementToRun = 'flutter drive '
         '--target=test_driver/${testName} -d web-server --$mode '
         '--browser-name=chrome --local-engine=host_debug_unopt';
@@ -440,7 +447,8 @@ class ChromeIntegrationArguments extends IntegrationArguments {
 
 /// Arguments to give `flutter drive` to run the integration tests on Firefox.
 class FirefoxIntegrationArguments extends IntegrationArguments {
-  List<String> getTestArguments(String testName, String mode) {
+  List<String> getTestArguments(String testName, String mode,
+      {bool isCanvaskitBackend = false}) {
     return <String>[
       'drive',
       '--target=test_driver/${testName}',
@@ -450,10 +458,12 @@ class FirefoxIntegrationArguments extends IntegrationArguments {
       '--browser-name=firefox',
       '--headless',
       '--local-engine=host_debug_unopt',
+      if (isCanvaskitBackend) '--web-renderer=canvaskit',
     ];
   }
 
-  String getCommandToRun(String testName, String mode) =>
+  String getCommandToRun(String testName, String mode,
+          {bool isCanvaskitBackend = false}) =>
       'flutter ${getTestArguments(testName, mode).join(' ')}';
 }
 
@@ -461,7 +471,8 @@ class FirefoxIntegrationArguments extends IntegrationArguments {
 class SafariIntegrationArguments extends IntegrationArguments {
   SafariIntegrationArguments();
 
-  List<String> getTestArguments(String testName, String mode) {
+  List<String> getTestArguments(String testName, String mode,
+      {bool isCanvaskitBackend = false}) {
     return <String>[
       'drive',
       '--target=test_driver/${testName}',
@@ -470,10 +481,12 @@ class SafariIntegrationArguments extends IntegrationArguments {
       '--$mode',
       '--browser-name=safari',
       '--local-engine=host_debug_unopt',
+      if (isCanvaskitBackend) '--web-renderer=canvaskit',
     ];
   }
 
-  String getCommandToRun(String testName, String mode) =>
+  String getCommandToRun(String testName, String mode,
+          {bool isCanvaskitBackend = false}) =>
       'flutter ${getTestArguments(testName, mode).join(' ')}';
 }
 
@@ -528,7 +541,7 @@ class IntegrationTestsArgumentParser {
               'See https://flutter.dev/docs/testing/build-modes for more '
               'details on the build modes.')
       ..addOption('rendering-backend',
-          defaultsTo: 'html',
+          defaultsTo: '',
           help: 'By default both `html` and `canvaskit` rendering backends are '
               ' tested when running integration tests. If this option is set '
               ' only one of these backends will be used. `canvaskit` and `html`'
