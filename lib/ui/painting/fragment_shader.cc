@@ -29,6 +29,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentShader);
   V(FragmentShader, initWithSPIRV) \
   V(FragmentShader, setTime) \
   V(FragmentShader, setImage) \
+  V(FragmentShader, setFloatUniform) \
   V(FragmentShader, refresh)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
@@ -48,7 +49,7 @@ void FragmentShader::initWithSPIRV(const tonic::Uint8List& data) {
     return;
   }
   auto sksl = transpiler->GetSkSL();
-  uniformData_ = std::make_unique<tonic::Float32List>(Dart_NewTypedData(Dart_TypedData_kFloat32, transpiler->GetUniformBufferSize()));
+  uniforms_.resize(transpiler->GetUniformBufferSize());
   initWithSource(sksl);
 }
 
@@ -66,9 +67,21 @@ void FragmentShader::setImage(CanvasImage* image,
   setShader();
 }
 
+void FragmentShader::setFloatUniform(size_t i, float value) {
+  if (i >= uniforms_.size()) {
+    Dart_ThrowException(tonic::ToDart("Float uniform index $i is out of bounds."));
+	}
+	uniforms_[i] = value;
+}
+
 void FragmentShader::refresh() {
-  sk_sp<SkData> uniforms = SkData::MakeWithoutCopy(uniformData_->data(), uniformData_->num_elements() * 4);
-  set_shader(UIDartState::CreateGPUObject(runtime_effect_->makeShader(uniforms, nullptr, 0, nullptr, false)));
+  set_shader(UIDartState::CreateGPUObject(
+    runtime_effect_->makeShader(
+      SkData::MakeWithCopy(uniforms_.data(), uniforms_.size() * sizeof(float)),
+        nullptr,
+        0,
+        nullptr,
+        false)));
 }
 
 void FragmentShader::initEffect(SkString sksl) {

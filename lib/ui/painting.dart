@@ -3519,7 +3519,7 @@ class FragmentShader extends Shader {
   void setImage(Image image, TileMode tmx, TileMode tmy, Float64List matrix4) native 'FragmentShader_setImage';
 
   /// TODO(clocksmith): Public Docs. 
-  Float32List uniformData() native 'FragmentShader_uniformData';
+  void setFloatUniform(int i, double value) native 'FragmentShader_setFloatUniform';
 
   /// TODO(clocksmith): Public Docs. 
   void refresh() native 'FragmentShader_refresh';

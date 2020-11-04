@@ -43,7 +43,7 @@ class FragmentShader : public Shader {
 
   void refresh();
   
-  const tonic::Float32List& uniformData() const { return *uniformData_; };
+  void setFloatUniform(size_t i, float value);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
@@ -61,7 +61,7 @@ class FragmentShader : public Shader {
   // created once and re-used.
   sk_sp<SkRuntimeEffect> runtime_effect_;
 
-  std::unique_ptr<tonic::Float32List> uniformData_;
+  std::vector<float> uniforms_;
   std::unique_ptr<SkRuntimeShaderBuilder> builder_;
 };
 
