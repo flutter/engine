@@ -122,26 +122,40 @@ class IntegrationTestsManager {
     final List<String> blockedTests =
         blockedTestsListsMap[getBlockedTestsListMapKey(_browser)] ?? <String>[];
 
-    // The following loops over the contents of the directory and saves an
-    // expected driver file name for each e2e test assuming any dart file
-    // not ending with `_test.dart` is an e2e test.
-    // Other files are not considered since developers can add files such as
-    // README.
-    for (io.File f in entities) {
-      final String basename = pathlib.basename(f.path);
-      if (!basename.contains('_test.dart') && basename.endsWith('.dart')) {
-        // Do not add the basename if it is in the `blockedTests`.
-        if (!blockedTests.contains(basename)) {
-          e2eTestsToRun.add(basename);
-        } else {
-          print('INFO: Test $basename is skipped since it is blocked for '
-              '${getBlockedTestsListMapKey(_browser)}');
+    // If no target is specified run all the tests.
+    if (IntegrationTestsArgumentParser.instance.testTarget.isEmpty) {
+      // The following loops over the contents of the directory and saves an
+      // expected driver file name for each e2e test assuming any dart file
+      // not ending with `_test.dart` is an e2e test.
+      // Other files are not considered since developers can add files such as
+      // README.
+      for (io.File f in entities) {
+        final String basename = pathlib.basename(f.path);
+        if (!basename.contains('_test.dart') && basename.endsWith('.dart')) {
+          // Do not add the basename if it is in the `blockedTests`.
+          if (!blockedTests.contains(basename)) {
+            e2eTestsToRun.add(basename);
+          } else {
+            print('INFO: Test $basename is skipped since it is blocked for '
+                '${getBlockedTestsListMapKey(_browser)}');
+          }
         }
       }
+      print(
+          'INFO: In project ${directory} ${e2eTestsToRun.length} tests to run.');
+    } else {
+      // If a target is specified it will run regardless of if it's blocked or
+      // not. There will be an info note to warn the developer.
+      final String targetTest =
+          IntegrationTestsArgumentParser.instance.testTarget;
+      final io.File file =
+          entities.singleWhere((f) => pathlib.basename(f.path) == targetTest);
+      final String basename = pathlib.basename(file.path);
+      if (blockedTests.contains(basename)) {
+        print('INFO: Test $basename do not run on CI environments.');
+      }
+      e2eTestsToRun.add(basename);
     }
-
-    print(
-        'INFO: In project ${directory} ${e2eTestsToRun.length} tests to run.');
 
     int numberOfPassedTests = 0;
     int numberOfFailedTests = 0;
@@ -160,27 +174,52 @@ class IntegrationTestsManager {
           : {'profile', 'release'};
     }
     for (String fileName in e2eTestsToRun) {
-      for (String mode in buildModes) {
-        if (!blockedTestsListsMapForModes[mode].contains(fileName)) {
-          final bool testResults =
-              await _runTestsInMode(directory, fileName, mode: mode);
-          if (testResults) {
-            numberOfPassedTests++;
-          } else {
-            numberOfFailedTests++;
-          }
-        }
-      }
+      await _runTestsTarget(directory, fileName, buildModes);
     }
-    final int numberOfTestsRun = numberOfPassedTests + numberOfFailedTests;
+
+    final int numberOfTestsRun = _numberOfPassedTests + _numberOfFailedTests;
 
     print('INFO: ${numberOfTestsRun} tests run. ${numberOfPassedTests} passed '
         'and ${numberOfFailedTests} failed.');
     return numberOfFailedTests == 0;
   }
 
+  int _numberOfPassedTests = 0;
+  int _numberOfFailedTests = 0;
+
+  Future<void> _runTestsTarget(
+      io.Directory directory, String target, Set<String> buildModes) async {
+    for (String mode in buildModes) {
+      if (!blockedTestsListsMapForModes[mode].contains(target)) {
+        // Run tests on html backend if no backend is selected or only
+        // `html` backend is selected.
+        if (!_renderingBackendSelected || _renderingBackendHtml) {
+          final bool htmlTestResults =
+              await _runTestsInMode(directory, target, mode: mode);
+          if (htmlTestResults) {
+            _numberOfPassedTests++;
+          } else {
+            _numberOfFailedTests++;
+          }
+        }
+        // Run the same test with canvaskit rendering backend if `html`
+        // backend is not specifically selected.
+        if (!_renderingBackendSelected || !_renderingBackendHtml) {
+          final bool canvaskitTestResults = await _runTestsInMode(
+              directory, target,
+              mode: mode, canvaskitBackend: true);
+          if (canvaskitTestResults) {
+            _numberOfPassedTests++;
+          } else {
+            _numberOfFailedTests++;
+          }
+        }
+      }
+    }
+  }
+
   Future<bool> _runTestsInMode(io.Directory directory, String testName,
-      {String mode = 'profile'}) async {
+      {String mode = 'profile', bool canvaskitBackend = false}) async {
     String executable =
         _useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
     Map<String, String> enviroment = Map<String, String>();
@@ -189,6 +228,10 @@ class IntegrationTestsManager {
     }
     final IntegrationArguments arguments =
         IntegrationArguments.fromBrowser(_browser);
+    final List<String> testArgs = arguments.getTestArguments(testName, mode);
+    if (canvaskitBackend) {
+      testArgs.add('--web-renderer=canvaskit');
+    }
     final int exitCode = await runProcess(
       executable,
       arguments.getTestArguments(testName, mode),
@@ -312,6 +355,12 @@ class IntegrationTestsManager {
 
   bool get _buildModeSelected =>
       !IntegrationTestsArgumentParser.instance.buildMode.isEmpty;
+
+  bool get _renderingBackendSelected =>
+      !IntegrationTestsArgumentParser.instance.renderingBackend.isEmpty;
+
+  bool get _renderingBackendHtml =>
+      IntegrationTestsArgumentParser.instance.renderingBackend == 'html';
 
   /// Validate the given `browser`, `platform` combination is suitable for
   /// integration tests to run.
@@ -447,13 +496,14 @@ class IntegrationTestsArgumentParser {
   /// If not specified, these tests will run using 'debug, profile, release'
   /// modes on Chrome and will run using 'profile, release' on other browsers.
   ///
-  ///
+  /// In order to skip a test for one of the modes, add the test to the
+  /// `blockedTestsListsMapForModes` list for the relevant compile mode.
   String buildMode;
 
-  /// Whether the rendering backend to be used is html.
+  /// Whether to use html or canvaskit backend.
   ///
-  /// If set to false canvaskit rendering backend will be used.
-  bool useHtmlBackend;
+  /// If not set html rendering backend will be used.
+  String renderingBackend;
 
   void populateOptions(ArgParser argParser) {
     argParser
@@ -468,28 +518,39 @@ class IntegrationTestsArgumentParser {
       )
       ..addOption('build-mode',
           defaultsTo: '',
-          help: 'Flutter supports three modes when building your app. The By '
-              'default debug, profile, release modes will be used one by one '
-              'on Chrome and profile, release modes will be used for other '
-              'browsers. If a build mode is selected tests will only be run '
-              'using that mode. ')
-      ..addFlag('html-backend',
-          defaultsTo: true,
-          help: 'Default rendering backend is HTML. If this flag is set to '
-              'false canvaskit backend will be used for rendering when running '
-              'integration tests.');
+          help: 'Flutter supports three modes when building your app. This '
+              'option sets the build mode for the integration tests. '
+              'By default an integration test will sequentially run on '
+              'multiple modes. All three modes (debug, release, profile) are '
+              'used for Chrome. Only profile, release modes will be used for '
+              'other browsers. In other words, if a build mode is selected '
+              'tests will only be run using that mode. '
+              'See https://flutter.dev/docs/testing/build-modes for more '
+              'details on the build modes.')
+      ..addOption('rendering-backend',
+          defaultsTo: 'html',
+          help: 'By default both `html` and `canvaskit` rendering backends are '
+              ' tested when running integration tests. If this option is set '
+              ' only one of these backends will be used. `canvaskit` and `html`'
+              ' are the only available options. ');
   }
 
   /// Populate browser with results of the arguments passed.
   void parseOptions(ArgResults argResults) {
     testTarget = argResults['target'] as String;
     buildMode = argResults['build-mode'] as String;
-    if (buildMode.toLowerCase() != 'debug' &&
+    if (!buildMode.isEmpty &&
+        buildMode.toLowerCase() != 'debug' &&
         buildMode.toLowerCase() != 'profile' &&
         buildMode.toLowerCase() != 'release') {
       throw ArgumentError('Unexpected build mode: $buildMode');
     }
-    useHtmlBackend = argResults['html-backend'] as bool;
+    renderingBackend = argResults['rendering-backend'] as String;
+    if (!renderingBackend.isEmpty &&
+        renderingBackend.toLowerCase() != 'html' &&
+        renderingBackend.toLowerCase() != 'canvaskit') {
+      throw ArgumentError('Unexpected rendering backend: $renderingBackend');
+    }
   }
 }
 
@@ -537,6 +598,10 @@ const Map<String, List<String>> blockedTestsListsMap = <String, List<String>>{
 };
 
 /// Tests blocked for one of the build modes.
+///
+/// If a test is not suppose to run for one of the modes also add that test
+/// to the corresponding list.
+// TODO(nurhan): Remove the failing test after fixing.
 const Map<String, List<String>> blockedTestsListsMapForModes =
     <String, List<String>>{
   'debug': [
