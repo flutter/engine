@@ -316,10 +316,13 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     if (_debugLogPointerEvents) {
       print(event.type);
     }
-    if (operatingSystem == OperatingSystem.windows &&
-        event.getModifierState('Control')) {
-      // Ignore Control+wheel events on windows since the default handler
+    if (event.getModifierState('Control') &&
+        operatingSystem != OperatingSystem.macOs &&
+        operatingSystem != OperatingSystem.iOs) {
+      // Ignore Control+wheel events since the default handler
       // will change browser zoom level instead of scrolling.
+      // The exception is MacOs where Control+wheel will still scroll and zoom
+      // is not implemented.
       return;
     }
     _callback(_convertWheelEventToPointerData(event));
