@@ -148,8 +148,6 @@ class TestCommand extends Command<bool> with ArgUtils {
       case TestTypesRequested.unit:
         return runUnitTests();
       case TestTypesRequested.integration:
-        // Parse additional arguments specific for integration testing.
-        IntegrationTestsArgumentParser.instance.parseOptions(argResults);
         return runIntegrationTests();
       case TestTypesRequested.all:
         if (runAllTests && isIntegrationTestsAvailable) {
@@ -168,6 +166,8 @@ class TestCommand extends Command<bool> with ArgUtils {
   }
 
   Future<bool> runIntegrationTests() async {
+    // Parse additional arguments specific for integration testing.
+    IntegrationTestsArgumentParser.instance.parseOptions(argResults);
     if(!_testPreparationReady) {
       await _prepare();
     }
