@@ -424,7 +424,7 @@ static void method_call_cb(FlMethodChannel* channel,
 }
 
 static void view_weak_notify_cb(gpointer user_data, GObject* object) {
-  FlTextInputPlugin* self = FL_TEXT_INPUT_PLUGIN(object);
+  FlTextInputPlugin* self = reinterpret_cast<FlTextInputPlugin*>(user_data);
   self->view = nullptr;
 }
 

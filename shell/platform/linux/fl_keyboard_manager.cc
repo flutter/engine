@@ -246,7 +246,7 @@ size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
 }
 
 static void view_weak_notify_cb(gpointer user_data, GObject* object) {
-  FlKeyboardManager* self = FL_KEYBOARD_MANAGER(object);
+  FlKeyboardManager* self = reinterpret_cast<FlKeyboardManager*>(user_data);
   self->view = nullptr;
 }
 
