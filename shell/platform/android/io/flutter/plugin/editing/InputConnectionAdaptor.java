@@ -484,13 +484,14 @@ class InputConnectionAdaptor extends BaseInputConnection
   @Override
   public void didChangeEditingState(
       boolean textChanged, boolean selectionChanged, boolean composingRegionChanged) {
-    // Notifies the input method that the editing state has changed. The input method may decide
-    // to modify/reject these changes and ends up calling TextInputChannel#updateEditingState to
-    // send the update to the framework. This could result in an infinite loop if the framework
-    // also rejects/modifies the new update.
+    // This method notifies the input method that the editing state has changed.
+    // updateSelection is mandatory. updateExtractedText and updateCursorAnchorInfo
+    // are on demand (if the input method set the correspoinding monitoring
+    // flags). See getExtractedText and requestCursorUpdates.
 
-    // Always send selection update. InputMethodManager#updateSelection skips sending the message
-    // if none of the parameters have changed since the last time we called it.
+    // Always send selection update. InputMethodManager#updateSelection skips
+    // sending the message if none of the parameters have changed since the last
+    // time we called it.
     mImm.updateSelection(
         mFlutterView,
         mEditable.getSelecionStart(),
