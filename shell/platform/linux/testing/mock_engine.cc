@@ -419,6 +419,9 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
     return kInvalidArguments;
   }
 
+  FlutterEngineProcTable empty_table = {};
+  *table = empty_table;
+
   table->CreateAOTData = &FlutterEngineCreateAOTData;
   table->CollectAOTData = &FlutterEngineCollectAOTData;
   table->Run = &FlutterEngineRun;
@@ -434,26 +437,9 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   table->PlatformMessageReleaseResponseHandle =
       &FlutterPlatformMessageReleaseResponseHandle;
   table->SendPlatformMessageResponse = &FlutterEngineSendPlatformMessageResponse;
-  table->RegisterExternalTexture = nullptr;
-  table->UnregisterExternalTexture = nullptr;
-  table->MarkExternalTextureFrameAvailable = nullptr;
-  table->UpdateSemanticsEnabled = nullptr;
-  table->UpdateAccessibilityFeatures = nullptr;
-  table->DispatchSemanticsAction = nullptr;
-  table->OnVsync = nullptr;
-  table->ReloadSystemFonts = nullptr;
-  table->TraceEventDurationBegin = nullptr;
-  table->TraceEventDurationEnd = nullptr;
-  table->TraceEventInstant = nullptr;
-  table->PostRenderThreadTask = nullptr;
-  table->GetCurrentTime = nullptr;
   table->RunTask = &FlutterEngineRunTask;
   table->UpdateLocales = &FlutterEngineUpdateLocales;
   table->RunsAOTCompiledDartCode = &FlutterEngineRunsAOTCompiledDartCode;
-  table->PostDartObject = nullptr;
-  table->NotifyLowMemoryWarning = nullptr;
-  table->PostCallbackOnAllNativeThreads = nullptr;
-  table->NotifyDisplayUpdate = nullptr;
 
   return kSuccess;
 }
