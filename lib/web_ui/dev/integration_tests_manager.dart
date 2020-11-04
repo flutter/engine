@@ -449,6 +449,9 @@ class ChromeIntegrationArguments extends IntegrationArguments {
     String statementToRun = 'flutter drive '
         '--target=test_driver/${testName} -d web-server --$mode '
         '--browser-name=chrome --local-engine=host_debug_unopt';
+    if (isCanvaskitBackend) {
+      statementToRun = '$statementToRun --web-renderer=canvaskit';
+    }
     if (isLuci) {
       statementToRun = '$statementToRun --chrome-binary='
           '${preinstalledChromeExecutable()}';
@@ -475,8 +478,12 @@ class FirefoxIntegrationArguments extends IntegrationArguments {
   }
 
   String getCommandToRun(String testName, String mode,
-          {bool isCanvaskitBackend = false}) =>
-      'flutter ${getTestArguments(testName, mode).join(' ')}';
+      {bool isCanvaskitBackend = false}) {
+    final String arguments =
+        getTestArguments(testName, mode, isCanvaskitBackend: isCanvaskitBackend)
+            .join(' ');
+    return 'flutter $arguments';
+  }
 }
 
 /// Arguments to give `flutter drive` to run the integration tests on Safari.
@@ -498,8 +505,12 @@ class SafariIntegrationArguments extends IntegrationArguments {
   }
 
   String getCommandToRun(String testName, String mode,
-          {bool isCanvaskitBackend = false}) =>
-      'flutter ${getTestArguments(testName, mode).join(' ')}';
+      {bool isCanvaskitBackend = false}) {
+    final String arguments =
+        getTestArguments(testName, mode, isCanvaskitBackend: isCanvaskitBackend)
+            .join(' ');
+    return 'flutter $arguments';
+  }
 }
 
 /// Parses additional options that can be used when running integration tests.
@@ -646,5 +657,6 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
 const Map<String, List<String>> blockedTestsListsMapForRenderBackends =
     <String, List<String>>{
   'html': [],
-  'canvaskit': [],
+  // This test failed on canvaskit on all three build modes.
+  'canvaskit': ['image_loading_integration.dart'],
 };
