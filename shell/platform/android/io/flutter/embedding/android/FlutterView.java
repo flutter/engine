@@ -580,14 +580,17 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         zeroSides = calculateShouldZeroSides();
       }
 
-      // Status bar (top) and left/right system insets should partially obscure the content
-      // (padding).
+      // Status bar (top), navigation bar (bottom) and left/right system insets should
+      // partially obscure the content (padding).
       viewportMetrics.paddingTop = statusBarVisible ? insets.getSystemWindowInsetTop() : 0;
       viewportMetrics.paddingRight =
           zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
               ? 0
               : insets.getSystemWindowInsetRight();
-      viewportMetrics.paddingBottom = 0;
+      viewportMetrics.paddingBottom =
+          navigationBarVisible && guessBottomKeyboardInset(insets) == 0
+              ? insets.getSystemWindowInsetBottom()
+              : 0;
       viewportMetrics.paddingLeft =
           zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
               ? 0
@@ -596,10 +599,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
       viewportMetrics.viewInsetTop = 0;
       viewportMetrics.viewInsetRight = 0;
-      viewportMetrics.viewInsetBottom =
-          navigationBarVisible
-              ? insets.getSystemWindowInsetBottom()
-              : guessBottomKeyboardInset(insets);
+      viewportMetrics.viewInsetBottom = guessBottomKeyboardInset(insets);
       viewportMetrics.viewInsetLeft = 0;
     }
 
@@ -721,27 +721,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Invoked when key is released.
-   *
-   * <p>This method is typically invoked in response to the release of a physical keyboard key or a
-   * D-pad button. It is generally not invoked when a virtual software keyboard is used, though a
-   * software keyboard may choose to invoke this method in some situations.
-   *
-   * <p>{@link KeyEvent}s are sent from Android to Flutter. {@link AndroidKeyProcessor} may do some
-   * additional work with the given {@link KeyEvent}, e.g., combine this {@code keyCode} with the
-   * previous {@code keyCode} to generate a unicode combined character.
-   */
-  @Override
-  public boolean onKeyUp(int keyCode, @NonNull KeyEvent event) {
-    if (!isAttachedToFlutterEngine()) {
-      return super.onKeyUp(keyCode, event);
-    }
-
-    return androidKeyProcessor.onKeyUp(event) || super.onKeyUp(keyCode, event);
-  }
-
-  /**
-   * Invoked when key is pressed.
+   * Invoked when a hardware key is pressed or released, before the IME receives the key.
    *
    * <p>This method is typically invoked in response to the press of a physical keyboard key or a
    * D-pad button. It is generally not invoked when a virtual software keyboard is used, though a
@@ -752,12 +732,13 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * previous {@code keyCode} to generate a unicode combined character.
    */
   @Override
-  public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
-    if (!isAttachedToFlutterEngine()) {
-      return super.onKeyDown(keyCode, event);
-    }
-
-    return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
+  public boolean dispatchKeyEventPreIme(KeyEvent event) {
+    // If the key processor doesn't handle it, then send it on to the
+    // superclass. The key processor will typically handle all events except
+    // those where it has re-dispatched the event after receiving a reply from
+    // the framework that the framework did not handle it.
+    return (isAttachedToFlutterEngine() && androidKeyProcessor.onKeyEvent(event))
+        || super.dispatchKeyEventPreIme(event);
   }
 
   /**
