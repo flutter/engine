@@ -634,7 +634,7 @@ class PersistedPicture extends PersistedLeafSurface {
 /// Given size of a rectangle and transform, computes pixel density
 /// (scale factor).
 double _computePixelDensity(Matrix4? transform, double width, double height) {
-  if (transform == null || transform.isIdentity()) {
+  if (transform == null || transform.isIdentityOrTranslation()) {
     return 1.0;
   }
   final Float32List m = transform.storage;
