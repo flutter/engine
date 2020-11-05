@@ -1398,6 +1398,8 @@ FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.h
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows.cc
+FILE: ../../../flutter/shell/platform/windows/flutter_windows_win32.cc
+FILE: ../../../flutter/shell/platform/windows/flutter_windows_winuwp.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_engine.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_engine.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.cc

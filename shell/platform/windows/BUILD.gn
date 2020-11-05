@@ -71,9 +71,11 @@ source_set("flutter_windows_source") {
 
   # Target-specific sources.
   if (target_os == "winuwp") {
+    sources += [ "flutter_windows_winuwp.cc" ]
     sources += [ "system_utils_winuwp.cc" ]
   } else {
     sources += [
+      "flutter_windows_win32.cc",
       "system_utils_win32.cc",
       "win32_dpi_utils.cc",
       "win32_dpi_utils.h",
