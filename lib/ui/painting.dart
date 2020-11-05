@@ -2744,12 +2744,11 @@ class PathMetric {
     return _measure.getTangentForOffset(contourIndex, distance);
   }
 
-  /// Given a start and stop distance, return the intervening segment(s).
+  /// Given a start and end distance, return the intervening segment(s).
   ///
   /// `start` and `end` are clamped to legal values (0..[length])
-  /// Returns null if the segment is 0 length or `start` > `stop`.
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
-  Path? extractPath(double start, double end, {bool startWithMoveTo = true}) {
+  Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
     return _measure.extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
   }
 
@@ -4414,7 +4413,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///         Rect.fromLTWH(sprite.index * 10.0, 0.0, 10.0, 10.0),
   ///     ], <Color>[
   ///       for (Sprite sprite in allSprites)
-  ///         Color.white.withAlpha(sprite.alpha),
+  ///         Colors.white.withAlpha(sprite.alpha),
   ///     ], BlendMode.srcIn, null, paint);
   ///   }
   ///
