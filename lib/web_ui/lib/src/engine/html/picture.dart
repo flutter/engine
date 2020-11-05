@@ -396,9 +396,8 @@ class PersistedPicture extends PersistedLeafSurface {
 
   void _applyDomPaint(EngineCanvas? oldCanvas) {
     _recycleCanvas(oldCanvas);
-    _canvas = DomCanvas();
+    _canvas = DomCanvas(rootElement!);
     domRenderer.clearDom(rootElement!);
-    rootElement!.append(_canvas!.rootElement);
     picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect);
   }
 
@@ -440,7 +439,9 @@ class PersistedPicture extends PersistedLeafSurface {
                 bitmapCanvas.bitmapPixelCount;
           }
           domRenderer.clearDom(rootElement!);
-          rootElement!.append(_canvas!.rootElement);
+          if (_canvas is BitmapCanvas) {
+            rootElement!.append(_canvas!.rootElement);
+          }
           _canvas!.clear();
           picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect);
         },
