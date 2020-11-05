@@ -10,7 +10,7 @@
 #include "flutter/shell/platform/linux/keyboard_map_private.h"
 
 // Ensures that a uint64_t can be safely fit into a gpointer.
-// 
+//
 // Flutter keyboard keys, values of uint64_t, are used by GHashTable by being
 // reinterpreted as gpointers. This greatly simplifies the implementation
 // (otherwise all keys and values needs allocation), but requires pointers to
@@ -29,9 +29,6 @@ static constexpr double kMicrosecondsPerMillisecond = 1000;
 
 struct _FlKeyboardManager {
   gchar* character_to_free;
-
-  // The owning Flutter view.
-  FlView* view;
 
   GObject parent_instance;
 
@@ -181,7 +178,7 @@ size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
       //  * From non-null to a different non-null: The physical key starts to map
       //    to a different logical key. Cancel the previous one and sync the new one.
 
-    int pressed_logical_key_last_count = pressed_logical_key == 0 ? 0 : 
+    int pressed_logical_key_last_count = pressed_logical_key == 0 ? 0 :
         decrease_pressed_logical_count(self->pressed_logicals, pressed_logical_key);
     if (pressed_logical_key_last_count == 1) {
       FlLogicalKeyDatum* logical_datum = result_logical + (logical_data_count++);
@@ -246,11 +243,6 @@ size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
   return 1;
 }
 
-static void view_weak_notify_cb(gpointer user_data, GObject* object) {
-  FlKeyboardManager* self = reinterpret_cast<FlKeyboardManager*>(user_data);
-  self->view = nullptr;
-}
-
 static void fl_keyboard_manager_dispose(GObject* object) {
   FlKeyboardManager* self = FL_KEYBOARD_MANAGER(object);
 
@@ -272,7 +264,7 @@ static void fl_keyboard_manager_class_init(FlKeyboardManagerClass* klass) {
 static void fl_keyboard_manager_init(FlKeyboardManager* self) {
 }
 
-FlKeyboardManager* fl_keyboard_manager_new(FlView* view) {
+FlKeyboardManager* fl_keyboard_manager_new() {
   FlKeyboardManager* self = FL_KEYBOARD_MANAGER(
       g_object_new(fl_keyboard_manager_get_type(), nullptr));
 
@@ -283,9 +275,6 @@ FlKeyboardManager* fl_keyboard_manager_new(FlView* view) {
   self->keyval_to_logical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
   initialize_gtk_keyval_to_logical_key(self->keyval_to_logical_key);
   self->character_to_free = nullptr;
-
-  self->view = view;
-  g_object_weak_ref(G_OBJECT(view), view_weak_notify_cb, self);
 
   return self;
 }

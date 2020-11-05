@@ -44,7 +44,7 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
                      KEYBOARD_MANAGER,
                      GObject);
 
-FlKeyboardManager* fl_keyboard_manager_new(FlView* view);
+FlKeyboardManager* fl_keyboard_manager_new();
 
 size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
                                              const GdkEventKey* event,

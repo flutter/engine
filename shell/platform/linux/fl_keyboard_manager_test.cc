@@ -2,33 +2,56 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/linux/fl_key_event_plugin.h"
+#include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
 
-#include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_message_codec.h"
+#include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
 
-// Creates a mock engine that responds to platform messages.
-static FlEngine* make_mock_engine() {
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
-  g_autoptr(FlEngine) engine = fl_engine_new(project, FL_RENDERER(renderer));
-  g_autoptr(GError) engine_error = nullptr;
-  EXPECT_TRUE(fl_engine_start(engine, &engine_error));
-  EXPECT_EQ(engine_error, nullptr);
-
-  return static_cast<FlEngine*>(g_object_ref(engine));
+static void expect_eq_physical(const FlKeyDatum& data, const FlKeyDatum& target) {
+  EXPECT_EQ(data.kind, target.kind);
+  EXPECT_EQ(data.key, target.key);
+  EXPECT_EQ(data.repeated, target.repeated);
+  EXPECT_EQ(data.timestamp, target.timestamp);
+  EXPECT_EQ(data.active_locks, target.active_locks);
+  EXPECT_EQ(data.logical_data_count, target.logical_data_count);
 }
-
-static const char* expected_value = nullptr;
 
 // Test sending a letter "A";
 TEST(FlKeyboardManagerTest, SendKeyEvent) {
-  make_mock_engine();
-  expected_value = nullptr;
+  g_autoptr(FlKeyboardManager) manager = fl_keyboard_manager_new();
+  FlKeyDatum physical_data[kMaxConvertedKeyData];
+  FlLogicalKeyDatum logical_data[kMaxConvertedLogicalKeyData];
+  size_t result_size;
+
+  char string[] = "A";
+  GdkEventKey key_event = GdkEventKey{
+      GDK_KEY_PRESS,                         // event type
+      nullptr,                               // window (not needed)
+      FALSE,                                 // event was sent explicitly
+      12345,                                 // time
+      0x0,                                   // modifier state
+      GDK_KEY_a,                             // key code
+      1,                                     // length of string representation
+      reinterpret_cast<gchar*>(&string[0]),  // string representation
+      0x026,                                 // scan code
+      0,                                     // keyboard group
+      0,                                     // is a modifier
+  };
+
+  result_size = fl_keyboard_manager_convert_key_event(manager, &key_event,
+      physical_data, logical_data);
+
+  EXPECT_EQ(result_size, 1u);
+  expect_eq_physical(physical_data[0], FlKeyDatum{
+    kFlKeyDataKindDown,       // kind
+    0x00070004,               // key
+    false,                    // repeated
+    12345000.0,               // timestamp
+    0,                        // active locks
+    1,                        // logical count
+  });
 }

@@ -88,36 +88,37 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[], cwd=buildr
 
   executable = FindExecutablePath(os.path.join(build_dir, executable_name))
 
-  print('Running %s in %s' % (executable_name, cwd))
+  print('Running %s in %s with %s' % (executable_name, cwd, ' '.join(flags)))
   test_command = [ executable ] + flags
   print(' '.join(test_command))
   RunCmd(test_command, cwd=cwd)
 
 
-def RunCCTests(build_dir, filter):
+def RunCCTests(build_dir, filter, flags=[]):
   print("Running Engine Unit-tests.")
 
   shuffle_flags = [
     "--gtest_shuffle",
     "--gtest_repeat=2",
   ]
+  all_flags = flags + shuffle_flags
 
-  RunEngineExecutable(build_dir, 'client_wrapper_glfw_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'client_wrapper_glfw_unittests', filter, all_flags)
 
-  RunEngineExecutable(build_dir, 'common_cpp_core_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'common_cpp_core_unittests', filter, all_flags)
 
-  RunEngineExecutable(build_dir, 'common_cpp_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'common_cpp_unittests', filter, all_flags)
 
-  RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter, all_flags)
 
   # https://github.com/flutter/flutter/issues/36294
   if not IsWindows():
-    RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags)
-    RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'embedder_unittests', filter, all_flags)
+    RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, all_flags)
   else:
-    RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, all_flags)
 
-    RunEngineExecutable(build_dir, 'client_wrapper_windows_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'client_wrapper_windows_unittests', filter, all_flags)
 
   flow_flags = ['--gtest_filter=-PerformanceOverlayLayer.Gold']
   if IsLinux():
@@ -125,37 +126,37 @@ def RunCCTests(build_dir, filter):
       '--golden-dir=%s' % golden_dir,
       '--font-file=%s' % roboto_font_path,
     ]
-  RunEngineExecutable(build_dir, 'flow_unittests', filter, flow_flags + shuffle_flags)
+  RunEngineExecutable(build_dir, 'flow_unittests', filter, flow_flags + all_flags)
 
   # TODO(44614): Re-enable after https://github.com/flutter/flutter/issues/44614 has been addressed.
-  # RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + shuffle_flags)
+  # RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + all_flags)
 
-  RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'runtime_unittests', filter, all_flags)
 
   if not IsWindows():
     # https://github.com/flutter/flutter/issues/36295
-    RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'shell_unittests', filter, all_flags)
     # https://github.com/google/googletest/issues/2490
-    RunEngineExecutable(build_dir, 'android_external_view_embedder_unittests', filter, shuffle_flags)
-    RunEngineExecutable(build_dir, 'jni_unittests', filter, shuffle_flags)
-    RunEngineExecutable(build_dir, 'platform_view_android_delegate_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'android_external_view_embedder_unittests', filter, all_flags)
+    RunEngineExecutable(build_dir, 'jni_unittests', filter, all_flags)
+    RunEngineExecutable(build_dir, 'platform_view_android_delegate_unittests', filter, all_flags)
 
   # The image release unit test can take a while on slow machines.
-  RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags + ['--timeout=90'])
+  RunEngineExecutable(build_dir, 'ui_unittests', filter, all_flags + ['--timeout=90'])
 
-  RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'testing_unittests', filter, all_flags)
 
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
-    RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags)
-    RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, all_flags)
+    RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, all_flags)
 
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():
-    RunEngineExecutable(build_dir, 'txt_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'txt_unittests', filter, all_flags)
 
   if IsLinux():
-    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, all_flags)
 
 
 def RunEngineBenchmarks(build_dir, filter):
@@ -451,6 +452,8 @@ def main():
   parser.add_argument('--ios-variant', dest='ios_variant', action='store',
       default='ios_debug_sim_unopt',
       help='The engine build variant to run objective-c tests for')
+  parser.add_argument('--engine-subset-filter', type=str, default='',
+      help='A filter to run a subset of the engine tests.')
   parser.add_argument('--verbose-dart-snapshot', dest='verbose_dart_snapshot', action='store_true',
       default=False, help='Show extra dart snapshot logging.')
 
@@ -466,8 +469,9 @@ def main():
     assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
 
   engine_filter = args.engine_filter.split(',') if args.engine_filter else None
+  engine_subset_filter = ['--gtest_filter=%s' % args.engine_subset_filter] if args.engine_subset_filter else []
   if 'engine' in types:
-    RunCCTests(build_dir, engine_filter)
+    RunCCTests(build_dir, engine_filter, flags=engine_subset_filter)
 
   if 'dart' in types:
     assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."

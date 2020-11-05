@@ -239,7 +239,7 @@ static void fl_view_constructed(GObject* object) {
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
   self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
-  self->keyboard_manager = fl_keyboard_manager_new(self);
+  self->keyboard_manager = fl_keyboard_manager_new();
 }
 
 static void fl_view_set_property(GObject* object,
