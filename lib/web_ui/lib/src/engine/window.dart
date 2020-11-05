@@ -42,7 +42,7 @@ class EngineFlutterWindow extends ui.Window {
   @visibleForTesting
   BrowserHistory get browserHistory {
     return _browserHistory ??=
-        MultiEntriesBrowserHistory(urlStrategy: _createDefaultUrlStrategy());
+        MultiEntriesBrowserHistory(urlStrategy: const HashUrlStrategy());
   }
 
   BrowserHistory? _browserHistory;
@@ -224,12 +224,6 @@ typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
 @JS('_flutter_web_set_location_strategy')
 // ignore: unused_element
 external set _jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
-
-UrlStrategy? _createDefaultUrlStrategy() {
-  return ui.debugEmulateFlutterTesterEnvironment
-      ? null
-      : const HashUrlStrategy();
-}
 
 /// The Web implementation of [ui.Window].
 class EngineSingletonFlutterWindow extends EngineFlutterWindow {
