@@ -73,7 +73,8 @@ const EmbeddedViewParams* EmbedderExternalView::GetEmbeddedViewParams() const {
 
 bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
   TRACE_EVENT0("flutter", "EmbedderExternalView::Render");
-
+  printf("\nRENDER\n");
+  printf("\nfbo id: %u\n", render_target.GetBackingStore()->open_gl.framebuffer.name);
   FML_DCHECK(HasEngineRenderedContents())
       << "Unnecessarily asked to render into a render target when there was "
          "nothing to render.";

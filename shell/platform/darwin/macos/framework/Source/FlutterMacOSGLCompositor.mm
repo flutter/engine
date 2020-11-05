@@ -42,24 +42,36 @@ bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layer
     return false;
   }
 
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-
   bool success = true;
   SkCanvas* canvas;
+  GLuint fbo_id;
+  GLuint dest_fbo_id;
+
+  CGSize size;
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
     switch (layer->type) {
       case kFlutterLayerContentTypeBackingStore:
+        if (i != 0) continue;
+        fbo_id = const_cast<FlutterBackingStore*>(layer->backing_store)->open_gl.framebuffer.name;
         canvas = reinterpret_cast<SkSurface*>(layer->backing_store->user_data)
             ->getCanvas();
         canvas->flush();
-        success = success && present_callback_();
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo_id);
+        size = CGSizeMake(layer->size.width, layer->size.height);
+        dest_fbo_id = [view_controller_.flutterView getFrameBufferIdForSize:size];
+        NSLog(@"dest_fbo_id %u", dest_fbo_id);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest_fbo_id);  // if not already bound
+        glBlitFramebuffer(0, 0, layer->size.width, layer->size.height, 0, 0, layer->size.width, layer->size.height,
+                          GL_COLOR_BUFFER_BIT, GL_NEAREST);
         break;
       case kFlutterLayerContentTypePlatformView:
-        NSLog(@"PV LAYER");
+        NSLog(@"Present backing store");
+        [view_controller_.view addSubview: view_controller_.view_map.at(1)];
         break;
     };
   }
+  success = success && present_callback_();
   return success;
 }
 

@@ -413,7 +413,9 @@ static void CommonInit(FlutterViewController* controller) {
       CGFloat width = [nsdict[@"width"] floatValue];
       CGFloat height = [nsdict[@"height"] floatValue];
 
-      NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectMake(x, y, width, height)
+      NSLog(@"x,y,w,h: %f %f %f %f", x,y,width,height);
+
+      NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectMake(0, 0, 300, 300)
                                                           viewIdentifier:viewId
                                                               arguments:nil];                                     
 
