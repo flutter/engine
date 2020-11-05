@@ -46,7 +46,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void OpacityLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "OpacityLayer::Paint");
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(context.needs_painting(paint_bounds()));
 
   SkPaint paint;
   paint.setAlpha(alpha_);

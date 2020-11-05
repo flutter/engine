@@ -23,7 +23,7 @@ void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void ContainerLayer::Paint(PaintContext& context) const {
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(context.needs_painting(paint_bounds()));
 
   PaintChildren(context);
 }
@@ -49,7 +49,9 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
     // sibling tree.
     context->has_platform_view = false;
 
-    layer->Preroll(context, child_matrix);
+    if (layer->paint_bounds() == kUnvisitedRect) {
+      layer->Preroll(context, child_matrix);
+    }
 
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);
@@ -72,12 +74,12 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(context.needs_painting(paint_bounds()));
 
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.
   for (auto& layer : layers_) {
-    if (layer->needs_painting()) {
+    if (context.needs_painting(layer->paint_bounds())) {
       layer->Paint(context);
     }
   }
@@ -86,8 +88,9 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
 void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
                                              Layer* layer,
                                              const SkMatrix& matrix) {
-  if (!context->has_platform_view && context->raster_cache &&
-      SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
+  if (!context->has_platform_view && context->raster_cache
+  //  &&    SkRect::Intersects(context->cull_rect, layer->paint_bounds())
+   ) {
     context->raster_cache->Prepare(context, layer, matrix);
   }
 }

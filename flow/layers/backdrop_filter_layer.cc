@@ -18,7 +18,7 @@ void BackdropFilterLayer::Preroll(PrerollContext* context,
 
 void BackdropFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "BackdropFilterLayer::Paint");
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(context.needs_painting(paint_bounds()));
 
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
       context,

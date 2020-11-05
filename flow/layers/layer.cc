@@ -10,7 +10,7 @@
 namespace flutter {
 
 Layer::Layer()
-    : paint_bounds_(SkRect::MakeEmpty()),
+    : paint_bounds_(kUnvisitedRect),
       unique_id_(NextUniqueID()),
       needs_system_composite_(false) {}
 

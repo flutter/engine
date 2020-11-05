@@ -36,6 +36,7 @@
 namespace flutter {
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
+static constexpr SkRect kUnvisitedRect = SkRect::MakeLTRB(-1E9F, -1E9F, -1E9F, -1E9F);
 
 // This should be an exact copy of the Clip enum in painting.dart.
 enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
@@ -122,6 +123,10 @@ class Layer {
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
     const float frame_device_pixel_ratio;
+
+    bool needs_painting(const SkRect& paint_bounds) {
+      return !internal_nodes_canvas->quickReject(paint_bounds);
+    }
   };
 
   // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also
@@ -171,7 +176,7 @@ class Layer {
     paint_bounds_ = paint_bounds;
   }
 
-  bool needs_painting() const { return !paint_bounds_.isEmpty(); }
+  bool needs_painting() const { FML_DCHECK(false); return false; }
 
   uint64_t unique_id() const { return unique_id_; }
 
