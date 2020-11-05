@@ -12,7 +12,8 @@ PlatformViewLayer::PlatformViewLayer(const SkPoint& offset,
     : offset_(offset), size_(size), view_id_(view_id) {}
 
 void PlatformViewLayer::Preroll(PrerollContext* context,
-                                const SkMatrix& matrix) {
+                                const SkMatrix& matrix,
+                                bool parent_need_cached) {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   context->child_scene_layer_exists_below = true;
   CheckForChildLayerBelow(context);

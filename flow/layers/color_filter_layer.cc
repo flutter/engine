@@ -10,10 +10,11 @@ ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
     : filter_(std::move(filter)) {}
 
 void ColorFilterLayer::Preroll(PrerollContext* context,
-                               const SkMatrix& matrix) {
+                               const SkMatrix& matrix,
+                               bool parent_need_cached) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  ContainerLayer::Preroll(context, matrix);
+  ContainerLayer::Preroll(context, matrix,parent_need_cached);
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {

@@ -16,7 +16,7 @@ class ShaderMaskLayer : public ContainerLayer {
                   const SkRect& mask_rect,
                   SkBlendMode blend_mode);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) override;
 
   void Paint(PaintContext& context) const override;
 

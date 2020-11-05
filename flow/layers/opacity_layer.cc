@@ -12,7 +12,7 @@ namespace flutter {
 OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
     : alpha_(alpha), offset_(offset) {}
 
-void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) {
   TRACE_EVENT0("flutter", "OpacityLayer::Preroll");
   FML_DCHECK(!GetChildContainer()->layers().empty());  // We can't be a leaf.
 
@@ -28,7 +28,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->mutators_stack.PushOpacity(alpha_);
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  ContainerLayer::Preroll(context, child_matrix);
+  ContainerLayer::Preroll(context, child_matrix,true);
   context->mutators_stack.Pop();
   context->mutators_stack.Pop();
 

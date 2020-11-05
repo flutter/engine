@@ -19,7 +19,7 @@ TextureLayer::TextureLayer(const SkPoint& offset,
       freeze_(freeze),
       filter_quality_(filter_quality) {}
 
-void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix,  bool parent_need_cached) {
   TRACE_EVENT0("flutter", "TextureLayer::Preroll");
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)

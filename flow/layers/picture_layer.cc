@@ -17,9 +17,8 @@ PictureLayer::PictureLayer(const SkPoint& offset,
       is_complex_(is_complex),
       will_change_(will_change) {}
 
-void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");
-
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   CheckForChildLayerBelow(context);
 #endif

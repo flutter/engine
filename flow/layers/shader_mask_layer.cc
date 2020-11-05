@@ -11,14 +11,14 @@ ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  SkBlendMode blend_mode)
     : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {}
 
-void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   CheckForChildLayerBelow(context);
 #endif
 
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  ContainerLayer::Preroll(context, matrix);
+  ContainerLayer::Preroll(context, matrix, parent_need_cached);
 }
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {

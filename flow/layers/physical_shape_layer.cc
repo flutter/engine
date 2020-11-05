@@ -24,7 +24,7 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
       clip_behavior_(clip_behavior) {}
 
 void PhysicalShapeLayer::Preroll(PrerollContext* context,
-                                 const SkMatrix& matrix) {
+                                 const SkMatrix& matrix, bool parent_need_cached) {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Preroll");
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());

@@ -15,7 +15,7 @@ ChildSceneLayer::ChildSceneLayer(zx_koid_t layer_id,
       size_(size),
       hit_testable_(hit_testable) {}
 
-void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) {
   TRACE_EVENT0("flutter", "ChildSceneLayer::Preroll");
 
   context->child_scene_layer_exists_below = true;

@@ -12,12 +12,16 @@ ClipRRectLayer::ClipRRectLayer(const SkRRect& clip_rrect, Clip clip_behavior)
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
-void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) {
   TRACE_EVENT0("flutter", "ClipRRectLayer::Preroll");
 
   SkRect previous_cull_rect = context->cull_rect;
   SkRect clip_rrect_bounds = clip_rrect_.getBounds();
-  children_inside_clip_ = context->cull_rect.intersect(clip_rrect_bounds);
+  if (parent_need_cached) {
+    children_inside_clip_ = true;
+  } else {
+    children_inside_clip_ = context->cull_rect.intersect(clip_rrect_bounds);
+  }
   if (children_inside_clip_) {
     TRACE_EVENT_INSTANT0("flutter", "children inside clip rect");
 
@@ -25,9 +29,9 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
         Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
     context->mutators_stack.PushClipRRect(clip_rrect_);
     SkRect child_paint_bounds = SkRect::MakeEmpty();
-    PrerollChildren(context, matrix, &child_paint_bounds);
+    PrerollChildren(context, matrix, &child_paint_bounds, parent_need_cached);
 
-    if (child_paint_bounds.intersect(clip_rrect_bounds)) {
+    if (child_paint_bounds.intersect(clip_rrect_bounds) || parent_need_cached) {
       set_paint_bounds(child_paint_bounds);
     }
     context->mutators_stack.Pop();

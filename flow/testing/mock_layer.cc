@@ -18,7 +18,7 @@ MockLayer::MockLayer(SkPath path,
       fake_needs_system_composite_(fake_needs_system_composite),
       fake_reads_surface_(fake_reads_surface) {}
 
-void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) {
   parent_mutators_ = context->mutators_stack;
   parent_matrix_ = matrix;
   parent_cull_rect_ = context->cull_rect;

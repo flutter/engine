@@ -25,7 +25,7 @@ uint64_t Layer::NextUniqueID() {
   return id;
 }
 
-void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
+void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) {}
 
 Layer::AutoPrerollSaveLayerState::AutoPrerollSaveLayerState(
     PrerollContext* preroll_context,

@@ -6,7 +6,6 @@
 #define FLUTTER_FLOW_LAYERS_CONTAINER_LAYER_H_
 
 #include <vector>
-
 #include "flutter/flow/layers/layer.h"
 
 namespace flutter {
@@ -17,7 +16,7 @@ class ContainerLayer : public Layer {
 
   virtual void Add(std::shared_ptr<Layer> layer);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) override;
   void Paint(PaintContext& context) const override;
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   void CheckForChildLayerBelow(PrerollContext* context) override;
@@ -29,7 +28,8 @@ class ContainerLayer : public Layer {
  protected:
   void PrerollChildren(PrerollContext* context,
                        const SkMatrix& child_matrix,
-                       SkRect* child_paint_bounds);
+                       SkRect* child_paint_bounds,
+                       bool parent_need_cached );
   void PaintChildren(PaintContext& context) const;
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)

@@ -18,7 +18,7 @@ using TransformLayerTest = LayerTest;
 TEST_F(TransformLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<TransformLayer>(SkMatrix());  // identity
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_FALSE(layer->needs_painting());
 
@@ -47,7 +47,7 @@ TEST_F(TransformLayerTest, Identity) {
   layer->Add(mock_layer);
 
   preroll_context()->cull_rect = cull_rect;
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
   EXPECT_TRUE(mock_layer->needs_painting());
@@ -76,7 +76,7 @@ TEST_F(TransformLayerTest, Simple) {
   layer->Add(mock_layer);
 
   preroll_context()->cull_rect = cull_rect;
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(),
             layer_transform.mapRect(mock_layer->paint_bounds()));
@@ -118,7 +118,7 @@ TEST_F(TransformLayerTest, Nested) {
   layer2->Add(mock_layer);
 
   preroll_context()->cull_rect = cull_rect;
-  layer1->Preroll(preroll_context(), initial_transform);
+  layer1->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer2->paint_bounds(),
             layer2_transform.mapRect(mock_layer->paint_bounds()));
@@ -175,7 +175,7 @@ TEST_F(TransformLayerTest, NestedSeparated) {
   layer2->Add(mock_layer2);
 
   preroll_context()->cull_rect = cull_rect;
-  layer1->Preroll(preroll_context(), initial_transform);
+  layer1->Preroll(preroll_context(), initial_transform, false);
   SkRect expected_layer1_bounds = layer2->paint_bounds();
   expected_layer1_bounds.join(mock_layer1->paint_bounds());
   layer1_transform.mapRect(&expected_layer1_bounds);

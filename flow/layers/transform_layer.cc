@@ -27,6 +27,7 @@ TransformLayer::TransformLayer(const SkMatrix& transform)
 }
 
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) {
   TRACE_EVENT0("flutter", "TransformLayer::Preroll");
 
   SkMatrix child_matrix;
@@ -43,7 +44,7 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, child_matrix, &child_paint_bounds);
+  PrerollChildren(context, child_matrix, &child_paint_bounds,need_raster_cached_);
 
   transform_.mapRect(&child_paint_bounds);
   set_paint_bounds(child_paint_bounds);

@@ -20,7 +20,7 @@ class TextureLayer : public Layer {
                bool freeze,
                SkFilterQuality filter_quality);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) override;
   void Paint(PaintContext& context) const override;
 
  private:

@@ -25,7 +25,7 @@ TEST_F(MockLayerTest, PaintBeforePreollDies) {
 TEST_F(MockLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<MockLayer>(SkPath(), SkPaint());
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), SkPath().getBounds());
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -45,7 +45,7 @@ TEST_F(MockLayerTest, SimpleParams) {
   preroll_context()->mutators_stack.PushTransform(scale_matrix);
   preroll_context()->cull_rect = cull_rect;
   preroll_context()->has_platform_view = parent_has_platform_view;
-  layer->Preroll(preroll_context(), start_matrix);
+  layer->Preroll(preroll_context(), start_matrix, false);
   EXPECT_EQ(preroll_context()->has_platform_view, false);
   EXPECT_EQ(layer->paint_bounds(), path.getBounds());
   EXPECT_TRUE(layer->needs_painting());
@@ -66,7 +66,7 @@ TEST_F(MockLayerTest, FakePlatformView) {
                                            true /* fake_has_platform_view */);
   EXPECT_EQ(preroll_context()->has_platform_view, false);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(preroll_context()->has_platform_view, true);
 }
 
@@ -76,7 +76,7 @@ TEST_F(MockLayerTest, FakeSystemComposite) {
       true /* fake_needs_system_composite */);
   EXPECT_EQ(layer->needs_system_composite(), false);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->needs_system_composite(), true);
 }
 

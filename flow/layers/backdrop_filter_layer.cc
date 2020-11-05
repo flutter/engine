@@ -10,10 +10,11 @@ BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
     : filter_(std::move(filter)) {}
 
 void BackdropFilterLayer::Preroll(PrerollContext* context,
-                                  const SkMatrix& matrix) {
+                                  const SkMatrix& matrix,
+                                  bool parent_need_cached) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
-  ContainerLayer::Preroll(context, matrix);
+  ContainerLayer::Preroll(context, matrix, parent_need_cached);
 }
 
 void BackdropFilterLayer::Paint(PaintContext& context) const {

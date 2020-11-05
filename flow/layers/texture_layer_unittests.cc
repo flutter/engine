@@ -21,7 +21,7 @@ TEST_F(TextureLayerTest, InvalidTexture) {
   auto layer = std::make_shared<TextureLayer>(layer_offset, layer_size, 0,
                                               false, kNone_SkFilterQuality);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(),
             (SkRect::MakeSize(layer_size)
                  .makeOffset(layer_offset.fX, layer_offset.fY)));
@@ -42,7 +42,7 @@ TEST_F(TextureLayerTest, PaintingEmptyLayerDies) {
   // Ensure the texture is located by the Layer.
   preroll_context()->texture_registry.RegisterTexture(mock_texture);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting());
 

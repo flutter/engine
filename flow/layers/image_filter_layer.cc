@@ -12,14 +12,15 @@ ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
       render_count_(1) {}
 
 void ImageFilterLayer::Preroll(PrerollContext* context,
-                               const SkMatrix& matrix) {
+                               const SkMatrix& matrix,
+                               bool parent_need_cached) {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Preroll");
 
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
   SkRect child_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_bounds);
+  PrerollChildren(context, matrix, &child_bounds, true);
   if (filter_) {
     const SkIRect filter_input_bounds = child_bounds.roundOut();
     SkIRect filter_output_bounds =

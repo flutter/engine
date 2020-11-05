@@ -19,7 +19,7 @@ using ImageFilterLayerTest = LayerTest;
 TEST_F(ImageFilterLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<ImageFilterLayer>(sk_sp<SkImageFilter>());
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting());
   EXPECT_FALSE(layer->needs_system_composite());
@@ -50,7 +50,7 @@ TEST_F(ImageFilterLayerTest, EmptyFilter) {
   auto layer = std::make_shared<ImageFilterLayer>(nullptr);
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
@@ -83,7 +83,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
   const SkRect child_rounded_bounds =
       SkRect::MakeLTRB(5.0f, 6.0f, 21.0f, 22.0f);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(layer->paint_bounds(), child_rounded_bounds);
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
@@ -116,7 +116,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
 
   const SkRect filter_bounds = SkRect::MakeLTRB(10.0f, 12.0f, 42.0f, 44.0f);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(layer->paint_bounds(), filter_bounds);
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
@@ -155,7 +155,7 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
   children_bounds.join(child_path2.getBounds());
   SkRect children_rounded_bounds = SkRect::Make(children_bounds.roundOut());
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), children_rounded_bounds);
@@ -207,7 +207,7 @@ TEST_F(ImageFilterLayerTest, Nested) {
   const SkRect mock_layer2_rounded_bounds =
       SkRect::Make(child_path2.getBounds().roundOut());
 
-  layer1->Preroll(preroll_context(), initial_transform);
+  layer1->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer1->paint_bounds(), children_rounded_bounds);
@@ -248,7 +248,7 @@ TEST_F(ImageFilterLayerTest, Readback) {
   // ImageFilterLayer does not read from surface
   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   preroll_context()->surface_needs_readback = false;
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 
   // ImageFilterLayer blocks child with readback
@@ -256,7 +256,7 @@ TEST_F(ImageFilterLayerTest, Readback) {
       std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
   layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 }
 

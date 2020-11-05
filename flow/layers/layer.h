@@ -73,7 +73,7 @@ class Layer {
   Layer();
   virtual ~Layer();
 
-  virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
+  virtual void Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached = false);
 
   // Used during Preroll by layers that employ a saveLayer to manage the
   // PrerollContext settings with values affected by the saveLayer mechanism.

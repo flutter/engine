@@ -31,7 +31,7 @@ TEST_F(OpacityLayerTest, PaintingEmptyLayerDies) {
       std::make_shared<OpacityLayer>(SK_AlphaOPAQUE, SkPoint::Make(0.0f, 0.0f));
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(mock_layer->paint_bounds(), SkPath().getBounds());
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
   EXPECT_FALSE(mock_layer->needs_painting());
@@ -153,7 +153,7 @@ TEST_F(OpacityLayerTest, FullyOpaque) {
   auto layer = std::make_shared<OpacityLayer>(SK_AlphaOPAQUE, layer_offset);
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), expected_layer_bounds);
   EXPECT_TRUE(mock_layer->needs_painting());
@@ -203,7 +203,7 @@ TEST_F(OpacityLayerTest, FullyTransparent) {
       std::make_shared<OpacityLayer>(SK_AlphaTRANSPARENT, layer_offset);
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), expected_layer_bounds);
   EXPECT_TRUE(mock_layer->needs_painting());
@@ -251,7 +251,7 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
   auto layer = std::make_shared<OpacityLayer>(alpha_half, layer_offset);
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), expected_layer_bounds);
   EXPECT_TRUE(mock_layer->needs_painting());
@@ -323,7 +323,7 @@ TEST_F(OpacityLayerTest, Nested) {
   expected_layer1_bounds.join(child1_path.getBounds());
   expected_layer1_bounds.join(child3_path.getBounds());
   expected_layer1_bounds = layer1_transform.mapRect(expected_layer1_bounds);
-  layer1->Preroll(preroll_context(), initial_transform);
+  layer1->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer1->paint_bounds(), child1_path.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child2_path.getBounds());
   EXPECT_EQ(mock_layer3->paint_bounds(), child3_path.getBounds());
@@ -399,7 +399,7 @@ TEST_F(OpacityLayerTest, Readback) {
 
   // OpacityLayer does not read from surface
   preroll_context()->surface_needs_readback = false;
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 
   // OpacityLayer blocks child with readback
@@ -407,7 +407,7 @@ TEST_F(OpacityLayerTest, Readback) {
       std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
   layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 }
 

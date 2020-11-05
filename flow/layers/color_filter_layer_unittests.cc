@@ -20,7 +20,7 @@ using ColorFilterLayerTest = LayerTest;
 TEST_F(ColorFilterLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<ColorFilterLayer>(sk_sp<SkColorFilter>());
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting());
   EXPECT_FALSE(layer->needs_system_composite());
@@ -51,7 +51,7 @@ TEST_F(ColorFilterLayerTest, EmptyFilter) {
   auto layer = std::make_shared<ColorFilterLayer>(nullptr);
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
@@ -80,7 +80,7 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
   auto layer = std::make_shared<ColorFilterLayer>(layer_filter);
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
@@ -116,7 +116,7 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
 
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), children_bounds);
@@ -163,7 +163,7 @@ TEST_F(ColorFilterLayerTest, Nested) {
 
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  layer1->Preroll(preroll_context(), initial_transform);
+  layer1->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer1->paint_bounds(), children_bounds);
@@ -202,7 +202,7 @@ TEST_F(ColorFilterLayerTest, Readback) {
   // ColorFilterLayer does not read from surface
   auto layer = std::make_shared<ColorFilterLayer>(layer_filter);
   preroll_context()->surface_needs_readback = false;
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 
   // ColorFilterLayer blocks child with readback
@@ -210,7 +210,7 @@ TEST_F(ColorFilterLayerTest, Readback) {
       std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
   layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 }
 

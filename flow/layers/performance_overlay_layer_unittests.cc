@@ -124,7 +124,7 @@ TEST_F(PerformanceOverlayLayerTest, PaintingEmptyLayerDies) {
   const uint64_t overlay_opts = kVisualizeRasterizerStatistics;
   auto layer = std::make_shared<PerformanceOverlayLayer>(overlay_opts);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_FALSE(layer->needs_painting());
 
@@ -141,7 +141,7 @@ TEST_F(PerformanceOverlayLayerTest, InvalidOptions) {
   // this a constructor parameter and move the set_paint_bounds into Preroll
   layer->set_paint_bounds(layer_bounds);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), layer_bounds);
   EXPECT_TRUE(layer->needs_painting());
 
@@ -159,7 +159,7 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
   // this a constructor parameter and move the set_paint_bounds into Preroll
   layer->set_paint_bounds(layer_bounds);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), layer_bounds);
   EXPECT_TRUE(layer->needs_painting());
 

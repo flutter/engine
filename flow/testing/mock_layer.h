@@ -22,7 +22,7 @@ class MockLayer : public Layer {
             bool fake_needs_system_composite = false,
             bool fake_reads_surface = false);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) override;
   void Paint(PaintContext& context) const override;
 
   const MutatorsStack& parent_mutators() { return parent_mutators_; }

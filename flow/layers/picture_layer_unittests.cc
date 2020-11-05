@@ -49,7 +49,7 @@ TEST_F(PictureLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<PictureLayer>(
       layer_offset, SkiaGPUObject(mock_picture, unref_queue()), false, false);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_FALSE(layer->needs_painting());
   EXPECT_FALSE(layer->needs_system_composite());
@@ -77,7 +77,7 @@ TEST_F(PictureLayerTest, SimplePicture) {
   auto layer = std::make_shared<PictureLayer>(
       layer_offset, SkiaGPUObject(mock_picture, unref_queue()), false, false);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(),
             picture_bounds.makeOffset(layer_offset.fX, layer_offset.fY));
   EXPECT_EQ(layer->picture(), mock_picture.get());

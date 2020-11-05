@@ -14,11 +14,11 @@ void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   layers_.emplace_back(std::move(layer));
 }
 
-void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix, bool parent_need_cached) {
   TRACE_EVENT0("flutter", "ContainerLayer::Preroll");
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_paint_bounds);
+  PrerollChildren(context, matrix, &child_paint_bounds,parent_need_cached);
   set_paint_bounds(child_paint_bounds);
 }
 
@@ -30,7 +30,8 @@ void ContainerLayer::Paint(PaintContext& context) const {
 
 void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkMatrix& child_matrix,
-                                     SkRect* child_paint_bounds) {
+                                     SkRect* child_paint_bounds,
+                                     bool parent_need_cached) {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   // If there is embedded Fuchsia content in the scene (a ChildSceneLayer),
   // Layers that appear above the embedded content will be turned into their own
@@ -49,7 +50,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
     // sibling tree.
     context->has_platform_view = false;
 
-    layer->Preroll(context, child_matrix);
+    layer->Preroll(context, child_matrix, parent_need_cached);
 
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);

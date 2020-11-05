@@ -20,7 +20,7 @@ using BackdropFilterLayerTest = LayerTest;
 TEST_F(BackdropFilterLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<BackdropFilterLayer>(sk_sp<SkImageFilter>());
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting());
   EXPECT_FALSE(layer->needs_system_composite());
@@ -51,7 +51,7 @@ TEST_F(BackdropFilterLayerTest, EmptyFilter) {
   auto layer = std::make_shared<BackdropFilterLayer>(nullptr);
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
@@ -77,7 +77,7 @@ TEST_F(BackdropFilterLayerTest, SimpleFilter) {
   auto layer = std::make_shared<BackdropFilterLayer>(layer_filter);
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
@@ -110,7 +110,7 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
 
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer->paint_bounds(), children_bounds);
@@ -153,7 +153,7 @@ TEST_F(BackdropFilterLayerTest, Nested) {
 
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  layer1->Preroll(preroll_context(), initial_transform);
+  layer1->Preroll(preroll_context(), initial_transform, false);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
   EXPECT_EQ(layer1->paint_bounds(), children_bounds);
@@ -190,18 +190,18 @@ TEST_F(BackdropFilterLayerTest, Readback) {
   // BDF with filter always reads from surface
   auto layer1 = std::make_shared<BackdropFilterLayer>(layer_filter);
   preroll_context()->surface_needs_readback = false;
-  layer1->Preroll(preroll_context(), initial_transform);
+  layer1->Preroll(preroll_context(), initial_transform, false);
   EXPECT_TRUE(preroll_context()->surface_needs_readback);
 
   // BDF with no filter does not read from surface itself
   auto layer2 = std::make_shared<BackdropFilterLayer>(no_filter);
   preroll_context()->surface_needs_readback = false;
-  layer2->Preroll(preroll_context(), initial_transform);
+  layer2->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 
   // BDF with no filter does not block prior readback value
   preroll_context()->surface_needs_readback = true;
-  layer2->Preroll(preroll_context(), initial_transform);
+  layer2->Preroll(preroll_context(), initial_transform, false);
   EXPECT_TRUE(preroll_context()->surface_needs_readback);
 
   // BDF with no filter blocks child with readback
@@ -209,7 +209,7 @@ TEST_F(BackdropFilterLayerTest, Readback) {
       std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
   layer2->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
-  layer2->Preroll(preroll_context(), initial_transform);
+  layer2->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 }
 

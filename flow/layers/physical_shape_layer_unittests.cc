@@ -21,7 +21,7 @@ TEST_F(PhysicalShapeLayerTest, PaintingEmptyLayerDies) {
                                            0.0f,  // elevation
                                            SkPath(), Clip::none);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_FALSE(layer->needs_painting());
   EXPECT_FALSE(layer->needs_system_composite());
@@ -52,7 +52,7 @@ TEST_F(PhysicalShapeLayerTest, NonEmptyLayer) {
       std::make_shared<PhysicalShapeLayer>(SK_ColorGREEN, SK_ColorBLACK,
                                            0.0f,  // elevation
                                            layer_path, Clip::none);
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), layer_path.getBounds());
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_FALSE(layer->needs_system_composite());
@@ -88,7 +88,7 @@ TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPath) {
   layer->Add(child2);
 
   SkRect child_paint_bounds;
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   child_paint_bounds.join(child1->paint_bounds());
   child_paint_bounds.join(child2->paint_bounds());
   EXPECT_EQ(layer->paint_bounds(), layer_path.getBounds());
@@ -123,7 +123,7 @@ TEST_F(PhysicalShapeLayerTest, ElevationSimple) {
   auto layer = std::make_shared<PhysicalShapeLayer>(
       SK_ColorGREEN, SK_ColorBLACK, initial_elevation, layer_path, Clip::none);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
@@ -175,7 +175,7 @@ TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
   layers[0]->Add(layers[2]);
   layers[2]->Add(layers[3]);
 
-  layers[0]->Preroll(preroll_context(), SkMatrix());
+  layers[0]->Preroll(preroll_context(), SkMatrix(), false);
   for (int i = 0; i < 4; i += 1) {
     // On Fuchsia, the system compositor handles all elevated
     // PhysicalShapeLayers and their shadows , so we do not do any painting
@@ -228,7 +228,7 @@ static bool ReadbackResult(PrerollContext* context,
     layer->Add(child);
   }
   context->surface_needs_readback = before;
-  layer->Preroll(context, initial_matrix);
+  layer->Preroll(context, initial_matrix, false);
   return context->surface_needs_readback;
 }
 

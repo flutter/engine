@@ -21,7 +21,7 @@ TEST_F(PlatformViewLayerTest, NullViewEmbedderDoesntPrerollCompositeOrPaint) {
   auto layer =
       std::make_shared<PlatformViewLayer>(layer_offset, layer_size, view_id);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_FALSE(preroll_context()->has_platform_view);
   EXPECT_EQ(layer->paint_bounds(),
             SkRect::MakeSize(layer_size)

@@ -19,14 +19,14 @@ TEST_F(ContainerLayerTest, LayerWithParentHasPlatformView) {
   auto layer = std::make_shared<ContainerLayer>();
 
   preroll_context()->has_platform_view = true;
-  EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context(), SkMatrix()),
+  EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context(), SkMatrix(), false),
                             "!context->has_platform_view");
 }
 
 TEST_F(ContainerLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<ContainerLayer>();
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context(), SkMatrix(), false);
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_FALSE(layer->needs_painting());
   EXPECT_FALSE(layer->needs_system_composite());
@@ -58,7 +58,7 @@ TEST_F(ContainerLayerTest, Simple) {
   auto layer = std::make_shared<ContainerLayer>();
   layer->Add(mock_layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->has_platform_view);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), child_path.getBounds());
@@ -93,7 +93,7 @@ TEST_F(ContainerLayerTest, Multiple) {
 
   SkRect expected_total_bounds = child_path1.getBounds();
   expected_total_bounds.join(child_path2.getBounds());
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_TRUE(preroll_context()->has_platform_view);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
@@ -132,7 +132,7 @@ TEST_F(ContainerLayerTest, MultipleWithEmpty) {
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->has_platform_view);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), SkPath().getBounds());
@@ -173,7 +173,7 @@ TEST_F(ContainerLayerTest, NeedsSystemComposite) {
 
   SkRect expected_total_bounds = child_path1.getBounds();
   expected_total_bounds.join(child_path2.getBounds());
-  layer->Preroll(preroll_context(), initial_transform);
+  layer->Preroll(preroll_context(), initial_transform, false);
   EXPECT_FALSE(preroll_context()->has_platform_view);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
