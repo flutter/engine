@@ -96,7 +96,7 @@ public class AndroidKeyProcessor {
       return false;
     }
     if (eventResponder.dispatchingKeyEvent) {
-      // Don't handle it if it is from our own delayed event synthesis.
+      // Don't handle it if it is from our own delayed event dispatch.
       return false;
     }
 
@@ -109,7 +109,14 @@ public class AndroidKeyProcessor {
       keyEventChannel.keyUp(flutterEvent);
     }
     eventResponder.addEvent(flutterEvent.eventId, keyEvent);
-    return true;
+
+    // We can't return "true" for system keys, since Android won't re-dispatch
+    // it later to the IME when we call dispatchKeyEventPreIme with it, even if
+    // we send it to our root view. Sadly, this means that even if you handle a
+    // system key (like the back button) in Flutter, the button press still gets
+    // propagated to the IME, etc., and you can't block the soft keyboard from
+    // being dismissed.
+    return !keyEvent.isSystem();
   }
 
   /**
@@ -263,13 +270,14 @@ public class AndroidKeyProcessor {
         }
       }
 
-      // Since the framework didn't handle it, dispatch the key again.
-      if (view != null) {
+      // Since the framework didn't handle it, dispatch the event again, unless
+      // it's a system key, which has already been returned to the system as not
+      // handled in onKeyEvent, above.
+      if (view != null && !event.isSystem()) {
         // Turn on dispatchingKeyEvent so that we don't dispatch to ourselves and
         // send it to the framework again.
         dispatchingKeyEvent = true;
-
-        view.getRootView().dispatchKeyEventPreIme(event);
+        view.getRootView().dispatchKeyEvent(event);
         dispatchingKeyEvent = false;
       }
     }
