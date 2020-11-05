@@ -183,7 +183,7 @@ abstract class EngineParagraph implements ui.Paragraph {
   /// Returns a DOM element that represents the entire paragraph and its
   /// children.
   ///
-  /// Generates a new DOM element on every invokation.
+  /// Generates a new DOM element on every invocation.
   html.HtmlElement toDomElement();
 }
 
