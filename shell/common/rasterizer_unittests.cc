@@ -204,6 +204,7 @@ TEST(
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
                          ThreadHost::Type::Platform | ThreadHost::Type::GPU |
                              ThreadHost::Type::IO | ThreadHost::Type::UI);
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
