@@ -2034,6 +2034,7 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
           // merge the threads here. However, the scenario it is testing is
           // unrelated to platform views. We should consider to update this test
           // so it doesn't require external_view_embedder.
+          // https://github.com/flutter/flutter/issues/69895
           raster_thread_merger->MergeWithLease(10);
           external_view_embedder->UpdatePostPrerollResult(
               PostPrerollResult::kSuccess);
