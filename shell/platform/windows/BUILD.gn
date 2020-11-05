@@ -32,7 +32,6 @@ source_set("flutter_windows_headers") {
   if (target_os == "winuwp") {
     configs += [
       "//flutter/shell/platform/common/cpp:desktop_library_implementation",
-      "//build/config/win:flutter_windows_winuwp_defs",
     ]
   } else {
     configs +=
@@ -95,10 +94,6 @@ source_set("flutter_windows_source") {
     "//flutter/shell/platform/common/cpp:desktop_library_implementation",
     "//third_party/angle:gl_prototypes",
   ]
-
-  if (target_os == "winuwp") {
-    configs += [ "//build/config/win:flutter_windows_winuwp_defs" ]
-  }
 
   public_configs = [ ":relative_angle_headers" ]
 
