@@ -1,4 +1,4 @@
-Signature: 1424d3cb937f4d2dd5a8cb9dbfe9f6cf
+Signature: b74fd8bdb9a00a1fb626f59fa765358c
 
 UNUSED LICENSES:
 
@@ -4084,6 +4084,7 @@ FILE: ../../../third_party/skia/gm/verifiers/gmverifier.cpp
 FILE: ../../../third_party/skia/gm/verifiers/gmverifier.h
 FILE: ../../../third_party/skia/gm/widebuttcaps.cpp
 FILE: ../../../third_party/skia/include/core/SkM44.h
+FILE: ../../../third_party/skia/include/core/SkSamplingOptions.h
 FILE: ../../../third_party/skia/include/effects/SkStrokeAndFillPathEffect.h
 FILE: ../../../third_party/skia/include/gpu/GrDirectContext.h
 FILE: ../../../third_party/skia/include/private/SkOpts_spi.h
