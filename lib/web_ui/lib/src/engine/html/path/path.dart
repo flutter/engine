@@ -1537,6 +1537,12 @@ class SurfacePath implements ui.Path {
   /// a persistent div.
   ui.Rect? get webOnlyPathAsRect => pathRef.getRect();
 
+  /// Detects if path is a vertical or horizontal line returns LTRB or null.
+  ///
+  /// Used for web optimization of physical shape represented as
+  /// a persistent div.
+  ui.Rect? get webOnlyPathAsLine => pathRef.getLine();
+
   /// Detects if path is simple oval and returns bounding rectangle or null.
   ///
   /// Used for web optimization of physical shape represented as

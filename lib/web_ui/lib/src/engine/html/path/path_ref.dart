@@ -178,6 +178,23 @@ class PathRef {
         atPoint(0).dx, atPoint(0).dy, atPoint(1).dx, atPoint(2).dy);
   }
 
+  /// Returns horizontal/vertical line bounds or null if not a line.
+  ui.Rect? getLine() {
+    if (_fVerbsLength != 2 || _fVerbs[0] != SPath.kMoveVerb ||
+        _fVerbs[1] != SPath.kLineVerb) {
+      return null;
+    }
+    final double x0 = _fPoints[0];
+    final double y0 = _fPoints[1];
+    final double x1 = _fPoints[2];
+    final double y1 = _fPoints[3];
+    if (x0 == x1 || y0 == y1) {
+      // Is horizontal.
+      return ui.Rect.fromLTRB(x0, y0, x1, y1);
+    }
+    return null;
+  }
+
   /// Reconstructs RRect from path commands.
   ///
   /// Expect 4 Conics and lines between.
