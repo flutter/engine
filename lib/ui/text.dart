@@ -2298,5 +2298,4 @@ FutureOr<void> _sendFontChangeMessage() async {
 /// and [TextStyle.height] is applied as normal. When set to false, the font's
 /// default ascent will be used.
 /// {@endtemplate}
-
-String _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';
+String? _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';
