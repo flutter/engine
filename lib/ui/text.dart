@@ -2299,4 +2299,4 @@ FutureOr<void> _sendFontChangeMessage() async {
 /// default ascent will be used.
 /// {@endtemplate}
 
-String _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';
+void _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';
