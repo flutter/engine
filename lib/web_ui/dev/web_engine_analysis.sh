@@ -17,6 +17,4 @@ echo "Running \`pub get\` in 'engine/src/flutter/lib/web_ui'"
 (cd "$WEB_UI_DIR"; $PUB_PATH get)
 
 echo "Running \`dart analyze\` in 'engine/src/flutter/lib/web_ui'"
-(cd "$WEB_UI_DIR"; $DART_PATH analyze --fatal-infos lib/)
-(cd "$WEB_UI_DIR"; $DART_PATH analyze --fatal-infos test/)
-(cd "$WEB_UI_DIR"; $DART_PATH analyze --fatal-infos dev/)
+(cd "$WEB_UI_DIR"; $DART_PATH analyze --fatal-infos)
