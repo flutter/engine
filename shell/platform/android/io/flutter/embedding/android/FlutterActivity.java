@@ -781,10 +781,9 @@ public class FlutterActivity extends Activity
    *
    * <p>Subclasses may override this method to directly control the initial route.
    *
-   * <p>If this method returns null and the {@code <meta-data>} has {@link
-   * FlutterActivityAndFragmentDelegate#HANDLE_DEEPLINKING_BUNDLE_KEY} set to true, the {@link
-   * FlutterActivityAndFragmentDelegate} retrieves the initial route from the {@code Intent} through
-   * the Intent.getData() instead.
+   * <p>If this method returns null and the {@code shouldHandleDeeplinking()} returns true, the
+   * {@link FlutterActivityAndFragmentDelegate} retrieves the initial route from the {@code Intent}
+   * through the Intent.getData() instead.
    */
   public String getInitialRoute() {
     if (getIntent().hasExtra(EXTRA_INITIAL_ROUTE)) {
