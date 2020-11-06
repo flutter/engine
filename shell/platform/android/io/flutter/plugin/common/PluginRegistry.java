@@ -20,12 +20,11 @@ import io.flutter.view.TextureRegistry;
  *
  * <p>This class also contains deprecated v1 embedding APIs used for plugin registration.
  *
- * <p>In v1 Android applications, an auto-generated and auto-updated plugin registrant
- * class (GeneratedPluginRegistrant) makes use of a {@link PluginRegistry} to register
- * contributions from each plugin mentioned in the application's pubspec file. The generated
- * registrant class is, again by default, called from the application's main {@link Activity}, which
- * defaults to an instance of {@link io.flutter.app.FlutterActivity}, itself a {@link
- * PluginRegistry}.
+ * <p>In v1 Android applications, an auto-generated and auto-updated plugin registrant class
+ * (GeneratedPluginRegistrant) makes use of a {@link PluginRegistry} to register contributions from
+ * each plugin mentioned in the application's pubspec file. The generated registrant class is, again
+ * by default, called from the application's main {@link Activity}, which defaults to an instance of
+ * {@link io.flutter.app.FlutterActivity}, itself a {@link PluginRegistry}.
  */
 public interface PluginRegistry {
   /**
@@ -67,8 +66,9 @@ public interface PluginRegistry {
   /**
    * Receiver of registrations from a single plugin.
    *
-   * @deprecated This registrar is for Flutter's v1 embedding. For instructions on migrating a plugin from
-   * Flutter's v1 Android embedding to v2, visit http://flutter.dev/go/android-plugin-migration
+   * @deprecated This registrar is for Flutter's v1 embedding. For instructions on migrating a
+   *     plugin from Flutter's v1 Android embedding to v2, visit
+   *     http://flutter.dev/go/android-plugin-migration
    */
   @Deprecated
   interface Registrar {
