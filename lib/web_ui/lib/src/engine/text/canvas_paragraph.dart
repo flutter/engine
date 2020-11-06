@@ -30,6 +30,7 @@ class CanvasParagraph implements EngineParagraph {
   /// The number of placeholders in this paragraph.
   final int placeholderCount;
 
+  // Defaulting to -1 for non-laid-out paragraphs like the native engine does.
   @override
   double width = -1.0;
 

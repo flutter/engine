@@ -17,6 +17,9 @@ void testMain() {
     WebExperiments.ensureInitialized();
   });
 
+  // TODO(mdebbar): Add checks for the output of `toDomElement()` in all the
+  //                tests below.
+
   test('Builds a text-only canvas paragraph', () {
     final EngineParagraphStyle style = EngineParagraphStyle(fontSize: 13.0);
     final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);

@@ -245,6 +245,7 @@ class DomParagraph implements EngineParagraph {
 
   bool get _hasLineMetrics => _measurementResult?.lines != null;
 
+  // Defaulting to -1 for non-laid-out paragraphs like the native engine does.
   @override
   double get width => _measurementResult?.width ?? -1;
 
