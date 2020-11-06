@@ -441,7 +441,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event {
-  FlutterEngineSendKeyEvent(_engine, &event);
+  _embedderAPI.SendKeyEvent(_engine, &event);
 }
 
 #pragma mark - Private methods

@@ -1441,7 +1441,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);
   }
 
-  auto packet = std::make_unique<flutter::KeyDataPacket>(logical_event_count, total_character_size);
+  auto packet = std::make_unique<flutter::KeyDataPacketBuilder>(logical_event_count, total_character_size);
 
   current = logical_events;
   for (size_t i = 0; i < logical_event_count; ++i) {

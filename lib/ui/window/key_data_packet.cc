@@ -7,8 +7,16 @@
 
 namespace flutter {
 
-KeyDataPacket::KeyDataPacket(size_t logical_count, size_t total_character_size)
-    : data_(
+KeyDataPacket::KeyDataPacket(uint8_t* data, size_t num_bytes)
+    : data_(data, data + num_bytes) {}
+
+KeyDataPacket::KeyDataPacket(size_t num_bytes)
+    : data_(num_bytes) {}
+
+KeyDataPacket::~KeyDataPacket() = default;
+
+KeyDataPacketBuilder::KeyDataPacketBuilder(size_t logical_count, size_t total_character_size)
+    : KeyDataPacket(
         logical_count * sizeof(LogicalKeyData) +  // logical data
         sizeof(PhysicalKeyData) +                 // physical data
         total_character_size
@@ -16,21 +24,18 @@ KeyDataPacket::KeyDataPacket(size_t logical_count, size_t total_character_size)
       logical_count_(logical_count) {
 }
 
-KeyDataPacket::KeyDataPacket(uint8_t* data, size_t num_bytes, size_t logical_count)
-    : data_(data, data + num_bytes), logical_count_(logical_count) {}
+KeyDataPacketBuilder::~KeyDataPacketBuilder() = default;
 
-KeyDataPacket::~KeyDataPacket() = default;
-
-void KeyDataPacket::SetPhysicalData(const PhysicalKeyData& event) {
-  memcpy(&data_[PhysicalDataStart_()], &event, sizeof(PhysicalKeyData));
+void KeyDataPacketBuilder::SetPhysicalData(const PhysicalKeyData& event) {
+  memcpy(&data()[PhysicalDataStart_()], &event, sizeof(PhysicalKeyData));
 }
 
-void KeyDataPacket::SetLogicalData(const LogicalKeyData& event, int i) {
-  memcpy(&data_[LogicalDataStart_() + i * sizeof(LogicalKeyData)], &event, sizeof(LogicalKeyData));
+void KeyDataPacketBuilder::SetLogicalData(const LogicalKeyData& event, int i) {
+  memcpy(&data()[LogicalDataStart_() + i * sizeof(LogicalKeyData)], &event, sizeof(LogicalKeyData));
 }
 
-void KeyDataPacket::SetCharacters(const uint8_t* data) {
-  memcpy(&data_[CharactersStart_()], data, data_.size() - CharactersStart_());
+void KeyDataPacketBuilder::SetCharacters(const uint8_t* characters) {
+  memcpy(&data()[CharactersStart_()], characters, data().size() - CharactersStart_());
 }
 
 }  // namespace flutter

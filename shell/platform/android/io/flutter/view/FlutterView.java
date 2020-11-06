@@ -44,6 +44,7 @@ import io.flutter.Log;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.embedding.android.HardwareKeyboard;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
@@ -64,6 +65,8 @@ import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -128,6 +131,7 @@ public class FlutterView extends SurfaceView
   private final LocalizationPlugin mLocalizationPlugin;
   private final MouseCursorPlugin mMouseCursorPlugin;
   private final AndroidKeyProcessor androidKeyProcessor;
+  private final HardwareKeyboard mHardwareKeyboard;
   private final AndroidTouchProcessor androidTouchProcessor;
   private AccessibilityBridge mAccessibilityNodeProvider;
   private final SurfaceHolder.Callback mSurfaceCallback;
@@ -235,6 +239,7 @@ public class FlutterView extends SurfaceView
     }
     mLocalizationPlugin = new LocalizationPlugin(context, localizationChannel);
     androidKeyProcessor = new AndroidKeyProcessor(this, keyEventChannel, mTextInputPlugin);
+    mHardwareKeyboard = new HardwareKeyboard();
     androidTouchProcessor =
         new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ false);
     platformViewsController.attachToFlutterRenderer(flutterRenderer);
@@ -268,12 +273,24 @@ public class FlutterView extends SurfaceView
     return dartExecutor;
   }
 
+  private boolean handleHardwareEvent(KeyEvent event) {
+    List<HardwareKeyboard.KeyDatum> keyData = mHardwareKeyboard.convertEvent(event);
+    boolean handled = true; // TODO
+    for (final HardwareKeyboard.KeyDatum keyDatum : keyData) {
+      final ByteBuffer buffer = mHardwareKeyboard.packDatum(keyDatum);
+      flutterRenderer.dispatchKeyDataPacket(buffer, buffer.position());
+    }
+    return handled;
+  }
+
   @Override
   public boolean onKeyUp(int keyCode, KeyEvent event) {
     if (!isAttached()) {
       return super.onKeyUp(keyCode, event);
     }
-    return androidKeyProcessor.onKeyUp(event) || super.onKeyUp(keyCode, event);
+    return handleHardwareEvent(event) ||
+        androidKeyProcessor.onKeyUp(event) ||
+        super.onKeyUp(keyCode, event);
   }
 
   @Override
@@ -281,7 +298,9 @@ public class FlutterView extends SurfaceView
     if (!isAttached()) {
       return super.onKeyDown(keyCode, event);
     }
-    return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
+    return handleHardwareEvent(event) ||
+        androidKeyProcessor.onKeyDown(event) ||
+        super.onKeyDown(keyCode, event);
   }
 
   public FlutterNativeView getFlutterNativeView() {

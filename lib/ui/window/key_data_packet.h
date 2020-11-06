@@ -16,24 +16,41 @@ namespace flutter {
 
 class KeyDataPacket {
  public:
-  KeyDataPacket(size_t logical_count, size_t total_character_size);
-  KeyDataPacket(uint8_t* data, size_t num_bytes, size_t logical_count);
+  KeyDataPacket(uint8_t* data, size_t num_bytes);
+
+ protected:
+  KeyDataPacket(size_t num_bytes);
+
+  std::vector<uint8_t>& data() { return data_; }
+
+ public:
   ~KeyDataPacket();
+
+  const std::vector<uint8_t>& data() const { return data_; }
+
+ private:
+  std::vector<uint8_t> data_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(KeyDataPacket);
+};
+
+class KeyDataPacketBuilder : public KeyDataPacket {
+ public:
+  KeyDataPacketBuilder(size_t logical_count, size_t total_character_size);
+  ~KeyDataPacketBuilder();
 
   void SetPhysicalData(const PhysicalKeyData& event);
   void SetLogicalData(const LogicalKeyData& event, int i);
-  void SetCharacters(const uint8_t* data);
-  const std::vector<uint8_t>& data() const { return data_; }
+  void SetCharacters(const uint8_t* characters);
 
  private:
   size_t LogicalDataStart_() { return 0; }
   size_t PhysicalDataStart_() { return LogicalDataStart_() + logical_count_ * sizeof(LogicalKeyData); }
   size_t CharactersStart_() { return PhysicalDataStart_() + sizeof(PhysicalKeyData); }
 
-  std::vector<uint8_t> data_;
   size_t logical_count_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(KeyDataPacket);
+  FML_DISALLOW_COPY_AND_ASSIGN(KeyDataPacketBuilder);
 };
 
 }  // namespace flutter
