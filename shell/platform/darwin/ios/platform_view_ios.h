@@ -126,7 +126,7 @@ class PlatformViewIOS final : public PlatformView {
   // used on the raster thread we need to protect it with a mutex.
   std::mutex ios_surface_mutex_;
   std::unique_ptr<IOSSurface> ios_surface_;
-  std::shared_ptr<IOSContext> ios_context_;
+  const std::unique_ptr<IOSContext> ios_context_;
   const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller_;
   PlatformMessageRouter platform_message_router_;
   AccessibilityBridgePtr accessibility_bridge_;

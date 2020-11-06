@@ -23,7 +23,8 @@ class IOSContextGL final : public IOSContext {
   // |IOSContext|
   ~IOSContextGL() override;
 
-  std::unique_ptr<IOSRenderTargetGL> CreateRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer);
+  std::unique_ptr<IOSRenderTargetGL> CreateRenderTarget(
+      fml::scoped_nsobject<CAEAGLLayer> layer) const;
 
  private:
   fml::scoped_nsobject<EAGLContext> context_;
@@ -33,7 +34,7 @@ class IOSContextGL final : public IOSContext {
   sk_sp<GrDirectContext> CreateResourceContext() override;
 
   // |IOSContext|
-  std::unique_ptr<GLContextResult> MakeCurrent() override;
+  std::unique_ptr<GLContextResult> MakeCurrent() const override;
 
   // |IOSContext|
   std::unique_ptr<Texture> CreateExternalTexture(

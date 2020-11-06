@@ -15,10 +15,9 @@
 
 namespace flutter {
 
-std::unique_ptr<IOSSurface> IOSSurface::Create(std::shared_ptr<IOSContext> context,
+std::unique_ptr<IOSSurface> IOSSurface::Create(const IOSContext& context,
                                                fml::scoped_nsobject<CALayer> layer) {
   FML_DCHECK(layer);
-  FML_DCHECK(context);
 
   if ([layer.get() isKindOfClass:[CAEAGLLayer class]]) {
     return std::make_unique<IOSSurfaceGL>(
@@ -45,15 +44,8 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(std::shared_ptr<IOSContext> conte
   );
 }
 
-IOSSurface::IOSSurface(std::shared_ptr<IOSContext> ios_context)
-    : ios_context_(std::move(ios_context)) {
-  FML_DCHECK(ios_context_);
-}
+IOSSurface::IOSSurface(const IOSContext& ios_context) : ios_context_(ios_context) {}
 
 IOSSurface::~IOSSurface() = default;
-
-std::shared_ptr<IOSContext> IOSSurface::GetContext() const {
-  return ios_context_;
-}
 
 }  // namespace flutter

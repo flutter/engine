@@ -14,7 +14,7 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
  public:
   IOSExternalViewEmbedder(const std::shared_ptr<FlutterPlatformViewsController>&
                               platform_views_controller,
-                          std::shared_ptr<IOSContext> context);
+                          const IOSContext& context);
 
   // |ExternalViewEmbedder|
   virtual ~IOSExternalViewEmbedder() override;
@@ -22,7 +22,7 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
  private:
   const std::shared_ptr<FlutterPlatformViewsController>&
       platform_views_controller_;
-  std::shared_ptr<IOSContext> ios_context_;
+  const IOSContext& ios_context_;
 
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override;

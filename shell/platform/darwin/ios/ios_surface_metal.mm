@@ -9,20 +9,20 @@
 
 namespace flutter {
 
-static IOSContextMetal* CastToMetalContext(const std::shared_ptr<IOSContext>& context) {
-  return reinterpret_cast<IOSContextMetal*>(context.get());
+static const IOSContextMetal& CastToMetalContext(const IOSContext& context) {
+  return static_cast<const IOSContextMetal&>(context);
 }
 
 IOSSurfaceMetal::IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
-                                 std::shared_ptr<IOSContext> context)
+                                 const IOSContext& context)
     : IOSSurface(std::move(context)), layer_(std::move(layer)) {
   if (!layer_) {
     return;
   }
 
-  auto metal_context = CastToMetalContext(GetContext());
+  auto& metal_context = CastToMetalContext(ios_context_);
 
-  layer_.get().device = metal_context->GetDevice().get();
+  layer_.get().device = metal_context.GetDevice().get();
   layer_.get().presentsWithTransaction = YES;
 
   is_valid_ = true;
@@ -43,11 +43,11 @@ void IOSSurfaceMetal::UpdateStorageSizeIfNecessary() {
 
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrDirectContext* /* unused */) {
-  auto metal_context = CastToMetalContext(GetContext());
+  auto& metal_context = CastToMetalContext(ios_context_);
 
-  return std::make_unique<GPUSurfaceMetal>(layer_,                               // layer
-                                           metal_context->GetMainContext(),      // context
-                                           metal_context->GetMainCommandQueue()  // command queue
+  return std::make_unique<GPUSurfaceMetal>(layer_,                              // layer
+                                           metal_context.GetMainContext(),      // context
+                                           metal_context.GetMainCommandQueue()  // command queue
   );
 }
 

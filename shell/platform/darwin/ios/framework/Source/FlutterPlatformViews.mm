@@ -22,7 +22,7 @@ namespace flutter {
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer(
     GrDirectContext* gr_context,
-    std::shared_ptr<IOSContext> ios_context) {
+    const IOSContext& ios_context) {
   if (available_layer_index_ >= layers_.size()) {
     std::shared_ptr<FlutterPlatformViewLayer> layer;
     fml::scoped_nsobject<FlutterOverlayView> overlay_view;
@@ -463,7 +463,7 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
-                                                 std::shared_ptr<IOSContext> ios_context,
+                                                 const IOSContext& ios_context,
                                                  std::unique_ptr<SurfaceFrame> frame) {
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
@@ -599,7 +599,7 @@ void FlutterPlatformViewsController::EndFrame(
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLayer(
     GrDirectContext* gr_context,
-    std::shared_ptr<IOSContext> ios_context,
+    const IOSContext& ios_context,
     sk_sp<SkPicture> picture,
     SkRect rect,
     int64_t view_id,

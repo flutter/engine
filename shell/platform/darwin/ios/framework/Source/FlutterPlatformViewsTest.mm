@@ -576,6 +576,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                                /*raster=*/thread_task_runner,
                                /*ui=*/thread_task_runner,
                                /*io=*/thread_task_runner);
+  std::unique_ptr<flutter::IOSContext> iosContext =
+      flutter::IOSContext::Create(flutter::IOSRenderingAPI::kSoftware);
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
@@ -611,7 +613,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       nullptr, true,
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return false; });
   XCTAssertFalse(
-      flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
+      flutterPlatformViewsController->SubmitFrame(nullptr, *iosContext, std::move(mock_surface)));
 
   auto embeddedViewParams_2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
@@ -620,7 +622,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto mock_surface_submit_false = std::make_unique<flutter::SurfaceFrame>(
       nullptr, true,
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
-  XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr,
+  XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, *iosContext,
                                                             std::move(mock_surface_submit_false)));
 
   flutterPlatformViewsController->Reset();

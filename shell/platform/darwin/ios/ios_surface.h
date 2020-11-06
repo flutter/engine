@@ -24,10 +24,8 @@ bool IsIosEmbeddedViewsPreviewEnabled();
 
 class IOSSurface {
  public:
-  static std::unique_ptr<IOSSurface> Create(std::shared_ptr<IOSContext> context,
+  static std::unique_ptr<IOSSurface> Create(const IOSContext& context,
                                             fml::scoped_nsobject<CALayer> layer);
-
-  std::shared_ptr<IOSContext> GetContext() const;
 
   virtual ~IOSSurface();
 
@@ -43,11 +41,11 @@ class IOSSurface {
   virtual std::unique_ptr<Surface> CreateGPUSurface(GrDirectContext* gr_context = nullptr) = 0;
 
  protected:
-  explicit IOSSurface(std::shared_ptr<IOSContext> ios_context);
+  explicit IOSSurface(const IOSContext& ios_context);
+
+  const IOSContext& ios_context_;
 
  private:
-  std::shared_ptr<IOSContext> ios_context_;
-
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurface);
 };
 
