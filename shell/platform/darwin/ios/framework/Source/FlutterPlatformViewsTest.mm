@@ -640,15 +640,26 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::MutatorsStack stack;
   SkMatrix finalMatrix;
 
-  auto embeddedViewParams =
+  auto embeddedViewParams_1 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
 
-  flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams_1));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
       nullptr, true,
+      [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return false; });
+  XCTAssertFalse(
+      flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
+
+  auto embeddedViewParams_2 =
+      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams_2));
+  flutterPlatformViewsController->CompositeEmbeddedView(2);
+  auto mock_surface_submit_false = std::make_unique<flutter::SurfaceFrame>(
+      nullptr, true,
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
-  flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface));
+  XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr,
+                                                            std::move(mock_surface_submit_false)));
 
   flutterPlatformViewsController->Reset();
 }

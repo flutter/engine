@@ -1050,10 +1050,13 @@ TEST_F(ShellTest,
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
-
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_ref;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        if (!raster_thread_merger_ref) {
+          raster_thread_merger_ref = raster_thread_merger;
+        }
         if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
           raster_thread_merger->MergeWithLease(10);
           external_view_embedder->UpdatePostPrerollResult(
@@ -1075,10 +1078,11 @@ TEST_F(ShellTest,
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
   PumpOneFrame(shell.get());
-  // `EndFrame` changed the post preroll result to `kSuccess`.
-  // First frame hasn't merged the threads yet, no
+  // `EndFrame` changed the post preroll result to `kSuccess` and merged the
+  // threads. During the frame, the threads are not merged, So no
   // `external_view_embedder->GetSubmittedFrameCount()` is called.
   end_frame_latch.Wait();
+  ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
   // This is the resubmitted frame, which threads are also merged.
@@ -2026,9 +2030,13 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
 
   fml::AutoResetWaitableEvent end_frame_latch;
   std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_ref;
   auto end_frame_callback =
       [&](bool should_merge_thread,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        if (!raster_thread_merger_ref) {
+          raster_thread_merger_ref = raster_thread_merger;
+        }
         if (should_merge_thread) {
           // TODO(cyanglaz): This test used external_view_embedder so we need to
           // merge the threads here. However, the scenario it is testing is
@@ -2071,11 +2079,15 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
 
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
+  // Threads will be merged at the end of this frame.
   PumpOneFrame(shell.get(), static_cast<double>(expected_size.width()),
                static_cast<double>(expected_size.height()));
 
   end_frame_latch.Wait();
-  // Threads not merged.
+  // Even the threads are merged at the end of the frame,
+  // during the frame, the threads are not merged,
+  // So no `external_view_embedder->GetSubmittedFrameCount()` is called.
+  ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
   end_frame_latch.Wait();
