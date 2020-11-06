@@ -108,7 +108,7 @@ void PlatformViewIOS::attachView() {
          "before attaching to PlatformViewIOS.";
   auto flutter_view = static_cast<FlutterView*>(owner_controller_.get().view);
   auto ca_layer = fml::scoped_nsobject<CALayer>{[[flutter_view layer] retain]};
-  ios_surface_ = IOSSurface::Create(ios_context_, ca_layer);
+  ios_surface_ = IOSSurface::Create(*ios_context_.get(), ca_layer);
   FML_DCHECK(ios_surface_ != nullptr);
 
   if (accessibility_bridge_) {
@@ -143,7 +143,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 
 // |PlatformView|
 std::shared_ptr<ExternalViewEmbedder> PlatformViewIOS::CreateExternalViewEmbedder() {
-  return std::make_shared<IOSExternalViewEmbedder>(platform_views_controller_, ios_context_);
+  return std::make_shared<IOSExternalViewEmbedder>(platform_views_controller_, *ios_context_.get());
 }
 
 // |PlatformView|

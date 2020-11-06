@@ -18,7 +18,7 @@ namespace flutter {
 
 class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
  public:
-  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer, std::shared_ptr<IOSContext> context);
+  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer, const IOSContext& context);
 
   ~IOSSurfaceGL() override;
 

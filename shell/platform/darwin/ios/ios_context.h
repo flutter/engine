@@ -90,7 +90,7 @@ class IOSContext {
   ///             bound to the current
   /// thread.
   ///
-  virtual std::unique_ptr<GLContextResult> MakeCurrent() = 0;
+  virtual std::unique_ptr<GLContextResult> MakeCurrent() const = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an external texture proxy of the appropriate client

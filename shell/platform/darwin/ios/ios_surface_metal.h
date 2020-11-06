@@ -15,7 +15,7 @@ namespace flutter {
 
 class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetal final : public IOSSurface {
  public:
-  IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer, std::shared_ptr<IOSContext> context);
+  IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer, const IOSContext& context);
 
   // |IOSSurface|
   ~IOSSurfaceMetal();

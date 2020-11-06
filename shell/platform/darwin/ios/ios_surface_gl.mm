@@ -10,14 +10,13 @@
 
 namespace flutter {
 
-static IOSContextGL* CastToGLContext(const std::shared_ptr<IOSContext>& context) {
-  return reinterpret_cast<IOSContextGL*>(context.get());
+static const IOSContextGL& CastToGLContext(const IOSContext& context) {
+  return static_cast<const IOSContextGL&>(context);
 }
 
-IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-                           std::shared_ptr<IOSContext> context)
+IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer, const IOSContext& context)
     : IOSSurface(context) {
-  render_target_ = CastToGLContext(context)->CreateRenderTarget(std::move(layer));
+  render_target_ = CastToGLContext(context).CreateRenderTarget(std::move(layer));
 }
 
 IOSSurfaceGL::~IOSSurfaceGL() = default;
@@ -66,7 +65,7 @@ std::unique_ptr<GLContextResult> IOSSurfaceGL::GLContextMakeCurrent() {
   if (!update_if_necessary) {
     return std::make_unique<GLContextDefaultResult>(false);
   }
-  return GetContext()->MakeCurrent();
+  return ios_context_.MakeCurrent();
 }
 
 // |GPUSurfaceGLDelegate|
