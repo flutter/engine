@@ -55,7 +55,7 @@ public class AndroidKeyProcessorTest {
     assertEquals(true, result);
     verify(fakeKeyEventChannel, times(1)).keyDown(any(KeyEventChannel.FlutterKeyEvent.class));
     verify(fakeKeyEventChannel, times(0)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
-    verify(fakeView, times(0)).dispatchKeyEventPreIme(any(KeyEvent.class));
+    verify(fakeView, times(0)).dispatchKeyEvent(any(KeyEvent.class));
   }
 
   @Test
@@ -104,7 +104,7 @@ public class AndroidKeyProcessorTest {
     // faking our response.
     verify(fakeKeyEventChannel, times(1)).keyDown(eventCaptor.capture());
     boolean[] dispatchResult = {true};
-    when(fakeView.dispatchKeyEventPreIme(any(KeyEvent.class)))
+    when(fakeView.dispatchKeyEvent(any(KeyEvent.class)))
         .then(
             new Answer<Boolean>() {
               @Override
@@ -118,10 +118,10 @@ public class AndroidKeyProcessorTest {
 
     // Fake a response from the framework.
     handlerCaptor.getValue().onKeyEventNotHandled(eventCaptor.getValue().eventId);
-    verify(fakeView, times(1)).dispatchKeyEventPreIme(fakeKeyEvent);
+    verify(fakeView, times(1)).dispatchKeyEvent(fakeKeyEvent);
     assertEquals(false, dispatchResult[0]);
     verify(fakeKeyEventChannel, times(0)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
-    verify(fakeRootView, times(1)).dispatchKeyEventPreIme(fakeKeyEvent);
+    verify(fakeRootView, times(1)).dispatchKeyEvent(fakeKeyEvent);
   }
 
   public void synthesizesEventsWhenKeyUpNotHandled() {
@@ -154,7 +154,7 @@ public class AndroidKeyProcessorTest {
     // faking our response.
     verify(fakeKeyEventChannel, times(1)).keyUp(eventCaptor.capture());
     boolean[] dispatchResult = {true};
-    when(fakeView.dispatchKeyEventPreIme(any(KeyEvent.class)))
+    when(fakeView.dispatchKeyEvent(any(KeyEvent.class)))
         .then(
             new Answer<Boolean>() {
               @Override
@@ -168,10 +168,10 @@ public class AndroidKeyProcessorTest {
 
     // Fake a response from the framework.
     handlerCaptor.getValue().onKeyEventNotHandled(eventCaptor.getValue().eventId);
-    verify(fakeView, times(1)).dispatchKeyEventPreIme(fakeKeyEvent);
+    verify(fakeView, times(1)).dispatchKeyEvent(fakeKeyEvent);
     assertEquals(false, dispatchResult[0]);
     verify(fakeKeyEventChannel, times(0)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
-    verify(fakeRootView, times(1)).dispatchKeyEventPreIme(fakeKeyEvent);
+    verify(fakeRootView, times(1)).dispatchKeyEvent(fakeKeyEvent);
   }
 
   @NonNull

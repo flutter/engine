@@ -721,28 +721,28 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Invoked when a hardware key is pressed or released, before the IME receives the key.
+   * Invoked when a hardware key is pressed or released.
    *
    * <p>This method is typically invoked in response to the press of a physical keyboard key or a
    * D-pad button. It is generally not invoked when a virtual software keyboard is used, though a
-   * software keyboard may choose to invoke this method in some situations,
-   * notably the back button often causes this function to be invoked.
+   * software keyboard may choose to invoke this method in some situations.
    *
    * <p>{@link KeyEvent}s are sent from Android to Flutter. {@link AndroidKeyProcessor} may do some
    * additional work with the given {@link KeyEvent}, e.g., combine this {@code keyCode} with the
    * previous {@code keyCode} to generate a unicode combined character.
    */
   @Override
-  public boolean dispatchKeyEventPreIme(KeyEvent event) {
+  public boolean dispatchKeyEvent(KeyEvent event) {
     if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
       // Tell Android to start tracking this event.
       getKeyDispatcherState().startTracking(event, this);
     } else if (event.getAction() == KeyEvent.ACTION_UP) {
+      // Stop tracking the event.
       getKeyDispatcherState().handleUpEvent(event);
       if (!event.isTracking() || event.isCanceled()) {
         // Don't send the event to the key processor if it was canceled, or no
         // longer being tracked.
-        return super.dispatchKeyEventPreIme(event);
+        return super.dispatchKeyEvent(event);
       }
     }
     // If the key processor doesn't handle it, then send it on to the
@@ -750,7 +750,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // those where it has re-dispatched the event after receiving a reply from
     // the framework that the framework did not handle it.
     return (isAttachedToFlutterEngine() && androidKeyProcessor.onKeyEvent(event))
-        || super.dispatchKeyEventPreIme(event);
+        || super.dispatchKeyEvent(event);
   }
 
   /**
