@@ -239,3 +239,12 @@ html.Element _pathToSvgElement(SurfacePath path, SurfacePaintData paint,
   sb.write('</svg>');
   return html.Element.html(sb.toString(), treeSanitizer: _NullTreeSanitizer());
 }
+
+/// TODO: Future optimization. Fingerprint dom canvas draw operations to be
+/// able to reuse DOM nodes.
+class _FingerPrints {
+  static const String drawColor = 'C';
+  static const String drawRect = 'r';
+  static const String drawRRect = 'R';
+  static const String drawParagraph = 'P';
+}
