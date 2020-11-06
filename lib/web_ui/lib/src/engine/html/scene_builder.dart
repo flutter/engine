@@ -260,7 +260,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       color.value,
       shadowColor?.value ?? 0xFF000000,
       clipBehavior,
-    )) as ui.PhysicalShapeEngineLayer;
+    ));
   }
 
   /// Add a retained engine layer subtree from previous frames.
