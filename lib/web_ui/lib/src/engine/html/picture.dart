@@ -51,7 +51,7 @@ class _PaintRequest {
 List<_PaintRequest> _paintQueue = <_PaintRequest>[];
 
 void _recycleCanvas(EngineCanvas? canvas) {
-  assert(canvas == null || !_recycledCanvases.contains(canvas!));
+  assert(canvas == null || !_recycledCanvases.contains(canvas));
   if (canvas is BitmapCanvas) {
     canvas.setElementCache(null);
     if (canvas.isReusable()) {
