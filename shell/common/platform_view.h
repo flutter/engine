@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "flow/embedded_views.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/surface.h"
 #include "flutter/flow/texture.h"
@@ -580,6 +581,8 @@ class PlatformView {
   virtual std::unique_ptr<std::vector<std::string>>
   ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data);
+
+  virtual std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder();
 
  protected:
   PlatformView::Delegate& delegate_;
