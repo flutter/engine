@@ -269,34 +269,34 @@ class AccessibilityFeatures {
   // A bitfield which represents each enabled feature.
   final int _index;
 
-  bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
-  bool get invertColors => _kInvertColorsIndex & _index != 0;
-  bool get disableAnimations => _kDisableAnimationsIndex & _index != 0;
-  bool get boldText => _kBoldTextIndex & _index != 0;
-  bool get reduceMotion => _kReduceMotionIndex & _index != 0;
-  bool get highContrast => _kHighContrastIndex & _index != 0;
+  // bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
+  // bool get invertColors => _kInvertColorsIndex & _index != 0;
+  // bool get disableAnimations => _kDisableAnimationsIndex & _index != 0;
+  // bool get boldText => _kBoldTextIndex & _index != 0;
+  // bool get reduceMotion => _kReduceMotionIndex & _index != 0;
+  // bool get highContrast => _kHighContrastIndex & _index != 0;
 
   @override
   String toString() {
     final List<String> features = <String>[];
-    if (accessibleNavigation) {
-      features.add('accessibleNavigation');
-    }
-    if (invertColors) {
-      features.add('invertColors');
-    }
-    if (disableAnimations) {
-      features.add('disableAnimations');
-    }
-    if (boldText) {
-      features.add('boldText');
-    }
-    if (reduceMotion) {
-      features.add('reduceMotion');
-    }
-    if (highContrast) {
-      features.add('highContrast');
-    }
+    // if (accessibleNavigation) {
+    //   features.add('accessibleNavigation');
+    // }
+    // if (invertColors) {
+    //   features.add('invertColors');
+    // }
+    // if (disableAnimations) {
+    //   features.add('disableAnimations');
+    // }
+    // if (boldText) {
+    //   features.add('boldText');
+    // }
+    // if (reduceMotion) {
+    //   features.add('reduceMotion');
+    // }
+    // if (highContrast) {
+    //   features.add('highContrast');
+    // }
     return 'AccessibilityFeatures$features';
   }
 

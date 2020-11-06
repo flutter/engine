@@ -13,6 +13,7 @@ const bool/*!*/ _debugPrintPlatformMessages = false;
 // ui.SingletonFlutterWindow instead.
 class EngineFlutterWindow extends ui.Window {
   EngineFlutterWindow(this._windowId, this.platformDispatcher) {
+    throw Exception('break on purpose');
     final EnginePlatformDispatcher engineDispatcher = platformDispatcher as EnginePlatformDispatcher;
     engineDispatcher._windows[_windowId] = this;
     engineDispatcher._windowConfigurations[_windowId] = ui.ViewConfiguration();
