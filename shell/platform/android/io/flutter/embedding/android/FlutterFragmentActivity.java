@@ -12,6 +12,7 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_BA
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_CACHED_ENGINE_ID;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DESTROY_ENGINE_WITH_ACTIVITY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_INITIAL_ROUTE;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_DEEPLINKING_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.INITIAL_ROUTE_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.NORMAL_THEME_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.SPLASH_SCREEN_META_DATA_KEY;
@@ -423,6 +424,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       return FlutterFragment.withCachedEngine(getCachedEngineId())
           .renderMode(renderMode)
           .transparencyMode(transparencyMode)
+          .handleDeeplinking(shouldHandleDeeplinking())
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
           .destroyEngineWithFragment(shouldDestroyEngineWithHost())
           .build();
@@ -450,6 +452,7 @@ public class FlutterFragmentActivity extends FragmentActivity
           .initialRoute(getInitialRoute())
           .appBundlePath(getAppBundlePath())
           .flutterShellArgs(FlutterShellArgs.fromIntent(getIntent()))
+          .handleDeeplinking(shouldHandleDeeplinking())
           .renderMode(renderMode)
           .transparencyMode(transparencyMode)
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
@@ -543,6 +546,19 @@ public class FlutterFragmentActivity extends FragmentActivity
    */
   protected boolean shouldAttachEngineToActivity() {
     return true;
+  }
+
+  public boolean shouldHandleDeeplinking() {
+    try {
+      ActivityInfo activityInfo =
+          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
+      Bundle metadata = activityInfo.metaData;
+      boolean shouldHandleDeeplinking =
+          metadata != null ? metadata.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : false;
+      return shouldHandleDeeplinking;
+    } catch (PackageManager.NameNotFoundException e) {
+      return false;
+    }
   }
 
   /** Hook for subclasses to easily provide a custom {@code FlutterEngine}. */
@@ -646,17 +662,16 @@ public class FlutterFragmentActivity extends FragmentActivity
    *
    * If both preferences are set, the {@code Intent} preference takes priority.
    *
-   * <p>If none is set, the {@link FlutterActivityAndFragmentDelegate} retrieves the initial route
-   * from the {@code Intent} through the Intent.getData() instead.
-   *
    * <p>The reason that a {@code <meta-data>} preference is supported is because this {@code
    * Activity} might be the very first {@code Activity} launched, which means the developer won't
    * have control over the incoming {@code Intent}.
    *
    * <p>Subclasses may override this method to directly control the initial route.
    *
-   * <p>If this method returns null, the {@link FlutterActivityAndFragmentDelegate} retrieves the
-   * initial route from the {@code Intent} through the Intent.getData() instead.
+   * <p>If this method returns null and the {@code <meta-data>} has {@link
+   * FlutterActivityAndFragmentDelegate#HANDLE_DEEPLINKING_BUNDLE_KEY} set to true, the {@link
+   * FlutterActivityAndFragmentDelegate} retrieves the initial route from the {@code Intent} through
+   * the Intent.getData() instead.
    */
   protected String getInitialRoute() {
     if (getIntent().hasExtra(EXTRA_INITIAL_ROUTE)) {

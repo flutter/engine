@@ -9,9 +9,6 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -70,7 +67,6 @@ import java.util.Arrays;
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
   private static final String FRAMEWORK_RESTORATION_BUNDLE_KEY = "framework";
   private static final String PLUGINS_RESTORATION_BUNDLE_KEY = "plugins";
-  private static final String HANDLE_DEEPLINKING_BUNDLE_KEY = "flutter_handle_deeplinking";
 
   // The FlutterActivity or FlutterFragment that is delegating most of its calls
   // to this FlutterActivityAndFragmentDelegate.
@@ -397,25 +393,13 @@ import java.util.Arrays;
   }
 
   private String maybeGetInitialRouteFromIntent(Intent intent) {
-    try {
-      Activity activity = host.getActivity();
-      ActivityInfo activityInfo =
-        activity
-          .getPackageManager()
-          .getActivityInfo(
-            activity.getComponentName(),
-            PackageManager.GET_META_DATA | PackageManager.GET_ACTIVITIES);
-      Bundle metadata = activityInfo.metaData;
-      if (metadata != null && metadata.getBoolean(HANDLE_DEEPLINKING_BUNDLE_KEY)) {
-        Uri data = intent.getData();
-        if (data != null && !data.toString().isEmpty()) {
-          return data.toString();
-        }
+    if (host.shouldHandleDeeplinking()) {
+      Uri data = intent.getData();
+      if (data != null && !data.toString().isEmpty()) {
+        return data.toString();
       }
-      return null;
-    } catch (NameNotFoundException e) {
-      return null;
     }
+    return null;
   }
 
   /**
@@ -768,6 +752,14 @@ import java.util.Arrays;
     /** Returns the {@link Context} that backs the host {@link Activity} or {@code Fragment}. */
     @NonNull
     Context getContext();
+
+    /**
+     * Returns true if the {@link FlutterActivityAndFragmentDelegate} should send the deeplinking
+     * URL to the framework through the {@code NavigationChannel.setInitialRoute} or {@code
+     * NavigationChannel.pushRoute}.
+     */
+    @Nullable
+    boolean shouldHandleDeeplinking();
 
     /**
      * Returns the host {@link Activity} or the {@code Activity} that is currently attached to the

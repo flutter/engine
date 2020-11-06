@@ -73,6 +73,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(mockHost.getTransparencyMode()).thenReturn(TransparencyMode.transparent);
     when(mockHost.provideFlutterEngine(any(Context.class))).thenReturn(mockFlutterEngine);
     when(mockHost.shouldAttachEngineToActivity()).thenReturn(true);
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(false);
     when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
   }
 
@@ -429,7 +430,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
-  public void itSendsInitialRouteFromIntentOnStartIfnoInitialRouteFromActivity() {
+  public void itSendsInitialRouteFromIntentOnStartIfNoInitialRouteFromActivity() {
     Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
     intent.setData(Uri.parse("http://myApp/custom/route"));
 
@@ -439,6 +440,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     when(mockHost.getActivity()).thenReturn(flutterActivity);
     when(mockHost.getInitialRoute()).thenReturn(null);
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
@@ -455,6 +457,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
   @Test
   public void itSendsPushRouteMessageWhenOnNewIntent() {
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
