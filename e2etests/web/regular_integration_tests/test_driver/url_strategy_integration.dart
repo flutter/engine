@@ -13,8 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:integration_test/integration_test.dart';
 
 void main() {
-  // final IntegrationTestWidgetsFlutterBinding binding =
-      IntegrationTestWidgetsFlutterBinding.ensureInitialized() as IntegrationTestWidgetsFlutterBinding;
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized() as IntegrationTestWidgetsFlutterBinding;
 
   testWidgets('Can customize url strategy', (WidgetTester tester) async {
     final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
