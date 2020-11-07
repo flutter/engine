@@ -96,7 +96,7 @@ TEST(RasterizerTest, drawEmptyPipeline) {
 }
 
 TEST(RasterizerTest,
-     drawWithExternalViewEmbedder_ExternalViewEmbedderSubmitFrameCalled) {
+     drawWithExternalViewEmbedderExternalViewEmbedderSubmitFrameCalled) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
@@ -154,7 +154,7 @@ TEST(RasterizerTest,
 
 TEST(
     RasterizerTest,
-    drawWithExternalViewEmbedderAndThreadMergerNotMerged_ExternalViewEmbedderSubmitFrameNotCalled) {
+    drawWithExternalViewEmbedderAndThreadMergerNotMergedExternalViewEmbedderSubmitFrameNotCalled) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
@@ -208,7 +208,7 @@ TEST(
 
 TEST(
     RasterizerTest,
-    drawWithExternalViewEmbedderAndThreadsMerged_ExternalViewEmbedderSubmitFrameCalled) {
+    drawWithExternalViewEmbedderAndThreadsMergedExternalViewEmbedderSubmitFrameCalled) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
