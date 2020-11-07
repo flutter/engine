@@ -15,27 +15,29 @@
 #include <thread>
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/task_runner.h"
 
 namespace flutter {
 
 // A custom task runner that integrates with user32 GetMessage semantics so that
 // host app can own its own message loop and flutter still gets to process
 // tasks on a timely basis.
-class Win32TaskRunner {
+class Win32TaskRunner : public TaskRunner {
  public:
   using TaskExpiredCallback = std::function<void(const FlutterTask*)>;
   Win32TaskRunner(DWORD main_thread_id,
                   const TaskExpiredCallback& on_task_expired);
 
-  ~Win32TaskRunner();
+  virtual ~Win32TaskRunner();
 
-  // Returns if the current thread is the thread used by the win32 event loop.
-  bool RunsTasksOnCurrentThread() const;
+  // |RunsTasksOnCurrentThread|
+  bool RunsTasksOnCurrentThread() const override;
 
   std::chrono::nanoseconds ProcessTasks();
 
-  // Post a Flutter engine tasks to the event loop for delayed execution.
-  void PostTask(FlutterTask flutter_task, uint64_t flutter_target_time_nanos);
+  // |PostTask|
+  void PostTask(FlutterTask flutter_task,
+                uint64_t flutter_target_time_nanos) override;
 
  private:
   using TaskTimePoint = std::chrono::steady_clock::time_point;

@@ -30,9 +30,8 @@ source_set("flutter_windows_headers") {
       [ "//flutter/shell/platform/common/cpp:common_cpp_library_headers" ]
 
   if (target_os == "winuwp") {
-    configs += [
-      "//flutter/shell/platform/common/cpp:desktop_library_implementation",
-    ]
+    configs +=
+        [ "//flutter/shell/platform/common/cpp:desktop_library_implementation" ]
   } else {
     configs +=
         [ "//flutter/shell/platform/common/cpp:desktop_library_implementation" ]
@@ -62,6 +61,7 @@ source_set("flutter_windows_source") {
     "string_conversion.cc",
     "string_conversion.h",
     "system_utils.h",
+    "task_runner.h",
     "text_input_plugin.cc",
     "text_input_plugin.h",
     "window_binding_handler.h",
@@ -71,8 +71,12 @@ source_set("flutter_windows_source") {
 
   # Target-specific sources.
   if (target_os == "winuwp") {
-    sources += [ "flutter_windows_winuwp.cc" ]
-    sources += [ "system_utils_winuwp.cc" ]
+    sources += [
+      "flutter_windows_winuwp.cc",
+      "system_utils_winuwp.cc",
+      "winrt_task_runner.cc",
+      "winrt_task_runner.h",
+    ]
   } else {
     sources += [
       "flutter_windows_win32.cc",

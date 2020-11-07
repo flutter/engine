@@ -13,11 +13,15 @@
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
+#include "flutter/shell/platform/windows/task_runner.h"
+#include "flutter/shell/platform/windows/window_state.h"
+
 #ifndef WINUWP
 #include "flutter/shell/platform/windows/win32_task_runner.h"  // nogncheck
 #include "flutter/shell/platform/windows/win32_window_proc_delegate_manager.h"  // nogncheck
+#else
+#include "flutter/shell/platform/windows/winrt_task_runner.h"  // nogncheck
 #endif
-#include "flutter/shell/platform/windows/window_state.h"
 
 namespace flutter {
 
@@ -75,9 +79,9 @@ class FlutterWindowsEngine {
     return message_dispatcher_.get();
   }
 
-#ifndef WINUWP
-  Win32TaskRunner* task_runner() { return task_runner_.get(); }
+  TaskRunner* task_runner() { return task_runner_.get(); }
 
+#ifndef WINUWP
   Win32WindowProcDelegateManager* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
   }
@@ -105,10 +109,8 @@ class FlutterWindowsEngine {
   // The view displaying the content running in this engine, if any.
   FlutterWindowsView* view_ = nullptr;
 
-#ifndef WINUWP
   // Task runner for tasks posted from the engine.
-  std::unique_ptr<Win32TaskRunner> task_runner_;
-#endif
+  std::unique_ptr<TaskRunner> task_runner_;
 
   // The plugin messenger handle given to API clients.
   std::unique_ptr<FlutterDesktopMessenger> messenger_;
