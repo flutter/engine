@@ -2744,12 +2744,11 @@ class PathMetric {
     return _measure.getTangentForOffset(contourIndex, distance);
   }
 
-  /// Given a start and stop distance, return the intervening segment(s).
+  /// Given a start and end distance, return the intervening segment(s).
   ///
   /// `start` and `end` are clamped to legal values (0..[length])
-  /// Returns null if the segment is 0 length or `start` > `stop`.
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
-  Path? extractPath(double start, double end, {bool startWithMoveTo = true}) {
+  Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
     return _measure.extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
   }
 
@@ -4541,7 +4540,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///       transformList[i * 4 + 0] = 1.0;
   ///       transformList[i * 4 + 1] = 0.0;
   ///       transformList[i * 4 + 2] = sprite.centerX - 5.0;
-  ///       transformList[i * 4 + 2] = sprite.centerY - 5.0;
+  ///       transformList[i * 4 + 3] = sprite.centerY - 5.0;
   ///     }
   ///     Paint paint = Paint();
   ///     canvas.drawAtlas(spriteAtlas, transformList, rectList, null, null, null, paint);
@@ -4601,7 +4600,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///       transformList[i * 4 + 0] = transform.scos;
   ///       transformList[i * 4 + 1] = transform.ssin;
   ///       transformList[i * 4 + 2] = transform.tx;
-  ///       transformList[i * 4 + 2] = transform.ty;
+  ///       transformList[i * 4 + 3] = transform.ty;
   ///
   ///       // This example computes the color value directly, but one could also compute
   ///       // an actual Color object and use its Color.value getter for the same result.

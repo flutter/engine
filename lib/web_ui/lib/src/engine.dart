@@ -17,8 +17,8 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
-import 'package:meta/meta.dart';
+import 'package:js/js.dart'; // ignore: import_of_legacy_library_into_null_safe
+import 'package:meta/meta.dart'; // ignore: import_of_legacy_library_into_null_safe
 
 import '../ui.dart' as ui;
 
@@ -129,6 +129,7 @@ part 'engine/text/line_break_properties.dart';
 part 'engine/text/line_breaker.dart';
 part 'engine/text/measurement.dart';
 part 'engine/text/paragraph.dart';
+part 'engine/text/canvas_paragraph.dart';
 part 'engine/text/ruler.dart';
 part 'engine/text/unicode_range.dart';
 part 'engine/text/word_break_properties.dart';

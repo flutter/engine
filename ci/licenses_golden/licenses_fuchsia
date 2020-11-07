@@ -1,4 +1,4 @@
-Signature: 943fc1a131f09ffade050d99717645af
+Signature: 31d11cbc15d66ebd5137f021a4e122a0
 
 UNUSED LICENSES:
 
@@ -2843,11 +2843,14 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory.wlan/iovar.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/crash_register.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_register.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/last_reboot_info.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/dai.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/dai_format.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/device.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/frames.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/instance.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/mac.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/session.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/reboot_reason.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/consumer_control.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/device_ids.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input/keys.fidl
