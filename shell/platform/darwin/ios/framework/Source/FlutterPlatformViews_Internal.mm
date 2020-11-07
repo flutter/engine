@@ -23,8 +23,9 @@ FlutterPlatformViewLayer::FlutterPlatformViewLayer(
 
 FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
 
-FlutterPlatformViewsController::FlutterPlatformViewsController()
-    : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>()),
+FlutterPlatformViewsController::FlutterPlatformViewsController(
+    std::shared_ptr<IOSSurfaceFactory> surface_factory)
+    : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>(surface_factory)),
       weak_factory_(std::make_unique<fml::WeakPtrFactory<FlutterPlatformViewsController>>(this)){};
 
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
@@ -88,6 +89,15 @@ void ResetAnchor(CALayer* layer) {
     self.backgroundColor = UIColor.clearColor;
   }
   return self;
+}
+
+// In some scenarios, when we add this view as a maskView of the ChildClippingView, iOS added
+// this view as a subview of the ChildClippingView.
+// This results this view blocking touch events on the ChildClippingView.
+// So we should always ignore any touch events sent to this view.
+// See https://github.com/flutter/flutter/issues/66044
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent*)event {
+  return NO;
 }
 
 - (void)drawRect:(CGRect)rect {

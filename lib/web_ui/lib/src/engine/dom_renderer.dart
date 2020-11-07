@@ -45,7 +45,7 @@ class DomRenderer {
   html.MetaElement? _viewportMeta;
 
   /// The canvaskit script, downloaded from a CDN. Only created if
-  /// [experimentalUseSkia] is set to true.
+  /// [useCanvasKit] is set to true.
   html.ScriptElement? get canvasKitScript => _canvasKitScript;
   html.ScriptElement? _canvasKitScript;
 
@@ -172,12 +172,17 @@ class DomRenderer {
     js_util.setProperty(element, name, value);
   }
 
-  void setElementStyle(html.Element element, String name, String? value) {
+  static void setElementStyle(html.Element element, String name, String? value) {
     if (value == null) {
       element.style.removeProperty(name);
     } else {
       element.style.setProperty(name, value);
     }
+  }
+
+  static void setElementTransform(html.Element element, String transformValue) {
+    js_util.setProperty(js_util.getProperty(element, 'style'), 'transform',
+        transformValue);
   }
 
   void setText(html.Element element, String text) {
@@ -307,6 +312,21 @@ flt-glass-pane * {
 ''', sheet.cssRules.length);
     }
 
+    // This css prevents an autofill overlay brought by the browser during
+    // text field autofill by delaying the transition effect.
+    // See: https://github.com/flutter/flutter/issues/61132.
+    if(browserHasAutofillOverlay()) {
+        sheet.insertRule('''
+.transparentTextEditing:-webkit-autofill,
+.transparentTextEditing:-webkit-autofill:hover,
+.transparentTextEditing:-webkit-autofill:focus,
+.transparentTextEditing:-webkit-autofill:active {
+    -webkit-transition-delay: 99999s;
+}
+''', sheet.cssRules.length);
+    }
+
+
     final html.BodyElement bodyElement = html.document.body!;
     setElementStyle(bodyElement, 'position', 'fixed');
     setElementStyle(bodyElement, 'top', '0');
@@ -389,7 +409,7 @@ flt-glass-pane * {
 
     final html.Element _accesibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
-        .prepareAccesibilityPlaceholder();
+        .prepareAccessibilityPlaceholder();
 
     // Insert the semantics placeholder after the scene host. For all widgets
     // in the scene, except for platform widgets, the scene host will pass the
@@ -436,7 +456,7 @@ flt-glass-pane * {
       });
     }
 
-    if (experimentalUseSkia) {
+    if (useCanvasKit) {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitBaseUrl + 'canvaskit.js';
@@ -451,7 +471,7 @@ flt-glass-pane * {
     }
     _localeSubscription = languageChangeEvent.forTarget(html.window)
       .listen(_languageDidChange);
-    window._updateLocales();
+    EnginePlatformDispatcher.instance._updateLocales();
   }
 
   /// Called immediately after browser window metrics change.
@@ -466,18 +486,18 @@ flt-glass-pane * {
   void _metricsDidChange(html.Event? event) {
     if(isMobile && !window.isRotation() && textEditing.isEditing) {
       window.computeOnScreenKeyboardInsets();
-      window.invokeOnMetricsChanged();
+      EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     } else {
       window._computePhysicalSize();
       // When physical size changes this value has to be recalculated.
       window.computeOnScreenKeyboardInsets();
-      window.invokeOnMetricsChanged();
+      EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     }
   }
 
   /// Called immediately after browser window language change.
   void _languageDidChange(html.Event event) {
-    window._updateLocales();
+    EnginePlatformDispatcher.instance._updateLocales();
     if (ui.window.onLocaleChanged != null) {
       ui.window.onLocaleChanged!();
     }
@@ -536,18 +556,18 @@ flt-glass-pane * {
   Future<bool> setPreferredOrientation(List<dynamic>? orientations) {
     final html.Screen screen = html.window.screen!;
     if (!_unsafeIsNull(screen)) {
-      final html.ScreenOrientation screenOrientation =
-          screen.orientation!;
+      final html.ScreenOrientation? screenOrientation =
+          screen.orientation;
       if (!_unsafeIsNull(screenOrientation)) {
         if (orientations!.isEmpty) {
-          screenOrientation.unlock();
+          screenOrientation!.unlock();
           return Future.value(true);
         } else {
           String? lockType = _deviceOrientationToLockType(orientations.first);
           if (lockType != null) {
             final Completer<bool> completer = Completer<bool>();
             try {
-              screenOrientation.lock(lockType).then((dynamic _) {
+              screenOrientation!.lock(lockType).then((dynamic _) {
                 completer.complete(true);
               }).catchError((dynamic error) {
                 // On Chrome desktop an error with 'not supported on this device

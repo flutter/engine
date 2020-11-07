@@ -8,6 +8,11 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
+#ifdef SHELL_ENABLE_GL
+#include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
+#endif
+
 namespace flutter {
 namespace testing {
 
@@ -25,6 +30,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
 
   custom_task_runners_.struct_size = sizeof(FlutterCustomTaskRunners);
 
+#ifdef SHELL_ENABLE_GL
   opengl_renderer_config_.struct_size = sizeof(FlutterOpenGLRendererConfig);
   opengl_renderer_config_.make_current = [](void* context) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLMakeCurrent();
@@ -57,6 +63,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     return reinterpret_cast<EmbedderTestContext*>(context)
         ->GetRootSurfaceTransformation();
   };
+#endif
 
   software_renderer_config_.struct_size = sizeof(FlutterSoftwareRendererConfig);
   software_renderer_config_.surface_present_callback =
@@ -107,14 +114,11 @@ FlutterProjectArgs& EmbedderConfigBuilder::GetProjectArgs() {
 void EmbedderConfigBuilder::SetSoftwareRendererConfig(SkISize surface_size) {
   renderer_config_.type = FlutterRendererType::kSoftware;
   renderer_config_.software = software_renderer_config_;
-
-  // TODO(chinmaygarde): The compositor still uses a GL surface for operation.
-  // Once this is no longer the case, don't setup the GL surface when using the
-  // software renderer config.
-  context_.SetupOpenGLSurface(surface_size);
+  context_.SetupSurface(surface_size);
 }
 
 void EmbedderConfigBuilder::SetOpenGLFBOCallBack() {
+#ifdef SHELL_ENABLE_GL
   // SetOpenGLRendererConfig must be called before this.
   FML_CHECK(renderer_config_.type == FlutterRendererType::kOpenGL);
   renderer_config_.open_gl.fbo_callback = [](void* context) -> uint32_t {
@@ -127,21 +131,26 @@ void EmbedderConfigBuilder::SetOpenGLFBOCallBack() {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
         frame_info);
   };
+#endif
 }
 
 void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
+#ifdef SHELL_ENABLE_GL
   // SetOpenGLRendererConfig must be called before this.
   FML_CHECK(renderer_config_.type == FlutterRendererType::kOpenGL);
   renderer_config_.open_gl.present = [](void* context) -> bool {
     // passing a placeholder fbo_id.
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(0);
   };
+#endif
 }
 
 void EmbedderConfigBuilder::SetOpenGLRendererConfig(SkISize surface_size) {
+#ifdef SHELL_ENABLE_GL
   renderer_config_.type = FlutterRendererType::kOpenGL;
   renderer_config_.open_gl = opengl_renderer_config_;
-  context_.SetupOpenGLSurface(surface_size);
+  context_.SetupSurface(surface_size);
+#endif
 }
 
 void EmbedderConfigBuilder::SetAssetsPath() {
@@ -206,6 +215,14 @@ void EmbedderConfigBuilder::AddCommandLineArgument(std::string arg) {
   }
 
   command_line_arguments_.emplace_back(std::move(arg));
+}
+
+void EmbedderConfigBuilder::AddDartEntrypointArgument(std::string arg) {
+  if (arg.size() == 0) {
+    return;
+  }
+
+  dart_entrypoint_arguments_.emplace_back(std::move(arg));
 }
 
 void EmbedderConfigBuilder::SetPlatformTaskRunner(
@@ -306,6 +323,23 @@ UniqueEngine EmbedderConfigBuilder::SetupEngine(bool run) const {
     // embedder config builder.
     project_args.command_line_argv = nullptr;
     project_args.command_line_argc = 0;
+  }
+
+  std::vector<const char*> dart_args;
+  dart_args.reserve(dart_entrypoint_arguments_.size());
+
+  for (const auto& arg : dart_entrypoint_arguments_) {
+    dart_args.push_back(arg.c_str());
+  }
+
+  if (dart_args.size() > 0) {
+    project_args.dart_entrypoint_argv = dart_args.data();
+    project_args.dart_entrypoint_argc = dart_args.size();
+  } else {
+    // Clear it out in case this is not the first engine launch from the
+    // embedder config builder.
+    project_args.dart_entrypoint_argv = nullptr;
+    project_args.dart_entrypoint_argc = 0;
   }
 
   auto result =

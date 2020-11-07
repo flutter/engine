@@ -17,7 +17,7 @@ const String _robotoUrl =
 class SkiaFontCollection {
   /// Fonts that have been registered but haven't been loaded yet.
   final List<Future<_RegisteredFont?>> _unloadedFonts =
-      <Future<_RegisteredFont>>[];
+      <Future<_RegisteredFont?>>[];
 
   /// Fonts which have been registered and loaded.
   final List<_RegisteredFont> _registeredFonts = <_RegisteredFont>[];
@@ -30,7 +30,7 @@ class SkiaFontCollection {
     fontProvider = canvasKit.TypefaceFontProvider.Make();
 
     for (var font in _registeredFonts) {
-      fontProvider!.registerFont(font.bytes, font.flutterFamily);
+      fontProvider.registerFont(font.bytes, font.flutterFamily);
     }
   }
 
@@ -123,7 +123,7 @@ class SkiaFontCollection {
     try {
       buffer = await html.window
           .fetch(url)
-          .then(_getArrayBuffer as FutureOr<ByteBuffer> Function(dynamic));
+          .then(_getArrayBuffer);
     } catch (e) {
       html.window.console.warn('Failed to load font $family at $url');
       html.window.console.warn(e);
@@ -149,7 +149,7 @@ class SkiaFontCollection {
     return actualFamily;
   }
 
-  Future<ByteBuffer>? _getArrayBuffer(dynamic fetchResult) {
+  Future<ByteBuffer> _getArrayBuffer(dynamic fetchResult) {
     // TODO(yjbanov): fetchResult.arrayBuffer is a dynamic invocation. Clean it up.
     return fetchResult
         .arrayBuffer()
@@ -157,7 +157,7 @@ class SkiaFontCollection {
   }
 
   SkFontMgr? skFontMgr;
-  TypefaceFontProvider? fontProvider;
+  late TypefaceFontProvider fontProvider;
 }
 
 /// Represents a font that has been registered.

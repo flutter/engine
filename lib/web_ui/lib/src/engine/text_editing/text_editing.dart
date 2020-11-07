@@ -11,6 +11,16 @@ bool _debugVisibleTextEditing = false;
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
 
+/// Blink and Webkit engines, bring an overlay on top of the text field when it
+/// is autofilled.
+bool browserHasAutofillOverlay() =>
+    browserEngine == BrowserEngine.blink ||
+    browserEngine == BrowserEngine.webkit;
+
+/// `transparentTextEditing` class is configured to make the autofill overlay
+/// transparent.
+const String transparentTextEditingClass = 'transparentTextEditing';
+
 void _emptyCallback(dynamic _) {}
 
 /// These style attributes are constant throughout the life time of an input
@@ -39,7 +49,11 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
     ..overflow = 'hidden'
     ..transformOrigin = '0 0 0';
 
-  /// This property makes the input's blinking cursor transparent.
+  if (browserHasAutofillOverlay()) {
+    domElement.classes.add(transparentTextEditingClass);
+  }
+
+  // This property makes the input's blinking cursor transparent.
   elementStyle.setProperty('caret-color', 'transparent');
 
   if (_debugVisibleTextEditing) {
@@ -78,6 +92,10 @@ void _hideAutofillElements(html.HtmlElement domElement,
     elementStyle
       ..top = '-9999px'
       ..left = '-9999px';
+  }
+
+  if (browserHasAutofillOverlay()) {
+    domElement.classes.add(transparentTextEditingClass);
   }
 
   /// This property makes the input's blinking cursor transparent.
@@ -258,21 +276,19 @@ class EngineAutofillForm {
 
   /// Sends the 'TextInputClient.updateEditingStateWithTag' message to the framework.
   void _sendAutofillEditingState(String? tag, EditingState editingState) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall(
-            'TextInputClient.updateEditingStateWithTag',
-            <dynamic>[
-              0,
-              <String?, dynamic>{tag: editingState.toFlutter()}
-            ],
-          ),
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall(
+          'TextInputClient.updateEditingStateWithTag',
+          <dynamic>[
+            0,
+            <String?, dynamic>{tag: editingState.toFlutter()}
+          ],
         ),
-        _emptyCallback,
-      );
-    }
+      ),
+      _emptyCallback,
+    );
   }
 }
 
@@ -1345,7 +1361,8 @@ class TextEditingChannel {
         throw StateError(
             'Unsupported method call on the flutter/textinput channel: ${call.method}');
     }
-    window._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+    EnginePlatformDispatcher.instance
+        ._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
   }
 
   /// Used for submitting the forms attached on the DOM.
@@ -1374,50 +1391,44 @@ class TextEditingChannel {
 
   /// Sends the 'TextInputClient.updateEditingState' message to the framework.
   void updateEditingState(int? clientId, EditingState? editingState) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall('TextInputClient.updateEditingState', <dynamic>[
-            clientId,
-            editingState!.toFlutter(),
-          ]),
-        ),
-        _emptyCallback,
-      );
-    }
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall('TextInputClient.updateEditingState', <dynamic>[
+          clientId,
+          editingState!.toFlutter(),
+        ]),
+      ),
+      _emptyCallback,
+    );
   }
 
   /// Sends the 'TextInputClient.performAction' message to the framework.
   void performAction(int? clientId, String? inputAction) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall(
-            'TextInputClient.performAction',
-            <dynamic>[clientId, inputAction],
-          ),
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall(
+          'TextInputClient.performAction',
+          <dynamic>[clientId, inputAction],
         ),
-        _emptyCallback,
-      );
-    }
+      ),
+      _emptyCallback,
+    );
   }
 
   /// Sends the 'TextInputClient.onConnectionClosed' message to the framework.
   void onConnectionClosed(int? clientId) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall(
-            'TextInputClient.onConnectionClosed',
-            <dynamic>[clientId],
-          ),
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall(
+          'TextInputClient.onConnectionClosed',
+          <dynamic>[clientId],
         ),
-        _emptyCallback,
-      );
-    }
+      ),
+      _emptyCallback,
+    );
   }
 }
 
@@ -1470,7 +1481,7 @@ class HybridTextEditing {
   ///
   /// It uses an HTML element to manage editing state when a custom element is
   /// not provided via [useCustomEditableElement]
-  DefaultTextEditingStrategy? _defaultEditingElement;
+  late final DefaultTextEditingStrategy _defaultEditingElement;
 
   /// The HTML element used to manage editing state.
   ///
@@ -1478,11 +1489,8 @@ class HybridTextEditing {
   /// [_defaultEditingElement] is used instead.
   DefaultTextEditingStrategy? _customEditingElement;
 
-  DefaultTextEditingStrategy? get editingElement {
-    if (_customEditingElement != null) {
-      return _customEditingElement;
-    }
-    return _defaultEditingElement;
+  DefaultTextEditingStrategy get editingElement {
+    return _customEditingElement ?? _defaultEditingElement;
   }
 
   /// Responds to the 'TextInput.setClient' message.
@@ -1497,12 +1505,12 @@ class HybridTextEditing {
 
   void updateConfig(InputConfiguration configuration) {
     _configuration = configuration;
-    editingElement?._applyConfiguration(_configuration);
+    editingElement._applyConfiguration(_configuration);
   }
 
   /// Responds to the 'TextInput.setEditingState' message.
   void setEditingState(EditingState state) {
-    editingElement!.setEditingState(state);
+    editingElement.setEditingState(state);
   }
 
   /// Responds to the 'TextInput.show' message.
@@ -1514,12 +1522,12 @@ class HybridTextEditing {
 
   /// Responds to the 'TextInput.setEditableSizeAndTransform' message.
   void setEditableSizeAndTransform(EditableTextGeometry geometry) {
-    editingElement!.updateElementPlacement(geometry);
+    editingElement.updateElementPlacement(geometry);
   }
 
   /// Responds to the 'TextInput.setStyle' message.
   void setStyle(EditableTextStyle style) {
-    editingElement!.updateElementStyle(style);
+    editingElement.updateElementStyle(style);
   }
 
   /// Responds to the 'TextInput.clearClient' message.
@@ -1574,7 +1582,7 @@ class HybridTextEditing {
   void _startEditing() {
     assert(!isEditing);
     isEditing = true;
-    editingElement!.enable(
+    editingElement.enable(
       _configuration,
       onChange: (EditingState? editingState) {
         channel.updateEditingState(_clientId, editingState);
@@ -1588,7 +1596,7 @@ class HybridTextEditing {
   void stopEditing() {
     assert(isEditing);
     isEditing = false;
-    editingElement!.disable();
+    editingElement.disable();
   }
 
   void sendTextConnectionClosedToFrameworkIfAny() {
@@ -1649,7 +1657,8 @@ class EditableTextStyle {
 
   String? get align => textAlignToCssValue(textAlign, textDirection);
 
-  String get cssFont => '${fontWeight} ${fontSize}px ${fontFamily}';
+  String get cssFont =>
+      '${fontWeight} ${fontSize}px ${canonicalizeFontFamily(fontFamily)}';
 
   void applyToDomElement(html.HtmlElement domElement) {
     domElement.style

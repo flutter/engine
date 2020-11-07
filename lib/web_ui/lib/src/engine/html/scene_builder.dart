@@ -23,7 +23,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// The surface currently being built.
   PersistedContainerSurface get _currentSurface => _surfaceStack.last;
 
-  ui.EngineLayer _pushSurface(PersistedContainerSurface surface) {
+  T _pushSurface<T extends PersistedContainerSurface>(T surface) {
     // Only attempt to update if the update is requested and the surface is in
     // the live tree.
     if (surface.oldLayer != null) {
@@ -65,7 +65,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     double dy, {
     ui.OffsetEngineLayer? oldLayer,
   }) {
-    return _pushSurface(PersistedOffset(oldLayer as PersistedOffset?, dx, dy)) as ui.OffsetEngineLayer;
+    return _pushSurface<PersistedOffset>(PersistedOffset(oldLayer as PersistedOffset?, dx, dy));
   }
 
   /// Pushes a transform operation onto the operation stack.
@@ -96,7 +96,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     } else {
       matrix = toMatrix32(matrix4);
     }
-    return _pushSurface(PersistedTransform(oldLayer as PersistedTransform?, matrix)) as ui.TransformEngineLayer;
+    return _pushSurface<PersistedTransform>(PersistedTransform(oldLayer as PersistedTransform?, matrix));
   }
 
   /// Pushes a rectangular clip operation onto the operation stack.
@@ -113,7 +113,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   }) {
     assert(clipBehavior != null); // ignore: unnecessary_null_comparison
     assert(clipBehavior != ui.Clip.none);
-    return _pushSurface(PersistedClipRect(oldLayer as PersistedClipRect?, rect)) as ui.ClipRectEngineLayer;
+    return _pushSurface<PersistedClipRect>(PersistedClipRect(oldLayer as PersistedClipRect?, rect, clipBehavior));
   }
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
@@ -127,7 +127,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Clip? clipBehavior,
     ui.ClipRRectEngineLayer? oldLayer,
   }) {
-    return _pushSurface(PersistedClipRRect(oldLayer, rrect, clipBehavior)) as ui.ClipRRectEngineLayer;
+    return _pushSurface<PersistedClipRRect>(PersistedClipRRect(oldLayer, rrect, clipBehavior));
   }
 
   /// Pushes a path clip operation onto the operation stack.
@@ -143,7 +143,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   }) {
     assert(clipBehavior != null); // ignore: unnecessary_null_comparison
     assert(clipBehavior != ui.Clip.none);
-    return _pushSurface(PersistedClipPath(oldLayer as PersistedClipPath?, path, clipBehavior)) as ui.ClipPathEngineLayer;
+    return _pushSurface<PersistedClipPath>(PersistedClipPath(oldLayer as PersistedClipPath?, path, clipBehavior));
   }
 
   /// Pushes an opacity operation onto the operation stack.
@@ -160,7 +160,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     ui.OpacityEngineLayer? oldLayer,
   }) {
-    return _pushSurface(PersistedOpacity(oldLayer as PersistedOpacity?, alpha, offset)) as ui.OpacityEngineLayer;
+    return _pushSurface<PersistedOpacity>(PersistedOpacity(oldLayer as PersistedOpacity?, alpha, offset));
   }
 
   /// Pushes a color filter operation onto the operation stack.
@@ -179,7 +179,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
     assert(filter != null); // ignore: unnecessary_null_comparison
-    return _pushSurface(PersistedColorFilter(oldLayer as PersistedColorFilter?, filter)) as ui.ColorFilterEngineLayer;
+    return _pushSurface<PersistedColorFilter>(PersistedColorFilter(oldLayer as PersistedColorFilter?, filter));
   }
 
   /// Pushes an image filter operation onto the operation stack.
@@ -198,7 +198,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilterEngineLayer? oldLayer,
   }) {
     assert(filter != null); // ignore: unnecessary_null_comparison
-    return _pushSurface(PersistedImageFilter(oldLayer as PersistedImageFilter?, filter)) as ui.ImageFilterEngineLayer;
+    return _pushSurface<PersistedImageFilter>(PersistedImageFilter(oldLayer as PersistedImageFilter?, filter));
   }
 
   /// Pushes a backdrop filter operation onto the operation stack.
@@ -212,7 +212,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilter filter, {
     ui.BackdropFilterEngineLayer? oldLayer,
   }) {
-    return _pushSurface(PersistedBackdropFilter(oldLayer as PersistedBackdropFilter?, filter as EngineImageFilter)) as ui.BackdropFilterEngineLayer;
+    return _pushSurface<PersistedBackdropFilter>(PersistedBackdropFilter(oldLayer as PersistedBackdropFilter?, filter as EngineImageFilter));
   }
 
   /// Pushes a shader mask operation onto the operation stack.
@@ -253,14 +253,14 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.PhysicalShapeEngineLayer? oldLayer,
   }) {
     assert(color != null, 'color must not be null'); // ignore: unnecessary_null_comparison
-    return _pushSurface(PersistedPhysicalShape(
+    return _pushSurface<PersistedPhysicalShape>(PersistedPhysicalShape(
       oldLayer as PersistedPhysicalShape?,
       path as SurfacePath,
       elevation,
       color.value,
       shadowColor?.value ?? 0xFF000000,
       clipBehavior,
-    )) as ui.PhysicalShapeEngineLayer;
+    ));
   }
 
   /// Add a retained engine layer subtree from previous frames.
@@ -528,6 +528,15 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// cannot be used further.
   @override
   SurfaceScene build() {
+    // "Build finish" and "raster start" happen back-to-back because we
+    // render on the same thread, so there's no overhead from hopping to
+    // another thread.
+    //
+    // In the HTML renderer we time the beginning of the rasterization phase
+    // (counter-intuitively) in SceneBuilder.build because DOM updates happen
+    // here. This is different from CanvasKit.
+    _frameTimingsOnBuildFinish();
+    _frameTimingsOnRasterStart();
     timeAction<void>(kProfilePrerollFrame, () {
       while (_surfaceStack.length > 1) {
         // Auto-pop layers that were pushed without a corresponding pop.

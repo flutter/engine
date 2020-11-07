@@ -537,27 +537,21 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   _textInputClient = client;
 }
 
-// Return true if the new input state needs to be synced back to the framework.
-- (BOOL)setTextInputState:(NSDictionary*)state {
+- (void)setTextInputState:(NSDictionary*)state {
   NSString* newText = state[@"text"];
   BOOL textChanged = ![self.text isEqualToString:newText];
   if (textChanged) {
     [self.inputDelegate textWillChange:self];
     [self.text setString:newText];
   }
-  BOOL needsEditingStateUpdate = textChanged;
   NSInteger composingBase = [state[@"composingBase"] intValue];
   NSInteger composingExtent = [state[@"composingExtent"] intValue];
   NSRange composingRange = [self clampSelection:NSMakeRange(MIN(composingBase, composingExtent),
                                                             ABS(composingBase - composingExtent))
                                         forText:self.text];
-  FlutterTextRange* newMarkedRange =
+
+  self.markedTextRange =
       composingRange.length > 0 ? [FlutterTextRange rangeWithNSRange:composingRange] : nil;
-  needsEditingStateUpdate =
-      needsEditingStateUpdate ||
-      (!newMarkedRange ? self.markedTextRange != nil
-                       : ![newMarkedRange isEqualTo:(FlutterTextRange*)self.markedTextRange]);
-  self.markedTextRange = newMarkedRange;
 
   NSRange selectedRange = [self clampSelectionFromBase:[state[@"selectionBase"] intValue]
                                                 extent:[state[@"selectionExtent"] intValue]
@@ -565,7 +559,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
   NSRange oldSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
   if (!NSEqualRanges(selectedRange, oldSelectedRange)) {
-    needsEditingStateUpdate = YES;
     [self.inputDelegate selectionWillChange:self];
 
     [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:selectedRange]];
@@ -579,9 +572,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (textChanged) {
     [self.inputDelegate textDidChange:self];
   }
-
-  // For consistency with Android behavior, send an update to the framework if anything changed.
-  return needsEditingStateUpdate;
 }
 
 // Extracts the selection information from the editing state dictionary.
@@ -788,6 +778,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)unmarkText {
+  if (!self.markedTextRange)
+    return;
   self.markedTextRange = nil;
   [self updateEditingState];
 }
@@ -1425,9 +1417,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)setTextInputEditingState:(NSDictionary*)state {
-  if ([_activeView setTextInputState:state]) {
-    [_activeView updateEditingState];
-  }
+  [_activeView setTextInputState:state];
 }
 
 - (void)clearTextInputClient {

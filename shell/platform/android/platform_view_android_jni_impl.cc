@@ -6,7 +6,6 @@
 
 #include <android/native_window_jni.h>
 #include <jni.h>
-
 #include <utility>
 
 #include "unicode/uchar.h"
@@ -36,8 +35,9 @@ namespace flutter {
 namespace {
 
 bool CheckException(JNIEnv* env) {
-  if (env->ExceptionCheck() == JNI_FALSE)
+  if (env->ExceptionCheck() == JNI_FALSE) {
     return true;
+  }
 
   jthrowable exception = env->ExceptionOccurred();
   env->ExceptionClear();
@@ -53,7 +53,7 @@ static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_callback_info_class =
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_jni_class = nullptr;
 
-static fml::jni::ScopedJavaGlobalRef<jclass>* g_surface_texture_class = nullptr;
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_texture_wrapper_class = nullptr;
 
 // Called By Native
 
@@ -613,7 +613,8 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeRegisterTexture",
-          .signature = "(JJLandroid/graphics/SurfaceTexture;)V",
+          .signature = "(JJLio/flutter/embedding/engine/renderer/"
+                       "SurfaceTextureWrapper;)V",
           .fnPtr = reinterpret_cast<void*>(&RegisterTexture),
       },
       {
@@ -857,15 +858,16 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_surface_texture_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
-      env, env->FindClass("android/graphics/SurfaceTexture"));
-  if (g_surface_texture_class->is_null()) {
-    FML_LOG(ERROR) << "Could not locate SurfaceTexture class";
+  g_texture_wrapper_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass(
+               "io/flutter/embedding/engine/renderer/SurfaceTextureWrapper"));
+  if (g_texture_wrapper_class->is_null()) {
+    FML_LOG(ERROR) << "Could not locate SurfaceTextureWrapper class";
     return false;
   }
 
   g_attach_to_gl_context_method = env->GetMethodID(
-      g_surface_texture_class->obj(), "attachToGLContext", "(I)V");
+      g_texture_wrapper_class->obj(), "attachToGLContext", "(I)V");
 
   if (g_attach_to_gl_context_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate attachToGlContext method";
@@ -873,7 +875,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   }
 
   g_update_tex_image_method =
-      env->GetMethodID(g_surface_texture_class->obj(), "updateTexImage", "()V");
+      env->GetMethodID(g_texture_wrapper_class->obj(), "updateTexImage", "()V");
 
   if (g_update_tex_image_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate updateTexImage method";
@@ -881,7 +883,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   }
 
   g_get_transform_matrix_method = env->GetMethodID(
-      g_surface_texture_class->obj(), "getTransformMatrix", "([F)V");
+      g_texture_wrapper_class->obj(), "getTransformMatrix", "([F)V");
 
   if (g_get_transform_matrix_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate getTransformMatrix method";
@@ -889,7 +891,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   }
 
   g_detach_from_gl_context_method = env->GetMethodID(
-      g_surface_texture_class->obj(), "detachFromGLContext", "()V");
+      g_texture_wrapper_class->obj(), "detachFromGLContext", "()V");
 
   if (g_detach_from_gl_context_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate detachFromGlContext method";
@@ -1174,10 +1176,10 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
       }
       case clip_rect: {
         const SkRect& rect = (*iter)->GetRect();
-        env->CallVoidMethod(mutatorsStack,
-                            g_mutators_stack_push_cliprect_method,
-                            (int)rect.left(), (int)rect.top(),
-                            (int)rect.right(), (int)rect.bottom());
+        env->CallVoidMethod(
+            mutatorsStack, g_mutators_stack_push_cliprect_method,
+            static_cast<int>(rect.left()), static_cast<int>(rect.top()),
+            static_cast<int>(rect.right()), static_cast<int>(rect.bottom()));
         break;
       }
       // TODO(cyanglaz): Implement other mutators.
@@ -1301,18 +1303,35 @@ PlatformViewAndroidJNIImpl::FlutterViewComputePlatformResolvedLocale(
   }
   fml::jni::ScopedJavaLocalRef<jobjectArray> j_locales_data =
       fml::jni::VectorToStringArray(env, supported_locales_data);
-  jobjectArray result = (jobjectArray)env->CallObjectMethod(
+  jobjectArray result = static_cast<jobjectArray>(env->CallObjectMethod(
       java_object.obj(), g_compute_platform_resolved_locale_method,
-      j_locales_data.obj());
+      j_locales_data.obj()));
 
   FML_CHECK(CheckException(env));
 
   int length = env->GetArrayLength(result);
   for (int i = 0; i < length; i++) {
     out->emplace_back(fml::jni::JavaStringToString(
-        env, (jstring)env->GetObjectArrayElement(result, i)));
+        env, static_cast<jstring>(env->GetObjectArrayElement(result, i))));
   }
   return out;
+}
+
+double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return kUnknownDisplayRefreshRate;
+  }
+
+  jclass clazz = env->GetObjectClass(java_object.obj());
+  if (clazz == nullptr) {
+    return kUnknownDisplayRefreshRate;
+  }
+
+  jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
+  return static_cast<double>(env->GetStaticFloatField(clazz, fid));
 }
 
 }  // namespace flutter

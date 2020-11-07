@@ -47,14 +47,12 @@ typedef struct {
   // it will be ignored in that case.
   const wchar_t* aot_library_path;
 
-  // The switches to pass to the Flutter engine.
-  //
-  // See: https://github.com/flutter/engine/blob/master/shell/common/switches.h
-  // for details. Not all arguments will apply to desktop.
-  const char** switches;
+  // Number of elements in the array passed in as dart_entrypoint_argv.
+  int dart_entrypoint_argc;
 
-  // The number of elements in |switches|.
-  size_t switches_count;
+  // Array of Dart entrypoint arguments. This is deep copied during the call
+  // to FlutterDesktopEngineCreate.
+  const char** dart_entrypoint_argv;
 } FlutterDesktopEngineProperties;
 
 // ========== View Controller ==========

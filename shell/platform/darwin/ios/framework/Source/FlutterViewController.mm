@@ -157,6 +157,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 - (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
                   initialRoute:(nullable NSString*)initialRoute {
+  // Need the project to get settings for the view. Initializing it here means
+  // the Engine class won't initialize it later.
+  if (!project) {
+    project = [[[FlutterDartProject alloc] init] autorelease];
+  }
+  FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
@@ -326,7 +332,11 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
   auto placeholder = [[[UIView alloc] init] autorelease];
 
   placeholder.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-  placeholder.backgroundColor = UIColor.whiteColor;
+  if (@available(iOS 13.0, *)) {
+    placeholder.backgroundColor = UIColor.systemBackgroundColor;
+  } else {
+    placeholder.backgroundColor = UIColor.whiteColor;
+  }
   placeholder.autoresizesSubviews = YES;
 
   // Only add the label when we know we have failed to enable tracing (and it was necessary).
@@ -339,9 +349,9 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
     messageLabel.autoresizingMask =
         UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     messageLabel.text =
-        @"In iOS 14+, Flutter application in debug mode can only be launched from Flutter tooling, "
+        @"In iOS 14+, debug mode Flutter apps can only be launched from Flutter tooling, "
         @"IDEs with Flutter plugins or from Xcode.\n\nAlternatively, build in profile or release "
-        @"modes to enable re-launching from the home screen.";
+        @"modes to enable launching from the home screen.";
     [placeholder addSubview:messageLabel];
   }
 
@@ -913,18 +923,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)viewDidLayoutSubviews {
-  CGSize viewSize = self.view.bounds.size;
+  CGRect viewBounds = self.view.bounds;
   CGFloat scale = [UIScreen mainScreen].scale;
 
   // Purposefully place this not visible.
-  _scrollView.get().frame = CGRectMake(0.0, 0.0, viewSize.width, 0.0);
+  _scrollView.get().frame = CGRectMake(0.0, 0.0, viewBounds.size.width, 0.0);
   _scrollView.get().contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
 
   // First time since creation that the dimensions of its view is known.
   bool firstViewBoundsUpdate = !_viewportMetrics.physical_width;
   _viewportMetrics.device_pixel_ratio = scale;
-  _viewportMetrics.physical_width = viewSize.width * scale;
-  _viewportMetrics.physical_height = viewSize.height * scale;
+  _viewportMetrics.physical_width = viewBounds.size.width * scale;
+  _viewportMetrics.physical_height = viewBounds.size.height * scale;
 
   [self updateViewportPadding];
   [self updateViewportMetrics];
@@ -1014,6 +1024,58 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self updateViewportMetrics];
 }
 
+- (void)dispatchPresses:(NSSet<UIPress*>*)presses API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
+    for (UIPress* press in presses) {
+      if (press.key == nil || press.phase == UIPressPhaseStationary ||
+          press.phase == UIPressPhaseChanged) {
+        continue;
+      }
+      NSMutableDictionary* keyMessage = [[@{
+        @"keymap" : @"ios",
+        @"type" : @"unknown",
+        @"keyCode" : @(press.key.keyCode),
+        @"modifiers" : @(press.key.modifierFlags),
+        @"characters" : press.key.characters,
+        @"charactersIgnoringModifiers" : press.key.charactersIgnoringModifiers
+      } mutableCopy] autorelease];
+
+      if (press.phase == UIPressPhaseBegan) {
+        keyMessage[@"type"] = @"keydown";
+      } else if (press.phase == UIPressPhaseEnded || press.phase == UIPressPhaseCancelled) {
+        keyMessage[@"type"] = @"keyup";
+      }
+
+      [[_engine.get() keyEventChannel] sendMessage:keyMessage];
+    }
+  }
+}
+
+- (void)pressesBegan:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
+- (void)pressesChanged:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
+- (void)pressesEnded:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
+- (void)pressesCancelled:(NSSet<UIPress*>*)presses
+               withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
 #pragma mark - Orientation updates
 
 - (void)onOrientationPreferencesUpdated:(NSNotification*)notification {
@@ -1095,14 +1157,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
   auto platformView = [_engine.get() platformView];
   int32_t flags = 0;
-  if (UIAccessibilityIsInvertColorsEnabled())
+  if (UIAccessibilityIsInvertColorsEnabled()) {
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kInvertColors);
-  if (UIAccessibilityIsReduceMotionEnabled())
+  }
+  if (UIAccessibilityIsReduceMotionEnabled()) {
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kReduceMotion);
-  if (UIAccessibilityIsBoldTextEnabled())
+  }
+  if (UIAccessibilityIsBoldTextEnabled()) {
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kBoldText);
-  if (UIAccessibilityDarkerSystemColorsEnabled())
+  }
+  if (UIAccessibilityDarkerSystemColorsEnabled()) {
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kHighContrast);
+  }
 #if TARGET_OS_SIMULATOR
   // There doesn't appear to be any way to determine whether the accessibility
   // inspector is enabled on the simulator. We conservatively always turn on the
@@ -1266,7 +1332,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Platform views
 
-- (flutter::FlutterPlatformViewsController*)platformViewsController {
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController {
   return [_engine.get() platformViewsController];
 }
 

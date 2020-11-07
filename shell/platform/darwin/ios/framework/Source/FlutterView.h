@@ -20,8 +20,7 @@
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
                                   asBase64Encoded:(BOOL)base64Encode;
 
-- (flutter::FlutterPlatformViewsController*)platformViewsController;
-
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 @end
 
 @interface FlutterView : UIView
@@ -33,8 +32,9 @@
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
                           opaque:(BOOL)opaque NS_DESIGNATED_INITIALIZER;
-- (std::unique_ptr<flutter::IOSSurface>)createSurface:(std::shared_ptr<flutter::IOSContext>)context;
 
+// Set by FlutterEngine or FlutterViewController to override software rendering.
+@property(class, nonatomic) BOOL forceSoftwareRendering;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_

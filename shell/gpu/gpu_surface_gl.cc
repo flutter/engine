@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 
@@ -170,9 +169,7 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
   );
 
   sk_sp<SkColorSpace> colorspace = SkColorSpace::MakeSRGB();
-
-  SkSurfaceProps surface_props(
-      SkSurfaceProps::InitType::kLegacyFontHost_InitType);
+  SkSurfaceProps surface_props(0, kUnknown_SkPixelGeometry);
 
   return SkSurface::MakeFromBackendRenderTarget(
       context,                                       // gr context

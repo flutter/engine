@@ -27,6 +27,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "font_skia.h"
+#include "minikin/Layout.h"
 #include "txt/platform.h"
 #include "txt/text_style.h"
 
@@ -82,7 +83,15 @@ class TxtFallbackFontProvider
 
 FontCollection::FontCollection() : enable_font_fallback_(true) {}
 
-FontCollection::~FontCollection() = default;
+FontCollection::~FontCollection() {
+  minikin::Layout::purgeCaches();
+
+#if FLUTTER_ENABLE_SKSHAPER
+  if (skt_collection_) {
+    skt_collection_->clearCaches();
+  }
+#endif
+}
 
 size_t FontCollection::GetFontManagersCount() const {
   return GetFontManagerOrder().size();
@@ -94,18 +103,34 @@ void FontCollection::SetupDefaultFontManager() {
 
 void FontCollection::SetDefaultFontManager(sk_sp<SkFontMgr> font_manager) {
   default_font_manager_ = font_manager;
+
+#if FLUTTER_ENABLE_SKSHAPER
+  skt_collection_.reset();
+#endif
 }
 
 void FontCollection::SetAssetFontManager(sk_sp<SkFontMgr> font_manager) {
   asset_font_manager_ = font_manager;
+
+#if FLUTTER_ENABLE_SKSHAPER
+  skt_collection_.reset();
+#endif
 }
 
 void FontCollection::SetDynamicFontManager(sk_sp<SkFontMgr> font_manager) {
   dynamic_font_manager_ = font_manager;
+
+#if FLUTTER_ENABLE_SKSHAPER
+  skt_collection_.reset();
+#endif
 }
 
 void FontCollection::SetTestFontManager(sk_sp<SkFontMgr> font_manager) {
   test_font_manager_ = font_manager;
+
+#if FLUTTER_ENABLE_SKSHAPER
+  skt_collection_.reset();
+#endif
 }
 
 // Return the available font managers in the order they should be queried.
@@ -124,6 +149,12 @@ std::vector<sk_sp<SkFontMgr>> FontCollection::GetFontManagerOrder() const {
 
 void FontCollection::DisableFontFallback() {
   enable_font_fallback_ = false;
+
+#if FLUTTER_ENABLE_SKSHAPER
+  if (skt_collection_) {
+    skt_collection_->disableFontFallback();
+  }
+#endif
 }
 
 std::shared_ptr<minikin::FontCollection>
@@ -343,6 +374,12 @@ FontCollection::GetFallbackFontFamily(const sk_sp<SkFontMgr>& manager,
 
 void FontCollection::ClearFontFamilyCache() {
   font_collections_cache_.clear();
+
+#if FLUTTER_ENABLE_SKSHAPER
+  if (skt_collection_) {
+    skt_collection_->clearCaches();
+  }
+#endif
 }
 
 #if FLUTTER_ENABLE_SKSHAPER

@@ -5,6 +5,8 @@
 package io.flutter.embedding.engine;
 
 import android.content.Context;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.AssetManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.FlutterInjector;
@@ -74,7 +76,7 @@ public class FlutterEngine {
   @NonNull private final FlutterJNI flutterJNI;
   @NonNull private final FlutterRenderer renderer;
   @NonNull private final DartExecutor dartExecutor;
-  @NonNull private final FlutterEnginePluginRegistry pluginRegistry;
+  @NonNull private final FlutterEngineConnectionRegistry pluginRegistry;
   @NonNull private final LocalizationPlugin localizationPlugin;
 
   // System channels.
@@ -264,7 +266,13 @@ public class FlutterEngine {
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins,
       boolean waitForRestorationData) {
-    this.dartExecutor = new DartExecutor(flutterJNI, context.getAssets());
+    AssetManager assetManager;
+    try {
+      assetManager = context.createPackageContext(context.getPackageName(), 0).getAssets();
+    } catch (NameNotFoundException e) {
+      assetManager = context.getAssets();
+    }
+    this.dartExecutor = new DartExecutor(flutterJNI, assetManager);
     this.dartExecutor.onAttachedToJNI();
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
@@ -301,7 +309,7 @@ public class FlutterEngine {
     this.platformViewsController.onAttachedToJNI();
 
     this.pluginRegistry =
-        new FlutterEnginePluginRegistry(context.getApplicationContext(), this, flutterLoader);
+        new FlutterEngineConnectionRegistry(context.getApplicationContext(), this, flutterLoader);
 
     if (automaticallyRegisterPlugins) {
       registerPlugins();

@@ -678,7 +678,7 @@ void testMain() async {
       await matchGoldenFile(
         'paint_spread_bounds.png',
         region: const Rect.fromLTRB(0, 0, 250, 600),
-        maxDiffRatePercent: 0.01,
+        maxDiffRatePercent: 0.2,
         pixelComparison: PixelComparison.precise,
       );
     } finally {
@@ -722,6 +722,18 @@ class TestImage implements Image {
 
   @override
   void dispose() {}
+
+  @override
+  bool get debugDisposed => false;
+
+  @override
+  Image clone() => this;
+
+  @override
+  bool isCloneOf(Image other) => other == this;
+
+  @override
+  List<StackTrace>/*?*/ debugGetOpenHandleStackTraces() => <StackTrace>[];
 }
 
 Paragraph createTestParagraph() {

@@ -19,7 +19,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.DisplayCutout;
 import android.view.KeyEvent;
@@ -41,11 +40,13 @@ import android.view.inputmethod.InputMethodManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
+import io.flutter.Log;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
+import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
@@ -71,9 +72,10 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Deprecated Android view containing a Flutter app.
  *
- * <p>Deprecation: {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
- * this class. See https://flutter.dev/go/android-project-migration for more migration details.
+ * @deprecated {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
+ *     this class. See https://flutter.dev/go/android-project-migration for more migration details.
  */
+@Deprecated
 public class FlutterView extends SurfaceView
     implements BinaryMessenger, TextureRegistry, MouseCursorPlugin.MouseCursorViewDelegate {
   /**
@@ -267,19 +269,9 @@ public class FlutterView extends SurfaceView
   }
 
   @Override
-  public boolean onKeyUp(int keyCode, KeyEvent event) {
-    if (!isAttached()) {
-      return super.onKeyUp(keyCode, event);
-    }
-    return androidKeyProcessor.onKeyUp(event) || super.onKeyUp(keyCode, event);
-  }
-
-  @Override
-  public boolean onKeyDown(int keyCode, KeyEvent event) {
-    if (!isAttached()) {
-      return super.onKeyDown(keyCode, event);
-    }
-    return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
+  public boolean dispatchKeyEventPreIme(KeyEvent event) {
+    return (isAttached() && androidKeyProcessor.onKeyEvent(event))
+        || super.dispatchKeyEventPreIme(event);
   }
 
   public FlutterNativeView getFlutterNativeView() {
@@ -660,14 +652,17 @@ public class FlutterView extends SurfaceView
         zeroSides = calculateShouldZeroSides();
       }
 
-      // Status bar (top) and left/right system insets should partially obscure the content
-      // (padding).
+      // Status bar (top), navigation bar (bottom) and left/right system insets should
+      // partially obscure the content (padding).
       mMetrics.physicalPaddingTop = statusBarVisible ? insets.getSystemWindowInsetTop() : 0;
       mMetrics.physicalPaddingRight =
           zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
               ? 0
               : insets.getSystemWindowInsetRight();
-      mMetrics.physicalPaddingBottom = 0;
+      mMetrics.physicalPaddingBottom =
+          navigationBarVisible && guessBottomKeyboardInset(insets) == 0
+              ? insets.getSystemWindowInsetBottom()
+              : 0;
       mMetrics.physicalPaddingLeft =
           zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
               ? 0
@@ -676,10 +671,7 @@ public class FlutterView extends SurfaceView
       // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
       mMetrics.physicalViewInsetTop = 0;
       mMetrics.physicalViewInsetRight = 0;
-      mMetrics.physicalViewInsetBottom =
-          navigationBarVisible
-              ? insets.getSystemWindowInsetBottom()
-              : guessBottomKeyboardInset(insets);
+      mMetrics.physicalViewInsetBottom = guessBottomKeyboardInset(insets);
       mMetrics.physicalViewInsetLeft = 0;
     }
 
@@ -875,18 +867,18 @@ public class FlutterView extends SurfaceView
     surfaceTexture.detachFromGLContext();
     final SurfaceTextureRegistryEntry entry =
         new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture);
-    mNativeView.getFlutterJNI().registerTexture(entry.id(), surfaceTexture);
+    mNativeView.getFlutterJNI().registerTexture(entry.id(), entry.textureWrapper());
     return entry;
   }
 
   final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
     private final long id;
-    private final SurfaceTexture surfaceTexture;
+    private final SurfaceTextureWrapper textureWrapper;
     private boolean released;
 
     SurfaceTextureRegistryEntry(long id, SurfaceTexture surfaceTexture) {
       this.id = id;
-      this.surfaceTexture = surfaceTexture;
+      this.textureWrapper = new SurfaceTextureWrapper(surfaceTexture);
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         // The callback relies on being executed on the UI thread (unsynchronised read of
@@ -894,12 +886,12 @@ public class FlutterView extends SurfaceView
         // and also the engine code check for platform thread in
         // Shell::OnPlatformViewMarkTextureFrameAvailable),
         // so we explicitly pass a Handler for the current thread.
-        this.surfaceTexture.setOnFrameAvailableListener(onFrameListener, new Handler());
+        this.surfaceTexture().setOnFrameAvailableListener(onFrameListener, new Handler());
       } else {
         // Android documentation states that the listener can be called on an arbitrary thread.
         // But in practice, versions of Android that predate the newer API will call the listener
         // on the thread where the SurfaceTexture was constructed.
-        this.surfaceTexture.setOnFrameAvailableListener(onFrameListener);
+        this.surfaceTexture().setOnFrameAvailableListener(onFrameListener);
       }
     }
 
@@ -920,9 +912,13 @@ public class FlutterView extends SurfaceView
           }
         };
 
+    public SurfaceTextureWrapper textureWrapper() {
+      return textureWrapper;
+    }
+
     @Override
     public SurfaceTexture surfaceTexture() {
-      return surfaceTexture;
+      return textureWrapper.surfaceTexture();
     }
 
     @Override
@@ -944,8 +940,8 @@ public class FlutterView extends SurfaceView
 
       // Otherwise onFrameAvailableListener might be called after mNativeView==null
       // (https://github.com/flutter/flutter/issues/20951). See also the check in onFrameAvailable.
-      surfaceTexture.setOnFrameAvailableListener(null);
-      surfaceTexture.release();
+      surfaceTexture().setOnFrameAvailableListener(null);
+      textureWrapper.release();
       mNativeView.getFlutterJNI().unregisterTexture(id);
     }
   }

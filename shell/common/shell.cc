@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #define RAPIDJSON_HAS_STDSTRING 1
 #include "flutter/shell/common/shell.h"
@@ -333,6 +332,8 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  display_manager_ = std::make_unique<DisplayManager>();
+
   // Generate a WeakPtrFactory for use with the raster thread. This does not
   // need to wait on a latch because it can only ever be used from the raster
   // thread from this class, so we have ordering guarantees.
@@ -562,8 +563,6 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   is_setup_ = true;
 
-  vm_->GetServiceProtocol()->AddHandler(this, GetServiceProtocolDescription());
-
   PersistentCache::GetCacheForProcess()->AddWorkerTaskRunner(
       task_runners_.GetIOTaskRunner());
 
@@ -573,14 +572,6 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   if (settings_.purge_persistent_cache) {
     PersistentCache::GetCacheForProcess()->Purge();
   }
-
-  // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
-  // same thread as it was created on. Shell is constructed on the platform
-  // thread but we need to call into the Engine on the UI thread, so we need
-  // to use getUnsafe() here to avoid failing the assertion.
-  //
-  // https://github.com/flutter/flutter/issues/42947
-  display_refresh_rate_ = weak_engine_.getUnsafe()->GetDisplayRefreshRate();
 
   return true;
 }
@@ -815,6 +806,16 @@ void Shell::OnPlatformViewDestroyed() {
 void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  if (metrics.device_pixel_ratio <= 0 || metrics.physical_width <= 0 ||
+      metrics.physical_height <= 0) {
+    FML_DLOG(ERROR)
+        << "Embedding reported invalid ViewportMetrics, ignoring update."
+        << "\nphysical_width: " << metrics.physical_width
+        << "\nphysical_height: " << metrics.physical_height
+        << "\ndevice_pixel_ratio: " << metrics.device_pixel_ratio;
+    return;
+  }
 
   // This is the formula Android uses.
   // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
@@ -1147,6 +1148,23 @@ void Shell::OnPreEngineRestart() {
 }
 
 // |Engine::Delegate|
+void Shell::OnRootIsolateCreated() {
+  if (is_added_to_service_protocol_) {
+    return;
+  }
+  auto description = GetServiceProtocolDescription();
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetPlatformTaskRunner(),
+      [self = weak_factory_.GetWeakPtr(),
+       description = std::move(description)]() {
+        if (self) {
+          self->vm_->GetServiceProtocol()->AddHandler(self.get(), description);
+        }
+      });
+  is_added_to_service_protocol_ = true;
+}
+
+// |Engine::Delegate|
 void Shell::UpdateIsolateDescription(const std::string isolate_name,
                                      int64_t isolate_port) {
   Handler::Description description(isolate_port, isolate_name);
@@ -1159,13 +1177,6 @@ void Shell::SetNeedsReportTimings(bool value) {
 
 // |Engine::Delegate|
 std::unique_ptr<std::vector<std::string>> Shell::ComputePlatformResolvedLocale(
-    const std::vector<std::string>& supported_locale_data) {
-  return ComputePlatformViewResolvedLocale(supported_locale_data);
-}
-
-// |PlatformView::Delegate|
-std::unique_ptr<std::vector<std::string>>
-Shell::ComputePlatformViewResolvedLocale(
     const std::vector<std::string>& supported_locale_data) {
   return platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
 }
@@ -1250,8 +1261,9 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
 }
 
 fml::Milliseconds Shell::GetFrameBudget() {
-  if (display_refresh_rate_ > 0) {
-    return fml::RefreshRateToFrameBudget(display_refresh_rate_.load());
+  double display_refresh_rate = display_manager_->GetMainDisplayRefreshRate();
+  if (display_refresh_rate > 0) {
+    return fml::RefreshRateToFrameBudget(display_refresh_rate);
   } else {
     return fml::kDefaultFrameBudget;
   }
@@ -1290,9 +1302,15 @@ bool Shell::HandleServiceProtocolMessage(
 // |ServiceProtocol::Handler|
 ServiceProtocol::Handler::Description Shell::GetServiceProtocolDescription()
     const {
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!weak_engine_) {
+    return ServiceProtocol::Handler::Description();
+  }
+
   return {
-      engine_->GetUIIsolateMainPort(),
-      engine_->GetUIIsolateName(),
+      weak_engine_->GetUIIsolateMainPort(),
+      weak_engine_->GetUIIsolateName(),
   };
 }
 
@@ -1396,9 +1414,21 @@ bool Shell::OnServiceProtocolRunInView(
   configuration.SetEntrypointAndLibrary(engine_->GetLastEntrypoint(),
                                         engine_->GetLastEntrypointLibrary());
 
-  configuration.AddAssetResolver(
-      std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
-          asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
+  configuration.AddAssetResolver(std::make_unique<DirectoryAssetBundle>(
+      fml::OpenDirectory(asset_directory_path.c_str(), false,
+                         fml::FilePermission::kRead),
+      false));
+
+  // Preserve any original asset resolvers to avoid syncing unchanged assets
+  // over the DevFS connection.
+  auto old_asset_manager = engine_->GetAssetManager();
+  if (old_asset_manager != nullptr) {
+    for (auto& old_resolver : old_asset_manager->TakeResolvers()) {
+      if (old_resolver->IsValidAfterAssetManagerChange()) {
+        configuration.AddAssetResolver(std::move(old_resolver));
+      }
+    }
+  }
 
   auto& allocator = response->GetAllocator();
   response->SetObject();
@@ -1442,9 +1472,13 @@ bool Shell::OnServiceProtocolGetDisplayRefreshRate(
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   response->SetObject();
   response->AddMember("type", "DisplayRefreshRate", response->GetAllocator());
-  response->AddMember("fps", engine_->GetDisplayRefreshRate(),
+  response->AddMember("fps", display_manager_->GetMainDisplayRefreshRate(),
                       response->GetAllocator());
   return true;
+}
+
+double Shell::GetMainDisplayRefreshRate() {
+  return display_manager_->GetMainDisplayRefreshRate();
 }
 
 bool Shell::OnServiceProtocolGetSkSLs(
@@ -1509,7 +1543,19 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 
   asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
       fml::OpenDirectory(params.at("assetDirectory").data(), false,
-                         fml::FilePermission::kRead)));
+                         fml::FilePermission::kRead),
+      false));
+
+  // Preserve any original asset resolvers to avoid syncing unchanged assets
+  // over the DevFS connection.
+  auto old_asset_manager = engine_->GetAssetManager();
+  if (old_asset_manager != nullptr) {
+    for (auto& old_resolver : old_asset_manager->TakeResolvers()) {
+      if (old_resolver->IsValidAfterAssetManagerChange()) {
+        asset_manager->PushBack(std::move(old_resolver));
+      }
+    }
+  }
 
   if (engine_->UpdateAssetManager(std::move(asset_manager))) {
     response->AddMember("type", "Success", allocator);
@@ -1606,6 +1652,11 @@ bool Shell::ReloadSystemFonts() {
 
 std::shared_ptr<fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch() const {
   return is_gpu_disabled_sync_switch_;
+}
+
+void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
+                             std::vector<Display> displays) {
+  display_manager_->HandleDisplayUpdates(update_type, displays);
 }
 
 }  // namespace flutter
