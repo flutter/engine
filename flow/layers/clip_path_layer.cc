@@ -25,12 +25,13 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
   context->mutators_stack.PushClipPath(clip_path_);
+
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
-
   if (child_paint_bounds.intersect(clip_path_bounds)) {
     set_paint_bounds(child_paint_bounds);
   }
+
   context->mutators_stack.Pop();
   context->cull_rect = previous_cull_rect;
 }

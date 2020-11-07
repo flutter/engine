@@ -17,17 +17,16 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   SkRect previous_cull_rect = context->cull_rect;
   context->cull_rect.intersect(clip_rect_);
-  // TRACE_EVENT_INSTANT0("flutter", "children inside clip rect");
-
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
   context->mutators_stack.PushClipRect(clip_rect_);
+
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
-
   if (child_paint_bounds.intersect(clip_rect_)) {
     set_paint_bounds(child_paint_bounds);
   }
+
   context->mutators_stack.Pop();
   context->cull_rect = previous_cull_rect;
 }

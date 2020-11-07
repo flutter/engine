@@ -49,9 +49,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
     // sibling tree.
     context->has_platform_view = false;
 
-    if (layer->paint_bounds() == kUnvisitedRect) {
-      layer->Preroll(context, child_matrix);
-    }
+    layer->Preroll(context, child_matrix);
 
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);
@@ -88,9 +86,8 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
 void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
                                              Layer* layer,
                                              const SkMatrix& matrix) {
-  if (!context->has_platform_view && context->raster_cache
-  //  &&    SkRect::Intersects(context->cull_rect, layer->paint_bounds())
-   ) {
+  if (!context->has_platform_view && context->raster_cache &&
+      SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
     context->raster_cache->Prepare(context, layer, matrix);
   }
 }

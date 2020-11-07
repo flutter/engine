@@ -36,7 +36,6 @@
 namespace flutter {
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
-static constexpr SkRect kUnvisitedRect = SkRect::MakeLTRB(-1E9F, -1E9F, -1E9F, -1E9F);
 
 // This should be an exact copy of the Clip enum in painting.dart.
 enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
@@ -176,7 +175,14 @@ class Layer {
     paint_bounds_ = paint_bounds;
   }
 
-  bool needs_painting() const { FML_DCHECK(false); return false; }
+  // This can be removed once we wean the unit tests off of calling it...
+  // Unit tests currently fail anyway because the mock PaintContext objects
+  // don't have a valid clip set to support the new needs_painting()
+  // mechanism, so more work is required...
+  bool needs_painting() const {
+    FML_LOG(ERROR) << "!!!!! Layer::needs_painting() CALLED !!!!!";
+    return !paint_bounds_.isEmpty();
+  }
 
   uint64_t unique_id() const { return unique_id_; }
 
