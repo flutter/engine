@@ -12,7 +12,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
-#import "flutter/shell/platform/embedder/embedder.h"
 #import "flutter/third_party/accessibility/accessibility_bridge.h"
 
 /**
@@ -512,7 +511,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   } else if (enabled && !_bridge){
     _bridge.reset(new ax::AccessibilityBridge((void*)CFBridgingRetain(self)));
   }
-  FlutterEngineUpdateSemanticsEnabled(_engine, enabled);
+  _embedderAPI.UpdateSemanticsEnabled(_engine, enabled);
 }
 
 #pragma mark - Private methods

@@ -7,7 +7,6 @@
 #import <Cocoa/Cocoa.h>
 
 #include "flutter/shell/platform/embedder/embedder.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridge.h"
 
 @interface FlutterEngine ()
 
