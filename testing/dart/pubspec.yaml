@@ -9,3 +9,6 @@ dependency_overrides:
    path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_engine
  sky_services:
    path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_services
+
+environment:
+  sdk: '>=2.10.0 <3.0.0'
