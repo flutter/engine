@@ -241,7 +241,7 @@ TEST(
   EXPECT_CALL(external_view_embedder, SupportsDynamicThreadMerging)
       .WillRepeatedly(Return(true));
 
-  EXPECT_CALL(*external_view_embedder,
+  EXPECT_CALL(external_view_embedder,
               BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
                          /*device_pixel_ratio=*/2.0,
                          /*raster_thread_merger=*/_))
