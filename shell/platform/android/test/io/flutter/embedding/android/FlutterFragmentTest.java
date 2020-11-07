@@ -51,7 +51,7 @@ public class FlutterFragmentTest {
     assertEquals("/custom/route", fragment.getInitialRoute());
     assertArrayEquals(new String[] {}, fragment.getFlutterShellArgs().toArray());
     assertFalse(fragment.shouldAttachEngineToActivity());
-    assertTrue(fragment.shouldAttachEngineToActivity());
+    assertTrue(fragment.shouldHandleDeeplinking());
     assertNull(fragment.getCachedEngineId());
     assertTrue(fragment.shouldDestroyEngineWithHost());
     assertEquals(RenderMode.texture, fragment.getRenderMode());

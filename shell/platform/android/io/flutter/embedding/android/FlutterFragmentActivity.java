@@ -548,7 +548,7 @@ public class FlutterFragmentActivity extends FragmentActivity
     return true;
   }
 
-  public boolean shouldHandleDeeplinking() {
+  protected boolean shouldHandleDeeplinking() {
     try {
       ActivityInfo activityInfo =
           getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);

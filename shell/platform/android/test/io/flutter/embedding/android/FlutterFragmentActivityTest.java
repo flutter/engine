@@ -119,6 +119,11 @@ public class FlutterFragmentActivityTest {
     protected String getAppBundlePath() {
       return "";
     }
+
+    @Override
+    protected boolean shouldHandleDeeplinking() {
+      return false;
+    }
   }
 
   // This is just a compile time check to ensure that it's possible for FlutterFragmentActivity
