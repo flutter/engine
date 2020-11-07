@@ -27,6 +27,7 @@
 #include <sys/sysctl.h>
 #include <sys/types.h>
 
+#include <mach/machine.h>
 #include <mutex>
 
 #include "flutter/fml/build_config.h"
@@ -114,7 +115,65 @@ static bool EnableTracingManually(const Settings& vm_settings) {
   return true;
 }
 
+static bool IsTracingCheckUnnecessaryOnVersion() {
+#if !OS_IOS || TARGET_OS_SIMULATOR
+  return true;
+#endif
+
+  // Check for arm64e.
+  cpu_type_t cputype = 0;
+  size_t cputype_size = sizeof(cpu_type_t);
+  if (::sysctlbyname("hw.cputype", &cputype, &cputype_size, nullptr, 0) < 0) {
+    FML_LOG(ERROR) << "Could not execute sysctl() to get CPU type: "
+                   << strerror(errno);
+  }
+
+  cpu_subtype_t cpusubtype = 0;
+  if (::sysctlbyname("hw.cpusubtype", &cpusubtype, &cputype_size, nullptr, 0) <
+      0) {
+    FML_LOG(ERROR) << "Could not execute sysctl() to get CPU subtype: "
+                   << strerror(errno);
+  }
+
+  // Tracing is necessary unless the device is arm64e (A12 chip or higher).
+  if (cputype != CPU_TYPE_ARM64 || cpusubtype != CPU_SUBTYPE_ARM64E) {
+    return false;
+  }
+
+  // Check for iOS 14.2 and higher.
+  size_t osversion_size;
+  ::sysctlbyname("kern.osversion", NULL, &osversion_size, NULL, 0);
+  char osversionBuffer[osversion_size];
+
+  if (::sysctlbyname("kern.osversion", osversionBuffer, &osversion_size, NULL,
+                     0) < 0) {
+    FML_LOG(ERROR) << "Could not execute sysctl() to get current OS version: "
+                   << strerror(errno);
+
+    return false;
+  }
+
+  int major_version = 0;
+  char minor_letter = 'Z';
+
+  for (size_t index = 0; index < osversion_size; index++) {
+    char version_char = osversionBuffer[index];
+    // Find the minor version build letter.
+    if (isalpha(version_char)) {
+      major_version = atoi((const char*)osversionBuffer);
+      minor_letter = toupper(version_char);
+      break;
+    }
+  }
+  // 18B92 is iOS 14.2 beta release candidate where tracing became unnecessary.
+  return major_version > 18 || (major_version == 18 && minor_letter >= 'B');
+}
+
 static bool EnableTracingIfNecessaryOnce(const Settings& vm_settings) {
+  if (IsTracingCheckUnnecessaryOnVersion()) {
+    return true;
+  }
+
   if (IsLaunchedByFlutterCLI(vm_settings)) {
     return true;
   }
