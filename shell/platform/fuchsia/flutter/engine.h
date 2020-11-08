@@ -34,6 +34,10 @@
 
 namespace flutter_runner {
 
+namespace testing {
+class EngineTest;
+}
+
 // Represents an instance of running Flutter engine along with the threads
 // that host the same.
 class Engine final {
@@ -87,8 +91,13 @@ class Engine final {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   bool use_legacy_renderer_ = true;
 #endif
+  bool intercept_all_input_ = false;
 
   fml::WeakPtrFactory<Engine> weak_factory_;
+
+  static void WarmupSkps(fml::BasicTaskRunner* concurrent_task_runner,
+                         fml::BasicTaskRunner* raster_task_runner,
+                         VulkanSurfaceProducer& surface_producer);
 
   void OnMainIsolateStart();
 
@@ -103,6 +112,8 @@ class Engine final {
   std::shared_ptr<flutter::ExternalViewEmbedder> GetExternalViewEmbedder();
 
   std::unique_ptr<flutter::Surface> CreateSurface();
+
+  friend class testing::EngineTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };

@@ -10,6 +10,7 @@ import android.text.Selection;
 import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
+import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import java.util.ArrayList;
 import org.junit.Test;
@@ -238,9 +239,15 @@ public class ListenableEditingStateTest {
 
     final Listener listener = new Listener();
     final View testView = new View(RuntimeEnvironment.application);
+    final AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     final InputConnectionAdaptor inputConnection =
         new InputConnectionAdaptor(
-            testView, 0, mock(TextInputChannel.class), editingState, new EditorInfo());
+            testView,
+            0,
+            mock(TextInputChannel.class),
+            mockKeyProcessor,
+            editingState,
+            new EditorInfo());
 
     // Make sure begin/endBatchEdit is called on the Editable when the input method calls
     // InputConnection#begin/endBatchEdit.
@@ -259,9 +266,15 @@ public class ListenableEditingStateTest {
         new ListenableEditingState(null, new View(RuntimeEnvironment.application));
     final Listener listener = new Listener();
     final View testView = new View(RuntimeEnvironment.application);
+    final AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     final InputConnectionAdaptor inputConnection =
         new InputConnectionAdaptor(
-            testView, 0, mock(TextInputChannel.class), editingState, new EditorInfo());
+            testView,
+            0,
+            mock(TextInputChannel.class),
+            mockKeyProcessor,
+            editingState,
+            new EditorInfo());
     editingState.replace(0, editingState.length(), "initial text");
 
     editingState.addEditingStateListener(listener);
@@ -289,9 +302,15 @@ public class ListenableEditingStateTest {
         new ListenableEditingState(null, new View(RuntimeEnvironment.application));
     final Listener listener = new Listener();
     final View testView = new View(RuntimeEnvironment.application);
+    final AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     final InputConnectionAdaptor inputConnection =
         new InputConnectionAdaptor(
-            testView, 0, mock(TextInputChannel.class), editingState, new EditorInfo());
+            testView,
+            0,
+            mock(TextInputChannel.class),
+            mockKeyProcessor,
+            editingState,
+            new EditorInfo());
     editingState.replace(0, editingState.length(), "initial text");
 
     editingState.addEditingStateListener(listener);
@@ -345,9 +364,15 @@ public class ListenableEditingStateTest {
         new ListenableEditingState(null, new View(RuntimeEnvironment.application));
     final Listener listener = new Listener();
     final View testView = new View(RuntimeEnvironment.application);
+    final AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     final InputConnectionAdaptor inputConnection =
         new InputConnectionAdaptor(
-            testView, 0, mock(TextInputChannel.class), editingState, new EditorInfo());
+            testView,
+            0,
+            mock(TextInputChannel.class),
+            mockKeyProcessor,
+            editingState,
+            new EditorInfo());
     editingState.replace(0, editingState.length(), "initial text");
 
     editingState.addEditingStateListener(listener);

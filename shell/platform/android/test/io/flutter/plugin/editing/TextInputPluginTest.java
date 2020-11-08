@@ -38,6 +38,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
+import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -773,11 +774,13 @@ public class TextInputPluginTest {
 
     // The input method updates the text, call notifyValueChanged.
     testAfm.resetStates();
+    final AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     InputConnectionAdaptor adaptor =
         new InputConnectionAdaptor(
             testView,
             0,
             mock(TextInputChannel.class),
+            mockKeyProcessor,
             (ListenableEditingState) textInputPlugin.getEditable(),
             new EditorInfo());
     adaptor.commitText("input from IME ", 1);

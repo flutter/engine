@@ -7,12 +7,12 @@
 import 'dart:js_util' as js_util;
 import 'dart:html' as html;
 import 'dart:typed_data';
-import 'package:test/bootstrap/browser.dart';
-import 'package:test/test.dart';
+import 'package:test/bootstrap/browser.dart'; // ignore: import_of_legacy_library_into_null_safe
+import 'package:test/test.dart'; // ignore: import_of_legacy_library_into_null_safe
 import 'package:ui/ui.dart' hide window;
 import 'package:ui/src/engine.dart';
 
-import 'matchers.dart';
+import 'matchers.dart'; // ignore: import_of_legacy_library_into_null_safe
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -535,6 +535,20 @@ void testMain() {
       start = end;
       end = iter.skipToNextContour();
       expect(start, end);
+    });
+
+    /// Regression test for https://github.com/flutter/flutter/issues/68702.
+    test('Path should return correct bounds after transform', () {
+      final Path path1 = Path()
+        ..moveTo(100, 100)
+        ..lineTo(200, 100)
+        ..lineTo(150, 200)
+        ..close();
+      final SurfacePath path2 = Path.from(path1) as SurfacePath;
+      Rect bounds = path2.pathRef.getBounds();
+      SurfacePath transformedPath = path2.transform(
+          Matrix4.identity().scaled(0.5, 0.5).toFloat64());
+      expect(transformedPath.pathRef.getBounds(), isNot(bounds));
     });
   });
 }

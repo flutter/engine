@@ -432,7 +432,7 @@ enum TextDecorationStyle {
   wavy
 }
 
-/// {@template flutter.dart:ui.textHeightBehavior}
+/// {@template dart.ui.textHeightBehavior}
 /// Defines how the paragraph will apply [TextStyle.height] to the ascent of the
 /// first line and descent of the last line.
 ///
@@ -1638,7 +1638,7 @@ enum BoxHeightStyle {
   /// The top and bottom of each box will cover half of the
   /// space above and half of the space below the line.
   ///
-  /// {@template flutter.dart:ui.boxHeightStyle.includeLineSpacing}
+  /// {@template dart.ui.boxHeightStyle.includeLineSpacing}
   /// The top edge of each line should be the same as the bottom edge
   /// of the line above. There should be no gaps in vertical coverage given any
   /// amount of line spacing. Line spacing is not included above the first line
@@ -1650,14 +1650,14 @@ enum BoxHeightStyle {
   ///
   /// The line spacing will be added to the top of the box.
   ///
-  /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
+  /// {@macro dart.ui.boxHeightStyle.includeLineSpacing}
   includeLineSpacingTop,
 
   /// Extends the bottom edge of the bounds to fully cover any line spacing.
   ///
   /// The line spacing will be added to the bottom of the box.
   ///
-  /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
+  /// {@macro dart.ui.boxHeightStyle.includeLineSpacing}
   includeLineSpacingBottom,
 
   /// Calculate box heights based on the metrics of this paragraph's [StrutStyle].
@@ -2264,7 +2264,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
 ///  If this is not provided, then the family name will be extracted from the font file.
 Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   return _futurize(
-    (_Callback<void> callback) => _loadFontFromList(list, callback, fontFamily)
+    (_Callback<void> callback) {
+      _loadFontFromList(list, callback, fontFamily);
+    }
   ).then((_) => _sendFontChangeMessage());
 }
 
@@ -2273,11 +2275,30 @@ final ByteData _fontChangeMessage = utf8.encoder.convert(
 ).buffer.asByteData();
 
 FutureOr<void> _sendFontChangeMessage() async {
-  PlatformDispatcher.instance.onPlatformMessage?.call(
-    'flutter/system',
-    _fontChangeMessage,
-    (_) {},
-  );
+  const String kSystemChannelName = 'flutter/system';
+  if (PlatformDispatcher.instance.onPlatformMessage != null) {
+    _invoke3<String, ByteData?, PlatformMessageResponseCallback>(
+      PlatformDispatcher.instance.onPlatformMessage,
+      PlatformDispatcher.instance._onPlatformMessageZone,
+      kSystemChannelName,
+      _fontChangeMessage,
+      (ByteData? responseData) { },
+    );
+  } else {
+    channelBuffers.push(kSystemChannelName, _fontChangeMessage, (ByteData? responseData) { });
+  }
 }
 
-String _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';
+// TODO(gspencergoog): remove this template block once the framework templates
+// are renamed to not reference it.
+/// {@template flutter.dart:ui.textHeightBehavior}
+/// Defines how the paragraph will apply [TextStyle.height] to the ascent of the
+/// first line and descent of the last line.
+///
+/// Each boolean value represents whether the [TextStyle.height] modifier will
+/// be applied to the corresponding metric. By default, all properties are true,
+/// and [TextStyle.height] is applied as normal. When set to false, the font's
+/// default ascent will be used.
+/// {@endtemplate}
+
+void _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';

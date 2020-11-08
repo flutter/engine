@@ -27,6 +27,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
+import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -50,6 +51,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @Nullable private Rect lastClientRect;
   private final boolean restartAlwaysRequired;
   private ImeSyncDeferringInsetsCallback imeSyncCallback;
+  private AndroidKeyProcessor keyProcessor;
 
   // Initialize the "last seen" text editing values to a non-null value.
   private TextEditState mLastKnownFrameworkTextEditingState;
@@ -175,6 +177,15 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @VisibleForTesting
   ImeSyncDeferringInsetsCallback getImeSyncCallback() {
     return imeSyncCallback;
+  }
+
+  @NonNull
+  public AndroidKeyProcessor getKeyEventProcessor() {
+    return keyProcessor;
+  }
+
+  public void setKeyEventProcessor(AndroidKeyProcessor processor) {
+    keyProcessor = processor;
   }
 
   /**
@@ -322,7 +333,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     outAttrs.imeOptions |= enterAction;
 
     InputConnectionAdaptor connection =
-        new InputConnectionAdaptor(view, inputTarget.id, textInputChannel, mEditable, outAttrs);
+        new InputConnectionAdaptor(
+            view, inputTarget.id, textInputChannel, keyProcessor, mEditable, outAttrs);
     outAttrs.initialSelStart = mEditable.getSelecionStart();
     outAttrs.initialSelEnd = mEditable.getSelecionEnd();
 
