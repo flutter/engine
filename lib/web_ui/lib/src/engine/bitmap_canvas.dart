@@ -505,6 +505,11 @@ class BitmapCanvas extends EngineCanvas {
             paint);
         return;
       }
+      final ui.Rect? pathAsRect = surfacePath.webOnlyPathAsRect;
+      if (pathAsRect != null) {
+        drawRect(pathAsRect!, paint);
+        return;
+      }
       final ui.Rect pathBounds = surfacePath.getBounds();
       html.Element svgElm = _pathToSvgElement(
           surfacePath, paint, '${pathBounds.right}', '${pathBounds.bottom}');
@@ -816,7 +821,7 @@ class BitmapCanvas extends EngineCanvas {
   void drawParagraph(EngineParagraph paragraph, ui.Offset offset) {
     assert(paragraph.isLaidOut);
 
-    if (paragraph.drawOnCanvas && _childOverdraw == false) {
+    if (false && paragraph.drawOnCanvas && _childOverdraw == false) {
       paragraph.paint(this, offset);
       return;
     }
