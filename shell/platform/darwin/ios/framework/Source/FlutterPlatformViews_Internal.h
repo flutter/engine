@@ -213,6 +213,8 @@ class FlutterPlatformViewsController {
   // Mapping a platform view ID to the top most parent view (root_view) who is a direct child to
   // the `flutter_view_`.
   //
+  // Note that the root_views_ are added to flutter_view_ during |SubmitFrame|.
+  //
   // The platform view with the view ID is a child of the root view; If the platform view is not
   // clipped, and no clipping view is added, the root view will be the intercepting view.
   std::map<int64_t, fml::scoped_nsobject<UIView>> root_views_;
