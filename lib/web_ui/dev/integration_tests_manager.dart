@@ -218,14 +218,14 @@ class IntegrationTestsManager {
         IntegrationArguments.fromBrowser(_browser);
     final int exitCode = await runProcess(
       executable,
-      arguments.getTestArguments(testName, mode,
-          isCanvaskitBackend: canvaskitBackend),
+      arguments.getTestArguments(testName, mode, canvaskitBackend),
       workingDirectory: directory.path,
       environment: enviroment,
     );
 
     if (exitCode != 0) {
-      final String command = arguments.getCommandToRun(testName, mode);
+      final String command =
+          arguments.getCommandToRun(testName, mode, canvaskitBackend);
       io.stderr
           .writeln('ERROR: Failed to run test. Exited with exit code $exitCode'
               '. To run $testName locally use the following command:'
@@ -422,16 +422,16 @@ abstract class IntegrationArguments {
     }
   }
 
-  List<String> getTestArguments(String testName, String mode,
-      {bool isCanvaskitBackend = false});
+  List<String> getTestArguments(
+      String testName, String mode, bool isCanvaskitBackend);
 
-  String getCommandToRun(String testName, String mode);
+  String getCommandToRun(String testName, String mode, bool isCanvaskitBackend);
 }
 
 /// Arguments to give `flutter drive` to run the integration tests on Chrome.
 class ChromeIntegrationArguments extends IntegrationArguments {
-  List<String> getTestArguments(String testName, String mode,
-      {bool isCanvaskitBackend = false}) {
+  List<String> getTestArguments(
+      String testName, String mode, bool isCanvaskitBackend) {
     return <String>[
       'drive',
       '--target=test_driver/${testName}',
@@ -446,8 +446,8 @@ class ChromeIntegrationArguments extends IntegrationArguments {
     ];
   }
 
-  String getCommandToRun(String testName, String mode,
-      {bool isCanvaskitBackend = false}) {
+  String getCommandToRun(
+      String testName, String mode, bool isCanvaskitBackend) {
     String statementToRun = 'flutter drive '
         '--target=test_driver/${testName} -d web-server --$mode '
         '--browser-name=chrome --local-engine=host_debug_unopt';
@@ -464,8 +464,8 @@ class ChromeIntegrationArguments extends IntegrationArguments {
 
 /// Arguments to give `flutter drive` to run the integration tests on Firefox.
 class FirefoxIntegrationArguments extends IntegrationArguments {
-  List<String> getTestArguments(String testName, String mode,
-      {bool isCanvaskitBackend = false}) {
+  List<String> getTestArguments(
+      String testName, String mode, bool isCanvaskitBackend) {
     return <String>[
       'drive',
       '--target=test_driver/${testName}',
@@ -479,11 +479,10 @@ class FirefoxIntegrationArguments extends IntegrationArguments {
     ];
   }
 
-  String getCommandToRun(String testName, String mode,
-      {bool isCanvaskitBackend = false}) {
+  String getCommandToRun(
+      String testName, String mode, bool isCanvaskitBackend) {
     final String arguments =
-        getTestArguments(testName, mode, isCanvaskitBackend: isCanvaskitBackend)
-            .join(' ');
+        getTestArguments(testName, mode, isCanvaskitBackend).join(' ');
     return 'flutter $arguments';
   }
 }
@@ -492,8 +491,8 @@ class FirefoxIntegrationArguments extends IntegrationArguments {
 class SafariIntegrationArguments extends IntegrationArguments {
   SafariIntegrationArguments();
 
-  List<String> getTestArguments(String testName, String mode,
-      {bool isCanvaskitBackend = false}) {
+  List<String> getTestArguments(
+      String testName, String mode, bool isCanvaskitBackend) {
     return <String>[
       'drive',
       '--target=test_driver/${testName}',
@@ -506,11 +505,10 @@ class SafariIntegrationArguments extends IntegrationArguments {
     ];
   }
 
-  String getCommandToRun(String testName, String mode,
-      {bool isCanvaskitBackend = false}) {
+  String getCommandToRun(
+      String testName, String mode, bool isCanvaskitBackend) {
     final String arguments =
-        getTestArguments(testName, mode, isCanvaskitBackend: isCanvaskitBackend)
-            .join(' ');
+        getTestArguments(testName, mode, isCanvaskitBackend).join(' ');
     return 'flutter $arguments';
   }
 }
@@ -538,9 +536,10 @@ class IntegrationTestsArgumentParser {
   /// `blockedTestsListsMapForModes` list for the relevant compile mode.
   String buildMode;
 
-  /// Whether to use html or canvaskit backend.
+  /// Whether to use html, canvaskit or auto for web renderer.
   ///
-  /// If not set html rendering backend will be used.
+  /// If not set all backends will be used one after another for integration
+  /// tests. If set only the provided option will be used.
   String webRenderer;
 
   void populateOptions(ArgParser argParser) {
