@@ -821,7 +821,7 @@ class BitmapCanvas extends EngineCanvas {
   void drawParagraph(EngineParagraph paragraph, ui.Offset offset) {
     assert(paragraph.isLaidOut);
 
-    if (false && paragraph.drawOnCanvas && _childOverdraw == false) {
+    if (paragraph.drawOnCanvas && _childOverdraw == false) {
       paragraph.paint(this, offset);
       return;
     }
