@@ -359,10 +359,10 @@ class IntegrationTestsManager {
       !IntegrationTestsArgumentParser.instance.buildMode.isEmpty;
 
   bool get _renderingBackendSelected =>
-      !IntegrationTestsArgumentParser.instance.renderingBackend.isEmpty;
+      !IntegrationTestsArgumentParser.instance.webRenderer.isEmpty;
 
   bool get _renderingBackendHtml =>
-      IntegrationTestsArgumentParser.instance.renderingBackend == 'html';
+      IntegrationTestsArgumentParser.instance.webRenderer == 'html';
 
   bool get _runAllTestTargets =>
       IntegrationTestsArgumentParser.instance.testTarget.isEmpty;
@@ -541,7 +541,7 @@ class IntegrationTestsArgumentParser {
   /// Whether to use html or canvaskit backend.
   ///
   /// If not set html rendering backend will be used.
-  String renderingBackend;
+  String webRenderer;
 
   void populateOptions(ArgParser argParser) {
     argParser
@@ -566,12 +566,13 @@ class IntegrationTestsArgumentParser {
               'tests will only be run using that mode. '
               'See https://flutter.dev/docs/testing/build-modes for more '
               'details on the build modes.')
-      ..addOption('rendering-backend',
+      ..addOption('web-renderer',
           defaultsTo: '',
-          help: 'By default both `html` and `canvaskit` rendering backends are '
-              ' tested when running integration tests. If this option is set '
-              ' only one of these backends will be used. `canvaskit` and `html`'
-              ' are the only available options. ');
+          help: 'By default all three options (`html`, `canvaskit`, `auto`) '
+              ' for rendering backends are tested when running integration '
+              ' tests. If this option is set only the backend provided by this '
+              ' option will be used. `auto`, `canvaskit` and `html`'
+              ' are the available options. ');
   }
 
   /// Populate browser with results of the arguments passed.
@@ -579,16 +580,17 @@ class IntegrationTestsArgumentParser {
     testTarget = argResults['target'] as String;
     buildMode = argResults['build-mode'] as String;
     if (!buildMode.isEmpty &&
-        buildMode.toLowerCase() != 'debug' &&
-        buildMode.toLowerCase() != 'profile' &&
-        buildMode.toLowerCase() != 'release') {
+        buildMode != 'debug' &&
+        buildMode != 'profile' &&
+        buildMode != 'release') {
       throw ArgumentError('Unexpected build mode: $buildMode');
     }
-    renderingBackend = argResults['rendering-backend'] as String;
-    if (!renderingBackend.isEmpty &&
-        renderingBackend.toLowerCase() != 'html' &&
-        renderingBackend.toLowerCase() != 'canvaskit') {
-      throw ArgumentError('Unexpected rendering backend: $renderingBackend');
+    webRenderer = argResults['web-renderer'] as String;
+    if (!webRenderer.isEmpty &&
+        webRenderer != 'html' &&
+        webRenderer != 'canvaskit' &&
+        webRenderer != 'auto') {
+      throw ArgumentError('Unexpected rendering backend: $webRenderer');
     }
   }
 }
@@ -638,7 +640,7 @@ const Map<String, List<String>> blockedTestsListsMap = <String, List<String>>{
 
 /// Tests blocked for one of the build modes.
 ///
-/// If a test is not suppose to run for one of the modes also add that test
+/// If a test is not supposed to run for one of the modes also add that test
 /// to the corresponding list.
 // TODO(nurhan): Remove the failing test after fixing.
 const Map<String, List<String>> blockedTestsListsMapForModes =
