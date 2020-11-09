@@ -58,11 +58,20 @@ bool AngleSurfaceManager::Initialize() {
   };
 
   const EGLint warp_display_attributes[] = {
-      // These attributes request D3D11 WARP (software rendering fallback) as a
-      // last resort.
+      // These attributes request D3D11 WARP (software rendering fallback) in case
+      // hardware-backed D3D11 is unavailable.
       EGL_PLATFORM_ANGLE_TYPE_ANGLE,
       EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
       EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE,
+      EGL_TRUE,
+      EGL_NONE,
+  };
+
+  const EGLint d3d9_display_attributes[] = {
+      // These are used to request ANGLE's D3D9 renderer as a fallback if D3D11
+      // is not available.
+      EGL_PLATFORM_ANGLE_TYPE_ANGLE,
+      EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE,
       EGL_TRUE,
       EGL_NONE,
   };
@@ -81,7 +90,6 @@ bool AngleSurfaceManager::Initialize() {
                                default_display_attributes);
   if (egl_display_ == EGL_NO_DISPLAY) {
     std::cerr << "EGL: Failed to get a compatible EGLdisplay" << std::endl;
-    return false;
   }
 
   if (eglInitialize(egl_display_, nullptr, nullptr) == EGL_FALSE) {
@@ -93,24 +101,34 @@ bool AngleSurfaceManager::Initialize() {
     if (egl_display_ == EGL_NO_DISPLAY) {
       std::cerr << "EGL: Failed to get a compatible 9.3 EGLdisplay"
                 << std::endl;
-      return false;
     }
 
     if (eglInitialize(egl_display_, nullptr, nullptr) == EGL_FALSE) {
-      // If all else fails, attempt D3D11 Feature Level 11_0 on WARP as a last
-      // resort
+      // If hardware rendering fails, attempt D3D11 Feature Level 11_0 on WARP
       egl_display_ = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE,
                                               EGL_DEFAULT_DISPLAY,
                                               warp_display_attributes);
       if (egl_display_ == EGL_NO_DISPLAY) {
         std::cerr << "EGL: Failed to get a compatible WARP EGLdisplay"
                   << std::endl;
-        return false;
       }
 
       if (eglInitialize(egl_display_, nullptr, nullptr) == EGL_FALSE) {
-        std::cerr << "EGL: Failed to initialize EGL" << std::endl;
-        return false;
+        // Finally, attempt D3D9 if all D3D11 paths have failed.
+        egl_display_ = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE,
+                                                EGL_DEFAULT_DISPLAY,
+                                                d3d9_display_attributes);
+        
+        if (egl_display_ == EGL_NO_DISPLAY) {
+          std::cerr << "EGL: Failed to get a compatible D3D9 display"
+                    << std::endl;
+          return false;
+        }
+
+        if (eglInitialize(egl_display_, nullptr, nullptr) == EGL_FALSE) {
+          std::cerr << "EGL: Failed to initialize EGL" << std::endl;
+          return false;
+        }
       }
     }
   }
