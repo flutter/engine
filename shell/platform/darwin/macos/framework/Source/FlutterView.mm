@@ -110,4 +110,9 @@
   [_reshapeListener viewDidReshape:self];
 }
 
+- (NSView *)hitTest:(NSPoint)aPoint {
+  NSLog(@"Hit root view");
+  return self;
+}
+
 @end
