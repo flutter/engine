@@ -431,25 +431,25 @@ TEST_F(DiffContextTest, BackdropLayer) {
   l3.root()->Add(scale);
 
   damage = DiffLayerTree(l3, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 140, 140));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 180, 180));
 
   LayerTree l4;
   l4.root()->Add(scale);
 
   // path just outside of readback region, doesn't affect blur
-  auto path1 = SkPath().addRect(SkRect::MakeXYWH(150, 150, 10, 10));
+  auto path1 = SkPath().addRect(SkRect::MakeXYWH(180, 180, 10, 10));
   l4.root()->Add(std::make_shared<MockLayer>(path1));
   damage = DiffLayerTree(l4, l3);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(150, 150, 10, 10));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(180, 180, 10, 10));
 
   LayerTree l5;
   l5.root()->Add(scale);
 
   // path just inside of readback region, must trigger backdrop repaint
-  auto path2 = SkPath().addRect(SkRect::MakeXYWH(149, 149, 10, 10));
+  auto path2 = SkPath().addRect(SkRect::MakeXYWH(179, 179, 10, 10));
   l5.root()->Add(std::make_shared<MockLayer>(path2));
   damage = DiffLayerTree(l5, l4);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 150, 150));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 190, 190));
 }
 
 TEST_F(DiffContextTest, ImageFilterLayer) {
@@ -473,32 +473,30 @@ TEST_F(DiffContextTest, ImageFilterLayer) {
   auto damage = DiffLayerTree(l1, LayerTree());
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(70, 70, 70, 70));
 
-  // filter bounds are calculated in screen space, make sure scaling doesn't
-  // affect it
   LayerTree l2;
   auto scale = std::make_shared<TransformLayer>(SkMatrix::MakeScale(2.0, 2.0));
   scale->Add(filter_layer);
   l2.root()->Add(scale);
 
   damage = DiffLayerTree(l2, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(170, 170, 80, 80));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(140, 140, 140, 140));
 
   LayerTree l3;
   l3.root()->Add(scale);
 
   // path outside of ImageFilterLayer
-  auto path1 = SkPath().addRect(SkRect::MakeXYWH(160, 160, 10, 10));
+  auto path1 = SkPath().addRect(SkRect::MakeXYWH(130, 130, 10, 10));
   l3.root()->Add(std::make_shared<MockLayer>(path1));
   damage = DiffLayerTree(l3, l2);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(160, 160, 10, 10));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(130, 130, 10, 10));
 
   // path intersecting ImageFilterLayer, should trigger ImageFilterLayer repaint
   LayerTree l4;
   l4.root()->Add(scale);
-  auto path2 = SkPath().addRect(SkRect::MakeXYWH(160, 160, 11, 11));
+  auto path2 = SkPath().addRect(SkRect::MakeXYWH(130, 130, 11, 11));
   l4.root()->Add(std::make_shared<MockLayer>(path2));
   damage = DiffLayerTree(l4, l3);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(160, 160, 90, 90));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(130, 130, 150, 150));
 }
 
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT

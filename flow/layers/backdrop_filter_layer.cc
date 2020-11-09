@@ -25,10 +25,11 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   auto paint_bounds = context->GetCullRect();
   context->AddPaintRegion(paint_bounds);
 
+  auto input_filter_bounds = paint_bounds.roundOut();
   auto filter_bounds =  // in screen coordinates
-      filter_->filterBounds(context->MapToScreen(paint_bounds), SkMatrix::I(),
+      filter_->filterBounds(input_filter_bounds, SkMatrix::I(),
                             SkImageFilter::kReverse_MapDirection);
-  context->AddReadbackRegion(context->MapToLayer(filter_bounds));
+  context->AddReadbackRegion(SkRect::Make(filter_bounds));
 
   DiffChildren(context, prev);
 
