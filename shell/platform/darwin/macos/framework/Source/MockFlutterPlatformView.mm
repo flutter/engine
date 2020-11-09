@@ -14,19 +14,6 @@
    return self;
 }
 
-- (instancetype)init {
-  self = [super init];
-  [[NSColor blueColor] setFill];
-  if (self) {
-    // gMockPlatformView = self;
-  }
-  return self;
-}
-
-- (void)dealloc {
-  // [super dealloc];
-}
-
 @end
 
 @implementation MockFlutterPlatformView
@@ -34,7 +21,6 @@
 - (instancetype)init {
   if (self = [super init]) {
     _view = [[MockPlatformView alloc] init];
-    _test_view_id = 1;
   }
   return self;
 }
@@ -42,23 +28,13 @@
 - (instancetype)initWithFrame:(CGRect) frame
                 arguments:(id _Nullable) args {
   if (self = [super init]) {
-    _view = [[NSTextField alloc] initWithFrame:frame];
-    [(NSTextField*)_view setStringValue:@"hello2"];
-    // [(NSTextField*)_view setStringValue:args];
-    [(NSTextField*)_view setTextColor:[NSColor blueColor]];
-    _test_view_id = 1;
+    _view = [[MockPlatformView alloc] initWithFrame:frame];
   }
   return self;
 }
 
 - (void)dealloc {
-  // [_view release];
   _view = nil;
-  // [super dealloc];
-}
-
-- (int64_t) GetTestViewID {
-  return _test_view_id;
 }
 
 @end

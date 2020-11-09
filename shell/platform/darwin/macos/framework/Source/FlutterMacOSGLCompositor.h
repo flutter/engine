@@ -36,6 +36,11 @@ class FlutterMacOSGLCompositor {
   // Global counter for testing.
   int count_ = 0;
 
+  // For FBO testing.
+  bool fbo_created_ = false;
+  GrGLFramebufferInfo fbo_;
+  
+
   bool CreateSoftwareRenderSurface(const FlutterBackingStoreConfig* config,
                                    FlutterBackingStore* renderer_out);
 
@@ -44,9 +49,6 @@ class FlutterMacOSGLCompositor {
 
   bool CreateFramebuffer(const FlutterBackingStoreConfig* config,
                              FlutterBackingStore* backing_store_out);
-
-  bool UpdateOffscreenComposition(const FlutterLayer** layers,
-                                    size_t layers_count);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterMacOSGLCompositor);
 };

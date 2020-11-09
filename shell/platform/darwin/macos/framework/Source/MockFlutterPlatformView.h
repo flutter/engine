@@ -5,7 +5,6 @@
 
 @interface MockFlutterPlatformView : NSObject <FlutterPlatformView>
   @property(nonatomic, strong) NSView* view;
-  @property(nonatomic) int64_t test_view_id;
 @end
 
 @interface MockPlatformView : NSTextView
