@@ -86,6 +86,26 @@ void testMain() {
       expect(path.webOnlyPathAsRect, const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0));
     });
 
+    test('Should detect horizontal line path', () {
+      SurfacePath path = SurfacePath();
+      path.moveTo(10, 20);
+      path.lineTo(100, 0);
+      expect(path.webOnlyPathAsLine, null);
+      path = SurfacePath();
+      path.moveTo(10, 20);
+      path.lineTo(200, 20);
+      Rect r = path.webOnlyPathAsLine!;
+      expect(r, equals(Rect.fromLTRB(10, 20, 200, 20)));
+    });
+
+    test('Should detect vertical line path', () {
+      final SurfacePath path = SurfacePath();
+      path.moveTo(10, 20);
+      path.lineTo(10, 200);
+      Rect r = path.webOnlyPathAsLine!;
+      expect(r, equals(Rect.fromLTRB(10, 20, 10, 200)));
+    });
+
     test('Should detect non rectangular path if empty', () {
       final SurfacePath path = SurfacePath();
       expect(path.webOnlyPathAsRect, null);

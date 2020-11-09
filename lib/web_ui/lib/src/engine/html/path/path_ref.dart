@@ -188,8 +188,7 @@ class PathRef {
     final double y0 = _fPoints[1];
     final double x1 = _fPoints[2];
     final double y1 = _fPoints[3];
-    if (x0 == x1 || y0 == y1) {
-      // Is horizontal.
+    if (y0 == y1 || x0 == x1) {
       return ui.Rect.fromLTRB(x0, y0, x1, y1);
     }
     return null;
