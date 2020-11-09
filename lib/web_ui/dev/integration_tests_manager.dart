@@ -155,7 +155,9 @@ class IntegrationTestsManager {
           entities.singleWhere((f) => pathlib.basename(f.path) == targetTest);
       final String basename = pathlib.basename(file.path);
       if (blockedTests.contains(basename)) {
-        print('INFO: Test $basename do not run on CI environments.');
+        print('INFO: Test $basename do not run on CI environments. Please '
+            'remove it from the blocked tests list if you want to enable this '
+            'test on CI.');
       }
       e2eTestsToRun.add(basename);
     }
