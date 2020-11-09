@@ -751,8 +751,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     FML_DCHECK(_bridge->GetFlutterAccessibilityFromID(0));
     NSAccessibilityElement* root = _bridge->GetFlutterAccessibilityFromID(0)->GetNativeViewAccessible();
     // root.accessibilityParent = self.viewController.view;
-    self.viewController.view.accessibilityLabel = @"chun heng view";
-    self.viewController.view.accessibilityRole = NSAccessibilityGroupRole;
+    // self.viewController.view.accessibilityLabel = @"chun heng view";
+    // self.viewController.view.accessibilityRole = NSAccessibilityGroupRole;
+    // self.viewController.view.accessibilityElement = YES;
     self.viewController.view.accessibilityChildren = @[root];
     std::vector<std::string> msgs(10);
     [self printTree:self.viewController.view.accessibilityChildren[0] msgs:msgs level:0];

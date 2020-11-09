@@ -106,4 +106,23 @@
   [_reshapeListener viewDidReshape:self];
 }
 
+#pragma mark - NSAccessibility overrides
+
+- (BOOL)isAccessibilityElement {
+  return YES;
+}
+
+- (NSAccessibilityRole)accessibilityRole {
+  return NSAccessibilityGroupRole;
+}
+
+- (NSString*) accessibilityLabel {
+  NSString* applicationName =
+    [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+  if (!applicationName) {
+    applicationName = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleName"];
+  }
+  return applicationName;
+}
+
 @end

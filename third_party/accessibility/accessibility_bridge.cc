@@ -238,20 +238,15 @@ void AccessibilityBridge::GetSubTreeList(SemanticsNode target, std::vector<Seman
 }
 
 void AccessibilityBridge::ConvertFluterUpdateToAXNodeData(const SemanticsNode& node, AXNodeData& node_data) {
+  node_data.id = node.id;
   SetRoleFromFlutterUpdate(node_data, node);
-  // node_data.role = Role::kGroup;
   SetStateFromFlutterUpdate(node_data, node);
   SetActionsFromFlutterUpdate(node_data, node);
   SetBooleanAttributesFromFlutterUpdate(node_data, node);
   SetIntAttributesFromFlutterUpdate(node_data, node);
   SetIntListAttributesFromFlutterUpdate(node_data, node);
   SetStringListAttributesFromFlutterUpdate(node_data, node);
-  node_data.id = node.id;
-  // if (node.label.empty())
-  //   node_data.SetName("pending");
-  // else
-  node_data.SetName(node.label);
-  node_data.SetDescription(node.label);
+  SetNameFromFlutterUpdate(node_data, node);
   node_data.SetValue(node.value);
   node_data.relative_bounds.bounds.setLTRB(
     node.rect.left,
@@ -442,6 +437,11 @@ FlutterAccessibility* AccessibilityBridge::GetFlutterAccessibilityFromID(int32_t
     return iter->second;
 
   return nullptr;
+}
+
+void AccessibilityBridge::SetNameFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
+  std::string name = node.label;
+  node_data.SetName(name);
 }
 
 AccessibilityBridge::SemanticsNode AccessibilityBridge::FromFlutterSemanticsNode(const FlutterSemanticsNode* flutter_node) {

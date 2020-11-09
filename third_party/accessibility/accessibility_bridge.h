@@ -98,6 +98,7 @@ class AccessibilityBridge : public AXTreeObserver {
   void SetIntAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
   void SetIntListAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
   void SetStringListAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
+  void SetNameFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
   SemanticsNode FromFlutterSemanticsNode(const FlutterSemanticsNode* flutter_node);
   SemanticsCustomAction FromFlutterSemanticsCustomAction(const FlutterSemanticsCustomAction* flutter_custom_action);
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);

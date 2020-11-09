@@ -89,26 +89,42 @@ SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinat
   cgBounds.size.width = bounds.width();
   cgBounds.size.height = bounds.height();
   FlutterEngine* engine = (__bridge FlutterEngine*)bridge_->GetUserData();
-  NSLog(@"id %d", GetData().id);
-  NSLog(@"cgBounds %@", NSStringFromRect(cgBounds));
-  CGRect viewFrame = engine.viewController.view.frame;
-  CGFloat flippedY = viewFrame.size.height - cgBounds.origin.y + cgBounds.size.height;
-  cgBounds.origin.y = flippedY;
-  NSLog(@"after flipped %@", NSStringFromRect(cgBounds));
-  CGRect view_bounds = [engine.viewController.view convertRect:cgBounds toView:nil];
-  NSLog(@"view_bounds %@", NSStringFromRect(view_bounds));
+  // if (GetData().id >5 && GetData().id< 10) {
+  // NSLog(@"id %d, view is %@", GetData().id, engine.viewController.view);
+  // NSLog(@"cgBounds %@", NSStringFromRect(cgBounds));
+  // }
+  cgBounds.origin.y = -cgBounds.origin.y - cgBounds.size.height;
+  // if (GetData().id >5 && GetData().id< 10) {
+  // NSLog(@"after flipped %@", NSStringFromRect(cgBounds));
+  // }
+  CGRect view_bounds = [engine.viewController.view convertRectFromBacking:cgBounds];
+  // if (GetData().id >5 && GetData().id< 10) {
+  // NSLog(@"view_bounds %@", NSStringFromRect(view_bounds));
+  // }
+  CGRect window_bounds = [engine.viewController.view convertRect:view_bounds toView:nil];
   // NSLog(@"the contentview is %@", [[engine.viewController.view window] contentView]);
   // NSLog(@"engine.viewController.view.frame %@", NSStringFromRect(engine.viewController.view.frame));
   // CGRect viewFrame = engine.viewController.view.frame;
   // CGFloat flippedY = -view_bounds.origin.y;
   // view_bounds.origin.y = flippedY;
   // NSLog(@"after inverted %@", NSStringFromRect(view_bounds));
-  CGRect global_bounds = [[engine.viewController.view window] convertRectToScreen:view_bounds];
-  NSLog(@"global_bounds %@", NSStringFromRect(global_bounds));
+  // if (GetData().id >5 && GetData().id< 10) {
+  // NSLog(@"window_bounds %@", NSStringFromRect(window_bounds));
+  // }
+  CGRect global_bounds = [[engine.viewController.view window] convertRectToScreen:window_bounds];
+  // if (GetData().id >5 && GetData().id< 10) {
+  // NSLog(@"global_bounds %@", NSStringFromRect(global_bounds));
+  // }
+  NSScreen* screen = [[NSScreen screens] firstObject];
+  NSRect screen_bounds = [screen frame];
+  global_bounds.origin.y =
+    screen_bounds.size.height - global_bounds.origin.y - global_bounds.size.height;
   // CGRect test = [[engine.viewController.view window] convertRectToScreen:engine.viewController.view.bounds];
   // NSLog(@"screen bound %@", NSStringFromRect(test));
   // NSLog(@"engine.viewController.view accessibilityFrame screen bound %@", NSStringFromRect(engine.viewController.view.accessibilityFrame));
-  
+  // if (GetData().id >5 && GetData().id< 10) {
+  // NSLog(@"global_bounds after flipped %@", NSStringFromRect(global_bounds));
+  // }
   SkRect result = SkRect::MakeXYWH(global_bounds.origin.x, global_bounds.origin.y, global_bounds.size.width, global_bounds.size.height);
   return result;
   // switch (coordinate_system) {
