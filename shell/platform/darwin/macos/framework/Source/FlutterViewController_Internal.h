@@ -12,6 +12,7 @@
 
 // The FlutterView for this view controller.
 @property(nonatomic, readonly, nullable) FlutterView* flutterView;
+@property(nonatomic, nullable) FlutterView* leafView;
 
 // A map of view ids to views.
 @property() std::map<int, NSView*> view_map;
@@ -30,5 +31,7 @@
  * Removes a responder for keyboard events.
  */
 - (void)removeKeyResponder:(nonnull NSResponder*)responder;
+
+- (FlutterView* _Nullable)createFlutterView;
 
 @end

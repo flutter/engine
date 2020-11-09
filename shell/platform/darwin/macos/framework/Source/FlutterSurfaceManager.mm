@@ -25,6 +25,7 @@ enum {
 @implementation FlutterSurfaceManager
 
 - (instancetype)initWithLayer:(CALayer*)layer_ openGLContext:(NSOpenGLContext*)opengLContext_ {
+  NSLog(@"FlutterSurfaceManager::initWithLayer");
   if (self = [super init]) {
     layer = layer_;
     openGLContext = opengLContext_;
@@ -47,6 +48,7 @@ enum {
 }
 
 - (void)createFramebuffer:(uint32_t)fbo withBackingTexture:(uint32_t)texture {
+  NSLog(@"FlutterSurfaceManager::createFramebuffer");
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture);
   glTexParameterf(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -101,6 +103,7 @@ enum {
 }
 
 - (void)swapBuffers {
+  NSLog(@"FlutterSurfaceManager::swapBuffers");
   contentLayer.frame = layer.bounds;
 
   // The surface is an OpenGL texture, which means it has origin in bottom left corner

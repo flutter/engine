@@ -25,6 +25,7 @@ FlutterMacOSGLCompositor::~FlutterMacOSGLCompositor() = default;
 
 bool FlutterMacOSGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                                 FlutterBackingStore* backing_store_out) {
+  NSLog(@"FlutterMacOSGLCompositor::CreateBackingStore");
   return CreateFramebuffer(config, backing_store_out);
 }
 
@@ -43,13 +44,12 @@ bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layer
 
   CGSize size;
   NSLog(@"layers count: %zu", layers_count);
+
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
     switch (layer->type) {
       case kFlutterLayerContentTypeBackingStore:
-      NSLog(@"kFlutterLayerContentTypeBackingStore, Layer: %zu", i);
-        // if (i != layers_count - 1) continue; // Only present top layer.
-        // if (i != 0) continue; // Only Present bottom layer.
+        NSLog(@"kFlutterLayerContentTypeBackingStore, Layer: %zu", i);
         fbo_id = const_cast<FlutterBackingStore*>(layer->backing_store)->open_gl.framebuffer.name;
         canvas = reinterpret_cast<SkSurface*>(layer->backing_store->user_data)
             ->getCanvas();
@@ -62,7 +62,6 @@ bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layer
 
         // Bind to default framebuffer.
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest_fbo_id); 
-
         glBlitFramebuffer(0, 0, layer->size.width, layer->size.height, 0, 0, layer->size.width, layer->size.height,
                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
         break;
@@ -72,6 +71,7 @@ bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layer
         break;
     };
   }
+
   return present_callback_();
 }
 
@@ -80,15 +80,8 @@ bool FlutterMacOSGLCompositor::CreateFramebuffer(const FlutterBackingStoreConfig
   NSLog(@"CreateFramebuffer");
   GrGLFramebufferInfo framebuffer_info;
 
-  if (!fbo_created_) {
-    framebuffer_info = {};
-    glGenFramebuffersEXT(1, &framebuffer_info.fFBOID);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_info.fFBOID);
-    fbo_ = framebuffer_info;
-    fbo_created_ = true;
-  }
-
-  framebuffer_info = fbo_;
+  framebuffer_info = {};
+  glGenFramebuffersEXT(1, &framebuffer_info.fFBOID);
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_info.fFBOID);
 
   NSLog(@"framebuffer id %u:", framebuffer_info.fFBOID);

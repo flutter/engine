@@ -253,6 +253,18 @@ static void CommonInit(FlutterViewController* controller) {
   FlutterView* flutterView = [[FlutterView alloc] initWithShareContext:resourceContext
                                                        reshapeListener:self];
   self.view = flutterView;
+  self.leafView = flutterView;
+}
+
+- (FlutterView*) createFlutterView {
+  NSOpenGLContext* resourceContext = _engine.resourceContext;
+  if (!resourceContext) {
+    NSLog(@"Unable to create FlutterView; no resource context available.");
+    return nullptr;
+  }
+  FlutterView* flutterView = [[FlutterView alloc] initWithShareContext:resourceContext
+                                                       reshapeListener:self];
+  return flutterView;
 }
 
 - (void)viewDidLoad {
@@ -397,29 +409,14 @@ static void CommonInit(FlutterViewController* controller) {
       // This is hardcoded to create an NSTextView.
       NSDictionary<NSString*, id>* args = [call arguments];
       long viewId = [args[@"id"] longValue];
-      // std::string viewType([args[@"viewType"] UTF8String]);
 
       MockFlutterPlatformFactory* factory = [MockFlutterPlatformFactory new];
 
-      // Get params.
-      NSObject<FlutterMessageCodec>* codec = [factory createArgsCodec];
-      FlutterStandardTypedData* paramsData = args[@"params"];
-      id params = [codec decode:paramsData.data];
-
-      NSDictionary *nsdict = (NSDictionary*)params;
-
-      CGFloat x = [nsdict[@"offset_x"] floatValue];
-      CGFloat y = [nsdict[@"offset_y"] floatValue];
-      CGFloat width = [nsdict[@"width"] floatValue];
-      CGFloat height = [nsdict[@"height"] floatValue];
-
-      NSLog(@"x,y,w,h: %f %f %f %f", x,y,width,height);
-
-      NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectMake(0, 0, 300, 300)
+      NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectMake(500, 0, 300, 300)
                                                           viewIdentifier:viewId
                                                               arguments:nil];                                     
 
-      // Hard coded right now to store one platform view in the dict.
+      // Hard coded right now to store one platform view in the map.
       self->_view_map[1] = [embedded_view view];
       result(nil);
     }];

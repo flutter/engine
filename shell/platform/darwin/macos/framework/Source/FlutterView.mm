@@ -67,6 +67,7 @@
 }
 
 - (void)present {
+  NSLog(@"FlutterView::present");
   [resizeSynchronizer requestCommit];
 }
 

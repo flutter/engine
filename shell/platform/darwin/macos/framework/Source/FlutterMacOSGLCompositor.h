@@ -33,14 +33,6 @@ class FlutterMacOSGLCompositor {
   FlutterViewController* view_controller_;
   PresentCallback present_callback_;
 
-  // Global counter for testing.
-  int count_ = 0;
-
-  // For FBO testing.
-  bool fbo_created_ = false;
-  GrGLFramebufferInfo fbo_;
-  
-
   bool CreateSoftwareRenderSurface(const FlutterBackingStoreConfig* config,
                                    FlutterBackingStore* renderer_out);
 
