@@ -876,6 +876,13 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
   fml::WeakPtr<flutter::FlutterPlatformViewsController> _platformViewsController;
   // Counting the pointers that has started in one touch sequence.
   NSInteger _currentTouchPointersCount;
+  // We can't dispatch events to the framework without this back pointer.
+  // This is a weak reference, the ForwardingGestureRecognizer is owned by the
+  // FlutterTouchInterceptingView which is strong referenced only by the FlutterView,
+  // which is strongly referenced by the FlutterViewController.
+  // So this is safe as when FlutterView is deallocated the reference to ForwardingGestureRecognizer
+  // will go away.
+  UIViewController* _flutterViewController;
 }
 
 - (instancetype)initWithTarget:(id)target
@@ -892,16 +899,31 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_platformViewsController->getFlutterViewController() touchesBegan:touches withEvent:event];
+  if (!_flutterViewController) {
+    // We try to get a reference to `_flutterViewController` before handling gestures.
+    // Once `_flutterViewController` is available, we keep this weak reference at least
+    // until the end of the touch event.
+    _flutterViewController = _platformViewsController->getFlutterViewController();
+    if (!_flutterViewController) {
+      return;
+    }
+  }
+  [_flutterViewController touchesBegan:touches withEvent:event];
   _currentTouchPointersCount += touches.count;
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_platformViewsController->getFlutterViewController() touchesMoved:touches withEvent:event];
+  if (!_flutterViewController) {
+    return;
+  }
+  [_flutterViewController touchesMoved:touches withEvent:event];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_platformViewsController->getFlutterViewController() touchesEnded:touches withEvent:event];
+  if (!_flutterViewController) {
+    return;
+  }
+  [_flutterViewController touchesEnded:touches withEvent:event];
   _currentTouchPointersCount -= touches.count;
   // Touches in one touch sequence are sent to the touchesEnded method separately if different
   // fingers stop touching the screen at different time. So one touchesEnded method triggering does
@@ -910,12 +932,19 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
   if (_currentTouchPointersCount == 0) {
     self.state = UIGestureRecognizerStateFailed;
   }
+  // Reset _flutterViewController if the engine asked to remove reference.
+  _flutterViewController = _platformViewsController->getFlutterViewController();
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_platformViewsController->getFlutterViewController() touchesCancelled:touches withEvent:event];
+  if (!_flutterViewController) {
+    return;
+  }
+  [_flutterViewController touchesCancelled:touches withEvent:event];
   _currentTouchPointersCount = 0;
   self.state = UIGestureRecognizerStateFailed;
+  // Reset _flutterViewController if the engine asked to remove reference.
+  _flutterViewController = _platformViewsController->getFlutterViewController();
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer

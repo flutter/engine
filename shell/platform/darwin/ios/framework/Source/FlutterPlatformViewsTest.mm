@@ -596,6 +596,121 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->Reset();
 }
 
+- (void)testSetFlutterViewControllerToNilInTheMiddleOfTouchEventShouldStillAllowGesturesToBeHandled {
+  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto surface_factory = flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware);
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*ios_surface_factory=*/surface_factory,
+      /*task_runners=*/runners);
+
+  auto flutterPlatformViewsController =
+      std::make_shared<flutter::FlutterPlatformViewsController>(surface_factory);
+  surface_factory->SetPlatformViewsController(flutterPlatformViewsController);
+
+  FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
+  flutterPlatformViewsController->RegisterViewFactory(
+      factory, @"MockFlutterPlatformView",
+      FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+  FlutterResult result = ^(id result) {
+  };
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall
+          methodCallWithMethodName:@"create"
+                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
+      result);
+
+  XCTAssertNotNil(gMockPlatformView);
+
+  // Find touch inteceptor view
+  UIView* touchInteceptorView = gMockPlatformView;
+  while (touchInteceptorView != nil &&
+         ![touchInteceptorView isKindOfClass:[FlutterTouchInterceptingView class]]) {
+    touchInteceptorView = touchInteceptorView.superview;
+  }
+  XCTAssertNotNil(touchInteceptorView);
+
+  // Find ForwardGestureRecognizer
+  UIGestureRecognizer* forwardGectureRecognizer = nil;
+  for (UIGestureRecognizer* gestureRecognizer in touchInteceptorView.gestureRecognizers) {
+    if ([gestureRecognizer isKindOfClass:NSClassFromString(@"ForwardingGestureRecognizer")]) {
+      forwardGectureRecognizer = gestureRecognizer;
+      break;
+    }
+  }
+  UIViewController* mockFlutterViewContoller = OCMClassMock([UIViewController class]);
+  {
+    // ***** Sequence 1, finishing touch event with touchEnded ***** //
+
+    flutterPlatformViewsController->SetFlutterViewController(mockFlutterViewContoller);
+
+    NSSet* touches1 = OCMClassMock([NSSet class]);
+    UIEvent* event1 = OCMClassMock([UIEvent class]);
+    [forwardGectureRecognizer touchesBegan:touches1 withEvent:event1];
+    OCMVerify([mockFlutterViewContoller touchesBegan:touches1 withEvent:event1]);
+
+    flutterPlatformViewsController->SetFlutterViewController(nil);
+
+    // Allow the touch event to finish
+    NSSet* touches2 = OCMClassMock([NSSet class]);
+    UIEvent* event2 = OCMClassMock([UIEvent class]);
+    [forwardGectureRecognizer touchesMoved:touches2 withEvent:event2];
+    OCMVerify([mockFlutterViewContoller touchesMoved:touches2 withEvent:event2]);
+
+    NSSet* touches3 = OCMClassMock([NSSet class]);
+    UIEvent* event3 = OCMClassMock([UIEvent class]);
+    [forwardGectureRecognizer touchesEnded:touches3 withEvent:event3];
+    OCMVerify([mockFlutterViewContoller touchesEnded:touches3 withEvent:event3]);
+
+    // Now the 2nd touch event should not be allowed.
+    NSSet* touches4 = OCMClassMock([NSSet class]);
+    UIEvent* event4 = OCMClassMock([UIEvent class]);
+    mockFlutterViewContoller = OCMClassMock([UIViewController class]);
+    [forwardGectureRecognizer touchesBegan:touches4 withEvent:event4];
+    OCMReject([mockFlutterViewContoller touchesBegan:touches4 withEvent:event4]);
+  }
+
+  {
+    // ***** Sequence 2, finishing touch event with touchCancelled ***** //
+    flutterPlatformViewsController->SetFlutterViewController(mockFlutterViewContoller);
+
+    NSSet* touches1 = OCMClassMock([NSSet class]);
+    UIEvent* event1 = OCMClassMock([UIEvent class]);
+    [forwardGectureRecognizer touchesBegan:touches1 withEvent:event1];
+    OCMVerify([mockFlutterViewContoller touchesBegan:touches1 withEvent:event1]);
+
+    flutterPlatformViewsController->SetFlutterViewController(nil);
+
+    // Allow the touch event to finish
+    NSSet* touches2 = OCMClassMock([NSSet class]);
+    UIEvent* event2 = OCMClassMock([UIEvent class]);
+    [forwardGectureRecognizer touchesMoved:touches2 withEvent:event2];
+    OCMVerify([mockFlutterViewContoller touchesMoved:touches2 withEvent:event2]);
+
+    NSSet* touches3 = OCMClassMock([NSSet class]);
+    UIEvent* event3 = OCMClassMock([UIEvent class]);
+    [forwardGectureRecognizer touchesCancelled:touches3 withEvent:event3];
+    OCMVerify([mockFlutterViewContoller touchesCancelled:touches3 withEvent:event3]);
+
+    // Now the 2nd touch event should not be allowed.
+    NSSet* touches4 = OCMClassMock([NSSet class]);
+    UIEvent* event4 = OCMClassMock([UIEvent class]);
+    mockFlutterViewContoller = OCMClassMock([UIViewController class]);
+    [forwardGectureRecognizer touchesBegan:touches4 withEvent:event4];
+    OCMReject([mockFlutterViewContoller touchesBegan:touches4 withEvent:event4]);
+  }
+
+  flutterPlatformViewsController->Reset();
+}
+
 - (void)testFlutterPlatformViewControllerSubmitFrameWithoutFlutterViewNotCrashing {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
