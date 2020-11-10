@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
 
 import android.app.Activity;
 import android.content.Context;
@@ -366,6 +367,9 @@ import java.util.Arrays;
     String initialRoute = host.getInitialRoute();
     if (initialRoute == null) {
       initialRoute = maybeGetInitialRouteFromIntent(host.getActivity().getIntent());
+      if (initialRoute == null) {
+        initialRoute = DEFAULT_INITIAL_ROUTE;
+      }
     }
     Log.v(
         TAG,
@@ -376,9 +380,7 @@ import java.util.Arrays;
 
     // The engine needs to receive the Flutter app's initial route before executing any
     // Dart code to ensure that the initial route arrives in time to be applied.
-    if (initialRoute != null) {
-      flutterEngine.getNavigationChannel().setInitialRoute(initialRoute);
-    }
+    flutterEngine.getNavigationChannel().setInitialRoute(initialRoute);
 
     String appBundlePathOverride = host.getAppBundlePath();
     if (appBundlePathOverride == null || appBundlePathOverride.isEmpty()) {
@@ -753,11 +755,7 @@ import java.util.Arrays;
     @NonNull
     Context getContext();
 
-    /**
-     * Returns true if the {@link FlutterActivityAndFragmentDelegate} should send the deeplinking
-     * URL to the framework through the {@code NavigationChannel.setInitialRoute} or {@code
-     * NavigationChannel.pushRoute}.
-     */
+    /** Returns true if the delegate should retrieve the initial route from the {@link Intent}. */
     @Nullable
     boolean shouldHandleDeeplinking();
 

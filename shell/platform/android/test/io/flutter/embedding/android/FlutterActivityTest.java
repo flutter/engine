@@ -1,5 +1,6 @@
 package io.flutter.embedding.android;
 
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_DEEPLINKING_META_DATA_KEY;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -114,6 +115,52 @@ public class FlutterActivityTest {
     assertEquals(BackgroundMode.transparent, flutterActivity.getBackgroundMode());
     assertEquals(RenderMode.texture, flutterActivity.getRenderMode());
     assertEquals(TransparencyMode.transparent, flutterActivity.getTransparencyMode());
+  }
+
+  @Test
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase1() {
+    Intent intent =
+        FlutterActivity.withNewEngine()
+            .backgroundMode(BackgroundMode.transparent)
+            .build(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    Bundle bundle = new Bundle();
+    bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, true);
+    flutterActivity.setMetaData(bundle);
+    assertTrue(flutterActivity.shouldHandleDeeplinking());
+  }
+
+  @Test
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase2() {
+    Intent intent =
+        FlutterActivity.withNewEngine()
+            .backgroundMode(BackgroundMode.transparent)
+            .build(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    Bundle bundle = new Bundle();
+    bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, false);
+    flutterActivity.setMetaData(bundle);
+    assertFalse(flutterActivity.shouldHandleDeeplinking());
+  }
+
+  @Test
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase3() {
+    Intent intent =
+        FlutterActivity.withNewEngine()
+            .backgroundMode(BackgroundMode.transparent)
+            .build(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    // Creates an empty bundle.
+    Bundle bundle = new Bundle();
+    flutterActivity.setMetaData(bundle);
+    // Empty bundle should return false.
+    assertFalse(flutterActivity.shouldHandleDeeplinking());
   }
 
   @Test

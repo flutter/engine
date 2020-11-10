@@ -34,6 +34,7 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import io.flutter.Log;
@@ -280,10 +281,9 @@ public class FlutterFragmentActivity extends FragmentActivity
    */
   private void switchLaunchThemeForNormalTheme() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      if (activityInfo.metaData != null) {
-        int normalThemeRID = activityInfo.metaData.getInt(NORMAL_THEME_META_DATA_KEY, -1);
+      Bundle metaData = getMetaData();
+      if (metaData != null) {
+        int normalThemeRID = metaData.getInt(NORMAL_THEME_META_DATA_KEY, -1);
         if (normalThemeRID != -1) {
           setTheme(normalThemeRID);
         }
@@ -319,9 +319,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   @SuppressWarnings("deprecation")
   private Drawable getSplashScreenFromManifest() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metadata = getMetaData();
       Integer splashScreenId =
           metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : null;
       return splashScreenId != null
@@ -548,11 +546,17 @@ public class FlutterFragmentActivity extends FragmentActivity
     return true;
   }
 
+  /**
+   * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+   * getInitialRoute} returns null.
+   *
+   * <p>The default implementation looks for the value of the key `flutter_handle_deeplinking` in
+   * the AndroidManifest.xml.
+   */
+  @VisibleForTesting
   protected boolean shouldHandleDeeplinking() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metadata = getMetaData();
       boolean shouldHandleDeeplinking =
           metadata != null ? metadata.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : false;
       return shouldHandleDeeplinking;
@@ -624,6 +628,25 @@ public class FlutterFragmentActivity extends FragmentActivity
     return null;
   }
 
+  private Bundle cachedMetaData;
+
+  /** Mocks the meta data for testing purposes. */
+  @VisibleForTesting
+  public void setMetaData(Bundle metaData) {
+    cachedMetaData = metaData;
+  };
+
+  /** Retrieves the meta data specified in the AndroidManifest.xml. */
+  @Nullable
+  protected Bundle getMetaData() throws PackageManager.NameNotFoundException {
+    if (cachedMetaData == null) {
+      ActivityInfo activityInfo =
+          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
+      cachedMetaData = activityInfo.metaData;
+    }
+    return cachedMetaData;
+  }
+
   /**
    * The Dart entrypoint that will be executed as soon as the Dart snapshot is loaded.
    *
@@ -636,9 +659,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   @NonNull
   public String getDartEntrypointFunctionName() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metadata = getMetaData();
       String desiredDartEntrypoint =
           metadata != null ? metadata.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
       return desiredDartEntrypoint != null ? desiredDartEntrypoint : DEFAULT_DART_ENTRYPOINT;
@@ -668,9 +689,8 @@ public class FlutterFragmentActivity extends FragmentActivity
    *
    * <p>Subclasses may override this method to directly control the initial route.
    *
-   * <p>If this method returns null and the {@code shouldHandleDeeplinking()} returns true, the
-   * {@link FlutterActivityAndFragmentDelegate} retrieves the initial route from the {@code Intent}
-   * through the Intent.getData() instead.
+   * <p>If this method returns null and the {@code shouldHandleDeeplinking} returns true, the
+   * initial route is derived from the {@code Intent} through the Intent.getData() instead.
    */
   protected String getInitialRoute() {
     if (getIntent().hasExtra(EXTRA_INITIAL_ROUTE)) {
@@ -678,9 +698,7 @@ public class FlutterFragmentActivity extends FragmentActivity
     }
 
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metadata = getMetaData();
       String desiredInitialRoute =
           metadata != null ? metadata.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
       return desiredInitialRoute;

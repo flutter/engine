@@ -447,10 +447,9 @@ public class FlutterActivity extends Activity
    */
   private void switchLaunchThemeForNormalTheme() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      if (activityInfo.metaData != null) {
-        int normalThemeRID = activityInfo.metaData.getInt(NORMAL_THEME_META_DATA_KEY, -1);
+      Bundle metaData = getMetaData();
+      if (metaData != null) {
+        int normalThemeRID = metaData.getInt(NORMAL_THEME_META_DATA_KEY, -1);
         if (normalThemeRID != -1) {
           setTheme(normalThemeRID);
         }
@@ -486,9 +485,7 @@ public class FlutterActivity extends Activity
   @SuppressWarnings("deprecation")
   private Drawable getSplashScreenFromManifest() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metadata = getMetaData();
       int splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : 0;
       return splashScreenId != 0
           ? Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP
@@ -749,9 +746,7 @@ public class FlutterActivity extends Activity
   @NonNull
   public String getDartEntrypointFunctionName() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metadata = getMetaData();
       String desiredDartEntrypoint =
           metadata != null ? metadata.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
       return desiredDartEntrypoint != null ? desiredDartEntrypoint : DEFAULT_DART_ENTRYPOINT;
@@ -781,9 +776,8 @@ public class FlutterActivity extends Activity
    *
    * <p>Subclasses may override this method to directly control the initial route.
    *
-   * <p>If this method returns null and the {@code shouldHandleDeeplinking()} returns true, the
-   * {@link FlutterActivityAndFragmentDelegate} retrieves the initial route from the {@code Intent}
-   * through the Intent.getData() instead.
+   * <p>If this method returns null and the {@code shouldHandleDeeplinking} returns true, the
+   * initial route is derived from the {@code Intent} through the Intent.getData() instead.
    */
   public String getInitialRoute() {
     if (getIntent().hasExtra(EXTRA_INITIAL_ROUTE)) {
@@ -791,9 +785,7 @@ public class FlutterActivity extends Activity
     }
 
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metadata = getMetaData();
       String desiredInitialRoute =
           metadata != null ? metadata.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
       return desiredInitialRoute;
@@ -898,6 +890,25 @@ public class FlutterActivity extends Activity
     return delegate.getFlutterEngine();
   }
 
+  private Bundle cachedMetaData;
+
+  /** Mocks the meta data for testing purposes. */
+  @VisibleForTesting
+  public void setMetaData(Bundle metaData) {
+    cachedMetaData = metaData;
+  };
+
+  /** Retrieves the meta data specified in the AndroidManifest.xml. */
+  @Nullable
+  protected Bundle getMetaData() throws PackageManager.NameNotFoundException {
+    if (cachedMetaData == null) {
+      ActivityInfo activityInfo =
+          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
+      cachedMetaData = activityInfo.metaData;
+    }
+    return cachedMetaData;
+  }
+
   @Nullable
   @Override
   public PlatformPlugin providePlatformPlugin(
@@ -974,12 +985,17 @@ public class FlutterActivity extends Activity
     return true;
   }
 
+  /**
+   * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+   * getInitialRoute} returns null.
+   *
+   * <p>The default implementation looks for the value of the key `flutter_handle_deeplinking` in
+   * the AndroidManifest.xml.
+   */
   @Override
   public boolean shouldHandleDeeplinking() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metadata = getMetaData();
       boolean shouldHandleDeeplinking =
           metadata != null ? metadata.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : false;
       return shouldHandleDeeplinking;

@@ -227,7 +227,10 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       return this;
     }
 
-    /** Whether the activity delegate should handle the deeplinking request. */
+    /**
+     * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+     * getInitialRoute} returns null.
+     */
     @NonNull
     public NewEngineFragmentBuilder handleDeeplinking(@NonNull Boolean handleDeeplinking) {
       this.handleDeeplinking = handleDeeplinking;
@@ -472,7 +475,10 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       return this;
     }
 
-    /** Whether the activity delegate should handle the deeplinking request. */
+    /**
+     * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+     * getInitialRoute} returns null.
+     */
     @NonNull
     public CachedEngineFragmentBuilder handleDeeplinking(@NonNull Boolean handleDeeplinking) {
       this.handleDeeplinking = handleDeeplinking;
@@ -1037,10 +1043,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * See {@link NewEngineFragmentBuilder#shouldHandleDeeplinking()} and {@link
-   * CachedEngineFragmentBuilder#shouldHandleDeeplinking()}.
-   *
-   * <p>Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate}
+   * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+   * getInitialRoute} returns null.
    */
   @Override
   public boolean shouldHandleDeeplinking() {
