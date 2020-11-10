@@ -256,17 +256,6 @@ static void CommonInit(FlutterViewController* controller) {
   self.leafView = flutterView;
 }
 
-- (FlutterView*) createFlutterView {
-  NSOpenGLContext* resourceContext = _engine.resourceContext;
-  if (!resourceContext) {
-    NSLog(@"Unable to create FlutterView; no resource context available.");
-    return nullptr;
-  }
-  FlutterView* flutterView = [[FlutterView alloc] initWithShareContext:resourceContext
-                                                       reshapeListener:self];
-  return flutterView;
-}
-
 - (void)viewDidLoad {
   [self configureTrackingArea];
 }

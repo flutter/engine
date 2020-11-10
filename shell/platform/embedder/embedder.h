@@ -283,6 +283,8 @@ typedef struct {
   /// The name of the framebuffer.
   uint32_t name;
 
+  uint32_t texture;
+
   /// User data to be returned on the invocation of the destruction callback.
   void* user_data;
 
@@ -864,6 +866,11 @@ typedef struct {
     /// The description of the software backing store.
     FlutterSoftwareBackingStore software;
   };
+
+  // For MacOS hack.
+  // CALayer for MacOS.
+  void* ca_layer;
+  void* io_surface_ref;
 } FlutterBackingStore;
 
 typedef struct {

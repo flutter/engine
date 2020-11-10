@@ -30,6 +30,7 @@
               reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
   self = [super initWithFrame:frame];
   if (self) {
+    NSLog(@"FlutterView::initWithFrame");
     self.openGLContext = [[NSOpenGLContext alloc] initWithFormat:shareContext.pixelFormat
                                                     shareContext:shareContext];
 

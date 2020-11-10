@@ -33,6 +33,9 @@ class FlutterMacOSGLCompositor {
   FlutterViewController* view_controller_;
   PresentCallback present_callback_;
 
+  IOSurfaceRef _ioSurfaceRef;
+  CALayer* content_layer;
+
   bool CreateSoftwareRenderSurface(const FlutterBackingStoreConfig* config,
                                    FlutterBackingStore* renderer_out);
 

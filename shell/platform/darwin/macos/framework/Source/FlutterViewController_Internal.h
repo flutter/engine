@@ -32,6 +32,4 @@
  */
 - (void)removeKeyResponder:(nonnull NSResponder*)responder;
 
-- (FlutterView* _Nullable)createFlutterView;
-
 @end
