@@ -507,7 +507,7 @@ class BitmapCanvas extends EngineCanvas {
       }
       final ui.Rect? pathAsRect = surfacePath.webOnlyPathAsRect;
       if (pathAsRect != null) {
-        drawRect(pathAsRect!, paint);
+        drawRect(pathAsRect, paint);
         return;
       }
       final ui.Rect pathBounds = surfacePath.getBounds();
