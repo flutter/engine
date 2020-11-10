@@ -163,7 +163,7 @@ class PathRef {
       return ui.Rect.fromLTRB(
           atPoint(0).dx, atPoint(0).dy, atPoint(1).dx, atPoint(2).dy);
     } else {
-      return _detectRect();
+      return _fVerbsLength == 4 ? _detectRect() : null;
     }
   }
   bool get isRectCCW => fRRectOrOvalIsCCW;
