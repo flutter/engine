@@ -895,7 +895,9 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  _flutterViewController = _platformViewsController->getFlutterViewController();
+  if (_currentTouchPointersCount == 0) {
+    _flutterViewController = _platformViewsController->getFlutterViewController();
+  }
   [_flutterViewController touchesBegan:touches withEvent:event];
   _currentTouchPointersCount += touches.count;
 }
@@ -914,8 +916,6 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
   if (_currentTouchPointersCount == 0) {
     self.state = UIGestureRecognizerStateFailed;
   }
-  // Reset _flutterViewController if the engine asked to remove reference.
-  _flutterViewController = _platformViewsController->getFlutterViewController();
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
