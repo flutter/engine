@@ -20,7 +20,7 @@ class LayerTree {
   PaintRegionMap& paint_region_map() { return paint_region_map_; }
   const PaintRegionMap& paint_region_map() const { return paint_region_map_; }
 
-  const SkISize & size() const { return size_; }
+  const SkISize& size() const { return size_; }
 
  private:
   std::shared_ptr<ContainerLayer> root_;
