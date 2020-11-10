@@ -52,7 +52,7 @@ import java.lang.reflect.Proxy;
  */
 @Keep
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-class SingleViewPresentation extends Presentation {
+public class SingleViewPresentation extends Presentation {
 
   /*
    * When an embedded view is resized in Flutterverse we move the Android view to a new virtual display
@@ -308,7 +308,7 @@ class SingleViewPresentation extends Presentation {
   // cases where the FlutterView changes windows this will return an outdated instance. This
   // should be fixed to instead defer returning the IMM to something that know's FlutterView's
   // true Context.
-  private static class PresentationContext extends ContextWrapper {
+  public static class PresentationContext extends ContextWrapper {
     private @NonNull final WindowManagerHandler windowManagerHandler;
     private @Nullable WindowManager windowManager;
     private final Context flutterAppWindowContext;

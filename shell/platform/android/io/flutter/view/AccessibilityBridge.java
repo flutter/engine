@@ -4,6 +4,8 @@
 
 package io.flutter.view;
 
+import static io.flutter.plugin.platform.SingleViewPresentation.PresentationContext;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
@@ -28,7 +30,6 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.BuildConfig;
 import io.flutter.Log;
-import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
@@ -558,7 +559,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (semanticsNode.platformViewId != -1) {
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
-      boolean childUsesVirtualDisplay = !(embeddedView.getContext() instanceof FlutterActivity);
+      boolean childUsesVirtualDisplay = embeddedView.getContext() instanceof PresentationContext;
       if (childUsesVirtualDisplay) {
         Rect bounds = semanticsNode.getGlobalRect();
         return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
@@ -853,8 +854,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         // mirrored.
         //
         // See the case above for how virtual displays are handled.
-        boolean childUsesHybridComposition = embeddedView.getContext() instanceof FlutterActivity;
-        if (childUsesHybridComposition) {
+        boolean childUsesVirtualDisplay = embeddedView.getContext() instanceof PresentationContext;
+        if (!childUsesVirtualDisplay) {
+          io.flutter.Log.d("flutter", "!childUsesVirtualDisplay");
           result.addChild(embeddedView);
           continue;
         }
