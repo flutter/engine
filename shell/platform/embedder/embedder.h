@@ -561,48 +561,35 @@ typedef struct {
 typedef enum {
   kFlutterKeyEventKindUp = 1,
   kFlutterKeyEventKindDown,
-  kFlutterKeyEventKindSync,
-  kFlutterKeyEventKindCancel,
+  kFlutterKeyEventKindRepeat,
 } FlutterKeyEventKind;
 
 typedef enum {
-  kFlutterKeyLockFlagCapsLock = 1 << 0,
-  kFlutterKeyLockFlagNumLock = 1 << 1,
-  kFlutterKeyLockFlagScrollLock = 1 << 2,
+  kFlutterKeyLockCapsLock = 1 << 0,
+  kFlutterKeyLockNumLock = 1 << 1,
+  kFlutterKeyLockScrollLock = 1 << 2,
 } FlutterKeyLockFlags;
-
-typedef struct {
-  /// The size of this struct. Must be sizeof(FlutterLogicalKeyEvent).
-  size_t struct_size;
-  // Logical event kind.
-  FlutterKeyEventKind kind;
-  // Logical key changed.
-  uint64_t key;
-  // Corresponding character. Only available for down/sync event. Not null-ended.
-  size_t character_size;
-  // Whether the event is a repeated down event.
-  bool repeated;
-} FlutterLogicalKeyEvent;
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterKeyEvent).
   size_t struct_size;
-  // Corresponding logical events.
-  size_t logical_event_count;
-  const FlutterLogicalKeyEvent* logical_events;
-  const uint8_t* logical_characters_data;
   // Timestamp in microseconds.
   double timestamp;
-  // A bitmask indicating whether each lock is on after this event.
-  //
-  // See `FlutterKeyLockFlags` for possible bits.
-  uint64_t active_locks;
-  // Physical event kind.
+  // The event kind.
   FlutterKeyEventKind kind;
-  // Physical key changed.
-  uint64_t key;
-  // Whether the event is a repeated down event.
-  bool repeated;
+  // The physical key of the event, distinguished by the HID code.
+  uint64_t physical;
+  // The logical key of the event, usually the effect of the key without
+  // modifier, but might include modifier if the information is not available.
+  // Can be 0 for empty.
+  uint64_t logical;
+  // Null-terminated character input from the event. Can be null. Not available
+  // to up events.
+  const char* character;
+  // The active lock flags after this event.
+  uint64_t locks;
+  // Whether the event is synthesized by Flutter.
+  bool synthesized;
 } FlutterKeyEvent;
 
 

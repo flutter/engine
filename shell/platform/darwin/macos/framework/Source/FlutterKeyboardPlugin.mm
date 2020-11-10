@@ -10,19 +10,6 @@
 #import "FlutterKeyboardPlugin.h"
 #import "KeyCodeMap_internal.h"
 
-// The number of bytes that should be able to fully store `event.characters`.
-//
-// This is an arbitrary number that is considered sufficient. The `characters`
-// takes such a small and capped amount of memory that malloc isn't worthwhile.
-//
-// Since `GetLogicalKeyForEvent` asserts `event.charactersIgnoringModifiers` to
-// be less than 2 int16's, i.e. 4 bytes, the `event.characters` is asserted
-// to be double the amount, i.e. 8 bytes.
-static const size_t kMaxCharactersSize = 8;
-
-// An empty list for an empty logical_characters_data.
-static const uint8_t kEmptyCharacterData[] = {};
-
 // Whether a string represents a control character.
 static bool IsControlCharacter(NSUInteger length, NSString *label) {
   if (length > 1) {
@@ -165,20 +152,11 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 
 /**
  * Update the locking state `lockBit` to be `isOn`.
- */
-- (void)updateLockFlag:(uint64_t)lockBit asOn:(BOOL)isOn;
-
-/**
- * Send a simple event that contains 1 logical event that has the same kind as
- * the physical event and no characters.
  *
- * The `activeLocks` must be updated before this method if necessary, since this
- * method sends `activeLocks` out.
+ * This is only used in the NSEventTypeFlagsChanged handler, since all locks
+ * keys belong to that event kind.
  */
-- (void)sendSimpleEventWithKind:(FlutterKeyEventKind)kind
-                    physicalKey:(uint64_t)physicalKey
-                     logicalKey:(uint64_t)logicalKey
-                      timestamp:(double)timestamp;
+- (void)updateActiveLocks:(uint64_t)lockBit asOn:(BOOL)isOn;
 
 /**
  * Processes a down event.
@@ -221,7 +199,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   }
 }
 
-- (void)updateLockFlag:(uint64_t)lockBit asOn:(BOOL)isOn {
+- (void)updateActiveLocks:(uint64_t)lockBit asOn:(BOOL)isOn {
   // This method is only called on CapsLock, because macOS does not seem to
   // process ScrollLock and NumLock at all.
   if (isOn) {
@@ -231,117 +209,43 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   }
 }
 
-- (void)sendSimpleEventWithKind:(FlutterKeyEventKind)kind
-                    physicalKey:(uint64_t)physicalKey
-                     logicalKey:(uint64_t)logicalKey
-                      timestamp:(double)timestamp {
-  FlutterLogicalKeyEvent logical_event = {
-    .struct_size = sizeof(FlutterLogicalKeyEvent),
-    .kind = kind,
-    .key = logicalKey,
-    .character_size = 0,
-  };
-  FlutterLogicalKeyEvent logical_events[] = {logical_event};
-  FlutterKeyEvent flutterEvent = {
-    .struct_size = sizeof(FlutterKeyEvent),
-    .logical_event_count = 1,
-    .logical_events = logical_events,
-    .logical_characters_data = kEmptyCharacterData,
-    .timestamp = timestamp,
-    .active_locks = _activeLocks,
-    .kind = kind,
-    .key = physicalKey,
-    .repeated = false,
-  };
-  [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
-}
-
 - (void)dispatchDownEvent:(NSEvent*)event {
   uint64_t physicalKey = GetPhysicalKeyForEvent(event);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
 
-  //=== Calculate logical events ===
-  // The event corresponding to `event` (in contrast to `cancel_logical_event`)
-  FlutterLogicalKeyEvent core_logical_event = {
-    .struct_size = sizeof(FlutterLogicalKeyEvent),
-  };
-  // A possible event to cancel the previous event, used to switch logical keys
-  // being pressed.
-  FlutterLogicalKeyEvent cancel_logical_event = {
-    .struct_size = sizeof(FlutterLogicalKeyEvent),
-  };
-  size_t character_size;
-  uint8_t logical_characters_data[kMaxCharactersSize];
-  // Whether this event is a repeated event with a different logical key, indicating
-  // events that update the logical key needs to be dispatched.
-  BOOL switchingLogical = NO;
-
   NSNumber* pressedLogicalKey = _pressedKeys[@(physicalKey)];
-  character_size = [event.characters lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
-  if (pressedLogicalKey) {
-    if (event.isARepeat) {
-      if (pressedLogicalKey.unsignedLongLongValue != logicalKey) {
-        // Switching logical keys
-        switchingLogical = YES;
-        cancel_logical_event.kind = kFlutterKeyEventKindCancel;
-        cancel_logical_event.key = logicalKey;
-        cancel_logical_event.character_size = 0;
-        cancel_logical_event.repeated = false;
-        core_logical_event.kind = kFlutterKeyEventKindSync;
-        core_logical_event.key = pressedLogicalKey.unsignedLongLongValue;
-        core_logical_event.character_size = character_size;
-        core_logical_event.repeated = false;
-      } else {
-        // Regular repeated down event
-        core_logical_event.kind = kFlutterKeyEventKindDown;
-        core_logical_event.key = logicalKey;
-        core_logical_event.character_size = character_size;
-        core_logical_event.repeated = true;
-      }
-    } else {
-      // A non-repeated key has been pressed that has the exact physical key
-      // as a currently pressed one, usually indicating multiple keyboards are
-      // pressing keys with the same physical key. The down event is ignored.
-      return;
-    }
-  } else { // pressedLogicalKey is null
-    if (event.isARepeat) {
-      // A repeated key has been pressed that has no record of being pressed.
-      // This indicates multiple keyboards are pressing keys with the same
-      // physical key, and the first key has been released. Ignore the pressing state
-      // of the 2nd key.
-      return;
-    } else {
-      // New down event
-      core_logical_event.kind = kFlutterKeyEventKindDown;
-      core_logical_event.key = logicalKey;
-      core_logical_event.character_size = character_size;
-      core_logical_event.repeated = false;
-    }
-  }
-  [self updateKey:physicalKey asPressed:logicalKey];
-  NSAssert((character_size < kMaxCharactersSize),
-      @"Unexpected long key characters: |%@|. Please report this to Flutter.", event.characters);
-  memcpy(logical_characters_data, event.characters.UTF8String, character_size);
+  bool isARepeat = false;
+  bool isSynthesized = false;
 
-  //=== Build physical event ===
-  FlutterLogicalKeyEvent logical_events[2];
-  uint8_t logical_event_count = 0;
-  if (switchingLogical) {
-    logical_events[logical_event_count++] = cancel_logical_event;
+  if (pressedLogicalKey) {
+    // This physical key is being pressed according to the record.
+    if (event.isARepeat) {
+      // A normal repeated key.
+      isARepeat = true;
+    } else {
+      // A non-repeated key has been pressed that has the exact physical key as
+      // a currently pressed one, usually indicating multiple keyboards are
+      // pressing keys with the same physical key, or the up event was lost
+      // during a loss of focus. The down event is ignored.
+      return;
+    }
+  } else {
+    // This physical key is not being pressed according to the record. It's a
+    // normal down event, whether the system event is a repeat or not.
   }
-  logical_events[logical_event_count++] = core_logical_event;
+  if (pressedLogicalKey == nil) {
+    [self updateKey:physicalKey asPressed:logicalKey];
+  }
 
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
-      .logical_event_count = logical_event_count,
-      .logical_events = logical_events,
-      .logical_characters_data = logical_characters_data,
       .timestamp = GetFlutterTimestampFrom(event),
-      .active_locks = _activeLocks,
-      .kind = kFlutterKeyEventKindDown,
-      .key = physicalKey,
-      .repeated = (event.isARepeat != NO),
+      .kind = isARepeat ? kFlutterKeyEventKindRepeat : kFlutterKeyEventKindDown,
+      .physical = physicalKey,
+      .logical = pressedLogicalKey == nil ? logicalKey : [pressedLogicalKey unsignedLongLongValue],
+      .character = event.characters.UTF8String,
+      .locks = _activeLocks,
+      .synthesized = isSynthesized,
   };
   [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
 }
@@ -358,27 +262,41 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
     return;
   }
   [self updateKey:physicalKey asPressed:0];
-  [self sendSimpleEventWithKind: kFlutterKeyEventKindUp
-                    physicalKey: physicalKey
-                     logicalKey: pressedLogicalKey.unsignedLongLongValue
-                      timestamp: GetFlutterTimestampFrom(event)];
+
+  FlutterKeyEvent flutterEvent = {
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = GetFlutterTimestampFrom(event),
+      .kind = kFlutterKeyEventKindUp,
+      .physical = physicalKey,
+      .logical = [pressedLogicalKey unsignedLongLongValue],
+      .character = nil,
+      .locks = _activeLocks,
+      .synthesized = false,
+  };
+  [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
 }
 
 - (void)dispatchCapsLockEvent:(NSEvent*)event {
   bool lockIsOn = (event.modifierFlags & NSEventModifierFlagCapsLock) != 0;
-  [self updateLockFlag:kFlutterKeyLockFlagCapsLock asOn:lockIsOn];
-  double timestamp = GetFlutterTimestampFrom(event);
+  [self updateActiveLocks:kFlutterKeyLockCapsLock asOn:lockIsOn];
+  FlutterKeyEvent flutterEvent = {
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = GetFlutterTimestampFrom(event),
+      .kind = kFlutterKeyEventKindDown,
+      .physical = kCapsLockPhysicalKey,
+      .logical = GetLogicalKeyForModifier(kCapsLockPhysicalKey),
+      .character = nil,
+      .locks = _activeLocks,
+      .synthesized = false,
+  };
+  [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+
   // MacOS sends a Down or an Up when CapsLock is pressed, depending on whether
   // the lock is enabled or disabled. This event should always be converted to
   // a Down and a cancel, since we don't know how long it will be pressed.
-  [self sendSimpleEventWithKind: kFlutterKeyEventKindDown
-                    physicalKey: kCapsLockPhysicalKey
-                     logicalKey: GetLogicalKeyForModifier(kCapsLockPhysicalKey)
-                      timestamp: timestamp];
-  [self sendSimpleEventWithKind: kFlutterKeyEventKindCancel
-                    physicalKey: kCapsLockPhysicalKey
-                     logicalKey: GetLogicalKeyForModifier(kCapsLockPhysicalKey)
-                      timestamp: timestamp];
+  flutterEvent.kind = kFlutterKeyEventKindUp;
+  flutterEvent.synthesized = false;
+  [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
 }
 
 - (void)dispatchFlagEvent:(NSEvent*)event {
@@ -397,15 +315,15 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   //
   // The logic of guessing is shown as follows, based on whether the key pairs
   // were recorded as pressed and whether the incoming flag is set: ("*"
-  // indicates some extent of synthesizing.)
+  // indicates synthesized event.)
   //
   // LastPressed \ NowEither |                   |
   //  (Tgt,Sbl)   \  Pressed |         1         |          0
   //  -----------------------|-------------------|-------------------
-  //                (1, 0)   | *       -         |        TgtUp
-  //                (0, 0)   |      TgtDown      | *        -
-  //                (0, 1)   |      TgtDown      | *    SblCancel
-  //                (1, 1)   |       TgtUp       | * SblCancel,TgtUp
+  //                (1, 0)   |         -         |        TgtUp
+  //                (0, 0)   |      TgtDown      |          -
+  //                (0, 1)   |      TgtDown      |        SblUp*
+  //                (1, 1)   |       TgtUp       |     SblUp*,TgtUp
   //
   // For non-pair keys, lastSiblingPressed is always set to 0, resulting in the
   // top half of the table.
@@ -428,24 +346,31 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 
   bool targetKeyShouldDown = !lastTargetPressed && nowEitherPressed;
   bool targetKeyShouldUp = lastTargetPressed && (lastSiblingPressed || !nowEitherPressed);
-  bool siblingKeyShouldCancel = lastSiblingPressed && !nowEitherPressed;
+  bool siblingKeyShouldUp = lastSiblingPressed && !nowEitherPressed;
 
-  double timestamp = GetFlutterTimestampFrom(event);
-  if (siblingKeyShouldCancel) {
+  FlutterKeyEvent flutterEvent = {
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = GetFlutterTimestampFrom(event),
+      .character = nil,
+      .locks = _activeLocks,
+  };
+  if (siblingKeyShouldUp) {
+    flutterEvent.kind = kFlutterKeyEventKindUp;
+    flutterEvent.physical = siblingKey;
+    flutterEvent.logical = GetLogicalKeyForModifier(siblingKey);
+    flutterEvent.synthesized = true;
     [self updateKey:siblingKey asPressed:0];
-    [self sendSimpleEventWithKind: kFlutterKeyEventKindCancel
-                      physicalKey: siblingKey
-                       logicalKey: GetLogicalKeyForModifier(siblingKey)
-                        timestamp: timestamp];
+    [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
   }
 
   if (targetKeyShouldDown || targetKeyShouldUp) {
     uint64_t logicalKey = GetLogicalKeyForModifier(targetKey);
+    flutterEvent.kind = targetKeyShouldDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp;
+    flutterEvent.physical = targetKey;
+    flutterEvent.logical = logicalKey;
+    flutterEvent.synthesized = false;
     [self updateKey:targetKey asPressed:(targetKeyShouldDown ? logicalKey : 0)];
-    [self sendSimpleEventWithKind: targetKeyShouldDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp
-                      physicalKey: targetKey
-                       logicalKey: logicalKey
-                        timestamp: timestamp];
+    [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
   }
 }
 

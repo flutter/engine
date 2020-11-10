@@ -10,35 +10,25 @@
 namespace flutter {
 
 // If this value changes, update the key data unpacking code in hooks.dart.
-static constexpr int kPhysicalKeyDataFieldCount = 4;
-static constexpr int kLogicalKeyDataFieldCount = 3;
+static constexpr int kKeyDataFieldCount = 6;
 static constexpr int kBytesPerKeyField = sizeof(int64_t);
 
 // Must match the KeyChange enum in ui/key.dart.
 enum class KeyChange : int64_t {
   kDown = 0,
   kUp,
-  kSync,
-  kCancel,
-  kRepeatedDown,
+  kRepeat,
 };
 
 // This structure is unpacked by hooks.dart.
-struct alignas(8) LogicalKeyData {
-  int64_t character_size;
-  KeyChange change;
-  uint64_t key;
-
-  void Clear();
-};
-
-// This structure is unpacked by hooks.dart.
-struct alignas(8) PhysicalKeyData {
+struct alignas(8) KeyData {
   // Timestamp in microseconds from an arbitrary and consistant start point
   uint64_t timestamp;
-  uint64_t active_locks;
   KeyChange change;
-  uint64_t key;
+  uint64_t physical;
+  uint64_t logical;
+  uint64_t locks;
+  uint64_t synthesized;
 
   void Clear();
 };

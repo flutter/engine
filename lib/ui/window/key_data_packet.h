@@ -36,19 +36,21 @@ class KeyDataPacket {
 
 class KeyDataPacketBuilder : public KeyDataPacket {
  public:
-  KeyDataPacketBuilder(size_t logical_count, size_t total_character_size);
+  // Build a KeyDataPacket by incrementally fill in data.
+  //
+  // The `character_data_size` is number of bytes to contain the character data.
+  KeyDataPacketBuilder(size_t character_data_size);
   ~KeyDataPacketBuilder();
 
-  void SetPhysicalData(const PhysicalKeyData& event);
-  void SetLogicalData(const LogicalKeyData& event, int i);
-  void SetCharacters(const uint8_t* characters);
+  void SetKeyData(const KeyData& event);
+  // Set character data to the proper position, which should not be terminated
+  // by a null character.
+  void SetCharacter(const char* characters);
 
  private:
-  size_t LogicalDataStart_() { return 0; }
-  size_t PhysicalDataStart_() { return LogicalDataStart_() + logical_count_ * sizeof(LogicalKeyData); }
-  size_t CharactersStart_() { return PhysicalDataStart_() + sizeof(PhysicalKeyData); }
-
-  size_t logical_count_;
+  size_t CharacterSizeStart_() { return 0; }
+  size_t KeyDataStart_() { return CharacterSizeStart_() + sizeof(uint64_t); }
+  size_t CharacterStart_() { return KeyDataStart_() + sizeof(KeyData); }
 
   FML_DISALLOW_COPY_AND_ASSIGN(KeyDataPacketBuilder);
 };

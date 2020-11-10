@@ -1393,20 +1393,27 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
                                   "running Flutter application.");
 }
 
-inline flutter::KeyChange ToKeyChange(
-    FlutterKeyEventKind key_change, bool repeated) {
+inline flutter::KeyChange ToKeyChange(FlutterKeyEventKind key_change) {
   switch (key_change) {
     case kFlutterKeyEventKindUp:
       return flutter::KeyChange::kUp;
     case kFlutterKeyEventKindDown:
-      return repeated ? flutter::KeyChange::kRepeatedDown : flutter::KeyChange::kDown;
-    case kFlutterKeyEventKindSync:
-      return flutter::KeyChange::kSync;
-    case kFlutterKeyEventKindCancel:
-      return flutter::KeyChange::kCancel;
+      return flutter::KeyChange::kDown;
+    case kFlutterKeyEventKindRepeat:
+      return flutter::KeyChange::kRepeat;
   }
-  return flutter::KeyChange::kCancel;
+  return flutter::KeyChange::kUp;
 }
+
+// The number of bytes that should be able to fully store character data.
+//
+// This is an arbitrary number that is considered sufficient, used as an
+// upperbound in strnlen.
+//
+// Many platforms assert the character to be less than 2 int16's, i.e. 4 bytes,
+// therefore the character data is asserted to be less than double the amount,
+// i.e. 8 bytes.
+constexpr size_t kKeyEventCharacterMaxBytes = 8;
 
 FlutterEngineResult FlutterEngineSendKeyEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
@@ -1419,56 +1426,24 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid key event.");
   }
 
-  const FlutterLogicalKeyEvent* logical_events = SAFE_ACCESS(event, logical_events, nullptr);
-  if (logical_events == nullptr) {
-    return LOG_EMBEDDER_ERROR(
-            kInvalidArguments, "Key event does not contain valid logical_events.");
-  }
-  const uint8_t* logical_characters_data = SAFE_ACCESS(event, logical_characters_data, nullptr);
-  if (logical_characters_data == nullptr) {
-    return LOG_EMBEDDER_ERROR(
-            kInvalidArguments, "Key event does not contain valid logical_characters_data.");
-  }
+  const char* character = SAFE_ACCESS(event, character, nullptr);
 
+  size_t character_data_size = character == nullptr ? 0 :
+      strnlen(character, kKeyEventCharacterMaxBytes);
 
-  int64_t total_character_size = 0;
-  size_t logical_event_count = SAFE_ACCESS(event, logical_event_count, 0);
+  auto packet = std::make_unique<flutter::KeyDataPacketBuilder>(character_data_size);
 
-  const FlutterLogicalKeyEvent* current = logical_events;
-  for (size_t i = 0; i < logical_event_count; ++i) {
-    total_character_size += SAFE_ACCESS(current, character_size, 0);
-    current = reinterpret_cast<const FlutterLogicalKeyEvent*>(
-        reinterpret_cast<const uint8_t*>(current) + current->struct_size);
-  }
-
-  auto packet = std::make_unique<flutter::KeyDataPacketBuilder>(logical_event_count, total_character_size);
-
-  current = logical_events;
-  for (size_t i = 0; i < logical_event_count; ++i) {
-    flutter::LogicalKeyData logical_key;
-
-    logical_key.character_size = SAFE_ACCESS(current, character_size, 0);
-    logical_key.change = ToKeyChange(
-        SAFE_ACCESS(current, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel),
-        SAFE_ACCESS(current, repeated, false));
-    logical_key.key = SAFE_ACCESS(current, key, 0);
-
-    packet->SetLogicalData(logical_key, i);
-    current = reinterpret_cast<const FlutterLogicalKeyEvent*>(
-        reinterpret_cast<const uint8_t*>(current) + current->struct_size);
-  }
-
-  flutter::PhysicalKeyData physical_key;
+  flutter::KeyData physical_key;
   physical_key.Clear();
   physical_key.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
-  physical_key.active_locks = (uint64_t)SAFE_ACCESS(event, active_locks, 0);
-  physical_key.change = ToKeyChange(
-      SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel),
-      SAFE_ACCESS(event, repeated, false));
-  physical_key.key = SAFE_ACCESS(event, key, 0);
-  packet->SetPhysicalData(physical_key);
-
-  packet->SetCharacters(logical_characters_data);
+  physical_key.change = ToKeyChange(SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindUp));
+  physical_key.physical = SAFE_ACCESS(event, physical, 0);
+  physical_key.logical = SAFE_ACCESS(event, logical, 0);
+  physical_key.locks = (uint64_t)SAFE_ACCESS(event, locks, 0);
+  physical_key.synthesized = !!SAFE_ACCESS(event, synthesized, false);
+  physical_key.character_size = character_data_size;
+  packet->SetKeyData(physical_key);
+  packet->SetCharacter(character);
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
                  ->DispatchKeyDataPacket(std::move(packet))

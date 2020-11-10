@@ -362,59 +362,28 @@ class PlatformDispatcher {
   //
   //  * key_data.h
   //  * key.dart
-  static const int _kPhysicalKeyDataFieldCount = 4;
-  static const int _kLogicalKeyDataFieldCount = 3;
-
-  static List<int> _getLogicalCharacterLengths(ByteData packet) {
-    const int kStride = Int64List.bytesPerElement;
-
-    final List<int> lengths = <int>[];
-    int current = 0;
-    int sumLengths = _kPhysicalKeyDataFieldCount * kStride;
-    while (current + sumLengths < packet.lengthInBytes) {
-      lengths.add(packet.getInt64(current, _kFakeHostEndian));
-      sumLengths += lengths.last;
-      current += _kLogicalKeyDataFieldCount * kStride;
-    }
-    assert(current + sumLengths == packet.lengthInBytes);
-    return lengths;
-  }
+  static const int _kKeyDataFieldCount = 6;
 
   // KeyData packet structure:
-  // | LogicalData 1 | LogicalData 2 | ... |
-  // | Physical Data |
+  // | CharDataSize |
+  // | Key Data |
   // | CharData |
   // where LogicalData starts with its character data length.
   static KeyData _unpackKeyData(ByteData packet) {
     const int kStride = Int64List.bytesPerElement;
 
-    final List<int> charLengths = _getLogicalCharacterLengths(packet);
-    final int logicalCount = charLengths.length;
-    int currentCharOffset = (_kPhysicalKeyDataFieldCount + _kLogicalKeyDataFieldCount  * logicalCount) * kStride;
+    int offset = 0;
+    final int charDataSize = packet.getUint64(kStride * offset++, _kFakeHostEndian);
+    final String? character = charDataSize == 0 ? null : utf8.decoder.convert(
+          packet.buffer.asUint8List(kStride * (offset + _kKeyDataFieldCount), charDataSize));
 
-    final List<LogicalKeyData> logicalKeyDataList = <LogicalKeyData>[];
-    for (int i = 0; i < logicalCount; ++i) {
-      // Initialize offset with +1 to skip the first field, character_data_length.
-      int offset = i * _kLogicalKeyDataFieldCount + 1;
-      final String char = charLengths[i] == 0 ? '' : utf8.decoder.convert(
-          packet.buffer.asUint8List(currentCharOffset, charLengths[i]));
-      currentCharOffset += charLengths[i];
-      logicalKeyDataList.add(LogicalKeyData(
-        change: KeyChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-        key: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-        character: char,
-      ));
-      assert(offset == (i + 1) * _kLogicalKeyDataFieldCount);
-    }
-    assert(currentCharOffset == packet.lengthInBytes);
-
-    int offset = logicalCount * _kLogicalKeyDataFieldCount;
     final KeyData keyData = KeyData(
-      timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
-      activeLocks: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      timeStamp: Duration(microseconds: packet.getUint64(kStride * offset++, _kFakeHostEndian)),
       change: KeyChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      key: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      logicalEvents: logicalKeyDataList,
+      physical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
+      logical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
+      character: character,
+      locks: packet.getInt64(kStride * offset++, _kFakeHostEndian),
     );
 
     return keyData;

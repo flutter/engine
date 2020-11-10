@@ -8,18 +8,11 @@
 
 namespace flutter {
 
-static_assert(sizeof(LogicalKeyData) == kBytesPerKeyField * kLogicalKeyDataFieldCount,
-              "LogicalKeyData has the wrong size");
+static_assert(sizeof(KeyData) == kBytesPerKeyField * kKeyDataFieldCount,
+              "KeyData has the wrong size");
 
-void LogicalKeyData::Clear() {
-  memset(this, 0, sizeof(LogicalKeyData));
-}
-
-static_assert(sizeof(PhysicalKeyData) == kBytesPerKeyField * kPhysicalKeyDataFieldCount,
-              "PhysicalKeyData has the wrong size");
-
-void PhysicalKeyData::Clear() {
-  memset(this, 0, sizeof(PhysicalKeyData));
+void KeyData::Clear() {
+  memset(this, 0, sizeof(KeyData));
 }
 
 }  // namespace flutter
