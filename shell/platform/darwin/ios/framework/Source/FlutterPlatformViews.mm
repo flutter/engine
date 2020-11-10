@@ -895,30 +895,16 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  if (!_flutterViewController) {
-    // We try to get a reference to `_flutterViewController` before handling gestures.
-    // Once `_flutterViewController` is available, we keep this weak reference at least
-    // until the end of the touch event.
-    _flutterViewController = _platformViewsController->getFlutterViewController();
-    if (!_flutterViewController) {
-      return;
-    }
-  }
+  _flutterViewController = _platformViewsController->getFlutterViewController();
   [_flutterViewController touchesBegan:touches withEvent:event];
   _currentTouchPointersCount += touches.count;
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  if (!_flutterViewController) {
-    return;
-  }
   [_flutterViewController touchesMoved:touches withEvent:event];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  if (!_flutterViewController) {
-    return;
-  }
   [_flutterViewController touchesEnded:touches withEvent:event];
   _currentTouchPointersCount -= touches.count;
   // Touches in one touch sequence are sent to the touchesEnded method separately if different
@@ -933,14 +919,9 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  if (!_flutterViewController) {
-    return;
-  }
   [_flutterViewController touchesCancelled:touches withEvent:event];
   _currentTouchPointersCount = 0;
   self.state = UIGestureRecognizerStateFailed;
-  // Reset _flutterViewController if the engine asked to remove reference.
-  _flutterViewController = _platformViewsController->getFlutterViewController();
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
