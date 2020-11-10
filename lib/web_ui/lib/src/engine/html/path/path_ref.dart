@@ -182,6 +182,8 @@ class PathRef {
   }
 
   /// Reconstructs Rect from path commands.
+  ///
+  /// Detects clockwise starting with horizontal line.
   ui.Rect? _detectRect() {
     assert(_fVerbs[0] == SPath.kMoveVerb);
     final double x0 = atPoint(0).dx;
@@ -210,7 +212,7 @@ class PathRef {
   }
 
   /// Returns horizontal/vertical line bounds or null if not a line.
-  ui.Rect? getLine() {
+  ui.Rect? getStraightLine() {
     if (_fVerbsLength != 2 || _fVerbs[0] != SPath.kMoveVerb ||
         _fVerbs[1] != SPath.kLineVerb) {
       return null;

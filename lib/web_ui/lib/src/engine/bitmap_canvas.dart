@@ -490,7 +490,7 @@ class BitmapCanvas extends EngineCanvas {
     if (_useDomForRendering(paint)) {
       final Matrix4 transform = _canvasPool._currentTransform;
       final SurfacePath surfacePath = path as SurfacePath;
-      final ui.Rect? pathAsLine = surfacePath.webOnlyPathAsLine;
+      final ui.Rect? pathAsLine = surfacePath.toStraightLine();
       if (pathAsLine != null) {
         final ui.Rect rect = (pathAsLine.top == pathAsLine.bottom) ?
           ui.Rect.fromLTWH(pathAsLine.left, pathAsLine.top, pathAsLine.width, 1)
@@ -505,7 +505,7 @@ class BitmapCanvas extends EngineCanvas {
             paint);
         return;
       }
-      final ui.Rect? pathAsRect = surfacePath.webOnlyPathAsRect;
+      final ui.Rect? pathAsRect = surfacePath.toRect();
       if (pathAsRect != null) {
         drawRect(pathAsRect, paint);
         return;
