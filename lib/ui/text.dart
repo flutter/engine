@@ -2264,7 +2264,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
 ///  If this is not provided, then the family name will be extracted from the font file.
 Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   return _futurize(
-    (_Callback<void> callback) => _loadFontFromList(list, callback, fontFamily)
+    (_Callback<void> callback) {
+      _loadFontFromList(list, callback, fontFamily);
+    }
   ).then((_) => _sendFontChangeMessage());
 }
 
@@ -2273,11 +2275,18 @@ final ByteData _fontChangeMessage = utf8.encoder.convert(
 ).buffer.asByteData();
 
 FutureOr<void> _sendFontChangeMessage() async {
-  PlatformDispatcher.instance.onPlatformMessage?.call(
-    'flutter/system',
-    _fontChangeMessage,
-    (_) {},
-  );
+  const String kSystemChannelName = 'flutter/system';
+  if (PlatformDispatcher.instance.onPlatformMessage != null) {
+    _invoke3<String, ByteData?, PlatformMessageResponseCallback>(
+      PlatformDispatcher.instance.onPlatformMessage,
+      PlatformDispatcher.instance._onPlatformMessageZone,
+      kSystemChannelName,
+      _fontChangeMessage,
+      (ByteData? responseData) { },
+    );
+  } else {
+    channelBuffers.push(kSystemChannelName, _fontChangeMessage, (ByteData? responseData) { });
+  }
 }
 
 // TODO(gspencergoog): remove this template block once the framework templates
@@ -2292,4 +2301,4 @@ FutureOr<void> _sendFontChangeMessage() async {
 /// default ascent will be used.
 /// {@endtemplate}
 
-String _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';
+void _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';

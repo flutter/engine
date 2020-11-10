@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@class FlutterViewController;
+import 'package:regular_integration_tests/screenshot_support.dart' as test;
 
-@interface FlutterAppDelegate (Test)
-@property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
-@end
+Future<void> main() async {
+  await test.runTestWithScreenshots();
+}
