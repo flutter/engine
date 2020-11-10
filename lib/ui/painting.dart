@@ -2912,7 +2912,7 @@ class ColorFilter implements ImageFilter {
       : _color = color,
         _blendMode = blendMode,
         _matrix = null,
-        _type = _TypeMode;
+        _type = _kTypeMode;
 
   /// Construct a color filter that transforms a color by a 5x5 matrix, where
   /// the fifth row is implicitly added in an identity configuration.
@@ -2978,7 +2978,7 @@ class ColorFilter implements ImageFilter {
       : _color = null,
         _blendMode = null,
         _matrix = matrix,
-        _type = _TypeMatrix;
+        _type = _kTypeMatrix;
 
   /// Construct a color filter that applies the sRGB gamma curve to the RGB
   /// channels.
@@ -2986,7 +2986,7 @@ class ColorFilter implements ImageFilter {
       : _color = null,
         _blendMode = null,
         _matrix = null,
-        _type = _TypeLinearToSrgbGamma;
+        _type = _kTypeLinearToSrgbGamma;
 
   /// Creates a color filter that applies the inverse of the sRGB gamma curve
   /// to the RGB channels.
@@ -2994,7 +2994,7 @@ class ColorFilter implements ImageFilter {
       : _color = null,
         _blendMode = null,
         _matrix = null,
-        _type = _TypeSrgbToLinearGamma;
+        _type = _kTypeSrgbToLinearGamma;
 
   final Color? _color;
   final BlendMode? _blendMode;
@@ -3002,10 +3002,10 @@ class ColorFilter implements ImageFilter {
   final int _type;
 
   // The type of SkColorFilter class to create for Skia.
-  static const int _TypeMode = 1; // MakeModeFilter
-  static const int _TypeMatrix = 2; // MakeMatrixFilterRowMajor255
-  static const int _TypeLinearToSrgbGamma = 3; // MakeLinearToSRGBGamma
-  static const int _TypeSrgbToLinearGamma = 4; // MakeSRGBToLinearGamma
+  static const int _kTypeMode = 1; // MakeModeFilter
+  static const int _kTypeMatrix = 2; // MakeMatrixFilterRowMajor255
+  static const int _kTypeLinearToSrgbGamma = 3; // MakeLinearToSRGBGamma
+  static const int _kTypeSrgbToLinearGamma = 4; // MakeSRGBToLinearGamma
 
   // SkImageFilters::ColorFilter
   @override
@@ -3013,20 +3013,20 @@ class ColorFilter implements ImageFilter {
 
   _ColorFilter? _toNativeColorFilter() {
     switch (_type) {
-      case _TypeMode:
+      case _kTypeMode:
         if (_color == null || _blendMode == null) {
           return null;
         }
         return _ColorFilter.mode(this);
-      case _TypeMatrix:
+      case _kTypeMatrix:
         if (_matrix == null) {
           return null;
         }
         assert(_matrix!.length == 20, 'Color Matrix must have 20 entries.');
         return _ColorFilter.matrix(this);
-      case _TypeLinearToSrgbGamma:
+      case _kTypeLinearToSrgbGamma:
         return _ColorFilter.linearToSrgbGamma(this);
-      case _TypeSrgbToLinearGamma:
+      case _kTypeSrgbToLinearGamma:
         return _ColorFilter.srgbToLinearGamma(this);
       default:
         throw StateError('Unknown mode $_type for ColorFilter.');
@@ -3050,13 +3050,13 @@ class ColorFilter implements ImageFilter {
   @override
   String get _shortDescription {
     switch (_type) {
-      case _TypeMode:
+      case _kTypeMode:
         return 'ColorFilter.mode($_color, $_blendMode)';
-      case _TypeMatrix:
+      case _kTypeMatrix:
         return 'ColorFilter.matrix($_matrix)';
-      case _TypeLinearToSrgbGamma:
+      case _kTypeLinearToSrgbGamma:
         return 'ColorFilter.linearToSrgbGamma()';
-      case _TypeSrgbToLinearGamma:
+      case _kTypeSrgbToLinearGamma:
         return 'ColorFilter.srgbToLinearGamma()';
       default:
         return 'unknow ColorFilter';
@@ -3066,13 +3066,13 @@ class ColorFilter implements ImageFilter {
   @override
   String toString() {
     switch (_type) {
-      case _TypeMode:
+      case _kTypeMode:
         return 'ColorFilter.mode($_color, $_blendMode)';
-      case _TypeMatrix:
+      case _kTypeMatrix:
         return 'ColorFilter.matrix($_matrix)';
-      case _TypeLinearToSrgbGamma:
+      case _kTypeLinearToSrgbGamma:
         return 'ColorFilter.linearToSrgbGamma()';
-      case _TypeSrgbToLinearGamma:
+      case _kTypeSrgbToLinearGamma:
         return 'ColorFilter.srgbToLinearGamma()';
       default:
         return 'Unknown ColorFilter type. This is an error. If you\'re seeing this, please file an issue at https://github.com/flutter/flutter/issues/new.';
@@ -3089,27 +3089,27 @@ class ColorFilter implements ImageFilter {
 class _ColorFilter extends NativeFieldWrapperClass2 {
   _ColorFilter.mode(this.creator)
     : assert(creator != null), // ignore: unnecessary_null_comparison
-      assert(creator._type == ColorFilter._TypeMode) {
+      assert(creator._type == ColorFilter._kTypeMode) {
     _constructor();
     _initMode(creator._color!.value, creator._blendMode!.index);
   }
 
   _ColorFilter.matrix(this.creator)
     : assert(creator != null), // ignore: unnecessary_null_comparison
-      assert(creator._type == ColorFilter._TypeMatrix) {
+      assert(creator._type == ColorFilter._kTypeMatrix) {
     _constructor();
     _initMatrix(Float32List.fromList(creator._matrix!));
   }
   _ColorFilter.linearToSrgbGamma(this.creator)
     : assert(creator != null), // ignore: unnecessary_null_comparison
-      assert(creator._type == ColorFilter._TypeLinearToSrgbGamma) {
+      assert(creator._type == ColorFilter._kTypeLinearToSrgbGamma) {
     _constructor();
     _initLinearToSrgbGamma();
   }
 
   _ColorFilter.srgbToLinearGamma(this.creator)
     : assert(creator != null), // ignore: unnecessary_null_comparison
-      assert(creator._type == ColorFilter._TypeSrgbToLinearGamma) {
+      assert(creator._type == ColorFilter._kTypeSrgbToLinearGamma) {
     _constructor();
     _initSrgbToLinearGamma();
   }
