@@ -180,23 +180,15 @@ class IntegrationTestsManager {
 
   Future<void> _runTestsTarget(
       io.Directory directory, String target, Set<String> buildModes) async {
-    for (String mode in buildModes) {
-      if (!blockedTestsListsMapForModes[mode].contains(target)) {
-        if (!_skipHtmlBackendTesting(target)) {
-          final bool htmlTestResults =
-              await _runTestsInMode(directory, target, mode: mode);
-          if (htmlTestResults) {
-            _numberOfPassedTests++;
-          } else {
-            _numberOfFailedTests++;
-          }
-        }
-        // Run the same test with canvaskit rendering backend.
-        if (!_skipCanvaskitBackendTesting(target)) {
-          final bool canvaskitTestResults = await _runTestsInMode(
-              directory, target,
-              mode: mode, canvaskitBackend: true);
-          if (canvaskitTestResults) {
+    final Set<String> renderingBackends = _getRenderingBackends();
+    for (String renderingBackend in renderingBackends) {
+      for (String mode in buildModes) {
+        if (!blockedTestsListsMapForModes[mode].contains(target) &&
+            !blockedTestsListsMapForRenderBackends[renderingBackend]
+                .contains(target)) {
+          final bool result = await _runTestsInMode(directory, target,
+              mode: mode, webRenderer: renderingBackend);
+          if (result) {
             _numberOfPassedTests++;
           } else {
             _numberOfFailedTests++;
@@ -207,7 +199,7 @@ class IntegrationTestsManager {
   }
 
   Future<bool> _runTestsInMode(io.Directory directory, String testName,
-      {String mode = 'profile', bool canvaskitBackend = false}) async {
+      {String mode = 'profile', String webRenderer = 'html'}) async {
     String executable =
         _useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
     Map<String, String> enviroment = Map<String, String>();
@@ -218,14 +210,14 @@ class IntegrationTestsManager {
         IntegrationArguments.fromBrowser(_browser);
     final int exitCode = await runProcess(
       executable,
-      arguments.getTestArguments(testName, mode, canvaskitBackend),
+      arguments.getTestArguments(testName, mode, webRenderer),
       workingDirectory: directory.path,
       environment: enviroment,
     );
 
     if (exitCode != 0) {
       final String command =
-          arguments.getCommandToRun(testName, mode, canvaskitBackend);
+          arguments.getCommandToRun(testName, mode, webRenderer);
       io.stderr
           .writeln('ERROR: Failed to run test. Exited with exit code $exitCode'
               '. To run $testName locally use the following command:'
@@ -234,6 +226,17 @@ class IntegrationTestsManager {
     } else {
       return true;
     }
+  }
+
+  Set<String> _getRenderingBackends() {
+    Set<String> renderingBackends;
+    if (_renderingBackendSelected) {
+      final String mode = IntegrationTestsArgumentParser.instance.webRenderer;
+      renderingBackends = <String>{mode};
+    } else {
+      renderingBackends = {'auto', 'html', 'canvaskit'};
+    }
+    return renderingBackends;
   }
 
   Set<String> _getBuildModes() {
@@ -361,23 +364,8 @@ class IntegrationTestsManager {
   bool get _renderingBackendSelected =>
       !IntegrationTestsArgumentParser.instance.webRenderer.isEmpty;
 
-  bool get _renderingBackendHtml =>
-      IntegrationTestsArgumentParser.instance.webRenderer == 'html';
-
   bool get _runAllTestTargets =>
       IntegrationTestsArgumentParser.instance.testTarget.isEmpty;
-
-  // Skip tests on html backend if backend is selected and selection is not
-  // `html` backend or if the test target is in the blocked list.
-  bool _skipHtmlBackendTesting(String testName) =>
-      (_renderingBackendSelected && !_renderingBackendHtml) ||
-      blockedTestsListsMapForRenderBackends['html'].contains(testName);
-
-  // Skip tests on canvaskit backend if backend is selected and selection is
-  // `html` backend or if the test target is in the blocked list.
-  bool _skipCanvaskitBackendTesting(String testName) =>
-      (_renderingBackendSelected && _renderingBackendHtml) ||
-      blockedTestsListsMapForRenderBackends['canvaskit'].contains(testName);
 
   /// Validate the given `browser`, `platform` combination is suitable for
   /// integration tests to run.
@@ -423,15 +411,15 @@ abstract class IntegrationArguments {
   }
 
   List<String> getTestArguments(
-      String testName, String mode, bool isCanvaskitBackend);
+      String testName, String mode, String webRenderer);
 
-  String getCommandToRun(String testName, String mode, bool isCanvaskitBackend);
+  String getCommandToRun(String testName, String mode, String webRenderer);
 }
 
 /// Arguments to give `flutter drive` to run the integration tests on Chrome.
 class ChromeIntegrationArguments extends IntegrationArguments {
   List<String> getTestArguments(
-      String testName, String mode, bool isCanvaskitBackend) {
+      String testName, String mode, String webRenderer) {
     return <String>[
       'drive',
       '--target=test_driver/${testName}',
@@ -442,18 +430,15 @@ class ChromeIntegrationArguments extends IntegrationArguments {
       if (isLuci) '--chrome-binary=${preinstalledChromeExecutable()}',
       '--headless',
       '--local-engine=host_debug_unopt',
-      if (isCanvaskitBackend) '--web-renderer=canvaskit',
+      '--web-renderer=$webRenderer',
     ];
   }
 
-  String getCommandToRun(
-      String testName, String mode, bool isCanvaskitBackend) {
+  String getCommandToRun(String testName, String mode, String webRenderer) {
     String statementToRun = 'flutter drive '
         '--target=test_driver/${testName} -d web-server --$mode '
-        '--browser-name=chrome --local-engine=host_debug_unopt';
-    if (isCanvaskitBackend) {
-      statementToRun = '$statementToRun --web-renderer=canvaskit';
-    }
+        '--browser-name=chrome --local-engine=host_debug_unopt '
+        '--web-renderer=$webRenderer';
     if (isLuci) {
       statementToRun = '$statementToRun --chrome-binary='
           '${preinstalledChromeExecutable()}';
@@ -465,7 +450,7 @@ class ChromeIntegrationArguments extends IntegrationArguments {
 /// Arguments to give `flutter drive` to run the integration tests on Firefox.
 class FirefoxIntegrationArguments extends IntegrationArguments {
   List<String> getTestArguments(
-      String testName, String mode, bool isCanvaskitBackend) {
+      String testName, String mode, String webRenderer) {
     return <String>[
       'drive',
       '--target=test_driver/${testName}',
@@ -475,14 +460,13 @@ class FirefoxIntegrationArguments extends IntegrationArguments {
       '--browser-name=firefox',
       '--headless',
       '--local-engine=host_debug_unopt',
-      if (isCanvaskitBackend) '--web-renderer=canvaskit',
+      '--web-renderer=$webRenderer',
     ];
   }
 
-  String getCommandToRun(
-      String testName, String mode, bool isCanvaskitBackend) {
+  String getCommandToRun(String testName, String mode, String webRenderer) {
     final String arguments =
-        getTestArguments(testName, mode, isCanvaskitBackend).join(' ');
+        getTestArguments(testName, mode, webRenderer).join(' ');
     return 'flutter $arguments';
   }
 }
@@ -492,7 +476,7 @@ class SafariIntegrationArguments extends IntegrationArguments {
   SafariIntegrationArguments();
 
   List<String> getTestArguments(
-      String testName, String mode, bool isCanvaskitBackend) {
+      String testName, String mode, String webRenderer) {
     return <String>[
       'drive',
       '--target=test_driver/${testName}',
@@ -501,14 +485,13 @@ class SafariIntegrationArguments extends IntegrationArguments {
       '--$mode',
       '--browser-name=safari',
       '--local-engine=host_debug_unopt',
-      if (isCanvaskitBackend) '--web-renderer=canvaskit',
+      '--web-renderer=$webRenderer',
     ];
   }
 
-  String getCommandToRun(
-      String testName, String mode, bool isCanvaskitBackend) {
+  String getCommandToRun(String testName, String mode, String webRenderer) {
     final String arguments =
-        getTestArguments(testName, mode, isCanvaskitBackend).join(' ');
+        getTestArguments(testName, mode, webRenderer).join(' ');
     return 'flutter $arguments';
   }
 }
@@ -652,13 +635,14 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
   'release': [],
 };
 
-/// Tests blocked for one of the build modes.
+/// Tests blocked for one of the rendering backends.
 ///
-/// If a test is not suppose to run for one of the modes also add that test
+/// If a test is not suppose to run for one of the backends also add that test
 /// to the corresponding list.
 // TODO(nurhan): Remove the failing test after fixing.
 const Map<String, List<String>> blockedTestsListsMapForRenderBackends =
     <String, List<String>>{
+  'auto': [],
   'html': [],
   // This test failed on canvaskit on all three build modes.
   'canvaskit': ['image_loading_integration.dart'],
