@@ -109,7 +109,7 @@
 #pragma mark - NSAccessibility overrides
 
 - (BOOL)isAccessibilityElement {
-  return YES;
+  return self.accessibilityChildren != nil && [self.accessibilityChildren count] != 0;
 }
 
 - (NSAccessibilityRole)accessibilityRole {

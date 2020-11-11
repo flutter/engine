@@ -21,7 +21,7 @@ class FlutterAccessibilityMac : public FlutterAccessibility {
   ~FlutterAccessibilityMac();
   // FlutterAccessibility override
   void Init(AccessibilityBridge* bridge, AXNode* node) override;
-  void OnAccessibilityEvent(AXEventGenerator::TargetedEvent event) override;
+  void OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event) override;
   const AXNodeData& GetData() const override;
   gfx::NativeViewAccessible GetNativeViewAccessible() override;
   gfx::NativeViewAccessible GetParent() override;

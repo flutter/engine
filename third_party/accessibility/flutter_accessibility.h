@@ -25,7 +25,7 @@ class FlutterAccessibility : public AXPlatformNodeDelegateBase {
   // take any arguments because in the Windows subclass we use a special
   // function to construct a COM object.
   virtual void Init(AccessibilityBridge* bridge, AXNode* node);
-  virtual void OnAccessibilityEvent(AXEventGenerator::TargetedEvent event);
+  virtual void OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event);
 };
 
 } // namespace ax

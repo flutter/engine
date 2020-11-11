@@ -13,5 +13,5 @@ FlutterAccessibility::FlutterAccessibility() = default;
 FlutterAccessibility::~FlutterAccessibility() = default;
 
 void FlutterAccessibility::Init(AccessibilityBridge* bridge, AXNode* node) {}
-void FlutterAccessibility::OnAccessibilityEvent(AXEventGenerator::TargetedEvent event) {}
+void FlutterAccessibility::OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event) {}
 }  // namespace ax

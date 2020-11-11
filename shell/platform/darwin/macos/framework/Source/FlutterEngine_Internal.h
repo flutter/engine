@@ -40,6 +40,5 @@
  * Accessibility API.
  */
 - (void)updateSemanticsEnabled:(BOOL)enabled;
-- (NSAffineTransform* _Nonnull)getWindowTransform;
 
 @end

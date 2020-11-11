@@ -511,6 +511,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   } else if (enabled && !_bridge){
     _bridge.reset(new ax::AccessibilityBridge((void*)CFBridgingRetain(self)));
   }
+  if (!enabled) {
+    self.viewController.view.accessibilityChildren = nil;
+  }
   _embedderAPI.UpdateSemanticsEnabled(_engine, enabled);
 }
 
@@ -729,55 +732,41 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   _bridge->AddFlutterSemanticsNodeUpdate(node);
 }
 
-- (void)printTree:(NSAccessibilityElement*)element msgs:(std::vector<std::string>&)msgs level:(int)level {
-  msgs[level] += std::string([element.accessibilityRole UTF8String]) + "-";
-  if (element.isAccessibilityElement)
-    msgs[level] += "true,";
-  else
-    msgs[level] += "false,";
-  // for (id child in element.accessibilityChildren) {
-  //   NSLog(@"%@ has child %@", element, child);
-  // }
-  // NSLog(@"in print tree for level %d accessibilityValue %@, screen bound origin %@, size %@, enabled %d, accessibilityElement %d",level, element.accessibilityValue, NSStringFromPoint(element.accessibilityFrame.origin), NSStringFromSize(element.accessibilityFrame.size), element.accessibilityEnabled, element.accessibilityElement);
-  for (id child in element.accessibilityChildren) {
-    [self printTree:child msgs:msgs level:level+1];
-  }
-}
+// - (void)printTree:(NSAccessibilityElement*)element msgs:(std::vector<std::string>&)msgs level:(int)level {
+//   msgs[level] += std::string([element.accessibilityRole UTF8String]) + "-";
+//   if (element.isAccessibilityElement)
+//     msgs[level] += "true,";
+//   else
+//     msgs[level] += "false,";
+//   // for (id child in element.accessibilityChildren) {
+//   //   NSLog(@"%@ has child %@", element, child);
+//   // }
+//   // NSLog(@"in print tree for level %d accessibilityValue %@, screen bound origin %@, size %@, enabled %d, accessibilityElement %d",level, element.accessibilityValue, NSStringFromPoint(element.accessibilityFrame.origin), NSStringFromSize(element.accessibilityFrame.size), element.accessibilityEnabled, element.accessibilityElement);
+//   for (id child in element.accessibilityChildren) {
+//     [self printTree:child msgs:msgs level:level+1];
+//   }
+// }
 
 - (void)updateSemanticsCustomActions:(const FlutterSemanticsCustomAction*)action {
   FML_DCHECK(_bridge);
   if (action->id == kFlutterSemanticsNodeIdBatchEnd) {
     _bridge->CommitUpdates();
-    FML_DCHECK(_bridge->GetFlutterAccessibilityFromID(0));
-    NSAccessibilityElement* root = _bridge->GetFlutterAccessibilityFromID(0)->GetNativeViewAccessible();
-    // root.accessibilityParent = self.viewController.view;
-    // self.viewController.view.accessibilityLabel = @"chun heng view";
-    // self.viewController.view.accessibilityRole = NSAccessibilityGroupRole;
-    // self.viewController.view.accessibilityElement = YES;
-    self.viewController.view.accessibilityChildren = @[root];
-    std::vector<std::string> msgs(10);
-    [self printTree:self.viewController.view.accessibilityChildren[0] msgs:msgs level:0];
-    for (auto msg : msgs) {
-      NSLog(@"%@", [NSString stringWithUTF8String:msg.data()]);
+    if (_bridge->GetFlutterAccessibilityFromID(0)) {
+      NSAccessibilityElement* root = _bridge->GetFlutterAccessibilityFromID(0)->GetNativeViewAccessible();
+      self.viewController.view.accessibilityChildren = @[root];
+    } else {
+      self.viewController.view.accessibilityChildren = nil;
     }
+
+    // std::vector<std::string> msgs(10);
+    // [self printTree:self.viewController.view.accessibilityChildren[0] msgs:msgs level:0];
+    // for (auto msg : msgs) {
+    //   NSLog(@"%@", [NSString stringWithUTF8String:msg.data()]);
+    // }
   }
   // The memory of input action does not persist in between these update calls,
   // we need to save the value instead of the reference.
   _bridge->AddFlutterSemanticsCustomActionUpdate(action);
-}
-
-- (NSAffineTransform*)getWindowTransform {
-    // TODO(chunhtai): we need to find a better way to get get the window transform
-  FlutterAppDelegate* appDelegate = (FlutterAppDelegate*)[NSApp delegate];
-  // NSRect rect = appDelegate.mainFlutterWindow.frame;
-  NSRect rect = [appDelegate.mainFlutterWindow contentRectForFrameRect:appDelegate.mainFlutterWindow.frame];
-  // NSRect frameRelativeToScreen = [myView.window convertRectToScreen:frameInWindow];
-  // NSLog(@"the viewController.view rect %@", self.viewController.view.window.frame);
-  NSLog(@"the appDelegate.mainFlutterWindow.frame rect %@", NSStringFromRect(appDelegate.mainFlutterWindow.frame));
-  NSLog(@"the appDelegate.mainFlutterWindow.frame contentView rect %@", NSStringFromRect([appDelegate.mainFlutterWindow contentRectForFrameRect:appDelegate.mainFlutterWindow.frame]));
-  NSAffineTransform* result = [[NSAffineTransform alloc] init];
-  [result translateXBy:rect.origin.x yBy:rect.origin.y];
-  return result;
 }
 
 #pragma mark - Task runner integration
