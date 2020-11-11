@@ -98,6 +98,7 @@ class CanvasKit {
   external void setCurrentContext(int glContext);
 
   /// Creates an [SkPath] using commands obtained from [SkPath.toCmds].
+  // TODO(yjbanov): switch to CanvasKit.Path.MakeFromCmds when it's available.
   external SkPath MakePathFromCmds(List<dynamic> pathCommands);
 }
 
