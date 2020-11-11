@@ -236,7 +236,8 @@ class IntegrationTestsManager {
       final String mode = IntegrationTestsArgumentParser.instance.webRenderer;
       renderingBackends = <String>{mode};
     } else {
-      renderingBackends = {'auto', 'html', 'canvaskit'};
+      // TODO(nurhan): Enable `auto` when recipe is sharded.
+      renderingBackends = {'html', 'canvaskit'};
     }
     return renderingBackends;
   }
@@ -251,9 +252,10 @@ class IntegrationTestsManager {
         buildModes = <String>{mode};
       }
     } else {
+      // TODO(nurhan): Enable `release` when recipe is sharded.
       buildModes = _browser == 'chrome'
-          ? {'debug', 'profile', 'release'}
-          : {'profile', 'release'};
+          ? {'debug', 'profile'}
+          : {'profile'};
     }
     return buildModes;
   }
@@ -632,6 +634,7 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
   'debug': [
     'treeshaking_integration.dart',
     'text_editing_integration.dart',
+    'url_strategy_integration.dart',
   ],
   'profile': [],
   'release': [],
