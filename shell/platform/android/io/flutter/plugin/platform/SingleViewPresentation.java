@@ -43,7 +43,15 @@ import java.lang.reflect.Proxy;
  *
  * <p>The view hierarchy for the presentation is as following:
  *
- * <p>rootView / \ / \ / \ container state.fakeWindowViewGroup | EmbeddedView
+ * <pre>
+ *          rootView
+ *         /         \
+ *        /           \
+ *       /             \
+ *   container       state.fakeWindowViewGroup
+ *      |
+ *   EmbeddedView
+ * </pre>
  *
  * @hide
  */
