@@ -150,6 +150,7 @@ static bool OnPresent(FlutterEngine* engine) {
 
 static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
   CGSize size = CGSizeMake(info->size.width, info->size.height);
+  NSLog(@"OnFBO: %@", NSStringFromSize(size));
   return [engine.viewController.flutterView getFrameBufferIdForSize:size];
 }
 
@@ -463,9 +464,11 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   if (!_engine) {
     return;
   }
+  NSLog(@"updateWindowMetrics true!");
   NSView* view = _viewController.view;
   CGRect scaledBounds = [view convertRectToBacking:view.bounds];
   CGSize scaledSize = scaledBounds.size;
+  NSLog(@"updateWindowMetrics: %@", NSStringFromSize(scaledSize));
   double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
 
   const FlutterWindowMetricsEvent windowMetricsEvent = {

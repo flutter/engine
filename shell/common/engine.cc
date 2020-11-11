@@ -240,6 +240,7 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
       viewport_metrics_.physical_height != metrics.physical_height ||
       viewport_metrics_.physical_width != metrics.physical_width ||
       viewport_metrics_.device_pixel_ratio != metrics.device_pixel_ratio;
+  FML_LOG(ERROR) << "Engine::SetViewportMetrics: " << dimensions_changed;
   viewport_metrics_ = metrics;
   runtime_controller_->SetViewportMetrics(viewport_metrics_);
   if (animator_) {
@@ -247,6 +248,7 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
       animator_->SetDimensionChangePending();
     }
     if (have_surface_) {
+      FML_LOG(ERROR) << "frame scheduled!!!";
       ScheduleFrame();
     }
   }

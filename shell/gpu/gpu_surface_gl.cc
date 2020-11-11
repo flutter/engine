@@ -8,6 +8,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
+#include <iostream>
 #include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -182,12 +183,15 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
 }
 
 bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
+  std::cerr << "GPUSurfaceGL::CreateOrUpdateSurfaces" << std::endl;
   if (onscreen_surface_ != nullptr &&
       size == SkISize::Make(onscreen_surface_->width(),
                             onscreen_surface_->height())) {
     // Surface size appears unchanged. So bail.
     return true;
   }
+
+  std::cerr << "GPUSurfaceGL::CreateOrUpdateSurfaces true!!" << std::endl;
 
   // We need to do some updates.
   TRACE_EVENT0("flutter", "UpdateSurfacesSize");

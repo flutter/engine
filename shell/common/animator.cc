@@ -202,18 +202,24 @@ void Animator::DrawLastLayerTree() {
 }
 
 void Animator::RequestFrame(bool regenerate_layer_tree) {
+  FML_LOG(ERROR) << "Animator::RequestFrame 1";
   if (regenerate_layer_tree) {
     regenerate_layer_tree_ = true;
   }
+  FML_LOG(ERROR) << "Animator::RequestFrame 2";
   if (paused_ && !dimension_change_pending_) {
     return;
   }
+
+  FML_LOG(ERROR) << "Animator::RequestFrame 3";
 
   if (!pending_frame_semaphore_.TryWait()) {
     // Multiple calls to Animator::RequestFrame will still result in a
     // single request to the VsyncWaiter.
     return;
   }
+
+  FML_LOG(ERROR) << "Animator::RequestFrame 4";
 
   // The AwaitVSync is going to call us back at the next VSync. However, we want
   // to be reasonably certain that the UI thread is not in the middle of a
@@ -222,14 +228,19 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
   // started an expensive operation right after posting this message however.
   // To support that, we need edge triggered wakes on VSync.
 
+  FML_LOG(ERROR) << "Animator::RequestFrame 5";
+
   task_runners_.GetUITaskRunner()->PostTask([self = weak_factory_.GetWeakPtr(),
                                              frame_number = frame_number_]() {
     if (!self) {
       return;
     }
     TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending", frame_number);
+    FML_LOG(ERROR) << "Animator::RequestFrame 6";
     self->AwaitVSync();
+    FML_LOG(ERROR) << "Animator::RequestFrame 7";
   });
+  FML_LOG(ERROR) << "Animator::RequestFrame 8";
   frame_scheduled_ = true;
 }
 

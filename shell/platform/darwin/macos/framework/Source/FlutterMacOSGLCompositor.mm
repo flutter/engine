@@ -7,6 +7,7 @@
 #import <OpenGL/gl.h>
 #import "flutter/fml/logging.h"
 #import "flutter/fml/platform/darwin/cf_utils.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/MacOSSwitchableGLContext.h"
 #import "third_party/skia/include/core/SkCanvas.h"
 #import "third_party/skia/include/core/SkSurface.h"
 #import "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
@@ -26,7 +27,7 @@ FlutterMacOSGLCompositor::FlutterMacOSGLCompositor(FlutterViewController* view_c
 FlutterMacOSGLCompositor::~FlutterMacOSGLCompositor() = default;
 
 bool FlutterMacOSGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
-                                                FlutterBackingStore* backing_store_out) {
+                                                  FlutterBackingStore* backing_store_out) {
   NSLog(@"FlutterMacOSGLCompositor::CreateBackingStore");
   return CreateFramebuffer(config, backing_store_out);
 }
@@ -41,86 +42,48 @@ bool FlutterMacOSGLCompositor::CollectBackingStore(const FlutterBackingStore* ba
 }
 
 bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
-  GLuint fbo_id;
-  // GLuint dest_fbo_id;
-  CGSize size;
-
-  // CALayer* content_layer;
-
-  // IOSurfaceRef io_surface_ref;
-  unsigned pixelFormat;
-  unsigned bytesPerElement;
-  size_t bytesPerRow;
-  size_t totalBytes;
-  uint32_t texture_id;
-  NSDictionary* options;
   NSLog(@"layers count: %zu", layers_count);
 
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
     FlutterBackingStore* backing_store = const_cast<FlutterBackingStore*>(layer->backing_store);
     switch (layer->type) {
-      case kFlutterLayerContentTypeBackingStore:
+      case kFlutterLayerContentTypeBackingStore: {
         NSLog(@"kFlutterLayerContentTypeBackingStore, Layer: %zu", i);
-        fbo_id = backing_store->open_gl.framebuffer.name;
+        GLuint fbo_id = backing_store->open_gl.framebuffer.name;
         NSLog(@"Presenting FBOID: %u", fbo_id);
-        size = CGSizeMake(layer->size.width, layer->size.height);
+        CGSize size = CGSizeMake(layer->size.width, layer->size.height);
+        CALayer* content_layer;
 
         if (backing_store->ca_layer == nullptr) {
           NSLog(@"ca_layer == nullptr");
           content_layer = [[CALayer alloc] init];
-          [content_layer setFrame:CGRectMake(layer->offset.x, layer->offset.y, size.width, size.height)];
+          [content_layer
+              setFrame:CGRectMake(layer->offset.x, layer->offset.y, size.width, size.height)];
           backing_store->ca_layer = (__bridge void*)content_layer;
           [content_layer setBackgroundColor:[[NSColor yellowColor] CGColor]];
           [view_controller_.flutterView.layer addSublayer:content_layer];
         } else {
           NSLog(@"ca_layer != nullptr");
           content_layer = (__bridge CALayer*)backing_store->ca_layer;
-          // [content_layer setFrame:CGRectMake(layer->offset.x, layer->offset.y, size.width, size.height)];
+          // [content_layer setFrame:CGRectMake(layer->offset.x, layer->offset.y, size.width,
+          // size.height)];
         }
 
-        // IOSurfaceRef
-        pixelFormat = 'BGRA';
-        bytesPerElement = 4;
+        // valid block 1
+        [view_controller_.flutterView getFrameBufferIdForSize:size];
+        // valid block end
 
-        bytesPerRow =
-          IOSurfaceAlignProperty(kIOSurfaceBytesPerRow, size.width * bytesPerElement);
-        totalBytes = IOSurfaceAlignProperty(kIOSurfaceAllocSize, size.height * bytesPerRow);
-        options = @{
-          (id)kIOSurfaceWidth : @(size.width),
-          (id)kIOSurfaceHeight : @(size.height),
-          (id)kIOSurfacePixelFormat : @(pixelFormat),
-          (id)kIOSurfaceBytesPerElement : @(bytesPerElement),
-          (id)kIOSurfaceBytesPerRow : @(bytesPerRow),
-          (id)kIOSurfaceAllocSize : @(totalBytes),
-        };
-        // backing_store->io_surface_ref = (void*)IOSurfaceCreate((CFDictionaryRef)options);
-        if (_ioSurfaceRef) {
-          CFRelease(_ioSurfaceRef);
-        }
-        _ioSurfaceRef = IOSurfaceCreate((CFDictionaryRef)options);
-
-        texture_id = backing_store->open_gl.framebuffer.texture;
-
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture_id);
-
-        CGLTexImageIOSurface2D(CGLGetCurrentContext(), GL_TEXTURE_RECTANGLE_ARB, GL_RGBA,
-                           int(size.width), int(size.height), GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV,
-                           _ioSurfaceRef, 0 /* plane */);
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE_ARB,
-                           texture_id, 0);
-
-        FML_DCHECK(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-
-        content_layer.transform = CATransform3DMakeScale(1, -1, 1);
-        [content_layer setContents:(__bridge id)_ioSurfaceRef];
+        IOSurfaceRef ioSurface = reinterpret_cast<IOSurfaceRef>(backing_store->io_surface_ref);
+        auto scale = CATransform3DMakeScale(0.5, -0.5, 0.5);
+        auto translate = CATransform3DMakeTranslation(size.width * -0.25, size.height * -0.25, 0);
+        content_layer.transform = CATransform3DConcat(scale, translate);
+        [content_layer setContents:(__bridge id)ioSurface];
         break;
+      }
       case kFlutterLayerContentTypePlatformView:
         NSLog(@"kFlutterLayerContentTypePlatformView");
-        [view_controller_.view addSubview: view_controller_.view_map.at(1)];
+        [view_controller_.view addSubview:view_controller_.view_map.at(1)];
         break;
     };
   }
@@ -128,31 +91,52 @@ bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layer
   return present_callback_();
 }
 
+void FlutterMacOSGLCompositor::TextureBackedByIOSurface(const FlutterBackingStoreConfig* config,
+                                                        FlutterBackingStore* backing_store_out,
+                                                        GLuint texture,
+                                                        GLuint fbo) {
+  // auto gl_context = view_controller_.flutterView.openGLContext;
+  // flutter::GLContextSwitch
+  // context_switch(std::make_unique<MacOSSwitchableGLContext>(gl_context));
+  IOSurfaceRef ioSurface = reinterpret_cast<IOSurfaceRef>(backing_store_out->io_surface_ref);
+  if (ioSurface) {
+    CFRelease(ioSurface);
+  }
+  unsigned pixelFormat = 'BGRA';
+  unsigned bytesPerElement = 4;
+
+  auto size = config->size;
+
+  size_t bytesPerRow = IOSurfaceAlignProperty(kIOSurfaceBytesPerRow, size.width * bytesPerElement);
+  size_t totalBytes = IOSurfaceAlignProperty(kIOSurfaceAllocSize, size.height * bytesPerRow);
+  NSDictionary* options = @{
+    (id)kIOSurfaceWidth : @(size.width),
+    (id)kIOSurfaceHeight : @(size.height),
+    (id)kIOSurfacePixelFormat : @(pixelFormat),
+    (id)kIOSurfaceBytesPerElement : @(bytesPerElement),
+    (id)kIOSurfaceBytesPerRow : @(bytesPerRow),
+    (id)kIOSurfaceAllocSize : @(totalBytes),
+  };
+  ioSurface = IOSurfaceCreate((CFDictionaryRef)options);
+  backing_store_out->io_surface_ref = ioSurface;
+
+  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture);
+
+  CGLTexImageIOSurface2D(CGLGetCurrentContext(), GL_TEXTURE_RECTANGLE_ARB, GL_RGBA, int(size.width),
+                         int(size.height), GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, ioSurface,
+                         0 /* plane */);
+  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE_ARB, texture,
+                         0);
+
+  FML_DCHECK(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+}
+
 bool FlutterMacOSGLCompositor::CreateFramebuffer(const FlutterBackingStoreConfig* config,
-                                               FlutterBackingStore* backing_store_out) {
+                                                 FlutterBackingStore* backing_store_out) {
   NSLog(@"CreateFramebuffer");
-  // GrGLFramebufferInfo framebuffer_info;
-
-  // framebuffer_info = {};
-  // glGenFramebuffersEXT(1, &framebuffer_info.fFBOID);
-  // glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_info.fFBOID);
-
-  // NSLog(@"framebuffer id %u:", framebuffer_info.fFBOID);
-  // GLuint texture;
-  // glGenTextures(1, &texture);
-  // glBindTexture(GL_TEXTURE_2D, texture);
-
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  // glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, config->size.width, config->size.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-  // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-  //                 GL_TEXTURE_2D, texture, 0);
-                  
-  // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-  //   NSLog(@"invalid framebuffer");
-  //   return false;
-  // }
-
   // Logic from FlutterSurfaceManager.
   GrGLFramebufferInfo framebuffer_info = {};
   GLuint texture;
@@ -167,6 +151,10 @@ bool FlutterMacOSGLCompositor::CreateFramebuffer(const FlutterBackingStoreConfig
   glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
+
+  // valid block 2 (memory for texture)
+  TextureBackedByIOSurface(config, backing_store_out, texture, framebuffer_info.fFBOID);
+  // valid block end
 
   framebuffer_info.fFormat = GL_RGBA8;
   const SkColorType color_type = kN32_SkColorType;

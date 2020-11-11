@@ -31,6 +31,7 @@
 }
 
 - (void)beginResize:(CGSize)size notify:(dispatch_block_t)notify {
+  NSLog(@"beginResize: %@", NSStringFromSize(size));
   std::unique_lock<std::mutex> lock(mutex);
   if (!delegate) {
     return;
@@ -64,9 +65,12 @@
 }
 
 - (bool)shouldEnsureSurfaceForSize:(CGSize)size {
+  NSLog(@"shouldEnsureSurfaceForSize: %@", NSStringFromSize(size));
   std::unique_lock<std::mutex> lock(mutex);
+  NSLog(@"shouldEnsureSurfaceForSize locked");
   if (!acceptingCommit) {
     if (CGSizeEqualToSize(newSize, size)) {
+      NSLog(@"shouldEnsureSurfaceForSize accepted!");
       acceptingCommit = true;
     }
   }
@@ -76,9 +80,11 @@
 - (void)requestCommit {
   std::unique_lock<std::mutex> lock(mutex);
   if (!acceptingCommit) {
+    NSLog(@"commit wasn't accepted!");
     return;
   }
 
+  NSLog(@"Hurray! commit wasn accepted!");
   pendingCommit = true;
   if (waiting) {  // BeginResize is in progress, interrupt it and schedule commit call
     condBlockRequestCommit.notify_all();
@@ -95,6 +101,9 @@
         }
         pendingCommit = false;
         condBlockBeginResize.notify_all();
+      } else {
+        NSLog(@"wtf!!!");
+        condBlockRequestCommit.notify_all();
       }
     });
     condBlockBeginResize.wait(lock, [&]() { return !pendingCommit; });

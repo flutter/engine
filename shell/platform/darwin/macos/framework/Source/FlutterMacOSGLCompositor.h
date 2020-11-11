@@ -33,9 +33,6 @@ class FlutterMacOSGLCompositor {
   FlutterViewController* view_controller_;
   PresentCallback present_callback_;
 
-  IOSurfaceRef _ioSurfaceRef;
-  CALayer* content_layer;
-
   bool CreateSoftwareRenderSurface(const FlutterBackingStoreConfig* config,
                                    FlutterBackingStore* renderer_out);
 
@@ -43,7 +40,12 @@ class FlutterMacOSGLCompositor {
                              FlutterBackingStore* backing_store_out);
 
   bool CreateFramebuffer(const FlutterBackingStoreConfig* config,
-                             FlutterBackingStore* backing_store_out);
+                         FlutterBackingStore* backing_store_out);
+
+  void TextureBackedByIOSurface(const FlutterBackingStoreConfig* config,
+                                FlutterBackingStore* backing_store_out,
+                                GLuint texture,
+                                GLuint fbo);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterMacOSGLCompositor);
 };

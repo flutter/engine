@@ -1229,15 +1229,19 @@ FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* flutter_metrics) {
+  std::cerr << "1" << std::endl;
   if (engine == nullptr || flutter_metrics == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
 
+  std::cerr << "2" << std::endl;
   flutter::ViewportMetrics metrics;
 
   metrics.physical_width = SAFE_ACCESS(flutter_metrics, width, 0.0);
   metrics.physical_height = SAFE_ACCESS(flutter_metrics, height, 0.0);
   metrics.device_pixel_ratio = SAFE_ACCESS(flutter_metrics, pixel_ratio, 1.0);
+
+  std::cerr << "3" << std::endl;
 
   if (metrics.device_pixel_ratio <= 0.0) {
     return LOG_EMBEDDER_ERROR(
@@ -1245,6 +1249,7 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
         "Device pixel ratio was invalid. It must be greater than zero.");
   }
 
+  std::cerr << "4" << std::endl;
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
              std::move(metrics))
              ? kSuccess
