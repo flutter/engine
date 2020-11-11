@@ -290,7 +290,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       } else {
         Log.v(TAG, "Using the launch theme as normal theme.");
       }
-    } catch (RuntimeException exception) {
+    } catch (PackageManager.NameNotFoundException exception) {
       Log.e(
           TAG,
           "Could not read meta-data for FlutterFragmentActivity. Using the launch theme as normal theme.");
@@ -327,7 +327,7 @@ public class FlutterFragmentActivity extends FragmentActivity
               ? getResources().getDrawable(splashScreenId, getTheme())
               : getResources().getDrawable(splashScreenId)
           : null;
-    } catch (RuntimeException e) {
+    } catch (PackageManager.NameNotFoundException e) {
       // This is never expected to happen.
       return null;
     }
@@ -561,7 +561,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       boolean shouldHandleDeeplinking =
           metaData != null ? metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : false;
       return shouldHandleDeeplinking;
-    } catch (RuntimeException e) {
+    } catch (PackageManager.NameNotFoundException e) {
       return false;
     }
   }
@@ -631,14 +631,10 @@ public class FlutterFragmentActivity extends FragmentActivity
 
   /** Retrieves the meta data specified in the AndroidManifest.xml. */
   @Nullable
-  protected Bundle getMetaData() throws RuntimeException {
-    try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      return activityInfo.metaData;
-    } catch (PackageManager.NameNotFoundException e) {
-      throw new RuntimeException(e.getMessage());
-    }
+  protected Bundle getMetaData() throws PackageManager.NameNotFoundException {
+    ActivityInfo activityInfo =
+        getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
+    return activityInfo.metaData;
   }
 
   /**
@@ -657,7 +653,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       String desiredDartEntrypoint =
           metaData != null ? metaData.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
       return desiredDartEntrypoint != null ? desiredDartEntrypoint : DEFAULT_DART_ENTRYPOINT;
-    } catch (RuntimeException e) {
+    } catch (PackageManager.NameNotFoundException e) {
       return DEFAULT_DART_ENTRYPOINT;
     }
   }
@@ -696,7 +692,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       String desiredInitialRoute =
           metaData != null ? metaData.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
       return desiredInitialRoute;
-    } catch (RuntimeException e) {
+    } catch (PackageManager.NameNotFoundException e) {
       return null;
     }
   }

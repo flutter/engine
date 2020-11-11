@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -88,7 +89,7 @@ public class FlutterFragmentActivityTest {
 
   @Test
   public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase1()
-      throws RuntimeException {
+      throws PackageManager.NameNotFoundException {
     FlutterFragmentActivity activity =
         Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
@@ -101,7 +102,7 @@ public class FlutterFragmentActivityTest {
 
   @Test
   public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase2()
-      throws RuntimeException {
+      throws PackageManager.NameNotFoundException {
     FlutterFragmentActivity activity =
         Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
@@ -114,7 +115,7 @@ public class FlutterFragmentActivityTest {
 
   @Test
   public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase3()
-      throws RuntimeException {
+      throws PackageManager.NameNotFoundException {
     FlutterFragmentActivity activity =
         Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
