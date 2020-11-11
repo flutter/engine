@@ -89,7 +89,7 @@ TEST(RasterizerTest, drawEmptyPipeline) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = fml::AdoptRef(new Pipeline<LayerTree>(/*depth=*/10));
-    rasterizer->Draw(pipeline, nullptr);
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -146,7 +146,7 @@ TEST(RasterizerTest,
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -200,7 +200,7 @@ TEST(
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -259,6 +259,6 @@ TEST(
   bool result = pipeline->Produce().Complete(std::move(layer_tree));
   EXPECT_TRUE(result);
   auto no_discard = [](LayerTree&) { return false; };
-  rasterizer->Draw(pipeline, no_discard);
+  rasterizer->Draw(pipeline);
 }
 }  // namespace flutter
