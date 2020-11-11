@@ -144,8 +144,10 @@ class IntegrationTestsManager {
           }
         }
       }
-      print(
-          'INFO: In project ${directory} ${e2eTestsToRun.length} tests to run.');
+      if (isVerboseLoggingEnabled) {
+        print(
+            'INFO: In project ${directory} ${e2eTestsToRun.length} tests to run.');
+      }
     } else {
       // If a target is specified it will run regardless of if it's blocked or
       // not. There will be an info note to warn the developer.
@@ -154,7 +156,7 @@ class IntegrationTestsManager {
       final io.File file =
           entities.singleWhere((f) => pathlib.basename(f.path) == targetTest);
       final String basename = pathlib.basename(file.path);
-      if (blockedTests.contains(basename)) {
+      if (blockedTests.contains(basename) && isVerboseLoggingEnabled) {
         print('INFO: Test $basename do not run on CI environments. Please '
             'remove it from the blocked tests list if you want to enable this '
             'test on CI.');
@@ -557,7 +559,7 @@ class IntegrationTestsArgumentParser {
               ' are the available options. ');
   }
 
-  /// Populate browser with results of the arguments passed.
+  /// Populate results of the arguments passed.
   void parseOptions(ArgResults argResults) {
     testTarget = argResults['target'] as String;
     buildMode = argResults['build-mode'] as String;
