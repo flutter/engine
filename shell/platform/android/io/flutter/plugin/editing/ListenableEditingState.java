@@ -33,7 +33,7 @@ class ListenableEditingState extends SpannableStringBuilder {
         boolean textChanged, boolean selectionChanged, boolean composingRegionChanged);
   }
 
-  private static final String TAG = "flutter";
+  private static final String TAG = "ListenableEditingState";
 
   private int mBatchEditNestDepth = 0;
   // We don't support adding/removing listeners, or changing the editing state in a listener
@@ -52,7 +52,7 @@ class ListenableEditingState extends SpannableStringBuilder {
 
   private BaseInputConnection mDummyConnection;
 
-  // The View is only use for creating a dummy BaseInputConnection for setComposingRegion. The View
+  // The View is only used for creating a dummy BaseInputConnection for setComposingRegion. The View
   // needs to have a non-null Context.
   public ListenableEditingState(TextInputChannel.TextEditState configuration, View view) {
     super();
@@ -81,8 +81,8 @@ class ListenableEditingState extends SpannableStringBuilder {
     }
     if (mBatchEditNestDepth == 1 && !mListeners.isEmpty()) {
       mTextWhenBeginBatchEdit = toString();
-      mSelectionStartWhenBeginBatchEdit = getSelecionStart();
-      mSelectionEndWhenBeginBatchEdit = getSelecionEnd();
+      mSelectionStartWhenBeginBatchEdit = getSelectionStart();
+      mSelectionEndWhenBeginBatchEdit = getSelectionEnd();
       mComposingStartWhenBeginBatchEdit = getComposingStart();
       mComposingEndWhenBeginBatchEdit = getComposingEnd();
     }
@@ -104,8 +104,8 @@ class ListenableEditingState extends SpannableStringBuilder {
         Log.v(TAG, "didFinishBatchEdit with " + String.valueOf(mListeners.size()) + " listener(s)");
         final boolean textChanged = !toString().equals(mTextWhenBeginBatchEdit);
         final boolean selectionChanged =
-            mSelectionStartWhenBeginBatchEdit != getSelecionStart()
-                || mSelectionEndWhenBeginBatchEdit != getSelecionEnd();
+            mSelectionStartWhenBeginBatchEdit != getSelectionStart()
+                || mSelectionEndWhenBeginBatchEdit != getSelectionEnd();
         final boolean composingRegionChanged =
             mComposingStartWhenBeginBatchEdit != getComposingStart()
                 || mComposingEndWhenBeginBatchEdit != getComposingEnd();
@@ -187,8 +187,8 @@ class ListenableEditingState extends SpannableStringBuilder {
       mToStringCache = null;
     }
 
-    final int selectionStart = getSelecionStart();
-    final int selectionEnd = getSelecionEnd();
+    final int selectionStart = getSelectionStart();
+    final int selectionEnd = getSelectionEnd();
     final int composingStart = getComposingStart();
     final int composingEnd = getComposingEnd();
 
@@ -198,7 +198,7 @@ class ListenableEditingState extends SpannableStringBuilder {
     }
 
     final boolean selectionChanged =
-        getSelecionStart() != selectionStart || getSelecionEnd() != selectionEnd;
+        getSelectionStart() != selectionStart || getSelectionEnd() != selectionEnd;
     final boolean composingRegionChanged =
         getComposingStart() != composingStart || getComposingEnd() != composingEnd;
     notifyListenersIfNeeded(textChanged, selectionChanged, composingRegionChanged);
@@ -224,11 +224,11 @@ class ListenableEditingState extends SpannableStringBuilder {
     }
   }
 
-  public final int getSelecionStart() {
+  public final int getSelectionStart() {
     return Selection.getSelectionStart(this);
   }
 
-  public final int getSelecionEnd() {
+  public final int getSelectionEnd() {
     return Selection.getSelectionEnd(this);
   }
 

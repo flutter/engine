@@ -35,7 +35,7 @@ import java.util.HashMap;
 
 /** Android implementation of the text input plugin. */
 public class TextInputPlugin implements ListenableEditingState.EditingStateWatcher {
-  private static final String TAG = "flutter";
+  private static final String TAG = "TextInputPlugin";
 
   @NonNull private final View mView;
   @NonNull private final InputMethodManager mImm;
@@ -335,8 +335,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
             view, inputTarget.id, textInputChannel, keyProcessor, mEditable, outAttrs);
-    outAttrs.initialSelStart = mEditable.getSelecionStart();
-    outAttrs.initialSelEnd = mEditable.getSelecionEnd();
+    outAttrs.initialSelStart = mEditable.getSelectionStart();
+    outAttrs.initialSelEnd = mEditable.getSelectionEnd();
 
     lastInputConnection = connection;
     return lastInputConnection;
@@ -565,8 +565,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       notifyValueChanged(mEditable.toString());
     }
 
-    final int selectionStart = mEditable.getSelecionStart();
-    final int selectionEnd = mEditable.getSelecionEnd();
+    final int selectionStart = mEditable.getSelectionStart();
+    final int selectionEnd = mEditable.getSelectionEnd();
     final int composingStart = mEditable.getComposingStart();
     final int composingEnd = mEditable.getComposingEnd();
     // Framework needs to sent value first.
@@ -605,7 +605,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   // ### Keep the AFM updated
   //
   // The autofill session connected to The AFM keeps a copy of the current state for each reported
-  // field in "AutofillVirtualStructure"(instead of holding a reference to those fields), so the AFM
+  // field in "AutofillVirtualStructure" (instead of holding a reference to those fields), so the AFM
   // needs to be notified when text changes if the client was part of the "AutofillVirtualStructure"
   // previously reported to the AFM. This step is essential for triggering autofill save. This is
   // done in #didChangeEditingState by calling #notifyValueChanged.

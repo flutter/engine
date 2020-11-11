@@ -33,7 +33,7 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 
 class InputConnectionAdaptor extends BaseInputConnection
     implements ListenableEditingState.EditingStateWatcher {
-  private static final String TAG = "flutter";
+  private static final String TAG = "InputConnectionAdaptor";
 
   private final View mFlutterView;
   private final int mClient;
@@ -95,8 +95,8 @@ class InputConnectionAdaptor extends BaseInputConnection
     mExtractedText.startOffset = 0;
     mExtractedText.partialStartOffset = -1;
     mExtractedText.partialEndOffset = -1;
-    mExtractedText.selectionStart = mEditable.getSelecionStart();
-    mExtractedText.selectionEnd = mEditable.getSelecionEnd();
+    mExtractedText.selectionStart = mEditable.getSelectionStart();
+    mExtractedText.selectionEnd = mEditable.getSelectionEnd();
     mExtractedText.text =
         request == null || (request.flags & GET_TEXT_WITH_STYLES) == 0
             ? mEditable.toString()
@@ -115,7 +115,7 @@ class InputConnectionAdaptor extends BaseInputConnection
     }
 
     mCursorAnchorInfoBuilder.setSelectionRange(
-        mEditable.getSelecionStart(), mEditable.getSelecionEnd());
+        mEditable.getSelectionStart(), mEditable.getSelectionEnd());
     final int composingStart = mEditable.getComposingStart();
     final int composingEnd = mEditable.getComposingEnd();
     if (composingStart >= 0 && composingEnd > composingStart) {
@@ -153,7 +153,7 @@ class InputConnectionAdaptor extends BaseInputConnection
 
   @Override
   public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-    if (mEditable.getSelecionStart() == -1) {
+    if (mEditable.getSelectionStart() == -1) {
       return true;
     }
 
@@ -507,8 +507,8 @@ class InputConnectionAdaptor extends BaseInputConnection
     // time we called it.
     mImm.updateSelection(
         mFlutterView,
-        mEditable.getSelecionStart(),
-        mEditable.getSelecionEnd(),
+        mEditable.getSelectionStart(),
+        mEditable.getSelectionEnd(),
         mEditable.getComposingStart(),
         mEditable.getComposingEnd());
 

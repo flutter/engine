@@ -49,8 +49,8 @@ public class ListenableEditingStateTest {
     assertFalse(listener.selectionChanged);
     assertFalse(listener.composingRegionChanged);
 
-    assertEquals(-1, editingState.getSelecionStart());
-    assertEquals(-1, editingState.getSelecionEnd());
+    assertEquals(-1, editingState.getSelectionStart());
+    assertEquals(-1, editingState.getSelectionEnd());
 
     listener.reset();
 
