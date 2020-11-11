@@ -34,21 +34,18 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-/*
+/**
  * A presentation used for hosting a single Android view in a virtual display.
  *
- * This presentation overrides the WindowManager's addView/removeView/updateViewLayout methods, such that views added
- * directly to the WindowManager are added as part of the presentation's view hierarchy (to fakeWindowViewGroup).
+ * <p>This presentation overrides the WindowManager's addView/removeView/updateViewLayout methods,
+ * such that views added directly to the WindowManager are added as part of the presentation's view
+ * hierarchy (to fakeWindowViewGroup).
  *
- * The view hierarchy for the presentation is as following:
+ * <p>The view hierarchy for the presentation is as following:
  *
- *          rootView
- *         /         \
- *        /           \
- *       /             \
- *   container       state.fakeWindowViewGroup
- *      |
- *   EmbeddedView
+ * <p>rootView / \ / \ / \ container state.fakeWindowViewGroup | EmbeddedView
+ *
+ * @hide
  */
 @Keep
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -303,11 +300,15 @@ public class SingleViewPresentation extends Presentation {
     }
   }
 
-  /** Proxies a Context replacing the WindowManager with our custom instance. */
   // TODO(mklim): This caches the IMM at construction time and won't pick up any changes. In rare
   // cases where the FlutterView changes windows this will return an outdated instance. This
   // should be fixed to instead defer returning the IMM to something that know's FlutterView's
   // true Context.
+  /**
+   * Proxies a Context replacing the WindowManager with our custom instance.
+   *
+   * @hide
+   */
   public static class PresentationContext extends ContextWrapper {
     private @NonNull final WindowManagerHandler windowManagerHandler;
     private @Nullable WindowManager windowManager;
