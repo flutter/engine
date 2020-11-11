@@ -145,7 +145,6 @@ TEST(RasterizerTest,
                                                   /*device_pixel_ratio=*/2.0f);
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
-    auto no_discard = [](LayerTree&) { return false; };
     rasterizer->Draw(pipeline);
     latch.Signal();
   });
@@ -199,7 +198,6 @@ TEST(
                                                   /*device_pixel_ratio=*/2.0f);
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
-    auto no_discard = [](LayerTree&) { return false; };
     rasterizer->Draw(pipeline);
     latch.Signal();
   });
@@ -258,7 +256,6 @@ TEST(
                                                 /*device_pixel_ratio=*/2.0f);
   bool result = pipeline->Produce().Complete(std::move(layer_tree));
   EXPECT_TRUE(result);
-  auto no_discard = [](LayerTree&) { return false; };
   rasterizer->Draw(pipeline);
 }
 }  // namespace flutter
