@@ -4,7 +4,6 @@
 
 package io.flutter.view;
 
-import static io.flutter.plugin.platform.SingleViewPresentation.PresentationContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.eq;
@@ -32,6 +31,7 @@ import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.android.FlutterFragmentActivity;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
+import io.flutter.plugin.platform.SingleViewPresentation.PresentationContext;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;

@@ -4,8 +4,6 @@
 
 package io.flutter.view;
 
-import static io.flutter.plugin.platform.SingleViewPresentation.PresentationContext;
-
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
@@ -32,6 +30,7 @@ import io.flutter.BuildConfig;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
+import io.flutter.plugin.platform.SingleViewPresentation.PresentationContext;
 import io.flutter.util.Predicate;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
