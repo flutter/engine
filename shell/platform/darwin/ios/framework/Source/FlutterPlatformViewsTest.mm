@@ -17,7 +17,6 @@ FLUTTER_ASSERT_NOT_ARC
 @class FlutterPlatformViewsTestMockPlatformView;
 static FlutterPlatformViewsTestMockPlatformView* gMockPlatformView = nil;
 const float kFloatCompareEpsilon = 0.001;
-BOOL enableViewCreateOnceCheck = NO;
 
 @interface FlutterPlatformViewsTestMockPlatformView : UIView
 @end
@@ -40,6 +39,7 @@ BOOL enableViewCreateOnceCheck = NO;
 
 @interface FlutterPlatformViewsTestMockFlutterPlatformView : NSObject <FlutterPlatformView>
 @property(nonatomic, strong) UIView* view;
+@property(nonatomic, assign) BOOL viewCreated;
 @end
 
 @implementation FlutterPlatformViewsTestMockFlutterPlatformView
@@ -57,13 +57,10 @@ BOOL enableViewCreateOnceCheck = NO;
 }
 
 - (void)checkViewCreatedOnce {
-  if (enableViewCreateOnceCheck) {
-    static bool created = false;
-    if (created) {
-      abort();
-    }
-    created = true;
+  if (self.viewCreated) {
+    abort();
   }
+  self.viewCreated = YES;
 }
 
 - (void)dealloc {
@@ -130,7 +127,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 @implementation FlutterPlatformViewsTest
 
 - (void)testFlutterViewOnlyCreateOnceInOneFrame {
-  enableViewCreateOnceCheck = YES;
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
@@ -182,7 +178,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertNotNil(gMockPlatformView);
 
   flutterPlatformViewsController->Reset();
-  enableViewCreateOnceCheck = NO;
 }
 
 - (void)testCanCreatePlatformViewWithoutFlutterView {

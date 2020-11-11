@@ -67,6 +67,7 @@
 @implementation TextPlatformView {
   UITextView* _textView;
   FlutterMethodChannel* _channel;
+  BOOL _viewCreated;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame
@@ -92,6 +93,10 @@
 }
 
 - (UIView*)view {
+  if (_viewCreated) {
+    abort();
+  }
+  _viewCreated = YES;
   return _textView;
 }
 
