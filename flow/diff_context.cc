@@ -77,22 +77,6 @@ bool DiffContext::PushCullRect(const SkRect& clip) {
   return state_.cull_rect.intersect(clip);
 }
 
-SkRect DiffContext::MapToLayer(const SkIRect& screen_rect) {
-  SkMatrix inverse;
-  if (!state_.transform.invert(&inverse)) {
-    // Give up and pass the rect unmodified
-    return SkRect::Make(screen_rect);
-  } else {
-    return inverse.mapRect(SkRect::Make(screen_rect));
-  }
-}
-
-SkIRect DiffContext::MapToScreen(const SkRect& layer_rect) {
-  SkIRect res;
-  state_.transform.mapRect(layer_rect).roundOut(&res);
-  return res;
-}
-
 void DiffContext::MarkSubtreeDirty(const PaintRegion& previous_paint_region) {
   FML_DCHECK(!IsSubtreeDirty());
   if (previous_paint_region.is_valid()) {
