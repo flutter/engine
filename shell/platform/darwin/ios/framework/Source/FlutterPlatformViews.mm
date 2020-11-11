@@ -896,6 +896,8 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
   if (_currentTouchPointersCount == 0) {
+    // At the start of each gesture sequence, we reset the `_flutterViewController`,
+    // so that all the touch events in the same sequence are forwarded to the same `_flutterViewController`.
     _flutterViewController = _platformViewsController->getFlutterViewController();
   }
   [_flutterViewController touchesBegan:touches withEvent:event];
