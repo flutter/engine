@@ -8,6 +8,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -118,7 +119,8 @@ public class FlutterActivityTest {
   }
 
   @Test
-  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase1() {
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase1()
+      throws RuntimeException {
     Intent intent =
         FlutterActivity.withNewEngine()
             .backgroundMode(BackgroundMode.transparent)
@@ -128,12 +130,14 @@ public class FlutterActivityTest {
     FlutterActivity flutterActivity = activityController.get();
     Bundle bundle = new Bundle();
     bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, true);
-    flutterActivity.setMetaData(bundle);
-    assertTrue(flutterActivity.shouldHandleDeeplinking());
+    FlutterActivity spyFlutterActivity = spy(flutterActivity);
+    when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
+    assertTrue(spyFlutterActivity.shouldHandleDeeplinking());
   }
 
   @Test
-  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase2() {
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase2()
+      throws RuntimeException {
     Intent intent =
         FlutterActivity.withNewEngine()
             .backgroundMode(BackgroundMode.transparent)
@@ -143,12 +147,14 @@ public class FlutterActivityTest {
     FlutterActivity flutterActivity = activityController.get();
     Bundle bundle = new Bundle();
     bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, false);
-    flutterActivity.setMetaData(bundle);
-    assertFalse(flutterActivity.shouldHandleDeeplinking());
+    FlutterActivity spyFlutterActivity = spy(flutterActivity);
+    when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
+    assertFalse(spyFlutterActivity.shouldHandleDeeplinking());
   }
 
   @Test
-  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase3() {
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase3()
+      throws RuntimeException {
     Intent intent =
         FlutterActivity.withNewEngine()
             .backgroundMode(BackgroundMode.transparent)
@@ -158,9 +164,10 @@ public class FlutterActivityTest {
     FlutterActivity flutterActivity = activityController.get();
     // Creates an empty bundle.
     Bundle bundle = new Bundle();
-    flutterActivity.setMetaData(bundle);
+    FlutterActivity spyFlutterActivity = spy(flutterActivity);
+    when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
     // Empty bundle should return false.
-    assertFalse(flutterActivity.shouldHandleDeeplinking());
+    assertFalse(spyFlutterActivity.shouldHandleDeeplinking());
   }
 
   @Test

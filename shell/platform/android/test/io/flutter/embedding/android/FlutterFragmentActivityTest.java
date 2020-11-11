@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -86,37 +87,43 @@ public class FlutterFragmentActivityTest {
   }
 
   @Test
-  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase1() {
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase1()
+      throws RuntimeException {
     FlutterFragmentActivity activity =
         Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
     Bundle bundle = new Bundle();
     bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, true);
-    activity.setMetaData(bundle);
-    assertTrue(activity.shouldHandleDeeplinking());
+    FlutterFragmentActivity spyFlutterActivity = spy(activity);
+    when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
+    assertTrue(spyFlutterActivity.shouldHandleDeeplinking());
   }
 
   @Test
-  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase2() {
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase2()
+      throws RuntimeException {
     FlutterFragmentActivity activity =
         Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
     Bundle bundle = new Bundle();
     bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, false);
-    activity.setMetaData(bundle);
-    assertFalse(activity.shouldHandleDeeplinking());
+    FlutterFragmentActivity spyFlutterActivity = spy(activity);
+    when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
+    assertFalse(spyFlutterActivity.shouldHandleDeeplinking());
   }
 
   @Test
-  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase3() {
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase3()
+      throws RuntimeException {
     FlutterFragmentActivity activity =
         Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
     // Creates an empty bundle.
     Bundle bundle = new Bundle();
-    activity.setMetaData(bundle);
+    FlutterFragmentActivity spyFlutterActivity = spy(activity);
+    when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
     // Empty bundle should return false.
-    assertFalse(activity.shouldHandleDeeplinking());
+    assertFalse(spyFlutterActivity.shouldHandleDeeplinking());
   }
 
   static class FlutterFragmentActivityWithProvidedEngine extends FlutterFragmentActivity {

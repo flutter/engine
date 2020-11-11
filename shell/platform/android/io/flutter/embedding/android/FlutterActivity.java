@@ -456,7 +456,7 @@ public class FlutterActivity extends Activity
       } else {
         Log.v(TAG, "Using the launch theme as normal theme.");
       }
-    } catch (PackageManager.NameNotFoundException exception) {
+    } catch (RuntimeException exception) {
       Log.e(
           TAG,
           "Could not read meta-data for FlutterActivity. Using the launch theme as normal theme.");
@@ -485,14 +485,14 @@ public class FlutterActivity extends Activity
   @SuppressWarnings("deprecation")
   private Drawable getSplashScreenFromManifest() {
     try {
-      Bundle metadata = getMetaData();
-      int splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : 0;
+      Bundle metaData = getMetaData();
+      int splashScreenId = metaData != null ? metaData.getInt(SPLASH_SCREEN_META_DATA_KEY) : 0;
       return splashScreenId != 0
           ? Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP
               ? getResources().getDrawable(splashScreenId, getTheme())
               : getResources().getDrawable(splashScreenId)
           : null;
-    } catch (PackageManager.NameNotFoundException e) {
+    } catch (RuntimeException e) {
       // This is never expected to happen.
       return null;
     }
@@ -746,11 +746,11 @@ public class FlutterActivity extends Activity
   @NonNull
   public String getDartEntrypointFunctionName() {
     try {
-      Bundle metadata = getMetaData();
+      Bundle metaData = getMetaData();
       String desiredDartEntrypoint =
-          metadata != null ? metadata.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
+          metaData != null ? metaData.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
       return desiredDartEntrypoint != null ? desiredDartEntrypoint : DEFAULT_DART_ENTRYPOINT;
-    } catch (PackageManager.NameNotFoundException e) {
+    } catch (RuntimeException e) {
       return DEFAULT_DART_ENTRYPOINT;
     }
   }
@@ -785,11 +785,11 @@ public class FlutterActivity extends Activity
     }
 
     try {
-      Bundle metadata = getMetaData();
+      Bundle metaData = getMetaData();
       String desiredInitialRoute =
-          metadata != null ? metadata.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
+          metaData != null ? metaData.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
       return desiredInitialRoute;
-    } catch (PackageManager.NameNotFoundException e) {
+    } catch (RuntimeException e) {
       return null;
     }
   }
@@ -890,23 +890,16 @@ public class FlutterActivity extends Activity
     return delegate.getFlutterEngine();
   }
 
-  private Bundle cachedMetaData;
-
-  /** Mocks the meta data for testing purposes. */
-  @VisibleForTesting
-  public void setMetaData(Bundle metaData) {
-    cachedMetaData = metaData;
-  };
-
   /** Retrieves the meta data specified in the AndroidManifest.xml. */
   @Nullable
-  protected Bundle getMetaData() throws PackageManager.NameNotFoundException {
-    if (cachedMetaData == null) {
+  protected Bundle getMetaData() throws RuntimeException {
+    try {
       ActivityInfo activityInfo =
           getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      cachedMetaData = activityInfo.metaData;
+      return activityInfo.metaData;
+    } catch (PackageManager.NameNotFoundException e) {
+      throw new RuntimeException(e.getMessage());
     }
-    return cachedMetaData;
   }
 
   @Nullable
@@ -989,17 +982,18 @@ public class FlutterActivity extends Activity
    * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
    * getInitialRoute} returns null.
    *
-   * <p>The default implementation looks for the value of the key `flutter_handle_deeplinking` in
-   * the AndroidManifest.xml.
+   * <p>The default implementation looks {@code <meta-data>} called {@link
+   * FlutterActivityLaunchConfigs#HANDLE_DEEPLINKING_META_DATA_KEY} within the Android manifest
+   * definition for this {@code FlutterActivity}.
    */
   @Override
   public boolean shouldHandleDeeplinking() {
     try {
-      Bundle metadata = getMetaData();
+      Bundle metaData = getMetaData();
       boolean shouldHandleDeeplinking =
-          metadata != null ? metadata.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : false;
+          metaData != null ? metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : false;
       return shouldHandleDeeplinking;
-    } catch (PackageManager.NameNotFoundException e) {
+    } catch (RuntimeException e) {
       return false;
     }
   }
