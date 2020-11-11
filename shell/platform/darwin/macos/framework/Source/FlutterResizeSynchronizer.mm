@@ -67,10 +67,18 @@
 
   _waiting = YES;
 
-  _condBlockRequestCommit.wait(lock, [&] { return _pendingCommit; });
+  const int wait_time_millis = 500;
+  bool request_commit_success = _condBlockRequestCommit.wait_for(
+      lock, std::chrono::milliseconds(wait_time_millis), [&] { return _pendingCommit; });
+  if (!request_commit_success) {
+    NSLog(@"Commit wasn't requested after %d ms, no frame was requested."
+          @" Releasing the platform thread.",
+          wait_time_millis);
+  } else {
+    [_delegate resizeSynchronizerFlush:self];
+    [_delegate resizeSynchronizerCommit:self];
+  }
 
-  [_delegate resizeSynchronizerFlush:self];
-  [_delegate resizeSynchronizerCommit:self];
   _pendingCommit = NO;
   _condBlockBeginResize.notify_all();
 
