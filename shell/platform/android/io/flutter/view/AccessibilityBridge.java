@@ -856,7 +856,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         // See the case above for how virtual displays are handled.
         boolean childUsesVirtualDisplay = embeddedView.getContext() instanceof PresentationContext;
         if (!childUsesVirtualDisplay) {
-          io.flutter.Log.d("flutter", "!childUsesVirtualDisplay");
           result.addChild(embeddedView);
           continue;
         }
