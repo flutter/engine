@@ -46,7 +46,7 @@ void ClipRectLayer::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {
 
 void ClipRectLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipRectLayer::Paint");
-  FML_DCHECK(context.needs_painting(paint_bounds()));
+  FML_DCHECK(needs_painting(context));
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->clipRect(clip_rect_,

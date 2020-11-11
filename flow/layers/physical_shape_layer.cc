@@ -45,7 +45,7 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
-  FML_DCHECK(context.needs_painting(paint_bounds()));
+  FML_DCHECK(needs_painting(context));
 
   if (elevation_ != 0) {
     DrawShadow(context.leaf_nodes_canvas, path_, shadow_color_, elevation_,

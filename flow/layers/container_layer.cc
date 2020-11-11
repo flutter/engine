@@ -23,7 +23,7 @@ void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void ContainerLayer::Paint(PaintContext& context) const {
-  FML_DCHECK(context.needs_painting(paint_bounds()));
+  FML_DCHECK(needs_painting(context));
 
   PaintChildren(context);
 }
@@ -72,12 +72,12 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {
-  FML_DCHECK(context.needs_painting(paint_bounds()));
+  FML_DCHECK(needs_painting(context));
 
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.
   for (auto& layer : layers_) {
-    if (context.needs_painting(layer->paint_bounds())) {
+    if (layer->needs_painting(context)) {
       layer->Paint(context);
     }
   }

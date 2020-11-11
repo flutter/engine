@@ -25,7 +25,7 @@ TEST_F(TextureLayerTest, InvalidTexture) {
   EXPECT_EQ(layer->paint_bounds(),
             (SkRect::MakeSize(layer_size)
                  .makeOffset(layer_offset.fX, layer_offset.fY)));
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
 
   layer->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
@@ -44,7 +44,7 @@ TEST_F(TextureLayerTest, PaintingEmptyLayerDies) {
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
-  EXPECT_FALSE(layer->needs_painting());
+  EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   layer->Paint(paint_context());
   EXPECT_EQ(mock_texture->paint_calls(),
@@ -69,7 +69,7 @@ TEST_F(TextureLayerTest, PaintingWithLowFilterQuality) {
   EXPECT_EQ(layer->paint_bounds(),
             (SkRect::MakeSize(layer_size)
                  .makeOffset(layer_offset.fX, layer_offset.fY)));
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
 
   layer->Paint(paint_context());
   EXPECT_EQ(mock_texture->paint_calls(),

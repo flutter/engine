@@ -46,7 +46,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void OpacityLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "OpacityLayer::Paint");
-  FML_DCHECK(context.needs_painting(paint_bounds()));
+  FML_DCHECK(needs_painting(context));
 
   SkPaint paint;
   paint.setAlpha(alpha_);
@@ -80,7 +80,11 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   Layer::AutoSaveLayer save_layer =
       Layer::AutoSaveLayer::Create(context, saveLayerBounds, &paint);
-  PaintChildren(context);
+
+  // Within the context of the SaveLayer, our paintability may have changed.
+  if (needs_painting(context)) {
+    PaintChildren(context);
+  }
 }
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)

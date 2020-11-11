@@ -51,7 +51,7 @@ void ClipPathLayer::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {
 
 void ClipPathLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
-  FML_DCHECK(context.needs_painting(paint_bounds()));
+  FML_DCHECK(needs_painting(context));
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->clipPath(clip_path_,

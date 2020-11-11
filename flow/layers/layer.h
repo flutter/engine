@@ -122,10 +122,6 @@ class Layer {
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
     const float frame_device_pixel_ratio;
-
-    bool needs_painting(const SkRect& paint_bounds) {
-      return !internal_nodes_canvas->quickReject(paint_bounds);
-    }
   };
 
   // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also
@@ -192,9 +188,21 @@ class Layer {
   // Unit tests currently fail anyway because the mock PaintContext objects
   // don't have a valid clip set to support the new needs_painting()
   // mechanism, so more work is required...
-  bool needs_painting() const {
-    FML_LOG(ERROR) << "!!!!! Layer::needs_painting() CALLED !!!!!";
-    return !paint_bounds_.isEmpty();
+  // bool needs_painting() const {
+  //   FML_LOG(ERROR) << "!!!!! Layer::needs_painting() CALLED !!!!!";
+  //   return !paint_bounds_.isEmpty();
+  // }
+
+  // Determines if the layer has any content.
+  bool is_empty() const { return paint_bounds_.isEmpty(); }
+
+  // Determines if the Paint() method is necessary based on the properties
+  // of the indicated PaintContext object.
+  bool needs_painting(PaintContext& context) const {
+    // Skia bug - quickReject returns false if the bounds are empty.
+    // (Waiting for Skia to acknowledge test case and file a bug.)
+    if (paint_bounds_.isEmpty()) return false;
+    return !context.internal_nodes_canvas->quickReject(paint_bounds_);
   }
 
   uint64_t unique_id() const { return unique_id_; }
