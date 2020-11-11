@@ -30,7 +30,6 @@ import io.flutter.BuildConfig;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
-import io.flutter.plugin.platform.SingleViewPresentation.PresentationContext;
 import io.flutter.util.Predicate;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -558,8 +557,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (semanticsNode.platformViewId != -1) {
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
-      boolean childUsesVirtualDisplay = embeddedView.getContext() instanceof PresentationContext;
-      if (childUsesVirtualDisplay) {
+      if (platformViewsAccessibilityDelegate.usesVirtualDisplay(semanticsNode.platformViewId)) {
         Rect bounds = semanticsNode.getGlobalRect();
         return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
       }
@@ -853,8 +851,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         // mirrored.
         //
         // See the case above for how virtual displays are handled.
-        boolean childUsesVirtualDisplay = embeddedView.getContext() instanceof PresentationContext;
-        if (!childUsesVirtualDisplay) {
+        if (!platformViewsAccessibilityDelegate.usesVirtualDisplay(child.platformViewId)) {
           result.addChild(embeddedView);
           continue;
         }
