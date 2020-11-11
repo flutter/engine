@@ -16,13 +16,13 @@ namespace testing {
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
 TEST_F(DiffContextTest, SimplePicture) {
-  auto picture = CreatePicture(SkRect::MakeXYWH(10, 10, 50, 50), 1);
+  auto picture = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
 
   LayerTree tree1;
   tree1.root()->Add(CreatePictureLayer(picture));
 
   auto damage = DiffLayerTree(tree1, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
 
   LayerTree tree2;
   tree2.root()->Add(CreatePictureLayer(picture));
@@ -32,46 +32,46 @@ TEST_F(DiffContextTest, SimplePicture) {
 
   LayerTree tree3;
   damage = DiffLayerTree(tree3, tree2);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
 }
 
 TEST_F(DiffContextTest, PictureCompare) {
   LayerTree tree1;
-  auto picture1 = CreatePicture(SkRect::MakeXYWH(10, 10, 50, 50), 1);
+  auto picture1 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
   tree1.root()->Add(CreatePictureLayer(picture1));
 
   auto damage = DiffLayerTree(tree1, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
 
   LayerTree tree2;
-  auto picture2 = CreatePicture(SkRect::MakeXYWH(10, 10, 50, 50), 1);
+  auto picture2 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
   tree2.root()->Add(CreatePictureLayer(picture2));
 
   damage = DiffLayerTree(tree2, tree1);
   EXPECT_TRUE(damage.surface_damage.isEmpty());
 
   LayerTree tree3;
-  auto picture3 = CreatePicture(SkRect::MakeXYWH(10, 10, 50, 50), 1);
+  auto picture3 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
   // add offset
   tree3.root()->Add(CreatePictureLayer(picture3, SkPoint::Make(10, 10)));
 
   damage = DiffLayerTree(tree3, tree2);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 60, 60));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(10, 10, 70, 70));
 
   LayerTree tree4;
   // different color
-  auto picture4 = CreatePicture(SkRect::MakeXYWH(10, 10, 50, 50), 2);
+  auto picture4 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 2);
   tree4.root()->Add(CreatePictureLayer(picture4, SkPoint::Make(10, 10)));
 
   damage = DiffLayerTree(tree4, tree3);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(20, 20, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(20, 20, 70, 70));
 }
 
 // Insert PictureLayer amongst container layers
 TEST_F(DiffContextTest, PictureLayerInsertion) {
-  auto pic1 = CreatePicture(SkRect::MakeXYWH(0, 0, 50, 50), 1);
-  auto pic2 = CreatePicture(SkRect::MakeXYWH(100, 0, 50, 50), 1);
-  auto pic3 = CreatePicture(SkRect::MakeXYWH(200, 0, 50, 50), 1);
+  auto pic1 = CreatePicture(SkRect::MakeLTRB(0, 0, 50, 50), 1);
+  auto pic2 = CreatePicture(SkRect::MakeLTRB(100, 0, 150, 50), 1);
+  auto pic3 = CreatePicture(SkRect::MakeLTRB(200, 0, 250, 50), 1);
 
   LayerTree t1;
 
@@ -82,7 +82,7 @@ TEST_F(DiffContextTest, PictureLayerInsertion) {
   t1.root()->Add(t1_c2);
 
   auto damage = DiffLayerTree(t1, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 150, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 150, 50));
 
   // Add in the middle
 
@@ -98,7 +98,7 @@ TEST_F(DiffContextTest, PictureLayerInsertion) {
   t2.root()->Add(t2_c2);
 
   damage = DiffLayerTree(t2, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 50));
 
   // Add in the beginning
 
@@ -107,7 +107,7 @@ TEST_F(DiffContextTest, PictureLayerInsertion) {
   t2.root()->Add(t2_c1);
   t2.root()->Add(t2_c2);
   damage = DiffLayerTree(t2, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 50));
 
   // Add at the end
 
@@ -116,21 +116,21 @@ TEST_F(DiffContextTest, PictureLayerInsertion) {
   t2.root()->Add(t2_c2);
   t2.root()->Add(CreatePictureLayer(pic3));
   damage = DiffLayerTree(t2, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 50));
 }
 
 // Insert picture layer amongst other picture layers
 TEST_F(DiffContextTest, PictureInsertion) {
-  auto pic1 = CreatePicture(SkRect::MakeXYWH(0, 0, 50, 50), 1);
-  auto pic2 = CreatePicture(SkRect::MakeXYWH(100, 0, 50, 50), 1);
-  auto pic3 = CreatePicture(SkRect::MakeXYWH(200, 0, 50, 50), 1);
+  auto pic1 = CreatePicture(SkRect::MakeLTRB(0, 0, 50, 50), 1);
+  auto pic2 = CreatePicture(SkRect::MakeLTRB(100, 0, 150, 50), 1);
+  auto pic3 = CreatePicture(SkRect::MakeLTRB(200, 0, 250, 50), 1);
 
   LayerTree t1;
   t1.root()->Add(CreatePictureLayer(pic1));
   t1.root()->Add(CreatePictureLayer(pic2));
 
   auto damage = DiffLayerTree(t1, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 150, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 150, 50));
 
   LayerTree t2;
   t2.root()->Add(CreatePictureLayer(pic3));
@@ -138,7 +138,7 @@ TEST_F(DiffContextTest, PictureInsertion) {
   t2.root()->Add(CreatePictureLayer(pic2));
 
   damage = DiffLayerTree(t2, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 50));
 
   LayerTree t3;
   t3.root()->Add(CreatePictureLayer(pic1));
@@ -146,7 +146,7 @@ TEST_F(DiffContextTest, PictureInsertion) {
   t3.root()->Add(CreatePictureLayer(pic2));
 
   damage = DiffLayerTree(t3, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 50));
 
   LayerTree t4;
   t4.root()->Add(CreatePictureLayer(pic1));
@@ -154,13 +154,13 @@ TEST_F(DiffContextTest, PictureInsertion) {
   t4.root()->Add(CreatePictureLayer(pic3));
 
   damage = DiffLayerTree(t4, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 50));
 }
 
 TEST_F(DiffContextTest, LayerDeletion) {
-  auto path1 = SkPath().addRect(SkRect::MakeXYWH(0, 0, 50, 50));
-  auto path2 = SkPath().addRect(SkRect::MakeXYWH(100, 0, 50, 50));
-  auto path3 = SkPath().addRect(SkRect::MakeXYWH(200, 0, 50, 50));
+  auto path1 = SkPath().addRect(SkRect::MakeLTRB(0, 0, 50, 50));
+  auto path2 = SkPath().addRect(SkRect::MakeLTRB(100, 0, 150, 50));
+  auto path3 = SkPath().addRect(SkRect::MakeLTRB(200, 0, 250, 50));
 
   auto c1 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
   auto c2 = CreateContainerLayer(std::make_shared<MockLayer>(path2));
@@ -172,56 +172,56 @@ TEST_F(DiffContextTest, LayerDeletion) {
   t1.root()->Add(c3);
 
   auto damage = DiffLayerTree(t1, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 250, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 250, 50));
 
   LayerTree t2;
   t2.root()->Add(c2);
   t2.root()->Add(c3);
 
   damage = DiffLayerTree(t2, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 50, 50));
 
   LayerTree t3;
   t3.root()->Add(c1);
   t3.root()->Add(c3);
 
   damage = DiffLayerTree(t3, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(100, 0, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(100, 0, 150, 50));
 
   LayerTree t4;
   t4.root()->Add(c1);
   t4.root()->Add(c2);
 
   damage = DiffLayerTree(t4, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 0, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 50));
 
   LayerTree t5;
   t5.root()->Add(c1);
 
   damage = DiffLayerTree(t5, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(100, 0, 150, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(100, 0, 250, 50));
 
   LayerTree t6;
   t6.root()->Add(c2);
 
   damage = DiffLayerTree(t6, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 250, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 250, 50));
 
   LayerTree t7;
   t7.root()->Add(c3);
 
   damage = DiffLayerTree(t7, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 150, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 150, 50));
 }
 
 TEST_F(DiffContextTest, ReplaceLayer) {
-  auto path1 = SkPath().addRect(SkRect::MakeXYWH(0, 0, 50, 50));
-  auto path2 = SkPath().addRect(SkRect::MakeXYWH(100, 0, 50, 50));
-  auto path3 = SkPath().addRect(SkRect::MakeXYWH(200, 0, 50, 50));
+  auto path1 = SkPath().addRect(SkRect::MakeLTRB(0, 0, 50, 50));
+  auto path2 = SkPath().addRect(SkRect::MakeLTRB(100, 0, 150, 50));
+  auto path3 = SkPath().addRect(SkRect::MakeLTRB(200, 0, 250, 50));
 
-  auto path1a = SkPath().addRect(SkRect::MakeXYWH(0, 100, 50, 50));
-  auto path2a = SkPath().addRect(SkRect::MakeXYWH(100, 100, 50, 50));
-  auto path3a = SkPath().addRect(SkRect::MakeXYWH(200, 100, 50, 50));
+  auto path1a = SkPath().addRect(SkRect::MakeLTRB(0, 100, 50, 150));
+  auto path2a = SkPath().addRect(SkRect::MakeLTRB(100, 100, 150, 150));
+  auto path3a = SkPath().addRect(SkRect::MakeLTRB(200, 100, 250, 150));
 
   auto c1 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
   auto c2 = CreateContainerLayer(std::make_shared<MockLayer>(path2));
@@ -233,7 +233,7 @@ TEST_F(DiffContextTest, ReplaceLayer) {
   t1.root()->Add(c3);
 
   auto damage = DiffLayerTree(t1, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 250, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 250, 50));
 
   LayerTree t2;
   t2.root()->Add(c1);
@@ -249,7 +249,7 @@ TEST_F(DiffContextTest, ReplaceLayer) {
   t3.root()->Add(c3);
 
   damage = DiffLayerTree(t3, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 50, 150));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 50, 150));
 
   LayerTree t4;
   t4.root()->Add(c1);
@@ -257,7 +257,7 @@ TEST_F(DiffContextTest, ReplaceLayer) {
   t4.root()->Add(c3);
 
   damage = DiffLayerTree(t4, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(100, 0, 50, 150));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(100, 0, 150, 150));
 
   LayerTree t5;
   t5.root()->Add(c1);
@@ -265,11 +265,11 @@ TEST_F(DiffContextTest, ReplaceLayer) {
   t5.root()->Add(CreateContainerLayer(std::make_shared<MockLayer>(path3a)));
 
   damage = DiffLayerTree(t4, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(100, 0, 50, 150));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(100, 0, 150, 150));
 }
 
 TEST_F(DiffContextTest, DieIfOldLayerWasNeverDiffed) {
-  auto path1 = SkPath().addRect(SkRect::MakeXYWH(0, 0, 50, 50));
+  auto path1 = SkPath().addRect(SkRect::MakeLTRB(0, 0, 50, 50));
   auto c1 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
 
   LayerTree t1;
@@ -295,7 +295,7 @@ TEST_F(DiffContextTest, DieIfOldLayerWasNeverDiffed) {
 }
 
 TEST_F(DiffContextTest, Transform) {
-  auto path1 = SkPath().addRect(SkRect::MakeXYWH(0, 0, 50, 50));
+  auto path1 = SkPath().addRect(SkRect::MakeLTRB(0, 0, 50, 50));
   auto m1 = std::make_shared<MockLayer>(path1);
 
   auto transform1 =
@@ -306,7 +306,7 @@ TEST_F(DiffContextTest, Transform) {
   t1.root()->Add(transform1);
 
   auto damage = DiffLayerTree(t1, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 50, 50));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
 
   auto transform2 =
       std::make_shared<TransformLayer>(SkMatrix::MakeTrans(20, 20));
@@ -317,7 +317,7 @@ TEST_F(DiffContextTest, Transform) {
   t2.root()->Add(transform2);
 
   damage = DiffLayerTree(t2, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(10, 10, 60, 60));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(10, 10, 70, 70));
 
   auto transform3 =
       std::make_shared<TransformLayer>(SkMatrix::MakeTrans(20, 20));
@@ -332,7 +332,7 @@ TEST_F(DiffContextTest, Transform) {
 }
 
 TEST_F(DiffContextTest, TransformNested) {
-  auto path1 = SkPath().addRect(SkRect::MakeXYWH(0, 0, 50, 50));
+  auto path1 = SkPath().addRect(SkRect::MakeLTRB(0, 0, 50, 50));
   auto m1 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
 
   auto transform1 =
@@ -357,7 +357,7 @@ TEST_F(DiffContextTest, TransformNested) {
   l1.root()->Add(transform1);
 
   auto damage = DiffLayerTree(l1, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(20, 20, 480, 480));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(20, 20, 500, 500));
 
   auto transform2 =
       std::make_shared<TransformLayer>(SkMatrix::MakeScale(2.0, 2.0));
@@ -387,14 +387,14 @@ TEST_F(DiffContextTest, TransformNested) {
 
   // transform2 has not transform1 assigned as old layer, so it should be
   // invalidated completely
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(20, 20, 480, 480));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(20, 20, 500, 500));
 
   // now diff the tree properly, the only difference being transform2_2 and
   // transform_2_1
   transform2->AssignOldLayer(transform1.get());
   damage = DiffLayerTree(l2, l1);
 
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(200, 200, 100, 102));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 200, 300, 302));
 }
 
 TEST_F(DiffContextTest, BackdropLayer) {
@@ -417,13 +417,13 @@ TEST_F(DiffContextTest, BackdropLayer) {
 
   LayerTree l2(SkISize::Make(100, 100));
 
-  auto clip = std::make_shared<ClipRectLayer>(SkRect::MakeXYWH(20, 20, 40, 40),
+  auto clip = std::make_shared<ClipRectLayer>(SkRect::MakeLTRB(20, 20, 60, 60),
                                               Clip::hardEdge);
   clip->Add(std::make_shared<BackdropFilterLayer>(filter));
   l2.root()->Add(clip);
   damage = DiffLayerTree(l2, LayerTree(SkISize::Make(100, 100)));
 
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 90, 90));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 90, 90));
 
   LayerTree l3;
   auto scale = std::make_shared<TransformLayer>(SkMatrix::MakeScale(2.0, 2.0));
@@ -431,25 +431,25 @@ TEST_F(DiffContextTest, BackdropLayer) {
   l3.root()->Add(scale);
 
   damage = DiffLayerTree(l3, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 180, 180));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 180, 180));
 
   LayerTree l4;
   l4.root()->Add(scale);
 
   // path just outside of readback region, doesn't affect blur
-  auto path1 = SkPath().addRect(SkRect::MakeXYWH(180, 180, 10, 10));
+  auto path1 = SkPath().addRect(SkRect::MakeLTRB(180, 180, 190, 190));
   l4.root()->Add(std::make_shared<MockLayer>(path1));
   damage = DiffLayerTree(l4, l3);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(180, 180, 10, 10));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(180, 180, 190, 190));
 
   LayerTree l5;
   l5.root()->Add(scale);
 
   // path just inside of readback region, must trigger backdrop repaint
-  auto path2 = SkPath().addRect(SkRect::MakeXYWH(179, 179, 10, 10));
+  auto path2 = SkPath().addRect(SkRect::MakeLTRB(179, 179, 189, 189));
   l5.root()->Add(std::make_shared<MockLayer>(path2));
   damage = DiffLayerTree(l5, l4);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(0, 0, 190, 190));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 190, 190));
 }
 
 TEST_F(DiffContextTest, ImageFilterLayer) {
@@ -466,12 +466,12 @@ TEST_F(DiffContextTest, ImageFilterLayer) {
 
   LayerTree l1;
   auto filter_layer = std::make_shared<ImageFilterLayer>(filter);
-  auto path = SkPath().addRect(SkRect::MakeXYWH(100, 100, 10, 10));
+  auto path = SkPath().addRect(SkRect::MakeLTRB(100, 100, 110, 110));
   filter_layer->Add(std::make_shared<MockLayer>(path));
   l1.root()->Add(filter_layer);
 
   auto damage = DiffLayerTree(l1, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(70, 70, 70, 70));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(70, 70, 140, 140));
 
   LayerTree l2;
   auto scale = std::make_shared<TransformLayer>(SkMatrix::MakeScale(2.0, 2.0));
@@ -479,24 +479,24 @@ TEST_F(DiffContextTest, ImageFilterLayer) {
   l2.root()->Add(scale);
 
   damage = DiffLayerTree(l2, LayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(140, 140, 140, 140));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(140, 140, 280, 280));
 
   LayerTree l3;
   l3.root()->Add(scale);
 
   // path outside of ImageFilterLayer
-  auto path1 = SkPath().addRect(SkRect::MakeXYWH(130, 130, 10, 10));
+  auto path1 = SkPath().addRect(SkRect::MakeLTRB(130, 130, 140, 140));
   l3.root()->Add(std::make_shared<MockLayer>(path1));
   damage = DiffLayerTree(l3, l2);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(130, 130, 10, 10));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(130, 130, 140, 140));
 
   // path intersecting ImageFilterLayer, should trigger ImageFilterLayer repaint
   LayerTree l4;
   l4.root()->Add(scale);
-  auto path2 = SkPath().addRect(SkRect::MakeXYWH(130, 130, 11, 11));
+  auto path2 = SkPath().addRect(SkRect::MakeLTRB(130, 130, 141, 141));
   l4.root()->Add(std::make_shared<MockLayer>(path2));
   damage = DiffLayerTree(l4, l3);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeXYWH(130, 130, 150, 150));
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(130, 130, 280, 280));
 }
 
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT
