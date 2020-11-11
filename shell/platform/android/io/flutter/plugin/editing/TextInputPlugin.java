@@ -605,10 +605,11 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   // ### Keep the AFM updated
   //
   // The autofill session connected to The AFM keeps a copy of the current state for each reported
-  // field in "AutofillVirtualStructure" (instead of holding a reference to those fields), so the AFM
-  // needs to be notified when text changes if the client was part of the "AutofillVirtualStructure"
-  // previously reported to the AFM. This step is essential for triggering autofill save. This is
-  // done in #didChangeEditingState by calling #notifyValueChanged.
+  // field in "AutofillVirtualStructure" (instead of holding a reference to those fields), so the
+  // AFM needs to be notified when text changes if the client was part of the
+  // "AutofillVirtualStructure" previously reported to the AFM. This step is essential for
+  // triggering autofill save. This is done in #didChangeEditingState by calling
+  // #notifyValueChanged.
   //
   // Additionally when the text input plugin receives a new TextInputConfiguration,
   // AutofillManager#notifyValueChanged will be called on all the autofillable fields contained in
