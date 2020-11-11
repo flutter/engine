@@ -252,9 +252,9 @@ public class FlutterActivityTest {
 
   private static final class FakeFlutterPlugin
       implements FlutterPlugin,
-      ActivityAware,
-      OnSaveInstanceStateListener,
-      DefaultLifecycleObserver {
+          ActivityAware,
+          OnSaveInstanceStateListener,
+          DefaultLifecycleObserver {
 
     private ActivityPluginBinding activityPluginBinding;
     private boolean stateRestored = false;
