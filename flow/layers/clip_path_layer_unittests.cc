@@ -56,7 +56,7 @@ TEST_F(ClipPathLayerTest, PaintingCulledLayerDies) {
   auto layer = std::make_shared<ClipPathLayer>(layer_path, Clip::hardEdge);
   layer->Add(mock_layer);
 
-  preroll_context()->cull_rect = distant_bounds;  // Cull everything
+  preroll_context()->cull_rect = distant_bounds;  // Cull these children
 
   layer->Preroll(preroll_context(), initial_matrix);
   EXPECT_EQ(preroll_context()->cull_rect, distant_bounds);    // Untouched

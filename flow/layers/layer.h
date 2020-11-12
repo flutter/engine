@@ -163,10 +163,10 @@ class Layer {
     needs_system_composite_ = value;
   }
 
-  // Returns the unclipped paint bounds in the layer's local coordinate
-  // system as determined during Preroll().  The bounds should include
-  // any transform or distortions performed by the layer itself, but not
-  // any transforms performed by its ancestors.
+  // Returns the paint bounds in the layer's local coordinate system
+  // as determined during Preroll().  The bounds should include any
+  // transform, clip or distortions performed by the layer itself,
+  // but not any similar modifications inherited from its ancestors.
   const SkRect& paint_bounds() const { return paint_bounds_; }
 
   // This must be set by the time Preroll() returns otherwise the layer will
