@@ -184,15 +184,6 @@ class Layer {
     paint_bounds_ = paint_bounds;
   }
 
-  // This can be removed once we wean the unit tests off of calling it...
-  // Unit tests currently fail anyway because the mock PaintContext objects
-  // don't have a valid clip set to support the new needs_painting()
-  // mechanism, so more work is required...
-  // bool needs_painting() const {
-  //   FML_LOG(ERROR) << "!!!!! Layer::needs_painting() CALLED !!!!!";
-  //   return !paint_bounds_.isEmpty();
-  // }
-
   // Determines if the layer has any content.
   bool is_empty() const { return paint_bounds_.isEmpty(); }
 
@@ -201,7 +192,8 @@ class Layer {
   bool needs_painting(PaintContext& context) const {
     // Skia bug - quickReject returns false if the bounds are empty.
     // (Waiting for Skia to acknowledge test case and file a bug.)
-    if (paint_bounds_.isEmpty()) return false;
+    if (paint_bounds_.isEmpty())
+      return false;
     return !context.internal_nodes_canvas->quickReject(paint_bounds_);
   }
 

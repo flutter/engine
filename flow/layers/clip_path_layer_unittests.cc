@@ -67,8 +67,7 @@ TEST_F(ClipPathLayerTest, PaintingCulledLayerDies) {
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_cull_rect(), distant_bounds);
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
-  EXPECT_EQ(mock_layer->parent_mutators(),
-            std::vector({Mutator(layer_path)}));
+  EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(layer_path)}));
 
   paint_context().internal_nodes_canvas->clipRect(distant_bounds, false);
   EXPECT_FALSE(mock_layer->needs_painting(paint_context()));
