@@ -96,6 +96,10 @@ class CanvasKit {
   );
   external SkSurface MakeSWCanvasSurface(html.CanvasElement canvas);
   external void setCurrentContext(int glContext);
+
+  /// Creates an [SkPath] using commands obtained from [SkPath.toCmds].
+  // TODO(yjbanov): switch to CanvasKit.Path.MakeFromCmds when it's available.
+  external SkPath MakePathFromCmds(List<dynamic> pathCommands);
 }
 
 @JS('window.CanvasKitInit')
@@ -1143,6 +1147,13 @@ class SkPath {
     double pers1,
     double pers2,
   );
+
+  /// Serializes the path into a list of commands.
+  ///
+  /// The list can be used to create a new [SkPath] using [CanvasKit.MakePathFromCmds].
+  external List<dynamic> toCmds();
+
+  external void delete();
 }
 
 @JS('window.flutterCanvasKit.SkContourMeasureIter')
@@ -1692,13 +1703,12 @@ List<SkDeletable> _skObjectDeleteQueue = <SkDeletable>[];
 
 final SkObjectFinalizationRegistry skObjectFinalizationRegistry =
     SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
-  _skObjectDeleteQueue.add(deletable);
-  _skObjectCollector ??= _scheduleSkObjectCollection();
+  _scheduleSkObjectCollection(deletable);
 }));
 
-/// Schedules an asap timer to delete garbage-collected Skia objects.
+/// Schedules a Skia object for deletion in an asap timer.
 ///
-/// We use a timer for the following reasons:
+/// A timer is used for the following reasons:
 ///
 ///  - Deleting the object immediately may lead to dangling pointer as the Skia
 ///    object may still be used by a function in the current frame. For example,
@@ -1709,21 +1719,28 @@ final SkObjectFinalizationRegistry skObjectFinalizationRegistry =
 ///  - A microtask, while solves the problem above, would prevent the event from
 ///    yielding to the graphics system to render the frame on the screen if there
 ///    is a large number of objects to delete, causing jank.
-Timer _scheduleSkObjectCollection() => Timer(Duration.zero, () {
-      html.window.performance.mark('SkObject collection-start');
-      final int length = _skObjectDeleteQueue.length;
-      for (int i = 0; i < length; i++) {
-        _skObjectDeleteQueue[i].delete();
-      }
-      _skObjectDeleteQueue = <SkDeletable>[];
+///
+/// Because scheduling a timer is expensive, the timer is shared by all objects
+/// deleted this frame. No timer is created if no objects were scheduled for
+/// deletion.
+void _scheduleSkObjectCollection(SkDeletable deletable) {
+  _skObjectDeleteQueue.add(deletable);
+  _skObjectCollector ??= Timer(Duration.zero, () {
+    html.window.performance.mark('SkObject collection-start');
+    final int length = _skObjectDeleteQueue.length;
+    for (int i = 0; i < length; i++) {
+      _skObjectDeleteQueue[i].delete();
+    }
+    _skObjectDeleteQueue = <SkDeletable>[];
 
-      // Null out the timer so we can schedule a new one next time objects are
-      // scheduled for deletion.
-      _skObjectCollector = null;
-      html.window.performance.mark('SkObject collection-end');
-      html.window.performance.measure('SkObject collection',
-          'SkObject collection-start', 'SkObject collection-end');
-    });
+    // Null out the timer so we can schedule a new one next time objects are
+    // scheduled for deletion.
+    _skObjectCollector = null;
+    html.window.performance.mark('SkObject collection-end');
+    html.window.performance.measure('SkObject collection',
+        'SkObject collection-start', 'SkObject collection-end');
+  });
+}
 
 /// Any Skia object that has a `delete` method.
 @JS()

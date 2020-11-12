@@ -1,4 +1,4 @@
-Signature: 998b386bd897c04d10cc86ea02f29c62
+Signature: f50da6da45acbfc9cdf05b8d2c99ed31
 
 UNUSED LICENSES:
 
@@ -2895,6 +2895,7 @@ FILE: ../../../third_party/skia/gm/crbug_946965.cpp
 FILE: ../../../third_party/skia/gm/patharcto.cpp
 FILE: ../../../third_party/skia/gm/runtimecolorfilter.cpp
 FILE: ../../../third_party/skia/gm/runtimefunctions.cpp
+FILE: ../../../third_party/skia/gm/runtimeintrinsics.cpp
 FILE: ../../../third_party/skia/gm/runtimeshader.cpp
 FILE: ../../../third_party/skia/gm/skbug_9319.cpp
 FILE: ../../../third_party/skia/include/effects/SkImageFilters.h
@@ -4140,11 +4141,13 @@ FILE: ../../../third_party/skia/modules/skshaper/src/SkUnicode.h
 FILE: ../../../third_party/skia/modules/skshaper/src/SkUnicode_icu.cpp
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFe.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeColorMatrix.h
+FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeComposite.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeTurbulence.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFilter.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFilterContext.h
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFe.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeColorMatrix.cpp
+FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeComposite.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeTurbulence.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFilter.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFilterContext.cpp
@@ -4180,6 +4183,7 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrHighContrastFilterEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrHighContrastFilterEffect.h
+FILE: ../../../third_party/skia/src/gpu/mock/GrMockOpTarget.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathAtlasMgr.cpp

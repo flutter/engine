@@ -133,6 +133,7 @@ source_set("flutter_framework_source") {
   deps = [
     ":ios_gpu_configuration",
     "//flutter/common",
+    "//flutter/common/graphics",
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/lib/ui",
@@ -208,6 +209,7 @@ shared_library("ios_test_flutter") {
     "//build/config:symbol_visibility_hidden",
   ]
   sources = [
+    "framework/Source/FlutterAppDelegateTest.mm",
     "framework/Source/FlutterBinaryMessengerRelayTest.mm",
     "framework/Source/FlutterDartProjectTest.mm",
     "framework/Source/FlutterEngineTest.mm",
