@@ -216,7 +216,8 @@ public class FlutterActivityTest {
     Intent intent =
         FlutterActivity.withCachedEngine("my_cached_engine").build(RuntimeEnvironment.application);
     Robolectric.buildActivity(FlutterActivity.class, intent).create();
-    assertTrue("FakeFlutterPlugin onCreate", fakeFlutterPlugin.onCreateCalled);
+    assertTrue(
+        "Expected FakeFlutterPlugin onCreateCalled to be true", fakeFlutterPlugin.onCreateCalled);
   }
 
   static class FlutterActivityWithProvidedEngine extends FlutterActivity {
