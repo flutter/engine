@@ -97,7 +97,7 @@ class JNIMock final : public PlatformViewAndroidJNI {
   MOCK_METHOD(double, GetDisplayRefreshRate, (), (override));
 
   MOCK_METHOD(bool,
-              FlutterViewDownloadDynamicFeature,
+              RequestDartDeferredLibrary,
               (int loading_unit_id),
               (override));
 };
