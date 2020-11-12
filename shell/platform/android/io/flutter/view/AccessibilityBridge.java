@@ -28,7 +28,6 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.BuildConfig;
 import io.flutter.Log;
-import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
@@ -206,6 +205,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // The widget within Flutter that currently sits beneath a cursor, e.g,
   // beneath a stylus or mouse cursor.
   @Nullable private SemanticsNode hoveredObject;
+
+  @VisibleForTesting
+  public int getHoveredObjectId() {
+    return hoveredObject.id;
+  }
 
   // A Java/Android cached representation of the Flutter app's navigation stack. The Flutter
   // navigation stack is tracked so that accessibility announcements can be made during Flutter's
@@ -553,8 +557,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (semanticsNode.platformViewId != -1) {
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
-      boolean childUsesVirtualDisplay = !(embeddedView.getContext() instanceof FlutterActivity);
-      if (childUsesVirtualDisplay) {
+      if (platformViewsAccessibilityDelegate.usesVirtualDisplay(semanticsNode.platformViewId)) {
         Rect bounds = semanticsNode.getGlobalRect();
         return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
       }
@@ -848,8 +851,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         // mirrored.
         //
         // See the case above for how virtual displays are handled.
-        boolean childUsesHybridComposition = embeddedView.getContext() instanceof FlutterActivity;
-        if (childUsesHybridComposition) {
+        if (!platformViewsAccessibilityDelegate.usesVirtualDisplay(child.platformViewId)) {
           result.addChild(embeddedView);
           continue;
         }
@@ -2180,7 +2182,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           return result;
         }
       }
-      return this;
+      return isFocusable() ? this : null;
     }
 
     // TODO(goderbauer): This should be decided by the framework once we have more information

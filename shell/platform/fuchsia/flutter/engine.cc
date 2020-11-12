@@ -9,6 +9,7 @@
 
 #include "../runtime/dart/utils/files.h"
 #include "flow/embedded_views.h"
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -16,14 +17,16 @@
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
-#include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
-
+#include "flutter/shell/common/serialization_callbacks.h"
 #include "flutter_runner_product_configuration.h"
 #include "fuchsia_external_view_embedder.h"
 #include "fuchsia_intl.h"
+#include "include/core/SkPicture.h"
+#include "include/core/SkSerialProcs.h"
 #include "platform_view.h"
 #include "surface.h"
 #include "task_runner_adapter.h"
+#include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
 #include "thread.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
@@ -75,6 +78,7 @@ Engine::Engine(Delegate& delegate,
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
       use_legacy_renderer_(product_config.use_legacy_renderer()),
 #endif
+      intercept_all_input_(product_config.get_intercept_all_input()),
       weak_factory_(this) {
   if (zx::event::create(0, &vsync_event_) != ZX_OK) {
     FML_DLOG(ERROR) << "Could not create the vsync event.";
@@ -143,7 +147,8 @@ Engine::Engine(Delegate& delegate,
           legacy_external_view_embedder_ =
               std::make_shared<flutter::SceneUpdateContext>(
                   thread_label_, std::move(view_token),
-                  std::move(view_ref_pair), session_connection_.value());
+                  std::move(view_ref_pair), session_connection_.value(),
+                  intercept_all_input_);
         } else
 #endif
         {
@@ -151,7 +156,7 @@ Engine::Engine(Delegate& delegate,
               std::make_shared<FuchsiaExternalViewEmbedder>(
                   thread_label_, std::move(view_token),
                   std::move(view_ref_pair), session_connection_.value(),
-                  surface_producer_.value());
+                  surface_producer_.value(), intercept_all_input_);
         }
         view_embedder_latch.Signal();
       }));
@@ -256,7 +261,14 @@ Engine::Engine(Delegate& delegate,
     }
   };
 #else
-  on_create_rasterizer = [](flutter::Shell& shell) {
+  on_create_rasterizer = [this, &product_config](flutter::Shell& shell) {
+    if (product_config.enable_shader_warmup()) {
+      FML_DCHECK(surface_producer_);
+      WarmupSkps(
+          shell.GetDartVM()->GetConcurrentMessageLoop()->GetTaskRunner().get(),
+          shell.GetTaskRunners().GetRasterTaskRunner().get(),
+          surface_producer_.value());
+    }
     return std::make_unique<flutter::Rasterizer>(shell);
   };
 #endif
@@ -622,5 +634,51 @@ void Engine::WriteProfileToTrace() const {
   }
 }
 #endif  // !defined(DART_PRODUCT)
+
+void Engine::WarmupSkps(fml::BasicTaskRunner* concurrent_task_runner,
+                        fml::BasicTaskRunner* raster_task_runner,
+                        VulkanSurfaceProducer& surface_producer) {
+  SkISize size = SkISize::Make(1024, 600);
+  auto skp_warmup_surface = surface_producer.ProduceOffscreenSurface(size);
+  if (!skp_warmup_surface) {
+    FML_LOG(ERROR) << "SkSurface::MakeRenderTarget returned null";
+    return;
+  }
+
+  // tell concurrent task runner to deserialize all skps available from
+  // the asset manager
+  concurrent_task_runner->PostTask([&raster_task_runner, skp_warmup_surface,
+                                    &surface_producer]() {
+    TRACE_DURATION("flutter", "DeserializeSkps");
+    std::vector<std::unique_ptr<fml::Mapping>> skp_mappings =
+        flutter::PersistentCache::GetCacheForProcess()
+            ->GetSkpsFromAssetManager();
+    std::vector<sk_sp<SkPicture>> pictures;
+    int i = 0;
+    for (auto& mapping : skp_mappings) {
+      std::unique_ptr<SkMemoryStream> stream =
+          SkMemoryStream::MakeDirect(mapping->GetMapping(), mapping->GetSize());
+      SkDeserialProcs procs = {0};
+      procs.fImageProc = flutter::DeserializeImageWithoutData;
+      procs.fTypefaceProc = flutter::DeserializeTypefaceWithoutData;
+      sk_sp<SkPicture> picture =
+          SkPicture::MakeFromStream(stream.get(), &procs);
+      if (!picture) {
+        FML_LOG(ERROR) << "Failed to deserialize picture " << i;
+        continue;
+      }
+
+      // Tell raster task runner to warmup have the compositor
+      // context warm up the newly deserialized picture
+      raster_task_runner->PostTask(
+          [skp_warmup_surface, picture, &surface_producer] {
+            TRACE_DURATION("flutter", "WarmupSkp");
+            skp_warmup_surface->getCanvas()->drawPicture(picture);
+            surface_producer.gr_context()->flush();
+          });
+      i++;
+    }
+  });
+}
 
 }  // namespace flutter_runner
