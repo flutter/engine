@@ -59,7 +59,7 @@ public class PlayStoreDynamicFeatureManagerTest {
   }
 
   TestFlutterJNI jni;
-  PlayStoreDynamicFeatureManager playStoreManager;
+  TestPlayStoreDynamicFeatureManager playStoreManager;
 
   @Test
   public void downloadCallsJNIFunctions() {
