@@ -29,8 +29,8 @@ bool AngleSurfaceManager::InitializeEGL(const EGLint* attributes) {
     return false;
   }
 
-  egl_display_ =
-      eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, attributes);
+  egl_display_ = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE,
+                                          EGL_DEFAULT_DISPLAY, attributes);
 
   if (egl_display_ == EGL_NO_DISPLAY) {
     std::cerr << "EGL: Failed to get a compatible EGLdisplay" << std::endl;
@@ -53,7 +53,6 @@ bool AngleSurfaceManager::Initialize() {
 
   const EGLint display_context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2,
                                                EGL_NONE};
-
 
   // These are prefered display attributes and request ANGLE's D3D11
   // renderer. eglInitialize will only succeed with these attributes if the
@@ -110,8 +109,8 @@ bool AngleSurfaceManager::Initialize() {
       d3d9_display_attributes,
   };
 
-  // Attempt to initialize ANGLE's renderer in order of: D3D11, D3D11 Feature Level 9_3,
-  // D3D11 WARP and finally D3D9.
+  // Attempt to initialize ANGLE's renderer in order of: D3D11, D3D11 Feature
+  // Level 9_3, D3D11 WARP and finally D3D9.
   for (auto config : display_attributes_configs) {
     if (InitializeEGL(config)) {
       break;
