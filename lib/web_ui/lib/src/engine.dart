@@ -17,8 +17,8 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
-import 'package:meta/meta.dart';
+import 'package:js/js.dart'; // ignore: import_of_legacy_library_into_null_safe
+import 'package:meta/meta.dart'; // ignore: import_of_legacy_library_into_null_safe
 
 import '../ui.dart' as ui;
 
@@ -89,6 +89,7 @@ part 'engine/html/recording_canvas.dart';
 part 'engine/html/render_vertices.dart';
 part 'engine/html/scene.dart';
 part 'engine/html/scene_builder.dart';
+part 'engine/html/shaders/normalized_gradient.dart';
 part 'engine/html/shaders/shader.dart';
 part 'engine/html/shaders/shader_builder.dart';
 part 'engine/html/surface.dart';
@@ -99,6 +100,7 @@ part 'engine/keyboard.dart';
 part 'engine/mouse_cursor.dart';
 part 'engine/onscreen_logging.dart';
 part 'engine/picture.dart';
+part 'engine/platform_dispatcher.dart';
 part 'engine/platform_views.dart';
 part 'engine/plugins.dart';
 part 'engine/pointer_binding.dart';
@@ -127,6 +129,7 @@ part 'engine/text/line_break_properties.dart';
 part 'engine/text/line_breaker.dart';
 part 'engine/text/measurement.dart';
 part 'engine/text/paragraph.dart';
+part 'engine/text/canvas_paragraph.dart';
 part 'engine/text/ruler.dart';
 part 'engine/text/unicode_range.dart';
 part 'engine/text/word_break_properties.dart';
@@ -170,6 +173,10 @@ void initializeEngine() {
   if (_engineInitialized) {
     return;
   }
+
+  // Setup the hook that allows users to customize URL strategy before running
+  // the app.
+  _addUrlStrategyListener();
 
   // Called by the Web runtime just before hot restarting the app.
   //
@@ -224,17 +231,17 @@ void initializeEngine() {
         // part of the rasterization process, particularly in the HTML
         // renderer, takes place in the `SceneBuilder.build()`.
         _frameTimingsOnBuildStart();
-        if (window._onBeginFrame != null) {
-          window.invokeOnBeginFrame(
+        if (EnginePlatformDispatcher.instance._onBeginFrame != null) {
+          EnginePlatformDispatcher.instance.invokeOnBeginFrame(
               Duration(microseconds: highResTimeMicroseconds));
         }
 
-        if (window._onDrawFrame != null) {
+        if (EnginePlatformDispatcher.instance._onDrawFrame != null) {
           // TODO(yjbanov): technically Flutter flushes microtasks between
           //                onBeginFrame and onDrawFrame. We don't, which hasn't
           //                been an issue yet, but eventually we'll have to
           //                implement it properly.
-          window.invokeOnDrawFrame();
+          EnginePlatformDispatcher.instance.invokeOnDrawFrame();
         }
       });
     }
@@ -242,6 +249,16 @@ void initializeEngine() {
 
   Keyboard.initialize();
   MouseCursor.initialize();
+}
+
+void _addUrlStrategyListener() {
+  _jsSetUrlStrategy = allowInterop((JsUrlStrategy? jsStrategy) {
+    customUrlStrategy =
+        jsStrategy == null ? null : CustomUrlStrategy.fromJs(jsStrategy);
+  });
+  registerHotRestartListener(() {
+    _jsSetUrlStrategy = null;
+  });
 }
 
 class _NullTreeSanitizer implements html.NodeTreeSanitizer {

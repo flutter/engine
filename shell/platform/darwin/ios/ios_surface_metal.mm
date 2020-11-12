@@ -13,10 +13,11 @@ static IOSContextMetal* CastToMetalContext(const std::shared_ptr<IOSContext>& co
   return reinterpret_cast<IOSContextMetal*>(context.get());
 }
 
-IOSSurfaceMetal::IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
-                                 std::shared_ptr<IOSContext> context,
-                                 FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(std::move(context), platform_views_controller), layer_(std::move(layer)) {
+IOSSurfaceMetal::IOSSurfaceMetal(
+    fml::scoped_nsobject<CAMetalLayer> layer,
+    std::shared_ptr<IOSContext> context,
+    const std::shared_ptr<IOSExternalViewEmbedder>& external_view_embedder)
+    : IOSSurface(std::move(context), external_view_embedder), layer_(std::move(layer)) {
   if (!layer_) {
     return;
   }
@@ -46,16 +47,10 @@ void IOSSurfaceMetal::UpdateStorageSizeIfNecessary() {
 std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrDirectContext* /* unused */) {
   auto metal_context = CastToMetalContext(GetContext());
 
-  return std::make_unique<GPUSurfaceMetal>(this,    // Metal surface delegate
-                                           layer_,  // layer
+  return std::make_unique<GPUSurfaceMetal>(layer_,                               // layer
                                            metal_context->GetMainContext(),      // context
                                            metal_context->GetMainCommandQueue()  // command queue
   );
-}
-
-// |GPUSurfaceDelegate|
-ExternalViewEmbedder* IOSSurfaceMetal::GetExternalViewEmbedder() {
-  return GetSurfaceExternalViewEmbedder().get();
 }
 
 }  // namespace flutter

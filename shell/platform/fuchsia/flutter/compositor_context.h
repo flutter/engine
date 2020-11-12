@@ -21,16 +21,19 @@ namespace flutter_runner {
 // Fuchsia.
 class CompositorContext final : public flutter::CompositorContext {
  public:
-  CompositorContext(SessionConnection& session_connection,
-                    VulkanSurfaceProducer& surface_producer,
-                    flutter::SceneUpdateContext& scene_update_context);
+  CompositorContext(
+      SessionConnection& session_connection,
+      VulkanSurfaceProducer& surface_producer,
+      std::shared_ptr<flutter::SceneUpdateContext> scene_update_context);
 
   ~CompositorContext() override;
+  void WarmupSkp(sk_sp<SkPicture> picture);
 
  private:
   SessionConnection& session_connection_;
   VulkanSurfaceProducer& surface_producer_;
-  flutter::SceneUpdateContext& scene_update_context_;
+  std::shared_ptr<flutter::SceneUpdateContext> scene_update_context_;
+  sk_sp<SkSurface> skp_warmup_surface_;
 
   // |flutter::CompositorContext|
   std::unique_ptr<ScopedFrame> AcquireFrame(

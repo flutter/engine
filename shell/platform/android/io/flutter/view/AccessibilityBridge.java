@@ -207,6 +207,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // beneath a stylus or mouse cursor.
   @Nullable private SemanticsNode hoveredObject;
 
+  @VisibleForTesting
+  public int getHoveredObjectId() {
+    return hoveredObject.id;
+  }
+
   // A Java/Android cached representation of the Flutter app's navigation stack. The Flutter
   // navigation stack is tracked so that accessibility announcements can be made during Flutter's
   // navigation changes.
@@ -1356,16 +1361,29 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
     // previously cached route id.
+
+    // Finds the last route that is not in the previous routes.
     SemanticsNode lastAdded = null;
     for (SemanticsNode semanticsNode : newRoutes) {
       if (!flutterNavigationStack.contains(semanticsNode.id)) {
         lastAdded = semanticsNode;
       }
     }
+
+    // If all the routes are in the previous route, get the last route.
     if (lastAdded == null && newRoutes.size() > 0) {
       lastAdded = newRoutes.get(newRoutes.size() - 1);
     }
-    if (lastAdded != null && lastAdded.id != previousRouteId) {
+
+    // There are two cases if lastAdded != nil
+    // 1. lastAdded is not in previous routes. In this case,
+    //    lastAdded.id != previousRouteId
+    // 2. All new routes are in previous routes and
+    //    lastAdded = newRoutes.last.
+    // In the first case, we need to announce new route. In the second case,
+    // we need to announce if one list is shorter than the other.
+    if (lastAdded != null
+        && (lastAdded.id != previousRouteId || newRoutes.size() != flutterNavigationStack.size())) {
       previousRouteId = lastAdded.id;
       sendWindowChangeEvent(lastAdded);
     }
@@ -2167,7 +2185,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           return result;
         }
       }
-      return this;
+      return isFocusable() ? this : null;
     }
 
     // TODO(goderbauer): This should be decided by the framework once we have more information
