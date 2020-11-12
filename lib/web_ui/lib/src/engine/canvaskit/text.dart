@@ -62,11 +62,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
       skTextStyle.fontSize = fontSize;
     }
 
-    if (fontFamily == null ||
-        !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
-      fontFamily = 'Roboto';
-    }
-    skTextStyle.fontFamilies = [fontFamily];
+    skTextStyle.fontFamilies = _getActualFontFamilies(fontFamily);
 
     return skTextStyle;
   }
@@ -74,20 +70,8 @@ class CkParagraphStyle implements ui.ParagraphStyle {
   static SkStrutStyleProperties toSkStrutStyleProperties(ui.StrutStyle value) {
     EngineStrutStyle style = value as EngineStrutStyle;
     final SkStrutStyleProperties skStrutStyle = SkStrutStyleProperties();
-    if (style._fontFamily != null) {
-      String fontFamily = style._fontFamily!;
-      if (!skiaFontCollection.registeredFamilies.contains(fontFamily)) {
-        fontFamily = 'Roboto';
-      }
-      final List<String> fontFamilies = <String>[fontFamily];
-      if (style._fontFamilyFallback != null) {
-        fontFamilies.addAll(style._fontFamilyFallback!);
-      }
-      skStrutStyle.fontFamilies = fontFamilies;
-    } else {
-      // If no strut font family is given, default to Roboto.
-      skStrutStyle.fontFamilies = ['Roboto'];
-    }
+    skStrutStyle.fontFamilies =
+        _getActualFontFamilies(style._fontFamily, style._fontFamilyFallback);
 
     if (style._fontSize != null) {
       skStrutStyle.fontSize = style._fontSize;
@@ -279,18 +263,8 @@ class CkTextStyle implements ui.TextStyle {
       properties.locale = locale.toLanguageTag();
     }
 
-    if (fontFamily == null ||
-        !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
-      fontFamily = 'Roboto';
-    }
-
-    List<String> fontFamilies = <String>[fontFamily];
-    if (fontFamilyFallback != null &&
-        !fontFamilyFallback.every((font) => fontFamily == font)) {
-      fontFamilies.addAll(fontFamilyFallback);
-    }
-
-    properties.fontFamilies = fontFamilies;
+    properties.fontFamilies =
+        _getActualFontFamilies(fontFamily, fontFamilyFallback);
 
     if (fontWeight != null || fontStyle != null) {
       properties.fontStyle = toSkFontStyle(fontWeight, fontStyle);
@@ -564,7 +538,6 @@ class CkParagraph extends ManagedSkiaObject<SkParagraph>
 
   @override
   void layout(ui.ParagraphConstraints constraints) {
-    assert(constraints.width != null); // ignore: unnecessary_null_comparison
     _lastLayoutConstraints = constraints;
 
     // TODO(het): CanvasKit throws an exception when laid out with
@@ -660,8 +633,52 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     return properties;
   }
 
+  /// Determines if the given [text] contains any code points which are not
+  /// supported by the current set of fonts.
+  void _verifyFontsSupportText(String text) {
+    CkTextStyle style = _peekStyle();
+    List<String> fontFamilies =
+        _getActualFontFamilies(style.fontFamily, style.fontFamilyFallback);
+    List<SkTypeface> typefaces = <SkTypeface>[];
+    for (var font in fontFamilies) {
+      List<SkTypeface>? typefacesForFamily =
+          skiaFontCollection.familyToTypefaceMap[font];
+      if (typefacesForFamily != null) {
+        typefaces.addAll(typefacesForFamily);
+      }
+    }
+    List<int> codeUnits = text.codeUnits;
+    List<bool> codeUnitsSupported = List<bool>.filled(codeUnits.length, false);
+    for (SkTypeface typeface in typefaces) {
+      SkFont font = SkFont(typeface);
+      Uint8List glyphs = font.getGlyphIDs(text);
+      assert(glyphs.length == codeUnitsSupported.length);
+      for (int i = 0; i < glyphs.length; i++) {
+        codeUnitsSupported[i] |= glyphs[i] != 0 || _isControlCode(codeUnits[i]);
+      }
+    }
+
+    if (codeUnitsSupported.any((x) => !x)) {
+      print('Some code units are not supported by any loaded font!!!!!');
+      List<int> missingCodeUnits = <int>[];
+      for (int i = 0; i < codeUnitsSupported.length; i++) {
+        if (!codeUnitsSupported[i]) {
+          missingCodeUnits.add(codeUnits[i]);
+          print('We do not support the Unicode code point: ${codeUnits[i]}');
+          _findFontsForMissingCodeunit(codeUnits[i]);
+        }
+      }
+    }
+  }
+
+  /// Returns [true] if [codepoint] is a Unicode control code.
+  bool _isControlCode(int codepoint) {
+    return codepoint < 32 || (codepoint > 127 && codepoint < 160);
+  }
+
   @override
   void addText(String text) {
+    _verifyFontsSupportText(text);
     _commands.add(_ParagraphCommand.addText(text));
     _paragraphBuilder.addText(text);
   }
@@ -746,4 +763,18 @@ enum _ParagraphCommandType {
   pop,
   pushStyle,
   addPlaceholder,
+}
+
+List<String> _getActualFontFamilies(String? fontFamily,
+    [List<String>? fontFamilyFallback]) {
+  if (fontFamily == null ||
+      !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
+    fontFamily = 'Roboto';
+  }
+  List<String> fontFamilies = <String>[fontFamily];
+  if (fontFamilyFallback != null &&
+      !fontFamilyFallback.every((font) => fontFamily == font)) {
+    fontFamilies.addAll(fontFamilyFallback);
+  }
+  return fontFamilies;
 }
