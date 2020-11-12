@@ -894,12 +894,6 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
   FML_DCHECK(_currentTouchPointersCount >= 0);
-  if (_currentTouchPointersCount < 0) {
-    // _currentTouchPointersCount should never be less than 0.
-    // To not breaking production code, we reset the count to 0 if a negative value
-    // is reached.
-    _currentTouchPointersCount = 0;
-  }
   if (_currentTouchPointersCount == 0) {
     // At the start of each gesture sequence, we reset the `_flutterViewController`,
     // so that all the touch events in the same sequence are forwarded to the same
