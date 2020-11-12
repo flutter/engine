@@ -72,7 +72,11 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {
-  FML_DCHECK(needs_painting(context));
+  // needs_painting(context) is only valid for the PaintContext that
+  // is initially handed to a layer's Paint() method. By the time the
+  // layer calls PaintChildren(), though, it may have modified the
+  // PaintContext so we can no longer double-check the culling.
+  // FML_DCHECK(needs_painting(context));
 
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.

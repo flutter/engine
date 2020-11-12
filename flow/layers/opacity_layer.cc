@@ -80,11 +80,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   Layer::AutoSaveLayer save_layer =
       Layer::AutoSaveLayer::Create(context, saveLayerBounds, &paint);
-
-  // Within the context of the SaveLayer, our paintability may have changed.
-  if (needs_painting(context)) {
-    PaintChildren(context);
-  }
+  PaintChildren(context);
 }
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
