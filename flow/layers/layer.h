@@ -8,10 +8,10 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/common/graphics/texture.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
-#include "flutter/flow/texture.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
@@ -59,7 +59,6 @@ struct PrerollContext {
   // These allow us to track properties like elevation, opacity, and the
   // prescence of a platform view during Preroll.
   bool has_platform_view = false;
-  bool is_opaque = true;
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   // True if, during the traversal so far, we have seen a child_scene_layer.
   // Informs whether a layer needs to be system composited.
@@ -155,7 +154,7 @@ class Layer {
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   // Updates the system composited scene.
-  virtual void UpdateScene(SceneUpdateContext& context);
+  virtual void UpdateScene(std::shared_ptr<SceneUpdateContext> context);
   virtual void CheckForChildLayerBelow(PrerollContext* context);
 #endif
 

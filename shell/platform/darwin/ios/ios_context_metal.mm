@@ -4,8 +4,8 @@
 
 #import "flutter/shell/platform/darwin/ios/ios_context_metal.h"
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
-#include "flutter/shell/common/persistent_cache.h"
 #import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
@@ -65,8 +65,6 @@ IOSContextMetal::IOSContextMetal() {
     return;
   }
   texture_cache_.Reset(texture_cache_raw);
-
-  is_valid_ = false;
 }
 
 IOSContextMetal::~IOSContextMetal() = default;

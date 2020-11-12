@@ -275,7 +275,7 @@ class RecordingCanvas {
 
   void clipRect(ui.Rect rect, ui.ClipOp clipOp) {
     assert(!_recordingEnded);
-    final PaintClipRect command = PaintClipRect(rect, clipOp);
+    final DrawCommand command = PaintClipRect(rect, clipOp);
     switch (clipOp) {
       case ui.ClipOp.intersect:
         _paintBounds.clipRect(rect, command);
@@ -466,12 +466,12 @@ class RecordingCanvas {
       // For Rect/RoundedRect paths use drawRect/drawRRect code paths for
       // DomCanvas optimization.
       SurfacePath sPath = path as SurfacePath;
-      final ui.Rect? rect = sPath.webOnlyPathAsRect;
+      final ui.Rect? rect = sPath.toRect();
       if (rect != null) {
         drawRect(rect, paint);
         return;
       }
-      final ui.RRect? rrect = sPath.webOnlyPathAsRoundedRect;
+      final ui.RRect? rrect = sPath.toRoundedRect();
       if (rrect != null) {
         drawRRect(rrect, paint);
         return;
@@ -522,13 +522,13 @@ class RecordingCanvas {
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
     assert(!_recordingEnded);
     final EngineParagraph engineParagraph = paragraph as EngineParagraph;
-    if (!engineParagraph._isLaidOut) {
+    if (!engineParagraph.isLaidOut) {
       // Ignore non-laid out paragraphs. This matches Flutter's behavior.
       return;
     }
 
     _didDraw = true;
-    if (engineParagraph._geometricStyle.ellipsis != null) {
+    if (engineParagraph.hasArbitraryPaint) {
       _hasArbitraryPaint = true;
     }
     final double left = offset.dx;
@@ -810,7 +810,7 @@ class PaintClipRect extends DrawCommand {
 
   @override
   void apply(EngineCanvas canvas) {
-    canvas.clipRect(rect);
+    canvas.clipRect(rect, clipOp);
   }
 
   @override
@@ -1185,7 +1185,7 @@ class PaintDrawParagraph extends DrawCommand {
   @override
   String toString() {
     if (assertionsEnabled) {
-      return 'DrawParagraph(${paragraph._plainText}, $offset)';
+      return 'DrawParagraph(${paragraph.toPlainText()}, $offset)';
     } else {
       return super.toString();
     }

@@ -33,10 +33,10 @@ class _CanvasPool extends _SaveStackTracking {
 
   html.HtmlElement? _rootElement;
   int _saveContextCount = 0;
-  // Number of elements that have been added to flt-canvas.
-  int _activeElementCount = 0;
+  final double _density;
 
-  _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
+  _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels,
+      this._density);
 
   html.CanvasRenderingContext2D get context {
     html.CanvasRenderingContext2D? ctx = _context;
@@ -76,7 +76,6 @@ class _CanvasPool extends _SaveStackTracking {
       _context = null;
       _contextHandle = null;
     }
-    _activeElementCount++;
   }
 
   void allocateCanvas(html.HtmlElement rootElement) {
@@ -86,7 +85,12 @@ class _CanvasPool extends _SaveStackTracking {
   void _createCanvas() {
     bool requiresClearRect = false;
     bool reused = false;
-    html.CanvasElement canvas;
+    html.CanvasElement? canvas;
+    if (_canvas != null) {
+      _canvas!.width = 0;
+      _canvas!.height = 0;
+      _canvas = null;
+    }
     if (_reusablePool != null && _reusablePool!.isNotEmpty) {
       canvas = _canvas = _reusablePool!.removeAt(0);
       requiresClearRect = true;
@@ -99,13 +103,10 @@ class _CanvasPool extends _SaveStackTracking {
       // * To make sure that when we scale the canvas by devicePixelRatio (see
       //   _initializeViewport below) the pixels line up.
       final double cssWidth =
-          _widthInBitmapPixels / EngineWindow.browserDevicePixelRatio;
+          _widthInBitmapPixels / EnginePlatformDispatcher.browserDevicePixelRatio;
       final double cssHeight =
-          _heightInBitmapPixels / EngineWindow.browserDevicePixelRatio;
-      canvas = html.CanvasElement(
-        width: _widthInBitmapPixels,
-        height: _heightInBitmapPixels,
-      );
+          _heightInBitmapPixels / EnginePlatformDispatcher.browserDevicePixelRatio;
+      canvas = _allocCanvas(_widthInBitmapPixels, _heightInBitmapPixels);
       _canvas = canvas;
 
       // Why is this null check here, even though we just allocated a canvas element above?
@@ -116,12 +117,9 @@ class _CanvasPool extends _SaveStackTracking {
       if (_canvas == null) {
         // Evict BitmapCanvas(s) and retry.
         _reduceCanvasMemoryUsage();
-        canvas = html.CanvasElement(
-          width: _widthInBitmapPixels,
-          height: _heightInBitmapPixels,
-        );
+        canvas = _allocCanvas(_widthInBitmapPixels, _heightInBitmapPixels);
       }
-      canvas.style
+      canvas!.style
         ..position = 'absolute'
         ..width = '${cssWidth}px'
         ..height = '${cssHeight}px';
@@ -134,20 +132,53 @@ class _CanvasPool extends _SaveStackTracking {
       _rootElement!.append(canvas);
     }
 
-    if (_activeElementCount == 0) {
-      canvas.style.zIndex = '-1';
-    } else if (reused) {
-      // If a canvas is the first element we set z-index = -1 to workaround
-      // blink compositing bug. To make sure this does not leak when reused
-      // reset z-index.
-      canvas.style.removeProperty('z-index');
+    try {
+      if (reused) {
+        // If a canvas is the first element we set z-index = -1 in [BitmapCanvas]
+        // endOfPaint to workaround blink compositing bug. To make sure this
+        // does not leak when reused reset z-index.
+        canvas.style.removeProperty('z-index');
+      }
+      _context = canvas.context2D;
+    } catch (e) {
+      // Handle OOM.
     }
-    ++_activeElementCount;
-
-    final html.CanvasRenderingContext2D context = _context = canvas.context2D;
-    _contextHandle = ContextStateHandle(this, context);
+    if (_context == null) {
+      _reduceCanvasMemoryUsage();
+      _context = canvas.context2D;
+    }
+    if (_context == null) {
+      /// Browser ran out of memory, try to recover current allocation
+      /// and bail.
+      _canvas?.width = 0;
+      _canvas?.height = 0;
+      _canvas = null;
+      return;
+    }
+    _contextHandle = ContextStateHandle(this, _context!, this._density);
     _initializeViewport(requiresClearRect);
     _replayClipStack();
+  }
+
+  html.CanvasElement? _allocCanvas(int width, int height) {
+    final dynamic canvas =
+      js_util.callMethod(html.document, 'createElement', <dynamic>['CANVAS']);
+    if (canvas != null) {
+      try {
+        canvas.width = (width * _density).ceil();
+        canvas.height = (height * _density).ceil();
+      } catch (e) {
+        return null;
+      }
+      return canvas as html.CanvasElement;
+    }
+    return null;
+    // !!! We don't use the code below since NNBD assumes it can never return
+    // null and optimizes out code.
+    // return canvas = html.CanvasElement(
+    //   width: _widthInBitmapPixels,
+    //   height: _heightInBitmapPixels,
+    // );
   }
 
   @override
@@ -194,7 +225,7 @@ class _CanvasPool extends _SaveStackTracking {
             clipTimeTransform[5] != prevTransform[5] ||
             clipTimeTransform[12] != prevTransform[12] ||
             clipTimeTransform[13] != prevTransform[13]) {
-          final double ratio = EngineWindow.browserDevicePixelRatio;
+          final double ratio = dpi;
           ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
           ctx.transform(
               clipTimeTransform[0],
@@ -210,8 +241,13 @@ class _CanvasPool extends _SaveStackTracking {
         } else if (clipEntry.rrect != null) {
           _clipRRect(ctx, clipEntry.rrect!);
         } else if (clipEntry.path != null) {
-          _runPath(ctx, clipEntry.path as SurfacePath);
-          ctx.clip();
+          final SurfacePath path = clipEntry.path as SurfacePath;
+          _runPath(ctx, path);
+          if (path.fillType == ui.PathFillType.nonZero) {
+            ctx.clip();
+          } else {
+            ctx.clip('evenodd');
+          }
         }
       }
     }
@@ -223,7 +259,7 @@ class _CanvasPool extends _SaveStackTracking {
         transform[5] != prevTransform[5] ||
         transform[12] != prevTransform[12] ||
         transform[13] != prevTransform[13]) {
-      final double ratio = EngineWindow.browserDevicePixelRatio;
+      final double ratio = dpi;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ctx.transform(transform[0], transform[1], transform[4], transform[5],
           transform[12], transform[13]);
@@ -265,7 +301,6 @@ class _CanvasPool extends _SaveStackTracking {
     _canvas = null;
     _context = null;
     _contextHandle = null;
-    _activeElementCount = 0;
   }
 
   void endOfPaint() {
@@ -302,14 +337,18 @@ class _CanvasPool extends _SaveStackTracking {
     // is applied on the DOM elements.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (clearCanvas) {
-      ctx.clearRect(0, 0, _widthInBitmapPixels, _heightInBitmapPixels);
+      ctx.clearRect(0, 0, _widthInBitmapPixels * _density,
+          _heightInBitmapPixels * _density);
     }
 
     // This scale makes sure that 1 CSS pixel is translated to the correct
     // number of bitmap pixels.
-    ctx.scale(EngineWindow.browserDevicePixelRatio,
-        EngineWindow.browserDevicePixelRatio);
+    ctx.scale(dpi, dpi);
   }
+
+  /// Returns effective dpi (browser DPI and pixel density due to transform).
+  double get dpi =>
+      EnginePlatformDispatcher.browserDevicePixelRatio * _density;
 
   void resetTransform() {
     final html.CanvasElement? canvas = _canvas;
@@ -319,9 +358,9 @@ class _CanvasPool extends _SaveStackTracking {
     }
   }
 
-  // Returns a data URI containing a representation of the image in this
-  // canvas.
-  String toDataUrl() => _canvas!.toDataUrl();
+  // Returns a "data://" URI containing a representation of the image in this
+  // canvas in PNG format.
+  String toDataUrl() => _canvas?.toDataUrl() ?? '';
 
   @override
   void save() {
@@ -443,7 +482,11 @@ class _CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       html.CanvasRenderingContext2D ctx = context;
       _runPath(ctx, path as SurfacePath);
-      ctx.clip();
+      if (path.fillType == ui.PathFillType.nonZero) {
+        ctx.clip();
+      } else {
+        ctx.clip('evenodd');
+      }
     }
   }
 
@@ -686,8 +729,9 @@ class _CanvasPool extends _SaveStackTracking {
 class ContextStateHandle {
   final html.CanvasRenderingContext2D context;
   final _CanvasPool _canvasPool;
+  final double density;
 
-  ContextStateHandle(this._canvasPool, this.context);
+  ContextStateHandle(this._canvasPool, this.context, this.density);
   ui.BlendMode? _currentBlendMode = ui.BlendMode.srcOver;
   ui.StrokeCap? _currentStrokeCap = ui.StrokeCap.butt;
   ui.StrokeJoin? _currentStrokeJoin = ui.StrokeJoin.miter;
@@ -761,7 +805,7 @@ class ContextStateHandle {
   /// Sets paint properties on the current canvas.
   ///
   /// [tearDownPaint] must be called after calling this method.
-  void setUpPaint(SurfacePaintData paint) {
+  void setUpPaint(SurfacePaintData paint, ui.Rect? shaderBounds) {
     if (assertionsEnabled) {
       assert(!_debugIsPaintSetUp);
       _debugIsPaintSetUp = true;
@@ -776,7 +820,8 @@ class ContextStateHandle {
     if (paint.shader != null) {
       final EngineGradient engineShader = paint.shader as EngineGradient;
       final Object paintStyle =
-          engineShader.createPaintStyle(_canvasPool.context);
+          engineShader.createPaintStyle(_canvasPool.context, shaderBounds,
+              density);
       fillStyle = paintStyle;
       strokeStyle = paintStyle;
     } else if (paint.color != null) {

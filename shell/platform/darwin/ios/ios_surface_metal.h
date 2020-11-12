@@ -8,16 +8,18 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
 @class CAMetalLayer;
 
 namespace flutter {
 
-class IOSSurfaceMetal final : public IOSSurface, public GPUSurfaceDelegate {
+class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetal final : public IOSSurface,
+                                                              public GPUSurfaceDelegate {
  public:
   IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
                   std::shared_ptr<IOSContext> context,
-                  FlutterPlatformViewsController* platform_views_controller);
+                  const std::shared_ptr<IOSExternalViewEmbedder>& external_view_embedder);
 
   // |IOSSurface|
   ~IOSSurfaceMetal() override;

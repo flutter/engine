@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/common/persistent_cache.h"
+#include "flutter/common/graphics/persistent_cache.h"
 
 #include <memory>
 
@@ -185,9 +185,10 @@ TEST_F(ShellTest, CanLoadSkSLsFromAsset) {
   ResetAssetManager();
   auto asset_manager = std::make_shared<AssetManager>();
   RunConfiguration config(nullptr, asset_manager);
-  asset_manager->PushBack(
-      std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
-          asset_dir.path().c_str(), false, fml::FilePermission::kRead)));
+  asset_manager->PushBack(std::make_unique<DirectoryAssetBundle>(
+      fml::OpenDirectory(asset_dir.path().c_str(), false,
+                         fml::FilePermission::kRead),
+      false));
   CheckTwoSkSLsAreLoaded();
 
   // 3rd, test the content of the SkSLs in the asset.
@@ -267,6 +268,39 @@ TEST_F(ShellTest, CanPurgePersistentCache) {
   // Verify that the dummy is purged.
   file = fml::OpenFileReadOnly(cache_dir, "test");
   ASSERT_FALSE(file.is_valid());
+
+  // Cleanup
+  fml::RemoveFilesInDirectory(base_dir.fd());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, PurgeAllowsFutureSkSLCache) {
+  sk_sp<SkData> shader_key = SkData::MakeWithCString("key");
+  sk_sp<SkData> shader_value = SkData::MakeWithCString("value");
+  std::string shader_filename = PersistentCache::SkKeyToFilePath(*shader_key);
+
+  fml::ScopedTemporaryDirectory base_dir;
+  ASSERT_TRUE(base_dir.fd().is_valid());
+  PersistentCache::SetCacheDirectoryPath(base_dir.path());
+  PersistentCache::ResetCacheForProcess();
+
+  // Run engine with purge_persistent_cache and cache_sksl.
+  auto settings = CreateSettingsForFixture();
+  settings.purge_persistent_cache = true;
+  settings.cache_sksl = true;
+  auto config = RunConfiguration::InferFromSettings(settings);
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  RunEngine(shell.get(), std::move(config));
+  auto persistent_cache = PersistentCache::GetCacheForProcess();
+  ASSERT_EQ(persistent_cache->LoadSkSLs().size(), 0u);
+
+  // Store the cache and verify it's valid.
+  StorePersistentCache(persistent_cache, *shader_key, *shader_value);
+  std::promise<bool> io_flushed;
+  shell->GetTaskRunners().GetIOTaskRunner()->PostTask(
+      [&io_flushed]() { io_flushed.set_value(true); });
+  io_flushed.get_future().get();  // Wait for the IO thread to flush the file.
+  ASSERT_GT(persistent_cache->LoadSkSLs().size(), 0u);
 
   // Cleanup
   fml::RemoveFilesInDirectory(base_dir.fd());

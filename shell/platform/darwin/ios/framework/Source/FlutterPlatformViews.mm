@@ -9,13 +9,14 @@
 #include <memory>
 #include <string>
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/persistent_cache.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_factory.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
 namespace flutter {
@@ -32,8 +33,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
       overlay_view.reset([[FlutterOverlayView alloc] init]);
       overlay_view_wrapper.reset([[FlutterOverlayView alloc] init]);
 
-      std::unique_ptr<IOSSurface> ios_surface =
-          [overlay_view.get() createSurface:std::move(ios_context)];
+      auto ca_layer = fml::scoped_nsobject<CALayer>{[[overlay_view.get() layer] retain]};
+      std::unique_ptr<IOSSurface> ios_surface = ios_surface_factory_->CreateSurface(ca_layer);
       std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface();
 
       layer = std::make_shared<FlutterPlatformViewLayer>(
@@ -44,8 +45,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
       overlay_view.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale]);
       overlay_view_wrapper.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale]);
 
-      std::unique_ptr<IOSSurface> ios_surface =
-          [overlay_view.get() createSurface:std::move(ios_context)];
+      auto ca_layer = fml::scoped_nsobject<CALayer>{[[overlay_view.get() layer] retain]};
+      std::unique_ptr<IOSSurface> ios_surface = ios_surface_factory_->CreateSurface(ca_layer);
       std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface(gr_context);
 
       layer = std::make_shared<FlutterPlatformViewLayer>(
@@ -279,6 +280,11 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     CancelFrame();
     return PostPrerollResult::kSkipAndRetryFrame;
   }
+  // If the post preroll action is successful, we will display platform views in the current frame.
+  // In order to sync the rendering of the platform views (quartz) with skia's rendering,
+  // We need to begin an explicit CATransaction. This transaction needs to be submitted
+  // after the current frame is submitted.
+  BeginCATransaction();
   raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
   return PostPrerollResult::kSuccess;
 }
@@ -286,6 +292,9 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
+  // All the CATransactions should be committed by the end of the last frame,
+  // so catransaction_added_ must be false.
+  FML_DCHECK(!catransaction_added_);
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
 
   auto rtree_factory = RTreeFactory();
@@ -333,6 +342,9 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
 
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view) {
+  if (flutter_view_ == nullptr) {
+    return;
+  }
   FML_DCHECK(CATransform3DEqualToTransform(embedded_view.layer.transform, CATransform3DIdentity));
   ResetAnchor(embedded_view.layer);
   ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
@@ -389,7 +401,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
 void FlutterPlatformViewsController::CompositeWithParams(int view_id,
                                                          const EmbeddedViewParams& params) {
-  FML_DCHECK(flutter_view_);
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   UIView* touchInterceptor = touch_interceptors_[view_id].get();
   touchInterceptor.layer.transform = CATransform3DIdentity;
@@ -410,9 +421,8 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
 }
 
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
-  FML_DCHECK(flutter_view_);
-  // TODO(amirh): assert that this is running on the platform thread once we support the iOS
-  // embedded views thread configuration.
+  // Any UIKit related code has to run on main thread.
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
 
   // Do nothing if the view doesn't need to be composited.
   if (views_to_recomposite_.count(view_id) == 0) {
@@ -428,6 +438,8 @@ void FlutterPlatformViewsController::Reset() {
   for (UIView* sub_view in [flutter_view subviews]) {
     [sub_view removeFromSuperview];
   }
+  root_views_.clear();
+  touch_interceptors_.clear();
   views_.clear();
   composition_order_.clear();
   active_composition_order_.clear();
@@ -454,12 +466,11 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                                                  std::shared_ptr<IOSContext> ios_context,
                                                  std::unique_ptr<SurfaceFrame> frame) {
-  FML_DCHECK(flutter_view_);
-
   // Any UIKit related code has to run on main thread.
-  // When on a non-main thread, we only allow the rest of the method to run if there is no
-  // Pending UIView operations.
-  FML_DCHECK([[NSThread currentThread] isMainThread] || !HasPlatformViewThisOrNextFrame());
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
+  if (flutter_view_ == nullptr) {
+    return frame->Submit();
+  }
 
   DisposeViews();
 
@@ -543,11 +554,13 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   BringLayersIntoView(platform_view_layers);
   // Mark all layers as available, so they can be used in the next frame.
   layer_pool_->RecycleLayers();
-  // Reset the composition order, so next frame starts empty.
-  composition_order_.clear();
 
   did_submit &= frame->Submit();
 
+  // If the frame is submitted with embedded platform views,
+  // there should be a |[CATransaction begin]| call in this frame prior to all the drawing.
+  // If that case, we need to commit the transaction.
+  CommitCATransactionIfNeeded();
   return did_submit;
 }
 
@@ -580,7 +593,10 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
 
 void FlutterPlatformViewsController::EndFrame(
     bool should_resubmit_frame,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+  // Reset the composition order, so next frame starts empty.
+  composition_order_.clear();
+}
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLayer(
     GrDirectContext* gr_context,
@@ -660,6 +676,21 @@ void FlutterPlatformViewsController::DisposeViews() {
     views_to_recomposite_.erase(viewId);
   }
   views_to_dispose_.clear();
+}
+
+void FlutterPlatformViewsController::BeginCATransaction() {
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
+  FML_DCHECK(!catransaction_added_);
+  [CATransaction begin];
+  catransaction_added_ = true;
+}
+
+void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
+  if (catransaction_added_) {
+    FML_DCHECK([[NSThread currentThread] isMainThread]);
+    [CATransaction commit];
+    catransaction_added_ = false;
+  }
 }
 
 }  // namespace flutter
@@ -857,16 +888,16 @@ void FlutterPlatformViewsController::DisposeViews() {
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_platformViewsController.get()->getFlutterViewController() touchesBegan:touches withEvent:event];
+  [_platformViewsController->getFlutterViewController() touchesBegan:touches withEvent:event];
   _currentTouchPointersCount += touches.count;
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_platformViewsController.get()->getFlutterViewController() touchesMoved:touches withEvent:event];
+  [_platformViewsController->getFlutterViewController() touchesMoved:touches withEvent:event];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_platformViewsController.get()->getFlutterViewController() touchesEnded:touches withEvent:event];
+  [_platformViewsController->getFlutterViewController() touchesEnded:touches withEvent:event];
   _currentTouchPointersCount -= touches.count;
   // Touches in one touch sequence are sent to the touchesEnded method separately if different
   // fingers stop touching the screen at different time. So one touchesEnded method triggering does
@@ -878,8 +909,7 @@ void FlutterPlatformViewsController::DisposeViews() {
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_platformViewsController.get()->getFlutterViewController() touchesCancelled:touches
-                                                                     withEvent:event];
+  [_platformViewsController->getFlutterViewController() touchesCancelled:touches withEvent:event];
   _currentTouchPointersCount = 0;
   self.state = UIGestureRecognizerStateFailed;
 }

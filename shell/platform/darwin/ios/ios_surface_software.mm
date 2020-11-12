@@ -15,10 +15,11 @@
 
 namespace flutter {
 
-IOSSurfaceSoftware::IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
-                                       std::shared_ptr<IOSContext> context,
-                                       FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(std::move(context), platform_views_controller), layer_(std::move(layer)) {}
+IOSSurfaceSoftware::IOSSurfaceSoftware(
+    fml::scoped_nsobject<CALayer> layer,
+    std::shared_ptr<IOSContext> context,
+    const std::shared_ptr<IOSExternalViewEmbedder>& external_view_embedder)
+    : IOSSurface(std::move(context), external_view_embedder), layer_(std::move(layer)) {}
 
 IOSSurfaceSoftware::~IOSSurfaceSoftware() = default;
 
@@ -124,7 +125,7 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
 
 // |GPUSurfaceSoftwareDelegate|
 ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
-  return this;
+  return GetSurfaceExternalViewEmbedder().get();
 }
 
 }  // namespace flutter

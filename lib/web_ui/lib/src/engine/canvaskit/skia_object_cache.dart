@@ -105,18 +105,24 @@ abstract class SkiaObject<T extends Object> {
 /// collector to determine when it is safe to release the C++ object.
 ///
 /// In browsers that do not support weak references we pessimistically delete
-/// the underlying C++ object before the Dart object is garbage-collected. The
-/// current algorithm deletes objects at the end of every frame. This allows
-/// reusing the C++ objects within the frame. If the object is used again after
-/// is was deleted, we [resurrect] it based on the data available on the
-/// JavaScript side.
+/// the underlying C++ object before the Dart object is garbage-collected.
+///
+/// If [isResurrectionExpensive] is false the object is deleted at the end of
+/// the frame. If a deleted object is reused in a subsequent frame it is
+/// resurrected by calling [resurrect]. This allows reusing the C++ objects
+/// within the frame.
+///
+/// If [isResurrectionExpensive] is true the object is put in a LRU cache.
+/// Objects that are used least frequently are deleted from the cache when
+/// the cache limit is reached.
 ///
 /// The lifecycle of a resurrectable C++ object is as follows:
 ///
-/// - Create default: when instantiating a C++ object for a Dart object for the
-///   first time, the C++ object is populated with default data (the defaults are
-///   defined by Flutter; Skia defaults are corrected if necessary). The
-///   default object is created by [createDefault].
+/// - Create: a managed object is created using a default instance that's
+///   either supplied as a constructor argument, or obtained by calling
+///   [createDefault]. The data in the new object is expected to contain
+///   data matching Flutter's defaults (sometimes Skia defaults need to be
+///   adjusted).
 /// - Zero or more cycles of delete + resurrect: when a Dart object is reused
 ///   after its C++ object is deleted we create a new C++ object populated with
 ///   data from the current state of the Dart object. This is done using the
@@ -124,8 +130,15 @@ abstract class SkiaObject<T extends Object> {
 /// - Final delete: if a Dart object is never reused, it is GC'd after its
 ///   underlying C++ object is deleted. This is implemented by [SkiaObjects].
 abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> {
-  ManagedSkiaObject() {
-    final T defaultObject = createDefault();
+  /// Creates a managed Skia object.
+  ///
+  /// If `instance` is null calls [createDefault] to create a Skia object to
+  /// manage. Otherwise, uses the provided instance.
+  ///
+  /// The provided instance must not be managed by another [ManagedSkiaObject],
+  /// as it may lead to undefined behavior.
+  ManagedSkiaObject([T? instance]) {
+    final T defaultObject = instance ?? createDefault();
     rawSkiaObject = defaultObject;
     if (browserSupportsFinalizationRegistry) {
       // If FinalizationRegistry is supported we will only ever need the
@@ -239,25 +252,49 @@ abstract class OneShotSkiaObject<T extends Object> extends SkiaObject<T> {
   }
 }
 
-/// Manages the lifecycle of a Skia object owned by a wrapper object.
+/// Uses reference counting to manage the lifecycle of a Skia object owned by a
+/// wrapper object.
 ///
-/// When the wrapper is garbage collected, deletes the corresponding
-/// [skObject] (only in browsers that support weak references).
+/// When the wrapper is garbage collected, decrements the refcount (only in
+/// browsers that support weak references).
 ///
-/// The [delete] method can be used to eagerly delete the [skObject]
-/// before the wrapper is garbage collected.
+/// The [delete] method can be used to eagerly decrement the refcount before the
+/// wrapper is garbage collected.
 ///
 /// The [delete] method may be called any number of times. The box
 /// will only delete the object once.
-class SkiaObjectBox {
-  SkiaObjectBox(Object wrapper, this.skObject) {
+class SkiaObjectBox<T> {
+  SkiaObjectBox(Object wrapper, T skObject)
+      : this._(wrapper, skObject, skObject as SkDeletable, <SkiaObjectBox>{});
+
+  SkiaObjectBox._(Object wrapper, this.skObject, this._skDeletable, this._refs) {
+    if (assertionsEnabled) {
+      _debugStackTrace = StackTrace.current;
+    }
+    _refs.add(this);
     if (browserSupportsFinalizationRegistry) {
       boxRegistry.register(wrapper, this);
     }
   }
 
+  /// Reference handles to the same underlying [skObject].
+  final Set<SkiaObjectBox> _refs;
+
+  late final StackTrace? _debugStackTrace;
+  /// If asserts are enabled, the [StackTrace]s representing when a reference
+  /// was created.
+  List<StackTrace>? debugGetStackTraces() {
+    if (assertionsEnabled) {
+      return _refs
+          .map<StackTrace>((SkiaObjectBox box) => box._debugStackTrace!)
+          .toList();
+    }
+    return null;
+  }
+
   /// The Skia object whose lifecycle is being managed.
-  final SkDeletable skObject;
+  final T skObject;
+  final SkDeletable _skDeletable;
 
   /// Whether this object has been deleted.
   bool get isDeleted => _isDeleted;
@@ -269,16 +306,32 @@ class SkiaObjectBox {
     box.delete();
   }));
 
-  /// Deletes the [skObject].
+  /// Returns a clone of this object, which increases its reference count.
+  ///
+  /// Clones must be [dispose]d when finished.
+  SkiaObjectBox<T> clone(Object wrapper) {
+    assert(!_isDeleted, 'Cannot clone from a deleted handle.');
+    assert(_refs.isNotEmpty);
+    return SkiaObjectBox<T>._(wrapper, skObject, _skDeletable, _refs);
+  }
+
+  /// Decrements the reference count for the [skObject].
   ///
   /// Does nothing if the object has already been deleted.
+  ///
+  /// If this causes the reference count to drop to zero, deletes the
+  /// [skObject].
   void delete() {
     if (_isDeleted) {
+      assert(!_refs.contains(this));
       return;
     }
+    final bool removed = _refs.remove(this);
+    assert(removed);
     _isDeleted = true;
-    _skObjectDeleteQueue.add(skObject);
-    _skObjectCollector ??= _scheduleSkObjectCollection();
+    if (_refs.isEmpty) {
+      _scheduleSkObjectCollection(_skDeletable);
+    }
   }
 }
 
@@ -308,7 +361,7 @@ class SkiaObjects {
     if (_addedCleanupCallback) {
       return;
     }
-    window.rasterizer!.addPostFrameCallback(postFrameCleanUp);
+    EnginePlatformDispatcher.instance.rasterizer!.addPostFrameCallback(postFrameCleanUp);
     _addedCleanupCallback = true;
   }
 

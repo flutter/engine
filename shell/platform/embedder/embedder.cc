@@ -1,8 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
-// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 #define RAPIDJSON_HAS_STDSTRING 1
@@ -10,6 +8,7 @@
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -37,6 +36,7 @@ extern const intptr_t kPlatformStrongDillSize;
 }
 
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/file.h"
@@ -44,19 +44,22 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
-#include "flutter/shell/platform/embedder/embedder_safe_access.h"
+#include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/writer.h"
+
+#ifdef SHELL_ENABLE_GL
+#include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
+#endif
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
@@ -156,6 +159,7 @@ InferOpenGLPlatformViewCreationCallback(
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
+#ifdef SHELL_ENABLE_GL
   if (config->type != kOpenGL) {
     return nullptr;
   }
@@ -266,6 +270,9 @@ InferOpenGLPlatformViewCreationCallback(
             std::move(external_view_embedder)  // external view embedder
         );
       });
+#else
+  return nullptr;
+#endif
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -336,6 +343,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterOpenGLTexture* texture) {
+#ifdef SHELL_ENABLE_GL
   GrGLTextureInfo texture_info;
   texture_info.fTarget = texture->target;
   texture_info.fID = texture->name;
@@ -347,8 +355,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
                                    texture_info         //
   );
 
-  SkSurfaceProps surface_properties(
-      SkSurfaceProps::InitType::kLegacyFontHost_InitType);
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
   auto surface = SkSurface::MakeFromBackendTexture(
       context,                      // context
@@ -370,12 +377,16 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   }
 
   return surface;
+#else
+  return nullptr;
+#endif
 }
 
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterOpenGLFramebuffer* framebuffer) {
+#ifdef SHELL_ENABLE_GL
   GrGLFramebufferInfo framebuffer_info = {};
   framebuffer_info.fFormat = framebuffer->target;
   framebuffer_info.fFBOID = framebuffer->name;
@@ -388,8 +399,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       framebuffer_info     // framebuffer info
   );
 
-  SkSurfaceProps surface_properties(
-      SkSurfaceProps::InitType::kLegacyFontHost_InitType);
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
   auto surface = SkSurface::MakeFromBackendRenderTarget(
       context,                      //  context
@@ -409,6 +419,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     return nullptr;
   }
   return surface;
+#else
+  return nullptr;
+#endif
 }
 
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
@@ -603,6 +616,11 @@ FlutterEngineResult FlutterEngineCreateAOTData(
       auto aot_data = std::make_unique<_FlutterEngineAOTData>();
       const char* error = nullptr;
 
+#if OS_FUCHSIA
+      // TODO(gw280): https://github.com/flutter/flutter/issues/50285
+      // Dart doesn't implement Dart_LoadELF on Fuchsia
+      Dart_LoadedElf* loaded_elf = nullptr;
+#else
       Dart_LoadedElf* loaded_elf = Dart_LoadELF(
           source->elf_path,               // file path
           0,                              // file offset
@@ -612,6 +630,7 @@ FlutterEngineResult FlutterEngineCreateAOTData(
           &aot_data->vm_isolate_data,     // vm isolate data (out)
           &aot_data->vm_isolate_instrs    // vm isolate instr (out)
       );
+#endif
 
       if (loaded_elf == nullptr) {
         return LOG_EMBEDDER_ERROR(kInvalidArguments, error);
@@ -630,18 +649,19 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 }
 
 FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
-  if (data) {
-    data->loaded_elf = nullptr;
-    data->vm_snapshot_data = nullptr;
-    data->vm_snapshot_instrs = nullptr;
-    data->vm_isolate_data = nullptr;
-    data->vm_isolate_instrs = nullptr;
+  if (!data) {
+    // Deleting a null object should be a no-op.
+    return kSuccess;
   }
+
+  // Created in a unique pointer in `FlutterEngineCreateAOTData`.
+  delete data;
   return kSuccess;
 }
 
-void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
-                                      flutter::Settings& settings) {
+void PopulateSnapshotMappingCallbacks(
+    const FlutterProjectArgs* args,
+    flutter::Settings& settings) {  // NOLINT(google-runtime-references)
   // There are no ownership concerns here as all mappings are owned by the
   // embedder and not the engine.
   auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
@@ -822,9 +842,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   if (SAFE_ACCESS(args, root_isolate_create_callback, nullptr) != nullptr) {
     VoidCallback callback =
         SAFE_ACCESS(args, root_isolate_create_callback, nullptr);
-    settings.root_isolate_create_callback = [callback, user_data]() {
-      callback(user_data);
-    };
+    settings.root_isolate_create_callback =
+        [callback, user_data](const auto& isolate) { callback(user_data); };
   }
 
   flutter::PlatformViewEmbedder::UpdateSemanticsNodesCallback
@@ -1017,6 +1036,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         return std::make_unique<flutter::Rasterizer>(shell);
       };
 
+#ifdef SHELL_ENABLE_GL
   // TODO(chinmaygarde): This is the wrong spot for this. It belongs in the
   // platform view jump table.
   flutter::EmbedderExternalTextureGL::ExternalTextureCallback
@@ -1075,6 +1095,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
       };
     }
   }
+#endif
 
   auto thread_host =
       flutter::EmbedderThreadHost::CreateEmbedderOrEngineManagedThreadHost(
@@ -1103,6 +1124,20 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     }
   }
 
+  if (SAFE_ACCESS(args, dart_entrypoint_argc, 0) > 0) {
+    if (SAFE_ACCESS(args, dart_entrypoint_argv, nullptr) == nullptr) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Could not determine Dart entrypoint arguments "
+                                "as dart_entrypoint_argc "
+                                "was set, but dart_entrypoint_argv was null.");
+    }
+    std::vector<std::string> arguments(args->dart_entrypoint_argc);
+    for (int i = 0; i < args->dart_entrypoint_argc; ++i) {
+      arguments[i] = std::string{args->dart_entrypoint_argv[i]};
+    }
+    settings.dart_entrypoint_args = std::move(arguments);
+  }
+
   if (!run_configuration.IsValid()) {
     return LOG_EMBEDDER_ERROR(
         kInvalidArguments,
@@ -1116,8 +1151,11 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
       std::move(settings),           //
       std::move(run_configuration),  //
       on_create_platform_view,       //
-      on_create_rasterizer,          //
-      external_texture_callback      //
+      on_create_rasterizer           //
+#ifdef SHELL_ENABLE_GL
+      ,
+      external_texture_callback  //
+#endif
   );
 
   // Release the ownership of the embedder engine to the caller.
@@ -1884,8 +1922,7 @@ FlutterEngineResult FlutterEnginePostDartObject(
         dart_object.value.as_external_typed_data.data = buffer;
         dart_object.value.as_external_typed_data.peer = peer;
         dart_object.value.as_external_typed_data.callback =
-            +[](void* unused_isolate_callback_data,
-                Dart_WeakPersistentHandle unused_handle, void* peer) {
+            +[](void* unused_isolate_callback_data, void* peer) {
               auto typed_peer = reinterpret_cast<ExternalTypedDataPeer*>(peer);
               typed_peer->trampoline(typed_peer->user_data);
               delete typed_peer;
@@ -1954,4 +1991,113 @@ FlutterEngineResult FlutterEnginePostCallbackOnAllNativeThreads(
              : LOG_EMBEDDER_ERROR(kInvalidArguments,
                                   "Internal error while attempting to post "
                                   "tasks to all threads.");
+}
+
+namespace {
+static bool ValidDisplayConfiguration(const FlutterEngineDisplay* displays,
+                                      size_t display_count) {
+  std::set<FlutterEngineDisplayId> display_ids;
+  for (size_t i = 0; i < display_count; i++) {
+    if (displays[i].single_display && display_count != 1) {
+      return false;
+    }
+    display_ids.insert(displays[i].display_id);
+  }
+
+  return display_ids.size() == display_count;
+}
+}  // namespace
+
+FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
+    FLUTTER_API_SYMBOL(FlutterEngine) raw_engine,
+    const FlutterEngineDisplaysUpdateType update_type,
+    const FlutterEngineDisplay* embedder_displays,
+    size_t display_count) {
+  if (raw_engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (!ValidDisplayConfiguration(embedder_displays, display_count)) {
+    return LOG_EMBEDDER_ERROR(
+        kInvalidArguments,
+        "Invalid FlutterEngineDisplay configuration specified.");
+  }
+
+  auto engine = reinterpret_cast<flutter::EmbedderEngine*>(raw_engine);
+
+  switch (update_type) {
+    case kFlutterEngineDisplaysUpdateTypeStartup: {
+      std::vector<flutter::Display> displays;
+      for (size_t i = 0; i < display_count; i++) {
+        flutter::Display display =
+            flutter::Display(embedder_displays[i].refresh_rate);
+        if (!embedder_displays[i].single_display) {
+          display = flutter::Display(embedder_displays[i].display_id,
+                                     embedder_displays[i].refresh_rate);
+        }
+        displays.push_back(display);
+      }
+      engine->GetShell().OnDisplayUpdates(flutter::DisplayUpdateType::kStartup,
+                                          displays);
+      return kSuccess;
+    }
+    default:
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Invalid FlutterEngineDisplaysUpdateType type specified.");
+  }
+}
+
+FlutterEngineResult FlutterEngineGetProcAddresses(
+    FlutterEngineProcTable* table) {
+  if (!table) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Null table specified.");
+  }
+#define SET_PROC(member, function)        \
+  if (STRUCT_HAS_MEMBER(table, member)) { \
+    table->member = &function;            \
+  }
+
+  SET_PROC(CreateAOTData, FlutterEngineCreateAOTData);
+  SET_PROC(CollectAOTData, FlutterEngineCollectAOTData);
+  SET_PROC(Run, FlutterEngineRun);
+  SET_PROC(Shutdown, FlutterEngineShutdown);
+  SET_PROC(Initialize, FlutterEngineInitialize);
+  SET_PROC(Deinitialize, FlutterEngineDeinitialize);
+  SET_PROC(RunInitialized, FlutterEngineRunInitialized);
+  SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
+  SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
+  SET_PROC(SendPlatformMessage, FlutterEngineSendPlatformMessage);
+  SET_PROC(PlatformMessageCreateResponseHandle,
+           FlutterPlatformMessageCreateResponseHandle);
+  SET_PROC(PlatformMessageReleaseResponseHandle,
+           FlutterPlatformMessageReleaseResponseHandle);
+  SET_PROC(SendPlatformMessageResponse,
+           FlutterEngineSendPlatformMessageResponse);
+  SET_PROC(RegisterExternalTexture, FlutterEngineRegisterExternalTexture);
+  SET_PROC(UnregisterExternalTexture, FlutterEngineUnregisterExternalTexture);
+  SET_PROC(MarkExternalTextureFrameAvailable,
+           FlutterEngineMarkExternalTextureFrameAvailable);
+  SET_PROC(UpdateSemanticsEnabled, FlutterEngineUpdateSemanticsEnabled);
+  SET_PROC(UpdateAccessibilityFeatures,
+           FlutterEngineUpdateAccessibilityFeatures);
+  SET_PROC(DispatchSemanticsAction, FlutterEngineDispatchSemanticsAction);
+  SET_PROC(OnVsync, FlutterEngineOnVsync);
+  SET_PROC(ReloadSystemFonts, FlutterEngineReloadSystemFonts);
+  SET_PROC(TraceEventDurationBegin, FlutterEngineTraceEventDurationBegin);
+  SET_PROC(TraceEventDurationEnd, FlutterEngineTraceEventDurationEnd);
+  SET_PROC(TraceEventInstant, FlutterEngineTraceEventInstant);
+  SET_PROC(PostRenderThreadTask, FlutterEnginePostRenderThreadTask);
+  SET_PROC(GetCurrentTime, FlutterEngineGetCurrentTime);
+  SET_PROC(RunTask, FlutterEngineRunTask);
+  SET_PROC(UpdateLocales, FlutterEngineUpdateLocales);
+  SET_PROC(RunsAOTCompiledDartCode, FlutterEngineRunsAOTCompiledDartCode);
+  SET_PROC(PostDartObject, FlutterEnginePostDartObject);
+  SET_PROC(NotifyLowMemoryWarning, FlutterEngineNotifyLowMemoryWarning);
+  SET_PROC(PostCallbackOnAllNativeThreads,
+           FlutterEnginePostCallbackOnAllNativeThreads);
+  SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
+#undef SET_PROC
+
+  return kSuccess;
 }

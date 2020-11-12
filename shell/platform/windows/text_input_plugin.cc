@@ -61,35 +61,9 @@ void TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
     return;
   }
   if (action == WM_KEYDOWN) {
+    // Most editing keys (arrow keys, backspace, delete, etc.) are handled in
+    // the framework, so don't need to be handled at this layer.
     switch (key) {
-      case VK_LEFT:
-        if (active_model_->MoveCursorBack()) {
-          SendStateUpdate(*active_model_);
-        }
-        break;
-      case VK_RIGHT:
-        if (active_model_->MoveCursorForward()) {
-          SendStateUpdate(*active_model_);
-        }
-        break;
-      case VK_END:
-        active_model_->MoveCursorToEnd();
-        SendStateUpdate(*active_model_);
-        break;
-      case VK_HOME:
-        active_model_->MoveCursorToBeginning();
-        SendStateUpdate(*active_model_);
-        break;
-      case VK_BACK:
-        if (active_model_->Backspace()) {
-          SendStateUpdate(*active_model_);
-        }
-        break;
-      case VK_DELETE:
-        if (active_model_->Delete()) {
-          SendStateUpdate(*active_model_);
-        }
-        break;
       case VK_RETURN:
         EnterPressed(active_model_.get());
         break;
@@ -195,7 +169,8 @@ void TextInputPlugin::HandleMethodCall(
     if (base == -1 && extent == -1) {
       base = extent = 0;
     }
-    active_model_->SetEditingState(base, extent, text->value.GetString());
+    active_model_->SetText(text->value.GetString());
+    active_model_->SetSelection(TextRange(base, extent));
   } else {
     result->NotImplemented();
     return;
@@ -210,14 +185,14 @@ void TextInputPlugin::SendStateUpdate(const TextInputModel& model) {
   auto& allocator = args->GetAllocator();
   args->PushBack(client_id_, allocator);
 
+  TextRange selection = model.selection();
   rapidjson::Value editing_state(rapidjson::kObjectType);
   editing_state.AddMember(kComposingBaseKey, -1, allocator);
   editing_state.AddMember(kComposingExtentKey, -1, allocator);
   editing_state.AddMember(kSelectionAffinityKey, kAffinityDownstream,
                           allocator);
-  editing_state.AddMember(kSelectionBaseKey, model.selection_base(), allocator);
-  editing_state.AddMember(kSelectionExtentKey, model.selection_extent(),
-                          allocator);
+  editing_state.AddMember(kSelectionBaseKey, selection.base(), allocator);
+  editing_state.AddMember(kSelectionExtentKey, selection.extent(), allocator);
   editing_state.AddMember(kSelectionIsDirectionalKey, false, allocator);
   editing_state.AddMember(
       kTextKey, rapidjson::Value(model.GetText(), allocator).Move(), allocator);

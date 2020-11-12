@@ -5,10 +5,12 @@
 package io.flutter.embedding.android;
 
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -62,7 +64,7 @@ import java.util.Arrays;
  * the same form. <strong>Do not use this class as a convenient shortcut for any other
  * behavior.</strong>
  */
-/* package */ final class FlutterActivityAndFragmentDelegate {
+/* package */ class FlutterActivityAndFragmentDelegate implements ExclusiveAppComponent<Activity> {
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
   private static final String FRAMEWORK_RESTORATION_BUNDLE_KEY = "framework";
   private static final String PLUGINS_RESTORATION_BUNDLE_KEY = "plugins";
@@ -154,14 +156,6 @@ import java.util.Arrays;
       setupFlutterEngine();
     }
 
-    // Regardless of whether or not a FlutterEngine already existed, the PlatformPlugin
-    // is bound to a specific Activity. Therefore, it needs to be created and configured
-    // every time this Fragment attaches to a new Activity.
-    // TODO(mattcarroll): the PlatformPlugin needs to be reimagined because it implicitly takes
-    //                    control of the entire window. This is unacceptable for non-fullscreen
-    //                    use-cases.
-    platformPlugin = host.providePlatformPlugin(host.getActivity(), flutterEngine);
-
     if (host.shouldAttachEngineToActivity()) {
       // Notify any plugins that are currently attached to our FlutterEngine that they
       // are now attached to an Activity.
@@ -172,13 +166,30 @@ import java.util.Arrays;
       // which means there shouldn't be any possibility for the Fragment Lifecycle to get out of
       // sync with the Activity. We use the Fragment's Lifecycle because it is possible that the
       // attached Activity is not a LifecycleOwner.
-      Log.v(TAG, "Attaching FlutterEngine to the Activity that owns this Fragment.");
-      flutterEngine
-          .getActivityControlSurface()
-          .attachToActivity(host.getActivity(), host.getLifecycle());
+      Log.v(TAG, "Attaching FlutterEngine to the Activity that owns this delegate.");
+      flutterEngine.getActivityControlSurface().attachToActivity(this, host.getLifecycle());
     }
 
+    // Regardless of whether or not a FlutterEngine already existed, the PlatformPlugin
+    // is bound to a specific Activity. Therefore, it needs to be created and configured
+    // every time this Fragment attaches to a new Activity.
+    // TODO(mattcarroll): the PlatformPlugin needs to be reimagined because it implicitly takes
+    //                    control of the entire window. This is unacceptable for non-fullscreen
+    //                    use-cases.
+    platformPlugin = host.providePlatformPlugin(host.getActivity(), flutterEngine);
+
     host.configureFlutterEngine(flutterEngine);
+  }
+
+  @Override
+  public @NonNull Activity getAppComponent() {
+    final Activity activity = host.getActivity();
+    if (activity == null) {
+      throw new AssertionError(
+          "FlutterActivityAndFragmentDelegate's getAppComponent should only "
+              + "be queried after onAttach, when the host's activity should always be non-null");
+    }
+    return activity;
   }
 
   /**
@@ -353,19 +364,23 @@ import java.util.Arrays;
       // So this is expected behavior in many cases.
       return;
     }
-
+    String initialRoute = host.getInitialRoute();
+    if (initialRoute == null) {
+      initialRoute = maybeGetInitialRouteFromIntent(host.getActivity().getIntent());
+      if (initialRoute == null) {
+        initialRoute = DEFAULT_INITIAL_ROUTE;
+      }
+    }
     Log.v(
         TAG,
         "Executing Dart entrypoint: "
             + host.getDartEntrypointFunctionName()
             + ", and sending initial route: "
-            + host.getInitialRoute());
+            + initialRoute);
 
     // The engine needs to receive the Flutter app's initial route before executing any
     // Dart code to ensure that the initial route arrives in time to be applied.
-    if (host.getInitialRoute() != null) {
-      flutterEngine.getNavigationChannel().setInitialRoute(host.getInitialRoute());
-    }
+    flutterEngine.getNavigationChannel().setInitialRoute(initialRoute);
 
     String appBundlePathOverride = host.getAppBundlePath();
     if (appBundlePathOverride == null || appBundlePathOverride.isEmpty()) {
@@ -377,6 +392,16 @@ import java.util.Arrays;
         new DartExecutor.DartEntrypoint(
             appBundlePathOverride, host.getDartEntrypointFunctionName());
     flutterEngine.getDartExecutor().executeDartEntrypoint(entrypoint);
+  }
+
+  private String maybeGetInitialRouteFromIntent(Intent intent) {
+    if (host.shouldHandleDeeplinking()) {
+      Uri data = intent.getData();
+      if (data != null && !data.toString().isEmpty()) {
+        return data.toString();
+      }
+    }
+    return null;
   }
 
   /**
@@ -478,6 +503,24 @@ import java.util.Arrays;
       flutterEngine.getActivityControlSurface().onSaveInstanceState(plugins);
       bundle.putBundle(PLUGINS_RESTORATION_BUNDLE_KEY, plugins);
     }
+  }
+
+  @Override
+  public void detachFromFlutterEngine() {
+    if (host.shouldDestroyEngineWithHost()) {
+      // The host owns the engine and should never have its engine taken by another exclusive
+      // activity.
+      throw new AssertionError(
+          "The internal FlutterEngine created by "
+              + host
+              + " has been attached to by another activity. To persist a FlutterEngine beyond the "
+              + "ownership of this activity, explicitly create a FlutterEngine");
+    }
+
+    // Default, but customizable, behavior is for the host to call {@link #onDetach}
+    // deterministically as to not mix more events during the lifecycle of the next exclusive
+    // activity.
+    host.detachFromFlutterEngine();
   }
 
   /**
@@ -595,8 +638,12 @@ import java.util.Arrays;
   void onNewIntent(@NonNull Intent intent) {
     ensureAlive();
     if (flutterEngine != null) {
-      Log.v(TAG, "Forwarding onNewIntent() to FlutterEngine.");
+      Log.v(TAG, "Forwarding onNewIntent() to FlutterEngine and sending pushRoute message.");
       flutterEngine.getActivityControlSurface().onNewIntent(intent);
+      String initialRoute = maybeGetInitialRouteFromIntent(intent);
+      if (initialRoute != null && !initialRoute.isEmpty()) {
+        flutterEngine.getNavigationChannel().pushRoute(initialRoute);
+      }
     } else {
       Log.w(TAG, "onNewIntent() invoked before FlutterFragment was attached to an Activity.");
     }
@@ -708,6 +755,10 @@ import java.util.Arrays;
     @NonNull
     Context getContext();
 
+    /** Returns true if the delegate should retrieve the initial route from the {@link Intent}. */
+    @Nullable
+    boolean shouldHandleDeeplinking();
+
     /**
      * Returns the host {@link Activity} or the {@code Activity} that is currently attached to the
      * host {@code Fragment}.
@@ -740,6 +791,15 @@ import java.util.Arrays;
      * provided.
      */
     boolean shouldDestroyEngineWithHost();
+
+    /**
+     * Callback called when the {@link FlutterEngine} has been attached to by another activity
+     * before this activity was destroyed.
+     *
+     * <p>The expected behavior is for this activity to synchronously stop using the {@link
+     * FlutterEngine} to avoid lifecycle crosstalk with the new activity.
+     */
+    void detachFromFlutterEngine();
 
     /** Returns the Dart entrypoint that should run when a new {@link FlutterEngine} is created. */
     @NonNull

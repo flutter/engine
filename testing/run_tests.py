@@ -113,6 +113,7 @@ def RunCCTests(build_dir, filter):
   # https://github.com/flutter/flutter/issues/36294
   if not IsWindows():
     RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, shuffle_flags)
   else:
     RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, shuffle_flags)
 
@@ -131,6 +132,8 @@ def RunCCTests(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
 
+  RunEngineExecutable(build_dir, 'tonic_unittests', filter, shuffle_flags)
+
   if not IsWindows():
     # https://github.com/flutter/flutter/issues/36295
     RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags)
@@ -147,6 +150,7 @@ def RunCCTests(build_dir, filter):
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
     RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():

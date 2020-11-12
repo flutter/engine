@@ -22,6 +22,9 @@ static constexpr char kHideMethod[] = "TextInput.hide";
 static constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
 static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
+static constexpr char kSetEditableSizeAndTransform[] =
+    "TextInput.setEditableSizeAndTransform";
+static constexpr char kSetMarkedTextRect[] = "TextInput.setMarkedTextRect";
 
 static constexpr char kInputActionKey[] = "inputAction";
 static constexpr char kTextInputTypeKey[] = "inputType";
@@ -33,6 +36,8 @@ static constexpr char kSelectionAffinityKey[] = "selectionAffinity";
 static constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
 static constexpr char kComposingBaseKey[] = "composingBase";
 static constexpr char kComposingExtentKey[] = "composingExtent";
+
+static constexpr char kTransform[] = "transform";
 
 static constexpr char kTextAffinityDownstream[] = "TextAffinity.downstream";
 static constexpr char kMultilineInputType[] = "TextInputType.multiline";
@@ -57,6 +62,19 @@ struct _FlTextInputPlugin {
   GtkIMContext* im_context;
 
   flutter::TextInputModel* text_model;
+
+  // The owning Flutter view.
+  FlView* view;
+
+  // A 4x4 matrix that maps from `EditableText` local coordinates to the
+  // coordinate system of `PipelineOwner.rootNode`.
+  double editabletext_transform[4][4];
+
+  // The smallest rect, in local coordinates, of the text in the composing
+  // range, or of the caret in the case where there is no current composing
+  // range. This value is updated via `TextInput.setMarkedTextRect` messages
+  // over the text input channel.
+  GdkRectangle composing_rect;
 };
 
 G_DEFINE_TYPE(FlTextInputPlugin, fl_text_input_plugin, G_TYPE_OBJECT)
@@ -90,23 +108,31 @@ static void update_editing_state(FlTextInputPlugin* self) {
   fl_value_append_take(args, fl_value_new_int(self->client_id));
   g_autoptr(FlValue) value = fl_value_new_map();
 
+  TextRange selection = self->text_model->selection();
   fl_value_set_string_take(
       value, kTextKey,
       fl_value_new_string(self->text_model->GetText().c_str()));
-  fl_value_set_string_take(
-      value, kSelectionBaseKey,
-      fl_value_new_int(self->text_model->selection_base()));
-  fl_value_set_string_take(
-      value, kSelectionExtentKey,
-      fl_value_new_int(self->text_model->selection_extent()));
+  fl_value_set_string_take(value, kSelectionBaseKey,
+                           fl_value_new_int(selection.base()));
+  fl_value_set_string_take(value, kSelectionExtentKey,
+                           fl_value_new_int(selection.extent()));
+
+  int composing_base = self->text_model->composing()
+                           ? self->text_model->composing_range().base()
+                           : -1;
+  int composing_extent = self->text_model->composing()
+                             ? self->text_model->composing_range().extent()
+                             : -1;
+  fl_value_set_string_take(value, kComposingBaseKey,
+                           fl_value_new_int(composing_base));
+  fl_value_set_string_take(value, kComposingExtentKey,
+                           fl_value_new_int(composing_extent));
 
   // The following keys are not implemented and set to default values.
   fl_value_set_string_take(value, kSelectionAffinityKey,
                            fl_value_new_string(kTextAffinityDownstream));
   fl_value_set_string_take(value, kSelectionIsDirectionalKey,
                            fl_value_new_bool(FALSE));
-  fl_value_set_string_take(value, kComposingBaseKey, fl_value_new_int(-1));
-  fl_value_set_string_take(value, kComposingExtentKey, fl_value_new_int(-1));
 
   fl_value_append(args, value);
 
@@ -139,9 +165,41 @@ static void perform_action(FlTextInputPlugin* self) {
                                   nullptr, perform_action_response_cb, self);
 }
 
+// Signal handler for GtkIMContext::preedit-start
+static void im_preedit_start_cb(FlTextInputPlugin* self) {
+  self->text_model->BeginComposing();
+
+  // Set the top-level window used for system input method windows.
+  GdkWindow* window =
+      gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
+  gtk_im_context_set_client_window(self->im_context, window);
+}
+
+// Signal handler for GtkIMContext::preedit-changed
+static void im_preedit_changed_cb(FlTextInputPlugin* self) {
+  g_autofree gchar* buf = nullptr;
+  gint cursor_offset = 0;
+  gtk_im_context_get_preedit_string(self->im_context, &buf, nullptr,
+                                    &cursor_offset);
+  cursor_offset += self->text_model->composing_range().base();
+  self->text_model->UpdateComposingText(buf);
+  self->text_model->SetSelection(TextRange(cursor_offset, cursor_offset));
+
+  update_editing_state(self);
+}
+
 // Signal handler for GtkIMContext::commit
 static void im_commit_cb(FlTextInputPlugin* self, const gchar* text) {
   self->text_model->AddText(text);
+  if (self->text_model->composing()) {
+    self->text_model->CommitComposing();
+  }
+  update_editing_state(self);
+}
+
+// Signal handler for GtkIMContext::preedit-end
+static void im_preedit_end_cb(FlTextInputPlugin* self) {
+  self->text_model->EndComposing();
   update_editing_state(self);
 }
 
@@ -184,12 +242,13 @@ static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
   // Clear the multiline flag, then set it only if the field is multiline.
   self->input_multiline = FALSE;
   FlValue* input_type_value =
-      fl_value_lookup(config_value, fl_value_new_string(kTextInputTypeKey));
+      fl_value_lookup_string(config_value, kTextInputTypeKey);
   if (fl_value_get_type(input_type_value) == FL_VALUE_TYPE_MAP) {
-    FlValue* input_type_name = fl_value_lookup(
-        input_type_value, fl_value_new_string(kTextInputTypeNameKey));
-    if (fl_value_equal(input_type_name,
-                       fl_value_new_string(kMultilineInputType))) {
+    FlValue* input_type_name =
+        fl_value_lookup_string(input_type_value, kTextInputTypeNameKey);
+    if (fl_value_get_type(input_type_name) == FL_VALUE_TYPE_STRING &&
+        g_strcmp0(fl_value_get_string(input_type_name), kMultilineInputType) ==
+            0) {
       self->input_multiline = TRUE;
     }
   }
@@ -199,6 +258,11 @@ static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
 
 // Shows the input method.
 static FlMethodResponse* show(FlTextInputPlugin* self) {
+  // Set the top-level window used for system input method windows.
+  GdkWindow* window =
+      gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
+  gtk_im_context_set_client_window(self->im_context, window);
+
   gtk_im_context_focus_in(self->im_context);
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
@@ -209,6 +273,8 @@ static FlMethodResponse* set_editing_state(FlTextInputPlugin* self,
                                            FlValue* args) {
   const gchar* text =
       fl_value_get_string(fl_value_lookup_string(args, kTextKey));
+  self->text_model->SetText(text);
+
   int64_t selection_base =
       fl_value_get_int(fl_value_lookup_string(args, kSelectionBaseKey));
   int64_t selection_extent =
@@ -218,7 +284,21 @@ static FlMethodResponse* set_editing_state(FlTextInputPlugin* self,
     selection_base = selection_extent = 0;
   }
 
-  self->text_model->SetEditingState(selection_base, selection_extent, text);
+  self->text_model->SetText(text);
+  self->text_model->SetSelection(TextRange(selection_base, selection_extent));
+
+  int64_t composing_base =
+      fl_value_get_int(fl_value_lookup_string(args, kComposingBaseKey));
+  int64_t composing_extent =
+      fl_value_get_int(fl_value_lookup_string(args, kComposingExtentKey));
+  if (composing_base == -1 && composing_extent == -1) {
+    self->text_model->EndComposing();
+  } else {
+    size_t composing_start = std::min(composing_base, composing_extent);
+    size_t cursor_offset = selection_base - composing_start;
+    self->text_model->SetComposingRange(
+        TextRange(composing_base, composing_extent), cursor_offset);
+  }
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
@@ -233,6 +313,83 @@ static FlMethodResponse* clear_client(FlTextInputPlugin* self) {
 // Hides the input method.
 static FlMethodResponse* hide(FlTextInputPlugin* self) {
   gtk_im_context_focus_out(self->im_context);
+
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+}
+
+// Update the IM cursor position.
+//
+// As text is input by the user, the framework sends two streams of updates
+// over the text input channel: updates to the composing rect (cursor rect when
+// not in IME composing mode) and updates to the matrix transform from local
+// coordinates to Flutter root coordinates. This function is called after each
+// of these updates. It transforms the composing rect to GTK window coordinates
+// and notifies GTK of the updated cursor position.
+static void update_im_cursor_position(FlTextInputPlugin* self) {
+  // Skip update if not composing to avoid setting to position 0.
+  if (!self->text_model->composing()) {
+    return;
+  }
+
+  // Transform the x, y positions of the cursor from local coordinates to
+  // Flutter view coordinates.
+  gint x = self->composing_rect.x * self->editabletext_transform[0][0] +
+           self->composing_rect.y * self->editabletext_transform[1][0] +
+           self->editabletext_transform[3][0] + self->composing_rect.width;
+  gint y = self->composing_rect.x * self->editabletext_transform[0][1] +
+           self->composing_rect.y * self->editabletext_transform[1][1] +
+           self->editabletext_transform[3][1] + self->composing_rect.height;
+
+  // Transform from Flutter view coordinates to GTK window coordinates.
+  GdkRectangle preedit_rect;
+  gtk_widget_translate_coordinates(
+      GTK_WIDGET(self->view), gtk_widget_get_toplevel(GTK_WIDGET(self->view)),
+      x, y, &preedit_rect.x, &preedit_rect.y);
+
+  // Set the cursor location in window coordinates so that GTK can position any
+  // system input method windows.
+  gtk_im_context_set_cursor_location(self->im_context, &preedit_rect);
+}
+
+// Handles updates to the EditableText size and position from the framework.
+//
+// On changes to the size or position of the RenderObject underlying the
+// EditableText, this update may be triggered. It provides an updated size and
+// transform from the local coordinate system of the EditableText to root
+// Flutter coordinate system.
+static FlMethodResponse* set_editable_size_and_transform(
+    FlTextInputPlugin* self,
+    FlValue* args) {
+  FlValue* transform = fl_value_lookup_string(args, kTransform);
+  size_t transform_len = fl_value_get_length(transform);
+  g_warn_if_fail(transform_len == 16);
+
+  for (size_t i = 0; i < transform_len; ++i) {
+    double val = fl_value_get_float(fl_value_get_list_value(transform, i));
+    self->editabletext_transform[i / 4][i % 4] = val;
+  }
+  update_im_cursor_position(self);
+
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+}
+
+// Handles updates to the composing rect from the framework.
+//
+// On changes to the state of the EditableText in the framework, this update
+// may be triggered. It provides an updated rect for the composing region in
+// local coordinates of the EditableText. In the case where there is no
+// composing region, the cursor rect is sent.
+static FlMethodResponse* set_marked_text_rect(FlTextInputPlugin* self,
+                                              FlValue* args) {
+  self->composing_rect.x =
+      fl_value_get_float(fl_value_lookup_string(args, "x"));
+  self->composing_rect.y =
+      fl_value_get_float(fl_value_lookup_string(args, "y"));
+  self->composing_rect.width =
+      fl_value_get_float(fl_value_lookup_string(args, "width"));
+  self->composing_rect.height =
+      fl_value_get_float(fl_value_lookup_string(args, "height"));
+  update_im_cursor_position(self);
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
@@ -257,6 +414,10 @@ static void method_call_cb(FlMethodChannel* channel,
     response = clear_client(self);
   } else if (strcmp(method, kHideMethod) == 0) {
     response = hide(self);
+  } else if (strcmp(method, kSetEditableSizeAndTransform) == 0) {
+    response = set_editable_size_and_transform(self, args);
+  } else if (strcmp(method, kSetMarkedTextRect) == 0) {
+    response = set_marked_text_rect(self, args);
   } else {
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
   }
@@ -277,6 +438,7 @@ static void fl_text_input_plugin_dispose(GObject* object) {
     delete self->text_model;
     self->text_model = nullptr;
   }
+  self->view = nullptr;
 
   G_OBJECT_CLASS(fl_text_input_plugin_parent_class)->dispose(object);
 }
@@ -289,6 +451,15 @@ static void fl_text_input_plugin_init(FlTextInputPlugin* self) {
   self->client_id = kClientIdUnset;
   self->im_context = gtk_im_multicontext_new();
   self->input_multiline = FALSE;
+  g_signal_connect_object(self->im_context, "preedit-start",
+                          G_CALLBACK(im_preedit_start_cb), self,
+                          G_CONNECT_SWAPPED);
+  g_signal_connect_object(self->im_context, "preedit-end",
+                          G_CALLBACK(im_preedit_end_cb), self,
+                          G_CONNECT_SWAPPED);
+  g_signal_connect_object(self->im_context, "preedit-changed",
+                          G_CALLBACK(im_preedit_changed_cb), self,
+                          G_CONNECT_SWAPPED);
   g_signal_connect_object(self->im_context, "commit", G_CALLBACK(im_commit_cb),
                           self, G_CONNECT_SWAPPED);
   g_signal_connect_object(self->im_context, "retrieve-surrounding",
@@ -300,7 +471,8 @@ static void fl_text_input_plugin_init(FlTextInputPlugin* self) {
   self->text_model = new flutter::TextInputModel();
 }
 
-FlTextInputPlugin* fl_text_input_plugin_new(FlBinaryMessenger* messenger) {
+FlTextInputPlugin* fl_text_input_plugin_new(FlBinaryMessenger* messenger,
+                                            FlView* view) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
   FlTextInputPlugin* self = FL_TEXT_INPUT_PLUGIN(
@@ -311,6 +483,7 @@ FlTextInputPlugin* fl_text_input_plugin_new(FlBinaryMessenger* messenger) {
       fl_method_channel_new(messenger, kChannelName, FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(self->channel, method_call_cb, self,
                                             nullptr);
+  self->view = view;
 
   return self;
 }

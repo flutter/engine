@@ -160,7 +160,7 @@ void VulkanSurfaceProducer::OnSurfacesPresented(
 
   // Do a single flush for all canvases derived from the context.
   {
-    TRACE_EVENT0("flutter", "GrContext::flushAndSignalSemaphores");
+    TRACE_EVENT0("flutter", "GrDirectContext::flushAndSignalSemaphores");
     context_->flushAndSubmit();
   }
 
@@ -269,6 +269,11 @@ void VulkanSurfaceProducer::SubmitSurface(
     std::unique_ptr<SurfaceProducerSurface> surface) {
   FML_DCHECK(valid_ && surface != nullptr);
   surface_pool_->SubmitSurface(std::move(surface));
+}
+
+sk_sp<SkSurface> VulkanSurfaceProducer::ProduceOffscreenSurface(
+    const SkISize& size) {
+  return surface_pool_->CreateSurface(size)->GetSkiaSurface();
 }
 
 }  // namespace flutter_runner

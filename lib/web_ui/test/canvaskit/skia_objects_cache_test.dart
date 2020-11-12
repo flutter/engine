@@ -12,6 +12,7 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/src/engine.dart';
 
 import 'common.dart';
+import '../matchers.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -49,7 +50,7 @@ void _tests() {
       when(mockRasterizer.addPostFrameCallback(any)).thenAnswer((_) {
         addPostFrameCallbackCount++;
       });
-      window.rasterizer = mockRasterizer;
+      EnginePlatformDispatcher.instance.rasterizer = mockRasterizer;
 
       // Trigger first create
       final TestSkiaObject testObject = TestSkiaObject();
@@ -153,9 +154,56 @@ void _tests() {
       expect(SkiaObjects.oneShotCache.debugContains(object2), isFalse);
     });
   });
+
+  group(SkiaObjectBox, () {
+    test('Records stack traces and respects refcounts', () async {
+      TestSkDeletable.deleteCount = 0;
+      final Object wrapper = Object();
+      final SkiaObjectBox<TestSkDeletable> box = SkiaObjectBox<TestSkDeletable>(wrapper, TestSkDeletable());
+
+      expect(box.debugGetStackTraces().length, 1);
+
+      final SkiaObjectBox clone = box.clone(wrapper);
+      expect(clone, isNot(same(box)));
+      expect(clone.debugGetStackTraces().length, 2);
+      expect(box.debugGetStackTraces().length, 2);
+
+      box.delete();
+
+      expect(() => box.clone(wrapper), throwsAssertionError);
+
+      expect(box.isDeleted, true);
+
+      // Let any timers elapse.
+      await Future<void>.delayed(Duration.zero);
+      expect(TestSkDeletable.deleteCount, 0);
+
+      expect(clone.debugGetStackTraces().length, 1);
+      expect(box.debugGetStackTraces().length, 1);
+
+      clone.delete();
+      expect(() => clone.clone(wrapper), throwsAssertionError);
+
+      // Let any timers elapse.
+      await Future<void>.delayed(Duration.zero);
+      expect(TestSkDeletable.deleteCount, 1);
+
+      expect(clone.debugGetStackTraces().length, 0);
+      expect(box.debugGetStackTraces().length, 0);
+    });
+  });
 }
 
-class TestOneShotSkiaObject extends OneShotSkiaObject<SkPaint> {
+class TestSkDeletable implements SkDeletable {
+  static int deleteCount = 0;
+
+  @override
+  void delete() {
+    deleteCount++;
+  }
+}
+
+class TestOneShotSkiaObject extends OneShotSkiaObject<SkPaint> implements SkDeletable {
   static int deleteCount = 0;
 
   TestOneShotSkiaObject() : super(SkPaint());

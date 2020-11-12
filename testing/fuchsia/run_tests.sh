@@ -45,20 +45,12 @@ fuchsia_ctl() {
 }
 
 reboot() {
-  fuchsia_ctl ssh \
-       --timeout-seconds $ssh_timeout_seconds \
-       --identity-file $pkey \
-       -c "log_listener --dump_logs yes --file /tmp/log.txt"
   # As we are not using recipes we don't have a way to know the location
   # to upload the log to isolated. We are saving the log to a file to avoid dart
   # hanging when running the process and then just using printing the content to
   # the console.
-  fuchsia_ctl ssh \
-       --timeout-seconds $ssh_timeout_seconds \
-       --identity-file $pkey \
-       -c "cat /tmp/log.txt"
-
-
+  kill -9 $PID
+  cat /tmp/log.txt
   echo "$(date) START:REBOOT ----------------------------------------"
   # note: this will set an exit code of 255, which we can ignore.
   fuchsia_ctl ssh \
@@ -82,6 +74,9 @@ for i in {1..10}; do
       --identity-file $pkey \
       -c "echo up" && break || sleep 15;
 done
+rm -rf /tmp/log.txt
+fuchsia_ctl ssh --timeout-seconds 1800 --identity-file $pkey -c "log_listener" --log-file /tmp/log.txt &
+PID=$!
 echo "$(date) END:WAIT_DEVICE_READY ---------------------------------"
 
 echo "$(date) START:EXTRACT_PACKAGES  -------------------------------"
@@ -161,6 +156,15 @@ fuchsia_ctl test \
     --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
 echo "$(date) DONE:shell_tests --------------------------------------"
+
+echo "$(date) START:embedder_tests -------------------------------------"
+fuchsia_ctl test \
+    -f embedder_tests-0.far  \
+    -t embedder_tests \
+    --identity-file $pkey \
+    --timeout-seconds $test_timeout_seconds \
+    --packages-directory packages
+echo "$(date) DONE:embedder_tests --------------------------------------"
 
 # TODO(gw280): Enable tests using JIT runner
 echo "$(date) START:flutter_runner_tests ----------------------------"
