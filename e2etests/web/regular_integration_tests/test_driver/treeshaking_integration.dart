@@ -36,12 +36,12 @@ Future<void> testOccurenceCountBelow(WidgetTester tester, String methodName, int
   await _loadBundleAndCheck(methodName, count);
 }
 
-String fileContents;
+String? fileContents;
 
 Future<void> _loadBundleAndCheck(String methodName, int count) async {
   fileContents ??= await html.HttpRequest.getString('main.dart.js');
   expect(fileContents, contains('RenderObjectToWidgetElement'));
-  expect(occurrenceCount(fileContents, methodName), lessThan(count));
+  expect(occurrenceCount(fileContents!, methodName), lessThan(count));
 }
 
 int occurrenceCount(String contents, String word) {

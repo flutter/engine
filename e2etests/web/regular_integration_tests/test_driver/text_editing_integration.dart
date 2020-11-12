@@ -288,8 +288,9 @@ KeyboardEvent dispatchKeyboardEvent(
   ];
 
   final KeyboardEvent event = js_util.callConstructor(
-          jsKeyboardEvent, js_util.jsify(eventArgs) as List<dynamic>)
-      as KeyboardEvent;
+    jsKeyboardEvent as Object,
+    js_util.jsify(eventArgs) as List<dynamic>,
+  ) as KeyboardEvent;
   target.dispatchEvent(event);
 
   return event;

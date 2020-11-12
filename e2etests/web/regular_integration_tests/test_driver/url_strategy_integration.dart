@@ -17,7 +17,7 @@ void main() {
 
   testWidgets('Can customize url strategy', (WidgetTester tester) async {
     final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-      const TestHistoryEntry('initial state', null, '/initial'),
+      const TestHistoryEntry(null, null, '/'),
     );
     setUrlStrategy(strategy);
 
@@ -30,7 +30,7 @@ void main() {
 
     expect(strategy.getPath(), '/');
 
-    final NavigatorState navigator = app.navKey.currentState;
+    final NavigatorState navigator = app.navKey.currentState!;
     navigator.pushNamed('/foo');
     await tester.pump();
     expect(strategy.getPath(), '/foo');
@@ -45,7 +45,7 @@ void main() {
 class TestUrlStrategy extends UrlStrategy {
   /// Creates a instance of [TestUrlStrategy] with an empty string as the
   /// path.
-  factory TestUrlStrategy() => TestUrlStrategy.fromEntry(TestHistoryEntry(null, null, ''));
+  factory TestUrlStrategy() => TestUrlStrategy.fromEntry(const TestHistoryEntry(null, null, ''));
 
   /// Creates an instance of [TestUrlStrategy] and populates it with a list
   /// that has [initialEntry] as the only item.
@@ -95,7 +95,7 @@ class TestUrlStrategy extends UrlStrategy {
   @override
   void replaceState(dynamic state, String title, String url) {
     assert(withinAppHistory);
-    if (url == null || url == '') {
+    if (url.isEmpty) {
       url = currentEntry.url;
     }
     currentEntry = TestHistoryEntry(state, title, url);
@@ -172,7 +172,7 @@ class TestUrlStrategy extends UrlStrategy {
 
 class TestHistoryEntry {
   final dynamic state;
-  final String title;
+  final String? title;
   final String url;
 
   const TestHistoryEntry(this.state, this.title, this.url);
