@@ -9,14 +9,12 @@ import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
 import android.content.res.AssetManager;
-import io.flutter.Log;
+import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterJNI;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
@@ -30,9 +28,7 @@ public class PlayStoreDynamicFeatureManagerTest {
     public TestFlutterJNI() {}
 
     @Override
-    public void loadDartDeferredLibrary(
-        int loadingUnitId,
-        @NonNull String[] searchPaths) {
+    public void loadDartDeferredLibrary(int loadingUnitId, @NonNull String[] searchPaths) {
       loadDartDeferredLibraryCalled = true;
     }
 

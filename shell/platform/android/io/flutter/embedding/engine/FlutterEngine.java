@@ -262,8 +262,8 @@ public class FlutterEngine {
   }
 
   /**
-   * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[], boolean, boolean)}, plus the
-   * ability to control {@code waitForRestorationData}.
+   * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[], boolean, boolean)},
+   * plus the ability to control {@code waitForRestorationData}.
    */
   public FlutterEngine(
       @NonNull Context context,
@@ -329,8 +329,10 @@ public class FlutterEngine {
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
 
-    this.dynamicFeatureManager = dynamicFeatureManager != null ?
-        dynamicFeatureManager : new PlayStoreDynamicFeatureManager(context, flutterJNI);
+    this.dynamicFeatureManager =
+        dynamicFeatureManager != null
+            ? dynamicFeatureManager
+            : new PlayStoreDynamicFeatureManager(context, flutterJNI);
     flutterJNI.setDynamicFeatureManager(dynamicFeatureManager);
 
     attachToJni();

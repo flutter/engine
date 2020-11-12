@@ -1008,8 +1008,7 @@ public class FlutterJNI {
    * loading of the dart library and any assets.
    *
    * @param loadingUnitId The loadingUnitId is assigned during compile time by gen_snapshot and is
-   *                      automatically retrieved when loadLibrary() is called on a dart deferred
-   *                      library.
+   *     automatically retrieved when loadLibrary() is called on a dart deferred library.
    */
   @SuppressWarnings("unused")
   @UiThread
@@ -1027,38 +1026,31 @@ public class FlutterJNI {
    * triggered the install/load process.
    *
    * @param loadingUnitId The loadingUnitId is assigned during compile time by gen_snapshot and is
-   *                      automatically retrieved when loadLibrary() is called on a dart deferred
-   *                      library. This is used to identify which dart deferred library the resolved
-   *                      correspond to.
-   *
-   * @param searchPaths   An array of paths in which to look for valid dart shared libraries. This
-   *                      supports paths within zipped apks as long as the apks are not compressed
-   *                      using the `path/to/apk.apk!path/inside/apk/lib.so` format. Paths will be
-   *                      tried first to last and ends when a library is sucessfully found. When the
-   *                      found library is invalid, no additional paths will be attempted.
+   *     automatically retrieved when loadLibrary() is called on a dart deferred library. This is
+   *     used to identify which dart deferred library the resolved correspond to.
+   * @param searchPaths An array of paths in which to look for valid dart shared libraries. This
+   *     supports paths within zipped apks as long as the apks are not compressed using the
+   *     `path/to/apk.apk!path/inside/apk/lib.so` format. Paths will be tried first to last and ends
+   *     when a library is sucessfully found. When the found library is invalid, no additional paths
+   *     will be attempted.
    */
   @UiThread
-  public void loadDartDeferredLibrary(
-      int loadingUnitId,
-      @NonNull String[] searchPaths) {
+  public void loadDartDeferredLibrary(int loadingUnitId, @NonNull String[] searchPaths) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeLoadDartDeferredLibrary(nativePlatformViewId, loadingUnitId, searchPaths);
   }
 
   private native void nativeLoadDartDeferredLibrary(
-      long nativePlatformViewId,
-      int loadingUnitId,
-      @NonNull String[] searchPaths);
+      long nativePlatformViewId, int loadingUnitId, @NonNull String[] searchPaths);
 
   /**
    * Specifies a new AssetManager that has access to the dynamic feature's assets in addition to the
    * base module's assets.
    *
-   * @param assetManager    An android AssetManager that is able to access the newly downloaded assets.
-   *
-   * @param assetBundlePath The subdirectory that the flutter assets are stored in. The typical value
-   *                        is `flutter_assets`.
+   * @param assetManager An android AssetManager that is able to access the newly downloaded assets.
+   * @param assetBundlePath The subdirectory that the flutter assets are stored in. The typical
+   *     value is `flutter_assets`.
    */
   @UiThread
   public void updateAssetManager(
@@ -1078,15 +1070,14 @@ public class FlutterJNI {
    * feature module and loading a dart deferred library, which is typically done by
    * DynamicFeatureManager.
    *
-   * <p>This will inform dart that the future returned by loadLibrary() should complete with an error.
+   * <p>This will inform dart that the future returned by loadLibrary() should complete with an
+   * error.
    *
    * @param loadingUnitId The loadingUnitId that corresponds to the dart deferred library that
-   *                      failed to install.
-   *
-   * @param error         The error message to display.
-   *
-   * @param isTransient   When isTransient is false, new attempts to install will automatically result in
-   *                      same error in dart before the request is passed to Android.
+   *     failed to install.
+   * @param error The error message to display.
+   * @param isTransient When isTransient is false, new attempts to install will automatically result
+   *     in same error in dart before the request is passed to Android.
    */
   @SuppressWarnings("unused")
   @UiThread

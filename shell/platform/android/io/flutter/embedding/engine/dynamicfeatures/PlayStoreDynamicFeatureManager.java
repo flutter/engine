@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-
 /**
  * Flutter default implementation of DynamicFeatureManager that downloads dynamic feature modules
  * from the Google Play store.
@@ -174,13 +173,13 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     int moduleNameIdentifier =
         context
             .getResources()
-            .getIdentifier(
-                "loadingUnit" + loadingUnitId, "string", context.getPackageName());
+            .getIdentifier("loadingUnit" + loadingUnitId, "string", context.getPackageName());
     return context.getResources().getString(moduleNameIdentifier);
   }
 
   public void downloadDynamicFeature(int loadingUnitId, String moduleName) {
-    String resolvedModuleName = moduleName == null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
+    String resolvedModuleName =
+        moduleName == null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {
       Log.d(TAG, "Dynamic feature module name was null.");
       return;
@@ -301,8 +300,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     searchPaths.add(soPath);
 
     flutterJNI.loadDartDeferredLibrary(
-        loadingUnitId,
-        searchPaths.toArray(new String[apkPaths.size()]));
+        loadingUnitId, searchPaths.toArray(new String[apkPaths.size()]));
   }
 
   public void uninstallFeature(int loadingUnitId, String moduleName) {
