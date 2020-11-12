@@ -65,10 +65,10 @@ public class PlayStoreDynamicFeatureManagerTest {
   public void downloadCallsJNIFunctions() {
     jni = new TestFlutterJNI();
     Context context = mock(Context.class);
-    playStoreManager = new PlayStoreDynamicFeatureManager(context, jni);
+    playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
     jni.setDynamicFeatureManager(playStoreManager);
 
-    playStoreManager.downloadDynamicFeature(0, "test");
+    playStoreManager.downloadDynamicFeature(0, "TestModuleName");
     assertTrue(jni.loadDartDeferredLibraryCalled);
     assertTrue(jni.updateAssetManagerCalled);
     assertFalse(jni.dynamicFeatureInstallFailureCalled);
