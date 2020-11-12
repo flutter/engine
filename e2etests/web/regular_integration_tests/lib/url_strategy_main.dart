@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 
 final GlobalKey<NavigatorState> navKey = GlobalKey(debugLabel: 'mainNavigator');
-Map<String, WidgetBuilder> appRoutes;
+Map<String, WidgetBuilder>? appRoutes;
 
 final Map<String, WidgetBuilder> _defaultAppRoutes = <String, WidgetBuilder>{
   '/': (context) => Container(),
