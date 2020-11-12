@@ -10,8 +10,8 @@
 #include <future>
 #include <memory>
 
-#include "flutter/assets/asset_resolver.h"
 #include "assets/directory_asset_bundle.h"
+#include "flutter/assets/asset_resolver.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/picture_layer.h"
