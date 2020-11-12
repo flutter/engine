@@ -51,7 +51,7 @@ public class FlutterLoaderTest {
   }
 
   @Test
-  public void itSetsTheOldGenHeapSizeAppropriately() {
+  public void itDefaultsTheOldGenHeapSizeAppropriately() {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
@@ -62,7 +62,10 @@ public class FlutterLoaderTest {
 
     ActivityManager activityManager =
         (ActivityManager) RuntimeEnvironment.application.getSystemService(Context.ACTIVITY_SERVICE);
-    final String oldGenHeapArg = "--old-gen-heap-size=" + activityManager.getLargeMemoryClass();
+    ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+    activityManager.getMemoryInfo(memInfo);
+    int oldGenHeapSizeMegaBytes = (int) (memInfo.totalMem / 1e6 / 2);
+    final String oldGenHeapArg = "--old-gen-heap-size=" + oldGenHeapSizeMegaBytes;
     ArgumentCaptor<String[]> shellArgsCaptor = ArgumentCaptor.forClass(String[].class);
     verify(mockFlutterJNI, times(1))
         .init(

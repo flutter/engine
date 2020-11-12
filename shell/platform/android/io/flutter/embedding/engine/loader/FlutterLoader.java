@@ -6,8 +6,10 @@ package io.flutter.embedding.engine.loader;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -28,6 +30,9 @@ import java.util.concurrent.Future;
 /** Finds Flutter resources in an application APK and also loads Flutter's native library. */
 public class FlutterLoader {
   private static final String TAG = "FlutterLoader";
+
+  private static final String OLD_GEN_HEAP_SIZE_META_DATA_KEY =
+      "io.flutter.embedding.android.OldGenHeapSize";
 
   // Must match values in flutter::switches
   static final String AOT_SHARED_LIBRARY_NAME = "aot-shared-library-name";
@@ -239,9 +244,23 @@ public class FlutterLoader {
         shellArgs.add("--log-tag=" + settings.getLogTag());
       }
 
-      ActivityManager activityManager =
-          (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
-      int oldGenHeapSizeMegaBytes = activityManager.getLargeMemoryClass();
+      ApplicationInfo applicationInfo =
+          applicationContext
+              .getPackageManager()
+              .getApplicationInfo(
+                  applicationContext.getPackageName(), PackageManager.GET_META_DATA);
+      Bundle metaData = applicationInfo.metaData;
+      int oldGenHeapSizeMegaBytes =
+          metaData != null ? metaData.getInt(OLD_GEN_HEAP_SIZE_META_DATA_KEY) : 0;
+      if (oldGenHeapSizeMegaBytes == 0) {
+        // default to half of total memory.
+        ActivityManager activityManager =
+            (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
+        ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+        activityManager.getMemoryInfo(memInfo);
+        oldGenHeapSizeMegaBytes = (int) (memInfo.totalMem / 1e6 / 2);
+      }
+
       shellArgs.add("--old-gen-heap-size=" + oldGenHeapSizeMegaBytes);
 
       long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
