@@ -682,6 +682,19 @@ G_MODULE_EXPORT FlValue* fl_value_get_list_value(FlValue* self, size_t index) {
   return static_cast<FlValue*>(g_ptr_array_index(v->values, index));
 }
 
+G_MODULE_EXPORT void fl_value_list_foreach(FlValue* self, GFunc func,
+                                           gpointer user_data) {
+  g_return_if_fail(self != nullptr);
+  g_return_if_fail(self->type == FL_VALUE_TYPE_LIST);
+  g_return_if_fail(func != nullptr);
+
+  size_t length = fl_value_get_length(self);
+  for (size_t i = 0; i < length; ++i) {
+    FlValue* value = fl_value_get_list_value(self, i);
+    func(value, user_data);
+  }
+}
+
 G_MODULE_EXPORT FlValue* fl_value_get_map_key(FlValue* self, size_t index) {
   g_return_val_if_fail(self != nullptr, nullptr);
   g_return_val_if_fail(self->type == FL_VALUE_TYPE_MAP, nullptr);
@@ -696,6 +709,19 @@ G_MODULE_EXPORT FlValue* fl_value_get_map_value(FlValue* self, size_t index) {
 
   FlValueMap* v = reinterpret_cast<FlValueMap*>(self);
   return static_cast<FlValue*>(g_ptr_array_index(v->values, index));
+}
+
+G_MODULE_EXPORT void fl_value_map_foreach(FlValue* self, GHFunc func,
+                                          gpointer user_data) {
+  g_return_if_fail(self != nullptr);
+  g_return_if_fail(self->type == FL_VALUE_TYPE_MAP);
+  g_return_if_fail(func != nullptr);
+
+  for (size_t i = 0; i < fl_value_get_length(self); i++) {
+    FlValue* key = fl_value_get_map_key(self, i);
+    FlValue* value = fl_value_get_map_value(self, i);
+    func(key, value, user_data);
+  }
 }
 
 G_MODULE_EXPORT FlValue* fl_value_lookup(FlValue* self, FlValue* key) {

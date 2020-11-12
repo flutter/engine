@@ -507,6 +507,17 @@ const double* fl_value_get_float_list(FlValue* value);
 FlValue* fl_value_get_list_value(FlValue* value, size_t index);
 
 /**
+ * fl_value_list_foreach:
+ * @value: an #FlValue of type #FL_VALUE_TYPE_LIST.
+ * @func: a function to call with each element's data.
+ * @index: optional user data to pass to the function.
+ *
+ * Calls a function for each element of a the list. Calling this with an
+ * #FlValue that is not of type #FL_VALUE_TYPE_LIST is a programming error.
+ */
+void fl_value_list_foreach(FlValue* value, GFunc func, gpointer user_data);
+
+/**
  * fl_value_get_map_key:
  * @value: an #FlValue of type #FL_VALUE_TYPE_MAP.
  * @index: an index in the map.
@@ -533,6 +544,17 @@ FlValue* fl_value_get_map_key(FlValue* value, size_t index);
  * Returns: an #FlValue.
  */
 FlValue* fl_value_get_map_value(FlValue* value, size_t index);
+
+/**
+ * fl_value_map_foreach:
+ * @value: an #FlValue of type #FL_VALUE_TYPE_MAP
+ * @func: a function to call with each element's key/value pair.
+ * @index: optional user data to pass to the function.
+ *
+ * Calls a function for each key/value pair of a the map. Calling this with an
+ * #FlValue that is not of type #FL_VALUE_TYPE_MAP is a programming error.
+ */
+void fl_value_map_foreach(FlValue* value, GHFunc func, gpointer user_data);
 
 /**
  * fl_value_lookup:

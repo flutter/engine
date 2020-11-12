@@ -938,3 +938,40 @@ TEST(FlValueTest, ListMapNotEqual) {
   g_autoptr(FlValue) value2 = fl_value_new_map();
   EXPECT_FALSE(fl_value_equal(value1, value2));
 }
+
+static void fl_value_list_foreach_test(gpointer value_data,
+                                       gpointer user_data) {
+  FlValue* value = static_cast<FlValue*>(value_data);
+  FlValue* out = static_cast<FlValue*>(user_data);
+  fl_value_append(out, value);
+}
+
+TEST(FlValueTest, ListForeach) {
+  g_autoptr(FlValue) value = fl_value_new_list();
+  fl_value_append_take(value, fl_value_new_int(1));
+  fl_value_append_take(value, fl_value_new_int(2));
+  fl_value_append_take(value, fl_value_new_int(3));
+
+  g_autoptr(FlValue) out = fl_value_new_list();
+  fl_value_list_foreach(value, fl_value_list_foreach_test, out);
+  EXPECT_TRUE(fl_value_equal(out, value));
+}
+
+static void fl_value_map_foreach_test(gpointer key_data, gpointer value_data,
+                                      gpointer user_data) {
+  FlValue* key = static_cast<FlValue*>(key_data);
+  FlValue* value = static_cast<FlValue*>(value_data);
+  FlValue* out = static_cast<FlValue*>(user_data);
+  fl_value_set(out, key, value);
+}
+
+TEST(FlValueTest, MapForeach) {
+  g_autoptr(FlValue) value = fl_value_new_map();
+  fl_value_set_string_take(value, "a", fl_value_new_int(1));
+  fl_value_set_string_take(value, "b", fl_value_new_int(2));
+  fl_value_set_string_take(value, "c", fl_value_new_int(3));
+
+  g_autoptr(FlValue) out = fl_value_new_map();
+  fl_value_map_foreach(value, fl_value_map_foreach_test, out);
+  EXPECT_TRUE(fl_value_equal(out, value));
+}
