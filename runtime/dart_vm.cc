@@ -10,6 +10,10 @@
 #include <sstream>
 #include <vector>
 
+#if OS_WIN
+#include <processthreadsapi.h>
+#endif
+
 #include "flutter/common/settings.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/file.h"
@@ -115,6 +119,20 @@ static const char* kDartTraceStreamsArgs[] = {
 static std::string DartOldGenHeapSizeArgs(uint64_t heap_size) {
   std::ostringstream oss;
   oss << "--old_gen_heap_size=" << heap_size;
+  return oss.str();
+}
+
+static std::string DartWorkerThreadPriorityArgs() {
+  std::ostringstream oss;
+  oss << "--worker-thread-priority=";
+#if OS_WIN
+  oss << THREAD_PRIORITY_BELOW_NORMAL;
+#elif OS_MACOSX || OS_IOS || OS_LINUX || OS_ANDROID
+  oss << "10";
+#else
+  // Currently a no-op.
+  oss << "10";
+#endif
   return oss.str();
 }
 
@@ -398,7 +416,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   // via FlutterEnginePostCallbackOnAllNativeThreads.
   // TODO(dnfield): this won't work on Fuchsia yet, see
   // https://github.com/dart-lang/sdk/issues/44209
-  args.push_back("--worker-thread-priority=10");
+  args.push_back(DartWorkerThreadPriorityArgs().c_str());
 
   char* flags_error = Dart_SetVMFlags(args.size(), args.data());
   if (flags_error) {
