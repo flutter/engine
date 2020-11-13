@@ -64,7 +64,6 @@
 		0D6AB6C922BB05E200EEE540 /* IosUnitTestsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IosUnitTestsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D6AB6CF22BB05E200EEE540 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0D6AB73E22BD8F0200EEE540 /* FlutterEngineConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FlutterEngineConfig.xcconfig; sourceTree = "<group>"; };
-		68FF0A70255A3B4E00165B60 /* FlutterPlatformViewsTest.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterPlatformViewsTest.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,7 +96,6 @@
 				0AC2331224BA71D300A85907 /* FlutterEnginePlatformViewTest.mm */,
 				0AC2331924BA71D300A85907 /* FlutterPluginAppLifeCycleDelegateTest.m */,
 				0AC2332124BA71D300A85907 /* FlutterViewControllerTest.mm */,
-				68FF0A70255A3B4E00165B60 /* FlutterPlatformViewsTest.mm */,
 			);
 			name = Source;
 			path = ../../../shell/platform/darwin/ios/framework/Source;
