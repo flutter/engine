@@ -80,6 +80,10 @@ class PlatformView final : public flutter::PlatformView,
   // |PlatformView|
   flutter::PointerDataDispatcherMaker GetDispatcherMaker() override;
 
+  // |flutter::PlatformView|
+  std::shared_ptr<flutter::ExternalViewEmbedder> CreateExternalViewEmbedder()
+      override;
+
  private:
   void RegisterPlatformMessageHandlers();
 

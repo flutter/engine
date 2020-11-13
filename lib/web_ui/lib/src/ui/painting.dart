@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 // ignore: unused_element, Used in Shader assert.
@@ -405,6 +405,12 @@ class ImageFilter {
     throw UnimplementedError('ImageFilter.matrix not implemented for web platform.');
     //    if (matrix4.length != 16)
     //      throw ArgumentError('"matrix4" must have 16 entries.');
+  }
+
+  ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
+     // TODO(flutter_web): add implementation.
+    throw UnimplementedError(
+        'ImageFilter.compose not implemented for web platform.');
   }
 }
 

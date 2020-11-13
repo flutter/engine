@@ -33,7 +33,10 @@ FLUTTER_ASSERT_ARC
   NSDictionary<UIApplicationOpenURLOptionsKey, id>* options = @{};
   BOOL result = [appDelegate application:[UIApplication sharedApplication]
                                  openURL:url
-                                 options:options];
+                                 options:options
+                         infoPlistGetter:^NSDictionary*() {
+                           return @{@"FlutterDeepLinkingEnabled" : @(YES)};
+                         }];
   XCTAssertTrue(result);
   OCMVerify([navigationChannel invokeMethod:@"pushRoute" arguments:url.path]);
 }

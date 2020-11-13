@@ -10,6 +10,6 @@
 // Category to add test-only visibility.
 @interface FlutterEngine (Test) <FlutterBinaryMessenger>
 - (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger;
-- (void)waitForFirstFrame:(NSTimeInterval)timeout callback:(void (^)(BOOL didTimeout))callback;
 - (flutter::IOSRenderingAPI)platformViewsRenderingAPI;
+- (void)waitForFirstFrame:(NSTimeInterval)timeout callback:(void (^)(BOOL didTimeout))callback;
 @end

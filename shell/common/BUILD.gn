@@ -71,8 +71,6 @@ source_set("common") {
     "engine.h",
     "key_data_dispatcher.cc",
     "key_data_dispatcher.h",
-    "persistent_cache.cc",
-    "persistent_cache.h",
     "pipeline.cc",
     "pipeline.h",
     "platform_view.cc",
@@ -113,6 +111,7 @@ source_set("common") {
   deps = [
     "//flutter/assets",
     "//flutter/common",
+    "//flutter/common/graphics",
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/lib/ui",
@@ -191,6 +190,7 @@ if (enable_unittests) {
     ]
 
     public_deps = [
+      "//flutter/common/graphics",
       "//flutter/flow",
       "//flutter/fml/dart",
       "//flutter/runtime",
@@ -255,6 +255,7 @@ if (enable_unittests) {
       ":shell_test_fixture_sources",
       ":shell_unittests_fixtures",
       "//flutter/assets",
+      "//flutter/common/graphics",
       "//flutter/shell/version",
       "//third_party/googletest:gmock",
     ]

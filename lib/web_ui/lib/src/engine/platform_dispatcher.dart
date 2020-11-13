@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Requests that the browser schedule a frame.
@@ -44,7 +44,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnPlatformConfigurationChanged() {
-    _invoke(_onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
+    invoke(_onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
   }
 
   /// The current list of windows,
@@ -88,7 +88,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Otherwise zones won't work properly.
   void invokeOnMetricsChanged() {
     if (_onMetricsChanged != null) {
-      _invoke(_onMetricsChanged, _onMetricsChangedZone);
+      invoke(_onMetricsChanged, _onMetricsChangedZone);
     }
   }
 
@@ -121,7 +121,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnBeginFrame(Duration duration) {
-    _invoke1<Duration>(_onBeginFrame, _onBeginFrameZone, duration);
+    invoke1<Duration>(_onBeginFrame, _onBeginFrameZone, duration);
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
@@ -142,7 +142,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnDrawFrame() {
-    _invoke(_onDrawFrame, _onDrawFrameZone);
+    invoke(_onDrawFrame, _onDrawFrameZone);
   }
 
   /// A callback that is invoked when pointer data is available.
@@ -167,7 +167,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnPointerDataPacket(ui.PointerDataPacket dataPacket) {
-    _invoke1<ui.PointerDataPacket>(_onPointerDataPacket, _onPointerDataPacketZone, dataPacket);
+    invoke1<ui.PointerDataPacket>(_onPointerDataPacket, _onPointerDataPacketZone, dataPacket);
   }
 
   /// A callback that is invoked when pointer data is available.
@@ -199,7 +199,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// rasterized frames.
   ///
   /// It's preferred to use [SchedulerBinding.addTimingsCallback] than to use
-  /// [Window.onReportTimings] directly because
+  /// [PlatformDispatcher.onReportTimings] directly because
   /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
   ///
   /// This can be used to see if the application has missed frames (through
@@ -229,7 +229,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnReportTimings(List<ui.FrameTiming> timings) {
-    _invoke1<List<ui.FrameTiming>>(_onReportTimings, _onReportTimingsZone, timings);
+    invoke1<List<ui.FrameTiming>>(_onReportTimings, _onReportTimingsZone, timings);
   }
 
   @override
@@ -241,6 +241,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _sendPlatformMessage(name, data, _zonedPlatformMessageResponseCallback(callback));
   }
 
+  // TODO(ianh): Deprecate onPlatformMessage once the framework is moved over
+  // to using channel buffers exclusively.
   @override
   ui.PlatformMessageCallback? get onPlatformMessage => _onPlatformMessage;
   ui.PlatformMessageCallback? _onPlatformMessage;
@@ -253,15 +255,29 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnPlatformMessage(String name, ByteData? data,
-      ui.PlatformMessageResponseCallback callback) {
-    _invoke3<String, ByteData?, ui.PlatformMessageResponseCallback>(
-      _onPlatformMessage,
-      _onPlatformMessageZone,
-      name,
-      data,
-      callback,
-    );
+  void invokeOnPlatformMessage(
+    String name,
+    ByteData? data,
+    ui.PlatformMessageResponseCallback callback,
+  ) {
+    if (name == ui.ChannelBuffers.kControlChannelName) {
+      // TODO(ianh): move this logic into ChannelBuffers once we remove onPlatformMessage
+      try {
+        ui.channelBuffers.handleMessage(data!);
+      } finally {
+        callback(null);
+      }
+    } else if (_onPlatformMessage != null) {
+      invoke3<String, ByteData?, ui.PlatformMessageResponseCallback>(
+        _onPlatformMessage,
+        _onPlatformMessageZone,
+        name,
+        data,
+        callback,
+      );
+    } else {
+      ui.channelBuffers.push(name, data, callback);
+    }
   }
 
   /// Wraps the given [callback] in another callback that ensures that the
@@ -541,7 +557,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnAccessibilityFeaturesChanged() {
-    _invoke(_onAccessibilityFeaturesChanged, _onAccessibilityFeaturesChangedZone);
+    invoke(_onAccessibilityFeaturesChanged, _onAccessibilityFeaturesChangedZone);
   }
 
   /// Change the retained semantics data about this window.
@@ -653,7 +669,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnLocaleChanged() {
-    _invoke(_onLocaleChanged, _onLocaleChangedZone);
+    invoke(_onLocaleChanged, _onLocaleChangedZone);
   }
 
   /// The system-reported text scale.
@@ -696,7 +712,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnTextScaleFactorChanged() {
-    _invoke(_onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
+    invoke(_onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
   }
 
   /// The setting indicating the current brightness mode of the host platform.
@@ -766,7 +782,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnPlatformBrightnessChanged() {
-    _invoke(_onPlatformBrightnessChanged, _onPlatformBrightnessChangedZone);
+    invoke(_onPlatformBrightnessChanged, _onPlatformBrightnessChangedZone);
   }
 
   /// Whether the user has requested that [updateSemantics] be called when
@@ -791,7 +807,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnSemanticsEnabledChanged() {
-    _invoke(_onSemanticsEnabledChanged, _onSemanticsEnabledChangedZone);
+    invoke(_onSemanticsEnabledChanged, _onSemanticsEnabledChangedZone);
   }
 
   /// A callback that is invoked whenever the user requests an action to be
@@ -814,7 +830,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Otherwise zones won't work properly.
   void invokeOnSemanticsAction(
       int id, ui.SemanticsAction action, ByteData? args) {
-    _invoke3<int, ui.SemanticsAction, ByteData?>(
+    invoke3<int, ui.SemanticsAction, ByteData?>(
         _onSemanticsAction, _onSemanticsActionZone, id, action, args);
   }
 
@@ -890,7 +906,7 @@ bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
 }
 
 /// Invokes [callback] inside the given [zone].
-void _invoke(void callback()?, Zone? zone) {
+void invoke(void callback()?, Zone? zone) {
   if (callback == null) {
     return;
   }
@@ -905,7 +921,7 @@ void _invoke(void callback()?, Zone? zone) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg].
-void _invoke1<A>(void callback(A a)?, Zone? zone, A arg) {
+void invoke1<A>(void callback(A a)?, Zone? zone, A arg) {
   if (callback == null) {
     return;
   }
@@ -919,24 +935,35 @@ void _invoke1<A>(void callback(A a)?, Zone? zone, A arg) {
   }
 }
 
-/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
-void _invoke3<A1, A2, A3>(
-    void callback(A1 a1, A2 a2, A3 a3)?,
-    Zone? zone,
-    A1 arg1,
-    A2 arg2,
-    A3 arg3,
-  ) {
+/// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
+void invoke2<A1, A2>(void Function(A1 a1, A2 a2)? callback, Zone? zone, A1 arg1, A2 arg2) {
   if (callback == null) {
     return;
   }
 
   assert(zone != null);
 
-  if (identical(zone!, Zone.current)) {
+  if (identical(zone, Zone.current)) {
+    callback(arg1, arg2);
+  } else {
+    zone!.runGuarded(() {
+      callback(arg1, arg2);
+    });
+  }
+}
+
+/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
+void invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback, Zone? zone, A1 arg1, A2 arg2, A3 arg3) {
+  if (callback == null) {
+    return;
+  }
+
+  assert(zone != null);
+
+  if (identical(zone, Zone.current)) {
     callback(arg1, arg2, arg3);
   } else {
-    zone.runGuarded(() {
+    zone!.runGuarded(() {
       callback(arg1, arg2, arg3);
     });
   }

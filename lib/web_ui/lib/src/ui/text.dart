@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 enum FontStyle {
@@ -588,7 +588,7 @@ abstract class ParagraphBuilder {
     if (engine.useCanvasKit) {
       return engine.CkParagraphBuilder(style);
     } else {
-      return engine.EngineParagraphBuilder(style as engine.EngineParagraphStyle);
+      return engine.DomParagraphBuilder(style as engine.EngineParagraphStyle);
     }
   }
   void pushStyle(TextStyle style);

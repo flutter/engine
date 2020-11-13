@@ -41,6 +41,7 @@ typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, 
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 
 /// Signature for [PlatformDispatcher.onPlatformMessage].
+// TODO(ianh): deprecate once framework uses [ChannelBuffers.setListener].
 typedef PlatformMessageCallback = void Function(String name, ByteData? data, PlatformMessageResponseCallback? callback);
 
 // Signature for _setNeedsReportTimings.
@@ -468,6 +469,8 @@ class PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the callback
   /// was set.
+  // TODO(ianh): Deprecate onPlatformMessage once the framework is moved over
+  // to using channel buffers exclusively.
   PlatformMessageCallback? get onPlatformMessage => _onPlatformMessage;
   PlatformMessageCallback? _onPlatformMessage;
   Zone _onPlatformMessageZone = Zone.root;
@@ -497,13 +500,15 @@ class PlatformDispatcher {
     };
   }
 
-  // Called from the engine, via hooks.dart
+  /// Send a message to the framework using the [ChannelBuffers].
+  ///
+  /// This method constructs the appropriate callback to respond
+  /// with the given `responseId`. It should only be called for messages
+  /// from the platform.
   void _dispatchPlatformMessage(String name, ByteData? data, int responseId) {
     if (name == ChannelBuffers.kControlChannelName) {
       try {
         channelBuffers.handleMessage(data!);
-      } catch (ex) {
-        _printDebug('Message to "$name" caused exception $ex');
       } finally {
         _respondToPlatformMessage(responseId, null);
       }
@@ -513,7 +518,7 @@ class PlatformDispatcher {
         _onPlatformMessageZone,
         name,
         data,
-            (ByteData? responseData) {
+        (ByteData? responseData) {
           _respondToPlatformMessage(responseId, responseData);
         },
       );
@@ -605,12 +610,7 @@ class PlatformDispatcher {
   ///
   /// This is equivalent to `locales.first` and will provide an empty non-null
   /// locale if the [locales] list has not been set or is empty.
-  Locale? get locale {
-    if (locales != null && locales!.isNotEmpty) {
-      return locales!.first;
-    }
-    return null;
-  }
+  Locale get locale => locales.first;
 
   /// The full system-reported supported locales of the device.
   ///
@@ -627,7 +627,7 @@ class PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<Locale>? get locales => configuration.locales;
+  List<Locale> get locales => configuration.locales;
 
   /// Performs the platform-native locale resolution.
   ///
@@ -703,12 +703,7 @@ class PlatformDispatcher {
   }
 
   // Called from the engine, via hooks.dart
-  String _localeClosure() {
-    if (locale == null) {
-      return '';
-    }
-    return locale.toString();
-  }
+  String _localeClosure() => locale.toString();
 
   /// The lifecycle state immediately after dart isolate initialization.
   ///
