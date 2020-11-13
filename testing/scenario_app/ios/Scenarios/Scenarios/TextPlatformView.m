@@ -88,7 +88,7 @@
     [_textView addGestureRecognizer:gestureRecognizer];
     gestureRecognizer.testTapGestureRecognizerDelegate = self;
     _textView.accessibilityLabel = @"";
-    
+
     _viewCreated = NO;
   }
   return self;
