@@ -190,10 +190,11 @@ class Layer {
   // Determines if the Paint() method is necessary based on the properties
   // of the indicated PaintContext object.
   bool needs_painting(PaintContext& context) const {
-    // Skia bug - quickReject returns false if the bounds are empty.
-    // (Waiting for Skia to acknowledge test case and file a bug.)
-    if (paint_bounds_.isEmpty())
+    // Workaround for Skia bug (quickReject does not reject empty bounds).
+    // https://bugs.chromium.org/p/skia/issues/detail?id=10951
+    if (paint_bounds_.isEmpty()) {
       return false;
+    }
     return !context.internal_nodes_canvas->quickReject(paint_bounds_);
   }
 
