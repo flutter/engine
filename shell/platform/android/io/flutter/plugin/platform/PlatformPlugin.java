@@ -29,7 +29,6 @@ public class PlatformPlugin {
       View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
   private final Activity activity;
-  private FragmentActivity fragmentActivity = null;
   private final PlatformChannel platformChannel;
   private PlatformChannel.SystemChromeStyle currentTheme;
   private int mEnabledOverlays;
@@ -102,17 +101,7 @@ public class PlatformPlugin {
       };
 
   public PlatformPlugin(Activity activity, PlatformChannel platformChannel) {
-    this.fragmentActivity = null;
     this.activity = activity;
-    this.platformChannel = platformChannel;
-    this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
-
-    mEnabledOverlays = DEFAULT_SYSTEM_UI;
-  }
-
-  public PlatformPlugin(FragmentActivity fragmentActivity, PlatformChannel platformChannel) {
-    this.fragmentActivity = fragmentActivity;
-    this.activity = fragmentActivity;
     this.platformChannel = platformChannel;
     this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
 
@@ -289,8 +278,8 @@ public class PlatformPlugin {
   }
 
   private void popSystemNavigator() {
-    if (fragmentActivity != null) {
-      fragmentActivity.getOnBackPressedDispatcher().onBackPressed();
+    if (activity instanceof FragmentActivity) {
+      ((FragmentActivity) activity).getOnBackPressedDispatcher().onBackPressed();
     } else {
       activity.finish();
     }
