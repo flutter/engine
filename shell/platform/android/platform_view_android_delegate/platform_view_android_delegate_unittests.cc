@@ -93,5 +93,14 @@ TEST(PlatformViewShell,
   delegate->UpdateSemantics(update, actions);
 }
 
+TEST(PlatformViewShell, RequestDartDeferredLibraryCallsJNIDownload) {
+  auto jni_mock = std::make_shared<JNIMock>();
+  auto delegate = std::make_unique<PlatformViewAndroidDelegate>(jni_mock);
+
+  int loadingUnitId = 123;
+  EXPECT_CALL(*jni_mock, RequestDartDeferredLibrary(loadingUnitId));
+  delegate->RequestDartDeferredLibrary(loadingUnitId);
+}
+
 }  // namespace testing
 }  // namespace flutter

@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.engine.dynamicfeatures;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
@@ -81,13 +82,38 @@ public class PlayStoreDynamicFeatureManagerTest {
     playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
     jni.setDynamicFeatureManager(playStoreManager);
 
-    playStoreManager.downloadDynamicFeature(123, "TestModuleName");
-    assertTrue(jni.loadDartDeferredLibraryCalled == 1);
-    assertTrue(jni.updateAssetManagerCalled == 1);
-    assertTrue(jni.dynamicFeatureInstallFailureCalled == 0);
+    assertEquals(jni.loadingUnitId, 0);
 
-    assertTrue(jni.searchPaths[0] == soTestPath);
-    assertTrue(jni.searchPaths.length == 1);
-    assertTrue(jni.loadingUnitId == 123);
+    playStoreManager.downloadDynamicFeature(123, "TestModuleName");
+    assertEquals(jni.loadDartDeferredLibraryCalled, 1);
+    assertEquals(jni.updateAssetManagerCalled, 1);
+    assertEquals(jni.dynamicFeatureInstallFailureCalled, 0);
+
+    assertTrue(jni.searchPaths[0].endsWith(soTestPath));
+    assertEquals(jni.searchPaths.length, 1);
+    assertEquals(jni.loadingUnitId, 123);
+  }
+
+  @Test
+  public void searchPathsAddsApks() throws NameNotFoundException {
+    jni = new TestFlutterJNI();
+    Context context = mock(Context.class);
+    when(context.createPackageContext(any(), anyInt())).thenReturn(context);
+    when(context.getAssets()).thenReturn(null);
+    String apkTestPath = "test/path/TestModuleName_armeabi_v7a.apk";
+    when(context.getFilesDir()).thenReturn(new File(apkTestPath));
+    playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
+    jni.setDynamicFeatureManager(playStoreManager);
+
+    assertEquals(jni.loadingUnitId, 0);
+
+    playStoreManager.downloadDynamicFeature(123, "TestModuleName");
+    assertEquals(jni.loadDartDeferredLibraryCalled, 1);
+    assertEquals(jni.updateAssetManagerCalled, 1);
+    assertEquals(jni.dynamicFeatureInstallFailureCalled, 0);
+
+    assertTrue(jni.searchPaths[0].endsWith(apkTestPath + "!lib/armeabi-v7a/app.so-123.part.so"));
+    assertEquals(jni.searchPaths.length, 1);
+    assertEquals(jni.loadingUnitId, 123);
   }
 }

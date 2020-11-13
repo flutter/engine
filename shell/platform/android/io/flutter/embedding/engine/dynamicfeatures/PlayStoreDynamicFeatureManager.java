@@ -272,7 +272,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     // Search directly in APKs first
     List<String> apkPaths = new ArrayList();
     // If not found in APKs, we check in extracted native libs for the lib directly.
-    String soPath = "";
+    List<String> soPaths = new ArrayList();
     Queue<File> searchFiles = new LinkedList();
     searchFiles.add(context.getFilesDir());
     while (!searchFiles.isEmpty()) {
@@ -289,7 +289,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
         continue;
       }
       if (name.equals(aotSharedLibraryName)) {
-        soPath = file.getAbsolutePath();
+        soPaths.add(file.getAbsolutePath());
       }
     }
 
@@ -297,7 +297,9 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     for (String path : apkPaths) {
       searchPaths.add(path + "!lib/" + abi + "/" + aotSharedLibraryName);
     }
-    searchPaths.add(soPath);
+    for (String path : soPaths) {
+      searchPaths.add(path);
+    }
 
     flutterJNI.loadDartDeferredLibrary(
         loadingUnitId, searchPaths.toArray(new String[apkPaths.size()]));

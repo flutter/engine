@@ -329,10 +329,8 @@ public class FlutterEngine {
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
 
-    this.dynamicFeatureManager =
-        dynamicFeatureManager != null
-            ? dynamicFeatureManager
-            : new PlayStoreDynamicFeatureManager(context, flutterJNI);
+    this.dynamicFeatureManager = dynamicFeatureManager;
+    // TODO(garyq): Inject PlayStoreDynamicFeatureManager(context, flutterJNI);
     flutterJNI.setDynamicFeatureManager(dynamicFeatureManager);
 
     attachToJni();
