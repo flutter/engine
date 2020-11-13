@@ -179,7 +179,7 @@ class GradientLinear extends EngineGradient {
       final double fromX = matrix4.transformedX + centerX;
       final double fromY = matrix4.transformedY + centerY;
       matrix4.transform(to.dx - centerX, to.dy - centerY);
-      gradient = ctx!.createLinearGradient(fromX, fromY,
+      gradient = ctx!.createLinearGradient(fromX - offsetX, fromY - offsetY,
           matrix4.transformedX + centerX - offsetX, matrix4.transformedY - offsetY + centerY);
     } else {
       gradient = ctx!.createLinearGradient(from.dx - offsetX, from.dy - offsetY, to.dx - offsetX, to.dy - offsetY);
@@ -224,9 +224,11 @@ class GradientRadial extends EngineGradient {
             'TileMode not supported in GradientRadial shader');
       }
     }
+    final double offsetX = shaderBounds!.left;
+    final double offsetY = shaderBounds.top;
     final html.CanvasGradient gradient = ctx!.createRadialGradient(
-        center.dx, center.dy, 0,
-        center.dx, center.dy, radius);
+        center.dx - offsetX, center.dy - offsetY, 0,
+        center.dx - offsetX, center.dy - offsetY, radius);
     final List<double>? colorStops = this.colorStops;
     if (colorStops == null) {
       assert(colors.length == 2);
