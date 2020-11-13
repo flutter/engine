@@ -102,7 +102,7 @@ public class PlatformPlugin {
       };
 
   public PlatformPlugin(Activity activity, PlatformChannel platformChannel) {
-    this.fragmentActivity = null;  
+    this.fragmentActivity = null;
     this.activity = activity;
     this.platformChannel = platformChannel;
     this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
@@ -290,9 +290,9 @@ public class PlatformPlugin {
 
   private void popSystemNavigator() {
     if (fragmentActivity != null) {
-      fragmentActivity.getOnBackPressedDispatcher().onBackPressed();	
+      fragmentActivity.getOnBackPressedDispatcher().onBackPressed();
     } else {
-     activity.finish();	
+     activity.finish();
     }
   }
 
