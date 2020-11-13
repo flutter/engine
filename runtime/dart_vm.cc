@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <vector>
 
@@ -122,7 +123,7 @@ static std::string DartOldGenHeapSizeArgs(uint64_t heap_size) {
   return oss.str();
 }
 
-static std::string DartWorkerThreadPriorityArgs() {
+static std::optional<std::string> DartWorkerThreadPriorityArgs() {
   std::ostringstream oss;
   oss << "--worker-thread-priority=";
 #if OS_WIN
@@ -130,8 +131,7 @@ static std::string DartWorkerThreadPriorityArgs() {
 #elif OS_MACOSX || OS_IOS || OS_LINUX || OS_ANDROID
   oss << "10";
 #else
-  // Currently a no-op.
-  oss << "10";
+  return std::nullopt;
 #endif
   return oss.str();
 }
@@ -416,7 +416,10 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   // via FlutterEnginePostCallbackOnAllNativeThreads.
   // TODO(dnfield): this won't work on Fuchsia yet, see
   // https://github.com/dart-lang/sdk/issues/44209
-  args.push_back(DartWorkerThreadPriorityArgs().c_str());
+  auto worker_thread_arg = DartWorkerThreadPriorityArgs();
+  if (worker_thread_arg.has_value()) {
+    args.push_back(worker_thread_arg.value().c_str());
+  }
 
   char* flags_error = Dart_SetVMFlags(args.size(), args.data());
   if (flags_error) {
