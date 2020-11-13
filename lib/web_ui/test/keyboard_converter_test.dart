@@ -41,7 +41,6 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
     bool preventedDefault = false;
     final onPreventDefault = () { preventedDefault = true; };
@@ -53,10 +52,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: Duration(milliseconds: 1),
       change: ui.KeyChange.down,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
     expect(preventedDefault, false);
 
@@ -66,11 +64,10 @@ void testMain() {
     );
     expectKeyData(keyDataList.last,
       timeStamp: Duration(milliseconds: 1, microseconds: 500),
-      change: ui.KeyChange.repeatedDown,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.repeatedDown, key: kLogicalLowerA, character: 'a'),
-      ],
+      change: ui.KeyChange.repeat,
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
     expect(preventedDefault, false);
 
@@ -80,11 +77,10 @@ void testMain() {
     );
     expectKeyData(keyDataList.last,
       timeStamp: Duration(seconds: 1, milliseconds: 500),
-      change: ui.KeyChange.repeatedDown,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.repeatedDown, key: kLogicalLowerA, character: 'a'),
-      ],
+      change: ui.KeyChange.repeat,
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
     expect(preventedDefault, false);
 
@@ -95,10 +91,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: Duration(seconds: 2, microseconds: 500),
       change: ui.KeyChange.up,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalLowerA),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: null,
     );
     expect(preventedDefault, false);
   });
@@ -107,71 +102,62 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalShiftLeft,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalShift),
-      ],
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShift,
+      character: null,
     );
 
     converter.handleEvent(keyDownEvent('KeyA', 'A', kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalUpperA, character: 'A'),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalUpperA,
+      character: 'A',
     );
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'A', kShift));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.repeatedDown,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.repeatedDown, key: kLogicalUpperA, character: 'A'),
-      ],
+      change: ui.KeyChange.repeat,
+      physical: kPhysicalKeyA,
+      logical: kLogicalUpperA,
+      character: 'A',
     );
 
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift'));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalShiftLeft,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalShift),
-      ],
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShift,
+      character: null,
     );
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.repeatedDown,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalUpperA),
-        ui.LogicalKeyData(change: ui.KeyChange.synchronize, key: kLogicalLowerA, character: 'a'),
-      ],
+      change: ui.KeyChange.repeat,
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: null,
     );
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.repeatedDown,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.repeatedDown, key: kLogicalLowerA, character: 'a'),
-      ],
+      change: ui.KeyChange.repeat,
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
 
     converter.handleEvent(keyUpEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalLowerA),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: null,
     );
   });
 
@@ -179,39 +165,38 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalShiftLeft,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalShift),
-      ],
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShift,
+      character: null,
     );
 
     converter.handleEvent(keyDownEvent('ShiftRight', 'Shift', kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalShiftRight,
-      logical: <ui.LogicalKeyData>[],
+      physical: kPhysicalShiftRight,
+      logical: kLogicalShift,
+      character: null,
     );
 
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalShiftLeft,
-      logical: <ui.LogicalKeyData>[],
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShift,
+      character: null,
     );
 
     converter.handleEvent(keyUpEvent('ShiftRight', 'Shift'));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalShiftRight,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalShift),
-      ],
+      physical: kPhysicalShiftRight,
+      logical: kLogicalShift,
+      character: null,
     );
   });
 
@@ -219,7 +204,6 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
     bool preventedDefault = false;
     final onPreventDefault = () { preventedDefault = true; };
@@ -227,10 +211,9 @@ void testMain() {
     converter.handleEvent(keyDownEvent('Tab', 'Tab')..onPreventDefault = onPreventDefault);
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalTab,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalTab),
-      ],
+      physical: kPhysicalTab,
+      logical: kLogicalTab,
+      character: null,
     );
     expect(preventedDefault, true);
     preventedDefault = false;
@@ -238,10 +221,9 @@ void testMain() {
     converter.handleEvent(keyUpEvent('Tab', 'Tab')..onPreventDefault = onPreventDefault);
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalTab,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalTab),
-      ],
+      physical: kPhysicalTab,
+      logical: kLogicalTab,
+      character: null,
     );
     expect(preventedDefault, true);
     preventedDefault = false;
@@ -251,7 +233,6 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
 
     // The absolute values of the following logical keys are not guaranteed.
@@ -267,37 +248,33 @@ void testMain() {
     converter.handleEvent(keyDownEvent('KeyE', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalKeyE,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalAltE),
-      ],
+      physical: kPhysicalKeyE,
+      logical: kLogicalAltE,
+      character: null,
     );
 
     converter.handleEvent(keyUpEvent('KeyE', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalKeyE,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalAltE),
-      ],
+      physical: kPhysicalKeyE,
+      logical: kLogicalAltE,
+      character: null,
     );
 
     converter.handleEvent(keyDownEvent('KeyU', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalKeyU,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalAltU),
-      ],
+      physical: kPhysicalKeyU,
+      logical: kLogicalAltU,
+      character: null,
     );
 
     converter.handleEvent(keyUpEvent('KeyU', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalKeyU,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalAltU),
-      ],
+      physical: kPhysicalKeyU,
+      logical: kLogicalAltU,
+      character: null,
     );
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kAlt | kShift));
@@ -307,10 +284,9 @@ void testMain() {
     converter.handleEvent(keyDownEvent('KeyE', 'Dead', kAlt | kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalKeyE,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalAltShiftE),
-      ],
+      physical: kPhysicalKeyE,
+      logical: kLogicalAltShiftE,
+      character: null,
     );
 
     converter.handleEvent(keyUpEvent('AltLeft', 'Alt', kShift));
@@ -318,10 +294,9 @@ void testMain() {
     converter.handleEvent(keyUpEvent('KeyE', 'e', kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalKeyE,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalAltShiftE),
-      ],
+      physical: kPhysicalKeyE,
+      logical: kLogicalAltShiftE,
+      character: null,
     );
 
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift'));
@@ -331,7 +306,6 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
@@ -341,18 +315,17 @@ void testMain() {
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
     expect(keyDataList, hasLength(2));
     expectKeyData(keyDataList.first,
-      change: ui.KeyChange.cancel,
-      key: kPhysicalShiftLeft,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalShift),
-      ],
+      change: ui.KeyChange.up,
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShift,
+      character: null,
+      synthesized: true,
     );
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalShiftLeft,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalShift),
-      ],
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShift,
+      character: null,
     );
     keyDataList.clear();
 
@@ -360,10 +333,9 @@ void testMain() {
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalShiftLeft,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalShift),
-      ],
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShift,
+      character: null,
     );
   });
 
@@ -371,7 +343,6 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
 
     // A KeyDown of ShiftRight is missed due to loss of focus.
@@ -383,7 +354,6 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
 
     // Same layout
@@ -403,19 +373,17 @@ void testMain() {
     converter.handleEvent(keyDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
 
     converter.handleEvent(keyDownEvent('KeyU', 'u'));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalKeyU,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerU, character: 'u'),
-      ],
+      physical: kPhysicalKeyU,
+      logical: kLogicalLowerU,
+      character: 'u',
     );
   });
 
@@ -423,30 +391,28 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     }, onMacOs: true);
 
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalCapsLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
-      ],
-      activeLocks: kCapsLock,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+      locks: kCapsLock,
     );
     keyDataList.clear();
 
     async.elapse(Duration(microseconds: 1));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.cancel,
-      key: kPhysicalCapsLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalCapsLock),
-      ],
-      activeLocks: kCapsLock,
+      change: ui.KeyChange.up,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+      locks: kCapsLock,
+      synthesized: true,
     );
     keyDataList.clear();
 
@@ -454,23 +420,22 @@ void testMain() {
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalCapsLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
-      ],
-      activeLocks: 0,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+      locks: 0,
     );
     keyDataList.clear();
 
     async.elapse(Duration(microseconds: 1));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.cancel,
-      key: kPhysicalCapsLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalCapsLock),
-      ],
-      activeLocks: 0,
+      change: ui.KeyChange.up,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+      locks: 0,
+      synthesized: true,
     );
     keyDataList.clear();
 
@@ -479,11 +444,10 @@ void testMain() {
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalCapsLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
-      ],
-      activeLocks: kCapsLock,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+      locks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -498,18 +462,16 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     }, onMacOs: false);
 
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalCapsLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
-      ],
-      activeLocks: kCapsLock,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+      locks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -520,11 +482,10 @@ void testMain() {
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalCapsLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalCapsLock),
-      ],
-      activeLocks: kCapsLock,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+      locks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -534,21 +495,19 @@ void testMain() {
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalCapsLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalCapsLock),
-      ],
-      activeLocks: 0,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+      locks: 0,
     );
 
     converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalCapsLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalCapsLock),
-      ],
-      activeLocks: 0,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+      locks: 0,
     );
   });
 
@@ -556,7 +515,6 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta)..timeStamp = 100);
@@ -566,10 +524,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 200),
       change: ui.KeyChange.down,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
     keyDataList.clear();
 
@@ -578,11 +535,11 @@ void testMain() {
     async.elapse(Duration(milliseconds: 2500));
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 1200),
-      change: ui.KeyChange.cancel,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalLowerA),
-      ],
+      change: ui.KeyChange.up,
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: null,
+      synthesized: true,
     );
     keyDataList.clear();
 
@@ -590,10 +547,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2700),
       change: ui.KeyChange.up,
-      key: kPhysicalMetaLeft,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalMeta),
-      ],
+      physical: kPhysicalMetaLeft,
+      logical: kLogicalMeta,
+      character: null,
     );
     async.elapse(Duration(milliseconds: 100));
 
@@ -602,10 +558,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2800),
       change: ui.KeyChange.down,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
     async.elapse(Duration(milliseconds: 100));
 
@@ -613,10 +568,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2900),
       change: ui.KeyChange.up,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalLowerA),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: null,
     );
   });
 
@@ -624,7 +578,6 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta)..timeStamp = 100);
@@ -644,11 +597,11 @@ void testMain() {
     async.elapse(Duration(milliseconds: 2500));
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 1700),
-      change: ui.KeyChange.cancel,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalLowerA),
-      ],
+      change: ui.KeyChange.up,
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: null,
+      synthesized: true,
     );
     keyDataList.clear();
 
@@ -656,10 +609,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 3200),
       change: ui.KeyChange.up,
-      key: kPhysicalMetaLeft,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalMeta),
-      ],
+      physical: kPhysicalMetaLeft,
+      logical: kLogicalMeta,
+      character: null,
     );
     async.elapse(Duration(milliseconds: 100));
 
@@ -668,10 +620,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 3300),
       change: ui.KeyChange.down,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
     async.elapse(Duration(milliseconds: 100));
 
@@ -679,10 +630,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 3400),
       change: ui.KeyChange.up,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalLowerA),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: null,
     );
   });
 
@@ -690,7 +640,6 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     });
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta')..timeStamp = 100);
@@ -700,10 +649,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 200),
       change: ui.KeyChange.down,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
     keyDataList.clear();
     async.elapse(Duration(milliseconds: 500));
@@ -715,10 +663,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 800),
       change: ui.KeyChange.up,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalLowerA),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: null,
     );
     keyDataList.clear();
     async.elapse(Duration(milliseconds: 2000));
@@ -729,10 +676,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2800),
       change: ui.KeyChange.down,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
     async.elapse(Duration(milliseconds: 100));
 
@@ -740,10 +686,9 @@ void testMain() {
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2900),
       change: ui.KeyChange.up,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalLowerA),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: null,
     );
   });
 
@@ -751,18 +696,16 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     }, onMacOs: false);
 
     converter.handleEvent(keyDownEvent('ScrollLock', 'ScrollLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalScrollLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalScrollLock),
-      ],
-      activeLocks: kScrollLock,
+      physical: kPhysicalScrollLock,
+      logical: kLogicalScrollLock,
+      character: null,
+      locks: kScrollLock,
     );
     keyDataList.clear();
 
@@ -773,32 +716,29 @@ void testMain() {
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalScrollLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalScrollLock),
-      ],
-      activeLocks: kScrollLock,
+      physical: kPhysicalScrollLock,
+      logical: kLogicalScrollLock,
+      character: null,
+      locks: kScrollLock,
     );
     keyDataList.clear();
 
     converter.handleEvent(keyDownEvent('ScrollLock', 'ScrollLock'));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalScrollLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalScrollLock),
-      ],
-      activeLocks: 0,
+      physical: kPhysicalScrollLock,
+      logical: kLogicalScrollLock,
+      character: null,
+      locks: 0,
     );
 
     converter.handleEvent(keyUpEvent('ScrollLock', 'ScrollLock'));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.up,
-      key: kPhysicalScrollLock,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.up, key: kLogicalScrollLock),
-      ],
-      activeLocks: 0,
+      physical: kPhysicalScrollLock,
+      logical: kLogicalScrollLock,
+      character: null,
+      locks: 0,
     );
   });
 
@@ -806,23 +746,22 @@ void testMain() {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
-      return true;
     }, onMacOs: false);
 
     converter.handleEvent(keyDownEvent('ShiftRight', 'Shift', kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalShiftRight,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalShift),
-      ],
+      physical: kPhysicalShiftRight,
+      logical: kLogicalShift,
+      character: null,
     );
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift));
     expectKeyData(keyDataList.last,
       change: ui.KeyChange.down,
-      key: kPhysicalShiftLeft,
-      logical: <ui.LogicalKeyData>[],
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShift,
+      character: null,
     );
     keyDataList.clear();
 
@@ -831,25 +770,26 @@ void testMain() {
     converter.handleEvent(keyDownEvent('KeyA', 'a'));
     expect(keyDataList, hasLength(3));
     expectKeyData(keyDataList[0],
-      change: ui.KeyChange.cancel,
+      change: ui.KeyChange.up,
       // If this event becomes left and the next event becomes right, it's an
       // acceptable (while unexpected) change.
-      key: kPhysicalShiftRight,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.cancel, key: kLogicalShift),
-      ],
+      physical: kPhysicalShiftRight,
+      logical: kLogicalShift,
+      synthesized: true,
+      character: null,
     );
     expectKeyData(keyDataList[1],
-      change: ui.KeyChange.cancel,
-      key: kPhysicalShiftLeft,
-      logical: <ui.LogicalKeyData>[],
+      change: ui.KeyChange.up,
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShift,
+      character: null,
     );
     expectKeyData(keyDataList.last,
+      synthesized: true,
       change: ui.KeyChange.down,
-      key: kPhysicalKeyA,
-      logical: <ui.LogicalKeyData>[
-        ui.LogicalKeyData(change: ui.KeyChange.down, key: kLogicalLowerA, character: 'a'),
-      ],
+      physical: kPhysicalKeyA,
+      logical: kLogicalLowerA,
+      character: 'a',
     );
   });
 }
@@ -939,23 +879,22 @@ const kScrollLock = 0x4;
 void expectKeyData(
   ui.KeyData target, {
   required ui.KeyChange change,
-  required int key,
-  required List<ui.LogicalKeyData> logical,
+  required int physical,
+  required int logical,
+  required String? character,
   Duration? timeStamp,
-  int? activeLocks,
+  int? locks,
+  bool synthesized = false,
 }) {
   expect(target.change, change);
-  expect(target.key, key);
+  expect(target.physical, physical);
+  expect(target.logical, logical);
+  expect(target.character, character);
+  expect(target.synthesized, synthesized);
   if (timeStamp != null)
     expect(target.timeStamp, equals(timeStamp));
-  if (activeLocks != null)
-    expect(target.activeLocks, equals(activeLocks));
-  expect(target.logicalEvents.length, logical.length);
-  for (int i = 0; i < logical.length; i++) {
-    expect(target.logicalEvents[i].change, logical[i].change);
-    expect(target.logicalEvents[i].key, logical[i].key);
-    expect(target.logicalEvents[i].character, logical[i].character);
-  }
+  if (locks != null)
+    expect(target.locks, equals(locks));
 }
 
 typedef FakeAsyncTest = void Function(FakeAsync);

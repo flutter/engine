@@ -1433,16 +1433,15 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
 
   auto packet = std::make_unique<flutter::KeyDataPacketBuilder>(character_data_size);
 
-  flutter::KeyData physical_key;
-  physical_key.Clear();
-  physical_key.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
-  physical_key.change = ToKeyChange(SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindUp));
-  physical_key.physical = SAFE_ACCESS(event, physical, 0);
-  physical_key.logical = SAFE_ACCESS(event, logical, 0);
-  physical_key.locks = (uint64_t)SAFE_ACCESS(event, locks, 0);
-  physical_key.synthesized = !!SAFE_ACCESS(event, synthesized, false);
-  physical_key.character_size = character_data_size;
-  packet->SetKeyData(physical_key);
+  flutter::KeyData key_data;
+  key_data.Clear();
+  key_data.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
+  key_data.change = ToKeyChange(SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindUp));
+  key_data.physical = SAFE_ACCESS(event, physical, 0);
+  key_data.logical = SAFE_ACCESS(event, logical, 0);
+  key_data.locks = (uint64_t)SAFE_ACCESS(event, locks, 0);
+  key_data.synthesized = !!SAFE_ACCESS(event, synthesized, false);
+  packet->SetKeyData(key_data);
   packet->SetCharacter(character);
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)

@@ -383,7 +383,8 @@ class PlatformDispatcher {
       physical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       logical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       character: character,
-      locks: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      locks: packet.getUint64(kStride * offset++, _kFakeHostEndian),
+      synthesized: packet.getUint64(kStride * offset++, _kFakeHostEndian) != 0,
     );
 
     return keyData;

@@ -169,6 +169,7 @@ class FlutterHtmlKeyboardEvent {
   String? get code => _event.code;
   String? get key => _event.key;
   bool? get repeat => _event.repeat;
+  int? get location => _event.location;
   num? get timeStamp => _event.timeStamp;
   bool get altKey => _event.altKey;
   bool get ctrlKey => _event.ctrlKey;
@@ -200,7 +201,7 @@ class KeyboardConverter {
   // key is pressed and the light turns off. Flutter considers both events as
   // key down, and synthesizes immediate cancel events following them. The state
   // of "whether CapsLock is on" should be accessed by "activeLocks".
-  bool _shouldSynthesizeCapsLockCancel() {
+  bool _shouldSynthesizeCapsLockUp() {
     return onMacOs;
   }
 
@@ -316,15 +317,12 @@ class KeyboardConverter {
       _keydownCancelDuration,
       () => ui.KeyData(
         timeStamp: currentTimeStamp + _keydownCancelDuration,
-        change: ui.KeyChange.cancel,
-        key: physicalKey,
-        activeLocks: 0,
-        logicalEvents: <ui.LogicalKeyData>[
-          ui.LogicalKeyData(
-            change: ui.KeyChange.cancel,
-            key: logicalKey,
-          ),
-        ],
+        change: ui.KeyChange.up,
+        physical: physicalKey,
+        logical: logicalKey,
+        locks: _activeLocks,
+        character: null,
+        synthesized: true,
       ),
       () {
         _pressingRecords.remove(physicalKey);
@@ -358,120 +356,99 @@ class KeyboardConverter {
 
     final int physicalKey = _getPhysicalCode(event.code!);
     final bool logicalKeyIsCharacter = !_eventKeyIsKeyname(eventKey);
-    final int logicalKey = logicalKeyIsCharacter ? _characterToLogicalKey(eventKey)
-        : eventKey == _kLogicalDead ? _deadKeyToLogicalKey(physicalKey, event)
-        : _otherLogicalKey(eventKey);
     final String? character = logicalKeyIsCharacter ? eventKey : null;
+    final int logicalKey = () {
+      if (kWebLogicalLocationMap.containsKey(event.key!)) {
+        final int? result = kWebLogicalLocationMap[event.key!]?[event.location!];
+        assert(result != null, 'Invalid modifier location: ${event.key}, ${event.location}');
+        return result!;
+      }
+      if (character != null)
+        return _characterToLogicalKey(character);
+      if (eventKey == _kLogicalDead)
+        return _deadKeyToLogicalKey(physicalKey, event);
+      return _otherLogicalKey(eventKey);
+    }();
 
     assert(event.type == 'keydown' || event.type == 'keyup');
     final bool isPhysicalDown = event.type == 'keydown' ||
       // On macOS, both keydown and keyup events of CapsLock should be considered keydown,
       // followed by an immediate cancel event.
-      (_shouldSynthesizeCapsLockCancel() && event.code! == _kPhysicalCapsLock);
+      (_shouldSynthesizeCapsLockUp() && event.code! == _kPhysicalCapsLock);
 
-    // The value of _pressingRecords[physicalKey] before and after calculating the events.
-    // See `_pressingRecords` for its meaning.
     final int? lastLogicalRecord = _pressingRecords[physicalKey];
-    final int? nextLogicalRecord = isPhysicalDown ? logicalKey : null;
 
-    // Possible synthesized key event to synchronize states before the main event.
-    ui.KeyData? preSynthesizedKeyData;
-    final List<ui.LogicalKeyData> logicalKeyDataList = <ui.LogicalKeyData>[];
+    ui.KeyChange change;
 
-    if (lastLogicalRecord != nextLogicalRecord) {
-      // Case 1: The pressing record for the physical key becomes a different
-      // record from before.
+    if (_shouldSynthesizeCapsLockUp() && event.code! == _kPhysicalCapsLock) {
+      // Case 1: Handle CapsLock on macOS
       //
-      //  * From null to non-null: Simple keydown
-      //  * From non-null to null: Simple keyup
-      //  * From non-null to a different non-null: The physical key starts to map
-      //    to a different logical key. Cancel the previous one and sync the new one.
-
-      // First remove the physical key to see if the logical key is still pressed after that.
-      _pressingRecords.remove(physicalKey);
-      if (lastLogicalRecord != null && !_pressingRecords.containsValue(lastLogicalRecord)) {
-        logicalKeyDataList.add(ui.LogicalKeyData(
-          change: nextLogicalRecord == null ? ui.KeyChange.up : ui.KeyChange.cancel,
-          key: lastLogicalRecord,
-        ));
-      }
-      if (nextLogicalRecord != null && !_pressingRecords.containsValue(nextLogicalRecord)) {
-        logicalKeyDataList.add(ui.LogicalKeyData(
-          change: lastLogicalRecord == null ? ui.KeyChange.down : ui.KeyChange.synchronize,
-          key: nextLogicalRecord,
-          character: character,
-        ));
-      }
-
       // On macOS, both keydown and keyup events of CapsLock are considered
-      // keydown, followed by an immediate cancel event.
-      if (event.code! == _kPhysicalCapsLock && _shouldSynthesizeCapsLockCancel()) {
-        _scheduleAsyncEvent(
-          Duration.zero,
-          () => ui.KeyData(
-            timeStamp: timeStamp,
-            change: ui.KeyChange.cancel,
-            key: physicalKey,
-            activeLocks: _activeLocks,
-            logicalEvents: <ui.LogicalKeyData>[
-              ui.LogicalKeyData(
-                change: ui.KeyChange.cancel,
-                key: logicalKey,
-              ),
-            ],
-          ),
-          () {
-            _pressingRecords.remove(physicalKey);
-          }
-        );
-      }
+      // keydown, followed by an immediate synchronized up event.
 
-    } else if (nextLogicalRecord != null) {
-      // Case 2: The pressing record for the physical key is a same non-null
-      // record as before, but received an event anyway.
-      //
-      //  * Repeated: A normal repeated event
-      //  * Non-repeated: Indicates an up event has been omitted
-      assert(isPhysicalDown);
-
-      if (event.repeat ?? false) {
-        logicalKeyDataList.add(ui.LogicalKeyData(
-          change: ui.KeyChange.repeatedDown,
-          key: nextLogicalRecord,
-          character: character,
-        ));
-      } else {
-        // This happens when the up event was omitted, usually due to loss of
-        // focus or shortcuts. A physical cancel must be synthesized, otherwise
-        // the physical press can not be represented.
-        preSynthesizedKeyData = ui.KeyData(
+      _scheduleAsyncEvent(
+        Duration.zero,
+        () => ui.KeyData(
           timeStamp: timeStamp,
-          change: ui.KeyChange.cancel,
-          key: physicalKey,
-          activeLocks: _activeLocks,
-          logicalEvents: <ui.LogicalKeyData>[
-            ui.LogicalKeyData(
-              change: ui.KeyChange.cancel,
-              key: nextLogicalRecord,
-            ),
-          ],
-        );
+          change: ui.KeyChange.up,
+          physical: physicalKey,
+          logical: logicalKey,
+          character: null,
+          locks: _activeLocks,
+          synthesized: true,
+        ),
+        () {
+          _pressingRecords.remove(physicalKey);
+        }
+      );
+      change = ui.KeyChange.down;
 
-        logicalKeyDataList.add(ui.LogicalKeyData(
-          change: ui.KeyChange.down,
-          key: nextLogicalRecord,
-          character: character,
-        ));
+    } else if (isPhysicalDown) {
+      // Case 2: Handle key down of normal keys
+      change = ui.KeyChange.down;
+      if (lastLogicalRecord != null) {
+        // This physical key is being pressed according to the record.
+        if (event.repeat ?? false) {
+          // A normal repeated key.
+          change = ui.KeyChange.repeat;
+        } else {
+          // A non-repeated key has been pressed that has the exact physical key as
+          // a currently pressed one, usually indicating multiple keyboards are
+          // pressing keys with the same physical key, or the up event was lost
+          // during a loss of focus. The down event is ignored.
+          return false;
+        }
+      } else {
+        // This physical key is not being pressed according to the record. It's a
+        // normal down event, whether the system event is a repeat or not.
       }
-    } else {
-      // Case 3: The physical record for the physical key is a same null state
-      // as before, indicating an omitted down event, usually due to loss of
-      // focus. Skip.
-      return false;
+
+    } else { // isPhysicalDown is false and not CapsLock
+      // Case 2: Handle key up of normal keys
+      if (lastLogicalRecord != null) {
+        // The physical key has been released before. It indicates multiple
+        // keyboards pressed keys with the same physical key. Ignore the up event.
+        return false;
+      }
+
+      change = ui.KeyChange.up;
     }
 
-    // Update _pressingRecords. It might have been updated before if necessary,
-    // but the update is done here anywaay.
+    late final int? nextLogicalRecord;
+    switch (change) {
+      case ui.KeyChange.down:
+        assert(lastLogicalRecord == null);
+        nextLogicalRecord = logicalKey;
+        break;
+      case ui.KeyChange.up:
+        assert(lastLogicalRecord != null);
+        nextLogicalRecord = null;
+        break;
+      case ui.KeyChange.repeat:
+        assert(lastLogicalRecord != null);
+        nextLogicalRecord = lastLogicalRecord;
+        break;
+    }
     if (nextLogicalRecord == null) {
       _pressingRecords.remove(physicalKey);
     } else {
@@ -485,25 +462,20 @@ class KeyboardConverter {
     // represent.
     _kLogicalKeyToModifierGetter.forEach((int logicalKey, _ModifierGetter getModifier) {
       if (_pressingRecords.containsValue(logicalKey) && !getModifier(event)) {
-        bool hasRemovedLogicalRecord = false;
         _pressingRecords.removeWhere((int physicalKey, int logicalRecord) {
           if (logicalRecord != logicalKey)
             return false;
 
           dispatchKeyData(ui.KeyData(
             timeStamp: timeStamp,
-            change: ui.KeyChange.cancel,
-            key: physicalKey,
-            activeLocks: _activeLocks,
-            logicalEvents: <ui.LogicalKeyData>[
-              if (!hasRemovedLogicalRecord) ui.LogicalKeyData(
-                change: ui.KeyChange.cancel,
-                key: logicalKey,
-              ),
-            ],
+            change: ui.KeyChange.up,
+            physical: physicalKey,
+            logical: logicalKey,
+            character: null,
+            locks: _activeLocks,
+            synthesized: true,
           ));
 
-          hasRemovedLogicalRecord = true;
           return true;
         });
       }
@@ -512,9 +484,9 @@ class KeyboardConverter {
     // Update lock flags
     if (!logicalKeyIsCharacter) {
       assert(event.repeat == false);
-      if (_shouldSynthesizeCapsLockCancel() && event.code! == _kPhysicalCapsLock) {
-        // If `_shouldSynthesizeCapsLockCancel` is false, CapsLock is handled in
-        // the next else clause.
+      if (_shouldSynthesizeCapsLockUp() && event.code! == _kPhysicalCapsLock) {
+        // If `_shouldSynthesizeCapsLockUp` is false, CapsLock is handled in
+        // the following else clause.
         _updateLockFlag(_kLockFlagCapsLock, event.type != 'keyup');
       } else if (nextLogicalRecord != null) {
         final int? lockFlag = _kPhysicalKeyToLockFlag[event.code!];
@@ -534,17 +506,14 @@ class KeyboardConverter {
 
     final ui.KeyData keyData = ui.KeyData(
       timeStamp: timeStamp,
-      change: isPhysicalDown
-        ? (event.repeat ?? false ? ui.KeyChange.repeatedDown : ui.KeyChange.down)
-        : ui.KeyChange.up,
-      key: physicalKey,
-      activeLocks: _activeLocks,
-      logicalEvents: logicalKeyDataList,
+      change: change,
+      physical: physicalKey,
+      logical: lastLogicalRecord ?? logicalKey,
+      character: change == ui.KeyChange.up ? null : character,
+      locks: _activeLocks,
+      synthesized: false,
     );
 
-    if (preSynthesizedKeyData != null) {
-      dispatchKeyData(preSynthesizedKeyData);
-    }
     dispatchKeyData(keyData);
     return true;
   }

@@ -135,7 +135,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
  * The keys of the dictionary are physical keys, while the values are the logical keys
  * on pressing.
  */
-@property(nonatomic) NSMutableDictionary* pressedKeys;
+@property(nonatomic) NSMutableDictionary* pressingRecords;
 
 /**
  * A bitmask indicating whether each lock is on.
@@ -186,16 +186,16 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   self = [super init];
   if (self != nil) {
     _flutterViewController = viewController;
-    _pressedKeys = [NSMutableDictionary dictionary];
+    _pressingRecords = [NSMutableDictionary dictionary];
   }
   return self;
 }
 
 - (void)updateKey:(uint64_t)physicalKey asPressed:(uint64_t)logicalKey {
   if (logicalKey == 0) {
-    [_pressedKeys removeObjectForKey:@(physicalKey)];
+    [_pressingRecords removeObjectForKey:@(physicalKey)];
   } else {
-    _pressedKeys[@(physicalKey)] = @(logicalKey);
+    _pressingRecords[@(physicalKey)] = @(logicalKey);
   }
 }
 
@@ -213,7 +213,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   uint64_t physicalKey = GetPhysicalKeyForEvent(event);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
 
-  NSNumber* pressedLogicalKey = _pressedKeys[@(physicalKey)];
+  NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
   bool isARepeat = false;
   bool isSynthesized = false;
 
@@ -255,7 +255,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       @"Unexpected repeated Up event. Please report this to Flutter.", event.characters);
 
   uint64_t physicalKey = GetPhysicalKeyForEvent(event);
-  NSNumber* pressedLogicalKey = _pressedKeys[@(physicalKey)];
+  NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
   if (!pressedLogicalKey) {
     // The physical key has been released before. It indicates multiple
     // keyboards pressed keys with the same physical key. Ignore the up event.
@@ -340,8 +340,8 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   // The `siblingKey` may be 0, which means it doesn't have a sibling key.
   uint64_t siblingKey = GetSiblingKeyForKey(targetKey);
 
-  bool lastTargetPressed = [_pressedKeys objectForKey:@(targetKey)] != nil;
-  bool lastSiblingPressed = siblingKey == 0 ? false : [_pressedKeys objectForKey:@(siblingKey)] != nil;
+  bool lastTargetPressed = [_pressingRecords objectForKey:@(targetKey)] != nil;
+  bool lastSiblingPressed = siblingKey == 0 ? false : [_pressingRecords objectForKey:@(siblingKey)] != nil;
   bool nowEitherPressed = (event.modifierFlags & modifierFlag) != 0;
 
   bool targetKeyShouldDown = !lastTargetPressed && nowEitherPressed;

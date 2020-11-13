@@ -244,60 +244,27 @@ void initialize_gtk_keyval_to_logical_key(GHashTable* table) {
   insert_record(table, 0x0000ff89, 0x00000009);    // KP_Tab
   insert_record(table, 0x0000fe20, 0x00000009);    // ISO_Left_Tab
   insert_record(table, 0x0000ff0d, 0x0000000d);    // Return
-  insert_record(table, 0x0000ff8d, 0x0000000d);    // KP_Enter
   insert_record(table, 0x0000fe34, 0x0000000d);    // ISO_Enter
   insert_record(table, 0x0000fd1e, 0x0000000d);    // 3270_Enter
   insert_record(table, 0x0000ff1b, 0x0000001b);    // Escape
-  insert_record(table, 0x0000ffff, 0x0000007f);    // Delete
-  insert_record(table, 0x0000ff9f, 0x0000007f);    // KP_Delete
   insert_record(table, 0x0000ff80, 0x00000020);    // KP_Space
-  insert_record(table, 0x0000ffaa, 0x0000002a);    // KP_Multiply
-  insert_record(table, 0x0000ffab, 0x0000002b);    // KP_Add
-  insert_record(table, 0x0000ffad, 0x0000002d);    // KP_Subtract
   insert_record(table, 0x0000ffae, 0x0000002e);    // KP_Decimal
-  insert_record(table, 0x0000ffaf, 0x0000002f);    // KP_Divide
-  insert_record(table, 0x0000ffb0, 0x00000030);    // KP_0
-  insert_record(table, 0x0000ffb1, 0x00000031);    // KP_1
-  insert_record(table, 0x0000ffb2, 0x00000032);    // KP_2
-  insert_record(table, 0x0000ffb3, 0x00000033);    // KP_3
-  insert_record(table, 0x0000ffb4, 0x00000034);    // KP_4
-  insert_record(table, 0x0000ffb5, 0x00000035);    // KP_5
-  insert_record(table, 0x0000ffb6, 0x00000036);    // KP_6
-  insert_record(table, 0x0000ffb7, 0x00000037);    // KP_7
-  insert_record(table, 0x0000ffb8, 0x00000038);    // KP_8
-  insert_record(table, 0x0000ffb9, 0x00000039);    // KP_9
-  insert_record(table, 0x0000ffbd, 0x0000003d);    // KP_Equal
-  insert_record(table, 0x0000ffe9, 0x00000102);    // Alt_L
-  insert_record(table, 0x0000ffea, 0x00000102);    // Alt_R
+  insert_record(table, 0x0000ffff, 0x0000007f);    // Delete
   insert_record(table, 0x0000ffe5, 0x00000104);    // Caps_Lock
-  insert_record(table, 0x0000ffe3, 0x00000105);    // Control_L
-  insert_record(table, 0x0000ffe4, 0x00000105);    // Control_R
   insert_record(table, 0x0000ffed, 0x00000108);    // Hyper_L
   insert_record(table, 0x0000ffee, 0x00000108);    // Hyper_R
-  insert_record(table, 0x0000ffe7, 0x00000109);    // Meta_L
-  insert_record(table, 0x0000ffe8, 0x00000109);    // Meta_R
   insert_record(table, 0x0000ff7f, 0x0000010a);    // Num_Lock
   insert_record(table, 0x0000ff14, 0x0000010c);    // Scroll_Lock
-  insert_record(table, 0x0000ffe1, 0x0000010d);    // Shift_L
-  insert_record(table, 0x0000ffe2, 0x0000010d);    // Shift_R
   insert_record(table, 0x0000ffeb, 0x0000010e);    // Super_L
   insert_record(table, 0x0000ffec, 0x0000010e);    // Super_R
   insert_record(table, 0x0000ff54, 0x00000301);    // Down
-  insert_record(table, 0x0000ff99, 0x00000301);    // KP_Down
   insert_record(table, 0x0000ff51, 0x00000302);    // Left
-  insert_record(table, 0x0000ff96, 0x00000302);    // KP_Left
   insert_record(table, 0x0000ff53, 0x00000303);    // Right
-  insert_record(table, 0x0000ff98, 0x00000303);    // KP_Right
   insert_record(table, 0x0000ff52, 0x00000304);    // Up
-  insert_record(table, 0x0000ff97, 0x00000304);    // KP_Up
   insert_record(table, 0x0000ff57, 0x00000305);    // End
-  insert_record(table, 0x0000ff9c, 0x00000305);    // KP_End
   insert_record(table, 0x0000ff50, 0x00000306);    // Home
-  insert_record(table, 0x0000ff95, 0x00000306);    // KP_Home
   insert_record(table, 0x0000ff56, 0x00000307);    // Page_Down
-  insert_record(table, 0x0000ff9b, 0x00000307);    // KP_Page_Down
   insert_record(table, 0x0000ff55, 0x00000308);    // Page_Up
-  insert_record(table, 0x0000ff9a, 0x00000308);    // KP_Page_Up
   insert_record(table, 0x0000ff0b, 0x00000401);    // Clear
   insert_record(table, 0x0000fd15, 0x00000402);    // 3270_Copy
   insert_record(table, 0x1008ff57, 0x00000402);    // Copy
@@ -305,7 +272,6 @@ void initialize_gtk_keyval_to_logical_key(GHashTable* table) {
   insert_record(table, 0x0000fd06, 0x00000405);    // 3270_EraseEOF
   insert_record(table, 0x0000fd1b, 0x00000406);    // 3270_ExSelect
   insert_record(table, 0x0000ff63, 0x00000407);    // Insert
-  insert_record(table, 0x0000ff9e, 0x00000407);    // KP_Insert
   insert_record(table, 0x1008ff6d, 0x00000408);    // Paste
   insert_record(table, 0x0000ff66, 0x00000409);    // Redo
   insert_record(table, 0x0000ff65, 0x0000040a);    // Undo
@@ -379,12 +345,6 @@ void initialize_gtk_keyval_to_logical_key(GHashTable* table) {
   insert_record(table, 0x1008ff90, 0x00000a02);    // MailForward
   insert_record(table, 0x1008ff72, 0x00000a03);    // Reply
   insert_record(table, 0x1008ff7b, 0x00000a04);    // Send
-  insert_record(table, 0x1008ff97, 0x00000d2c);    // AudioForward
-  insert_record(table, 0x1008ff31, 0x00000d2e);    // AudioPause
-  insert_record(table, 0x0000fd16, 0x00000d2f);    // 3270_Play
-  insert_record(table, 0x1008ff14, 0x00000d2f);    // AudioPlay
-  insert_record(table, 0x1008ff1c, 0x00000d30);    // AudioRecord
-  insert_record(table, 0x1008ff3e, 0x00000d31);    // AudioRewind
   insert_record(table, 0x1008ff15, 0x00000a07);    // AudioStop
   insert_record(table, 0x1008ff17, 0x00000a08);    // AudioNext
   insert_record(table, 0x1008ff16, 0x00000a09);    // AudioPrev
@@ -398,8 +358,8 @@ void initialize_gtk_keyval_to_logical_key(GHashTable* table) {
   insert_record(table, 0x1008ff12, 0x00000a11);    // AudioMute
   insert_record(table, 0x1008ff20, 0x00000b02);    // Calendar
   insert_record(table, 0x1008ff19, 0x00000b03);    // Mail
-  insert_record(table, 0x1008ff6e, 0x00000b0d);    // Phone
   insert_record(table, 0x1008ff2d, 0x00000b07);    // ScreenSaver
+  insert_record(table, 0x1008ff6e, 0x00000b0d);    // Phone
   insert_record(table, 0x1008ff26, 0x00000c01);    // Back
   insert_record(table, 0x1008ff30, 0x00000c02);    // Favorites
   insert_record(table, 0x1008ff27, 0x00000c03);    // Forward
@@ -407,4 +367,44 @@ void initialize_gtk_keyval_to_logical_key(GHashTable* table) {
   insert_record(table, 0x1008ff29, 0x00000c05);    // Refresh
   insert_record(table, 0x1008ff1b, 0x00000c06);    // Search
   insert_record(table, 0x1008ff28, 0x00000c07);    // Stop
+  insert_record(table, 0x1008ff97, 0x00000d2c);    // AudioForward
+  insert_record(table, 0x1008ff31, 0x00000d2e);    // AudioPause
+  insert_record(table, 0x0000fd16, 0x00000d2f);    // 3270_Play
+  insert_record(table, 0x1008ff14, 0x00000d2f);    // AudioPlay
+  insert_record(table, 0x1008ff1c, 0x00000d30);    // AudioRecord
+  insert_record(table, 0x1008ff3e, 0x00000d31);    // AudioRewind
+  insert_record(table, 0x0000ff8d, 0x20000000d);    // KP_Enter
+  insert_record(table, 0x0000ffaa, 0x20000002a);    // KP_Multiply
+  insert_record(table, 0x0000ffab, 0x20000002b);    // KP_Add
+  insert_record(table, 0x0000ffad, 0x20000002d);    // KP_Subtract
+  insert_record(table, 0x0000ff9f, 0x20000002e);    // KP_Delete
+  insert_record(table, 0x0000ffaf, 0x20000002f);    // KP_Divide
+  insert_record(table, 0x0000ff9e, 0x200000030);    // KP_Insert
+  insert_record(table, 0x0000ffb0, 0x200000030);    // KP_0
+  insert_record(table, 0x0000ff9c, 0x200000031);    // KP_End
+  insert_record(table, 0x0000ffb1, 0x200000031);    // KP_1
+  insert_record(table, 0x0000ff99, 0x200000032);    // KP_Down
+  insert_record(table, 0x0000ffb2, 0x200000032);    // KP_2
+  insert_record(table, 0x0000ff9b, 0x200000033);    // KP_Page_Down
+  insert_record(table, 0x0000ffb3, 0x200000033);    // KP_3
+  insert_record(table, 0x0000ff96, 0x200000034);    // KP_Left
+  insert_record(table, 0x0000ffb4, 0x200000034);    // KP_4
+  insert_record(table, 0x0000ffb5, 0x200000035);    // KP_5
+  insert_record(table, 0x0000ff98, 0x200000036);    // KP_Right
+  insert_record(table, 0x0000ffb6, 0x200000036);    // KP_6
+  insert_record(table, 0x0000ff95, 0x200000037);    // KP_Home
+  insert_record(table, 0x0000ffb7, 0x200000037);    // KP_7
+  insert_record(table, 0x0000ff97, 0x200000038);    // KP_Up
+  insert_record(table, 0x0000ffb8, 0x200000038);    // KP_8
+  insert_record(table, 0x0000ff9a, 0x200000039);    // KP_Page_Up
+  insert_record(table, 0x0000ffb9, 0x200000039);    // KP_9
+  insert_record(table, 0x0000ffbd, 0x20000003d);    // KP_Equal
+  insert_record(table, 0x0000ffe9, 0x300000102);    // Alt_L
+  insert_record(table, 0x0000ffe3, 0x300000105);    // Control_L
+  insert_record(table, 0x0000ffe7, 0x300000109);    // Meta_L
+  insert_record(table, 0x0000ffe1, 0x30000010d);    // Shift_L
+  insert_record(table, 0x0000ffea, 0x400000102);    // Alt_R
+  insert_record(table, 0x0000ffe4, 0x400000105);    // Control_R
+  insert_record(table, 0x0000ffe8, 0x400000109);    // Meta_R
+  insert_record(table, 0x0000ffe2, 0x40000010d);    // Shift_R
 }
