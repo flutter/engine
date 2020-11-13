@@ -95,7 +95,7 @@
 }
 
 - (UIView*)view {
-  // Engine should only call me once in my lifecycle.
+  // Makes sure the engine only calls this method once.
   if (_viewCreated) {
     abort();
   }
