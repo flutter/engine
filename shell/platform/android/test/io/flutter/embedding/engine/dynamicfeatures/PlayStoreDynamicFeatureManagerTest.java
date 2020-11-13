@@ -68,9 +68,6 @@ public class PlayStoreDynamicFeatureManagerTest {
     }
   }
 
-  TestFlutterJNI jni;
-  TestPlayStoreDynamicFeatureManager playStoreManager;
-
   @Test
   public void downloadCallsJNIFunctions() throws NameNotFoundException {
     TestFlutterJNI jni = new TestFlutterJNI();
@@ -79,7 +76,8 @@ public class PlayStoreDynamicFeatureManagerTest {
     when(context.getAssets()).thenReturn(null);
     String soTestPath = "test/path/app.so-123.part.so";
     when(context.getFilesDir()).thenReturn(new File(soTestPath));
-    TestPlayStoreDynamicFeatureManager playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
+    TestPlayStoreDynamicFeatureManager playStoreManager =
+        new TestPlayStoreDynamicFeatureManager(context, jni);
     jni.setDynamicFeatureManager(playStoreManager);
 
     assertEquals(jni.loadingUnitId, 0);
@@ -102,7 +100,8 @@ public class PlayStoreDynamicFeatureManagerTest {
     when(context.getAssets()).thenReturn(null);
     String apkTestPath = "test/path/TestModuleName_armeabi_v7a.apk";
     when(context.getFilesDir()).thenReturn(new File(apkTestPath));
-    TestPlayStoreDynamicFeatureManager playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
+    TestPlayStoreDynamicFeatureManager playStoreManager =
+        new TestPlayStoreDynamicFeatureManager(context, jni);
     jni.setDynamicFeatureManager(playStoreManager);
 
     assertEquals(jni.loadingUnitId, 0);
@@ -125,7 +124,8 @@ public class PlayStoreDynamicFeatureManagerTest {
     when(context.getAssets()).thenReturn(null);
     String apkTestPath = "test/path/invalidpath.apk";
     when(context.getFilesDir()).thenReturn(new File(apkTestPath));
-    TestPlayStoreDynamicFeatureManager playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
+    TestPlayStoreDynamicFeatureManager playStoreManager =
+        new TestPlayStoreDynamicFeatureManager(context, jni);
     jni.setDynamicFeatureManager(playStoreManager);
 
     assertEquals(jni.loadingUnitId, 0);
