@@ -1,4 +1,4 @@
-Signature: f46f11a76c5bdb7e5c43b30b33a286d2
+Signature: e600982ec9a907a46376fa0152950e52
 
 UNUSED LICENSES:
 
@@ -9536,6 +9536,8 @@ FILE: ../../../third_party/dart/runtime/vm/constants_base.h
 FILE: ../../../third_party/dart/runtime/vm/datastream_test.cc
 FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
 FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
+FILE: ../../../third_party/dart/runtime/vm/experimental_features.cc
+FILE: ../../../third_party/dart/runtime/vm/experimental_features.h
 FILE: ../../../third_party/dart/runtime/vm/field_table.cc
 FILE: ../../../third_party/dart/runtime/vm/field_table.h
 FILE: ../../../third_party/dart/runtime/vm/heap/become_test.cc

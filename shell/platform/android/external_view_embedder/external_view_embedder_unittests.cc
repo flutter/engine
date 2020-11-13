@@ -52,11 +52,6 @@ class SurfaceMock : public Surface {
 
   MOCK_METHOD(GrDirectContext*, GetContext, (), (override));
 
-  MOCK_METHOD(flutter::ExternalViewEmbedder*,
-              GetExternalViewEmbedder,
-              (),
-              (override));
-
   MOCK_METHOD(std::unique_ptr<GLContextResult>,
               MakeRenderContextCurrent,
               (),
@@ -95,8 +90,9 @@ fml::RefPtr<fml::RasterThreadMerger> GetThreadMergerFromRasterThread() {
 TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
   auto jni_mock = std::make_shared<JNIMock>();
 
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_mock, nullptr);
   auto raster_thread_merger = GetThreadMergerFromPlatformThread();
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
@@ -117,8 +113,9 @@ TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
 TEST(AndroidExternalViewEmbedder, GetCurrentCanvases__CompositeOrder) {
   auto jni_mock = std::make_shared<JNIMock>();
 
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_mock, nullptr);
   auto raster_thread_merger = GetThreadMergerFromPlatformThread();
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
@@ -137,8 +134,9 @@ TEST(AndroidExternalViewEmbedder, GetCurrentCanvases__CompositeOrder) {
 }
 
 TEST(AndroidExternalViewEmbedder, CompositeEmbeddedView) {
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, nullptr, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, nullptr, nullptr);
 
   ASSERT_EQ(nullptr, embedder->CompositeEmbeddedView(0));
   embedder->PrerollCompositeEmbeddedView(
@@ -152,8 +150,9 @@ TEST(AndroidExternalViewEmbedder, CompositeEmbeddedView) {
 }
 
 TEST(AndroidExternalViewEmbedder, CancelFrame) {
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, nullptr, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, nullptr, nullptr);
 
   embedder->PrerollCompositeEmbeddedView(
       0, std::make_unique<EmbeddedViewParams>());
@@ -165,8 +164,9 @@ TEST(AndroidExternalViewEmbedder, CancelFrame) {
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
   auto jni_mock = std::make_shared<JNIMock>();
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_mock, nullptr);
 
   auto raster_thread_merger = GetThreadMergerFromPlatformThread();
   ASSERT_FALSE(raster_thread_merger->IsMerged());
@@ -196,8 +196,9 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
   auto jni_mock = std::make_shared<JNIMock>();
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_mock, nullptr);
 
   auto raster_thread_merger = GetThreadMergerFromPlatformThread();
   ASSERT_FALSE(raster_thread_merger->IsMerged());
@@ -214,8 +215,9 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
 TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
   auto jni_mock = std::make_shared<JNIMock>();
 
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_mock, nullptr);
   auto raster_thread_merger = GetThreadMergerFromPlatformThread();
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
@@ -239,8 +241,9 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
 TEST(AndroidExternalViewEmbedder, PlatformViewRect__ChangedParams) {
   auto jni_mock = std::make_shared<JNIMock>();
 
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_mock, nullptr);
   auto raster_thread_merger = GetThreadMergerFromPlatformThread();
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
@@ -275,8 +278,7 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRect__ChangedParams) {
 
 TEST(AndroidExternalViewEmbedder, SubmitFrame) {
   auto jni_mock = std::make_shared<JNIMock>();
-  auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
 
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
@@ -475,8 +477,9 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
 TEST(AndroidExternalViewEmbedder, DoesNotCallJNIPlatformThreadOnlyMethods) {
   auto jni_mock = std::make_shared<JNIMock>();
 
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_mock, nullptr);
 
   // While on the raster thread, don't make JNI calls as these methods can only
   // run on the platform thread.
@@ -492,8 +495,6 @@ TEST(AndroidExternalViewEmbedder, DoesNotCallJNIPlatformThreadOnlyMethods) {
 
 TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
   auto jni_mock = std::make_shared<JNIMock>();
-  auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
 
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
@@ -521,6 +522,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
         return android_surface_mock;
       });
 
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, surface_factory);
   auto raster_thread_merger = GetThreadMergerFromPlatformThread();
@@ -573,8 +575,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
 
 TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
   auto jni_mock = std::make_shared<JNIMock>();
-  auto android_context =
-      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
 
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
@@ -656,16 +657,17 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
 
 TEST(AndroidExternalViewEmbedder, SupportsDynamicThreadMerging) {
   auto jni_mock = std::make_shared<JNIMock>();
-
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_mock, nullptr);
   ASSERT_TRUE(embedder->SupportsDynamicThreadMerging());
 }
 
 TEST(AndroidExternalViewEmbedder, DisableThreadMerger) {
   auto jni_mock = std::make_shared<JNIMock>();
-  auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_mock, nullptr);
 
   auto raster_thread_merger = GetThreadMergerFromRasterThread();
   ASSERT_FALSE(raster_thread_merger->IsMerged());
