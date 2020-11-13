@@ -606,9 +606,9 @@ class _CanvasPool extends _SaveStackTracking {
     }
   }
 
-  /// Applys path to drawing context, preparing for fill and other operations.
+  /// Applies path to drawing context, preparing for fill and other operations.
   ///
-  /// !Don't refactor _runPath/_runPathWithOffset. Latency sensitive
+  /// WARNING: Don't refactor _runPath/_runPathWithOffset. Latency sensitive
   void _runPathWithOffset(html.CanvasRenderingContext2D ctx, SurfacePath path,
       double offsetX, double offsetY) {
     ctx.beginPath();
