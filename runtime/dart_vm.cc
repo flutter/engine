@@ -393,6 +393,13 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     args.push_back(settings_.dart_flags[i].c_str());
   }
 
+  // Give worker threads used by the VM a lower priority.
+  // These threads are internally managed by the Dart VM, and are not accessible
+  // via FlutterEnginePostCallbackOnAllNativeThreads.
+  // TODO(dnfield): this won't work on Fuchsia yet, see
+  // https://github.com/dart-lang/sdk/issues/44209
+  args.push_back("--worker-thread-priority=10");
+
   char* flags_error = Dart_SetVMFlags(args.size(), args.data());
   if (flags_error) {
     FML_LOG(FATAL) << "Error while setting Dart VM flags: " << flags_error;
