@@ -102,7 +102,7 @@ public class PlatformPlugin {
       };
 
   public PlatformPlugin(Activity activity, PlatformChannel platformChannel) {
-	this.fragmentActivity = null;  
+    this.fragmentActivity = null;  
     this.activity = activity;
     this.platformChannel = platformChannel;
     this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
@@ -111,12 +111,12 @@ public class PlatformPlugin {
   }
   
   public PlatformPlugin(FragmentActivity fragmentActivity, PlatformChannel platformChannel) {
-	this.fragmentActivity = fragmentActivity;
-	this.activity = fragmentActivity;
-	this.platformChannel = platformChannel;
-	this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
+    this.fragmentActivity = fragmentActivity;
+    this.activity = fragmentActivity;
+    this.platformChannel = platformChannel;
+    this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
 
-	mEnabledOverlays = DEFAULT_SYSTEM_UI;
+    mEnabledOverlays = DEFAULT_SYSTEM_UI;
   }
 
   /**
@@ -289,11 +289,11 @@ public class PlatformPlugin {
   }
 
   private void popSystemNavigator() {
-	if (fragmentActivity != null) {
-	  fragmentActivity.getOnBackPressedDispatcher().onBackPressed();	
-	} else {
-	  activity.finish();	
-	}
+    if (fragmentActivity != null) {
+      fragmentActivity.getOnBackPressedDispatcher().onBackPressed();	
+    } else {
+     activity.finish();	
+    }
   }
 
   private CharSequence getClipboardData(PlatformChannel.ClipboardContentFormat format) {
