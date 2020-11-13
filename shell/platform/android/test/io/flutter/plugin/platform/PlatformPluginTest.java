@@ -114,7 +114,7 @@ public class PlatformPluginTest {
     clipboardManager.setPrimaryClip(clip);
     assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
   }
-  
+
   @Test
   public void popSystemNavigatorFlutterActivity() {
     Activity fakeActivity = spy(new Activity());
@@ -125,7 +125,7 @@ public class PlatformPluginTest {
 
     verify(fakeActivity, times(1)).finish();
   }
-  
+
   @Test
   public void popSystemNavigatorFlutterFragment() {
     FragmentActivity fragmentActivity = spy(new FragmentActivity());
@@ -136,7 +136,7 @@ public class PlatformPluginTest {
 
     verify(fragmentActivity, times(1)).getOnBackPressedDispatcher();
   }
-  
+
   @Test
   public void setRequestedOrientationFlutterFragment() {
     FragmentActivity fragmentActivity = spy(new FragmentActivity());
