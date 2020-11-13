@@ -6,6 +6,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
@@ -17,6 +20,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.view.View;
 import android.view.Window;
+import androidx.fragment.app.FragmentActivity;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
 import java.io.ByteArrayInputStream;
@@ -109,5 +113,42 @@ public class PlatformPluginTest {
     clip = ClipData.newPlainText("", "");
     clipboardManager.setPrimaryClip(clip);
     assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+  }
+  
+  @Test
+  public void popSystemNavigatorFlutterActivity() {
+	Activity fakeActivity = spy(new Activity());
+	PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+	PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+	
+	platformPlugin.mPlatformMessageHandler.popSystemNavigator();
+	
+	verify(fakeActivity, times(1)).finish();
+  }
+  
+  @Test
+  public void popSystemNavigatorFlutterFragment() {
+	FragmentActivity fragmentActivity = spy(new FragmentActivity());
+	
+	PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);	
+	PlatformPlugin platformPlugin =
+		new PlatformPlugin(fragmentActivity, fakePlatformChannel);
+
+	platformPlugin.mPlatformMessageHandler.popSystemNavigator();
+	
+	verify(fragmentActivity, times(1)).getOnBackPressedDispatcher();
+  }
+  
+  @Test
+  public void setRequestedOrientationFlutterFragment() {
+	FragmentActivity fragmentActivity = spy(new FragmentActivity());
+	
+	PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);	
+	PlatformPlugin platformPlugin =
+		new PlatformPlugin(fragmentActivity, fakePlatformChannel);
+	
+	platformPlugin.mPlatformMessageHandler.setPreferredOrientations(0);
+	
+	verify(fragmentActivity, times(1)).setRequestedOrientation(0);
   }
 }
