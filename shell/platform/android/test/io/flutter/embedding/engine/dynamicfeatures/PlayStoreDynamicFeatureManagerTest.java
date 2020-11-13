@@ -4,14 +4,18 @@
 
 package io.flutter.embedding.engine.dynamicfeatures;
 
-import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterJNI;
+import java.io.File;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -21,27 +25,32 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 public class PlayStoreDynamicFeatureManagerTest {
   private class TestFlutterJNI extends FlutterJNI {
-    public boolean loadDartDeferredLibraryCalled = false;
-    public boolean updateAssetManagerCalled = false;
-    public boolean dynamicFeatureInstallFailureCalled = false;
+    public int loadDartDeferredLibraryCalled = 0;
+    public int updateAssetManagerCalled = 0;
+    public int dynamicFeatureInstallFailureCalled = 0;
+    public String[] searchPaths;
+    public int loadingUnitId;
 
     public TestFlutterJNI() {}
 
     @Override
     public void loadDartDeferredLibrary(int loadingUnitId, @NonNull String[] searchPaths) {
-      loadDartDeferredLibraryCalled = true;
+      loadDartDeferredLibraryCalled++;
+      this.searchPaths = searchPaths;
+      this.loadingUnitId = loadingUnitId;
     }
 
     @Override
     public void updateAssetManager(
         @NonNull AssetManager assetManager, @NonNull String assetBundlePath) {
-      updateAssetManagerCalled = true;
+      updateAssetManagerCalled++;
+      this.loadingUnitId = loadingUnitId;
     }
 
     @Override
     public void dynamicFeatureInstallFailure(
         int loadingUnitId, @NonNull String error, boolean isTransient) {
-      dynamicFeatureInstallFailureCalled = true;
+      dynamicFeatureInstallFailureCalled++;
     }
   }
 
@@ -62,15 +71,23 @@ public class PlayStoreDynamicFeatureManagerTest {
   TestPlayStoreDynamicFeatureManager playStoreManager;
 
   @Test
-  public void downloadCallsJNIFunctions() {
+  public void downloadCallsJNIFunctions() throws NameNotFoundException {
     jni = new TestFlutterJNI();
     Context context = mock(Context.class);
+    when(context.createPackageContext(any(), anyInt())).thenReturn(context);
+    when(context.getAssets()).thenReturn(null);
+    String soTestPath = "test/path/app.so-123.part.so";
+    when(context.getFilesDir()).thenReturn(new File(soTestPath));
     playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
     jni.setDynamicFeatureManager(playStoreManager);
 
-    playStoreManager.downloadDynamicFeature(0, "TestModuleName");
-    assertTrue(jni.loadDartDeferredLibraryCalled);
-    assertTrue(jni.updateAssetManagerCalled);
-    assertFalse(jni.dynamicFeatureInstallFailureCalled);
+    playStoreManager.downloadDynamicFeature(123, "TestModuleName");
+    assertTrue(jni.loadDartDeferredLibraryCalled == 1);
+    assertTrue(jni.updateAssetManagerCalled == 1);
+    assertTrue(jni.dynamicFeatureInstallFailureCalled == 0);
+
+    assertTrue(jni.searchPaths[0] == soTestPath);
+    assertTrue(jni.searchPaths.length == 1);
+    assertTrue(jni.loadingUnitId == 123);
   }
 }
