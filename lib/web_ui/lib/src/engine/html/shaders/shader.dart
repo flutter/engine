@@ -224,11 +224,9 @@ class GradientRadial extends EngineGradient {
             'TileMode not supported in GradientRadial shader');
       }
     }
-    final double offsetX = shaderBounds!.left;
-    final double offsetY = shaderBounds.top;
     final html.CanvasGradient gradient = ctx!.createRadialGradient(
-        center.dx - offsetX, center.dy - offsetY, 0,
-        center.dx - offsetX, center.dy - offsetY, radius);
+        center.dx, center.dy, 0,
+        center.dx, center.dy, radius);
     final List<double>? colorStops = this.colorStops;
     if (colorStops == null) {
       assert(colors.length == 2);
