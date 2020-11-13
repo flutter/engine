@@ -22,7 +22,7 @@ IOSSurfaceMetal::IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
 
   auto metal_context = CastToMetalContext(GetContext());
 
-  layer_.get().device = metal_context->GetDevice().get();
+  layer_.get().device = metal_context->GetDarwinContext().get().mtlDevice;
   layer_.get().presentsWithTransaction = YES;
 
   is_valid_ = true;
@@ -44,7 +44,6 @@ void IOSSurfaceMetal::UpdateStorageSizeIfNecessary() {
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrDirectContext* /* unused */) {
   auto metal_context = CastToMetalContext(GetContext());
-
   return std::make_unique<GPUSurfaceMetal>(layer_,                               // layer
                                            metal_context->GetMainContext(),      // context
                                            metal_context->GetMainCommandQueue()  // command queue

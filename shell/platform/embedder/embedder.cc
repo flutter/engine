@@ -276,6 +276,21 @@ InferOpenGLPlatformViewCreationCallback(
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
+InferMetalPlatformViewCreationCallback(
+    const FlutterRendererConfig* config,
+    void* user_data,
+    flutter::PlatformViewEmbedder::PlatformDispatchTable
+        platform_dispatch_table,
+    std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
+        external_view_embedder) {
+  if (config->type != kSoftware) {
+    return nullptr;
+  }
+  // TODO (iskakaushik)
+  return nullptr;
+}
+
+static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferSoftwarePlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
@@ -331,6 +346,10 @@ InferPlatformViewCreationCallback(
           std::move(external_view_embedder));
     case kSoftware:
       return InferSoftwarePlatformViewCreationCallback(
+          config, user_data, platform_dispatch_table,
+          std::move(external_view_embedder));
+    case kMetal:
+      return InferMetalPlatformViewCreationCallback(
           config, user_data, platform_dispatch_table,
           std::move(external_view_embedder));
     default:

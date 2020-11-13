@@ -235,6 +235,10 @@ def to_gn_args(args):
       # attributes in release modes till the toolchain is updated.
       gn_args['skia_enable_api_available_macro'] = args.runtime_mode != "release"
 
+    if sys.platform == 'darwin' and args.macos_enable_metal:
+      gn_args['skia_use_metal'] = True
+      gn_args['shell_enable_metal'] = True
+
     if args.enable_vulkan:
       # Enable vulkan in the Flutter shell.
       gn_args['shell_enable_vulkan'] = True
@@ -349,6 +353,7 @@ def parse_args(args):
   parser.add_argument('--operator-new-alignment', dest='operator_new_alignment', type=str, default=None)
 
   parser.add_argument('--enable-vulkan', action='store_true', default=False)
+  parser.add_argument('--macos-enable-metal', action='store_true', default=False)
 
   parser.add_argument('--enable-fontconfig', action='store_true', default=False)
   parser.add_argument('--enable-skshaper', action='store_true', default=False)
