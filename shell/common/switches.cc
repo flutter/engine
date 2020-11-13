@@ -45,6 +45,7 @@ static const std::string gAllowedDartFlags[] = {
     "--no-enable-isolate-groups",
     "--no-causal_async_stacks",
     "--lazy_async_stacks",
+    "--worker-thread-priority",
 };
 // clang-format on
 
