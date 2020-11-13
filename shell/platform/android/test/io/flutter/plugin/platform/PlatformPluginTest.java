@@ -117,38 +117,34 @@ public class PlatformPluginTest {
   
   @Test
   public void popSystemNavigatorFlutterActivity() {
-	Activity fakeActivity = spy(new Activity());
-	PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
-	PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
-	
-	platformPlugin.mPlatformMessageHandler.popSystemNavigator();
-	
-	verify(fakeActivity, times(1)).finish();
+    Activity fakeActivity = spy(new Activity());
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    platformPlugin.mPlatformMessageHandler.popSystemNavigator();
+
+    verify(fakeActivity, times(1)).finish();
   }
   
   @Test
   public void popSystemNavigatorFlutterFragment() {
-	FragmentActivity fragmentActivity = spy(new FragmentActivity());
-	
-	PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);	
-	PlatformPlugin platformPlugin =
-		new PlatformPlugin(fragmentActivity, fakePlatformChannel);
+    FragmentActivity fragmentActivity = spy(new FragmentActivity());
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);	
+    PlatformPlugin platformPlugin = new PlatformPlugin(fragmentActivity, fakePlatformChannel);
 
-	platformPlugin.mPlatformMessageHandler.popSystemNavigator();
-	
-	verify(fragmentActivity, times(1)).getOnBackPressedDispatcher();
+    platformPlugin.mPlatformMessageHandler.popSystemNavigator();
+
+    verify(fragmentActivity, times(1)).getOnBackPressedDispatcher();
   }
   
   @Test
   public void setRequestedOrientationFlutterFragment() {
-	FragmentActivity fragmentActivity = spy(new FragmentActivity());
-	
-	PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);	
-	PlatformPlugin platformPlugin =
-		new PlatformPlugin(fragmentActivity, fakePlatformChannel);
-	
-	platformPlugin.mPlatformMessageHandler.setPreferredOrientations(0);
-	
-	verify(fragmentActivity, times(1)).setRequestedOrientation(0);
+    FragmentActivity fragmentActivity = spy(new FragmentActivity());
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);	
+    PlatformPlugin platformPlugin = new PlatformPlugin(fragmentActivity, fakePlatformChannel);
+
+    platformPlugin.mPlatformMessageHandler.setPreferredOrientations(0);
+
+    verify(fragmentActivity, times(1)).setRequestedOrientation(0);
   }
 }
