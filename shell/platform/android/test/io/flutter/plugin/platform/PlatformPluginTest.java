@@ -129,7 +129,7 @@ public class PlatformPluginTest {
   @Test
   public void popSystemNavigatorFlutterFragment() {
     FragmentActivity fragmentActivity = spy(new FragmentActivity());
-    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);	
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fragmentActivity, fakePlatformChannel);
 
     platformPlugin.mPlatformMessageHandler.popSystemNavigator();
@@ -140,7 +140,7 @@ public class PlatformPluginTest {
   @Test
   public void setRequestedOrientationFlutterFragment() {
     FragmentActivity fragmentActivity = spy(new FragmentActivity());
-    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);	
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fragmentActivity, fakePlatformChannel);
 
     platformPlugin.mPlatformMessageHandler.setPreferredOrientations(0);
