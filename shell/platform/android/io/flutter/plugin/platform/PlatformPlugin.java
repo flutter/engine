@@ -109,7 +109,7 @@ public class PlatformPlugin {
 
     mEnabledOverlays = DEFAULT_SYSTEM_UI;
   }
-  
+
   public PlatformPlugin(FragmentActivity fragmentActivity, PlatformChannel platformChannel) {
     this.fragmentActivity = fragmentActivity;
     this.activity = fragmentActivity;
@@ -292,7 +292,7 @@ public class PlatformPlugin {
     if (fragmentActivity != null) {
       fragmentActivity.getOnBackPressedDispatcher().onBackPressed();
     } else {
-     activity.finish();
+      activity.finish();
     }
   }
 
