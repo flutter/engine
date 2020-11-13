@@ -47,6 +47,7 @@ const float kFloatCompareEpsilon = 0.001;
 - (instancetype)init {
   if (self = [super init]) {
     _view = [[FlutterPlatformViewsTestMockPlatformView alloc] init];
+    _viewCreated = NO;
   }
   return self;
 }

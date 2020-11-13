@@ -88,11 +88,14 @@
     [_textView addGestureRecognizer:gestureRecognizer];
     gestureRecognizer.testTapGestureRecognizerDelegate = self;
     _textView.accessibilityLabel = @"";
+    
+    _viewCreated = NO;
   }
   return self;
 }
 
 - (UIView*)view {
+  // Engine should only call me once in my lifecycle.
   if (_viewCreated) {
     abort();
   }
