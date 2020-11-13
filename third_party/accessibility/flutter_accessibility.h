@@ -14,7 +14,7 @@ class AccessibilityBridge;
 
 class FlutterAccessibility : public AXPlatformNodeDelegateBase {
  public:
-  // Creates a platform specific BrowserAccessibility. Ownership passes to the
+  // Creates a platform specific FlutterAccessibility. Ownership passes to the
   // caller.
   static FlutterAccessibility* Create();
 

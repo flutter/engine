@@ -224,7 +224,7 @@ struct AX_BASE_EXPORT AXNodeData {
   bool IsInvisibleOrIgnored() const;
 
   // Helper to determine if the data belongs to a node that is invocable.
-  bool IsInvocable() const;
+  bool IsInvisible() const;
 
   // Helper to determine if the data belongs to a node that is a menu button.
   bool IsMenuButton() const;

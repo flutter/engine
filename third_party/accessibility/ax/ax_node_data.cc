@@ -1004,7 +1004,7 @@ bool AXNodeData::IsInvisibleOrIgnored() const {
   return IsIgnored() || HasState(ax::State::kInvisible);
 }
 
-bool AXNodeData::IsInvocable() const {
+bool AXNodeData::IsInvisible() const {
   // A control is "invocable" if it initiates an action when activated but
   // does not maintain any state. A control that maintains state when activated
   // would be considered a toggle or expand-collapse element - these elements

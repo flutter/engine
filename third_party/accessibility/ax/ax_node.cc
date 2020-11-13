@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "third_party/skia/include/core/SkColor.h"
+
 // #include "base/strings/string16.h"
 // #include "base/strings/string_util.h"
 // #include "base/strings/utf_string_conversions.h"
@@ -558,6 +560,18 @@ std::string AXNode::GetLanguage() const {
   return std::string();
 }
 
+std::string AXNode::GetValueForControl() const {
+  if (data().IsTextField())
+    return GetValueForTextField();
+  if (data().IsRangeValueSupported())
+    return GetTextForRangeValue();
+  if (data().role == ax::Role::kColorWell)
+    return GetValueForColorWell();
+  if (!IsControl(data().role))
+    return std::string();
+  return data().GetStringAttribute(ax::StringAttribute::kValue);
+}
+
 std::ostream& operator<<(std::ostream& stream, const AXNode& node) {
   return stream << node.data().ToString();
 }
@@ -1088,6 +1102,45 @@ AXNode* AXNode::ComputeFirstUnignoredChildRecursive() const {
       return descendant;
   }
   return nullptr;
+}
+
+std::string AXNode::GetTextForRangeValue() const {
+  FML_DCHECK(data().IsRangeValueSupported());
+  std::string range_value =
+      data().GetStringAttribute(ax::StringAttribute::kValue);
+  float numeric_value;
+  if (range_value.empty() &&
+      data().GetFloatAttribute(ax::FloatAttribute::kValueForRange,
+                               &numeric_value)) {
+    range_value = std::to_string(numeric_value);
+  }
+  return range_value;
+}
+
+std::string AXNode::GetValueForColorWell() const {
+  FML_DCHECK(data().role == ax::Role::kColorWell);
+  // static cast because SkColor is a 4-byte unsigned int
+  unsigned int color = static_cast<unsigned int>(
+      data().GetIntAttribute(ax::IntAttribute::kColorValue));
+
+  unsigned int red = SkColorGetR(color);
+  unsigned int green = SkColorGetG(color);
+  unsigned int blue = SkColorGetB(color);
+  std::ostringstream stringStream;
+  stringStream << red * 100 / 255 << "% red " << green * 100 / 255 << "% green " << blue * 100 / 255 << "% blue";
+  return stringStream.str();
+}
+
+std::string AXNode::GetValueForTextField() const {
+  FML_DCHECK(data().IsTextField());
+  std::string value =
+      data().GetStringAttribute(ax::StringAttribute::kValue);
+  // Some screen readers like Jaws and VoiceOver require a value to be set in
+  // text fields with rich content, even though the same information is
+  // available on the children.
+  if (value.empty() && data().IsRichTextField())
+    return GetInnerText();
+  return value;
 }
 
 bool AXNode::IsIgnored() const {

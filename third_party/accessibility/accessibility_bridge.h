@@ -27,6 +27,7 @@ class AccessibilityBridge : public AXTreeObserver {
   void AddFlutterSemanticsCustomActionUpdate(const FlutterSemanticsCustomAction* action);
   void CommitUpdates();
   ax::AXTree* GetAXTree();
+  AXEventGenerator* GetEventGenerator();
   void* GetUserData();
   FlutterAccessibility* GetFlutterAccessibilityFromID(int32_t id) const;
   // AXTreeObserver implementation.

@@ -134,6 +134,10 @@ AX_BASE_EXPORT bool IsRowContainer(const ax::Role role);
 // Returns true if the role is a subclass of the ARIA Section abstract role.
 AX_BASE_EXPORT bool IsSection(const ax::Role role);
 
+// Returns true if the role is one of those exposed by the HTML <select>
+// element.
+AX_BASE_EXPORT bool IsSelectElement(const ax::Role role);
+
 // Returns true if the role is a subclass of the ARIA Sectionhead role.
 AX_BASE_EXPORT bool IsSectionhead(const ax::Role role);
 

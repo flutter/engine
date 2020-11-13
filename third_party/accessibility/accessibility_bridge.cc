@@ -13,11 +13,6 @@
 
 namespace ax { // namespace
 
-// const int32_t khasScrollingAction = FlutterSemanticsAction::kFlutterSemanticsActionScrollLeft |
-//                                     FlutterSemanticsAction::kFlutterSemanticsActionScrollRight |
-//                                     FlutterSemanticsAction::kFlutterSemanticsActionScrollUp |
-//                                     FlutterSemanticsAction::kFlutterSemanticsActionScrollDown;
-
 // AccessibilityBridge
 AccessibilityBridge::AccessibilityBridge(void* user_data)
   : tree_(std::make_unique<AXTree>()),
@@ -43,20 +38,11 @@ void AccessibilityBridge::CommitUpdates() {
   AXTreeUpdate update;
   // Figure out update order, AXTree only accepts update in tree order, where
   // parent node must come before the child node in AXTreeUpdate.nodes.
-  // We start frp, picking a random node and turn the entire subtree into a
+  // We start with picking a random node and turn the entire subtree into a
   // list. We pick another node from the remaining update, and keep doing so until
   // the update map is empty.
   // We then concatenate the lists in the reversed order, this guarantees parent
   // updates always come before child updates.
-  // _pending_semantics_node_updates.erase(1);
-  // _pending_semantics_node_updates.erase(2);
-  // _pending_semantics_node_updates.erase(3);
-  // _pending_semantics_node_updates.erase(4);
-  // _pending_semantics_node_updates.erase(16);
-  // _pending_semantics_node_updates.erase(15);
-  // _pending_semantics_node_updates.erase(17);
-  // _pending_semantics_node_updates[0].children_in_traversal_order = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
-  // _pending_semantics_node_updates[0].label = "root";
   std::vector<std::vector<SemanticsNode>> results;
   while (!_pending_semantics_node_updates.empty()) {
     auto begin = _pending_semantics_node_updates.begin();
@@ -74,17 +60,6 @@ void AccessibilityBridge::CommitUpdates() {
       update.nodes.push_back(node_data);
     }
   }
-  
-  for (auto d : update.nodes) {
-    std::string children="[";
-    for (int32_t i : d.child_ids) {
-      children+= std::to_string(i);
-      children+= ", ";
-    }
-    children+= "]";
-    FML_LOG(ERROR) << "id: " <<d.id << " child_ids: "<< children;
-  }
-
 
   tree_->Unserialize(update);
   _pending_semantics_node_updates.clear();
@@ -115,14 +90,11 @@ ax::AXTree* AccessibilityBridge::GetAXTree() {
   return tree_.get();
 }
 
-void AccessibilityBridge::OnNodeWillBeDeleted(ax::AXTree* tree,
-                                                      ax::AXNode* node) {
-  // DCHECK(node);
-  // if (FlutterAccessibility* wrapper = GetFromAXNode(node)) {
-  //   if (wrapper == GetLastFocusedNode())
-  //     SetLastFocusedNode(nullptr);
-  // }
+AXEventGenerator* AccessibilityBridge::GetEventGenerator() {
+  return &event_generator_;
 }
+
+void AccessibilityBridge::OnNodeWillBeDeleted(ax::AXTree* tree, ax::AXNode* node) {}
 
 void AccessibilityBridge::OnSubtreeWillBeDeleted(ax::AXTree* tree,
                                                          ax::AXNode* node) {}
@@ -130,15 +102,9 @@ void AccessibilityBridge::OnSubtreeWillBeDeleted(ax::AXTree* tree,
 void AccessibilityBridge::OnNodeCreated(ax::AXTree* tree,
                                                 ax::AXNode* node) {
   FML_DCHECK(node);
-  FML_LOG(ERROR) << "a11ybridge see id=" <<node->id();
   FlutterAccessibility* wrapper = FlutterAccessibility::Create();
   id_wrapper_map_[node->id()] = wrapper;
   wrapper->Init(this, node);
-
-  // if (tree->root() != node &&
-  //     node.data().role == ax::Role::kRootWebArea) {
-  //   popup_root_ids_.insert(node.id());
-  // }
 }
 
 void AccessibilityBridge::OnNodeDeleted(ax::AXTree* tree,
@@ -148,70 +114,25 @@ void AccessibilityBridge::OnNodeDeleted(ax::AXTree* tree,
     id_wrapper_map_.erase(node_id);
     delete wrapper;
   }
-
-  // if (popup_root_ids_.find(node_id) != popup_root_ids_.end())
-  //   popup_root_ids_.erase(node_id);
 }
 
 void AccessibilityBridge::OnNodeReparented(ax::AXTree* tree,
                                                    ax::AXNode* node) {
-  // FML_DCHECK(node);
-  // FlutterAccessibility* wrapper = GetFlutterAccessibilityFromID(node.id());
-  // if (!wrapper) {
-  //   wrapper = FlutterAccessibility::Create();
-  //   id_wrapper_map_[node.id()] = wrapper;
-  // }
-  // wrapper->Init(this, node);
+
 }
 
 void AccessibilityBridge::OnRoleChanged(ax::AXTree* tree,
                                                 ax::AXNode* node,
                                                 ax::Role old_role,
                                                 ax::Role new_role) {
-  // DCHECK(node);
-  // if (tree->root() == node)
-  //   return;
-  // if (new_role == ax::Role::kRootWebArea) {
-  //   popup_root_ids_.insert(node.id());
-  // } else if (old_role == ax::Role::kRootWebArea) {
-  //   popup_root_ids_.erase(node.id());
-  // }
+
 }
 
 void AccessibilityBridge::OnAtomicUpdateFinished(
     ax::AXTree* tree,
     bool root_changed,
     const std::vector<ax::AXTreeObserver::Change>& changes) {
-  // const bool ax_tree_id_changed =
-  //     GetTreeData().tree_id != ax::AXTreeIDUnknown() &&
-  //     GetTreeData().tree_id != ax_tree_id_;
-  // // When the tree that contains the focus is destroyed and re-created, we
-  // // should fire a new focus event. Also, whenever the tree ID or the root of
-  // // this tree changes we may need to fire an event on our parent node in the
-  // // parent tree to ensure that we're properly connected.
-  // if (ax_tree_id_changed && last_focused_node_tree_id_ &&
-  //     ax_tree_id_ == *last_focused_node_tree_id_) {
-  //   SetLastFocusedNode(nullptr);
-  // }
-  // if (ax_tree_id_changed || root_changed)
-  //   connected_to_parent_tree_node_ = false;
-
-  // if (ax_tree_id_changed) {
-  //   ax::AXTreeManagerMap::GetInstance().RemoveTreeManager(ax_tree_id_);
-  //   ax_tree_id_ = GetTreeData().tree_id;
-  //   ax::AXTreeManagerMap::GetInstance().AddTreeManager(ax_tree_id_, this);
-  // }
-
-  // // Calls OnDataChanged on newly created, reparented or changed nodes.
-  // for (const auto& change : changes) {
-  //   ax::AXNode* node = change.node;
-  //   FlutterAccessibility* wrapper = GetFromAXNode(node);
-  //   if (wrapper) {
-  //     wrapper->OnDataChanged();
-  //   }
-  // }
-
-  // The Flutter semantics update does not include child->parent relation ship
+  // The Flutter semantics update does not include child->parent relationship
   // We have to update the relative bound offset container id here in order
   // to calculate the screen bound correctly.
   for (const auto& change : changes) {
@@ -309,7 +230,6 @@ void AccessibilityBridge::SetRoleFromFlutterUpdate(AXNodeData& node_data, const 
 
 void AccessibilityBridge::SetStateFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
   FlutterSemanticsFlag flags = node.flags;
-  // FlutterSemanticsAction actions = node.actions;
   if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField && 
       (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) > 0) {
     node_data.AddState(State::kEditable);
@@ -489,14 +409,5 @@ AccessibilityBridge::SemanticsCustomAction AccessibilityBridge::FromFlutterSeman
   }
   return result;
 }
-
-// void printTree(NSAccessibilityElement* element, std::vector<std::string>& msg,int level){
-//   // msg[level] += std::string([element.accessibilityValue UTF8String]) + ", ";
-//   NSLog(@"in print tree for level %d accessibilityValue %@, screen bound origin %@, size %@, enabled %d, accessibilityElement %d",level, element.accessibilityValue, NSStringFromPoint(element.accessibilityFrame.origin), NSStringFromSize(element.accessibilityFrame.size), element.accessibilityEnabled, element.accessibilityElement);
-//   for (id child in element.accessibilityChildren) {
-//     printTree(child, msg, level+1);
-//   }
-// }
-
 
 }  // namespace ax
