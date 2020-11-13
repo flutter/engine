@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Requests that the browser schedule a frame.
@@ -174,7 +174,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// rasterized frames.
   ///
   /// It's preferred to use [SchedulerBinding.addTimingsCallback] than to use
-  /// [Window.onReportTimings] directly because
+  /// [PlatformDispatcher.onReportTimings] directly because
   /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
   ///
   /// This can be used to see if the application has missed frames (through
