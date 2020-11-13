@@ -9,14 +9,13 @@
 #include <memory>
 #include <string>
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/persistent_cache.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
-#import "flutter/shell/platform/darwin/ios/ios_surface_factory.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
 namespace flutter {
@@ -34,7 +33,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
       overlay_view_wrapper.reset([[FlutterOverlayView alloc] init]);
 
       auto ca_layer = fml::scoped_nsobject<CALayer>{[[overlay_view.get() layer] retain]};
-      std::unique_ptr<IOSSurface> ios_surface = ios_surface_factory_->CreateSurface(ca_layer);
+      std::unique_ptr<IOSSurface> ios_surface = IOSSurface::Create(ios_context, ca_layer);
       std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface();
 
       layer = std::make_shared<FlutterPlatformViewLayer>(
@@ -46,7 +45,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
       overlay_view_wrapper.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale]);
 
       auto ca_layer = fml::scoped_nsobject<CALayer>{[[overlay_view.get() layer] retain]};
-      std::unique_ptr<IOSSurface> ios_surface = ios_surface_factory_->CreateSurface(ca_layer);
+      std::unique_ptr<IOSSurface> ios_surface = IOSSurface::Create(ios_context, ca_layer);
       std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface(gr_context);
 
       layer = std::make_shared<FlutterPlatformViewLayer>(
