@@ -73,13 +73,13 @@ public class PlayStoreDynamicFeatureManagerTest {
 
   @Test
   public void downloadCallsJNIFunctions() throws NameNotFoundException {
-    jni = new TestFlutterJNI();
+    TestFlutterJNI jni = new TestFlutterJNI();
     Context context = mock(Context.class);
     when(context.createPackageContext(any(), anyInt())).thenReturn(context);
     when(context.getAssets()).thenReturn(null);
     String soTestPath = "test/path/app.so-123.part.so";
     when(context.getFilesDir()).thenReturn(new File(soTestPath));
-    playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
+    TestPlayStoreDynamicFeatureManager playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
     jni.setDynamicFeatureManager(playStoreManager);
 
     assertEquals(jni.loadingUnitId, 0);
@@ -96,13 +96,13 @@ public class PlayStoreDynamicFeatureManagerTest {
 
   @Test
   public void searchPathsAddsApks() throws NameNotFoundException {
-    jni = new TestFlutterJNI();
+    TestFlutterJNI jni = new TestFlutterJNI();
     Context context = mock(Context.class);
     when(context.createPackageContext(any(), anyInt())).thenReturn(context);
     when(context.getAssets()).thenReturn(null);
     String apkTestPath = "test/path/TestModuleName_armeabi_v7a.apk";
     when(context.getFilesDir()).thenReturn(new File(apkTestPath));
-    playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
+    TestPlayStoreDynamicFeatureManager playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
     jni.setDynamicFeatureManager(playStoreManager);
 
     assertEquals(jni.loadingUnitId, 0);
@@ -114,6 +114,28 @@ public class PlayStoreDynamicFeatureManagerTest {
 
     assertTrue(jni.searchPaths[0].endsWith(apkTestPath + "!lib/armeabi-v7a/app.so-123.part.so"));
     assertEquals(jni.searchPaths.length, 1);
+    assertEquals(jni.loadingUnitId, 123);
+  }
+
+  @Test
+  public void invalidSearchPathsAreIgnored() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+    Context context = mock(Context.class);
+    when(context.createPackageContext(any(), anyInt())).thenReturn(context);
+    when(context.getAssets()).thenReturn(null);
+    String apkTestPath = "test/path/invalidpath.apk";
+    when(context.getFilesDir()).thenReturn(new File(apkTestPath));
+    TestPlayStoreDynamicFeatureManager playStoreManager = new TestPlayStoreDynamicFeatureManager(context, jni);
+    jni.setDynamicFeatureManager(playStoreManager);
+
+    assertEquals(jni.loadingUnitId, 0);
+
+    playStoreManager.downloadDynamicFeature(123, "TestModuleName");
+    assertEquals(jni.loadDartDeferredLibraryCalled, 1);
+    assertEquals(jni.updateAssetManagerCalled, 1);
+    assertEquals(jni.dynamicFeatureInstallFailureCalled, 0);
+
+    assertEquals(jni.searchPaths.length, 0);
     assertEquals(jni.loadingUnitId, 123);
   }
 }
