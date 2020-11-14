@@ -45,7 +45,7 @@ task:
       fetch_framework_script: |
         mkdir -p $FRAMEWORK_PATH
         cd $FRAMEWORK_PATH
-        git clone https://github.com/flutter/flutter.git
+        git clone --branch flutter-1.24-candidate.10 https://github.com/flutter/flutter.git
       analyze_framework_script: |
         cd $FRAMEWORK_PATH/flutter
         rm -rf bin/cache/pkg/sky_engine
