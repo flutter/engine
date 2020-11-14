@@ -10,6 +10,23 @@ import 'dart:ui';
 void main() {}
 
 @pragma('vm:entry-point')
+void testMatrix() {
+  final Float64List matrix4 = Float64List.fromList(<double>[
+    0, 1, 2, 3,
+    4, 5, 6, 7,
+    8, 9, 10, 11,
+    12, 13, 14, 15,
+  ]);
+  _checkM44Conversion(matrix4);
+
+  final Float64List list1 = Float64List.fromList(<double>[1]);
+  _checkIncompleteM44Conversion(list1);
+}
+
+void _checkM44Conversion(Float64List matrix4) native 'CheckM44Conversion';
+void _checkIncompleteM44Conversion(Float64List list1) native 'CheckIncompleteM44Conversion';
+
+@pragma('vm:entry-point')
 void createVertices() {
   const int uint16max = 65535;
 
@@ -49,7 +66,6 @@ void messageCallback(dynamic data) {}
 @pragma('vm:entry-point')
 void validateConfiguration() native 'ValidateConfiguration';
 
-
 // Draw a circle on a Canvas that has a PictureRecorder. Take the image from
 // the PictureRecorder, and encode it as png. Check that the png data is
 // backed by an external Uint8List.
@@ -71,8 +87,9 @@ Future<void> encodeImageProducesExternalUint8List() async {
     _validateExternal(result);
   });
 }
+
 void _encodeImage(Image i, int format, void Function(Uint8List result))
-  native 'EncodeImage';
+    native 'EncodeImage';
 void _validateExternal(Uint8List result) native 'ValidateExternal';
 
 @pragma('vm:entry-point')
@@ -130,5 +147,7 @@ Future<void> pumpImage() async {
   window.onBeginFrame = renderImage;
   window.scheduleFrame();
 }
-void _captureImageAndPicture(Image image, Picture picture) native 'CaptureImageAndPicture';
+
+void _captureImageAndPicture(Image image, Picture picture)
+    native 'CaptureImageAndPicture';
 Future<void> _onBeginFrameDone() native 'OnBeginFrameDone';
