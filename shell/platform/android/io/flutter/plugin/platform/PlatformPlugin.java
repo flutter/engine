@@ -14,10 +14,11 @@ import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
+import androidx.activity.ComponentActivity;
+import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import androidx.fragment.app.FragmentActivity;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.io.FileNotFoundException;
@@ -278,8 +279,8 @@ public class PlatformPlugin {
   }
 
   private void popSystemNavigator() {
-    if (activity instanceof FragmentActivity) {
-      ((FragmentActivity) activity).getOnBackPressedDispatcher().onBackPressed();
+    if (activity instanceof OnBackPressedDispatcherOwner) {
+      ((ComponentActivity) activity).getOnBackPressedDispatcher().onBackPressed();
     } else {
       activity.finish();
     }

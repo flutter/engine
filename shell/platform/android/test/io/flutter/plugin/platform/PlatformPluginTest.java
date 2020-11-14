@@ -7,7 +7,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,6 +20,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.view.View;
 import android.view.Window;
+import androidx.activity.OnBackPressedDispatcher;
 import androidx.fragment.app.FragmentActivity;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
@@ -118,7 +118,7 @@ public class PlatformPluginTest {
 
   @Test
   public void popSystemNavigatorFlutterActivity() {
-    Activity fakeActivity = spy(new Activity());
+    Activity fakeActivity = mock(Activity.class);
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
@@ -129,7 +129,9 @@ public class PlatformPluginTest {
 
   @Test
   public void popSystemNavigatorFlutterFragment() {
-    FragmentActivity fragmentActivity = spy(new FragmentActivity());
+    FragmentActivity fragmentActivity = mock(FragmentActivity.class);
+    OnBackPressedDispatcher onBackPressedDispatcher = mock(OnBackPressedDispatcher.class);
+    when(fragmentActivity.getOnBackPressedDispatcher()).thenReturn(onBackPressedDispatcher);
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fragmentActivity, fakePlatformChannel);
 
@@ -141,7 +143,7 @@ public class PlatformPluginTest {
 
   @Test
   public void setRequestedOrientationFlutterFragment() {
-    FragmentActivity fragmentActivity = spy(new FragmentActivity());
+    FragmentActivity fragmentActivity = mock(FragmentActivity.class);
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fragmentActivity, fakePlatformChannel);
 
