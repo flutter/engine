@@ -7,6 +7,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
+#include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 
 namespace flutter {
@@ -19,7 +20,9 @@ class EmbedderSurfaceSoftware final : public EmbedderSurface,
         software_present_backing_store;  // required
   };
 
-  EmbedderSurfaceSoftware(SoftwareDispatchTable software_dispatch_table);
+  EmbedderSurfaceSoftware(
+      SoftwareDispatchTable software_dispatch_table,
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
   ~EmbedderSurfaceSoftware() override;
 
@@ -27,6 +30,7 @@ class EmbedderSurfaceSoftware final : public EmbedderSurface,
   bool valid_ = false;
   SoftwareDispatchTable software_dispatch_table_;
   sk_sp<SkSurface> sk_surface_;
+  std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
 
   // |EmbedderSurface|
   bool IsValid() const override;
@@ -35,7 +39,7 @@ class EmbedderSurfaceSoftware final : public EmbedderSurface,
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
   // |EmbedderSurface|
-  sk_sp<GrContext> CreateResourceContext() const override;
+  sk_sp<GrDirectContext> CreateResourceContext() const override;
 
   // |GPUSurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;

@@ -2,28 +2,58 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
-#include <memory>
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 
-#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+
+#if FLUTTER_SHELL_ENABLE_METAL
+#import "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
+#endif  // FLUTTER_SHELL_ENABLE_METAL
 
 namespace flutter {
 
-// The name of the Info.plist flag to enable the embedded iOS views preview.
-const char* const kEmbeddedViewsPreview = "io.flutter.embedded_views_preview";
+std::unique_ptr<IOSSurface> IOSSurface::Create(std::shared_ptr<IOSContext> context,
+                                               fml::scoped_nsobject<CALayer> layer) {
+  FML_DCHECK(layer);
+  FML_DCHECK(context);
 
-bool IsIosEmbeddedViewsPreviewEnabled() {
-  return [[[NSBundle mainBundle] objectForInfoDictionaryKey:@(kEmbeddedViewsPreview)] boolValue];
+  if ([layer.get() isKindOfClass:[CAEAGLLayer class]]) {
+    return std::make_unique<IOSSurfaceGL>(
+        fml::scoped_nsobject<CAEAGLLayer>(
+            reinterpret_cast<CAEAGLLayer*>([layer.get() retain])),  // EAGL layer
+        std::move(context)                                          // context
+    );
+  }
+
+#if FLUTTER_SHELL_ENABLE_METAL
+  if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
+    if ([layer.get() isKindOfClass:[CAMetalLayer class]]) {
+      return std::make_unique<IOSSurfaceMetal>(
+          fml::scoped_nsobject<CAMetalLayer>(
+              reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
+          std::move(context)                                           // context
+      );
+    }
+  }
+#endif  // FLUTTER_SHELL_ENABLE_METAL
+
+  return std::make_unique<IOSSurfaceSoftware>(std::move(layer),   // layer
+                                              std::move(context)  // context
+  );
 }
 
-IOSSurface::IOSSurface(FlutterPlatformViewsController* platform_views_controller)
-    : platform_views_controller_(platform_views_controller) {}
+IOSSurface::IOSSurface(std::shared_ptr<IOSContext> ios_context)
+    : ios_context_(std::move(ios_context)) {
+  FML_DCHECK(ios_context_);
+}
 
 IOSSurface::~IOSSurface() = default;
 
-FlutterPlatformViewsController* IOSSurface::GetPlatformViewsController() {
-  return platform_views_controller_;
+std::shared_ptr<IOSContext> IOSSurface::GetContext() const {
+  return ios_context_;
 }
+
 }  // namespace flutter

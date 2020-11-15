@@ -7,19 +7,22 @@
 
 #include <memory>
 
+#include "flow/embedded_views.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/flow/texture.h"
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
+#include "flutter/lib/ui/window/pointer_data_packet_converter.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
-#include "flutter/shell/common/surface.h"
+#include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/vsync_waiter.h"
 #include "third_party/skia/include/core/SkSize.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
@@ -83,7 +86,8 @@ class PlatformView {
     ///
     /// @param[in]  closure  The callback to execute on the next frame.
     ///
-    virtual void OnPlatformViewSetNextFrameCallback(fml::closure closure) = 0;
+    virtual void OnPlatformViewSetNextFrameCallback(
+        const fml::closure& closure) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate the viewport metrics of the platform
@@ -169,7 +173,7 @@ class PlatformView {
     ///             Flutter layer tree. All textures must have a unique
     ///             identifier. When the rasterizer encounters an external
     ///             texture within its hierarchy, it gives the embedder a chance
-    ///             to update that texture on the GPU thread before it
+    ///             to update that texture on the raster thread before it
     ///             composites the same on-screen.
     ///
     /// @param[in]  texture  The texture that is being updated by the embedder
@@ -333,7 +337,8 @@ class PlatformView {
 
   //----------------------------------------------------------------------------
   /// @brief      Used by the framework to tell the embedder to apply the
-  ///             specified semantics node updates.
+  ///             specified semantics node updates. The default implementation
+  ///             of this method does nothing.
   ///
   /// @see        SemanticsNode, SemticsNodeUpdates,
   ///             CustomAccessibilityActionUpdates
@@ -348,10 +353,11 @@ class PlatformView {
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to specify the updated viewport metrics. In
-  ///             response to this call, on the GPU thread, the rasterizer may
-  ///             need to be reconfigured to the updated viewport dimensions. On
-  ///             the UI thread, the framework may need to start generating a
-  ///             new frame for the updated viewport metrics as well.
+  ///             response to this call, on the raster thread, the rasterizer
+  ///             may need to be reconfigured to the updated viewport
+  ///             dimensions. On the UI thread, the framework may need to start
+  ///             generating a new frame for the updated viewport metrics as
+  ///             well.
   ///
   /// @param[in]  metrics  The updated viewport metrics.
   ///
@@ -403,7 +409,7 @@ class PlatformView {
   ///             main render thread GPU context. May be `nullptr` in case such
   ///             a context cannot be created.
   ///
-  virtual sk_sp<GrContext> CreateResourceContext() const;
+  virtual sk_sp<GrDirectContext> CreateResourceContext() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Used by the shell to notify the embedder that the resource
@@ -417,17 +423,23 @@ class PlatformView {
   ///
   virtual void ReleaseResourceContext() const;
 
+  //--------------------------------------------------------------------------
+  /// @brief      Returns a platform-specific PointerDataDispatcherMaker so the
+  ///             `Engine` can construct the PointerDataPacketDispatcher based
+  ///             on platforms.
+  virtual PointerDataDispatcherMaker GetDispatcherMaker();
+
   //----------------------------------------------------------------------------
   /// @brief      Returns a weak pointer to the platform view. Since the
-  ///             platform view may only be created, accessed and destroyed on
-  ///             the platform thread, any access to the platform view from a
-  ///             non-platform task runner needs a weak pointer to the platform
-  ///             view along with a reference to the platform task runner. A
-  ///             task must be posted to the platform task runner with the weak
-  ///             pointer captured in the same. The platform view method may
-  ///             only be called in the posted task once the weak pointer
-  ///             validity has been checked. This method is used by callers to
-  ///             obtain that weak pointer.
+  ///             platform view may only be created, accessed and destroyed
+  ///             on the platform thread, any access to the platform view
+  ///             from a non-platform task runner needs a weak pointer to
+  ///             the platform view along with a reference to the platform
+  ///             task runner. A task must be posted to the platform task
+  ///             runner with the weak pointer captured in the same. The
+  ///             platform view method may only be called in the posted task
+  ///             once the weak pointer validity has been checked. This
+  ///             method is used by callers to obtain that weak pointer.
   ///
   /// @return     The weak pointer to the platform view.
   ///
@@ -445,13 +457,14 @@ class PlatformView {
 
   //----------------------------------------------------------------------------
   /// @brief      Sets a callback that gets executed when the rasterizer renders
-  ///             the next frame. Due to the asynchronous nature of rendering in
-  ///             Flutter, embedders usually add a placeholder over the
-  ///             contents in which Flutter is going to render when Flutter is
-  ///             first initialized. This callback may be used as a signal to
-  ///             remove that placeholder. The callback is executed on the
-  ///             render task runner and not the platform task runner. It is
-  ///             the embedder's responsibility to re-thread as necessary.
+  ///             the next frame. Due to the asynchronous nature of
+  ///             rendering in Flutter, embedders usually add a placeholder
+  ///             over the contents in which Flutter is going to render when
+  ///             Flutter is first initialized. This callback may be used as
+  ///             a signal to remove that placeholder. The callback is
+  ///             executed on the render task runner and not the platform
+  ///             task runner. It is the embedder's responsibility to
+  ///             re-thread as necessary.
   ///
   /// @attention  The callback is executed on the render task runner and not the
   ///             platform task runner. Embedders must re-thread as necessary.
@@ -459,13 +472,13 @@ class PlatformView {
   /// @param[in]  closure  The callback to execute on the render thread when the
   ///                      next frame gets rendered.
   ///
-  void SetNextFrameCallback(fml::closure closure);
+  void SetNextFrameCallback(const fml::closure& closure);
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatches pointer events from the embedder to the
   ///             framework. Each pointer data packet may contain multiple
-  ///             pointer input events. Each call to this method wakes up the UI
-  ///             thread.
+  ///             pointer input events. Each call to this method wakes up
+  ///             the UI thread.
   ///
   /// @param[in]  packet  The pointer data packet to dispatch to the framework.
   ///
@@ -474,16 +487,17 @@ class PlatformView {
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to specify a texture that it wants the
   ///             rasterizer to composite within the Flutter layer tree. All
-  ///             textures must have a unique identifier. When the rasterizer
-  ///             encounters an external texture within its hierarchy, it gives
-  ///             the embedder a chance to update that texture on the GPU thread
-  ///             before it composites the same on-screen.
+  ///             textures must have a unique identifier. When the
+  ///             rasterizer encounters an external texture within its
+  ///             hierarchy, it gives the embedder a chance to update that
+  ///             texture on the raster thread before it composites the same
+  ///             on-screen.
   ///
   /// @attention  This method must only be called once per texture. When the
-  ///             texture is updated, calling `MarkTextureFrameAvailable` with
-  ///             the specified texture identifier is sufficient to make Flutter
-  ///             re-render the frame with the updated texture composited
-  ///             in-line.
+  ///             texture is updated, calling `MarkTextureFrameAvailable`
+  ///             with the specified texture identifier is sufficient to
+  ///             make Flutter re-render the frame with the updated texture
+  ///             composited in-line.
   ///
   /// @see        UnregisterTexture, MarkTextureFrameAvailable
   ///
@@ -493,10 +507,11 @@ class PlatformView {
   void RegisterTexture(std::shared_ptr<flutter::Texture> texture);
 
   //--------------------------------------------------------------------------
-  /// @brief      Used by the embedder to notify the rasterizer that it will no
-  ///             longer attempt to composite the specified texture within the
-  ///             layer tree. This allows the rasterizer to collect associated
-  ///             resources.
+  /// @brief      Used by the embedder to notify the rasterizer that it will
+  /// no
+  ///             longer attempt to composite the specified texture within
+  ///             the layer tree. This allows the rasterizer to collect
+  ///             associated resources.
   ///
   /// @attention  This call must only be called once per texture identifier.
   ///
@@ -513,13 +528,14 @@ class PlatformView {
   ///             of the previously registered texture have been updated.
   ///             Typically, Flutter will only render a frame if there is an
   ///             updated layer tree. However, in cases where the layer tree
-  ///             is static but one of the externally composited textures has
-  ///             been updated by the embedder, the embedder needs to notify
-  ///             the rasterizer to render a new frame. In such cases, the
-  ///             existing layer tree may be reused with the frame re-composited
-  ///             with all updated external textures. Unlike the calls to
-  ///             register and unregister the texture, this call must be made
-  ///             each time a new texture frame is available.
+  ///             is static but one of the externally composited textures
+  ///             has been updated by the embedder, the embedder needs to
+  ///             notify the rasterizer to render a new frame. In such
+  ///             cases, the existing layer tree may be reused with the
+  ///             frame re-composited with all updated external textures.
+  ///             Unlike the calls to register and unregister the texture,
+  ///             this call must be made each time a new texture frame is
+  ///             available.
   ///
   /// @see        RegisterTexture, UnregisterTexture
   ///
@@ -528,15 +544,37 @@ class PlatformView {
   ///
   void MarkTextureFrameAvailable(int64_t texture_id);
 
+  //--------------------------------------------------------------------------
+  /// @brief      Directly invokes platform-specific APIs to compute the
+  ///             locale the platform would have natively resolved to.
+  ///
+  /// @param[in]  supported_locale_data  The vector of strings that represents
+  ///                                    the locales supported by the app.
+  ///                                    Each locale consists of three
+  ///                                    strings: languageCode, countryCode,
+  ///                                    and scriptCode in that order.
+  ///
+  /// @return     A vector of 3 strings languageCode, countryCode, and
+  ///             scriptCode that represents the locale selected by the
+  ///             platform. Empty strings mean the value was unassigned. Empty
+  ///             vector represents a null locale.
+  ///
+  virtual std::unique_ptr<std::vector<std::string>>
+  ComputePlatformResolvedLocales(
+      const std::vector<std::string>& supported_locale_data);
+
+  virtual std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder();
+
  protected:
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;
 
+  PointerDataPacketConverter pointer_data_packet_converter_;
   SkISize size_;
   fml::WeakPtrFactory<PlatformView> weak_factory_;
 
-  // Unlike all other methods on the platform view, this is called on the GPU
-  // task runner.
+  // Unlike all other methods on the platform view, this is called on the
+  // GPU task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
 
  private:

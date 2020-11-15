@@ -2,15 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
-#include "flutter/fml/logging.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
+
+#import "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate_Test.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
 
 static NSString* kUIBackgroundMode = @"UIBackgroundModes";
 static NSString* kRemoteNotificationCapabitiliy = @"remote-notification";
 static NSString* kBackgroundFetchCapatibility = @"fetch";
+
+@interface FlutterAppDelegate ()
+@property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
+@end
 
 @implementation FlutterAppDelegate {
   FlutterPluginAppLifeCycleDelegate* _lifeCycleDelegate;
@@ -25,6 +32,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 - (void)dealloc {
   [_lifeCycleDelegate release];
+  [_rootFlutterViewControllerGetter release];
   [super dealloc];
 }
 
@@ -41,40 +49,34 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 // Returns the key window's rootViewController, if it's a FlutterViewController.
 // Otherwise, returns nil.
 - (FlutterViewController*)rootFlutterViewController {
-  UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
-  if ([viewController isKindOfClass:[FlutterViewController class]]) {
-    return (FlutterViewController*)viewController;
+  if (_rootFlutterViewControllerGetter != nil) {
+    return _rootFlutterViewControllerGetter();
+  }
+  UIViewController* rootViewController = _window.rootViewController;
+  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
+    return (FlutterViewController*)rootViewController;
   }
   return nil;
 }
 
-- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  [super touchesBegan:touches withEvent:event];
-
-  // Pass status bar taps to key window Flutter rootViewController.
-  if (self.rootFlutterViewController != nil) {
-    [self.rootFlutterViewController handleStatusBarTouches:event];
-  }
-}
-
+// Do not remove, some clients may be calling these via `super`.
 - (void)applicationDidEnterBackground:(UIApplication*)application {
-  [_lifeCycleDelegate applicationDidEnterBackground:application];
 }
 
+// Do not remove, some clients may be calling these via `super`.
 - (void)applicationWillEnterForeground:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillEnterForeground:application];
 }
 
+// Do not remove, some clients may be calling these via `super`.
 - (void)applicationWillResignActive:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillResignActive:application];
 }
 
+// Do not remove, some clients may be calling these via `super`.
 - (void)applicationDidBecomeActive:(UIApplication*)application {
-  [_lifeCycleDelegate applicationDidBecomeActive:application];
 }
 
+// Do not remove, some clients may be calling these via `super`.
 - (void)applicationWillTerminate:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillTerminate:application];
 }
 
 #pragma GCC diagnostic push
@@ -104,18 +106,79 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
        willPresentNotification:(UNNotification*)notification
          withCompletionHandler:
              (void (^)(UNNotificationPresentationOptions options))completionHandler
-    API_AVAILABLE(ios(10)) {
+    NS_AVAILABLE_IOS(10_0) {
   if (@available(iOS 10.0, *)) {
-    [_lifeCycleDelegate userNotificationCenter:center
-                       willPresentNotification:notification
-                         withCompletionHandler:completionHandler];
+    if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
+      [_lifeCycleDelegate userNotificationCenter:center
+                         willPresentNotification:notification
+                           withCompletionHandler:completionHandler];
+    }
+  }
+}
+
+/**
+ * Calls all plugins registered for `UNUserNotificationCenterDelegate` callbacks.
+ */
+- (void)userNotificationCenter:(UNUserNotificationCenter*)center
+    didReceiveNotificationResponse:(UNNotificationResponse*)response
+             withCompletionHandler:(void (^)(void))completionHandler NS_AVAILABLE_IOS(10_0) {
+  if (@available(iOS 10.0, *)) {
+    if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
+      [_lifeCycleDelegate userNotificationCenter:center
+                  didReceiveNotificationResponse:response
+                           withCompletionHandler:completionHandler];
+    }
+  }
+}
+
+static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
+  NSNumber* isEnabled = [infoDictionary objectForKey:@"FlutterDeepLinkingEnabled"];
+  if (isEnabled) {
+    return [isEnabled boolValue];
+  } else {
+    return NO;
+  }
+}
+
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
+    infoPlistGetter:(NSDictionary* (^)())infoPlistGetter {
+  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
+    return YES;
+  } else if (!IsDeepLinkingEnabled(infoPlistGetter())) {
+    return NO;
+  } else {
+    FlutterViewController* flutterViewController = [self rootFlutterViewController];
+    if (flutterViewController) {
+      [flutterViewController.engine
+          waitForFirstFrame:3.0
+                   callback:^(BOOL didTimeout) {
+                     if (didTimeout) {
+                       FML_LOG(ERROR)
+                           << "Timeout waiting for the first frame when launching an URL.";
+                     } else {
+                       [flutterViewController.engine.navigationChannel invokeMethod:@"pushRoute"
+                                                                          arguments:url.path];
+                     }
+                   }];
+      return YES;
+    } else {
+      FML_LOG(ERROR) << "Attempting to open an URL without a Flutter RootViewController.";
+      return NO;
+    }
   }
 }
 
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  return [_lifeCycleDelegate application:application openURL:url options:options];
+  return [self application:application
+                   openURL:url
+                   options:options
+           infoPlistGetter:^NSDictionary*() {
+             return [[NSBundle mainBundle] infoDictionary];
+           }];
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
@@ -166,34 +229,32 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
 
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
-  UIViewController* rootViewController = _window.rootViewController;
-  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return
-        [[(FlutterViewController*)rootViewController pluginRegistry] registrarForPlugin:pluginKey];
+  FlutterViewController* flutterRootViewController = [self rootFlutterViewController];
+  if (flutterRootViewController) {
+    return [[flutterRootViewController pluginRegistry] registrarForPlugin:pluginKey];
   }
   return nil;
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {
-  UIViewController* rootViewController = _window.rootViewController;
-  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return [[(FlutterViewController*)rootViewController pluginRegistry] hasPlugin:pluginKey];
+  FlutterViewController* flutterRootViewController = [self rootFlutterViewController];
+  if (flutterRootViewController) {
+    return [[flutterRootViewController pluginRegistry] hasPlugin:pluginKey];
   }
   return false;
 }
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
-  UIViewController* rootViewController = _window.rootViewController;
-  if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return [[(FlutterViewController*)rootViewController pluginRegistry]
-        valuePublishedByPlugin:pluginKey];
+  FlutterViewController* flutterRootViewController = [self rootFlutterViewController];
+  if (flutterRootViewController) {
+    return [[flutterRootViewController pluginRegistry] valuePublishedByPlugin:pluginKey];
   }
   return nil;
 }
 
 #pragma mark - Selectors handling
 
-- (void)addApplicationLifeCycleDelegate:(NSObject<FlutterPlugin>*)delegate {
+- (void)addApplicationLifeCycleDelegate:(NSObject<FlutterApplicationLifeCycleDelegate>*)delegate {
   [_lifeCycleDelegate addDelegate:delegate];
 }
 

@@ -2,14 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
 #pragma mark - Basic message channel
+
+static NSString* const FlutterChannelBuffersChannel = @"dev.flutter/channel-buffers";
+
+static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenger,
+                                NSString* channel,
+                                NSInteger newSize) {
+  NSString* messageString = [NSString stringWithFormat:@"resize\r%@\r%@", channel, @(newSize)];
+  NSData* message = [messageString dataUsingEncoding:NSUTF8StringEncoding];
+  [binaryMessenger sendOnChannel:FlutterChannelBuffersChannel message:message];
+}
 
 @implementation FlutterBasicMessageChannel {
   NSObject<FlutterBinaryMessenger>* _messenger;
   NSString* _name;
   NSObject<FlutterMessageCodec>* _codec;
+  FlutterBinaryMessengerConnection _connection;
 }
 + (instancetype)messageChannelWithName:(NSString*)name
                        binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
@@ -58,7 +69,12 @@
 
 - (void)setMessageHandler:(FlutterMessageHandler)handler {
   if (!handler) {
-    [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
+    if (_connection > 0) {
+      [_messenger cleanupConnection:_connection];
+      _connection = 0;
+    } else {
+      [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
+    }
     return;
   }
   // Grab reference to avoid retain on self.
@@ -68,8 +84,13 @@
       callback([codec encode:reply]);
     });
   };
-  [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
+  _connection = [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
 }
+
+- (void)resizeChannelBuffer:(NSInteger)newSize {
+  ResizeChannelBuffer(_messenger, _name, newSize);
+}
+
 @end
 
 #pragma mark - Method channel
@@ -153,6 +174,7 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   NSObject<FlutterBinaryMessenger>* _messenger;
   NSString* _name;
   NSObject<FlutterMethodCodec>* _codec;
+  FlutterBinaryMessengerConnection _connection;
 }
 
 + (instancetype)methodChannelWithName:(NSString*)name
@@ -207,7 +229,12 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 
 - (void)setMethodCallHandler:(FlutterMethodCallHandler)handler {
   if (!handler) {
-    [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
+    if (_connection > 0) {
+      [_messenger cleanupConnection:_connection];
+      _connection = 0;
+    } else {
+      [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
+    }
     return;
   }
   // Make sure the block captures the codec, not self.
@@ -223,8 +250,13 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
         callback([codec encodeSuccessEnvelope:result]);
     });
   };
-  [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
+  _connection = [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
 }
+
+- (void)resizeChannelBuffer:(NSInteger)newSize {
+  ResizeChannelBuffer(_messenger, _name, newSize);
+}
+
 @end
 
 #pragma mark - Event channel

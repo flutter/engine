@@ -5,13 +5,25 @@
 #ifndef FLUTTER_FML_TIME_TIME_DELTA_H_
 #define FLUTTER_FML_TIME_TIME_DELTA_H_
 
-#include <stdint.h>
-#include <time.h>
-
+#include <chrono>
+#include <cstdint>
+#include <ctime>
 #include <iosfwd>
 #include <limits>
 
 namespace fml {
+
+using namespace std::chrono_literals;
+
+using Milliseconds = std::chrono::duration<double, std::milli>;
+
+// Default to 60fps.
+constexpr Milliseconds kDefaultFrameBudget = Milliseconds(1s) / 60;
+
+template <typename T>
+Milliseconds RefreshRateToFrameBudget(T refresh_rate) {
+  return Milliseconds(1s) / refresh_rate;
+}
 
 // A TimeDelta represents the difference between two time points.
 class TimeDelta {
@@ -40,6 +52,10 @@ class TimeDelta {
 
   static constexpr TimeDelta FromSecondsF(double seconds) {
     return FromNanoseconds(seconds * (1000.0 * 1000.0 * 1000.0));
+  }
+
+  static constexpr TimeDelta FromMillisecondsF(double millis) {
+    return FromNanoseconds(millis * (1000.0 * 1000.0));
   }
 
   constexpr int64_t ToNanoseconds() const { return delta_; }

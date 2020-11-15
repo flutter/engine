@@ -6,15 +6,16 @@
 #define FLUTTER_LIB_UI_COMPOSITING_SCENE_HOST_H_
 
 #include <lib/ui/scenic/cpp/id.h>
-#include <stdint.h>
-#include <third_party/tonic/dart_library_natives.h>
-#include <third_party/tonic/dart_persistent_value.h>
 #include <zircon/types.h>
+
+#include <cstdint>
 
 #include "dart-pkg/zircon/sdk_ext/handle.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/dart_wrapper.h"
+#include "third_party/tonic/dart_library_natives.h"
+#include "third_party/tonic/dart_persistent_value.h"
 
 namespace flutter {
 
@@ -33,14 +34,11 @@ class SceneHost : public RefCountedDartWrappable<SceneHost> {
   static void OnViewDisconnected(scenic::ResourceId id);
   static void OnViewStateChanged(scenic::ResourceId id, bool state);
 
-  SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderToken,
-            Dart_Handle viewConnectedCallback,
-            Dart_Handle viewDisconnectedCallback,
-            Dart_Handle viewStateChangedCallback);
   ~SceneHost() override;
 
   zx_koid_t id() const { return koid_; }
 
+  // These are visible to Dart.
   void dispose();
   void setProperties(double width,
                      double height,
@@ -49,13 +47,18 @@ class SceneHost : public RefCountedDartWrappable<SceneHost> {
                      double insetBottom,
                      double insetLeft,
                      bool focusable);
-  void setOpacity(double opacity);
 
  private:
-  fml::RefPtr<fml::TaskRunner> gpu_task_runner_;
+  SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderToken,
+            Dart_Handle viewConnectedCallback,
+            Dart_Handle viewDisconnectedCallback,
+            Dart_Handle viewStateChangedCallback);
+
+  fml::RefPtr<fml::TaskRunner> raster_task_runner_;
   tonic::DartPersistentValue view_connected_callback_;
   tonic::DartPersistentValue view_disconnected_callback_;
   tonic::DartPersistentValue view_state_changed_callback_;
+  std::string isolate_service_id_;
   zx_koid_t koid_ = ZX_KOID_INVALID;
 };
 

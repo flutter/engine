@@ -12,10 +12,11 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/task_runner.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
 
-// A queue that holds Skia objects that must be destructed on the the given task
+// A queue that holds Skia objects that must be destructed on the given task
 // runner.
 class SkiaUnrefQueue : public fml::RefCountedThreadSafe<SkiaUnrefQueue> {
  public:
@@ -34,9 +35,14 @@ class SkiaUnrefQueue : public fml::RefCountedThreadSafe<SkiaUnrefQueue> {
   std::mutex mutex_;
   std::deque<SkRefCnt*> objects_;
   bool drain_pending_;
+  fml::WeakPtr<GrDirectContext> context_;
 
+  // The `GrDirectContext* context` is only used for signaling Skia to
+  // performDeferredCleanup. It can be nullptr when such signaling is not needed
+  // (e.g., in unit tests).
   SkiaUnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
-                 fml::TimeDelta delay);
+                 fml::TimeDelta delay,
+                 fml::WeakPtr<GrDirectContext> context = {});
 
   ~SkiaUnrefQueue();
 
@@ -54,14 +60,11 @@ class SkiaGPUObject {
   using SkiaObjectType = T;
 
   SkiaGPUObject() = default;
-
   SkiaGPUObject(sk_sp<SkiaObjectType> object, fml::RefPtr<SkiaUnrefQueue> queue)
       : object_(std::move(object)), queue_(std::move(queue)) {
-    FML_DCHECK(queue_ && object_);
+    FML_DCHECK(object_);
   }
-
   SkiaGPUObject(SkiaGPUObject&&) = default;
-
   ~SkiaGPUObject() { reset(); }
 
   SkiaGPUObject& operator=(SkiaGPUObject&&) = default;
@@ -69,7 +72,7 @@ class SkiaGPUObject {
   sk_sp<SkiaObjectType> get() const { return object_; }
 
   void reset() {
-    if (object_) {
+    if (object_ && queue_) {
       queue_->Unref(object_.release());
     }
     queue_ = nullptr;

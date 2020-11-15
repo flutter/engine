@@ -4,11 +4,9 @@
 
 package io.flutter.embedding.engine.plugins.service;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
-/**
- * A {@link FlutterPlugin} that wants to know when it is running within a {@link Service}.
- */
+/** A {@link FlutterPlugin} that wants to know when it is running within a {@link Service}. */
 public interface ServiceAware {
   /**
    * Callback triggered when a {@code ServiceAware} {@link FlutterPlugin} is associated with a
@@ -17,8 +15,12 @@ public interface ServiceAware {
   void onAttachedToService(@NonNull ServicePluginBinding binding);
 
   /**
-   * Callback triggered when a {@code ServiceAware} {@link FlutterPlugin} is detached from a
-   * {@link Service}.
+   * Callback triggered when a {@code ServiceAware} {@link FlutterPlugin} is detached from a {@link
+   * Service}.
+   *
+   * <p>Any {@code Lifecycle} listeners that were registered in {@link
+   * #onAttachedToService(ServicePluginBinding)} should be deregistered here to avoid a possible
+   * memory leak and other side effects.
    */
   void onDetachedFromService();
 

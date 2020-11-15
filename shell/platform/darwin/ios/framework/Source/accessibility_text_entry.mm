@@ -4,8 +4,10 @@
 
 #import <UIKit/UIKit.h>
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
+
+static const UIAccessibilityTraits UIAccessibilityTraitUndocumentedEmptyLine = 0x800000000000;
 
 @implementation FlutterInactiveTextInput {
 }
@@ -23,7 +25,13 @@
 }
 
 - (NSString*)textInRange:(UITextRange*)range {
+  if (!range) {
+    return nil;
+  }
+  NSAssert([range isKindOfClass:[FlutterTextRange class]],
+           @"Expected a FlutterTextRange for range (got %@).", [range class]);
   NSRange textRange = ((FlutterTextRange*)range).range;
+  NSAssert(textRange.location != NSNotFound, @"Expected a valid text range.");
   return [self.text substringWithRange:textRange];
 }
 
@@ -169,7 +177,8 @@
   FlutterInactiveTextInput* _inactive_text_input;
 }
 
-- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge uid:(int32_t)uid {
+- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
+                           uid:(int32_t)uid {
   self = [super initWithBridge:bridge uid:uid];
 
   if (self) {
@@ -192,7 +201,7 @@
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsFocused)) {
     // The text input view must have a non-trivial size for the accessibility
     // system to send text editing events.
-    [self bridge] -> textInputView().frame = CGRectMake(0.0, 0.0, 1.0, 1.0);
+    [self bridge]->textInputView().frame = CGRectMake(0.0, 0.0, 1.0, 1.0);
   }
 }
 
@@ -208,7 +217,7 @@
  */
 - (UIView<UITextInput>*)textInputSurrogate {
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsFocused)) {
-    return [self bridge] -> textInputView();
+    return [self bridge]->textInputView();
   } else {
     return _inactive_text_input;
   }
@@ -219,24 +228,35 @@
 }
 
 - (void)accessibilityElementDidBecomeFocused {
+  if (![self isAccessibilityBridgeAlive])
+    return;
   [[self textInputSurrogate] accessibilityElementDidBecomeFocused];
   [super accessibilityElementDidBecomeFocused];
 }
 
 - (void)accessibilityElementDidLoseFocus {
+  if (![self isAccessibilityBridgeAlive])
+    return;
   [[self textInputSurrogate] accessibilityElementDidLoseFocus];
   [super accessibilityElementDidLoseFocus];
 }
 
 - (BOOL)accessibilityElementIsFocused {
+  if (![self isAccessibilityBridgeAlive])
+    return false;
   return [self node].HasFlag(flutter::SemanticsFlags::kIsFocused);
 }
 
 - (BOOL)accessibilityActivate {
+  if (![self isAccessibilityBridgeAlive])
+    return false;
   return [[self textInputSurrogate] accessibilityActivate];
 }
 
 - (NSString*)accessibilityLabel {
+  if (![self isAccessibilityBridgeAlive])
+    return nil;
+
   NSString* label = [super accessibilityLabel];
   if (label != nil)
     return label;
@@ -244,6 +264,8 @@
 }
 
 - (NSString*)accessibilityHint {
+  if (![self isAccessibilityBridgeAlive])
+    return nil;
   NSString* hint = [super accessibilityHint];
   if (hint != nil)
     return hint;
@@ -251,6 +273,8 @@
 }
 
 - (NSString*)accessibilityValue {
+  if (![self isAccessibilityBridgeAlive])
+    return nil;
   NSString* value = [super accessibilityValue];
   if (value != nil)
     return value;
@@ -258,11 +282,18 @@
 }
 
 - (UIAccessibilityTraits)accessibilityTraits {
+  if (![self isAccessibilityBridgeAlive])
+    return 0;
   // Adding UIAccessibilityTraitKeyboardKey to the trait list so that iOS treats it like
   // a keyboard entry control, thus adding support for text editing features, such as
   // pinch to select text, and up/down fling to move cursor.
-  return [super accessibilityTraits] | [self textInputSurrogate].accessibilityTraits |
-         UIAccessibilityTraitKeyboardKey;
+  UIAccessibilityTraits results = [super accessibilityTraits] |
+                                  [self textInputSurrogate].accessibilityTraits |
+                                  UIAccessibilityTraitKeyboardKey;
+  // We remove an undocumented flag to get rid of a bug where single-tapping
+  // a text input field incorrectly says "empty line".
+  // See also: https://github.com/flutter/flutter/issues/52487
+  return results & (~UIAccessibilityTraitUndocumentedEmptyLine);
 }
 
 #pragma mark - UITextInput overrides

@@ -6,17 +6,22 @@
 #define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_VULKAN_H_
 
 #include <jni.h>
+
 #include <memory>
+
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/android/android_native_window.h"
-#include "flutter/shell/platform/android/android_surface.h"
+#include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
 #include "flutter/vulkan/vulkan_window.h"
 
 namespace flutter {
 
-class AndroidSurfaceVulkan : public AndroidSurface {
+class AndroidSurfaceVulkan : public AndroidSurface,
+                             public GPUSurfaceVulkanDelegate {
  public:
-  AndroidSurfaceVulkan();
+  AndroidSurfaceVulkan(const AndroidContext& android_context,
+                       std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   ~AndroidSurfaceVulkan() override;
 
@@ -24,13 +29,14 @@ class AndroidSurfaceVulkan : public AndroidSurface {
   bool IsValid() const override;
 
   // |AndroidSurface|
-  std::unique_ptr<Surface> CreateGPUSurface() override;
+  std::unique_ptr<Surface> CreateGPUSurface(
+      GrDirectContext* gr_context) override;
 
   // |AndroidSurface|
   void TeardownOnScreenContext() override;
 
   // |AndroidSurface|
-  bool OnScreenSurfaceResize(const SkISize& size) const override;
+  bool OnScreenSurfaceResize(const SkISize& size) override;
 
   // |AndroidSurface|
   bool ResourceContextMakeCurrent() override;
@@ -40,6 +46,9 @@ class AndroidSurfaceVulkan : public AndroidSurface {
 
   // |AndroidSurface|
   bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) override;
+
+  // |GPUSurfaceVulkanDelegate|
+  fml::RefPtr<vulkan::VulkanProcTable> vk() override;
 
  private:
   fml::RefPtr<vulkan::VulkanProcTable> proc_table_;

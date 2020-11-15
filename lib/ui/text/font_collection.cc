@@ -8,7 +8,7 @@
 
 #include "flutter/lib/ui/text/asset_manager_font_provider.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "flutter/lib/ui/window/window.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/runtime/test_font_data.h"
 #include "rapidjson/document.h"
 #include "rapidjson/rapidjson.h"
@@ -27,11 +27,13 @@ namespace flutter {
 
 namespace {
 
-void LoadFontFromList(tonic::Uint8List& font_data,
+void LoadFontFromList(tonic::Uint8List& font_data,  // NOLINT
                       Dart_Handle callback,
                       std::string family_name) {
-  FontCollection& font_collection =
-      UIDartState::Current()->window()->client()->GetFontCollection();
+  FontCollection& font_collection = UIDartState::Current()
+                                        ->platform_configuration()
+                                        ->client()
+                                        ->GetFontCollection();
   font_collection.LoadFontFromList(font_data.data(), font_data.num_elements(),
                                    family_name);
   font_data.Release();
@@ -39,6 +41,7 @@ void LoadFontFromList(tonic::Uint8List& font_data,
 }
 
 void _LoadFontFromList(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   tonic::DartCallStatic(LoadFontFromList, args);
 }
 
@@ -46,8 +49,6 @@ void _LoadFontFromList(Dart_NativeArguments args) {
 
 FontCollection::FontCollection()
     : collection_(std::make_shared<txt::FontCollection>()) {
-  collection_->SetupDefaultFontManager();
-
   dynamic_font_manager_ = sk_make_sp<txt::DynamicFontManager>();
   collection_->SetDynamicFontManager(dynamic_font_manager_);
 }
@@ -65,6 +66,10 @@ void FontCollection::RegisterNatives(tonic::DartLibraryNatives* natives) {
 
 std::shared_ptr<txt::FontCollection> FontCollection::GetFontCollection() const {
   return collection_;
+}
+
+void FontCollection::SetupDefaultFontManager() {
+  collection_->SetupDefaultFontManager();
 }
 
 void FontCollection::RegisterFonts(
@@ -118,7 +123,7 @@ void FontCollection::RegisterFonts(
         continue;
       }
 
-      // TODO: Handle weights and styles.
+      // TODO(chinmaygarde): Handle weights and styles.
       font_provider->RegisterAsset(family_name->value.GetString(),
                                    font_asset->value.GetString());
     }
@@ -129,17 +134,24 @@ void FontCollection::RegisterFonts(
 }
 
 void FontCollection::RegisterTestFonts() {
-  sk_sp<SkTypeface> test_typeface =
-      SkTypeface::MakeFromStream(GetTestFontData());
+  std::vector<sk_sp<SkTypeface>> test_typefaces;
+  std::vector<std::unique_ptr<SkStreamAsset>> font_data = GetTestFontData();
+  for (auto& font : font_data) {
+    test_typefaces.push_back(SkTypeface::MakeFromStream(std::move(font)));
+  }
 
   std::unique_ptr<txt::TypefaceFontAssetProvider> font_provider =
       std::make_unique<txt::TypefaceFontAssetProvider>();
 
-  font_provider->RegisterTypeface(std::move(test_typeface),
-                                  GetTestFontFamilyName());
+  size_t index = 0;
+  std::vector<std::string> names = GetTestFontFamilyNames();
+  for (sk_sp<SkTypeface> typeface : test_typefaces) {
+    font_provider->RegisterTypeface(std::move(typeface), names[index]);
+    index++;
+  }
 
-  collection_->SetTestFontManager(sk_make_sp<txt::TestFontManager>(
-      std::move(font_provider), GetTestFontFamilyName()));
+  collection_->SetTestFontManager(
+      sk_make_sp<txt::TestFontManager>(std::move(font_provider), names));
 
   collection_->DisableFontFallback();
 }

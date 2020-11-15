@@ -12,25 +12,38 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/embedder_engine.h"
-#include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
 
+#ifdef SHELL_ENABLE_GL
+#include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
+#endif
+
 namespace flutter {
+
+struct ShellArgs;
 
 // The object that is returned to the embedder as an opaque pointer to the
 // instance of the Flutter engine.
 class EmbedderEngine {
  public:
   EmbedderEngine(std::unique_ptr<EmbedderThreadHost> thread_host,
-                 flutter::TaskRunners task_runners,
-                 flutter::Settings settings,
+                 TaskRunners task_runners,
+                 Settings settings,
+                 RunConfiguration run_configuration,
                  Shell::CreateCallback<PlatformView> on_create_platform_view,
-                 Shell::CreateCallback<Rasterizer> on_create_rasterizer,
+                 Shell::CreateCallback<Rasterizer> on_create_rasterizer
+#ifdef SHELL_ENABLE_GL
+                 ,
                  EmbedderExternalTextureGL::ExternalTextureCallback
-                     external_texture_callback);
+                     external_texture_callback
+#endif
+  );
 
   ~EmbedderEngine();
+
+  bool LaunchShell();
+
+  bool CollectShell();
 
   const TaskRunners& GetTaskRunners() const;
 
@@ -38,7 +51,7 @@ class EmbedderEngine {
 
   bool NotifyDestroyed();
 
-  bool Run(RunConfiguration run_configuration);
+  bool RunRootIsolate();
 
   bool IsValid() const;
 
@@ -67,18 +80,27 @@ class EmbedderEngine {
                     fml::TimePoint frame_start_time,
                     fml::TimePoint frame_target_time);
 
-  bool PostRenderThreadTask(fml::closure task);
+  bool ReloadSystemFonts();
+
+  bool PostRenderThreadTask(const fml::closure& task);
 
   bool RunTask(const FlutterTask* task);
+
+  bool PostTaskOnEngineManagedNativeThreads(
+      std::function<void(FlutterNativeThreadType)> closure) const;
+
+  Shell& GetShell();
 
  private:
   const std::unique_ptr<EmbedderThreadHost> thread_host_;
   TaskRunners task_runners_;
+  RunConfiguration run_configuration_;
+  std::unique_ptr<ShellArgs> shell_args_;
   std::unique_ptr<Shell> shell_;
+#ifdef SHELL_ENABLE_GL
   const EmbedderExternalTextureGL::ExternalTextureCallback
       external_texture_callback_;
-  bool is_valid_ = false;
-  uint64_t next_pointer_flow_id_ = 0;
+#endif
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderEngine);
 };

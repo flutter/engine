@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
+
+#include <cstring>
 
 @implementation FlutterBinaryCodec
 + (instancetype)sharedInstance {
@@ -13,7 +15,8 @@
   return _sharedInstance;
 }
 
-- (NSData*)encode:(NSData*)message {
+- (NSData*)encode:(id)message {
+  NSAssert(!message || [message isKindOfClass:[NSData class]], @"");
   return message;
 }
 
@@ -31,10 +34,12 @@
   return _sharedInstance;
 }
 
-- (NSData*)encode:(NSString*)message {
+- (NSData*)encode:(id)message {
   if (message == nil)
     return nil;
-  const char* utf8 = message.UTF8String;
+  NSAssert([message isKindOfClass:[NSString class]], @"");
+  NSString* stringMessage = message;
+  const char* utf8 = stringMessage.UTF8String;
   return [NSData dataWithBytes:utf8 length:strlen(utf8)];
 }
 

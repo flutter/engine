@@ -6,33 +6,50 @@
 #define SHELL_COMMON_SHELL_H_
 
 #include <functional>
+#include <mutex>
+#include <string_view>
 #include <unordered_map>
 
+#include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/flow/texture.h"
+#include "flutter/flow/surface.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/fml/memory/thread_checker.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/fml/string_view.h"
-#include "flutter/fml/synchronization/thread_annotations.h"
+#include "flutter/fml/status.h"
+#include "flutter/fml/synchronization/sync_switch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
+#include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/service_protocol.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/common/surface.h"
 
 namespace flutter {
+
+/// Error exit codes for the Dart isolate.
+enum class DartErrorCode {
+  /// No error has occurred.
+  NoError = 0,
+  /// The Dart error code for an API error.
+  ApiError = 253,
+  /// The Dart error code for a compilation error.
+  CompilationError = 254,
+  /// The Dart error code for an unkonwn error.
+  UnknownError = 255
+};
 
 //------------------------------------------------------------------------------
 /// Perhaps the single most important class in the Flutter engine repository.
@@ -62,7 +79,8 @@ namespace flutter {
 /// platform task runner. In case the embedder wants to directly access a shell
 /// subcomponent, it is the embedder's responsibility to acquire a weak pointer
 /// to that component and post a task to the task runner used by the component
-/// to access its methods.
+/// to access its methods. The shell must also be destroyed on the platform
+/// task runner.
 ///
 /// There is no explicit API to bootstrap and shutdown the Dart VM. The first
 /// instance of the shell in the process bootstraps the Dart VM and the
@@ -109,6 +127,44 @@ class Shell final : public PlatformView::Delegate,
   static std::unique_ptr<Shell> Create(
       TaskRunners task_runners,
       Settings settings,
+      const CreateCallback<PlatformView>& on_create_platform_view,
+      const CreateCallback<Rasterizer>& on_create_rasterizer);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a shell instance using the provided settings. The
+  ///             callbacks to create the various shell subcomponents will be
+  ///             called on the appropriate threads before this method returns.
+  ///             Unlike the simpler variant of this factory method, this method
+  ///             allows for specification of window data. If this is the first
+  ///             instance of a shell in the process, this call also bootstraps
+  ///             the Dart VM.
+  ///
+  /// @param[in]  task_runners             The task runners
+  /// @param[in]  platform_data            The default data for setting up
+  ///                                      ui.Window that attached to this
+  ///                                      intance.
+  /// @param[in]  settings                 The settings
+  /// @param[in]  on_create_platform_view  The callback that must return a
+  ///                                      platform view. This will be called on
+  ///                                      the platform task runner before this
+  ///                                      method returns.
+  /// @param[in]  on_create_rasterizer     That callback that must provide a
+  ///                                      valid rasterizer. This will be called
+  ///                                      on the render task runner before this
+  ///                                      method returns.
+  ///
+  /// @return     A full initialized shell if the settings and callbacks are
+  ///             valid. The root isolate has been created but not yet launched.
+  ///             It may be launched by obtaining the engine weak pointer and
+  ///             posting a task onto the UI task runner with a valid run
+  ///             configuration to run the isolate. The embedder must always
+  ///             check the validity of the shell (using the IsSetup call)
+  ///             immediately after getting a pointer to it.
+  ///
+  static std::unique_ptr<Shell> Create(
+      TaskRunners task_runners,
+      const PlatformData platform_data,
+      Settings settings,
       CreateCallback<PlatformView> on_create_platform_view,
       CreateCallback<Rasterizer> on_create_rasterizer);
 
@@ -122,11 +178,11 @@ class Shell final : public PlatformView::Delegate,
   ///             requires the specification of a running VM instance.
   ///
   /// @param[in]  task_runners             The task runners
+  /// @param[in]  platform_data            The default data for setting up
+  ///                                      ui.Window that attached to this
+  ///                                      intance.
   /// @param[in]  settings                 The settings
   /// @param[in]  isolate_snapshot         A custom isolate snapshot. Takes
-  ///                                      precedence over any snapshots
-  ///                                      specified in the settings.
-  /// @param[in]  shared_snapshot          A custom shared snapshot. Takes
   ///                                      precedence over any snapshots
   ///                                      specified in the settings.
   /// @param[in]  on_create_platform_view  The callback that must return a
@@ -149,11 +205,11 @@ class Shell final : public PlatformView::Delegate,
   ///
   static std::unique_ptr<Shell> Create(
       TaskRunners task_runners,
+      const PlatformData platform_data,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      fml::RefPtr<const DartSnapshot> shared_snapshot,
-      CreateCallback<PlatformView> on_create_platform_view,
-      CreateCallback<Rasterizer> on_create_rasterizer,
+      const CreateCallback<PlatformView>& on_create_platform_view,
+      const CreateCallback<Rasterizer>& on_create_rasterizer,
       DartVMRef vm);
 
   //----------------------------------------------------------------------------
@@ -163,6 +219,19 @@ class Shell final : public PlatformView::Delegate,
   ///             this method returns.
   ///
   ~Shell();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Starts an isolate for the given RunConfiguration.
+  ///
+  void RunEngine(RunConfiguration run_configuration);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Starts an isolate for the given RunConfiguration. The
+  ///             result_callback will be called with the status of the
+  ///             operation.
+  ///
+  void RunEngine(RunConfiguration run_configuration,
+                 const std::function<void(Engine::RunStatus)>& result_callback);
 
   //------------------------------------------------------------------------------
   /// @return     The settings used to launch this shell.
@@ -181,17 +250,19 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @return     The task runners current in use by the shell.
   ///
-  const TaskRunners& GetTaskRunners() const;
+  const TaskRunners& GetTaskRunners() const override;
 
   //----------------------------------------------------------------------------
   /// @brief      Rasterizers may only be accessed on the GPU task runner.
   ///
   /// @return     A weak pointer to the rasterizer.
   ///
-  fml::WeakPtr<Rasterizer> GetRasterizer();
+  fml::TaskRunnerAffineWeakPtr<Rasterizer> GetRasterizer() const;
 
   //------------------------------------------------------------------------------
-  /// @brief      Engines may only be accessed on the UI thread.
+  /// @brief      Engines may only be accessed on the UI thread. This method is
+  ///             deprecated, and implementers should instead use other API
+  ///             available on the Shell or the PlatformView.
   ///
   /// @return     A weak pointer to the engine.
   ///
@@ -205,10 +276,17 @@ class Shell final : public PlatformView::Delegate,
   ///
   fml::WeakPtr<PlatformView> GetPlatformView();
 
+  //----------------------------------------------------------------------------
+  /// @brief      The IO Manager may only be accessed on the IO task runner.
+  ///
+  /// @return     A weak pointer to the IO manager.
+  ///
+  fml::WeakPtr<ShellIOManager> GetIOManager();
+
   // Embedders should call this under low memory conditions to free up
   // internal caches used.
   //
-  // This method posts a task to the GPU threads to signal the Rasterizer to
+  // This method posts a task to the raster threads to signal the Rasterizer to
   // free resources.
 
   //----------------------------------------------------------------------------
@@ -243,36 +321,105 @@ class Shell final : public PlatformView::Delegate,
   Rasterizer::Screenshot Screenshot(Rasterizer::ScreenshotType type,
                                     bool base64_encode);
 
+  //----------------------------------------------------------------------------
+  /// @brief   Pauses the calling thread until the first frame is presented.
+  ///
+  /// @return  'kOk' when the first frame has been presented before the timeout
+  ///          successfully, 'kFailedPrecondition' if called from the GPU or UI
+  ///          thread, 'kDeadlineExceeded' if there is a timeout.
+  ///
+  fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to reload the system fonts in
+  /// FontCollection.
+  ///             It also clears the cached font families and send system
+  ///             channel message to framework to rebuild affected widgets.
+  ///
+  /// @return     Returns if shell reloads system fonts successfully.
+  ///
+  bool ReloadSystemFonts();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to get the last error from the Dart UI
+  ///             Isolate, if one exists.
+  ///
+  /// @return     Returns the last error code from the UI Isolate.
+  ///
+  std::optional<DartErrorCode> GetUIIsolateLastError() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to check if the Engine is running and has
+  ///             any live ports remaining. For example, the Flutter tester uses
+  ///             this method to check whether it should continue to wait for
+  ///             a running test or not.
+  ///
+  /// @return     Returns if the shell has an engine and the engine has any live
+  ///             Dart ports.
+  ///
+  bool EngineHasLivePorts() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief     Accessor for the disable GPU SyncSwitch
+  std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const override;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Get a pointer to the Dart VM used by this running shell
+  ///             instance.
+  ///
+  /// @return     The Dart VM pointer.
+  ///
+  DartVM* GetDartVM();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the display manager of the updates.
+  ///
+  void OnDisplayUpdates(DisplayUpdateType update_type,
+                        std::vector<Display> displays);
+
+  //----------------------------------------------------------------------------
+  /// @brief Queries the `DisplayManager` for the main display refresh rate.
+  ///
+  double GetMainDisplayRefreshRate();
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
-                         rapidjson::Document&)>;
+                         rapidjson::Document*)>;
 
   const TaskRunners task_runners_;
   const Settings settings_;
   DartVMRef vm_;
+  mutable std::mutex time_recorder_mutex_;
+  std::optional<fml::TimePoint> latest_frame_target_time_;
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
   std::unique_ptr<Engine> engine_;               // on UI task runner
   std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
   std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
+  std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
 
-  fml::WeakPtr<Engine> weak_engine_;          // to be shared across threads
-  fml::WeakPtr<Rasterizer> weak_rasterizer_;  // to be shared across threads
+  fml::WeakPtr<Engine> weak_engine_;  // to be shared across threads
+  fml::TaskRunnerAffineWeakPtr<Rasterizer>
+      weak_rasterizer_;  // to be shared across threads
   fml::WeakPtr<PlatformView>
       weak_platform_view_;  // to be shared across threads
 
-  std::unordered_map<std::string,  // method
+  std::unordered_map<std::string_view,  // method
                      std::pair<fml::RefPtr<fml::TaskRunner>,
                                ServiceProtocolHandler>  // task-runner/function
                                                         // pair
                      >
       service_protocol_handlers_;
   bool is_setup_ = false;
+  bool is_added_to_service_protocol_ = false;
   uint64_t next_pointer_flow_id_ = 0;
 
   bool first_frame_rasterized_ = false;
+  std::atomic<bool> waiting_for_first_frame_ = true;
+  std::mutex waiting_for_first_frame_mutex_;
+  std::condition_variable waiting_for_first_frame_condition_;
 
-  // Written in the UI thread and read from the GPU thread. Hence make it
+  // Written in the UI thread and read from the raster thread. Hence make it
   // atomic.
   std::atomic<bool> needs_report_timings_{false};
 
@@ -285,6 +432,17 @@ class Shell final : public PlatformView::Delegate,
   // here for easier conversions to Dart objects.
   std::vector<int64_t> unreported_timings_;
 
+  /// Manages the displays. This class is thread safe, can be accessed from any
+  /// of the threads.
+  std::unique_ptr<DisplayManager> display_manager_;
+
+  // protects expected_frame_size_ which is set on platform thread and read on
+  // raster thread
+  std::mutex resize_mutex_;
+
+  // used to discard wrong size layer tree produced during interactive resizing
+  SkISize expected_frame_size_ = SkISize::MakeEmpty();
+
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
 
@@ -293,18 +451,16 @@ class Shell final : public PlatformView::Delegate,
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
       DartVMRef vm,
       TaskRunners task_runners,
+      const PlatformData platform_data,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      fml::RefPtr<const DartSnapshot> shared_snapshot,
-      Shell::CreateCallback<PlatformView> on_create_platform_view,
-      Shell::CreateCallback<Rasterizer> on_create_rasterizer);
+      const Shell::CreateCallback<PlatformView>& on_create_platform_view,
+      const Shell::CreateCallback<Rasterizer>& on_create_rasterizer);
 
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,
              std::unique_ptr<Rasterizer> rasterizer,
              std::unique_ptr<ShellIOManager> io_manager);
-
-  DartVM* GetDartVM();
 
   void ReportTimings();
 
@@ -349,17 +505,17 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) override;
 
   // |PlatformView::Delegate|
-  void OnPlatformViewSetNextFrameCallback(fml::closure closure) override;
+  void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override;
 
   // |Animator::Delegate|
-  void OnAnimatorBeginFrame(fml::TimePoint frame_time) override;
+  void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;
 
   // |Animator::Delegate|
   void OnAnimatorNotifyIdle(int64_t deadline) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDraw(
-      fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) override;
+  void OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+                      fml::TimePoint frame_target_time) override;
 
   // |Animator::Delegate|
   void OnAnimatorDrawLastLayerTree() override;
@@ -379,24 +535,37 @@ class Shell final : public PlatformView::Delegate,
   void OnPreEngineRestart() override;
 
   // |Engine::Delegate|
+  void OnRootIsolateCreated() override;
+
+  // |Engine::Delegate|
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
 
   // |Engine::Delegate|
   void SetNeedsReportTimings(bool value) override;
 
+  // |Engine::Delegate|
+  std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) override;
+
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;
 
+  // |Rasterizer::Delegate|
+  fml::Milliseconds GetFrameBudget() override;
+
+  // |Rasterizer::Delegate|
+  fml::TimePoint GetLatestFrameTargetTime() const override;
+
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
-      fml::StringView method) const override;
+      std::string_view method) const override;
 
   // |ServiceProtocol::Handler|
   bool HandleServiceProtocolMessage(
-      fml::StringView method,  // one if the extension names specified above.
+      std::string_view method,  // one if the extension names specified above.
       const ServiceProtocolMap& params,
-      rapidjson::Document& response) override;
+      rapidjson::Document* response) override;
 
   // |ServiceProtocol::Handler|
   ServiceProtocol::Handler::Description GetServiceProtocolDescription()
@@ -405,35 +574,54 @@ class Shell final : public PlatformView::Delegate,
   // Service protocol handler
   bool OnServiceProtocolScreenshot(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
+      rapidjson::Document* response);
 
   // Service protocol handler
   bool OnServiceProtocolScreenshotSKP(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
+      rapidjson::Document* response);
 
   // Service protocol handler
   bool OnServiceProtocolRunInView(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
+      rapidjson::Document* response);
 
   // Service protocol handler
   bool OnServiceProtocolFlushUIThreadTasks(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
+      rapidjson::Document* response);
 
   // Service protocol handler
   bool OnServiceProtocolSetAssetBundlePath(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
+      rapidjson::Document* response);
 
   // Service protocol handler
   bool OnServiceProtocolGetDisplayRefreshRate(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
+      rapidjson::Document* response);
+
+  // Service protocol handler
+  //
+  // The returned SkSLs are base64 encoded. Decode before storing them to files.
+  bool OnServiceProtocolGetSkSLs(
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document* response);
+
+  // Service protocol handler
+  bool OnServiceProtocolEstimateRasterCacheMemory(
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document* response);
+
+  // Creates an asset bundle from the original settings asset path or
+  // directory.
+  std::unique_ptr<DirectoryAssetBundle> RestoreOriginalAssetResolver();
+
+  // For accessing the Shell via the raster thread, necessary for various
+  // rasterizer callbacks.
+  std::unique_ptr<fml::TaskRunnerAffineWeakPtrFactory<Shell>> weak_factory_gpu_;
 
   fml::WeakPtrFactory<Shell> weak_factory_;
-
   friend class testing::ShellTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Shell);

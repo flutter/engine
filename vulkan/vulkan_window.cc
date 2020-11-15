@@ -2,22 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_window.h"
+// FLUTTER_NOLINT: https://github.com/flutter/flutter/issues/68331
+
+#include "vulkan_window.h"
 
 #include <memory>
 #include <string>
 
-#include "flutter/vulkan/vulkan_application.h"
-#include "flutter/vulkan/vulkan_device.h"
-#include "flutter/vulkan/vulkan_native_surface.h"
-#include "flutter/vulkan/vulkan_surface.h"
-#include "flutter/vulkan/vulkan_swapchain.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "vulkan_application.h"
+#include "vulkan_device.h"
+#include "vulkan_native_surface.h"
+#include "vulkan_surface.h"
+#include "vulkan_swapchain.h"
 
 namespace vulkan {
 
 VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
-                           std::unique_ptr<VulkanNativeSurface> native_surface)
+                           std::unique_ptr<VulkanNativeSurface> native_surface,
+                           bool render_to_surface)
     : valid_(false), vk(std::move(proc_table)) {
   if (!vk || !vk->HasAcquiredMandatoryProcAddresses()) {
     FML_DLOG(INFO) << "Proc table has not acquired mandatory proc addresses.";
@@ -58,8 +61,13 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
     return;
   }
 
-  // Create the logical surface from the native platform surface.
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface.
+  if (!render_to_surface) {
+    return;
+  }
 
+  // Create the logical surface from the native platform surface.
   surface_ = std::make_unique<VulkanSurface>(*vk, *application_,
                                              std::move(native_surface));
 
@@ -68,7 +76,7 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
     return;
   }
 
-  // Create the Skia GrContext.
+  // Create the Skia GrDirectContext.
 
   if (!CreateSkiaGrContext()) {
     FML_DLOG(INFO) << "Could not create Skia context.";
@@ -91,7 +99,7 @@ bool VulkanWindow::IsValid() const {
   return valid_;
 }
 
-GrContext* VulkanWindow::GetSkiaGrContext() {
+GrDirectContext* VulkanWindow::GetSkiaGrContext() {
   return skia_gr_context_.get();
 }
 
@@ -102,7 +110,7 @@ bool VulkanWindow::CreateSkiaGrContext() {
     return false;
   }
 
-  sk_sp<GrContext> context = GrContext::MakeVulkan(backend_context);
+  sk_sp<GrDirectContext> context = GrDirectContext::MakeVulkan(backend_context);
 
   if (context == nullptr) {
     return false;

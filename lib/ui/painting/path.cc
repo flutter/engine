@@ -4,10 +4,10 @@
 
 #include "flutter/lib/ui/painting/path.h"
 
-#define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 #include "flutter/lib/ui/painting/matrix.h"
+#include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -20,7 +20,8 @@ namespace flutter {
 typedef CanvasPath Path;
 
 static void Path_constructor(Dart_NativeArguments args) {
-  DartCallConstructor(&CanvasPath::Create, args);
+  UIDartState::ThrowIfUIOperationsProhibited();
+  DartCallConstructor(&CanvasPath::CreateNew, args);
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
@@ -71,11 +72,11 @@ CanvasPath::CanvasPath() {}
 CanvasPath::~CanvasPath() {}
 
 int CanvasPath::getFillType() {
-  return path_.getFillType();
+  return static_cast<int>(path_.getFillType());
 }
 
 void CanvasPath::setFillType(int fill_type) {
-  path_.setFillType(static_cast<SkPath::FillType>(fill_type));
+  path_.setFillType(static_cast<SkPathFillType>(fill_type));
 }
 
 void CanvasPath::moveTo(float x, float y) {
@@ -156,9 +157,8 @@ void CanvasPath::arcToPoint(float arcEndX,
                             bool isClockwiseDirection) {
   const auto arcSize = isLargeArc ? SkPath::ArcSize::kLarge_ArcSize
                                   : SkPath::ArcSize::kSmall_ArcSize;
-  const auto direction = isClockwiseDirection
-                             ? SkPath::Direction::kCW_Direction
-                             : SkPath::Direction::kCCW_Direction;
+  const auto direction =
+      isClockwiseDirection ? SkPathDirection::kCW : SkPathDirection::kCCW;
 
   path_.arcTo(radiusX, radiusY, xAxisRotation, arcSize, direction, arcEndX,
               arcEndY);
@@ -173,9 +173,8 @@ void CanvasPath::relativeArcToPoint(float arcEndDeltaX,
                                     bool isClockwiseDirection) {
   const auto arcSize = isLargeArc ? SkPath::ArcSize::kLarge_ArcSize
                                   : SkPath::ArcSize::kSmall_ArcSize;
-  const auto direction = isClockwiseDirection
-                             ? SkPath::Direction::kCW_Direction
-                             : SkPath::Direction::kCCW_Direction;
+  const auto direction =
+      isClockwiseDirection ? SkPathDirection::kCW : SkPathDirection::kCCW;
   path_.rArcTo(radiusX, radiusY, xAxisRotation, arcSize, direction,
                arcEndDeltaX, arcEndDeltaY);
 }
@@ -208,8 +207,10 @@ void CanvasPath::addRRect(const RRect& rrect) {
 }
 
 void CanvasPath::addPath(CanvasPath* path, double dx, double dy) {
-  if (!path)
+  if (!path) {
     Dart_ThrowException(ToDart("Path.addPath called with non-genuine Path."));
+    return;
+  }
   path_.addPath(path->path(), dx, dy, SkPath::kAppend_AddPathMode);
 }
 
@@ -220,6 +221,7 @@ void CanvasPath::addPathWithMatrix(CanvasPath* path,
   if (!path) {
     Dart_ThrowException(
         ToDart("Path.addPathWithMatrix called with non-genuine Path."));
+    return;
   }
 
   SkMatrix matrix = ToSkMatrix(matrix4);
@@ -230,9 +232,11 @@ void CanvasPath::addPathWithMatrix(CanvasPath* path,
 }
 
 void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
-  if (!path)
+  if (!path) {
     Dart_ThrowException(
         ToDart("Path.extendWithPath called with non-genuine Path."));
+    return;
+  }
   path_.addPath(path->path(), dx, dy, SkPath::kExtend_AddPathMode);
 }
 
@@ -243,6 +247,7 @@ void CanvasPath::extendWithPathAndMatrix(CanvasPath* path,
   if (!path) {
     Dart_ThrowException(
         ToDart("Path.addPathWithMatrix called with non-genuine Path."));
+    return;
   }
 
   SkMatrix matrix = ToSkMatrix(matrix4);
@@ -264,17 +269,16 @@ bool CanvasPath::contains(double x, double y) {
   return path_.contains(x, y);
 }
 
-fml::RefPtr<CanvasPath> CanvasPath::shift(double dx, double dy) {
-  fml::RefPtr<CanvasPath> path = CanvasPath::Create();
+void CanvasPath::shift(Dart_Handle path_handle, double dx, double dy) {
+  fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
   path_.offset(dx, dy, &path->path_);
-  return path;
 }
 
-fml::RefPtr<CanvasPath> CanvasPath::transform(tonic::Float64List& matrix4) {
-  fml::RefPtr<CanvasPath> path = CanvasPath::Create();
+void CanvasPath::transform(Dart_Handle path_handle,
+                           tonic::Float64List& matrix4) {
+  fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
   path_.transform(ToSkMatrix(matrix4), &path->path_);
   matrix4.Release();
-  return path;
 }
 
 tonic::Float32List CanvasPath::getBounds() {
@@ -288,15 +292,22 @@ tonic::Float32List CanvasPath::getBounds() {
 }
 
 bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
-  return Op(path1->path(), path2->path(), (SkPathOp)operation, &path_);
+  return Op(path1->path(), path2->path(), static_cast<SkPathOp>(operation),
+            &path_);
 }
 
-fml::RefPtr<CanvasPath> CanvasPath::clone() {
-  fml::RefPtr<CanvasPath> path = CanvasPath::Create();
+void CanvasPath::clone(Dart_Handle path_handle) {
+  fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
   // per Skia docs, this will create a fast copy
   // data is shared until the source path or dest path are mutated
   path->path_ = path_;
-  return path;
+}
+
+// This is doomed to be called too early, since Paths are mutable.
+// However, it can help for some of the clone/shift/transform type methods
+// where the resultant path will initially have a meaningful size.
+size_t CanvasPath::GetAllocationSize() const {
+  return sizeof(CanvasPath) + path_.approximateBytesUsed();
 }
 
 }  // namespace flutter

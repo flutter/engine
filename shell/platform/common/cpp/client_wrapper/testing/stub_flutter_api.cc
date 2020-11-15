@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Copyright 2013 The Flutter Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 #include "flutter/shell/platform/common/cpp/client_wrapper/testing/stub_flutter_api.h"
 
 static flutter::testing::StubFlutterApi* s_stub_implementation;
@@ -38,27 +34,44 @@ ScopedStubFlutterApi::~ScopedStubFlutterApi() {
 
 // Forwarding dummy implementations of the C API.
 
-FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
+FlutterDesktopMessengerRef FlutterDesktopPluginRegistrarGetMessenger(
     FlutterDesktopPluginRegistrarRef registrar) {
   // The stub ignores this, so just return an arbitrary non-zero value.
   return reinterpret_cast<FlutterDesktopMessengerRef>(1);
 }
 
-void FlutterDesktopRegistrarEnableInputBlocking(
+void FlutterDesktopPluginRegistrarSetDestructionHandler(
     FlutterDesktopPluginRegistrarRef registrar,
-    const char* channel) {
+    FlutterDesktopOnPluginRegistrarDestroyed callback) {
   if (s_stub_implementation) {
-    s_stub_implementation->RegistrarEnableInputBlocking(channel);
+    s_stub_implementation->PluginRegistrarSetDestructionHandler(callback);
   }
 }
 
-void FlutterDesktopMessengerSend(FlutterDesktopMessengerRef messenger,
+bool FlutterDesktopMessengerSend(FlutterDesktopMessengerRef messenger,
                                  const char* channel,
                                  const uint8_t* message,
                                  const size_t message_size) {
+  bool result = false;
   if (s_stub_implementation) {
-    s_stub_implementation->MessengerSend(channel, message, message_size);
+    result =
+        s_stub_implementation->MessengerSend(channel, message, message_size);
   }
+  return result;
+}
+
+bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
+                                          const char* channel,
+                                          const uint8_t* message,
+                                          const size_t message_size,
+                                          const FlutterDesktopBinaryReply reply,
+                                          void* user_data) {
+  bool result = false;
+  if (s_stub_implementation) {
+    result = s_stub_implementation->MessengerSendWithReply(
+        channel, message, message_size, reply, user_data);
+  }
+  return result;
 }
 
 void FlutterDesktopMessengerSendResponse(

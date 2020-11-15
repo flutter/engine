@@ -10,46 +10,120 @@
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
-#include "flutter/shell/platform/android/android_native_window.h"
+#include "flutter/shell/platform/android/context/android_context.h"
+#include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
-class AndroidContextGL : public fml::RefCountedThreadSafe<AndroidContextGL> {
+//------------------------------------------------------------------------------
+/// Holds an `EGLSurface` reference.
+///
+///
+/// This can be used in conjuction to unique_ptr to provide better guarantees
+/// about the lifespan of the `EGLSurface` object.
+///
+class AndroidEGLSurface {
  public:
-  bool CreateWindowSurface(fml::RefPtr<AndroidNativeWindow> window);
+  AndroidEGLSurface(EGLSurface surface, EGLDisplay display, EGLContext context);
+  ~AndroidEGLSurface();
 
-  bool CreatePBufferSurface();
-
-  fml::RefPtr<AndroidEnvironmentGL> Environment() const;
-
+  //----------------------------------------------------------------------------
+  /// @return     Whether the current `EGLSurface` reference is valid. That is,
+  /// if
+  ///             the surface doesn't point to `EGL_NO_SURFACE`.
+  ///
   bool IsValid() const;
 
-  bool MakeCurrent();
+  //----------------------------------------------------------------------------
+  /// @brief      Binds the EGLContext context to the current rendering thread
+  ///             and to the draw and read surface.
+  ///
+  /// @return     Whether the surface was made current.
+  ///
+  bool MakeCurrent() const;
 
-  bool ClearCurrent();
-
+  //----------------------------------------------------------------------------
+  /// @brief      This only applies to on-screen surfaces such as those created
+  ///             by `AndroidContextGL::CreateOnscreenSurface`.
+  ///
+  /// @return     Whether the EGL surface color buffer was swapped.
+  ///
   bool SwapBuffers();
 
-  SkISize GetSize();
-
-  bool Resize(const SkISize& size);
+  //----------------------------------------------------------------------------
+  /// @return     The size of an `EGLSurface`.
+  ///
+  SkISize GetSize() const;
 
  private:
-  fml::RefPtr<AndroidEnvironmentGL> environment_;
-  fml::RefPtr<AndroidNativeWindow> window_;
-  EGLConfig config_;
-  EGLSurface surface_;
-  EGLContext context_;
-  bool valid_;
+  const EGLSurface surface_;
+  const EGLDisplay display_;
+  const EGLContext context_;
+};
 
-  AndroidContextGL(fml::RefPtr<AndroidEnvironmentGL> env,
-                   const AndroidContextGL* share_context = nullptr);
+//------------------------------------------------------------------------------
+/// The Android context is used by `AndroidSurfaceGL` to create and manage
+/// EGL surfaces.
+///
+/// This context binds `EGLContext` to the current rendering thread and to the
+/// draw and read `EGLSurface`s.
+///
+class AndroidContextGL : public AndroidContext {
+ public:
+  AndroidContextGL(AndroidRenderingAPI rendering_api,
+                   fml::RefPtr<AndroidEnvironmentGL> environment);
 
   ~AndroidContextGL();
 
-  FML_FRIEND_MAKE_REF_COUNTED(AndroidContextGL);
-  FML_FRIEND_REF_COUNTED_THREAD_SAFE(AndroidContextGL);
+  //----------------------------------------------------------------------------
+  /// @brief      Allocates an new EGL window surface that is used for on-screen
+  ///             pixels.
+  ///
+  /// @return     The window surface.
+  ///
+  std::unique_ptr<AndroidEGLSurface> CreateOnscreenSurface(
+      fml::RefPtr<AndroidNativeWindow> window) const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Allocates an 1x1 pbuffer surface that is used for making the
+  ///             offscreen current for texture uploads.
+  ///
+  /// @return     The pbuffer surface.
+  ///
+  std::unique_ptr<AndroidEGLSurface> CreateOffscreenSurface() const;
+
+  //----------------------------------------------------------------------------
+  /// @return     The Android environment that contains a reference to the
+  /// display.
+  ///
+  fml::RefPtr<AndroidEnvironmentGL> Environment() const;
+
+  //----------------------------------------------------------------------------
+  /// @return     Whether the current context is valid. That is, if the EGL
+  ///             contexts were successfully created.
+  ///
+  bool IsValid() const;
+
+  //----------------------------------------------------------------------------
+  /// @return     Whether the current context was successfully clear.
+  ///
+  bool ClearCurrent() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Create a new EGLContext using the same EGLConfig.
+  ///
+  /// @return     The EGLContext.
+  ///
+  EGLContext CreateNewContext() const;
+
+ private:
+  fml::RefPtr<AndroidEnvironmentGL> environment_;
+  EGLConfig config_;
+  EGLContext context_;
+  EGLContext resource_context_;
+  bool valid_ = false;
+
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidContextGL);
 };
 

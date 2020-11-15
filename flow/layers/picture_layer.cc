@@ -17,14 +17,20 @@ PictureLayer::PictureLayer(const SkPoint& offset,
       is_complex_(is_complex),
       will_change_(will_change) {}
 
-PictureLayer::~PictureLayer() = default;
-
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+  TRACE_EVENT0("flutter", "PictureLayer::Preroll");
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  CheckForChildLayerBelow(context);
+#endif
+
   SkPicture* sk_picture = picture();
 
   if (auto* cache = context->raster_cache) {
+    TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
+
     SkMatrix ctm = matrix;
-    ctm.postTranslate(offset_.x(), offset_.y());
+    ctm.preTranslate(offset_.x(), offset_.y());
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     ctm = RasterCache::GetIntegralTransCTM(ctm);
 #endif
@@ -39,7 +45,7 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void PictureLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PictureLayer::Paint");
   FML_DCHECK(picture_.get());
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting(context));
 
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
   context.leaf_nodes_canvas->translate(offset_.x(), offset_.y());
@@ -48,15 +54,12 @@ void PictureLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-  if (context.raster_cache) {
-    const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
-    RasterCacheResult result = context.raster_cache->Get(*picture(), ctm);
-    if (result.is_valid()) {
-      result.draw(*context.leaf_nodes_canvas);
-      return;
-    }
+  if (context.raster_cache &&
+      context.raster_cache->Draw(*picture(), *context.leaf_nodes_canvas)) {
+    TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
+    return;
   }
-  context.leaf_nodes_canvas->drawPicture(picture());
+  picture()->playback(context.leaf_nodes_canvas);
 }
 
 }  // namespace flutter

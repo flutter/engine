@@ -4,35 +4,35 @@
 
 package io.flutter.embedding.engine.plugins.shim;
 
-import android.support.annotation.NonNull;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import androidx.annotation.NonNull;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.PluginRegistry;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * A {@link PluginRegistry} that is shimmed to use the new Android embedding and plugin API behind
- * the scenes.
- * <p>
- * The following is an example usage of {@code ShimPluginRegistry} within a {@code FlutterActivity}:
- * {@code
- *   // Create the FlutterEngine that will back the Flutter UI.
- *   FlutterEngine flutterEngine = new FlutterEngine(context);
+ * A {@link PluginRegistry} that is shimmed to let old plugins use the new Android embedding and
+ * plugin API behind the scenes.
  *
- *   // Create a ShimPluginRegistry and wrap the FlutterEngine with the shim.
- *   ShimPluginRegistry shimPluginRegistry = new ShimPluginRegistry(flutterEngine, platformViewsController);
+ * <p>The following is an example usage of {@code ShimPluginRegistry} within a {@code
+ * FlutterActivity}:
  *
- *   // Use the GeneratedPluginRegistrant to add every plugin that's in the pubspec.
- *   GeneratedPluginRegistrant.registerWith(shimPluginRegistry);
- * }
+ * <pre>
+ * // Create the FlutterEngine that will back the Flutter UI.
+ * FlutterEngine flutterEngine = new FlutterEngine(context);
+ *
+ * // Create a ShimPluginRegistry and wrap the FlutterEngine with the shim.
+ * ShimPluginRegistry shimPluginRegistry = new ShimPluginRegistry(flutterEngine, platformViewsController);
+ *
+ * // Use the GeneratedPluginRegistrant to add every plugin that's in the pubspec.
+ * GeneratedPluginRegistrant.registerWith(shimPluginRegistry);
+ * </pre>
  */
 public class ShimPluginRegistry implements PluginRegistry {
   private static final String TAG = "ShimPluginRegistry";
@@ -72,17 +72,16 @@ public class ShimPluginRegistry implements PluginRegistry {
 
   /**
    * Aggregates all {@link ShimRegistrar}s within one single {@link FlutterPlugin}.
-   * <p>
-   * The reason we need this aggregate is because the new embedding uniquely identifies
-   * plugins by their plugin class, but the plugin shim system represents every plugin
-   * with a {@link ShimRegistrar}. Therefore, every plugin we would register after the first
-   * plugin, would overwrite the previous plugin, because they're all {@link ShimRegistrar}
-   * instances.
-   * <p>
-   * {@code ShimRegistrarAggregate} multiplexes {@link FlutterPlugin} and {@link ActivityAware}
-   * calls so that we can register just one {@code ShimRegistrarAggregate} with a
-   * {@link FlutterEngine}, while forwarding the relevant plugin resources to any number
-   * of {@link ShimRegistrar}s within this {@code ShimRegistrarAggregate}.
+   *
+   * <p>The reason we need this aggregate is because the new embedding uniquely identifies plugins
+   * by their plugin class, but the plugin shim system represents every plugin with a {@link
+   * ShimRegistrar}. Therefore, every plugin we would register after the first plugin, would
+   * overwrite the previous plugin, because they're all {@link ShimRegistrar} instances.
+   *
+   * <p>{@code ShimRegistrarAggregate} multiplexes {@link FlutterPlugin} and {@link ActivityAware}
+   * calls so that we can register just one {@code ShimRegistrarAggregate} with a {@link
+   * FlutterEngine}, while forwarding the relevant plugin resources to any number of {@link
+   * ShimRegistrar}s within this {@code ShimRegistrarAggregate}.
    */
   private static class ShimRegistrarAggregate implements FlutterPlugin, ActivityAware {
     private final Set<ShimRegistrar> shimRegistrars = new HashSet<>();
@@ -114,6 +113,7 @@ public class ShimPluginRegistry implements PluginRegistry {
         shimRegistrar.onDetachedFromEngine(binding);
       }
       flutterPluginBinding = null;
+      activityPluginBinding = null;
     }
 
     @Override
@@ -134,6 +134,7 @@ public class ShimPluginRegistry implements PluginRegistry {
 
     @Override
     public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+      activityPluginBinding = binding;
       for (ShimRegistrar shimRegistrar : shimRegistrars) {
         shimRegistrar.onReattachedToActivityForConfigChanges(binding);
       }
@@ -144,6 +145,7 @@ public class ShimPluginRegistry implements PluginRegistry {
       for (ShimRegistrar shimRegistrar : shimRegistrars) {
         shimRegistrar.onDetachedFromActivity();
       }
+      activityPluginBinding = null;
     }
   }
 }

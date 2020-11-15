@@ -5,16 +5,18 @@
 #ifndef FLUTTER_FML_DELAYED_TASK_H_
 #define FLUTTER_FML_DELAYED_TASK_H_
 
+#include <queue>
+
 #include "flutter/fml/closure.h"
 #include "flutter/fml/time/time_point.h"
-
-#include <queue>
 
 namespace fml {
 
 class DelayedTask {
  public:
-  DelayedTask(size_t order, fml::closure task, fml::TimePoint target_time);
+  DelayedTask(size_t order,
+              const fml::closure& task,
+              fml::TimePoint target_time);
 
   DelayedTask(const DelayedTask& other);
 

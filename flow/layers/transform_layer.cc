@@ -4,6 +4,8 @@
 
 #include "flutter/flow/layers/transform_layer.h"
 
+#include <optional>
+
 namespace flutter {
 
 TransformLayer::TransformLayer(const SkMatrix& transform)
@@ -24,9 +26,9 @@ TransformLayer::TransformLayer(const SkMatrix& transform)
   }
 }
 
-TransformLayer::~TransformLayer() = default;
-
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+  TRACE_EVENT0("flutter", "TransformLayer::Preroll");
+
   SkMatrix child_matrix;
   child_matrix.setConcat(matrix, transform_);
   context->mutators_stack.PushTransform(transform_);
@@ -50,20 +52,25 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->mutators_stack.Pop();
 }
 
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 
-void TransformLayer::UpdateScene(SceneUpdateContext& context) {
+void TransformLayer::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {
+  TRACE_EVENT0("flutter", "TransformLayer::UpdateScene");
   FML_DCHECK(needs_system_composite());
 
-  SceneUpdateContext::Transform transform(context, transform_);
+  std::optional<SceneUpdateContext::Transform> transform;
+  if (!transform_.isIdentity()) {
+    transform.emplace(context, transform_);
+  }
+
   UpdateSceneChildren(context);
 }
 
-#endif  // defined(OS_FUCHSIA)
+#endif
 
 void TransformLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting(context));
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->concat(transform_);

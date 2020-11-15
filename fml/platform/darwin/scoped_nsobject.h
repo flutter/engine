@@ -76,20 +76,20 @@ class scoped_nsprotocol {
     object_ = temp;
   }
 
-  // scoped_nsprotocol<>::release() is like scoped_ptr<>::release.  It is NOT a
-  // wrapper for [object_ release].  To force a scoped_nsprotocol<> to call
-  // [object_ release], use scoped_nsprotocol<>::reset().
-  NST release() FML_WARN_UNUSED_RESULT {
-    NST temp = object_;
-    object_ = nil;
-    return temp;
-  }
-
   // Shift reference to the autorelease pool to be released later.
   NST autorelease() { return [release() autorelease]; }
 
  private:
   NST object_;
+
+  // scoped_nsprotocol<>::release() is like scoped_ptr<>::release.  It is NOT a
+  // wrapper for [object_ release].  To force a scoped_nsprotocol<> to call
+  // [object_ release], use scoped_nsprotocol<>::reset().
+  [[nodiscard]] NST release() {
+    NST temp = object_;
+    object_ = nil;
+    return temp;
+  }
 };
 
 // Free functions

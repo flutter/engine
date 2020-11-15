@@ -10,7 +10,8 @@ ThreadHost::ThreadHost() = default;
 
 ThreadHost::ThreadHost(ThreadHost&&) = default;
 
-ThreadHost::ThreadHost(std::string name_prefix, uint64_t mask) {
+ThreadHost::ThreadHost(std::string name_prefix_arg, uint64_t mask)
+    : name_prefix(name_prefix_arg) {
   if (mask & ThreadHost::Type::Platform) {
     platform_thread = std::make_unique<fml::Thread>(name_prefix + ".platform");
   }
@@ -20,11 +21,15 @@ ThreadHost::ThreadHost(std::string name_prefix, uint64_t mask) {
   }
 
   if (mask & ThreadHost::Type::GPU) {
-    gpu_thread = std::make_unique<fml::Thread>(name_prefix + ".gpu");
+    raster_thread = std::make_unique<fml::Thread>(name_prefix + ".raster");
   }
 
   if (mask & ThreadHost::Type::IO) {
     io_thread = std::make_unique<fml::Thread>(name_prefix + ".io");
+  }
+
+  if (mask & ThreadHost::Type::Profiler) {
+    profiler_thread = std::make_unique<fml::Thread>(name_prefix + ".profiler");
   }
 }
 
@@ -33,8 +38,9 @@ ThreadHost::~ThreadHost() = default;
 void ThreadHost::Reset() {
   platform_thread.reset();
   ui_thread.reset();
-  gpu_thread.reset();
+  raster_thread.reset();
   io_thread.reset();
+  profiler_thread.reset();
 }
 
 }  // namespace flutter

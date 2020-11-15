@@ -8,8 +8,8 @@
 #include <lib/async/default.h>
 #include <lib/syslog/global.h>
 
-#include "flutter/flow/scene_update_context.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/vulkan/vulkan_application.h"
 #include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
@@ -22,9 +22,8 @@
 
 namespace flutter_runner {
 
-class VulkanSurfaceProducer final
-    : public flutter::SceneUpdateContext::SurfaceProducer,
-      public vulkan::VulkanProvider {
+class VulkanSurfaceProducer final : public SurfaceProducer,
+                                    public vulkan::VulkanProvider {
  public:
   VulkanSurfaceProducer(scenic::Session* scenic_session);
 
@@ -32,39 +31,19 @@ class VulkanSurfaceProducer final
 
   bool IsValid() const { return valid_; }
 
-  // |flutter::SceneUpdateContext::SurfaceProducer|
-  std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-  ProduceSurface(const SkISize& size,
-                 const flutter::LayerRasterCacheKey& layer_key,
-                 std::unique_ptr<scenic::EntityNode> entity_node) override;
+  // |SurfaceProducer|
+  std::unique_ptr<SurfaceProducerSurface> ProduceSurface(
+      const SkISize& size) override;
 
-  // |flutter::SceneUpdateContext::SurfaceProducer|
-  void SubmitSurface(
-      std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-          surface) override;
+  sk_sp<SkSurface> ProduceOffscreenSurface(const SkISize& size);
 
-  // |flutter::SceneUpdateContext::HasRetainedNode|
-  bool HasRetainedNode(const flutter::LayerRasterCacheKey& key) const override {
-    return surface_pool_->HasRetainedNode(key);
-  }
-
-  // |flutter::SceneUpdateContext::GetRetainedNode|
-  const scenic::EntityNode& GetRetainedNode(
-      const flutter::LayerRasterCacheKey& key) override {
-    return surface_pool_->GetRetainedNode(key);
-  }
+  // |SurfaceProducer|
+  void SubmitSurface(std::unique_ptr<SurfaceProducerSurface> surface) override;
 
   void OnSurfacesPresented(
-      std::vector<
-          std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>
-          surfaces);
+      std::vector<std::unique_ptr<SurfaceProducerSurface>> surfaces);
 
-  void OnSessionSizeChangeHint(float width_change_factor,
-                               float height_change_factor) {
-    FX_LOGF(INFO, LOG_TAG,
-            "VulkanSurfaceProducer:OnSessionSizeChangeHint %f, %f",
-            width_change_factor, height_change_factor);
-  }
+  GrDirectContext* gr_context() const { return context_.get(); }
 
  private:
   // VulkanProvider
@@ -74,9 +53,7 @@ class VulkanSurfaceProducer final
   }
 
   bool TransitionSurfacesToExternal(
-      const std::vector<
-          std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>&
-          surfaces);
+      const std::vector<std::unique_ptr<SurfaceProducerSurface>>& surfaces);
 
   // Note: the order here is very important. The proctable must be destroyed
   // last because it contains the function pointers for VkDestroyDevice and
@@ -84,7 +61,7 @@ class VulkanSurfaceProducer final
   fml::RefPtr<vulkan::VulkanProcTable> vk_;
   std::unique_ptr<vulkan::VulkanApplication> application_;
   std::unique_ptr<vulkan::VulkanDevice> logical_device_;
-  sk_sp<GrContext> context_;
+  sk_sp<GrDirectContext> context_;
   std::unique_ptr<VulkanSurfacePool> surface_pool_;
   bool valid_ = false;
 

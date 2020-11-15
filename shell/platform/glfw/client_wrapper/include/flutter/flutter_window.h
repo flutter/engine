@@ -5,10 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_GLFW_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_GLFW_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_WINDOW_H_
 
+#include <flutter_glfw.h>
+
 #include <string>
 #include <vector>
-
-#include <flutter_glfw.h>
 
 #include "plugin_registrar.h"
 
@@ -78,6 +78,21 @@ class FlutterWindow {
   // seen by Flutter as compared to the screen.
   double GetScaleFactor() {
     return FlutterDesktopWindowGetScaleFactor(window_);
+  }
+
+  // Forces a specific pixel ratio for Flutter rendering, rather than one
+  // computed automatically from screen information.
+  //
+  // To clear a previously set override, pass an override value of zero.
+  void SetPixelRatioOverride(double pixel_ratio) {
+    FlutterDesktopWindowSetPixelRatioOverride(window_, pixel_ratio);
+  }
+
+  // Sets the min/max size of |flutter_window| in screen coordinates. Use
+  // kFlutterDesktopDontCare for any dimension you wish to leave unconstrained.
+  void SetSizeLimits(FlutterDesktopSize minimum_size,
+                     FlutterDesktopSize maximum_size) {
+    FlutterDesktopWindowSetSizeLimits(window_, minimum_size, maximum_size);
   }
 
  private:

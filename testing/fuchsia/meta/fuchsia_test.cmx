@@ -1,0 +1,27 @@
+{
+  "program": {
+    "binary": "bin/app"
+  },
+  "sandbox": {
+    "features": [
+      "vulkan",
+      "deprecated-ambient-replace-as-executable",
+      "isolated-cache-storage",
+      "isolated-temp"
+    ],
+    "services": [
+      "fuchsia.accessibility.semantics.SemanticsManager",
+      "fuchsia.deprecatedtimezone.Timezone",
+      "fuchsia.intl.PropertyProvider",
+      "fuchsia.logger.LogSink",
+      "fuchsia.netstack.Netstack",
+      "fuchsia.process.Launcher",
+      "fuchsia.settings.Intl",
+      "fuchsia.sysmem.Allocator",
+      "fuchsia.tracing.provider.Registry",
+      "fuchsia.vulkan.loader.Loader",
+      "fuchsia.intl.PropertyProvider",
+      "fuchsia.fonts.Provider"
+    ]
+  }
+}

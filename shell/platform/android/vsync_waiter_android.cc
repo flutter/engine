@@ -38,25 +38,14 @@ void VsyncWaiterAndroid::AwaitVSync() {
   });
 }
 
-float VsyncWaiterAndroid::GetDisplayRefreshRate() const {
-  JNIEnv* env = fml::jni::AttachCurrentThread();
-  if (g_vsync_waiter_class == nullptr) {
-    return kUnknownRefreshRateFPS;
-  }
-  jclass clazz = g_vsync_waiter_class->obj();
-  if (clazz == nullptr) {
-    return kUnknownRefreshRateFPS;
-  }
-  jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
-  return env->GetStaticFloatField(clazz, fid);
-}
-
 // static
 void VsyncWaiterAndroid::OnNativeVsync(JNIEnv* env,
                                        jclass jcaller,
                                        jlong frameTimeNanos,
                                        jlong frameTargetTimeNanos,
                                        jlong java_baton) {
+  TRACE_EVENT0("flutter", "VSYNC");
+
   auto frame_time = fml::TimePoint::FromEpochDelta(
       fml::TimeDelta::FromNanoseconds(frameTimeNanos));
   auto target_time = fml::TimePoint::FromEpochDelta(
