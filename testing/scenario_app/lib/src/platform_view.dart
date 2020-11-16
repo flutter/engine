@@ -412,7 +412,7 @@ class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenar
 
   @override
   void onBeginFrame(Duration duration) {
-    final SceneBuilder builder = 
+    final SceneBuilder builder =
       SceneBuilder()
       ..pushClipRect(const Rect.fromLTRB(100, 100, 400, 400));
 
