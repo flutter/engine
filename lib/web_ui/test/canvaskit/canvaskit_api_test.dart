@@ -474,6 +474,26 @@ void _imageFilterTests() {
       isNotNull,
     );
   });
+
+  test('MakeColorFilter', () {
+    expect(
+      canvasKit.SkImageFilter.MakeColorFilter(
+        canvasKit.SkColorFilter.MakeLinearToSRGBGamma(),
+        null,
+      ),
+      isNotNull,
+    );
+  });
+
+  test('MakeCompose', () {
+    expect(
+      canvasKit.SkImageFilter.MakeCompose(
+        canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
+        canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
+      ),
+      isNotNull,
+    );
+  });
 }
 
 void _mallocTests() {
@@ -786,7 +806,7 @@ void _pathTests() {
 
   test('SkContourMeasureIter/SkContourMeasure', () {
     final SkContourMeasureIter iter =
-        SkContourMeasureIter(_testClosedSkPath(), false, 0);
+        SkContourMeasureIter(_testClosedSkPath(), false, 1.0);
     final SkContourMeasure measure1 = iter.next();
     expect(measure1.length(), 40);
     expect(measure1.getPosTan(5), Float32List.fromList(<double>[15, 10, 1, 0]));

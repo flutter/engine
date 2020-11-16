@@ -19,6 +19,7 @@
 #include "FontLanguageListCache.h"
 
 #include <unicode/uloc.h>
+#include <unicode/umachine.h>
 #include <unordered_set>
 
 #include <log/log.h>
@@ -69,7 +70,8 @@ static size_t toLanguageTag(char* output,
   }
 
   uErr = U_ZERO_ERROR;
-  outLength = uloc_toLanguageTag(likelyChars, output, outSize, FALSE, &uErr);
+  outLength =
+      uloc_toLanguageTag(likelyChars, output, outSize, /*false*/ 0, &uErr);
   if (U_FAILURE(uErr)) {
     // unable to build a proper language identifier
     ALOGD("uloc_toLanguageTag(\"%s\") failed: %s", likelyChars,

@@ -7,7 +7,7 @@
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Entrypoint into the CanvasKit API.
@@ -823,6 +823,16 @@ class SkImageFilterNamespace {
     SkFilterQuality filterQuality,
     Null input, // we don't use this yet
   );
+
+  external SkImageFilter MakeColorFilter(
+    SkColorFilter colorFilter,
+    Null input, // we don't use this yet
+  );
+
+  external SkImageFilter MakeCompose(
+    SkImageFilter outer,
+    SkImageFilter inner,
+  );
 }
 
 @JS()
@@ -1158,8 +1168,9 @@ class SkPath {
 
 @JS('window.flutterCanvasKit.SkContourMeasureIter')
 class SkContourMeasureIter {
-  external SkContourMeasureIter(SkPath path, bool forceClosed, int startIndex);
+  external SkContourMeasureIter(SkPath path, bool forceClosed, double resScale);
   external SkContourMeasure? next();
+  external void delete();
 }
 
 @JS()
@@ -1168,6 +1179,7 @@ class SkContourMeasure {
   external Float32List getPosTan(double distance);
   external bool isClosed();
   external double length();
+  external void delete();
 }
 
 // TODO(hterkelsen): Use a shared malloc'ed array for performance.
@@ -1778,6 +1790,11 @@ external Object? get _finalizationRegistryConstructor;
 /// Whether the current browser supports `FinalizationRegistry`.
 bool browserSupportsFinalizationRegistry =
     _finalizationRegistryConstructor != null;
+
+/// Sets the value of [browserSupportsFinalizationRegistry] to its true value.
+void debugResetBrowserSupportsFinalizationRegistry() {
+  browserSupportsFinalizationRegistry = _finalizationRegistryConstructor != null;
+}
 
 @JS()
 class SkData {

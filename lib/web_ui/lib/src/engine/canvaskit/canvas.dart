@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A Dart wrapper around Skia's [SkCanvas].
@@ -241,11 +241,11 @@ class CkCanvas {
   }
 
   void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter) {
-    final CkImageFilter skImageFilter = filter as CkImageFilter;
+    final _CkManagedSkImageFilterConvertible convertible = filter as _CkManagedSkImageFilterConvertible;
     return skCanvas.saveLayer(
       null,
       toSkRect(bounds),
-      skImageFilter.skiaObject,
+      convertible._imageFilter.skiaObject,
       0,
     );
   }
