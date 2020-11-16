@@ -435,8 +435,16 @@ typedef struct {
   BoolPresentInfoCallback present_with_info;
 } FlutterOpenGLRendererConfig;
 
+// return value expected to be `CAMetalLayer*`
+typedef void* (*FlutterMetalLayerCallback)(void* /* user data */);
+
+// return value expected to be `MTLDevice*`
+typedef const void* FlutterMetalDevice;
+
 typedef struct {
   size_t struct_size;
+  FlutterMetalDevice metal_device;
+  FlutterMetalLayerCallback metal_layer_callback;
 } FlutterMetalRendererConfig;
 
 typedef struct {

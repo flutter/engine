@@ -24,8 +24,6 @@ class IOSContextMetal final : public IOSContext {
 
   fml::scoped_nsobject<FlutterDarwinContextMetal> GetDarwinContext() const;
 
-  fml::scoped_nsprotocol<id<MTLCommandQueue>> GetMainCommandQueue() const;
-
   sk_sp<GrDirectContext> GetMainContext() const;
 
   sk_sp<GrDirectContext> GetResourceContext() const;

@@ -72,6 +72,13 @@ template("embedder_source_set") {
       ]
     }
 
+    if (embedder_enable_metal) {
+      sources += [
+        "embedder_surface_metal.mm",
+        "embedder_surface_metal.h",
+      ]
+    }
+
     deps = [
       ":embedder_gpu_configuration",
       "//flutter/assets",
@@ -87,6 +94,12 @@ template("embedder_source_set") {
       "//third_party/dart/runtime/bin:elf_loader",
       "//third_party/skia",
     ]
+
+    if (embedder_enable_metal) {
+      deps += [
+        "//flutter/shell/platform/darwin/graphics"
+      ]
+    }
 
     public_deps = [ ":embedder_headers" ]
 

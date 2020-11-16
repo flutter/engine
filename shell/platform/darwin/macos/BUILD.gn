@@ -5,7 +5,7 @@
 assert(is_mac)
 
 import("//build/config/mac/mac_sdk.gni")
-import("//flutter/common/config.gni")
+import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
 import("//flutter/shell/platform/glfw/config.gni")
 import("//flutter/testing/testing.gni")
@@ -79,6 +79,11 @@ source_set("flutter_framework_source") {
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
   ]
+
+  if (shell_enable_metal) {
+    # TODO: exclude gl deps in this case.
+    deps += [ "//flutter/shell/platform/darwin/graphics" ]
+  }
 
   public_configs = [ "//flutter:config" ]
 

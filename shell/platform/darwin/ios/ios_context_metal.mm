@@ -14,7 +14,7 @@ namespace flutter {
 
 IOSContextMetal::IOSContextMetal() {
   darwin_context_metal_ = fml::scoped_nsobject<FlutterDarwinContextMetal>{
-      [[[FlutterDarwinContextMetal alloc] init] retain]};
+      [[[FlutterDarwinContextMetal alloc] initWithDefaultMTLDevice] retain]};
 
   if (!darwin_context_metal_) {
     return;
@@ -40,10 +40,6 @@ IOSContextMetal::~IOSContextMetal() = default;
 
 fml::scoped_nsobject<FlutterDarwinContextMetal> IOSContextMetal::GetDarwinContext() const {
   return darwin_context_metal_;
-}
-
-fml::scoped_nsprotocol<id<MTLCommandQueue>> IOSContextMetal::GetMainCommandQueue() const {
-  return main_command_queue_;
 }
 
 sk_sp<GrDirectContext> IOSContextMetal::GetMainContext() const {

@@ -6,14 +6,17 @@
 #define SHELL_PLATFORM_DARWIN_GRAPHICS_DARWIN_CONTEXT_METAL_H_
 
 #import <Foundation/Foundation.h>
-#include <Metal/Metal.h>
+#import <Metal/Metal.h>
+
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface FlutterDarwinContextMetal : NSObject
 
-- (instancetype)init;
+- (instancetype)initWithDefaultMTLDevice;
+
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)mtlDevice;
 
 @property(nonatomic, readonly) id<MTLDevice> mtlDevice;
 @property(nonatomic, readonly) id<MTLCommandQueue> mtlCommandQueue;

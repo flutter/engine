@@ -10,6 +10,7 @@
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
@@ -19,21 +20,19 @@ namespace flutter {
 
 class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetal : public Surface {
  public:
-  GPUSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
-                  sk_sp<GrDirectContext> context,
-                  fml::scoped_nsprotocol<id<MTLCommandQueue>> command_queue);
+  GPUSurfaceMetal(GPUSurfaceMetalDelegate* delegate, sk_sp<GrDirectContext> context);
 
   // |Surface|
   ~GPUSurfaceMetal();
 
- private:
-  fml::scoped_nsobject<CAMetalLayer> layer_;
-  sk_sp<GrDirectContext> context_;
-  fml::scoped_nsprotocol<id<MTLCommandQueue>> command_queue_;
-  GrMTLHandle next_drawable_ = nullptr;
-
   // |Surface|
   bool IsValid() override;
+
+ private:
+  const GPUSurfaceMetalDelegate* delegate_;
+  const MTLRenderTargetType render_target_type_;
+  sk_sp<GrDirectContext> context_;
+  GrMTLHandle next_drawable_ = nullptr;
 
   // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;

@@ -8,6 +8,10 @@
 #include <algorithm>
 #include <vector>
 
+#ifdef FLUTTER_SHELL_ENABLE_METAL
+#import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h"
+#endif
+
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
@@ -129,6 +133,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   // Pointer to the Dart AOT snapshot and instruction data.
   _FlutterEngineAOTData* _aotData;
+
+#ifdef FlutterDarwinContextMetal
+  // Metal Context
+  FlutterDarwinContextMetal* _metalContext;
+#endif
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -173,6 +182,16 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     NSLog(@"Attempted to run an engine with no view controller without headless mode enabled.");
     return NO;
   }
+
+#ifdef FLUTTER_SHELL_ENABLE_METAL
+  _metalContext = [[FlutterDarwinContextMetal alloc] initWithDefaultMTLDevice];
+
+  const FlutterRendererConfig metalRendererConfig = {
+      .type = kMetal,
+      .metal.struct_size = sizeof(FlutterMetalRendererConfig),
+      .metal.metal_device = (__bridge FlutterMetalDevice)_metalContext.mtlDevice,
+  };
+#endif
 
   [_openGLRenderer attachToFlutterView:_viewController.flutterView];
   const FlutterRendererConfig rendererConfig = [_openGLRenderer createRendererConfig];

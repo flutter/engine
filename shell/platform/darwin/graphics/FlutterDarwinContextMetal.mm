@@ -25,10 +25,14 @@ static GrContextOptions CreateMetalGrContextOptions() {
 @implementation FlutterDarwinContextMetal {
 }
 
-- (instancetype)init {
+- (instancetype)initWithDefaultMTLDevice {
+  return [self initWithMTLDevice:MTLCreateSystemDefaultDevice()];
+}
+
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)mtlDevice {
   self = [super init];
   if (self != nil) {
-    _mtlDevice = MTLCreateSystemDefaultDevice();
+    _mtlDevice = mtlDevice;
 
     if (!_mtlDevice) {
       FML_DLOG(ERROR) << "Could not acquire Metal device.";

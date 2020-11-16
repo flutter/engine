@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/shell/platform/config.gni")
 import("//flutter/testing/testing.gni")
 
@@ -97,10 +98,13 @@ group("flutter") {
       "//flutter/shell/common:shell_unittests",
       "//flutter/shell/platform/embedder:embedder_proctable_unittests",
       "//flutter/shell/platform/embedder:embedder_unittests",
-      "//flutter/testing:testing_unittests",
       "//flutter/third_party/tonic/tests:tonic_unittests",
       "//flutter/third_party/txt:txt_unittests",
     ]
+
+    if (!(is_mac && shell_enable_metal)) {
+      public_deps += [ "//flutter/testing:testing_unittests" ]
+    }
 
     if (is_fuchsia) {
       public_deps += [ "//flutter/shell/platform/fuchsia:tests" ]
