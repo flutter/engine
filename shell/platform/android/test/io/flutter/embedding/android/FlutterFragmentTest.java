@@ -7,12 +7,23 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import android.content.Context;
+import androidx.fragment.app.FragmentActivity;
+import androidx.activity.OnBackPressedCallback;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.FlutterEngineCache;
+import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.loader.FlutterLoader;
+import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
@@ -107,5 +118,42 @@ public class FlutterFragmentTest {
     // 1 time same as before.
     verify(mockDelegate, times(1)).onDestroyView();
     verify(mockDelegate, times(1)).onDetach();
+  }
+
+  @Test
+  public void itDoesNotRecurseSystemNavigatorPopWhenUsingOnBackPressedCallback() {
+    NavigationChannel mockNavigationChannel = mock(NavigationChannel.class);
+    FlutterEngine engine =
+        new FlutterEngine(
+            RuntimeEnvironment.application, mock(FlutterLoader.class), mock(FlutterJNI.class));
+    NavigationChannel navigationChannel = spy(engine.getNavigationChannel());
+    FlutterEngineCache.getInstance().put("my_cached_engine", engine);
+
+    FlutterFragment fragment = FlutterFragment.withCachedEngine("my_cached_engine").build();
+    FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
+    activity
+        .getSupportFragmentManager()
+        .beginTransaction()
+        .replace(android.R.id.content, fragment)
+        .commitNow();
+    engine.getPlatformChannel().channel.invokeMethod("SystemNavigator.pop", null);
+    verify(navigationChannel, never()).popRoute();
+    assertTrue(activity.isFinishing());
+  }
+
+  public static final class OnBackPressedCallbackFlutterFragment extends FlutterFragment {
+    private final OnBackPressedCallback onBackPressedCallback =
+        new OnBackPressedCallback(true) {
+          @Override
+          public void handleOnBackPressed() {
+            onBackPressed();
+          }
+        };
+
+    @Override
+    public void onAttach(Context context) {
+      super.onAttach(context);
+      requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+    }
   }
 }
