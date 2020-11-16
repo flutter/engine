@@ -2,7 +2,6 @@ package io.flutter.plugin.platform;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -19,7 +18,6 @@ import android.net.Uri;
 import android.view.View;
 import android.view.Window;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
-import io.flutter.embedding.engine.systemchannels.PlatformChannel.Brightness;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.SystemChromeStyle;
 import java.io.ByteArrayInputStream;
@@ -124,8 +122,7 @@ public class PlatformPluginTest {
     when(fakeActivity.getWindow()).thenReturn(fakeWindow);
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
-    SystemChromeStyle style =
-        new SystemChromeStyle(0XFF000000, null, 0XFFC70039, null, 0XFF006DB3);
+    SystemChromeStyle style = new SystemChromeStyle(0XFF000000, null, 0XFFC70039, null, 0XFF006DB3);
     platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
     assertEquals(0XFF006DB3, fakeActivity.getWindow().getNavigationBarDividerColor());
