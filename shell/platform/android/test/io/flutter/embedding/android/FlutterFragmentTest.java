@@ -132,7 +132,7 @@ public class FlutterFragmentTest {
     FlutterEngineCache.getInstance().put("my_cached_engine", engine);
 
     FlutterFragment fragment = FlutterFragment.withCachedEngine("my_cached_engine").build();
-    FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
+    FragmentActivity activity = spy(Robolectric.setupActivity(FragmentActivity.class));
     activity
         .getSupportFragmentManager()
         .beginTransaction()
@@ -140,7 +140,7 @@ public class FlutterFragmentTest {
         .commitNow();
     engine.getPlatformChannel().channel.invokeMethod("SystemNavigator.pop", null);
     verify(navigationChannel, never()).popRoute();
-    assertTrue(activity.isFinishing());
+    verify(activity).finish();
   }
 
   public static final class OnBackPressedCallbackFlutterFragment extends FlutterFragment {
