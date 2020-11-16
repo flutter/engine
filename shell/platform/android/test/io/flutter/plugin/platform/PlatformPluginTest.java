@@ -124,7 +124,7 @@ public class PlatformPluginTest {
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
     SystemChromeStyle style = new SystemChromeStyle(0XFF000000, null, 0XFFC70039, null, 0XFF006DB3);
-    
+
     if (Build.VERSION.SDK_INT >= 28) {
       platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
@@ -132,6 +132,5 @@ public class PlatformPluginTest {
       assertEquals(0XFFC70039, fakeActivity.getWindow().getStatusBarColor());
       assertEquals(0XFF000000, fakeActivity.getWindow().getNavigationBarColor());
     }
-
   }
 }
