@@ -4,8 +4,6 @@
 
 package dev.flutter.scenariosui;
 
-import android.app.Activity;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
@@ -160,13 +158,7 @@ public class ScreenshotUtil {
             Bitmap bitmap =
                 InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
             // Remove the status and action bars from the screenshot capture.
-            bitmap =
-                Bitmap.createBitmap(
-                    bitmap,
-                    0,
-                    0,
-                    bitmap.getWidth(),
-                    bitmap.getHeight());
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
             final String screenshotName = String.format("%s__%s", testClass, testName);
             // Write bitmap to the album.
