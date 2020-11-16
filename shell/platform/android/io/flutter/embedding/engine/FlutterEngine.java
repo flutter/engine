@@ -13,7 +13,6 @@ import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager;
-import io.flutter.embedding.engine.dynamicfeatures.PlayStoreDynamicFeatureManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
@@ -329,10 +328,7 @@ public class FlutterEngine {
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
 
-    this.dynamicFeatureManager =
-        dynamicFeatureManager != null
-            ? dynamicFeatureManager
-            : new PlayStoreDynamicFeatureManager(context, flutterJNI);
+    this.dynamicFeatureManager = dynamicFeatureManager;
     // TODO(garyq): Inject PlayStoreDynamicFeatureManager(context, flutterJNI);
     flutterJNI.setDynamicFeatureManager(dynamicFeatureManager);
 

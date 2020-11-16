@@ -8,7 +8,9 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -20,6 +22,7 @@ import java.io.File;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
@@ -59,10 +62,12 @@ public class PlayStoreDynamicFeatureManagerTest {
   private class TestPlayStoreDynamicFeatureManager extends PlayStoreDynamicFeatureManager {
     public TestPlayStoreDynamicFeatureManager(Context context, FlutterJNI jni) {
       super(context, jni);
+      jni.setDynamicFeatureManager(this);
     }
 
     @Override
     public void downloadDynamicFeature(int loadingUnitId, String moduleName) {
+      // Override this to skip the online SplitInstallManager portion.
       loadAssets(loadingUnitId, moduleName);
       loadDartLibrary(loadingUnitId, moduleName);
     }
@@ -71,15 +76,14 @@ public class PlayStoreDynamicFeatureManagerTest {
   @Test
   public void downloadCallsJNIFunctions() throws NameNotFoundException {
     TestFlutterJNI jni = new TestFlutterJNI();
-    Context context = mock(Context.class);
-    when(context.createPackageContext(any(), anyInt())).thenReturn(context);
-    when(context.getAssets()).thenReturn(null);
+    Context spyContext = spy(RuntimeEnvironment.systemContext);
+    doReturn(spyContext).when(spyContext).createPackageContext(any(), anyInt());
+    doReturn(null).when(spyContext).getAssets();
     String soTestPath = "test/path/app.so-123.part.so";
-    when(context.getFilesDir()).thenReturn(new File(soTestPath));
+    doReturn(new File(soTestPath)).when(spyContext).getFilesDir();
     TestPlayStoreDynamicFeatureManager playStoreManager =
-        new TestPlayStoreDynamicFeatureManager(context, jni);
+        new TestPlayStoreDynamicFeatureManager(spyContext, jni);
     jni.setDynamicFeatureManager(playStoreManager);
-
     assertEquals(jni.loadingUnitId, 0);
 
     playStoreManager.downloadDynamicFeature(123, "TestModuleName");
@@ -95,13 +99,13 @@ public class PlayStoreDynamicFeatureManagerTest {
   @Test
   public void searchPathsAddsApks() throws NameNotFoundException {
     TestFlutterJNI jni = new TestFlutterJNI();
-    Context context = mock(Context.class);
-    when(context.createPackageContext(any(), anyInt())).thenReturn(context);
-    when(context.getAssets()).thenReturn(null);
+    Context spyContext = spy(RuntimeEnvironment.systemContext);
+    doReturn(spyContext).when(spyContext).createPackageContext(any(), anyInt());
+    doReturn(null).when(spyContext).getAssets();
     String apkTestPath = "test/path/TestModuleName_armeabi_v7a.apk";
-    when(context.getFilesDir()).thenReturn(new File(apkTestPath));
+    doReturn(new File(apkTestPath)).when(spyContext).getFilesDir();
     TestPlayStoreDynamicFeatureManager playStoreManager =
-        new TestPlayStoreDynamicFeatureManager(context, jni);
+        new TestPlayStoreDynamicFeatureManager(spyContext, jni);
     jni.setDynamicFeatureManager(playStoreManager);
 
     assertEquals(jni.loadingUnitId, 0);
@@ -119,13 +123,13 @@ public class PlayStoreDynamicFeatureManagerTest {
   @Test
   public void invalidSearchPathsAreIgnored() throws NameNotFoundException {
     TestFlutterJNI jni = new TestFlutterJNI();
-    Context context = mock(Context.class);
-    when(context.createPackageContext(any(), anyInt())).thenReturn(context);
-    when(context.getAssets()).thenReturn(null);
+    Context spyContext = spy(RuntimeEnvironment.systemContext);
+    doReturn(spyContext).when(spyContext).createPackageContext(any(), anyInt());
+    doReturn(null).when(spyContext).getAssets();
     String apkTestPath = "test/path/invalidpath.apk";
-    when(context.getFilesDir()).thenReturn(new File(apkTestPath));
+    doReturn(new File(apkTestPath)).when(spyContext).getFilesDir();
     TestPlayStoreDynamicFeatureManager playStoreManager =
-        new TestPlayStoreDynamicFeatureManager(context, jni);
+        new TestPlayStoreDynamicFeatureManager(spyContext, jni);
     jni.setDynamicFeatureManager(playStoreManager);
 
     assertEquals(jni.loadingUnitId, 0);
