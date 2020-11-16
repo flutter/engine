@@ -269,8 +269,7 @@ public class PlatformPlugin {
         window.setStatusBarColor(systemChromeStyle.statusBarColor);
       }
     }
-    if (systemChromeStyle.systemNavigationBarDividerColor != null
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
       window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
       window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
