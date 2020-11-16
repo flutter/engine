@@ -13,10 +13,11 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 
-#include "flutter/third_party/accessibility/ax/platform/ax_platform_node.h"
 #include "flutter/third_party/accessibility/accessibility_bridge.h"
 // #include "flutter/third_party/accessibility/flutter_accessibility_position.h"
 #include "flutter/third_party/accessibility/ax/ax_node_position.h"
+#include "flutter/third_party/accessibility/ax/ax_action_data.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_base.h"
 
 #define SYSTEM_VERSION_EQUAL_TO(v)                  ([[[NSProcessInfo processInfo] operatingSystemVersionString] compare:v options:NSNumericSearch] == NSOrderedSame)
@@ -114,7 +115,7 @@ FlutterAccessibilityMac::~FlutterAccessibilityMac() {
 }
 
 void FlutterAccessibilityMac::Init(AccessibilityBridge* bridge, AXNode* node) {
-  bridge_ = bridge;
+  FlutterAccessibilityMac::Init(bridge, node);
   ax_node_ = node;
 }
 
@@ -209,7 +210,7 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
         FireNativeMacNotificationWithUserInfo(
             native_node, mac_notification, user_info);
         FireNativeMacNotificationWithUserInfo(
-            bridge_->GetFlutterAccessibilityFromID(kRootNode)->GetNativeViewAccessible(), mac_notification, user_info);
+            GetBridge()->GetFlutterAccessibilityFromID(kRootNode)->GetNativeViewAccessible(), mac_notification, user_info);
         return;
       }
       break;
@@ -348,6 +349,7 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
 void FlutterAccessibilityMac::FireNativeMacNotification(
     gfx::NativeViewAccessible native_node,
     NSString* mac_notification) {
+  FML_LOG(ERROR) << "fire native mac notification:" << mac_notification; 
   FML_DCHECK(mac_notification);
   FML_DCHECK(native_node);
   NSAccessibilityPostNotification(native_node, mac_notification);
@@ -365,7 +367,7 @@ void FlutterAccessibilityMac::FireNativeMacNotificationWithUserInfo(
 
 bool FlutterAccessibilityMac::IsInGeneratedEventBatch(
     ax::AXEventGenerator::Event event_type) const {
-  for (const auto& event : *(bridge_->GetEventGenerator())) {
+  for (const auto& event : *(GetBridge()->GetEventGenerator())) {
     if (event.event_params.event == event_type)
       return true;  // Any side effects will have already been handled.
   }
@@ -377,6 +379,10 @@ const AXNodeData& FlutterAccessibilityMac::GetData() const {
   return ax_node_->data();
 }
 
+void FlutterAccessibilityMac::DispatchAccessibilityAction(uint16_t target, FlutterSemanticsAction action, uint8_t* data, size_t data_size) {
+  [GetFlutterEngine()]
+}
+
 gfx::NativeViewAccessible FlutterAccessibilityMac::GetNativeViewAccessible() {
   FML_DCHECK(ax_platform_node_);
   return ax_platform_node_->GetNativeViewAccessible();
@@ -386,7 +392,7 @@ gfx::NativeViewAccessible FlutterAccessibilityMac::GetParent() {
   if (!ax_node_->parent()) {
     return nullptr;
   }
-  return bridge_->GetFlutterAccessibilityFromID(ax_node_->parent()->id())->GetNativeViewAccessible();
+  return GetBridge()->GetFlutterAccessibilityFromID(ax_node_->parent()->id())->GetNativeViewAccessible();
 }
 
 SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinate_system,
@@ -409,7 +415,7 @@ SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinat
   // }
   const bool clip_bounds = clipping_behavior == ax::AXClippingBehavior::kClipped;
   bool offscreen = false;
-  SkRect bounds = bridge_->GetAXTree()->RelativeToTreeBounds(ax_node_, GetData().relative_bounds.bounds,
+  SkRect bounds = GetBridge()->GetAXTree()->RelativeToTreeBounds(ax_node_, GetData().relative_bounds.bounds,
                                                       &offscreen, clip_bounds);
   // Applies window transform.
   NSRect local_bound;
@@ -417,7 +423,7 @@ SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinat
   local_bound.origin.y = bounds.y();
   local_bound.size.width = bounds.width();
   local_bound.size.height = bounds.height();
-  FlutterEngine* engine = (__bridge FlutterEngine*)bridge_->GetUserData();
+  FlutterEngine* engine = GetFlutterEngine();
   // local_bounds is flipped.
   local_bound.origin.y = -local_bound.origin.y - local_bound.size.height;
 
@@ -443,7 +449,7 @@ std::string FlutterAccessibilityMac::GetLiveRegionText() const {
     return text;
 
   for (int32_t child : GetData().child_ids) {
-    const FlutterAccessibilityMac* accessibility_child = (FlutterAccessibilityMac*)bridge_->GetFlutterAccessibilityFromID(child);
+    const FlutterAccessibilityMac* accessibility_child = (FlutterAccessibilityMac*)GetBridge()->GetFlutterAccessibilityFromID(child);
     if (!accessibility_child)
       continue;
 
@@ -569,6 +575,9 @@ FlutterAccessibilityMac::GetUserInfoForValueChangedNotification(
   };
 }
 
+FlutterEngine* FlutterAccessibilityMac::GetFlutterEngine() {
+  return (__bridge FlutterEngine*)GetBridge()->GetUserData();
+}
 
 int FlutterAccessibilityMac::GetChildCount() const {
   return static_cast<int>(ax_node_->GetUnignoredChildCount());
@@ -576,7 +585,7 @@ int FlutterAccessibilityMac::GetChildCount() const {
 
 gfx::NativeViewAccessible FlutterAccessibilityMac::ChildAtIndex(int index) {
   int32_t child = ax_node_->GetUnignoredChildAtIndex(index)->id();
-  return bridge_->GetFlutterAccessibilityFromID(child)->GetNativeViewAccessible();
+  return GetBridge()->GetFlutterAccessibilityFromID(child)->GetNativeViewAccessible();
 }
 
 gfx::NativeViewAccessible FlutterAccessibilityMac::GetNSWindow() {

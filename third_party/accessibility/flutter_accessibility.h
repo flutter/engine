@@ -5,6 +5,8 @@
 #ifndef AX_FLUTTER_ACCESSIBILITY_H
 #define AX_FLUTTER_ACCESSIBILITY_H
 
+#include "flutter/shell/platform/embedder/embedder.h"
+
 #include "ax/platform/ax_platform_node_delegate_base.h"
 #include "ax/ax_event_generator.h"
 
@@ -21,13 +23,22 @@ class FlutterAccessibility : public AXPlatformNodeDelegateBase {
   FlutterAccessibility();
   ~FlutterAccessibility() override;
 
-  // Called only once, immediately after construction. The constructor doesn't
-  // take any arguments because in the Windows subclass we use a special
-  // function to construct a COM object.
-  virtual void Init(AccessibilityBridge* bridge, AXNode* node);
-  virtual void OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event);
-};
+  AccessibilityBridge* GetBridge();
+  bool AccessibilityPerformAction(const AXActionData& data) override;
 
+  /**
+   * Called only once, immediately after construction. The constructor doesn't
+   * take any arguments because in the Windows subclass we use a special
+   * function to construct a COM object.
+   * 
+   * Subclass must call super.
+   */
+  void Init(AccessibilityBridge* bridge, AXNode* node);
+  virtual void OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event);
+  virtual void DispatchAccessibilityAction(uint16_t target, FlutterSemanticsAction action, uint8_t* data, size_t data_size);
+ private:
+  AccessibilityBridge* bridge_
+};
 } // namespace ax
 
 #endif // AX_FLUTTER_ACCESSIBILITY_H

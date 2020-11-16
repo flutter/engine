@@ -30,6 +30,7 @@ class AccessibilityBridge : public AXTreeObserver {
   AXEventGenerator* GetEventGenerator();
   void* GetUserData();
   FlutterAccessibility* GetFlutterAccessibilityFromID(int32_t id) const;
+  void SetFocusedNode(int32_t node_id);
   // AXTreeObserver implementation.
   void OnNodeWillBeDeleted(ax::AXTree* tree, ax::AXNode* node) override;
   void OnSubtreeWillBeDeleted(ax::AXTree* tree, ax::AXNode* node) override;
@@ -87,6 +88,7 @@ class AccessibilityBridge : public AXTreeObserver {
   AXEventGenerator event_generator_;
   std::unordered_map<int32_t, SemanticsNode> _pending_semantics_node_updates;
   std::unordered_map<int32_t, SemanticsCustomAction> _pending_semantics_custom_action_updates;
+  int32_t last_focused_node_ = ax::AXNode::kInvalidAXID;
   void* user_data_;
 
   void InitAXTree(const AXTreeUpdate& initial_state);

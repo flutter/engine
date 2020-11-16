@@ -517,6 +517,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   _embedderAPI.UpdateSemanticsEnabled(_engine, enabled);
 }
 
+- (void)dispatchSemanticsAction:(uint16_t)target
+                         action:(FlutterSemanticsAction)action
+                           data:(const uint8_t*)data
+                       dataSize:(size_t)dataSize {
+  _embedderAPI.DispatchSemanticsAction(_engine, target, action, data, dataSize);
+}
+
 #pragma mark - Private methods
 
 - (void)sendUserLocales {

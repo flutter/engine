@@ -94,6 +94,24 @@ AXEventGenerator* AccessibilityBridge::GetEventGenerator() {
   return &event_generator_;
 }
 
+FlutterAccessibility* AccessibilityBridge::GetFlutterAccessibilityFromID(int32_t id) const {
+  const auto iter = id_wrapper_map_.find(id);
+  if (iter != id_wrapper_map_.end())
+    return iter->second;
+
+  return nullptr;
+}
+
+void AccessibilityBridge::SetFocusedNode(int32_t node_id) {
+  if (last_focused_node_ != node_id) {
+    FlutterAccessibility* last_focused_child = GetFlutterAccessibilityFromID(last_focused_node_);
+    if (last_focused_child) {
+      last_focused_child->DispatchAccessibilityAction(last_focused_node_, FlutterSemanticsAction::kFlutterSemanticsActionDidLoseAccessibilityFocus, null, 0);
+    }
+    last_focused_node_ = node_id;
+  }
+}
+
 void AccessibilityBridge::OnNodeWillBeDeleted(ax::AXTree* tree, ax::AXNode* node) {}
 
 void AccessibilityBridge::OnSubtreeWillBeDeleted(ax::AXTree* tree,
@@ -349,14 +367,6 @@ void AccessibilityBridge::SetStringListAttributesFromFlutterUpdate(AXNodeData& n
     }
     node_data.AddStringListAttribute(StringListAttribute::kCustomActionDescriptions, custom_action_description);
   }
-}
-
-FlutterAccessibility* AccessibilityBridge::GetFlutterAccessibilityFromID(int32_t id) const {
-  const auto iter = id_wrapper_map_.find(id);
-  if (iter != id_wrapper_map_.end())
-    return iter->second;
-
-  return nullptr;
 }
 
 void AccessibilityBridge::SetNameFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
