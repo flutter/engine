@@ -129,28 +129,6 @@ public class ScreenshotUtil {
     album = null;
   }
 
-  private static int getStatusBarHeight() {
-    final Context context = InstrumentationRegistry.getTargetContext();
-    // Resource name defined in
-    // https://android.googlesource.com/platform/frameworks/base/+/master/core/res/res/values/dimens.xml#34
-    final int resourceId =
-        context.getResources().getIdentifier("status_bar_height", "dimen", "android");
-    int statusBarHeight = 0;
-    if (resourceId > 0) {
-      statusBarHeight = context.getResources().getDimensionPixelSize(resourceId);
-    }
-    return statusBarHeight;
-  }
-
-  private static int getActionBarHeight(Activity activity) {
-    int actionBarHeight = 0;
-    final android.content.res.TypedArray styledAttributes =
-        activity.getTheme().obtainStyledAttributes(new int[] {android.R.attr.actionBarSize});
-    actionBarHeight = (int) styledAttributes.getDimension(0, 0);
-    styledAttributes.recycle();
-    return actionBarHeight;
-  }
-
   /**
    * Captures a screenshot of {@code TestableFlutterActivity}.
    *
@@ -186,9 +164,9 @@ public class ScreenshotUtil {
                 Bitmap.createBitmap(
                     bitmap,
                     0,
-                    getStatusBarHeight(),
+                    0,
                     bitmap.getWidth(),
-                    bitmap.getHeight() - getStatusBarHeight() - getActionBarHeight(activity));
+                    bitmap.getHeight());
 
             final String screenshotName = String.format("%s__%s", testClass, testName);
             // Write bitmap to the album.
