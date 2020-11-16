@@ -122,10 +122,11 @@ public class FlutterFragmentTest {
 
   @Test
   public void itDoesNotRecurseSystemNavigatorPopWhenUsingOnBackPressedCallback() {
-    NavigationChannel mockNavigationChannel = mock(NavigationChannel.class);
+    FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
+    when(mockFlutterJni.isAttached()).thenReturn(true);
     FlutterEngine engine =
         new FlutterEngine(
-            RuntimeEnvironment.application, mock(FlutterLoader.class), mock(FlutterJNI.class));
+            RuntimeEnvironment.application, mock(FlutterLoader.class), mockFlutterJni);
     NavigationChannel navigationChannel = spy(engine.getNavigationChannel());
     FlutterEngineCache.getInstance().put("my_cached_engine", engine);
 
