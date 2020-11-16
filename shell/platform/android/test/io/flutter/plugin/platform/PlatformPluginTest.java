@@ -15,6 +15,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.view.View;
 import android.view.Window;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
@@ -123,10 +124,14 @@ public class PlatformPluginTest {
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
     SystemChromeStyle style = new SystemChromeStyle(0XFF000000, null, 0XFFC70039, null, 0XFF006DB3);
-    platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+    
+    if (Build.VERSION.SDK_INT >= 28) {
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
-    assertEquals(0XFF006DB3, fakeActivity.getWindow().getNavigationBarDividerColor());
-    assertEquals(0XFFC70039, fakeActivity.getWindow().getStatusBarColor());
-    assertEquals(0XFF000000, fakeActivity.getWindow().getNavigationBarColor());
+      assertEquals(0XFF006DB3, fakeActivity.getWindow().getNavigationBarDividerColor());
+      assertEquals(0XFFC70039, fakeActivity.getWindow().getStatusBarColor());
+      assertEquals(0XFF000000, fakeActivity.getWindow().getNavigationBarColor());
+    }
+
   }
 }
