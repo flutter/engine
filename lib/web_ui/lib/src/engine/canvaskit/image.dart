@@ -8,10 +8,7 @@ part of engine;
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 void skiaInstantiateImageCodec(Uint8List list, Callback<ui.Codec> callback,
     [int? width, int? height, int? format, int? rowBytes]) {
-  final SkAnimatedImage skAnimatedImage =
-      canvasKit.MakeAnimatedImageFromEncoded(list);
-  final CkAnimatedImage animatedImage = CkAnimatedImage(skAnimatedImage);
-  final CkAnimatedImageCodec codec = CkAnimatedImageCodec(animatedImage);
+  final CkAnimatedImage codec = CkAnimatedImage.decodeFromBytes(list);
   callback(codec);
 }
 
@@ -33,10 +30,7 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
     }
     final Uint8List list =
         new Uint8List.view((response.response as ByteBuffer));
-    final SkAnimatedImage skAnimatedImage =
-        canvasKit.MakeAnimatedImageFromEncoded(list);
-    final CkAnimatedImage animatedImage = CkAnimatedImage(skAnimatedImage);
-    final CkAnimatedImageCodec codec = CkAnimatedImageCodec(animatedImage);
+    final CkAnimatedImage codec = CkAnimatedImage.decodeFromBytes(list);
     completer.complete(codec);
   }, onError: (dynamic error) {
     completer.completeError(error);
@@ -44,16 +38,17 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
   return completer.future;
 }
 
-/// A wrapper for `SkAnimatedImage`.
-class CkAnimatedImage implements StackTraceDebugger {
-  /// Wraps an existing [SkAnimatedImage] and takes ownership of it.
-  ///
-  /// Do not store references to [skAnimatedImage] outside this class due to
-  /// the risk of use-after-free bugs.
-  CkAnimatedImage(SkAnimatedImage skAnimatedImage) {
+/// The CanvasKit implementation of [ui.Codec].
+///
+/// Wraps `SkAnimatedImage`.
+class CkAnimatedImage implements ui.Codec, StackTraceDebugger {
+  /// Decodes an image from a list of encoded bytes.
+  CkAnimatedImage.decodeFromBytes(Uint8List bytes) {
     if (assertionsEnabled) {
       _debugStackTrace = StackTrace.current;
     }
+    final SkAnimatedImage skAnimatedImage =
+        canvasKit.MakeAnimatedImageFromEncoded(bytes);
     box = SkiaObjectBox<CkAnimatedImage, SkAnimatedImage>(this, skAnimatedImage);
   }
 
@@ -73,6 +68,7 @@ class CkAnimatedImage implements StackTraceDebugger {
     return true;
   }
 
+  @override
   void dispose() {
     if (_disposed) {
       // This method is idempotent.
@@ -84,26 +80,25 @@ class CkAnimatedImage implements StackTraceDebugger {
     box.unref(this);
   }
 
+  @override
   int get frameCount {
     assert(_debugCheckIsNotDisposed());
     return box.skiaObject.getFrameCount();
   }
 
-  /// Decodes the next frame and returns the frame duration.
-  Duration decodeNextFrame() {
-    assert(_debugCheckIsNotDisposed());
-    final int durationMillis = box.skiaObject.decodeNextFrame();
-    return Duration(milliseconds: durationMillis);
-  }
-
+  @override
   int get repetitionCount {
     assert(_debugCheckIsNotDisposed());
     return box.skiaObject.getRepetitionCount();
   }
 
-  CkImage get currentFrameAsImage {
+  @override
+  Future<ui.FrameInfo> getNextFrame() {
     assert(_debugCheckIsNotDisposed());
-    return CkImage(box.skiaObject.getCurrentFrame());
+    final int durationMillis = box.skiaObject.decodeNextFrame();
+    final Duration duration = Duration(milliseconds: durationMillis);
+    final CkImage image = CkImage(box.skiaObject.getCurrentFrame());
+    return Future<ui.FrameInfo>.value(AnimatedImageFrameInfo(duration, image));
   }
 }
 
@@ -220,31 +215,6 @@ class CkImage implements ui.Image, StackTraceDebugger {
   String toString() {
     assert(_debugCheckIsNotDisposed());
     return '[$width\u00D7$height]';
-  }
-}
-
-/// A [Codec] that wraps an `SkAnimatedImage`.
-class CkAnimatedImageCodec implements ui.Codec {
-  CkAnimatedImage animatedImage;
-
-  CkAnimatedImageCodec(this.animatedImage);
-
-  @override
-  void dispose() {
-    animatedImage.dispose();
-  }
-
-  @override
-  int get frameCount => animatedImage.frameCount;
-
-  @override
-  int get repetitionCount => animatedImage.repetitionCount;
-
-  @override
-  Future<ui.FrameInfo> getNextFrame() {
-    final Duration duration = animatedImage.decodeNextFrame();
-    final CkImage image = animatedImage.currentFrameAsImage;
-    return Future<ui.FrameInfo>.value(AnimatedImageFrameInfo(duration, image));
   }
 }
 
