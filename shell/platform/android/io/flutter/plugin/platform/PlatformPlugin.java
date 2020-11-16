@@ -280,7 +280,7 @@ public class PlatformPlugin {
 
   private void popSystemNavigator() {
     if (activity instanceof OnBackPressedDispatcherOwner) {
-      ((ComponentActivity) activity).getOnBackPressedDispatcher().onBackPressed();
+      ((OnBackPressedDispatcherOwner) activity).getOnBackPressedDispatcher().onBackPressed();
     } else {
       activity.finish();
     }
