@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Set this flag to true to see all the fired events in the console.
@@ -125,9 +125,7 @@ class PointerBinding {
 
   void _onPointerData(Iterable<ui.PointerData> data) {
     final ui.PointerDataPacket packet = ui.PointerDataPacket(data: data.toList());
-    if (window._onPointerDataPacket != null) {
-      window.invokeOnPointerDataPacket(packet);
-    }
+    EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(packet);
   }
 }
 
@@ -229,6 +227,8 @@ abstract class _BaseAdapter {
 }
 
 mixin _WheelEventListenerMixin on _BaseAdapter {
+  static double? _defaultScrollLineHeight;
+
   List<ui.PointerData> _convertWheelEventToPointerData(
     html.WheelEvent event
   ) {
@@ -242,8 +242,9 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     double deltaY = event.deltaY as double;
     switch (event.deltaMode) {
       case domDeltaLine:
-        deltaX *= 32.0;
-        deltaY *= 32.0;
+        _defaultScrollLineHeight ??= _computeDefaultScrollLineHeight();
+        deltaX *= _defaultScrollLineHeight!;
+        deltaY *= _defaultScrollLineHeight!;
         break;
       case domDeltaPage:
         deltaX *= ui.window.physicalSize.width;
@@ -253,6 +254,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       default:
         break;
     }
+
     final List<ui.PointerData> data = <ui.PointerData>[];
     _pointerDataConverter.convert(
       data,
@@ -286,6 +288,49 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         eventOptions
       ]
     );
+  }
+
+  void _handleWheelEvent(html.Event e) {
+    assert(e is html.WheelEvent);
+    final html.WheelEvent event = e as html.WheelEvent;
+    if (_debugLogPointerEvents) {
+      print(event.type);
+    }
+    if (event.getModifierState('Control') &&
+        operatingSystem != OperatingSystem.macOs &&
+        operatingSystem != OperatingSystem.iOs) {
+      // Ignore Control+wheel events since the default handler
+      // will change browser zoom level instead of scrolling.
+      // The exception is MacOs where Control+wheel will still scroll and zoom
+      // is not implemented.
+      return;
+    }
+    _callback(_convertWheelEventToPointerData(event));
+    // Prevent default so mouse wheel event doesn't get converted to
+    // a scroll event that semantic nodes would process.
+    //
+    event.preventDefault();
+  }
+
+  /// For browsers that report delta line instead of pixels such as FireFox
+  /// compute line height using the default font size.
+  ///
+  /// Use Firefox to test this code path.
+  double _computeDefaultScrollLineHeight() {
+    const double kFallbackFontHeight = 16.0;
+    final html.DivElement probe = html.DivElement();
+    probe.style
+        ..fontSize = 'initial'
+        ..display = 'none';
+    html.document.body!.append(probe);
+    String fontSize = probe.getComputedStyle().fontSize;
+    double? res;
+    if (fontSize.contains('px')) {
+       fontSize = fontSize.replaceAll('px', '');
+       res = double.tryParse(fontSize);
+    }
+    probe.remove();
+    return res == null ? kFallbackFontHeight : res / 4.0;
   }
 }
 
@@ -491,14 +536,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     });
 
     _addWheelEventListener((html.Event event) {
-      assert(event is html.WheelEvent);
-      if (_debugLogPointerEvents) {
-        print(event.type);
-      }
-      _callback(_convertWheelEventToPointerData(event as html.WheelEvent));
-      // Prevent default so mouse wheel event doesn't get converted to
-      // a scroll event that semantic nodes would process.
-      event.preventDefault();
+      _handleWheelEvent(event);
     });
   }
 
@@ -770,14 +808,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     }, acceptOutsideGlasspane: true);
 
     _addWheelEventListener((html.Event event) {
-      assert(event is html.WheelEvent);
-      if (_debugLogPointerEvents) {
-        print(event.type);
-      }
-      _callback(_convertWheelEventToPointerData(event as html.WheelEvent));
-      // Prevent default so mouse wheel event doesn't get converted to
-      // a scroll event that semantic nodes would process.
-      event.preventDefault();
+      _handleWheelEvent(event);
     });
   }
 

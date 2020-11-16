@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// An abstract class that provides the API for [EngineWindow] to delegate its
@@ -151,17 +151,15 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
           currentPath);
     }
     _lastSeenSerialCount = _currentSerialCount;
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/navigation',
-        const JSONMethodCodec().encodeMethodCall(
-            MethodCall('pushRouteInformation', <dynamic, dynamic>{
-          'location': currentPath,
-          'state': event.state?['state'],
-        })),
-        (_) {},
-      );
-    }
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/navigation',
+      const JSONMethodCodec().encodeMethodCall(
+          MethodCall('pushRouteInformation', <dynamic, dynamic>{
+        'location': currentPath,
+        'state': event.state?['state'],
+      })),
+      (_) {},
+    );
   }
 
   @override
@@ -272,13 +270,11 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       _setupFlutterEntry(urlStrategy!);
 
       // 2. Send a 'popRoute' platform message so the app can handle it accordingly.
-      if (window._onPlatformMessage != null) {
-        window.invokeOnPlatformMessage(
-          'flutter/navigation',
-          const JSONMethodCodec().encodeMethodCall(_popRouteMethodCall),
-          (_) {},
-        );
-      }
+      EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+        'flutter/navigation',
+        const JSONMethodCodec().encodeMethodCall(_popRouteMethodCall),
+        (_) {},
+      );
     } else if (_isFlutterEntry(event.state)) {
       // We get into this scenario when the user changes the url manually. It
       // causes a new entry to be pushed on top of our "flutter" one. When this
@@ -291,15 +287,13 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       _userProvidedRouteName = null;
 
       // Send a 'pushRoute' platform message so the app handles it accordingly.
-      if (window._onPlatformMessage != null) {
-        window.invokeOnPlatformMessage(
-          'flutter/navigation',
-          const JSONMethodCodec().encodeMethodCall(
-            MethodCall('pushRoute', newRouteName),
-          ),
-          (_) {},
-        );
-      }
+      EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+        'flutter/navigation',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall('pushRoute', newRouteName),
+        ),
+        (_) {},
+      );
     } else {
       // The user has pushed a new entry on top of our flutter entry. This could
       // happen when the user modifies the hash part of the url directly, for

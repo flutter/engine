@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Enable this to print every command applied by a canvas.
@@ -466,12 +466,12 @@ class RecordingCanvas {
       // For Rect/RoundedRect paths use drawRect/drawRRect code paths for
       // DomCanvas optimization.
       SurfacePath sPath = path as SurfacePath;
-      final ui.Rect? rect = sPath.webOnlyPathAsRect;
+      final ui.Rect? rect = sPath.toRect();
       if (rect != null) {
         drawRect(rect, paint);
         return;
       }
-      final ui.RRect? rrect = sPath.webOnlyPathAsRoundedRect;
+      final ui.RRect? rrect = sPath.toRoundedRect();
       if (rrect != null) {
         drawRRect(rrect, paint);
         return;
@@ -522,13 +522,13 @@ class RecordingCanvas {
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
     assert(!_recordingEnded);
     final EngineParagraph engineParagraph = paragraph as EngineParagraph;
-    if (!engineParagraph._isLaidOut) {
+    if (!engineParagraph.isLaidOut) {
       // Ignore non-laid out paragraphs. This matches Flutter's behavior.
       return;
     }
 
     _didDraw = true;
-    if (engineParagraph._geometricStyle.ellipsis != null) {
+    if (engineParagraph.hasArbitraryPaint) {
       _hasArbitraryPaint = true;
     }
     final double left = offset.dx;
@@ -1185,7 +1185,7 @@ class PaintDrawParagraph extends DrawCommand {
   @override
   String toString() {
     if (assertionsEnabled) {
-      return 'DrawParagraph(${paragraph._plainText}, $offset)';
+      return 'DrawParagraph(${paragraph.toPlainText()}, $offset)';
     } else {
       return super.toString();
     }

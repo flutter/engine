@@ -18,7 +18,12 @@
  * View capable of acting as a rendering target and input source for the Flutter
  * engine.
  */
-@interface FlutterView : NSOpenGLView
+@interface FlutterView : NSView
+
+/**
+ * The OpenGL context of backing surface.
+ */
+@property(readwrite, nonatomic, nonnull) NSOpenGLContext* openGLContext;
 
 - (nullable instancetype)initWithFrame:(NSRect)frame
                           shareContext:(nonnull NSOpenGLContext*)shareContext
@@ -34,5 +39,16 @@
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect NS_UNAVAILABLE;
 - (nullable instancetype)initWithCoder:(nonnull NSCoder*)coder NS_UNAVAILABLE;
 - (nonnull instancetype)init NS_UNAVAILABLE;
+
+/**
+ * Flushes the OpenGL context and flips the surfaces. Expected to be called on raster thread.
+ */
+- (void)present;
+
+/**
+ * Ensures that framebuffer with requested size exists and returns the ID. Expected to be called on
+ * raster thread.
+ */
+- (int)frameBufferIDForSize:(CGSize)size;
 
 @end

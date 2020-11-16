@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 // ignore: unused_element, Used in Shader assert.
@@ -230,7 +230,7 @@ enum Clip {
 }
 
 abstract class Paint {
-  factory Paint() => engine.experimentalUseSkia ? engine.CkPaint() : engine.SurfacePaint();
+  factory Paint() => engine.useCanvasKit ? engine.CkPaint() : engine.SurfacePaint();
   static bool enableDithering = false;
   BlendMode get blendMode;
   set blendMode(BlendMode value);
@@ -278,7 +278,7 @@ abstract class Gradient extends Shader {
     List<double>? colorStops,
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
-  ]) => engine.experimentalUseSkia
+  ]) => engine.useCanvasKit
     ? engine.CkGradientLinear(from, to, colors, colorStops, tileMode, matrix4)
     : engine.GradientLinear(from, to, colors, colorStops, tileMode, matrix4);
   factory Gradient.radial(
@@ -296,13 +296,13 @@ abstract class Gradient extends Shader {
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
     final Float32List? matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
-      return engine.experimentalUseSkia
+      return engine.useCanvasKit
           ? engine.CkGradientRadial(center, radius, colors, colorStops, tileMode, matrix32)
           : engine.GradientRadial(center, radius, colors, colorStops, tileMode, matrix32);
     } else {
       assert(center != Offset.zero ||
           focal != Offset.zero); // will result in exception(s) in Skia side
-      return engine.experimentalUseSkia
+      return engine.useCanvasKit
           ? engine.CkGradientConical(
               focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32)
           : engine.GradientConical(
@@ -317,7 +317,7 @@ abstract class Gradient extends Shader {
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
     Float64List? matrix4,
-  ]) => engine.experimentalUseSkia
+  ]) => engine.useCanvasKit
     ? engine.CkGradientSweep(center, colors, colorStops, tileMode, startAngle,
           endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null)
     : engine.GradientSweep(center, colors, colorStops, tileMode, startAngle,
@@ -329,6 +329,7 @@ abstract class Image {
   int get height;
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba});
   void dispose();
+  bool get debugDisposed;
 
   Image clone() => this;
 
@@ -393,7 +394,7 @@ enum FilterQuality {
 
 class ImageFilter {
   factory ImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0}) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
     }
     return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
@@ -404,6 +405,12 @@ class ImageFilter {
     throw UnimplementedError('ImageFilter.matrix not implemented for web platform.');
     //    if (matrix4.length != 16)
     //      throw ArgumentError('"matrix4" must have 16 entries.');
+  }
+
+  ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
+     // TODO(flutter_web): add implementation.
+    throw UnimplementedError(
+        'ImageFilter.compose not implemented for web platform.');
   }
 }
 
@@ -451,7 +458,7 @@ Future<Codec> instantiateImageCodec(
 }
 
 String? _instantiateImageCodec(Uint8List list, engine.Callback<Codec> callback) {
-  if (engine.experimentalUseSkia) {
+  if (engine.useCanvasKit) {
     engine.skiaInstantiateImageCodec(list, callback);
     return null;
   }
@@ -460,10 +467,15 @@ String? _instantiateImageCodec(Uint8List list, engine.Callback<Codec> callback) 
   return null;
 }
 
-Future<Codec?> webOnlyInstantiateImageCodecFromUrl(Uri uri,
-    {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) {
-  return _futurize<Codec?>((engine.Callback<Codec> callback) =>
+Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
+  {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) {
+  if (engine.useCanvasKit) {
+    return engine.skiaInstantiateWebImageCodec(
+      uri.toString(), chunkCallback);
+  } else {
+    return _futurize<Codec>((engine.Callback<Codec> callback) =>
       _instantiateImageCodecFromUrl(uri, chunkCallback, callback));
+  }
 }
 
 String? _instantiateImageCodecFromUrl(
@@ -471,13 +483,8 @@ String? _instantiateImageCodecFromUrl(
   engine.WebOnlyImageCodecChunkCallback? chunkCallback,
   engine.Callback<Codec> callback,
 ) {
-  if (engine.experimentalUseSkia) {
-    engine.skiaInstantiateWebImageCodec(uri.toString(), callback, chunkCallback);
-    return null;
-  } else {
-    callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
-    return null;
-  }
+  callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
+  return null;
 }
 
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
@@ -576,7 +583,7 @@ void decodeImageFromPixels(
   int? targetHeight,
   bool allowUpscaling = true,
 }) {
-  if (engine.experimentalUseSkia) {
+  if (engine.useCanvasKit) {
     engine.skiaInstantiateImageCodec(
       pixels,
       (Codec codec) {
@@ -695,7 +702,7 @@ class Shadow {
 
 class ImageShader extends Shader {
   factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkImageShader(image, tmx, tmy, matrix4);
     }
     throw UnsupportedError('ImageShader not implemented for web platform.');

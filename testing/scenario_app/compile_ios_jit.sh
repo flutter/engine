@@ -74,7 +74,8 @@ echo "Compiling JIT Snapshot..."
 
 "$DEVICE_TOOLS/gen_snapshot" --deterministic \
   --enable-asserts \
-  --causal_async_stacks \
+  --no-causal_async_stacks \
+  --lazy_async_stacks \
   --isolate_snapshot_instructions="$OUTDIR/isolate_snapshot_instr" \
   --snapshot_kind=app-jit \
   --load_vm_snapshot_data="$DEVICE_TOOLS/../gen/flutter/lib/snapshot/vm_isolate_snapshot.bin" \
@@ -110,6 +111,6 @@ cp "$SCRIPT_DIR/ios/AppFrameworkInfo.plist" "$OUTDIR/App.framework/Info.plist"
 echo "Created $OUTDIR/App.framework/App."
 
 rm -rf "$SCRIPT_DIR/ios/Scenarios/App.framework"
-rm -rf "$SCRIPT_DIR/ios/Scenarios/Flutter.framework"
+rm -rf "$SCRIPT_DIR/ios/Scenarios/Flutter.xcframework"
 cp -R "$OUTDIR/App.framework" "$SCRIPT_DIR/ios/Scenarios"
-cp -R "$DEVICE_TOOLS/../Flutter.framework" "$SCRIPT_DIR/ios/Scenarios"
+cp -R "$DEVICE_TOOLS/../Flutter.xcframework" "$SCRIPT_DIR/ios/Scenarios"

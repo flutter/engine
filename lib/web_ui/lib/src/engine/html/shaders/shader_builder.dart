@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Creates shader program for target webgl version.
@@ -58,7 +58,7 @@ class ShaderBuilder {
   ShaderDeclaration? _fragmentColorDeclaration;
 
   ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2,
-    _isFragmentShader = false;
+        _isFragmentShader = false;
 
   ShaderBuilder.fragment(this.version) :
         isWebGl2 = version == WebGLVersion.webgl2,
@@ -238,9 +238,23 @@ class ShaderMethod {
   final String returnType = 'void';
   final String name;
   final List<String> _statements = [];
+  int _indentLevel = 1;
+
+  void indent() {
+    ++_indentLevel;
+  }
+
+  void unindent() {
+    assert(_indentLevel != 1);
+    --_indentLevel;
+  }
 
   void addStatement(String statement) {
-    _statements.add(statement);
+    if (assertionsEnabled) {
+      _statements.add('  ' * _indentLevel + statement);
+    } else {
+      _statements.add(statement);
+    }
   }
 
   void write(StringBuffer buffer) {
@@ -250,14 +264,6 @@ class ShaderMethod {
     }
     buffer.writeln('}');
   }
-}
-
-/// html webgl version qualifier constants.
-abstract class WebGLVersion {
-  // WebGL 1.0 is based on OpenGL ES 2.0 / GLSL 1.00
-  static const int webgl1 = 1;
-  // WebGL 2.0 is based on OpenGL ES 3.0 / GLSL 3.00
-  static const int webgl2 = 2;
 }
 
 /// WebGl Shader data types.

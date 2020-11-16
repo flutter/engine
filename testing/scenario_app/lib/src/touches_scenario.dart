@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
+
 import 'dart:convert';
 import 'dart:ui';
 
@@ -10,7 +12,7 @@ import 'scenario.dart';
 /// A scenario that sends back messages when touches are received.
 class TouchesScenario extends Scenario {
   /// Constructor for `TouchesScenario`.
-  TouchesScenario(Window window) : super(window);
+  TouchesScenario(PlatformDispatcher dispatcher) : super(dispatcher);
 
   @override
   void onPointerDataPacket(PointerDataPacket packet) {

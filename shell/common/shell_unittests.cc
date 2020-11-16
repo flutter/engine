@@ -10,6 +10,8 @@
 #include <future>
 #include <memory>
 
+#include "assets/directory_asset_bundle.h"
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
@@ -20,7 +22,6 @@
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_test.h"
@@ -316,6 +317,8 @@ TEST_F(ShellTest, AllowedDartVMFlag) {
   std::vector<const char*> flags = {
       "--enable-isolate-groups",
       "--no-enable-isolate-groups",
+      "--lazy_async_stacks",
+      "--no-causal_async_stacks",
   };
 #if !FLUTTER_RELEASE
   flags.push_back("--max_profile_depth 1");
@@ -1048,12 +1051,18 @@ TEST_F(ShellTest,
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
-
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_ref;
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-        external_view_embedder->UpdatePostPrerollResult(
-            PostPrerollResult::kSuccess);
+        if (!raster_thread_merger_ref) {
+          raster_thread_merger_ref = raster_thread_merger;
+        }
+        if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
+          raster_thread_merger->MergeWithLease(10);
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
+        }
         end_frame_latch.Signal();
       };
   external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
@@ -1061,7 +1070,6 @@ TEST_F(ShellTest,
 
   auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
                            false, external_view_embedder);
-
   PlatformViewNotifyCreated(shell.get());
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -1071,13 +1079,18 @@ TEST_F(ShellTest,
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
   PumpOneFrame(shell.get());
-  // `EndFrame` changed the post preroll result to `kSuccess`.
+  // `EndFrame` changed the post preroll result to `kSuccess` and merged the
+  // threads. During the frame, the threads are not merged, So no
+  // `external_view_embedder->GetSubmittedFrameCount()` is called.
+  end_frame_latch.Wait();
+  ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  // This is the resubmitted frame, which threads are also merged.
   end_frame_latch.Wait();
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
 
-  end_frame_latch.Wait();
-  ASSERT_EQ(2, external_view_embedder->GetSubmittedFrameCount());
-
+  PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
 }
 
@@ -1326,7 +1339,7 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-static size_t GetRasterizerResourceCacheBytesSync(Shell& shell) {
+static size_t GetRasterizerResourceCacheBytesSync(const Shell& shell) {
   size_t bytes = 0;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
@@ -2017,14 +2030,29 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   SkISize expected_size = SkISize::Make(400, 200);
 
   fml::AutoResetWaitableEvent end_frame_latch;
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_ref;
+  auto end_frame_callback =
+      [&](bool should_merge_thread,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        if (!raster_thread_merger_ref) {
+          raster_thread_merger_ref = raster_thread_merger;
+        }
+        if (should_merge_thread) {
+          // TODO(cyanglaz): This test used external_view_embedder so we need to
+          // merge the threads here. However, the scenario it is testing is
+          // unrelated to platform views. We should consider to update this test
+          // so it doesn't require external_view_embedder.
+          // https://github.com/flutter/flutter/issues/69895
+          raster_thread_merger->MergeWithLease(10);
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
+        }
+        end_frame_latch.Signal();
+      };
 
-  auto end_frame_callback = [&](bool, fml::RefPtr<fml::RasterThreadMerger>) {
-    end_frame_latch.Signal();
-  };
-
-  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder =
-      std::make_shared<ShellTestExternalViewEmbedder>(
-          std::move(end_frame_callback), PostPrerollResult::kSuccess, true);
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      std::move(end_frame_callback), PostPrerollResult::kResubmitFrame, true);
 
   std::unique_ptr<Shell> shell = CreateShell(
       settings, GetTaskRunnersForFixture(), false, external_view_embedder);
@@ -2045,8 +2073,6 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->GetEngine();
-
   PumpOneFrame(shell.get(), static_cast<double>(wrong_size.width()),
                static_cast<double>(wrong_size.height()));
 
@@ -2054,14 +2080,22 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
 
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
+  // Threads will be merged at the end of this frame.
   PumpOneFrame(shell.get(), static_cast<double>(expected_size.width()),
                static_cast<double>(expected_size.height()));
 
   end_frame_latch.Wait();
+  // Even the threads are merged at the end of the frame,
+  // during the frame, the threads are not merged,
+  // So no `external_view_embedder->GetSubmittedFrameCount()` is called.
+  ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
+  end_frame_latch.Wait();
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
   ASSERT_EQ(expected_size, external_view_embedder->GetLastSubmittedFrameSize());
 
+  PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
 }
 
@@ -2181,6 +2215,96 @@ TEST_F(ShellTest, OnServiceProtocolSetAssetBundlePathWorks) {
   ASSERT_TRUE(can_access_resource);
 
   DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, EngineRootIsolateLaunchesDontTakeVMDataSettings) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  // Make sure the shell launch does not kick off the creation of the VM
+  // instance by already creating one upfront.
+  auto vm_settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(vm_settings);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+
+  auto settings = vm_settings;
+  fml::AutoResetWaitableEvent isolate_create_latch;
+  settings.root_isolate_create_callback = [&](const auto& isolate) {
+    isolate_create_latch.Signal();
+  };
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(configuration.IsValid());
+  RunEngine(shell.get(), std::move(configuration));
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  DestroyShell(std::move(shell));
+  isolate_create_latch.Wait();
+}
+
+TEST_F(ShellTest, AssetManagerSingle) {
+  fml::ScopedTemporaryDirectory asset_dir;
+  fml::UniqueFD asset_dir_fd = fml::OpenDirectory(
+      asset_dir.path().c_str(), false, fml::FilePermission::kRead);
+
+  std::string filename = "test_name";
+  std::string content = "test_content";
+
+  bool success = fml::WriteAtomically(asset_dir_fd, filename.c_str(),
+                                      fml::DataMapping(content));
+  ASSERT_TRUE(success);
+
+  AssetManager asset_manager;
+  asset_manager.PushBack(
+      std::make_unique<DirectoryAssetBundle>(std::move(asset_dir_fd), false));
+
+  auto mapping = asset_manager.GetAsMapping(filename);
+  ASSERT_TRUE(mapping != nullptr);
+
+  std::string result(reinterpret_cast<const char*>(mapping->GetMapping()),
+                     mapping->GetSize());
+
+  ASSERT_TRUE(result == content);
+}
+
+TEST_F(ShellTest, AssetManagerMulti) {
+  fml::ScopedTemporaryDirectory asset_dir;
+  fml::UniqueFD asset_dir_fd = fml::OpenDirectory(
+      asset_dir.path().c_str(), false, fml::FilePermission::kRead);
+
+  std::vector<std::string> filenames = {
+      "good0",
+      "bad0",
+      "good1",
+      "bad1",
+  };
+
+  for (auto filename : filenames) {
+    bool success = fml::WriteAtomically(asset_dir_fd, filename.c_str(),
+                                        fml::DataMapping(filename));
+    ASSERT_TRUE(success);
+  }
+
+  AssetManager asset_manager;
+  asset_manager.PushBack(
+      std::make_unique<DirectoryAssetBundle>(std::move(asset_dir_fd), false));
+
+  auto mappings = asset_manager.GetAsMappings("(.*)");
+  ASSERT_TRUE(mappings.size() == 4);
+
+  std::vector<std::string> expected_results = {
+      "good0",
+      "good1",
+  };
+
+  mappings = asset_manager.GetAsMappings("(.*)good(.*)");
+  ASSERT_TRUE(mappings.size() == expected_results.size());
+
+  for (auto& mapping : mappings) {
+    std::string result(reinterpret_cast<const char*>(mapping->GetMapping()),
+                       mapping->GetSize());
+    ASSERT_NE(
+        std::find(expected_results.begin(), expected_results.end(), result),
+        expected_results.end());
+  }
 }
 
 }  // namespace testing
