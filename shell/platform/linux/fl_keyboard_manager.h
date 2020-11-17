@@ -13,24 +13,17 @@
 typedef enum {
   kFlKeyDataKindUp = 1,
   kFlKeyDataKindDown,
-  kFlKeyDataKindSync,
-  kFlKeyDataKindCancel,
+  kFlKeyDataKindRepeat,
 } FlKeyEventKind;
 
 typedef struct {
   FlKeyEventKind kind;
-  uint64_t key;
-  const char* character;
-  bool repeated;
-} FlLogicalKeyDatum;
-
-typedef struct {
-  FlKeyEventKind kind;
-  uint64_t key;
-  bool repeated;
   double timestamp;
-  uint32_t active_locks;
-  size_t logical_data_count;
+  uint64_t physical;
+  uint64_t logical;
+  uint32_t locks;
+  const char* character;
+  bool synthesized;
 } FlKeyDatum;
 
 constexpr int kMaxConvertedKeyData = 3;

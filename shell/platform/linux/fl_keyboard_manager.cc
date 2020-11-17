@@ -34,16 +34,8 @@ struct _FlKeyboardManager {
 
   // Stores pressed keys, mapping their Flutter physical key to Flutter logical key.
   //
-  // Both keys and values are malloc'd uint64. Responsible of freeing its keys,
-  // but not its values.
+  // Both keys and values are directly stored uint64s.
   GHashTable* pressing_records;
-
-  // Maps pressed logical keys to the times they are pressed; i.e. the times
-  // they appear as values of `pressing_records`.
-  //
-  // Keys are malloc'd uint64_t, values are malloc'd int. Responsible of
-  // freeing keys and values.
-  GHashTable* pressed_logicals;
 
   // A static map from XKB to Flutter's physical key code
   GHashTable* xkb_to_physical_key;
@@ -147,8 +139,7 @@ static int assign_pressed_logical(GHashTable* pressing_records,
 
 size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
                                              const GdkEventKey* event,
-                                             FlKeyDatum* result_physical,
-                                             FlLogicalKeyDatum* result_logical) {
+                                             FlKeyDatum* results) {
   printf("===START=== state %d\n", event->state);
   if (self->character_to_free != nullptr) {
     g_free(self->character_to_free);
@@ -158,87 +149,37 @@ size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
   uint64_t logical_key = event_to_logical_key(event, self->keyval_to_logical_key);
   bool is_physical_down = event->type == GDK_KEY_PRESS;
 
-  uint64_t pressed_logical_key = pressed_logical_for_physical(self->pressing_records, physical_key);
-  uint64_t last_logical_record = pressed_logical_key;
-  uint64_t next_logical_record = is_physical_down ? logical_key : 0;
+  uint64_t last_logical_record = pressed_logical_for_physical(self->pressing_records, physical_key);
+  uint64_t next_logical_record = is_physical_down ? (last_logical_record : 0;
 
-  size_t logical_data_count = 0;
   char* character_to_free = nullptr;
-  bool is_repeated = false;
 
   printf("last %lu next %lu down %d type %d\n", last_logical_record, next_logical_record, is_physical_down, event->type);
   fflush(stdout);
 
-  if (last_logical_record != next_logical_record) {
-      // Case 1: The pressing record for the physical key becomes a different
-      // record from before.
-      //
-      //  * From null to non-null: Simple keydown
-      //  * From non-null to null: Simple keyup
-      //  * From non-null to a different non-null: The physical key starts to map
-      //    to a different logical key. Cancel the previous one and sync the new one.
+  FlKeyDatum* base_event = results + 0;
+  base_event->physical = physical_key;
+  base_event->timestamp = event_to_timestamp(event);
+  base_event->synthesized = false;
 
-    int pressed_logical_key_last_count = pressed_logical_key == 0 ? 0 :
-        decrease_pressed_logical_count(self->pressed_logicals, pressed_logical_key);
-    if (pressed_logical_key_last_count == 1) {
-      FlLogicalKeyDatum* logical_datum = result_logical + (logical_data_count++);
-      logical_datum->kind = next_logical_record == 0 ? kFlKeyDataKindUp : kFlKeyDataKindCancel;
-      logical_datum->key = last_logical_record;
-      logical_datum->repeated = false;
-      logical_datum->character = NULL;
+  if (is_physical_down) {
+    character_to_free = event_to_character(event); // Might be null
+    base_event->character = character_to_free;
+
+    if (last_logical_record) {
+      // GTK doesn't report repeat events separatedly, therefore we can't
+      // distinguish a repeat event from a down event after a missed up event.
+      base_event->kind = kFlKeyDataKindRepeat;
+      base_event->logical = last_logical_record;
+    } else {
+      base_event->kind = kFlKeyDataKindDown;
+      base_event->logical = logical_key;
     }
-    printf("beforeinsertsize %d\n", g_hash_table_size(self->pressing_records));
-    int logical_key_next_count = next_logical_record == 0 ? 0 :
-        assign_pressed_logical(self->pressing_records, self->pressed_logicals,
-            physical_key, logical_key);
-    printf("afterinsertsize %d\n", g_hash_table_size(self->pressing_records));
-    if (logical_key_next_count == 1) {
-      FlLogicalKeyDatum* logical_datum = result_logical + (logical_data_count++);
-      logical_datum->kind = last_logical_record == 0 ? kFlKeyDataKindDown : kFlKeyDataKindSync;
-      logical_datum->key = next_logical_record;
-      logical_datum->repeated = false;
-      character_to_free = event_to_character(event);
-      logical_datum->character = character_to_free;
-    }
-    printf("pressed_last %d next %d\n", pressed_logical_key_last_count, logical_key_next_count);
-    fflush(stdout);
-
-    printf("beforesize %d\n", g_hash_table_size(self->pressing_records));
-    if (next_logical_record == 0) {
-      g_hash_table_remove(self->pressing_records, uint64ToGpointer(physical_key));
-      printf("removed %lu\n", physical_key);
-    }
-    printf("aftersize %d\n", g_hash_table_size(self->pressing_records));
-    fflush(stdout);
-
-  } else if (next_logical_record != 0) {
-    // Case 2: The pressing record for the physical key is a same non-null
-    // record as before, but received an event anyway.
-    //
-    // GTK does not indicate whether an event is repeated, therefore we can only
-    // assume they are all repeated.
-
-    FlLogicalKeyDatum* logical_datum = result_logical + (logical_data_count++);
-    logical_datum->kind = next_logical_record == 0 ? kFlKeyDataKindDown : kFlKeyDataKindUp;
-    logical_datum->key = last_logical_record;
-    logical_datum->repeated = true;
-    character_to_free = event_to_character(event);
-    logical_datum->character = character_to_free;
-    is_repeated = true;
-  } else {
-    // Case 3: The physical record for the physical key is a same null state
-    // as before, indicating an omitted down event, usually due to loss of
-    // focus. Skip.
-    return 0;
+  } else { // is_physical_down false
+    base_event->character = nullptr;
+    base_event->kind = kFlKeyDataKindUp;
+    base_event->logical = logical_key;
   }
-
-  FlKeyDatum* physical_datum = result_physical + 0;
-  physical_datum->logical_data_count = logical_data_count;
-  physical_datum->timestamp = event_to_timestamp(event);
-  physical_datum->active_locks = 0;
-  physical_datum->kind = is_physical_down ? kFlKeyDataKindDown : kFlKeyDataKindUp;
-  physical_datum->key = physical_key;
-  physical_datum->repeated = is_repeated;
 
   return 1;
 }

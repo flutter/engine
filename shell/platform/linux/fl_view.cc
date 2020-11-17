@@ -116,10 +116,8 @@ static FlutterKeyEventKind convertKeyEventKind(FlKeyEventKind kind) {
       return kFlutterKeyEventKindUp;
     case kFlKeyDataKindDown:
       return kFlutterKeyEventKindDown;
-    case kFlKeyDataKindSync:
-      return kFlutterKeyEventKindSync;
-    case kFlKeyDataKindCancel:
-      return kFlutterKeyEventKindCancel;
+    case kFlKeyDataKindRepeat:
+      return kFlutterKeyEventKindRepeat;
   }
 }
 
@@ -136,50 +134,22 @@ static char *nullable_strcpy(char* dest, const char* src) {
 
 // Sends a Flutter key event to the engine.
 static gboolean fl_view_send_key_event(FlView* self, const GdkEventKey* event) {
-  FlKeyDatum physical_data[kMaxConvertedKeyData] = {};
-  FlLogicalKeyDatum logical_data[kMaxConvertedLogicalKeyData] = {};
+  FlKeyDatum key_data[kMaxConvertedKeyData] = {};
   size_t result_count = fl_keyboard_manager_convert_key_event(
-      self->keyboard_manager, event, physical_data, logical_data);
-  size_t base_logical_index = 0;
-  for (size_t physical_index = 0; physical_index < result_count; physical_index++) {
-    FlKeyDatum* physical_datum = physical_data + physical_index;
+      self->keyboard_manager, event, key_data);
+  for (size_t data_index = 0; data_index < result_count; data_index++) {
+    FlKeyDatum* key_datum = key_data + data_index;
     FlutterKeyEvent fl_event = {};
     fl_event.struct_size = sizeof(fl_event);
-    fl_event.timestamp = physical_datum->timestamp;
-    fl_event.active_locks = physical_datum->active_locks;
-    fl_event.kind = convertKeyEventKind(physical_datum->kind);
-    fl_event.key = physical_datum->key;
-    fl_event.repeated = physical_datum->repeated;
-    fl_event.active_locks = physical_datum->active_locks;
-    fl_event.logical_event_count = physical_datum->logical_data_count;
-
-    size_t character_sizes[fl_event.logical_event_count];
-    size_t character_data_size = 0;
-    for (size_t logical_index = 0; logical_index < fl_event.logical_event_count; logical_index++) {
-      character_sizes[logical_index] = nullable_strlen(logical_data[base_logical_index + logical_index].character);
-      character_data_size += character_sizes[logical_index];
-    }
-    uint8_t logical_characters_data[character_data_size];
-    fl_event.logical_characters_data = logical_characters_data;
-
-    FlutterLogicalKeyEvent logical_events[fl_event.logical_event_count];
-    fl_event.logical_events = logical_events;
-
-    static_assert(sizeof(uint8_t) == sizeof(char));
-    char* base_character_head = reinterpret_cast<char*>(logical_characters_data);
-    for (size_t logical_index = 0; logical_index < fl_event.logical_event_count; logical_index++) {
-      FlLogicalKeyDatum *logical_datum = logical_data + (base_logical_index + logical_index);
-      nullable_strcpy(base_character_head, logical_datum->character);
-      logical_events[logical_index].struct_size = sizeof(FlutterLogicalKeyEvent);
-      logical_events[logical_index].character_size = character_sizes[logical_index];
-      logical_events[logical_index].key = logical_datum->key;
-      logical_events[logical_index].kind = convertKeyEventKind(logical_datum->kind);
-      logical_events[logical_index].repeated = logical_datum->repeated;
-      base_character_head += character_sizes[logical_index];
-    }
+    fl_event.timestamp = key_datum->timestamp;
+    fl_event.kind = convertKeyEventKind(key_datum->kind);
+    fl_event.physical = key_datum->physical;
+    fl_event.logical = key_datum->logical;
+    fl_event.locks = key_datum->locks;
+    fl_event.character = key_datum->character;
+    fl_event.synthesized = key_datum->synthesized;
 
     fl_engine_send_key_event(self->engine, &fl_event);
-    base_logical_index += fl_event.logical_event_count;
   }
   return TRUE;
 }
