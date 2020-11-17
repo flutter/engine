@@ -21,7 +21,7 @@ class TextureRegistrarImpl : public TextureRegistrar {
   TextureRegistrarImpl(TextureRegistrarImpl const&) = delete;
   TextureRegistrarImpl& operator=(TextureRegistrarImpl const&) = delete;
 
-  int64_t RegisterTexture(Texture* texture) override;
+  int64_t RegisterTexture(TextureVariant* texture) override;
   bool MarkTextureFrameAvailable(int64_t texture_id) override;
   bool UnregisterTexture(int64_t texture_id) override;
 

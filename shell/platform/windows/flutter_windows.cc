@@ -197,10 +197,9 @@ FlutterDesktopTextureRegistrarRef FlutterDesktopRegistrarGetTextureRegistrar(
 
 int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    FlutterDesktopTextureCallback texture_callback,
-    void* user_data) {
+    const FlutterDesktopTextureInfo* texture_info) {
   return TextureRegistrarFromHandle(texture_registrar)
-      ->RegisterTexture(texture_callback, user_data);
+      ->RegisterTexture(texture_info);
 }
 
 bool FlutterDesktopTextureRegistrarUnregisterExternalTexture(

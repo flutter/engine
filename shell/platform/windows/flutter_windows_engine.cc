@@ -367,4 +367,20 @@ void FlutterWindowsEngine::SendSystemSettings() {
   settings_channel_->Send(settings);
 }
 
+bool FlutterWindowsEngine::RegisterExternalTexture(int64_t texture_id) {
+  return (embedder_api_.RegisterExternalTexture(engine_, texture_id) ==
+          kSuccess);
+}
+
+bool FlutterWindowsEngine::UnregisterExternalTexture(int64_t texture_id) {
+  return (embedder_api_.UnregisterExternalTexture(engine_, texture_id) ==
+          kSuccess);
+}
+
+bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
+    int64_t texture_id) {
+  return (embedder_api_.MarkExternalTextureFrameAvailable(
+              engine_, texture_id) == kSuccess);
+}
+
 }  // namespace flutter

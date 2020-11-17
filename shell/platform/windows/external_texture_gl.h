@@ -19,7 +19,7 @@ typedef struct ExternalTextureGLState ExternalTextureGLState;
 // An abstraction of an OpenGL texture.
 class ExternalTextureGL {
  public:
-  ExternalTextureGL(FlutterDesktopTextureCallback texture_callback,
+  ExternalTextureGL(FlutterDesktopPixelBufferTextureCallback texture_callback,
                     void* user_data);
 
   virtual ~ExternalTextureGL();
@@ -45,7 +45,7 @@ class ExternalTextureGL {
   bool CopyPixelBuffer(size_t& width, size_t& height);
 
   std::unique_ptr<ExternalTextureGLState> state_;
-  FlutterDesktopTextureCallback texture_callback_ = nullptr;
+  FlutterDesktopPixelBufferTextureCallback texture_callback_ = nullptr;
   void* user_data_ = nullptr;
 };
 

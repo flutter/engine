@@ -68,7 +68,7 @@ struct ExternalTextureGLState {
 };
 
 ExternalTextureGL::ExternalTextureGL(
-    FlutterDesktopTextureCallback texture_callback,
+    FlutterDesktopPixelBufferTextureCallback texture_callback,
     void* user_data)
     : state_(std::make_unique<ExternalTextureGLState>()),
       texture_callback_(texture_callback),

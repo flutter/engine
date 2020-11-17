@@ -15,25 +15,32 @@ namespace flutter {
 
 namespace {
 
+class TestPixelBufferTextureDelegate : public PixelBufferTextureDelegate {
+ public:
+  const FlutterDesktopPixelBuffer* CopyPixelBuffer(size_t width,
+                                                   size_t height) override {
+    return nullptr;
+  }
+};
+
 // Stub implementation to validate calls to the API.
 class TestApi : public testing::StubFlutterApi {
  public:
-  struct FakeTexture {
+  struct FakePixelBufferTexture {
     int64_t texture_id;
     int32_t mark_count;
-    FlutterDesktopTextureCallback texture_callback;
+    FlutterDesktopPixelBufferTextureCallback texture_callback;
     void* user_data;
   };
 
  public:
   int64_t TextureRegistrarRegisterExternalTexture(
-      FlutterDesktopTextureCallback texture_callback,
-      void* user_data) override {
+      const FlutterDesktopTextureInfo* info) override {
     last_texture_id_++;
 
-    auto texture = std::make_unique<FakeTexture>();
-    texture->texture_callback = texture_callback;
-    texture->user_data = user_data;
+    auto texture = std::make_unique<FakePixelBufferTexture>();
+    texture->texture_callback = info->pixel_buffer.callback;
+    texture->user_data = info->pixel_buffer.user_data;
     texture->mark_count = 0;
     texture->texture_id = last_texture_id_;
 
@@ -59,7 +66,7 @@ class TestApi : public testing::StubFlutterApi {
     return false;
   }
 
-  FakeTexture* GetFakeTexture(int64_t texture_id) {
+  FakePixelBufferTexture* GetFakeTexture(int64_t texture_id) {
     auto it = textures_.find(texture_id);
     if (it != textures_.end()) {
       return it->second.get();
@@ -73,7 +80,7 @@ class TestApi : public testing::StubFlutterApi {
 
  private:
   int64_t last_texture_id_ = -1;
-  std::map<int64_t, std::unique_ptr<FakeTexture>> textures_;
+  std::map<int64_t, std::unique_ptr<FakePixelBufferTexture>> textures_;
 };
 
 }  // namespace
@@ -93,13 +100,16 @@ TEST(TextureRegistrarTest, RegisterUnregisterTexture) {
   auto texture = test_api->GetFakeTexture(0);
   EXPECT_EQ(texture, nullptr);
 
-  int64_t texture_id = textures->RegisterTexture(reinterpret_cast<Texture*>(2));
+  auto pixel_buffer_texture = std::make_unique<TextureVariant>(
+      PixelBufferTexture(std::make_unique<TestPixelBufferTextureDelegate>()));
+  int64_t texture_id = textures->RegisterTexture(pixel_buffer_texture.get());
   EXPECT_EQ(test_api->last_texture_id(), texture_id);
   EXPECT_EQ(test_api->textures_size(), static_cast<size_t>(1));
 
   texture = test_api->GetFakeTexture(texture_id);
   EXPECT_EQ(texture->texture_id, texture_id);
-  EXPECT_EQ(texture->user_data, reinterpret_cast<Texture*>(2));
+  EXPECT_EQ(texture->user_data,
+            std::get_if<PixelBufferTexture>(pixel_buffer_texture.get()));
 
   textures->MarkTextureFrameAvailable(texture_id);
   textures->MarkTextureFrameAvailable(texture_id);

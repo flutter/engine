@@ -118,6 +118,16 @@ class FlutterWindowsEngine {
   // Informs the engine that the system font list has changed.
   void ReloadSystemFonts();
 
+  // Attempts to register the texture with the given |texture_id|.
+  bool RegisterExternalTexture(int64_t texture_id);
+
+  // Attempts to unregister the texture with the given |texture_id|.
+  bool UnregisterExternalTexture(int64_t texture_id);
+
+  // Notifies the engine about a new frame being available for the
+  // given |texture_id|.
+  bool MarkExternalTextureFrameAvailable(int64_t texture_id);
+
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineEmbedderApiModifier;

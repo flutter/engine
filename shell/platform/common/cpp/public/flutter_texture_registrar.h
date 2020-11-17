@@ -19,6 +19,11 @@ struct FlutterDesktopTextureRegistrar;
 typedef struct FlutterDesktopTextureRegistrar*
     FlutterDesktopTextureRegistrarRef;
 
+typedef enum {
+  // A Pixel buffer-based texture.
+  kFlutterDesktopPixelBufferTexture
+} FlutterDesktopTextureType;
+
 // An image buffer object.
 typedef struct {
   // The pixel data buffer.
@@ -31,18 +36,30 @@ typedef struct {
 
 // The pixel buffer copy callback definition provided to
 // the Flutter engine to copy the texture.
-typedef const FlutterDesktopPixelBuffer* (*FlutterDesktopTextureCallback)(
-    size_t width,
-    size_t height,
-    void* user_data);
+typedef const FlutterDesktopPixelBuffer* (
+    *FlutterDesktopPixelBufferTextureCallback)(size_t width,
+                                               size_t height,
+                                               void* user_data);
 
-// Registers a new texture with the Flutter engine and returns the texture ID,
-// The engine will use the |texture_callback|
-// function to copy the pixel buffer from the caller.
+// An object used to configure pixel buffer textures.
+typedef struct {
+  // The callback used by the engine to copy the pixel buffer object.
+  FlutterDesktopPixelBufferTextureCallback callback;
+  // Opaque data that will get passed to the provided |callback|.
+  void* user_data;
+} FlutterDesktopPixelBufferTextureConfig;
+
+typedef struct {
+  FlutterDesktopTextureType type;
+  union {
+    FlutterDesktopPixelBufferTextureConfig pixel_buffer;
+  };
+} FlutterDesktopTextureInfo;
+
+// Registers a new texture with the Flutter engine and returns the texture ID.
 FLUTTER_EXPORT int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    FlutterDesktopTextureCallback texture_callback,
-    void* user_data);
+    const FlutterDesktopTextureInfo* info);
 
 // Unregisters an existing texture from the Flutter engine for a |texture_id|.
 // Returns true on success or false if the specified texture doesn't exist.

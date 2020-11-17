@@ -19,11 +19,9 @@ class FlutterWindowsTextureRegistrar {
  public:
   explicit FlutterWindowsTextureRegistrar(FlutterWindowsEngine* engine);
 
-  // Registers a texture whose pixel data will be obtained using the
-  // specified |texture_callback|
+  // Registers a texture described by the given |texture_info| object.
   // Returns the non-zero, positive texture id or -1 on error.
-  int64_t RegisterTexture(FlutterDesktopTextureCallback texture_callback,
-                          void* user_data);
+  int64_t RegisterTexture(const FlutterDesktopTextureInfo* texture_info);
 
   // Attempts to unregister the texture identified by |texture_id|.
   // Returns true if the texture was successfully unregistered.

@@ -6,6 +6,8 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include <iostream>
+
 namespace flutter {
 
 FlutterWindowsTextureRegistrar::FlutterWindowsTextureRegistrar(
@@ -13,16 +15,26 @@ FlutterWindowsTextureRegistrar::FlutterWindowsTextureRegistrar(
     : engine_(engine) {}
 
 int64_t FlutterWindowsTextureRegistrar::RegisterTexture(
-    FlutterDesktopTextureCallback texture_callback,
-    void* user_data) {
-  auto texture_gl =
-      std::make_unique<flutter::ExternalTextureGL>(texture_callback, user_data);
+    const FlutterDesktopTextureInfo* texture_info) {
+  if (texture_info->type != kFlutterDesktopPixelBufferTexture) {
+    std::cerr << "Attempted to register texture of unsupport type."
+              << std::endl;
+    return -1;
+  }
+
+  if (!texture_info->pixel_buffer.callback) {
+    std::cerr << "Invalid pixel buffer texture callback." << std::endl;
+    return -1;
+  }
+
+  auto texture_gl = std::make_unique<flutter::ExternalTextureGL>(
+      engine_, texture_info->pixel_buffer.callback,
+      texture_info->pixel_buffer.user_data);
 
   int64_t texture_id = texture_gl->texture_id();
   textures_[texture_id] = std::move(texture_gl);
 
-  if (FlutterEngineRegisterExternalTexture(engine_->engine(), texture_id) ==
-      kSuccess) {
+  if (engine_->RegisterExternalTexture(texture_id)) {
     return texture_id;
   }
 
@@ -34,14 +46,12 @@ bool FlutterWindowsTextureRegistrar::UnregisterTexture(int64_t texture_id) {
   if (it != textures_.end()) {
     textures_.erase(it);
   }
-  return (FlutterEngineUnregisterExternalTexture(engine_->engine(),
-                                                 texture_id) == kSuccess);
+  return engine_->UnregisterExternalTexture(texture_id);
 }
 
 bool FlutterWindowsTextureRegistrar::MarkTextureFrameAvailable(
     int64_t texture_id) {
-  return (FlutterEngineMarkExternalTextureFrameAvailable(
-              engine_->engine(), texture_id) == kSuccess);
+  return engine_->MarkExternalTextureFrameAvailable(texture_id);
 }
 
 bool FlutterWindowsTextureRegistrar::PopulateTexture(
