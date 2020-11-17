@@ -489,7 +489,11 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   for (size_t i = 0; i < num_platform_views; i++) {
     int64_t platform_view_id = composition_order_[i];
     sk_sp<RTree> rtree = platform_view_rtrees_[platform_view_id];
-    sk_sp<SkPicture> picture = picture_recorders_[platform_view_id]->finishRecordingAsPicture();
+
+    sk_sp<SkPicture> picture = nullptr;
+    if (picture_recorders_[platform_view_id]->getRecordingCanvas()) {
+      picture = picture_recorders_[platform_view_id]->finishRecordingAsPicture();
+    }
 
     // Check if the current picture contains overlays that intersect with the
     // current platform view or any of the previous platform views.
@@ -544,7 +548,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
         overlay_id++;
       }
     }
-    background_canvas->drawPicture(picture);
+    if (picture) {
+      background_canvas->drawPicture(picture);
+    }
   }
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
