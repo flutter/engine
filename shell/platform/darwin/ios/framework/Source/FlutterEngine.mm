@@ -941,11 +941,17 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Settings settings = _shell->GetSettings();
   SetEntryPoint(&settings, entrypoint, libraryURI);
 
+  fml::WeakPtr<flutter::PlatformView> platform_view = _shell->GetPlatformView();
+  FML_DCHECK(platform_view);
+  flutter::PlatformViewIOS* ios_platform_view =
+      static_cast<flutter::PlatformViewIOS*>(platform_view.get());
+  std::shared_ptr<flutter::IOSContext> context = ios_platform_view->GetIosContext();
+  FML_DCHECK(context);
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
-      [result](flutter::Shell& shell) {
+      [result, context](flutter::Shell& shell) {
         [result recreatePlatformViewController];
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, result->_renderingApi, result->_platformViewsController, shell.GetTaskRunners());
+            shell, context, result->_platformViewsController, shell.GetTaskRunners());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =

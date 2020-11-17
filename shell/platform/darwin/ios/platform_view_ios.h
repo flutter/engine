@@ -40,6 +40,11 @@ namespace flutter {
  */
 class PlatformViewIOS final : public PlatformView {
  public:
+  PlatformViewIOS(PlatformView::Delegate& delegate,
+                  const std::shared_ptr<IOSContext>& context,
+                  const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
+                  flutter::TaskRunners task_runners);
+
   explicit PlatformViewIOS(
       PlatformView::Delegate& delegate,
       IOSRenderingAPI rendering_api,
@@ -87,6 +92,8 @@ class PlatformViewIOS final : public PlatformView {
 
   // |PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
+
+  const std::shared_ptr<IOSContext>& GetIosContext() { return ios_context_; }
 
  private:
   /// Smart pointer for use with objective-c observers.
