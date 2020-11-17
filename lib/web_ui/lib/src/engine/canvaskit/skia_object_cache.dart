@@ -321,8 +321,8 @@ class SkiaObjectBox<R extends StackTraceDebugger, T> {
 
   /// Deletes Skia objects when their wrappers are garbage collected.
   static final SkObjectFinalizationRegistry boxRegistry =
-      SkObjectFinalizationRegistry(js.allowInterop((SkiaObjectBox box) {
-    box._skDeletable.delete();
+      SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
+    deletable.delete();
   }));
 
   /// Increases the reference count of this box because a new object began
