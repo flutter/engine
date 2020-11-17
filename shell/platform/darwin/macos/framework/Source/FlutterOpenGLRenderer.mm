@@ -97,7 +97,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (uint32_t)getFBO:(const FlutterFrameInfo*)info {
   CGSize size = CGSizeMake(info->size.width, info->size.height);
-  return [_flutterView frameBufferIDForSize:size];
+  return [[_flutterView backingStoreForSize:size] getFrameBufferId];
 }
 
 - (NSOpenGLContext*)resourceContext {

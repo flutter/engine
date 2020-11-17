@@ -56,6 +56,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterMouseCursorPlugin.mm",
     "framework/Source/FlutterOpenGLRenderer.h",
     "framework/Source/FlutterOpenGLRenderer.mm",
+    "framework/Source/FlutterResizableBackingStoreProvider.h",
+    "framework/Source/FlutterResizableBackingStoreProvider.mm",
     "framework/Source/FlutterResizeSynchronizer.h",
     "framework/Source/FlutterResizeSynchronizer.mm",
     "framework/Source/FlutterSurfaceManager.h",

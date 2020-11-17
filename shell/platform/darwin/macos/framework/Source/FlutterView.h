@@ -4,6 +4,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h"
+
 /**
  * Listener for view resizing.
  */
@@ -41,9 +43,9 @@
 - (void)present;
 
 /**
- * Ensures that framebuffer with requested size exists and returns the ID. Expected to be called on
- * raster thread.
+ * Ensures that a backing store with requested size exists and returns the descriptor. Expected to
+ * be called on raster thread.
  */
-- (int)frameBufferIDForSize:(CGSize)size;
+- (nonnull FlutterBackingStoreDescriptor*)backingStoreForSize:(CGSize)size;
 
 @end

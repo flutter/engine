@@ -4,18 +4,17 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
 
 #import <OpenGL/gl.h>
 #import <QuartzCore/QuartzCore.h>
 
-@interface FlutterView () <FlutterResizeSynchronizerDelegate> {
+@interface FlutterView () {
   __weak id<FlutterViewReshapeListener> _reshapeListener;
+  id<FlutterResizableBackingStoreProvider> _resizableBackingStoreProvider;
   FlutterResizeSynchronizer* _resizeSynchronizer;
-  FlutterSurfaceManager* _surfaceManager;
-  NSOpenGLContext* _openGLContext;
 }
 
 @end
@@ -32,37 +31,23 @@
               reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
   self = [super initWithFrame:frame];
   if (self) {
-    _openGLContext = mainContext;
     [self setWantsLayer:YES];
 
-    _resizeSynchronizer = [[FlutterResizeSynchronizer alloc] initWithDelegate:self];
-    _surfaceManager = [[FlutterSurfaceManager alloc] initWithLayer:self.layer
-                                                     openGLContext:_openGLContext];
-
+    _resizableBackingStoreProvider =
+        [[FlutterOpenGLResizableBackingStoreProvider alloc] initWithMainContext:mainContext
+                                                                       andLayer:self.layer];
+    _resizeSynchronizer =
+        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
     _reshapeListener = reshapeListener;
   }
   return self;
 }
 
-- (void)resizeSynchronizerFlush:(FlutterResizeSynchronizer*)synchronizer {
-  MacOSGLContextSwitch context_switch(_openGLContext);
-  glFlush();
-}
-
-- (void)resizeSynchronizerCommit:(FlutterResizeSynchronizer*)synchronizer {
-  [CATransaction begin];
-  [CATransaction setDisableActions:YES];
-
-  [_surfaceManager swapBuffers];
-
-  [CATransaction commit];
-}
-
-- (int)frameBufferIDForSize:(CGSize)size {
+- (FlutterBackingStoreDescriptor*)backingStoreForSize:(CGSize)size {
   if ([_resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
-    [_surfaceManager ensureSurfaceSize:size];
+    [_resizableBackingStoreProvider updateBackingStoreIfNecessaryForSize:size];
   }
-  return [_surfaceManager glFrameBufferId];
+  return [_resizableBackingStoreProvider getBackingStore];
 }
 
 - (void)present {
