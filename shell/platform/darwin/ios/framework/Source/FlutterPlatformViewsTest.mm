@@ -136,8 +136,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners);
 
-  auto flutterPlatformViewsController = std::make_unique<flutter::FlutterPlatformViewsController>();
-
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
   flutterPlatformViewsController->RegisterViewFactory(
