@@ -241,7 +241,8 @@ void FlutterPlatformViewsController::RegisterViewFactory(
   gesture_recognizers_blocking_policies[idString] = gestureRecognizerBlockingPolicy;
 }
 
-void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
+void FlutterPlatformViewsController::BeginFrame(SkISize frame_size) {
+  composition_order_.clear();
   frame_size_ = frame_size;
 }
 
@@ -588,13 +589,6 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
     }
     active_composition_order_.push_back(platform_view_id);
   }
-}
-
-void FlutterPlatformViewsController::EndFrame(
-    bool should_resubmit_frame,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  // Reset the composition order, so next frame starts empty.
-  composition_order_.clear();
 }
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLayer(
