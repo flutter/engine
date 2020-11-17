@@ -1,4 +1,4 @@
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestsUtils.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 
 namespace flutter::testing {
 

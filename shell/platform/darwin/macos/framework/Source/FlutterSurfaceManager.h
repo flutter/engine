@@ -3,7 +3,9 @@
 // Manages the IOSurfaces for FlutterView
 @interface FlutterSurfaceManager : NSObject
 
-- (instancetype)initWithLayer:(CALayer*)layer openGLContext:(NSOpenGLContext*)opengLContext;
+- (instancetype)initWithLayer:(CALayer*)containingLayer
+                openGLContext:(NSOpenGLContext*)openGLContext
+              numFramebuffers:(int)numFramebuffers;
 
 - (void)ensureSurfaceSize:(CGSize)size;
 - (void)swapBuffers;
@@ -16,14 +18,15 @@
 - (void)setLayerContent;
 
 /**
- * Sets the CALayer content to the content of the provided ioSurface.
+ * Sets the CALayer content to the content of ioSurface at ioSurfaceNum.
  */
-- (void)setLayerContentWithIOSurface:(IOSurfaceRef*)ioSurface;
+// TODO(richardjcai): Fix this and remove setLayerContent.
+- (void)setLayerContentWithIOSurface:(int)ioSurfaceNum;
 
 /**
  * Binds the IOSurface to the provided texture/framebuffer.
  */
-- (void)backTextureWithIOSurface:(IOSurfaceRef*)ioSurface
+- (void)backTextureWithIOSurface:(int)ioSurfaceNum
                             size:(CGSize)size
                   backingTexture:(GLuint)texture
                              fbo:(GLuint)fbo;
@@ -46,15 +49,5 @@
  * texture is collected.
  */
 - (uint32_t)getTexture;
-
-/**
- * Returns the kFront IOSurfaceRef.
- * The IOSurface is backed by the FBO provided by getFramebuffer
- * and texture provided by getTexture. The IOSurface is used
- * in FlutterMacOSCompositor's Present call.
- * The IOSurface is collected when the backing store that uses the
- * IOSurface is collected.
- */
-- (IOSurfaceRef*)getIOSurface;
 
 @end

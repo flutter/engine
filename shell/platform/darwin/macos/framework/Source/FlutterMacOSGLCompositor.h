@@ -12,19 +12,20 @@
 
 namespace flutter {
 
-/**
- * FlutterMacOSGLCompositor creates and manages backing stores used for
- * rendering Flutter content and presents Flutter content and Platform views.
- */
+// FlutterMacOSGLCompositor creates and manages the backing stores used for
+// rendering Flutter content and presents Flutter content and Platform views.
+// Platform views are not yet supported.
+// FlutterMacOSGLCompositor is created and destroyed by FlutterEngine. 
 class FlutterMacOSGLCompositor {
  public:
-  FlutterMacOSGLCompositor(FlutterViewController* view_controller,
-                           NSOpenGLContext* open_gl_context);
+  FlutterMacOSGLCompositor(FlutterViewController* view_controller);
 
-  virtual ~FlutterMacOSGLCompositor();
-
-  // Creates a backing store according to FlutterBackingStoreConfig
-  // by modifying backing_store_out.
+  // Creates a FlutterSurfaceManager and uses the FlutterSurfaceManager's
+  // underlying FBO and texture in the backing store.
+  // Any additional state allocated for the backing store and 
+  // saved as user_data in the backing store must be collected
+  // in the backing_store's desctruction_callback field which will
+  // be called when the embedder collects the backing store.
   bool CreateBackingStore(const FlutterBackingStoreConfig* config,
                           FlutterBackingStore* backing_store_out);
 
@@ -40,16 +41,10 @@ class FlutterMacOSGLCompositor {
   // PresentCallback is called at the end of the Present function.
   void SetPresentCallback(const PresentCallback& present_callback);
 
- protected:
+ private:
   FlutterViewController* view_controller_;
   PresentCallback present_callback_;
   NSOpenGLContext* open_gl_context_;
-
-  // Creates a FlutterSurfaceManager and uses the FlutterSurfaceManager's
-  // underlying FBO and texture in the backing store.
-  bool CreateBackingStoreUsingSurfaceManager(
-      const FlutterBackingStoreConfig* config,
-      FlutterBackingStore* backing_store_out);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterMacOSGLCompositor);
 };

@@ -16,15 +16,39 @@
 
 namespace flutter {
 
-FlutterMacOSGLCompositor::FlutterMacOSGLCompositor(FlutterViewController* view_controller,
-                                                   NSOpenGLContext* open_gl_context)
-    : view_controller_(view_controller), open_gl_context_(open_gl_context) {}
-
-FlutterMacOSGLCompositor::~FlutterMacOSGLCompositor() = default;
+FlutterMacOSGLCompositor::FlutterMacOSGLCompositor(FlutterViewController* view_controller)
+    : view_controller_(view_controller),
+      open_gl_context_(view_controller.flutterView.openGLContext) {}
 
 bool FlutterMacOSGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                                   FlutterBackingStore* backing_store_out) {
-  return CreateBackingStoreUsingSurfaceManager(config, backing_store_out);
+  FlutterSurfaceManager* surfaceManager =
+      [[FlutterSurfaceManager alloc] initWithLayer:view_controller_.flutterView.layer
+                                     openGLContext:open_gl_context_
+                                   numFramebuffers:1];
+
+  GLuint fbo = [surfaceManager getFramebuffer];
+  GLuint texture = [surfaceManager getTexture];
+
+  CGSize size = CGSizeMake(config->size.width, config->size.height);
+  size_t kFlutterSurfaceManagerFrontBuffer = 0;
+  [surfaceManager backTextureWithIOSurface:kFlutterSurfaceManagerFrontBuffer
+                                      size:size
+                            backingTexture:texture
+                                       fbo:fbo];
+
+  backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
+  backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
+  backing_store_out->open_gl.framebuffer.target = GL_RGBA8;
+  backing_store_out->open_gl.framebuffer.name = fbo;
+  backing_store_out->open_gl.framebuffer.user_data = (__bridge_retained void*)surfaceManager;
+  backing_store_out->open_gl.framebuffer.destruction_callback = [](void* user_data) {
+    if (user_data != nullptr) {
+      CFRelease(user_data);
+    }
+  };
+
+  return true;
 }
 
 bool FlutterMacOSGLCompositor::CollectBackingStore(const FlutterBackingStore* backing_store) {
@@ -40,11 +64,12 @@ bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layer
     switch (layer->type) {
       case kFlutterLayerContentTypeBackingStore: {
         FlutterSurfaceManager* surfaceManager =
-            (__bridge FlutterSurfaceManager*)backing_store->user_data;
+            (__bridge FlutterSurfaceManager*)backing_store->open_gl.framebuffer.user_data;
 
         CGSize size = CGSizeMake(layer->size.width, layer->size.height);
         [view_controller_.flutterView frameBufferIDForSize:size];
-        [surfaceManager setLayerContentWithIOSurface:[surfaceManager getIOSurface]];
+        size_t kFlutterSurfaceManagerFrontBuffer = 0;
+        [surfaceManager setLayerContentWithIOSurface:kFlutterSurfaceManagerFrontBuffer];
         break;
       }
       case kFlutterLayerContentTypePlatformView:
@@ -54,36 +79,6 @@ bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layer
     };
   }
   return present_callback_();
-}
-
-bool FlutterMacOSGLCompositor::CreateBackingStoreUsingSurfaceManager(
-    const FlutterBackingStoreConfig* config,
-    FlutterBackingStore* backing_store_out) {
-  FlutterSurfaceManager* surfaceManager =
-      [[FlutterSurfaceManager alloc] initWithLayer:view_controller_.flutterView.layer
-                                     openGLContext:open_gl_context_];
-
-  GLuint fbo = [surfaceManager getFramebuffer];
-  GLuint texture = [surfaceManager getTexture];
-  IOSurfaceRef* io_surface_ref = [surfaceManager getIOSurface];
-
-  CGSize size = CGSizeMake(config->size.width, config->size.height);
-
-  [surfaceManager backTextureWithIOSurface:io_surface_ref size:size backingTexture:texture fbo:fbo];
-
-  backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
-  backing_store_out->user_data = (__bridge_retained void*)surfaceManager;
-  backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
-  backing_store_out->open_gl.framebuffer.target = GL_RGBA8;
-  backing_store_out->open_gl.framebuffer.name = fbo;
-  backing_store_out->open_gl.framebuffer.user_data = backing_store_out->user_data;
-  backing_store_out->open_gl.framebuffer.destruction_callback = [](void* user_data) {
-    if (user_data != nullptr) {
-      CFRelease(user_data);
-    }
-  };
-
-  return true;
 }
 
 void FlutterMacOSGLCompositor::SetPresentCallback(
