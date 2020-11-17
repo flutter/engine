@@ -9,12 +9,17 @@
 // Edit the template dev/tools/gen_keycodes/data/keyboard_map_web.tmpl instead.
 // See dev/tools/gen_keycodes/README.md for more information.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Maps Web KeyboardEvent codes to the matching LogicalKeyboardKey id.
 const Map<String, int> kWebToLogicalKey = <String, int>{
   'Unidentified': 0x0000000001,
+  'Backspace': 0x0000000008,
+  'Tab': 0x0000000009,
+  'Enter': 0x000000000d,
+  'Escape': 0x000000001b,
+  'Delete': 0x000000007f,
   'Accel': 0x0000000101,
   'AltGraph': 0x0000000103,
   'CapsLock': 0x0000000104,
@@ -548,7 +553,7 @@ const Map<String, int> kWebToPhysicalKey = <String, int>{
 
 /// Maps Web KeyboardEvent keys to Flutter logical IDs that depend on locations.
 ///
-/// `KeyboardEvent.location` is defined as
+/// `KeyboardEvent.location` is defined as:
 ///
 ///  * 0: Standard
 ///  * 1: Left

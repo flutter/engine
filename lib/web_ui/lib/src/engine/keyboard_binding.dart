@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 typedef VoidCallback = void Function();
@@ -24,17 +24,25 @@ const Map<String, int> _kPhysicalKeyToLockFlag = {
   _kPhysicalScrollLock: _kLockFlagScrollLock,
 };
 
-const int _kLogicalAlt = 0x00000000102;
-const int _kLogicalControl = 0x00000000105;
-const int _kLogicalShift = 0x0000000010d;
-const int _kLogicalMeta = 0x00000000109;
+const int _kLogicalAltLeft = 0x0300000102;
+const int _kLogicalAltRight = 0x0400000102;
+const int _kLogicalControlLeft = 0x0300000105;
+const int _kLogicalControlRight = 0x0400000105;
+const int _kLogicalShiftLeft = 0x030000010d;
+const int _kLogicalShiftRight = 0x040000010d;
+const int _kLogicalMetaLeft = 0x0300000109;
+const int _kLogicalMetaRight = 0x0400000109;
 // Map logical keys for modifier keys to the functions that can get their
 // modifier flag out of an event.
 final Map<int, _ModifierGetter> _kLogicalKeyToModifierGetter = {
-  _kLogicalAlt: (FlutterHtmlKeyboardEvent event) => event.altKey,
-  _kLogicalControl: (FlutterHtmlKeyboardEvent event) => event.ctrlKey,
-  _kLogicalShift: (FlutterHtmlKeyboardEvent event) => event.shiftKey,
-  _kLogicalMeta: (FlutterHtmlKeyboardEvent event) => event.metaKey,
+  _kLogicalAltLeft: (FlutterHtmlKeyboardEvent event) => event.altKey,
+  _kLogicalAltRight: (FlutterHtmlKeyboardEvent event) => event.altKey,
+  _kLogicalControlLeft: (FlutterHtmlKeyboardEvent event) => event.ctrlKey,
+  _kLogicalControlRight: (FlutterHtmlKeyboardEvent event) => event.ctrlKey,
+  _kLogicalShiftLeft: (FlutterHtmlKeyboardEvent event) => event.shiftKey,
+  _kLogicalShiftRight: (FlutterHtmlKeyboardEvent event) => event.shiftKey,
+  _kLogicalMetaLeft: (FlutterHtmlKeyboardEvent event) => event.metaKey,
+  _kLogicalMetaRight: (FlutterHtmlKeyboardEvent event) => event.metaKey,
 };
 
 // After a keydown is received, this is the duration we wait for a repeat event
@@ -250,6 +258,10 @@ class KeyboardConverter {
     if (key.length == 2) {
       result += key.codeUnitAt(1) << 16;
     }
+    // Convert lower letters to upper letters
+    if (result >= _kCharLowerA && result <= _kCharLowerZ) {
+      result = result - _kCharLowerA + _kCharUpperA;
+    }
     return result;
   }
 
@@ -425,7 +437,7 @@ class KeyboardConverter {
 
     } else { // isPhysicalDown is false and not CapsLock
       // Case 2: Handle key up of normal keys
-      if (lastLogicalRecord != null) {
+      if (lastLogicalRecord == null) {
         // The physical key has been released before. It indicates multiple
         // keyboards pressed keys with the same physical key. Ignore the up event.
         return false;
@@ -461,6 +473,7 @@ class KeyboardConverter {
     // events can not be deduced since we don't know which physical key they
     // represent.
     _kLogicalKeyToModifierGetter.forEach((int logicalKey, _ModifierGetter getModifier) {
+      // print(_pressingRecords);
       if (_pressingRecords.containsValue(logicalKey) && !getModifier(event)) {
         _pressingRecords.removeWhere((int physicalKey, int logicalRecord) {
           if (logicalRecord != logicalKey)

@@ -192,7 +192,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnKeyData(ui.KeyData dataPacket) {
-    _invoke1<ui.KeyData>(_onKeyData, _onKeyDataZone, dataPacket);
+    invoke1<ui.KeyData>(_onKeyData, _onKeyDataZone, dataPacket);
   }
 
   /// A callback that is invoked to report the [FrameTiming] of recently
