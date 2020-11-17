@@ -106,7 +106,8 @@ void AccessibilityBridge::SetFocusedNode(int32_t node_id) {
   if (last_focused_node_ != node_id) {
     FlutterAccessibility* last_focused_child = GetFlutterAccessibilityFromID(last_focused_node_);
     if (last_focused_child) {
-      last_focused_child->DispatchAccessibilityAction(last_focused_node_, FlutterSemanticsAction::kFlutterSemanticsActionDidLoseAccessibilityFocus, null, 0);
+      FML_LOG(ERROR) << "find difference focused fired lose focus action";
+      last_focused_child->DispatchAccessibilityAction(last_focused_node_, FlutterSemanticsAction::kFlutterSemanticsActionDidLoseAccessibilityFocus, nullptr, 0);
     }
     last_focused_node_ = node_id;
   }

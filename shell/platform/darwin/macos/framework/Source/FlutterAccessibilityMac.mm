@@ -114,15 +114,8 @@ FlutterAccessibilityMac::~FlutterAccessibilityMac() {
   ax_platform_node_->Destroy();
 }
 
-void FlutterAccessibilityMac::Init(AccessibilityBridge* bridge, AXNode* node) {
-  FlutterAccessibilityMac::Init(bridge, node);
-  ax_node_ = node;
-}
-
-
-
 void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event) {
-  FML_DCHECK(targeted_event.node == ax_node_);
+  FML_DCHECK(targeted_event.node == GetAXNode());
   ax::AXEventGenerator::Event event_type = targeted_event.event_params.event;
   gfx::NativeViewAccessible native_node = GetNativeViewAccessible();
   FML_DCHECK(native_node);
@@ -225,7 +218,7 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
       AXEventGenerator::EventParams event_params(ax::AXEventGenerator::Event::LIVE_REGION_CHANGED,
                 ax::EventFrom::kNone,
                 {});
-      AXEventGenerator::TargetedEvent live_region(ax_node_, event_params);
+      AXEventGenerator::TargetedEvent live_region(GetAXNode(), event_params);
       OnAccessibilityEvent(live_region);
       return;
     }
@@ -376,11 +369,15 @@ bool FlutterAccessibilityMac::IsInGeneratedEventBatch(
 
 // AXPlatformNodeDelegateBase override
 const AXNodeData& FlutterAccessibilityMac::GetData() const {
-  return ax_node_->data();
+  return GetAXNode()->data();
 }
 
 void FlutterAccessibilityMac::DispatchAccessibilityAction(uint16_t target, FlutterSemanticsAction action, uint8_t* data, size_t data_size) {
-  [GetFlutterEngine()]
+  FML_LOG(ERROR) << "dispatch action to engine" << action;
+  [GetFlutterEngine() dispatchSemanticsAction:target
+                                       action:action
+                                         data:data
+                                     dataSize:data_size];
 }
 
 gfx::NativeViewAccessible FlutterAccessibilityMac::GetNativeViewAccessible() {
@@ -389,10 +386,10 @@ gfx::NativeViewAccessible FlutterAccessibilityMac::GetNativeViewAccessible() {
 }
 
 gfx::NativeViewAccessible FlutterAccessibilityMac::GetParent() {
-  if (!ax_node_->parent()) {
+  if (!GetAXNode()->parent()) {
     return nullptr;
   }
-  return GetBridge()->GetFlutterAccessibilityFromID(ax_node_->parent()->id())->GetNativeViewAccessible();
+  return GetBridge()->GetFlutterAccessibilityFromID(GetAXNode()->parent()->id())->GetNativeViewAccessible();
 }
 
 SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinate_system,
@@ -415,7 +412,7 @@ SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinat
   // }
   const bool clip_bounds = clipping_behavior == ax::AXClippingBehavior::kClipped;
   bool offscreen = false;
-  SkRect bounds = GetBridge()->GetAXTree()->RelativeToTreeBounds(ax_node_, GetData().relative_bounds.bounds,
+  SkRect bounds = GetBridge()->GetAXTree()->RelativeToTreeBounds(GetAXNode(), GetData().relative_bounds.bounds,
                                                       &offscreen, clip_bounds);
   // Applies window transform.
   NSRect local_bound;
@@ -441,7 +438,7 @@ SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinat
 
 // Private method
 std::string FlutterAccessibilityMac::GetLiveRegionText() const {
-  if (ax_node_->IsIgnored())
+  if (GetAXNode()->IsIgnored())
     return "";
 
   std::string text = GetData().GetStringAttribute(ax::StringAttribute::kName);
@@ -468,7 +465,7 @@ void FlutterAccessibilityMac::computeTextEdit(std::u16string& inserted_text, std
   // We run this code on all macOS versions to get the highest test coverage.
   std::u16string old_value = old_text_editing_value_;
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert;
-  std::u16string new_value = convert.from_bytes(ax_node_->GetValueForControl());
+  std::u16string new_value = convert.from_bytes(GetAXNode()->GetValueForControl());
   old_text_editing_value_ = new_value;
   if (old_value.empty() && new_value.empty())
     return;
@@ -518,7 +515,7 @@ void FlutterAccessibilityMac::computeTextEdit(std::u16string& inserted_text, std
   deleted_text = current_deleted_text;
   // Creates text marker
   AXNodePosition::AXPositionInstance position = AXNodePosition::CreateTextPosition(
-      ax_node_->tree()->GetAXTreeID(), ax_node_->id(), i,  ax::TextAffinity::kDownstream);
+      GetAXNode()->tree()->GetAXTreeID(), GetAXNode()->id(), i,  ax::TextAffinity::kDownstream);
   AXNodePosition::SerializedPosition serialized = position->Serialize();
   AXTextMarkerRef cf_text_marker = AXTextMarkerCreate(
       kCFAllocatorDefault, reinterpret_cast<const UInt8*>(&serialized),
@@ -575,16 +572,16 @@ FlutterAccessibilityMac::GetUserInfoForValueChangedNotification(
   };
 }
 
-FlutterEngine* FlutterAccessibilityMac::GetFlutterEngine() {
+FlutterEngine* FlutterAccessibilityMac::GetFlutterEngine() const {
   return (__bridge FlutterEngine*)GetBridge()->GetUserData();
 }
 
 int FlutterAccessibilityMac::GetChildCount() const {
-  return static_cast<int>(ax_node_->GetUnignoredChildCount());
+  return static_cast<int>(GetAXNode()->GetUnignoredChildCount());
 }
 
 gfx::NativeViewAccessible FlutterAccessibilityMac::ChildAtIndex(int index) {
-  int32_t child = ax_node_->GetUnignoredChildAtIndex(index)->id();
+  int32_t child = GetAXNode()->GetUnignoredChildAtIndex(index)->id();
   return GetBridge()->GetFlutterAccessibilityFromID(child)->GetNativeViewAccessible();
 }
 

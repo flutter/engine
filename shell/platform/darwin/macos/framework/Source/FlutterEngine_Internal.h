@@ -50,7 +50,7 @@
  */
 - (void)dispatchSemanticsAction:(uint16_t)target
                          action:(FlutterSemanticsAction)action
-                           data:(const uint8_t*)data
+                           data:(const uint8_t* _Nullable)data
                        dataSize:(size_t)dataSize;
 
 @end

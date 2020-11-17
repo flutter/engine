@@ -23,7 +23,8 @@ class FlutterAccessibility : public AXPlatformNodeDelegateBase {
   FlutterAccessibility();
   ~FlutterAccessibility() override;
 
-  AccessibilityBridge* GetBridge();
+  AccessibilityBridge* GetBridge() const;
+  AXNode* GetAXNode() const;
   bool AccessibilityPerformAction(const AXActionData& data) override;
 
   /**
@@ -33,11 +34,12 @@ class FlutterAccessibility : public AXPlatformNodeDelegateBase {
    * 
    * Subclass must call super.
    */
-  void Init(AccessibilityBridge* bridge, AXNode* node);
-  virtual void OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event);
-  virtual void DispatchAccessibilityAction(uint16_t target, FlutterSemanticsAction action, uint8_t* data, size_t data_size);
+  virtual void Init(AccessibilityBridge* bridge, AXNode* node);
+  virtual void OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event) = 0;
+  virtual void DispatchAccessibilityAction(uint16_t target, FlutterSemanticsAction action, uint8_t* data, size_t data_size) = 0;
  private:
-  AccessibilityBridge* bridge_
+  AXNode* ax_node_;
+  AccessibilityBridge* bridge_;
 };
 } // namespace ax
 

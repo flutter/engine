@@ -32,12 +32,11 @@ class FlutterAccessibilityMac : public FlutterAccessibility {
   gfx::NativeViewAccessible GetNSWindow() override;
  
  private:
-  AXNode* ax_node_;
   AXPlatformNode* ax_platform_node_;
   std::u16string old_text_editing_value_;
   std::string GetLiveRegionText() const;
   NSDictionary* GetUserInfoForValueChangedNotification(const id native_node, const std::u16string& deleted_text, const std::u16string& inserted_text, id edit_text_marker);
-  FlutterEngine* GetFlutterEngine();
+  FlutterEngine* GetFlutterEngine() const;
   void FireNativeMacNotification(gfx::NativeViewAccessible native_node, NSString* mac_notification);
   void FireNativeMacNotificationWithUserInfo(gfx::NativeViewAccessible native_node, NSString* mac_notification, NSDictionary* user_info);
   void computeTextEdit(std::u16string& inserted_text, std::u16string& deleted_text, id* edit_text_marker);

@@ -4,7 +4,8 @@
 
 #include "flutter_accessibility.h"
 
-
+#include "accessibility_bridge.h"
+#include "ax/ax_action_data.h"
 
 namespace ax {
 
@@ -12,23 +13,25 @@ FlutterAccessibility::FlutterAccessibility() = default;
 
 FlutterAccessibility::~FlutterAccessibility() = default;
 
-AccessibilityBridge* FlutterAccessibility::GetBridge() {
+AccessibilityBridge* FlutterAccessibility::GetBridge() const {
   return bridge_;
+}
+
+AXNode* FlutterAccessibility::GetAXNode() const {
+  return ax_node_;
 }
 
 bool FlutterAccessibility::AccessibilityPerformAction(
     const ax::AXActionData& data) {
-  int32_t target = data.target_node_id;
-  FML_LOG(ERROR) << "got action " <<ax::ToString(data.action);
+  int32_t target = GetAXNode()->id();
+  FML_LOG(ERROR) << "got action " <<ax::ToString(data.action) <<  " target= " << target;
   switch (data.action) {
      case ax::Action::kDoDefault:
-      action = FlutterSemanticsAction::kFlutterSemanticsActionTap;
-      DispatchAccessibilityAction(target, FlutterSemanticsAction::kFlutterSemanticsActionTap, null, 0);
+      DispatchAccessibilityAction(target, FlutterSemanticsAction::kFlutterSemanticsActionTap, nullptr, 0);
       return true;
     case ax::Action::kFocus:
-      // Notifies previous node has loose focus
       bridge_->SetFocusedNode(target);
-      DispatchAccessibilityAction(target, FlutterSemanticsAction::kFlutterSemanticsActionDidGainAccessibilityFocus, null, 0);
+      DispatchAccessibilityAction(target, FlutterSemanticsAction::kFlutterSemanticsActionDidGainAccessibilityFocus, nullptr, 0);
       return true;
     // case ax::Action::kScrollToPoint: {
     //   // Convert the target point from screen coordinates to frame coordinates.
@@ -107,7 +110,7 @@ bool FlutterAccessibility::AccessibilityPerformAction(
 
 void FlutterAccessibility::Init(AccessibilityBridge* bridge, AXNode* node) {
   bridge_ = bridge;
+  ax_node_ = node;
 }
 
-void FlutterAccessibility::OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event) {}
 }  // namespace ax
