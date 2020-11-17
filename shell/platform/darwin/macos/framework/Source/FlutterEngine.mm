@@ -201,7 +201,11 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   // FlutterMacOSGLCompositor is created by the engine.
   // This is only created when the engine has a FlutterViewController
   // and used to support platform views.
+  // Creation / Destruction.
   std::unique_ptr<flutter::FlutterMacOSGLCompositor> _macOSCompositor;
+
+  // FlutterCompositor is copied and used in embedder.cc.
+  FlutterCompositor _compositor;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -311,14 +315,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     flutterArguments.aot_data = _aotData;
   }
 
-  // Only create a Compositor if we have a ViewController.
-  if (_viewController) {
-    // Engine does not need to manage the life cycle of compositor
-    // since compositor is captured and copied in embedder.cc.
-    FlutterCompositor compositor = {};
-    [self setupCompositor:&compositor];
-    flutterArguments.compositor = &compositor;
-  }
+  [self setupCompositor];
+  flutterArguments.compositor = &_compositor;
 
   FlutterEngineResult result = _embedderAPI.Initialize(
       FLUTTER_ENGINE_VERSION, &rendererConfig, &flutterArguments, (__bridge void*)(self), &_engine);
@@ -374,16 +372,16 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   }
 }
 
-- (void)setupCompositor:(FlutterCompositor*)compositor {
+- (void)setupCompositor {
   [_mainOpenGLContext makeCurrentContext];
 
-  _macOSCompositor =
-      std::make_unique<flutter::FlutterMacOSGLCompositor>(_viewController, _resourceContext);
+  _macOSCompositor = std::make_unique<flutter::FlutterMacOSGLCompositor>(_viewController);
 
-  compositor->struct_size = sizeof(FlutterCompositor);
-  compositor->user_data = _macOSCompositor.get();
+  _compositor = {};
+  _compositor.struct_size = sizeof(FlutterCompositor);
+  _compositor.user_data = _macOSCompositor.get();
 
-  compositor->create_backing_store_callback = [](const FlutterBackingStoreConfig* config,  //
+  _compositor.create_backing_store_callback = [](const FlutterBackingStoreConfig* config,  //
                                                  FlutterBackingStore* backing_store_out,   //
                                                  void* user_data                           //
                                               ) {
@@ -391,14 +389,14 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
         config, backing_store_out);
   };
 
-  compositor->collect_backing_store_callback = [](const FlutterBackingStore* backing_store,  //
+  _compositor.collect_backing_store_callback = [](const FlutterBackingStore* backing_store,  //
                                                   void* user_data                            //
                                                ) {
     return reinterpret_cast<flutter::FlutterMacOSGLCompositor*>(user_data)->CollectBackingStore(
         backing_store);
   };
 
-  compositor->present_layers_callback = [](const FlutterLayer** layers,  //
+  _compositor.present_layers_callback = [](const FlutterLayer** layers,  //
                                            size_t layers_count,          //
                                            void* user_data               //
                                         ) {
@@ -406,7 +404,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
                                                                                     layers_count);
   };
 
-  _macOSCompositor->SetPresentCallback([self]() { return [self engineCallbackOnPresent]; });
+  __weak FlutterEngine* weak_self = self;
+  _macOSCompositor->SetPresentCallback(
+      [weak_self]() { return [weak_self engineCallbackOnPresent]; });
 }
 
 - (id<FlutterBinaryMessenger>)binaryMessenger {

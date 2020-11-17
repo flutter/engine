@@ -38,7 +38,8 @@
 
     _resizeSynchronizer = [[FlutterResizeSynchronizer alloc] initWithDelegate:self];
     _surfaceManager = [[FlutterSurfaceManager alloc] initWithLayer:self.layer
-                                                     openGLContext:self.openGLContext];
+                                                     openGLContext:self.openGLContext
+                                                   numFramebuffers:2];
 
     _reshapeListener = reshapeListener;
   }
