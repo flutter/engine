@@ -15,6 +15,7 @@ import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
 import androidx.activity.OnBackPressedDispatcherOwner;
+import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -269,9 +270,10 @@ public class PlatformPlugin {
         window.setStatusBarColor(systemChromeStyle.statusBarColor);
       }
     }
-    if (systemChromeStyle.systemNavigationBarDividerColor != null) {
-      // Not available until Android P.
-      // window.setNavigationBarDividerColor(systemNavigationBarDividerColor);
+    if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
+      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+      window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+      window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
     }
     view.setSystemUiVisibility(flags);
     currentTheme = systemChromeStyle;
