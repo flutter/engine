@@ -106,9 +106,8 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   }
   // |flutter::PlatformView::Delegate|
   void LoadDartDeferredLibrary(intptr_t loading_unit_id,
-                               std::string lib_name,
-                               const std::vector<std::string>& apkPaths,
-                               std::string abi) {}
+                               const uint8_t* snapshot_data,
+                               const uint8_t* snapshot_instructions) {}
   // |flutter::PlatformView::Delegate|
   void UpdateAssetManager(
       std::shared_ptr<flutter::AssetManager> asset_manager) {}
