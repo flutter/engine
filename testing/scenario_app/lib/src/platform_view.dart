@@ -613,6 +613,24 @@ class PlatformViewForTouchIOSScenario extends Scenario
   }
 }
 
+/// A simple platform view for testing platform view with a continuous texture layer.
+class PlatformViewWithContinuousTexture extends PlatformViewScenario {
+  /// Constructs a platform view with continuous texture layer
+  PlatformViewWithContinuousTexture(PlatformDispatcher dispatcher, String text, { int id = 0 })
+      : super(dispatcher, text, id: id);
+
+  @override
+  void onBeginFrame(Duration duration) {
+    print('begin frame');
+    final SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0, 0);
+    builder.addTexture(0, width: 300, height: 300, offset: const Offset(200, 200));
+
+    finishBuilderByAddingPlatformViewAndPicture(builder, id);
+  }
+}
+
 mixin _BasePlatformViewScenarioMixin on Scenario {
   int _textureId;
 
