@@ -247,6 +247,9 @@ void ShellTest::OnServiceProtocol(
   fml::TaskRunner::RunNowOrPostTask(
       task_runner, [shell, some_protocol, params, response, &finished]() {
         switch (some_protocol) {
+          case ServiceProtocolEnum::kDumpSkiaMemory:
+            shell->OnServiceProtocolDumpSkiaMemory(params, response);
+            break;
           case ServiceProtocolEnum::kGetSkSLs:
             shell->OnServiceProtocolGetSkSLs(params, response);
             break;

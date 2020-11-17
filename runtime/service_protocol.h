@@ -21,6 +21,7 @@ namespace flutter {
 
 class ServiceProtocol {
  public:
+  static const std::string_view kDumpSkiaMemoryExtensionName;
   static const std::string_view kScreenshotExtensionName;
   static const std::string_view kScreenshotSkpExtensionName;
   static const std::string_view kRunInViewExtensionName;

@@ -2023,6 +2023,26 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   DestroyShell(std::move(shell));
 }
 
+TEST_F(ShellTest, OnServiceProtocolDumpSkiaMemoryWorks) {
+  Settings settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  ServiceProtocol::Handler::ServiceProtocolMap empty_params;
+  rapidjson::Document document;
+  OnServiceProtocol(shell.get(), ServiceProtocolEnum::kDumpSkiaMemory,
+                    shell->GetTaskRunners().GetRasterTaskRunner(), empty_params,
+                    &document);
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+  std::string expected_json =
+      "{\"type\":\"DumpSkiaMemory\",\"hasContext\":false}";
+  std::string actual_json = buffer.GetString();
+  ASSERT_EQ(actual_json, expected_json);
+
+  DestroyShell(std::move(shell));
+}
+
 TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
 

@@ -23,6 +23,7 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
+#include "rapidjson/document.h"
 
 namespace flutter {
 
@@ -432,6 +433,15 @@ class Rasterizer final : public SnapshotDelegate {
   /// @see        `ExternalViewEmbedder`
   ///
   void DisableThreadMergerIfNeeded();
+
+  //----------------------------------------------------------------------------
+  /// @brief       Writes an array of Skia memory usage information to the
+  ///              `response`. This method is intended for use with the
+  ///              `_flutter.dumpSkiaMemory` service protocol extension.
+  ///
+  /// @param[out]  response  The JSON document to write an array of Skia memory
+  ///                        statistics into.
+  void WriteGraphicsContextStatistics(rapidjson::Document* response);
 
  private:
   Delegate& delegate_;

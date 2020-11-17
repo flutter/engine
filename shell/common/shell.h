@@ -572,6 +572,11 @@ class Shell final : public PlatformView::Delegate,
       const override;
 
   // Service protocol handler
+  bool OnServiceProtocolDumpSkiaMemory(
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document* response);
+
+  // Service protocol handler
   bool OnServiceProtocolScreenshot(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);

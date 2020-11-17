@@ -16,6 +16,7 @@
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
+#include "third_party/skia/include/core/SkTraceMemoryDump.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
 // When screenshotting we want to ensure we call the base method for
@@ -682,9 +683,7 @@ void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
 
   GrDirectContext* context = surface_->GetContext();
   if (context) {
-    int max_resources;
-    context->getResourceCacheLimits(&max_resources, nullptr);
-    context->setResourceCacheLimits(max_resources, max_bytes);
+    context->setResourceCacheLimit(max_bytes);
   }
 }
 
@@ -699,6 +698,61 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
     return max_bytes;
   }
   return std::nullopt;
+}
+
+class SkTraceMemoryDumpJson : public SkTraceMemoryDump {
+ public:
+  SkTraceMemoryDumpJson(rapidjson::Document* response)
+      : values_(rapidjson::kArrayType), response_(response) {}
+
+  void dumpNumericValue(const char* dumpName,
+                        const char* valueName,
+                        const char* units,
+                        uint64_t value) override {
+    rapidjson::Value json;
+    json.SetObject();
+    json.AddMember("dumpName", std::string(dumpName),
+                   response_->GetAllocator());
+    json.AddMember("valueName", std::string(valueName),
+                   response_->GetAllocator());
+    json.AddMember("units", std::string(units), response_->GetAllocator());
+    json.AddMember("value", value, response_->GetAllocator());
+    values_.PushBack(json, response_->GetAllocator());
+  }
+  void setMemoryBacking(const char* dumpName,
+                        const char* backingType,
+                        const char* backingObjectId) override {}
+  void setDiscardableMemoryBacking(
+      const char* dumpName,
+      const SkDiscardableMemory& discardableMemoryObject) override {}
+  LevelOfDetail getRequestedDetails() const override {
+    return SkTraceMemoryDump::kObjectsBreakdowns_LevelOfDetail;
+  }
+  bool shouldDumpWrappedObjects() const override { return true; }
+
+  void finish() {
+    response_->AddMember("data", values_, response_->GetAllocator());
+  }
+
+ private:
+  rapidjson::Value values_;
+  rapidjson::Document* response_;
+};
+
+void Rasterizer::WriteGraphicsContextStatistics(rapidjson::Document* response) {
+  if (!surface_) {
+    response->AddMember<bool>("hasContext", false, response->GetAllocator());
+    return;
+  }
+  auto context = surface_->GetContext();
+  if (!context) {
+    response->AddMember<bool>("hasContext", false, response->GetAllocator());
+    return;
+  }
+  response->AddMember<bool>("hasContext", true, response->GetAllocator());
+  SkTraceMemoryDumpJson traceMemoryDump(response);
+  context->dumpMemoryStatistics(&traceMemoryDump);
+  traceMemoryDump.finish();
 }
 
 Rasterizer::Screenshot::Screenshot() {}

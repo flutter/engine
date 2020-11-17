@@ -20,6 +20,8 @@
 
 namespace flutter {
 
+const std::string_view ServiceProtocol::kDumpSkiaMemoryExtensionName =
+    "_flutter.dumpSkiaMemory";
 const std::string_view ServiceProtocol::kScreenshotExtensionName =
     "_flutter.screenshot";
 const std::string_view ServiceProtocol::kScreenshotSkpExtensionName =
@@ -48,6 +50,7 @@ ServiceProtocol::ServiceProtocol()
           kListViewsExtensionName,
 
           // Public
+          kDumpSkiaMemoryExtensionName,
           kScreenshotExtensionName,
           kScreenshotSkpExtensionName,
           kRunInViewExtensionName,

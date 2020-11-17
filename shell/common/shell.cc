@@ -344,7 +344,10 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
       }));
 
   // Install service protocol handlers.
-
+  service_protocol_handlers_[ServiceProtocol::kDumpSkiaMemoryExtensionName] = {
+      task_runners_.GetRasterTaskRunner(),
+      std::bind(&Shell::OnServiceProtocolDumpSkiaMemory, this,
+                std::placeholders::_1, std::placeholders::_2)};
   service_protocol_handlers_[ServiceProtocol::kScreenshotExtensionName] = {
       task_runners_.GetRasterTaskRunner(),
       std::bind(&Shell::OnServiceProtocolScreenshot, this,
@@ -1339,6 +1342,16 @@ static void ServiceProtocolFailureError(rapidjson::Document* response,
   const int64_t kJsonServerError = -32000;
   response->AddMember("code", kJsonServerError, allocator);
   response->AddMember("message", message, allocator);
+}
+
+bool Shell::OnServiceProtocolDumpSkiaMemory(
+    const ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document* response) {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  response->SetObject();
+  response->AddMember("type", "DumpSkiaMemory", response->GetAllocator());
+  rasterizer_->WriteGraphicsContextStatistics(response);
+  return true;
 }
 
 // Service protocol handler
