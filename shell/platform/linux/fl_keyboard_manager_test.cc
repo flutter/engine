@@ -11,23 +11,23 @@
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
 
-static void expect_eq_physical(const FlKeyDatum& data, const FlKeyDatum& target) {
+static void expect_key_datum_eq(const FlKeyDatum& data, const FlKeyDatum& target) {
   EXPECT_EQ(data.kind, target.kind);
-  EXPECT_EQ(data.key, target.key);
-  EXPECT_EQ(data.repeated, target.repeated);
+  EXPECT_EQ(data.physical, target.physical);
+  EXPECT_EQ(data.logical, target.logical);
   EXPECT_EQ(data.timestamp, target.timestamp);
-  EXPECT_EQ(data.active_locks, target.active_locks);
-  EXPECT_EQ(data.logical_data_count, target.logical_data_count);
+  // EXPECT_EQ(data.locks, target.locks);
+  EXPECT_STREQ(data.character, target.character);
+  EXPECT_EQ(data.synthesized, target.synthesized);
 }
 
-// Test sending a letter "A";
+// Test sending a letter "a";
 TEST(FlKeyboardManagerTest, SendKeyEvent) {
   g_autoptr(FlKeyboardManager) manager = fl_keyboard_manager_new();
   FlKeyDatum physical_data[kMaxConvertedKeyData];
-  FlLogicalKeyDatum logical_data[kMaxConvertedLogicalKeyData];
   size_t result_size;
 
-  char string[] = "A";
+  char string[] = "a";
   GdkEventKey key_event = GdkEventKey{
       GDK_KEY_PRESS,                         // event type
       nullptr,                               // window (not needed)
@@ -42,16 +42,16 @@ TEST(FlKeyboardManagerTest, SendKeyEvent) {
       0,                                     // is a modifier
   };
 
-  result_size = fl_keyboard_manager_convert_key_event(manager, &key_event,
-      physical_data, logical_data);
+  result_size = fl_keyboard_manager_convert_key_event(manager, &key_event, physical_data);
 
   EXPECT_EQ(result_size, 1u);
-  expect_eq_physical(physical_data[0], FlKeyDatum{
+  expect_key_datum_eq(physical_data[0], FlKeyDatum{
     kFlKeyDataKindDown,       // kind
-    0x00070004,               // key
-    false,                    // repeated
     12345000.0,               // timestamp
-    0,                        // active locks
-    1,                        // logical count
+    0x00070004,               // physical
+    0x00000061,               // logical
+    0x0,                      // locks
+    "a",                      // character
+    false,                    // synthesized
   });
 }

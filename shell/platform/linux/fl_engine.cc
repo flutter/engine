@@ -609,7 +609,7 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
 
 void fl_engine_send_key_event(FlEngine* self,
                               const FlutterKeyEvent* event) {
-  FlutterEngineSendKeyEvent(self->engine, event);
+  self->embedder_api.SendKeyEvent(self->engine, event);
 }
 
 G_MODULE_EXPORT FlBinaryMessenger* fl_engine_get_binary_messenger(

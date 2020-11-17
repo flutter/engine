@@ -121,17 +121,6 @@ static FlutterKeyEventKind convertKeyEventKind(FlKeyEventKind kind) {
   }
 }
 
-static size_t nullable_strlen(const char* str) {
-  return str == nullptr ? 0 : strlen(str);
-}
-
-static char *nullable_strcpy(char* dest, const char* src) {
-  printf("dest %lx src %lx str %s\n", (int64_t)dest, (int64_t)src, src == nullptr ? "" : src);
-  if (src == nullptr)
-    return dest;
-  return strcpy(dest, src);
-}
-
 // Sends a Flutter key event to the engine.
 static gboolean fl_view_send_key_event(FlView* self, const GdkEventKey* event) {
   FlKeyDatum key_data[kMaxConvertedKeyData] = {};

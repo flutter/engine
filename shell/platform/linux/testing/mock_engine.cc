@@ -437,6 +437,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   table->RunInitialized = &FlutterEngineRunInitialized;
   table->SendWindowMetricsEvent = &FlutterEngineSendWindowMetricsEvent;
   table->SendPointerEvent = &FlutterEngineSendPointerEvent;
+  table->SendKeyEvent = &FlutterEngineSendKeyEvent;
   table->SendPlatformMessage = &FlutterEngineSendPlatformMessage;
   table->PlatformMessageCreateResponseHandle =
       &FlutterPlatformMessageCreateResponseHandle;

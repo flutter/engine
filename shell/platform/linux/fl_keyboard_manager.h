@@ -41,8 +41,7 @@ FlKeyboardManager* fl_keyboard_manager_new();
 
 size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
                                              const GdkEventKey* event,
-                                             FlKeyDatum* result_physical,
-                                             FlLogicalKeyDatum* result_logical);
+                                             FlKeyDatum* results);
 
 G_END_DECLS
 

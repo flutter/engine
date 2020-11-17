@@ -91,10 +91,6 @@ static uint64_t gpointerToUint64(gpointer pointer) {
   return pointer == nullptr ? 0 : reinterpret_cast<uint64_t>(pointer);
 }
 
-static uint64_t gpointerToInt(gpointer pointer) {
-  return pointer == nullptr ? 0 : GPOINTER_TO_INT(pointer);
-}
-
 static gpointer uint64ToGpointer(uint64_t number) {
   return reinterpret_cast<gpointer>(number);
 }
@@ -104,37 +100,6 @@ static gpointer uint64ToGpointer(uint64_t number) {
 // Returns 0 if not found.
 static uint64_t pressed_logical_for_physical(GHashTable* pressing_records, uint64_t physical) {
   return gpointerToUint64(g_hash_table_lookup(pressing_records, uint64ToGpointer(physical)));
-}
-
-// Return the pressing count before the decrease.
-//
-// The logical pointer might be freed afterwards.
-static int decrease_pressed_logical_count(GHashTable* pressed_logicals, uint64_t logical) {
-  gpointer count_pointer = g_hash_table_lookup(pressed_logicals, uint64ToGpointer(logical));
-  if (count_pointer == nullptr)
-    return 0;
-  int count = GPOINTER_TO_INT(count_pointer);
-  if (count == 1) {
-    g_hash_table_insert(pressed_logicals, uint64ToGpointer(logical), GINT_TO_POINTER(count - 1));
-  } else {
-    g_hash_table_remove(pressed_logicals, uint64ToGpointer(logical));
-  }
-  return count;
-}
-
-// Assign pressing_records[physical] = logical, and increase
-// pressed_logicals[logical].
-//
-// The pressed_logicals[original_logical] is not changed.
-//
-// Returns the new logical pressing count.
-static int assign_pressed_logical(GHashTable* pressing_records,
-    GHashTable* pressed_logicals, uint64_t physical, uint64_t logical) {
-  int logical_count = gpointerToInt(g_hash_table_lookup(pressed_logicals, uint64ToGpointer(logical)));
-  g_hash_table_insert(pressed_logicals, uint64ToGpointer(logical), GINT_TO_POINTER(logical_count + 1));
-  printf("insert %lu\n", physical);
-  g_hash_table_insert(pressing_records, uint64ToGpointer(physical), uint64ToGpointer(logical));
-  return logical_count + 1;
 }
 
 size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
@@ -150,7 +115,7 @@ size_t fl_keyboard_manager_convert_key_event(FlKeyboardManager* self,
   bool is_physical_down = event->type == GDK_KEY_PRESS;
 
   uint64_t last_logical_record = pressed_logical_for_physical(self->pressing_records, physical_key);
-  uint64_t next_logical_record = is_physical_down ? (last_logical_record : 0;
+  uint64_t next_logical_record = is_physical_down ? last_logical_record : 0;
 
   char* character_to_free = nullptr;
 
@@ -188,7 +153,6 @@ static void fl_keyboard_manager_dispose(GObject* object) {
   FlKeyboardManager* self = FL_KEYBOARD_MANAGER(object);
 
   g_clear_pointer(&self->pressing_records, g_hash_table_unref);
-  g_clear_pointer(&self->pressed_logicals, g_hash_table_unref);
   g_clear_pointer(&self->xkb_to_physical_key, g_hash_table_unref);
   g_clear_pointer(&self->keyval_to_logical_key, g_hash_table_unref);
   if (self->character_to_free != nullptr) {
@@ -210,7 +174,6 @@ FlKeyboardManager* fl_keyboard_manager_new() {
       g_object_new(fl_keyboard_manager_get_type(), nullptr));
 
   self->pressing_records = g_hash_table_new(g_direct_hash, g_direct_equal);
-  self->pressed_logicals = g_hash_table_new(g_direct_hash, g_direct_equal);
   self->xkb_to_physical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
   initialize_xkb_to_physical_key(self->xkb_to_physical_key);
   self->keyval_to_logical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
