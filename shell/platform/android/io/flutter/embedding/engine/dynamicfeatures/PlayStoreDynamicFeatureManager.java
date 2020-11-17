@@ -234,7 +234,9 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
 
   public void loadAssets(int loadingUnitId, String moduleName) {
     // Since android dynamic feature asset manager is handled through
-    // context, neither parameter is used here.
+    // context, neither parameter is used here. Assets are stored in
+    // the apk's `assets` directory allowing them to be accessed by
+    // Android's AssetManager directly.
     try {
       context = context.createPackageContext(context.getPackageName(), 0);
 
@@ -307,9 +309,5 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
 
   public void uninstallFeature(int loadingUnitId, String moduleName) {
     // TODO(garyq): support uninstalling.
-  }
-
-  void destroy() {
-    splitInstallManager.unregisterListener(listener);
   }
 }

@@ -263,8 +263,10 @@ class Engine final : public RuntimeDelegate,
 
     //--------------------------------------------------------------------------
     /// @brief      Invoked when the dart VM requests that a deferred library
-    ///             be loaded. Notifies the engine that the requested loading
-    ///             unit should be downloaded and loaded.
+    ///             be loaded. Notifies the engine that the deferred library
+    ///             identified by the specified loading unit id should be
+    ///             downloaded and loaded into the Dart VM via
+    ///             `LoadDartDeferredLibrary`
     ///
     /// @param[in]  loading_unit_id  The unique id of the deferred library's
     ///                              loading unit.
@@ -781,9 +783,14 @@ class Engine final : public RuntimeDelegate,
   /// @brief      Loads the dart shared library into the dart VM. When the
   ///             dart library is loaded successfully, the dart future
   ///             returned by the originating loadLibrary() call completes.
-  ///             Each shared library is a loading unit, which consists of
-  ///             deferred libraries that can be compiled split from the
-  ///             base dart library by gen_snapshot.
+  ///
+  ///             The Dart compiler may generate separate shared library .so
+  ///             files called 'loading units' when libraries are imported
+  ///             as deferred. Each of these shared libraries are identified
+  ///             by a unique loading unit id and can be dynamically loaded
+  ///             into the VM by dlopen-ing and resolving the data and
+  ///             instructions symbols.
+  ///
   ///
   /// @param[in]  loading_unit_id  The unique id of the deferred library's
   ///                              loading unit.

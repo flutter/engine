@@ -76,16 +76,19 @@ public interface DynamicFeatureManager {
   /**
    * Extract and load any assets and resources from the module for use by Flutter.
    *
-   * <p>Assets shoud be loaded before the dart derferred library is loaded, as successful loading of
-   * the dart loading unit indicates the dynamic feature is fully loaded.
-   *
-   * <p>Depending on the structure of the feature module, there may or may not be assets to extract.
+   * <p>This method should provide a refreshed AssetManager to FlutterJNI.updateAssetManager that
+   * can access the new assets. If no assets are included as part of the dynamic feature, then
+   * nothing needs to be done.
    *
    * <p>If using the Play Store dynamic feature delivery, refresh the context via: {@code
    * context.createPackageContext(context.getPackageName(), 0);} This returns a new context, from
    * which an updated asset manager may be obtained and passed to updateAssetManager in FlutterJNI.
    * This process does not require loadingUnitId or moduleName, however, the two parameters are
    * still present for custom implementations that store assets outside of Android's native system.
+   *
+   * <p>Assets shoud be loaded before the dart deferred library is loaded, as successful loading of
+   * the dart loading unit indicates the dynamic feature is fully loaded. Implementations of
+   * downloadDynamicFeature should invoke this after successful download.
    *
    * @param loadingUnitId The unique identifier associated with a dart deferred library.
    * @param moduleName The dynamic feature module name as defined in bundle_config.yaml.
