@@ -21,7 +21,7 @@ analyzer:
   ]
   strong-mode:
     implicit-casts: false
-    implicit-dynamic: false
+    # implicit-dynamic: false # at least temporary for RecursiveVisitor change
   errors:
     # treat missing required parameters as a warning (not a hint)
     missing_required_param: warning
