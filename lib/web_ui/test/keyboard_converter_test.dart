@@ -433,7 +433,6 @@ void testMain() {
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
-      locks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -444,7 +443,6 @@ void testMain() {
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
-      locks: kCapsLock,
       synthesized: true,
     );
     keyDataList.clear();
@@ -456,7 +454,6 @@ void testMain() {
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
-      locks: 0,
     );
     keyDataList.clear();
 
@@ -467,7 +464,6 @@ void testMain() {
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
-      locks: 0,
       synthesized: true,
     );
     keyDataList.clear();
@@ -480,7 +476,6 @@ void testMain() {
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
-      locks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -504,7 +499,6 @@ void testMain() {
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
-      locks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -518,7 +512,6 @@ void testMain() {
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
-      locks: kCapsLock,
     );
     keyDataList.clear();
 
@@ -531,7 +524,6 @@ void testMain() {
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
-      locks: 0,
     );
 
     converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
@@ -540,7 +532,6 @@ void testMain() {
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
-      locks: 0,
     );
   });
 
@@ -738,7 +729,6 @@ void testMain() {
       physical: kPhysicalScrollLock,
       logical: kLogicalScrollLock,
       character: null,
-      locks: kScrollLock,
     );
     keyDataList.clear();
 
@@ -752,7 +742,6 @@ void testMain() {
       physical: kPhysicalScrollLock,
       logical: kLogicalScrollLock,
       character: null,
-      locks: kScrollLock,
     );
     keyDataList.clear();
 
@@ -762,7 +751,6 @@ void testMain() {
       physical: kPhysicalScrollLock,
       logical: kLogicalScrollLock,
       character: null,
-      locks: 0,
     );
 
     converter.handleEvent(keyUpEvent('ScrollLock', 'ScrollLock'));
@@ -771,7 +759,6 @@ void testMain() {
       physical: kPhysicalScrollLock,
       logical: kLogicalScrollLock,
       character: null,
-      locks: 0,
     );
   });
 
@@ -919,7 +906,6 @@ void expectKeyData(
   required int logical,
   required String? character,
   Duration? timeStamp,
-  int? locks,
   bool synthesized = false,
 }) {
   expect(target.change, change);
@@ -929,8 +915,6 @@ void expectKeyData(
   expect(target.synthesized, synthesized);
   if (timeStamp != null)
     expect(target.timeStamp, equals(timeStamp));
-  if (locks != null)
-    expect(target.locks, equals(locks));
 }
 
 typedef FakeAsyncTest = void Function(FakeAsync);

@@ -276,9 +276,11 @@ public class FlutterView extends SurfaceView
   private boolean handleHardwareEvent(KeyEvent event) {
     List<HardwareKeyboard.KeyDatum> keyData = mHardwareKeyboard.convertEvent(event);
     boolean handled = true; // TODO
-    for (final HardwareKeyboard.KeyDatum keyDatum : keyData) {
-      final ByteBuffer buffer = mHardwareKeyboard.packDatum(keyDatum);
-      flutterRenderer.dispatchKeyDataPacket(buffer, buffer.position());
+    if (keyData != null) {
+      for (final HardwareKeyboard.KeyDatum keyDatum : keyData) {
+        final ByteBuffer buffer = mHardwareKeyboard.packDatum(keyDatum);
+        flutterRenderer.dispatchKeyDataPacket(buffer, buffer.position());
+      }
     }
     return handled;
   }

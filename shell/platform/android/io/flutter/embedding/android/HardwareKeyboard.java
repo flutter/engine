@@ -4,18 +4,35 @@
 
 package io.flutter.embedding.android;
 
-
 import android.view.KeyEvent;
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
 public class HardwareKeyboard {
   private static final String TAG = "HardwareKeyboard";
+
+  // Must match the KeyChange enum in key.dart.
+  @IntDef({
+    KeyChange.DOWN,
+    KeyChange.UP,
+    KeyChange.REPEAT,
+  })
+  private @interface KeyChange {
+    int DOWN = 0;
+    int UP = 1;
+    int REPEAT = 2;
+  }
+
+  // Must match _kKeyDataFieldCount in platform_dispatcher.dart.
+  private static final int KEY_DATA_FIELD_COUNT = 6;
+  private static final int BYTES_PER_FIELD = 8;
 
   private final HashMap<Long, Long> mPressingRecords = new HashMap<Long, Long>();
 
@@ -40,6 +57,7 @@ public class HardwareKeyboard {
     return objValue.longValue();
   }
 
+  // May return null
   public List<KeyDatum> convertEvent(KeyEvent event) {
     final long logicalKey = logicalKeyFromEvent(event);
     final long physicalKey = physicalKeyFromEvent(event);
@@ -48,7 +66,7 @@ public class HardwareKeyboard {
 
     final long lastLogicalRecord = getLastLogicalRecord(physicalKey);
 
-    EventKind change;
+    int change;
 
     if (isPhysicalDown) {
       if (lastLogicalRecord != 0) {
@@ -58,35 +76,35 @@ public class HardwareKeyboard {
           // a currently pressed one, usually indicating multiple keyboards are
           // pressing keys with the same physical key, or the up event was lost
           // during a loss of focus. The down event is ignored.
-          return new ArrayList<KeyDatum>();
+          return null;
         } else {
           // A normal repeated key.
-          change = EventKind.repeat;
+          change = KeyChange.REPEAT;
         }
       } else {
         // This physical key is not being pressed according to the record. It's a
         // normal down event, whether the system event is a repeat or not.
-        change = EventKind.down;
+        change = KeyChange.DOWN;
       }
     } else { // isPhysicalDown false
       if (lastLogicalRecord == 0) {
         // The physical key has been released before. It indicates multiple
         // keyboards pressed keys with the same physical key. Ignore the up event.
-        return new ArrayList<KeyDatum>();
+        return null;
       }
 
-      change = EventKind.up;
+      change = KeyChange.UP;
     }
 
     Long nextLogicalRecord = null;
     switch (change) {
-      case down:
+      case KeyChange.DOWN:
         nextLogicalRecord = logicalKey;
         break;
-      case up:
+      case KeyChange.UP:
         nextLogicalRecord = null;
         break;
-      case repeat:
+      case KeyChange.REPEAT:
         nextLogicalRecord = lastLogicalRecord;
         break;
     }
@@ -110,20 +128,24 @@ public class HardwareKeyboard {
   }
 
   public ByteBuffer packDatum(KeyDatum keyDatum) {
-    ByteBuffer packet =
-        ByteBuffer.allocateDirect(1);
+    final ByteBuffer packet =
+        ByteBuffer.allocateDirect(KEY_DATA_FIELD_COUNT * BYTES_PER_FIELD);
     packet.order(ByteOrder.LITTLE_ENDIAN);
+    final byte[] bytes = keyDatum.character.getBytes(StandardCharsets.UTF_8);
+
+    packet.putLong(bytes.length);
+
+    packet.putLong(keyDatum.timeStamp);
+    packet.putLong(keyDatum.change);
+    packet.putLong(keyDatum.physical);
+    packet.putLong(keyDatum.logical);
+    final long synthesized = keyDatum.synthesized ? 1 : 0;
+    packet.putLong(synthesized);
     return packet;
   }
 
-  public enum EventKind {
-    down,
-    up,
-    repeat,
-  }
-
   public static class KeyDatum {
-    @NonNull public final EventKind kind;
+    @NonNull public final int change;
     // Time in microseconds from an arbitrary and consistent start.
     @NonNull public final long timeStamp;
     @NonNull public final long physical;
@@ -132,13 +154,13 @@ public class HardwareKeyboard {
     @NonNull public final boolean synthesized;
 
     public KeyDatum(
-        @NonNull EventKind kind,
+        @NonNull int change,
         @NonNull long timeStamp,
         @NonNull long physical,
         @NonNull long logical,
         @Nullable String character,
         @NonNull boolean synthesized) {
-      this.kind = kind;
+      this.change = change;
       this.timeStamp = timeStamp;
       this.physical = physical;
       this.logical = logical;

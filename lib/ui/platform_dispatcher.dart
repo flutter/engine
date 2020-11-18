@@ -362,8 +362,10 @@ class PlatformDispatcher {
   // If this value changes, update the encoding code in the following files:
   //
   //  * key_data.h
-  //  * key.dart
-  static const int _kKeyDataFieldCount = 6;
+  //  * key.dart (ui)
+  //  * key.dart (web_ui)
+  //  * HardwareKeyboard.java
+  static const int _kKeyDataFieldCount = 5;
 
   // KeyData packet structure:
   // | CharDataSize |
@@ -384,7 +386,6 @@ class PlatformDispatcher {
       physical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       logical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       character: character,
-      locks: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       synthesized: packet.getUint64(kStride * offset++, _kFakeHostEndian) != 0,
     );
 

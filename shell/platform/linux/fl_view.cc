@@ -112,10 +112,10 @@ static gboolean fl_view_send_pointer_button_event(FlView* self,
 
 static FlutterKeyEventKind convertKeyEventKind(FlKeyEventKind kind) {
   switch (kind) {
-    case kFlKeyDataKindUp:
-      return kFlutterKeyEventKindUp;
     case kFlKeyDataKindDown:
       return kFlutterKeyEventKindDown;
+    case kFlKeyDataKindUp:
+      return kFlutterKeyEventKindUp;
     case kFlKeyDataKindRepeat:
       return kFlutterKeyEventKindRepeat;
   }
@@ -134,7 +134,6 @@ static gboolean fl_view_send_key_event(FlView* self, const GdkEventKey* event) {
     fl_event.kind = convertKeyEventKind(key_datum->kind);
     fl_event.physical = key_datum->physical;
     fl_event.logical = key_datum->logical;
-    fl_event.locks = key_datum->locks;
     fl_event.character = key_datum->character;
     fl_event.synthesized = key_datum->synthesized;
 

@@ -28,7 +28,6 @@ class KeyData {
     required this.logical,
     required this.character,
     required this.synthesized,
-    required this.locks,
   });
 
   /// Time of event dispatch, relative to an arbitrary timeline.
@@ -55,13 +54,9 @@ class KeyData {
   /// native event.
   final bool synthesized;
 
-  /// A bitmask that represents lock keys (such as CapsLock) that are active
-  /// after this event.
-  final int locks;
-
   @override
   String toString() => 'KeyData(timeStamp: $timeStamp, change: $change, physical: $physical, '
-    'logical: $logical, character: $character, locks: $locks, synthesized: $synthesized)';
+    'logical: $logical, character: $character, synthesized: $synthesized)';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {

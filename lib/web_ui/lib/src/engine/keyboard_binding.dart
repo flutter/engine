@@ -12,18 +12,6 @@ typedef _ModifierGetter = bool Function(FlutterHtmlKeyboardEvent event);
 // Set this flag to true to see all the fired events in the console.
 const bool _debugLogKeyEvents = false;
 
-// Bitmask for lock flags. Must be kept up-to-date with FlutterKeyLockFlags in
-// embedder.h.
-const int _kLockFlagCapsLock = 0x01;
-const int _kLockFlagNumLock = 0x02;
-const int _kLockFlagScrollLock = 0x04;
-// Map physical keys for lock keys to their flags.
-const Map<String, int> _kPhysicalKeyToLockFlag = {
-  _kPhysicalCapsLock: _kLockFlagCapsLock,
-  _kPhysicalNumLock: _kLockFlagNumLock,
-  _kPhysicalScrollLock: _kLockFlagScrollLock,
-};
-
 const int _kLogicalAltLeft = 0x0300000102;
 const int _kLogicalAltRight = 0x0400000102;
 const int _kLogicalControlLeft = 0x0300000105;
@@ -63,8 +51,6 @@ bool isAlphabet(int charCode) {
 }
 
 const String _kPhysicalCapsLock = 'CapsLock';
-const String _kPhysicalNumLock = 'NumLock';
-const String _kPhysicalScrollLock = 'ScrollLock';
 
 const String _kLogicalDead = 'Dead';
 
@@ -284,18 +270,6 @@ class KeyboardConverter {
   // to positioned keys (left/right/numpad) or multiple keyboards.
   final Map<int, int> _pressingRecords = <int, int>{};
 
-  int _activeLocks = 0;
-  void _updateLockFlag(int bit, bool value) {
-    if (value) {
-      _activeLocks |= bit;
-    } else {
-      _activeLocks &= ~bit;
-    }
-  }
-  void _toggleLockFlag(int bit) {
-    _updateLockFlag(bit, (_activeLocks & bit) == 0);
-  }
-
   // Schedule the dispatching of an event in the future. The `callback` will
   // invoked before that.
   //
@@ -332,7 +306,6 @@ class KeyboardConverter {
         change: ui.KeyChange.up,
         physical: physicalKey,
         logical: logicalKey,
-        locks: _activeLocks,
         character: null,
         synthesized: true,
       ),
@@ -406,7 +379,6 @@ class KeyboardConverter {
           physical: physicalKey,
           logical: logicalKey,
           character: null,
-          locks: _activeLocks,
           synthesized: true,
         ),
         () {
@@ -485,7 +457,6 @@ class KeyboardConverter {
             physical: physicalKey,
             logical: logicalKey,
             character: null,
-            locks: _activeLocks,
             synthesized: true,
           ));
 
@@ -493,20 +464,6 @@ class KeyboardConverter {
         });
       }
     });
-
-    // Update lock flags
-    if (!logicalKeyIsCharacter) {
-      assert(event.repeat == false);
-      if (_shouldSynthesizeCapsLockUp() && event.code! == _kPhysicalCapsLock) {
-        // If `_shouldSynthesizeCapsLockUp` is false, CapsLock is handled in
-        // the following else clause.
-        _updateLockFlag(_kLockFlagCapsLock, event.type != 'keyup');
-      } else if (nextLogicalRecord != null) {
-        final int? lockFlag = _kPhysicalKeyToLockFlag[event.code!];
-        if (lockFlag != null)
-          _toggleLockFlag(lockFlag);
-      }
-    }
 
     // Update key guards
     if (logicalKeyIsCharacter) {
@@ -523,7 +480,6 @@ class KeyboardConverter {
       physical: physicalKey,
       logical: lastLogicalRecord ?? logicalKey,
       character: change == ui.KeyChange.up ? null : character,
-      locks: _activeLocks,
       synthesized: false,
     );
 

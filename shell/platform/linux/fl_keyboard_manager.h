@@ -11,8 +11,8 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 typedef enum {
-  kFlKeyDataKindUp = 1,
-  kFlKeyDataKindDown,
+  kFlKeyDataKindDown = 0,
+  kFlKeyDataKindUp,
   kFlKeyDataKindRepeat,
 } FlKeyEventKind;
 
@@ -21,13 +21,11 @@ typedef struct {
   double timestamp;
   uint64_t physical;
   uint64_t logical;
-  uint32_t locks;
   const char* character;
   bool synthesized;
 } FlKeyDatum;
 
 constexpr int kMaxConvertedKeyData = 3;
-constexpr int kMaxConvertedLogicalKeyData = 8;
 
 G_BEGIN_DECLS
 

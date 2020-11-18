@@ -564,12 +564,6 @@ typedef enum {
   kFlutterKeyEventKindRepeat,
 } FlutterKeyEventKind;
 
-typedef enum {
-  kFlutterKeyLockCapsLock = 1 << 0,
-  kFlutterKeyLockNumLock = 1 << 1,
-  kFlutterKeyLockScrollLock = 1 << 2,
-} FlutterKeyLockFlags;
-
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterKeyEvent).
   size_t struct_size;
@@ -586,8 +580,6 @@ typedef struct {
   // Null-terminated character input from the event. Can be null. Not available
   // to up events.
   const char* character;
-  // The active lock flags after this event.
-  uint64_t locks;
   // Whether the event is synthesized by Flutter.
   bool synthesized;
 } FlutterKeyEvent;

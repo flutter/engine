@@ -138,25 +138,12 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 @property(nonatomic) NSMutableDictionary* pressingRecords;
 
 /**
- * A bitmask indicating whether each lock is on.
- */
-@property(nonatomic) NSUInteger activeLocks;
-
-/**
  * Update the pressing state.
  *
  * If `logicalKey` is not 0, `physicalKey` is pressed as `logicalKey`.
  * Otherwise, `physicalKey` is released.
  */
 - (void)updateKey:(uint64_t)physicalKey asPressed:(uint64_t)logicalKey;
-
-/**
- * Update the locking state `lockBit` to be `isOn`.
- *
- * This is only used in the NSEventTypeFlagsChanged handler, since all locks
- * keys belong to that event kind.
- */
-- (void)updateActiveLocks:(uint64_t)lockBit asOn:(BOOL)isOn;
 
 /**
  * Processes a down event.
@@ -199,16 +186,6 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   }
 }
 
-- (void)updateActiveLocks:(uint64_t)lockBit asOn:(BOOL)isOn {
-  // This method is only called on CapsLock, because macOS does not seem to
-  // process ScrollLock and NumLock at all.
-  if (isOn) {
-    _activeLocks |= lockBit;
-  } else {
-    _activeLocks &= ~lockBit;
-  }
-}
-
 - (void)dispatchDownEvent:(NSEvent*)event {
   uint64_t physicalKey = GetPhysicalKeyForEvent(event);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
@@ -244,7 +221,6 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .physical = physicalKey,
       .logical = pressedLogicalKey == nil ? logicalKey : [pressedLogicalKey unsignedLongLongValue],
       .character = event.characters.UTF8String,
-      .locks = _activeLocks,
       .synthesized = isSynthesized,
   };
   [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
@@ -270,7 +246,6 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .physical = physicalKey,
       .logical = [pressedLogicalKey unsignedLongLongValue],
       .character = nil,
-      .locks = _activeLocks,
       .synthesized = false,
   };
   [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
@@ -278,7 +253,6 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 
 - (void)dispatchCapsLockEvent:(NSEvent*)event {
   bool lockIsOn = (event.modifierFlags & NSEventModifierFlagCapsLock) != 0;
-  [self updateActiveLocks:kFlutterKeyLockCapsLock asOn:lockIsOn];
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = GetFlutterTimestampFrom(event),
@@ -286,7 +260,6 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .physical = kCapsLockPhysicalKey,
       .logical = GetLogicalKeyForModifier(kCapsLockPhysicalKey),
       .character = nil,
-      .locks = _activeLocks,
       .synthesized = false,
   };
   [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
@@ -352,7 +325,6 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = GetFlutterTimestampFrom(event),
       .character = nil,
-      .locks = _activeLocks,
   };
   if (siblingKeyShouldUp) {
     flutterEvent.kind = kFlutterKeyEventKindUp;

@@ -1439,7 +1439,6 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   key_data.change = ToKeyChange(SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindUp));
   key_data.physical = SAFE_ACCESS(event, physical, 0);
   key_data.logical = SAFE_ACCESS(event, logical, 0);
-  key_data.locks = (uint64_t)SAFE_ACCESS(event, locks, 0);
   key_data.synthesized = !!SAFE_ACCESS(event, synthesized, false);
   packet->SetKeyData(key_data);
   packet->SetCharacter(character);

@@ -16,7 +16,6 @@ static void expect_key_datum_eq(const FlKeyDatum& data, const FlKeyDatum& target
   EXPECT_EQ(data.physical, target.physical);
   EXPECT_EQ(data.logical, target.logical);
   EXPECT_EQ(data.timestamp, target.timestamp);
-  // EXPECT_EQ(data.locks, target.locks);
   EXPECT_STREQ(data.character, target.character);
   EXPECT_EQ(data.synthesized, target.synthesized);
 }
@@ -50,7 +49,6 @@ TEST(FlKeyboardManagerTest, SendKeyEvent) {
     12345000.0,               // timestamp
     0x00070004,               // physical
     0x00000061,               // logical
-    0x0,                      // locks
     "a",                      // character
     false,                    // synthesized
   });
