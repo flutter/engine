@@ -269,7 +269,10 @@ class Engine final : public RuntimeDelegate,
     ///             `LoadDartDeferredLibrary`
     ///
     /// @param[in]  loading_unit_id  The unique id of the deferred library's
-    ///                              loading unit.
+    ///                              loading unit. This id is to be passed
+    ///                              back into LoadDartDeferredLibrary
+    ///                              in order to identify which deferred
+    ///                              library to load.
     ///
     virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
   };
@@ -787,9 +790,10 @@ class Engine final : public RuntimeDelegate,
   ///             The Dart compiler may generate separate shared libraries
   ///             files called 'loading units' when libraries are imported
   ///             as deferred. Each of these shared libraries are identified
-  ///             by a unique loading unit id and can be dynamically loaded
-  ///             into the VM by dlopen-ing and resolving the data and
-  ///             instructions symbols.
+  ///             by a unique loading unit id. Callers should dlopen the
+  ///             shared library file and use dlsym to resolve the dart
+  ///             symbols. These symbols can then be passed to this method to
+  ///             be dynamically loaded into the VM.
   ///
   ///             This method is paired with a RequestDartDeferredLibrary
   ///             invocation that provides the embedder with the loading unit id
@@ -797,7 +801,8 @@ class Engine final : public RuntimeDelegate,
   ///
   ///
   /// @param[in]  loading_unit_id  The unique id of the deferred library's
-  ///                              loading unit.
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
   ///
   /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
   ///                              shared library.
