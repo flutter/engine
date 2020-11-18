@@ -1691,6 +1691,28 @@ void FlutterEngineTraceEventInstant(const char* name) {
   fml::tracing::TraceEventInstant0("flutter", name);
 }
 
+FlutterEngineResult FlutterEnginePostPlatformThreadTask(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    VoidCallback callback,
+    void* baton) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (callback == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Platform thread callback was null.");
+  }
+
+  auto task = [callback, baton]() { callback(baton); };
+
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)
+                 ->PostPlatformThreadTask(task)
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(kInternalInconsistency,
+                                  "Could not post the platform thread task.");
+}
+
 FlutterEngineResult FlutterEnginePostRenderThreadTask(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     VoidCallback callback,
@@ -2090,6 +2112,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(TraceEventDurationBegin, FlutterEngineTraceEventDurationBegin);
   SET_PROC(TraceEventDurationEnd, FlutterEngineTraceEventDurationEnd);
   SET_PROC(TraceEventInstant, FlutterEngineTraceEventInstant);
+  SET_PROC(PostPlatformThreadTask, FlutterEnginePostPlatformThreadTask);
   SET_PROC(PostRenderThreadTask, FlutterEnginePostRenderThreadTask);
   SET_PROC(GetCurrentTime, FlutterEngineGetCurrentTime);
   SET_PROC(RunTask, FlutterEngineRunTask);
