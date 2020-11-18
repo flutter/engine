@@ -73,14 +73,14 @@ static bool OnPresent(FlutterEngine* engine, intptr_t metalTextureId) {
 #pragma mark - Embedder callback implementations.
 
 - (void)populateTextureForSize:(CGSize)size to:(FlutterMetalTexture*)output {
-  if (!_mtlCommandQueue) {
+  if (!_mtlCommandQueue || !_flutterView) {
     return;
   }
   // TODO XXX
 }
 
 - (bool)present:(int64_t)textureId {
-  if (!_mtlCommandQueue) {
+  if (!_mtlCommandQueue || !_flutterView) {
     return false;
   }
   [_flutterView present];

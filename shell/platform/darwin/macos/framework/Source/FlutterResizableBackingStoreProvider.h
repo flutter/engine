@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import <Cocoa/Cocoa.h>
+#import <Metal/Metal.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 
@@ -36,9 +37,13 @@ typedef NS_ENUM(NSInteger, FlutterMacOSBackingStoreType) {
 
 - (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext andLayer:(nullable CALayer*)layer;
 
-- (void)resizeSynchronizerFlush:(nonnull FlutterResizeSynchronizer*)synchronizer;
+@end
 
-- (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer;
+@interface FlutterMetalResizableBackingStoreProvider
+    : NSObject <FlutterResizableBackingStoreProvider>
+
+- (instancetype)initWithDevice:(id<MTLDevice>)mtlDevice
+                      andQueue:(id<MTLCommandQueue>)mtlCommandQueue;
 
 @end
 

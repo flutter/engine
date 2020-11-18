@@ -33,15 +33,15 @@
 
 @implementation FlutterOpenGLResizableBackingStoreProvider {
   NSOpenGLContext* _mainContext;
-  FlutterSurfaceManager* _surfaceManager;
+  id<FlutterSurfaceManager> _surfaceManager;
 }
 
 - (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext andLayer:(CALayer*)layer {
   self = [super init];
   if (self) {
     _mainContext = mainContext;
-    _surfaceManager = [[FlutterSurfaceManager alloc] initWithLayer:layer
-                                                     openGLContext:_mainContext];
+    _surfaceManager = [[FlutterGLSurfaceManager alloc] initWithLayer:layer
+                                                       openGLContext:_mainContext];
   }
   return self;
 }
@@ -51,8 +51,7 @@
 }
 
 - (FlutterBackingStoreDescriptor*)getBackingStore {
-  int fboId = [_surfaceManager glFrameBufferId];
-  return [[FlutterBackingStoreDescriptor alloc] initOpenGLDescriptorWithFBOId:fboId];
+  return [_surfaceManager getBackingStore];
 }
 
 - (void)resizeSynchronizerFlush:(nonnull FlutterResizeSynchronizer*)synchronizer {
@@ -67,6 +66,45 @@
   [_surfaceManager swapBuffers];
 
   [CATransaction commit];
+}
+
+@end
+
+@implementation FlutterMetalResizableBackingStoreProvider {
+  id<MTLDevice> _mtlDevice;
+  id<MTLCommandQueue> _mtlCommandQueue;
+}
+
+- (instancetype)initWithDevice:(id<MTLDevice>)mtlDevice
+                      andQueue:(id<MTLCommandQueue>)mtlCommandQueue {
+  self = [super init];
+  if (self) {
+    _mtlDevice = mtlDevice;
+    _mtlCommandQueue = mtlCommandQueue;
+  }
+  return self;
+}
+
+- (void)updateBackingStoreIfNecessaryForSize:(CGSize)size {
+  // [_surfaceManager ensureSurfaceSize:size];
+}
+
+- (FlutterBackingStoreDescriptor*)getBackingStore {
+  // int fboId = [_surfaceManager glFrameBufferId];
+  // return [[FlutterBackingStoreDescriptor alloc] initOpenGLDescriptorWithFBOId:fboId];
+}
+
+- (void)resizeSynchronizerFlush:(nonnull FlutterResizeSynchronizer*)synchronizer {
+  // TODO XXX
+}
+
+- (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer {
+  // [CATransaction begin];
+  // [CATransaction setDisableActions:YES];
+
+  // [_surfaceManager swapBuffers];
+
+  // [CATransaction commit];
 }
 
 @end

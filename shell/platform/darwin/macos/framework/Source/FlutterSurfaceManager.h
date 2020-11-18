@@ -3,16 +3,32 @@
 // found in the LICENSE file.
 
 #import <Cocoa/Cocoa.h>
+#include <QuartzCore/CAMetalLayer.h>
+
+#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h"
+
+@protocol FlutterSurfaceManager
+
+- (void)ensureSurfaceSize:(CGSize)size;
+
+- (void)swapBuffers;
+
+- (FlutterBackingStoreDescriptor*)getBackingStore;
+
+@end
 
 // Manages the IOSurfaces for FlutterView
-@interface FlutterSurfaceManager : NSObject
+@interface FlutterGLSurfaceManager : NSObject <FlutterSurfaceManager>
 
 - (nullable instancetype)initWithLayer:(nonnull CALayer*)containingLayer
                          openGLContext:(nonnull NSOpenGLContext*)opengLContext;
 
-- (void)ensureSurfaceSize:(CGSize)size;
-- (void)swapBuffers;
+@end
 
-- (uint32_t)glFrameBufferId;
+@interface FlutterMetalSurfaceManager : NSObject <FlutterSurfaceManager>
+
+- (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
+                        andCommandQueue:(nonnull id<MTLCommandQueue>)commandQueue
+                        andCAMetalLayer:(nonnull CAMetalLayer*)layer;
 
 @end
