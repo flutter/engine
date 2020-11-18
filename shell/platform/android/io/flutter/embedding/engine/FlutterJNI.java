@@ -1047,8 +1047,8 @@ public class FlutterJNI {
   /**
    * Adds the specified AssetManager as an APKAssetResolver in the Flutter Engine's AssetManager.
    *
-   * This may be used to update the engine AssetManager when a new dynamic feature is installed and a
-   * new Android AssetManager is created with access to new assets.
+   * <p>This may be used to update the engine AssetManager when a new dynamic feature is installed
+   * and a new Android AssetManager is created with access to new assets.
    *
    * @param assetManager An android AssetManager that is able to access the newly downloaded assets.
    * @param assetBundlePath The subdirectory that the flutter assets are stored in. The typical

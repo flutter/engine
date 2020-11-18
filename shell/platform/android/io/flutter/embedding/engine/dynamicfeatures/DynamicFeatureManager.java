@@ -21,8 +21,8 @@ package io.flutter.embedding.engine.dynamicfeatures;
  * invokes downloadDynamicFeature. Once the feature module is downloaded, loadAssets and
  * loadDartLibrary should be invoked. loadDartLibrary should find shared library .so files for the
  * engine to open and pass the .so path to FlutterJNI.loadDartDeferredLibrary. loadAssets should
- * typically ensure the new assets are available to the engine's asset manager by passing an
- * updated Android AssetManager to the engine via FlutterJNI.updateAssetManager.
+ * typically ensure the new assets are available to the engine's asset manager by passing an updated
+ * Android AssetManager to the engine via FlutterJNI.updateAssetManager.
  *
  * <p>The loadAssets and loadDartLibrary methods are separated out because they may also be called
  * manually via platform channel messages. A full downloadDynamicFeature implementation should call
@@ -39,8 +39,8 @@ public interface DynamicFeatureManager {
    * <p>This method begins the download and installation of the specified feature module. For
    * example, the Play Store dynamic delivery implementation uses SplitInstallManager to request the
    * download of the module. Download is not complete when this method returns. The download process
-   * should be listened for and upon completion of download, listeners should invoke loadAssets first
-   * and then loadDartLibrary to complete the dynamic feature load process.
+   * should be listened for and upon completion of download, listeners should invoke loadAssets
+   * first and then loadDartLibrary to complete the dynamic feature load process.
    *
    * <p>Both parameters are not always necessary to identify which module to install. Asset-only
    * modules do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be passed
@@ -134,8 +134,6 @@ public interface DynamicFeatureManager {
    */
   public abstract void uninstallFeature(int loadingUnitId, String moduleName);
 
-  /**
-   * Destructor that cleans up any leftover objects that are no longer needed.
-   */
+  /** Destructor that cleans up any leftover objects that are no longer needed. */
   public abstract void destroy();
 }
