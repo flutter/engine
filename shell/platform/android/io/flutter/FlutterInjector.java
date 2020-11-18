@@ -116,7 +116,7 @@ public final class FlutterInjector {
       if (flutterLoader == null) {
         flutterLoader = new FlutterLoader();
       }
-      // dynamicFeatureManager can be null, so no default is necessary.
+      // DynamicFeatureManager's intended default is null.
     }
 
     /**

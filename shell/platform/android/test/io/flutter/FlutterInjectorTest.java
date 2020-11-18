@@ -9,8 +9,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
-import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.dynamicfeatures.PlayStoreDynamicFeatureManager;
+import io.flutter.embedding.engine.loader.FlutterLoader;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
