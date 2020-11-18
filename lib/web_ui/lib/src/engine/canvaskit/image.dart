@@ -70,10 +70,10 @@ class CkAnimatedImage implements ui.Codec, StackTraceDebugger {
 
   @override
   void dispose() {
-    if (_disposed) {
-      // This method is idempotent.
-      return;
-    }
+    assert(
+      !_disposed,
+      'Cannot dispose a codec that has already been disposed.',
+    );
     _disposed = true;
 
     // This image is no longer usable. Bump the ref count.
@@ -141,9 +141,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
   @override
   void dispose() {
-    if (_disposed) {
-      return;
-    }
+    assert(
+      !_disposed,
+      'Cannot dispose an image that has already been disposed.',
+    );
     _disposed = true;
     box.unref(this);
   }

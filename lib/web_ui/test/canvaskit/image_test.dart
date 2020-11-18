@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../matchers.dart';
 import 'common.dart';
 import 'test_data.dart';
 
@@ -30,9 +31,9 @@ void testMain() {
       image.dispose();
       expect(image.box.isDeleted, true);
       expect(image.debugDisposed, true);
-      image.dispose();
-      expect(image.box.isDeleted, true);
-      expect(image.debugDisposed, true);
+
+      // Disallow double-dispose.
+      expect(() => image.dispose(), throwsAssertionError);
     });
 
     test('CkAnimatedImage can be cloned and explicitly disposed of', () async {
@@ -68,9 +69,9 @@ void testMain() {
       image.dispose();
       expect(image.debugDisposed, true);
       expect(image.box.isDeleted, true);
-      image.dispose();
-      expect(image.debugDisposed, true);
-      expect(image.box.isDeleted, true);
+
+      // Disallow double-dispose.
+      expect(() => image.dispose(), throwsAssertionError);
     });
 
     test('CkImage can be explicitly disposed of when cloned', () async {

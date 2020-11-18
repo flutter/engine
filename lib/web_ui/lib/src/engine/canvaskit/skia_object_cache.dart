@@ -273,9 +273,9 @@ abstract class StackTraceDebugger {
 /// The [delete] method may be called any number of times. The box
 /// will only delete the object once.
 class SkiaObjectBox<R extends StackTraceDebugger, T> {
-  SkiaObjectBox(R debugWrapper, this.skiaObject) : _skDeletable = skiaObject as SkDeletable {
+  SkiaObjectBox(R debugReferrer, this.skiaObject) : _skDeletable = skiaObject as SkDeletable {
     if (assertionsEnabled) {
-      debugReferrers.add(debugWrapper);
+      debugReferrers.add(debugReferrer);
     }
     if (browserSupportsFinalizationRegistry) {
       boxRegistry.register(this, _skDeletable);
@@ -295,7 +295,7 @@ class SkiaObjectBox<R extends StackTraceDebugger, T> {
   /// The length of this list is always identical to [refCount].
   ///
   /// This list can be used for debugging ref counting issues.
-  final List<R> debugReferrers = <R>[];
+  final Set<R> debugReferrers = <R>{};
 
   /// If asserts are enabled, the [StackTrace]s representing when a reference
   /// was created.
@@ -329,13 +329,14 @@ class SkiaObjectBox<R extends StackTraceDebugger, T> {
   /// sharing ownership of the underlying [skiaObject].
   ///
   /// Clones must be [dispose]d when finished.
-  void ref(R debugWrapper) {
+  void ref(R debugReferrer) {
     assert(!_isDeleted, 'Cannot increment ref count on a deleted handle.');
     assert(_refCount > 0);
+    assert(
+      debugReferrers.add(debugReferrer),
+      'Attempted to increment ref count by the same referrer more than once.',
+    );
     _refCount += 1;
-    if (assertionsEnabled) {
-      debugReferrers.add(debugWrapper);
-    }
     assert(refCount == debugReferrers.length);
   }
 
@@ -345,10 +346,13 @@ class SkiaObjectBox<R extends StackTraceDebugger, T> {
   ///
   /// If this causes the reference count to drop to zero, deletes the
   /// [skObject].
-  void unref(R debugWrapper) {
+  void unref(R debugReferrer) {
     assert(!_isDeleted, 'Attempted to unref an already deleted Skia object.');
+    assert(
+      debugReferrers.remove(debugReferrer),
+      'Attempted to decrement ref count by the same referrer more than once.',
+    );
     _refCount -= 1;
-    assert(debugReferrers.remove(debugWrapper));
     assert(refCount == debugReferrers.length);
     if (_refCount == 0) {
       _isDeleted = true;
