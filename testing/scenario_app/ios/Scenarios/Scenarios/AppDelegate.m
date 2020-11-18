@@ -4,10 +4,10 @@
 
 #import "AppDelegate.h"
 
+#import "ContinuousTexture.h"
 #import "FlutterEngine+ScenariosTest.h"
 #import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"
-#import "ContinuousTexture.h"
 
 @interface NoStatusBarFlutterViewController : FlutterViewController
 
@@ -53,7 +53,7 @@
     @"--tap-status-bar" : @"tap_status_bar",
     @"--text-semantics-focus" : @"text_semantics_focus",
     @"--animated-color-square" : @"animated_color_square",
-    @"--platform-view-with-continuous-texture": @"platform_view_with_continuous_texture"
+    @"--platform-view-with-continuous-texture" : @"platform_view_with_continuous_texture"
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap
@@ -73,7 +73,8 @@
 
   [self.window makeKeyAndVisible];
   if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--with-continuous-texture"]) {
-    [ContinuousTexture registerWithRegistrar:[self registrarForPlugin:@"com.constant.firing.texture"]];
+    [ContinuousTexture
+        registerWithRegistrar:[self registrarForPlugin:@"com.constant.firing.texture"]];
   }
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
