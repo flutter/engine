@@ -988,16 +988,12 @@ public class FlutterJNI {
 
   /** Sets the dynamic feature manager that is used to download and install split features. */
   @UiThread
-  public void setDynamicFeatureManager(@NonNull DynamicFeatureManager dynamicFeatureManager) {
+  public void setDynamicFeatureManager(@Nullable DynamicFeatureManager dynamicFeatureManager) {
     ensureRunningOnMainThread();
     this.dynamicFeatureManager = dynamicFeatureManager;
-  }
-
-  /** Sets the dynamic feature manager that is used to download and install split features. */
-  @UiThread
-  public void removeDynamicFeatureManager() {
-    ensureRunningOnMainThread();
-    this.dynamicFeatureManager = null;
+    if (dynamicFeatureManager != null) {
+      dynamicFeatureManager.setJNI(this);
+    }
   }
 
   /**

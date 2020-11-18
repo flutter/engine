@@ -99,8 +99,6 @@ public class FlutterEngine {
   // Engine Lifecycle.
   @NonNull private final Set<EngineLifecycleListener> engineLifecycleListeners = new HashSet<>();
 
-  @NonNull private DynamicFeatureManager dynamicFeatureManager;
-
   @NonNull
   private final EngineLifecycleListener engineLifecycleListener =
       new EngineLifecycleListener() {
@@ -302,6 +300,7 @@ public class FlutterEngine {
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
+    flutterJNI.setDynamicFeatureManager(FlutterInjector.instance().dynamicFeatureManager());
 
     attachToJni();
 
@@ -378,7 +377,7 @@ public class FlutterEngine {
     platformViewsController.onDetachedFromJNI();
     dartExecutor.onDetachedFromJNI();
     flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
-    flutterJNI.removeDynamicFeatureManager();
+    flutterJNI.setDynamicFeatureManager(null);
     flutterJNI.detachFromNativeAndReleaseResources();
   }
 

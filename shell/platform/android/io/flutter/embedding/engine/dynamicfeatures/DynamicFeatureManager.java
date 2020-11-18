@@ -36,11 +36,13 @@ import io.flutter.embedding.engine.FlutterJNI;
  */
 public interface DynamicFeatureManager {
   /**
-   * Sets the FlutterJNI to use to communicate with the Flutter native engine.
+   * Sets the FlutterJNI to be used to communication with the Flutter native engine.
    *
-   * <p>Since this class may be instantiated before the FlutterEngine and FlutterJNI is fully
-   * initialized, this method should be called to provide the FlutterJNI instance to use for use in
-   * loadDartLibrary and loadAssets.
+   * <p>A FlutterJNI is required in order to properly execute loadAssets and loadDartLibrary.
+   *
+   * <p>Since this class may be instantiated for injection before the FlutterEngine and FlutterJNI
+   * is fully initialized, this method should be called to provide the FlutterJNI instance to use
+   * for use in loadDartLibrary and loadAssets.
    */
   public abstract void setJNI(FlutterJNI flutterJNI);
 
