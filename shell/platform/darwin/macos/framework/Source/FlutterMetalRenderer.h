@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import <Cocoa/Cocoa.h>
+#import <Metal/Metal.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
@@ -16,6 +17,10 @@ NS_ASSUME_NONNULL_BEGIN
  * FlutterView once the FlutterViewController is initializer.
  */
 @interface FlutterMetalRenderer : NSObject <FlutterTextureRegistry>
+
+@property(nonatomic, readonly) id<MTLDevice> mtlDevice;
+
+@property(nonatomic, readonly) id<MTLCommandQueue> mtlCommandQueue;
 
 /**
  * Intializes the renderer with the given FlutterEngine.
@@ -31,6 +36,10 @@ NS_ASSUME_NONNULL_BEGIN
  * Creates a FlutterRendererConfig that renders using Metal.
  */
 - (FlutterRendererConfig)createRendererConfig;
+
+- (void)populateTextureForSize:(CGSize)size to:(FlutterMetalTexture*)output;
+
+- (bool)present:(int64_t)textureId;
 
 @end
 

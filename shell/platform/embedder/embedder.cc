@@ -283,11 +283,16 @@ InferMetalPlatformViewCreationCallback(
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
-  if (config->type != kSoftware) {
+  if (config->type != kMetal) {
     return nullptr;
   }
-  // TODO (iskakaushik)
+
+#ifdef SHELL_ENABLE_METAL
+
   return nullptr;
+#else
+  return nullptr;
+#endif
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>

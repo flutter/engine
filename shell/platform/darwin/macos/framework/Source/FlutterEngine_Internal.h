@@ -7,6 +7,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterEngine ()
@@ -21,6 +22,12 @@
  * management.
  */
 @property(nonatomic, readonly, nonnull) FlutterOpenGLRenderer* openGLRenderer;
+
+/**
+ * Provides the renderer config needed to initialize the engine and also handles external texture
+ * management.
+ */
+@property(nonatomic, readonly, nonnull) FlutterMetalRenderer* metalRenderer;
 
 /**
  * Function pointers for interacting with the embedder.h API.
