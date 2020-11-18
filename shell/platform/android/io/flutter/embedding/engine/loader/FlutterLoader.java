@@ -17,6 +17,7 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.BuildConfig;
+import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.util.PathUtils;
@@ -78,6 +79,9 @@ public class FlutterLoader {
    */
   public FlutterLoader(@NonNull FlutterJNI flutterJNI) {
     this.flutterJNI = flutterJNI;
+    if (FlutterInjector.instance().dynamicFeatureManager() != null) {
+      FlutterInjector.instance().dynamicFeatureManager().setJNI(this.flutterJNI);
+    }
   }
 
   private boolean initialized = false;
@@ -120,7 +124,9 @@ public class FlutterLoader {
    * @param applicationContext The Android application context.
    * @param settings Configuration settings.
    */
-  public void startInitialization(@NonNull Context applicationContext, @NonNull Settings settings) {
+  public void startInitialization(
+      @NonNull Context applicationContext,
+      @NonNull Settings settings) {
     // Do not run startInitialization more than once.
     if (this.settings != null) {
       return;

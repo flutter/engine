@@ -260,30 +260,6 @@ public class FlutterEngine {
         false);
   }
 
-  /**
-   * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[], boolean, boolean)},
-   * plus the ability to control {@code waitForRestorationData}.
-   */
-  public FlutterEngine(
-      @NonNull Context context,
-      @Nullable FlutterLoader flutterLoader,
-      @NonNull FlutterJNI flutterJNI,
-      @NonNull PlatformViewsController platformViewsController,
-      @Nullable String[] dartVmArgs,
-      boolean automaticallyRegisterPlugins,
-      boolean waitForRestorationData) {
-    this(
-        context,
-        flutterLoader,
-        flutterJNI,
-        platformViewsController,
-        dartVmArgs,
-        automaticallyRegisterPlugins,
-        waitForRestorationData,
-        null);
-  }
-
-  // TODO(garyq): Move this to a better injection system.
   /** Fully configurable {@code FlutterEngine} constructor. */
   public FlutterEngine(
       @NonNull Context context,
@@ -292,8 +268,7 @@ public class FlutterEngine {
       @NonNull PlatformViewsController platformViewsController,
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins,
-      boolean waitForRestorationData,
-      @Nullable DynamicFeatureManager dynamicFeatureManager) {
+      boolean waitForRestorationData) {
     AssetManager assetManager;
     try {
       assetManager = context.createPackageContext(context.getPackageName(), 0).getAssets();
@@ -327,10 +302,6 @@ public class FlutterEngine {
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
-
-    this.dynamicFeatureManager = dynamicFeatureManager;
-    // TODO(garyq): Inject PlayStoreDynamicFeatureManager(context, flutterJNI);
-    flutterJNI.setDynamicFeatureManager(dynamicFeatureManager);
 
     attachToJni();
 
@@ -404,9 +375,6 @@ public class FlutterEngine {
     Log.v(TAG, "Destroying.");
     // The order that these things are destroyed is important.
     pluginRegistry.destroy();
-    if (dynamicFeatureManager != null) {
-      dynamicFeatureManager.destroy();
-    }
     platformViewsController.onDetachedFromJNI();
     dartExecutor.onDetachedFromJNI();
     flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);

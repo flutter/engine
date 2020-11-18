@@ -9,6 +9,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import android.os.Build;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.play.core.splitinstall.SplitInstallException;
 import com.google.android.play.core.splitinstall.SplitInstallManager;
 import com.google.android.play.core.splitinstall.SplitInstallManagerFactory;
@@ -35,7 +36,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   private static final String TAG = "PlayStoreDynamicFeatureManager";
 
   private @NonNull SplitInstallManager splitInstallManager;
-  private @NonNull FlutterJNI flutterJNI;
+  private @Nullable FlutterJNI flutterJNI;
   private @NonNull Context context;
   // Each request to install a feature module gets a session ID. These maps associate
   // the session ID with the loading unit and module name that was requested.
@@ -157,7 +158,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     }
   }
 
-  public PlayStoreDynamicFeatureManager(@NonNull Context context, @NonNull FlutterJNI flutterJNI) {
+  public PlayStoreDynamicFeatureManager(@NonNull Context context, @Nullable FlutterJNI flutterJNI) {
     this.context = context;
     this.flutterJNI = flutterJNI;
     splitInstallManager = SplitInstallManagerFactory.create(context);
@@ -165,6 +166,18 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     splitInstallManager.registerListener(listener);
     sessionIdToName = new HashMap();
     sessionIdToLoadingUnitId = new HashMap();
+  }
+
+  public void setJNI(@NonNull FlutterJNI flutterJNI) {
+    this.flutterJNI = flutterJNI;
+  }
+
+  private boolean verifyJNI() {
+    if (flutterJNI == null) {
+      Log.e(TAG, "No FlutterJNI provided.");
+      return false;
+    }
+    return true;
   }
 
   private String loadingUnitIdToModuleName(int loadingUnitId) {
@@ -233,6 +246,9 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   }
 
   public void loadAssets(int loadingUnitId, String moduleName) {
+    if (!verifyJNI()) {
+      return;
+    }
     // Since android dynamic feature asset manager is handled through
     // context, neither parameter is used here. Assets are stored in
     // the apk's `assets` directory allowing them to be accessed by
@@ -251,6 +267,9 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   }
 
   public void loadDartLibrary(int loadingUnitId, String moduleName) {
+    if (!verifyJNI()) {
+      return;
+    }
     // Loading unit must be specified and valid to load a dart library.
     if (loadingUnitId < 0) {
       return;

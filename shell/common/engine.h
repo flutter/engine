@@ -262,7 +262,7 @@ class Engine final : public RuntimeDelegate,
         const std::vector<std::string>& supported_locale_data) = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      Invoked when the dart VM requests that a deferred library
+    /// @brief      Invoked when the Dart VM requests that a deferred library
     ///             be loaded. Notifies the engine that the deferred library
     ///             identified by the specified loading unit id should be
     ///             downloaded and loaded into the Dart VM via
@@ -780,16 +780,20 @@ class Engine final : public RuntimeDelegate,
   const std::string& InitialRoute() const { return initial_route_; }
 
   //--------------------------------------------------------------------------
-  /// @brief      Loads the dart shared library into the dart VM. When the
-  ///             dart library is loaded successfully, the dart future
+  /// @brief      Loads the Dart shared library into the Dart VM. When the
+  ///             Dart library is loaded successfully, the Dart future
   ///             returned by the originating loadLibrary() call completes.
   ///
-  ///             The Dart compiler may generate separate shared library .so
+  ///             The Dart compiler may generate separate shared libraries
   ///             files called 'loading units' when libraries are imported
   ///             as deferred. Each of these shared libraries are identified
   ///             by a unique loading unit id and can be dynamically loaded
   ///             into the VM by dlopen-ing and resolving the data and
   ///             instructions symbols.
+  ///
+  ///             This method is paired with a RequestDartDeferredLibrary
+  ///             invocation that provides the embedder with the loading unit id
+  ///             of the deferred library to load.
   ///
   ///
   /// @param[in]  loading_unit_id  The unique id of the deferred library's

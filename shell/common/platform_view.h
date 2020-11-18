@@ -613,17 +613,24 @@ class PlatformView {
   virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id);
 
   //--------------------------------------------------------------------------
-  /// @brief      Loads the dart shared library into the dart VM. When the
-  ///             dart library is loaded successfully, the dart future
+  /// @brief      Loads the Dart shared library into the Dart VM. When the
+  ///             Dart library is loaded successfully, the Dart future
   ///             returned by the originating loadLibrary() call completes.
-  ///             Each shared library is a loading unit, which consists of
-  ///             deferred libraries that can be compiled split from the
-  ///             base dart library by gen_snapshot.
+  ///
+  ///             The Dart compiler may generate separate shared libraries
+  ///             files called 'loading units' when libraries are imported
+  ///             as deferred. Each of these shared libraries are identified
+  ///             by a unique loading unit id and can be dynamically loaded
+  ///             into the VM by dlopen-ing and resolving the data and
+  ///             instructions symbols.
+  ///
+  ///             This method is paired with a RequestDartDeferredLibrary
+  ///             invocation that provides the embedder with the loading unit id
+  ///             of the deferred library to load.
+  ///
   ///
   /// @param[in]  loading_unit_id  The unique id of the deferred library's
-  ///                              loading unit. This is the same id as the
-  ///                              one passed in by the corresponding
-  ///                              RequestDartDeferredLibrary.
+  ///                              loading unit.
   ///
   /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
   ///                              shared library.

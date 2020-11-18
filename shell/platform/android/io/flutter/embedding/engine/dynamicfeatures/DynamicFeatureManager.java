@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.engine.dynamicfeatures;
 
+import io.flutter.embedding.engine.FlutterJNI;
+
 // TODO: add links to external documentation on how to use split aot features.
 /**
  * Basic interface that handles downloading and loading of dynamic features.
@@ -33,6 +35,15 @@ package io.flutter.embedding.engine.dynamicfeatures;
  * identified by the loading unit ID and assets.
  */
 public interface DynamicFeatureManager {
+  /**
+   * Sets the FlutterJNI to use to communicate with the Flutter native engine.
+   *
+   * <p>Since this class may be instantiated before the FlutterEngine and FlutterJNI is fully
+   * initialized, this method should be called to provide the FlutterJNI instance to use for use in
+   * loadDartLibrary and loadAssets.
+   */
+  public abstract void setJNI(FlutterJNI flutterJNI);
+
   /**
    * Request that the feature module be downloaded and installed.
    *
