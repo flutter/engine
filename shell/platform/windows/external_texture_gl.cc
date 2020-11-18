@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/windows/external_texture_gl.h"
 
+#include "flutter/shell/platform/windows/flutter_windows_engine.h"
+
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -68,9 +70,11 @@ struct ExternalTextureGLState {
 };
 
 ExternalTextureGL::ExternalTextureGL(
+    FlutterWindowsEngine* engine,
     FlutterDesktopPixelBufferTextureCallback texture_callback,
     void* user_data)
-    : state_(std::make_unique<ExternalTextureGLState>()),
+    : engine_(engine),
+      state_(std::make_unique<ExternalTextureGLState>()),
       texture_callback_(texture_callback),
       user_data_(user_data) {}
 
@@ -79,6 +83,10 @@ ExternalTextureGL::~ExternalTextureGL() {
   if (gl.valid && state_->gl_texture != 0) {
     gl.glDeleteTextures(1, &state_->gl_texture);
   }
+}
+
+void ExternalTextureGL::MarkFrameAvailable() {
+  engine_->MarkExternalTextureFrameAvailable(texture_id());
 }
 
 bool ExternalTextureGL::PopulateTexture(size_t width,

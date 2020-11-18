@@ -16,16 +16,23 @@ namespace flutter {
 
 typedef struct ExternalTextureGLState ExternalTextureGLState;
 
+class FlutterWindowsEngine;
+
 // An abstraction of an OpenGL texture.
 class ExternalTextureGL {
  public:
-  ExternalTextureGL(FlutterDesktopPixelBufferTextureCallback texture_callback,
+  ExternalTextureGL(FlutterWindowsEngine* engine,
+                    FlutterDesktopPixelBufferTextureCallback texture_callback,
                     void* user_data);
 
   virtual ~ExternalTextureGL();
 
   // Returns the unique id of this texture.
   int64_t texture_id() { return reinterpret_cast<int64_t>(this); }
+
+  FlutterWindowsEngine* engine() { return engine_; }
+
+  void MarkFrameAvailable();
 
   // Attempts to populate the specified |opengl_texture| with texture details
   // such as the name, width, height and the pixel format upon successfully
@@ -47,6 +54,7 @@ class ExternalTextureGL {
   std::unique_ptr<ExternalTextureGLState> state_;
   FlutterDesktopPixelBufferTextureCallback texture_callback_ = nullptr;
   void* user_data_ = nullptr;
+  FlutterWindowsEngine* engine_ = nullptr;
 };
 
 }  // namespace flutter

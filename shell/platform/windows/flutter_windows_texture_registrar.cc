@@ -51,7 +51,16 @@ bool FlutterWindowsTextureRegistrar::UnregisterTexture(int64_t texture_id) {
 
 bool FlutterWindowsTextureRegistrar::MarkTextureFrameAvailable(
     int64_t texture_id) {
-  return engine_->MarkExternalTextureFrameAvailable(texture_id);
+  auto it = textures_.find(texture_id);
+  if (it != textures_.end()) {
+    return engine_->PostPlatformThreadTask(
+        [](void* data) {
+          auto texture = reinterpret_cast<ExternalTextureGL*>(data);
+          texture->MarkFrameAvailable();
+        },
+        it->second.get());
+  }
+  return false;
 }
 
 bool FlutterWindowsTextureRegistrar::PopulateTexture(
