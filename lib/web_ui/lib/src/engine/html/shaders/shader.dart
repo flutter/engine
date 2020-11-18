@@ -98,34 +98,10 @@ class GradientSweep extends EngineGradient {
     method.addStatement(''
         'float st = angle;');
 
-    method.addStatement('vec4 bias;');
-    method.addStatement('vec4 scale;');
-    // Write uniforms for each threshold, bias and scale.
-    for (int i = 0; i < (gradient.thresholdCount - 1) ~/ 4 + 1; i++) {
-      builder.addUniform(ShaderType.kVec4, name: 'threshold_${i}');
-    }
-    for (int i = 0; i < gradient.thresholdCount; i++) {
-      builder.addUniform(ShaderType.kVec4, name: 'bias_$i');
-      builder.addUniform(ShaderType.kVec4, name: 'scale_$i');
-    }
-    String probeName = 'st';
-    switch (tileMode) {
-      case ui.TileMode.clamp:
-        break;
-      case ui.TileMode.repeated:
-        method.addStatement('float tiled_st = fract(st);');
-        probeName = 'tiled_st';
-        break;
-      case ui.TileMode.mirror:
-        method.addStatement('float t_1 = (st - 1.0);');
-        method.addStatement('float tiled_st = abs((t_1 - 2.0 * floor(t_1 * 0.5)) - 1.0);');
-        probeName = 'tiled_st';
-        break;
-    }
-    _writeUnrolledBinarySearch(method, 0, gradient.thresholdCount - 1,
-      probe: probeName, sourcePrefix: 'threshold',
-      biasName: 'bias', scaleName: 'scale');
+    final String probeName =
+    _writeSharedGradientShader(builder, method, gradient, tileMode);
     method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
+
     String shader = builder.build();
     return shader;
   }
@@ -172,6 +148,7 @@ class GradientLinear extends EngineGradient {
     if (tileMode == ui.TileMode.clamp) {
       return _createCanvasGradient(ctx, shaderBounds, density);
     } else {
+      initWebGl();
       return _createGlGradient(ctx, shaderBounds, density);
     }
   }
@@ -298,34 +275,8 @@ class GradientLinear extends EngineGradient {
         'vec4 localCoord = vec4(gl_FragCoord.x, '
             'u_resolution.y - gl_FragCoord.y, 0, 1) * m_gradient;');
     method.addStatement('float st = localCoord.x;');
-    method.addStatement('vec4 bias;');
-    method.addStatement('vec4 scale;');
-    // Write uniforms for each threshold, bias and scale.
-    for (int i = 0; i < (gradient.thresholdCount - 1) ~/ 4 + 1; i++) {
-      builder.addUniform(ShaderType.kVec4, name: 'threshold_${i}');
-    }
-    for (int i = 0; i < gradient.thresholdCount; i++) {
-      builder.addUniform(ShaderType.kVec4, name: 'bias_$i');
-      builder.addUniform(ShaderType.kVec4, name: 'scale_$i');
-    }
-    String probeName = 'st';
-    switch (tileMode) {
-      case ui.TileMode.clamp:
-        break;
-      case ui.TileMode.repeated:
-        method.addStatement('float tiled_st = fract(st);');
-        probeName = 'tiled_st';
-        break;
-      case ui.TileMode.mirror:
-        method.addStatement('float t_1 = (st - 1.0);');
-        method.addStatement(
-            'float tiled_st = abs((t_1 - 2.0 * floor(t_1 * 0.5)) - 1.0);');
-        probeName = 'tiled_st';
-        break;
-    }
-    _writeUnrolledBinarySearch(method, 0, gradient.thresholdCount - 1,
-        probe: probeName, sourcePrefix: 'threshold',
-        biasName: 'bias', scaleName: 'scale');
+    final String probeName =
+        _writeSharedGradientShader(builder, method, gradient, tileMode);
     method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
     String shader = builder.build();
     return shader;
@@ -345,10 +296,45 @@ void _addColorStopsToCanvasGradient(html.CanvasGradient gradient,
   }
 }
 
-// TODO(flutter_web): For transforms and tile modes implement as webgl
-// For now only GradientRotation is supported in flutter which is implemented
-// for linear gradient.
-// See https://github.com/flutter/flutter/issues/32819
+/// Returns name of gradient treshold variable to use to compute color.
+String _writeSharedGradientShader(ShaderBuilder builder,
+    ShaderMethod method,
+    NormalizedGradient gradient,
+    ui.TileMode tileMode) {
+  method.addStatement('vec4 bias;');
+  method.addStatement('vec4 scale;');
+  // Write uniforms for each threshold, bias and scale.
+  for (int i = 0; i < (gradient.thresholdCount - 1) ~/ 4 + 1; i++) {
+    builder.addUniform(ShaderType.kVec4, name: 'threshold_${i}');
+  }
+  for (int i = 0; i < gradient.thresholdCount; i++) {
+    builder.addUniform(ShaderType.kVec4, name: 'bias_$i');
+    builder.addUniform(ShaderType.kVec4, name: 'scale_$i');
+  }
+
+  // Use st variable name if clamped, otherwise write code to comnpute
+  // tiled_st.
+  String probeName = 'st';
+  switch (tileMode) {
+    case ui.TileMode.clamp:
+      break;
+    case ui.TileMode.repeated:
+      method.addStatement('float tiled_st = fract(st);');
+      probeName = 'tiled_st';
+      break;
+    case ui.TileMode.mirror:
+      method.addStatement('float t_1 = (st - 1.0);');
+      method.addStatement(
+          'float tiled_st = abs((t_1 - 2.0 * floor(t_1 * 0.5)) - 1.0);');
+      probeName = 'tiled_st';
+      break;
+  }
+  _writeUnrolledBinarySearch(method, 0, gradient.thresholdCount - 1,
+      probe: probeName, sourcePrefix: 'threshold',
+      biasName: 'bias', scaleName: 'scale');
+  return probeName;
+}
+
 class GradientRadial extends EngineGradient {
   GradientRadial(this.center, this.radius, this.colors, this.colorStops,
       this.tileMode, this.matrix4)
@@ -364,12 +350,16 @@ class GradientRadial extends EngineGradient {
   @override
   Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
       ui.Rect? shaderBounds, double density) {
-    if (!useCanvasKit) {
-      if (tileMode != ui.TileMode.clamp) {
-        throw UnimplementedError(
-            'TileMode not supported in GradientRadial shader');
-      }
+    if (tileMode == ui.TileMode.clamp) {
+      return _createCanvasGradient(ctx, shaderBounds, density);
+    } else {
+      initWebGl();
+      return _createGlGradient(ctx, shaderBounds, density);
     }
+  }
+
+  Object _createCanvasGradient(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds, double density) {
     final double offsetX = shaderBounds!.left;
     final double offsetY = shaderBounds.top;
     final html.CanvasGradient gradient = ctx!.createRadialGradient(
@@ -377,6 +367,77 @@ class GradientRadial extends EngineGradient {
         center.dx - offsetX, center.dy - offsetY, radius);
     _addColorStopsToCanvasGradient(gradient, colors, colorStops);
     return gradient;
+  }
+
+  /// Creates a radial gradient with tiling repeat or mirror.
+  html.CanvasPattern _createGlGradient(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds, double density) {
+    assert(shaderBounds != null);
+    int widthInPixels = shaderBounds!.width.ceil();
+    int heightInPixels = shaderBounds.height.ceil();
+    assert(widthInPixels > 0 && heightInPixels > 0);
+
+    initWebGl();
+    // Render gradient into a bitmap and create a canvas pattern.
+    _OffScreenCanvas offScreenCanvas =
+    _OffScreenCanvas(widthInPixels, heightInPixels);
+    _GlContext gl = _OffScreenCanvas.supported
+        ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
+        : _GlContext.fromCanvas(offScreenCanvas._glCanvas!,
+        webGLVersion == WebGLVersion.webgl1);
+    gl.setViewportSize(widthInPixels, heightInPixels);
+
+    NormalizedGradient normalizedGradient = NormalizedGradient(
+        colors, stops: colorStops);
+
+    _GlProgram glProgram = gl.useAndCacheProgram(
+        _WebGlRenderer.writeBaseVertexShader(),
+        _createRadialFragmentShader(normalizedGradient, tileMode))!;
+
+    Object tileOffset = gl.getUniformLocation(glProgram.program, 'u_tile_offset');
+    double centerX = (center.dx - shaderBounds.left) / (shaderBounds.width);
+    double centerY = (center.dy - shaderBounds.top) / (shaderBounds.height);
+    gl.setUniform2f(tileOffset,
+        2 * (shaderBounds.width * (centerX - 0.5)),
+        2 * (shaderBounds.height * (centerY - 0.5)));
+    Object radiusUniform = gl.getUniformLocation(glProgram.program, 'u_radius');
+    gl.setUniform1f(radiusUniform, radius);
+    normalizedGradient.setupUniforms(gl, glProgram);
+    Object gradientMatrix = gl.getUniformLocation(
+        glProgram.program, 'm_gradient');
+    gl.setUniformMatrix4fv(gradientMatrix, false, matrix4 == null ? Matrix4.identity().storage : matrix4!);
+
+    Object? imageBitmap = _glRenderer!.drawRect(ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
+        gl, glProgram, normalizedGradient, widthInPixels, heightInPixels);
+
+    return ctx!.createPattern(imageBitmap!, 'no-repeat')!;
+  }
+
+  String _createRadialFragmentShader(NormalizedGradient gradient,
+      ui.TileMode tileMode) {
+    ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
+    builder.floatPrecision = ShaderPrecision.kMedium;
+    builder.addIn(ShaderType.kVec4, name: 'v_color');
+    builder.addUniform(ShaderType.kVec2, name: 'u_resolution');
+    builder.addUniform(ShaderType.kVec2, name: 'u_tile_offset');
+    builder.addUniform(ShaderType.kFloat, name: 'u_radius');
+    builder.addUniform(ShaderType.kMat4, name: 'm_gradient');
+    ShaderDeclaration fragColor = builder.fragmentColor;
+    ShaderMethod method = builder.addMethod('main');
+    // Sweep gradient
+    method.addStatement(
+        'vec2 center = 0.5 * (u_resolution + u_tile_offset);');
+    method.addStatement(
+        'vec4 localCoord = vec4(gl_FragCoord.x - center.x, center.y - gl_FragCoord.y, 0, 1) * m_gradient;');
+    method.addStatement(
+        'float dist = length(localCoord);');
+    method.addStatement(''
+        'float st = abs(dist / u_radius);');
+    final String probeName =
+      _writeSharedGradientShader(builder, method, gradient, tileMode);
+    method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
+    String shader = builder.build();
+    return shader;
   }
 }
 
