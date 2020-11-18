@@ -478,8 +478,6 @@ bool FlutterPlatformViewsController::SubmitFrame(
 bool FlutterPlatformViewsController::SubmitFrameGpuSafe(GrDirectContext* gr_context,
                                                         std::shared_ptr<IOSContext> ios_context,
                                                         std::unique_ptr<SurfaceFrame> frame) {
-  FML_DCHECK(flutter_view_);
-
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
   if (flutter_view_ == nullptr) {
