@@ -131,11 +131,23 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
   }
 }
 
+static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
+  NSNumber* isEnabled = [infoDictionary objectForKey:@"FlutterDeepLinkingEnabled"];
+  if (isEnabled) {
+    return [isEnabled boolValue];
+  } else {
+    return NO;
+  }
+}
+
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
-            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
+    infoPlistGetter:(NSDictionary* (^)())infoPlistGetter {
   if ([_lifeCycleDelegate application:application openURL:url options:options]) {
     return YES;
+  } else if (!IsDeepLinkingEnabled(infoPlistGetter())) {
+    return NO;
   } else {
     FlutterViewController* flutterViewController = [self rootFlutterViewController];
     if (flutterViewController) {
@@ -156,6 +168,17 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
       return NO;
     }
   }
+}
+
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
+  return [self application:application
+                   openURL:url
+                   options:options
+           infoPlistGetter:^NSDictionary*() {
+             return [[NSBundle mainBundle] infoDictionary];
+           }];
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {

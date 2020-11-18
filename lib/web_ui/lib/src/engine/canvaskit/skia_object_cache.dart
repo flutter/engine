@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A cache of Skia objects whose memory Flutter manages.
@@ -105,18 +105,24 @@ abstract class SkiaObject<T extends Object> {
 /// collector to determine when it is safe to release the C++ object.
 ///
 /// In browsers that do not support weak references we pessimistically delete
-/// the underlying C++ object before the Dart object is garbage-collected. The
-/// current algorithm deletes objects at the end of every frame. This allows
-/// reusing the C++ objects within the frame. If the object is used again after
-/// is was deleted, we [resurrect] it based on the data available on the
-/// JavaScript side.
+/// the underlying C++ object before the Dart object is garbage-collected.
+///
+/// If [isResurrectionExpensive] is false the object is deleted at the end of
+/// the frame. If a deleted object is reused in a subsequent frame it is
+/// resurrected by calling [resurrect]. This allows reusing the C++ objects
+/// within the frame.
+///
+/// If [isResurrectionExpensive] is true the object is put in a LRU cache.
+/// Objects that are used least frequently are deleted from the cache when
+/// the cache limit is reached.
 ///
 /// The lifecycle of a resurrectable C++ object is as follows:
 ///
-/// - Create default: when instantiating a C++ object for a Dart object for the
-///   first time, the C++ object is populated with default data (the defaults are
-///   defined by Flutter; Skia defaults are corrected if necessary). The
-///   default object is created by [createDefault].
+/// - Create: a managed object is created using a default instance that's
+///   either supplied as a constructor argument, or obtained by calling
+///   [createDefault]. The data in the new object is expected to contain
+///   data matching Flutter's defaults (sometimes Skia defaults need to be
+///   adjusted).
 /// - Zero or more cycles of delete + resurrect: when a Dart object is reused
 ///   after its C++ object is deleted we create a new C++ object populated with
 ///   data from the current state of the Dart object. This is done using the
@@ -124,8 +130,15 @@ abstract class SkiaObject<T extends Object> {
 /// - Final delete: if a Dart object is never reused, it is GC'd after its
 ///   underlying C++ object is deleted. This is implemented by [SkiaObjects].
 abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> {
-  ManagedSkiaObject() {
-    final T defaultObject = createDefault();
+  /// Creates a managed Skia object.
+  ///
+  /// If `instance` is null calls [createDefault] to create a Skia object to
+  /// manage. Otherwise, uses the provided instance.
+  ///
+  /// The provided instance must not be managed by another [ManagedSkiaObject],
+  /// as it may lead to undefined behavior.
+  ManagedSkiaObject([T? instance]) {
+    final T defaultObject = instance ?? createDefault();
     rawSkiaObject = defaultObject;
     if (browserSupportsFinalizationRegistry) {
       // If FinalizationRegistry is supported we will only ever need the
@@ -239,6 +252,15 @@ abstract class OneShotSkiaObject<T extends Object> extends SkiaObject<T> {
   }
 }
 
+/// Interface that classes wrapping [SkiaObjectBox] must implement.
+///
+/// Used to collect stack traces in debug mode.
+abstract class StackTraceDebugger {
+  /// The stack trace pointing to code location that created or upreffed a
+  /// [SkiaObjectBox].
+  StackTrace get debugStackTrace;
+}
+
 /// Uses reference counting to manage the lifecycle of a Skia object owned by a
 /// wrapper object.
 ///
@@ -250,37 +272,48 @@ abstract class OneShotSkiaObject<T extends Object> extends SkiaObject<T> {
 ///
 /// The [delete] method may be called any number of times. The box
 /// will only delete the object once.
-class SkiaObjectBox {
-  SkiaObjectBox(Object wrapper, SkDeletable skObject)
-      : this._(wrapper, skObject, <SkiaObjectBox>{});
-
-  SkiaObjectBox._(Object wrapper, this.skObject, this._refs) {
+class SkiaObjectBox<R extends StackTraceDebugger, T> {
+  SkiaObjectBox(R debugReferrer, this.skiaObject) : _skDeletable = skiaObject as SkDeletable {
     if (assertionsEnabled) {
-      _debugStackTrace = StackTrace.current;
+      debugReferrers.add(debugReferrer);
     }
-    _refs.add(this);
     if (browserSupportsFinalizationRegistry) {
-      boxRegistry.register(wrapper, this);
+      boxRegistry.register(this, _skDeletable);
     }
+    assert(refCount == debugReferrers.length);
   }
 
-  /// Reference handles to the same underlying [skObject].
-  final Set<SkiaObjectBox> _refs;
+  /// The number of objects sharing references to this box.
+  ///
+  /// When this count reaches zero, the underlying [skiaObject] is scheduled
+  /// for deletion.
+  int get refCount => _refCount;
+  int _refCount = 1;
 
-  late final StackTrace? _debugStackTrace;
+  /// When assertions are enabled, stores all objects that share this box.
+  ///
+  /// The length of this list is always identical to [refCount].
+  ///
+  /// This list can be used for debugging ref counting issues.
+  final Set<R> debugReferrers = <R>{};
+
   /// If asserts are enabled, the [StackTrace]s representing when a reference
   /// was created.
   List<StackTrace>? debugGetStackTraces() {
     if (assertionsEnabled) {
-      return _refs
-          .map<StackTrace>((SkiaObjectBox box) => box._debugStackTrace!)
+      return debugReferrers
+          .map<StackTrace>((R referrer) => referrer.debugStackTrace)
           .toList();
     }
     return null;
   }
 
   /// The Skia object whose lifecycle is being managed.
-  final SkDeletable skObject;
+  ///
+  /// Do not store this value outside this box. It is memory-managed by
+  /// [SkiaObjectBox]. Storing it may result in use-after-free bugs.
+  final T skiaObject;
+  final SkDeletable _skDeletable;
 
   /// Whether this object has been deleted.
   bool get isDeleted => _isDeleted;
@@ -288,17 +321,23 @@ class SkiaObjectBox {
 
   /// Deletes Skia objects when their wrappers are garbage collected.
   static final SkObjectFinalizationRegistry boxRegistry =
-      SkObjectFinalizationRegistry(js.allowInterop((SkiaObjectBox box) {
-    box.delete();
+      SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
+    deletable.delete();
   }));
 
-  /// Returns a clone of this object, which increases its reference count.
+  /// Increases the reference count of this box because a new object began
+  /// sharing ownership of the underlying [skiaObject].
   ///
   /// Clones must be [dispose]d when finished.
-  SkiaObjectBox clone(Object wrapper) {
-    assert(!_isDeleted, 'Cannot clone from a deleted handle.');
-    assert(_refs.isNotEmpty);
-    return SkiaObjectBox._(wrapper, skObject, _refs);
+  void ref(R debugReferrer) {
+    assert(!_isDeleted, 'Cannot increment ref count on a deleted handle.');
+    assert(_refCount > 0);
+    assert(
+      debugReferrers.add(debugReferrer),
+      'Attempted to increment ref count by the same referrer more than once.',
+    );
+    _refCount += 1;
+    assert(refCount == debugReferrers.length);
   }
 
   /// Decrements the reference count for the [skObject].
@@ -307,17 +346,17 @@ class SkiaObjectBox {
   ///
   /// If this causes the reference count to drop to zero, deletes the
   /// [skObject].
-  void delete() {
-    if (_isDeleted) {
-      assert(!_refs.contains(this));
-      return;
-    }
-    final bool removed = _refs.remove(this);
-    assert(removed);
-    _isDeleted = true;
-    if (_refs.isEmpty) {
-      _skObjectDeleteQueue.add(skObject);
-      _skObjectCollector ??= _scheduleSkObjectCollection();
+  void unref(R debugReferrer) {
+    assert(!_isDeleted, 'Attempted to unref an already deleted Skia object.');
+    assert(
+      debugReferrers.remove(debugReferrer),
+      'Attempted to decrement ref count by the same referrer more than once.',
+    );
+    _refCount -= 1;
+    assert(refCount == debugReferrers.length);
+    if (_refCount == 0) {
+      _isDeleted = true;
+      _scheduleSkObjectCollection(_skDeletable);
     }
   }
 }
@@ -373,7 +412,7 @@ class SkiaObjects {
   ///
   /// Since it's expensive to resurrect, we shouldn't just delete it after every
   /// frame. Instead, add it to a cache and only delete it when the cache fills.
-  static void manageExpensive(ManagedSkiaObject object) {
+  static void manageExpensive(SkiaObject object) {
     registerCleanupCallback();
     expensiveCache.add(object);
   }

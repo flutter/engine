@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 class DomRenderer {
@@ -172,12 +172,17 @@ class DomRenderer {
     js_util.setProperty(element, name, value);
   }
 
-  void setElementStyle(html.Element element, String name, String? value) {
+  static void setElementStyle(html.Element element, String name, String? value) {
     if (value == null) {
       element.style.removeProperty(name);
     } else {
       element.style.setProperty(name, value);
     }
+  }
+
+  static void setElementTransform(html.Element element, String transformValue) {
+    js_util.setProperty(js_util.getProperty(element, 'style'), 'transform',
+        transformValue);
   }
 
   void setText(html.Element element, String text) {
@@ -473,8 +478,8 @@ flt-glass-pane * {
   ///
   /// When there is a text editing going on in mobile devices, do not change
   /// the physicalSize, change the [window.viewInsets]. See:
-  /// https://api.flutter.dev/flutter/dart-ui/Window/viewInsets.html
-  /// https://api.flutter.dev/flutter/dart-ui/Window/physicalSize.html
+  /// https://api.flutter.dev/flutter/dart-ui/FlutterView/viewInsets.html
+  /// https://api.flutter.dev/flutter/dart-ui/FlutterView/physicalSize.html
   ///
   /// Note: always check for rotations for a mobile device. Update the physical
   /// size if the change is caused by a rotation.

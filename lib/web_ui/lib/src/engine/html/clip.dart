@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Mixin used by surfaces that clip their contents using an overflowing DOM
@@ -195,11 +195,11 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   void recomputeTransformAndClip() {
     _transform = parent!._transform;
 
-    final ui.RRect? roundRect = path.webOnlyPathAsRoundedRect;
+    final ui.RRect? roundRect = path.toRoundedRect();
     if (roundRect != null) {
       _localClipBounds = roundRect.outerRect;
     } else {
-      final ui.Rect? rect = path.webOnlyPathAsRect;
+      final ui.Rect? rect = path.toRect();
       if (rect != null) {
         _localClipBounds = rect;
       } else {
@@ -233,7 +233,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   void _applyShape() {
     // Handle special case of round rect physical shape mapping to
     // rounded div.
-    final ui.RRect? roundRect = path.webOnlyPathAsRoundedRect;
+    final ui.RRect? roundRect = path.toRoundedRect();
     if (roundRect != null) {
       final String borderRadius =
           '${roundRect.tlRadiusX}px ${roundRect.trRadiusX}px '
@@ -253,7 +253,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       }
       return;
     } else {
-      final ui.Rect? rect = path.webOnlyPathAsRect;
+      final ui.Rect? rect = path.toRect();
       if (rect != null) {
         final html.CssStyleDeclaration style = rootElement!.style;
         style
@@ -270,7 +270,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
         }
         return;
       } else {
-        final ui.Rect? ovalRect = path.webOnlyPathAsCircle;
+        final ui.Rect? ovalRect = path.toCircle();
         if (ovalRect != null) {
           final double rx = ovalRect.width / 2.0;
           final double ry = ovalRect.height / 2.0;
@@ -307,9 +307,9 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     _clipElement =
         html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
     domRenderer.append(rootElement!, _clipElement!);
-    domRenderer.setElementStyle(
+    DomRenderer.setElementStyle(
         rootElement!, 'clip-path', 'url(#svgClip$_clipIdCounter)');
-    domRenderer.setElementStyle(
+    DomRenderer.setElementStyle(
         rootElement!, '-webkit-clip-path', 'url(#svgClip$_clipIdCounter)');
     final html.CssStyleDeclaration rootElementStyle = rootElement!.style;
     rootElementStyle
@@ -341,8 +341,8 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       _clipElement = null;
       // Reset style on prior element since we may have switched between
       // rect/rrect and arbitrary path.
-      domRenderer.setElementStyle(rootElement!, 'clip-path', '');
-      domRenderer.setElementStyle(rootElement!, '-webkit-clip-path', '');
+      DomRenderer.setElementStyle(rootElement!, 'clip-path', '');
+      DomRenderer.setElementStyle(rootElement!, '-webkit-clip-path', '');
       _applyShape();
     } else {
       // Reuse clipElement from prior surface.
@@ -416,9 +416,9 @@ String createSvgClipDef(html.HtmlElement element, ui.Path clipPath) {
   final ui.Rect pathBounds = clipPath.getBounds();
   final String svgClipPath = _pathToSvgClipPath(clipPath,
       scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom);
-  domRenderer.setElementStyle(
+  DomRenderer.setElementStyle(
       element, 'clip-path', 'url(#svgClip$_clipIdCounter)');
-  domRenderer.setElementStyle(
+  DomRenderer.setElementStyle(
       element, '-webkit-clip-path', 'url(#svgClip$_clipIdCounter)');
   // We need to set width and height for the clipElement to cover the
   // bounds of the path since browsers such as Safari and Edge

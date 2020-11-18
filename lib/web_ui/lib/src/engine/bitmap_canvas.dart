@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A raw HTML canvas that is directly written to.
@@ -331,17 +331,12 @@ class BitmapCanvas extends EngineCanvas {
   /// - Pictures typically have large rect/rounded rectangles as background
   ///   prefer DOM if canvas has not been allocated yet.
   ///
-  /// Future optimization: The check below can be used to prevent excessive
-  /// canvas sandwiching (switching between dom and multiple canvas(s)).
-  /// Once RecordingCanvas is updated to detect switch count, this can be
-  /// enabled.
-  /// (_canvasPool._canvas == null &&
-  ///           paint.maskFilter == null &&
-  ///           paint.shader == null &&
-  ///           paint.style != ui.PaintingStyle.stroke)
-  ///
   bool _useDomForRendering(SurfacePaintData paint) =>
-      _preserveImageData == false && _contains3dTransform;
+      (_preserveImageData == false && _contains3dTransform) ||
+      (_childOverdraw && _canvasPool._canvas == null &&
+          paint.maskFilter == null &&
+          paint.shader == null &&
+          paint.style != ui.PaintingStyle.stroke);
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
@@ -495,6 +490,26 @@ class BitmapCanvas extends EngineCanvas {
     if (_useDomForRendering(paint)) {
       final Matrix4 transform = _canvasPool._currentTransform;
       final SurfacePath surfacePath = path as SurfacePath;
+      final ui.Rect? pathAsLine = surfacePath.toStraightLine();
+      if (pathAsLine != null) {
+        final ui.Rect rect = (pathAsLine.top == pathAsLine.bottom) ?
+          ui.Rect.fromLTWH(pathAsLine.left, pathAsLine.top, pathAsLine.width, 1)
+          : ui.Rect.fromLTWH(pathAsLine.left, pathAsLine.top, 1, pathAsLine.height);
+
+        html.HtmlElement element = _buildDrawRectElement(
+            rect, paint, 'draw-rect', _canvasPool._currentTransform);
+        _drawElement(
+            element,
+            ui.Offset(
+                math.min(rect.left, rect.right), math.min(rect.top, rect.bottom)),
+            paint);
+        return;
+      }
+      final ui.Rect? pathAsRect = surfacePath.toRect();
+      if (pathAsRect != null) {
+        drawRect(pathAsRect, paint);
+        return;
+      }
       final ui.Rect pathBounds = surfacePath.getBounds();
       html.Element svgElm = _pathToSvgElement(
           surfacePath, paint, '${pathBounds.right}', '${pathBounds.bottom}');
@@ -558,15 +573,10 @@ class BitmapCanvas extends EngineCanvas {
       ui.Image image, ui.Offset p, SurfacePaintData paint) {
     final HtmlImage htmlImage = image as HtmlImage;
     final ui.BlendMode? blendMode = paint.blendMode;
-    final EngineColorFilter? colorFilter =
-        paint.colorFilter as EngineColorFilter?;
-    final ui.BlendMode? colorFilterBlendMode = colorFilter?._blendMode;
+    final EngineColorFilter? colorFilter = paint.colorFilter as EngineColorFilter?;
     html.HtmlElement imgElement;
-    if (colorFilterBlendMode == null) {
-      // No Blending, create an image by cloning original loaded image.
-      imgElement = _reuseOrCreateImage(htmlImage);
-    } else {
-      switch (colorFilterBlendMode) {
+    if (colorFilter is _CkBlendModeColorFilter) {
+      switch (colorFilter.blendMode) {
         case ui.BlendMode.colorBurn:
         case ui.BlendMode.colorDodge:
         case ui.BlendMode.hue:
@@ -580,14 +590,17 @@ class BitmapCanvas extends EngineCanvas {
         case ui.BlendMode.color:
         case ui.BlendMode.luminosity:
         case ui.BlendMode.xor:
-          imgElement = _createImageElementWithSvgFilter(
-              image, colorFilter!._color, colorFilterBlendMode, paint);
+          imgElement = _createImageElementWithSvgFilter(image,
+              colorFilter.color, colorFilter.blendMode, paint);
           break;
         default:
-          imgElement = _createBackgroundImageWithBlend(
-              image, colorFilter!._color, colorFilterBlendMode, paint);
+          imgElement = _createBackgroundImageWithBlend(image,
+              colorFilter.color, colorFilter.blendMode, paint);
           break;
       }
+    } else {
+      // No Blending, create an image by cloning original loaded image.
+      imgElement = _reuseOrCreateImage(htmlImage);
     }
     imgElement.style.mixBlendMode = _stringForBlendMode(blendMode) ?? '';
     if (_canvasPool.isClipped) {

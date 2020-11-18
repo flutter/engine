@@ -18,9 +18,7 @@ namespace flutter {
 
 class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
  public:
-  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-               std::shared_ptr<IOSContext> context,
-               const std::shared_ptr<IOSExternalViewEmbedder>& external_view_embedder = nullptr);
+  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer, std::shared_ptr<IOSContext> context);
 
   ~IOSSurfaceGL() override;
 
@@ -47,9 +45,6 @@ class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
 
   // |GPUSurfaceGLDelegate|
   bool SurfaceSupportsReadback() const override;
-
-  // |GPUSurfaceGLDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
  private:
   std::unique_ptr<IOSRenderTargetGL> render_target_;

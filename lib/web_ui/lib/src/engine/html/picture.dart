@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 // TODO(yjbanov): this is currently very naive. We probably want to cache
@@ -51,6 +51,7 @@ class _PaintRequest {
 List<_PaintRequest> _paintQueue = <_PaintRequest>[];
 
 void _recycleCanvas(EngineCanvas? canvas) {
+  assert(canvas == null || !_recycledCanvases.contains(canvas));
   if (canvas is BitmapCanvas) {
     canvas.setElementCache(null);
     if (canvas.isReusable()) {
@@ -316,7 +317,7 @@ class PersistedPicture extends PersistedLeafSurface {
       if (rootElement != null) {
         domRenderer.clearDom(rootElement!);
       }
-      if (_canvas != null) {
+      if (_canvas != null && _canvas != oldCanvas) {
         _recycleCanvas(_canvas);
       }
       _canvas = null;
@@ -395,10 +396,9 @@ class PersistedPicture extends PersistedLeafSurface {
   }
 
   void _applyDomPaint(EngineCanvas? oldCanvas) {
-    _recycleCanvas(oldCanvas);
-    _canvas = DomCanvas();
+    _recycleCanvas(_canvas);
+    _canvas = DomCanvas(rootElement!);
     domRenderer.clearDom(rootElement!);
-    rootElement!.append(_canvas!.rootElement);
     picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect);
   }
 
@@ -589,6 +589,7 @@ class PersistedPicture extends PersistedLeafSurface {
   @override
   void discard() {
     _recycleCanvas(_canvas);
+    _canvas = null;
     super.discard();
   }
 
@@ -633,7 +634,7 @@ class PersistedPicture extends PersistedLeafSurface {
 /// Given size of a rectangle and transform, computes pixel density
 /// (scale factor).
 double _computePixelDensity(Matrix4? transform, double width, double height) {
-  if (transform == null || transform.isIdentity()) {
+  if (transform == null || transform.isIdentityOrTranslation()) {
     return 1.0;
   }
   final Float32List m = transform.storage;

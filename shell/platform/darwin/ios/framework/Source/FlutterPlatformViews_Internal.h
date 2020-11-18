@@ -61,7 +61,6 @@ void ResetAnchor(CALayer* layer);
 
 class IOSContextGL;
 class IOSSurface;
-class IOSSurfaceFactory;
 
 struct FlutterPlatformViewLayer {
   FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> overlay_view,
@@ -88,8 +87,7 @@ struct FlutterPlatformViewLayer {
 // This class isn't thread safe.
 class FlutterPlatformViewLayerPool {
  public:
-  FlutterPlatformViewLayerPool(std::shared_ptr<IOSSurfaceFactory> ios_surface_factory)
-      : ios_surface_factory_(ios_surface_factory) {}
+  FlutterPlatformViewLayerPool() = default;
 
   ~FlutterPlatformViewLayerPool() = default;
 
@@ -121,14 +119,12 @@ class FlutterPlatformViewLayerPool {
   size_t available_layer_index_ = 0;
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers_;
 
-  const std::shared_ptr<IOSSurfaceFactory> ios_surface_factory_;
-
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewLayerPool);
 };
 
 class FlutterPlatformViewsController {
  public:
-  FlutterPlatformViewsController(std::shared_ptr<IOSSurfaceFactory> surface_factory);
+  FlutterPlatformViewsController();
 
   ~FlutterPlatformViewsController();
 
@@ -176,7 +172,8 @@ class FlutterPlatformViewsController {
 
   bool SubmitFrame(GrDirectContext* gr_context,
                    std::shared_ptr<IOSContext> ios_context,
-                   std::unique_ptr<SurfaceFrame> frame);
+                   std::unique_ptr<SurfaceFrame> frame,
+                   const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch);
 
   // Invoked at the very end of a frame.
   // After invoking this method, nothing should happen on the current TaskRunner during the same
@@ -210,8 +207,8 @@ class FlutterPlatformViewsController {
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
   std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
   std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> touch_interceptors_;
-  // Mapping a platform view ID to the top most parent view (root_view) who is a direct child to
-  // the `flutter_view_`.
+  // Mapping a platform view ID to the top most parent view (root_view) of a platform view. In
+  // |SubmitFrame|, root_views_ are added to flutter_view_ as child views.
   //
   // The platform view with the view ID is a child of the root view; If the platform view is not
   // clipped, and no clipping view is added, the root view will be the intercepting view.
@@ -307,6 +304,10 @@ class FlutterPlatformViewsController {
 
   // Commit a CATransaction if |BeginCATransaction| has been called during the frame.
   void CommitCATransactionIfNeeded();
+
+  bool SubmitFrameGpuSafe(GrDirectContext* gr_context,
+                          std::shared_ptr<IOSContext> ios_context,
+                          std::unique_ptr<SurfaceFrame> frame);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Generic callback signature, used by [_futurize].
@@ -511,8 +511,7 @@ final ByteData? _fontChangeMessage =
 bool _fontChangeScheduled = false;
 
 FutureOr<void> sendFontChangeMessage() async {
-  if (EnginePlatformDispatcher.instance._onPlatformMessage != null &&
-    !_fontChangeScheduled) {
+  if (!_fontChangeScheduled) {
     _fontChangeScheduled = true;
     // Batch updates into next animationframe.
     html.window.requestAnimationFrame((num _) {
@@ -520,7 +519,7 @@ FutureOr<void> sendFontChangeMessage() async {
       EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
         'flutter/system',
         _fontChangeMessage,
-            (_) {},
+        (_) {},
       );
     });
   }
