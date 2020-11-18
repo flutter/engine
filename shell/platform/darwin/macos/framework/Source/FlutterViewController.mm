@@ -14,6 +14,9 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
+// This is for creating Mock Platform Views currently.
+#import "flutter/shell/platform/darwin/macos/framework/Source/MockFlutterPlatformView.h"
+
 namespace {
 
 /// Clipboard plain text format.
@@ -198,6 +201,9 @@ struct KeyboardState {
 
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
+
+  // A method channel for platform view functionality.
+  FlutterMethodChannel* _platformViewsChannel;
 }
 
 @dynamic view;
@@ -377,9 +383,32 @@ static void CommonInit(FlutterViewController* controller) {
       [FlutterMethodChannel methodChannelWithName:@"flutter/platform"
                                   binaryMessenger:_engine.binaryMessenger
                                             codec:[FlutterJSONMethodCodec sharedInstance]];
+
+  _platformViewsChannel =
+      [FlutterMethodChannel methodChannelWithName:@"flutter/platform_views"
+                                  binaryMessenger:_engine.binaryMessenger
+                                            codec:[FlutterStandardMethodCodec sharedInstance]];
+
   __weak FlutterViewController* weakSelf = self;
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [weakSelf handleMethodCall:call result:result];
+  }];
+
+  [_platformViewsChannel
+  setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {                
+    // This is hardcoded to create an NSTextView.
+    NSDictionary<NSString*, id>* args = [call arguments];
+    long viewId = [args[@"id"] longValue];
+
+    MockFlutterPlatformFactory* factory = [MockFlutterPlatformFactory new];
+
+    NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectMake(500, 0, 300, 300)
+                                                        viewIdentifier:viewId
+                                                            arguments:nil];                                     
+
+    // Hard coded right now to store one platform view in the map.
+    self->_view_map[1] = [embedded_view view];
+    result(nil);
   }];
 }
 

@@ -69,7 +69,7 @@ bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layer
       }
       case kFlutterLayerContentTypePlatformView:
         // Add functionality in follow up PR.
-        FML_CHECK(false) << "Presenting PlatformViews not yet supported";
+        // FML_CHECK(false) << "Presenting PlatformViews not yet supported";
         break;
     };
   }
