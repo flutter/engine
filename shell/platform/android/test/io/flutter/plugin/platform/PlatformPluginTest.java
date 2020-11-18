@@ -138,7 +138,7 @@ public class PlatformPluginTest {
       assertEquals(0XFF000000, fakeActivity.getWindow().getNavigationBarColor());
     }
   }
-  
+
   @Test
   public void popSystemNavigatorFlutterActivity() {
     Activity fakeActivity = mock(Activity.class);
@@ -173,5 +173,5 @@ public class PlatformPluginTest {
     platformPlugin.mPlatformMessageHandler.setPreferredOrientations(0);
 
     verify(fragmentActivity, times(1)).setRequestedOrientation(0);
-  }   
+  }
 }
