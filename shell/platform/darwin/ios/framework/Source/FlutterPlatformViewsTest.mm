@@ -136,8 +136,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       result);
 
   XCTAssertNotNil(gMockPlatformView);
-
-  flutterPlatformViewsController->Reset();
 }
 
 - (void)testChildClippingViewHitTests {
@@ -213,7 +211,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   CGRect platformViewRectInFlutterView = [gMockPlatformView convertRect:gMockPlatformView.bounds
                                                                  toView:mockFlutterView];
   XCTAssertTrue(CGRectEqualToRect(platformViewRectInFlutterView, CGRectMake(100, 100, 300, 300)));
-  flutterPlatformViewsController->Reset();
 }
 
 - (void)testChildClippingViewShouldBeTheBoundingRectOfPlatformView {
@@ -283,8 +280,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertLessThan(
       fabs(platformViewRectInFlutterView.size.height - childClippingView.frame.size.height),
       kFloatCompareEpsilon);
-
-  flutterPlatformViewsController->Reset();
 }
 
 - (void)testClipRect {
@@ -356,7 +351,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       }
     }
   }
-  flutterPlatformViewsController->Reset();
 }
 
 - (void)testClipRRect {
@@ -428,7 +422,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       }
     }
   }
-  flutterPlatformViewsController->Reset();
 }
 
 - (void)testClipPath {
@@ -501,7 +494,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       }
     }
   }
-  flutterPlatformViewsController->Reset();
 }
 
 - (void)testSetFlutterViewControllerAfterCreateCanStillDispatchTouchEvents {
@@ -564,8 +556,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->SetFlutterViewController(mockFlutterViewContoller);
   [forwardGectureRecognizer touchesBegan:touches2 withEvent:event2];
   OCMVerify([mockFlutterViewContoller touchesBegan:touches2 withEvent:event2]);
-
-  flutterPlatformViewsController->Reset();
 }
 
 - (void)testSetFlutterViewControllerInTheMiddleOfTouchEventShouldStillAllowGesturesToBeHandled {
@@ -816,8 +806,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   gpu_is_disabled->SetSwitch(false);
   XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(
       nullptr, nullptr, std::move(mock_surface_submit_false), gpu_is_disabled));
-
-  flutterPlatformViewsController->Reset();
 }
 
 - (void)
@@ -920,8 +908,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
   XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), 1UL);
-
-  flutterPlatformViewsController->Reset();
 }
 
 - (int)alphaOfPoint:(CGPoint)point onView:(UIView*)view {
