@@ -6,7 +6,7 @@
 
 #include <Foundation/Foundation.h>
 #include <QuartzCore/CAEAGLLayer.h>
-#include <QuartzCore/CAMetalLayer.h>
+#import <QuartzCore/CAMetalLayer.h>
 #if FLUTTER_SHELL_ENABLE_METAL
 #include <Metal/Metal.h>
 #endif  // FLUTTER_SHELL_ENABLE_METAL

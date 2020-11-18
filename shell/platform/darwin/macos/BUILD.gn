@@ -56,6 +56,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterMouseCursorPlugin.mm",
     "framework/Source/FlutterOpenGLRenderer.h",
     "framework/Source/FlutterOpenGLRenderer.mm",
+    "framework/Source/FlutterBackingStoreDescriptor.h",
+    "framework/Source/FlutterBackingStoreDescriptor.mm",
     "framework/Source/FlutterResizableBackingStoreProvider.h",
     "framework/Source/FlutterResizableBackingStoreProvider.mm",
     "framework/Source/FlutterResizeSynchronizer.h",
@@ -105,6 +107,7 @@ source_set("flutter_framework_source") {
     "Cocoa.framework",
     "CoreVideo.framework",
     "IOSurface.framework",
+    "Metal.framework",
     "QuartzCore.framework",
   ]
 }

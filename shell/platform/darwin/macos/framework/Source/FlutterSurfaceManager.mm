@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
-#include <cstddef>
 
+#include <cstddef>
 #include <OpenGL/gl.h>
 #include <vector>
 
@@ -108,12 +108,12 @@ enum {
     _contentLayer = [[CALayer alloc] init];
     [_containingLayer addSublayer:_contentLayer];
 
-    _ioSurfaceHolder = [[IOSurfaceHolder alloc] init:2];
+    _ioSurfaceHolder = [[IOSurfaceHolder alloc] init:kFlutterSurfaceManagerBufferCount];
 
     MacOSGLContextSwitch context_switch(openGLContext);
 
-    glGenFramebuffers(2, _frameBufferId);
-    glGenTextures(2, _backingTexture);
+    glGenFramebuffers(kFlutterSurfaceManagerBufferCount, _frameBufferId);
+    glGenTextures(kFlutterSurfaceManagerBufferCount, _backingTexture);
 
     [self createFramebuffer:_frameBufferId[0] withBackingTexture:_backingTexture[0]];
     [self createFramebuffer:_frameBufferId[1] withBackingTexture:_backingTexture[1]];
@@ -187,6 +187,9 @@ enum {
   id<MTLCommandQueue> _mtlCommandQueue;
   CAMetalLayer* _containingLayer;  // provided (parent layer)
   CALayer* _contentLayer;
+  IOSurfaceHolder* _ioSurfaceHolder;
+
+  id<MTLTexture> _textures[kFlutterSurfaceManagerBufferCount];
 }
 
 - (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
@@ -201,6 +204,8 @@ enum {
     // vertically if we render to Metal texture
     _contentLayer = [[CALayer alloc] init];
     [_containingLayer addSublayer:_contentLayer];
+
+    _ioSurfaceHolder = [[IOSurfaceHolder alloc] init:kFlutterSurfaceManagerBufferCount];
   }
   return self;
 }
@@ -210,12 +215,40 @@ enum {
     return;
   }
   _surfaceSize = size;
+  [_ioSurfaceHolder recreateIOSurfacesWithSize:size];
+
+  for (size_t i = 0; i < kFlutterSurfaceManagerBufferCount; i++) {
+    IOSurfaceRef ioSurface = [_ioSurfaceHolder get:i];
+    MTLTextureDescriptor* textureDescriptor =
+        [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
+                                                           width:size.width
+                                                          height:size.height
+                                                       mipmapped:NO];
+    // plane = 0 for BGRA.
+    _textures[i] = [_mtlDevice newTextureWithDescriptor:textureDescriptor
+                                              iosurface:ioSurface
+                                                  plane:0];
+  }
 }
 
 - (void)swapBuffers {
+  _contentLayer.frame = _containingLayer.bounds;
+
+  // The surface is an Metal texture, which means it has origin in bottom left corner
+  // and needs to be flipped vertically
+  _contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
+  IOSurfaceRef backBuffer = [_ioSurfaceHolder get:kFlutterSurfaceManagerBackBuffer];
+  [_contentLayer setContents:(__bridge id)backBuffer];
+
+  [_ioSurfaceHolder swapSurfacesAtIndex:kFlutterSurfaceManagerBackBuffer
+                               andIndex:kFlutterSurfaceManagerFrontBuffer];
+  std::swap(_textures[kFlutterSurfaceManagerBackBuffer],
+            _textures[kFlutterSurfaceManagerFrontBuffer]);
 }
 
 - (FlutterBackingStoreDescriptor*)getBackingStore {
+  auto texture = _textures[kFlutterSurfaceManagerBackBuffer];
+  return [[FlutterBackingStoreDescriptor alloc] initMetalDescriptorWithTexture:texture];
 }
 
 @end

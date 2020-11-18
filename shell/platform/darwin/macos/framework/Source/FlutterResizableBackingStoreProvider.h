@@ -4,25 +4,12 @@
 
 #import <Cocoa/Cocoa.h>
 #import <Metal/Metal.h>
+#import <QuartzCore/CAMetalLayer.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
 
 NS_ASSUME_NONNULL_BEGIN
-
-typedef NS_ENUM(NSInteger, FlutterMacOSBackingStoreType) {
-  FlutterMacOSBackingStoreTypeMetal,
-  FlutterMacOSBackingStoreTypeOpenGL
-};
-
-@interface FlutterBackingStoreDescriptor : NSObject
-
-@property(readonly, nonatomic) FlutterMacOSBackingStoreType backingStoreType;
-
-- (instancetype)initOpenGLDescriptorWithFBOId:(int)fboId;
-
-- (int)getFrameBufferId;
-
-@end
 
 @protocol FlutterResizableBackingStoreProvider <FlutterResizeSynchronizerDelegate>
 
@@ -43,7 +30,8 @@ typedef NS_ENUM(NSInteger, FlutterMacOSBackingStoreType) {
     : NSObject <FlutterResizableBackingStoreProvider>
 
 - (instancetype)initWithDevice:(id<MTLDevice>)mtlDevice
-                      andQueue:(id<MTLCommandQueue>)mtlCommandQueue;
+                      andQueue:(id<MTLCommandQueue>)mtlCommandQueue
+               andCAMetalLayer:(CAMetalLayer*)layer;
 
 @end
 

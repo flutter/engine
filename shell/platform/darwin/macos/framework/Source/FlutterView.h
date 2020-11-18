@@ -22,6 +22,13 @@
  */
 @interface FlutterView : NSView
 
+#ifdef SHELL_ENABLE_METAL
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)device
+                     commandQueue:(id<MTLCommandQueue>)commandQueue
+                  reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener
+    NS_DESIGNATED_INITIALIZER;
+#endif
+
 - (nullable instancetype)initWithFrame:(NSRect)frame
                            mainContext:(nonnull NSOpenGLContext*)mainContext
                        reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener

@@ -3,10 +3,11 @@
 // found in the LICENSE file.
 
 #import <Cocoa/Cocoa.h>
-#include <QuartzCore/CAMetalLayer.h>
+#import <QuartzCore/CAMetalLayer.h>
 
-#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
 
+NS_ASSUME_NONNULL_BEGIN
 @protocol FlutterSurfaceManager
 
 - (void)ensureSurfaceSize:(CGSize)size;
@@ -20,15 +21,17 @@
 // Manages the IOSurfaces for FlutterView
 @interface FlutterGLSurfaceManager : NSObject <FlutterSurfaceManager>
 
-- (nullable instancetype)initWithLayer:(nonnull CALayer*)containingLayer
-                         openGLContext:(nonnull NSOpenGLContext*)opengLContext;
+- (nullable instancetype)initWithLayer:(CALayer*)containingLayer
+                         openGLContext:(NSOpenGLContext*)opengLContext;
 
 @end
 
 @interface FlutterMetalSurfaceManager : NSObject <FlutterSurfaceManager>
 
-- (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
-                        andCommandQueue:(nonnull id<MTLCommandQueue>)commandQueue
-                        andCAMetalLayer:(nonnull CAMetalLayer*)layer;
+- (nullable instancetype)initWithDevice:(id<MTLDevice>)device
+                        andCommandQueue:(id<MTLCommandQueue>)commandQueue
+                        andCAMetalLayer:(CAMetalLayer*)layer;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -4,32 +4,12 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h"
 
+#import <Metal/Metal.h>
 #import <OpenGL/gl.h>
 #import <QuartzCore/QuartzCore.h>
 
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
-
-@implementation FlutterBackingStoreDescriptor {
-  int _fboId;
-}
-
-- (instancetype)initOpenGLDescriptorWithFBOId:(int)fboId {
-  self = [super init];
-  if (self) {
-    _fboId = fboId;
-    _backingStoreType = FlutterMacOSBackingStoreTypeOpenGL;
-  }
-  return self;
-}
-
-- (int)getFrameBufferId {
-  NSAssert(_backingStoreType == FlutterMacOSBackingStoreTypeOpenGL,
-           @"Only OpenGL backing stores can request FBO id.");
-  return _fboId;
-}
-
-@end
 
 @implementation FlutterOpenGLResizableBackingStoreProvider {
   NSOpenGLContext* _mainContext;
@@ -73,14 +53,19 @@
 @implementation FlutterMetalResizableBackingStoreProvider {
   id<MTLDevice> _mtlDevice;
   id<MTLCommandQueue> _mtlCommandQueue;
+  id<FlutterSurfaceManager> _surfaceManager;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)mtlDevice
-                      andQueue:(id<MTLCommandQueue>)mtlCommandQueue {
+                      andQueue:(id<MTLCommandQueue>)mtlCommandQueue
+               andCAMetalLayer:(CAMetalLayer*)layer {
   self = [super init];
   if (self) {
     _mtlDevice = mtlDevice;
     _mtlCommandQueue = mtlCommandQueue;
+    _surfaceManager = [[FlutterMetalSurfaceManager alloc] initWithDevice:mtlDevice
+                                                         andCommandQueue:mtlCommandQueue
+                                                         andCAMetalLayer:layer];
   }
   return self;
 }
@@ -92,6 +77,7 @@
 - (FlutterBackingStoreDescriptor*)getBackingStore {
   // int fboId = [_surfaceManager glFrameBufferId];
   // return [[FlutterBackingStoreDescriptor alloc] initOpenGLDescriptorWithFBOId:fboId];
+  return nil;
 }
 
 - (void)resizeSynchronizerFlush:(nonnull FlutterResizeSynchronizer*)synchronizer {

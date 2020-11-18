@@ -9,6 +9,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
 
 #import <OpenGL/gl.h>
+#import <QuartzCore/CAMetalLayer.h>
 #import <QuartzCore/QuartzCore.h>
 
 @interface FlutterView () {
@@ -20,6 +21,35 @@
 @end
 
 @implementation FlutterView
+
+#ifdef SHELL_ENABLE_METAL
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)device
+                     commandQueue:(id<MTLCommandQueue>)commandQueue
+                  reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
+  self = [super initWithFrame:NSZeroRect];
+  if (self) {
+    _reshapeListener = reshapeListener;
+
+    [self setWantsLayer:YES];
+    _resizableBackingStoreProvider = [[FlutterMetalResizableBackingStoreProvider alloc]
+         initWithDevice:device
+               andQueue:commandQueue
+        andCAMetalLayer:reinterpret_cast<CAMetalLayer*>(self.layer)];
+    _resizeSynchronizer =
+        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
+  }
+  return self;
+}
+
++ (Class)layerClass {
+  return [CAMetalLayer class];
+}
+
+- (CALayer*)makeBackingLayer {
+  return [CAMetalLayer layer];
+}
+
+#endif
 
 - (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext
                     reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {

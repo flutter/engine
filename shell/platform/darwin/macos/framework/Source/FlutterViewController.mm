@@ -239,13 +239,26 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)loadView {
+  FlutterView* flutterView;
+#ifdef SHELL_ENABLE_METAL
+  id<MTLDevice> mtlDevice = _engine.metalRenderer.mtlDevice;
+  id<MTLCommandQueue> mtlCommandQueue = _engine.metalRenderer.mtlCommandQueue;
+  if (!mtlDevice || !mtlCommandQueue) {
+    NSLog(@"Unable to create FlutterView; no MTLDevice or MTLCommandQueue available.");
+    return;
+  }
+  flutterView = [[FlutterView alloc] initWithMTLDevice:mtlDevice
+                                          commandQueue:mtlCommandQueue
+                                       reshapeListener:self];
+#elif SHELL_ENABLE_GL
   NSOpenGLContext* mainContext = _engine.openGLRenderer.openGLContext;
   if (!mainContext) {
     NSLog(@"Unable to create FlutterView; no GL context available.");
     return;
   }
-  FlutterView* flutterView = [[FlutterView alloc] initWithMainContext:mainContext
-                                                      reshapeListener:self];
+  flutterView = [[FlutterView alloc] initWithMainContext:mainContext reshapeListener:self];
+#endif
+
   self.view = flutterView;
 }
 

@@ -5,7 +5,7 @@
 #include "flutter/shell/gpu/gpu_surface_metal.h"
 
 #include <Metal/Metal.h>
-#include <QuartzCore/CAMetalLayer.h>
+#import <QuartzCore/CAMetalLayer.h>
 
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
