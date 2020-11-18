@@ -3,11 +3,15 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
+
+#import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 @implementation FlutterMetalRenderer {
   // The embedding-API-level engine object.
   FLUTTER_API_SYMBOL(FlutterEngine) _engine;
+
+  FlutterDarwinContextMetal* _metalContext;
 }
 
 - (instancetype)initWithFlutterEngine:(FLUTTER_API_SYMBOL(FlutterEngine))engine {
@@ -28,7 +32,10 @@
  * Creates a FlutterRendererConfig that renders using Metal.
  */
 - (FlutterRendererConfig)createRendererConfig {
-  FlutterRendererConfig config;
+  FlutterRendererConfig config = {
+      .type = FlutterRendererType::kMetal,
+      .metal.struct_size = sizeof(FlutterMetalRendererConfig),
+  };
   return config;
 }
 

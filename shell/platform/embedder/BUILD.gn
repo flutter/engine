@@ -74,8 +74,8 @@ template("embedder_source_set") {
 
     if (embedder_enable_metal) {
       sources += [
-        "embedder_surface_metal.mm",
         "embedder_surface_metal.h",
+        "embedder_surface_metal.mm",
       ]
     }
 
@@ -96,9 +96,7 @@ template("embedder_source_set") {
     ]
 
     if (embedder_enable_metal) {
-      deps += [
-        "//flutter/shell/platform/darwin/graphics"
-      ]
+      deps += [ "//flutter/shell/platform/darwin/graphics" ]
     }
 
     public_deps = [ ":embedder_headers" ]

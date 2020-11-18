@@ -56,8 +56,6 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterMouseCursorPlugin.mm",
     "framework/Source/FlutterOpenGLRenderer.h",
     "framework/Source/FlutterOpenGLRenderer.mm",
-    "framework/Source/FlutterMetalRenderer.h",
-    "framework/Source/FlutterMetalRenderer.mm",
     "framework/Source/FlutterResizableBackingStoreProvider.h",
     "framework/Source/FlutterResizableBackingStoreProvider.mm",
     "framework/Source/FlutterResizeSynchronizer.h",
@@ -85,6 +83,11 @@ source_set("flutter_framework_source") {
   ]
 
   if (shell_enable_metal) {
+    sources += [
+      "framework/Source/FlutterMetalRenderer.h",
+      "framework/Source/FlutterMetalRenderer.mm",
+    ]
+
     # TODO: exclude gl deps in this case.
     deps += [ "//flutter/shell/platform/darwin/graphics" ]
   }
