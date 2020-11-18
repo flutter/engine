@@ -72,6 +72,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (void)attachToFlutterView:(FlutterView*)view {
   _flutterView = view;
+  _openGLContext = view.openGLContext;
 }
 
 - (bool)makeCurrent {
@@ -109,15 +110,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     _resourceContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:nil];
   }
   return _resourceContext;
-}
-
-- (NSOpenGLContext*)openGLContext {
-  if (!_openGLContext) {
-    NSOpenGLContext* shareContext = [self resourceContext];
-    _openGLContext = [[NSOpenGLContext alloc] initWithFormat:shareContext.pixelFormat
-                                                shareContext:shareContext];
-  }
-  return _openGLContext;
 }
 
 - (bool)makeResourceCurrent {
