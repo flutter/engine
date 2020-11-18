@@ -242,13 +242,12 @@ void FlutterPlatformViewsController::RegisterViewFactory(
 }
 
 void FlutterPlatformViewsController::BeginFrame(SkISize frame_size) {
-  composition_order_.clear();
+  ResetFrameState();
   frame_size_ = frame_size;
 }
 
 void FlutterPlatformViewsController::CancelFrame() {
-  picture_recorders_.clear();
-  composition_order_.clear();
+  ResetFrameState();
 }
 
 // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
@@ -697,6 +696,11 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
     [CATransaction commit];
     catransaction_added_ = false;
   }
+}
+
+void FlutterPlatformViewsController::ResetFrameState() {
+  picture_recorders_.clear();
+  composition_order_.clear();
 }
 
 }  // namespace flutter

@@ -869,6 +869,61 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertNil(gMockPlatformView);
 }
 
+- (void)testFlutterPlatformViewControllerBeginFrameShouldResetCompisitionOrder {
+  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/flutterPlatformViewsController,
+      /*task_runners=*/runners);
+
+  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  flutterPlatformViewsController->SetFlutterView(mockFlutterView);
+
+  FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
+  flutterPlatformViewsController->RegisterViewFactory(
+      factory, @"MockFlutterPlatformView",
+      FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+  FlutterResult result = ^(id result) {
+  };
+
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall
+          methodCallWithMethodName:@"create"
+                         arguments:@{@"id" : @0, @"viewType" : @"MockFlutterPlatformView"}],
+      result);
+
+  // First frame, |GetCurrentCanvases| is not empty after composite.
+  flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
+  flutter::MutatorsStack stack;
+  SkMatrix finalMatrix;
+  auto embeddedViewParams1 =
+      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
+  flutterPlatformViewsController->CompositeEmbeddedView(0);
+  XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), (unsigned long)1);
+
+  // Second frame, |GetCurrentCanvases| should be empty at the start
+  flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
+  XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), (unsigned long)0);
+
+  auto embeddedViewParams2 =
+      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams2));
+  flutterPlatformViewsController->CompositeEmbeddedView(0);
+  XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), (unsigned long)1);
+
+  flutterPlatformViewsController->Reset();
+}
+
 - (int)alphaOfPoint:(CGPoint)point onView:(UIView*)view {
   unsigned char pixel[4] = {0};
 

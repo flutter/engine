@@ -141,6 +141,7 @@ class FlutterPlatformViewsController {
       NSString* factoryId,
       FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy);
 
+  // Called at the begining of each frame.
   void BeginFrame(SkISize frame_size);
 
   // Indicates that we don't compisite any platform views or overlays during this frame.
@@ -302,6 +303,9 @@ class FlutterPlatformViewsController {
   bool SubmitFrameGpuSafe(GrDirectContext* gr_context,
                           std::shared_ptr<IOSContext> ios_context,
                           std::unique_ptr<SurfaceFrame> frame);
+
+  // Resets the state of the frame.
+  void ResetFrameState();
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
