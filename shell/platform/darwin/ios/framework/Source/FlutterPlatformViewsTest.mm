@@ -909,17 +909,17 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
-  XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), (unsigned long)1);
+  XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), 1UL);
 
   // Second frame, |GetCurrentCanvases| should be empty at the start
   flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
-  XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), (unsigned long)0);
+  XCTAssertTrue(flutterPlatformViewsController->GetCurrentCanvases().empty());
 
   auto embeddedViewParams2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
-  XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), (unsigned long)1);
+  XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), 1UL);
 
   flutterPlatformViewsController->Reset();
 }
