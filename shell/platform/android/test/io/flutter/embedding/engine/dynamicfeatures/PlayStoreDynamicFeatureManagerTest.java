@@ -32,6 +32,7 @@ public class PlayStoreDynamicFeatureManagerTest {
     public int dynamicFeatureInstallFailureCalled = 0;
     public String[] searchPaths;
     public int loadingUnitId;
+    public AssetManager assetManager;
 
     public TestFlutterJNI() {}
 
@@ -47,6 +48,7 @@ public class PlayStoreDynamicFeatureManagerTest {
         @NonNull AssetManager assetManager, @NonNull String assetBundlePath) {
       updateAssetManagerCalled++;
       this.loadingUnitId = loadingUnitId;
+      this.assetManager = assetManager;
     }
 
     @Override
@@ -60,7 +62,6 @@ public class PlayStoreDynamicFeatureManagerTest {
   private class TestPlayStoreDynamicFeatureManager extends PlayStoreDynamicFeatureManager {
     public TestPlayStoreDynamicFeatureManager(Context context, FlutterJNI jni) {
       super(context, jni);
-      jni.setDynamicFeatureManager(this);
     }
 
     @Override
@@ -139,5 +140,27 @@ public class PlayStoreDynamicFeatureManagerTest {
 
     assertEquals(jni.searchPaths.length, 0);
     assertEquals(jni.loadingUnitId, 123);
+  }
+
+  @Test
+  public void assetManagerUpdateInvoked() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+    Context spyContext = spy(RuntimeEnvironment.systemContext);
+    doReturn(spyContext).when(spyContext).createPackageContext(any(), anyInt());
+    AssetManager assetManager = spyContext.getAssets();
+    String apkTestPath = "blah doesn't matter here";
+    doReturn(new File(apkTestPath)).when(spyContext).getFilesDir();
+    TestPlayStoreDynamicFeatureManager playStoreManager =
+        new TestPlayStoreDynamicFeatureManager(spyContext, jni);
+    jni.setDynamicFeatureManager(playStoreManager);
+
+    assertEquals(jni.loadingUnitId, 0);
+
+    playStoreManager.downloadDynamicFeature(123, "TestModuleName");
+    assertEquals(jni.loadDartDeferredLibraryCalled, 1);
+    assertEquals(jni.updateAssetManagerCalled, 1);
+    assertEquals(jni.dynamicFeatureInstallFailureCalled, 0);
+
+    assertEquals(jni.assetManager, assetManager);
   }
 }

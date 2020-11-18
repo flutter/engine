@@ -76,7 +76,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
               loadAssets(
                   sessionIdToLoadingUnitId.get(state.sessionId()),
                   sessionIdToName.get(state.sessionId()));
-              // We only load dart shared lib for the loading unit id requested. Other loading units
+              // We only load Dart shared lib for the loading unit id requested. Other loading units
               // (if present) in the dynamic feature module are not loaded, but can be loaded by
               // calling again with their loading unit id.
               loadDartLibrary(
@@ -309,5 +309,9 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
 
   public void uninstallFeature(int loadingUnitId, String moduleName) {
     // TODO(garyq): support uninstalling.
+  }
+
+  public void destroy() {
+    splitInstallManager.unregisterListener(listener);
   }
 }

@@ -13,15 +13,16 @@ package io.flutter.embedding.engine.dynamicfeatures;
  *
  * <p>The Flutter default implementation is PlayStoreDynamicFeatureManager.
  *
- * <p>DynamicFeatureManager handles the embedder/android level tasks of downloading, installing, and
- * loading dart deferred libraries. A typical code-flow begins with a dart call to loadLibrary() on
+ * <p>DynamicFeatureManager handles the embedder/Android level tasks of downloading, installing, and
+ * loading Dart deferred libraries. A typical code-flow begins with a Dart call to loadLibrary() on
  * deferred imported library. See https://dart.dev/guides/language/language-tour#deferred-loading
  * This call retrieves a unique identifier called the loading unit id, which is assigned by
  * gen_snapshot during compilation. The loading unit id is passed down through the engine and
  * invokes downloadDynamicFeature. Once the feature module is downloaded, loadAssets and
  * loadDartLibrary should be invoked. loadDartLibrary should find shared library .so files for the
- * engine to open. loadAssets should typically ensure the new assets are available to the engine's
- * asset manager by passing an updated android AssetManager to the engine.
+ * engine to open and pass the .so path to FlutterJNI.loadDartDeferredLibrary. loadAssets should
+ * typically ensure the new assets are available to the engine's asset manager by passing an
+ * updated Android AssetManager to the engine via FlutterJNI.updateAssetManager.
  *
  * <p>The loadAssets and loadDartLibrary methods are separated out because they may also be called
  * manually via platform channel messages. A full downloadDynamicFeature implementation should call
@@ -38,8 +39,8 @@ public interface DynamicFeatureManager {
    * <p>This method begins the download and installation of the specified feature module. For
    * example, the Play Store dynamic delivery implementation uses SplitInstallManager to request the
    * download of the module. Download is not complete when this method returns. The download process
-   * should be listened for and upon completion of download, listeners should invoke loadAssets and
-   * loadDartLibrary to complete the dynamic feature load process.
+   * should be listened for and upon completion of download, listeners should invoke loadAssets first
+   * and then loadDartLibrary to complete the dynamic feature load process.
    *
    * <p>Both parameters are not always necessary to identify which module to install. Asset-only
    * modules do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be passed
@@ -55,20 +56,20 @@ public interface DynamicFeatureManager {
    * (invalid) and moduleName is supplied. Without a loadingUnitId, this method just downloads the
    * module by name and attempts to load assets via loadAssets.
    *
-   * @param loadingUnitId The unique identifier associated with a dart deferred library. This id is
+   * @param loadingUnitId The unique identifier associated with a Dart deferred library. This id is
    *     assigned by the compiler and can be seen for reference in bundle_config.yaml. This ID is
-   *     primarily used in loadDartLibrary to indicate to dart which dart library is being loaded.
+   *     primarily used in loadDartLibrary to indicate to Dart which Dart library is being loaded.
    *     Loading unit ids range from 0 to the number existing loading units. Passing a negative
-   *     loading unit id indicates that no dart deferred library should be loaded after download
+   *     loading unit id indicates that no Dart deferred library should be loaded after download
    *     completes. This is the case when the dynamic feature module is an assets-only module. If a
    *     negative loadingUnitId is passed, then moduleName must not be null. Passing a loadingUnitId
-   *     larger than the highest valid loading unit's id will cause the dart loadLibrary() to
+   *     larger than the highest valid loading unit's id will cause the Dart loadLibrary() to
    *     complete with a failure.
    * @param moduleName The dynamic feature module name as defined in bundle_config.yaml. This may be
    *     null if the dynamic feature to be loaded is associated with a loading unit/deferred dart
    *     library. In this case, it is this method's responsibility to map the loadingUnitId to its
    *     corresponding moduleName. When loading asset-only or other dynamic features without an
-   *     associated dart deferred library, loading unit id should a negative value and moduleName
+   *     associated Dart deferred library, loading unit id should a negative value and moduleName
    *     must be non-null.
    */
   public abstract void downloadDynamicFeature(int loadingUnitId, String moduleName);
@@ -86,11 +87,11 @@ public interface DynamicFeatureManager {
    * This process does not require loadingUnitId or moduleName, however, the two parameters are
    * still present for custom implementations that store assets outside of Android's native system.
    *
-   * <p>Assets shoud be loaded before the dart deferred library is loaded, as successful loading of
-   * the dart loading unit indicates the dynamic feature is fully loaded. Implementations of
+   * <p>Assets shoud be loaded before the Dart deferred library is loaded, as successful loading of
+   * the Dart loading unit indicates the dynamic feature is fully loaded. Implementations of
    * downloadDynamicFeature should invoke this after successful download.
    *
-   * @param loadingUnitId The unique identifier associated with a dart deferred library.
+   * @param loadingUnitId The unique identifier associated with a Dart deferred library.
    * @param moduleName The dynamic feature module name as defined in bundle_config.yaml.
    */
   public abstract void loadAssets(int loadingUnitId, String moduleName);
@@ -98,22 +99,22 @@ public interface DynamicFeatureManager {
   /**
    * Load the .so shared library file into the Dart VM.
    *
-   * <p>When a feature module download is triggered via a dart loadLibrary() call on a deferred
-   * library and the download completes, this method should be called to find the path .so library
-   * file and passed to FlutterJNI.loadDartDeferredLibrary to be dlopen-ed.
+   * <p>When the download of a dynamic feature module completes, this method should be called to
+   * find the path .so library file. The path(s) should then be passed to
+   * FlutterJNI.loadDartDeferredLibrary to be dlopen-ed and loaded into the Dart VM.
    *
-   * <p>Specifically, APKs distributed by android's app bundle format may vary by device and API
+   * <p>Specifically, APKs distributed by Android's app bundle format may vary by device and API
    * number, so FlutterJNI's loadDartDeferredLibrary accepts a list of search paths with can include
    * paths within APKs that have not been unpacked using the
    * `path/to/apk.apk!path/inside/apk/lib.so` format. Each search path will be attempted in order
    * until a shared library is found. This allows for the developer to avoid unpacking the apk zip.
    *
-   * <p>Upon successful load of the dart library, the dart future from the originating loadLibary()
+   * <p>Upon successful load of the Dart library, the Dart future from the originating loadLibary()
    * call completes and developers are able to use symbols and assets from the feature module.
    *
-   * @param loadingUnitId The unique identifier associated with a dart deferred library. This id is
+   * @param loadingUnitId The unique identifier associated with a Dart deferred library. This id is
    *     assigned by the compiler and can be seen for reference in bundle_config.yaml. This ID is
-   *     primarily used in loadDartLibrary to indicate to dart which dart library is being loaded.
+   *     primarily used in loadDartLibrary to indicate to Dart which Dart library is being loaded.
    *     Loading unit ids range from 0 to the number existing loading units. Negative loading unit
    *     ids are considered invalid and this method will result in a no-op.
    * @param moduleName The dynamic feature module name as defined in bundle_config.yaml. If using
@@ -132,4 +133,9 @@ public interface DynamicFeatureManager {
    * one of loadingUnitId or moduleName must be valid or non-null.
    */
   public abstract void uninstallFeature(int loadingUnitId, String moduleName);
+
+  /**
+   * Destructor that cleans up any leftover objects that are no longer needed.
+   */
+  public abstract void destroy();
 }

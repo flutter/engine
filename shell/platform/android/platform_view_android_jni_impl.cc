@@ -102,7 +102,7 @@ static jmethodID g_detach_from_gl_context_method = nullptr;
 
 static jmethodID g_compute_platform_resolved_locale_method = nullptr;
 
-static jmethodID g_install_dynamic_library_method = nullptr;
+static jmethodID g_request_dart_deferred_library_method = nullptr;
 
 // Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
@@ -1029,11 +1029,11 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_install_dynamic_library_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "RequestDartDeferredLibrary", "(I)V");
+  g_request_dart_deferred_library_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "requestDartDeferredLibrary", "(I)V");
 
-  if (g_install_dynamic_library_method == nullptr) {
-    FML_LOG(ERROR) << "Could not locate downloadDynamicFeature method";
+  if (g_request_dart_deferred_library_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate requestDartDeferredLibrary method";
     return false;
   }
 
@@ -1473,7 +1473,8 @@ bool PlatformViewAndroidJNIImpl::RequestDartDeferredLibrary(
     return true;
   }
 
-  env->CallObjectMethod(java_object.obj(), g_install_dynamic_library_method,
+  env->CallObjectMethod(java_object.obj(),
+                        g_request_dart_deferred_library_method,
                         loading_unit_id);
 
   FML_CHECK(CheckException(env));

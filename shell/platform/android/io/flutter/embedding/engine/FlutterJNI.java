@@ -1001,7 +1001,7 @@ public class FlutterJNI {
   }
 
   /**
-   * Called by dart to request that a dart deferred library corresponding to loadingUnitId be
+   * Called by dart to request that a Dart deferred library corresponding to loadingUnitId be
    * downloaded (if necessary) and loaded into the dart vm.
    *
    * <p>This method delegates the task to DynamicFeatureManager, which handles the download and
@@ -1012,14 +1012,14 @@ public class FlutterJNI {
    */
   @SuppressWarnings("unused")
   @UiThread
-  public void RequestDartDeferredLibrary(int loadingUnitId) {
+  public void requestDartDeferredLibrary(int loadingUnitId) {
     if (dynamicFeatureManager != null) {
       dynamicFeatureManager.downloadDynamicFeature(loadingUnitId, null);
     }
   }
 
   /**
-   * Searches each of the provided paths for a valid dart shared library .so file and resolves
+   * Searches each of the provided paths for a valid Dart shared library .so file and resolves
    * symbols to load into the dart VM.
    *
    * <p>Successful loading of the dart library completes the future returned by loadLibrary() that
@@ -1027,7 +1027,7 @@ public class FlutterJNI {
    *
    * @param loadingUnitId The loadingUnitId is assigned during compile time by gen_snapshot and is
    *     automatically retrieved when loadLibrary() is called on a dart deferred library. This is
-   *     used to identify which dart deferred library the resolved correspond to.
+   *     used to identify which Dart deferred library the resolved correspond to.
    * @param searchPaths An array of paths in which to look for valid dart shared libraries. This
    *     supports paths within zipped apks as long as the apks are not compressed using the
    *     `path/to/apk.apk!path/inside/apk/lib.so` format. Paths will be tried first to last and ends
@@ -1045,8 +1045,10 @@ public class FlutterJNI {
       long nativePlatformViewId, int loadingUnitId, @NonNull String[] searchPaths);
 
   /**
-   * Specifies a new AssetManager that has access to the dynamic feature's assets in addition to the
-   * base module's assets.
+   * Adds the specified AssetManager as an APKAssetResolver in the Flutter Engine's AssetManager.
+   *
+   * This may be used to update the engine AssetManager when a new dynamic feature is installed and a
+   * new Android AssetManager is created with access to new assets.
    *
    * @param assetManager An android AssetManager that is able to access the newly downloaded assets.
    * @param assetBundlePath The subdirectory that the flutter assets are stored in. The typical
@@ -1077,7 +1079,7 @@ public class FlutterJNI {
    *     failed to install.
    * @param error The error message to display.
    * @param isTransient When isTransient is false, new attempts to install will automatically result
-   *     in same error in dart before the request is passed to Android.
+   *     in same error in Dart before the request is passed to Android.
    */
   @SuppressWarnings("unused")
   @UiThread

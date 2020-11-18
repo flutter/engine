@@ -404,6 +404,9 @@ public class FlutterEngine {
     Log.v(TAG, "Destroying.");
     // The order that these things are destroyed is important.
     pluginRegistry.destroy();
+    if (dynamicFeatureManager != null) {
+      dynamicFeatureManager.destroy();
+    }
     platformViewsController.onDetachedFromJNI();
     dartExecutor.onDetachedFromJNI();
     flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
