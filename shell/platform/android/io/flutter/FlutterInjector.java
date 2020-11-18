@@ -64,7 +64,8 @@ public final class FlutterInjector {
     instance = null;
   }
 
-  private FlutterInjector(@NonNull FlutterLoader flutterLoader, DynamicFeatureManager dynamicFeatureManager) {
+  private FlutterInjector(
+      @NonNull FlutterLoader flutterLoader, DynamicFeatureManager dynamicFeatureManager) {
     this.flutterLoader = flutterLoader;
     this.dynamicFeatureManager = dynamicFeatureManager;
   }
@@ -78,7 +79,10 @@ public final class FlutterInjector {
     return flutterLoader;
   }
 
-  /** Returns the {@link DynamicFeatureManager} instance to use for the Flutter Android engine embedding. */
+  /**
+   * Returns the {@link DynamicFeatureManager} instance to use for the Flutter Android engine
+   * embedding.
+   */
   @Nullable
   public DynamicFeatureManager dynamicFeatureManager() {
     return dynamicFeatureManager;

@@ -120,9 +120,7 @@ public class FlutterLoader {
    * @param applicationContext The Android application context.
    * @param settings Configuration settings.
    */
-  public void startInitialization(
-      @NonNull Context applicationContext,
-      @NonNull Settings settings) {
+  public void startInitialization(@NonNull Context applicationContext, @NonNull Settings settings) {
     // Do not run startInitialization more than once.
     if (this.settings != null) {
       return;
