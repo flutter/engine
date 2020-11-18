@@ -20,26 +20,14 @@
  */
 @interface FlutterView : NSView
 
-/**
- * The OpenGL context of backing surface.
- */
-@property(readwrite, nonatomic, nonnull) NSOpenGLContext* openGLContext;
-
-/**
- * Controls whether view resizing synchronously updates contents. This can only be enabled
- * after the engine is running and producing frames, because during synchronous view resizing the
- * platform thread is blocked until engine produces frame with requested size.
- */
-@property(readwrite, nonatomic) BOOL synchronousResizing;
-
 - (nullable instancetype)initWithFrame:(NSRect)frame
-                          shareContext:(nonnull NSOpenGLContext*)shareContext
+                           mainContext:(nonnull NSOpenGLContext*)mainContext
                        reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener
     NS_DESIGNATED_INITIALIZER;
 
-- (nullable instancetype)initWithShareContext:(nonnull NSOpenGLContext*)shareContext
-                              reshapeListener:
-                                  (nonnull id<FlutterViewReshapeListener>)reshapeListener;
+- (nullable instancetype)initWithMainContext:(nonnull NSOpenGLContext*)mainContext
+                             reshapeListener:
+                                 (nonnull id<FlutterViewReshapeListener>)reshapeListener;
 
 - (nullable instancetype)initWithFrame:(NSRect)frameRect
                            pixelFormat:(nullable NSOpenGLPixelFormat*)format NS_UNAVAILABLE;

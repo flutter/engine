@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
@@ -126,7 +126,7 @@ class CkAnimatedImage implements ui.Image {
       // Defaults to PNG 100%.
       final SkData skData = _skAnimatedImage.encodeToData();
       // Make a copy that we can return.
-      bytes = Uint8List.fromList(canvasKit.getSkDataBytes(skData));
+      bytes = Uint8List.fromList(canvasKit.getDataBytes(skData));
     }
 
     final ByteData data = bytes.buffer.asByteData(0, bytes.length);
@@ -207,7 +207,7 @@ class CkImage implements ui.Image {
     } else {
       final SkData skData = skImage.encodeToData(); //defaults to PNG 100%
       // make a copy that we can return
-      bytes = Uint8List.fromList(canvasKit.getSkDataBytes(skData));
+      bytes = Uint8List.fromList(canvasKit.getDataBytes(skData));
     }
 
     final ByteData data = bytes.buffer.asByteData(0, bytes.length);

@@ -695,7 +695,7 @@ public class TextInputChannel {
         throws IndexOutOfBoundsException {
 
       if ((selectionStart != -1 || selectionEnd != -1)
-          && (selectionStart < 0 || selectionStart > selectionEnd)) {
+          && (selectionStart < 0 || selectionEnd < 0)) {
         throw new IndexOutOfBoundsException(
             "invalid selection: ("
                 + String.valueOf(selectionStart)
@@ -714,7 +714,7 @@ public class TextInputChannel {
                 + ")");
       }
 
-      if (composingStart > text.length()) {
+      if (composingEnd > text.length()) {
         throw new IndexOutOfBoundsException(
             "invalid composing start: " + String.valueOf(composingStart));
       }
@@ -722,6 +722,11 @@ public class TextInputChannel {
       if (selectionStart > text.length()) {
         throw new IndexOutOfBoundsException(
             "invalid selection start: " + String.valueOf(selectionStart));
+      }
+
+      if (selectionEnd > text.length()) {
+        throw new IndexOutOfBoundsException(
+            "invalid selection end: " + String.valueOf(selectionEnd));
       }
 
       this.text = text;

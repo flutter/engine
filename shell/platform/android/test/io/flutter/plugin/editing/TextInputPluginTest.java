@@ -1,6 +1,7 @@
 package io.flutter.plugin.editing;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.AdditionalMatchers.gt;
@@ -46,6 +47,7 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
@@ -425,6 +427,48 @@ public class TextInputPluginTest {
 
     // Verify that we've restarted the input.
     assertEquals(1, testImm.getRestartCount(testView));
+  }
+
+  @Test
+  public void TextEditState_throwsOnInvalidStatesReceived() {
+    // Index OOB:
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("", 0, -9, -1, -1));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("", -9, 0, -1, -1));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("", 0, 1, -1, -1));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("", 1, 0, -1, -1));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, 1, 5));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, 5, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, 5, 5));
+
+    // Invalid Selections:
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("", -1, -2, -1, -1));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("", -2, -1, -1, -1));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("", -9, -9, -1, -1));
+
+    // Invalid Composing Ranges:
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, -9, -1));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, -1, -9));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, -9, -9));
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, 2, 1));
+    // A collapsed composing range is invalid.
+    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, 1, 1));
+
+    // Valid values (does not throw):
+    // Nothing selected/composing:
+    TextEditState state = new TextEditState("", -1, -1, -1, -1);
+    assertEquals("", state.text);
+    assertEquals(-1, state.selectionStart);
+    assertEquals(-1, state.selectionEnd);
+    assertEquals(-1, state.composingStart);
+    assertEquals(-1, state.composingEnd);
+    // Collapsed selection.
+    state = new TextEditState("x", 0, 0, 0, 1);
+    assertEquals(0, state.selectionStart);
+    assertEquals(0, state.selectionEnd);
+    // Reversed Selection.
+    state = new TextEditState("REEEE", 4, 2, -1, -1);
+    assertEquals(4, state.selectionStart);
+    assertEquals(2, state.selectionEnd);
   }
 
   @Test

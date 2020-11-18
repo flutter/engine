@@ -261,4 +261,40 @@ TEST(
   auto no_discard = [](LayerTree&) { return false; };
   rasterizer->Draw(pipeline, no_discard);
 }
+
+TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  ThreadHost thread_host("io.flutter.test." + test_name + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::GPU |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  MockDelegate delegate;
+  EXPECT_CALL(delegate, GetTaskRunners())
+      .WillRepeatedly(ReturnRef(task_runners));
+  auto rasterizer = std::make_unique<Rasterizer>(delegate);
+
+  std::shared_ptr<MockExternalViewEmbedder> external_view_embedder =
+      std::make_shared<MockExternalViewEmbedder>();
+  rasterizer->SetExternalViewEmbedder(external_view_embedder);
+
+  EXPECT_CALL(
+      *external_view_embedder,
+      EndFrame(/*should_resubmit_frame=*/false,
+               /*raster_thread_merger=*/fml::RefPtr<fml::RasterThreadMerger>(
+                   nullptr)))
+      .Times(0);
+
+  fml::AutoResetWaitableEvent latch;
+  thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
+    auto pipeline = fml::AdoptRef(new Pipeline<LayerTree>(/*depth=*/10));
+    auto no_discard = [](LayerTree&) { return false; };
+    rasterizer->Draw(pipeline, no_discard);
+    latch.Signal();
+  });
+  latch.Wait();
+}
 }  // namespace flutter

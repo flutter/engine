@@ -54,10 +54,10 @@ class ListenableEditingState extends SpannableStringBuilder {
 
   // The View is only used for creating a dummy BaseInputConnection for setComposingRegion. The View
   // needs to have a non-null Context.
-  public ListenableEditingState(TextInputChannel.TextEditState configuration, View view) {
+  public ListenableEditingState(TextInputChannel.TextEditState initalState, View view) {
     super();
-    if (configuration != null) {
-      setEditingState(configuration);
+    if (initalState != null) {
+      setEditingState(initalState);
     }
 
     Editable self = this;
@@ -137,7 +137,7 @@ class ListenableEditingState extends SpannableStringBuilder {
     beginBatchEdit();
     replace(0, length(), newState.text);
 
-    if (newState.selectionStart >= 0 && newState.selectionEnd >= newState.selectionStart) {
+    if (newState.selectionStart >= 0) {
       Selection.setSelection(this, newState.selectionStart, newState.selectionEnd);
     } else {
       Selection.removeSelection(this);

@@ -191,7 +191,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
   }
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (external_view_embedder_) {
+  if (surface_ && external_view_embedder_) {
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
   }

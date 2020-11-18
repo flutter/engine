@@ -394,6 +394,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mEditable =
         new ListenableEditingState(
             configuration.autofill != null ? configuration.autofill.editState : null, mView);
+    this.configuration = configuration;
     updateAutofillConfigurationIfNeeded(configuration);
 
     // setTextInputClient will be followed by a call to setTextInputEditingState.
@@ -637,7 +638,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
         || afm == null
         || configuration == null
-        || configuration.autofill == null) {
+        || configuration.autofill == null
+        || !needsAutofill()) {
       return;
     }
 
@@ -659,7 +661,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       return;
     }
 
-    this.configuration = configuration;
     if (configuration == null || configuration.autofill == null) {
       // Disables autofill if the configuration doesn't have an autofill field.
       mAutofillConfigurations = null;
