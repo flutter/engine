@@ -228,7 +228,7 @@ def to_gn_args(args):
       gn_args['goma_dir'] = depot_tools_bin_dir
     else:
       if args.goma:
-        print("GOMA usage was specified but can't be found, falling back go local builds. Set the GOMA_DIR environment variable to fix GOMA.")
+        print("GOMA usage was specified but can't be found, falling back to local builds. Set the GOMA_DIR environment variable to fix GOMA.")
       gn_args['use_goma'] = False
       gn_args['goma_dir'] = None
 
