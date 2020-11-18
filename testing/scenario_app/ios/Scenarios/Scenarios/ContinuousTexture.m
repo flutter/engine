@@ -31,9 +31,8 @@
     (NSString*)kCVPixelBufferMetalCompatibilityKey : @YES
   };
   CVPixelBufferRef pxbuffer = NULL;
-  CVReturn status =
-      CVPixelBufferCreate(kCFAllocatorDefault, 200, 200, kCVPixelFormatType_32BGRA,
-                          (__bridge CFDictionaryRef)options, &pxbuffer);
+  CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, 200, 200, kCVPixelFormatType_32BGRA,
+                                        (__bridge CFDictionaryRef)options, &pxbuffer);
 
   NSParameterAssert(status == kCVReturnSuccess && pxbuffer != NULL);
 
