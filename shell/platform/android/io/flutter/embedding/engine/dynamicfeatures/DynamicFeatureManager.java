@@ -147,6 +147,6 @@ public interface DynamicFeatureManager {
    */
   public abstract void uninstallFeature(int loadingUnitId, String moduleName);
 
-  /** Destructor that cleans up any leftover objects that are no longer needed. */
+  /** Cleans up and releases resources. This object is no longer usable after calling this method. */
   public abstract void destroy();
 }

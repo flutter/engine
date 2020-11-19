@@ -1011,6 +1011,11 @@ public class FlutterJNI {
   public void requestDartDeferredLibrary(int loadingUnitId) {
     if (dynamicFeatureManager != null) {
       dynamicFeatureManager.downloadDynamicFeature(loadingUnitId, null);
+    } else {
+      // TODO(garyq): Add link to setup/instructions guide wiki.
+      Log.e(
+          TAG,
+          "No DynamicFeatureManager found. Android setup must be completed before using split AOT dynamic features.");
     }
   }
 

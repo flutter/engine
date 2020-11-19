@@ -378,6 +378,9 @@ public class FlutterEngine {
     flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.setDynamicFeatureManager(null);
     flutterJNI.detachFromNativeAndReleaseResources();
+    if (FlutterInjector.instance().dynamicFeatureManager() != null) {
+      FlutterInjector.instance().dynamicFeatureManager().destroy();
+    }
   }
 
   /**
