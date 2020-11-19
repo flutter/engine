@@ -44,7 +44,6 @@ EmbedderEngine::EmbedderEngine(
       external_texture_callback_(external_texture_callback)
 #endif
 {
-  FML_DLOG(ERROR) << "embedder engine created.";
 }
 
 EmbedderEngine::~EmbedderEngine() = default;

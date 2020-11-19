@@ -35,6 +35,8 @@
 
 namespace {
 
+NSString* const NSAccessibilityScrollToVisibleAction = @"AXScrollToVisible";
+
 // Same length as web content/WebKit.
 static int kLiveRegionDebounceMillis = 20;
 
@@ -314,7 +316,7 @@ ActionList BuildActionList() {
   const ActionList::value_type entries[] = {
       // NSAccessibilityPressAction must come first in this list.
       {ax::Action::kDoDefault, NSAccessibilityPressAction},
-
+      {ax::Action::kScrollToMakeVisible, NSAccessibilityScrollToVisibleAction},
       {ax::Action::kDecrement, NSAccessibilityDecrementAction},
       {ax::Action::kIncrement, NSAccessibilityIncrementAction},
       {ax::Action::kShowContextMenu, NSAccessibilityShowMenuAction},
@@ -676,7 +678,6 @@ bool AlsoUseShowMenuActionForDefaultAction(const ax::AXNodeData& data) {
 - (id)accessibilityAttributeValue:(NSString*)attribute {
   if (!_node)
     return nil;  // Return nil when detached. Even for ax::Role.
-
   SEL selector = NSSelectorFromString(attribute);
   if ([self respondsToSelector:selector])
     return [self performSelector:selector];
@@ -687,7 +688,6 @@ bool AlsoUseShowMenuActionForDefaultAction(const ax::AXNodeData& data) {
                      forParameter:(id)parameter {
   if (!_node)
     return nil;
-
   SEL selector = NSSelectorFromString([attribute stringByAppendingString:@":"]);
   if ([self respondsToSelector:selector])
     return [self performSelector:selector withObject:parameter];

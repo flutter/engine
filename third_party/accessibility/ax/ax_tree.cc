@@ -774,9 +774,25 @@ SkRect AXTree::RelativeToTreeBoundsInternal(const AXNode* node,
     }
 
     // Get the intersection between the bounds and the container.
-    SkRect intersection = bounds;
-    intersection.intersect(container_bounds);
-
+    int l = std::max(container_bounds.left(), bounds.left());
+    int r = std::min(container_bounds.right(), bounds.right());
+    int t = std::max(container_bounds.top(), bounds.top());
+    int b = std::min(container_bounds.bottom(), bounds.bottom());
+    // No intersection on x axis
+    if (l > r) {
+      // We want to make sure the bounds origin is at the right edge of container
+      if (l == bounds.left()) {
+        l = r = container_bounds.right();
+      }
+    }
+    // No intersection on y axis
+    if (b < t) {
+      // We want to make sure the bounds origin is at the bottom edge of container
+      if (t == bounds.top()) {
+        b = t = container_bounds.bottom();
+      }
+    }
+    SkRect intersection = SkRect::MakeLTRB(l, t, r, b);
     // Calculate the clipped bounds to determine offscreen state.
     SkRect clipped = bounds;
     // If this node has the kClipsChildren attribute set, clip the rect to fit.
@@ -826,7 +842,6 @@ SkRect AXTree::RelativeToTreeBoundsInternal(const AXNode* node,
       if (offscreen != nullptr)
         *offscreen |= true;
     }
-
     node = container;
   }
 

@@ -31,6 +31,7 @@ class AccessibilityBridge : public AXTreeObserver {
   void* GetUserData();
   FlutterAccessibility* GetFlutterAccessibilityFromID(int32_t id) const;
   void SetFocusedNode(int32_t node_id);
+  int32_t GetLastFocusedNode();
   // AXTreeObserver implementation.
   void OnNodeWillBeDeleted(ax::AXTree* tree, ax::AXNode* node) override;
   void OnSubtreeWillBeDeleted(ax::AXTree* tree, ax::AXNode* node) override;

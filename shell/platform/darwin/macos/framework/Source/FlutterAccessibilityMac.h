@@ -24,6 +24,7 @@ class FlutterAccessibilityMac : public FlutterAccessibility {
   void DispatchAccessibilityAction(uint16_t target, FlutterSemanticsAction action, uint8_t* data, size_t data_size) override;
   gfx::NativeViewAccessible GetNativeViewAccessible() override;
   gfx::NativeViewAccessible GetParent() override;
+  gfx::NativeViewAccessible GetFocus() override;
   int GetChildCount() const override;
   SkRect GetBoundsRect(const AXCoordinateSystem coordinate_system,
                           const AXClippingBehavior clipping_behavior,

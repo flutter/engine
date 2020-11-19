@@ -24,7 +24,7 @@ AXNode* FlutterAccessibility::GetAXNode() const {
 bool FlutterAccessibility::AccessibilityPerformAction(
     const ax::AXActionData& data) {
   int32_t target = GetAXNode()->id();
-  FML_LOG(ERROR) << "got action " <<ax::ToString(data.action) <<  " target= " << target;
+//   FML_LOG(ERROR) << "got action " <<ax::ToString(data.action) <<  " target= " << target;
   switch (data.action) {
      case ax::Action::kDoDefault:
       DispatchAccessibilityAction(target, FlutterSemanticsAction::kFlutterSemanticsActionTap, nullptr, 0);
@@ -42,11 +42,9 @@ bool FlutterAccessibility::AccessibilityPerformAction(
     //   manager_->ScrollToPoint(*this, target);
     //   return true;
     // }
-    // case ax::Action::kScrollToMakeVisible:
-    //   manager_->ScrollToMakeVisible(
-    //       *this, data.target_rect, data.horizontal_scroll_alignment,
-    //       data.vertical_scroll_alignment, data.scroll_behavior);
-    //   return true;
+    case ax::Action::kScrollToMakeVisible:
+      DispatchAccessibilityAction(target, FlutterSemanticsAction::kFlutterSemanticsActionShowOnScreen, nullptr, 0);
+      return true;
     // case ax::Action::kSetScrollOffset:
     //   manager_->SetScrollOffset(*this, data.target_point);
     //   return true;

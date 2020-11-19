@@ -20,15 +20,36 @@
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_base.h"
 
-#define SYSTEM_VERSION_EQUAL_TO(v)                  ([[[NSProcessInfo processInfo] operatingSystemVersionString] compare:v options:NSNumericSearch] == NSOrderedSame)
-#define SYSTEM_VERSION_GREATER_THAN(v)              ([[[NSProcessInfo processInfo] operatingSystemVersionString] compare:v options:NSNumericSearch] == NSOrderedDescending)
-#define SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[NSProcessInfo processInfo] operatingSystemVersionString] compare:v options:NSNumericSearch] != NSOrderedAscending)
-#define SYSTEM_VERSION_LESS_THAN(v)                 ([[[NSProcessInfo processInfo] operatingSystemVersionString] compare:v options:NSNumericSearch] == NSOrderedAscending)
-#define SYSTEM_VERSION_LESS_THAN_OR_EQUAL_TO(v)     ([[[NSProcessInfo processInfo] operatingSystemVersionString] compare:v options:NSNumericSearch] != NSOrderedDescending)
-
 using AXTextMarkerRef = CFTypeRef;
 
 namespace ax { // namespace
+
+bool SystemVersionEqualTo(NSOperatingSystemVersion target) {
+  NSOperatingSystemVersion systemVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
+  return target.majorVersion == systemVersion.majorVersion && target.minorVersion == systemVersion.minorVersion;
+}
+
+bool SystemVersionGreaterOrEqualTo(NSOperatingSystemVersion target) {
+  NSOperatingSystemVersion systemVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
+  if (systemVersion.majorVersion < target.majorVersion) {
+    return false;
+  }
+  else if (systemVersion.majorVersion > target.majorVersion) {
+    return true;
+  }
+  return systemVersion.minorVersion >= target.minorVersion;
+}
+
+bool SystemVersionLessOrEqualTo(NSOperatingSystemVersion target) {
+  NSOperatingSystemVersion systemVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
+  if (systemVersion.majorVersion < target.majorVersion) {
+    return true;
+  }
+  else if (systemVersion.majorVersion > target.majorVersion) {
+    return false;
+  }
+  return systemVersion.minorVersion <= target.minorVersion;
+}
 
 // Native mac notifications fired.
 NSString* const NSAccessibilityAutocorrectionOccurredNotification =
@@ -119,8 +140,9 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
   ax::AXEventGenerator::Event event_type = targeted_event.event_params.event;
   gfx::NativeViewAccessible native_node = GetNativeViewAccessible();
   FML_DCHECK(native_node);
+  FML_LOG(ERROR) << "receives event_type= " << event_type;
 
-  NSString* mac_notification = nullptr;
+  NSString* mac_notification = nil;
 
   switch (event_type) {
     case ax::AXEventGenerator::Event::ACTIVE_DESCENDANT_CHANGED:
@@ -144,7 +166,7 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
       // checkbox in Voiceover utility being unchecked. The checkbox is
       // unchecked by default in 10.15 so we don't fire AXLoadComplete events to
       // support the default behavior.
-      if (SYSTEM_VERSION_EQUAL_TO(@"10.15"))
+      if (SystemVersionEqualTo({ .majorVersion = 10, .minorVersion = 15 }))
         return;
       mac_notification = NSAccessibilityLoadCompleteNotification;
       break;
@@ -191,19 +213,26 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
     case ax::AXEventGenerator::Event::SELECTED_VALUE_CHANGED:
     case ax::AXEventGenerator::Event::VALUE_IN_TEXT_FIELD_CHANGED:
       mac_notification = NSAccessibilityValueChangedNotification;
-      if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"10.11") && GetData().HasState(ax::State::kEditable)) {
-
+      NSLog(@"compare result %d has state, %d", SystemVersionGreaterOrEqualTo({ .majorVersion = 10, .minorVersion = 11 }), GetData().HasState(ax::State::kEditable));
+      if (SystemVersionGreaterOrEqualTo({ .majorVersion = 10, .minorVersion = 11 }) && GetData().HasState(ax::State::kEditable)) {
         std::u16string deleted_text;
         std::u16string inserted_text;
         id edit_text_marker = nil;
         computeTextEdit(deleted_text, inserted_text, &edit_text_marker);
         NSDictionary* user_info = GetUserInfoForValueChangedNotification(
             native_node, deleted_text, inserted_text, edit_text_marker);
-
+        NSLog(@"user_info of value change %@", user_info);
+        NSLog(@"GetNativeAccessibile %@", GetNativeViewAccessible());
+        FireNativeMacNotification(
+            native_node, mac_notification);
+        FireNativeMacNotification(
+            [NSApp mainWindow], mac_notification);
         FireNativeMacNotificationWithUserInfo(
             native_node, mac_notification, user_info);
         FireNativeMacNotificationWithUserInfo(
             GetBridge()->GetFlutterAccessibilityFromID(kRootNode)->GetNativeViewAccessible(), mac_notification, user_info);
+        FireNativeMacNotificationWithUserInfo(
+            [NSApp mainWindow], mac_notification, user_info);
         return;
       }
       break;
@@ -223,7 +252,7 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
       return;
     }
     case ax::AXEventGenerator::Event::LIVE_REGION_CHANGED: {
-      if (SYSTEM_VERSION_LESS_THAN_OR_EQUAL_TO(@"10.13")) {
+      if (SystemVersionLessOrEqualTo({ .majorVersion = 10, .minorVersion = 13 })) {
         // Use the announcement API to get around OS <= 10.13 VoiceOver bug
         // where it stops announcing live regions after the first time focus
         // leaves any content area.
@@ -275,12 +304,18 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
     case ax::AXEventGenerator::Event::MENU_ITEM_SELECTED:
       mac_notification = NSAccessibilityMenuItemSelectedNotification;
       break;
+    case ax::AXEventGenerator::Event::CHILDREN_CHANGED: {
+      // NSAccessibilityCreatedNotification seems to be the only way to let
+      // Voiceover pick up layout changes.
+      FireNativeMacNotification([NSApp mainWindow], NSAccessibilityCreatedNotification);
+      return;
+    }
+    case ax::AXEventGenerator::Event::SUBTREE_CREATED:
     case ax::AXEventGenerator::Event::ACCESS_KEY_CHANGED:
     case ax::AXEventGenerator::Event::ATK_TEXT_OBJECT_ATTRIBUTE_CHANGED:
     case ax::AXEventGenerator::Event::ATOMIC_CHANGED:
     case ax::AXEventGenerator::Event::AUTO_COMPLETE_CHANGED:
     case ax::AXEventGenerator::Event::BUSY_CHANGED:
-    case ax::AXEventGenerator::Event::CHILDREN_CHANGED:
     case ax::AXEventGenerator::Event::CONTROLS_CHANGED:
     case ax::AXEventGenerator::Event::CLASS_NAME_CHANGED:
     case ax::AXEventGenerator::Event::DESCRIBED_BY_CHANGED:
@@ -325,7 +360,6 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
     case ax::AXEventGenerator::Event::SET_SIZE_CHANGED:
     case ax::AXEventGenerator::Event::SORT_CHANGED:
     case ax::AXEventGenerator::Event::STATE_CHANGED:
-    case ax::AXEventGenerator::Event::SUBTREE_CREATED:
     case ax::AXEventGenerator::Event::TEXT_ATTRIBUTE_CHANGED:
     case ax::AXEventGenerator::Event::RANGE_VALUE_MAX_CHANGED:
     case ax::AXEventGenerator::Event::RANGE_VALUE_MIN_CHANGED:
@@ -335,16 +369,15 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
       // It's okay to skip them.
       return;
   }
-
   FireNativeMacNotification(native_node, mac_notification);
 }
 
 void FlutterAccessibilityMac::FireNativeMacNotification(
     gfx::NativeViewAccessible native_node,
     NSString* mac_notification) {
-  FML_LOG(ERROR) << "fire native mac notification:" << mac_notification; 
+  NSLog(@"fire native mac notification: %@, ", mac_notification);
   FML_DCHECK(mac_notification);
-  FML_DCHECK(native_node);
+  // FML_DCHECK(native_node);
   NSAccessibilityPostNotification(native_node, mac_notification);
 }
 
@@ -352,6 +385,7 @@ void FlutterAccessibilityMac::FireNativeMacNotificationWithUserInfo(
     gfx::NativeViewAccessible native_node,
     NSString* mac_notification,
     NSDictionary* user_info) {
+  NSLog(@"fire native mac notification with user info: %@, ", mac_notification);
   FML_DCHECK(mac_notification);
   FML_DCHECK(native_node);
   FML_DCHECK(user_info);
@@ -392,6 +426,14 @@ gfx::NativeViewAccessible FlutterAccessibilityMac::GetParent() {
   return GetBridge()->GetFlutterAccessibilityFromID(GetAXNode()->parent()->id())->GetNativeViewAccessible();
 }
 
+gfx::NativeViewAccessible FlutterAccessibilityMac::GetFocus() {
+  int32_t focused_node = GetBridge()->GetLastFocusedNode();
+  if (focused_node == ax::AXNode::kInvalidAXID) {
+    return nullptr;
+  }
+  return GetBridge()->GetFlutterAccessibilityFromID(focused_node)->GetNativeViewAccessible();
+}
+
 SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinate_system,
                      const AXClippingBehavior clipping_behavior,
                       AXOffscreenResult* offscreen_result) const {
@@ -414,6 +456,7 @@ SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinat
   bool offscreen = false;
   SkRect bounds = GetBridge()->GetAXTree()->RelativeToTreeBounds(GetAXNode(), GetData().relative_bounds.bounds,
                                                       &offscreen, clip_bounds);
+  // FML_LOG(ERROR) << "id=" << GetData().id<<" offscreen= " << offscreen;
   // Applies window transform.
   NSRect local_bound;
   local_bound.origin.x = bounds.x();
@@ -568,7 +611,7 @@ FlutterAccessibilityMac::GetUserInfoForValueChangedNotification(
   return @{
     NSAccessibilityTextStateChangeTypeKey: @(AXTextStateChangeTypeEdit),
     NSAccessibilityTextChangeValues: changes,
-    NSAccessibilityTextChangeElement: GetNativeViewAccessible(),
+    NSAccessibilityTextChangeElement: native_node,
   };
 }
 

@@ -13,6 +13,11 @@
 
 namespace ax { // namespace
 
+constexpr int khasScrollingAction = FlutterSemanticsAction::kFlutterSemanticsActionScrollLeft |
+  FlutterSemanticsAction::kFlutterSemanticsActionScrollRight |
+  FlutterSemanticsAction::kFlutterSemanticsActionScrollUp |
+  FlutterSemanticsAction::kFlutterSemanticsActionScrollDown;
+
 // AccessibilityBridge
 AccessibilityBridge::AccessibilityBridge(void* user_data)
   : tree_(std::make_unique<AXTree>()),
@@ -70,8 +75,7 @@ void AccessibilityBridge::CommitUpdates() {
     FML_LOG(ERROR) << "Failed to update AXTree, error: " << error;
     return;
   }
-  
-  
+  // Handles accessibility events as the result of the semantics update.
   for (const auto& targeted_event : event_generator_) {
     FlutterAccessibility* event_target = GetFlutterAccessibilityFromID(targeted_event.node->id());
     if (!event_target)
@@ -106,17 +110,28 @@ void AccessibilityBridge::SetFocusedNode(int32_t node_id) {
   if (last_focused_node_ != node_id) {
     FlutterAccessibility* last_focused_child = GetFlutterAccessibilityFromID(last_focused_node_);
     if (last_focused_child) {
-      FML_LOG(ERROR) << "find difference focused fired lose focus action";
       last_focused_child->DispatchAccessibilityAction(last_focused_node_, FlutterSemanticsAction::kFlutterSemanticsActionDidLoseAccessibilityFocus, nullptr, 0);
     }
     last_focused_node_ = node_id;
   }
 }
 
+int32_t AccessibilityBridge::GetLastFocusedNode() {
+  return last_focused_node_;
+}
+
 void AccessibilityBridge::OnNodeWillBeDeleted(ax::AXTree* tree, ax::AXNode* node) {}
 
 void AccessibilityBridge::OnSubtreeWillBeDeleted(ax::AXTree* tree,
                                                          ax::AXNode* node) {}
+
+void AccessibilityBridge::OnNodeReparented(ax::AXTree* tree,
+                                                   ax::AXNode* node) {}
+
+void AccessibilityBridge::OnRoleChanged(ax::AXTree* tree,
+                                                ax::AXNode* node,
+                                                ax::Role old_role,
+                                                ax::Role new_role) {}
 
 void AccessibilityBridge::OnNodeCreated(ax::AXTree* tree,
                                                 ax::AXNode* node) {
@@ -133,18 +148,6 @@ void AccessibilityBridge::OnNodeDeleted(ax::AXTree* tree,
     id_wrapper_map_.erase(node_id);
     delete wrapper;
   }
-}
-
-void AccessibilityBridge::OnNodeReparented(ax::AXTree* tree,
-                                                   ax::AXNode* node) {
-
-}
-
-void AccessibilityBridge::OnRoleChanged(ax::AXTree* tree,
-                                                ax::AXNode* node,
-                                                ax::Role old_role,
-                                                ax::Role new_role) {
-
 }
 
 void AccessibilityBridge::OnAtomicUpdateFinished(
@@ -165,6 +168,7 @@ void AccessibilityBridge::OnAtomicUpdateFinished(
   }
 }
 
+// Private method.
 void AccessibilityBridge::GetSubTreeList(SemanticsNode target, std::vector<SemanticsNode>& result) {
   result.push_back(target);
   for (int32_t child : target.children_in_traversal_order) {
@@ -250,17 +254,18 @@ void AccessibilityBridge::SetRoleFromFlutterUpdate(AXNodeData& node_data, const 
 void AccessibilityBridge::SetStateFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
   FlutterSemanticsFlag flags = node.flags;
   if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField && 
-      (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) > 0) {
+      (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) == 0) {
     node_data.AddState(State::kEditable);
   }
-  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsHidden ) {
-      // flags & FlutterSemanticsFlag::kFlutterSemanticsFlagScopesRoute ||
-      // ((actions & khasScrollingAction) == 0 && flags == 0 && node.value.empty() && node.label.empty() && node.hint.empty())) {
-    node_data.AddState(State::kInvisible);
-  }
-  // if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsFocusable) {
-  //   node_data.AddState(State::kFocusable);
+  // if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsHidden ) {
+  //     // flags & FlutterSemanticsFlag::kFlutterSemanticsFlagScopesRoute ||
+  //     // ((actions & khasScrollingAction) == 0 && flags == 0 && node.value.empty() && node.label.empty() && node.hint.empty())) {
+  //   node_data.AddState(State::kInvisible);
   // }
+
+  // kFlutterSemanticsFlagIsFocusable means a keyboard focusable, it is different
+  // from semantics focusable.
+  // TODO(chunhtai): figure out whether something is not semantics focusable.
   node_data.AddState(State::kFocusable);
 }
 
@@ -290,9 +295,8 @@ void AccessibilityBridge::SetActionsFromFlutterUpdate(AXNodeData& node_data, con
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionDecrease) {
     node_data.AddAction(Action::kDecrement);
   }
-  if (actions & FlutterSemanticsAction::kFlutterSemanticsActionShowOnScreen) {
-    node_data.AddAction(Action::kScrollToMakeVisible);
-  }
+  // Every node has show on screen action.
+  node_data.AddAction(Action::kScrollToMakeVisible);
   // if (actions & FlutterSemanticsAction::kFlutterSemanticsActionMoveCursorForwardByCharacter) {
     
   // }
@@ -332,18 +336,20 @@ void AccessibilityBridge::SetActionsFromFlutterUpdate(AXNodeData& node_data, con
 }
 
 void AccessibilityBridge::SetBooleanAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
-  // FlutterSemanticsAction actions = node.actions;
-  // FlutterSemanticsFlag flags = node.flags;
-  // node_data.AddBoolAttribute(BoolAttribute::kScrollable, actions & khasScrollingAction);
-  // node_data.AddBoolAttribute(BoolAttribute::kClickable, actions & FlutterSemanticsAction::kFlutterSemanticsActionTap);
-  // node_data.AddBoolAttribute(BoolAttribute::kClipsChildren, actions & khasScrollingAction && node.children_in_traversal_order.size() != 0);
-  // node_data.AddBoolAttribute(BoolAttribute::kSelected, flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsSelected);
-  // node_data.AddBoolAttribute(BoolAttribute::kEditableRoot, flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField && 
-  //                                                                     (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) > 0);
+  FlutterSemanticsAction actions = node.actions;
+  FlutterSemanticsFlag flags = node.flags;
+  node_data.AddBoolAttribute(BoolAttribute::kScrollable, actions & khasScrollingAction);
+  node_data.AddBoolAttribute(BoolAttribute::kClickable, actions & FlutterSemanticsAction::kFlutterSemanticsActionTap);
+  node_data.AddBoolAttribute(BoolAttribute::kClipsChildren, actions & khasScrollingAction && node.children_in_traversal_order.size() != 0);
+  node_data.AddBoolAttribute(BoolAttribute::kSelected, flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsSelected);
+  node_data.AddBoolAttribute(BoolAttribute::kEditableRoot, flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField && 
+                                                                      (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) > 0);
 }
 
 void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
   node_data.AddIntAttribute(IntAttribute::kTextDirection, node.text_direction);
+  node_data.AddIntAttribute(IntAttribute::kTextSelStart, node.text_selection_base);
+  node_data.AddIntAttribute(IntAttribute::kTextSelEnd, node.text_selection_extent);
 }
 
 void AccessibilityBridge::SetIntListAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
