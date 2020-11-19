@@ -67,9 +67,46 @@ void CanvasPath::RegisterNatives(tonic::DartLibraryNatives* natives) {
                      FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-CanvasPath::CanvasPath() {}
+CanvasPath::CanvasPath() : weak_factory_(this) {
+  resetVolatility();
+}
 
-CanvasPath::~CanvasPath() {}
+CanvasPath::~CanvasPath() = default;
+
+void CanvasPath::resetVolatility() {
+  if (!tracking_volatility_) {
+    path_.setIsVolatile(true);
+    volatile_paths_.push_back(weak_factory_.GetWeakPtr());
+    tracking_volatility_ = true;
+  }
+}
+
+// static
+std::mutex CanvasPath::volatile_paths_mutex_;
+// static
+std::vector<fml::WeakPtr<CanvasPath>> CanvasPath::volatile_paths_;
+// static
+void CanvasPath::updatePathVolatility() {
+  FML_DCHECK(UIDartState::Current());
+  FML_DCHECK(UIDartState::Current()
+                 ->GetTaskRunners()
+                 .GetUITaskRunner()
+                 ->RunsTasksOnCurrentThread());
+  std::scoped_lock guard(volatile_paths_mutex_);
+  std::vector<fml::WeakPtr<CanvasPath>> remaining_paths;
+  for (auto weak_path : volatile_paths_) {
+    if (weak_path) {
+      weak_path->volatility_count_++;
+      if (weak_path->volatility_count_ >= 2) {
+        weak_path->path_.setIsVolatile(false);
+        weak_path->tracking_volatility_ = false;
+      } else {
+        remaining_paths.push_back(weak_path);
+      }
+    }
+  }
+  volatile_paths_ = std::move(remaining_paths);
+}
 
 int CanvasPath::getFillType() {
   return static_cast<int>(path_.getFillType());
@@ -77,26 +114,32 @@ int CanvasPath::getFillType() {
 
 void CanvasPath::setFillType(int fill_type) {
   path_.setFillType(static_cast<SkPathFillType>(fill_type));
+  resetVolatility();
 }
 
 void CanvasPath::moveTo(float x, float y) {
   path_.moveTo(x, y);
+  resetVolatility();
 }
 
 void CanvasPath::relativeMoveTo(float x, float y) {
   path_.rMoveTo(x, y);
+  resetVolatility();
 }
 
 void CanvasPath::lineTo(float x, float y) {
   path_.lineTo(x, y);
+  resetVolatility();
 }
 
 void CanvasPath::relativeLineTo(float x, float y) {
   path_.rLineTo(x, y);
+  resetVolatility();
 }
 
 void CanvasPath::quadraticBezierTo(float x1, float y1, float x2, float y2) {
   path_.quadTo(x1, y1, x2, y2);
+  resetVolatility();
 }
 
 void CanvasPath::relativeQuadraticBezierTo(float x1,
@@ -104,6 +147,7 @@ void CanvasPath::relativeQuadraticBezierTo(float x1,
                                            float x2,
                                            float y2) {
   path_.rQuadTo(x1, y1, x2, y2);
+  resetVolatility();
 }
 
 void CanvasPath::cubicTo(float x1,
@@ -113,6 +157,7 @@ void CanvasPath::cubicTo(float x1,
                          float x3,
                          float y3) {
   path_.cubicTo(x1, y1, x2, y2, x3, y3);
+  resetVolatility();
 }
 
 void CanvasPath::relativeCubicTo(float x1,
@@ -122,10 +167,12 @@ void CanvasPath::relativeCubicTo(float x1,
                                  float x3,
                                  float y3) {
   path_.rCubicTo(x1, y1, x2, y2, x3, y3);
+  resetVolatility();
 }
 
 void CanvasPath::conicTo(float x1, float y1, float x2, float y2, float w) {
   path_.conicTo(x1, y1, x2, y2, w);
+  resetVolatility();
 }
 
 void CanvasPath::relativeConicTo(float x1,
@@ -134,6 +181,7 @@ void CanvasPath::relativeConicTo(float x1,
                                  float y2,
                                  float w) {
   path_.rConicTo(x1, y1, x2, y2, w);
+  resetVolatility();
 }
 
 void CanvasPath::arcTo(float left,
@@ -146,6 +194,7 @@ void CanvasPath::arcTo(float left,
   path_.arcTo(SkRect::MakeLTRB(left, top, right, bottom),
               startAngle * 180.0 / M_PI, sweepAngle * 180.0 / M_PI,
               forceMoveTo);
+  resetVolatility();
 }
 
 void CanvasPath::arcToPoint(float arcEndX,
@@ -162,6 +211,7 @@ void CanvasPath::arcToPoint(float arcEndX,
 
   path_.arcTo(radiusX, radiusY, xAxisRotation, arcSize, direction, arcEndX,
               arcEndY);
+  resetVolatility();
 }
 
 void CanvasPath::relativeArcToPoint(float arcEndDeltaX,
@@ -177,14 +227,17 @@ void CanvasPath::relativeArcToPoint(float arcEndDeltaX,
       isClockwiseDirection ? SkPathDirection::kCW : SkPathDirection::kCCW;
   path_.rArcTo(radiusX, radiusY, xAxisRotation, arcSize, direction,
                arcEndDeltaX, arcEndDeltaY);
+  resetVolatility();
 }
 
 void CanvasPath::addRect(float left, float top, float right, float bottom) {
   path_.addRect(SkRect::MakeLTRB(left, top, right, bottom));
+  resetVolatility();
 }
 
 void CanvasPath::addOval(float left, float top, float right, float bottom) {
   path_.addOval(SkRect::MakeLTRB(left, top, right, bottom));
+  resetVolatility();
 }
 
 void CanvasPath::addArc(float left,
@@ -195,15 +248,18 @@ void CanvasPath::addArc(float left,
                         float sweepAngle) {
   path_.addArc(SkRect::MakeLTRB(left, top, right, bottom),
                startAngle * 180.0 / M_PI, sweepAngle * 180.0 / M_PI);
+  resetVolatility();
 }
 
 void CanvasPath::addPolygon(const tonic::Float32List& points, bool close) {
   path_.addPoly(reinterpret_cast<const SkPoint*>(points.data()),
                 points.num_elements() / 2, close);
+  resetVolatility();
 }
 
 void CanvasPath::addRRect(const RRect& rrect) {
   path_.addRRect(rrect.sk_rrect);
+  resetVolatility();
 }
 
 void CanvasPath::addPath(CanvasPath* path, double dx, double dy) {
@@ -212,6 +268,7 @@ void CanvasPath::addPath(CanvasPath* path, double dx, double dy) {
     return;
   }
   path_.addPath(path->path(), dx, dy, SkPath::kAppend_AddPathMode);
+  resetVolatility();
 }
 
 void CanvasPath::addPathWithMatrix(CanvasPath* path,
@@ -229,6 +286,7 @@ void CanvasPath::addPathWithMatrix(CanvasPath* path,
   matrix.setTranslateY(matrix.getTranslateY() + dy);
   path_.addPath(path->path(), matrix, SkPath::kAppend_AddPathMode);
   matrix4.Release();
+  resetVolatility();
 }
 
 void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
@@ -238,6 +296,7 @@ void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
     return;
   }
   path_.addPath(path->path(), dx, dy, SkPath::kExtend_AddPathMode);
+  resetVolatility();
 }
 
 void CanvasPath::extendWithPathAndMatrix(CanvasPath* path,
@@ -255,14 +314,17 @@ void CanvasPath::extendWithPathAndMatrix(CanvasPath* path,
   matrix.setTranslateY(matrix.getTranslateY() + dy);
   path_.addPath(path->path(), matrix, SkPath::kExtend_AddPathMode);
   matrix4.Release();
+  resetVolatility();
 }
 
 void CanvasPath::close() {
   path_.close();
+  resetVolatility();
 }
 
 void CanvasPath::reset() {
   path_.reset();
+  resetVolatility();
 }
 
 bool CanvasPath::contains(double x, double y) {
@@ -272,6 +334,7 @@ bool CanvasPath::contains(double x, double y) {
 void CanvasPath::shift(Dart_Handle path_handle, double dx, double dy) {
   fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
   path_.offset(dx, dy, &path->path_);
+  resetVolatility();
 }
 
 void CanvasPath::transform(Dart_Handle path_handle,
@@ -279,6 +342,7 @@ void CanvasPath::transform(Dart_Handle path_handle,
   fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
   path_.transform(ToSkMatrix(matrix4), &path->path_);
   matrix4.Release();
+  resetVolatility();
 }
 
 tonic::Float32List CanvasPath::getBounds() {
@@ -294,6 +358,7 @@ tonic::Float32List CanvasPath::getBounds() {
 bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
   return Op(path1->path(), path2->path(), static_cast<SkPathOp>(operation),
             &path_);
+  resetVolatility();
 }
 
 void CanvasPath::clone(Dart_Handle path_handle) {

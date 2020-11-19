@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PATH_H_
 #define FLUTTER_LIB_UI_PAINTING_PATH_H_
 
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/rrect.h"
 #include "third_party/skia/include/core/SkPath.h"
@@ -114,10 +115,20 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
+  static void updatePathVolatility();
+
  private:
   CanvasPath();
 
+  static std::mutex volatile_paths_mutex_;
+  static std::vector<fml::WeakPtr<CanvasPath>> volatile_paths_;
+
   SkPath path_;
+  bool tracking_volatility_ = false;
+  int volatility_count_ = 0;
+  fml::WeakPtrFactory<CanvasPath> weak_factory_;
+
+  void resetVolatility();
 };
 
 }  // namespace flutter

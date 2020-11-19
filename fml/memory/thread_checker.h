@@ -8,6 +8,7 @@
 #ifndef FLUTTER_FML_MEMORY_THREAD_CHECKER_H_
 #define FLUTTER_FML_MEMORY_THREAD_CHECKER_H_
 
+#include "flutter/fml/backtrace.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -61,6 +62,7 @@ class ThreadChecker final {
         FML_DLOG(ERROR) << "IsCreationThreadCurrent expected thread: '"
                         << expected_thread << "' actual thread:'"
                         << actual_thread << "'";
+        FML_DLOG(ERROR) << fml::BacktraceHere();
       }
     }
 #endif  // __APPLE__
