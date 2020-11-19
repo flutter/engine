@@ -199,6 +199,7 @@ enum {
   if (self) {
     _mtlDevice = device;
     _mtlCommandQueue = commandQueue;
+    _containingLayer = layer;
 
     // Layer for content. This is separate from provided layer, because it needs to be flipped
     // vertically if we render to Metal texture
@@ -224,6 +225,8 @@ enum {
                                                            width:size.width
                                                           height:size.height
                                                        mipmapped:NO];
+    textureDescriptor.usage =
+        MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget | MTLTextureUsageShaderWrite;
     // plane = 0 for BGRA.
     _textures[i] = [_mtlDevice newTextureWithDescriptor:textureDescriptor
                                               iosurface:ioSurface
@@ -236,7 +239,7 @@ enum {
 
   // The surface is an Metal texture, which means it has origin in bottom left corner
   // and needs to be flipped vertically
-  _contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
+  //  _contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
   IOSurfaceRef backBuffer = [_ioSurfaceHolder get:kFlutterSurfaceManagerBackBuffer];
   [_contentLayer setContents:(__bridge id)backBuffer];
 

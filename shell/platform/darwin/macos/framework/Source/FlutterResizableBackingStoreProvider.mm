@@ -71,24 +71,25 @@
 }
 
 - (void)updateBackingStoreIfNecessaryForSize:(CGSize)size {
-  // [_surfaceManager ensureSurfaceSize:size];
+  [_surfaceManager ensureSurfaceSize:size];
 }
 
 - (FlutterBackingStoreDescriptor*)getBackingStore {
-  // int fboId = [_surfaceManager glFrameBufferId];
-  // return [[FlutterBackingStoreDescriptor alloc] initOpenGLDescriptorWithFBOId:fboId];
-  return nil;
+  return [_surfaceManager getBackingStore];
 }
 
 - (void)resizeSynchronizerFlush:(nonnull FlutterResizeSynchronizer*)synchronizer {
-  // TODO XXX
+  // TODO (XXX)
 }
 
 - (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer {
+  id<MTLCommandBuffer> commandBuffer = [_mtlCommandQueue commandBuffer];
+  [commandBuffer commit];
+  [commandBuffer waitUntilScheduled];
   // [CATransaction begin];
   // [CATransaction setDisableActions:YES];
 
-  // [_surfaceManager swapBuffers];
+  [_surfaceManager swapBuffers];
 
   // [CATransaction commit];
 }

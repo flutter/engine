@@ -321,10 +321,11 @@ InferMetalPlatformViewCreationCallback(
 
     FlutterMetalTexture metal_texture;
     metal_texture.struct_size = sizeof(FlutterMetalTexture);
-    metal_texture.texture = texture_info.texture;
+    metal_texture.texture = &texture_info.texture;
 
     ptr(user_data, &frame_info, &metal_texture);
     texture_info.texture_id = metal_texture.texture_id;
+    texture_info.texture = metal_texture.texture;
     return texture_info;
   };
 
