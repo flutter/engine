@@ -4,6 +4,8 @@
 
 #include "flutter/shell/gpu/gpu_surface_metal.h"
 
+#import <Metal/Metal.h>
+
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -46,6 +48,20 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
   frame_info.height = frame_size.height();
   frame_info.width = frame_size.width();
 
+  switch (render_target_type_) {
+    case MTLRenderTargetType::kCAMTLLayer:
+      return AcquireFrameFromMTLLayer(frame_info);
+    case MTLRenderTargetType::kMTLTexture:
+      return AcquireFrameFromMTLTexture(frame_info);
+    default:
+      FML_CHECK(false) << "unknown render target type!";
+  }
+
+  return nullptr;
+}
+
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromMTLLayer(
+    const MTLFrameInfo& frame_info) {
   auto layer = delegate_->GetCAMetalLayer(frame_info);
   if (!layer) {
     FML_LOG(ERROR) << "Invalid CALayer given by the embedder.";
@@ -63,7 +79,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
   );
 
   if (!surface) {
-    FML_LOG(ERROR) << "Could not create the SkSurface from the metal texture.";
+    FML_LOG(ERROR) << "Could not create the SkSurface from the CAMetalLayer.";
     return nullptr;
   }
 
@@ -79,6 +95,45 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
     bool present_result = delegate_->PresentDrawable(next_drawable_);
     next_drawable_ = nullptr;
     return present_result;
+  };
+
+  return std::make_unique<SurfaceFrame>(std::move(surface), true, submit_callback);
+}
+
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromMTLTexture(
+    const MTLFrameInfo& frame_info) {
+  GPUMTLTextureInfo texture = delegate_->GetMTLTexture(frame_info);
+  id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture.texture);
+
+  if (!mtl_texture) {
+    FML_LOG(ERROR) << "Invalid MTLTexture given by the embedder.";
+    return nullptr;
+  }
+
+  GrMtlTextureInfo info;
+  info.fTexture.reset([mtl_texture retain]);
+  GrBackendTexture backend_texture(frame_info.width, frame_info.height, GrMipmapped::kNo, info);
+
+  auto surface =
+      SkSurface::MakeFromBackendTexture(context_.get(), backend_texture, kTopLeft_GrSurfaceOrigin,
+                                        1, kBGRA_8888_SkColorType, nullptr, nullptr);
+
+  if (!surface) {
+    FML_LOG(ERROR) << "Could not create the SkSurface from the metal texture.";
+    return nullptr;
+  }
+
+  auto submit_callback = [texture_id = texture.texture_id, this](const SurfaceFrame& surface_frame,
+                                                                 SkCanvas* canvas) -> bool {
+    TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
+    if (canvas == nullptr) {
+      FML_DLOG(ERROR) << "Canvas not available.";
+      return false;
+    }
+
+    canvas->flush();
+
+    return delegate_->PresentTexture(texture_id);
   };
 
   return std::make_unique<SurfaceFrame>(std::move(surface), true, submit_callback);

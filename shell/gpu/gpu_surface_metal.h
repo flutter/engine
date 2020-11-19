@@ -15,7 +15,8 @@ namespace flutter {
 
 class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetal : public Surface {
  public:
-  GPUSurfaceMetal(GPUSurfaceMetalDelegate* delegate, sk_sp<GrDirectContext> context);
+  GPUSurfaceMetal(GPUSurfaceMetalDelegate* delegate,
+                  sk_sp<GrDirectContext> context);
 
   // |Surface|
   ~GPUSurfaceMetal();
@@ -40,6 +41,12 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetal : public Surface {
 
   // |Surface|
   std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
+
+  std::unique_ptr<SurfaceFrame> AcquireFrameFromMTLLayer(
+      const MTLFrameInfo& frame_info);
+
+  std::unique_ptr<SurfaceFrame> AcquireFrameFromMTLTexture(
+      const MTLFrameInfo& frame_info);
 
   void ReleaseUnusedDrawableIfNecessary();
 
