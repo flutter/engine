@@ -418,7 +418,7 @@ public class FlutterViewTest {
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     // Bottom padding is removed due to hide navigation.
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
     // Right padding is zero because the rotation is 90deg
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingRight);
   }
