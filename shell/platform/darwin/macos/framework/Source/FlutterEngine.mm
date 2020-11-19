@@ -289,10 +289,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   if (controller) {
     [_openGLRenderer attachToFlutterView:controller.flutterView];
+  } else {
+    [_openGLRenderer clearResourceContext];
   }
 
   if (!controller && !_allowHeadlessExecution) {
-    [_openGLRenderer clearResourceContext];
     [self shutDownEngine];
   }
 }

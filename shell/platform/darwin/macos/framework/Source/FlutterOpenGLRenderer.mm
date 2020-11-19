@@ -48,8 +48,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
   FlutterView* _flutterView;
 
-  // The context that is owned by the currently displayed FlutterView. This is stashed
-  // in the renderer so that the view doesn't need to be accessed from a background thread.
+  // The context provided to the Flutter engine for rendering to the FlutterView. This is lazily
+  // created during initialization of the FlutterView. This is used to render content into the
+  // FlutterView.
   NSOpenGLContext* _openGLContext;
 
   // The context provided to the Flutter engine for resource loading.
@@ -140,7 +141,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   FlutterExternalTextureGL* FlutterTexture =
       [[FlutterExternalTextureGL alloc] initWithFlutterTexture:texture];
   int64_t textureID = [FlutterTexture textureID];
-  auto success = _embedderAPI.RegisterExternalTexture(_engine, textureID);
+  FlutterEngineResult success = _embedderAPI.RegisterExternalTexture(_engine, textureID);
   if (success == FlutterEngineResult::kSuccess) {
     _textures[@(textureID)] = FlutterTexture;
     return textureID;
@@ -151,14 +152,14 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (void)textureFrameAvailable:(int64_t)textureID {
-  auto success = _embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID);
+  FlutterEngineResult success = _embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID);
   if (success != FlutterEngineResult::kSuccess) {
     NSLog(@"Unable to mark texture with id %lld as available.", textureID);
   }
 }
 
 - (void)unregisterTexture:(int64_t)textureID {
-  auto success = _embedderAPI.UnregisterExternalTexture(_engine, textureID);
+  FlutterEngineResult success = _embedderAPI.UnregisterExternalTexture(_engine, textureID);
   if (success == FlutterEngineResult::kSuccess) {
     [_textures removeObjectForKey:@(textureID)];
   } else {
