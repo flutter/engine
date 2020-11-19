@@ -8,6 +8,7 @@ import android.view.KeyEvent;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.flutter.embedding.android.KeyboardMap;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -16,8 +17,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class HardwareKeyboard {
-  private static final String TAG = "HardwareKeyboard";
-
   // Must match the KeyChange enum in key.dart.
   @IntDef({
     KeyChange.DOWN,
@@ -31,7 +30,7 @@ public class HardwareKeyboard {
   }
 
   // Must match _kKeyDataFieldCount in platform_dispatcher.dart.
-  private static final int KEY_DATA_FIELD_COUNT = 6;
+  private static final int KEY_DATA_FIELD_COUNT = 5;
   private static final int BYTES_PER_FIELD = 8;
 
   private final HashMap<Long, Long> mPressingRecords = new HashMap<Long, Long>();
@@ -41,11 +40,17 @@ public class HardwareKeyboard {
 
   static long logicalKeyFromEvent(KeyEvent event) {
     final int keyCode = event.getKeyCode();
+    final Long mapResult = KeyboardMap.keyCodeToLogical.get(Long.valueOf(keyCode));
+    if (mapResult != null)
+      return mapResult.longValue();
     return keyCode;
   }
 
   static long physicalKeyFromEvent(KeyEvent event) {
     final int scanCode = event.getScanCode();
+    final Long mapResult = KeyboardMap.scanCodeToPhysical.get(Long.valueOf(scanCode));
+    if (mapResult != null)
+      return mapResult.longValue();
     return scanCode;
   }
 
@@ -128,10 +133,12 @@ public class HardwareKeyboard {
   }
 
   public ByteBuffer packDatum(KeyDatum keyDatum) {
+    // The "1" is for the leading "character_size".
     final ByteBuffer packet =
-        ByteBuffer.allocateDirect(KEY_DATA_FIELD_COUNT * BYTES_PER_FIELD);
+        ByteBuffer.allocateDirect((1 + KEY_DATA_FIELD_COUNT) * BYTES_PER_FIELD);
     packet.order(ByteOrder.LITTLE_ENDIAN);
-    final byte[] bytes = keyDatum.character.getBytes(StandardCharsets.UTF_8);
+    final byte[] bytes = keyDatum.character == null ? new byte[0]
+        : keyDatum.character.getBytes(StandardCharsets.UTF_8);
 
     packet.putLong(bytes.length);
 
@@ -141,6 +148,7 @@ public class HardwareKeyboard {
     packet.putLong(keyDatum.logical);
     final long synthesized = keyDatum.synthesized ? 1 : 0;
     packet.putLong(synthesized);
+    packet.put(ByteBuffer.wrap(bytes));
     return packet;
   }
 
