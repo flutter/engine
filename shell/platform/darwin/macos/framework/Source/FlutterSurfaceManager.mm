@@ -4,8 +4,8 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 
-#include <cstddef>
 #include <OpenGL/gl.h>
+#include <cstddef>
 #include <vector>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"

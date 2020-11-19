@@ -18,11 +18,17 @@ struct MTLFrameInfo {
   uint32_t height;
 };
 
+// expected to be id<MTLDevice>
+typedef void* GPUMTLDeviceHandle;
+
+// expected to be id<MTLCommandQueues>
+typedef void* GPUMTLCommandQueueHandle;
+
 // expected to be CAMetalLayer*
-typedef const void* GPUMTLLayerHandle;
+typedef void* GPUMTLLayerHandle;
 
 // expected to be id<MTLTexture>
-typedef const void* GPUMTLTextureHandle;
+typedef void* GPUMTLTextureHandle;
 
 struct GPUMTLTextureInfo {
   intptr_t texture_id;

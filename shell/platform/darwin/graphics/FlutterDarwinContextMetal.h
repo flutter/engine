@@ -18,6 +18,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithMTLDevice:(id<MTLDevice>)mtlDevice;
 
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)mtlDevice
+                     commandQueue:(id<MTLCommandQueue>)commandQueue;
+
 @property(nonatomic, readonly) id<MTLDevice> mtlDevice;
 @property(nonatomic, readonly) id<MTLCommandQueue> mtlCommandQueue;
 @property(nonatomic, readonly) sk_sp<GrDirectContext> mainContext;

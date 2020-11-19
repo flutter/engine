@@ -8,20 +8,34 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_metal.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h"
+#include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
+#include "shell/gpu/gpu_surface_metal_delegate.h"
 
 namespace flutter {
 
 class EmbedderSurfaceMetal final : public EmbedderSurface,
                                    public GPUSurfaceMetalDelegate {
  public:
-  explicit EmbedderSurfaceMetal();
+  struct MetalDispatchTable {
+    GPUMTLDeviceHandle device;                         // required
+    GPUMTLCommandQueueHandle command_queue;            // required
+    std::function<bool(intptr_t texture_id)> present;  // required
+    std::function<GPUMTLTextureInfo(MTLFrameInfo frame_info)>
+        get_texture;  // required
+  };
+
+  EmbedderSurfaceMetal(
+      MetalDispatchTable metal_dispatch_table,
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
   ~EmbedderSurfaceMetal() override;
 
  private:
   bool valid_ = false;
+  MetalDispatchTable metal_dispatch_table_;
   FlutterDarwinContextMetal* darwin_metal_context_;
+  std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
   sk_sp<SkSurface> sk_surface_;
 
   // |EmbedderSurface|

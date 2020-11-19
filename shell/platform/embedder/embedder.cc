@@ -121,6 +121,21 @@ static bool IsSoftwareRendererConfigValid(const FlutterRendererConfig* config) {
   return true;
 }
 
+static bool IsMetalRendererConfigValid(const FlutterRendererConfig* config) {
+  if (config->type != kMetal) {
+    return false;
+  }
+
+  const FlutterMetalRendererConfig* metal_config = &config->metal;
+
+  bool device = SAFE_ACCESS(metal_config, device, nullptr);
+  bool command_queue = SAFE_ACCESS(metal_config, command_queue, nullptr);
+  bool present = SAFE_ACCESS(metal_config, present_callback, nullptr);
+  bool get_texture = SAFE_ACCESS(metal_config, texture_callback, nullptr);
+
+  return device && command_queue && present && get_texture;
+}
+
 static bool IsRendererValid(const FlutterRendererConfig* config) {
   if (config == nullptr) {
     return false;
@@ -131,6 +146,8 @@ static bool IsRendererValid(const FlutterRendererConfig* config) {
       return IsOpenGLRendererConfigValid(config);
     case kSoftware:
       return IsSoftwareRendererConfigValid(config);
+    case kMetal:
+      return IsMetalRendererConfigValid(config);
     default:
       return false;
   }
@@ -287,9 +304,53 @@ InferMetalPlatformViewCreationCallback(
     return nullptr;
   }
 
-#ifdef SHELL_ENABLE_METAL
+#ifdef FLUTTER_SHELL_ENABLE_METAL
+  FML_LOG(ERROR) << "! 1";
+  auto metal_present = [ptr = config->metal.present_callback,
+                        user_data](intptr_t texture_id) {
+    return ptr(user_data, texture_id);
+  };
+  FML_LOG(ERROR) << "! 2";
+  auto metal_get_texture = [ptr = config->metal.texture_callback,
+                            user_data](flutter::MTLFrameInfo metal_frame_info)
+      -> flutter::GPUMTLTextureInfo {
+    FlutterFrameInfo frame_info = {};
+    frame_info.struct_size = sizeof(FlutterFrameInfo);
+    frame_info.size = {metal_frame_info.width, metal_frame_info.height};
+    flutter::GPUMTLTextureInfo texture_info;
 
-  return nullptr;
+    FlutterMetalTexture metal_texture;
+    metal_texture.struct_size = sizeof(FlutterMetalTexture);
+    metal_texture.texture = texture_info.texture;
+
+    ptr(user_data, &frame_info, &metal_texture);
+    texture_info.texture_id = metal_texture.texture_id;
+    return texture_info;
+  };
+
+  FML_LOG(ERROR) << "! 3";
+
+  flutter::EmbedderSurfaceMetal::MetalDispatchTable metal_dispatch_table = {
+      .device = config->metal.device,
+      .command_queue = config->metal.command_queue,
+      .get_texture = metal_get_texture,
+      .present = metal_present,
+  };
+
+  FML_LOG(ERROR) << "! 4";
+
+  return fml::MakeCopyable(
+      [metal_dispatch_table, platform_dispatch_table,
+       external_view_embedder =
+           std::move(external_view_embedder)](flutter::Shell& shell) mutable {
+        return std::make_unique<flutter::PlatformViewEmbedder>(
+            shell,                             // delegate
+            shell.GetTaskRunners(),            // task runners
+            software_dispatch_table,           // software dispatch table
+            platform_dispatch_table,           // platform dispatch table
+            std::move(external_view_embedder)  // external view embedder
+        );
+      });
 #else
   return nullptr;
 #endif
@@ -354,6 +415,7 @@ InferPlatformViewCreationCallback(
           config, user_data, platform_dispatch_table,
           std::move(external_view_embedder));
     case kMetal:
+      FML_LOG(ERROR) << "! 0";
       return InferMetalPlatformViewCreationCallback(
           config, user_data, platform_dispatch_table,
           std::move(external_view_embedder));

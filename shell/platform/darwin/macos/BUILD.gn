@@ -46,6 +46,8 @@ source_set("flutter_framework_source") {
 
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
+    "framework/Source/FlutterBackingStoreDescriptor.h",
+    "framework/Source/FlutterBackingStoreDescriptor.mm",
     "framework/Source/FlutterDartProject.mm",
     "framework/Source/FlutterDartProject_Internal.h",
     "framework/Source/FlutterEngine.mm",
@@ -56,8 +58,6 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterMouseCursorPlugin.mm",
     "framework/Source/FlutterOpenGLRenderer.h",
     "framework/Source/FlutterOpenGLRenderer.mm",
-    "framework/Source/FlutterBackingStoreDescriptor.h",
-    "framework/Source/FlutterBackingStoreDescriptor.mm",
     "framework/Source/FlutterResizableBackingStoreProvider.h",
     "framework/Source/FlutterResizableBackingStoreProvider.mm",
     "framework/Source/FlutterResizeSynchronizer.h",
@@ -84,11 +84,15 @@ source_set("flutter_framework_source") {
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
   ]
 
+  defines = []
+
   if (shell_enable_metal) {
     sources += [
       "framework/Source/FlutterMetalRenderer.h",
       "framework/Source/FlutterMetalRenderer.mm",
     ]
+
+    defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
 
     # TODO: exclude gl deps in this case.
     deps += [ "//flutter/shell/platform/darwin/graphics" ]
@@ -96,7 +100,7 @@ source_set("flutter_framework_source") {
 
   public_configs = [ "//flutter:config" ]
 
-  defines = [
+  defines += [
     "FLUTTER_FRAMEWORK",
     "FLUTTER_ENGINE_NO_PROTOTYPES",
   ]

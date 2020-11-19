@@ -22,7 +22,7 @@
 
 @implementation FlutterView
 
-#ifdef SHELL_ENABLE_METAL
+#ifdef FLUTTER_SHELL_ENABLE_METAL
 - (instancetype)initWithMTLDevice:(id<MTLDevice>)device
                      commandQueue:(id<MTLCommandQueue>)commandQueue
                   reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {

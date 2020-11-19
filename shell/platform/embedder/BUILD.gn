@@ -72,13 +72,6 @@ template("embedder_source_set") {
       ]
     }
 
-    if (embedder_enable_metal) {
-      sources += [
-        "embedder_surface_metal.h",
-        "embedder_surface_metal.mm",
-      ]
-    }
-
     deps = [
       ":embedder_gpu_configuration",
       "//flutter/assets",
@@ -96,6 +89,19 @@ template("embedder_source_set") {
     ]
 
     if (embedder_enable_metal) {
+      print("metal!!! embedder_enable_metal!")
+
+      if (!defined(defines)) {
+        defines = []
+      }
+
+      defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
+
+      sources += [
+        "embedder_surface_metal.h",
+        "embedder_surface_metal.mm",
+      ]
+
       deps += [ "//flutter/shell/platform/darwin/graphics" ]
     }
 

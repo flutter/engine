@@ -12,9 +12,16 @@
 
 namespace flutter {
 
-EmbedderSurfaceMetal::EmbedderSurfaceMetal()
-    : GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture) {
-  darwin_metal_context_ = [[FlutterDarwinContextMetal alloc] initWithDefaultMTLDevice];
+EmbedderSurfaceMetal::EmbedderSurfaceMetal(
+    MetalDispatchTable metal_dispatch_table,
+    std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
+    : GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
+      metal_dispatch_table_(metal_dispatch_table),
+      external_view_embedder_(external_view_embedder) {
+  id<MTLDevice> device = (id<MTLDevice>)metal_dispatch_table_.device;
+  id<MTLCommandQueue> command_queue = (id<MTLCommandQueue>)metal_dispatch_table_.command_queue;
+  darwin_metal_context_ = [[FlutterDarwinContextMetal alloc] initWithMTLDevice:device
+                                                                  commandQueue:command_queue];
   valid_ = darwin_metal_context_ != nullptr;
 }
 
@@ -59,14 +66,12 @@ bool EmbedderSurfaceMetal::PresentDrawable(GrMTLHandle drawable) const {
 
 // |GPUSurfaceMetalDelegate|
 GPUMTLTextureInfo EmbedderSurfaceMetal::GetMTLTexture(MTLFrameInfo frame_info) const {
-  // TODO (iskakaushik)
-  return {.texture_id = 0, .texture = nullptr};
+  return metal_dispatch_table_.get_texture(frame_info);
 }
 
 // |GPUSurfaceMetalDelegate|
 bool EmbedderSurfaceMetal::PresentTexture(intptr_t texture_id) const {
-  // TODO (iskakaushik)
-  return false;
+  return metal_dispatch_table_.present(texture_id);
 }
 
 }  // namespace flutter

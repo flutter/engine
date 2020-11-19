@@ -36,6 +36,21 @@ PlatformViewEmbedder::PlatformViewEmbedder(
       platform_dispatch_table_(platform_dispatch_table) {}
 #endif
 
+#ifdef FLUTTER_SHELL_ENABLE_METAL
+PlatformViewEmbedder::PlatformViewEmbedder(
+    PlatformView::Delegate& delegate,
+    flutter::TaskRunners task_runners,
+    EmbedderSurfaceMetal::MetalDispatchTable metal_dispatch_table,
+    PlatformDispatchTable platform_dispatch_table,
+    std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
+    : PlatformView(delegate, std::move(task_runners)),
+      external_view_embedder_(external_view_embedder),
+      embedder_surface_(
+          std::make_unique<EmbedderSurfaceMetal>(metal_dispatch_table,
+                                                 external_view_embedder_)),
+      platform_dispatch_table_(platform_dispatch_table) {}
+#endif
+
 PlatformViewEmbedder::~PlatformViewEmbedder() = default;
 
 void PlatformViewEmbedder::UpdateSemantics(

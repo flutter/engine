@@ -10,6 +10,7 @@
 
 #ifdef FLUTTER_SHELL_ENABLE_METAL
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #endif
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
@@ -133,11 +134,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   // Pointer to the Dart AOT snapshot and instruction data.
   _FlutterEngineAOTData* _aotData;
-
-#ifdef FlutterDarwinContextMetal
-  // Metal Context
-  FlutterDarwinContextMetal* _metalContext;
-#endif
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -155,7 +151,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _allowHeadlessExecution = allowHeadlessExecution;
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
+
+#ifdef FLUTTER_SHELL_ENABLE_METAL
+  _metalRenderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:_engine];
+#elif SHELL_ENABLE_GL
   _openGLRenderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:_engine];
+#endif
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -183,18 +184,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return NO;
   }
 
+  FlutterRendererConfig rendererConfig;
 #ifdef FLUTTER_SHELL_ENABLE_METAL
-  _metalContext = [[FlutterDarwinContextMetal alloc] initWithDefaultMTLDevice];
-
-  const FlutterRendererConfig metalRendererConfig = {
-      .type = kMetal,
-      .metal.struct_size = sizeof(FlutterMetalRendererConfig),
-      .metal.metal_device = (__bridge FlutterMetalDevice)_metalContext.mtlDevice,
-  };
-#endif
-
+  [_metalRenderer attachToFlutterView:_viewController.flutterView];
+  rendererConfig = [_metalRenderer createRendererConfig];
+#elif SHELL_ENAGLE_GL
   [_openGLRenderer attachToFlutterView:_viewController.flutterView];
-  const FlutterRendererConfig rendererConfig = [_openGLRenderer createRendererConfig];
+  rendererConfig = [_openGLRenderer createRendererConfig];
+#endif
 
   // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
 

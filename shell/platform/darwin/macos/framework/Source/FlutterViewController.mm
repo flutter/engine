@@ -240,7 +240,8 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)loadView {
   FlutterView* flutterView;
-#ifdef SHELL_ENABLE_METAL
+#ifdef FLUTTER_SHELL_ENABLE_METAL
+  NSLog(@"metal!!!");
   id<MTLDevice> mtlDevice = _engine.metalRenderer.mtlDevice;
   id<MTLCommandQueue> mtlCommandQueue = _engine.metalRenderer.mtlCommandQueue;
   if (!mtlDevice || !mtlCommandQueue) {

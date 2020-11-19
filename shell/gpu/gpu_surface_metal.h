@@ -5,11 +5,8 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_H_
 
-#include <Metal/Metal.h>
-
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"

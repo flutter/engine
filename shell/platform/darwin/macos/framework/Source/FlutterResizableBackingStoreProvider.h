@@ -6,8 +6,8 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

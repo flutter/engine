@@ -30,6 +30,11 @@ static GrContextOptions CreateMetalGrContextOptions() {
 }
 
 - (instancetype)initWithMTLDevice:(id<MTLDevice>)mtlDevice {
+  return [self initWithMTLDevice:mtlDevice commandQueue:[mtlDevice newCommandQueue]];
+}
+
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)mtlDevice
+                     commandQueue:(id<MTLCommandQueue>)commandQueue {
   self = [super init];
   if (self != nil) {
     _mtlDevice = mtlDevice;
@@ -39,7 +44,7 @@ static GrContextOptions CreateMetalGrContextOptions() {
       return nil;
     }
 
-    _mtlCommandQueue = [_mtlDevice newCommandQueue];
+    _mtlCommandQueue = commandQueue;
 
     if (!_mtlCommandQueue) {
       FML_DLOG(ERROR) << "Could not create Metal command queue.";
