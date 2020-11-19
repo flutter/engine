@@ -71,19 +71,14 @@ enum {
   MacOSGLContextSwitch context_switch(_openGLContext);
 
   for (int i = 0; i < kFlutterSurfaceManagerBufferCount; ++i) {
-    [self backTextureWithIOSurface:i
-                              size:size
-                    backingTexture:_backingTexture[i]
-                               fbo:_frameBufferId[i]];
+    [self recreateIOSurface:i size:size];
+    [self backTextureWithIOSurface:i size:size];
   }
 }
 
-- (void)backTextureWithIOSurface:(int)ioSurfaceNum
-                            size:(CGSize)size
-                  backingTexture:(GLuint)texture
-                             fbo:(GLuint)fbo {
-  if (_ioSurface[ioSurfaceNum]) {
-    CFRelease(_ioSurface[ioSurfaceNum]);
+- (void)recreateIOSurface:(int)index size:(CGSize)size {
+  if (_ioSurface[index]) {
+    CFRelease(_ioSurface[index]);
   }
 
   unsigned pixelFormat = 'BGRA';
@@ -99,18 +94,20 @@ enum {
     (id)kIOSurfaceBytesPerRow : @(bytesPerRow),
     (id)kIOSurfaceAllocSize : @(totalBytes),
   };
-  _ioSurface[ioSurfaceNum] = IOSurfaceCreate((CFDictionaryRef)options);
+  _ioSurface[index] = IOSurfaceCreate((CFDictionaryRef)options);
+}
 
-  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture);
+- (void)backTextureWithIOSurface:(int)index size:(CGSize)size {
+  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, _backingTexture[index]);
 
   CGLTexImageIOSurface2D(CGLGetCurrentContext(), GL_TEXTURE_RECTANGLE_ARB, GL_RGBA, int(size.width),
-                         int(size.height), GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV,
-                         _ioSurface[ioSurfaceNum], 0 /* plane */);
+                         int(size.height), GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, _ioSurface[index],
+                         0 /* plane */);
   glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
 
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE_ARB, texture,
-                         0);
+  glBindFramebuffer(GL_FRAMEBUFFER, _frameBufferId[index]);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE_ARB,
+                         _backingTexture[index], 0);
 
   NSAssert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
            @"Framebuffer status check failed");
@@ -138,16 +135,12 @@ enum {
             _backingTexture[kFlutterSurfaceManagerFrontBuffer]);
 }
 
-- (uint32_t)glFrameBufferId {
+- (uint32_t)glFrameBufferBackId {
   return _frameBufferId[kFlutterSurfaceManagerBackBuffer];
 }
 
-- (uint32_t)getFramebuffer {
+- (uint32_t)glFrameBufferFrontId {
   return _frameBufferId[kFlutterSurfaceManagerFrontBuffer];
-}
-
-- (uint32_t)getTexture {
-  return _backingTexture[kFlutterSurfaceManagerFrontBuffer];
 }
 
 - (void)dealloc {

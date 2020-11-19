@@ -65,7 +65,7 @@
   if ([_resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
     [_surfaceManager ensureSurfaceSize:size];
   }
-  return [_surfaceManager glFrameBufferId];
+  return [_surfaceManager glFrameBufferBackId];
 }
 
 - (void)present {
