@@ -5,6 +5,7 @@
 // TODO(dnfield): Remove unused_import ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
 
+// @dart = 2.12
 part of dart.ui;
 
 @pragma('vm:entry-point')

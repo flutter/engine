@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 
+// @dart = 2.12
 part of dart.ui;
 
 /// Static methods to allow for simple sharing of [SendPort]s across [Isolate]s.

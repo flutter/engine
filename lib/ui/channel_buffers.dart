@@ -5,6 +5,7 @@
 
 // KEEP THIS SYNCHRONIZED WITH ../web_ui/lib/src/ui/channel_buffers.dart
 
+// @dart = 2.12
 part of dart.ui;
 
 /// Signature for [ChannelBuffers.drain]'s `callback` argument.

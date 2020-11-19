@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 
+// @dart = 2.12
 part of dart.ui;
 
 /// How the pointer has changed since the last report.

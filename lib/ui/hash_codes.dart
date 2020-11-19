@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 
+// @dart = 2.12
 part of dart.ui;
 
 class _HashEnd { const _HashEnd(); }
