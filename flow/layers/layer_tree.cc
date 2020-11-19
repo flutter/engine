@@ -60,6 +60,11 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   root_layer_->Preroll(&context, frame.root_surface_transformation());
   return context.surface_needs_readback;
 }
+#if defined(OS_MACOSX)
+bool LayerTree::HasPlatformView() {
+  return root_layer_->HasPlatformView();
+}
+#endif
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 void LayerTree::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {

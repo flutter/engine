@@ -31,6 +31,13 @@ class LayerTree {
   bool Preroll(CompositorContext::ScopedFrame& frame,
                bool ignore_raster_cache = false);
 
+  // Used to check before Prerolling to see if the layer tree
+  // contains a platform view.
+  // Specifically used for MacOS to determine if the compositor
+  // should be used.
+#if defined(OS_MACOSX)
+  bool HasPlatformView();
+#endif
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   void UpdateScene(std::shared_ptr<SceneUpdateContext> context);
 #endif

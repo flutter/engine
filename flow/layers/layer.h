@@ -75,6 +75,10 @@ class Layer {
 
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
 
+#if defined(OS_MACOSX)
+  virtual bool HasPlatformView();
+#endif
+
   // Used during Preroll by layers that employ a saveLayer to manage the
   // PrerollContext settings with values affected by the saveLayer mechanism.
   // This object must be created before calling Preroll on the children to

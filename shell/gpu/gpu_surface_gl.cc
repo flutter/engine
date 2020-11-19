@@ -343,4 +343,9 @@ bool GPUSurfaceGL::ClearRenderContext() {
   return delegate_->GLContextClearCurrent();
 }
 
+// |Surface|
+void GPUSurfaceGL::SetRenderToSurface(bool render_to_surface) {
+  render_to_surface_ = render_to_surface;
+}
+
 }  // namespace flutter
