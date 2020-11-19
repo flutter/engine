@@ -10,29 +10,31 @@
 - (void)ensureSurfaceSize:(CGSize)size;
 - (void)swapBuffers;
 
-- (uint32_t)glFrameBufferId;
-
 /**
  * Sets the CALayer content to the content of _ioSurface[kBack].
  */
 - (void)setLayerContent;
 
 /**
- * Sets the CALayer content to the content of ioSurface at ioSurfaceNum.
+ * Sets the CALayer content to the content of _ioSurface[index].
  */
-// TODO(richardjcai): Fix this and remove setLayerContent.
-- (void)setLayerContentWithIOSurface:(int)ioSurfaceNum;
+- (void)setLayerContentWithIOSurface:(int)index;
 
 /**
- * Binds the IOSurface to the provided texture/framebuffer.
+ * Recreates the IOSurface _ioSurface[index] with specified size.
  */
-- (void)backTextureWithIOSurface:(int)ioSurfaceNum
-                            size:(CGSize)size
-                  backingTexture:(GLuint)texture
-                             fbo:(GLuint)fbo;
+- (void)recreateIOSurface:(int)index size:(CGSize)size;
 
-// Methods used by FlutterMacOSCompositor to render Flutter content
-// using a single Framebuffer/Texture/IOSurface.
+/**
+ * Binds the IOSurface at _ioSurface[index] to the texture id at
+ * _backingTexture[index] and fbo at _frameBufferId[index].
+ */
+- (void)backTextureWithIOSurface:(int)index size:(CGSize)size;
+
+/**
+ * Returns the kBack framebuffer.
+ */
+- (uint32_t)glFrameBufferBackId;
 
 /**
  * Returns the kFront framebuffer.
@@ -40,14 +42,6 @@
  * The framebuffer is collected when the backing store that uses the
  * framebuffer is collected.
  */
-- (uint32_t)getFramebuffer;
-
-/**
- * Returns the kFront texture.
- * The texture is used by FlutterMacOSCompositor to create a backing store.
- * The texture is collected when the backing store that uses the
- * texture is collected.
- */
-- (uint32_t)getTexture;
+- (uint32_t)glFrameBufferFrontId;
 
 @end
