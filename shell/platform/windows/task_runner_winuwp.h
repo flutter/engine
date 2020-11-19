@@ -20,13 +20,13 @@ namespace flutter {
 
 // A custom task runner that uses a CoreDispatcher to schedule
 // flutter tasks.
-class WinrtTaskRunner : public TaskRunner {
+class TaskRunnerWinUwp : public TaskRunner {
  public:
   using TaskExpiredCallback = std::function<void(const FlutterTask*)>;
-  WinrtTaskRunner(DWORD main_thread_id,
-                  const TaskExpiredCallback& on_task_expired);
+  TaskRunnerWinUwp(DWORD main_thread_id,
+                   const TaskExpiredCallback& on_task_expired);
 
-  ~WinrtTaskRunner();
+  ~TaskRunnerWinUwp();
 
   // |RunsTasksOnCurrentThread|
   bool RunsTasksOnCurrentThread() const override;
@@ -40,9 +40,9 @@ class WinrtTaskRunner : public TaskRunner {
   DWORD main_thread_id_;
   TaskExpiredCallback on_task_expired_;
 
-  WinrtTaskRunner(const WinrtTaskRunner&) = delete;
+  TaskRunnerWinUwp(const TaskRunnerWinUwp&) = delete;
 
-  WinrtTaskRunner& operator=(const WinrtTaskRunner&) = delete;
+  TaskRunnerWinUwp& operator=(const TaskRunnerWinUwp&) = delete;
 
   winrt::Windows::UI::Core::CoreDispatcher dispatcher_{nullptr};
 

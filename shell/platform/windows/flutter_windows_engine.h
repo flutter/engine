@@ -18,10 +18,7 @@
 #include "flutter/shell/platform/windows/window_state.h"
 
 #ifndef WINUWP
-#include "flutter/shell/platform/windows/win32_task_runner.h"  // nogncheck
 #include "flutter/shell/platform/windows/win32_window_proc_delegate_manager.h"  // nogncheck
-#else
-#include "flutter/shell/platform/windows/winrt_task_runner.h"  // nogncheck
 #endif
 
 namespace flutter {

@@ -74,21 +74,21 @@ source_set("flutter_windows_source") {
     sources += [
       "flutter_windows_winuwp.cc",
       "system_utils_winuwp.cc",
-      "winrt_task_runner.cc",
-      "winrt_task_runner.h",
+      "task_runner_winuwp.cc",
+      "task_runner_winuwp.h",
     ]
   } else {
     sources += [
       "flutter_windows_win32.cc",
       "system_utils_win32.cc",
+      "task_runner_win32.cc",
+      "task_runner_win32.h",
       "win32_dpi_utils.cc",
       "win32_dpi_utils.h",
       "win32_flutter_window.cc",
       "win32_flutter_window.h",
       "win32_platform_handler.cc",
       "win32_platform_handler.h",
-      "win32_task_runner.cc",
-      "win32_task_runner.h",
       "win32_window.cc",
       "win32_window.h",
       "win32_window_proc_delegate_manager.cc",

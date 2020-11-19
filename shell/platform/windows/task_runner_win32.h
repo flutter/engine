@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_WIN32_TASK_RUNNER_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_WIN32_TASK_RUNNER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TASK_RUNNER_WIN32_H_
+#define FLUTTER_SHELL_PLATFORM_WINDOWS_TASK_RUNNER_WIN32_H_
 
 #include <windows.h>
 
@@ -23,16 +23,16 @@ typedef uint64_t (*CurrentTimeProc)();
 // A custom task runner that integrates with user32 GetMessage semantics so that
 // host app can own its own message loop and flutter still gets to process
 // tasks on a timely basis.
-class Win32TaskRunner : public TaskRunner {
+class TaskRunnerWin32 : public TaskRunner {
  public:
   using TaskExpiredCallback = std::function<void(const FlutterTask*)>;
   // Creates a new task runner with the given main thread ID, current time
   // provider, and callback for tasks that are ready to be run.
-  Win32TaskRunner(DWORD main_thread_id,
+  TaskRunnerWin32(DWORD main_thread_id,
                   CurrentTimeProc get_current_time,
                   const TaskExpiredCallback& on_task_expired);
 
-  virtual ~Win32TaskRunner();
+  virtual ~TaskRunnerWin32();
 
   // |RunsTasksOnCurrentThread|
   bool RunsTasksOnCurrentThread() const override;
@@ -70,11 +70,11 @@ class Win32TaskRunner : public TaskRunner {
   std::mutex task_queue_mutex_;
   std::priority_queue<Task, std::deque<Task>, Task::Comparer> task_queue_;
 
-  Win32TaskRunner(const Win32TaskRunner&) = delete;
+  TaskRunnerWin32(const TaskRunnerWin32&) = delete;
 
-  Win32TaskRunner& operator=(const Win32TaskRunner&) = delete;
+  TaskRunnerWin32& operator=(const TaskRunnerWin32&) = delete;
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_WIN32_TASK_RUNNER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_TASK_RUNNER_WIN32_H_
