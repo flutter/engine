@@ -549,9 +549,10 @@ class PlatformDispatcher {
   /// This is the first locale selected by the user and is the user's primary
   /// locale (the locale the device UI is displayed in)
   ///
-  /// This is equivalent to `locales.first` and will provide an empty non-null
-  /// locale if the [locales] list has not been set or is empty.
-  Locale get locale => locales.first;
+  /// This is equivalent to `locales.first`, except that it will provide an
+  /// undefined (using the language tag "und") non-null locale if the [locales]
+  /// list has not been set or is empty.
+  Locale get locale => locales.isEmpty ? const Locale.fromSubtags() : locales.first;
 
   /// The full system-reported supported locales of the device.
   ///
