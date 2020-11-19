@@ -22,7 +22,6 @@ namespace flutter {
 // flutter tasks.
 class TaskRunnerWinUwp : public TaskRunner {
  public:
-  using TaskExpiredCallback = std::function<void(const FlutterTask*)>;
   TaskRunnerWinUwp(DWORD main_thread_id,
                    const TaskExpiredCallback& on_task_expired);
 

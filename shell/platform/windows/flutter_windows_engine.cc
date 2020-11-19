@@ -14,12 +14,6 @@
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
 
-#ifdef WINUWP
-#include "flutter/shell/platform/windows/task_runner_winuwp.h"  // nogncheck
-#else
-#include "flutter/shell/platform/windows/task_runner_win32.h"  // nogncheck
-#endif
-
 namespace flutter {
 
 namespace {
@@ -102,8 +96,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
-#ifndef WINUWP
-  task_runner_ = std::make_unique<TaskRunnerWin32>(
+  task_runner_ = TaskRunner::Create(
       GetCurrentThreadId(), embedder_api_.GetCurrentTime,
       [this](const auto* task) {
         if (!engine_) {
@@ -115,19 +108,6 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
           std::cerr << "Failed to post an engine task." << std::endl;
         }
       });
-#else
-  task_runner_ = std::make_unique<TaskRunnerWinUwp>(
-      GetCurrentThreadId(), [this](const auto* task) {
-        if (!engine_) {
-          std::cerr << "Cannot post an engine task when engine is not running."
-                    << std::endl;
-          return;
-        }
-        if (FlutterEngineRunTask(engine_, task) != kSuccess) {
-          std::cerr << "Failed to post an engine task." << std::endl;
-        }
-      });
-#endif
 
   // Set up the legacy structs backing the API handles.
   messenger_ = std::make_unique<FlutterDesktopMessenger>();

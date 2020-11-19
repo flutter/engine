@@ -10,6 +10,15 @@
 
 namespace flutter {
 
+// static
+std::unique_ptr<TaskRunner> TaskRunner::Create(
+    DWORD main_thread_id,
+    CurrentTimeProc get_current_time,
+    const TaskExpiredCallback& on_task_expired) {
+  return std::make_unique<TaskRunnerWin32>(main_thread_id, get_current_time,
+                                           on_task_expired);
+}
+
 TaskRunnerWin32::TaskRunnerWin32(DWORD main_thread_id,
                                  CurrentTimeProc get_current_time,
                                  const TaskExpiredCallback& on_task_expired)

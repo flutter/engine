@@ -19,13 +19,11 @@
 
 namespace flutter {
 
-typedef uint64_t (*CurrentTimeProc)();
 // A custom task runner that integrates with user32 GetMessage semantics so that
 // host app can own its own message loop and flutter still gets to process
 // tasks on a timely basis.
 class TaskRunnerWin32 : public TaskRunner {
  public:
-  using TaskExpiredCallback = std::function<void(const FlutterTask*)>;
   // Creates a new task runner with the given main thread ID, current time
   // provider, and callback for tasks that are ready to be run.
   TaskRunnerWin32(DWORD main_thread_id,
