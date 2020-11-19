@@ -50,7 +50,7 @@ class GradientSweep extends EngineGradient {
 
     _GlProgram glProgram = gl.useAndCacheProgram(
         _WebGlRenderer.writeBaseVertexShader(),
-        _createSweepFragmentShader(normalizedGradient, tileMode))!;
+        _createSweepFragmentShader(normalizedGradient, tileMode));
 
     Object tileOffset = gl.getUniformLocation(glProgram.program, 'u_tile_offset');
     double centerX = (center.dx - shaderBounds.left) / (shaderBounds.width);
@@ -124,10 +124,8 @@ class GradientLinear extends EngineGradient {
       Float32List? matrix,)
       : assert(_offsetIsValid(from)),
         assert(_offsetIsValid(to)),
-        assert(colors != null),
-  // ignore: unnecessary_null_comparison
-        assert(tileMode != null),
-  // ignore: unnecessary_null_comparison
+        assert(colors != null), // ignore: unnecessary_null_comparison
+        assert(tileMode != null), // ignore: unnecessary_null_comparison
         this.matrix4 = matrix == null ? null : _FastMatrix32(matrix),
         super._() {
     if (assertionsEnabled) {
@@ -192,7 +190,7 @@ class GradientLinear extends EngineGradient {
     _GlContext gl = _OffScreenCanvas.supported
         ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
         : _GlContext.fromCanvas(offScreenCanvas._glCanvas!,
-        webGLVersion == WebGLVersion.webgl1);
+            webGLVersion == WebGLVersion.webgl1);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     NormalizedGradient normalizedGradient = NormalizedGradient(
@@ -200,7 +198,7 @@ class GradientLinear extends EngineGradient {
 
     _GlProgram glProgram = gl.useAndCacheProgram(
         _WebGlRenderer.writeBaseVertexShader(),
-        _createLinearFragmentShader(normalizedGradient, tileMode))!;
+        _createLinearFragmentShader(normalizedGradient, tileMode));
 
     // Setup from/to uniforms.
     //
@@ -217,7 +215,6 @@ class GradientLinear extends EngineGradient {
     double length = math.sqrt(dx * dx + dy * dy);
     // sin(theta) = dy / length.
     // cos(theta) = dx / length.
-    const double epsilon = 0.0000001;
     // Flip dy for gl flip.
     double sinVal = length < kFltEpsilon ? 0 : -dy / length;
     double cosVal = length < kFltEpsilon ? 1 : dx / length;
@@ -296,6 +293,8 @@ void _addColorStopsToCanvasGradient(html.CanvasGradient gradient,
   }
 }
 
+/// Writes shader code to map fragment value to gradient color.
+///
 /// Returns name of gradient treshold variable to use to compute color.
 String _writeSharedGradientShader(ShaderBuilder builder,
     ShaderMethod method,
@@ -384,7 +383,7 @@ class GradientRadial extends EngineGradient {
     _GlContext gl = _OffScreenCanvas.supported
         ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
         : _GlContext.fromCanvas(offScreenCanvas._glCanvas!,
-        webGLVersion == WebGLVersion.webgl1);
+            webGLVersion == WebGLVersion.webgl1);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     NormalizedGradient normalizedGradient = NormalizedGradient(
@@ -392,7 +391,7 @@ class GradientRadial extends EngineGradient {
 
     _GlProgram glProgram = gl.useAndCacheProgram(
         _WebGlRenderer.writeBaseVertexShader(),
-        _createRadialFragmentShader(normalizedGradient, tileMode))!;
+        _createRadialFragmentShader(normalizedGradient, tileMode));
 
     Object tileOffset = gl.getUniformLocation(glProgram.program, 'u_tile_offset');
     double centerX = (center.dx - shaderBounds.left) / (shaderBounds.width);
