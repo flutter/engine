@@ -9,8 +9,6 @@
 #include "flutter/shell/platform/windows/testing/engine_embedder_api_modifier.h"
 #include "gtest/gtest.h"
 
-#include <iostream>
-
 namespace flutter {
 namespace testing {
 
@@ -35,8 +33,6 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineEmbedderApiModifier modifier(engine.get());
-  std::cout << "Running RunDoesExpectedInitialization with " << std::hex
-            << (intptr_t)(engine.get()) << std::endl;
 
   // The engine should be run with expected configuration values.
   bool run_called = false;
@@ -45,8 +41,6 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
                 size_t version, const FlutterRendererConfig* config,
                 const FlutterProjectArgs* args, void* user_data,
                 FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
-        std::cout << "Run called with " << std::hex << (intptr_t)user_data
-                  << std::endl;
         run_called = true;
         *engine_out = reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1);
 
@@ -104,8 +98,6 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
 TEST(FlutterWindowsEngine, SendPlatformMessageWithoutResponse) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineEmbedderApiModifier modifier(engine.get());
-  std::cout << "Running SendPlatformMessageWithoutResponse with " << std::hex
-            << (intptr_t)(engine.get()) << std::endl;
 
   const char* channel = "test";
   const std::vector<uint8_t> test_message = {1, 2, 3, 4};
@@ -132,8 +124,6 @@ TEST(FlutterWindowsEngine, SendPlatformMessageWithoutResponse) {
 TEST(FlutterWindowsEngine, SendPlatformMessageWithResponse) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineEmbedderApiModifier modifier(engine.get());
-  std::cout << "Running SendPlatformMessageWithResponse with " << std::hex
-            << (intptr_t)(engine.get()) << std::endl;
 
   const char* channel = "test";
   const std::vector<uint8_t> test_message = {1, 2, 3, 4};
