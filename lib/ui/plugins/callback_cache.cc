@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/lib/ui/plugins/callback_cache.h"
+
 #include <fstream>
 #include <iterator>
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
-#include "flutter/lib/ui/plugins/callback_cache.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -36,7 +37,7 @@ void DartCallbackCache::SetCachePath(const std::string& path) {
 }
 
 Dart_Handle DartCallbackCache::GetCallback(int64_t handle) {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::scoped_lock lock(mutex_);
   auto iterator = cache_.find(handle);
   if (iterator != cache_.end()) {
     DartCallbackRepresentation cb = iterator->second;
@@ -48,7 +49,7 @@ Dart_Handle DartCallbackCache::GetCallback(int64_t handle) {
 int64_t DartCallbackCache::GetCallbackHandle(const std::string& name,
                                              const std::string& class_name,
                                              const std::string& library_path) {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::scoped_lock lock(mutex_);
   std::hash<std::string> hasher;
   int64_t hash = hasher(name);
   hash += hasher(class_name);
@@ -63,7 +64,7 @@ int64_t DartCallbackCache::GetCallbackHandle(const std::string& name,
 
 std::unique_ptr<DartCallbackRepresentation>
 DartCallbackCache::GetCallbackInformation(int64_t handle) {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::scoped_lock lock(mutex_);
   auto iterator = cache_.find(handle);
   if (iterator != cache_.end()) {
     return std::make_unique<DartCallbackRepresentation>(iterator->second);
@@ -114,7 +115,7 @@ void DartCallbackCache::SaveCacheToDisk() {
 }
 
 void DartCallbackCache::LoadCacheFromDisk() {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::scoped_lock lock(mutex_);
 
   // Don't reload the cache if it's already populated.
   if (!cache_.empty()) {
@@ -129,7 +130,7 @@ void DartCallbackCache::LoadCacheFromDisk() {
   Document d;
   d.Parse(cache_contents.c_str());
   if (d.HasParseError() || !d.IsArray()) {
-    FML_LOG(WARNING) << "Could not parse callback cache, aborting restore";
+    FML_LOG(INFO) << "Could not parse callback cache, aborting restore";
     // TODO(bkonyi): log and bail (delete cache?)
     return;
   }

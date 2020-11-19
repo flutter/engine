@@ -13,15 +13,14 @@ namespace flutter {
 
 class PlatformViewLayer : public Layer {
  public:
-  PlatformViewLayer();
-  ~PlatformViewLayer() override;
-
-  void set_offset(const SkPoint& offset) { offset_ = offset; }
-  void set_size(const SkSize& size) { size_ = size; }
-  void set_view_id(int64_t view_id) { view_id_ = view_id; }
+  PlatformViewLayer(const SkPoint& offset, const SkSize& size, int64_t view_id);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  // Updates the system composited scene.
+  void UpdateScene(std::shared_ptr<SceneUpdateContext> context) override;
+#endif
 
  private:
   SkPoint offset_;

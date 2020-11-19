@@ -5,12 +5,11 @@
 #ifndef FLUTTER_FLOW_LAYERS_CHILD_SCENE_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_CHILD_SCENE_LAYER_H_
 
-#include <third_party/skia/include/core/SkMatrix.h>
-#include <third_party/skia/include/core/SkPoint.h>
-#include <third_party/skia/include/core/SkSize.h>
-
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/scene_update_context.h"
+#include "third_party/skia/include/core/SkMatrix.h"
+#include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
@@ -18,7 +17,6 @@ namespace flutter {
 class ChildSceneLayer : public Layer {
  public:
   ChildSceneLayer(zx_koid_t layer_id,
-                  bool use_view_holder,
                   const SkPoint& offset,
                   const SkSize& size,
                   bool hit_testable);
@@ -28,14 +26,13 @@ class ChildSceneLayer : public Layer {
 
   void Paint(PaintContext& context) const override;
 
-  void UpdateScene(SceneUpdateContext& context) override;
+  void UpdateScene(std::shared_ptr<SceneUpdateContext> context) override;
 
  private:
   zx_koid_t layer_id_ = ZX_KOID_INVALID;
   SkPoint offset_;
   SkSize size_;
   bool hit_testable_ = true;
-  bool use_view_holder_ = true;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ChildSceneLayer);
 };

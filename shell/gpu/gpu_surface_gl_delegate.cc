@@ -4,26 +4,26 @@
 
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 
+#include <cstring>
+
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
 
 namespace flutter {
+
+GPUSurfaceGLDelegate::~GPUSurfaceGLDelegate() = default;
 
 bool GPUSurfaceGLDelegate::GLContextFBOResetAfterPresent() const {
   return false;
 }
 
-bool GPUSurfaceGLDelegate::UseOffscreenSurface() const {
-  return false;
+bool GPUSurfaceGLDelegate::SurfaceSupportsReadback() const {
+  return true;
 }
 
 SkMatrix GPUSurfaceGLDelegate::GLContextSurfaceTransformation() const {
   SkMatrix matrix;
   matrix.setIdentity();
   return matrix;
-}
-
-flutter::ExternalViewEmbedder* GPUSurfaceGLDelegate::GetExternalViewEmbedder() {
-  return nullptr;
 }
 
 GPUSurfaceGLDelegate::GLProcResolver GPUSurfaceGLDelegate::GetGLProcResolver()

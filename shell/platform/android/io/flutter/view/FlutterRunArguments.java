@@ -4,14 +4,9 @@
 
 package io.flutter.view;
 
-/**
- * A class containing arguments for entering a FlutterNativeView's isolate for
- * the first time.
- */
+/** A class containing arguments for entering a FlutterNativeView's isolate for the first time. */
 public class FlutterRunArguments {
-  public String[] bundlePaths;
   public String bundlePath;
   public String entrypoint;
   public String libraryPath;
-  public String defaultPath;
 }

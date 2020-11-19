@@ -4,7 +4,7 @@
 
 #include "flutter/lib/ui/semantics/semantics_node.h"
 
-#include <string.h>
+#include <cstring>
 
 namespace flutter {
 
@@ -16,11 +16,11 @@ SemanticsNode::SemanticsNode(const SemanticsNode& other) = default;
 
 SemanticsNode::~SemanticsNode() = default;
 
-bool SemanticsNode::HasAction(SemanticsAction action) {
+bool SemanticsNode::HasAction(SemanticsAction action) const {
   return (actions & static_cast<int32_t>(action)) != 0;
 }
 
-bool SemanticsNode::HasFlag(SemanticsFlags flag) {
+bool SemanticsNode::HasFlag(SemanticsFlags flag) const {
   return (flags & static_cast<int32_t>(flag)) != 0;
 }
 

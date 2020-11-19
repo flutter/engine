@@ -4,13 +4,10 @@
 
 package io.flutter.plugin.common;
 
-import android.util.Log;
-
 import io.flutter.BuildConfig;
+import io.flutter.Log;
 
-/**
- * Thrown to indicate that a Flutter method invocation failed on the Flutter side.
- */
+/** Thrown to indicate that a Flutter method invocation failed on the Flutter side. */
 public class FlutterException extends RuntimeException {
   private static final String TAG = "FlutterException#";
 

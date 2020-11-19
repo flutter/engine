@@ -1,0 +1,35 @@
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "const_finder",
+      "rootUri": "../",
+      "packageUri": "lib",
+      "languageVersion": "2.4"
+    },
+    {
+      "name": "kernel",
+      "rootUri": "../../../../third_party/dart/pkg/kernel",
+      "packageUri": "lib",
+      "languageVersion": "2.6"
+    },
+    {
+      "name": "meta",
+      "rootUri": "../../../../third_party/dart/pkg/meta",
+      "packageUri": "lib",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "args",
+      "rootUri": "../../../../third_party/dart/third_party/pkg/args",
+      "packageUri": "lib",
+      "languageVersion": "2.3"
+    },
+    {
+      "name": "path",
+      "rootUri": "../../../../third_party/dart/third_party/pkg/path",
+      "packageUri": "lib",
+      "languageVersion": "2.10"
+    }
+  ]
+}

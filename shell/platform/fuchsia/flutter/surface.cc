@@ -6,56 +6,40 @@
 
 #include <fcntl.h>
 #include <lib/fdio/watcher.h>
+#include <lib/zx/time.h>
 #include <unistd.h>
 
 #include "flutter/fml/unique_fd.h"
 
 namespace flutter_runner {
 
-Surface::Surface(std::string debug_label)
-    : debug_label_(std::move(debug_label)) {}
+Surface::Surface(std::string debug_label,
+                 std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
+                 GrDirectContext* gr_context)
+    : debug_label_(std::move(debug_label)),
+      view_embedder_(view_embedder),
+      gr_context_(gr_context) {}
 
 Surface::~Surface() = default;
 
 // |flutter::Surface|
 bool Surface::IsValid() {
-  return valid_;
+  return true;
 }
 
 // |flutter::Surface|
 std::unique_ptr<flutter::SurfaceFrame> Surface::AcquireFrame(
     const SkISize& size) {
   return std::make_unique<flutter::SurfaceFrame>(
-      nullptr, [](const flutter::SurfaceFrame& surface_frame,
-                  SkCanvas* canvas) { return true; });
+      nullptr, true,
+      [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        return true;
+      });
 }
 
 // |flutter::Surface|
-GrContext* Surface::GetContext() {
-  return nullptr;
-}
-
-static zx_status_t DriverWatcher(int dirfd,
-                                 int event,
-                                 const char* fn,
-                                 void* cookie) {
-  if (event == WATCH_EVENT_ADD_FILE && !strcmp(fn, "000")) {
-    return ZX_ERR_STOP;
-  }
-  return ZX_OK;
-}
-
-bool Surface::CanConnectToDisplay() {
-  constexpr char kGpuDriverClass[] = "/dev/class/gpu";
-  fml::UniqueFD fd(open(kGpuDriverClass, O_DIRECTORY | O_RDONLY));
-  if (fd.get() < 0) {
-    FML_DLOG(ERROR) << "Failed to open " << kGpuDriverClass;
-    return false;
-  }
-
-  zx_status_t status = fdio_watch_directory(
-      fd.get(), DriverWatcher, zx_deadline_after(ZX_SEC(5)), nullptr);
-  return status == ZX_ERR_STOP;
+GrDirectContext* Surface::GetContext() {
+  return gr_context_;
 }
 
 // |flutter::Surface|

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:typed_data' show Float64List;
 import 'dart:ui';
 
@@ -114,7 +115,7 @@ void main() {
 
     // basic tests on horizontal line
     final PathMetrics simpleHorizontalMetrics = simpleHorizontalLine.computeMetrics();
-    expect(simpleHorizontalMetrics.iterator.current, isNull);
+    expect(() => simpleHorizontalMetrics.iterator.current, throwsRangeError);
     expect(simpleHorizontalMetrics.iterator.moveNext(), isTrue);
     expect(simpleHorizontalMetrics.iterator.current, isNotNull);
     expect(simpleHorizontalMetrics.iterator.current.length, equals(10.0));
@@ -127,11 +128,11 @@ void main() {
     expect(posTan.angle, equals(0.0));
 
     expect(simpleHorizontalMetrics.iterator.moveNext(), isFalse);
-    expect(simpleHorizontalMetrics.iterator.current, isNull);
+    expect(() => simpleHorizontalMetrics.iterator.current, throwsRangeError);
 
     // test with forceClosed
     final PathMetrics simpleMetricsClosed = simpleHorizontalLine.computeMetrics(forceClosed: true);
-    expect(simpleMetricsClosed.iterator.current, isNull);
+    expect(() => simpleHorizontalMetrics.iterator.current, throwsRangeError);
     expect(simpleMetricsClosed.iterator.moveNext(), isTrue);
     expect(simpleMetricsClosed.iterator.current, isNotNull);
     expect(simpleMetricsClosed.iterator.current.length, equals(20.0)); // because we forced close
@@ -162,7 +163,7 @@ void main() {
       ..lineTo(10.0, 15.0);
 
     final PathMetrics multiContourMetric = multiContour.computeMetrics();
-    expect(multiContourMetric.iterator.current, isNull);
+    expect(() => multiContourMetric.iterator.current, throwsRangeError);
     expect(multiContourMetric.iterator.moveNext(), isTrue);
     expect(multiContourMetric.iterator.current, isNotNull);
     expect(multiContourMetric.iterator.current.length, equals(10.0));
@@ -170,7 +171,7 @@ void main() {
     expect(multiContourMetric.iterator.current, isNotNull);
     expect(multiContourMetric.iterator.current.length, equals(5.0));
     expect(multiContourMetric.iterator.moveNext(), isFalse);
-    expect(multiContourMetric.iterator.current, isNull);
+    expect(() => multiContourMetric.iterator.current, throwsRangeError);
   });
 
   test('PathMetrics can remember lengths and isClosed', () {

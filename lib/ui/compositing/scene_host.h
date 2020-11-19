@@ -6,15 +6,16 @@
 #define FLUTTER_LIB_UI_COMPOSITING_SCENE_HOST_H_
 
 #include <lib/ui/scenic/cpp/id.h>
-#include <stdint.h>
-#include <third_party/tonic/dart_library_natives.h>
-#include <third_party/tonic/dart_persistent_value.h>
 #include <zircon/types.h>
-#include "dart-pkg/zircon/sdk_ext/handle.h"
 
+#include <cstdint>
+
+#include "dart-pkg/zircon/sdk_ext/handle.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/dart_wrapper.h"
+#include "third_party/tonic/dart_library_natives.h"
+#include "third_party/tonic/dart_persistent_value.h"
 
 namespace flutter {
 
@@ -23,13 +24,9 @@ class SceneHost : public RefCountedDartWrappable<SceneHost> {
   FML_FRIEND_MAKE_REF_COUNTED(SceneHost);
 
  public:
-  ~SceneHost() override;
-
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
   static fml::RefPtr<SceneHost> Create(
-      fml::RefPtr<zircon::dart::Handle> exportTokenHandle);
-  static fml::RefPtr<SceneHost> CreateViewHolder(
-      fml::RefPtr<zircon::dart::Handle> viewHolderTokenHandle,
+      fml::RefPtr<zircon::dart::Handle> viewHolderToken,
       Dart_Handle viewConnectedCallback,
       Dart_Handle viewDisconnectedCallback,
       Dart_Handle viewStateChangedCallback);
@@ -37,9 +34,12 @@ class SceneHost : public RefCountedDartWrappable<SceneHost> {
   static void OnViewDisconnected(scenic::ResourceId id);
   static void OnViewStateChanged(scenic::ResourceId id, bool state);
 
-  zx_koid_t id() const { return id_; }
-  bool use_view_holder() const { return use_view_holder_; }
+  ~SceneHost() override;
 
+  zx_koid_t id() const { return koid_; }
+
+  // These are visible to Dart.
+  void dispose();
   void setProperties(double width,
                      double height,
                      double insetTop,
@@ -47,21 +47,19 @@ class SceneHost : public RefCountedDartWrappable<SceneHost> {
                      double insetBottom,
                      double insetLeft,
                      bool focusable);
-  void dispose();
 
  private:
-  explicit SceneHost(fml::RefPtr<zircon::dart::Handle> exportTokenHandle);
-  SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderTokenHandle,
+  SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderToken,
             Dart_Handle viewConnectedCallback,
             Dart_Handle viewDisconnectedCallback,
             Dart_Handle viewStateChangedCallback);
 
-  fml::RefPtr<fml::TaskRunner> gpu_task_runner_;
-  std::unique_ptr<tonic::DartPersistentValue> view_connected_callback_;
-  std::unique_ptr<tonic::DartPersistentValue> view_disconnected_callback_;
-  std::unique_ptr<tonic::DartPersistentValue> view_state_changed_callback_;
-  zx_koid_t id_ = ZX_KOID_INVALID;
-  bool use_view_holder_ = false;
+  fml::RefPtr<fml::TaskRunner> raster_task_runner_;
+  tonic::DartPersistentValue view_connected_callback_;
+  tonic::DartPersistentValue view_disconnected_callback_;
+  tonic::DartPersistentValue view_state_changed_callback_;
+  std::string isolate_service_id_;
+  zx_koid_t koid_ = ZX_KOID_INVALID;
 };
 
 }  // namespace flutter

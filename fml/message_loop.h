@@ -18,17 +18,13 @@ class MessageLoop {
   FML_EMBEDDER_ONLY
   static MessageLoop& GetCurrent();
 
-  enum class Type { kConcurrent };
-
-  MessageLoop(Type type);
-
   bool IsValid() const;
 
   void Run();
 
   void Terminate();
 
-  void AddTaskObserver(intptr_t key, fml::closure callback);
+  void AddTaskObserver(intptr_t key, const fml::closure& callback);
 
   void RemoveTaskObserver(intptr_t key);
 
@@ -43,6 +39,8 @@ class MessageLoop {
   static bool IsInitializedForCurrentThread();
 
   ~MessageLoop();
+
+  static TaskQueueId GetCurrentTaskQueueId();
 
  private:
   friend class TaskRunner;

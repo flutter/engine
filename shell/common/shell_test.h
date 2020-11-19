@@ -5,66 +5,121 @@
 #ifndef FLUTTER_SHELL_COMMON_SHELL_TEST_H_
 #define FLUTTER_SHELL_COMMON_SHELL_TEST_H_
 
+#include "flutter/shell/common/shell.h"
+
 #include <memory>
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/common/settings.h"
+#include "flutter/flow/layers/container_layer.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/time/time_point.h"
+#include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/run_configuration.h"
-#include "flutter/shell/common/shell.h"
+#include "flutter/shell/common/shell_test_external_view_embedder.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/gpu/gpu_surface_software.h"
+#include "flutter/shell/common/vsync_waiters_test.h"
+#include "flutter/testing/elf_loader.h"
+#include "flutter/testing/fixture_test.h"
 #include "flutter/testing/test_dart_native_resolver.h"
-#include "flutter/testing/thread_test.h"
 
 namespace flutter {
 namespace testing {
 
-class ShellTest : public ThreadTest {
+class ShellTest : public FixtureTest {
  public:
   ShellTest();
 
-  ~ShellTest();
-
-  Settings CreateSettingsForFixture();
-
+  Settings CreateSettingsForFixture() override;
+  std::unique_ptr<Shell> CreateShell(Settings settings,
+                                     bool simulate_vsync = false);
+  std::unique_ptr<Shell> CreateShell(
+      Settings settings,
+      TaskRunners task_runners,
+      bool simulate_vsync = false,
+      std::shared_ptr<ShellTestExternalViewEmbedder>
+          shell_test_external_view_embedder = nullptr);
+  void DestroyShell(std::unique_ptr<Shell> shell);
+  void DestroyShell(std::unique_ptr<Shell> shell, TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
 
-  void AddNativeCallback(std::string name, Dart_NativeFunction callback);
+  fml::TimePoint GetLatestFrameTargetTime(Shell* shell) const;
 
- protected:
-  // |testing::ThreadTest|
-  void SetUp() override;
+  void SendEnginePlatformMessage(Shell* shell,
+                                 fml::RefPtr<PlatformMessage> message);
 
-  // |testing::ThreadTest|
-  void TearDown() override;
+  static void PlatformViewNotifyCreated(
+      Shell* shell);  // This creates the surface
+  static void PlatformViewNotifyDestroyed(
+      Shell* shell);  // This destroys the surface
+  static void RunEngine(Shell* shell, RunConfiguration configuration);
+  static void RestartEngine(Shell* shell, RunConfiguration configuration);
+
+  /// Issue as many VSYNC as needed to flush the UI tasks so far, and reset
+  /// the `will_draw_new_frame` to true.
+  static void VSyncFlush(Shell* shell, bool& will_draw_new_frame);
+
+  /// Given the root layer, this callback builds the layer tree to be rasterized
+  /// in PumpOneFrame.
+  using LayerTreeBuilder =
+      std::function<void(std::shared_ptr<ContainerLayer> root)>;
+
+  static void SetViewportMetrics(Shell* shell, double width, double height);
+  static void NotifyIdle(Shell* shell, int64_t deadline);
+
+  static void PumpOneFrame(Shell* shell,
+                           double width = 1,
+                           double height = 1,
+                           LayerTreeBuilder = {});
+  static void PumpOneFrame(Shell* shell,
+                           flutter::ViewportMetrics viewport_metrics,
+                           LayerTreeBuilder = {});
+  static void DispatchFakePointerData(Shell* shell);
+  static void DispatchPointerData(Shell* shell,
+                                  std::unique_ptr<PointerDataPacket> packet);
+  // Declare |UnreportedTimingsCount|, |GetNeedsReportTimings| and
+  // |SetNeedsReportTimings| inside |ShellTest| mainly for easier friend class
+  // declarations as shell unit tests and Shell are in different name spaces.
+
+  static bool GetNeedsReportTimings(Shell* shell);
+  static void SetNeedsReportTimings(Shell* shell, bool value);
+
+  // Declare |StorePersistentCache| inside |ShellTest| so |PersistentCache| can
+  // friend |ShellTest| and allow us to call private |PersistentCache::store| in
+  // unit tests.
+  static void StorePersistentCache(PersistentCache* cache,
+                                   const SkData& key,
+                                   const SkData& value);
+
+  enum ServiceProtocolEnum {
+    kGetSkSLs,
+    kEstimateRasterCacheMemory,
+    kSetAssetBundlePath,
+    kRunInView,
+  };
+
+  // Helper method to test private method Shell::OnServiceProtocolGetSkSLs.
+  // (ShellTest is a friend class of Shell.) We'll also make sure that it is
+  // running on the correct task_runner.
+  static void OnServiceProtocol(
+      Shell* shell,
+      ServiceProtocolEnum some_protocol,
+      fml::RefPtr<fml::TaskRunner> task_runner,
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document* response);
+
+  std::shared_ptr<txt::FontCollection> GetFontCollection(Shell* shell);
+
+  // Do not assert |UnreportedTimingsCount| to be positive in any tests.
+  // Otherwise those tests will be flaky as the clearing of unreported timings
+  // is unpredictive.
+  static int UnreportedTimingsCount(Shell* shell);
 
  private:
-  fml::UniqueFD assets_dir_;
-  std::shared_ptr<TestDartNativeResolver> native_resolver_;
-  std::unique_ptr<ThreadHost> thread_host_;
+  ThreadHost thread_host_;
 
-  void SetSnapshotsAndAssets(Settings& settings);
-};
-
-class ShellTestPlatformView : public PlatformView,
-                              public GPUSurfaceSoftwareDelegate {
- public:
-  ShellTestPlatformView(PlatformView::Delegate& delegate,
-                        TaskRunners task_runners);
-
-  ~ShellTestPlatformView() override;
-
- private:
-  // |PlatformView|
-  std::unique_ptr<Surface> CreateRenderingSurface() override;
-
-  // |GPUSurfaceSoftwareDelegate|
-  virtual sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
-
-  // |GPUSurfaceSoftwareDelegate|
-  virtual bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
-
-  FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
+  FML_DISALLOW_COPY_AND_ASSIGN(ShellTest);
 };
 
 }  // namespace testing

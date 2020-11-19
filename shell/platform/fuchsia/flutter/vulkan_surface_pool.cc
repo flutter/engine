@@ -8,7 +8,7 @@
 #include <string>
 
 #include "flutter/fml/trace_event.h"
-#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter_runner {
 
@@ -22,7 +22,7 @@ std::string ToString(const SkISize& size) {
 }  // namespace
 
 VulkanSurfacePool::VulkanSurfacePool(vulkan::VulkanProvider& vulkan_provider,
-                                     sk_sp<GrContext> context,
+                                     sk_sp<GrDirectContext> context,
                                      scenic::Session* scenic_session)
     : vulkan_provider_(vulkan_provider),
       context_(std::move(context)),
@@ -49,6 +49,8 @@ std::unique_ptr<VulkanSurface> VulkanSurfacePool::AcquireSurface(
 
 std::unique_ptr<VulkanSurface> VulkanSurfacePool::GetCachedOrCreateSurface(
     const SkISize& size) {
+  TRACE_EVENT2("flutter", "VulkanSurfacePool::GetCachedOrCreateSurface",
+               "width", size.width(), "height", size.height());
   // First try to find a surface that exactly matches |size|.
   {
     auto exact_match_it =
@@ -59,6 +61,7 @@ std::unique_ptr<VulkanSurface> VulkanSurfacePool::GetCachedOrCreateSurface(
     if (exact_match_it != available_surfaces_.end()) {
       auto acquired_surface = std::move(*exact_match_it);
       available_surfaces_.erase(exact_match_it);
+      TRACE_EVENT_INSTANT0("flutter", "Exact match found");
       return acquired_surface;
     }
   }
@@ -88,6 +91,7 @@ std::unique_ptr<VulkanSurface> VulkanSurfacePool::GetCachedOrCreateSurface(
 
   // If no such surface exists, then create a new one.
   if (best_it == available_surfaces_.end()) {
+    TRACE_EVENT_INSTANT0("flutter", "No available surfaces");
     return CreateSurface(size);
   }
 
@@ -98,16 +102,17 @@ std::unique_ptr<VulkanSurface> VulkanSurfacePool::GetCachedOrCreateSurface(
   if (!swap_succeeded) {
     FML_DLOG(ERROR) << "Failed to swap VulkanSurface to new VkImage of size: "
                     << ToString(size);
+    TRACE_EVENT_INSTANT0("flutter", "failed to swap, making new");
     return CreateSurface(size);
   }
+  TRACE_EVENT_INSTANT0("flutter", "Using differently sized image");
   FML_DCHECK(acquired_surface->IsValid());
   trace_surfaces_reused_++;
   return acquired_surface;
 }
 
 void VulkanSurfacePool::SubmitSurface(
-    std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-        p_surface) {
+    std::unique_ptr<SurfaceProducerSurface> p_surface) {
   TRACE_EVENT0("flutter", "VulkanSurfacePool::SubmitSurface");
 
   // This cast is safe because |VulkanSurface| is the only implementation of
@@ -120,44 +125,21 @@ void VulkanSurfacePool::SubmitSurface(
     return;
   }
 
-  const flutter::LayerRasterCacheKey& retained_key =
-      vulkan_surface->GetRetainedKey();
-  if (retained_key.id() != 0) {
-    // Add the surface to |retained_surfaces_| if its retained key has a valid
-    // layer id (|retained_key.id()|).
-    //
-    // We have to add the entry to |retained_surfaces_| map early when it's
-    // still pending (|is_pending| = true). Otherwise (if we add the surface
-    // later when |SignalRetainedReady| is called), Flutter would fail to find
-    // the retained node before the painting is done (which could take multiple
-    // frames). Flutter would then create a new |VulkanSurface| for the layer
-    // upon the failed lookup. The new |VulkanSurface| would invalidate this
-    // surface, and before the new |VulkanSurface| is done painting, another
-    // newer |VulkanSurface| is likely to be created to replace the new
-    // |VulkanSurface|. That would make the retained rendering much less useful
-    // in improving the performance.
-    auto insert_iterator = retained_surfaces_.insert(std::make_pair(
-        retained_key, RetainedSurface({true, std::move(vulkan_surface)})));
-    if (insert_iterator.second) {
-      insert_iterator.first->second.vk_surface->SignalWritesFinished(std::bind(
-          &VulkanSurfacePool::SignalRetainedReady, this, retained_key));
-    }
-  } else {
-    uintptr_t surface_key = reinterpret_cast<uintptr_t>(vulkan_surface.get());
-    auto insert_iterator = pending_surfaces_.insert(std::make_pair(
-        surface_key,               // key
-        std::move(vulkan_surface)  // value
-        ));
-    if (insert_iterator.second) {
-      insert_iterator.first->second->SignalWritesFinished(std::bind(
-          &VulkanSurfacePool::RecyclePendingSurface, this, surface_key));
-    }
+  uintptr_t surface_key = reinterpret_cast<uintptr_t>(vulkan_surface.get());
+  auto insert_iterator = pending_surfaces_.insert(std::make_pair(
+      surface_key,               // key
+      std::move(vulkan_surface)  // value
+      ));
+  if (insert_iterator.second) {
+    insert_iterator.first->second->SignalWritesFinished(std::bind(
+        &VulkanSurfacePool::RecyclePendingSurface, this, surface_key));
   }
 }
 
 std::unique_ptr<VulkanSurface> VulkanSurfacePool::CreateSurface(
     const SkISize& size) {
-  TRACE_EVENT0("flutter", "VulkanSurfacePool::CreateSurface");
+  TRACE_EVENT2("flutter", "VulkanSurfacePool::CreateSurface", "width",
+               size.width(), "height", size.height());
   auto surface = std::make_unique<VulkanSurface>(vulkan_provider_, context_,
                                                  scenic_session_, size);
   if (!surface->IsValid()) {
@@ -190,36 +172,22 @@ void VulkanSurfacePool::RecycleSurface(std::unique_ptr<VulkanSurface> surface) {
     return;
   }
 
+  TRACE_EVENT0("flutter", "VulkanSurfacePool::RecycleSurface");
   // Recycle the buffer by putting it in the list of available surfaces if we
   // have not reached the maximum amount of cached surfaces.
   if (available_surfaces_.size() < kMaxSurfaces) {
     available_surfaces_.push_back(std::move(surface));
+  } else {
+    TRACE_EVENT_INSTANT0("flutter", "Too many surfaces in pool, dropping");
   }
-}
-
-void VulkanSurfacePool::RecycleRetainedSurface(
-    const flutter::LayerRasterCacheKey& key) {
-  auto it = retained_surfaces_.find(key);
-  if (it == retained_surfaces_.end()) {
-    return;
-  }
-
-  // The surface should not be pending.
-  FML_DCHECK(!it->second.is_pending);
-
-  auto surface_to_recycle = std::move(it->second.vk_surface);
-  retained_surfaces_.erase(it);
-  RecycleSurface(std::move(surface_to_recycle));
-}
-
-void VulkanSurfacePool::SignalRetainedReady(flutter::LayerRasterCacheKey key) {
-  retained_surfaces_[key].is_pending = false;
+  TraceStats();
 }
 
 void VulkanSurfacePool::AgeAndCollectOldBuffers() {
   TRACE_EVENT0("flutter", "VulkanSurfacePool::AgeAndCollectOldBuffers");
 
   // Remove all surfaces that are no longer valid or are too old.
+  size_t size_before = available_surfaces_.size();
   available_surfaces_.erase(
       std::remove_if(available_surfaces_.begin(), available_surfaces_.end(),
                      [&](auto& surface) {
@@ -227,6 +195,8 @@ void VulkanSurfacePool::AgeAndCollectOldBuffers() {
                               surface->AdvanceAndGetAge() >= kMaxSurfaceAge;
                      }),
       available_surfaces_.end());
+  TRACE_EVENT1("flutter", "AgeAndCollect", "aged surfaces",
+               (size_before - available_surfaces_.size()));
 
   // Look for a surface that has both a larger |VkDeviceMemory| allocation
   // than is necessary for its |VkImage|, and has a stable size history.
@@ -238,6 +208,7 @@ void VulkanSurfacePool::AgeAndCollectOldBuffers() {
   // If we found such a surface, then destroy it and cache a new one that only
   // uses a necessary amount of memory.
   if (surface_to_remove_it != available_surfaces_.end()) {
+    TRACE_EVENT_INSTANT0("flutter", "replacing surface with smaller one");
     auto size = (*surface_to_remove_it)->GetSize();
     available_surfaces_.erase(surface_to_remove_it);
     auto new_surface = CreateSurface(size);
@@ -248,29 +219,11 @@ void VulkanSurfacePool::AgeAndCollectOldBuffers() {
     }
   }
 
-  // Recycle retained surfaces that are not used and not pending in this frame.
-  //
-  // It's safe to recycle any retained surfaces that are not pending no matter
-  // whether they're used or not. Hence if there's memory pressure, feel free to
-  // recycle all retained surfaces that are not pending.
-  std::vector<flutter::LayerRasterCacheKey> recycle_keys;
-  for (auto& [key, retained_surface] : retained_surfaces_) {
-    if (retained_surface.is_pending ||
-        retained_surface.vk_surface->IsUsedInRetainedRendering()) {
-      // Reset the flag for the next frame
-      retained_surface.vk_surface->ResetIsUsedInRetainedRendering();
-    } else {
-      recycle_keys.push_back(key);
-    }
-  }
-  for (auto& key : recycle_keys) {
-    RecycleRetainedSurface(key);
-  }
-
   TraceStats();
 }
 
 void VulkanSurfacePool::ShrinkToFit() {
+  TRACE_EVENT0("flutter", "VulkanSurfacePool::ShrinkToFit");
   // Reset all oversized surfaces in |available_surfaces_| so that the old
   // surfaces and new surfaces don't exist at the same time at any point,
   // reducing our peak memory footprint.
@@ -298,11 +251,8 @@ void VulkanSurfacePool::ShrinkToFit() {
 
 void VulkanSurfacePool::TraceStats() {
   // Resources held in cached buffers.
-  size_t cached_surfaces = 0;
   size_t cached_surfaces_bytes = 0;
-
   for (const auto& surface : available_surfaces_) {
-    cached_surfaces++;
     cached_surfaces_bytes += surface->GetAllocationSize();
   }
 
@@ -313,16 +263,20 @@ void VulkanSurfacePool::TraceStats() {
   const size_t skia_cache_purgeable =
       context_->getResourceCachePurgeableBytes();
 
-  FML_TRACE_COUNTER("flutter", "SurfacePool", 0u,                     //
-                    "CachedCount", cached_surfaces,                   //
-                    "CachedBytes", cached_surfaces_bytes,             //
-                    "Created", trace_surfaces_created_,               //
-                    "Reused", trace_surfaces_reused_,                 //
-                    "PendingInCompositor", pending_surfaces_.size(),  //
-                    "Retained", retained_surfaces_.size(),            //
-                    "SkiaCacheResources", skia_resources,             //
-                    "SkiaCacheBytes", skia_bytes,                     //
-                    "SkiaCachePurgeable", skia_cache_purgeable        //
+  TRACE_COUNTER("flutter", "SurfacePoolCounts", 0u, "CachedCount",
+                available_surfaces_.size(),                       //
+                "Created", trace_surfaces_created_,               //
+                "Reused", trace_surfaces_reused_,                 //
+                "PendingInCompositor", pending_surfaces_.size(),  //
+                "Retained", 0,                                    //
+                "SkiaCacheResources", skia_resources              //
+  );
+
+  TRACE_COUNTER("flutter", "SurfacePoolBytes", 0u,          //
+                "CachedBytes", cached_surfaces_bytes,       //
+                "RetainedBytes", 0,                         //
+                "SkiaCacheBytes", skia_bytes,               //
+                "SkiaCachePurgeable", skia_cache_purgeable  //
   );
 
   // Reset per present/frame stats.

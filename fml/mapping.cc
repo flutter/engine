@@ -4,6 +4,7 @@
 
 #include "flutter/fml/mapping.h"
 
+#include <algorithm>
 #include <sstream>
 
 namespace fml {
@@ -31,7 +32,7 @@ std::unique_ptr<FileMapping> FileMapping::CreateReadOnly(
   auto mapping = std::make_unique<FileMapping>(
       base_fd, std::initializer_list<Protection>{Protection::kRead});
 
-  if (mapping->GetSize() == 0 || mapping->GetMapping() == nullptr) {
+  if (!mapping->IsValid()) {
     return nullptr;
   }
 
@@ -56,7 +57,7 @@ std::unique_ptr<FileMapping> FileMapping::CreateReadExecute(
       base_fd, std::initializer_list<Protection>{Protection::kRead,
                                                  Protection::kExecute});
 
-  if (mapping->GetSize() == 0 || mapping->GetMapping() == nullptr) {
+  if (!mapping->IsValid()) {
     return nullptr;
   }
 
@@ -66,6 +67,9 @@ std::unique_ptr<FileMapping> FileMapping::CreateReadExecute(
 // Data Mapping
 
 DataMapping::DataMapping(std::vector<uint8_t> data) : data_(std::move(data)) {}
+
+DataMapping::DataMapping(const std::string& string)
+    : data_(string.begin(), string.end()) {}
 
 DataMapping::~DataMapping() = default;
 
@@ -78,6 +82,17 @@ const uint8_t* DataMapping::GetMapping() const {
 }
 
 // NonOwnedMapping
+
+NonOwnedMapping::NonOwnedMapping(const uint8_t* data,
+                                 size_t size,
+                                 const ReleaseProc& release_proc)
+    : data_(data), size_(size), release_proc_(release_proc) {}
+
+NonOwnedMapping::~NonOwnedMapping() {
+  if (release_proc_) {
+    release_proc_(data_, size_);
+  }
+}
 
 size_t NonOwnedMapping::GetSize() const {
   return size_;

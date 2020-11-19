@@ -13,27 +13,24 @@
 
 #if defined(__cplusplus)
 extern "C" {
-#endif
+#endif  // defined(__cplusplus)
 
 // Opaque reference to a plugin registrar.
 typedef struct FlutterDesktopPluginRegistrar* FlutterDesktopPluginRegistrarRef;
 
+// Function pointer type for registrar destruction callback.
+typedef void (*FlutterDesktopOnPluginRegistrarDestroyed)(
+    FlutterDesktopPluginRegistrarRef);
+
 // Returns the engine messenger associated with this registrar.
 FLUTTER_EXPORT FlutterDesktopMessengerRef
-FlutterDesktopRegistrarGetMessenger(FlutterDesktopPluginRegistrarRef registrar);
+FlutterDesktopPluginRegistrarGetMessenger(
+    FlutterDesktopPluginRegistrarRef registrar);
 
-// Enables input blocking on the given channel.
-//
-// If set, then the Flutter window will disable input callbacks
-// while waiting for the handler for messages on that channel to run. This is
-// useful if handling the message involves showing a modal window, for instance.
-//
-// This must be called after FlutterDesktopSetMessageHandler, as setting a
-// handler on a channel will reset the input blocking state back to the
-// default of disabled.
-FLUTTER_EXPORT void FlutterDesktopRegistrarEnableInputBlocking(
+// Registers a callback to be called when the plugin registrar is destroyed.
+FLUTTER_EXPORT void FlutterDesktopPluginRegistrarSetDestructionHandler(
     FlutterDesktopPluginRegistrarRef registrar,
-    const char* channel);
+    FlutterDesktopOnPluginRegistrarDestroyed callback);
 
 #if defined(__cplusplus)
 }  // extern "C"

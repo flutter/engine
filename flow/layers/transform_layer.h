@@ -13,18 +13,15 @@ namespace flutter {
 // at all. Hence |set_transform| must be called with an initialized SkMatrix.
 class TransformLayer : public ContainerLayer {
  public:
-  TransformLayer();
-  ~TransformLayer() override;
-
-  void set_transform(const SkMatrix& transform) { transform_ = transform; }
+  TransformLayer(const SkMatrix& transform);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  void UpdateScene(std::shared_ptr<SceneUpdateContext> context) override;
+#endif
 
  private:
   SkMatrix transform_;

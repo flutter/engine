@@ -5,9 +5,8 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_ENGINE_LAYER_H_
 #define FLUTTER_LIB_UI_PAINTING_ENGINE_LAYER_H_
 
+#include "flutter/flow/layers/container_layer.h"
 #include "flutter/lib/ui/dart_wrapper.h"
-
-#include "flutter/flow/layers/layer.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -23,11 +22,17 @@ class EngineLayer : public RefCountedDartWrappable<EngineLayer> {
  public:
   ~EngineLayer() override;
 
-  size_t GetAllocationSize() override;
+  size_t GetAllocationSize() const override;
 
   static fml::RefPtr<EngineLayer> MakeRetained(
       std::shared_ptr<flutter::ContainerLayer> layer) {
     return fml::MakeRefCounted<EngineLayer>(layer);
+  }
+
+  static void MakeRetained(Dart_Handle dart_handle,
+                           std::shared_ptr<flutter::ContainerLayer> layer) {
+    auto engine_layer = fml::MakeRefCounted<EngineLayer>(layer);
+    engine_layer->AssociateWithDartWrapper(dart_handle);
   }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);

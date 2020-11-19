@@ -5,164 +5,72 @@
 #ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_
 #define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_
 
+#import <UIKit/UIKit.h>
+
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-#import <UIKit/UIKit.h>
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#include "third_party/skia/include/core/SkMatrix44.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge_ios.h"
 #include "third_party/skia/include/core/SkRect.h"
-
-namespace flutter {
-class AccessibilityBridge;
-}  // namespace flutter
-
-@class FlutterPlatformViewSemanticsContainer;
-
-/**
- * A node in the iOS semantics tree.
- */
-@interface SemanticsObject : NSObject
-
-/**
- * The globally unique identifier for this node.
- */
-@property(nonatomic, readonly) int32_t uid;
-
-/**
- * The parent of this node in the node tree. Will be nil for the root node and
- * during transient state changes.
- */
-@property(nonatomic, assign) SemanticsObject* parent;
-
-/**
- * The accessibility bridge that this semantics object is attached to. This
- * object may use the bridge to access contextual application information. A weak pointer is used
- * because the platform view owns the accessibility bridge.
- */
-@property(nonatomic, readonly) fml::WeakPtr<flutter::AccessibilityBridge> bridge;
-
-/**
- * The semantics node used to produce this semantics object.
- */
-@property(nonatomic, readonly) flutter::SemanticsNode node;
-
-/**
- * Updates this semantics object using data from the `node` argument.
- */
-- (void)setSemanticsNode:(const flutter::SemanticsNode*)node NS_REQUIRES_SUPER;
-
-/**
- * Whether this semantics object has child semantics objects.
- */
-@property(nonatomic, readonly) BOOL hasChildren;
-
-/**
- * Direct children of this semantics object. Each child's `parent` property must
- * be equal to this object.
- */
-@property(nonatomic, strong) NSMutableArray<SemanticsObject*>* children;
-
-/**
- * Used if this SemanticsObject is for a platform view.
- */
-@property(strong, nonatomic) FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer;
-
-- (BOOL)nodeWillCauseLayoutChange:(const flutter::SemanticsNode*)node;
-
-#pragma mark - Designated initializers
-
-- (instancetype)init __attribute__((unavailable("Use initWithBridge instead")));
-- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge
-                           uid:(int32_t)uid NS_DESIGNATED_INITIALIZER;
-
-@end
-
-/**
- * An implementation of UIAccessibilityCustomAction which also contains the
- * Flutter uid.
- */
-@interface FlutterCustomAccessibilityAction : UIAccessibilityCustomAction
-
-/**
- * The uid of the action defined by the flutter application.
- */
-@property(nonatomic) int32_t uid;
-
-@end
-
-/**
- * The default implementation of `SemanticsObject` for most accessibility elements
- * in the iOS accessibility tree.
- *
- * Use this implementation for nodes that do not need to be expressed via UIKit-specific
- * protocols (it only implements NSObject).
- *
- * See also:
- *  * TextInputSemanticsObject, which implements `UITextInput` protocol to expose
- *    editable text widgets to a11y.
- */
-@interface FlutterSemanticsObject : SemanticsObject
-@end
-
-/**
- * Designated to act as an accessibility container of a platform view.
- *
- * This object does not take any accessibility actions on its own, nor has any accessibility
- * label/value/trait/hint... on its own. The accessibility data will be handled by the platform
- * view.
- *
- * See also:
- * * `SemanticsObject` for the other type of semantics objects.
- * * `FlutterSemanticsObject` for default implementation of `SemanticsObject`.
- */
-@interface FlutterPlatformViewSemanticsContainer : NSObject
-
-/**
- * The position inside an accessibility container.
- */
-@property(nonatomic) NSInteger index;
-
-- (instancetype)init __attribute__((unavailable("Use initWithAccessibilityContainer: instead")));
-
-- (instancetype)initWithSemanticsObject:(SemanticsObject*)object;
-
-@end
 
 namespace flutter {
 class PlatformViewIOS;
 
-class AccessibilityBridge final {
+/**
+ * An accessibility instance is bound to one `FlutterViewController` and
+ * `FlutterView` instance.
+ *
+ * It helps populate the UIView's accessibilityElements property from Flutter's
+ * semantics nodes.
+ */
+class AccessibilityBridge final : public AccessibilityBridgeIos {
  public:
-  AccessibilityBridge(UIView* view,
+  /** Delegate for handling iOS operations. */
+  class IosDelegate {
+   public:
+    virtual ~IosDelegate() = default;
+    /// Returns true when the FlutterViewController associated with the `view`
+    /// is presenting a modal view controller.
+    virtual bool IsFlutterViewControllerPresentingModalViewController(
+        FlutterViewController* view_controller) = 0;
+    virtual void PostAccessibilityNotification(UIAccessibilityNotifications notification,
+                                               id argument) = 0;
+  };
+
+  AccessibilityBridge(FlutterViewController* view_controller,
                       PlatformViewIOS* platform_view,
-                      FlutterPlatformViewsController* platform_views_controller);
+                      std::shared_ptr<FlutterPlatformViewsController> platform_views_controller,
+                      std::unique_ptr<IosDelegate> ios_delegate = nullptr);
   ~AccessibilityBridge();
 
   void UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
                        flutter::CustomAccessibilityActionUpdates actions);
-  void DispatchSemanticsAction(int32_t id, flutter::SemanticsAction action);
+  void DispatchSemanticsAction(int32_t id, flutter::SemanticsAction action) override;
   void DispatchSemanticsAction(int32_t id,
                                flutter::SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               std::vector<uint8_t> args) override;
+  void AccessibilityObjectDidBecomeFocused(int32_t id) override;
+  void AccessibilityObjectDidLoseFocus(int32_t id) override;
 
-  UIView<UITextInput>* textInputView();
+  UIView<UITextInput>* textInputView() override;
 
-  UIView* view() const { return view_; }
+  UIView* view() const override { return view_controller_.view; }
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
-  FlutterPlatformViewsController* GetPlatformViewsController() const {
+  std::shared_ptr<FlutterPlatformViewsController> GetPlatformViewsController() const override {
     return platform_views_controller_;
   };
 
@@ -170,19 +78,25 @@ class AccessibilityBridge final {
 
  private:
   SemanticsObject* GetOrCreateObject(int32_t id, flutter::SemanticsNodeUpdates& updates);
+  SemanticsObject* FindFirstFocusable(SemanticsObject* object);
   void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                         NSMutableArray<NSNumber*>* doomed_uids);
   void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
 
-  UIView* view_;
+  FlutterViewController* view_controller_;
   PlatformViewIOS* platform_view_;
-  FlutterPlatformViewsController* platform_views_controller_;
+  const std::shared_ptr<FlutterPlatformViewsController> platform_views_controller_;
+  // If the this id is kSemanticObjectIdInvalid, it means either nothing has
+  // been focused or the focus is currently outside of the flutter application
+  // (i.e. the status bar or keyboard)
+  int32_t last_focused_semantics_object_id_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;
   int32_t previous_route_id_;
   std::unordered_map<int32_t, flutter::CustomAccessibilityAction> actions_;
   std::vector<int32_t> previous_routes_;
+  std::unique_ptr<IosDelegate> ios_delegate_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };

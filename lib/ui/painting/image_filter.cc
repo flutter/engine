@@ -6,6 +6,7 @@
 
 #include "flutter/lib/ui/painting/matrix.h"
 #include "third_party/skia/include/effects/SkBlurImageFilter.h"
+#include "third_party/skia/include/effects/SkImageFilters.h"
 #include "third_party/skia/include/effects/SkImageSource.h"
 #include "third_party/skia/include/effects/SkPictureImageFilter.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -16,16 +17,19 @@
 namespace flutter {
 
 static void ImageFilter_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&ImageFilter::Create, args);
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageFilter);
 
-#define FOR_EACH_BINDING(V)   \
-  V(ImageFilter, initImage)   \
-  V(ImageFilter, initPicture) \
-  V(ImageFilter, initBlur)    \
-  V(ImageFilter, initMatrix)
+#define FOR_EACH_BINDING(V)       \
+  V(ImageFilter, initImage)       \
+  V(ImageFilter, initPicture)     \
+  V(ImageFilter, initBlur)        \
+  V(ImageFilter, initMatrix)      \
+  V(ImageFilter, initColorFilter) \
+  V(ImageFilter, initComposeFilter)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -61,6 +65,16 @@ void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
   filter_ = SkImageFilter::MakeMatrixFilter(
       ToSkMatrix(matrix4), static_cast<SkFilterQuality>(filterQuality),
       nullptr);
+}
+
+void ImageFilter::initColorFilter(ColorFilter* colorFilter) {
+  filter_ = SkImageFilters::ColorFilter(
+      colorFilter ? colorFilter->filter() : nullptr, nullptr);
+}
+
+void ImageFilter::initComposeFilter(ImageFilter* outer, ImageFilter* inner) {
+  filter_ = SkImageFilters::Compose(outer ? outer->filter() : nullptr,
+                                    inner ? inner->filter() : nullptr);
 }
 
 }  // namespace flutter

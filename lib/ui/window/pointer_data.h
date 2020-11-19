@@ -5,10 +5,13 @@
 #ifndef FLUTTER_LIB_UI_WINDOW_POINTER_DATA_H_
 #define FLUTTER_LIB_UI_WINDOW_POINTER_DATA_H_
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace flutter {
 
+// If this value changes, update the pointer data unpacking code in hooks.dart.
+static constexpr int kPointerDataFieldCount = 29;
+static constexpr int kBytesPerField = sizeof(int64_t);
 // Must match the button constants in events.dart.
 enum PointerButtonMouse : int64_t {
   kPointerButtonMousePrimary = 1 << 0,
@@ -55,15 +58,20 @@ struct alignas(8) PointerData {
     kScroll,
   };
 
+  int64_t embedder_id;
   int64_t time_stamp;
   Change change;
   DeviceKind kind;
   SignalKind signal_kind;
   int64_t device;
+  int64_t pointer_identifier;
   double physical_x;
   double physical_y;
+  double physical_delta_x;
+  double physical_delta_y;
   int64_t buttons;
   int64_t obscured;
+  int64_t synthesized;
   double pressure;
   double pressure_min;
   double pressure_max;

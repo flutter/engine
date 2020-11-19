@@ -18,16 +18,25 @@
 
 namespace flutter {
 
+namespace testing {
+class ShellTest;
+}
+
+/// Executor of animations.
+///
+/// In conjunction with the |VsyncWaiter| it allows callers (typically Dart
+/// code) to schedule work that ends up generating a |LayerTree|.
 class Animator final {
  public:
   class Delegate {
    public:
-    virtual void OnAnimatorBeginFrame(fml::TimePoint frame_time) = 0;
+    virtual void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) = 0;
 
     virtual void OnAnimatorNotifyIdle(int64_t deadline) = 0;
 
     virtual void OnAnimatorDraw(
-        fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) = 0;
+        fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+        fml::TimePoint frame_target_time) = 0;
 
     virtual void OnAnimatorDrawLastLayerTree() = 0;
   };
@@ -38,11 +47,26 @@ class Animator final {
 
   ~Animator();
 
-  float GetDisplayRefreshRate() const;
-
   void RequestFrame(bool regenerate_layer_tree = true);
 
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
+
+  //--------------------------------------------------------------------------
+  /// @brief    Schedule a secondary callback to be executed right after the
+  ///           main `VsyncWaiter::AsyncWaitForVsync` callback (which is added
+  ///           by `Animator::RequestFrame`).
+  ///
+  ///           Like the callback in `AsyncWaitForVsync`, this callback is
+  ///           only scheduled to be called once, and it's supposed to be
+  ///           called in the UI thread. If there is no AsyncWaitForVsync
+  ///           callback (`Animator::RequestFrame` is not called), this
+  ///           secondary callback will still be executed at vsync.
+  ///
+  ///           This callback is used to provide the vsync signal needed by
+  ///           `SmoothPointerDataDispatcher`.
+  ///
+  /// @see      `PointerDataDispatcher::ScheduleSecondaryVsyncCallback`.
+  void ScheduleSecondaryVsyncCallback(const fml::closure& callback);
 
   void Start();
 
@@ -71,7 +95,9 @@ class Animator final {
   TaskRunners task_runners_;
   std::shared_ptr<VsyncWaiter> waiter_;
 
-  fml::TimePoint last_begin_frame_time_;
+  fml::TimePoint last_frame_begin_time_;
+  fml::TimePoint last_vsync_start_time_;
+  fml::TimePoint last_frame_target_time_;
   int64_t dart_frame_deadline_;
   fml::RefPtr<LayerTreePipeline> layer_tree_pipeline_;
   fml::Semaphore pending_frame_semaphore_;
@@ -86,6 +112,8 @@ class Animator final {
   std::deque<uint64_t> trace_flow_ids_;
 
   fml::WeakPtrFactory<Animator> weak_factory_;
+
+  friend class testing::ShellTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Animator);
 };

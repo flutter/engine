@@ -41,6 +41,7 @@ void ImageShader::initWithImage(CanvasImage* image,
   if (!image) {
     Dart_ThrowException(
         ToDart("ImageShader constructor called with non-genuine Image."));
+    return;
   }
   SkMatrix sk_matrix = ToSkMatrix(matrix4);
   set_shader(UIDartState::CreateGPUObject(

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -18,5 +19,28 @@ void main() {
         expect(runZone, same(innerZone));
       }));
     });
+  });
+
+  test('FrameTiming.toString has the correct format', () {
+    final FrameTiming timing = FrameTiming(
+      vsyncStart: 500,
+      buildStart: 1000,
+      buildFinish: 8000,
+      rasterStart: 9000,
+      rasterFinish: 19500
+    );
+    expect(timing.toString(), 'FrameTiming(buildDuration: 7.0ms, rasterDuration: 10.5ms, vsyncOverhead: 0.5ms, totalSpan: 19.0ms)');
+  });
+
+  test('computePlatformResolvedLocale basic', () {
+    final List<Locale> supportedLocales = <Locale>[
+      const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN'),
+      const Locale.fromSubtags(languageCode: 'fr', countryCode: 'FR'),
+      const Locale.fromSubtags(languageCode: 'en', countryCode: 'US'),
+      const Locale.fromSubtags(languageCode: 'en'),
+    ];
+    // The default implementation returns null due to lack of a real platform.
+    final Locale result = window.computePlatformResolvedLocale(supportedLocales);
+    expect(result, null);
   });
 }

@@ -6,17 +6,43 @@
 #define FLUTTER_COMMON_SETTINGS_H_
 
 #include <fcntl.h>
-#include <stdint.h>
 
+#include <chrono>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/time/time_point.h"
 #include "flutter/fml/unique_fd.h"
 
 namespace flutter {
+
+class FrameTiming {
+ public:
+  enum Phase {
+    kVsyncStart,
+    kBuildStart,
+    kBuildFinish,
+    kRasterStart,
+    kRasterFinish,
+    kCount
+  };
+
+  static constexpr Phase kPhases[kCount] = {
+      kVsyncStart, kBuildStart, kBuildFinish, kRasterStart, kRasterFinish};
+
+  fml::TimePoint Get(Phase phase) const { return data_[phase]; }
+  fml::TimePoint Set(Phase phase, fml::TimePoint value) {
+    return data_[phase] = value;
+  }
+
+ private:
+  fml::TimePoint data_[kCount];
+};
 
 using TaskObserverAdd =
     std::function<void(intptr_t /* key */, fml::closure /* callback */)>;
@@ -25,12 +51,15 @@ using UnhandledExceptionCallback =
     std::function<bool(const std::string& /* error */,
                        const std::string& /* stack trace */)>;
 
-// TODO(chinmaygarde): Deprecate all the "path" struct members in favor of the
+// TODO(26783): Deprecate all the "path" struct members in favor of the
 // callback that generates the mapping from these paths.
-// https://github.com/flutter/flutter/issues/26783
 using MappingCallback = std::function<std::unique_ptr<fml::Mapping>(void)>;
-using MappingsCallback =
-    std::function<std::vector<std::unique_ptr<const fml::Mapping>>(void)>;
+using Mappings = std::vector<std::unique_ptr<const fml::Mapping>>;
+using MappingsCallback = std::function<Mappings(void)>;
+
+using FrameRasterizedCallback = std::function<void(const FrameTiming&)>;
+
+class DartIsolate;
 
 struct Settings {
   Settings();
@@ -54,7 +83,10 @@ struct Settings {
   // libraries.
   MappingCallback dart_library_sources_kernel;
 
-  std::string application_library_path;
+  // Path to a library containing the application's compiled Dart code.
+  // This is a vector so that the embedder can provide fallback paths in
+  // case the primary path to the library can not be loaded.
+  std::vector<std::string> application_library_path;
 
   std::string application_kernel_asset;       // deprecated
   std::string application_kernel_list_asset;  // deprecated
@@ -66,14 +98,24 @@ struct Settings {
   std::vector<std::string> dart_entrypoint_args;
 
   // Isolate settings
+  bool enable_checked_mode = false;
   bool start_paused = false;
   bool trace_skia = false;
+  std::string trace_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
   bool dump_skp_on_shader_compilation = false;
+  bool cache_sksl = false;
+  bool purge_persistent_cache = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
+
+  // Whether embedder only allows secure connections.
+  bool may_insecurely_connect_to_all_domains = true;
+  // JSON-formatted domain network policy.
+  std::string domain_network_policy;
+
   // Used as the script URI in debug messages. Does not affect how the Dart code
   // is executed.
   std::string advisory_script_uri = "main.dart";
@@ -82,15 +124,30 @@ struct Settings {
   std::string advisory_script_entrypoint = "main";
 
   // Observatory settings
+
+  // Whether the Dart VM service should be enabled.
   bool enable_observatory = false;
-  // Port on target will be auto selected by the OS. A message will be printed
-  // on the target with the port after it has been selected.
+
+  // Whether to publish the observatory URL over mDNS.
+  // On iOS 14 this prompts a local network permission dialog,
+  // which cannot be accepted or dismissed in a CI environment.
+  bool enable_observatory_publication = true;
+
+  // The IP address to which the Dart VM service is bound.
+  std::string observatory_host;
+
+  // The port to which the Dart VM service is bound. When set to `0`, a free
+  // port will be automatically selected by the OS. A message is logged on the
+  // target indicating the URL at which the VM service can be accessed.
   uint32_t observatory_port = 0;
-  bool ipv6 = false;
 
   // Determines whether an authentication code is required to communicate with
   // the VM service.
   bool disable_service_auth_codes = true;
+
+  // Determine whether the vmservice should fallback to automatic port selection
+  // after failing to bind to a specified port.
+  bool enable_service_port_fallback = false;
 
   // Font settings
   bool use_test_fonts = false;
@@ -114,12 +171,22 @@ struct Settings {
   TaskObserverRemove task_observer_remove;
   // The main isolate is current when this callback is made. This is a good spot
   // to perform native Dart bindings for libraries not built in.
-  fml::closure root_isolate_create_callback;
+  std::function<void(const DartIsolate&)> root_isolate_create_callback;
+  // TODO(68738): Update isolate callbacks in settings to accept an additional
+  // DartIsolate parameter.
   fml::closure isolate_create_callback;
   // The isolate is not current and may have already been destroyed when this
   // call is made.
   fml::closure root_isolate_shutdown_callback;
   fml::closure isolate_shutdown_callback;
+  // A callback made in the isolate scope of the service isolate when it is
+  // launched. Care must be taken to ensure that callers are assigning callbacks
+  // to the settings object used to launch the VM. If an existing VM is used to
+  // launch an isolate using these settings, the callback will be ignored as the
+  // service isolate has already been launched. Also, this callback will only be
+  // made in the modes in which the service isolate is eligible for launch
+  // (debug and profile).
+  fml::closure service_isolate_create_callback;
   // The callback made on the UI thread in an isolate scope when the engine
   // detects that the framework is idle. The VM also uses this time to perform
   // tasks suitable when idling. Due to this, embedders are still advised to be
@@ -148,6 +215,30 @@ struct Settings {
   fml::UniqueFD::element_type assets_dir =
       fml::UniqueFD::traits_type::InvalidValue();
   std::string assets_path;
+
+  // Callback to handle the timings of a rasterized frame. This is called as
+  // soon as a frame is rasterized.
+  FrameRasterizedCallback frame_rasterized_callback;
+
+  // This data will be available to the isolate immediately on launch via the
+  // PlatformDispatcher.getPersistentIsolateData callback. This is meant for
+  // information that the isolate cannot request asynchronously (platform
+  // messages can be used for that purpose). This data is held for the lifetime
+  // of the shell and is available on isolate restarts in the shell instance.
+  // Due to this, the buffer must be as small as possible.
+  std::shared_ptr<const fml::Mapping> persistent_isolate_data;
+
+  /// Max size of old gen heap size in MB, or 0 for unlimited, -1 for default
+  /// value.
+  ///
+  /// See also:
+  /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
+  int64_t old_gen_heap_size = -1;
+
+  /// A timestamp representing when the engine started. The value is based
+  /// on the clock used by the Dart timeline APIs. This timestamp is used
+  /// to log a timeline event that tracks the latency of engine startup.
+  std::chrono::microseconds engine_start_timestamp = {};
 
   std::string ToString() const;
 };

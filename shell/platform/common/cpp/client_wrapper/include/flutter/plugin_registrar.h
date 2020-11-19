@@ -5,11 +5,12 @@
 #ifndef FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_H_
 #define FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_H_
 
+#include <flutter_plugin_registrar.h>
+
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
-
-#include <flutter_plugin_registrar.h>
 
 #include "binary_messenger.h"
 
@@ -47,11 +48,13 @@ class PluginRegistrar {
   // that they stay valid for any registered callbacks.
   void AddPlugin(std::unique_ptr<Plugin> plugin);
 
-  // Enables input blocking on the given channel name.
-  //
-  // If set, then the parent window should disable input callbacks
-  // while waiting for the handler for messages on that channel to run.
-  void EnableInputBlockingForChannel(const std::string& channel);
+ protected:
+  FlutterDesktopPluginRegistrarRef registrar() { return registrar_; }
+
+  // Destroys all owned plugins. Subclasses should call this at the beginning of
+  // their destructors to prevent the possibility of an owned plugin trying to
+  // access destroyed state during its own destruction.
+  void ClearPlugins();
 
  private:
   // Handle for interacting with the C API's registrar.
@@ -67,6 +70,53 @@ class PluginRegistrar {
 class Plugin {
  public:
   virtual ~Plugin() = default;
+};
+
+// A singleton to own PluginRegistrars. This is intended for use in plugins,
+// where there is no higher-level object to own a PluginRegistrar that can
+// own plugin instances and ensure that they live as long as the engine they
+// are registered with.
+class PluginRegistrarManager {
+ public:
+  static PluginRegistrarManager* GetInstance();
+
+  // Prevent copying.
+  PluginRegistrarManager(PluginRegistrarManager const&) = delete;
+  PluginRegistrarManager& operator=(PluginRegistrarManager const&) = delete;
+
+  // Returns a plugin registrar wrapper of type T, which must be a kind of
+  // PluginRegistrar, creating it if necessary. The returned registrar will
+  // live as long as the underlying FlutterDesktopPluginRegistrarRef, so
+  // can be used to own plugin instances.
+  //
+  // Calling this multiple times for the same registrar_ref with different
+  // template types results in undefined behavior.
+  template <class T>
+  T* GetRegistrar(FlutterDesktopPluginRegistrarRef registrar_ref) {
+    auto insert_result =
+        registrars_.emplace(registrar_ref, std::make_unique<T>(registrar_ref));
+    auto& registrar_pair = *(insert_result.first);
+    FlutterDesktopPluginRegistrarSetDestructionHandler(registrar_pair.first,
+                                                       OnRegistrarDestroyed);
+    return static_cast<T*>(registrar_pair.second.get());
+  }
+
+  // Destroys all registrar wrappers created by the manager.
+  //
+  // This is intended primarily for use in tests.
+  void Reset() { registrars_.clear(); }
+
+ private:
+  PluginRegistrarManager();
+
+  using WrapperMap = std::map<FlutterDesktopPluginRegistrarRef,
+                              std::unique_ptr<PluginRegistrar>>;
+
+  static void OnRegistrarDestroyed(FlutterDesktopPluginRegistrarRef registrar);
+
+  WrapperMap* registrars() { return &registrars_; }
+
+  WrapperMap registrars_;
 };
 
 }  // namespace flutter

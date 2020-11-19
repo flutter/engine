@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_EXTERNAL_TEXTURE_GL_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_EXTERNAL_TEXTURE_GL_H_
 
-#include "flutter/flow/texture.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
@@ -14,11 +14,13 @@ namespace flutter {
 
 class EmbedderExternalTextureGL : public flutter::Texture {
  public:
-  using ExternalTextureCallback = std::function<
-      sk_sp<SkImage>(int64_t texture_identifier, GrContext*, const SkISize&)>;
+  using ExternalTextureCallback =
+      std::function<sk_sp<SkImage>(int64_t texture_identifier,
+                                   GrDirectContext*,
+                                   const SkISize&)>;
 
   EmbedderExternalTextureGL(int64_t texture_identifier,
-                            ExternalTextureCallback callback);
+                            const ExternalTextureCallback& callback);
 
   ~EmbedderExternalTextureGL();
 
@@ -30,7 +32,8 @@ class EmbedderExternalTextureGL : public flutter::Texture {
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
-             GrContext* context) override;
+             GrDirectContext* context,
+             SkFilterQuality filter_quality) override;
 
   // |flutter::Texture|
   void OnGrContextCreated() override;
@@ -40,6 +43,9 @@ class EmbedderExternalTextureGL : public flutter::Texture {
 
   // |flutter::Texture|
   void MarkNewFrameAvailable() override;
+
+  // |flutter::Texture|
+  void OnTextureUnregistered() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderExternalTextureGL);
 };

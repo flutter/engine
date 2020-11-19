@@ -11,18 +11,19 @@ namespace flutter {
 
 class ClipRRectLayer : public ContainerLayer {
  public:
-  ClipRRectLayer(Clip clip_behavior);
-  ~ClipRRectLayer() override;
-
-  void set_clip_rrect(const SkRRect& clip_rrect) { clip_rrect_ = clip_rrect; }
+  ClipRRectLayer(const SkRRect& clip_rrect, Clip clip_behavior);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
+  bool UsesSaveLayer() const {
+    return clip_behavior_ == Clip::antiAliasWithSaveLayer;
+  }
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  void UpdateScene(std::shared_ptr<SceneUpdateContext> context) override;
+#endif
 
  private:
   SkRRect clip_rrect_;

@@ -8,6 +8,7 @@
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/image.h"
+#include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
 namespace tonic {
@@ -23,7 +24,8 @@ class Picture : public RefCountedDartWrappable<Picture> {
 
  public:
   ~Picture() override;
-  static fml::RefPtr<Picture> Create(flutter::SkiaGPUObject<SkPicture> picture);
+  static fml::RefPtr<Picture> Create(Dart_Handle dart_handle,
+                                     flutter::SkiaGPUObject<SkPicture> picture);
 
   sk_sp<SkPicture> picture() const { return picture_.get(); }
 
@@ -33,7 +35,7 @@ class Picture : public RefCountedDartWrappable<Picture> {
 
   void dispose();
 
-  size_t GetAllocationSize() override;
+  size_t GetAllocationSize() const override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
@@ -43,7 +45,7 @@ class Picture : public RefCountedDartWrappable<Picture> {
                                       Dart_Handle raw_image_callback);
 
  private:
-  explicit Picture(flutter::SkiaGPUObject<SkPicture> picture);
+  Picture(flutter::SkiaGPUObject<SkPicture> picture);
 
   flutter::SkiaGPUObject<SkPicture> picture_;
 };

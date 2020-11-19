@@ -11,21 +11,15 @@ namespace flutter {
 
 class PhysicalShapeLayer : public ContainerLayer {
  public:
-  PhysicalShapeLayer(Clip clip_behavior);
-  ~PhysicalShapeLayer() override;
+  PhysicalShapeLayer(SkColor color,
+                     SkColor shadow_color,
+                     float elevation,
+                     const SkPath& path,
+                     Clip clip_behavior);
 
-  void set_path(const SkPath& path);
-
-  void set_color(SkColor color) { color_ = color; }
-  void set_shadow_color(SkColor shadow_color) { shadow_color_ = shadow_color; }
-  void set_device_pixel_ratio(SkScalar dpr) { device_pixel_ratio_ = dpr; }
-  void set_viewport_depth(float depth) { viewport_depth_ = depth; }
-
-  // Sets the elevation. This needs to be set before preroll because it's then
-  // cached by any children of this layer. Setting it after preroll will break
-  // their elevation calculations.
-  void set_elevation(float elevation) { elevation_ = elevation; }
-
+  static SkRect ComputeShadowBounds(const SkRect& bounds,
+                                    float elevation,
+                                    float pixel_ratio);
   static void DrawShadow(SkCanvas* canvas,
                          const SkPath& path,
                          SkColor color,
@@ -37,23 +31,18 @@ class PhysicalShapeLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
+  bool UsesSaveLayer() const {
+    return clip_behavior_ == Clip::antiAliasWithSaveLayer;
+  }
+
+  float elevation() const { return elevation_; }
 
  private:
-  float elevation_ = 0.0f;
-  float total_elevation_ = 0.0f;
-  float viewport_depth_;
   SkColor color_;
   SkColor shadow_color_;
-  SkScalar device_pixel_ratio_;
+  float elevation_ = 0.0f;
   SkPath path_;
-  bool isRect_;
-  SkRRect frameRRect_;
   Clip clip_behavior_;
-
-  friend class PhysicalShapeLayer_TotalElevation_Test;
 };
 
 }  // namespace flutter

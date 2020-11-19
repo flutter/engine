@@ -1,4 +1,7 @@
 name: licenses
+environment:
+  sdk: '>=2.8.0 <3.0.0'
+
 dependencies:
   archive: ^2.0.4
   args: 1.5.0

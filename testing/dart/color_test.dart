@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:ui';
 
 import 'package:test/test.dart';
@@ -74,6 +75,12 @@ void main() {
     );
     expect(
       Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), 1.1),
+      const Color(0xFFFFFFFF),
+    );
+
+    // Prevent regression: https://github.com/flutter/flutter/issues/67423
+    expect(
+      Color.lerp(const Color(0xFFFFFFFF), const Color(0xFFFFFFFF), 0.04),
       const Color(0xFFFFFFFF),
     );
   });

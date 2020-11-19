@@ -4,46 +4,70 @@
 
 package io.flutter;
 
-import android.support.annotation.NonNull;
-
-import io.flutter.BuildConfig;
+import androidx.annotation.NonNull;
 
 /**
- * Port of {@link android.util.Log} that only logs in {@link BuildConfig#DEBUG} mode.
+ * Port of {@link android.util.Log} that only logs in {@link io.flutter.BuildConfig#DEBUG} mode and
+ * internally filters logs based on a {@link #logLevel}.
  */
 public class Log {
+  private static int logLevel = android.util.Log.DEBUG;
+
+  public static int ASSERT = android.util.Log.ASSERT;
+  public static int DEBUG = android.util.Log.DEBUG;
+  public static int ERROR = android.util.Log.ERROR;
+  public static int INFO = android.util.Log.INFO;
+  public static int VERBOSE = android.util.Log.VERBOSE;
+  public static int WARN = android.util.Log.WARN;
+
+  /**
+   * Sets a log cutoff such that a log level of lower priority than {@code logLevel} is filtered
+   * out.
+   *
+   * <p>See {@link android.util.Log} for log level constants.
+   */
+  public static void setLogLevel(int logLevel) {
+    Log.logLevel = logLevel;
+  }
+
+  public static void println(@NonNull int level, @NonNull String tag, @NonNull String message) {
+    if (BuildConfig.DEBUG && logLevel <= level) {
+      android.util.Log.println(level, tag, message);
+    }
+  }
+
   public static void v(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && logLevel <= android.util.Log.VERBOSE) {
       android.util.Log.v(tag, message);
     }
   }
 
   public static void v(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && logLevel <= android.util.Log.VERBOSE) {
       android.util.Log.v(tag, message, tr);
     }
   }
 
   public static void i(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && logLevel <= android.util.Log.INFO) {
       android.util.Log.i(tag, message);
     }
   }
 
   public static void i(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && logLevel <= android.util.Log.INFO) {
       android.util.Log.i(tag, message, tr);
     }
   }
 
   public static void d(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && logLevel <= android.util.Log.DEBUG) {
       android.util.Log.d(tag, message);
     }
   }
 
   public static void d(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && logLevel <= android.util.Log.DEBUG) {
       android.util.Log.d(tag, message, tr);
     }
   }
