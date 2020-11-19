@@ -80,7 +80,7 @@ void IOSSurface::BeginFrame(SkISize frame_size,
                             fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::BeginFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  platform_views_controller_->SetFrameSize(frame_size);
+  platform_views_controller_->BeginFrame(frame_size);
 }
 
 // |ExternalViewEmbedder|
@@ -127,7 +127,6 @@ void IOSSurface::EndFrame(bool should_resubmit_frame,
                           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::EndFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  return platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger);
 }
 
 // |ExternalViewEmbedder|
