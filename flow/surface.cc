@@ -18,4 +18,6 @@ bool Surface::ClearRenderContext() {
   return false;
 }
 
+void Surface::SetRenderToSurface(bool render_to_surface) {}
+
 }  // namespace flutter

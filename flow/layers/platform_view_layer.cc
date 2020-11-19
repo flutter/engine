@@ -34,6 +34,12 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
                                                        std::move(params));
 }
 
+#if defined(OS_MACOSX)
+bool PlatformViewLayer::HasPlatformView() {
+  return true;
+}
+#endif
+
 void PlatformViewLayer::Paint(PaintContext& context) const {
   if (context.view_embedder == nullptr) {
 #if !defined(LEGACY_FUCHSIA_EMBEDDER)

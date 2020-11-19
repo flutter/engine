@@ -33,6 +33,11 @@ class Surface {
 
   virtual bool ClearRenderContext();
 
+  // SetRenderToSurface sets whether or not the surface should be rendered to.
+  // This is needed for MacOS as we want to render scenes without platform views
+  // to the surface even in the existence of a external_view_embedder.
+  virtual void SetRenderToSurface(bool render_to_surface);
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);
 };

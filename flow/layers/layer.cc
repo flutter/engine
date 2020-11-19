@@ -27,6 +27,12 @@ uint64_t Layer::NextUniqueID() {
 
 void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
 
+#if defined(OS_MACOSX)
+bool Layer::HasPlatformView() {
+  return false;
+}
+#endif
+
 Layer::AutoPrerollSaveLayerState::AutoPrerollSaveLayerState(
     PrerollContext* preroll_context,
     bool save_layer_is_active,

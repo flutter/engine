@@ -48,6 +48,9 @@ class GPUSurfaceGL : public Surface {
   // |Surface|
   bool ClearRenderContext() override;
 
+  // |Surface|
+  void SetRenderToSurface(bool render_to_surface) override;
+
  private:
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrDirectContext> context_;
@@ -59,7 +62,7 @@ class GPUSurfaceGL : public Surface {
   // external view embedder may want to render to the root surface. This is a
   // hack to make avoid allocating resources for the root surface when an
   // external view embedder is present.
-  const bool render_to_surface_;
+  bool render_to_surface_;
   bool valid_ = false;
   fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGL> weak_factory_;
 
