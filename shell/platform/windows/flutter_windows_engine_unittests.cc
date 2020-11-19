@@ -32,13 +32,12 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 
 TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
-  FlutterWindowsEngine* engine_instance = engine.get();
-  EngineEmbedderApiModifier modifier(engine_instance);
+  EngineEmbedderApiModifier modifier(engine.get());
 
   // The engine should be run with expected configuration values.
   bool run_called = false;
   modifier.embedder_api().Run = MOCK_ENGINE_PROC(
-      Run, ([&run_called, engine_instance](
+      Run, ([&run_called, engine_instance = engine.get()](
                 size_t version, const FlutterRendererConfig* config,
                 const FlutterProjectArgs* args, void* user_data,
                 FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
