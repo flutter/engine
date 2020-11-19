@@ -174,7 +174,10 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
 
   private boolean verifyJNI() {
     if (flutterJNI == null) {
-      Log.e(TAG, "No FlutterJNI provided. `setJNI` must be called on the DynamicFeatureManager before attempting to load dart libraries or invoking with platform channels.");
+      Log.e(
+          TAG,
+          "No FlutterJNI provided. `setJNI` must be called on the DynamicFeatureManager before attempting to load dart libraries or invoking with platform channels.");
+       return false;
       return false;
     }
     return true;
