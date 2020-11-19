@@ -137,6 +137,8 @@ FlutterWindowsEngine::~FlutterWindowsEngine() {
 }
 
 bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
+  std::cout << "Called RunWithEntrypoint on " << std::hex << (intptr_t)(this)
+            << std::endl;
   if (!project_->HasValidPaths()) {
     std::cerr << "Missing or unresolvable paths to assets." << std::endl;
     return false;
