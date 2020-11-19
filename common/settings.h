@@ -59,6 +59,8 @@ using MappingsCallback = std::function<Mappings(void)>;
 
 using FrameRasterizedCallback = std::function<void(const FrameTiming&)>;
 
+class DartIsolate;
+
 struct Settings {
   Settings();
 
@@ -169,7 +171,9 @@ struct Settings {
   TaskObserverRemove task_observer_remove;
   // The main isolate is current when this callback is made. This is a good spot
   // to perform native Dart bindings for libraries not built in.
-  fml::closure root_isolate_create_callback;
+  std::function<void(const DartIsolate&)> root_isolate_create_callback;
+  // TODO(68738): Update isolate callbacks in settings to accept an additional
+  // DartIsolate parameter.
   fml::closure isolate_create_callback;
   // The isolate is not current and may have already been destroyed when this
   // call is made.
@@ -217,11 +221,11 @@ struct Settings {
   FrameRasterizedCallback frame_rasterized_callback;
 
   // This data will be available to the isolate immediately on launch via the
-  // Window.getPersistentIsolateData callback. This is meant for information
-  // that the isolate cannot request asynchronously (platform messages can be
-  // used for that purpose). This data is held for the lifetime of the shell and
-  // is available on isolate restarts in the shell instance. Due to this,
-  // the buffer must be as small as possible.
+  // PlatformDispatcher.getPersistentIsolateData callback. This is meant for
+  // information that the isolate cannot request asynchronously (platform
+  // messages can be used for that purpose). This data is held for the lifetime
+  // of the shell and is available on isolate restarts in the shell instance.
+  // Due to this, the buffer must be as small as possible.
   std::shared_ptr<const fml::Mapping> persistent_isolate_data;
 
   /// Max size of old gen heap size in MB, or 0 for unlimited, -1 for default

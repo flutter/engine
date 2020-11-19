@@ -258,6 +258,11 @@ static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
 
 // Shows the input method.
 static FlMethodResponse* show(FlTextInputPlugin* self) {
+  // Set the top-level window used for system input method windows.
+  GdkWindow* window =
+      gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
+  gtk_im_context_set_client_window(self->im_context, window);
+
   gtk_im_context_focus_in(self->im_context);
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
@@ -423,11 +428,6 @@ static void method_call_cb(FlMethodChannel* channel,
   }
 }
 
-static void view_weak_notify_cb(gpointer user_data, GObject* object) {
-  FlTextInputPlugin* self = FL_TEXT_INPUT_PLUGIN(object);
-  self->view = nullptr;
-}
-
 static void fl_text_input_plugin_dispose(GObject* object) {
   FlTextInputPlugin* self = FL_TEXT_INPUT_PLUGIN(object);
 
@@ -438,6 +438,7 @@ static void fl_text_input_plugin_dispose(GObject* object) {
     delete self->text_model;
     self->text_model = nullptr;
   }
+  self->view = nullptr;
 
   G_OBJECT_CLASS(fl_text_input_plugin_parent_class)->dispose(object);
 }
@@ -483,7 +484,6 @@ FlTextInputPlugin* fl_text_input_plugin_new(FlBinaryMessenger* messenger,
   fl_method_channel_set_method_call_handler(self->channel, method_call_cb, self,
                                             nullptr);
   self->view = view;
-  g_object_weak_ref(G_OBJECT(view), view_weak_notify_cb, self);
 
   return self;
 }

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/common/persistent_cache.h"
+#include "flutter/common/graphics/persistent_cache.h"
 
 #include <future>
 #include <memory>
@@ -389,6 +389,16 @@ fml::RefPtr<fml::TaskRunner> PersistentCache::GetWorkerTaskRunner() const {
 void PersistentCache::SetAssetManager(std::shared_ptr<AssetManager> value) {
   TRACE_EVENT_INSTANT0("flutter", "PersistentCache::SetAssetManager");
   asset_manager_ = value;
+}
+
+std::vector<std::unique_ptr<fml::Mapping>>
+PersistentCache::GetSkpsFromAssetManager() const {
+  if (!asset_manager_) {
+    FML_LOG(ERROR)
+        << "PersistentCache::GetSkpsFromAssetManager: Asset manager not set!";
+    return std::vector<std::unique_ptr<fml::Mapping>>();
+  }
+  return asset_manager_->GetAsMappings(".*\\.skp$");
 }
 
 }  // namespace flutter

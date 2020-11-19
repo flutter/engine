@@ -6,7 +6,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "flutter/shell/platform/embedder/embedder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterEngine ()
 
@@ -16,10 +17,15 @@
 @property(nonatomic, readonly) BOOL running;
 
 /**
- * The resource context used by the engine for texture uploads. FlutterViews associated with this
- * engine should be created to share with this context.
+ * Provides the renderer config needed to initialize the engine and also handles external texture
+ * management.
  */
-@property(nonatomic, readonly, nullable) NSOpenGLContext* resourceContext;
+@property(nonatomic, readonly, nonnull) FlutterOpenGLRenderer* openGLRenderer;
+
+/**
+ * Function pointers for interacting with the embedder.h API.
+ */
+@property(nonatomic) FlutterEngineProcTable& embedderAPI;
 
 /**
  * Informs the engine that the associated view controller's view size has changed.

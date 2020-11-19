@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 // This URL was found by using the Google Fonts Developer API to find the URL
@@ -17,7 +17,7 @@ const String _robotoUrl =
 class SkiaFontCollection {
   /// Fonts that have been registered but haven't been loaded yet.
   final List<Future<_RegisteredFont?>> _unloadedFonts =
-      <Future<_RegisteredFont>>[];
+      <Future<_RegisteredFont?>>[];
 
   /// Fonts which have been registered and loaded.
   final List<_RegisteredFont> _registeredFonts = <_RegisteredFont>[];
@@ -121,9 +121,7 @@ class SkiaFontCollection {
   Future<_RegisteredFont?> _registerFont(String url, String family) async {
     ByteBuffer buffer;
     try {
-      buffer = await html.window
-          .fetch(url)
-          .then(_getArrayBuffer as FutureOr<ByteBuffer> Function(dynamic));
+      buffer = await html.window.fetch(url).then(_getArrayBuffer);
     } catch (e) {
       html.window.console.warn('Failed to load font $family at $url');
       html.window.console.warn(e);
@@ -143,13 +141,13 @@ class SkiaFontCollection {
   }
 
   String? _readActualFamilyName(Uint8List bytes) {
-    final SkFontMgr tmpFontMgr = canvasKit.SkFontMgr.FromData([bytes])!;
+    final SkFontMgr tmpFontMgr = canvasKit.FontMgr.FromData([bytes])!;
     String? actualFamily = tmpFontMgr.getFamilyName(0);
     tmpFontMgr.delete();
     return actualFamily;
   }
 
-  Future<ByteBuffer>? _getArrayBuffer(dynamic fetchResult) {
+  Future<ByteBuffer> _getArrayBuffer(dynamic fetchResult) {
     // TODO(yjbanov): fetchResult.arrayBuffer is a dynamic invocation. Clean it up.
     return fetchResult
         .arrayBuffer()
@@ -171,8 +169,5 @@ class _RegisteredFont {
   /// The font family that was parsed from the font's bytes.
   final String actualFamily;
 
-  _RegisteredFont(this.bytes, this.flutterFamily, this.actualFamily)
-      : assert(bytes != null), // ignore: unnecessary_null_comparison
-        assert(flutterFamily != null), // ignore: unnecessary_null_comparison
-        assert(actualFamily != null); // ignore: unnecessary_null_comparison
+  _RegisteredFont(this.bytes, this.flutterFamily, this.actualFamily);
 }

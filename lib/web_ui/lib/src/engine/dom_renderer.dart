@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 class DomRenderer {
@@ -45,7 +45,7 @@ class DomRenderer {
   html.MetaElement? _viewportMeta;
 
   /// The canvaskit script, downloaded from a CDN. Only created if
-  /// [experimentalUseSkia] is set to true.
+  /// [useCanvasKit] is set to true.
   html.ScriptElement? get canvasKitScript => _canvasKitScript;
   html.ScriptElement? _canvasKitScript;
 
@@ -172,12 +172,17 @@ class DomRenderer {
     js_util.setProperty(element, name, value);
   }
 
-  void setElementStyle(html.Element element, String name, String? value) {
+  static void setElementStyle(html.Element element, String name, String? value) {
     if (value == null) {
       element.style.removeProperty(name);
     } else {
       element.style.setProperty(name, value);
     }
+  }
+
+  static void setElementTransform(html.Element element, String transformValue) {
+    js_util.setProperty(js_util.getProperty(element, 'style'), 'transform',
+        transformValue);
   }
 
   void setText(html.Element element, String text) {
@@ -404,7 +409,7 @@ flt-glass-pane * {
 
     final html.Element _accesibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
-        .prepareAccesibilityPlaceholder();
+        .prepareAccessibilityPlaceholder();
 
     // Insert the semantics placeholder after the scene host. For all widgets
     // in the scene, except for platform widgets, the scene host will pass the
@@ -451,7 +456,7 @@ flt-glass-pane * {
       });
     }
 
-    if (experimentalUseSkia) {
+    if (useCanvasKit) {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitBaseUrl + 'canvaskit.js';
@@ -466,33 +471,33 @@ flt-glass-pane * {
     }
     _localeSubscription = languageChangeEvent.forTarget(html.window)
       .listen(_languageDidChange);
-    window._updateLocales();
+    EnginePlatformDispatcher.instance._updateLocales();
   }
 
   /// Called immediately after browser window metrics change.
   ///
   /// When there is a text editing going on in mobile devices, do not change
   /// the physicalSize, change the [window.viewInsets]. See:
-  /// https://api.flutter.dev/flutter/dart-ui/Window/viewInsets.html
-  /// https://api.flutter.dev/flutter/dart-ui/Window/physicalSize.html
+  /// https://api.flutter.dev/flutter/dart-ui/FlutterView/viewInsets.html
+  /// https://api.flutter.dev/flutter/dart-ui/FlutterView/physicalSize.html
   ///
   /// Note: always check for rotations for a mobile device. Update the physical
   /// size if the change is caused by a rotation.
   void _metricsDidChange(html.Event? event) {
     if(isMobile && !window.isRotation() && textEditing.isEditing) {
       window.computeOnScreenKeyboardInsets();
-      window.invokeOnMetricsChanged();
+      EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     } else {
       window._computePhysicalSize();
       // When physical size changes this value has to be recalculated.
       window.computeOnScreenKeyboardInsets();
-      window.invokeOnMetricsChanged();
+      EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     }
   }
 
   /// Called immediately after browser window language change.
   void _languageDidChange(html.Event event) {
-    window._updateLocales();
+    EnginePlatformDispatcher.instance._updateLocales();
     if (ui.window.onLocaleChanged != null) {
       ui.window.onLocaleChanged!();
     }

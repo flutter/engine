@@ -46,15 +46,15 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
  public:
   class Entity {
    public:
-    Entity(SceneUpdateContext& context);
+    Entity(std::shared_ptr<SceneUpdateContext> context);
     virtual ~Entity();
 
-    SceneUpdateContext& context() { return context_; }
+    std::shared_ptr<SceneUpdateContext> context() { return context_; }
     scenic::EntityNode& entity_node() { return entity_node_; }
     virtual scenic::ContainerNode& embedder_node() { return entity_node_; }
 
    private:
-    SceneUpdateContext& context_;
+    std::shared_ptr<SceneUpdateContext> context_;
     Entity* const previous_entity_;
 
     scenic::EntityNode entity_node_;
@@ -62,8 +62,9 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
 
   class Transform : public Entity {
    public:
-    Transform(SceneUpdateContext& context, const SkMatrix& transform);
-    Transform(SceneUpdateContext& context,
+    Transform(std::shared_ptr<SceneUpdateContext> context,
+              const SkMatrix& transform);
+    Transform(std::shared_ptr<SceneUpdateContext> context,
               float scale_x,
               float scale_y,
               float scale_z);
@@ -79,7 +80,7 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     // When layer is not nullptr, the frame is associated with a layer subtree
     // rooted with that layer. The frame may then create a surface that will be
     // retained for that layer.
-    Frame(SceneUpdateContext& context,
+    Frame(std::shared_ptr<SceneUpdateContext> context,
           const SkRRect& rrect,
           SkColor color,
           SkAlpha opacity,
@@ -104,7 +105,8 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
 
   class Clip : public Entity {
    public:
-    Clip(SceneUpdateContext& context, const SkRect& shape_bounds);
+    Clip(std::shared_ptr<SceneUpdateContext> context,
+         const SkRect& shape_bounds);
     ~Clip() = default;
   };
 
@@ -120,7 +122,8 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   SceneUpdateContext(std::string debug_label,
                      fuchsia::ui::views::ViewToken view_token,
                      scenic::ViewRefPair view_ref_pair,
-                     SessionWrapper& session);
+                     SessionWrapper& session,
+                     bool intercept_all_input = false);
   ~SceneUpdateContext() = default;
 
   scenic::ContainerNode& root_node() { return root_node_; }
@@ -175,6 +178,40 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
                   std::optional<bool> override_hit_testable = std::nullopt);
 
  private:
+  // Helper class for setting up an invisible rectangle to catch all input.
+  // Rejected input will then be re-injected into a suitable platform view
+  // controlled by this Engine instance.
+  class InputInterceptor {
+   public:
+    InputInterceptor(scenic::Session* session)
+        : opacity_node_(session), shape_node_(session) {
+      opacity_node_.SetLabel("Flutter::InputInterceptor");
+      opacity_node_.SetOpacity(0.f);
+
+      // Set the shape node to capture all input. Any unwanted input will be
+      // reinjected.
+      shape_node_.SetHitTestBehavior(
+          fuchsia::ui::gfx::HitTestBehavior::kDefault);
+      shape_node_.SetSemanticVisibility(false);
+
+      opacity_node_.AddChild(shape_node_);
+    }
+
+    void UpdateDimensions(scenic::Session* session,
+                          float width,
+                          float height,
+                          float elevation) {
+      opacity_node_.SetTranslation(width * 0.5f, height * 0.5f, elevation);
+      shape_node_.SetShape(scenic::Rectangle(session, width, height));
+    }
+
+    const scenic::Node& node() { return opacity_node_; }
+
+   private:
+    scenic::OpacityNodeHACK opacity_node_;
+    scenic::ShapeNode shape_node_;
+  };
+
   void CreateFrame(scenic::EntityNode& entity_node,
                    const SkRRect& rrect,
                    SkColor color,
@@ -196,6 +233,9 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
 
   float next_elevation_ = 0.f;
   float alpha_ = 1.f;
+
+  std::optional<InputInterceptor> input_interceptor_;
+  bool intercept_all_input_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };

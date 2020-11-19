@@ -45,7 +45,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
   void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<flutter::SurfaceFrame> frame) override {
+                   std::unique_ptr<flutter::SurfaceFrame> frame,
+                   const std::shared_ptr<fml::SyncSwitch>&
+                       gpu_disable_sync_switch) override {
     return;
   }
 
@@ -184,10 +186,11 @@ TEST_F(PlatformViewTests, CreateSurfaceTest) {
   // Test create surface callback function.
   sk_sp<GrDirectContext> gr_context =
       GrDirectContext::MakeMock(nullptr, GrContextOptions());
-  MockExternalViewEmbedder view_embedder;
+  std::shared_ptr<MockExternalViewEmbedder> view_embedder =
+      std::make_shared<MockExternalViewEmbedder>();
   auto CreateSurfaceCallback = [&view_embedder, gr_context]() {
     return std::make_unique<flutter_runner::Surface>(
-        "PlatformViewTest", &view_embedder, gr_context.get());
+        "PlatformViewTest", view_embedder, gr_context.get());
   };
 
   auto platform_view = flutter_runner::PlatformView(
@@ -205,6 +208,7 @@ TEST_F(PlatformViewTests, CreateSurfaceTest) {
       nullptr,                 // on_update_view_callback,
       nullptr,                 // on_destroy_view_callback,
       CreateSurfaceCallback,   // on_create_surface_callback,
+      view_embedder,           // external_view_embedder,
       fml::TimeDelta::Zero(),  // vsync_offset
       ZX_HANDLE_INVALID        // vsync_event_handle
   );
@@ -213,7 +217,8 @@ TEST_F(PlatformViewTests, CreateSurfaceTest) {
   RunLoopUntilIdle();
 
   EXPECT_EQ(gr_context.get(), delegate.surface()->GetContext());
-  EXPECT_EQ(&view_embedder, delegate.surface()->GetExternalViewEmbedder());
+  EXPECT_EQ(view_embedder.get(),
+            platform_view.CreateExternalViewEmbedder().get());
 }
 
 // This test makes sure that the PlatformView correctly registers Scenic
@@ -248,6 +253,7 @@ TEST_F(PlatformViewTests, SetViewportMetrics) {
       nullptr,                        // on_update_view_callback,
       nullptr,                        // on_destroy_view_callback,
       nullptr,                        // on_create_surface_callback,
+      nullptr,                        // external_view_embedder,
       fml::TimeDelta::Zero(),         // vsync_offset
       ZX_HANDLE_INVALID               // vsync_event_handle
   );
@@ -380,6 +386,7 @@ TEST_F(PlatformViewTests, ChangesAccessibilitySettings) {
       nullptr,                 // on_update_view_callback,
       nullptr,                 // on_destroy_view_callback,
       nullptr,                 // on_create_surface_callback,
+      nullptr,                 // external_view_embedder,
       fml::TimeDelta::Zero(),  // vsync_offset
       ZX_HANDLE_INVALID        // vsync_event_handle
   );
@@ -430,6 +437,7 @@ TEST_F(PlatformViewTests, EnableWireframeTest) {
       nullptr,                  // on_update_view_callback,
       nullptr,                  // on_destroy_view_callback,
       nullptr,                  // on_create_surface_callback,
+      nullptr,                  // external_view_embedder,
       fml::TimeDelta::Zero(),   // vsync_offset
       ZX_HANDLE_INVALID         // vsync_event_handle
   );
@@ -491,6 +499,7 @@ TEST_F(PlatformViewTests, CreateViewTest) {
       nullptr,                 // on_update_view_callback,
       nullptr,                 // on_destroy_view_callback,
       nullptr,                 // on_create_surface_callback,
+      nullptr,                 // external_view_embedder,
       fml::TimeDelta::Zero(),  // vsync_offset
       ZX_HANDLE_INVALID        // vsync_event_handle
   );
@@ -554,6 +563,7 @@ TEST_F(PlatformViewTests, UpdateViewTest) {
       UpdateViewCallback,      // on_update_view_callback,
       nullptr,                 // on_destroy_view_callback,
       nullptr,                 // on_create_surface_callback,
+      nullptr,                 // external_view_embedder,
       fml::TimeDelta::Zero(),  // vsync_offset
       ZX_HANDLE_INVALID        // vsync_event_handle
   );
@@ -617,6 +627,7 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
       nullptr,                 // on_update_view_callback,
       DestroyViewCallback,     // on_destroy_view_callback,
       nullptr,                 // on_create_surface_callback,
+      nullptr,                 // external_view_embedder,
       fml::TimeDelta::Zero(),  // vsync_offset
       ZX_HANDLE_INVALID        // vsync_event_handle
   );
@@ -677,6 +688,7 @@ TEST_F(PlatformViewTests, ViewEventsTest) {
       nullptr,                        // on_update_view_callback,
       nullptr,                        // on_destroy_view_callback,
       nullptr,                        // on_create_surface_callback,
+      nullptr,                        // external_view_embedder,
       fml::TimeDelta::Zero(),         // vsync_offset
       ZX_HANDLE_INVALID               // vsync_event_handle
   );
@@ -759,6 +771,7 @@ TEST_F(PlatformViewTests, RequestFocusTest) {
       nullptr,                    // on_update_view_callback,
       nullptr,                    // on_destroy_view_callback,
       nullptr,                    // on_create_surface_callback,
+      nullptr,                    // external_view_embedder,
       fml::TimeDelta::Zero(),     // vsync_offset
       ZX_HANDLE_INVALID           // vsync_event_handle
   );
@@ -835,6 +848,7 @@ TEST_F(PlatformViewTests, RequestFocusFailTest) {
       nullptr,                    // on_update_view_callback,
       nullptr,                    // on_destroy_view_callback,
       nullptr,                    // on_create_surface_callback,
+      nullptr,                    // external_view_embedder,
       fml::TimeDelta::Zero(),     // vsync_offset
       ZX_HANDLE_INVALID           // vsync_event_handle
   );

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_COMMON_PERSISTENT_CACHE_H_
-#define FLUTTER_SHELL_COMMON_PERSISTENT_CACHE_H_
+#ifndef FLUTTER_COMMON_GRAPHICS_PERSISTENT_CACHE_H_
+#define FLUTTER_COMMON_GRAPHICS_PERSISTENT_CACHE_H_
 
 #include <memory>
 #include <mutex>
@@ -74,6 +74,9 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   /// Load all the SkSL shader caches in the right directory.
   std::vector<SkSLCache> LoadSkSLs();
 
+  // Return mappings for all skp's accessible through the AssetManager
+  std::vector<std::unique_ptr<fml::Mapping>> GetSkpsFromAssetManager() const;
+
   /// Set the asset manager from which PersistentCache can load SkLSs. A nullptr
   /// can be provided to clear the asset manager.
   static void SetAssetManager(std::shared_ptr<AssetManager> value);
@@ -131,4 +134,4 @@ class PersistentCache : public GrContextOptions::PersistentCache {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_COMMON_PERSISTENT_CACHE_H_
+#endif  // FLUTTER_COMMON_GRAPHICS_PERSISTENT_CACHE_H_

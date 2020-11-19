@@ -7,9 +7,10 @@
 
 #include <memory>
 
+#include "flow/embedded_views.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/surface.h"
-#include "flutter/flow/texture.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
@@ -209,25 +210,6 @@ class PlatformView {
     ///
     virtual void OnPlatformViewMarkTextureFrameAvailable(
         int64_t texture_id) = 0;
-
-    //--------------------------------------------------------------------------
-    /// @brief      Directly invokes platform-specific APIs to compute the
-    ///             locale the platform would have natively resolved to.
-    ///
-    /// @param[in]  supported_locale_data  The vector of strings that represents
-    ///                                    the locales supported by the app.
-    ///                                    Each locale consists of three
-    ///                                    strings: languageCode, countryCode,
-    ///                                    and scriptCode in that order.
-    ///
-    /// @return     A vector of 3 strings languageCode, countryCode, and
-    ///             scriptCode that represents the locale selected by the
-    ///             platform. Empty strings mean the value was unassigned. Empty
-    ///             vector represents a null locale.
-    ///
-    virtual std::unique_ptr<std::vector<std::string>>
-    ComputePlatformViewResolvedLocale(
-        const std::vector<std::string>& supported_locale_data) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -580,6 +562,8 @@ class PlatformView {
   virtual std::unique_ptr<std::vector<std::string>>
   ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data);
+
+  virtual std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder();
 
  protected:
   PlatformView::Delegate& delegate_;

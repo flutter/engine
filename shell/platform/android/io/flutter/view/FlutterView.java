@@ -269,19 +269,9 @@ public class FlutterView extends SurfaceView
   }
 
   @Override
-  public boolean onKeyUp(int keyCode, KeyEvent event) {
-    if (!isAttached()) {
-      return super.onKeyUp(keyCode, event);
-    }
-    return androidKeyProcessor.onKeyUp(event) || super.onKeyUp(keyCode, event);
-  }
-
-  @Override
-  public boolean onKeyDown(int keyCode, KeyEvent event) {
-    if (!isAttached()) {
-      return super.onKeyDown(keyCode, event);
-    }
-    return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
+  public boolean dispatchKeyEventPreIme(KeyEvent event) {
+    return (isAttached() && androidKeyProcessor.onKeyEvent(event))
+        || super.dispatchKeyEventPreIme(event);
   }
 
   public FlutterNativeView getFlutterNativeView() {
@@ -662,14 +652,17 @@ public class FlutterView extends SurfaceView
         zeroSides = calculateShouldZeroSides();
       }
 
-      // Status bar (top) and left/right system insets should partially obscure the content
-      // (padding).
+      // Status bar (top), navigation bar (bottom) and left/right system insets should
+      // partially obscure the content (padding).
       mMetrics.physicalPaddingTop = statusBarVisible ? insets.getSystemWindowInsetTop() : 0;
       mMetrics.physicalPaddingRight =
           zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
               ? 0
               : insets.getSystemWindowInsetRight();
-      mMetrics.physicalPaddingBottom = 0;
+      mMetrics.physicalPaddingBottom =
+          navigationBarVisible && guessBottomKeyboardInset(insets) == 0
+              ? insets.getSystemWindowInsetBottom()
+              : 0;
       mMetrics.physicalPaddingLeft =
           zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
               ? 0
@@ -678,10 +671,7 @@ public class FlutterView extends SurfaceView
       // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
       mMetrics.physicalViewInsetTop = 0;
       mMetrics.physicalViewInsetRight = 0;
-      mMetrics.physicalViewInsetBottom =
-          navigationBarVisible
-              ? insets.getSystemWindowInsetBottom()
-              : guessBottomKeyboardInset(insets);
+      mMetrics.physicalViewInsetBottom = guessBottomKeyboardInset(insets);
       mMetrics.physicalViewInsetLeft = 0;
     }
 

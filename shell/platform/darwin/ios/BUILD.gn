@@ -131,6 +131,7 @@ source_set("flutter_framework_source") {
   deps = [
     ":ios_gpu_configuration",
     "//flutter/common",
+    "//flutter/common/graphics",
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/lib/ui",
@@ -206,6 +207,7 @@ shared_library("ios_test_flutter") {
     "//build/config:symbol_visibility_hidden",
   ]
   sources = [
+    "framework/Source/FlutterAppDelegateTest.mm",
     "framework/Source/FlutterBinaryMessengerRelayTest.mm",
     "framework/Source/FlutterDartProjectTest.mm",
     "framework/Source/FlutterEngineTest.mm",
@@ -218,6 +220,7 @@ shared_library("ios_test_flutter") {
   deps = [
     ":flutter_framework_source",
     ":ios_test_flutter_mrc",
+    "//flutter/common:common",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
@@ -321,7 +324,8 @@ shared_library("copy_and_verify_framework_module") {
   ]
 }
 
-group("flutter_framework") {
+group("universal_flutter_framework") {
+  visibility = [ ":*" ]
   deps = [
     ":copy_and_verify_framework_module",
     ":copy_dylib",
@@ -331,4 +335,19 @@ group("flutter_framework") {
     ":copy_framework_podspec",
     ":copy_license",
   ]
+}
+
+action("flutter_framework") {
+  script = "//flutter/sky/tools/create_xcframework.py"
+  outputs = [ "$root_out_dir/Flutter.xcframework" ]
+  args = [
+    "--frameworks",
+    rebase_path("$_flutter_framework_dir"),
+    "--name",
+    "Flutter",
+    "--location",
+    rebase_path("$root_out_dir"),
+  ]
+
+  deps = [ ":universal_flutter_framework" ]
 }

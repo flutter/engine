@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A surface that applies an image filter to background.
@@ -113,10 +113,10 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       // Gaussian blur with standard deviation (normal distribution),
       // the blur will fall within 2 * sigma pixels.
       if (browserEngine == BrowserEngine.webkit) {
-        domRenderer.setElementStyle(_filterElement!, '-webkit-backdrop-filter',
+        DomRenderer.setElementStyle(_filterElement!, '-webkit-backdrop-filter',
             _imageFilterToCss(filter));
       }
-      domRenderer.setElementStyle(_filterElement!, 'backdrop-filter', _imageFilterToCss(filter));
+      DomRenderer.setElementStyle(_filterElement!, 'backdrop-filter', _imageFilterToCss(filter));
     }
   }
 

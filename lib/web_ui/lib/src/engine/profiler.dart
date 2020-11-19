@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A function that receives a benchmark [value] labeleb by [name].
@@ -110,7 +110,7 @@ class Profiler {
 
 /// Whether we are collecting [ui.FrameTiming]s.
 bool get _frameTimingsEnabled {
-  return window._onReportTimings != null;
+  return EnginePlatformDispatcher.instance._onReportTimings != null;
 }
 
 /// Collects frame timings from frames.
@@ -202,7 +202,7 @@ void _frameTimingsOnRasterFinish() {
   _rasterFinishMicros = -1;
   if (now - _frameTimingsLastSubmitTime > _kFrameTimingsSubmitInterval) {
     _frameTimingsLastSubmitTime = now;
-    window.invokeOnReportTimings(_frameTimings);
+    EnginePlatformDispatcher.instance.invokeOnReportTimings(_frameTimings);
     _frameTimings = <ui.FrameTiming>[];
   }
 }

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// An error related to the CanvasKit rendering backend.
@@ -63,7 +63,7 @@ void drawSkShadow(
       canvasKit.computeTonalColors(inTonalColors);
 
   skCanvas.drawShadow(
-    path._skPath,
+    path.skiaObject,
     Float32List(3)
       ..[2] = devicePixelRatio * elevation,
     Float32List(3)
