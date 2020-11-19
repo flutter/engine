@@ -25,14 +25,14 @@ void testMain() async {
   Future<void> _testGradient(String fileName, Shader shader,
       {Rect paintRect = const Rect.fromLTRB(50, 50, 300, 300),
       Rect shaderRect = const Rect.fromLTRB(50, 50, 300, 300),
-      bool write: false}) async {
-    final RecordingCanvas rc =
-        RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+      bool write = false,
+      Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
+    final RecordingCanvas rc = RecordingCanvas(region);
     final Paint paint = Paint()..shader = shader;
     final Path path = Path();
     path.addRect(paintRect);
     rc.drawPath(path, paint);
-    await canvasScreenshot(rc, fileName, write: write);
+    await canvasScreenshot(rc, fileName, write: write, region: region);
   }
 
   test('Should draw centered radial gradient.', () async {
@@ -99,7 +99,8 @@ void testMain() async {
             colors,
             colorStops,
             TileMode.repeated),
-        shaderRect: shaderRect);
+        shaderRect: shaderRect,
+        region: const Rect.fromLTWH(0, 0, 600, 800));
   });
 
   test('Should draw with radial gradient with TileMode.mirrored.', () async {
@@ -113,6 +114,7 @@ void testMain() async {
             colors,
             colorStops,
             TileMode.mirror),
-        shaderRect: shaderRect);
+        shaderRect: shaderRect,
+        region: const Rect.fromLTWH(0, 0, 600, 800));
   });
 }
