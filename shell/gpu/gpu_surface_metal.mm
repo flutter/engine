@@ -4,9 +4,6 @@
 
 #include "flutter/shell/gpu/gpu_surface_metal.h"
 
-#include <Metal/Metal.h>
-#import <QuartzCore/CAMetalLayer.h>
-
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -49,7 +46,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
   frame_info.height = frame_size.height();
   frame_info.width = frame_size.width();
 
-  CAMetalLayer* layer = (__bridge CAMetalLayer*)(delegate_->GetCAMetalLayer(frame_info));
+  auto layer = delegate_->GetCAMetalLayer(frame_info);
   if (!layer) {
     FML_LOG(ERROR) << "Invalid CALayer given by the embedder.";
     return nullptr;

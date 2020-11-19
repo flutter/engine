@@ -457,7 +457,7 @@ typedef void (*FlutterMetalTextureCallback)(
     const FlutterFrameInfo* /* frame info */,
     FlutterMetalTexture* /* texture out */);
 
-typedef void (*FlutterMetalPresentCallback)(void* /* user data */,
+typedef bool (*FlutterMetalPresentCallback)(void* /* user data */,
                                             intptr_t /* texture id */);
 
 typedef struct {

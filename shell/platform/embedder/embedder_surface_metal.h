@@ -7,7 +7,6 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_metal.h"
-#import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "shell/gpu/gpu_surface_metal_delegate.h"
@@ -34,9 +33,10 @@ class EmbedderSurfaceMetal final : public EmbedderSurface,
  private:
   bool valid_ = false;
   MetalDispatchTable metal_dispatch_table_;
-  FlutterDarwinContextMetal* darwin_metal_context_;
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
   sk_sp<SkSurface> sk_surface_;
+  sk_sp<GrDirectContext> main_context_;
+  sk_sp<GrDirectContext> resource_context_;
 
   // |EmbedderSurface|
   bool IsValid() const override;

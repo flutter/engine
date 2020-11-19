@@ -306,10 +306,10 @@ InferMetalPlatformViewCreationCallback(
 
 #ifdef FLUTTER_SHELL_ENABLE_METAL
   FML_LOG(ERROR) << "! 1";
-  auto metal_present = [ptr = config->metal.present_callback,
-                        user_data](intptr_t texture_id) {
-    return ptr(user_data, texture_id);
-  };
+  std::function<bool(intptr_t texture_id)> metal_present =
+      [ptr = config->metal.present_callback, user_data](intptr_t texture_id) {
+        return ptr(user_data, texture_id);
+      };
   FML_LOG(ERROR) << "! 2";
   auto metal_get_texture = [ptr = config->metal.texture_callback,
                             user_data](flutter::MTLFrameInfo metal_frame_info)
@@ -331,10 +331,11 @@ InferMetalPlatformViewCreationCallback(
   FML_LOG(ERROR) << "! 3";
 
   flutter::EmbedderSurfaceMetal::MetalDispatchTable metal_dispatch_table = {
-      .device = config->metal.device,
-      .command_queue = config->metal.command_queue,
-      .get_texture = metal_get_texture,
+      .device = const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
+      .command_queue = const_cast<flutter::GPUMTLCommandQueueHandle>(
+          config->metal.command_queue),
       .present = metal_present,
+      .get_texture = metal_get_texture,
   };
 
   FML_LOG(ERROR) << "! 4";
@@ -346,7 +347,7 @@ InferMetalPlatformViewCreationCallback(
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                             // delegate
             shell.GetTaskRunners(),            // task runners
-            software_dispatch_table,           // software dispatch table
+            metal_dispatch_table,              // metal dispatch table
             platform_dispatch_table,           // platform dispatch table
             std::move(external_view_embedder)  // external view embedder
         );

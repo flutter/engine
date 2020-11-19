@@ -20,9 +20,11 @@ EmbedderSurfaceMetal::EmbedderSurfaceMetal(
       external_view_embedder_(external_view_embedder) {
   id<MTLDevice> device = (id<MTLDevice>)metal_dispatch_table_.device;
   id<MTLCommandQueue> command_queue = (id<MTLCommandQueue>)metal_dispatch_table_.command_queue;
-  darwin_metal_context_ = [[FlutterDarwinContextMetal alloc] initWithMTLDevice:device
-                                                                  commandQueue:command_queue];
-  valid_ = darwin_metal_context_ != nullptr;
+  auto darwin_metal_context = [[FlutterDarwinContextMetal alloc] initWithMTLDevice:device
+                                                                      commandQueue:command_queue];
+  main_context_ = darwin_metal_context.mainContext;
+  resource_context_ = darwin_metal_context.resourceContext;
+  valid_ = main_context_ && resource_context_;
 }
 
 EmbedderSurfaceMetal::~EmbedderSurfaceMetal() = default;
@@ -38,7 +40,7 @@ std::unique_ptr<Surface> EmbedderSurfaceMetal::CreateGPUSurface() {
     return nullptr;
   }
 
-  auto surface = std::make_unique<GPUSurfaceMetal>(this, darwin_metal_context_.mainContext);
+  auto surface = std::make_unique<GPUSurfaceMetal>(this, main_context_);
 
   if (!surface->IsValid()) {
     return nullptr;
@@ -49,7 +51,7 @@ std::unique_ptr<Surface> EmbedderSurfaceMetal::CreateGPUSurface() {
 
 // |EmbedderSurface|
 sk_sp<GrDirectContext> EmbedderSurfaceMetal::CreateResourceContext() const {
-  return darwin_metal_context_.resourceContext;
+  return resource_context_;
 }
 
 // |GPUSurfaceMetalDelegate|

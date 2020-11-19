@@ -11,8 +11,6 @@
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
-@class CAMetalLayer;
-
 namespace flutter {
 
 class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetal : public Surface {
