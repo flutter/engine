@@ -141,8 +141,6 @@ def to_gn_args(args):
         gn_args['flutter_enable_legacy_fuchsia_embedder'] = args.fuchsia_legacy
     elif args.target_os == 'winuwp':
         gn_args['target_os'] = 'winuwp'
-        # Enabling angle_is_winuwp is dependent on an in-flight patch to https://chromium.googlesource.com/angle/angle to update UWP support
-        # gn_args['angle_is_winuwp'] = True
     elif args.target_os is not None:
         gn_args['target_os'] = args.target_os
 

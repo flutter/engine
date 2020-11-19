@@ -34,14 +34,14 @@ class TaskRunnerWin32 : public TaskRunner {
 
   virtual ~TaskRunnerWin32();
 
-  // |RunsTasksOnCurrentThread|
+  // |TaskRunner|
   bool RunsTasksOnCurrentThread() const override;
 
-  std::chrono::nanoseconds ProcessTasks();
-
-  // |PostTask|
+  // |TaskRunner|
   void PostTask(FlutterTask flutter_task,
                 uint64_t flutter_target_time_nanos) override;
+
+  std::chrono::nanoseconds ProcessTasks();
 
  private:
   using TaskTimePoint = std::chrono::steady_clock::time_point;

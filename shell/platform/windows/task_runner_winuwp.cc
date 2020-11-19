@@ -23,17 +23,10 @@ bool TaskRunnerWinUwp::RunsTasksOnCurrentThread() const {
   return GetCurrentThreadId() == main_thread_id_;
 }
 
-TaskRunnerWinUwp::TaskTimePoint TaskRunnerWinUwp::TimePointFromFlutterTime(
-    uint64_t flutter_target_time_nanos) {
-  const auto now = TaskTimePoint::clock::now();
-  const auto flutter_duration =
-      flutter_target_time_nanos - FlutterEngineGetCurrentTime();
-  return now + std::chrono::nanoseconds(flutter_duration);
-}
-
 void TaskRunnerWinUwp::PostTask(FlutterTask flutter_task,
                                 uint64_t flutter_target_time_nanos) {
-  // TODO: consider waiting on threadpool thread until target time
+  // TODO: Handle the target time. See
+  // https://github.com/flutter/flutter/issues/70890.
 
   dispatcher_.RunAsync(
       winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,

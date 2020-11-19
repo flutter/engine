@@ -28,26 +28,21 @@ class TaskRunnerWinUwp : public TaskRunner {
 
   ~TaskRunnerWinUwp();
 
-  // |RunsTasksOnCurrentThread|
+  TaskRunnerWinUwp(const TaskRunnerWinUwp&) = delete;
+  TaskRunnerWinUwp& operator=(const TaskRunnerWinUwp&) = delete;
+
+  // |TaskRunner|
   bool RunsTasksOnCurrentThread() const override;
 
-  // |PostTask|
+  // |TaskRunner|
   void PostTask(FlutterTask flutter_task,
                 uint64_t flutter_target_time_nanos) override;
 
  private:
-  using TaskTimePoint = std::chrono::steady_clock::time_point;
   DWORD main_thread_id_;
   TaskExpiredCallback on_task_expired_;
 
-  TaskRunnerWinUwp(const TaskRunnerWinUwp&) = delete;
-
-  TaskRunnerWinUwp& operator=(const TaskRunnerWinUwp&) = delete;
-
   winrt::Windows::UI::Core::CoreDispatcher dispatcher_{nullptr};
-
-  static TaskTimePoint TimePointFromFlutterTime(
-      uint64_t flutter_target_time_nanos);
 };
 
 }  // namespace flutter

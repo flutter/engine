@@ -20,12 +20,13 @@
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
-#ifndef WINUWP
-#include "flutter/shell/platform/windows/win32_platform_handler.h"  // nogncheck
-#endif
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 #include "flutter/shell/platform/windows/window_state.h"
+
+#ifndef WINUWP
+#include "flutter/shell/platform/windows/win32_platform_handler.h"  // nogncheck
+#endif
 
 namespace flutter {
 
