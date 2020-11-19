@@ -71,7 +71,6 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 @implementation FlutterEngineRegistrar {
   NSString* _pluginKey;
   FlutterEngine* _flutterEngine;
-  FlutterEngineProcTable _embedderAPI;
 }
 
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine {
@@ -154,7 +153,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _allowHeadlessExecution = allowHeadlessExecution;
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
-  _openGLRenderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:_engine];
+  _openGLRenderer = [[FlutterOpenGLRenderer alloc] initWithEmbedderEngine:_engine
+                                                            flutterEngine:self];
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self

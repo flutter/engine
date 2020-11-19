@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import <OCMock/OCMock.h>
+
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
@@ -50,4 +52,66 @@ TEST(FlutterEngine, MessengerSend) {
   [engine shutDownEngine];
 }
 
-}  // flutter::testing
+TEST(FlutterEngine, RegisterExternalTexture) {
+  FlutterEngine* engine = CreateTestEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+
+  id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
+  bool called = false;
+
+  engine.embedderAPI.RegisterExternalTexture =
+      MOCK_ENGINE_PROC(RegisterExternalTexture, [&](auto engine, int64_t textureIdentifier) {
+        called = true;
+        EXPECT_EQ(textureIdentifier, reinterpret_cast<int64_t>(flutterTexture));
+        return kSuccess;
+      });
+
+  [engine.openGLRenderer registerTexture:flutterTexture];
+  EXPECT_TRUE(called);
+
+  [engine shutDownEngine];
+}
+
+TEST(FlutterEngine, UnregisterExternalTexture) {
+  FlutterEngine* engine = CreateTestEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+
+  id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
+  bool called = false;
+
+  int64_t registeredTextureId = [engine.openGLRenderer registerTexture:flutterTexture];
+  engine.embedderAPI.UnregisterExternalTexture =
+      MOCK_ENGINE_PROC(UnregisterExternalTexture, [&](auto engine, int64_t textureIdentifier) {
+        called = true;
+        EXPECT_EQ(textureIdentifier, registeredTextureId);
+        return kSuccess;
+      });
+
+  [engine.openGLRenderer unregisterTexture:registeredTextureId];
+  EXPECT_TRUE(called);
+
+  [engine shutDownEngine];
+}
+
+TEST(FlutterEngine, MarkExternalTextureFrameAvailable) {
+  FlutterEngine* engine = CreateTestEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+
+  id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
+  bool called = false;
+
+  int64_t registeredTextureId = [engine.openGLRenderer registerTexture:flutterTexture];
+  engine.embedderAPI.MarkExternalTextureFrameAvailable = MOCK_ENGINE_PROC(
+      MarkExternalTextureFrameAvailable, [&](auto engine, int64_t textureIdentifier) {
+        called = true;
+        EXPECT_EQ(textureIdentifier, registeredTextureId);
+        return kSuccess;
+      });
+
+  [engine.openGLRenderer textureFrameAvailable:registeredTextureId];
+  EXPECT_TRUE(called);
+
+  [engine shutDownEngine];
+}
+
+}  // namespace flutter::testing

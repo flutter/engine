@@ -59,13 +59,15 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   // A mapping of textureID to internal FlutterExternalTextureGL adapter.
   NSMutableDictionary<NSNumber*, FlutterExternalTextureGL*>* _textures;
 
-  FlutterEngineProcTable _embedderAPI;
+  FlutterEngine* _flutterEngine;
 }
 
-- (instancetype)initWithFlutterEngine:(FLUTTER_API_SYMBOL(FlutterEngine))engine {
+- (instancetype)initWithEmbedderEngine:(FLUTTER_API_SYMBOL(FlutterEngine))engine
+                         flutterEngine:(FlutterEngine*)flutterEngine {
   self = [super init];
   if (self) {
     _engine = engine;
+    _flutterEngine = flutterEngine;
     _textures = [[NSMutableDictionary alloc] init];
   }
   return self;
@@ -141,7 +143,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   FlutterExternalTextureGL* FlutterTexture =
       [[FlutterExternalTextureGL alloc] initWithFlutterTexture:texture];
   int64_t textureID = [FlutterTexture textureID];
-  FlutterEngineResult success = _embedderAPI.RegisterExternalTexture(_engine, textureID);
+  FlutterEngineResult success =
+      _flutterEngine.embedderAPI.RegisterExternalTexture(_engine, textureID);
   if (success == FlutterEngineResult::kSuccess) {
     _textures[@(textureID)] = FlutterTexture;
     return textureID;
@@ -152,14 +155,16 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (void)textureFrameAvailable:(int64_t)textureID {
-  FlutterEngineResult success = _embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID);
+  FlutterEngineResult success =
+      _flutterEngine.embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID);
   if (success != FlutterEngineResult::kSuccess) {
     NSLog(@"Unable to mark texture with id %lld as available.", textureID);
   }
 }
 
 - (void)unregisterTexture:(int64_t)textureID {
-  FlutterEngineResult success = _embedderAPI.UnregisterExternalTexture(_engine, textureID);
+  FlutterEngineResult success =
+      _flutterEngine.embedderAPI.UnregisterExternalTexture(_engine, textureID);
   if (success == FlutterEngineResult::kSuccess) {
     [_textures removeObjectForKey:@(textureID)];
   } else {

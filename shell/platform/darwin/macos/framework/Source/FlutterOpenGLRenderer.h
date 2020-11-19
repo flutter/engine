@@ -31,7 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Intializes the renderer with the given FlutterEngine.
  */
-- (instancetype)initWithFlutterEngine:(FLUTTER_API_SYMBOL(FlutterEngine))engine;
+- (instancetype)initWithEmbedderEngine:(FLUTTER_API_SYMBOL(FlutterEngine))engine
+                         flutterEngine:(FlutterEngine*)flutterEngine;
 
 /**
  * Attaches to the FlutterView and sets up the renderers main OpenGL context.
