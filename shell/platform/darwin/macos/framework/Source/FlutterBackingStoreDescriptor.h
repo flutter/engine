@@ -20,6 +20,8 @@ typedef NS_ENUM(NSInteger, FlutterMacOSBackingStoreType) {
 
 - (instancetype)initMetalDescriptorWithTexture:(id<MTLTexture>)texture;
 
+- (id<MTLTexture>)getMetalTexture;
+
 - (int)getFrameBufferId;
 
 @end

@@ -76,7 +76,11 @@ static bool OnPresent(FlutterEngine* engine, intptr_t metalTextureId) {
   if (!_mtlCommandQueue || !_flutterView) {
     return;
   }
-  // TODO XXX
+  FlutterBackingStoreDescriptor* backingStore = [_flutterView backingStoreForSize:size];
+  id<MTLTexture> mtlTexture = [backingStore getMetalTexture];
+  output->struct_size = sizeof(FlutterMetalTexture);
+  output->texture = (__bridge void*)mtlTexture;
+  output->texture_id = 1;
 }
 
 - (bool)present:(int64_t)textureId {
