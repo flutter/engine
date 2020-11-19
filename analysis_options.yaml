@@ -21,7 +21,9 @@ analyzer:
   ]
   strong-mode:
     implicit-casts: false
-    # implicit-dynamic: false # at least temporary for RecursiveVisitor change
+    # TODO(jensj): Re-enable this when the sdk rolls to include
+    # the re-landing of https://dart-review.googlesource.com/c/sdk/+/172180.
+    # implicit-dynamic: false
   errors:
     # treat missing required parameters as a warning (not a hint)
     missing_required_param: warning

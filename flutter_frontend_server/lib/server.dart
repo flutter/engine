@@ -190,6 +190,8 @@ Future<int> starter(
 
 /// A [RecursiveVisitor] that replaces [Object.toString] overrides with
 /// `super.toString()`.
+// TODO(jensj): Remove the below ignore when the sdk rolls to include
+// the re-landing of https://dart-review.googlesource.com/c/sdk/+/172180.
 // ignore: always_specify_types
 class ToStringVisitor extends RecursiveVisitor {
   /// The [packageUris] must not be null.
