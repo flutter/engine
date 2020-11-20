@@ -25,7 +25,7 @@ G_DECLARE_FINAL_TYPE(FlSettingsPlugin,
  * fl_settings_plugin_new:
  * @messenger: an #FlBinaryMessenger
  *
- * Creates a new plugin that implements FIXME.
+ * Creates a new plugin that sends user settings to the Flutter engine.
  *
  * Returns: a new #FlSettingsPlugin
  */
