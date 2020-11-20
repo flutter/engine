@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
 
+#include <gtk/gtk.h>
 #include <deque>
 
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
@@ -42,6 +43,9 @@ static void fl_key_event_plugin_dispose(GObject* object) {
   FlKeyEventPlugin* self = FL_KEY_EVENT_PLUGIN(object);
 
   g_clear_object(&self->channel);
+  g_object_remove_weak_pointer(
+      G_OBJECT(self->text_input_plugin),
+      reinterpret_cast<gpointer*>(&(self->text_input_plugin)));
 
   G_OBJECT_CLASS(fl_key_event_plugin_parent_class)->dispose(object);
 }
@@ -50,9 +54,7 @@ static void fl_key_event_plugin_class_init(FlKeyEventPluginClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_key_event_plugin_dispose;
 }
 
-static void fl_key_event_plugin_init(FlKeyEventPlugin* self) {
-  self->pendingEvents.clear();
-}
+static void fl_key_event_plugin_init(FlKeyEventPlugin* self) {}
 
 FlKeyEventPlugin* fl_key_event_plugin_new(
     FlBinaryMessenger* messenger,
@@ -104,6 +106,8 @@ void fl_remove_pending_event(FlKeyEventPlugin* self, uint64_t id) {
         id);
     return;
   }
+  gdk_event_free(
+      reinterpret_cast<GdkEvent*>(self->pendingEvents.front().second));
   self->pendingEvents.pop_front();
 }
 
@@ -134,11 +138,14 @@ void fl_handle_response(GObject* object,
                         gpointer user_data) {
   _KeyEventResponseData* data =
       reinterpret_cast<_KeyEventResponseData*>(user_data);
-  if (data->self == nullptr) {
-    // Weak pointer to the plugin has been destroyed.
-    return;
-  }
+
+  // Will also return if the weak pointer has been destroyed.
   g_return_if_fail(FL_IS_KEY_EVENT_PLUGIN(data->self));
+
+  FlKeyEventPlugin* self = data->self;
+  // Don't need to weak pointer anymore.
+  g_object_remove_weak_pointer(G_OBJECT(self),
+                               reinterpret_cast<gpointer*>(&(data->self)));
 
   g_autoptr(GError) error = nullptr;
   FlBasicMessageChannel* messageChannel = FL_BASIC_MESSAGE_CHANNEL(object);
@@ -152,7 +159,7 @@ void fl_handle_response(GObject* object,
   g_autoptr(FlValue) handled_value = fl_value_lookup_string(message, "handled");
   bool handled = false;
   if (handled_value != nullptr) {
-    GdkEventKey* event = fl_find_pending_event(data->self, data->id);
+    GdkEventKey* event = fl_find_pending_event(self, data->id);
     if (event == nullptr) {
       g_warning(
           "Event response for event id %ld received, but event was received "
@@ -161,16 +168,16 @@ void fl_handle_response(GObject* object,
     } else {
       handled = fl_value_get_bool(handled_value);
       if (!handled) {
-        if (data->self->text_input_plugin != nullptr) {
+        if (self->text_input_plugin != nullptr) {
           // Propagate the event to the text input plugin.
           handled = fl_text_input_plugin_filter_keypress(
-              data->self->text_input_plugin, event);
+              self->text_input_plugin, event);
         }
         // Dispatch the event to other GTK windows if the text input plugin
         // didn't handle it. We keep track of the event id so we can recognize
         // the event when our window receives it again and not respond to it. If
         // the response callback is set, then use that instead.
-        if (!handled && data->self->response_callback == nullptr) {
+        if (!handled && self->response_callback == nullptr) {
           gdk_event_put(reinterpret_cast<GdkEvent*>(event));
         }
       }
@@ -180,11 +187,11 @@ void fl_handle_response(GObject* object,
   if (handled) {
     // Because the event was handled, we no longer need to track it. Unhandled
     // events will be removed when the event is re-dispatched to the window.
-    fl_remove_pending_event(data->self, data->id);
+    fl_remove_pending_event(self, data->id);
   }
 
-  if (data->self->response_callback != nullptr) {
-    data->self->response_callback(object, message, handled, data->user_data);
+  if (self->response_callback != nullptr) {
+    self->response_callback(object, message, handled, data->user_data);
   }
 }
 

@@ -29,7 +29,9 @@ G_DECLARE_FINAL_TYPE(FlKeyEventPlugin,
 /**
  * FlKeyEventPluginCallback:
  * @source_object: (nullable): the object the key event was started with.
- * @handled: a boolean indicating if the key event was handled or not.
+ * @message: the message returned from the framework.
+ * @handled: a boolean indicating whether the key event was handled in the
+ *framework.
  * @user_data: user data passed to the callback.
  *
  * Type definition for a function that will be called when a key event is
@@ -45,10 +47,10 @@ typedef void (*FlKeyEventPluginCallback)(GObject* source_object,
  * @messenger: an #FlBinaryMessenger.
  * @response_callback: the callback to call when a response is received.  If not
  *                     given (nullptr), then the default response callback is
- *                     used. Typically used for tests to receive event information.
- *                     If specified, unhandled events will not be re-dispatched.
- * @text_input_plugin: The #FlTextInputPlugin to send key events to if the framework
- *                     doesn't handle them.
+ *                     used. Typically used for tests to receive event
+ * information. If specified, unhandled events will not be re-dispatched.
+ * @text_input_plugin: The #FlTextInputPlugin to send key events to if the
+ * framework doesn't handle them.
  * @channel_name: the name of the channel to send key events to the framework
  *                on. If not given (nullptr), then the standard key event
  *                channel name is used. Typically used for tests to send on a
