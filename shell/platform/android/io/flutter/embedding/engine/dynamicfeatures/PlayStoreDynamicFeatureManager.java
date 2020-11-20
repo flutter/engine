@@ -47,7 +47,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
 
   private class FeatureInstallStateUpdatedListener implements SplitInstallStateUpdatedListener {
     public void onStateUpdate(SplitInstallSessionState state) {
-      if (sessionIdToName.containsKey(state.sessionId())) {
+      if (sessionIdToName.get(state.sessionId()) != null) {
         // TODO(garyq): Add system channel for split aot messages.
         switch (state.status()) {
           case SplitInstallSessionStatus.FAILED:
@@ -63,8 +63,8 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   sessionIdToLoadingUnitId.get(state.sessionId()),
                   "Module install failed with " + state.errorCode(),
                   true);
-              sessionIdToName.remove(state.sessionId());
-              sessionIdToLoadingUnitId.remove(state.sessionId());
+              sessionIdToName.delete(state.sessionId());
+              sessionIdToLoadingUnitId.delete(state.sessionId());
               break;
             }
           case SplitInstallSessionStatus.INSTALLED:
@@ -83,8 +83,8 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
               loadDartLibrary(
                   sessionIdToLoadingUnitId.get(state.sessionId()),
                   sessionIdToName.get(state.sessionId()));
-              sessionIdToName.remove(state.sessionId());
-              sessionIdToLoadingUnitId.remove(state.sessionId());
+              sessionIdToName.delete(state.sessionId());
+              sessionIdToLoadingUnitId.delete(state.sessionId());
               break;
             }
           case SplitInstallSessionStatus.CANCELED:
@@ -94,7 +94,8 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) install canceled.",
                       sessionIdToName.get(state.sessionId()), state.sessionId()));
-              sessionIdToName.remove(state.sessionId());
+              sessionIdToName.delete(state.sessionId());
+              sessionIdToLoadingUnitId.delete(state.sessionId());
               break;
             }
           case SplitInstallSessionStatus.CANCELING:
