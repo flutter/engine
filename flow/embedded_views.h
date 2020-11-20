@@ -10,6 +10,7 @@
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/raster_thread_merger.h"
+#include "flutter/fml/synchronization/sync_switch.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
@@ -123,7 +124,7 @@ class Mutator {
 //
 // For example consider the following stack: [T1, T2, T3], where T1 is the top
 // of the stack and T3 is the bottom of the stack. Applying this mutators stack
-// to a platform view P1 will result in T1(T2(T2(P1))).
+// to a platform view P1 will result in T1(T2(T3(P1))).
 class MutatorsStack {
  public:
   MutatorsStack() = default;
@@ -309,8 +310,10 @@ class ExternalViewEmbedder {
   // This method can mutate the root Skia canvas before submitting the frame.
   //
   // It can also allocate frames for overlay surfaces to compose hybrid views.
-  virtual void SubmitFrame(GrDirectContext* context,
-                           std::unique_ptr<SurfaceFrame> frame);
+  virtual void SubmitFrame(
+      GrDirectContext* context,
+      std::unique_ptr<SurfaceFrame> frame,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch);
 
   // This method provides the embedder a way to do additional tasks after
   // |SubmitFrame|. For example, merge task runners if `should_resubmit_frame`
