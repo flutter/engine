@@ -96,19 +96,6 @@ void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
   }
 }
 
-#if defined(OS_MACOSX)
-bool ContainerLayer::HasPlatformView() {
-  bool hasPlatformView = false;
-  for (auto& layer : layers_) {
-    if (layer->HasPlatformView()) {
-      hasPlatformView = true;
-    }
-  }
-
-  return hasPlatformView;
-}
-#endif
-
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 
 void ContainerLayer::CheckForChildLayerBelow(PrerollContext* context) {

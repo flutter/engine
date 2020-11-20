@@ -19,9 +19,6 @@ class ContainerLayer : public Layer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
-#if defined(OS_MACOSX)
-  bool HasPlatformView() override;
-#endif
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   void CheckForChildLayerBelow(PrerollContext* context) override;
   void UpdateScene(std::shared_ptr<SceneUpdateContext> context) override;

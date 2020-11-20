@@ -424,30 +424,13 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   compositor_context_->ui_time().SetLapTime(layer_tree.build_time());
 
   SkCanvas* embedder_root_canvas = nullptr;
-#if defined(OS_MACOSX)
-  // For MacOS, we only want to use the external_view_embedder / compositor
-  // if there is a platform view in the layer tree.
-  // TODO(richardjcai): Remove branching logic for using external_view_embedder
-  // once the compositor supports smooth resizing.
-  // https://github.com/flutter/flutter/issues/70848.
-  bool hasPlatformView = layer_tree.HasPlatformView();
-  if (external_view_embedder_ && hasPlatformView) {
-#else
   if (external_view_embedder_) {
-#endif
     external_view_embedder_->BeginFrame(
         layer_tree.frame_size(), surface_->GetContext(),
         layer_tree.device_pixel_ratio(), raster_thread_merger_);
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
 
-#if defined(OS_MACOSX)
-  if (external_view_embedder_ && hasPlatformView) {
-    surface_->SetRenderToSurface(false);
-  } else {
-    surface_->SetRenderToSurface(true);
-  }
-#endif
   // On Android, the external view embedder deletes surfaces in `BeginFrame`.
   //
   // Deleting a surface also clears the GL context. Therefore, acquire the
@@ -467,23 +450,14 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   auto root_surface_canvas =
       embedder_root_canvas ? embedder_root_canvas : frame->SkiaCanvas();
 
-#if defined(OS_MACOSX)
-  auto external_view_embedder =
-      hasPlatformView ? external_view_embedder_.get() : nullptr;
-  auto raster_thread_merger = hasPlatformView ? raster_thread_merger_ : nullptr;
-#else
-  auto external_view_embedder = external_view_embedder_.get();
-  auto raster_thread_merger = raster_thread_merger_;
-#endif
-
   auto compositor_frame = compositor_context_->AcquireFrame(
-      surface_->GetContext(),       // skia GrContext
-      root_surface_canvas,          // root surface canvas
-      external_view_embedder,       // external view embedder
-      root_surface_transformation,  // root surface transformation
-      true,                         // instrumentation enabled
-      frame->supports_readback(),   // surface supports pixel reads
-      raster_thread_merger          // thread merger
+      surface_->GetContext(),         // skia GrContext
+      root_surface_canvas,            // root surface canvas
+      external_view_embedder_.get(),  // external view embedder
+      root_surface_transformation,    // root surface transformation
+      true,                           // instrumentation enabled
+      frame->supports_readback(),     // surface supports pixel reads
+      raster_thread_merger_           // thread merger
   );
 
   if (compositor_frame) {
@@ -492,14 +466,8 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
     }
-#if defined(OS_MACOSX)
-    if (external_view_embedder_ &&
-        (!raster_thread_merger_ || raster_thread_merger_->IsMerged()) &&
-        hasPlatformView) {
-#else
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
-#endif
       FML_DCHECK(!frame->IsSubmitted());
       external_view_embedder_->SubmitFrame(
           surface_->GetContext(), std::move(frame),
