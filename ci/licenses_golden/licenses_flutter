@@ -654,10 +654,10 @@ FILE: ../../../flutter/shell/common/shell_test_platform_view_gl.h
 FILE: ../../../flutter/shell/common/shell_test_platform_view_vulkan.cc
 FILE: ../../../flutter/shell/common/shell_test_platform_view_vulkan.h
 FILE: ../../../flutter/shell/common/shell_unittests.cc
-FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
-FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
 FILE: ../../../flutter/shell/common/sk_trace_memory_dump_json.cc
 FILE: ../../../flutter/shell/common/sk_trace_memory_dump_json.h
+FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
+FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
 FILE: ../../../flutter/shell/common/skp_shader_warmup_unittests.cc
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
