@@ -82,7 +82,8 @@ void testMain() async {
     rc.drawRRect(RRect.fromRectAndRadius(shaderRect, Radius.circular(16)), paint);
     expect(rc.hasArbitraryPaint, isTrue);
     await canvasScreenshot(rc, 'linear_gradient_rounded_rect',
-        region: screenRect);
+        region: screenRect,
+        maxDiffRatePercent: 0.1);
   });
 
   test('Should draw tiled repeated linear gradient with transform.', () async {
