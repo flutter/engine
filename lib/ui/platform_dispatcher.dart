@@ -1319,6 +1319,10 @@ class Locale {
   /// [region](https://github.com/unicode-org/cldr/blob/master/common/validity/region.xml) for
   /// each of languageCode, scriptCode and countryCode respectively.
   ///
+  /// The [languageCode] subtag is optional. When there is no language subtag,
+  /// the parameter should be omitted or set to "und". When not supplied, the
+  /// [languageCode] defaults to "und", an undefined language code.
+  ///
   /// The [countryCode] subtag is optional. When there is no country subtag,
   /// the parameter should be omitted or passed `null` instead of an empty-string.
   ///

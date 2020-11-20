@@ -428,7 +428,7 @@ void main() {
   });
 
   test('PlatformDispatcher.locale returns unknown locale when locales is set to empty list', () {
-    Locale? locale;
+    late Locale locale;
     runZoned(() {
       window.onLocaleChanged = () {
         locale = PlatformDispatcher.instance.locale;
@@ -437,5 +437,6 @@ void main() {
 
     _updateLocales(<String>[]);
     expectEquals(locale, const Locale.fromSubtags());
+    expectEquals(locale.languageCode, 'und');
   });
 }
