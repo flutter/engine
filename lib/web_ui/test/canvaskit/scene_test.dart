@@ -9,6 +9,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import 'common.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -47,5 +49,6 @@ void testMain() {
       final ui.Image sceneImage = await scene.toImage(100, 100);
       expect(sceneImage, isA<CkImage>());
     });
-  });
+  // TODO: https://github.com/flutter/flutter/issues/60040
+  }, skip: isIosSafari);
 }
