@@ -117,13 +117,14 @@ enum {
   [self setLayerContentWithIOSurface:kFlutterSurfaceManagerBackBuffer];
 }
 
+// index better than ioSurfaceNum
 - (void)setLayerContentWithIOSurface:(int)ioSurfaceNum {
   _contentLayer.frame = _containingLayer.bounds;
 
   // The surface is an OpenGL texture, which means it has origin in bottom left corner
   // and needs to be flipped vertically
   _contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
-  NSLog(@"setting the content!");
+  NSLog(@"setting the content from fbo:%lld", (long long)_frameBufferId[ioSurfaceNum]);
   [_contentLayer setContents:(__bridge id)_ioSurface[ioSurfaceNum]];
 }
 
@@ -145,6 +146,7 @@ enum {
 }
 
 - (void)dealloc {
+  NSLog(@"SurfaceM dealloc");
   [_contentLayer removeFromSuperlayer];
   glDeleteFramebuffers(kFlutterSurfaceManagerBufferCount, _frameBufferId);
   glDeleteTextures(kFlutterSurfaceManagerBufferCount, _backingTexture);

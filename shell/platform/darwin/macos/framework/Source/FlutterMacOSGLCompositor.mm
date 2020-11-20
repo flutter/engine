@@ -48,6 +48,7 @@ bool FlutterMacOSGLCompositor::CreateBackingStore(const FlutterBackingStoreConfi
   // Resizes will be co-ordinated by the root CA Layer.
   if (data->is_root_view) {
     auto fboName = [view_controller_.flutterView frameBufferIDForSize:size];
+    NSLog(@"requested a backing store, so we gave %lld", (long long)fboName);
     backing_store_out->open_gl.framebuffer.name = fboName;
   } else {
     FlutterSurfaceManager* surfaceManager =
