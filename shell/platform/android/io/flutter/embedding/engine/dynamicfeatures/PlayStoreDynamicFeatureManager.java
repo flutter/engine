@@ -164,8 +164,8 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     splitInstallManager = SplitInstallManagerFactory.create(context);
     listener = new FeatureInstallStateUpdatedListener();
     splitInstallManager.registerListener(listener);
-    sessionIdToName = new HashMap();
-    sessionIdToLoadingUnitId = new HashMap();
+    sessionIdToName = new HashMap<Integer, String>();
+    sessionIdToLoadingUnitId = new HashMap<Integer, Integer>();
   }
 
   public void setJNI(@NonNull FlutterJNI flutterJNI) {
@@ -293,10 +293,10 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     // performant and robust.
 
     // Search directly in APKs first
-    List<String> apkPaths = new ArrayList();
+    List<String> apkPaths = new ArrayList<String>();
     // If not found in APKs, we check in extracted native libs for the lib directly.
-    List<String> soPaths = new ArrayList();
-    Queue<File> searchFiles = new LinkedList();
+    List<String> soPaths = new ArrayList<String>();
+    Queue<File> searchFiles = new LinkedList<File>();
     searchFiles.add(context.getFilesDir());
     while (!searchFiles.isEmpty()) {
       File file = searchFiles.remove();
