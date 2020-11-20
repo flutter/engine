@@ -1,4 +1,4 @@
-Signature: 2bcf786301c251bcfbb243e8b15239a5
+Signature: ec6c09b075c49af86339fce1284e45dc
 
 UNUSED LICENSES:
 
@@ -2364,7 +2364,6 @@ FILE: ../../../third_party/skia/include/core/SkPixmap.h
 FILE: ../../../third_party/skia/include/core/SkPngChunkReader.h
 FILE: ../../../third_party/skia/include/core/SkPoint3.h
 FILE: ../../../third_party/skia/include/core/SkRSXform.h
-FILE: ../../../third_party/skia/include/core/SkRWBuffer.h
 FILE: ../../../third_party/skia/include/core/SkTraceMemoryDump.h
 FILE: ../../../third_party/skia/include/effects/SkImageSource.h
 FILE: ../../../third_party/skia/include/effects/SkTableColorFilter.h
@@ -2454,7 +2453,6 @@ FILE: ../../../third_party/skia/src/core/SkPictureImageGenerator.cpp
 FILE: ../../../third_party/skia/src/core/SkPixmap.cpp
 FILE: ../../../third_party/skia/src/core/SkPixmapPriv.h
 FILE: ../../../third_party/skia/src/core/SkPoint3.cpp
-FILE: ../../../third_party/skia/src/core/SkRWBuffer.cpp
 FILE: ../../../third_party/skia/src/core/SkRecord.cpp
 FILE: ../../../third_party/skia/src/core/SkRecordPattern.h
 FILE: ../../../third_party/skia/src/core/SkRecords.cpp
