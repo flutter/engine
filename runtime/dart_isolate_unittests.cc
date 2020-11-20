@@ -8,6 +8,7 @@
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
+#include "flutter/runtime/dart_deferred_load_handler.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/isolate_configuration.h"
@@ -52,18 +53,19 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
       IsolateConfiguration::InferFromSettings(settings);
 
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
-      vm_data->GetSettings(),              // settings
-      vm_data->GetIsolateSnapshot(),       // isolate snapshot
-      std::move(task_runners),             // task runners
-      nullptr,                             // window
-      {},                                  // snapshot delegate
-      {},                                  // hint freed delegate
-      {},                                  // io manager
-      {},                                  // unref queue
-      {},                                  // image decoder
-      "main.dart",                         // advisory uri
-      "main",                              // advisory entrypoint,
-      DartIsolate::Flags{},                // flags
+      vm_data->GetSettings(),         // settings
+      vm_data->GetIsolateSnapshot(),  // isolate snapshot
+      std::move(task_runners),        // task runners
+      nullptr,                        // window
+      {},                             // snapshot delegate
+      {},                             // hint freed delegate
+      {},                             // io manager
+      {},                             // unref queue
+      {},                             // image decoder
+      "main.dart",                    // advisory uri
+      "main",                         // advisory entrypoint,
+      DartIsolate::Flags{},           // flags
+      DartDeferredLoadHandler::empty_dart_deferred_load_handler,
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
@@ -92,18 +94,19 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
-      vm_data->GetSettings(),              // settings
-      vm_data->GetIsolateSnapshot(),       // isolate snapshot
-      std::move(task_runners),             // task runners
-      nullptr,                             // window
-      {},                                  // snapshot delegate
-      {},                                  // hint freed delegate
-      {},                                  // io manager
-      {},                                  // unref queue
-      {},                                  // image decoder
-      "main.dart",                         // advisory uri
-      "main",                              // advisory entrypoint
-      DartIsolate::Flags{},                // flags
+      vm_data->GetSettings(),         // settings
+      vm_data->GetIsolateSnapshot(),  // isolate snapshot
+      std::move(task_runners),        // task runners
+      nullptr,                        // window
+      {},                             // snapshot delegate
+      {},                             // hint freed delegate
+      {},                             // io manager
+      {},                             // unref queue
+      {},                             // image decoder
+      "main.dart",                    // advisory uri
+      "main",                         // advisory entrypoint
+      DartIsolate::Flags{},           // flags
+      DartDeferredLoadHandler::empty_dart_deferred_load_handler,
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
@@ -350,18 +353,19 @@ TEST_F(DartIsolateTest, CanCreateServiceIsolate) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
-      vm_data->GetSettings(),              // settings
-      vm_data->GetIsolateSnapshot(),       // isolate snapshot
-      std::move(task_runners),             // task runners
-      nullptr,                             // window
-      {},                                  // snapshot delegate
-      {},                                  // hint freed delegate
-      {},                                  // io manager
-      {},                                  // unref queue
-      {},                                  // image decoder
-      "main.dart",                         // advisory uri
-      "main",                              // advisory entrypoint,
-      DartIsolate::Flags{},                // flags
+      vm_data->GetSettings(),         // settings
+      vm_data->GetIsolateSnapshot(),  // isolate snapshot
+      std::move(task_runners),        // task runners
+      nullptr,                        // window
+      {},                             // snapshot delegate
+      {},                             // hint freed delegate
+      {},                             // io manager
+      {},                             // unref queue
+      {},                             // image decoder
+      "main.dart",                    // advisory uri
+      "main",                         // advisory entrypoint,
+      DartIsolate::Flags{},           // flags
+      DartDeferredLoadHandler::empty_dart_deferred_load_handler,
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint

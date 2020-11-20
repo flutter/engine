@@ -4,6 +4,9 @@
 
 #include "flutter/runtime/runtime_controller.h"
 
+#include <dlfcn.h>
+#include <sstream>
+
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
@@ -11,6 +14,7 @@
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
+#include "flutter/runtime/dart_deferred_load_handler.h"
 #include "flutter/runtime/isolate_configuration.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "third_party/tonic/dart_message_handler.h"
@@ -53,7 +57,9 @@ RuntimeController::RuntimeController(
       platform_data_(std::move(p_platform_data)),
       isolate_create_callback_(p_isolate_create_callback),
       isolate_shutdown_callback_(p_isolate_shutdown_callback),
-      persistent_isolate_data_(std::move(p_persistent_isolate_data)) {}
+      persistent_isolate_data_(std::move(p_persistent_isolate_data)) {
+  DartDeferredLoadHandler::RegisterRuntimeController(this);
+}
 
 RuntimeController::~RuntimeController() {
   FML_DCHECK(Dart_CurrentIsolate() == nullptr);
@@ -353,23 +359,24 @@ bool RuntimeController::LaunchRootIsolate(
 
   auto strong_root_isolate =
       DartIsolate::CreateRunningRootIsolate(
-          settings,                                       //
-          isolate_snapshot_,                              //
-          task_runners_,                                  //
-          std::make_unique<PlatformConfiguration>(this),  //
-          snapshot_delegate_,                             //
-          hint_freed_delegate_,                           //
-          io_manager_,                                    //
-          unref_queue_,                                   //
-          image_decoder_,                                 //
-          advisory_script_uri_,                           //
-          advisory_script_entrypoint_,                    //
-          DartIsolate::Flags{},                           //
-          isolate_create_callback_,                       //
-          isolate_shutdown_callback_,                     //
-          dart_entrypoint,                                //
-          dart_entrypoint_library,                        //
-          std::move(isolate_configuration)                //
+          settings,                                             //
+          isolate_snapshot_,                                    //
+          task_runners_,                                        //
+          std::make_unique<PlatformConfiguration>(this),        //
+          snapshot_delegate_,                                   //
+          hint_freed_delegate_,                                 //
+          io_manager_,                                          //
+          unref_queue_,                                         //
+          image_decoder_,                                       //
+          advisory_script_uri_,                                 //
+          advisory_script_entrypoint_,                          //
+          DartIsolate::Flags{},                                 //
+          DartDeferredLoadHandler::dart_deferred_load_handler,  //
+          isolate_create_callback_,                             //
+          isolate_shutdown_callback_,                           //
+          dart_entrypoint,                                      //
+          dart_entrypoint_library,                              //
+          std::move(isolate_configuration)                      //
           )
           .lock();
 
@@ -413,6 +420,78 @@ std::optional<std::string> RuntimeController::GetRootIsolateServiceID() const {
 
 std::optional<uint32_t> RuntimeController::GetRootIsolateReturnCode() {
   return root_isolate_return_code_;
+}
+
+void RuntimeController::CompleteDartLoadLibrary(
+    intptr_t loading_unit_id,
+    std::string lib_name,
+    std::vector<std::string>& apkPaths,
+    std::string abi) {
+  std::vector<std::string> searchPaths;
+  for (std::string apkPath : apkPaths) {
+    searchPaths.push_back(apkPath + "!/lib/" + abi + "/" + lib_name);
+  }
+
+  // TODO: Switch to using the NativeLibrary class, eg:
+  //
+  //      fml::RefPtr<fml::NativeLibrary> native_lib =
+  //          fml::NativeLibrary::Create(lib_name.c_str());
+  void* handle = nullptr;
+  while (handle == nullptr && !searchPaths.empty()) {
+    std::string path = searchPaths.back();
+    handle = ::dlopen(path.c_str(), RTLD_NOW);
+    searchPaths.pop_back();
+    if (handle == nullptr) {
+      FML_LOG(ERROR) << "Opening lib \"" << lib_name
+                     << "\" failed: " + std::string(::dlerror());
+    }
+  }
+  if (handle == nullptr) {
+    root_isolate_.lock()->LoadLoadingUnitFailure(
+        loading_unit_id, "No lib .so found for provided search paths.", true);
+    return;
+  }
+
+  uint8_t* isolate_data =
+      static_cast<uint8_t*>(::dlsym(handle, DartSnapshot::kIsolateDataSymbol));
+  if (isolate_data == nullptr) {
+    // Mac sometimes requires an underscore prefix.
+    std::stringstream underscore_symbol_name;
+    underscore_symbol_name << "_" << DartSnapshot::kIsolateDataSymbol;
+    isolate_data = static_cast<uint8_t*>(
+        ::dlsym(handle, underscore_symbol_name.str().c_str()));
+    if (isolate_data == nullptr) {
+      // FML_LOG(ERROR) << "Could not resolve symbol in library: "
+      //                << DartSnapshot::kIsolateDataSymbol;
+      root_isolate_.lock()->LoadLoadingUnitFailure(
+          loading_unit_id, "Could not resolve data symbol in library", true);
+      return;
+    }
+  }
+  uint8_t* isolate_instructions = static_cast<uint8_t*>(
+      ::dlsym(handle, DartSnapshot::kIsolateInstructionsSymbol));
+  if (isolate_instructions == nullptr) {
+    // Mac sometimes requires an underscore prefix.
+    std::stringstream underscore_symbol_name;
+    underscore_symbol_name << "_" << DartSnapshot::kIsolateInstructionsSymbol;
+    isolate_instructions = static_cast<uint8_t*>(
+        ::dlsym(handle, underscore_symbol_name.str().c_str()));
+    if (isolate_data == nullptr) {
+      // FML_LOG(ERROR) << "Could not resolve symbol in library: "
+      //                << DartSnapshot::kIsolateInstructionsSymbol;
+      root_isolate_.lock()->LoadLoadingUnitFailure(
+          loading_unit_id, "Could not resolve instructions symbol in library",
+          true);
+      return;
+    }
+  }
+
+  root_isolate_.lock()->LoadLoadingUnit(loading_unit_id, isolate_data,
+                                        isolate_instructions);
+}
+
+Dart_Handle RuntimeController::OnDartLoadLibrary(intptr_t loading_unit_id) {
+  return client_.OnDartLoadLibrary(loading_unit_id);
 }
 
 RuntimeController::Locale::Locale(std::string language_code_,

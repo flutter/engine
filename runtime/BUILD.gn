@@ -37,6 +37,8 @@ group("libdart") {
 
 source_set("runtime") {
   sources = [
+    "dart_deferred_load_handler.cc",
+    "dart_deferred_load_handler.h",
     "dart_isolate.cc",
     "dart_isolate.h",
     "dart_isolate_group_data.cc",
