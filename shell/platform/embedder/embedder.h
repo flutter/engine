@@ -873,6 +873,8 @@ typedef struct {
   size_t struct_size;
   /// The size of the render target the engine expects to render into.
   FlutterSize size;
+  /// This is true if a backing store is requested for the root view.
+  bool is_root_view;
 } FlutterBackingStoreConfig;
 
 typedef enum {

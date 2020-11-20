@@ -276,7 +276,6 @@ void EmbedderConfigBuilder::SetCompositor() {
     return reinterpret_cast<EmbedderTestCompositor*>(user_data)->Present(
         layers,       //
         layers_count  //
-
     );
   };
   project_args_.compositor = &compositor_;
