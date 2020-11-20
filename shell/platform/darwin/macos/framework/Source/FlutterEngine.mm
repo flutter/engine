@@ -519,6 +519,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (uint32_t)engineCallbackOnFBO:(const FlutterFrameInfo*)info {
+  NSLog(@"unex 1");
   CGSize size = CGSizeMake(info->size.width, info->size.height);
   return [_viewController.flutterView frameBufferIDForSize:size];
 }
@@ -529,6 +530,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (bool)engineCallbackOnPresent {
+  NSLog(@"unex 2");
   if (!_mainOpenGLContext) {
     return false;
   }

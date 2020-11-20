@@ -117,11 +117,13 @@
   } else {
     // No resize, schedule commit on platform thread and wait until either done
     // or interrupted by incoming BeginResize
+    NSLog(@"Flushing!");
     [_delegate resizeSynchronizerFlush:self];
     dispatch_async(dispatch_get_main_queue(), [self, cookie = _cookie] {
       std::unique_lock<std::mutex> lock(_mutex);
       if (cookie == _cookie) {
         if (_delegate) {
+          NSLog(@"Committing!");
           [_delegate resizeSynchronizerCommit:self];
         }
         _pendingCommit = NO;
