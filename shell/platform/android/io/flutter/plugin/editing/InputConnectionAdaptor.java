@@ -26,6 +26,8 @@ import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
+import android.view.inputmethod.InputContentInfo;
+import android.os.Bundle;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -483,6 +485,14 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean performPrivateCommand(String action, Bundle data) {
     textInputChannel.performPrivateCommand(mClient, action, data);
     return true;
+  }
+
+  @Override
+  public boolean commitContent(InputContentInfo inputContentInfo, int flags, Bundle opts) {
+      Log.d("HackFlutterEngine", "commitContent: " + inputContentInfo.getLinkUri().toString());
+
+      textInputChannel.commitContent(mClient, inputContentInfo.getLinkUri().toString());
+      return true;
   }
 
   @Override

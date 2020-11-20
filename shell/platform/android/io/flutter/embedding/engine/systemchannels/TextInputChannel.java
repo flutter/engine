@@ -269,6 +269,12 @@ public class TextInputChannel {
         "TextInputClient.performAction", Arrays.asList(inputClientId, "TextInputAction.next"));
   }
 
+  public void commitContent(int inputClientId, String contentUrl) {
+    Log.v(TAG, "Sending 'commitContent' message.");
+    channel.invokeMethod(
+        "TextInputClient.performAction", Arrays.asList(inputClientId, "TextInputAction.commitContent", contentUrl));
+  }
+
   /** Instructs Flutter to execute a "previous" action. */
   public void previous(int inputClientId) {
     Log.v(TAG, "Sending 'previous' message.");
