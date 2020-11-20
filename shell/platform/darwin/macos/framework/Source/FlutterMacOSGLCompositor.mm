@@ -16,30 +16,60 @@
 
 namespace flutter {
 
+struct BackingStoreData {
+  void* surface_manager;
+  bool is_root_view;
+};
+
 FlutterMacOSGLCompositor::FlutterMacOSGLCompositor(FlutterViewController* view_controller)
     : view_controller_(view_controller),
       open_gl_context_(view_controller.flutterView.openGLContext) {}
 
 bool FlutterMacOSGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                                   FlutterBackingStore* backing_store_out) {
-  FlutterSurfaceManager* surfaceManager =
-      [[FlutterSurfaceManager alloc] initWithLayer:view_controller_.flutterView.layer
-                                     openGLContext:open_gl_context_
-                                   numFramebuffers:1];
-
   CGSize size = CGSizeMake(config->size.width, config->size.height);
-  int kFlutterSurfaceManagerFrontBuffer = 0;
-  [surfaceManager recreateIOSurface:kFlutterSurfaceManagerFrontBuffer size:size];
-  [surfaceManager backTextureWithIOSurface:kFlutterSurfaceManagerFrontBuffer size:size];
+  BackingStoreData* data = (BackingStoreData*)malloc(sizeof(BackingStoreData));
+  if (data) {
+    data->is_root_view = config->root_view;
+    data->surface_manager = nullptr;
+  }
 
   backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
   backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
   backing_store_out->open_gl.framebuffer.target = GL_RGBA8;
-  backing_store_out->open_gl.framebuffer.name = [surfaceManager glFrameBufferFrontId];
-  backing_store_out->open_gl.framebuffer.user_data = (__bridge_retained void*)surfaceManager;
+
+  // This is wrong, _flutterView will manage the size for the root layer. For each layer we
+  // shouldn't be interfacing with the FlutterView.
+  //
+  // 1. Root view will ensure the size. Every other view will be a child of the root view
+  // layer.
+  // 2. Root CA Layer -> {Child Layer 1, Child Layer 2, Child Layer 3, ...}
+  //
+  // Resizes will be co-ordinated by the root CA Layer.
+  if (data->is_root_view) {
+    auto fboName = [view_controller_.flutterView frameBufferIDForSize:size];
+    backing_store_out->open_gl.framebuffer.name = fboName;
+  } else {
+    FlutterSurfaceManager* surfaceManager =
+        [[FlutterSurfaceManager alloc] initWithLayer:view_controller_.flutterView.layer
+                                       openGLContext:open_gl_context_
+                                     numFramebuffers:1];
+    data->surface_manager = (__bridge_retained void*)surfaceManager;
+
+    int kFlutterSurfaceManagerFrontBuffer = 0;
+    [surfaceManager recreateIOSurface:kFlutterSurfaceManagerFrontBuffer size:size];
+    [surfaceManager backTextureWithIOSurface:kFlutterSurfaceManagerFrontBuffer size:size];
+    backing_store_out->open_gl.framebuffer.name = [surfaceManager glFrameBufferFrontId];
+  }
+
+  backing_store_out->open_gl.framebuffer.user_data = data;
   backing_store_out->open_gl.framebuffer.destruction_callback = [](void* user_data) {
     if (user_data != nullptr) {
-      CFRelease(user_data);
+      BackingStoreData* data = (BackingStoreData*)user_data;
+      if (data->surface_manager) {
+        CFRelease(data->surface_manager);
+      }
+      free(data);
     }
   };
 
@@ -53,18 +83,29 @@ bool FlutterMacOSGLCompositor::CollectBackingStore(const FlutterBackingStore* ba
 }
 
 bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
+  NSLog(@"Num layers being presented = %u", (unsigned)layers_count);
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
     FlutterBackingStore* backing_store = const_cast<FlutterBackingStore*>(layer->backing_store);
     switch (layer->type) {
       case kFlutterLayerContentTypeBackingStore: {
+        BackingStoreData* data = (BackingStoreData*)(backing_store->open_gl.framebuffer.user_data);
         FlutterSurfaceManager* surfaceManager =
-            (__bridge FlutterSurfaceManager*)backing_store->open_gl.framebuffer.user_data;
+            (__bridge FlutterSurfaceManager*)(data->surface_manager);
 
-        CGSize size = CGSizeMake(layer->size.width, layer->size.height);
-        [view_controller_.flutterView frameBufferIDForSize:size];
-        int kFlutterSurfaceManagerFrontBuffer = 0;
-        [surfaceManager setLayerContentWithIOSurface:kFlutterSurfaceManagerFrontBuffer];
+        if (data->is_root_view) {
+          NSLog(@"root view!!");
+        } else {
+          NSLog(@"other view!!");
+        }
+
+        if (surfaceManager) {
+          int kFlutterSurfaceManagerFrontBuffer = 0;
+          [surfaceManager setLayerContentWithIOSurface:kFlutterSurfaceManagerFrontBuffer];
+        } else {
+          // assert is_root_view
+          [view_controller_.flutterView present];
+        }
         break;
       }
       case kFlutterLayerContentTypePlatformView:

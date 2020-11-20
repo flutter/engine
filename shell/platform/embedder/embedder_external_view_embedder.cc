@@ -119,13 +119,15 @@ SkCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
 }
 
 static FlutterBackingStoreConfig MakeBackingStoreConfig(
-    const SkISize& backing_store_size) {
+    const SkISize& backing_store_size,
+    bool root_view) {
   FlutterBackingStoreConfig config = {};
 
   config.struct_size = sizeof(config);
 
   config.size.width = backing_store_size.width();
   config.size.height = backing_store_size.height();
+  config.root_view = root_view;
 
   return config;
 }
@@ -172,8 +174,8 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
     // directly.
     const auto render_surface_size = external_view->GetRenderSurfaceSize();
 
-    const auto backing_store_config =
-        MakeBackingStoreConfig(render_surface_size);
+    const auto backing_store_config = MakeBackingStoreConfig(
+        render_surface_size, external_view->IsRootView());
 
     // This is where the embedder will create render targets for us. Control
     // flow to the embedder makes the engine susceptible to having the embedder
