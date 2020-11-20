@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import android.os.Build;
+import android.util.SparseArray;
+import android.util.SparseIntArray;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.play.core.splitinstall.SplitInstallException;
@@ -22,7 +24,6 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -164,8 +165,8 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     splitInstallManager = SplitInstallManagerFactory.create(context);
     listener = new FeatureInstallStateUpdatedListener();
     splitInstallManager.registerListener(listener);
-    sessionIdToName = new HashMap<Integer, String>();
-    sessionIdToLoadingUnitId = new HashMap<Integer, Integer>();
+    sessionIdToName = new SparseArray<String>();
+    sessionIdToLoadingUnitId = new SparseIntArray();
   }
 
   public void setJNI(@NonNull FlutterJNI flutterJNI) {
