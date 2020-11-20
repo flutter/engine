@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <string>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
@@ -690,6 +691,93 @@ static bool RunFlutterEngine(
   return true;
 }
 
+const char* GetLocaleStringFromEnvironment() {
+  const char* retval;
+  retval = getenv("LANGUAGE");
+  if ((retval != NULL) && (retval[0] != '\0')) {
+    return retval;
+  }
+  retval = getenv("LC_ALL");
+  if ((retval != NULL) && (retval[0] != '\0')) {
+    return retval;
+  }
+  retval = getenv("LC_MESSAGES");
+  if ((retval != NULL) && (retval[0] != '\0')) {
+    return retval;
+  }
+  retval = getenv("LANG");
+  if ((retval != NULL) && (retval[0] != '\0')) {
+    return retval;
+  }
+
+  return NULL;
+}
+
+// Parse a locale into its components.
+static void ParseLocale(const std::string& locale,
+                        std::string* language,
+                        std::string* territory,
+                        std::string* codeset,
+                        std::string* modifier) {
+  // #include <string>
+  // Locales are in the form "language[_territory][.codeset][@modifier]"
+  std::string::size_type end = locale.size();
+  std::string::size_type modifier_pos = locale.rfind('@');
+  if (modifier_pos != std::string::npos) {
+    *modifier = locale.substr(modifier_pos + 1, end - modifier_pos - 1);
+    end = modifier_pos;
+  } else {
+    *modifier = nullptr;
+  }
+
+  std::string::size_type codeset_pos = locale.rfind('.');
+  if (codeset_pos != std::string::npos) {
+    *codeset = locale.substr(codeset_pos + 1, end - codeset_pos - 1);
+    end = codeset_pos;
+  } else {
+    *codeset = nullptr;
+  }
+
+  std::string::size_type territory_pos = locale.rfind('_');
+  if (territory_pos != std::string::npos) {
+    *territory = locale.substr(territory_pos + 1, end - territory_pos - 1);
+    end = territory_pos;
+  } else {
+    *territory = nullptr;
+  }
+
+  *language = local.substr(0, end);
+}
+
+static void SetUpLocales(FlutterDesktopEngineState* state) {
+  const char* locale_string;
+  locale_string = GetLocaleStringFromEnvironment();
+  if (!locale_string) {
+    locale_string = "C";
+  }
+  std::istringstream locales_stream(locale_string);
+  std::vector<std::unique_ptr<FlutterLocale>> locales;
+  std::string s;
+  while (getline(locales_stream, s, ':')) {
+    locales.push_back(std::make_unique<FlutterLocale>());
+    std::string language, territory, codeset, modifier;
+    ParseLocale(s, &language, &territory, &codeset, &modifier);
+    locales.back()->struct_size = sizeof(FlutterLocale);
+    locales.back()->language_code = language.c_str();
+    locales.back()->country_code = territory.c_str();
+    locales.back()->script_code = codeset.c_str();
+    locales.back()->variant_code = modifier.c_str();
+  }
+  FlutterLocale** locales_array =
+      reinterpret_cast<FlutterLocale**>(&locales[0]);
+  FlutterEngineResult result = FlutterEngineUpdateLocales(
+      state->flutter_engine, const_cast<const FlutterLocale**>(locales_array),
+      locales.size());
+  if (result != kSuccess) {
+    std::cerr << "Failed to set up Flutter locales." << std::endl;
+  }
+}
+
 // Populates |state|'s helper object fields that are common to normal and
 // headless mode.
 //
@@ -713,6 +801,8 @@ static void SetUpCommonEngineState(FlutterDesktopEngineState* state,
   // System channel handler.
   state->platform_handler = std::make_unique<flutter::PlatformHandler>(
       state->internal_plugin_registrar->messenger(), window);
+
+  SetUpLocales(state);
 }
 
 bool FlutterDesktopInit() {
