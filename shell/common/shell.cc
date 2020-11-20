@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/icu_util.h"
 #include "flutter/fml/log_settings.h"
@@ -21,7 +22,6 @@
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/engine.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
@@ -546,6 +546,10 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   engine_ = std::move(engine);
   rasterizer_ = std::move(rasterizer);
   io_manager_ = std::move(io_manager);
+
+  // Set the external view embedder for the rasterizer.
+  auto view_embedder = platform_view_->CreateExternalViewEmbedder();
+  rasterizer_->SetExternalViewEmbedder(view_embedder);
 
   // The weak ptr must be generated in the platform thread which owns the unique
   // ptr.
@@ -1179,6 +1183,22 @@ void Shell::SetNeedsReportTimings(bool value) {
 std::unique_ptr<std::vector<std::string>> Shell::ComputePlatformResolvedLocale(
     const std::vector<std::string>& supported_locale_data) {
   return platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
+}
+
+void Shell::LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                                    const uint8_t* snapshot_data,
+                                    const uint8_t* snapshot_instructions) {
+  engine_->LoadDartDeferredLibrary(loading_unit_id, snapshot_data,
+                                   snapshot_instructions);
+}
+
+void Shell::UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) {
+  engine_->UpdateAssetManager(std::move(asset_manager));
+}
+
+// |Engine::Delegate|
+void Shell::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  platform_view_->RequestDartDeferredLibrary(loading_unit_id);
 }
 
 void Shell::ReportTimings() {

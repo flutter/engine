@@ -33,6 +33,11 @@ class MockDelegate : public PlatformView::Delegate {
   void OnPlatformViewRegisterTexture(std::shared_ptr<Texture> texture) override {}
   void OnPlatformViewUnregisterTexture(int64_t texture_id) override {}
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) override {}
+
+  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                               const uint8_t* snapshot_data,
+                               const uint8_t* snapshot_instructions) override {}
+  void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override {}
 };
 
 }  // namespace
@@ -61,7 +66,7 @@ class MockDelegate : public PlatformView::Delegate {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
-      flutter::IOSSurfaceFactory::Create(flutter::IOSRenderingAPI::kSoftware),
+      /*platform_views_controller=*/nil,
       /*task_runners=*/runners);
 
   id project = OCMClassMock([FlutterDartProject class]);

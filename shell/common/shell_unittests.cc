@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "assets/directory_asset_bundle.h"
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
@@ -21,7 +22,6 @@
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_test.h"
@@ -1001,7 +1001,13 @@ TEST_F(ShellTest,
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 // TODO(https://github.com/flutter/flutter/issues/66056): Deflake on all other
 // platforms
-TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
+TEST_F(ShellTest,
+#if defined(OS_FUCHSIA)
+       DISABLED_SkipAndSubmitFrame
+#else
+       SkipAndSubmitFrame
+#endif
+) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
@@ -1009,8 +1015,11 @@ TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-        external_view_embedder->UpdatePostPrerollResult(
-            PostPrerollResult::kSuccess);
+        if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
+          raster_thread_merger->MergeWithLease(10);
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
+        }
         end_frame_latch.Signal();
       };
   external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
@@ -1033,10 +1042,12 @@ TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
   end_frame_latch.Wait();
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
-  PumpOneFrame(shell.get());
+  // Let the resubmitted frame to run and `GetSubmittedFrameCount` should be
+  // called.
   end_frame_latch.Wait();
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
 
+  PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
 }
 

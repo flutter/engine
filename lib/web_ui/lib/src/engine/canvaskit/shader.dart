@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 abstract class CkShader extends ManagedSkiaObject<SkShader> implements ui.Shader {
@@ -35,7 +35,7 @@ class CkGradientSweep extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
-    return canvasKit.SkShader.MakeSweepGradient(
+    return canvasKit.Shader.MakeSweepGradient(
       center.dx,
       center.dy,
       toSkFloatColorList(colors),
@@ -83,7 +83,7 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
   SkShader createDefault() {
     assert(useCanvasKit);
 
-    return canvasKit.SkShader.MakeLinearGradient(
+    return canvasKit.Shader.MakeLinearGradient(
       toSkPoint(from),
       toSkPoint(to),
       toSkFloatColorList(colors),
@@ -111,7 +111,7 @@ class CkGradientRadial extends CkShader implements ui.Gradient {
   SkShader createDefault() {
     assert(useCanvasKit);
 
-    return canvasKit.SkShader.MakeRadialGradient(
+    return canvasKit.Shader.MakeRadialGradient(
       toSkPoint(center),
       radius,
       toSkFloatColorList(colors),
@@ -142,7 +142,7 @@ class CkGradientConical extends CkShader implements ui.Gradient {
   @override
   SkShader createDefault() {
     assert(useCanvasKit);
-    return canvasKit.SkShader.MakeTwoPointConicalGradient(
+    return canvasKit.Shader.MakeTwoPointConicalGradient(
       toSkPoint(focal),
       focalRadius,
       toSkPoint(center),
@@ -162,15 +162,15 @@ class CkGradientConical extends CkShader implements ui.Gradient {
 class CkImageShader extends CkShader implements ui.ImageShader {
   CkImageShader(
       ui.Image image, this.tileModeX, this.tileModeY, this.matrix4)
-      : _skImage = image as CkImage;
+      : _image = image as CkImage;
 
   final ui.TileMode tileModeX;
   final ui.TileMode tileModeY;
   final Float64List matrix4;
-  final CkImage _skImage;
+  final CkImage _image;
 
   @override
-  SkShader createDefault() => _skImage.skImage.makeShader(
+  SkShader createDefault() => _image.skImage.makeShader(
     toSkTileMode(tileModeX),
     toSkTileMode(tileModeY),
     toSkMatrixFromFloat64(matrix4),

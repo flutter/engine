@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Enable this to print every command applied by a canvas.
@@ -466,12 +466,12 @@ class RecordingCanvas {
       // For Rect/RoundedRect paths use drawRect/drawRRect code paths for
       // DomCanvas optimization.
       SurfacePath sPath = path as SurfacePath;
-      final ui.Rect? rect = sPath.webOnlyPathAsRect;
+      final ui.Rect? rect = sPath.toRect();
       if (rect != null) {
         drawRect(rect, paint);
         return;
       }
-      final ui.RRect? rrect = sPath.webOnlyPathAsRoundedRect;
+      final ui.RRect? rrect = sPath.toRoundedRect();
       if (rrect != null) {
         drawRRect(rrect, paint);
         return;
