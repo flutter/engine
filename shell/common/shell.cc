@@ -1368,13 +1368,16 @@ bool Shell::OnServiceProtocolDumpSkiaMemory(
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
   fml::AutoResetWaitableEvent latch;
-  task_runners_.GetIOTaskRunner()->PostTask(
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetIOTaskRunner(),
       [&response, &latch, io_manager = GetIOManager()]() {
         if (!io_manager) {
+          latch.Signal();
           return;
         }
         auto context = io_manager->GetResourceContext();
         if (!context) {
+          latch.Signal();
           return;
         }
         SkTraceMemoryDumpJson traceMemoryDump;
