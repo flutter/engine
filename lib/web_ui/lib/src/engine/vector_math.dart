@@ -201,6 +201,8 @@ class Matrix4 {
   /// Copy into [arg].
   Matrix4 copyInto(Matrix4 arg) {
     final Float32List argStorage = arg._m4storage;
+    // Start reading from the last element to eliminate range checks
+    // in subsequent reads.
     argStorage[15] = _m4storage[15];
     argStorage[0] = _m4storage[0];
     argStorage[1] = _m4storage[1];
