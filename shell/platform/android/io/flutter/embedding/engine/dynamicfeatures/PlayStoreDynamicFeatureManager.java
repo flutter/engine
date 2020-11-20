@@ -26,7 +26,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 
 /**
@@ -41,8 +40,8 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   private @NonNull Context context;
   // Each request to install a feature module gets a session ID. These maps associate
   // the session ID with the loading unit and module name that was requested.
-  private @NonNull Map<Integer, String> sessionIdToName;
-  private @NonNull Map<Integer, Integer> sessionIdToLoadingUnitId;
+  private @NonNull SparseArray<String> sessionIdToName;
+  private @NonNull SparseIntArray sessionIdToLoadingUnitId;
 
   private FeatureInstallStateUpdatedListener listener;
 
