@@ -858,6 +858,8 @@ typedef struct {
   /// Indicates if this backing store was updated since the last time it was
   /// associated with a presented layer.
   bool did_update;
+  /// Indicates whether this backing store can be cached and re-used.
+  bool is_cacheable;
   union {
     /// The description of the OpenGL backing store.
     FlutterOpenGLBackingStore open_gl;

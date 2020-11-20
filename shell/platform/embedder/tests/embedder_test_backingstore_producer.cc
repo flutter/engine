@@ -72,6 +72,7 @@ bool EmbedderTestBackingStoreProducer::CreateFramebuffer(
 
   backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
   backing_store_out->user_data = surface.get();
+  backing_store_out->is_cacheable = true;
   backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
   backing_store_out->open_gl.framebuffer.target = framebuffer_info.fFormat;
   backing_store_out->open_gl.framebuffer.name = framebuffer_info.fFBOID;
@@ -124,6 +125,7 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
   }
 
   backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
+  backing_store_out->is_cacheable = true;
   backing_store_out->user_data = surface.get();
   backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeTexture;
   backing_store_out->open_gl.texture.target = texture_info.fTarget;
@@ -160,6 +162,7 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware(
   }
 
   backing_store_out->type = kFlutterBackingStoreTypeSoftware;
+  backing_store_out->is_cacheable = true;
   backing_store_out->user_data = surface.get();
   backing_store_out->software.allocation = pixmap.addr();
   backing_store_out->software.row_bytes = pixmap.rowBytes();
