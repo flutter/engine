@@ -144,7 +144,7 @@ void main() {
     // DOM.
     final InputElement input2 =
         document.getElementsByTagName('input')[0] as InputElement;
-    expect(input2.value, 'Text2');
+    expect(input2.value, 'Text3');
   });
 
   testWidgets(
