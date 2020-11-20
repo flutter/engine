@@ -5,9 +5,7 @@
 package io.flutter;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 
 /**
@@ -64,28 +62,16 @@ public final class FlutterInjector {
     instance = null;
   }
 
-  private FlutterInjector(
-      @NonNull FlutterLoader flutterLoader, DynamicFeatureManager dynamicFeatureManager) {
+  private FlutterInjector(@NonNull FlutterLoader flutterLoader) {
     this.flutterLoader = flutterLoader;
-    this.dynamicFeatureManager = dynamicFeatureManager;
   }
 
   private FlutterLoader flutterLoader;
-  private DynamicFeatureManager dynamicFeatureManager;
 
   /** Returns the {@link FlutterLoader} instance to use for the Flutter Android engine embedding. */
   @NonNull
   public FlutterLoader flutterLoader() {
     return flutterLoader;
-  }
-
-  /**
-   * Returns the {@link DynamicFeatureManager} instance to use for the Flutter Android engine
-   * embedding.
-   */
-  @Nullable
-  public DynamicFeatureManager dynamicFeatureManager() {
-    return dynamicFeatureManager;
   }
 
   /**
@@ -96,7 +82,6 @@ public final class FlutterInjector {
    */
   public static final class Builder {
     private FlutterLoader flutterLoader;
-    private DynamicFeatureManager dynamicFeatureManager;
     /**
      * Sets a {@link FlutterLoader} override.
      *
@@ -107,16 +92,10 @@ public final class FlutterInjector {
       return this;
     }
 
-    public Builder setDynamicFeatureManager(@Nullable DynamicFeatureManager dynamicFeatureManager) {
-      this.dynamicFeatureManager = dynamicFeatureManager;
-      return this;
-    }
-
     private void fillDefaults() {
       if (flutterLoader == null) {
         flutterLoader = new FlutterLoader();
       }
-      // DynamicFeatureManager's intended default is null.
     }
 
     /**
@@ -126,7 +105,7 @@ public final class FlutterInjector {
     public FlutterInjector build() {
       fillDefaults();
 
-      return new FlutterInjector(flutterLoader, dynamicFeatureManager);
+      return new FlutterInjector(flutterLoader);
     }
   }
 }

@@ -95,11 +95,6 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (override));
 
   MOCK_METHOD(double, GetDisplayRefreshRate, (), (override));
-
-  MOCK_METHOD(bool,
-              RequestDartDeferredLibrary,
-              (int loading_unit_id),
-              (override));
 };
 
 }  // namespace flutter
