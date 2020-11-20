@@ -1029,6 +1029,21 @@ public class InputConnectionAdaptorTest {
   }
 
   @Test
+  public void testSendKeyEvent_delKeyNotConsumed() {
+    int selStart = 29;
+    ListenableEditingState editable = sampleEditable(selStart, selStart, SAMPLE_RTL_TEXT);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
+
+    for (int i = 0; i < 10; i++) {
+      boolean didConsume = adaptor.sendKeyEvent(downKeyDown);
+      assertFalse(didConsume);
+    }
+    assertEquals(29, Selection.getSelectionStart(editable));
+  }
+
+  @Test
   public void testDoesNotConsumeBackButton() {
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
