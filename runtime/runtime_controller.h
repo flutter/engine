@@ -474,26 +474,36 @@ class RuntimeController : public PlatformConfigurationClient {
   std::optional<uint32_t> GetRootIsolateReturnCode();
 
   //--------------------------------------------------------------------------
-  /// @brief      Loads the dart shared library from disk and into the dart VM
-  ///             based off of the search parameters. When the dart library is
-  ///             loaded successfully, the dart future returned by the
-  ///             originating loadLibrary() call completes.
+  /// @brief      Loads the Dart shared library into the Dart VM. When the
+  ///             Dart library is loaded successfully, the Dart future
+  ///             returned by the originating loadLibrary() call completes.
+  ///
+  ///             The Dart compiler may generate separate shared libraries
+  ///             files called 'loading units' when libraries are imported
+  ///             as deferred. Each of these shared libraries are identified
+  ///             by a unique loading unit id. Callers should dlopen the
+  ///             shared library file and use dlsym to resolve the dart
+  ///             symbols. These symbols can then be passed to this method to
+  ///             be dynamically loaded into the VM.
+  ///
+  ///             This method is paired with a RequestDartDeferredLibrary
+  ///             invocation that provides the embedder with the loading unit id
+  ///             of the deferred library to load.
+  ///
   ///
   /// @param[in]  loading_unit_id  The unique id of the deferred library's
-  ///                              loading unit.
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
   ///
-  /// @param[in]  lib_name         The file name of the .so shared library
-  ///                              file.
+  /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+  ///                              shared library.
   ///
-  /// @param[in]  apkPaths         The paths of the APKs that may or may not
-  ///                              contain the lib_name file.
+  /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+  ///                              unit's shared library.
   ///
-  /// @param[in]  abi              The abi of the library, eg, arm64-v8a
-  ///
-  void CompleteDartLoadLibrary(intptr_t loading_unit_id,
-                               std::string lib_name,
-                               std::vector<std::string>& apkPaths,
-                               std::string abi);
+  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                               const uint8_t* snapshot_data,
+                               const uint8_t* snapshot_instructions);
 
   //--------------------------------------------------------------------------
   /// @brief      Invoked when the dart VM requests that a deferred library
@@ -506,7 +516,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @return     A Dart_Handle that is Dart_Null on success, and a dart error
   ///             on failure.
   ///
-  Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id);
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id);
 
  protected:
   /// Constructor for Mocks.

@@ -422,76 +422,16 @@ std::optional<uint32_t> RuntimeController::GetRootIsolateReturnCode() {
   return root_isolate_return_code_;
 }
 
-void RuntimeController::CompleteDartLoadLibrary(
+void RuntimeController::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
-    std::string lib_name,
-    std::vector<std::string>& apkPaths,
-    std::string abi) {
-  std::vector<std::string> searchPaths;
-  for (std::string apkPath : apkPaths) {
-    searchPaths.push_back(apkPath + "!/lib/" + abi + "/" + lib_name);
-  }
-
-  // TODO: Switch to using the NativeLibrary class, eg:
-  //
-  //      fml::RefPtr<fml::NativeLibrary> native_lib =
-  //          fml::NativeLibrary::Create(lib_name.c_str());
-  void* handle = nullptr;
-  while (handle == nullptr && !searchPaths.empty()) {
-    std::string path = searchPaths.back();
-    handle = ::dlopen(path.c_str(), RTLD_NOW);
-    searchPaths.pop_back();
-    if (handle == nullptr) {
-      FML_LOG(ERROR) << "Opening lib \"" << lib_name
-                     << "\" failed: " + std::string(::dlerror());
-    }
-  }
-  if (handle == nullptr) {
-    root_isolate_.lock()->LoadLoadingUnitFailure(
-        loading_unit_id, "No lib .so found for provided search paths.", true);
-    return;
-  }
-
-  uint8_t* isolate_data =
-      static_cast<uint8_t*>(::dlsym(handle, DartSnapshot::kIsolateDataSymbol));
-  if (isolate_data == nullptr) {
-    // Mac sometimes requires an underscore prefix.
-    std::stringstream underscore_symbol_name;
-    underscore_symbol_name << "_" << DartSnapshot::kIsolateDataSymbol;
-    isolate_data = static_cast<uint8_t*>(
-        ::dlsym(handle, underscore_symbol_name.str().c_str()));
-    if (isolate_data == nullptr) {
-      // FML_LOG(ERROR) << "Could not resolve symbol in library: "
-      //                << DartSnapshot::kIsolateDataSymbol;
-      root_isolate_.lock()->LoadLoadingUnitFailure(
-          loading_unit_id, "Could not resolve data symbol in library", true);
-      return;
-    }
-  }
-  uint8_t* isolate_instructions = static_cast<uint8_t*>(
-      ::dlsym(handle, DartSnapshot::kIsolateInstructionsSymbol));
-  if (isolate_instructions == nullptr) {
-    // Mac sometimes requires an underscore prefix.
-    std::stringstream underscore_symbol_name;
-    underscore_symbol_name << "_" << DartSnapshot::kIsolateInstructionsSymbol;
-    isolate_instructions = static_cast<uint8_t*>(
-        ::dlsym(handle, underscore_symbol_name.str().c_str()));
-    if (isolate_data == nullptr) {
-      // FML_LOG(ERROR) << "Could not resolve symbol in library: "
-      //                << DartSnapshot::kIsolateInstructionsSymbol;
-      root_isolate_.lock()->LoadLoadingUnitFailure(
-          loading_unit_id, "Could not resolve instructions symbol in library",
-          true);
-      return;
-    }
-  }
-
-  root_isolate_.lock()->LoadLoadingUnit(loading_unit_id, isolate_data,
-                                        isolate_instructions);
+    const uint8_t* snapshot_data,
+    const uint8_t* snapshot_instructions) {
+  root_isolate_.lock()->LoadLoadingUnit(loading_unit_id, snapshot_data,
+                                        snapshot_instructions);
 }
 
-Dart_Handle RuntimeController::OnDartLoadLibrary(intptr_t loading_unit_id) {
-  return client_.OnDartLoadLibrary(loading_unit_id);
+void RuntimeController::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  return client_.RequestDartDeferredLibrary(loading_unit_id);
 }
 
 RuntimeController::Locale::Locale(std::string language_code_,
