@@ -25,8 +25,8 @@ void DartDeferredLoadHandler::RegisterRuntimeController(
 Dart_Handle DartDeferredLoadHandler::OnDartLoadLibrary(
     intptr_t loading_unit_id) {
   if (runtime_controller_ != nullptr)
-    return static_cast<RuntimeController*>(runtime_controller_)
-        ->OnDartLoadLibrary(loading_unit_id);
+    static_cast<RuntimeController*>(runtime_controller_)
+        ->RequestDartDeferredLibrary(loading_unit_id);
   return Dart_Null();
 }
 

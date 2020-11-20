@@ -862,11 +862,8 @@ class Engine final : public RuntimeDelegate,
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
 
-  // The Following commented out code connects into part 2 of the split AOT
-  // feature. Left commented out until it lands:
-
   // // |RuntimeDelegate|
-  // void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 
   void SetNeedsReportTimings(bool value) override;
 
