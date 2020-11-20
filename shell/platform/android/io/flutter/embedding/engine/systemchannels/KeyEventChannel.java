@@ -225,16 +225,29 @@ public class KeyEventChannel {
      * The unique id for this Flutter key event.
      *
      * <p>This id is used to identify pending events when results are received from the framework.
-     * This ID does not come from Android.
+     * This ID does not come from Android, but instead is derived from attributes of this event that
+     * can be recognized if the event is re-dispatched.
      */
     public final long eventId;
 
-    public FlutterKeyEvent(@NonNull KeyEvent androidKeyEvent, long eventId) {
-      this(androidKeyEvent, null, eventId);
+    /**
+     * Creates a unique id for a Flutter key event from an Android KeyEvent.
+     *
+     * <p>This id is used to identify pending key events when results are received from the
+     * framework.
+     */
+    public static long computeEventId(@NonNull KeyEvent event) {
+      return (event.getEventTime() & 0xffffffff)
+          | ((long) (event.getAction() == KeyEvent.ACTION_DOWN ? 0x1 : 0x0)) << 32
+          | ((long) (event.getScanCode() & 0xffff)) << 33;
+    }
+
+    public FlutterKeyEvent(@NonNull KeyEvent androidKeyEvent) {
+      this(androidKeyEvent, null);
     }
 
     public FlutterKeyEvent(
-        @NonNull KeyEvent androidKeyEvent, @Nullable Character complexCharacter, long eventId) {
+        @NonNull KeyEvent androidKeyEvent, @Nullable Character complexCharacter) {
       this(
           androidKeyEvent.getDeviceId(),
           androidKeyEvent.getFlags(),
@@ -246,7 +259,7 @@ public class KeyEventChannel {
           androidKeyEvent.getMetaState(),
           androidKeyEvent.getSource(),
           androidKeyEvent.getRepeatCount(),
-          eventId);
+          computeEventId(androidKeyEvent));
     }
 
     public FlutterKeyEvent(

@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
+import io.flutter.embedding.engine.systemchannels.KeyEventChannel.FlutterKeyEvent;
 import io.flutter.plugin.editing.TextInputPlugin;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayDeque;
@@ -33,7 +34,6 @@ import java.util.Map.Entry;
  */
 public class AndroidKeyProcessor {
   private static final String TAG = "AndroidKeyProcessor";
-  private static long eventIdSerial = 0;
 
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final TextInputPlugin textInputPlugin;
@@ -50,8 +50,8 @@ public class AndroidKeyProcessor {
    * <p>It is possible that that in the middle of the async round trip, the focus chain could
    * change, and instead of the native widget that was "next" when the event was fired getting the
    * event, it may be the next widget when the event is synthesized that gets it. In practice, this
-   * shouldn't be a huge problem, as this is an unlikely occurance to happen without user input, and
-   * it may actually be desired behavior, but it is possible.
+   * shouldn't be a huge problem, as this is an unlikely occurrence to happen without user input,
+   * and it may actually be desired behavior, but it is possible.
    *
    * @param view takes the activity to use for re-dispatching of events that were not handled by the
    *     framework.
@@ -88,29 +88,47 @@ public class AndroidKeyProcessor {
    * @return true if the key event should not be propagated to other Android components. Delayed
    *     synthesis events will return false, so that other components may handle them.
    */
-  public boolean onKeyEvent(@NonNull KeyEvent keyEvent) {
-    int action = keyEvent.getAction();
-    if (action != KeyEvent.ACTION_DOWN && action != KeyEvent.ACTION_UP) {
+  public boolean onKeyEvent(@NonNull KeyEvent event) {
+    int action = event.getAction();
+    if (action != event.ACTION_DOWN && action != event.ACTION_UP) {
       // There is theoretically a KeyEvent.ACTION_MULTIPLE, but theoretically
       // that isn't sent by Android anymore, so this is just for protection in
       // case the theory is wrong.
       return false;
     }
-    if (eventResponder.dispatchingKeyEvent) {
-      // Don't handle it if it is from our own delayed event dispatch.
+    long eventId = FlutterKeyEvent.computeEventId(event);
+    if (eventResponder.isHeadEvent(eventId)) {
+      // If the event is at the head of the queue of pending events we've seen,
+      // and has the same id, then we know that this is a re-dispatched event, and
+      // we shouldn't respond to it, but we should remove it from tracking now.
+      eventResponder.removePendingEvent(eventId);
       return false;
     }
 
-    Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());
+    Character complexCharacter = applyCombiningCharacterToBaseCharacter(event.getUnicodeChar());
     KeyEventChannel.FlutterKeyEvent flutterEvent =
-        new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter, eventIdSerial++);
+        new KeyEventChannel.FlutterKeyEvent(event, complexCharacter);
+
+    eventResponder.addEvent(flutterEvent.eventId, event);
     if (action == KeyEvent.ACTION_DOWN) {
       keyEventChannel.keyDown(flutterEvent);
     } else {
       keyEventChannel.keyUp(flutterEvent);
     }
-    eventResponder.addEvent(flutterEvent.eventId, keyEvent);
     return true;
+  }
+
+  /**
+   * Returns whether or not the given event is currently being processed by this key processor. This
+   * is used to determine if a new key event sent to the {@link InputConnectionAdaptor} originates
+   * from a hardware key event, or a soft keyboard editing event.
+   *
+   * @param event the event to check for being the current event.
+   * @return
+   */
+  public boolean isCurrentEvent(@NonNull KeyEvent event) {
+    long id = FlutterKeyEvent.computeEventId(event);
+    return eventResponder.isHeadEvent(id);
   }
 
   /**
@@ -179,7 +197,6 @@ public class AndroidKeyProcessor {
     final Deque<Entry<Long, KeyEvent>> pendingEvents = new ArrayDeque<Entry<Long, KeyEvent>>();
     @NonNull private final View view;
     @NonNull private final TextInputPlugin textInputPlugin;
-    boolean dispatchingKeyEvent = false;
 
     public EventResponder(@NonNull View view, @NonNull TextInputPlugin textInputPlugin) {
       this.view = view;
@@ -202,6 +219,25 @@ public class AndroidKeyProcessor {
       return pendingEvents.removeFirst().getValue();
     }
 
+    private KeyEvent findPendingEvent(long id) {
+      if (pendingEvents.size() == 0) {
+        throw new AssertionError(
+            "Event response received when no events are in the queue. Received id " + id);
+      }
+      if (pendingEvents.getFirst().getKey() != id) {
+        throw new AssertionError(
+            "Event response received out of order. Should have seen event "
+                + pendingEvents.getFirst().getKey()
+                + " first. Instead, received "
+                + id);
+      }
+      return pendingEvents.getFirst().getValue();
+    }
+
+    private boolean isHeadEvent(long id) {
+      return pendingEvents.size() > 0 && pendingEvents.getFirst().getKey() == id;
+    }
+
     /**
      * Called whenever the framework responds that a given key event was handled by the framework.
      *
@@ -222,18 +258,11 @@ public class AndroidKeyProcessor {
      */
     @Override
     public void onKeyEventNotHandled(long id) {
-      dispatchKeyEvent(removePendingEvent(id));
+      dispatchKeyEvent(findPendingEvent(id), id);
     }
 
     /** Adds an Android key event with an id to the event responder to wait for a response. */
     public void addEvent(long id, @NonNull KeyEvent event) {
-      if (pendingEvents.size() > 0 && pendingEvents.getFirst().getKey() >= id) {
-        throw new AssertionError(
-            "New events must have ids greater than the most recent pending event. New id "
-                + id
-                + " is less than or equal to the last event id of "
-                + pendingEvents.getFirst().getKey());
-      }
       pendingEvents.addLast(new SimpleImmutableEntry<Long, KeyEvent>(id, event));
       if (pendingEvents.size() > MAX_PENDING_EVENTS) {
         Log.e(
@@ -250,27 +279,21 @@ public class AndroidKeyProcessor {
      *
      * @param event the event to be dispatched to the activity.
      */
-    public void dispatchKeyEvent(KeyEvent event) {
+    public void dispatchKeyEvent(KeyEvent event, long id) {
       // If the textInputPlugin is still valid and accepting text, then we'll try
       // and send the key event to it, assuming that if the event can be sent,
       // that it has been handled.
-      if (textInputPlugin.getLastInputConnection() != null
-          && textInputPlugin.getInputMethodManager().isAcceptingText()) {
-        dispatchingKeyEvent = true;
-        boolean handled = textInputPlugin.getLastInputConnection().sendKeyEvent(event);
-        dispatchingKeyEvent = false;
-        if (handled) {
-          return;
-        }
+      if (textInputPlugin.getInputMethodManager().isAcceptingText()
+          && textInputPlugin.getLastInputConnection() != null
+          && textInputPlugin.getLastInputConnection().sendKeyEvent(event)) {
+        // The event was handled, so we can remove it from the queue.
+        removePendingEvent(id);
+        return;
       }
 
       // Since the framework didn't handle it, dispatch the event again.
       if (view != null) {
-        // Turn on dispatchingKeyEvent so that we don't dispatch to ourselves and
-        // send it to the framework again.
-        dispatchingKeyEvent = true;
         view.getRootView().dispatchKeyEvent(event);
-        dispatchingKeyEvent = false;
       }
     }
   }

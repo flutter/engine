@@ -62,7 +62,7 @@ public class KeyEventChannelTest {
 
     KeyEvent event = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
     KeyEventChannel.FlutterKeyEvent flutterKeyEvent =
-        new KeyEventChannel.FlutterKeyEvent(event, null, 10);
+        new KeyEventChannel.FlutterKeyEvent(event, null);
     keyEventChannel.keyDown(flutterKeyEvent);
     ArgumentCaptor<ByteBuffer> byteBufferArgumentCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
     ArgumentCaptor<BinaryMessenger.BinaryReply> replyArgumentCaptor =
@@ -78,7 +78,7 @@ public class KeyEventChannelTest {
     // Simulate a reply, and see that it is handled.
     sendReply(true, replyArgumentCaptor.getValue());
     assertTrue(handled[0]);
-    assertEquals(10, handledId[0]);
+    assertEquals(KeyEventChannel.FlutterKeyEvent.computeEventId(event), handledId[0]);
   }
 
   @Test
@@ -103,7 +103,7 @@ public class KeyEventChannelTest {
 
     KeyEvent event = new FakeKeyEvent(KeyEvent.ACTION_UP, 65);
     KeyEventChannel.FlutterKeyEvent flutterKeyEvent =
-        new KeyEventChannel.FlutterKeyEvent(event, null, 10);
+        new KeyEventChannel.FlutterKeyEvent(event, null);
     keyEventChannel.keyUp(flutterKeyEvent);
     ArgumentCaptor<ByteBuffer> byteBufferArgumentCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
     ArgumentCaptor<BinaryMessenger.BinaryReply> replyArgumentCaptor =
@@ -119,6 +119,6 @@ public class KeyEventChannelTest {
     // Simulate a reply, and see that it is handled.
     sendReply(true, replyArgumentCaptor.getValue());
     assertTrue(handled[0]);
-    assertEquals(10, handledId[0]);
+    assertEquals(KeyEventChannel.FlutterKeyEvent.computeEventId(event), handledId[0]);
   }
 }
