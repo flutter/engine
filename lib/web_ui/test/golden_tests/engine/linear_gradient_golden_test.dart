@@ -38,7 +38,8 @@ void testMain() async {
     rc.drawRect(shaderRect, paint);
     expect(rc.hasArbitraryPaint, isTrue);
     await canvasScreenshot(rc, 'linear_gradient_rect',
-        region: screenRect);
+        region: screenRect,
+        maxDiffRatePercent: 0.01);
   });
 
   test('Should draw linear gradient with transform.', () async {
@@ -65,7 +66,8 @@ void testMain() async {
     }
     expect(rc.hasArbitraryPaint, isTrue);
     await canvasScreenshot(rc, 'linear_gradient_oval_matrix',
-        region: screenRect);
+        region: screenRect,
+        maxDiffRatePercent: 0.2);
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/50010
@@ -80,7 +82,7 @@ void testMain() async {
     rc.drawRRect(RRect.fromRectAndRadius(shaderRect, Radius.circular(16)), paint);
     expect(rc.hasArbitraryPaint, isTrue);
     await canvasScreenshot(rc, 'linear_gradient_rounded_rect',
-        region: screenRect, write: true);
+        region: screenRect);
   });
 
   test('Should draw tiled repeated linear gradient with transform.', () async {
