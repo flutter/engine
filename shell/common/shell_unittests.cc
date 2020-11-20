@@ -2035,8 +2035,7 @@ TEST_F(ShellTest, OnServiceProtocolDumpSkiaMemoryWorks) {
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);
-  std::string expected_json =
-      "{\"type\":\"DumpSkiaMemory\",\"hasContext\":false}";
+  std::string expected_json = "{\"type\":\"DumpSkiaMemory\"}";
   std::string actual_json = buffer.GetString();
   ASSERT_EQ(actual_json, expected_json);
 
