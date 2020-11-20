@@ -123,6 +123,7 @@ enum {
   // The surface is an OpenGL texture, which means it has origin in bottom left corner
   // and needs to be flipped vertically
   _contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
+  NSLog(@"setting the content!");
   [_contentLayer setContents:(__bridge id)_ioSurface[ioSurfaceNum]];
 }
 
