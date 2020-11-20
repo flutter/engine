@@ -45,7 +45,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
   void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<flutter::SurfaceFrame> frame) override {
+                   std::unique_ptr<flutter::SurfaceFrame> frame,
+                   const std::shared_ptr<fml::SyncSwitch>&
+                       gpu_disable_sync_switch) override {
     return;
   }
 
@@ -102,6 +104,13 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
       const std::vector<std::string>& supported_locale_data) {
     return nullptr;
   }
+  // |flutter::PlatformView::Delegate|
+  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                               const uint8_t* snapshot_data,
+                               const uint8_t* snapshot_instructions) {}
+  // |flutter::PlatformView::Delegate|
+  void UpdateAssetManager(
+      std::shared_ptr<flutter::AssetManager> asset_manager) {}
 
   flutter::Surface* surface() const { return surface_.get(); }
   flutter::PlatformMessage* message() const { return message_.get(); }
