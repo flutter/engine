@@ -8,6 +8,7 @@
 
 #include "flutter/shell/platform/embedder/embedder_layers.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
+#include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -263,8 +264,12 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
   // Hold all rendered layers in the render target cache for one frame to
   // see if they may be reused next frame.
   for (auto& render_target : matched_render_targets) {
-    render_target_cache_.CacheRenderTarget(render_target.first,
-                                           std::move(render_target.second));
+    const FlutterBackingStore* backing_store =
+        render_target.second->GetBackingStore();
+    if (SAFE_ACCESS(backing_store, is_cacheable, true)) {
+      render_target_cache_.CacheRenderTarget(render_target.first,
+                                             std::move(render_target.second));
+    }
   }
 
   frame->Submit();

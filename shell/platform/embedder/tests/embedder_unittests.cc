@@ -552,6 +552,7 @@ TEST_F(EmbedderTest,
           FlutterBackingStore backing_store = *layers[0]->backing_store;
           backing_store.type = kFlutterBackingStoreTypeSoftware;
           backing_store.did_update = true;
+          backing_store.is_cacheable = true;
           backing_store.software.height = 600;
 
           FlutterLayer layer = {};
@@ -585,6 +586,7 @@ TEST_F(EmbedderTest,
           FlutterBackingStore backing_store = *layers[2]->backing_store;
           backing_store.type = kFlutterBackingStoreTypeSoftware;
           backing_store.did_update = true;
+          backing_store.is_cacheable = true;
           backing_store.software.height = 600;
 
           FlutterLayer layer = {};
@@ -618,6 +620,7 @@ TEST_F(EmbedderTest,
           FlutterBackingStore backing_store = *layers[4]->backing_store;
           backing_store.type = kFlutterBackingStoreTypeSoftware;
           backing_store.did_update = true;
+          backing_store.is_cacheable = true;
           backing_store.software.height = 600;
 
           FlutterLayer layer = {};
@@ -862,6 +865,7 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
           FlutterBackingStore backing_store = *layers[0]->backing_store;
           backing_store.type = kFlutterBackingStoreTypeSoftware;
           backing_store.did_update = true;
+          backing_store.is_cacheable = true;
 
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
@@ -894,6 +898,7 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
           FlutterBackingStore backing_store = *layers[2]->backing_store;
           backing_store.type = kFlutterBackingStoreTypeSoftware;
           backing_store.did_update = true;
+          backing_store.is_cacheable = true;
 
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
