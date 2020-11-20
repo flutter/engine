@@ -287,6 +287,7 @@ class InputConnectionAdaptor extends BaseInputConnection
 
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
+    Log.w(TAG, "Received " + (event.getAction() == KeyEvent.ACTION_DOWN ? "down" : "up") + " event for " + Character.getName(event.getUnicodeChar()));
     // Give the key processor a chance to process this event.  It will send it
     // to the framework to be handled and return true. If the framework ends up
     // not handling it, the processor will re-send the event, this time
@@ -296,21 +297,22 @@ class InputConnectionAdaptor extends BaseInputConnection
     }
 
     if (event.getAction() == KeyEvent.ACTION_DOWN) {
-      if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
-        int selStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
-        int selEnd = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
-        if (selStart == selEnd && selStart > 0) {
-          // Extend selection to left of the last character
-          selStart = flutterTextUtils.getOffsetBefore(mEditable, selStart);
-        }
-        if (selEnd > selStart) {
-          // Delete the selection.
-          Selection.setSelection(mEditable, selStart);
-          mEditable.delete(selStart, selEnd);
-          return true;
-        }
-        return false;
-      } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
+      // if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
+      //   int selStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
+      //   int selEnd = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
+      //   if (selStart == selEnd && selStart > 0) {
+      //     // Extend selection to left of the last character
+      //     selStart = flutterTextUtils.getOffsetBefore(mEditable, selStart);
+      //   }
+      //   if (selEnd > selStart) {
+      //     // Delete the selection.
+      //     Selection.setSelection(mEditable, selStart);
+      //     mEditable.delete(selStart, selEnd);
+      //     return true;
+      //   }
+      //   return false;
+      // } else
+      if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
         int selStart = Selection.getSelectionStart(mEditable);
         int selEnd = Selection.getSelectionEnd(mEditable);
         if (selStart == selEnd && !event.isShiftPressed()) {
