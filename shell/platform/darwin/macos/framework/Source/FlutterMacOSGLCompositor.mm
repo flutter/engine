@@ -96,14 +96,12 @@ bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layer
 
         if (data->is_root_view) {
           NSLog(@"root view!!");
-          [view_controller_.flutterView present];
-          return true;
         } else {
           NSLog(@"other view!!");
           int kFlutterSurfaceManagerFrontBuffer = 0;
           [surfaceManager setLayerContentWithIOSurface:kFlutterSurfaceManagerFrontBuffer];
-          return present_callback_();
         }
+        break;
       }
       case kFlutterLayerContentTypePlatformView:
         // Add functionality in follow up PR.
@@ -111,7 +109,7 @@ bool FlutterMacOSGLCompositor::Present(const FlutterLayer** layers, size_t layer
         break;
     };
   }
-  return false;
+  return present_callback_();
 }
 
 void FlutterMacOSGLCompositor::SetPresentCallback(
