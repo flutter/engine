@@ -26,13 +26,15 @@ void testMain() async {
       {Rect paintRect = const Rect.fromLTRB(50, 50, 300, 300),
       Rect shaderRect = const Rect.fromLTRB(50, 50, 300, 300),
       bool write = false,
+      double maxDiffRatePercent = 0,
       Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
     final RecordingCanvas rc = RecordingCanvas(region);
     final Paint paint = Paint()..shader = shader;
     final Path path = Path();
     path.addRect(paintRect);
     rc.drawPath(path, paint);
-    await canvasScreenshot(rc, fileName, write: write, region: region);
+    await canvasScreenshot(rc, fileName, write: write, region: region,
+        maxDiffRatePercent: maxDiffRatePercent);
   }
 
   test('Should draw centered radial gradient.', () async {
@@ -47,7 +49,8 @@ void testMain() async {
               const Color.fromARGB(255, 0, 0, 0),
               const Color.fromARGB(255, 0, 0, 255)
             ]),
-        shaderRect: shaderRect);
+        shaderRect: shaderRect,
+        maxDiffRatePercent: 0.2);
   });
 
   test('Should draw right bottom centered radial gradient.', () async {
@@ -59,7 +62,8 @@ void testMain() async {
           const Color.fromARGB(255, 0, 0, 0),
           const Color.fromARGB(255, 0, 0, 255)
         ]),
-        shaderRect: shaderRect);
+        shaderRect: shaderRect,
+        maxDiffRatePercent: 0.3);
   });
 
   test('Should draw with radial gradient with TileMode.clamp.', () async {
@@ -76,7 +80,8 @@ void testMain() async {
             ],
             <double>[0.0, 1.0],
             TileMode.clamp),
-        shaderRect: shaderRect);
+        shaderRect: shaderRect,
+        maxDiffRatePercent: 0.2);
   });
 
   const List<Color> colors = <Color>[
