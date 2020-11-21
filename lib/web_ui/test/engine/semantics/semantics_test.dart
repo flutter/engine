@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
-@TestOn('chrome')
+@TestOn('chrome || safari')
 // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
 
 import 'dart:async';
@@ -378,11 +378,17 @@ void _testContainer() {
     final html.Element container =
         html.document.querySelector('flt-semantics-container');
 
-    expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
-    expect(parentElement.style.transformOrigin, '0px 0px 0px');
-    expect(container.style.transform, 'translate(-10px, -10px)');
-    expect(container.style.transformOrigin, '0px 0px 0px');
-
+    if (isDesktop) {
+      expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
+      expect(parentElement.style.transformOrigin, '0px 0px 0px');
+      expect(container.style.transform, 'translate(-10px, -10px)');
+      expect(container.style.transformOrigin, '0px 0px 0px');
+    } else {
+      expect(parentElement.style.top, '20px');
+      expect(parentElement.style.left, '20px');
+      expect(container.style.top, '-10px');
+      expect(container.style.left, '-10px');
+    }
     semantics().semanticsEnabled = false;
   },
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
@@ -412,10 +418,8 @@ void _testVerticalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.webkit ||
-          browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.edge);
 
   test('scrollable node with children has a container node', () async {
     semantics()
@@ -451,10 +455,8 @@ void _testVerticalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.webkit ||
-          browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.edge);
 
   test('scrollable node dispatches scroll events', () async {
     final StreamController<int> idLogController = StreamController<int>();
@@ -495,7 +497,7 @@ void _testVerticalScrolling() {
       childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3]),
     );
 
-    for (int id = 1; id <= 3; id++) {
+    for (int id = 1; id <= 5; id++) {
       updateNode(
         builder,
         id: id,
@@ -520,29 +522,34 @@ void _testVerticalScrolling() {
     expect(scrollable, isNotNull);
 
     // When there's more content than the available size the neutral scrollTop
-    // is greater than 0 with a maximum of 10.
-    expect(scrollable.scrollTop, 10);
+    // is greater than 0 with a maximum of 10 or 9.
+    int browserMaxScrollDiff = 0;
+    // The max scroll value is `9` for Safari Desktop and `10` for other
+    // browsers.
+    if (browserEngine == BrowserEngine.webkit &&
+        operatingSystem == OperatingSystem.macOs) {
+      browserMaxScrollDiff = 1;
+    }
+
+    expect(scrollable.scrollTop, 10 - browserMaxScrollDiff);
 
     scrollable.scrollTop = 20;
     expect(scrollable.scrollTop, 20);
     expect(await idLog.first, 0);
     expect(await actionLog.first, ui.SemanticsAction.scrollUp);
     // Engine semantics returns scroll top back to neutral.
-    expect(scrollable.scrollTop, 10);
+    expect(scrollable.scrollTop, 10 - browserMaxScrollDiff);
 
     scrollable.scrollTop = 5;
-    expect(scrollable.scrollTop, 5);
+    expect(scrollable.scrollTop, 5 - browserMaxScrollDiff);
     expect(await idLog.first, 0);
     expect(await actionLog.first, ui.SemanticsAction.scrollDown);
     // Engine semantics returns scroll top back to neutral.
-    expect(scrollable.scrollTop, 10);
 
     semantics().semanticsEnabled = false;
   },
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-      skip: browserEngine == BrowserEngine.webkit ||
-          browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.edge);
 }
 
 void _testHorizontalScrolling() {
@@ -568,10 +575,8 @@ void _testHorizontalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.webkit ||
-          browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.edge);
 
   test('scrollable node with children has a container node', () async {
     semantics()
@@ -607,10 +612,8 @@ void _testHorizontalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.webkit ||
-          browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.edge);
 
   test('scrollable node dispatches scroll events', () async {
     final SemanticsActionLogger logger = SemanticsActionLogger();
@@ -658,28 +661,33 @@ void _testHorizontalScrolling() {
 
     // When there's more content than the available size the neutral scrollTop
     // is greater than 0 with a maximum of 10.
-    expect(scrollable.scrollLeft, 10);
+    int browserMaxScrollDiff = 0;
+    // The max scroll value is `9` for Safari Desktop and `10` for other
+    // browsers.
+    if (browserEngine == BrowserEngine.webkit &&
+        operatingSystem == OperatingSystem.macOs) {
+      browserMaxScrollDiff = 1;
+    }
+    expect(scrollable.scrollLeft, 10 - browserMaxScrollDiff);
 
     scrollable.scrollLeft = 20;
     expect(scrollable.scrollLeft, 20);
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.scrollLeft);
     // Engine semantics returns scroll position back to neutral.
-    expect(scrollable.scrollLeft, 10);
+    expect(scrollable.scrollLeft, 10 - browserMaxScrollDiff);
 
     scrollable.scrollLeft = 5;
-    expect(scrollable.scrollLeft, 5);
+    expect(scrollable.scrollLeft, 5 - browserMaxScrollDiff);
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.scrollRight);
     // Engine semantics returns scroll top back to neutral.
-    expect(scrollable.scrollLeft, 10);
+    expect(scrollable.scrollLeft, 10 - browserMaxScrollDiff);
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.webkit ||
-          browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.edge);
 }
 
 void _testIncrementables() {
@@ -878,7 +886,7 @@ void _testTextField() {
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 
     semantics().semanticsEnabled = false;
-  }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+  },  // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
       skip: (browserEngine != BrowserEngine.blink));
@@ -1197,10 +1205,8 @@ void _testTappable() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.webkit ||
-          browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.edge);
 }
 
 void _testImage() {
