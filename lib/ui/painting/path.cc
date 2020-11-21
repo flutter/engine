@@ -98,7 +98,7 @@ void CanvasPath::updatePathVolatility() {
        it != last;) {
     auto path = *it;
     path->frame_count++;
-    if (path->frame_count >= 2) {
+    if (path->frame_count >= number_of_frames_until_non_volatile) {
       path->path_.setIsVolatile(false);
       path->tracking_volatility = false;
       it = volatile_paths_.erase(it);

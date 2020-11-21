@@ -116,6 +116,11 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
+  // Called by the shell at the end of a frame after notifying Dart about idle
+  // time.
+  //
+  // This method will flip the volatility bit to false for any paths that have
+  // survived the |number_of_frames_until_non_volatile|.
   static void updatePathVolatility();
 
   virtual void ReleaseDartWrappableReference() const override;
@@ -129,12 +134,14 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
   CanvasPath();
 
+  static constexpr int number_of_frames_until_non_volatile = 2;
   static std::mutex volatile_paths_mutex_;
   static std::unordered_set<std::shared_ptr<TrackedVolatilePath>>
       volatile_paths_;
 
   std::shared_ptr<TrackedVolatilePath> tracked_path_;
 
+  // Must be called whenever the path is created or mutated.
   void resetVolatility();
 };
 
