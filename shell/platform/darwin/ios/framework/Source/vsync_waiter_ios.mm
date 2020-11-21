@@ -102,8 +102,6 @@ void VsyncWaiterIOS::AwaitVSync() {
     display_link.get().paused = YES;
     auto preferredFPS = display_link.get().preferredFramesPerSecond;  // iOS 10.0
 
-    display_link.reset();
-
     // From Docs:
     // The default value for preferredFramesPerSecond is 0. When this value is 0, the preferred
     // frame rate is equal to the maximum refresh rate of the display, as indicated by the
