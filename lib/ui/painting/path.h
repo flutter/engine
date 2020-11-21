@@ -5,11 +5,9 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PATH_H_
 #define FLUTTER_LIB_UI_PAINTING_PATH_H_
 
-#include <mutex>
-#include <unordered_set>
-
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/rrect.h"
+#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/pathops/SkPathOps.h"
 #include "third_party/tonic/typed_data/typed_list.h"
@@ -117,33 +115,18 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
-  // Called by the shell at the end of a frame after notifying Dart about idle
-  // time.
-  //
-  // This method will flip the volatility bit to false for any paths that have
-  // survived the |number_of_frames_until_non_volatile|.
-  static void updatePathVolatility();
-
   virtual void ReleaseDartWrappableReference() const override;
 
  private:
-  struct TrackedVolatilePath {
-    bool tracking_volatility = false;
-    int frame_count = 0;
-    SkPath path_;
-  };
-
   CanvasPath();
 
-  static constexpr int number_of_frames_until_non_volatile = 2;
-  static std::mutex volatile_paths_mutex_;
-  static std::unordered_set<std::shared_ptr<TrackedVolatilePath>>
-      volatile_paths_;
-
-  std::shared_ptr<TrackedVolatilePath> tracked_path_;
+  std::shared_ptr<VolatilePathTracker> path_tracker_;
+  std::shared_ptr<VolatilePathTracker::Path> tracked_path_;
 
   // Must be called whenever the path is created or mutated.
   void resetVolatility();
+
+  SkPath& mutable_path() { return tracked_path_->path_; }
 };
 
 }  // namespace flutter

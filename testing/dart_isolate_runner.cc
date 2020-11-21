@@ -126,7 +126,8 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
           settings.isolate_shutdown_callback,  // isolate shutdown callback
           entrypoint,                          // entrypoint
           std::nullopt,                        // library
-          std::move(isolate_configuration)     // isolate configuration
+          std::move(isolate_configuration),    // isolate configuration
+          nullptr                              // volatile path tracker
           )
           .lock();
 
