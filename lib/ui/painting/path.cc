@@ -67,78 +67,83 @@ void CanvasPath::RegisterNatives(tonic::DartLibraryNatives* natives) {
                      FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-CanvasPath::CanvasPath() : weak_factory_(this) {
+CanvasPath::CanvasPath()
+    : tracked_path_(std::make_shared<TrackedVolatilePath>()) {
   resetVolatility();
 }
 
 CanvasPath::~CanvasPath() = default;
 
 void CanvasPath::resetVolatility() {
-  if (!tracking_volatility_) {
-    path_.setIsVolatile(true);
-    volatile_paths_.push_back(weak_factory_.GetWeakPtr());
-    tracking_volatility_ = true;
+  if (!tracked_path_->tracking_volatility) {
+    tracked_path_->path_.setIsVolatile(true);
+    tracked_path_->tracking_volatility = true;
+    {
+      std::scoped_lock guard(volatile_paths_mutex_);
+      volatile_paths_.insert(tracked_path_);
+    }
   }
 }
 
 // static
 std::mutex CanvasPath::volatile_paths_mutex_;
 // static
-std::vector<fml::WeakPtr<CanvasPath>> CanvasPath::volatile_paths_;
+std::unordered_set<std::shared_ptr<CanvasPath::TrackedVolatilePath>>
+    CanvasPath::volatile_paths_;
 // static
 void CanvasPath::updatePathVolatility() {
-  FML_DCHECK(UIDartState::Current());
-  FML_DCHECK(UIDartState::Current()
-                 ->GetTaskRunners()
-                 .GetUITaskRunner()
-                 ->RunsTasksOnCurrentThread());
+  TRACE_EVENT0("flutter", "updatePathVolatility");
   std::scoped_lock guard(volatile_paths_mutex_);
-  std::vector<fml::WeakPtr<CanvasPath>> remaining_paths;
-  for (auto weak_path : volatile_paths_) {
-    if (weak_path) {
-      weak_path->volatility_count_++;
-      if (weak_path->volatility_count_ >= 2) {
-        weak_path->path_.setIsVolatile(false);
-        weak_path->tracking_volatility_ = false;
-      } else {
-        remaining_paths.push_back(weak_path);
-      }
+  for (auto it = volatile_paths_.begin(), last = volatile_paths_.end();
+       it != last;) {
+    auto path = *it;
+    path->frame_count++;
+    if (path->frame_count >= 2) {
+      path->path_.setIsVolatile(false);
+      path->tracking_volatility = false;
+      it = volatile_paths_.erase(it);
+    } else {
+      ++it;
     }
   }
-  volatile_paths_ = std::move(remaining_paths);
+}
+
+void CanvasPath::ReleaseDartWrappableReference() const {
+  std::scoped_lock guard(volatile_paths_mutex_);
+  volatile_paths_.erase(tracked_path_);
 }
 
 int CanvasPath::getFillType() {
-  return static_cast<int>(path_.getFillType());
+  return static_cast<int>(tracked_path_->path_.getFillType());
 }
 
 void CanvasPath::setFillType(int fill_type) {
-  path_.setFillType(static_cast<SkPathFillType>(fill_type));
+  tracked_path_->path_.setFillType(static_cast<SkPathFillType>(fill_type));
   resetVolatility();
 }
 
 void CanvasPath::moveTo(float x, float y) {
-  path_.moveTo(x, y);
+  tracked_path_->path_.moveTo(x, y);
   resetVolatility();
 }
 
 void CanvasPath::relativeMoveTo(float x, float y) {
-  path_.rMoveTo(x, y);
+  tracked_path_->path_.rMoveTo(x, y);
   resetVolatility();
 }
 
 void CanvasPath::lineTo(float x, float y) {
-  path_.lineTo(x, y);
+  tracked_path_->path_.lineTo(x, y);
   resetVolatility();
 }
 
 void CanvasPath::relativeLineTo(float x, float y) {
-  path_.rLineTo(x, y);
+  tracked_path_->path_.rLineTo(x, y);
   resetVolatility();
 }
 
 void CanvasPath::quadraticBezierTo(float x1, float y1, float x2, float y2) {
-  path_.quadTo(x1, y1, x2, y2);
+  tracked_path_->path_.quadTo(x1, y1, x2, y2);
   resetVolatility();
 }
 
@@ -146,7 +151,7 @@ void CanvasPath::relativeQuadraticBezierTo(float x1,
                                            float y1,
                                            float x2,
                                            float y2) {
-  path_.rQuadTo(x1, y1, x2, y2);
+  tracked_path_->path_.rQuadTo(x1, y1, x2, y2);
   resetVolatility();
 }
 
@@ -156,7 +161,7 @@ void CanvasPath::cubicTo(float x1,
                          float y2,
                          float x3,
                          float y3) {
-  path_.cubicTo(x1, y1, x2, y2, x3, y3);
+  tracked_path_->path_.cubicTo(x1, y1, x2, y2, x3, y3);
   resetVolatility();
 }
 
@@ -166,12 +171,12 @@ void CanvasPath::relativeCubicTo(float x1,
                                  float y2,
                                  float x3,
                                  float y3) {
-  path_.rCubicTo(x1, y1, x2, y2, x3, y3);
+  tracked_path_->path_.rCubicTo(x1, y1, x2, y2, x3, y3);
   resetVolatility();
 }
 
 void CanvasPath::conicTo(float x1, float y1, float x2, float y2, float w) {
-  path_.conicTo(x1, y1, x2, y2, w);
+  tracked_path_->path_.conicTo(x1, y1, x2, y2, w);
   resetVolatility();
 }
 
@@ -180,7 +185,7 @@ void CanvasPath::relativeConicTo(float x1,
                                  float x2,
                                  float y2,
                                  float w) {
-  path_.rConicTo(x1, y1, x2, y2, w);
+  tracked_path_->path_.rConicTo(x1, y1, x2, y2, w);
   resetVolatility();
 }
 
@@ -191,9 +196,9 @@ void CanvasPath::arcTo(float left,
                        float startAngle,
                        float sweepAngle,
                        bool forceMoveTo) {
-  path_.arcTo(SkRect::MakeLTRB(left, top, right, bottom),
-              startAngle * 180.0 / M_PI, sweepAngle * 180.0 / M_PI,
-              forceMoveTo);
+  tracked_path_->path_.arcTo(SkRect::MakeLTRB(left, top, right, bottom),
+                             startAngle * 180.0 / M_PI,
+                             sweepAngle * 180.0 / M_PI, forceMoveTo);
   resetVolatility();
 }
 
@@ -209,8 +214,8 @@ void CanvasPath::arcToPoint(float arcEndX,
   const auto direction =
       isClockwiseDirection ? SkPathDirection::kCW : SkPathDirection::kCCW;
 
-  path_.arcTo(radiusX, radiusY, xAxisRotation, arcSize, direction, arcEndX,
-              arcEndY);
+  tracked_path_->path_.arcTo(radiusX, radiusY, xAxisRotation, arcSize,
+                             direction, arcEndX, arcEndY);
   resetVolatility();
 }
 
@@ -225,18 +230,18 @@ void CanvasPath::relativeArcToPoint(float arcEndDeltaX,
                                   : SkPath::ArcSize::kSmall_ArcSize;
   const auto direction =
       isClockwiseDirection ? SkPathDirection::kCW : SkPathDirection::kCCW;
-  path_.rArcTo(radiusX, radiusY, xAxisRotation, arcSize, direction,
-               arcEndDeltaX, arcEndDeltaY);
+  tracked_path_->path_.rArcTo(radiusX, radiusY, xAxisRotation, arcSize,
+                              direction, arcEndDeltaX, arcEndDeltaY);
   resetVolatility();
 }
 
 void CanvasPath::addRect(float left, float top, float right, float bottom) {
-  path_.addRect(SkRect::MakeLTRB(left, top, right, bottom));
+  tracked_path_->path_.addRect(SkRect::MakeLTRB(left, top, right, bottom));
   resetVolatility();
 }
 
 void CanvasPath::addOval(float left, float top, float right, float bottom) {
-  path_.addOval(SkRect::MakeLTRB(left, top, right, bottom));
+  tracked_path_->path_.addOval(SkRect::MakeLTRB(left, top, right, bottom));
   resetVolatility();
 }
 
@@ -246,19 +251,20 @@ void CanvasPath::addArc(float left,
                         float bottom,
                         float startAngle,
                         float sweepAngle) {
-  path_.addArc(SkRect::MakeLTRB(left, top, right, bottom),
-               startAngle * 180.0 / M_PI, sweepAngle * 180.0 / M_PI);
+  tracked_path_->path_.addArc(SkRect::MakeLTRB(left, top, right, bottom),
+                              startAngle * 180.0 / M_PI,
+                              sweepAngle * 180.0 / M_PI);
   resetVolatility();
 }
 
 void CanvasPath::addPolygon(const tonic::Float32List& points, bool close) {
-  path_.addPoly(reinterpret_cast<const SkPoint*>(points.data()),
-                points.num_elements() / 2, close);
+  tracked_path_->path_.addPoly(reinterpret_cast<const SkPoint*>(points.data()),
+                               points.num_elements() / 2, close);
   resetVolatility();
 }
 
 void CanvasPath::addRRect(const RRect& rrect) {
-  path_.addRRect(rrect.sk_rrect);
+  tracked_path_->path_.addRRect(rrect.sk_rrect);
   resetVolatility();
 }
 
@@ -267,7 +273,8 @@ void CanvasPath::addPath(CanvasPath* path, double dx, double dy) {
     Dart_ThrowException(ToDart("Path.addPath called with non-genuine Path."));
     return;
   }
-  path_.addPath(path->path(), dx, dy, SkPath::kAppend_AddPathMode);
+  tracked_path_->path_.addPath(path->path(), dx, dy,
+                               SkPath::kAppend_AddPathMode);
   resetVolatility();
 }
 
@@ -284,7 +291,8 @@ void CanvasPath::addPathWithMatrix(CanvasPath* path,
   SkMatrix matrix = ToSkMatrix(matrix4);
   matrix.setTranslateX(matrix.getTranslateX() + dx);
   matrix.setTranslateY(matrix.getTranslateY() + dy);
-  path_.addPath(path->path(), matrix, SkPath::kAppend_AddPathMode);
+  tracked_path_->path_.addPath(path->path(), matrix,
+                               SkPath::kAppend_AddPathMode);
   matrix4.Release();
   resetVolatility();
 }
@@ -295,7 +303,8 @@ void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
         ToDart("Path.extendWithPath called with non-genuine Path."));
     return;
   }
-  path_.addPath(path->path(), dx, dy, SkPath::kExtend_AddPathMode);
+  path->tracked_path_->path_.addPath(path->path(), dx, dy,
+                                     SkPath::kExtend_AddPathMode);
   resetVolatility();
 }
 
@@ -312,42 +321,44 @@ void CanvasPath::extendWithPathAndMatrix(CanvasPath* path,
   SkMatrix matrix = ToSkMatrix(matrix4);
   matrix.setTranslateX(matrix.getTranslateX() + dx);
   matrix.setTranslateY(matrix.getTranslateY() + dy);
-  path_.addPath(path->path(), matrix, SkPath::kExtend_AddPathMode);
+  path->tracked_path_->path_.addPath(path->path(), matrix,
+                                     SkPath::kExtend_AddPathMode);
   matrix4.Release();
   resetVolatility();
 }
 
 void CanvasPath::close() {
-  path_.close();
+  tracked_path_->path_.close();
   resetVolatility();
 }
 
 void CanvasPath::reset() {
-  path_.reset();
+  tracked_path_->path_.reset();
   resetVolatility();
 }
 
 bool CanvasPath::contains(double x, double y) {
-  return path_.contains(x, y);
+  return tracked_path_->path_.contains(x, y);
 }
 
 void CanvasPath::shift(Dart_Handle path_handle, double dx, double dy) {
   fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
-  path_.offset(dx, dy, &path->path_);
+  tracked_path_->path_.offset(dx, dy, &path->tracked_path_->path_);
   resetVolatility();
 }
 
 void CanvasPath::transform(Dart_Handle path_handle,
                            tonic::Float64List& matrix4) {
   fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
-  path_.transform(ToSkMatrix(matrix4), &path->path_);
+  tracked_path_->path_.transform(ToSkMatrix(matrix4),
+                                 &path->tracked_path_->path_);
   matrix4.Release();
   resetVolatility();
 }
 
 tonic::Float32List CanvasPath::getBounds() {
   tonic::Float32List rect(Dart_NewTypedData(Dart_TypedData_kFloat32, 4));
-  const SkRect& bounds = path_.getBounds();
+  const SkRect& bounds = tracked_path_->path_.getBounds();
   rect[0] = bounds.left();
   rect[1] = bounds.top();
   rect[2] = bounds.right();
@@ -357,7 +368,7 @@ tonic::Float32List CanvasPath::getBounds() {
 
 bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
   return Op(path1->path(), path2->path(), static_cast<SkPathOp>(operation),
-            &path_);
+            &tracked_path_->path_);
   resetVolatility();
 }
 
@@ -365,14 +376,14 @@ void CanvasPath::clone(Dart_Handle path_handle) {
   fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
   // per Skia docs, this will create a fast copy
   // data is shared until the source path or dest path are mutated
-  path->path_ = path_;
+  path->tracked_path_->path_ = tracked_path_->path_;
 }
 
 // This is doomed to be called too early, since Paths are mutable.
 // However, it can help for some of the clone/shift/transform type methods
 // where the resultant path will initially have a meaningful size.
 size_t CanvasPath::GetAllocationSize() const {
-  return sizeof(CanvasPath) + path_.approximateBytesUsed();
+  return sizeof(CanvasPath) + tracked_path_->path_.approximateBytesUsed();
 }
 
 }  // namespace flutter

@@ -5,7 +5,8 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PATH_H_
 #define FLUTTER_LIB_UI_PAINTING_PATH_H_
 
-#include "flutter/fml/memory/weak_ptr.h"
+#include <unordered_set>
+
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/rrect.h"
 #include "third_party/skia/include/core/SkPath.h"
@@ -37,7 +38,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   static fml::RefPtr<CanvasPath> CreateFrom(Dart_Handle path_handle,
                                             const SkPath& src) {
     fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
-    path->path_ = src;
+    path->tracked_path_->path_ = src;
     return path;
   }
 
@@ -109,7 +110,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   bool op(CanvasPath* path1, CanvasPath* path2, int operation);
   void clone(Dart_Handle path_handle);
 
-  const SkPath& path() const { return path_; }
+  const SkPath& path() const { return tracked_path_->path_; }
 
   size_t GetAllocationSize() const override;
 
@@ -117,16 +118,22 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
   static void updatePathVolatility();
 
+  virtual void ReleaseDartWrappableReference() const override;
+
  private:
+  struct TrackedVolatilePath {
+    bool tracking_volatility = false;
+    int frame_count = 0;
+    SkPath path_;
+  };
+
   CanvasPath();
 
   static std::mutex volatile_paths_mutex_;
-  static std::vector<fml::WeakPtr<CanvasPath>> volatile_paths_;
+  static std::unordered_set<std::shared_ptr<TrackedVolatilePath>>
+      volatile_paths_;
 
-  SkPath path_;
-  bool tracking_volatility_ = false;
-  int volatility_count_ = 0;
-  fml::WeakPtrFactory<CanvasPath> weak_factory_;
+  std::shared_ptr<TrackedVolatilePath> tracked_path_;
 
   void resetVolatility();
 };
