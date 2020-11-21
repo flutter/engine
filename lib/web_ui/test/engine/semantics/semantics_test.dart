@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
-@TestOn('chrome || safari')
-// TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+@TestOn('chrome || safari || firefox')
 
 import 'dart:async';
 import 'dart:html' as html;
