@@ -136,6 +136,13 @@ std::unique_ptr<Surface> PlatformView::CreateRenderingSurface() {
   return nullptr;
 }
 
+std::shared_ptr<ExternalViewEmbedder>
+PlatformView::CreateExternalViewEmbedder() {
+  FML_DLOG(WARNING)
+      << "This platform doesn't support embedding external views.";
+  return nullptr;
+}
+
 void PlatformView::SetNextFrameCallback(const fml::closure& closure) {
   if (!closure) {
     return;
@@ -151,5 +158,15 @@ PlatformView::ComputePlatformResolvedLocales(
       std::make_unique<std::vector<std::string>>();
   return out;
 }
+
+void PlatformView::RequestDartDeferredLibrary(intptr_t loading_unit_id) {}
+
+void PlatformView::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    const uint8_t* snapshot_data,
+    const uint8_t* snapshot_instructions) {}
+
+void PlatformView::UpdateAssetManager(
+    std::shared_ptr<AssetManager> asset_manager) {}
 
 }  // namespace flutter

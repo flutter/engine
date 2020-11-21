@@ -32,25 +32,6 @@ task:
     mv $CIRRUS_WORKING_DIR flutter
     gclient sync
   matrix:
-    - name: build_and_benchmark_linux_release
-      only_if: $CIRRUS_BRANCH == 'master' # Only run for post-submit commits.
-      compile_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/tools/gn --runtime-mode=release
-        ninja -C out/host_release
-      benchmark_host_script: |
-        cd $ENGINE_PATH/src/out/host_release/
-        ./txt_benchmarks --benchmark_format=json > txt_benchmarks.json
-        ./fml_benchmarks --benchmark_format=json > fml_benchmarks.json
-        ./shell_benchmarks --benchmark_format=json > shell_benchmarks.json
-        ./ui_benchmarks --benchmark_format=json > ui_benchmarks.json
-        cd $ENGINE_PATH/src/flutter/testing/benchmark
-        pub get
-        dart bin/parse_and_send.dart ../../../out/host_release/txt_benchmarks.json
-        dart bin/parse_and_send.dart ../../../out/host_release/fml_benchmarks.json
-        dart bin/parse_and_send.dart ../../../out/host_release/shell_benchmarks.json
-        dart bin/parse_and_send.dart ../../../out/host_release/ui_benchmarks.json
-
     # The following test depends on Flutter framework repo. It may fail if the
     # framework repo is currently broken.
     - name: build_and_test_linux_unopt_debug
@@ -74,4 +55,9 @@ task:
         bin/flutter analyze --dartdocs --flutter-repo --local-engine=host_debug_unopt
       test_framework_script: |
         cd $FRAMEWORK_PATH/flutter/packages/flutter
-        ../../bin/flutter test --local-engine=host_debug_unopt
+        ../../bin/flutter test --local-engine=host_debug_unopt --null-assertions --sound-null-safety --enable-experiment=non-nullable
+    # TODO(fujino): remove this once ci/licenses.sh is run on LUCI
+    - name: licenses_check
+      build_script: |
+        cd $ENGINE_PATH/src/flutter
+        ./ci/licenses.sh

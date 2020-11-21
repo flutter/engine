@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// This composites HTML views into the [ui.Scene].
@@ -292,7 +292,7 @@ class HtmlViewEmbedder {
     //
     // HTML elements use logical (CSS) pixels, but we have been using physical
     // pixels, so scale down the head element to match the logical resolution.
-    final double scale = EngineWindow.browserDevicePixelRatio;
+    final double scale = EnginePlatformDispatcher.browserDevicePixelRatio;
     final double inverseScale = 1 / scale;
     final Matrix4 scaleMatrix =
         Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
@@ -320,7 +320,7 @@ class HtmlViewEmbedder {
       return;
     }
     _svgPathDefs = html.Element.html(
-      '<svg width="0" height="0"><defs id="sk_path_defs"></defs></svg>',
+      '$kSvgResourceHeader><defs id="sk_path_defs"></defs></svg>',
       treeSanitizer: _NullTreeSanitizer(),
     );
     skiaSceneHost!.append(_svgPathDefs!);

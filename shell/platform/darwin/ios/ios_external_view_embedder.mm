@@ -7,7 +7,7 @@
 namespace flutter {
 
 IOSExternalViewEmbedder::IOSExternalViewEmbedder(
-    FlutterPlatformViewsController* platform_views_controller,
+    const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
     std::shared_ptr<IOSContext> context)
     : platform_views_controller_(platform_views_controller), ios_context_(context) {
   FML_CHECK(ios_context_);
@@ -37,7 +37,7 @@ void IOSExternalViewEmbedder::BeginFrame(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::BeginFrame");
   FML_CHECK(platform_views_controller_);
-  platform_views_controller_->SetFrameSize(frame_size);
+  platform_views_controller_->BeginFrame(frame_size);
 }
 
 // |ExternalViewEmbedder|
@@ -72,11 +72,14 @@ SkCanvas* IOSExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
 }
 
 // |ExternalViewEmbedder|
-void IOSExternalViewEmbedder::SubmitFrame(GrDirectContext* context,
-                                          std::unique_ptr<SurfaceFrame> frame) {
+void IOSExternalViewEmbedder::SubmitFrame(
+    GrDirectContext* context,
+    std::unique_ptr<SurfaceFrame> frame,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::SubmitFrame");
   FML_CHECK(platform_views_controller_);
-  platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame));
+  platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame),
+                                          gpu_disable_sync_switch);
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::DidSubmitFrame");
 }
 
@@ -85,7 +88,6 @@ void IOSExternalViewEmbedder::EndFrame(bool should_resubmit_frame,
                                        fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::EndFrame");
   FML_CHECK(platform_views_controller_);
-  return platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger);
 }
 
 // |ExternalViewEmbedder|

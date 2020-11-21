@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.10
+
 import 'dart:convert' show utf8, json;
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -15,7 +17,7 @@ void nativeOnPointerDataPacket(List<int> sequences) native 'NativeOnPointerDataP
 
 @pragma('vm:entry-point')
 void reportTimingsMain() {
-  window.onReportTimings = (List<FrameTiming> timings) {
+  PlatformDispatcher.instance.onReportTimings = (List<FrameTiming> timings) {
     List<int> timestamps = [];
     for (FrameTiming t in timings) {
       for (FramePhase phase in FramePhase.values) {
@@ -28,15 +30,15 @@ void reportTimingsMain() {
 
 @pragma('vm:entry-point')
 void onBeginFrameMain() {
-  window.onBeginFrame = (Duration beginTime) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
     nativeOnBeginFrame(beginTime.inMicroseconds);
   };
 }
 
 @pragma('vm:entry-point')
 void onPointerDataPacketMain() {
-  window.onPointerDataPacket = (PointerDataPacket packet) {
-    List<int> sequence= <int>[];
+  PlatformDispatcher.instance.onPointerDataPacket = (PointerDataPacket packet) {
+    List<int> sequence = <int>[];
     for (PointerData data in packet.data) {
       sequence.add(PointerChange.values.indexOf(data.change));
     }
@@ -62,7 +64,7 @@ void _reportMetrics(double devicePixelRatio, double width, double height) native
 
 @pragma('vm:entry-point')
 void dummyReportTimingsMain() {
-  window.onReportTimings = (List<FrameTiming> timings) {};
+  PlatformDispatcher.instance.onReportTimings = (List<FrameTiming> timings) {};
 }
 
 @pragma('vm:entry-point')
@@ -102,7 +104,7 @@ void testSkiaResourceCacheSendsResponse() {
                             "method": "Skia.setResourceCacheMaxBytes",
                             "args": 10000
                           }''';
-  window.sendPlatformMessage(
+  PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/skia',
     Uint8List.fromList(utf8.encode(jsonRequest)).buffer.asByteData(),
     callback,
@@ -120,17 +122,24 @@ void canCreateImageFromDecompressedData() {
     (int i) => i % 4 < 2 ? 0x00 : 0xFF,
   ));
 
-
   decodeImageFromPixels(
-      pixels, imageWidth, imageHeight, PixelFormat.rgba8888,
-      (Image image) {
-    notifyWidthHeight(image.width, image.height);
-  });
+    pixels,
+    imageWidth,
+    imageHeight,
+    PixelFormat.rgba8888,
+    (Image image) {
+      notifyWidthHeight(image.width, image.height);
+    },
+  );
 }
 
 @pragma('vm:entry-point')
 void canAccessIsolateLaunchData() {
-  notifyMessage(utf8.decode(window.getPersistentIsolateData()!.buffer.asUint8List()));
+  notifyMessage(
+    utf8.decode(
+      PlatformDispatcher.instance.getPersistentIsolateData()!.buffer.asUint8List(),
+    ),
+  );
 }
 
 void notifyMessage(String string) native 'NotifyMessage';
@@ -145,23 +154,41 @@ void sendFixtureMapping(List<int> list) native 'SendFixtureMapping';
 
 @pragma('vm:entry-point')
 void canDecompressImageFromAsset() {
-  decodeImageFromList(Uint8List.fromList(getFixtureImage()), (Image result) {
-    notifyWidthHeight(result.width, result.height);
-  });
+  decodeImageFromList(
+    Uint8List.fromList(getFixtureImage()),
+    (Image result) {
+      notifyWidthHeight(result.width, result.height);
+    },
+  );
 }
 
 List<int> getFixtureImage() native 'GetFixtureImage';
 
 void notifyLocalTime(String string) native 'NotifyLocalTime';
 
+bool waitFixture() native 'WaitFixture';
+
+// Return local date-time as a string, to an hour resolution.  So, "2020-07-23
+// 14:03:22" will become "2020-07-23 14".
+String localTimeAsString() {
+   final now = DateTime.now().toLocal();
+   // This is: "$y-$m-$d $h:$min:$sec.$ms$us";
+   final timeStr = now.toString();
+   // Forward only "$y-$m-$d $h" for timestamp comparison.  Not using DateTime
+   // formatting since package:intl is not available.
+  return timeStr.split(":")[0];
+}
+
 @pragma('vm:entry-point')
 void localtimesMatch() {
-  final now = DateTime.now().toLocal();
-  // This is: "$y-$m-$d $h:$min:$sec.$ms$us";
-  final timeStr = now.toString();
-  // Forward only "$y-$m-$d $h" for timestamp comparison.  Not using DateTime
-  // formatting since package:intl is not available.
-  notifyLocalTime(timeStr.split(":")[0]);
+  notifyLocalTime(localTimeAsString());
+}
+
+@pragma('vm:entry-point')
+void timezonesChange() {
+  do {
+    notifyLocalTime(localTimeAsString());
+  } while (waitFixture());
 }
 
 void notifyCanAccessResource(bool success) native 'NotifyCanAccessResource';

@@ -10,19 +10,8 @@
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
+#include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
-
-// Creates a mock engine that responds to platform messages.
-static FlEngine* make_mock_engine() {
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
-  g_autoptr(FlEngine) engine = fl_engine_new(project, FL_RENDERER(renderer));
-  g_autoptr(GError) engine_error = nullptr;
-  EXPECT_TRUE(fl_engine_start(engine, &engine_error));
-  EXPECT_EQ(engine_error, nullptr);
-
-  return static_cast<FlEngine*>(g_object_ref(engine));
-}
 
 // Checks sending nullptr for a message works.
 TEST(FlBinaryMessengerTest, SendNullptrMessage) {
@@ -186,7 +175,7 @@ TEST(FlBinaryMessengerTest, ReceiveMessage) {
   fl_binary_messenger_set_message_handler_on_channel(
       messenger, "test/responses", response_cb, loop, nullptr);
 
-  // Triggger the engine to send a message.
+  // Trigger the engine to send a message.
   const char* text = "Marco!";
   g_autoptr(GBytes) message = g_bytes_new(text, strlen(text));
   fl_binary_messenger_send_on_channel(messenger, "test/send-message", message,

@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 abstract class Path {
   factory Path() {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkPath();
     } else {
       return engine.SurfacePath();
     }
   }
   factory Path.from(Path source) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkPath.from(source as engine.CkPath);
     } else {
       return engine.SurfacePath.from(source as engine.SurfacePath);
@@ -64,7 +64,7 @@ abstract class Path {
   static Path combine(PathOperation operation, Path path1, Path path2) {
     assert(path1 != null); // ignore: unnecessary_null_comparison
     assert(path2 != null); // ignore: unnecessary_null_comparison
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkPath.combine(operation, path1, path2);
     }
     throw UnimplementedError();

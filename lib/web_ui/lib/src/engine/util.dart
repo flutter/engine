@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Generic callback signature, used by [_futurize].
@@ -111,8 +111,8 @@ TransformKind transformKindOf(Float32List matrix) {
 
   // If matrix contains scaling, rotation, z translation or
   // perspective transform, it is not considered simple.
-  final bool isSimple2dTransform =
-      m[15] == 1.0 &&  // start reading from the last element to eliminate range checks in subsequent reads.
+  final bool isSimple2dTransform = m[15] ==
+          1.0 && // start reading from the last element to eliminate range checks in subsequent reads.
       m[14] == 0.0 && // z translation is NOT simple
       // m[13] - y translation is simple
       // m[12] - x translation is simple
@@ -126,8 +126,8 @@ TransformKind transformKindOf(Float32List matrix) {
       // m[4] - 2D rotation is simple
       m[3] == 0.0 &&
       m[2] == 0.0;
-      // m[1] - 2D rotation is simple
-      // m[0] - scale x is simple
+  // m[1] - 2D rotation is simple
+  // m[0] - scale x is simple
 
   if (!isSimple2dTransform) {
     return TransformKind.complex;
@@ -136,8 +136,7 @@ TransformKind transformKindOf(Float32List matrix) {
   // From this point on we're sure the transform is 2D, but we don't know if
   // it's identity or not. To check, we need to look at the remaining elements
   // that were not checked above.
-  final bool isIdentityTransform =
-      m[0] == 1.0 &&
+  final bool isIdentityTransform = m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[4] == 0.0 &&
       m[5] == 1.0 &&
@@ -165,7 +164,7 @@ bool isIdentityFloat32ListTransform(Float32List matrix) {
 /// transform. Consider removing the CSS `transform` property from elements
 /// that apply identity transform.
 String float64ListToCssTransform2d(Float32List matrix) {
-  assert (transformKindOf(matrix) != TransformKind.complex);
+  assert(transformKindOf(matrix) != TransformKind.complex);
   return 'matrix(${matrix[0]},${matrix[1]},${matrix[4]},${matrix[5]},${matrix[12]},${matrix[13]})';
 }
 
@@ -279,10 +278,22 @@ void transformLTRB(Matrix4 transform, Float32List ltrb) {
 
   _tempPointMatrix.multiplyTranspose(transform);
 
-  ltrb[0] = math.min(math.min(math.min(_tempPointData[0], _tempPointData[1]), _tempPointData[2]), _tempPointData[3]);
-  ltrb[1] = math.min(math.min(math.min(_tempPointData[4], _tempPointData[5]), _tempPointData[6]), _tempPointData[7]);
-  ltrb[2] = math.max(math.max(math.max(_tempPointData[0], _tempPointData[1]), _tempPointData[2]), _tempPointData[3]);
-  ltrb[3] = math.max(math.max(math.max(_tempPointData[4], _tempPointData[5]), _tempPointData[6]), _tempPointData[7]);
+  ltrb[0] = math.min(
+      math.min(
+          math.min(_tempPointData[0], _tempPointData[1]), _tempPointData[2]),
+      _tempPointData[3]);
+  ltrb[1] = math.min(
+      math.min(
+          math.min(_tempPointData[4], _tempPointData[5]), _tempPointData[6]),
+      _tempPointData[7]);
+  ltrb[2] = math.max(
+      math.max(
+          math.max(_tempPointData[0], _tempPointData[1]), _tempPointData[2]),
+      _tempPointData[3]);
+  ltrb[3] = math.max(
+      math.max(
+          math.max(_tempPointData[4], _tempPointData[5]), _tempPointData[6]),
+      _tempPointData[7]);
 }
 
 /// Returns true if [rect] contains every point that is also contained by the
@@ -300,6 +311,13 @@ bool rectContainsOther(ui.Rect rect, ui.Rect other) {
 /// Counter used for generating clip path id inside an svg <defs> tag.
 int _clipIdCounter = 0;
 
+/// Used for clipping and filter svg resources.
+///
+/// Position needs to be absolute since these svgs are sandwiched between
+/// canvas elements and can cause layout shifts otherwise.
+const String kSvgResourceHeader = '<svg width="0" height="0" '
+    'style="position:absolute">';
+
 /// Converts Path to svg element that contains a clip-path definition.
 ///
 /// Calling this method updates [_clipIdCounter]. The HTML id of the generated
@@ -311,14 +329,21 @@ String _pathToSvgClipPath(ui.Path path,
     double scaleY = 1.0}) {
   _clipIdCounter += 1;
   final StringBuffer sb = StringBuffer();
-  sb.write('<svg width="0" height="0" '
-      'style="position:absolute">');
+  sb.write(kSvgResourceHeader);
   sb.write('<defs>');
 
   final String clipId = 'svgClip$_clipIdCounter';
-  sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
 
-  sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
+  if (browserEngine == BrowserEngine.firefox) {
+    // Firefox objectBoundingBox fails to scale to 1x1 units, instead use
+    // no clipPathUnits but write the path in target units.
+    sb.write('<clipPath id=$clipId>');
+    sb.write('<path fill="#FFFFFF" d="');
+  } else {
+    sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
+    sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
+  }
+
   pathToSvg(path as SurfacePath, sb, offsetX: offsetX, offsetY: offsetY);
   sb.write('"></path></clipPath></defs></svg');
   return sb.toString();
@@ -420,10 +445,11 @@ const Set<String> _genericFontFamilies = <String>{
 ///
 /// For iOS, default to -apple-system, where it should be available, otherwise
 /// default to Arial. BlinkMacSystemFont is used for Chrome on iOS.
-final String _fallbackFontFamily = _isMacOrIOS ?
-    '-apple-system, BlinkMacSystemFont' : 'Arial';
+final String _fallbackFontFamily =
+    _isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
 
-bool get _isMacOrIOS => operatingSystem == OperatingSystem.iOs ||
+bool get _isMacOrIOS =>
+    operatingSystem == OperatingSystem.iOs ||
     operatingSystem == OperatingSystem.macOs;
 
 /// Create a font-family string appropriate for CSS.
@@ -439,8 +465,10 @@ String? canonicalizeFontFamily(String? fontFamily) {
     // on sans-serif.
     // Map to San Francisco Text/Display fonts, use -apple-system,
     // BlinkMacSystemFont.
-    if (fontFamily == '.SF Pro Text' || fontFamily == '.SF Pro Display' ||
-        fontFamily == '.SF UI Text' || fontFamily == '.SF UI Display') {
+    if (fontFamily == '.SF Pro Text' ||
+        fontFamily == '.SF Pro Display' ||
+        fontFamily == '.SF UI Text' ||
+        fontFamily == '.SF UI Display') {
       return _fallbackFontFamily;
     }
   }
@@ -474,7 +502,8 @@ void applyWebkitClipFix(html.Element? containerElement) {
   }
 }
 
-final ByteData? _fontChangeMessage = JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
+final ByteData? _fontChangeMessage =
+    JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
 
 // Font load callbacks will typically arrive in sequence, we want to prevent
 // sendFontChangeMessage of causing multiple synchronous rebuilds.
@@ -482,31 +511,36 @@ final ByteData? _fontChangeMessage = JSONMessageCodec().encodeMessage(<String, d
 bool _fontChangeScheduled = false;
 
 FutureOr<void> sendFontChangeMessage() async {
-  if (window._onPlatformMessage != null)
-    if (!_fontChangeScheduled) {
-      _fontChangeScheduled = true;
-      // Batch updates into next animationframe.
-      html.window.requestAnimationFrame((num _) {
-        _fontChangeScheduled = false;
-        window.invokeOnPlatformMessage(
-          'flutter/system',
-          _fontChangeMessage,
-              (_) {},
-        );
-      });
-    }
+  if (!_fontChangeScheduled) {
+    _fontChangeScheduled = true;
+    // Batch updates into next animationframe.
+    html.window.requestAnimationFrame((num _) {
+      _fontChangeScheduled = false;
+      EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+        'flutter/system',
+        _fontChangeMessage,
+        (_) {},
+      );
+    });
+  }
 }
 
 // Stores matrix in a form that allows zero allocation transforms.
-class _FastMatrix64 {
-  final Float64List matrix;
+class _FastMatrix32 {
+  final Float32List matrix;
   double transformedX = 0, transformedY = 0;
-  _FastMatrix64(this.matrix);
+  _FastMatrix32(this.matrix);
 
   void transform(double x, double y) {
     transformedX = matrix[12] + (matrix[0] * x) + (matrix[4] * y);
     transformedY = matrix[13] + (matrix[1] * x) + (matrix[5] * y);
   }
+
+  String debugToString() =>
+      '${matrix[0].toStringAsFixed(3)}, ${matrix[4].toStringAsFixed(3)}, ${matrix[8].toStringAsFixed(3)}, ${matrix[12].toStringAsFixed(3)}\n'
+      '${matrix[1].toStringAsFixed(3)}, ${matrix[5].toStringAsFixed(3)}, ${matrix[9].toStringAsFixed(3)}, ${matrix[13].toStringAsFixed(3)}\n'
+      '${matrix[2].toStringAsFixed(3)}, ${matrix[6].toStringAsFixed(3)}, ${matrix[10].toStringAsFixed(3)}, ${matrix[14].toStringAsFixed(3)}\n'
+      '${matrix[3].toStringAsFixed(3)}, ${matrix[7].toStringAsFixed(3)}, ${matrix[11].toStringAsFixed(3)}, ${matrix[15].toStringAsFixed(3)}\n';
 }
 
 /// Roughly the inverse of [ui.Shadow.convertRadiusToSigma].
@@ -529,14 +563,12 @@ bool isUnsoundNull(dynamic object) {
 }
 
 bool _offsetIsValid(ui.Offset offset) {
-  assert(offset != null, 'Offset argument was null.'); // ignore: unnecessary_null_comparison
   assert(!offset.dx.isNaN && !offset.dy.isNaN,
       'Offset argument contained a NaN value.');
   return true;
 }
 
 bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4 != null, 'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
 }
@@ -563,3 +595,47 @@ int clampInt(int value, int min, int max) {
     return value;
   }
 }
+
+ui.Rect computeBoundingRectangleFromMatrix(Matrix4 transform, ui.Rect rect) {
+    final Float32List m = transform.storage;
+    // Apply perspective transform to all 4 corners. Can't use left,top, bottom,
+    // right since for example rotating 45 degrees would yield inaccurate size.
+    double x = rect.left;
+    double y = rect.top;
+    double wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+    double xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+    double yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+    double minX = xp, maxX = xp;
+    double minY =yp, maxY = yp;
+    x = rect.right;
+    y = rect.bottom;
+    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+
+    minX = math.min(minX, xp);
+    maxX = math.max(maxX, xp);
+    minY = math.min(minY, yp);
+    maxY = math.max(maxY, yp);
+
+    x = rect.left;
+    y = rect.bottom;
+    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+    minX = math.min(minX, xp);
+    maxX = math.max(maxX, xp);
+    minY = math.min(minY, yp);
+    maxY = math.max(maxY, yp);
+
+    x = rect.right;
+    y = rect.top;
+    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+    minX = math.min(minX, xp);
+    maxX = math.max(maxX, xp);
+    minY = math.min(minY, yp);
+    maxY = math.max(maxY, yp);
+    return ui.Rect.fromLTWH(minX, minY, maxX-minX, maxY-minY);
+  }

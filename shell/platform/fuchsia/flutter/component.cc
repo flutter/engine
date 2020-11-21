@@ -402,9 +402,7 @@ Application::Application(
   settings_.task_observer_remove = std::bind(
       &CurrentMessageLoopRemoveAfterTaskObserver, std::placeholders::_1);
 
-  // TODO(FL-117): Re-enable causal async stack traces when this issue is
-  // addressed.
-  settings_.dart_flags = {"--no_causal_async_stacks"};
+  settings_.dart_flags = {"--no_causal_async_stacks", "--lazy_async_stacks"};
 
   // Don't collect CPU samples from Dart VM C++ code.
   settings_.dart_flags.push_back("--no_profile_vm");
@@ -483,7 +481,7 @@ class FileInNamespaceBuffer final : public fml::Mapping {
     }
     uintptr_t addr;
     zx_status_t status =
-        zx::vmar::root_self()->map(0, buffer.vmo, 0, buffer.size, flags, &addr);
+        zx::vmar::root_self()->map(flags, 0, buffer.vmo, 0, buffer.size, &addr);
     if (status != ZX_OK) {
       FML_LOG(FATAL) << "Failed to map " << path << ": "
                      << zx_status_get_string(status);

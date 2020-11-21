@@ -202,13 +202,14 @@ class Engine final : public RuntimeDelegate,
     /// @brief      Notifies the shell of the name of the root isolate and its
     ///             port when that isolate is launched, restarted (in the
     ///             cold-restart scenario) or the application itself updates the
-    ///             name of the root isolate (via `Window.setIsolateDebugName`
-    ///             in `window.dart`). The name of the isolate is meaningless to
-    ///             the engine but is used in instrumentation and tooling.
-    ///             Currently, this information is to update the service
-    ///             protocol list of available root isolates running in the VM
-    ///             and their names so that the appropriate isolate can be
-    ///             selected in the tools for debugging and instrumentation.
+    ///             name of the root isolate (via
+    ///             `PlatformDispatcher.setIsolateDebugName` in
+    ///             `platform_dispatcher.dart`). The name of the isolate is
+    ///             meaningless to the engine but is used in instrumentation and
+    ///             tooling. Currently, this information is to update the
+    ///             service protocol list of available root isolates running in
+    ///             the VM and their names so that the appropriate isolate can
+    ///             be selected in the tools for debugging and instrumentation.
     ///
     /// @param[in]  isolate_name  The isolate name
     /// @param[in]  isolate_port  The isolate port
@@ -259,6 +260,21 @@ class Engine final : public RuntimeDelegate,
     virtual std::unique_ptr<std::vector<std::string>>
     ComputePlatformResolvedLocale(
         const std::vector<std::string>& supported_locale_data) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Invoked when the Dart VM requests that a deferred library
+    ///             be loaded. Notifies the engine that the deferred library
+    ///             identified by the specified loading unit id should be
+    ///             downloaded and loaded into the Dart VM via
+    ///             `LoadDartDeferredLibrary`
+    ///
+    /// @param[in]  loading_unit_id  The unique id of the deferred library's
+    ///                              loading unit. This id is to be passed
+    ///                              back into LoadDartDeferredLibrary
+    ///                              in order to identify which deferred
+    ///                              library to load.
+    ///
+    virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -552,8 +568,8 @@ class Engine final : public RuntimeDelegate,
   ///             "main.dart", the entrypoint is "main" and the port name
   ///             "1234". Once launched, the isolate may re-christen itself
   ///             using a name it selects via `setIsolateDebugName` in
-  ///             `window.dart`. This name is purely advisory and only used by
-  ///             instrumentation and reporting purposes.
+  ///             `platform_dispatcher.dart`. This name is purely advisory and
+  ///             only used by instrumentation and reporting purposes.
   ///
   /// @return     The debug name of the root isolate.
   ///
@@ -766,6 +782,38 @@ class Engine final : public RuntimeDelegate,
   ///
   const std::string& InitialRoute() const { return initial_route_; }
 
+  //--------------------------------------------------------------------------
+  /// @brief      Loads the Dart shared library into the Dart VM. When the
+  ///             Dart library is loaded successfully, the Dart future
+  ///             returned by the originating loadLibrary() call completes.
+  ///
+  ///             The Dart compiler may generate separate shared libraries
+  ///             files called 'loading units' when libraries are imported
+  ///             as deferred. Each of these shared libraries are identified
+  ///             by a unique loading unit id. Callers should dlopen the
+  ///             shared library file and use dlsym to resolve the dart
+  ///             symbols. These symbols can then be passed to this method to
+  ///             be dynamically loaded into the VM.
+  ///
+  ///             This method is paired with a RequestDartDeferredLibrary
+  ///             invocation that provides the embedder with the loading unit id
+  ///             of the deferred library to load.
+  ///
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+  ///                              shared library.
+  ///
+  /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+  ///                              unit's shared library.
+  ///
+  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                               const uint8_t* snapshot_data,
+                               const uint8_t* snapshot_instructions);
+
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;
@@ -813,6 +861,12 @@ class Engine final : public RuntimeDelegate,
   // |RuntimeDelegate|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // The Following commented out code connects into part 2 of the split AOT
+  // feature. Left commented out until it lands:
+
+  // // |RuntimeDelegate|
+  // void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 
   void SetNeedsReportTimings(bool value) override;
 

@@ -7,9 +7,10 @@
 
 #include <memory>
 
+#include "flow/embedded_views.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/surface.h"
-#include "flutter/flow/texture.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
@@ -211,23 +212,41 @@ class PlatformView {
         int64_t texture_id) = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      Directly invokes platform-specific APIs to compute the
-    ///             locale the platform would have natively resolved to.
+    /// @brief      Loads the dart shared library into the dart VM. When the
+    ///             dart library is loaded successfully, the dart future
+    ///             returned by the originating loadLibrary() call completes.
     ///
-    /// @param[in]  supported_locale_data  The vector of strings that represents
-    ///                                    the locales supported by the app.
-    ///                                    Each locale consists of three
-    ///                                    strings: languageCode, countryCode,
-    ///                                    and scriptCode in that order.
+    ///             The Dart compiler may generate separate shared library .so
+    ///             files called 'loading units' when libraries are imported
+    ///             as deferred. Each of these shared libraries are identified
+    ///             by a unique loading unit id and can be dynamically loaded
+    ///             into the VM by dlopen-ing and resolving the data and
+    ///             instructions symbols.
     ///
-    /// @return     A vector of 3 strings languageCode, countryCode, and
-    ///             scriptCode that represents the locale selected by the
-    ///             platform. Empty strings mean the value was unassigned. Empty
-    ///             vector represents a null locale.
     ///
-    virtual std::unique_ptr<std::vector<std::string>>
-    ComputePlatformViewResolvedLocale(
-        const std::vector<std::string>& supported_locale_data) = 0;
+    /// @param[in]  loading_unit_id  The unique id of the deferred library's
+    ///                              loading unit.
+    ///
+    /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+    ///                              shared library.
+    ///
+    /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+    ///                              unit's shared library.
+    ///
+    virtual void LoadDartDeferredLibrary(
+        intptr_t loading_unit_id,
+        const uint8_t* snapshot_data,
+        const uint8_t* snapshot_instructions) = 0;
+
+    // TODO(garyq): Implement a proper asset_resolver replacement instead of
+    // overwriting the entire asset manager.
+    //--------------------------------------------------------------------------
+    /// @brief      Sets the asset manager of the engine to asset_manager
+    ///
+    /// @param[in]  asset_manager  The asset manager to use.
+    ///
+    virtual void UpdateAssetManager(
+        std::shared_ptr<AssetManager> asset_manager) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -580,6 +599,64 @@ class PlatformView {
   virtual std::unique_ptr<std::vector<std::string>>
   ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data);
+
+  virtual std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder();
+
+  //--------------------------------------------------------------------------
+  /// @brief      Invoked when the dart VM requests that a deferred library
+  ///             be loaded. Notifies the engine that the deferred library
+  ///             identified by the specified loading unit id should be
+  ///             downloaded and loaded into the Dart VM via
+  ///             `LoadDartDeferredLibrary`
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit. This id is to be passed
+  ///                              back into LoadDartDeferredLibrary
+  ///                              in order to identify which deferred
+  ///                              library to load.
+  ///
+  virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Loads the Dart shared library into the Dart VM. When the
+  ///             Dart library is loaded successfully, the Dart future
+  ///             returned by the originating loadLibrary() call completes.
+  ///
+  ///             The Dart compiler may generate separate shared libraries
+  ///             files called 'loading units' when libraries are imported
+  ///             as deferred. Each of these shared libraries are identified
+  ///             by a unique loading unit id. Callers should dlopen the
+  ///             shared library file and use dlsym to resolve the dart
+  ///             symbols. These symbols can then be passed to this method to
+  ///             be dynamically loaded into the VM.
+  ///
+  ///             This method is paired with a RequestDartDeferredLibrary
+  ///             invocation that provides the embedder with the loading unit id
+  ///             of the deferred library to load.
+  ///
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+  ///                              shared library.
+  ///
+  /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+  ///                              unit's shared library.
+  ///
+  virtual void LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                                       const uint8_t* snapshot_data,
+                                       const uint8_t* snapshot_instructions);
+
+  // TODO(garyq): Implement a proper asset_resolver replacement instead of
+  // overwriting the entire asset manager.
+  //--------------------------------------------------------------------------
+  /// @brief      Sets the asset manager of the engine to asset_manager
+  ///
+  /// @param[in]  asset_manager  The asset manager to use.
+  ///
+  virtual void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager);
 
  protected:
   PlatformView::Delegate& delegate_;

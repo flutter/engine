@@ -39,8 +39,7 @@ void testMain() {
     test('pushTransform implements surface lifecycle', () {
       testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
         return sceneBuilder.pushTransform(
-            Matrix4.translationValues(10, 20, 0).toFloat64(),
-            oldLayer: oldLayer);
+            (Matrix4.identity()..scale(html.window.devicePixelRatio)).toFloat64());
       }, () {
         return '''<s><flt-transform></flt-transform></s>''';
       });
@@ -256,6 +255,42 @@ void testMain() {
       expect(list[0].style.zIndex, '-1');
       expect(list[1].style.zIndex, '');
     });
+  });
+
+  /// Verify elementCache is passed during update to reuse existing
+  /// image elements.
+  test('Should retain same image element', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture picture1 = _drawPathImagePath();
+    EngineLayer oldLayer = builder.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+    );
+    builder.addPicture(Offset.zero, picture1);
+    builder.pop();
+
+    html.HtmlElement content = builder.build().webOnlyRootElement;
+    html.document.body.append(content);
+    List<html.ImageElement> list = content.querySelectorAll('img');
+    for (html.ImageElement image in list) {
+      image.alt = 'marked';
+    }
+
+    // Force update to scene which will utilize reuse code path.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    builder2.pushClipRect(
+        const Rect.fromLTRB(5, 10, 300, 300),
+        oldLayer: oldLayer
+    );
+    final Picture picture2 = _drawPathImagePath();
+    builder2.addPicture(Offset.zero, picture2);
+    builder2.pop();
+
+    html.HtmlElement contentAfterReuse = builder2.build().webOnlyRootElement;
+    list = contentAfterReuse.querySelectorAll('img');
+    for (html.ImageElement image in list) {
+      expect(image.alt, 'marked');
+    }
+    expect(list.length, 1);
   });
 
   PersistedPicture findPictureSurfaceChild(PersistedContainerSurface parent) {
@@ -488,6 +523,70 @@ void testMain() {
     await testCase('bcde', 'remove as end', deletions: 1);
     await testCase('be', 'remove in the middle', deletions: 2);
     await testCase('', 'remove all', deletions: 2);
+  });
+
+  test('Canvas should allocate fewer pixels when zoomed out', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture picture1 = _drawPicture();
+    builder.pushClipRect(const Rect.fromLTRB(10, 10, 300, 300));
+    builder.addPicture(Offset.zero, picture1);
+    builder.pop();
+
+    html.HtmlElement content = builder.build().webOnlyRootElement;
+    html.CanvasElement canvas = content.querySelector('canvas');
+    final int unscaledWidth = canvas.width;
+    final int unscaledHeight = canvas.height;
+
+    // Force update to scene which will utilize reuse code path.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    builder2.pushOffset(0, 0);
+    builder2.pushTransform(Matrix4.identity().scaled(0.5, 0.5).toFloat64());
+    builder2.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+    );
+    builder2.addPicture(Offset.zero, picture1);
+    builder2.pop();
+    builder2.pop();
+    builder2.pop();
+
+    html.HtmlElement contentAfterScale = builder2.build().webOnlyRootElement;
+    html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas');
+    // Although we are drawing same picture, due to scaling the new canvas
+    // should have fewer pixels.
+    expect(canvas2.width < unscaledWidth, true);
+    expect(canvas2.height < unscaledHeight, true);
+  });
+
+  test('Canvas should allocate more pixels when zoomed in', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture picture1 = _drawPicture();
+    builder.pushClipRect(const Rect.fromLTRB(10, 10, 300, 300));
+    builder.addPicture(Offset.zero, picture1);
+    builder.pop();
+
+    html.HtmlElement content = builder.build().webOnlyRootElement;
+    html.CanvasElement canvas = content.querySelector('canvas');
+    final int unscaledWidth = canvas.width;
+    final int unscaledHeight = canvas.height;
+
+    // Force update to scene which will utilize reuse code path.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    builder2.pushOffset(0, 0);
+    builder2.pushTransform(Matrix4.identity().scaled(2, 2).toFloat64());
+    builder2.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+    );
+    builder2.addPicture(Offset.zero, picture1);
+    builder2.pop();
+    builder2.pop();
+    builder2.pop();
+
+    html.HtmlElement contentAfterScale = builder2.build().webOnlyRootElement;
+    html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas');
+    // Although we are drawing same picture, due to scaling the new canvas
+    // should have more pixels.
+    expect(canvas2.width > unscaledWidth, true);
+    expect(canvas2.height > unscaledHeight, true);
   });
 }
 
