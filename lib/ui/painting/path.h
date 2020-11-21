@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PATH_H_
 #define FLUTTER_LIB_UI_PAINTING_PATH_H_
 
+#include <mutex>
 #include <unordered_set>
 
 #include "flutter/lib/ui/dart_wrapper.h"
