@@ -71,6 +71,12 @@ source_set("flutter_glfw") {
   }
 }
 
+executable("flutter_glfw_tests") {
+  testonly = true
+  deps = [":flutter_glfw"]
+  sources = ["flutter_glfw_test.cc"]
+}
+
 copy("publish_headers_glfw") {
   sources = _public_headers
   outputs = [ "$root_out_dir/{{source_file_part}}" ]
