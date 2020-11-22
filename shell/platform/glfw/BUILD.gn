@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/testing/testing.gni")
+
 _public_headers = [ "public/flutter_glfw.h" ]
 
 # Any files that are built by clients (client_wrapper code, library headers for
@@ -32,6 +34,7 @@ source_set("flutter_glfw") {
     "event_loop.cc",
     "event_loop.h",
     "flutter_glfw.cc",
+    "flutter_glfw_private.h",
     "glfw_event_loop.cc",
     "glfw_event_loop.h",
     "headless_event_loop.cc",
@@ -71,9 +74,19 @@ source_set("flutter_glfw") {
   }
 }
 
-executable("flutter_glfw_tests") {
+test_fixtures("flutter_glfw_fixtures") {
+  fixtures = []
+}
+
+executable("flutter_glfw_unittests") {
   testonly = true
-  deps = [":flutter_glfw"]
+  deps = [
+    ":flutter_glfw_fixtures",
+    ":flutter_glfw_headers",
+    ":flutter_glfw",
+    "//flutter/shell/platform/embedder:embedder_headers",
+    "//flutter/testing",
+  ]
   sources = ["flutter_glfw_test.cc"]
 }
 

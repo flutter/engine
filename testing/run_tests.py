@@ -158,6 +158,7 @@ def RunCCTests(build_dir, filter):
 
   if IsLinux():
     RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_glfw_unittests', filter, shuffle_flags)
 
 
 def RunEngineBenchmarks(build_dir, filter):
