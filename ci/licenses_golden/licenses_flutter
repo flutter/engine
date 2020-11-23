@@ -1284,6 +1284,8 @@ FILE: ../../../flutter/shell/platform/glfw/client_wrapper/plugin_registrar_glfw_
 FILE: ../../../flutter/shell/platform/glfw/event_loop.cc
 FILE: ../../../flutter/shell/platform/glfw/event_loop.h
 FILE: ../../../flutter/shell/platform/glfw/flutter_glfw.cc
+FILE: ../../../flutter/shell/platform/glfw/flutter_glfw_private.h
+FILE: ../../../flutter/shell/platform/glfw/flutter_glfw_test.cc
 FILE: ../../../flutter/shell/platform/glfw/glfw_event_loop.cc
 FILE: ../../../flutter/shell/platform/glfw/glfw_event_loop.h
 FILE: ../../../flutter/shell/platform/glfw/headless_event_loop.cc
