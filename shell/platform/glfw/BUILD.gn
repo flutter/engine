@@ -30,7 +30,7 @@ source_set("flutter_glfw_headers") {
 }
 
 source_set("flutter_glfw") {
-  public = ["system_utils.h"]
+  public = [ "system_utils.h" ]
 
   sources = [
     "event_loop.cc",
@@ -82,10 +82,10 @@ test_fixtures("flutter_glfw_fixtures") {
 
 executable("flutter_glfw_unittests") {
   testonly = true
-  sources = ["system_utils_test.cc"]
+  sources = [ "system_utils_test.cc" ]
   deps = [
-    ":flutter_glfw_fixtures",
     ":flutter_glfw",
+    ":flutter_glfw_fixtures",
     "//flutter/shell/platform/embedder:embedder_headers",
     "//flutter/testing",
   ]
