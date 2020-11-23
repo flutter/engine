@@ -6,7 +6,6 @@
 #include "flutter/fml/paths.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/runtime/dart_deferred_load_handler.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/isolate_configuration.h"
@@ -58,19 +57,18 @@ static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
 
   auto isolate =
       DartIsolate::CreateRunningRootIsolate(
-          vm.GetSettings(),         // settings
-          vm.GetIsolateSnapshot(),  // isolate_snapshot
-          runners,                  // task_runners
-          {},                       // window
-          {},                       // snapshot_delegate
-          {},                       // hint_freed_delegate
-          {},                       // io_manager
-          {},                       // unref_queue
-          {},                       // image_decoder
-          "main.dart",              // advisory_script_uri
-          entrypoint.c_str(),       // advisory_script_entrypoint
-          DartIsolate::Flags{},     // flags
-          DartDeferredLoadHandler::empty_dart_deferred_load_handler,
+          vm.GetSettings(),                    // settings
+          vm.GetIsolateSnapshot(),             // isolate_snapshot
+          runners,                             // task_runners
+          {},                                  // window
+          {},                                  // snapshot_delegate
+          {},                                  // hint_freed_delegate
+          {},                                  // io_manager
+          {},                                  // unref_queue
+          {},                                  // image_decoder
+          "main.dart",                         // advisory_script_uri
+          entrypoint.c_str(),                  // advisory_script_entrypoint
+          DartIsolate::Flags{},                // flags
           settings.isolate_create_callback,    // isolate create callback
           settings.isolate_shutdown_callback,  // isolate shutdown callback,
           entrypoint,                          // dart entrypoint

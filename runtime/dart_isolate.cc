@@ -87,7 +87,6 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
     Flags isolate_flags,
-    Dart_DeferredLoadHandler& deferred_load_handler,
     const fml::closure& isolate_create_callback,
     const fml::closure& isolate_shutdown_callback,
     std::optional<std::string> dart_entrypoint,
@@ -118,7 +117,6 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
                                    advisory_script_uri,                //
                                    advisory_script_entrypoint,         //
                                    isolate_flags,                      //
-                                   deferred_load_handler,              //
                                    isolate_create_callback,            //
                                    isolate_shutdown_callback           //
                                    )
@@ -189,7 +187,6 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
     Flags flags,
-    Dart_DeferredLoadHandler& deferred_load_handler,
     const fml::closure& isolate_create_callback,
     const fml::closure& isolate_shutdown_callback) {
   TRACE_EVENT0("flutter", "DartIsolate::CreateRootIsolate");
@@ -226,7 +223,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   auto isolate_flags = flags.Get();
   Dart_Isolate vm_isolate = CreateDartIsolateGroup(
       std::move(isolate_group_data), std::move(isolate_data), &isolate_flags,
-      deferred_load_handler, error.error());
+      error.error());
 
   if (error) {
     FML_LOG(ERROR) << "CreateDartIsolateGroup failed: " << error.str();
@@ -292,8 +289,7 @@ std::string DartIsolate::GetServiceId() {
   return service_id;
 }
 
-bool DartIsolate::Initialize(Dart_Isolate dart_isolate,
-                             Dart_DeferredLoadHandler& deferred_load_handler) {
+bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
   TRACE_EVENT0("flutter", "DartIsolate::Initialize");
   if (phase_ != Phase::Uninitialized) {
     return false;
@@ -325,8 +321,8 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate,
     return false;
   }
 
-  // Dart_SetDeferredLoadHandler(&DartDeferredLoadHandler);
-  Dart_SetDeferredLoadHandler(deferred_load_handler);
+  Dart_SetDeferredLoadHandler(
+      DartDeferredLoadHandler::dart_deferred_load_handler);
 
   if (!UpdateThreadPoolNames()) {
     return false;
@@ -751,9 +747,8 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           DART_VM_SERVICE_ISOLATE_NAME,   // script uri
           DART_VM_SERVICE_ISOLATE_NAME,   // script entrypoint
           DartIsolate::Flags{flags},      // flags
-          DartDeferredLoadHandler::empty_dart_deferred_load_handler,
-          nullptr,  // isolate create callback
-          nullptr   // isolate shutdown callback
+          nullptr,                        // isolate create callback
+          nullptr                         // isolate shutdown callback
       );
 
   std::shared_ptr<DartIsolate> service_isolate = weak_service_isolate.lock();
@@ -863,8 +858,7 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
           false)));                              // is_root_isolate
 
   Dart_Isolate vm_isolate = CreateDartIsolateGroup(
-      std::move(isolate_group_data), std::move(isolate_data), flags,
-      DartDeferredLoadHandler::empty_dart_deferred_load_handler, error);
+      std::move(isolate_group_data), std::move(isolate_data), flags, error);
 
   if (*error) {
     FML_LOG(ERROR) << "CreateDartIsolateGroup failed: " << error;
@@ -909,9 +903,7 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
           false)));                             // is_root_isolate
 
   // root isolate should have been created via CreateRootIsolate
-  if (!InitializeIsolate(
-          *embedder_isolate, isolate,
-          DartDeferredLoadHandler::empty_dart_deferred_load_handler, error)) {
+  if (!InitializeIsolate(*embedder_isolate, isolate, error)) {
     return false;
   }
 
@@ -927,7 +919,6 @@ Dart_Isolate DartIsolate::CreateDartIsolateGroup(
     std::unique_ptr<std::shared_ptr<DartIsolateGroupData>> isolate_group_data,
     std::unique_ptr<std::shared_ptr<DartIsolate>> isolate_data,
     Dart_IsolateFlags* flags,
-    Dart_DeferredLoadHandler& deferred_load_handler,
     char** error) {
   TRACE_EVENT0("flutter", "DartIsolate::CreateDartIsolateGroup");
 
@@ -949,8 +940,7 @@ Dart_Isolate DartIsolate::CreateDartIsolateGroup(
   isolate_group_data.release();
   isolate_data.release();
 
-  if (!InitializeIsolate(std::move(embedder_isolate), isolate,
-                         deferred_load_handler, error)) {
+  if (!InitializeIsolate(std::move(embedder_isolate), isolate, error)) {
     return nullptr;
   }
 
@@ -960,10 +950,9 @@ Dart_Isolate DartIsolate::CreateDartIsolateGroup(
 bool DartIsolate::InitializeIsolate(
     std::shared_ptr<DartIsolate> embedder_isolate,
     Dart_Isolate isolate,
-    Dart_DeferredLoadHandler& deferred_load_handler,
     char** error) {
   TRACE_EVENT0("flutter", "DartIsolate::InitializeIsolate");
-  if (!embedder_isolate->Initialize(isolate, deferred_load_handler)) {
+  if (!embedder_isolate->Initialize(isolate)) {
     *error = fml::strdup("Embedder could not initialize the Dart isolate.");
     FML_DLOG(ERROR) << *error;
     return false;

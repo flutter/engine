@@ -359,24 +359,23 @@ bool RuntimeController::LaunchRootIsolate(
 
   auto strong_root_isolate =
       DartIsolate::CreateRunningRootIsolate(
-          settings,                                             //
-          isolate_snapshot_,                                    //
-          task_runners_,                                        //
-          std::make_unique<PlatformConfiguration>(this),        //
-          snapshot_delegate_,                                   //
-          hint_freed_delegate_,                                 //
-          io_manager_,                                          //
-          unref_queue_,                                         //
-          image_decoder_,                                       //
-          advisory_script_uri_,                                 //
-          advisory_script_entrypoint_,                          //
-          DartIsolate::Flags{},                                 //
-          DartDeferredLoadHandler::dart_deferred_load_handler,  //
-          isolate_create_callback_,                             //
-          isolate_shutdown_callback_,                           //
-          dart_entrypoint,                                      //
-          dart_entrypoint_library,                              //
-          std::move(isolate_configuration)                      //
+          settings,                                       //
+          isolate_snapshot_,                              //
+          task_runners_,                                  //
+          std::make_unique<PlatformConfiguration>(this),  //
+          snapshot_delegate_,                             //
+          hint_freed_delegate_,                           //
+          io_manager_,                                    //
+          unref_queue_,                                   //
+          image_decoder_,                                 //
+          advisory_script_uri_,                           //
+          advisory_script_entrypoint_,                    //
+          DartIsolate::Flags{},                           //
+          isolate_create_callback_,                       //
+          isolate_shutdown_callback_,                     //
+          dart_entrypoint,                                //
+          dart_entrypoint_library,                        //
+          std::move(isolate_configuration)                //
           )
           .lock();
 
