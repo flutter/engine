@@ -34,23 +34,23 @@ const char* GetLocaleStringFromEnvironment() {
 }
 
 // The least specific to most specific components of a locale.
-enum class Component {
-  Codeset = 1 << 0,
-  Territory = 1 << 1,
-  Modifier = 1 << 2,
+enum Component {
+  kCodeset = 1 << 0,
+  kTerritory = 1 << 1,
+  kModifier = 1 << 2,
 };
 
 // Construct a mask indicating which of the components in |info| are set.
 int ComputeVariantMask(const LanguageInfo& info) {
   int mask = 0;
   if (!info.territory.empty()) {
-    mask |= static_cast<int>(Component::Territory);
+    mask |= kTerritory;
   }
   if (!info.codeset.empty()) {
-    mask |= static_cast<int>(Component::Codeset);
+    mask |= kCodeset;
   }
   if (!info.modifier.empty()) {
-    mask |= static_cast<int>(Component::Modifier);
+    mask |= kModifier;
   }
   return mask;
 }
@@ -66,13 +66,13 @@ void AppendLocaleVariants(std::vector<LanguageInfo>& languages,
       LanguageInfo variant;
       variant.language = info.language;
 
-      if (i & static_cast<int>(Component::Territory)) {
+      if (i & kTerritory) {
         variant.territory = info.territory;
       }
-      if (i & static_cast<int>(Component::Codeset)) {
+      if (i & kCodeset) {
         variant.codeset = info.codeset;
       }
-      if (i & static_cast<int>(Component::Modifier)) {
+      if (i & kModifier) {
         variant.modifier = info.modifier;
       }
       languages.push_back(variant);
