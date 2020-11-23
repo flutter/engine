@@ -49,6 +49,11 @@ class DomRenderer {
   html.ScriptElement? get canvasKitScript => _canvasKitScript;
   html.ScriptElement? _canvasKitScript;
 
+  /// The cached `define` function which we removed while loading CanvasKit.
+  ///
+  /// Once CanvasKit is loaded we will restore it.
+  dynamic _cachedDefine;
+
   /// The element that contains the [sceneElement].
   ///
   /// This element is created and inserted in the HTML DOM once. It is never
@@ -78,7 +83,8 @@ class DomRenderer {
   /// This getter calls the `hasFocus` method of the `Document` interface.
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
-  bool? get windowHasFocus => js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
+  bool? get windowHasFocus =>
+      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
@@ -172,7 +178,8 @@ class DomRenderer {
     js_util.setProperty(element, name, value);
   }
 
-  static void setElementStyle(html.Element element, String name, String? value) {
+  static void setElementStyle(
+      html.Element element, String name, String? value) {
     if (value == null) {
       element.style.removeProperty(name);
     } else {
@@ -181,8 +188,8 @@ class DomRenderer {
   }
 
   static void setElementTransform(html.Element element, String transformValue) {
-    js_util.setProperty(js_util.getProperty(element, 'style'), 'transform',
-        transformValue);
+    js_util.setProperty(
+        js_util.getProperty(element, 'style'), 'transform', transformValue);
   }
 
   void setText(html.Element element, String text) {
@@ -200,7 +207,8 @@ class DomRenderer {
   }
 
   void setThemeColor(ui.Color color) {
-    html.MetaElement? theme = html.document.querySelector('#flutterweb-theme') as html.MetaElement?;
+    html.MetaElement? theme =
+        html.document.querySelector('#flutterweb-theme') as html.MetaElement?;
     if (theme == null) {
       theme = html.MetaElement()
         ..id = 'flutterweb-theme'
@@ -315,8 +323,8 @@ flt-glass-pane * {
     // This css prevents an autofill overlay brought by the browser during
     // text field autofill by delaying the transition effect.
     // See: https://github.com/flutter/flutter/issues/61132.
-    if(browserHasAutofillOverlay()) {
-        sheet.insertRule('''
+    if (browserHasAutofillOverlay()) {
+      sheet.insertRule('''
 .transparentTextEditing:-webkit-autofill,
 .transparentTextEditing:-webkit-autofill:hover,
 .transparentTextEditing:-webkit-autofill:focus,
@@ -325,7 +333,6 @@ flt-glass-pane * {
 }
 ''', sheet.cssRules.length);
     }
-
 
     final html.BodyElement bodyElement = html.document.body!;
     setElementStyle(bodyElement, 'position', 'fixed');
@@ -416,8 +423,7 @@ flt-glass-pane * {
     // pointer events through to the semantics tree. However, for platform
     // views, the pointer events will not pass through, and will be handled
     // by the platform view.
-    glassPaneElement
-        .insertBefore(_accesibilityPlaceholder, _sceneHostElement);
+    glassPaneElement.insertBefore(_accesibilityPlaceholder, _sceneHostElement);
 
     PointerBinding.initInstance(glassPaneElement);
 
@@ -460,7 +466,14 @@ flt-glass-pane * {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitBaseUrl + 'canvaskit.js';
-      html.document.head!.append(_canvasKitScript!);
+      // CanvasKit will try to use `define()` if it is available, which will
+      // cause errors because CanvasKit uses an anonymous module.
+      if (js_util.hasProperty(html.window, 'define')) {
+        _cachedDefine = js_util.getProperty(html.window, 'define');
+        js_util.setProperty(html.window, 'define', null);
+      }
+      html.document.currentScript!.parentNode!
+          .insertBefore(_canvasKitScript!, html.document.currentScript);
     }
 
     if (html.window.visualViewport != null) {
@@ -469,8 +482,8 @@ flt-glass-pane * {
     } else {
       _resizeSubscription = html.window.onResize.listen(_metricsDidChange);
     }
-    _localeSubscription = languageChangeEvent.forTarget(html.window)
-      .listen(_languageDidChange);
+    _localeSubscription =
+        languageChangeEvent.forTarget(html.window).listen(_languageDidChange);
     EnginePlatformDispatcher.instance._updateLocales();
   }
 
@@ -484,7 +497,7 @@ flt-glass-pane * {
   /// Note: always check for rotations for a mobile device. Update the physical
   /// size if the change is caused by a rotation.
   void _metricsDidChange(html.Event? event) {
-    if(isMobile && !window.isRotation() && textEditing.isEditing) {
+    if (isMobile && !window.isRotation() && textEditing.isEditing) {
       window.computeOnScreenKeyboardInsets();
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     } else {
@@ -517,13 +530,20 @@ flt-glass-pane * {
   static bool? _ellipseFeatureDetected;
 
   /// Draws CanvasElement ellipse with fallback.
-  static void ellipse(html.CanvasRenderingContext2D context,
-      double centerX, double centerY, double radiusX, double radiusY,
-      double rotation, double startAngle, double endAngle, bool antiClockwise) {
+  static void ellipse(
+      html.CanvasRenderingContext2D context,
+      double centerX,
+      double centerY,
+      double radiusX,
+      double radiusY,
+      double rotation,
+      double startAngle,
+      double endAngle,
+      bool antiClockwise) {
     _ellipseFeatureDetected ??= js_util.getProperty(context, 'ellipse') != null;
     if (_ellipseFeatureDetected!) {
-      context.ellipse(centerX, centerY, radiusX, radiusY,
-          rotation, startAngle, endAngle, antiClockwise);
+      context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
+          endAngle, antiClockwise);
     } else {
       context.save();
       context.translate(centerX, centerY);
@@ -539,9 +559,11 @@ flt-glass-pane * {
   static const String orientationLockTypeLandscape = 'landscape';
   static const String orientationLockTypePortrait = 'portrait';
   static const String orientationLockTypePortraitPrimary = 'portrait-primary';
-  static const String orientationLockTypePortraitSecondary = 'portrait-secondary';
+  static const String orientationLockTypePortraitSecondary =
+      'portrait-secondary';
   static const String orientationLockTypeLandscapePrimary = 'landscape-primary';
-  static const String orientationLockTypeLandscapeSecondary = 'landscape-secondary';
+  static const String orientationLockTypeLandscapeSecondary =
+      'landscape-secondary';
 
   /// Sets preferred screen orientation.
   ///
@@ -556,8 +578,7 @@ flt-glass-pane * {
   Future<bool> setPreferredOrientation(List<dynamic>? orientations) {
     final html.Screen screen = html.window.screen!;
     if (!_unsafeIsNull(screen)) {
-      final html.ScreenOrientation? screenOrientation =
-          screen.orientation;
+      final html.ScreenOrientation? screenOrientation = screen.orientation;
       if (!_unsafeIsNull(screenOrientation)) {
         if (orientations!.isEmpty) {
           screenOrientation!.unlock();
@@ -588,7 +609,7 @@ flt-glass-pane * {
 
   // Converts device orientation to w3c OrientationLockType enum.
   static String? _deviceOrientationToLockType(String deviceOrientation) {
-    switch(deviceOrientation) {
+    switch (deviceOrientation) {
       case 'DeviceOrientation.portraitUp':
         return orientationLockTypePortraitPrimary;
       case 'DeviceOrientation.landscapeLeft':
