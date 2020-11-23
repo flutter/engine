@@ -30,7 +30,7 @@ source_set("flutter_glfw_headers") {
 }
 
 source_set("flutter_glfw") {
-  public = _public_headers + ["system_utils.h"]
+  public = ["system_utils.h"]
 
   sources = [
     "event_loop.cc",
