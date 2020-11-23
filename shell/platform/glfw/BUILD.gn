@@ -30,11 +30,12 @@ source_set("flutter_glfw_headers") {
 }
 
 source_set("flutter_glfw") {
+  public = _public_headers + ["system_utils.h"]
+
   sources = [
     "event_loop.cc",
     "event_loop.h",
     "flutter_glfw.cc",
-    "flutter_glfw_private.h",
     "glfw_event_loop.cc",
     "glfw_event_loop.h",
     "headless_event_loop.cc",
@@ -44,6 +45,7 @@ source_set("flutter_glfw") {
     "keyboard_hook_handler.h",
     "platform_handler.cc",
     "platform_handler.h",
+    "system_utils.cc",
     "text_input_plugin.cc",
     "text_input_plugin.h",
   ]
@@ -80,14 +82,13 @@ test_fixtures("flutter_glfw_fixtures") {
 
 executable("flutter_glfw_unittests") {
   testonly = true
+  sources = ["system_utils_test.cc"]
   deps = [
     ":flutter_glfw_fixtures",
-    ":flutter_glfw_headers",
     ":flutter_glfw",
     "//flutter/shell/platform/embedder:embedder_headers",
     "//flutter/testing",
   ]
-  sources = ["flutter_glfw_test.cc"]
 }
 
 copy("publish_headers_glfw") {

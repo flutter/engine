@@ -12,19 +12,17 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
-#include <list>
-#include <string>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/common/cpp/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/glfw/flutter_glfw_private.h"
 #include "flutter/shell/platform/glfw/glfw_event_loop.h"
 #include "flutter/shell/platform/glfw/headless_event_loop.h"
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 #include "flutter/shell/platform/glfw/keyboard_hook_handler.h"
 #include "flutter/shell/platform/glfw/platform_handler.h"
+#include "flutter/shell/platform/glfw/system_utils.h"
 #include "flutter/shell/platform/glfw/text_input_plugin.h"
 
 // GLFW_TRUE & GLFW_FALSE are introduced since libglfw-3.3,
@@ -693,118 +691,22 @@ static bool RunFlutterEngine(
   return true;
 }
 
-const char* GetLocaleStringFromEnvironmentVariables(const char* language,
-                                                    const char* lc_all,
-                                                    const char* lc_messages,
-                                                    const char* lang) {
-  const char* retval;
-  retval = language;
-  if ((retval != NULL) && (retval[0] != '\0')) {
-    return retval;
-  }
-  retval = lc_all;
-  if ((retval != NULL) && (retval[0] != '\0')) {
-    return retval;
-  }
-  retval = lc_messages;
-  if ((retval != NULL) && (retval[0] != '\0')) {
-    return retval;
-  }
-  retval = lang;
-  if ((retval != NULL) && (retval[0] != '\0')) {
-    return retval;
-  }
-
-  return NULL;
-}
-
-const char* GetLocaleStringFromEnvironment() {
-  return GetLocaleStringFromEnvironmentVariables(
-      getenv("LANGUAGE"), getenv("LC_ALL"), getenv("LC_MESSAGES"),
-      getenv("LANG"));
-}
-
-// Parse a locale into its components.
-void ParseLocale(const std::string& locale,
-                 std::string* language,
-                 std::string* territory,
-                 std::string* codeset,
-                 std::string* modifier) {
-  // Locales are in the form "language[_territory][.codeset][@modifier]"
-  std::string::size_type end = locale.size();
-  std::string::size_type modifier_pos = locale.rfind('@');
-  if (modifier_pos != std::string::npos) {
-    *modifier = locale.substr(modifier_pos + 1, end - modifier_pos - 1);
-    end = modifier_pos;
-  }
-
-  std::string::size_type codeset_pos = locale.rfind('.');
-  if (codeset_pos != std::string::npos) {
-    *codeset = locale.substr(codeset_pos + 1, end - codeset_pos - 1);
-    end = codeset_pos;
-  }
-
-  std::string::size_type territory_pos = locale.rfind('_');
-  if (territory_pos != std::string::npos) {
-    *territory = locale.substr(territory_pos + 1, end - territory_pos - 1);
-    end = territory_pos;
-  }
-
-  *language = locale.substr(0, end);
-}
-
-std::vector<std::unique_ptr<FlutterLocale>> GetLocales(
-    const char* locale_string,
-    std::list<std::string>& locale_storage) {
-  if (!locale_string || locale_string[0] == '\0') {
-    locale_string = "C";
-  }
-  std::istringstream locales_stream(locale_string);
-  std::vector<std::unique_ptr<FlutterLocale>> locales;
-  std::string s;
-  while (getline(locales_stream, s, ':')) {
-    locales.push_back(std::make_unique<FlutterLocale>());
-    std::string language, territory, codeset, modifier;
-    ParseLocale(s, &language, &territory, &codeset, &modifier);
-    FlutterLocale* locale = locales.back().get();
-    locale->struct_size = sizeof(FlutterLocale);
-    if (!language.empty()) {
-      locale_storage.push_back(language);
-      locale->language_code = locale_storage.back().c_str();
-    }
-    if (!territory.empty()) {
-      locale_storage.push_back(territory);
-      locale->country_code = locale_storage.back().c_str();
-    }
-    if (!codeset.empty()) {
-      locale_storage.push_back(codeset);
-      locale->script_code = locale_storage.back().c_str();
-    }
-    if (!modifier.empty()) {
-      locale_storage.push_back(modifier);
-      locale->variant_code = locale_storage.back().c_str();
-    }
-  }
-  return locales;
-}
-
-// Returns parsed locales fetched from the environment.
-std::vector<std::unique_ptr<FlutterLocale>> GetLocalesFromEnvironment(
-    std::list<std::string>& locale_storage) {
-  return GetLocales(GetLocaleStringFromEnvironment(), locale_storage);
-}
-
 // Passes locale information to the Flutter engine.
 static void SetUpLocales(FlutterDesktopEngineState* state) {
-  // Helper to extend lifetime of the strings passed to Flutter.
-  std::list<std::string> locale_storage;
-  std::vector<std::unique_ptr<FlutterLocale>> locales =
-      GetLocalesFromEnvironment(locale_storage);
-  FlutterLocale** locales_array =
-      reinterpret_cast<FlutterLocale**>(&locales[0]);
+  std::vector<flutter::LanguageInfo> languages =
+      flutter::GetPreferredLanguageInfo();
+  std::vector<FlutterLocale> flutter_locales =
+      flutter::ConvertToFlutterLocale(languages);
+  // Convert the locale list to the locale pointer list that must be provided.
+  std::vector<const FlutterLocale*> flutter_locale_list;
+  flutter_locale_list.reserve(flutter_locales.size());
+  std::transform(
+      flutter_locales.begin(), flutter_locales.end(),
+      std::back_inserter(flutter_locale_list),
+      [](const auto& arg) -> const auto* { return &arg; });
   FlutterEngineResult result = FlutterEngineUpdateLocales(
-      state->flutter_engine, const_cast<const FlutterLocale**>(locales_array),
-      locales.size());
+      state->flutter_engine, flutter_locale_list.data(),
+      flutter_locale_list.size());
   if (result != kSuccess) {
     std::cerr << "Failed to set up Flutter locales." << std::endl;
   }
