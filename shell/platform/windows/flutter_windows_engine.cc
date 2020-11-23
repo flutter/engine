@@ -124,8 +124,9 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   window_proc_delegate_manager_ =
       std::make_unique<Win32WindowProcDelegateManager>();
 
-  // Set up internal channels. In the longer term, these should be replaced with
-  // formal embedder APIs.
+  // Set up internal channels.
+  // TODO: Replace this with an embedder.h API. See
+  // https://github.com/flutter/flutter/issues/71099
   settings_channel_ =
       std::make_unique<BasicMessageChannel<rapidjson::Document>>(
           messenger_wrapper_.get(), "flutter/settings",
