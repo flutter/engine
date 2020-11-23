@@ -20,6 +20,7 @@
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_base.h"
 
+using AXTextMarkerRangeRef = CFTypeRef;
 using AXTextMarkerRef = CFTypeRef;
 
 namespace ax { // namespace
@@ -103,6 +104,27 @@ enum AXTextEditType {
   AXTextEditTypeAttributesChange
 };
 
+enum AXTextSelectionDirection {
+  AXTextSelectionDirectionUnknown,
+  AXTextSelectionDirectionBeginning,
+  AXTextSelectionDirectionEnd,
+  AXTextSelectionDirectionPrevious,
+  AXTextSelectionDirectionNext,
+  AXTextSelectionDirectionDiscontiguous
+};
+
+enum AXTextSelectionGranularity {
+  AXTextSelectionGranularityUnknown,
+  AXTextSelectionGranularityCharacter,
+  AXTextSelectionGranularityWord,
+  AXTextSelectionGranularityLine,
+  AXTextSelectionGranularitySentence,
+  AXTextSelectionGranularityParagraph,
+  AXTextSelectionGranularityPage,
+  AXTextSelectionGranularityDocument,
+  AXTextSelectionGranularityAll
+};
+
 const int kLiveRegionChangeIntervalMS = 20;
 
 extern "C" {
@@ -115,6 +137,10 @@ extern "C" {
 AXTextMarkerRef AXTextMarkerCreate(CFAllocatorRef allocator,
                                    const UInt8* bytes,
                                    CFIndex length);
+
+AXTextMarkerRangeRef AXTextMarkerRangeCreate(CFAllocatorRef allocator,
+                                             AXTextMarkerRef start_marker,
+                                             AXTextMarkerRef end_marker);
 
 // #endif  // MAC_OS_X_VERSION_10_11
 
@@ -204,7 +230,35 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
       }
       break;
     case ax::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {
-      // flutter does not support this event.
+      // This event always fires at root
+      mac_notification = NSAccessibilitySelectedTextChangedNotification;
+      // WebKit fires a notification both on the focused object and the page
+      // root.
+      const AXTreeData& tree_data = GetBridge()->GetAXTree()->data();
+      int32_t focus = tree_data.focus_id;
+      if (focus == AXNode::kInvalidAXID || focus != tree_data.sel_anchor_object_id)
+        break;  // Just fire a notification on the root.
+      FlutterAccessibility* focus_node = GetBridge()->GetFlutterAccessibilityFromID(focus);
+      if (!focus_node)
+        break;
+      if (SystemVersionGreaterOrEqualTo({ .majorVersion = 10, .minorVersion = 11 })) {
+        // |NSAccessibilityPostNotificationWithUserInfo| should be used on OS X
+        // 10.11 or later to notify Voiceover about text selection changes. This
+        // API has been present on versions of OS X since 10.7 but doesn't
+        // appear to be needed by Voiceover before version 10.11.
+        NSDictionary* user_info =
+            GetUserInfoForSelectedTextChangedNotification();
+
+        FireNativeMacNotificationWithUserInfo(
+            focus_node->GetNativeViewAccessible(), mac_notification, user_info);
+        FireNativeMacNotificationWithUserInfo(
+            native_node, mac_notification, user_info);
+        return;
+      } else {
+        FireNativeMacNotification(focus_node->GetNativeViewAccessible(),
+                                        mac_notification);
+      }
+      break;
     }
     case ax::AXEventGenerator::Event::CHECKED_STATE_CHANGED:
       mac_notification = NSAccessibilityValueChangedNotification;
@@ -213,7 +267,6 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
     case ax::AXEventGenerator::Event::SELECTED_VALUE_CHANGED:
     case ax::AXEventGenerator::Event::VALUE_IN_TEXT_FIELD_CHANGED:
       mac_notification = NSAccessibilityValueChangedNotification;
-      NSLog(@"compare result %d has state, %d", SystemVersionGreaterOrEqualTo({ .majorVersion = 10, .minorVersion = 11 }), GetData().HasState(ax::State::kEditable));
       if (SystemVersionGreaterOrEqualTo({ .majorVersion = 10, .minorVersion = 11 }) && GetData().HasState(ax::State::kEditable)) {
         std::u16string deleted_text;
         std::u16string inserted_text;
@@ -221,8 +274,6 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
         computeTextEdit(deleted_text, inserted_text, &edit_text_marker);
         NSDictionary* user_info = GetUserInfoForValueChangedNotification(
             native_node, deleted_text, inserted_text, edit_text_marker);
-        NSLog(@"user_info of value change %@", user_info);
-        NSLog(@"GetNativeAccessibile %@", GetNativeViewAccessible());
         FireNativeMacNotification(
             native_node, mac_notification);
         FireNativeMacNotification(
@@ -401,11 +452,7 @@ bool FlutterAccessibilityMac::IsInGeneratedEventBatch(
   return false;
 }
 
-// AXPlatformNodeDelegateBase override
-const AXNodeData& FlutterAccessibilityMac::GetData() const {
-  return GetAXNode()->data();
-}
-
+// FlutterAccessibilityMac override
 void FlutterAccessibilityMac::DispatchAccessibilityAction(uint16_t target, FlutterSemanticsAction action, uint8_t* data, size_t data_size) {
   FML_LOG(ERROR) << "dispatch action to engine" << action;
   [GetFlutterEngine() dispatchSemanticsAction:target
@@ -417,21 +464,6 @@ void FlutterAccessibilityMac::DispatchAccessibilityAction(uint16_t target, Flutt
 gfx::NativeViewAccessible FlutterAccessibilityMac::GetNativeViewAccessible() {
   FML_DCHECK(ax_platform_node_);
   return ax_platform_node_->GetNativeViewAccessible();
-}
-
-gfx::NativeViewAccessible FlutterAccessibilityMac::GetParent() {
-  if (!GetAXNode()->parent()) {
-    return nullptr;
-  }
-  return GetBridge()->GetFlutterAccessibilityFromID(GetAXNode()->parent()->id())->GetNativeViewAccessible();
-}
-
-gfx::NativeViewAccessible FlutterAccessibilityMac::GetFocus() {
-  int32_t focused_node = GetBridge()->GetLastFocusedNode();
-  if (focused_node == ax::AXNode::kInvalidAXID) {
-    return nullptr;
-  }
-  return GetBridge()->GetFlutterAccessibilityFromID(focused_node)->GetNativeViewAccessible();
 }
 
 SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinate_system,
@@ -568,6 +600,60 @@ void FlutterAccessibilityMac::computeTextEdit(std::u16string& inserted_text, std
 }
 
 NSDictionary*
+FlutterAccessibilityMac::GetUserInfoForSelectedTextChangedNotification() {
+  NSMutableDictionary* user_info =
+      [[NSMutableDictionary alloc] init];
+  [user_info setObject:@YES forKey:NSAccessibilityTextStateSyncKey];
+  [user_info setObject:@(AXTextSelectionDirectionUnknown)
+                forKey:NSAccessibilityTextSelectionDirection];
+  [user_info setObject:@(AXTextSelectionGranularityUnknown)
+                forKey:NSAccessibilityTextSelectionGranularity];
+  [user_info setObject:@YES
+                forKey:NSAccessibilityTextSelectionChangedFocus];
+
+  // TODO(chunhtai): figure out whether selection has moved or not.
+  [user_info setObject:@(AXTextStateChangeTypeSelectionMove)
+                  forKey:NSAccessibilityTextStateChangeTypeKey];
+
+  ax::AXTree::Selection selection = GetBridge()->GetAXTree()->GetUnignoredSelection();
+  int32_t focus_id = selection.focus_object_id;
+  FlutterAccessibility* focus_object = GetBridge()->GetFlutterAccessibilityFromID(focus_id);
+  if (focus_object) {
+    id native_focus_object = focus_object->GetNativeViewAccessible();
+    [user_info setObject:native_focus_object
+                  forKey:NSAccessibilityTextChangeElement];
+
+    id selected_text = CreateTextMarkerRange(selection);
+    if (selected_text) {
+      NSString* const NSAccessibilitySelectedTextMarkerRangeAttribute =
+          @"AXSelectedTextMarkerRange";
+      [user_info setObject:selected_text
+                    forKey:NSAccessibilitySelectedTextMarkerRangeAttribute];
+    }
+  }
+
+  return user_info;
+}
+
+id FlutterAccessibilityMac::CreateTextMarkerRange(ax::AXTree::Selection selection) {
+  AXNodePosition::AXPositionInstance anchor = AXNodePosition::CreateTextPosition(
+      GetBridge()->GetAXTree()->GetAXTreeID(), selection.anchor_object_id, selection.anchor_offset,  selection.anchor_affinity);
+  AXNodePosition::AXPositionInstance focus = AXNodePosition::CreateTextPosition(
+      GetBridge()->GetAXTree()->GetAXTreeID(), selection.focus_object_id, selection.focus_offset,  selection.focus_affinity);
+  AXNodePosition::SerializedPosition serialized_anchor = anchor->Serialize();
+  AXNodePosition::SerializedPosition serialized_focus = focus->Serialize();
+  AXTextMarkerRef start_marker = AXTextMarkerCreate(
+      kCFAllocatorDefault, reinterpret_cast<const UInt8*>(&serialized_anchor),
+      sizeof(AXNodePosition::SerializedPosition));
+  AXTextMarkerRef end_marker = AXTextMarkerCreate(
+      kCFAllocatorDefault, reinterpret_cast<const UInt8*>(&serialized_focus),
+      sizeof(AXNodePosition::SerializedPosition));
+  AXTextMarkerRangeRef cf_marker_range =
+      AXTextMarkerRangeCreate(kCFAllocatorDefault, start_marker, end_marker);
+  return (__bridge id)(cf_marker_range);
+}
+
+NSDictionary*
 FlutterAccessibilityMac::GetUserInfoForValueChangedNotification(
     const id native_node,
     const std::u16string& deleted_text,
@@ -617,15 +703,6 @@ FlutterAccessibilityMac::GetUserInfoForValueChangedNotification(
 
 FlutterEngine* FlutterAccessibilityMac::GetFlutterEngine() const {
   return (__bridge FlutterEngine*)GetBridge()->GetUserData();
-}
-
-int FlutterAccessibilityMac::GetChildCount() const {
-  return static_cast<int>(GetAXNode()->GetUnignoredChildCount());
-}
-
-gfx::NativeViewAccessible FlutterAccessibilityMac::ChildAtIndex(int index) {
-  int32_t child = GetAXNode()->GetUnignoredChildAtIndex(index)->id();
-  return GetBridge()->GetFlutterAccessibilityFromID(child)->GetNativeViewAccessible();
 }
 
 gfx::NativeViewAccessible FlutterAccessibilityMac::GetNSWindow() {

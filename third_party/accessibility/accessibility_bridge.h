@@ -94,7 +94,7 @@ class AccessibilityBridge : public AXTreeObserver {
 
   void InitAXTree(const AXTreeUpdate& initial_state);
   void GetSubTreeList(SemanticsNode target, std::vector<SemanticsNode>& result);
-  void ConvertFluterUpdateToAXNodeData(const SemanticsNode& node, AXNodeData& node_data);
+  void ConvertFluterUpdate(const SemanticsNode& node, AXTreeUpdate& tree_update);
   void SetRoleFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
   void SetStateFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
   void SetActionsFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
@@ -103,6 +103,8 @@ class AccessibilityBridge : public AXTreeObserver {
   void SetIntListAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
   void SetStringListAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
   void SetNameFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
+  void SetValueFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
+  void SetTreeData(const SemanticsNode& node, AXTreeUpdate& tree_update);
   SemanticsNode FromFlutterSemanticsNode(const FlutterSemanticsNode* flutter_node);
   SemanticsCustomAction FromFlutterSemanticsCustomAction(const FlutterSemanticsCustomAction* flutter_custom_action);
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);

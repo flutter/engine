@@ -33,10 +33,39 @@
 // #import "ui/gfx/mac/coordinate_conversion.h"
 // #include "ui/strings/grit/ui_strings.h"
 
+using AXTextMarkerRangeRef = CFTypeRef;
+using AXTextMarkerRef = CFTypeRef;
+
 namespace {
 
-NSString* const NSAccessibilityScrollToVisibleAction = @"AXScrollToVisible";
+extern "C" {
 
+AXTextMarkerRef AXTextMarkerRangeCopyStartMarker(
+    AXTextMarkerRangeRef text_marker_range);
+
+AXTextMarkerRef AXTextMarkerRangeCopyEndMarker(
+    AXTextMarkerRangeRef text_marker_range);
+
+size_t AXTextMarkerGetLength(AXTextMarkerRef text_marker);
+
+const UInt8* AXTextMarkerGetBytePtr(AXTextMarkerRef text_marker);
+
+AXTextMarkerRef AXTextMarkerCreate(CFAllocatorRef allocator,
+                                   const UInt8* bytes,
+                                   CFIndex length);
+
+AXTextMarkerRangeRef AXTextMarkerRangeCreate(CFAllocatorRef allocator,
+                                             AXTextMarkerRef start_marker,
+                                             AXTextMarkerRef end_marker);
+
+}
+
+NSString* const NSAccessibilityScrollToVisibleAction = @"AXScrollToVisible";
+// Private attributes for text markers.
+NSString* const NSAccessibilityStartTextMarkerAttribute = @"AXStartTextMarker";
+NSString* const NSAccessibilityEndTextMarkerAttribute = @"AXEndTextMarker";
+NSString* const NSAccessibilitySelectedTextMarkerRangeAttribute =
+    @"AXSelectedTextMarkerRange";
 // Same length as web content/WebKit.
 static int kLiveRegionDebounceMillis = 20;
 
@@ -291,6 +320,38 @@ RoleMap BuildSubroleMap() {
   };
 
   return RoleMap(begin(subroles), end(subroles));
+}
+
+ax::AXNodePosition::AXPositionInstance CreatePositionFromTextMarker(
+    AXTextMarkerRef text_marker) {
+  if (AXTextMarkerGetLength(text_marker) != sizeof(ax::AXNodePosition::SerializedPosition))
+    return ax::AXNodePosition::CreateNullPosition();
+
+  const UInt8* source_buffer = AXTextMarkerGetBytePtr(text_marker);
+  if (!source_buffer)
+    return ax::AXNodePosition::CreateNullPosition();
+
+  return ax::AXNodePosition::Unserialize(
+      *reinterpret_cast<const ax::AXNodePosition::SerializedPosition*>(source_buffer));
+}
+
+id CreateTextMarkerRange(ax::AXTree::Selection selection) {
+  ax::AXTreeID tree_id;
+  ax::AXNodePosition::AXPositionInstance anchor = ax::AXNodePosition::CreateTextPosition(
+      tree_id, selection.anchor_object_id, selection.anchor_offset,  selection.anchor_affinity);
+  ax::AXNodePosition::AXPositionInstance focus = ax::AXNodePosition::CreateTextPosition(
+      tree_id, selection.focus_object_id, selection.focus_offset,  selection.focus_affinity);
+  ax::AXNodePosition::SerializedPosition serialized_anchor = anchor->Serialize();
+  ax::AXNodePosition::SerializedPosition serialized_focus = focus->Serialize();
+  AXTextMarkerRef start_marker = AXTextMarkerCreate(
+      kCFAllocatorDefault, reinterpret_cast<const UInt8*>(&serialized_anchor),
+      sizeof(ax::AXNodePosition::SerializedPosition));
+  AXTextMarkerRef end_marker = AXTextMarkerCreate(
+      kCFAllocatorDefault, reinterpret_cast<const UInt8*>(&serialized_focus),
+      sizeof(ax::AXNodePosition::SerializedPosition));
+  AXTextMarkerRangeRef cf_marker_range =
+      AXTextMarkerRangeCreate(kCFAllocatorDefault, start_marker, end_marker);
+  return (__bridge id)(cf_marker_range);
 }
 
 EventMap BuildEventMap() {
@@ -615,6 +676,9 @@ bool AlsoUseShowMenuActionForDefaultAction(const ax::AXNodeData& data) {
     NSAccessibilityInsertionPointLineNumberAttribute,
     NSAccessibilityNumberOfCharactersAttribute,
     NSAccessibilitySelectedTextAttribute,
+    NSAccessibilityStartTextMarkerAttribute,
+    NSAccessibilityEndTextMarkerAttribute,
+    NSAccessibilitySelectedTextMarkerRangeAttribute,
     NSAccessibilitySelectedTextRangeAttribute,
     NSAccessibilityVisibleCharacterRangeAttribute,
   ];
@@ -669,6 +733,9 @@ bool AlsoUseShowMenuActionForDefaultAction(const ax::AXNodeData& data) {
   } else if ([attribute
                  isEqualToString:NSAccessibilitySelectedTextRangeAttribute]) {
     [self setAccessibilitySelectedTextRange:((NSValue*)value).rangeValue];
+  } else if ([attribute
+                 isEqualToString:NSAccessibilitySelectedTextMarkerRangeAttribute]) {
+    [self setAccessibilitySelectedTextMarkerRange:value];
   } else if ([attribute isEqualToString:NSAccessibilityFocusedAttribute]) {
     [self setAccessibilityFocused:((NSNumber*)value).boolValue];
   }
@@ -867,6 +934,38 @@ bool AlsoUseShowMenuActionForDefaultAction(const ax::AXNodeData& data) {
   return [NSValue valueWithRange:{static_cast<NSUInteger>(std::min(start, end)), static_cast<NSUInteger>(abs(end - start))}];
 }
 
+- (id)AXSelectedTextMarkerRange {
+  ax::AXTree::Selection selection;
+  selection.is_backward = true;
+  selection.anchor_offset = _node->GetIntAttribute(ax::IntAttribute::kTextSelEnd);
+  selection.focus_offset = _node->GetIntAttribute(ax::IntAttribute::kTextSelStart);
+  selection.anchor_object_id = _node->GetData().id;
+  selection.focus_object_id = _node->GetData().id;
+  return CreateTextMarkerRange(selection);
+}
+
+- (id)AXStartTextMarker {
+  ax::AXTreeID tree_id;
+  ax::AXNodePosition::AXPositionInstance position = ax::AXNodePosition::CreateTextPosition(
+      tree_id, _node->GetData().id, 0,  ax::TextAffinity::kDownstream);
+  ax::AXNodePosition::SerializedPosition serialized = position->Serialize();
+  AXTextMarkerRef cf_text_marker = AXTextMarkerCreate(
+      kCFAllocatorDefault, reinterpret_cast<const UInt8*>(&serialized),
+      sizeof(ax::AXNodePosition::SerializedPosition));
+  return (__bridge id)(cf_text_marker);
+}
+
+- (id)AXEndTextMarker {
+  ax::AXTreeID tree_id;
+  ax::AXNodePosition::AXPositionInstance position = ax::AXNodePosition::CreateTextPosition(
+      tree_id, _node->GetData().id, 0,  ax::TextAffinity::kDownstream);
+  ax::AXNodePosition::SerializedPosition serialized = position->Serialize();
+  AXTextMarkerRef cf_text_marker = AXTextMarkerCreate(
+      kCFAllocatorDefault, reinterpret_cast<const UInt8*>(&serialized),
+      sizeof(ax::AXNodePosition::SerializedPosition));
+  return (__bridge id)(cf_text_marker);
+}
+
 - (NSNumber*)AXNumberOfCharacters {
   return @([[self getAXValueAsString] length]);
 }
@@ -918,8 +1017,7 @@ bool AlsoUseShowMenuActionForDefaultAction(const ax::AXNodeData& data) {
   // from ax::TextInputClient::GetCompositionCharacterBounds().
   // TODO(chunhtai): we will need to implementt this method in order to support
   // textfield
-  FML_DCHECK(true);
-  return nil;
+  return [NSValue valueWithRect:[self boundsInScreen]];
 }
 
 - (id)AXRTFForRange:(id)parameter {
@@ -943,6 +1041,144 @@ bool AlsoUseShowMenuActionForDefaultAction(const ax::AXNodeData& data) {
   // decorations, and BridgedContentView has a conversion function that creates
   // an NSAttributedString. Refactor things so they can be used here.
   return attributedString.autorelease();
+}
+
+// Flutter added new text prarmeterized attribute
+- (id)AXTextMarkerIsValid:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXIndexForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXTextMarkerForIndex:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXEndTextMarkerForBounds:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXStartTextMarkerForBounds:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXLineTextMarkerRangeForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXUIElementForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXTextMarkerRangeForUIElement:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXLineForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXTextMarkerRangeForLine:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXStringForTextMarkerRange:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXTextMarkerForPosition:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXBoundsForTextMarkerRange:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXAttributedStringForTextMarkerRange:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXAttributedStringForTextMarkerRangeWithOptions:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXTextMarkerRangeForUnorderedTextMarkers:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXNextTextMarkerForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXPreviousTextMarkerForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXLeftWordTextMarkerRangeForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXRightWordTextMarkerRangeForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXLeftLineTextMarkerRangeForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXRightLineTextMarkerRangeForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXSentenceTextMarkerRangeForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXParagraphTextMarkerRangeForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXNextWordEndTextMarkerForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXPreviousWordStartTextMarkerForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXNextLineEndTextMarkerForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXPreviousLineStartTextMarkerForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXNextSentenceEndTextMarkerForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXPreviousSentenceStartTextMarkerForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXNextParagraphEndTextMarkerForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXPreviousParagraphStartTextMarkerForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXStyleTextMarkerRangeForTextMarker:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
+}
+- (id)AXLengthForTextMarkerRange:(id)parameter {
+  FML_DCHECK(false);
+  return nil;
 }
 
 - (NSString*)description {
@@ -1029,7 +1265,8 @@ bool AlsoUseShowMenuActionForDefaultAction(const ax::AXNodeData& data) {
   // accessibility clients from trying to set the selection range, which won't
   // work because of 692362.
   if (selector == @selector(setAccessibilitySelectedText:) ||
-      selector == @selector(setAccessibilitySelectedTextRange:)) {
+      selector == @selector(setAccessibilitySelectedTextRange:) ||
+      selector == @selector(setAccessibilitySelectedTextMarkerRange:)) {
     return restriction != ax::Restriction::kReadOnly;
   }
 
@@ -1090,6 +1327,27 @@ bool AlsoUseShowMenuActionForDefaultAction(const ax::AXNodeData& data) {
   data.action = ax::Action::kSetSelection;
   data.anchor_offset = range.location;
   data.focus_offset = NSMaxRange(range);
+  _node->GetDelegate()->AccessibilityPerformAction(data);
+}
+
+- (void)setAccessibilitySelectedTextMarkerRange:(id)marker_range {
+  AXTextMarkerRangeRef cf_marker_range =
+      static_cast<AXTextMarkerRangeRef>(marker_range);
+
+  AXTextMarkerRef start_marker = AXTextMarkerRangeCopyStartMarker(cf_marker_range);
+  AXTextMarkerRef end_marker = AXTextMarkerRangeCopyEndMarker(cf_marker_range);
+  if (!start_marker || !end_marker)
+    return;
+
+  ax::AXNodePosition::AXPositionInstance anchor =
+      CreatePositionFromTextMarker(start_marker);
+  ax::AXNodePosition::AXPositionInstance focus =
+      CreatePositionFromTextMarker(end_marker);
+  // |AXPlatformRange| takes ownership of its anchor and focus.
+  ax::AXActionData data;
+  data.action = ax::Action::kSetSelection;
+  data.anchor_offset = anchor->text_offset();
+  data.focus_offset = focus->text_offset();
   _node->GetDelegate()->AccessibilityPerformAction(data);
 }
 

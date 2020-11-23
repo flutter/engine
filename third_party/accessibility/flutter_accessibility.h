@@ -25,7 +25,13 @@ class FlutterAccessibility : public AXPlatformNodeDelegateBase {
 
   AccessibilityBridge* GetBridge() const;
   AXNode* GetAXNode() const;
+  // AXPlatformNodeDelegateBase override;
+  const AXNodeData& GetData() const override;
   bool AccessibilityPerformAction(const AXActionData& data) override;
+  gfx::NativeViewAccessible GetParent() override;
+  gfx::NativeViewAccessible GetFocus() override;
+  int GetChildCount() const override;
+  gfx::NativeViewAccessible ChildAtIndex(int index) override;
 
   /**
    * Called only once, immediately after construction. The constructor doesn't

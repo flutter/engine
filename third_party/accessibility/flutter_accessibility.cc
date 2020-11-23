@@ -13,6 +13,11 @@ FlutterAccessibility::FlutterAccessibility() = default;
 
 FlutterAccessibility::~FlutterAccessibility() = default;
 
+void FlutterAccessibility::Init(AccessibilityBridge* bridge, AXNode* node) {
+  bridge_ = bridge;
+  ax_node_ = node;
+}
+
 AccessibilityBridge* FlutterAccessibility::GetBridge() const {
   return bridge_;
 }
@@ -106,9 +111,35 @@ bool FlutterAccessibility::AccessibilityPerformAction(
   return false;
 }
 
-void FlutterAccessibility::Init(AccessibilityBridge* bridge, AXNode* node) {
-  bridge_ = bridge;
-  ax_node_ = node;
+const AXNodeData& FlutterAccessibility::GetData() const {
+  return GetAXNode()->data();
+}
+
+gfx::NativeViewAccessible FlutterAccessibility::GetParent() {
+  if (!GetAXNode()->parent()) {
+    return nullptr;
+  }
+  return GetBridge()->GetFlutterAccessibilityFromID(GetAXNode()->parent()->id())->GetNativeViewAccessible();
+}
+
+gfx::NativeViewAccessible FlutterAccessibility::GetFocus() {
+  int32_t focused_node = GetBridge()->GetLastFocusedNode();
+  if (focused_node == ax::AXNode::kInvalidAXID) {
+    return nullptr;
+  }
+  FlutterAccessibility* focus = GetBridge()->GetFlutterAccessibilityFromID(focused_node);
+  if (!focus)
+    return nullptr;
+  return GetBridge()->GetFlutterAccessibilityFromID(focused_node)->GetNativeViewAccessible();
+}
+
+int FlutterAccessibility::GetChildCount() const {
+  return static_cast<int>(GetAXNode()->GetUnignoredChildCount());
+}
+
+gfx::NativeViewAccessible FlutterAccessibility::ChildAtIndex(int index) {
+  int32_t child = GetAXNode()->GetUnignoredChildAtIndex(index)->id();
+  return GetBridge()->GetFlutterAccessibilityFromID(child)->GetNativeViewAccessible();
 }
 
 }  // namespace ax

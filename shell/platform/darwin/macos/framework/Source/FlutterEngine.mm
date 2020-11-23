@@ -740,11 +740,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 // - (void)printTree:(NSAccessibilityElement*)element msgs:(std::vector<std::string>&)msgs level:(int)level {
-//   msgs[level] += std::string([element.accessibilityRole UTF8String]) + "-";
-//   if (element.isAccessibilityElement)
-//     msgs[level] += "true,";
-//   else
-//     msgs[level] += "false,";
+//   NSString* m = [NSString stringWithFormat:@"%@, ",element];
+
+//   msgs[level] += [m UTF8String];
+//   // if (element.isAccessibilityElement)
+//   //   msgs[level] += "true,";
+//   // else
+//   //   msgs[level] += "false,";
 //   // for (id child in element.accessibilityChildren) {
 //   //   NSLog(@"%@ has child %@", element, child);
 //   // }
@@ -759,8 +761,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   if (action->id == kFlutterSemanticsNodeIdBatchEnd) {
     _bridge->CommitUpdates();
     if (_bridge->GetFlutterAccessibilityFromID(0)) {
-      NSAccessibilityElement* root = _bridge->GetFlutterAccessibilityFromID(0)->GetNativeViewAccessible();
-      self.viewController.view.accessibilityChildren = @[root];
+      if ((!self.viewController.view.accessibilityChildren || [self.viewController.view.accessibilityChildren count] == 0)) {
+        NSAccessibilityElement* root = _bridge->GetFlutterAccessibilityFromID(0)->GetNativeViewAccessible();
+        self.viewController.view.accessibilityChildren = @[root];
+      }
     } else {
       self.viewController.view.accessibilityChildren = nil;
     }
@@ -771,8 +775,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     //   NSLog(@"%@", [NSString stringWithUTF8String:msg.data()]);
     // }
   }
-  // The memory of input action does not persist in between these update calls,
-  // we need to save the value instead of the reference.
   _bridge->AddFlutterSemanticsCustomActionUpdate(action);
 }
 
