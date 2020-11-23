@@ -668,7 +668,7 @@ void _testHorizontalScrolling() {
         operatingSystem == OperatingSystem.macOs) {
       browserMaxScrollDiff = 1;
     }
-    expect(scrollable.scrollLeft, 10 - browserMaxScrollDiff);
+    expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
 
     scrollable.scrollLeft = 20;
     expect(scrollable.scrollLeft, 20);
