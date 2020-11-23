@@ -48,7 +48,7 @@ std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrDirectContext* /* u
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUMTLLayerHandle IOSSurfaceMetal::GetCAMetalLayer(MTLFrameInfo frame_info) const {
+GPUCAMetalLayerHandle IOSSurfaceMetal::GetCAMetalLayer(MTLFrameInfo frame_info) const {
   CAMetalLayer* layer = layer_.get();
   layer.device = device_;
 

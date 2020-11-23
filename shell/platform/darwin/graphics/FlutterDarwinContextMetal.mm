@@ -8,8 +8,6 @@
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
-namespace {
-
 static GrContextOptions CreateMetalGrContextOptions() {
   GrContextOptions options = {};
   if (flutter::PersistentCache::cache_sksl()) {
@@ -20,16 +18,10 @@ static GrContextOptions CreateMetalGrContextOptions() {
   return options;
 }
 
-}  // namespace
-
-@implementation FlutterDarwinContextMetal {
-}
+@implementation FlutterDarwinContextMetal
 
 - (instancetype)initWithDefaultMTLDevice {
-  return [self initWithMTLDevice:MTLCreateSystemDefaultDevice()];
-}
-
-- (instancetype)initWithMTLDevice:(id<MTLDevice>)mtlDevice {
+  id<MTLDevice> mtlDevice = MTLCreateSystemDefaultDevice();
   return [self initWithMTLDevice:mtlDevice commandQueue:[mtlDevice newCommandQueue]];
 }
 

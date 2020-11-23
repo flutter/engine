@@ -25,7 +25,7 @@ typedef void* GPUMTLDeviceHandle;
 typedef void* GPUMTLCommandQueueHandle;
 
 // expected to be CAMetalLayer*
-typedef void* GPUMTLLayerHandle;
+typedef void* GPUCAMetalLayerHandle;
 
 // expected to be id<MTLTexture>
 typedef void* GPUMTLTextureHandle;
@@ -65,7 +65,8 @@ class GPUSurfaceMetalDelegate {
   /// @brief Returns the handle to the CAMetalLayer to render to. This is only
   /// called when the specifed render target type is `kCAMetalLayer`.
   ///
-  virtual GPUMTLLayerHandle GetCAMetalLayer(MTLFrameInfo frame_info) const = 0;
+  virtual GPUCAMetalLayerHandle GetCAMetalLayer(
+      MTLFrameInfo frame_info) const = 0;
 
   //------------------------------------------------------------------------------
   /// @brief Presents the drawable to the "screen". The drawable is obtained
