@@ -1,4 +1,4 @@
-Signature: 0367ed0d8fa4d97c8a900dc6ae1dc4cc
+Signature: 099730522bf2f155280a0e955655c12c
 
 UNUSED LICENSES:
 
@@ -1867,7 +1867,7 @@ FILE: ../../../third_party/skia/gm/textblob.cpp
 FILE: ../../../third_party/skia/gm/textblobshader.cpp
 FILE: ../../../third_party/skia/gm/tiledscaledbitmap.cpp
 FILE: ../../../third_party/skia/gm/variedtext.cpp
-FILE: ../../../third_party/skia/gm/yuvtorgbsubset.cpp
+FILE: ../../../third_party/skia/gm/yuvtorgbeffect.cpp
 FILE: ../../../third_party/skia/include/c/sk_canvas.h
 FILE: ../../../third_party/skia/include/c/sk_data.h
 FILE: ../../../third_party/skia/include/c/sk_image.h
@@ -5628,6 +5628,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLModifiersPool.h
 FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructor.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLNodeArrayWrapper.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC.
 
