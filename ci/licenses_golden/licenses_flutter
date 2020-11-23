@@ -1409,6 +1409,12 @@ FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.h
 FILE: ../../../flutter/shell/platform/windows/key_event_handler.cc
 FILE: ../../../flutter/shell/platform/windows/key_event_handler.h
 FILE: ../../../flutter/shell/platform/windows/keyboard_hook_handler.h
+FILE: ../../../flutter/shell/platform/windows/platform_handler.cc
+FILE: ../../../flutter/shell/platform/windows/platform_handler.h
+FILE: ../../../flutter/shell/platform/windows/platform_handler_win32.cc
+FILE: ../../../flutter/shell/platform/windows/platform_handler_win32.h
+FILE: ../../../flutter/shell/platform/windows/platform_handler_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/platform_handler_winuwp.h
 FILE: ../../../flutter/shell/platform/windows/public/flutter_windows.h
 FILE: ../../../flutter/shell/platform/windows/string_conversion.cc
 FILE: ../../../flutter/shell/platform/windows/string_conversion.h
@@ -1430,8 +1436,6 @@ FILE: ../../../flutter/shell/platform/windows/win32_dpi_utils_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.h
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window_unittests.cc
-FILE: ../../../flutter/shell/platform/windows/win32_platform_handler.cc
-FILE: ../../../flutter/shell/platform/windows/win32_platform_handler.h
 FILE: ../../../flutter/shell/platform/windows/win32_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_window.h
 FILE: ../../../flutter/shell/platform/windows/win32_window_proc_delegate_manager.cc

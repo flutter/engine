@@ -69,7 +69,7 @@ bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
 }
 
 uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
-  return static_cast<flutter::Win32TaskRunner*>(
+  return static_cast<flutter::TaskRunnerWin32*>(
              EngineFromHandle(engine)->task_runner())
       ->ProcessTasks()
       .count();
