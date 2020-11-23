@@ -523,27 +523,28 @@ void _testVerticalScrolling() {
     // When there's more content than the available size the neutral scrollTop
     // is greater than 0 with a maximum of 10 or 9.
     int browserMaxScrollDiff = 0;
-    // The max scroll value is `9` for Safari Desktop and `10` for other
+    // The max scroll value varies between `9` and `10` for Safari desktop
     // browsers.
     if (browserEngine == BrowserEngine.webkit &&
         operatingSystem == OperatingSystem.macOs) {
       browserMaxScrollDiff = 1;
     }
 
-    expect(scrollable.scrollTop, 10 - browserMaxScrollDiff);
+    expect(scrollable.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
 
     scrollable.scrollTop = 20;
     expect(scrollable.scrollTop, 20);
     expect(await idLog.first, 0);
     expect(await actionLog.first, ui.SemanticsAction.scrollUp);
     // Engine semantics returns scroll top back to neutral.
-    expect(scrollable.scrollTop, 10 - browserMaxScrollDiff);
+    expect(scrollable.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
 
     scrollable.scrollTop = 5;
-    expect(scrollable.scrollTop, 5 - browserMaxScrollDiff);
+    expect(scrollable.scrollTop >= (5 - browserMaxScrollDiff), isTrue);
     expect(await idLog.first, 0);
     expect(await actionLog.first, ui.SemanticsAction.scrollDown);
     // Engine semantics returns scroll top back to neutral.
+    expect(scrollable.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
 
     semantics().semanticsEnabled = false;
   },
@@ -661,7 +662,7 @@ void _testHorizontalScrolling() {
     // When there's more content than the available size the neutral scrollTop
     // is greater than 0 with a maximum of 10.
     int browserMaxScrollDiff = 0;
-    // The max scroll value is `9` for Safari Desktop and `10` for other
+    // The max scroll value varies between `9` and `10` for Safari desktop
     // browsers.
     if (browserEngine == BrowserEngine.webkit &&
         operatingSystem == OperatingSystem.macOs) {
@@ -674,14 +675,14 @@ void _testHorizontalScrolling() {
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.scrollLeft);
     // Engine semantics returns scroll position back to neutral.
-    expect(scrollable.scrollLeft, 10 - browserMaxScrollDiff);
+    expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
 
     scrollable.scrollLeft = 5;
-    expect(scrollable.scrollLeft, 5 - browserMaxScrollDiff);
+    expect(scrollable.scrollLeft >= (5 - browserMaxScrollDiff), isTrue);
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.scrollRight);
     // Engine semantics returns scroll top back to neutral.
-    expect(scrollable.scrollLeft, 10 - browserMaxScrollDiff);
+    expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
 
     semantics().semanticsEnabled = false;
   },
