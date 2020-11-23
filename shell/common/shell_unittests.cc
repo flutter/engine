@@ -2101,6 +2101,8 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
 
   end_frame_latch.Wait();
+  // 2 frames are submitted because `kResubmitFrame`, but only the 2nd frame should be
+  // submitted with `external_view_embedder`, hence the below check.
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
   ASSERT_EQ(expected_size, external_view_embedder->GetLastSubmittedFrameSize());
 
