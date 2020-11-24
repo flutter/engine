@@ -4,7 +4,6 @@
 
 #include "flutter/runtime/runtime_controller.h"
 
-#include <dlfcn.h>
 #include <sstream>
 
 #include "flutter/fml/message_loop.h"

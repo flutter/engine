@@ -149,8 +149,8 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
   }
 
   if (settings.root_isolate_create_callback) {
-    // Isolate callbacks always occur in isolate scope and before user code
-    // has had a chance to run.
+    // Isolate callbacks always occur in isolate scope and before user code has
+    // had a chance to run.
     tonic::DartState::Scope scope(isolate.get());
     settings.root_isolate_create_callback(*isolate.get());
   }
@@ -678,8 +678,8 @@ bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
 bool DartIsolate::Shutdown() {
   TRACE_EVENT0("flutter", "DartIsolate::Shutdown");
   // This call may be re-entrant since Dart_ShutdownIsolate can invoke the
-  // cleanup callback which deletes the embedder side object of the dart
-  // isolate (a.k.a. this).
+  // cleanup callback which deletes the embedder side object of the dart isolate
+  // (a.k.a. this).
   if (phase_ == Phase::Shutdown) {
     return false;
   }
@@ -809,9 +809,8 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
     // The VM attempts to start the VM service for us on |Dart_Initialize|. In
     // such a case, the callback data will be null and the script URI will be
     // DART_VM_SERVICE_ISOLATE_NAME. In such cases, we just create the service
-    // isolate like normal but dont hold a reference to it at all. We also
-    // start this isolate since we will never again reference it from the
-    // engine.
+    // isolate like normal but dont hold a reference to it at all. We also start
+    // this isolate since we will never again reference it from the engine.
     return DartCreateAndStartServiceIsolate(package_root,    //
                                             package_config,  //
                                             flags,           //
@@ -932,8 +931,7 @@ Dart_Isolate DartIsolate::CreateDartIsolateGroup(
     return nullptr;
   }
 
-  // Ownership of the isolate data objects has been transferred to the Dart
-  // VM.
+  // Ownership of the isolate data objects has been transferred to the Dart VM.
   std::shared_ptr<DartIsolate> embedder_isolate(*isolate_data);
   isolate_group_data.release();
   isolate_data.release();
@@ -963,9 +961,9 @@ bool DartIsolate::InitializeIsolate(
     return false;
   }
 
-  // Root isolates will be setup by the engine and the service isolate (which
-  // is also a root isolate) by the utility routines in the VM. However,
-  // secondary isolates will be run by the VM if they are marked as runnable.
+  // Root isolates will be setup by the engine and the service isolate (which is
+  // also a root isolate) by the utility routines in the VM. However, secondary
+  // isolates will be run by the VM if they are marked as runnable.
   if (!embedder_isolate->IsRootIsolate()) {
     auto child_isolate_preparer =
         embedder_isolate->GetIsolateGroupData().GetChildIsolatePreparer();
