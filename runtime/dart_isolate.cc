@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/runtime/dart_isolate.h"
-#include "flutter/runtime/dart_deferred_load_handler.h"
 
 #include <cstdlib>
 #include <tuple>
