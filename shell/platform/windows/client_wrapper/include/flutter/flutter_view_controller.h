@@ -56,7 +56,7 @@ class FlutterViewController {
                                                   UINT message,
                                                   WPARAM wparam,
                                                   LPARAM lparam);
-  #endif
+#endif
 
  private:
   // Handle for interacting with the C API's view controller, if any.

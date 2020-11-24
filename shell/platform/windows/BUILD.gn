@@ -26,9 +26,8 @@ config("relative_flutter_windows_headers") {
 source_set("flutter_windows_headers") {
   public = _public_headers
 
-  public_deps = [
-    "//flutter/shell/platform/common/cpp:common_cpp_library_headers",
-  ]
+  public_deps =
+      [ "//flutter/shell/platform/common/cpp:common_cpp_library_headers" ]
 
   if (target_os == "winuwp") {
     configs +=
@@ -130,28 +129,20 @@ source_set("flutter_windows_source") {
 
 copy("publish_headers_windows") {
   sources = _public_headers
-  outputs = [
-    "$root_out_dir/{{source_file_part}}",
-  ]
+  outputs = [ "$root_out_dir/{{source_file_part}}" ]
 
   # The Windows header assumes the presence of the common headers.
-  deps = [
-    "//flutter/shell/platform/common/cpp:publish_headers",
-  ]
+  deps = [ "//flutter/shell/platform/common/cpp:publish_headers" ]
 }
 
 shared_library("flutter_windows") {
-  deps = [
-    ":flutter_windows_source",
-  ]
+  deps = [ ":flutter_windows_source" ]
 
   public_configs = [ "//flutter:config" ]
 }
 
 shared_library("flutter_windows_winuwp") {
-  deps = [
-    ":flutter_windows_source",
-  ]
+  deps = [ ":flutter_windows_source" ]
   libs = [ "windowsapp.lib" ]
   public_configs = [ "//flutter:config" ]
 }
@@ -199,9 +190,7 @@ if (target_os == "winuwp") {
 }
 
 shared_library("flutter_windows_glfw") {
-  deps = [
-    "//flutter/shell/platform/glfw:flutter_glfw",
-  ]
+  deps = [ "//flutter/shell/platform/glfw:flutter_glfw" ]
 
   public_configs = [ "//flutter:config" ]
 }
