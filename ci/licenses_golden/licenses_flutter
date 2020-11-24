@@ -1054,6 +1054,10 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngin
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h
