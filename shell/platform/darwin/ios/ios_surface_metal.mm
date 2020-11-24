@@ -82,10 +82,7 @@ bool IOSSurfaceMetal::PresentDrawable(GrMTLHandle drawable) const {
   [command_buffer.get() commit];
   [command_buffer.get() waitUntilScheduled];
 
-  fml::scoped_nsprotocol<id<CAMetalDrawable>> drawable_holder(
-      reinterpret_cast<id<CAMetalDrawable>>(drawable));
-  [drawable_holder.get() present];
-
+  [reinterpret_cast<id<CAMetalDrawable>>(drawable) present];
   return true;
 }
 

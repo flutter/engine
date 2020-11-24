@@ -27,6 +27,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetal : public Surface {
  private:
   const GPUSurfaceMetalDelegate* delegate_;
   const MTLRenderTargetType render_target_type_;
+  GrMTLHandle next_drawable_ = nullptr;
   sk_sp<GrDirectContext> context_;
 
   // |Surface|
@@ -46,6 +47,8 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetal : public Surface {
 
   std::unique_ptr<SurfaceFrame> AcquireFrameFromMTLTexture(
       const SkISize& frame_info);
+
+  void ReleaseUnusedDrawableIfNecessary();
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetal);
 };
