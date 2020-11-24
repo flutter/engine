@@ -242,7 +242,8 @@ Win32Window::HandleMessage(UINT const message,
       // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
       if (keycode_for_char_message_ != 0) {
         const unsigned int scancode = (lparam >> 16) & 0xff;
-        OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN, code_point);
+        const int repeats = lparam & 0xffff;
+        OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN, code_point, repeats);
         keycode_for_char_message_ = 0;
       }
       break;
@@ -267,8 +268,9 @@ Win32Window::HandleMessage(UINT const message,
       if (keyCode == VK_SHIFT || keyCode == VK_MENU || keyCode == VK_CONTROL) {
         keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
       }
+      const int repeats = lparam & 0xffff;
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
-      OnKey(keyCode, scancode, action, 0);
+      OnKey(keyCode, scancode, action, 0, repeats);
       break;
   }
 

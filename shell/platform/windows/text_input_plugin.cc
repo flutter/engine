@@ -56,7 +56,8 @@ void TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
                                    int key,
                                    int scancode,
                                    int action,
-                                   char32_t character) {
+                                   char32_t character,
+                                   int repeats) {
   if (active_model_ == nullptr) {
     return;
   }

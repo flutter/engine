@@ -93,8 +93,9 @@ void FlutterWindowsView::OnText(const std::u16string& text) {
 void FlutterWindowsView::OnKey(int key,
                                int scancode,
                                int action,
-                               char32_t character) {
-  SendKey(key, scancode, action, character);
+                               char32_t character,
+                               int repeats) {
+  SendKey(key, scancode, action, character, repeats);
 }
 
 void FlutterWindowsView::OnScroll(double x,
@@ -181,9 +182,10 @@ void FlutterWindowsView::SendText(const std::u16string& text) {
 void FlutterWindowsView::SendKey(int key,
                                  int scancode,
                                  int action,
-                                 char32_t character) {
+                                 char32_t character,
+                                 int repeats) {
   for (const auto& handler : keyboard_hook_handlers_) {
-    handler->KeyboardHook(this, key, scancode, action, character);
+    handler->KeyboardHook(this, key, scancode, action, character, repeats);
   }
 }
 
