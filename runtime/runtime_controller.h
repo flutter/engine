@@ -505,6 +505,7 @@ class RuntimeController : public PlatformConfigurationClient {
                                const uint8_t* snapshot_data,
                                const uint8_t* snapshot_instructions);
 
+  // |PlatformConfigurationClient|
   //--------------------------------------------------------------------------
   /// @brief      Invoked when the dart VM requests that a deferred library
   ///             be loaded. Notifies the engine that the requested loading
@@ -516,7 +517,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @return     A Dart_Handle that is Dart_Null on success, and a dart error
   ///             on failure.
   ///
-  void RequestDartDeferredLibrary(intptr_t loading_unit_id);
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 
  protected:
   /// Constructor for Mocks.

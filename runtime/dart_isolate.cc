@@ -321,8 +321,7 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
     return false;
   }
 
-  Dart_SetDeferredLoadHandler(
-      DartDeferredLoadHandler::dart_deferred_load_handler);
+  Dart_SetDeferredLoadHandler(OnDartLoadLibrary);
 
   if (!UpdateThreadPoolNames()) {
     return false;
@@ -1034,6 +1033,12 @@ void DartIsolate::OnShutdownCallback() {
   if (isolate_shutdown_callback) {
     isolate_shutdown_callback();
   }
+}
+
+Dart_Handle DartIsolate::OnDartLoadLibrary(intptr_t loading_unit_id) {
+  Current()->platform_configuration()->client()->RequestDartDeferredLibrary(
+      loading_unit_id);
+  return Dart_Null();
 }
 
 DartIsolate::AutoFireClosure::AutoFireClosure(const fml::closure& closure)

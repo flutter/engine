@@ -500,6 +500,9 @@ class DartIsolate : public UIDartState {
   static void DartIsolateGroupCleanupCallback(
       std::shared_ptr<DartIsolateGroupData>* isolate_group_data);
 
+  // |Dart_DeferredLoadHandler|
+  static Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id);
+
   FML_DISALLOW_COPY_AND_ASSIGN(DartIsolate);
 };
 
