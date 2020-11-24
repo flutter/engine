@@ -2,20 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_utilities.h"
+#include "vulkan_utilities.h"
 
 #include <algorithm>
 #include <unordered_set>
 
-namespace vulkan {
+#include "flutter/fml/build_config.h"
 
-bool IsDebuggingEnabled() {
-#ifndef NDEBUG
-  return true;
-#else
-  return false;
-#endif
-}
+namespace vulkan {
 
 // Whether to show Vulkan validation layer info messages in addition
 // to the error messages.
@@ -27,27 +21,24 @@ bool ValidationErrorsFatal() {
 #if OS_FUCHSIA
   return false;
 #endif
-
   return true;
 }
 
 static std::vector<std::string> InstanceOrDeviceLayersToEnable(
     const VulkanProcTable& vk,
-    VkPhysicalDevice physical_device) {
-  if (!IsDebuggingEnabled()) {
+    VkPhysicalDevice physical_device,
+    bool enable_validation_layers) {
+  if (!enable_validation_layers) {
     return {};
   }
 
   // NOTE: The loader is sensitive to the ordering here. Please do not rearrange
   // this list.
 #if OS_FUCHSIA
-  // Fuchsia uses the updated Vulkan loader and validation layers which no
-  // longer includes the image validation layer.
-  const std::vector<std::string> candidates = {
-      "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_parameter_validation",
-      "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation",
-      "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_swapchain",
-      "VK_LAYER_GOOGLE_unique_objects"};
+  // The other layers in the Fuchsia SDK seem to have a bug right now causing
+  // crashes, so it is only recommended that we use VK_LAYER_KHRONOS_validation
+  // until we have a confirmation that they are fixed.
+  const std::vector<std::string> candidates = {"VK_LAYER_KHRONOS_validation"};
 #else
   const std::vector<std::string> candidates = {
       "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_parameter_validation",
@@ -103,18 +94,22 @@ static std::vector<std::string> InstanceOrDeviceLayersToEnable(
   return available_candidates;
 }
 
-std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk) {
-  return InstanceOrDeviceLayersToEnable(vk, VK_NULL_HANDLE);
+std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk,
+                                                bool enable_validation_layers) {
+  return InstanceOrDeviceLayersToEnable(vk, VK_NULL_HANDLE,
+                                        enable_validation_layers);
 }
 
 std::vector<std::string> DeviceLayersToEnable(
     const VulkanProcTable& vk,
-    const VulkanHandle<VkPhysicalDevice>& physical_device) {
+    const VulkanHandle<VkPhysicalDevice>& physical_device,
+    bool enable_validation_layers) {
   if (!physical_device) {
     return {};
   }
 
-  return InstanceOrDeviceLayersToEnable(vk, physical_device);
+  return InstanceOrDeviceLayersToEnable(vk, physical_device,
+                                        enable_validation_layers);
 }
 
 }  // namespace vulkan

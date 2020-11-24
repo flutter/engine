@@ -16,11 +16,12 @@
 #include "third_party/skia/include/core/SkTypeface.h"
 #include "txt/font_asset_provider.h"
 
-namespace blink {
+namespace flutter {
 
 class AssetManagerFontStyleSet : public SkFontStyleSet {
  public:
-  AssetManagerFontStyleSet(std::shared_ptr<blink::AssetManager> asset_manager);
+  AssetManagerFontStyleSet(std::shared_ptr<AssetManager> asset_manager,
+                           std::string family_name);
 
   ~AssetManagerFontStyleSet() override;
 
@@ -39,7 +40,8 @@ class AssetManagerFontStyleSet : public SkFontStyleSet {
   SkTypeface* matchStyle(const SkFontStyle& pattern) override;
 
  private:
-  std::shared_ptr<blink::AssetManager> asset_manager_;
+  std::shared_ptr<AssetManager> asset_manager_;
+  std::string family_name_;
 
   struct TypefaceAsset {
     TypefaceAsset(std::string a);
@@ -58,7 +60,7 @@ class AssetManagerFontStyleSet : public SkFontStyleSet {
 
 class AssetManagerFontProvider : public txt::FontAssetProvider {
  public:
-  AssetManagerFontProvider(std::shared_ptr<blink::AssetManager> asset_manager);
+  AssetManagerFontProvider(std::shared_ptr<AssetManager> asset_manager);
 
   ~AssetManagerFontProvider() override;
 
@@ -75,13 +77,13 @@ class AssetManagerFontProvider : public txt::FontAssetProvider {
 
  private:
   std::shared_ptr<AssetManager> asset_manager_;
-  std::unordered_map<std::string, AssetManagerFontStyleSet>
+  std::unordered_map<std::string, sk_sp<AssetManagerFontStyleSet>>
       registered_families_;
   std::vector<std::string> family_names_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AssetManagerFontProvider);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_TEXT_ASSET_MANAGER_FONT_PROVIDER_H_

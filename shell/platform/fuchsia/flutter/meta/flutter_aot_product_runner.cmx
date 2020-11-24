@@ -1,0 +1,30 @@
+{
+  "program": {
+    "data": "data"
+  },
+  "sandbox": {
+    "features": [
+      "config-data",
+      "root-ssl-certificates",
+      "vulkan",
+      "isolated-cache-storage"
+    ],
+    "services": [
+      "fuchsia.accessibility.SettingsManager",
+      "fuchsia.accessibility.semantics.SemanticsManager",
+      "fuchsia.device.NameProvider",
+      "fuchsia.deprecatedtimezone.Timezone",
+      "fuchsia.feedback.CrashReporter",
+      "fuchsia.fonts.Provider",
+      "fuchsia.intl.PropertyProvider",
+      "fuchsia.logger.LogSink",
+      "fuchsia.net.NameLookup",
+      "fuchsia.netstack.Netstack",
+      "fuchsia.posix.socket.Provider",
+      "fuchsia.sysmem.Allocator",
+      "fuchsia.timezone.Timezone",
+      "fuchsia.tracing.provider.Registry",
+      "fuchsia.vulkan.loader.Loader"
+    ]
+  }
+}

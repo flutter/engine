@@ -9,13 +9,15 @@ import 'dart:convert';
 import 'dart:io';
 
 class ShellProcess {
-  final Completer<Uri> _observatoryUriCompleter = new Completer<Uri>();
+  final Completer<Uri> _observatoryUriCompleter = Completer<Uri>();
   final Process _process;
 
-  ShellProcess(this._process) : assert(_process != null) {
+  ShellProcess(this._process) {
     // Scan stdout and scrape the Observatory Uri.
-    _process.stdout.transform(utf8.decoder)
-                   .transform(const LineSplitter()).listen((String line) {
+    _process.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((String line) {
       const String observatoryUriPrefix = 'Observatory listening on ';
       if (line.startsWith(observatoryUriPrefix)) {
         print(line);
@@ -26,9 +28,6 @@ class ShellProcess {
   }
 
   Future<bool> kill() async {
-    if (_process == null) {
-      return false;
-    }
     return _process.kill();
   }
 
@@ -42,22 +41,21 @@ class ShellLauncher {
     '--observatory-port=0',
     '--non-interactive',
     '--run-forever',
+    '--disable-service-auth-codes',
   ];
   final String shellExecutablePath;
   final String mainDartPath;
   final bool startPaused;
 
-  ShellLauncher(this.shellExecutablePath,
-                this.mainDartPath,
-                this.startPaused,
-                List<String> extraArgs) {
+  ShellLauncher(this.shellExecutablePath, this.mainDartPath, this.startPaused,
+      List<String> extraArgs) {
     if (extraArgs is List) {
       args.addAll(extraArgs);
     }
     args.add(mainDartPath);
   }
 
-  Future<ShellProcess> launch() async {
+  Future<ShellProcess?> launch() async {
     try {
       final List<String> shellArguments = <String>[];
       if (startPaused) {
@@ -65,11 +63,12 @@ class ShellLauncher {
       }
       shellArguments.addAll(args);
       print('Launching $shellExecutablePath $shellArguments');
-      final Process process = await Process.start(shellExecutablePath, shellArguments);
-      return new ShellProcess(process);
+      final Process process =
+          await Process.start(shellExecutablePath, shellArguments);
+      return ShellProcess(process);
     } catch (e) {
       print('Error launching shell: $e');
+      return null;
     }
-    return null;
   }
 }

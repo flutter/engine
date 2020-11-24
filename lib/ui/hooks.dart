@@ -4,214 +4,152 @@
 
 // TODO(dnfield): Remove unused_import ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
+
+// @dart = 2.12
 part of dart.ui;
-
-// ignore: unused_element
-String _decodeUTF8(ByteData message) {
-  return message != null ? utf8.decoder.convert(message.buffer.asUint8List()) : null;
-}
-
-// ignore: unused_element
-dynamic _decodeJSON(String message) {
-  return message != null ? json.decode(message) : null;
-}
 
 @pragma('vm:entry-point')
 // ignore: unused_element
-void _updateWindowMetrics(double devicePixelRatio,
-                          double width,
-                          double height,
-                          double paddingTop,
-                          double paddingRight,
-                          double paddingBottom,
-                          double paddingLeft,
-                          double viewInsetTop,
-                          double viewInsetRight,
-                          double viewInsetBottom,
-                          double viewInsetLeft) {
-  window
-    .._devicePixelRatio = devicePixelRatio
-    .._physicalSize = new Size(width, height)
-    .._padding = new WindowPadding._(
-        top: paddingTop,
-        right: paddingRight,
-        bottom: paddingBottom,
-        left: paddingLeft)
-    .._viewInsets = new WindowPadding._(
-        top: viewInsetTop,
-        right: viewInsetRight,
-        bottom: viewInsetBottom,
-        left: viewInsetLeft);
-  _invoke(window.onMetricsChanged, window._onMetricsChangedZone);
+void _updateWindowMetrics(
+  Object id,
+  double devicePixelRatio,
+  double width,
+  double height,
+  double viewPaddingTop,
+  double viewPaddingRight,
+  double viewPaddingBottom,
+  double viewPaddingLeft,
+  double viewInsetTop,
+  double viewInsetRight,
+  double viewInsetBottom,
+  double viewInsetLeft,
+  double systemGestureInsetTop,
+  double systemGestureInsetRight,
+  double systemGestureInsetBottom,
+  double systemGestureInsetLeft,
+) {
+  PlatformDispatcher.instance._updateWindowMetrics(
+    id,
+    devicePixelRatio,
+    width,
+    height,
+    viewPaddingTop,
+    viewPaddingRight,
+    viewPaddingBottom,
+    viewPaddingLeft,
+    viewInsetTop,
+    viewInsetRight,
+    viewInsetBottom,
+    viewInsetLeft,
+    systemGestureInsetTop,
+    systemGestureInsetRight,
+    systemGestureInsetBottom,
+    systemGestureInsetLeft,
+  );
 }
 
 typedef _LocaleClosure = String Function();
 
-String _localeClosure() {
-  if (window.locale == null) {
-    return null;
-  }
-  return window.locale.toString();
-}
-
 @pragma('vm:entry-point')
 // ignore: unused_element
-_LocaleClosure _getLocaleClosure() => _localeClosure;
+_LocaleClosure? _getLocaleClosure() => PlatformDispatcher.instance._localeClosure;
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateLocales(List<String> locales) {
-  const int stringsPerLocale = 4;
-  final int numLocales = locales.length ~/ stringsPerLocale;
-  window._locales = new List<Locale>(numLocales);
-  for (int localeIndex = 0; localeIndex < numLocales; localeIndex++) {
-    final String countryCode = locales[localeIndex * stringsPerLocale + 1];
-    final String scriptCode = locales[localeIndex * stringsPerLocale + 2];
-
-    window._locales[localeIndex] = new Locale.fromSubtags(
-      languageCode: locales[localeIndex * stringsPerLocale],
-      countryCode: countryCode.isEmpty ? null : countryCode,
-      scriptCode: scriptCode.isEmpty ? null : scriptCode,
-    );
-  }
-  _invoke(window.onLocaleChanged, window._onLocaleChangedZone);
+  PlatformDispatcher.instance._updateLocales(locales);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateUserSettingsData(String jsonData) {
-  final Map<String, dynamic> data = json.decode(jsonData);
-  if (data.isEmpty) {
-    return;
-  }
-  _updateTextScaleFactor(data['textScaleFactor'].toDouble());
-  _updateAlwaysUse24HourFormat(data['alwaysUse24HourFormat']);
-  _updatePlatformBrightness(data['platformBrightness']);
+  PlatformDispatcher.instance._updateUserSettingsData(jsonData);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateLifecycleState(String state) {
-  // We do not update the state if the state has already been used to initialize
-  // the lifecycleState.
-  if (!window._initialLifecycleStateAccessed)
-    window._initialLifecycleState = state;
-}
-
-
-void _updateTextScaleFactor(double textScaleFactor) {
-  window._textScaleFactor = textScaleFactor;
-  _invoke(window.onTextScaleFactorChanged, window._onTextScaleFactorChangedZone);
-}
-
-void _updateAlwaysUse24HourFormat(bool alwaysUse24HourFormat) {
-  window._alwaysUse24HourFormat = alwaysUse24HourFormat;
-}
-
-void _updatePlatformBrightness(String brightnessName) {
-  window._platformBrightness = brightnessName == 'dark' ? Brightness.dark : Brightness.light;
-  _invoke(window.onPlatformBrightnessChanged, window._onPlatformBrightnessChangedZone);
+  PlatformDispatcher.instance._updateLifecycleState(state);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateSemanticsEnabled(bool enabled) {
-  window._semanticsEnabled = enabled;
-  _invoke(window.onSemanticsEnabledChanged, window._onSemanticsEnabledChangedZone);
+  PlatformDispatcher.instance._updateSemanticsEnabled(enabled);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateAccessibilityFeatures(int values) {
-  final AccessibilityFeatures newFeatures = new AccessibilityFeatures._(values);
-  if (newFeatures == window._accessibilityFeatures)
-    return;
-  window._accessibilityFeatures = newFeatures;
-  _invoke(window.onAccessibilityFeaturesChanged, window._onAccessibilityFlagsChangedZone);
+  PlatformDispatcher.instance._updateAccessibilityFeatures(values);
 }
 
 @pragma('vm:entry-point')
-void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
-  if (window.onPlatformMessage != null) {
-    _invoke3<String, ByteData, PlatformMessageResponseCallback>(
-      window.onPlatformMessage,
-      window._onPlatformMessageZone,
-      name,
-      data,
-      (ByteData responseData) {
-        window._respondToPlatformMessage(responseId, responseData);
-      },
-    );
-  } else {
-    window._respondToPlatformMessage(responseId, null);
-  }
+// ignore: unused_element
+void _dispatchPlatformMessage(String name, ByteData? data, int responseId) {
+  PlatformDispatcher.instance._dispatchPlatformMessage(name, data, responseId);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _dispatchPointerDataPacket(ByteData packet) {
-  if (window.onPointerDataPacket != null)
-    _invoke1<PointerDataPacket>(window.onPointerDataPacket, window._onPointerDataPacketZone, _unpackPointerDataPacket(packet));
+  PlatformDispatcher.instance._dispatchPointerDataPacket(packet);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
-void _dispatchSemanticsAction(int id, int action, ByteData args) {
-  _invoke3<int, SemanticsAction, ByteData>(
-    window.onSemanticsAction,
-    window._onSemanticsActionZone,
-    id,
-    SemanticsAction.values[action],
-    args,
-  );
+void _dispatchSemanticsAction(int id, int action, ByteData? args) {
+  PlatformDispatcher.instance._dispatchSemanticsAction(id, action, args);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _beginFrame(int microseconds) {
-  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone, new Duration(microseconds: microseconds));
+  PlatformDispatcher.instance._beginFrame(microseconds);
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
+void _reportTimings(List<int> timings) {
+  PlatformDispatcher.instance._reportTimings(timings);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _drawFrame() {
-  _invoke(window.onDrawFrame, window._onDrawFrameZone);
+  PlatformDispatcher.instance._drawFrame();
 }
 
 // ignore: always_declare_return_types, prefer_generic_function_type_aliases
-typedef _UnaryFunction(Null args);
-// ignore: always_declare_return_types, prefer_generic_function_type_aliases
-typedef _BinaryFunction(Null args, Null message);
+typedef _ListStringArgFunction(List<String> args);
 
 @pragma('vm:entry-point')
 // ignore: unused_element
-void _runMainZoned(Function startMainIsolateFunction, Function userMainFunction) {
-  startMainIsolateFunction((){
-    runZoned<Future<void>>(() {
-      const List<String> empty_args = <String>[];
-      if (userMainFunction is _BinaryFunction) {
-        // This seems to be undocumented but supported by the command line VM.
-        // Let's do the same in case old entry-points are ported to Flutter.
-        (userMainFunction as dynamic)(empty_args, '');
-      } else if (userMainFunction is _UnaryFunction) {
-        (userMainFunction as dynamic)(empty_args);
+void _runMainZoned(Function startMainIsolateFunction,
+                   Function userMainFunction,
+                   List<String> args) {
+  startMainIsolateFunction(() {
+    runZonedGuarded<void>(() {
+      if (userMainFunction is _ListStringArgFunction) {
+        (userMainFunction as dynamic)(args);
       } else {
         userMainFunction();
       }
-    }, onError: (Object error, StackTrace stackTrace) {
+    }, (Object error, StackTrace stackTrace) {
       _reportUnhandledException(error.toString(), stackTrace.toString());
     });
   }, null);
 }
 
-void _reportUnhandledException(String error, String stackTrace) native 'Window_reportUnhandledException';
+void _reportUnhandledException(String error, String stackTrace) native 'PlatformConfiguration_reportUnhandledException';
 
 /// Invokes [callback] inside the given [zone].
-void _invoke(void callback(), Zone zone) {
-  if (callback == null)
+void _invoke(void Function()? callback, Zone zone) {
+  if (callback == null) {
     return;
+  }
 
-  assert(zone != null);
+  assert(zone != null); // ignore: unnecessary_null_comparison
 
   if (identical(zone, Zone.current)) {
     callback();
@@ -221,11 +159,16 @@ void _invoke(void callback(), Zone zone) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg].
-void _invoke1<A>(void callback(A a), Zone zone, A arg) {
-  if (callback == null)
+///
+/// The 1 in the name refers to the number of arguments expected by
+/// the callback (and thus passed to this function, in addition to the
+/// callback itself and the zone in which the callback is executed).
+void _invoke1<A>(void Function(A a)? callback, Zone zone, A arg) {
+  if (callback == null) {
     return;
+  }
 
-  assert(zone != null);
+  assert(zone != null); // ignore: unnecessary_null_comparison
 
   if (identical(zone, Zone.current)) {
     callback(arg);
@@ -235,26 +178,37 @@ void _invoke1<A>(void callback(A a), Zone zone, A arg) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
-// ignore: unused_element
-void _invoke2<A1, A2>(void callback(A1 a1, A2 a2), Zone zone, A1 arg1, A2 arg2) {
-  if (callback == null)
+///
+/// The 2 in the name refers to the number of arguments expected by
+/// the callback (and thus passed to this function, in addition to the
+/// callback itself and the zone in which the callback is executed).
+void _invoke2<A1, A2>(void Function(A1 a1, A2 a2)? callback, Zone zone, A1 arg1, A2 arg2) {
+  if (callback == null) {
     return;
+  }
 
-  assert(zone != null);
+  assert(zone != null); // ignore: unnecessary_null_comparison
 
   if (identical(zone, Zone.current)) {
     callback(arg1, arg2);
   } else {
-    zone.runBinaryGuarded<A1, A2>(callback, arg1, arg2);
+    zone.runGuarded(() {
+      callback(arg1, arg2);
+    });
   }
 }
 
-/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2] and [arg3].
-void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1, A2 arg2, A3 arg3) {
-  if (callback == null)
+/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
+///
+/// The 3 in the name refers to the number of arguments expected by
+/// the callback (and thus passed to this function, in addition to the
+/// callback itself and the zone in which the callback is executed).
+void _invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback, Zone zone, A1 arg1, A2 arg2, A3 arg3) {
+  if (callback == null) {
     return;
+  }
 
-  assert(zone != null);
+  assert(zone != null); // ignore: unnecessary_null_comparison
 
   if (identical(zone, Zone.current)) {
     callback(arg1, arg2, arg3);
@@ -263,49 +217,4 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1
       callback(arg1, arg2, arg3);
     });
   }
-}
-
-// If this value changes, update the encoding code in the following files:
-//
-//  * pointer_data.cc
-//  * FlutterView.java
-const int _kPointerDataFieldCount = 24;
-
-PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
-  const int kStride = Int64List.bytesPerElement;
-  const int kBytesPerPointerData = _kPointerDataFieldCount * kStride;
-  final int length = packet.lengthInBytes ~/ kBytesPerPointerData;
-  assert(length * kBytesPerPointerData == packet.lengthInBytes);
-  final List<PointerData> data = new List<PointerData>(length);
-  for (int i = 0; i < length; ++i) {
-    int offset = i * _kPointerDataFieldCount;
-    data[i] = new PointerData(
-      timeStamp: new Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
-      change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      signalKind: PointerSignalKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      buttons: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      obscured: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
-      pressure: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      pressureMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      pressureMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      distance: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      distanceMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      size: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMajor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMinor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      platformData: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
-    );
-    assert(offset == (i + 1) * _kPointerDataFieldCount);
-  }
-  return new PointerDataPacket(data: data);
 }

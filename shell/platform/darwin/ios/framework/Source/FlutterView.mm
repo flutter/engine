@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
@@ -12,18 +12,14 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-@interface FlutterView () <UIInputViewAudioFeedback>
-
-@end
-
-@implementation FlutterView
-
-id<FlutterViewEngineDelegate> _delegate;
+@implementation FlutterView {
+  id<FlutterViewEngineDelegate> _delegate;
+}
 
 - (instancetype)init {
   @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
@@ -44,7 +40,12 @@ id<FlutterViewEngineDelegate> _delegate;
 }
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate opaque:(BOOL)opaque {
-  FML_DCHECK(delegate) << "Delegate must not be nil.";
+  if (delegate == nil) {
+    NSLog(@"FlutterView delegate was nil.");
+    [self release];
+    return nil;
+  }
+
   self = [super initWithFrame:CGRectNull];
 
   if (self) {
@@ -56,49 +57,30 @@ id<FlutterViewEngineDelegate> _delegate;
 }
 
 - (void)layoutSubviews {
-  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
-    CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
-    layer.allowsGroupOpacity = YES;
+  if ([self.layer isKindOfClass:NSClassFromString(@"CAEAGLLayer")] ||
+      [self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
     CGFloat screenScale = [UIScreen mainScreen].scale;
-    layer.contentsScale = screenScale;
-    layer.rasterizationScale = screenScale;
+    self.layer.allowsGroupOpacity = YES;
+    self.layer.contentsScale = screenScale;
+    self.layer.rasterizationScale = screenScale;
   }
 
   [super layoutSubviews];
 }
 
+static BOOL _forceSoftwareRendering;
+
++ (BOOL)forceSoftwareRendering {
+  return _forceSoftwareRendering;
+}
+
++ (void)setForceSoftwareRendering:(BOOL)forceSoftwareRendering {
+  _forceSoftwareRendering = forceSoftwareRendering;
+}
+
 + (Class)layerClass {
-#if TARGET_IPHONE_SIMULATOR
-  return [CALayer class];
-#else   // TARGET_IPHONE_SIMULATOR
-  return [CAEAGLLayer class];
-#endif  // TARGET_IPHONE_SIMULATOR
-}
-
-- (std::unique_ptr<shell::IOSSurface>)createSurface {
-  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
-    fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
-        reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
-    if (shell::IsIosEmbeddedViewsPreviewEnabled()) {
-      // TODO(amirh): We can lower this to iOS 8.0 once we have a Metal rendering backend.
-      // https://github.com/flutter/flutter/issues/24132
-      if (@available(iOS 9.0, *)) {
-        // TODO(amirh): only do this if there's an embedded view.
-        // https://github.com/flutter/flutter/issues/24133
-        eagl_layer.get().presentsWithTransaction = YES;
-      }
-    }
-    return std::make_unique<shell::IOSSurfaceGL>(std::move(eagl_layer),
-                                                 [_delegate platformViewsController]);
-  } else {
-    fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
-    return std::make_unique<shell::IOSSurfaceSoftware>(std::move(layer),
-                                                       [_delegate platformViewsController]);
-  }
-}
-
-- (BOOL)enableInputClicksWhenVisible {
-  return YES;
+  return flutter::GetCoreAnimationLayerClassForRenderingAPI(
+      flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering));
 }
 
 - (void)drawLayer:(CALayer*)layer inContext:(CGContextRef)context {
@@ -108,7 +90,7 @@ id<FlutterViewEngineDelegate> _delegate;
     return;
   }
 
-  auto screenshot = [_delegate takeScreenshot:shell::Rasterizer::ScreenshotType::UncompressedImage
+  auto screenshot = [_delegate takeScreenshot:flutter::Rasterizer::ScreenshotType::UncompressedImage
                               asBase64Encoded:NO];
 
   if (!screenshot.data || screenshot.data->isEmpty() || screenshot.frame_size.isEmpty()) {

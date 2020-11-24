@@ -6,20 +6,18 @@
 #define FLUTTER_FLOW_RASTER_CACHE_KEY_H_
 
 #include <unordered_map>
+
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/fml/logging.h"
 
-namespace flow {
+namespace flutter {
 
 template <typename ID>
 class RasterCacheKey {
  public:
   RasterCacheKey(ID id, const SkMatrix& ctm) : id_(id), matrix_(ctm) {
-    matrix_[SkMatrix::kMTransX] = SkScalarFraction(ctm.getTranslateX());
-    matrix_[SkMatrix::kMTransY] = SkScalarFraction(ctm.getTranslateY());
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    FML_DCHECK(matrix_.getTranslateX() == 0 && matrix_.getTranslateY() == 0);
-#endif
+    matrix_[SkMatrix::kMTransX] = 0;
+    matrix_[SkMatrix::kMTransY] = 0;
   }
 
   ID id() const { return id_; }
@@ -56,8 +54,9 @@ using PictureRasterCacheKey = RasterCacheKey<uint32_t>;
 
 class Layer;
 
-using LayerRasterCacheKey = RasterCacheKey<Layer*>;
+// The ID is the uint64_t layer unique_id
+using LayerRasterCacheKey = RasterCacheKey<uint64_t>;
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_RASTER_CACHE_KEY_H_

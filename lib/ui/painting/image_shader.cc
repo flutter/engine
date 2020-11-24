@@ -12,7 +12,7 @@
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
 static void ImageShader_constructor(Dart_NativeArguments args) {
   DartCallConstructor(&ImageShader::Create, args);
@@ -35,12 +35,13 @@ fml::RefPtr<ImageShader> ImageShader::Create() {
 }
 
 void ImageShader::initWithImage(CanvasImage* image,
-                                SkShader::TileMode tmx,
-                                SkShader::TileMode tmy,
+                                SkTileMode tmx,
+                                SkTileMode tmy,
                                 const tonic::Float64List& matrix4) {
   if (!image) {
     Dart_ThrowException(
         ToDart("ImageShader constructor called with non-genuine Image."));
+    return;
   }
   SkMatrix sk_matrix = ToSkMatrix(matrix4);
   set_shader(UIDartState::CreateGPUObject(
@@ -51,4 +52,4 @@ ImageShader::ImageShader() = default;
 
 ImageShader::~ImageShader() = default;
 
-}  // namespace blink
+}  // namespace flutter

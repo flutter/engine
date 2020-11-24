@@ -4,9 +4,9 @@
 
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 
-#include <string.h>
+#include <cstring>
 
-namespace blink {
+namespace flutter {
 
 PointerDataPacket::PointerDataPacket(size_t count)
     : data_(count * sizeof(PointerData)) {}
@@ -20,4 +20,4 @@ void PointerDataPacket::SetPointerData(size_t i, const PointerData& data) {
   memcpy(&data_[i * sizeof(PointerData)], &data, sizeof(PointerData));
 }
 
-}  // namespace blink
+}  // namespace flutter

@@ -13,7 +13,7 @@ namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 class SemanticsUpdate : public RefCountedDartWrappable<SemanticsUpdate> {
   DEFINE_WRAPPERTYPEINFO();
@@ -21,9 +21,9 @@ class SemanticsUpdate : public RefCountedDartWrappable<SemanticsUpdate> {
 
  public:
   ~SemanticsUpdate() override;
-  static fml::RefPtr<SemanticsUpdate> create(
-      SemanticsNodeUpdates nodes,
-      CustomAccessibilityActionUpdates actions);
+  static void create(Dart_Handle semantics_update_handle,
+                     SemanticsNodeUpdates nodes,
+                     CustomAccessibilityActionUpdates actions);
 
   SemanticsNodeUpdates takeNodes();
 
@@ -41,6 +41,6 @@ class SemanticsUpdate : public RefCountedDartWrappable<SemanticsUpdate> {
   CustomAccessibilityActionUpdates actions_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_UPDATE_H_

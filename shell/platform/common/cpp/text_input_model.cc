@@ -4,178 +4,284 @@
 
 #include "flutter/shell/platform/common/cpp/text_input_model.h"
 
-#include <iostream>
+#include <algorithm>
+#include <codecvt>
+#include <locale>
 
-// TODO(awdavies): Need to fix this regarding issue #47.
-static constexpr char kComposingBaseKey[] = "composingBase";
+#if defined(_MSC_VER)
+// TODO(naifu): This temporary code is to solve link error.(VS2015/2017)
+// https://social.msdn.microsoft.com/Forums/vstudio/en-US/8f40dcd8-c67f-4eba-9134-a19b9178e481/vs-2015-rc-linker-stdcodecvt-error
+std::locale::id std::codecvt<char16_t, char, _Mbstatet>::id;
+#endif  // defined(_MSC_VER)
 
-static constexpr char kComposingExtentKey[] = "composingExtent";
+namespace flutter {
 
-static constexpr char kSelectionAffinityKey[] = "selectionAffinity";
-static constexpr char kAffinityDownstream[] = "TextAffinity.downstream";
+namespace {
 
-static constexpr char kSelectionBaseKey[] = "selectionBase";
-static constexpr char kSelectionExtentKey[] = "selectionExtent";
-
-static constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
-
-static constexpr char kTextKey[] = "text";
-
-// Input client configuration keys.
-static constexpr char kTextInputAction[] = "inputAction";
-static constexpr char kTextInputType[] = "inputType";
-static constexpr char kTextInputTypeName[] = "name";
-
-namespace shell {
-
-TextInputModel::TextInputModel(int client_id, const rapidjson::Value& config)
-    : text_(""),
-      client_id_(client_id),
-      selection_base_(text_.begin()),
-      selection_extent_(text_.begin()) {
-  // TODO: Improve error handling during refactoring; this is just minimal
-  // checking to avoid asserts since RapidJSON is stricter than jsoncpp.
-  if (config.IsObject()) {
-    auto input_action = config.FindMember(kTextInputAction);
-    if (input_action != config.MemberEnd() && input_action->value.IsString()) {
-      input_action_ = input_action->value.GetString();
-    }
-    auto input_type_info = config.FindMember(kTextInputType);
-    if (input_type_info != config.MemberEnd() &&
-        input_type_info->value.IsObject()) {
-      auto input_type = input_type_info->value.FindMember(kTextInputTypeName);
-      if (input_type != input_type_info->value.MemberEnd() &&
-          input_type->value.IsString()) {
-        input_type_ = input_type->value.GetString();
-      }
-    }
-  }
+// Returns true if |code_point| is a leading surrogate of a surrogate pair.
+bool IsLeadingSurrogate(char32_t code_point) {
+  return (code_point & 0xFFFFFC00) == 0xD800;
 }
+// Returns true if |code_point| is a trailing surrogate of a surrogate pair.
+bool IsTrailingSurrogate(char32_t code_point) {
+  return (code_point & 0xFFFFFC00) == 0xDC00;
+}
+
+}  // namespace
+
+TextInputModel::TextInputModel() = default;
 
 TextInputModel::~TextInputModel() = default;
 
-bool TextInputModel::SetEditingState(size_t selection_base,
-                                     size_t selection_extent,
-                                     const std::string& text) {
-  if (selection_base > selection_extent) {
+void TextInputModel::SetText(const std::string& text) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      utf16_converter;
+  text_ = utf16_converter.from_bytes(text);
+  selection_ = TextRange(0);
+  composing_range_ = TextRange(0);
+}
+
+bool TextInputModel::SetSelection(const TextRange& range) {
+  if (composing_ && !range.collapsed()) {
     return false;
   }
-  // Only checks extent since it is implicitly greater-than-or-equal-to base.
-  if (selection_extent > text.size()) {
+  if (!editable_range().Contains(range)) {
     return false;
   }
-  text_ = std::string(text);
-  selection_base_ = text_.begin() + selection_base;
-  selection_extent_ = text_.begin() + selection_extent;
+  selection_ = range;
   return true;
 }
 
-void TextInputModel::DeleteSelected() {
-  selection_base_ = text_.erase(selection_base_, selection_extent_);
-  // Moves extent back to base, so that it is a single cursor placement again.
-  selection_extent_ = selection_base_;
+bool TextInputModel::SetComposingRange(const TextRange& range,
+                                       size_t cursor_offset) {
+  if (!composing_ || !text_range().Contains(range)) {
+    return false;
+  }
+  composing_range_ = range;
+  selection_ = TextRange(range.start() + cursor_offset);
+  return true;
 }
 
-void TextInputModel::AddCharacter(char c) {
-  if (selection_base_ != selection_extent_) {
-    DeleteSelected();
+void TextInputModel::BeginComposing() {
+  composing_ = true;
+  composing_range_ = TextRange(selection_.start());
+}
+
+void TextInputModel::UpdateComposingText(const std::string& composing_text) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      utf16_converter;
+  std::u16string text = utf16_converter.from_bytes(composing_text);
+
+  // Preserve selection if we get a no-op update to the composing region.
+  if (text.length() == 0 && composing_range_.collapsed()) {
+    return;
   }
-  selection_extent_ = text_.insert(selection_extent_, c);
-  selection_extent_++;
-  selection_base_ = selection_extent_;
+  DeleteSelected();
+  text_.replace(composing_range_.start(), composing_range_.length(), text);
+  composing_range_.set_end(composing_range_.start() + text.length());
+  selection_ = TextRange(composing_range_.end());
+}
+
+void TextInputModel::CommitComposing() {
+  // Preserve selection if no composing text was entered.
+  if (composing_range_.collapsed()) {
+    return;
+  }
+  composing_range_ = TextRange(composing_range_.end());
+  selection_ = composing_range_;
+}
+
+void TextInputModel::EndComposing() {
+  composing_ = false;
+  composing_range_ = TextRange(0);
+}
+
+bool TextInputModel::DeleteSelected() {
+  if (selection_.collapsed()) {
+    return false;
+  }
+  size_t start = selection_.start();
+  text_.erase(start, selection_.length());
+  selection_ = TextRange(start);
+  if (composing_) {
+    // This occurs only immediately after composing has begun with a selection.
+    composing_range_ = selection_;
+  }
+  return true;
+}
+
+void TextInputModel::AddCodePoint(char32_t c) {
+  if (c <= 0xFFFF) {
+    AddText(std::u16string({static_cast<char16_t>(c)}));
+  } else {
+    char32_t to_decompose = c - 0x10000;
+    AddText(std::u16string({
+        // High surrogate.
+        static_cast<char16_t>((to_decompose >> 10) + 0xd800),
+        // Low surrogate.
+        static_cast<char16_t>((to_decompose % 0x400) + 0xdc00),
+    }));
+  }
+}
+
+void TextInputModel::AddText(const std::u16string& text) {
+  DeleteSelected();
+  if (composing_) {
+    // Delete the current composing text, set the cursor to composing start.
+    text_.erase(composing_range_.start(), composing_range_.length());
+    selection_ = TextRange(composing_range_.start());
+    composing_range_.set_end(composing_range_.start() + text.length());
+  }
+  size_t position = selection_.position();
+  text_.insert(position, text);
+  selection_ = TextRange(position + text.length());
+}
+
+void TextInputModel::AddText(const std::string& text) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      utf16_converter;
+  AddText(utf16_converter.from_bytes(text));
 }
 
 bool TextInputModel::Backspace() {
-  if (selection_base_ != selection_extent_) {
-    DeleteSelected();
+  if (DeleteSelected()) {
     return true;
   }
-  if (selection_base_ != text_.begin()) {
-    selection_base_ = text_.erase(selection_base_ - 1, selection_base_);
-    selection_extent_ = selection_base_;
-    return true;
-  }
-  return false;  // No edits happened.
-}
-
-bool TextInputModel::Delete() {
-  if (selection_base_ != selection_extent_) {
-    DeleteSelected();
-    return true;
-  }
-  if (selection_base_ != text_.end()) {
-    selection_base_ = text_.erase(selection_base_, selection_base_ + 1);
-    selection_extent_ = selection_base_;
+  // There is no selection. Delete the preceding codepoint.
+  size_t position = selection_.position();
+  if (position != editable_range().start()) {
+    int count = IsTrailingSurrogate(text_.at(position - 1)) ? 2 : 1;
+    text_.erase(position - count, count);
+    selection_ = TextRange(position - count);
+    if (composing_) {
+      composing_range_.set_end(composing_range_.end() - count);
+    }
     return true;
   }
   return false;
 }
 
-void TextInputModel::MoveCursorToBeginning() {
-  selection_base_ = text_.begin();
-  selection_extent_ = text_.begin();
+bool TextInputModel::Delete() {
+  if (DeleteSelected()) {
+    return true;
+  }
+  // There is no selection. Delete the preceding codepoint.
+  size_t position = selection_.position();
+  if (position < editable_range().end()) {
+    int count = IsLeadingSurrogate(text_.at(position)) ? 2 : 1;
+    text_.erase(position, count);
+    if (composing_) {
+      composing_range_.set_end(composing_range_.end() - count);
+    }
+    return true;
+  }
+  return false;
 }
 
-void TextInputModel::MoveCursorToEnd() {
-  selection_base_ = text_.end();
-  selection_extent_ = text_.end();
+bool TextInputModel::DeleteSurrounding(int offset_from_cursor, int count) {
+  size_t max_pos = editable_range().end();
+  size_t start = selection_.extent();
+  if (offset_from_cursor < 0) {
+    for (int i = 0; i < -offset_from_cursor; i++) {
+      // If requested start is before the available text then reduce the
+      // number of characters to delete.
+      if (start == editable_range().start()) {
+        count = i;
+        break;
+      }
+      start -= IsTrailingSurrogate(text_.at(start - 1)) ? 2 : 1;
+    }
+  } else {
+    for (int i = 0; i < offset_from_cursor && start != max_pos; i++) {
+      start += IsLeadingSurrogate(text_.at(start)) ? 2 : 1;
+    }
+  }
+
+  auto end = start;
+  for (int i = 0; i < count && end != max_pos; i++) {
+    end += IsLeadingSurrogate(text_.at(start)) ? 2 : 1;
+  }
+
+  if (start == end) {
+    return false;
+  }
+
+  auto deleted_length = end - start;
+  text_.erase(start, deleted_length);
+
+  // Cursor moves only if deleted area is before it.
+  selection_ = TextRange(offset_from_cursor <= 0 ? start : selection_.start());
+
+  // Adjust composing range.
+  if (composing_) {
+    composing_range_.set_end(composing_range_.end() - deleted_length);
+  }
+  return true;
+}
+
+bool TextInputModel::MoveCursorToBeginning() {
+  size_t min_pos = editable_range().start();
+  if (selection_.collapsed() && selection_.position() == min_pos) {
+    return false;
+  }
+  selection_ = TextRange(min_pos);
+  return true;
+}
+
+bool TextInputModel::MoveCursorToEnd() {
+  size_t max_pos = editable_range().end();
+  if (selection_.collapsed() && selection_.position() == max_pos) {
+    return false;
+  }
+  selection_ = TextRange(max_pos);
+  return true;
 }
 
 bool TextInputModel::MoveCursorForward() {
-  // If about to move set to the end of the highlight (when not selecting).
-  if (selection_base_ != selection_extent_) {
-    selection_base_ = selection_extent_;
+  // If there's a selection, move to the end of the selection.
+  if (!selection_.collapsed()) {
+    selection_ = TextRange(selection_.end());
     return true;
   }
-  // If not at the end, move the extent forward.
-  if (selection_extent_ != text_.end()) {
-    selection_extent_++;
-    selection_base_++;
+  // Otherwise, move the cursor forward.
+  size_t position = selection_.position();
+  if (position != editable_range().end()) {
+    int count = IsLeadingSurrogate(text_.at(position)) ? 2 : 1;
+    selection_ = TextRange(position + count);
     return true;
   }
   return false;
 }
 
 bool TextInputModel::MoveCursorBack() {
-  // If about to move set to the beginning of the highlight
-  // (when not selecting).
-  if (selection_base_ != selection_extent_) {
-    selection_extent_ = selection_base_;
+  // If there's a selection, move to the beginning of the selection.
+  if (!selection_.collapsed()) {
+    selection_ = TextRange(selection_.start());
     return true;
   }
-  // If not at the start, move the beginning backward.
-  if (selection_base_ != text_.begin()) {
-    selection_base_--;
-    selection_extent_--;
+  // Otherwise, move the cursor backward.
+  size_t position = selection_.position();
+  if (position != editable_range().start()) {
+    int count = IsTrailingSurrogate(text_.at(position - 1)) ? 2 : 1;
+    selection_ = TextRange(position - count);
     return true;
   }
   return false;
 }
 
-std::unique_ptr<rapidjson::Document> TextInputModel::GetState() const {
-  // TODO(stuartmorgan): Move client_id out up to the plugin so that this
-  // function just returns the editing state.
-  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
-  auto& allocator = args->GetAllocator();
-  args->PushBack(client_id_, allocator);
-
-  rapidjson::Value editing_state(rapidjson::kObjectType);
-  // TODO(awdavies): Most of these are hard-coded for now.
-  editing_state.AddMember(kComposingBaseKey, -1, allocator);
-  editing_state.AddMember(kComposingExtentKey, -1, allocator);
-  editing_state.AddMember(kSelectionAffinityKey, kAffinityDownstream,
-                          allocator);
-  editing_state.AddMember(kSelectionBaseKey,
-                          static_cast<int>(selection_base_ - text_.begin()),
-                          allocator);
-  editing_state.AddMember(kSelectionExtentKey,
-                          static_cast<int>(selection_extent_ - text_.begin()),
-                          allocator);
-  editing_state.AddMember(kSelectionIsDirectionalKey, false, allocator);
-  editing_state.AddMember(kTextKey, rapidjson::Value(text_, allocator).Move(),
-                          allocator);
-  args->PushBack(editing_state, allocator);
-  return args;
+std::string TextInputModel::GetText() const {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      utf8_converter;
+  return utf8_converter.to_bytes(text_);
 }
 
-}  // namespace shell
+int TextInputModel::GetCursorOffset() const {
+  // Measure the length of the current text up to the selection extent.
+  // There is probably a much more efficient way of doing this.
+  auto leading_text = text_.substr(0, selection_.extent());
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      utf8_converter;
+  return utf8_converter.to_bytes(leading_text).size();
+}
+
+}  // namespace flutter

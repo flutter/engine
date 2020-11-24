@@ -14,7 +14,9 @@
 #include "flutter/shell/platform/glfw/keyboard_hook_handler.h"
 #include "flutter/shell/platform/glfw/public/flutter_glfw.h"
 
-namespace shell {
+#include "rapidjson/document.h"
+
+namespace flutter {
 
 // Implements a text input plugin.
 //
@@ -25,14 +27,14 @@ class TextInputPlugin : public KeyboardHookHandler {
 
   virtual ~TextInputPlugin();
 
-  // |shell::KeyboardHookHandler|
+  // |KeyboardHookHandler|
   void KeyboardHook(GLFWwindow* window,
                     int key,
                     int scancode,
                     int action,
                     int mods) override;
 
-  // |shell::KeyboardHookHandler|
+  // |KeyboardHookHandler|
   void CharHook(GLFWwindow* window, unsigned int code_point) override;
 
  private:
@@ -50,13 +52,21 @@ class TextInputPlugin : public KeyboardHookHandler {
   // The MethodChannel used for communication with the Flutter engine.
   std::unique_ptr<flutter::MethodChannel<rapidjson::Document>> channel_;
 
-  // Mapping of client IDs to text input models.
-  std::map<int, std::unique_ptr<TextInputModel>> input_models_;
+  // The active client id.
+  int client_id_;
 
   // The active model. nullptr if not set.
-  TextInputModel* active_model_;
+  std::unique_ptr<TextInputModel> active_model_;
+
+  // Keyboard type of the client. See available options:
+  // https://docs.flutter.io/flutter/services/TextInputType-class.html
+  std::string input_type_;
+
+  // An action requested by the user on the input client. See available options:
+  // https://docs.flutter.io/flutter/services/TextInputAction-class.html
+  std::string input_action_;
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_GLFW_TEXT_INPUT_PLUGIN_H_

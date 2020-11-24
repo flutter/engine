@@ -1,0 +1,54 @@
+## Driver version in use.
+## For an integration test to run, the browser's major version and the driver's
+## major version should be equal. Please make sure the major version of
+## the binary for `chrome` is the same with `required_driver_version`.
+## (Major version meaning: For a browser that has version 13.0.5, the major
+## version is 13.)
+## Please refer to README's `Upgrade Browser Version` section for more details
+## on how to update the version number.
+required_driver_version:
+  ## Make sure the major version of the binary in `browser_lock.yaml` is the
+  ## same for Chrome.
+  chrome: '84'
+chrome:
+  # It seems Chrome can't always release from the same build for all operating
+  # systems, so we specify per-OS build number.
+  Linux: 768968 # Major version 84
+  Mac: 768985 # Major version 84
+  Win: 768975 # Major version 84
+firefox:
+  version: '72.0'
+edge:
+  launcher_version: '1.2.0.0'
+ios-safari:
+  # Make sure this version is the same version supported by LUCI macOS bots.
+  # XCode on these bots will be updated once a year, do not forget to update
+  # `heightOfHeader` during this time.
+  majorVersion: 13
+  minorVersion: 0
+  device: 'iPhone 11'
+  # `xcrun simctl` command is used to take screenshots. It takes the screenshot
+  # of the entire simulator. Therefore we need to crop all the parts other than
+  # the browsers' content. This file must be in sync with the local and LUCI
+  # versions of macOS, iOS Simulator, and Xcode.
+  # `heightOfHeader` is the number of pixels taken by the phone's header menu
+  # and the browsers address bar.
+  # TODO: https://github.com/flutter/flutter/issues/65672
+  heightOfHeader: 189
+  # `heightOfFooter` is the number of pixels taken by the phone's navigation
+  # menu.
+  heightOfFooter: 250
+  # Most of the time tests use a portion of the screen to compare goldens
+  # instead of the entire screen. This area is reprented by a rectangle
+  # when taking screenshots. However the rectangle dimensions are in logical
+  # coordinates. In order to convert these coordinates to coordinates on the
+  # phone screeen we enlarge or shrink the area by applying a linear
+  # transformation by a scale_factor (a.k.a. we perform isotropic scaling).
+  # This value will be differ depending on the phone.
+  # For iOS 13.0 iPhone 11 Pro, this number is 1.15.
+  scaleFactor: 1.00
+
+## geckodriver is used for testing Firefox Browser. It works with multiple
+## Firefox Browser versions.
+## See: https://github.com/mozilla/geckodriver/releases
+geckodriver: 'v0.26.0'

@@ -3,9 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/runtime/dart_service_isolate.h"
+
 #include "flutter/testing/testing.h"
 
-namespace blink {
+namespace flutter {
 
 TEST(DartServiceIsolateTest, CanAddAndRemoveHandles) {
   ASSERT_EQ(DartServiceIsolate::AddServerStatusCallback(nullptr), 0);
@@ -14,4 +15,4 @@ TEST(DartServiceIsolateTest, CanAddAndRemoveHandles) {
   ASSERT_TRUE(DartServiceIsolate::RemoveServerStatusCallback(handle));
 }
 
-}  // namespace blink
+}  // namespace flutter

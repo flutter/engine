@@ -85,30 +85,6 @@ class LineWidths {
   std::vector<float> mIndents;
 };
 
-class TabStops {
- public:
-  void set(const int* stops, size_t nStops, int tabWidth) {
-    if (stops != nullptr) {
-      mStops.assign(stops, stops + nStops);
-    } else {
-      mStops.clear();
-    }
-    mTabWidth = tabWidth;
-  }
-  float nextTab(float widthSoFar) const {
-    for (size_t i = 0; i < mStops.size(); i++) {
-      if (mStops[i] > widthSoFar) {
-        return mStops[i];
-      }
-    }
-    return floor(widthSoFar / mTabWidth + 1) * mTabWidth;
-  }
-
- private:
-  std::vector<int> mStops;
-  int mTabWidth;
-};
-
 class LineBreaker {
  public:
   const static int kTab_Shift =
@@ -121,7 +97,10 @@ class LineBreaker {
   // could be here but it's better for performance that it's upstream because of
   // the cost of constructing and comparing the ICU Locale object.
   // Note: caller is responsible for managing lifetime of hyphenator
-  void setLocale(const icu::Locale& locale, Hyphenator* hyphenator);
+  //
+  // libtxt extension: always use the default locale so that a cached instance
+  // of the ICU break iterator can be reused.
+  void setLocale();
 
   void resize(size_t size) {
     mTextBuf.resize(size);
@@ -142,10 +121,6 @@ class LineBreaker {
                      float restWidth);
 
   void setIndents(const std::vector<float>& indents);
-
-  void setTabStops(const int* stops, size_t nStops, int tabWidth) {
-    mTabStops.set(stops, nStops, tabWidth);
-  }
 
   BreakStrategy getStrategy() const { return mStrategy; }
 
@@ -176,6 +151,13 @@ class LineBreaker {
   void addReplacement(size_t start, size_t end, float width);
 
   size_t computeBreaks();
+
+  // libtxt: Add ability to set custom char widths. This allows manual
+  // definition of the widths of arbitrary glyphs. To linebreak properly, call
+  // addStyleRun with nullptr as the paint property, which will lead it to
+  // assume the width has already been calculated. Used for properly breaking
+  // inline placeholders.
+  void setCustomCharWidth(size_t offset, float width);
 
   const int* getBreaks() const { return mBreaks.data(); }
 
@@ -246,7 +228,6 @@ class LineBreaker {
   HyphenationFrequency mHyphenationFrequency = kHyphenationFrequency_Normal;
   bool mJustified;
   LineWidths mLineWidths;
-  TabStops mTabStops;
 
   // result of line breaking
   std::vector<int> mBreaks;

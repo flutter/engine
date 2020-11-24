@@ -5,13 +5,15 @@
 #ifndef FLUTTER_LIB_UI_WINDOW_VIEWPORT_METRICS_H_
 #define FLUTTER_LIB_UI_WINDOW_VIEWPORT_METRICS_H_
 
-#include <stdint.h>
+#include <ostream>
 
-namespace blink {
+namespace flutter {
 
 struct ViewportMetrics {
   ViewportMetrics();
-
+  ViewportMetrics(double p_device_pixel_ratio,
+                  double p_physical_width,
+                  double p_physical_height);
   ViewportMetrics(double p_device_pixel_ratio,
                   double p_physical_width,
                   double p_physical_height,
@@ -22,9 +24,11 @@ struct ViewportMetrics {
                   double p_physical_view_inset_top,
                   double p_physical_view_inset_right,
                   double p_physical_view_inset_bottom,
-                  double p_physical_view_inset_left);
-
-  ViewportMetrics(const ViewportMetrics& other);
+                  double p_physical_view_inset_left,
+                  double p_physical_system_gesture_inset_top,
+                  double p_physical_system_gesture_inset_right,
+                  double p_physical_system_gesture_inset_bottom,
+                  double p_physical_system_gesture_inset_left);
 
   double device_pixel_ratio = 1.0;
   double physical_width = 0;
@@ -37,27 +41,15 @@ struct ViewportMetrics {
   double physical_view_inset_right = 0;
   double physical_view_inset_bottom = 0;
   double physical_view_inset_left = 0;
+  double physical_system_gesture_inset_top = 0;
+  double physical_system_gesture_inset_right = 0;
+  double physical_system_gesture_inset_bottom = 0;
+  double physical_system_gesture_inset_left = 0;
 };
 
-struct LogicalSize {
-  double width = 0.0;
-  double height = 0.0;
-};
+bool operator==(const ViewportMetrics& a, const ViewportMetrics& b);
+std::ostream& operator<<(std::ostream& os, const ViewportMetrics& a);
 
-struct LogicalInset {
-  double left = 0.0;
-  double top = 0.0;
-  double right = 0.0;
-  double bottom = 0.0;
-};
-
-struct LogicalMetrics {
-  LogicalSize size;
-  double scale = 1.0;
-  LogicalInset padding;
-  LogicalInset view_inset;
-};
-
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_WINDOW_VIEWPORT_METRICS_H_

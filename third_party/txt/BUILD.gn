@@ -12,17 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//flutter/common/config.gni")
+import("//flutter/testing/testing.gni")
+
+declare_args() {
+  flutter_use_fontconfig = false
+}
+
+if (flutter_use_fontconfig) {
+  assert(is_linux)
+}
+
 config("txt_config") {
   visibility = [ ":*" ]
   include_dirs = [ "src" ]
 }
 
-source_set("txt") {
-  if (current_toolchain == host_toolchain && !is_mac) {
-    defines = [ "DIRECTORY_FONT_MANAGER_AVAILABLE" ]
+config("allow_posix_names") {
+  if (is_win && is_clang) {
+    # POSIX names of many functions are marked deprecated by default;
+    # disable that since they are used for cross-platform compatibility.
+    defines = [ "_CRT_NONSTDC_NO_DEPRECATE" ]
   }
-  if (is_android) {
-    defines = [ "ANDROID_FONT_MANAGER_AVAILABLE" ]
+}
+
+source_set("txt") {
+  defines = []
+  if (flutter_use_fontconfig) {
+    defines += [ "FLUTTER_USE_FONTCONFIG" ]
+  }
+  if (flutter_enable_skshaper) {
+    defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
   }
 
   sources = [
@@ -70,19 +90,28 @@ source_set("txt") {
     "src/txt/font_asset_provider.h",
     "src/txt/font_collection.cc",
     "src/txt/font_collection.h",
+    "src/txt/font_features.cc",
+    "src/txt/font_features.h",
     "src/txt/font_skia.cc",
     "src/txt/font_skia.h",
     "src/txt/font_style.h",
     "src/txt/font_weight.h",
+    "src/txt/line_metrics.h",
     "src/txt/paint_record.cc",
     "src/txt/paint_record.h",
-    "src/txt/paragraph.cc",
     "src/txt/paragraph.h",
     "src/txt/paragraph_builder.cc",
     "src/txt/paragraph_builder.h",
+    "src/txt/paragraph_builder_txt.cc",
+    "src/txt/paragraph_builder_txt.h",
     "src/txt/paragraph_style.cc",
     "src/txt/paragraph_style.h",
+    "src/txt/paragraph_txt.cc",
+    "src/txt/paragraph_txt.h",
+    "src/txt/placeholder_run.cc",
+    "src/txt/placeholder_run.h",
     "src/txt/platform.h",
+    "src/txt/run_metrics.h",
     "src/txt/styled_runs.cc",
     "src/txt/styled_runs.h",
     "src/txt/test_font_manager.cc",
@@ -98,7 +127,9 @@ source_set("txt") {
     "src/txt/typeface_font_asset_provider.h",
     "src/utils/JenkinsHash.cpp",
     "src/utils/JenkinsHash.h",
+    "src/utils/LinuxUtils.h",
     "src/utils/LruCache.h",
+    "src/utils/MacUtils.h",
     "src/utils/TypeHelpers.h",
     "src/utils/WindowsUtils.h",
   ]
@@ -106,108 +137,205 @@ source_set("txt") {
   public_configs = [ ":txt_config" ]
 
   public_deps = [
-    "$flutter_root/fml",
+    "//flutter/fml",
     "//third_party/harfbuzz",
     "//third_party/icu",
     "//third_party/skia",
   ]
 
-  deps = [
-    "//third_party/skia",
-  ]
+  deps = [ "//third_party/skia" ]
+
+  if (flutter_use_fontconfig) {
+    deps += [ "//third_party/fontconfig" ]
+  }
+
+  if (flutter_enable_skshaper) {
+    sources += [
+      "src/skia/paragraph_builder_skia.cc",
+      "src/skia/paragraph_builder_skia.h",
+      "src/skia/paragraph_skia.cc",
+      "src/skia/paragraph_skia.h",
+    ]
+
+    deps += [ "//third_party/skia/modules/skparagraph" ]
+  }
 
   if (is_mac || is_ios) {
-    set_sources_assignment_filter([])
     sources += [ "src/txt/platform_mac.mm" ]
-    set_sources_assignment_filter(sources_assignment_filter)
-    deps += [ "$flutter_root/fml" ]
+    deps += [ "//flutter/fml" ]
   } else if (is_android) {
     sources += [ "src/txt/platform_android.cc" ]
+  } else if (is_linux) {
+    sources += [ "src/txt/platform_linux.cc" ]
+  } else if (is_fuchsia) {
+    sources += [ "src/txt/platform_fuchsia.cc" ]
+  } else if (is_win) {
+    sources += [ "src/txt/platform_windows.cc" ]
   } else {
     sources += [ "src/txt/platform.cc" ]
   }
 }
 
-txt_common_executable_deps = [
-  "//third_party/dart/runtime:libdart_jit",  # For logging.
-  "$flutter_root/fml",  # For ICU initialization.
-]
-
-source_set("txt_test_utils") {
-  sources = [
-    "tests/txt_test_utils.cc",
-    "tests/txt_test_utils.h",
+if (enable_unittests) {
+  txt_common_executable_deps = [
+    "//flutter/fml",  # For ICU initialization.
+    "//third_party/dart/runtime:libdart_jit",  # For logging.
   ]
 
-  deps = [
-    ":txt",
-    "$flutter_root/fml",
-    "//third_party/skia",
-  ]
-}
-
-executable("txt_unittests") {
-  testonly = true
-
-  sources = [
-    "tests/CmapCoverageTest.cpp",
-    "tests/EmojiTest.cpp",
-    "tests/FileUtils.cpp",
-    "tests/FileUtils.h",
-    "tests/FontTestUtils.h",
-    "tests/GraphemeBreakTests.cpp",
-    "tests/ICUTestBase.h",
-    "tests/LayoutUtilsTest.cpp",
-    "tests/MeasurementTests.cpp",
-    "tests/SparseBitSetTest.cpp",
-    "tests/UnicodeUtils.cpp",
-    "tests/UnicodeUtils.h",
-    "tests/UnicodeUtilsTest.cpp",
-    "tests/font_collection_unittests.cc",
-    "tests/paragraph_unittests.cc",
-    "tests/render_test.cc",
-    "tests/render_test.h",
-    "tests/txt_run_all_unittests.cc",
-
-    # These tests require static fixtures.
-    # "tests/FontCollectionItemizeTest.cpp",
-    # "tests/FontCollectionTest.cpp",
-    # "tests/FontFamilyTest.cpp",
-    # "tests/FontLanguageListCacheTest.cpp",
-    # "tests/FontTestUtils.cpp",
-    # "tests/HbFontCacheTest.cpp",
-    # "tests/HyphenatorTest.cpp",
-    # "tests/LayoutTest.cpp",
-  ]
-
-  if (!is_win) {
-    sources += [
-      "tests/MinikinFontForTest.cpp",
-      "tests/MinikinFontForTest.h",
+  test_fixtures("txt_fixtures") {
+    fixtures = [
+      "third_party/fonts/Bold.ttf",
+      "third_party/fonts/Bold.ttx",
+      "third_party/fonts/BoldItalic.ttf",
+      "third_party/fonts/BoldItalic.ttx",
+      "third_party/fonts/ColorEmojiFont.ttf",
+      "third_party/fonts/ColorEmojiFont.ttx",
+      "third_party/fonts/ColorTextMixedEmojiFont.ttf",
+      "third_party/fonts/ColorTextMixedEmojiFont.ttx",
+      "third_party/fonts/DroidSerif.ttf",
+      "third_party/fonts/Emoji.ttf",
+      "third_party/fonts/Emoji.ttx",
+      "third_party/fonts/HomemadeApple.ttf",
+      "third_party/fonts/Italic.ttf",
+      "third_party/fonts/Italic.ttx",
+      "third_party/fonts/Ja.ttf",
+      "third_party/fonts/Ja.ttx",
+      "third_party/fonts/Katibeh-Regular.ttf",
+      "third_party/fonts/Ko.ttf",
+      "third_party/fonts/Ko.ttx",
+      "third_party/fonts/MultiAxis.ttf",
+      "third_party/fonts/MultiAxis.ttx",
+      "third_party/fonts/NoCmapFormat14.ttf",
+      "third_party/fonts/NoCmapFormat14.ttx",
+      "third_party/fonts/NoGlyphFont.ttf",
+      "third_party/fonts/NoGlyphFont.ttx",
+      "third_party/fonts/NotoColorEmoji.ttf",
+      "third_party/fonts/NotoNaskhArabic-Regular.ttf",
+      "third_party/fonts/NotoSansCJK-Regular.ttc",
+      "third_party/fonts/NotoSansKhmer-Regular.ttf",
+      "third_party/fonts/Regular.ttf",
+      "third_party/fonts/Regular.ttx",
+      "third_party/fonts/Roboto-Black.ttf",
+      "third_party/fonts/Roboto-BlackItalic.ttf",
+      "third_party/fonts/Roboto-Bold.ttf",
+      "third_party/fonts/Roboto-BoldItalic.ttf",
+      "third_party/fonts/Roboto-Italic.ttf",
+      "third_party/fonts/Roboto-Light.ttf",
+      "third_party/fonts/Roboto-LightItalic.ttf",
+      "third_party/fonts/Roboto-Medium.ttf",
+      "third_party/fonts/Roboto-MediumItalic.ttf",
+      "third_party/fonts/Roboto-Regular.ttf",
+      "third_party/fonts/Roboto-Thin.ttf",
+      "third_party/fonts/Roboto-ThinItalic.ttf",
+      "third_party/fonts/SourceHanSerifCN-Bold.otf",
+      "third_party/fonts/SourceHanSerifCN-Regular.otf",
+      "third_party/fonts/TextEmojiFont.ttf",
+      "third_party/fonts/TextEmojiFont.ttx",
+      "third_party/fonts/UnicodeBMPOnly.ttf",
+      "third_party/fonts/UnicodeBMPOnly.ttx",
+      "third_party/fonts/UnicodeBMPOnly2.ttf",
+      "third_party/fonts/UnicodeBMPOnly2.ttx",
+      "third_party/fonts/UnicodeUCS4.ttf",
+      "third_party/fonts/UnicodeUCS4.ttx",
+      "third_party/fonts/VariationSelectorTest-Regular.ttf",
+      "third_party/fonts/VariationSelectorTest-Regular.ttx",
+      "third_party/fonts/ZhHans.ttf",
+      "third_party/fonts/ZhHans.ttx",
+      "third_party/fonts/ZhHant.ttf",
+      "third_party/fonts/ZhHant.ttx",
+      "third_party/fonts/ahem.ttf",
+      "third_party/fonts/emoji.xml",
+      "third_party/fonts/itemize.xml",
     ]
   }
 
-  deps = [
-           ":txt",
-           ":txt_test_utils",
-           "//third_party/googletest:gtest",
-         ] + txt_common_executable_deps
-}
+  source_set("txt_test_utils") {
+    sources = [
+      "tests/txt_test_utils.cc",
+      "tests/txt_test_utils.h",
+    ]
 
-executable("txt_benchmarks") {
-  testonly = true
+    deps = [
+      ":txt",
+      "//flutter/fml",
+      "//third_party/skia",
+    ]
+  }
 
-  sources = [
-    "benchmarks/paint_record_benchmarks.cc",
-    "benchmarks/paragraph_benchmarks.cc",
-    "benchmarks/paragraph_builder_benchmarks.cc",
-    "benchmarks/styled_runs_benchmarks.cc",
-    "benchmarks/txt_run_all_benchmarks.cc",
-  ]
+  executable("txt_benchmarks") {
+    testonly = true
 
-  deps = [
-           ":txt",
-           ":txt_test_utils",
-           "//third_party/benchmark",
-         ] + txt_common_executable_deps
+    sources = [
+      "benchmarks/paint_record_benchmarks.cc",
+      "benchmarks/paragraph_benchmarks.cc",
+      "benchmarks/paragraph_builder_benchmarks.cc",
+      "benchmarks/styled_runs_benchmarks.cc",
+      "benchmarks/txt_run_all_benchmarks.cc",
+    ]
+
+    deps = [
+             ":txt",
+             ":txt_fixtures",
+             ":txt_test_utils",
+             "//flutter/testing:testing_lib",
+             "//third_party/benchmark",
+           ] + txt_common_executable_deps
+
+    if (flutter_enable_skshaper) {
+      sources += [ "benchmarks/skparagraph_benchmarks.cc" ]
+
+      deps += [ "//third_party/skia/modules/skparagraph" ]
+    }
+  }
+
+  executable("txt_unittests") {
+    testonly = true
+
+    sources = [
+      "tests/CmapCoverageTest.cpp",
+      "tests/EmojiTest.cpp",
+      "tests/FileUtils.cpp",
+      "tests/FileUtils.h",
+      "tests/FontTestUtils.h",
+      "tests/GraphemeBreakTests.cpp",
+      "tests/ICUTestBase.h",
+      "tests/LayoutUtilsTest.cpp",
+      "tests/MeasurementTests.cpp",
+      "tests/SparseBitSetTest.cpp",
+      "tests/UnicodeUtils.cpp",
+      "tests/UnicodeUtils.h",
+      "tests/UnicodeUtilsTest.cpp",
+      "tests/font_collection_unittests.cc",
+      "tests/paragraph_unittests.cc",
+      "tests/render_test.cc",
+      "tests/render_test.h",
+      "tests/txt_run_all_unittests.cc",
+
+      # These tests require static fixtures.
+      # "tests/FontCollectionItemizeTest.cpp",
+      # "tests/FontCollectionTest.cpp",
+      # "tests/FontFamilyTest.cpp",
+      # "tests/FontLanguageListCacheTest.cpp",
+      # "tests/FontTestUtils.cpp",
+      # "tests/HbFontCacheTest.cpp",
+      # "tests/HyphenatorTest.cpp",
+      # "tests/LayoutTest.cpp",
+    ]
+
+    if (!is_win) {
+      sources += [
+        "tests/MinikinFontForTest.cpp",
+        "tests/MinikinFontForTest.h",
+      ]
+    }
+
+    configs += [ ":allow_posix_names" ]
+
+    deps = [
+             ":txt",
+             ":txt_test_utils",
+             "//flutter/testing:testing_lib",
+             ":txt_fixtures",
+           ] + txt_common_executable_deps
+  }
 }

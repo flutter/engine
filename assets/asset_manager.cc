@@ -7,7 +7,7 @@
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/fml/trace_event.h"
 
-namespace blink {
+namespace flutter {
 
 AssetManager::AssetManager() = default;
 
@@ -29,7 +29,11 @@ void AssetManager::PushBack(std::unique_ptr<AssetResolver> resolver) {
   resolvers_.push_back(std::move(resolver));
 }
 
-// |blink::AssetResolver|
+std::deque<std::unique_ptr<AssetResolver>> AssetManager::TakeResolvers() {
+  return std::move(resolvers_);
+}
+
+// |AssetResolver|
 std::unique_ptr<fml::Mapping> AssetManager::GetAsMapping(
     const std::string& asset_name) const {
   if (asset_name.size() == 0) {
@@ -47,9 +51,32 @@ std::unique_ptr<fml::Mapping> AssetManager::GetAsMapping(
   return nullptr;
 }
 
-// |blink::AssetResolver|
+// |AssetResolver|
+std::vector<std::unique_ptr<fml::Mapping>> AssetManager::GetAsMappings(
+    const std::string& asset_pattern) const {
+  std::vector<std::unique_ptr<fml::Mapping>> mappings;
+  if (asset_pattern.size() == 0) {
+    return mappings;
+  }
+  TRACE_EVENT1("flutter", "AssetManager::GetAsMappings", "pattern",
+               asset_pattern.c_str());
+  for (const auto& resolver : resolvers_) {
+    auto resolver_mappings = resolver->GetAsMappings(asset_pattern);
+    mappings.insert(mappings.end(),
+                    std::make_move_iterator(resolver_mappings.begin()),
+                    std::make_move_iterator(resolver_mappings.end()));
+  }
+  return mappings;
+}
+
+// |AssetResolver|
 bool AssetManager::IsValid() const {
   return resolvers_.size() > 0;
 }
 
-}  // namespace blink
+// |AssetResolver|
+bool AssetManager::IsValidAfterAssetManagerChange() const {
+  return false;
+}
+
+}  // namespace flutter

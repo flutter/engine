@@ -9,14 +9,13 @@
 #include "flutter/lib/ui/painting/rrect.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/pathops/SkPathOps.h"
-#include "third_party/tonic/typed_data/float32_list.h"
-#include "third_party/tonic/typed_data/float64_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   DEFINE_WRAPPERTYPEINFO();
@@ -24,12 +23,19 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
  public:
   ~CanvasPath() override;
-  static fml::RefPtr<CanvasPath> Create() {
+  static fml::RefPtr<CanvasPath> CreateNew(Dart_Handle path_handle) {
     return fml::MakeRefCounted<CanvasPath>();
   }
 
-  static fml::RefPtr<CanvasPath> CreateFrom(const SkPath& src) {
-    fml::RefPtr<CanvasPath> path = CanvasPath::Create();
+  static fml::RefPtr<CanvasPath> Create(Dart_Handle path_handle) {
+    auto path = fml::MakeRefCounted<CanvasPath>();
+    path->AssociateWithDartWrapper(path_handle);
+    return path;
+  }
+
+  static fml::RefPtr<CanvasPath> CreateFrom(Dart_Handle path_handle,
+                                            const SkPath& src) {
+    fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
     path->path_ = src;
     return path;
   }
@@ -96,13 +102,15 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   void close();
   void reset();
   bool contains(double x, double y);
-  fml::RefPtr<CanvasPath> shift(double dx, double dy);
-  fml::RefPtr<CanvasPath> transform(tonic::Float64List& matrix4);
+  void shift(Dart_Handle path_handle, double dx, double dy);
+  void transform(Dart_Handle path_handle, tonic::Float64List& matrix4);
   tonic::Float32List getBounds();
   bool op(CanvasPath* path1, CanvasPath* path2, int operation);
-  fml::RefPtr<CanvasPath> clone();
+  void clone(Dart_Handle path_handle);
 
   const SkPath& path() const { return path_; }
+
+  size_t GetAllocationSize() const override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
@@ -112,6 +120,6 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   SkPath path_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_PATH_H_

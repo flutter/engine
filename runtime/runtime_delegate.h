@@ -15,7 +15,7 @@
 #include "flutter/lib/ui/window/platform_message.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
-namespace blink {
+namespace flutter {
 
 class RuntimeDelegate {
  public:
@@ -23,23 +23,30 @@ class RuntimeDelegate {
 
   virtual void ScheduleFrame(bool regenerate_layer_tree = true) = 0;
 
-  virtual void Render(std::unique_ptr<flow::LayerTree> layer_tree) = 0;
+  virtual void Render(std::unique_ptr<flutter::LayerTree> layer_tree) = 0;
 
-  virtual void UpdateSemantics(
-      blink::SemanticsNodeUpdates update,
-      blink::CustomAccessibilityActionUpdates actions) = 0;
+  virtual void UpdateSemantics(SemanticsNodeUpdates update,
+                               CustomAccessibilityActionUpdates actions) = 0;
 
   virtual void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) = 0;
 
   virtual FontCollection& GetFontCollection() = 0;
 
+  virtual void OnRootIsolateCreated() = 0;
+
   virtual void UpdateIsolateDescription(const std::string isolate_name,
                                         int64_t isolate_port) = 0;
+
+  virtual void SetNeedsReportTimings(bool value) = 0;
+
+  virtual std::unique_ptr<std::vector<std::string>>
+  ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) = 0;
 
  protected:
   virtual ~RuntimeDelegate();
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_RUNTIME_RUNTIME_DELEGATE_H_

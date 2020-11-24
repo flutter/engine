@@ -15,6 +15,7 @@
  */
 
 #include "paint_record.h"
+
 #include "flutter/fml/logging.h"
 
 namespace txt {
@@ -26,27 +27,50 @@ PaintRecord::PaintRecord(TextStyle style,
                          sk_sp<SkTextBlob> text,
                          SkFontMetrics metrics,
                          size_t line,
-                         double run_width,
+                         double x_start,
+                         double x_end,
                          bool is_ghost)
     : style_(style),
       offset_(offset),
       text_(std::move(text)),
       metrics_(metrics),
       line_(line),
-      run_width_(run_width),
+      x_start_(x_start),
+      x_end_(x_end),
       is_ghost_(is_ghost) {}
+
+PaintRecord::PaintRecord(TextStyle style,
+                         SkPoint offset,
+                         sk_sp<SkTextBlob> text,
+                         SkFontMetrics metrics,
+                         size_t line,
+                         double x_start,
+                         double x_end,
+                         bool is_ghost,
+                         PlaceholderRun* placeholder_run)
+    : style_(style),
+      offset_(offset),
+      text_(std::move(text)),
+      metrics_(metrics),
+      line_(line),
+      x_start_(x_start),
+      x_end_(x_end),
+      is_ghost_(is_ghost),
+      placeholder_run_(placeholder_run) {}
 
 PaintRecord::PaintRecord(TextStyle style,
                          sk_sp<SkTextBlob> text,
                          SkFontMetrics metrics,
                          size_t line,
-                         double run_width,
+                         double x_start,
+                         double x_end,
                          bool is_ghost)
     : style_(style),
       text_(std::move(text)),
       metrics_(metrics),
       line_(line),
-      run_width_(run_width),
+      x_start_(x_start),
+      x_end_(x_end),
       is_ghost_(is_ghost) {}
 
 PaintRecord::PaintRecord(PaintRecord&& other) {
@@ -55,7 +79,10 @@ PaintRecord::PaintRecord(PaintRecord&& other) {
   text_ = std::move(other.text_);
   metrics_ = other.metrics_;
   line_ = other.line_;
-  run_width_ = other.run_width_, is_ghost_ = other.is_ghost_;
+  placeholder_run_ = other.placeholder_run_;
+  x_start_ = other.x_start_;
+  x_end_ = other.x_end_;
+  is_ghost_ = other.is_ghost_;
 }
 
 PaintRecord& PaintRecord::operator=(PaintRecord&& other) {
@@ -64,8 +91,10 @@ PaintRecord& PaintRecord::operator=(PaintRecord&& other) {
   text_ = std::move(other.text_);
   metrics_ = other.metrics_;
   line_ = other.line_;
-  run_width_ = other.run_width_;
+  x_start_ = other.x_start_;
+  x_end_ = other.x_end_;
   is_ghost_ = other.is_ghost_;
+  placeholder_run_ = other.placeholder_run_;
   return *this;
 }
 

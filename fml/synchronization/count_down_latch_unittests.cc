@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/fml/synchronization/count_down_latch.h"
+
 #include <chrono>
 #include <thread>
 
-#include "flutter/fml/synchronization/count_down_latch.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/thread.h"
 #include "flutter/testing/testing.h"
 
@@ -16,6 +18,11 @@ TEST(CountDownLatchTest, CanWaitOnZero) {
   latch.Wait();
 }
 
+#if OS_FUCHSIA
+#define CanWait DISABLED_CanWait
+#else
+#define CanWait CanWait
+#endif
 TEST(CountDownLatchTest, CanWait) {
   fml::Thread thread("test_thread");
   const size_t count = 100;

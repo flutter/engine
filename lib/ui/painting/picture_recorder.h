@@ -12,7 +12,7 @@ namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 class Canvas;
 class Picture;
 
@@ -26,8 +26,7 @@ class PictureRecorder : public RefCountedDartWrappable<PictureRecorder> {
   ~PictureRecorder() override;
 
   SkCanvas* BeginRecording(SkRect bounds);
-  fml::RefPtr<Picture> endRecording();
-  bool isRecording();
+  fml::RefPtr<Picture> endRecording(Dart_Handle dart_picture);
 
   void set_canvas(fml::RefPtr<Canvas> canvas) { canvas_ = std::move(canvas); }
 
@@ -41,6 +40,6 @@ class PictureRecorder : public RefCountedDartWrappable<PictureRecorder> {
   fml::RefPtr<Canvas> canvas_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_PICTURE_RECORDER_H_

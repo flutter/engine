@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 
-namespace shell {
+namespace flutter {
 
 IncomingMessageDispatcher::IncomingMessageDispatcher(
     FlutterDesktopMessengerRef messenger)
@@ -12,10 +12,11 @@ IncomingMessageDispatcher::IncomingMessageDispatcher(
 
 IncomingMessageDispatcher::~IncomingMessageDispatcher() = default;
 
+/// @note Procedure doesn't copy all closures.
 void IncomingMessageDispatcher::HandleMessage(
     const FlutterDesktopMessage& message,
-    std::function<void(void)> input_block_cb,
-    std::function<void(void)> input_unblock_cb) {
+    const std::function<void(void)>& input_block_cb,
+    const std::function<void(void)>& input_unblock_cb) {
   std::string channel(message.channel);
 
   // Find the handler for the channel; if there isn't one, report the failure.
@@ -54,4 +55,4 @@ void IncomingMessageDispatcher::EnableInputBlockingForChannel(
   input_blocking_channels_.insert(channel);
 }
 
-}  // namespace shell
+}  // namespace flutter

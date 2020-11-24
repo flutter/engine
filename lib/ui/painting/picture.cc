@@ -4,6 +4,8 @@
 
 #include "flutter/lib/ui/painting/picture.h"
 
+#include <memory>
+
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -15,7 +17,7 @@
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
-namespace blink {
+namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
@@ -26,11 +28,16 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
 DART_BIND_ALL(Picture, FOR_EACH_BINDING)
 
-fml::RefPtr<Picture> Picture::Create(flow::SkiaGPUObject<SkPicture> picture) {
-  return fml::MakeRefCounted<Picture>(std::move(picture));
+fml::RefPtr<Picture> Picture::Create(
+    Dart_Handle dart_handle,
+    flutter::SkiaGPUObject<SkPicture> picture) {
+  auto canvas_picture = fml::MakeRefCounted<Picture>(std::move(picture));
+
+  canvas_picture->AssociateWithDartWrapper(dart_handle);
+  return canvas_picture;
 }
 
-Picture::Picture(flow::SkiaGPUObject<SkPicture> picture)
+Picture::Picture(flutter::SkiaGPUObject<SkPicture> picture)
     : picture_(std::move(picture)) {}
 
 Picture::~Picture() = default;
@@ -46,12 +53,13 @@ Dart_Handle Picture::toImage(uint32_t width,
 }
 
 void Picture::dispose() {
+  picture_.reset();
   ClearDartWrapper();
 }
 
-size_t Picture::GetAllocationSize() {
+size_t Picture::GetAllocationSize() const {
   if (auto picture = picture_.get()) {
-    return picture->approximateBytesUsed();
+    return picture->approximateBytesUsed() + sizeof(Picture);
   } else {
     return sizeof(Picture);
   }
@@ -74,7 +82,7 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
       dart_state, raw_image_callback);
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
-  auto gpu_task_runner = dart_state->GetTaskRunners().GetGPUTaskRunner();
+  auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
   auto snapshot_delegate = dart_state->GetSnapshotDelegate();
 
   // We can't create an image on this task runner because we don't have a
@@ -84,54 +92,46 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
 
   auto picture_bounds = SkISize::Make(width, height);
 
-  auto ui_task = fml::MakeCopyable(
-      [ui_task_runner, image_callback = std::move(image_callback),
-       unref_queue](sk_sp<SkImage> raster_image) mutable {
-        // Send the raster image back to the UI thread for submission to the
-        // framework.
-        fml::TaskRunner::RunNowOrPostTask(
-            ui_task_runner,
-            fml::MakeCopyable([raster_image,
-                               image_callback = std::move(image_callback),
-                               unref_queue]() mutable {
-              auto dart_state = image_callback->dart_state().lock();
-              if (!dart_state) {
-                // The root isolate could have died in the meantime.
-                return;
-              }
-              tonic::DartState::Scope scope(dart_state);
+  auto ui_task = fml::MakeCopyable([image_callback = std::move(image_callback),
+                                    unref_queue](
+                                       sk_sp<SkImage> raster_image) mutable {
+    auto dart_state = image_callback->dart_state().lock();
+    if (!dart_state) {
+      // The root isolate could have died in the meantime.
+      return;
+    }
+    tonic::DartState::Scope scope(dart_state);
 
-              if (!raster_image) {
-                tonic::DartInvoke(image_callback->Get(), {Dart_Null()});
-                return;
-              }
+    if (!raster_image) {
+      tonic::DartInvoke(image_callback->Get(), {Dart_Null()});
+      return;
+    }
 
-              auto dart_image = CanvasImage::Create();
-              dart_image->set_image(
-                  {std::move(raster_image), std::move(unref_queue)});
-              auto* raw_dart_image = tonic::ToDart(std::move(dart_image));
+    auto dart_image = CanvasImage::Create();
+    dart_image->set_image({std::move(raster_image), std::move(unref_queue)});
+    auto* raw_dart_image = tonic::ToDart(std::move(dart_image));
 
-              // All done!
-              tonic::DartInvoke(image_callback->Get(), {raw_dart_image});
-            }));
-      });
+    // All done!
+    tonic::DartInvoke(image_callback->Get(), {raw_dart_image});
 
-  auto gpu_task = fml::MakeCopyable([gpu_task_runner, picture, picture_bounds,
-                                     snapshot_delegate, ui_task]() {
-    fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, [snapshot_delegate,
-                                                        picture, picture_bounds,
-                                                        ui_task]() {
-      // Snapshot the picture on the GPU thread. This thread has access to the
-      // GPU contexts that may contain the sole references to texture backed
-      // images in the picture.
-      ui_task(snapshot_delegate->MakeRasterSnapshot(picture, picture_bounds));
-    });
+    // image_callback is associated with the Dart isolate and must be deleted
+    // on the UI thread.
+    image_callback.reset();
   });
 
-  // Kick things off on the GPU.
-  gpu_task();
+  // Kick things off on the raster rask runner.
+  fml::TaskRunner::RunNowOrPostTask(
+      raster_task_runner,
+      [ui_task_runner, snapshot_delegate, picture, picture_bounds, ui_task] {
+        sk_sp<SkImage> raster_image =
+            snapshot_delegate->MakeRasterSnapshot(picture, picture_bounds);
+
+        fml::TaskRunner::RunNowOrPostTask(
+            ui_task_runner,
+            [ui_task, raster_image]() { ui_task(raster_image); });
+      });
 
   return Dart_Null();
 }
 
-}  // namespace blink
+}  // namespace flutter

@@ -8,10 +8,10 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/ref_ptr.h"
-#include "flutter/vulkan/vulkan_handle.h"
-#include "flutter/vulkan/vulkan_interface.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
+#include "vulkan_handle.h"
+#include "vulkan_interface.h"
 
 namespace vulkan {
 
@@ -115,8 +115,8 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(CreateAndroidSurfaceKHR);
 #endif  // OS_ANDROID
 #if OS_FUCHSIA
-  DEFINE_PROC(GetMemoryFuchsiaHandleKHR);
-  DEFINE_PROC(ImportSemaphoreFuchsiaHandleKHR);
+  DEFINE_PROC(GetMemoryZirconHandleFUCHSIA);
+  DEFINE_PROC(ImportSemaphoreZirconHandleFUCHSIA);
 #endif  // OS_FUCHSIA
 
 #undef DEFINE_PROC

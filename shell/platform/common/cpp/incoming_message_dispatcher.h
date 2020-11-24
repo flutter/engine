@@ -13,7 +13,7 @@
 
 #include "flutter/shell/platform/common/cpp/public/flutter_messenger.h"
 
-namespace shell {
+namespace flutter {
 
 // Manages per-channel registration of callbacks for handling messages from the
 // Flutter engine, and dispatching incoming messages to those handlers.
@@ -39,8 +39,8 @@ class IncomingMessageDispatcher {
   // NotImplemented response to the engine.
   void HandleMessage(
       const FlutterDesktopMessage& message,
-      std::function<void(void)> input_block_cb = [] {},
-      std::function<void(void)> input_unblock_cb = [] {});
+      const std::function<void(void)>& input_block_cb = [] {},
+      const std::function<void(void)>& input_unblock_cb = [] {});
 
   // Registers a message callback for incoming messages from the Flutter
   // side on the specified channel. |callback| will be called with the message
@@ -73,6 +73,6 @@ class IncomingMessageDispatcher {
   std::set<std::string> input_blocking_channels_;
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_CPP_INCOMING_MESSAGE_DISPATCHER_H_

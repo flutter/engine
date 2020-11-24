@@ -9,42 +9,45 @@
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
-#include "flutter/shell/platform/android/android_surface.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
 
-namespace shell {
+namespace flutter {
 
 class AndroidSurfaceSoftware final : public AndroidSurface,
                                      public GPUSurfaceSoftwareDelegate {
  public:
-  AndroidSurfaceSoftware();
+  AndroidSurfaceSoftware(const AndroidContext& android_context,
+                         std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   ~AndroidSurfaceSoftware() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool IsValid() const override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool ResourceContextMakeCurrent() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool ResourceContextClearCurrent() override;
 
-  // |shell::AndroidSurface|
-  std::unique_ptr<Surface> CreateGPUSurface() override;
+  // |AndroidSurface|
+  std::unique_ptr<Surface> CreateGPUSurface(
+      GrDirectContext* gr_context) override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   void TeardownOnScreenContext() override;
 
-  // |shell::AndroidSurface|
-  bool OnScreenSurfaceResize(const SkISize& size) const override;
+  // |AndroidSurface|
+  bool OnScreenSurfaceResize(const SkISize& size) override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) override;
 
-  // |shell::GPUSurfaceSoftwareDelegate|
+  // |GPUSurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
 
-  // |shell::GPUSurfaceSoftwareDelegate|
+  // |GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
 
  private:
@@ -56,6 +59,6 @@ class AndroidSurfaceSoftware final : public AndroidSurface,
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceSoftware);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_SOFTWARE_H_

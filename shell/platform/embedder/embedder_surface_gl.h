@@ -7,9 +7,10 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
+#include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 
-namespace shell {
+namespace flutter {
 
 class EmbedderSurfaceGL final : public EmbedderSurface,
                                 public GPUSurfaceGLDelegate {
@@ -17,16 +18,18 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   struct GLDispatchTable {
     std::function<bool(void)> gl_make_current_callback;           // required
     std::function<bool(void)> gl_clear_current_callback;          // required
-    std::function<bool(void)> gl_present_callback;                // required
-    std::function<intptr_t(void)> gl_fbo_callback;                // required
+    std::function<bool(uint32_t)> gl_present_callback;            // required
+    std::function<intptr_t(GLFrameInfo)> gl_fbo_callback;         // required
     std::function<bool(void)> gl_make_resource_current_callback;  // optional
     std::function<SkMatrix(void)>
         gl_surface_transformation_callback;              // optional
     std::function<void*(const char*)> gl_proc_resolver;  // optional
   };
 
-  EmbedderSurfaceGL(GLDispatchTable gl_dispatch_table,
-                    bool fbo_reset_after_present);
+  EmbedderSurfaceGL(
+      GLDispatchTable gl_dispatch_table,
+      bool fbo_reset_after_present,
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
   ~EmbedderSurfaceGL() override;
 
@@ -35,39 +38,41 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   GLDispatchTable gl_dispatch_table_;
   bool fbo_reset_after_present_;
 
-  // |shell::EmbedderSurface|
+  std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
+
+  // |EmbedderSurface|
   bool IsValid() const override;
 
-  // |shell::EmbedderSurface|
+  // |EmbedderSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
-  // |shell::EmbedderSurface|
-  sk_sp<GrContext> CreateResourceContext() const override;
+  // |EmbedderSurface|
+  sk_sp<GrDirectContext> CreateResourceContext() const override;
 
-  // |shell::GPUSurfaceGLDelegate|
-  bool GLContextMakeCurrent() override;
+  // |GPUSurfaceGLDelegate|
+  std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
 
-  // |shell::GPUSurfaceGLDelegate|
+  // |GPUSurfaceGLDelegate|
   bool GLContextClearCurrent() override;
 
-  // |shell::GPUSurfaceGLDelegate|
-  bool GLContextPresent() override;
+  // |GPUSurfaceGLDelegate|
+  bool GLContextPresent(uint32_t fbo_id) override;
 
-  // |shell::GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO() const override;
+  // |GPUSurfaceGLDelegate|
+  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
 
-  // |shell::GPUSurfaceGLDelegate|
+  // |GPUSurfaceGLDelegate|
   bool GLContextFBOResetAfterPresent() const override;
 
-  // |shell::GPUSurfaceGLDelegate|
+  // |GPUSurfaceGLDelegate|
   SkMatrix GLContextSurfaceTransformation() const override;
 
-  // |shell::GPUSurfaceGLDelegate|
+  // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceGL);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_SURFACE_GL_H_

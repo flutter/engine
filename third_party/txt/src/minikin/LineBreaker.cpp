@@ -32,8 +32,6 @@ using std::vector;
 
 namespace minikin {
 
-const int CHAR_TAB = 0x0009;
-
 // Large scores in a hierarchy; we prefer desperate breaks to an overfull line.
 // All these constants are larger than any reasonable actual width score.
 const float SCORE_INFTY = std::numeric_limits<float>::max();
@@ -64,10 +62,16 @@ const size_t MAX_TEXT_BUF_RETAIN = 32678;
 // Maximum amount that spaces can shrink, in justified text.
 const float SHRINKABILITY = 1.0 / 3.0;
 
-void LineBreaker::setLocale(const icu::Locale& locale, Hyphenator* hyphenator) {
-  mWordBreaker.setLocale(locale);
-  mLocale = locale;
-  mHyphenator = hyphenator;
+// libtxt: Add a fudge factor to comparisons between currentLineWidth and
+// postBreak width.  The currentLineWidth passed by the Flutter framework
+// is based on maxIntrinsicWidth/Layout::measureText calculations that may
+// not precisely match the postBreak width.
+const float LIBTXT_WIDTH_ADJUST = 0.00001;
+
+void LineBreaker::setLocale() {
+  mWordBreaker.setLocale();
+  mLocale = icu::Locale();
+  mHyphenator = nullptr;
 }
 
 void LineBreaker::setText() {
@@ -124,13 +128,12 @@ float LineBreaker::addStyleRun(MinikinPaint* paint,
                                size_t end,
                                bool isRtl) {
   float width = 0.0f;
-  int bidiFlags = isRtl ? kBidi_Force_RTL : kBidi_Force_LTR;
 
   float hyphenPenalty = 0.0;
   if (paint != nullptr) {
     width = Layout::measureText(mTextBuf.data(), start, end - start,
-                                mTextBuf.size(), bidiFlags, style, *paint,
-                                typeface, mCharWidths.data() + start);
+                                mTextBuf.size(), isRtl, style, *paint, typeface,
+                                mCharWidths.data() + start);
 
     // a heuristic that seems to perform well
     hyphenPenalty =
@@ -159,22 +162,14 @@ float LineBreaker::addStyleRun(MinikinPaint* paint,
   size_t postSpaceCount = mSpaceCount;
   for (size_t i = start; i < end; i++) {
     uint16_t c = mTextBuf[i];
-    if (c == CHAR_TAB) {
-      mWidth = mPreBreak + mTabStops.nextTab(mWidth - mPreBreak);
-      if (mFirstTabIndex == INT_MAX) {
-        mFirstTabIndex = (int)i;
-      }
-      // fall back to greedy; other modes don't know how to deal with tabs
-      mStrategy = kBreakStrategy_Greedy;
-    } else {
-      if (isWordSpace(c))
-        mSpaceCount += 1;
-      mWidth += mCharWidths[i];
-      if (!isLineEndSpace(c)) {
-        postBreak = mWidth;
-        postSpaceCount = mSpaceCount;
-        afterWord = i + 1;
-      }
+    // libtxt: Tab handling was removed here.
+    if (isWordSpace(c))
+      mSpaceCount += 1;
+    mWidth += mCharWidths[i];
+    if (!isLineEndSpace(c)) {
+      postBreak = mWidth;
+      postSpaceCount = mSpaceCount;
+      afterWord = i + 1;
     }
     if (i + 1 == current) {
       size_t wordStart = mWordBreaker.wordStart();
@@ -205,12 +200,12 @@ float LineBreaker::addStyleRun(MinikinPaint* paint,
             paint->hyphenEdit = HyphenEdit::editForThisLine(hyph);
             const float firstPartWidth = Layout::measureText(
                 mTextBuf.data(), lastBreak, j - lastBreak, mTextBuf.size(),
-                bidiFlags, style, *paint, typeface, nullptr);
+                isRtl, style, *paint, typeface, nullptr);
             ParaWidth hyphPostBreak = lastBreakWidth + firstPartWidth;
 
             paint->hyphenEdit = HyphenEdit::editForNextLine(hyph);
             const float secondPartWidth = Layout::measureText(
-                mTextBuf.data(), j, afterWord - j, mTextBuf.size(), bidiFlags,
+                mTextBuf.data(), j, afterWord - j, mTextBuf.size(), isRtl,
                 style, *paint, typeface, nullptr);
             ParaWidth hyphPreBreak = postBreak - secondPartWidth;
 
@@ -248,7 +243,10 @@ void LineBreaker::addWordBreak(size_t offset,
                                HyphenationType hyph) {
   Candidate cand;
   ParaWidth width = mCandidates.back().preBreak;
-  if (postBreak - width > currentLineWidth()) {
+  // libtxt: add a fudge factor to this comparison.  The currentLineWidth passed
+  // by the framework is based on maxIntrinsicWidth/Layout::measureText
+  // calculations that may not precisely match the postBreak width.
+  if (postBreak - width > currentLineWidth() + LIBTXT_WIDTH_ADJUST) {
     // Add desperate breaks.
     // Note: these breaks are based on the shaping of the (non-broken) original
     // text; they are imprecise especially in the presence of kerning,
@@ -313,7 +311,7 @@ void LineBreaker::addCandidate(Candidate cand) {
   // mCandidates, and mPreBreak is its preBreak value. mBestBreak is the index
   // of the best line breaking candidate we have found since then, and
   // mBestScore is its penalty.
-  if (cand.postBreak - mPreBreak > currentLineWidth()) {
+  if (cand.postBreak - mPreBreak > currentLineWidth() + LIBTXT_WIDTH_ADJUST) {
     // This break would create an overfull line, pick the best break and break
     // there (greedy)
     if (mBestBreak == mLastBreak) {
@@ -324,7 +322,8 @@ void LineBreaker::addCandidate(Candidate cand) {
   }
 
   while (mLastBreak != candIndex &&
-         cand.postBreak - mPreBreak > currentLineWidth()) {
+         cand.postBreak - mPreBreak >
+             currentLineWidth() + LIBTXT_WIDTH_ADJUST) {
     // We should rarely come here. But if we are here, we have broken the line,
     // but the remaining part still doesn't fit. We now need to break at the
     // second best place after the last break, but we have not kept that
@@ -361,6 +360,14 @@ void LineBreaker::pushBreak(int offset, float width, uint8_t hyphenEdit) {
   flags |= hyphenEdit;
   mFlags.push_back(flags);
   mFirstTabIndex = INT_MAX;
+}
+
+// libtxt: Add ability to set custom char widths. This allows manual definition
+// of the widths of arbitrary glyphs. To linebreak properly, call addStyleRun
+// with nullptr as the paint property, which will lead it to assume the width
+// has already been calculated. Used for properly breaking inline widgets.
+void LineBreaker::setCustomCharWidth(size_t offset, float width) {
+  mCharWidths[offset] = (width);
 }
 
 void LineBreaker::addReplacement(size_t start, size_t end, float width) {

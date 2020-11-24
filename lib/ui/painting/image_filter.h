@@ -6,12 +6,13 @@
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_FILTER_H_
 
 #include "flutter/lib/ui/dart_wrapper.h"
+#include "flutter/lib/ui/painting/color_filter.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
-#include "third_party/tonic/typed_data/float64_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
-namespace blink {
+namespace flutter {
 
 class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   DEFINE_WRAPPERTYPEINFO();
@@ -25,8 +26,10 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   void initPicture(Picture*);
   void initBlur(double sigma_x, double sigma_y);
   void initMatrix(const tonic::Float64List& matrix4, int filter_quality);
+  void initColorFilter(ColorFilter* colorFilter);
+  void initComposeFilter(ImageFilter* outer, ImageFilter* inner);
 
-  const sk_sp<SkImageFilter>& filter() { return filter_; }
+  const sk_sp<SkImageFilter>& filter() const { return filter_; }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
@@ -36,6 +39,6 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   sk_sp<SkImageFilter> filter_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_IMAGE_FILTER_H_

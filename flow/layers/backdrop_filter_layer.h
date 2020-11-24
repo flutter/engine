@@ -6,17 +6,15 @@
 #define FLUTTER_FLOW_LAYERS_BACKDROP_FILTER_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
-
 #include "third_party/skia/include/core/SkImageFilter.h"
 
-namespace flow {
+namespace flutter {
 
 class BackdropFilterLayer : public ContainerLayer {
  public:
-  BackdropFilterLayer();
-  ~BackdropFilterLayer() override;
+  BackdropFilterLayer(sk_sp<SkImageFilter> filter);
 
-  void set_filter(sk_sp<SkImageFilter> filter) { filter_ = std::move(filter); }
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
 
@@ -26,6 +24,6 @@ class BackdropFilterLayer : public ContainerLayer {
   FML_DISALLOW_COPY_AND_ASSIGN(BackdropFilterLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_BACKDROP_FILTER_LAYER_H_

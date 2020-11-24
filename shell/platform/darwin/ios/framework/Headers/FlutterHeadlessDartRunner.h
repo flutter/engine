@@ -7,10 +7,10 @@
 
 #import <Foundation/Foundation.h>
 
-#include "FlutterBinaryMessenger.h"
-#include "FlutterDartProject.h"
-#include "FlutterEngine.h"
-#include "FlutterMacros.h"
+#import "FlutterBinaryMessenger.h"
+#import "FlutterDartProject.h"
+#import "FlutterEngine.h"
+#import "FlutterMacros.h"
 
 /**
  * A callback for when FlutterHeadlessDartRunner has attempted to start a Dart
@@ -22,7 +22,7 @@
 typedef void (^FlutterHeadlessDartRunnerCallback)(BOOL success);
 
 /**
- * The FlutterHeadlessDartRunner runs Flutter Dart code with a null rasterizer,
+ * The deprecated FlutterHeadlessDartRunner runs Flutter Dart code with a null rasterizer,
  * and no native drawing surface. It is appropriate for use in running Dart
  * code e.g. in the background from a plugin.
  *

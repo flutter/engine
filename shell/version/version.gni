@@ -1,0 +1,46 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+declare_args() {
+  engine_version = ""
+
+  skia_version = ""
+
+  dart_version = ""
+}
+
+_flutter_root = "//flutter"
+
+if (engine_version == "") {
+  engine_version_lines =
+      exec_script("//flutter/build/git_revision.py",
+                  [
+                    "--repository",
+                    rebase_path(_flutter_root, "", _flutter_root),
+                  ],
+                  "list lines")
+  engine_version = engine_version_lines[0]
+}
+
+if (skia_version == "") {
+  skia_version_lines =
+      exec_script("//flutter/build/git_revision.py",
+                  [
+                    "--repository",
+                    rebase_path("//third_party/skia", "", _flutter_root),
+                  ],
+                  "list lines")
+  skia_version = skia_version_lines[0]
+}
+
+if (dart_version == "") {
+  dart_version_lines =
+      exec_script("//flutter/build/git_revision.py",
+                  [
+                    "--repository",
+                    rebase_path("//third_party/dart", "", _flutter_root),
+                  ],
+                  "list lines")
+  dart_version = dart_version_lines[0]
+}

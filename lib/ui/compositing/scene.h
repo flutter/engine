@@ -5,7 +5,7 @@
 #ifndef FLUTTER_LIB_UI_COMPOSITING_SCENE_H_
 #define FLUTTER_LIB_UI_COMPOSITING_SCENE_H_
 
-#include <stdint.h>
+#include <cstdint>
 #include <memory>
 
 #include "flutter/flow/layers/layer_tree.h"
@@ -16,7 +16,7 @@ namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 class Scene : public RefCountedDartWrappable<Scene> {
   DEFINE_WRAPPERTYPEINFO();
@@ -24,12 +24,13 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
  public:
   ~Scene() override;
-  static fml::RefPtr<Scene> create(std::shared_ptr<flow::Layer> rootLayer,
-                                   uint32_t rasterizerTracingThreshold,
-                                   bool checkerboardRasterCacheImages,
-                                   bool checkerboardOffscreenLayers);
+  static void create(Dart_Handle scene_handle,
+                     std::shared_ptr<flutter::Layer> rootLayer,
+                     uint32_t rasterizerTracingThreshold,
+                     bool checkerboardRasterCacheImages,
+                     bool checkerboardOffscreenLayers);
 
-  std::unique_ptr<flow::LayerTree> takeLayerTree();
+  std::unique_ptr<flutter::LayerTree> takeLayerTree();
 
   Dart_Handle toImage(uint32_t width,
                       uint32_t height,
@@ -40,14 +41,14 @@ class Scene : public RefCountedDartWrappable<Scene> {
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  explicit Scene(std::shared_ptr<flow::Layer> rootLayer,
+  explicit Scene(std::shared_ptr<flutter::Layer> rootLayer,
                  uint32_t rasterizerTracingThreshold,
                  bool checkerboardRasterCacheImages,
                  bool checkerboardOffscreenLayers);
 
-  std::unique_ptr<flow::LayerTree> m_layerTree;
+  std::unique_ptr<flutter::LayerTree> layer_tree_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_COMPOSITING_SCENE_H_

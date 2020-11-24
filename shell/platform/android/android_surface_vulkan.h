@@ -6,40 +6,49 @@
 #define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_VULKAN_H_
 
 #include <jni.h>
+
 #include <memory>
+
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/android/android_native_window.h"
-#include "flutter/shell/platform/android/android_surface.h"
+#include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
 #include "flutter/vulkan/vulkan_window.h"
 
-namespace shell {
+namespace flutter {
 
-class AndroidSurfaceVulkan : public AndroidSurface {
+class AndroidSurfaceVulkan : public AndroidSurface,
+                             public GPUSurfaceVulkanDelegate {
  public:
-  AndroidSurfaceVulkan();
+  AndroidSurfaceVulkan(const AndroidContext& android_context,
+                       std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   ~AndroidSurfaceVulkan() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool IsValid() const override;
 
-  // |shell::AndroidSurface|
-  std::unique_ptr<Surface> CreateGPUSurface() override;
+  // |AndroidSurface|
+  std::unique_ptr<Surface> CreateGPUSurface(
+      GrDirectContext* gr_context) override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   void TeardownOnScreenContext() override;
 
-  // |shell::AndroidSurface|
-  bool OnScreenSurfaceResize(const SkISize& size) const override;
+  // |AndroidSurface|
+  bool OnScreenSurfaceResize(const SkISize& size) override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool ResourceContextMakeCurrent() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool ResourceContextClearCurrent() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) override;
+
+  // |GPUSurfaceVulkanDelegate|
+  fml::RefPtr<vulkan::VulkanProcTable> vk() override;
 
  private:
   fml::RefPtr<vulkan::VulkanProcTable> proc_table_;
@@ -48,6 +57,6 @@ class AndroidSurfaceVulkan : public AndroidSurface {
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceVulkan);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_VULKAN_H_

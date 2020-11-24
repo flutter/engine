@@ -4,15 +4,21 @@
 
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 
-namespace flow {
+namespace flutter {
 
-BackdropFilterLayer::BackdropFilterLayer() = default;
+BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
+    : filter_(std::move(filter)) {}
 
-BackdropFilterLayer::~BackdropFilterLayer() = default;
+void BackdropFilterLayer::Preroll(PrerollContext* context,
+                                  const SkMatrix& matrix) {
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
+  ContainerLayer::Preroll(context, matrix);
+}
 
 void BackdropFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "BackdropFilterLayer::Paint");
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting(context));
 
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
       context,
@@ -20,4 +26,4 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
-}  // namespace flow
+}  // namespace flutter

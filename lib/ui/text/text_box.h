@@ -9,7 +9,7 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
-namespace blink {
+namespace flutter {
 
 enum class TextDirection {
   rtl,
@@ -23,20 +23,6 @@ struct TextBox {
   TextBox(SkRect r, TextDirection d) : rect(r), direction(d) {}
 };
 
-}  // namespace blink
-
-namespace tonic {
-
-template <>
-struct DartConverter<blink::TextBox> {
-  static Dart_Handle ToDart(const blink::TextBox& val);
-};
-
-template <>
-struct DartListFactory<blink::TextBox> {
-  static Dart_Handle NewList(intptr_t length);
-};
-
-}  // namespace tonic
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_TEXT_TEXT_BOX_H_

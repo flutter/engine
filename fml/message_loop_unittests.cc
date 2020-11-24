@@ -4,14 +4,19 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#include "flutter/fml/message_loop.h"
+
+#include <iostream>
 #include <thread>
 
-#include "flutter/fml/message_loop.h"
+#include "flutter/fml/build_config.h"
+#include "flutter/fml/concurrent_message_loop.h"
+#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
 #include "gtest/gtest.h"
 
-#define TIME_SENSITIVE(x) TimeSensitiveTest_##x
+#define TIMESENSITIVE(x) TimeSensitiveTest_##x
 #if OS_WIN
 #define PLATFORM_SPECIFIC_CAPTURE(...) [ __VA_ARGS__, count ]
 #else
@@ -149,7 +154,7 @@ TEST(MessageLoop, CheckRunsTaskOnCurrentThread) {
   thread.join();
 }
 
-TEST(MessageLoop, TIME_SENSITIVE(SingleDelayedTaskByDelta)) {
+TEST(MessageLoop, TIMESENSITIVE(SingleDelayedTaskByDelta)) {
   bool checked = false;
   std::thread thread([&checked]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -171,7 +176,7 @@ TEST(MessageLoop, TIME_SENSITIVE(SingleDelayedTaskByDelta)) {
   ASSERT_TRUE(checked);
 }
 
-TEST(MessageLoop, TIME_SENSITIVE(SingleDelayedTaskForTime)) {
+TEST(MessageLoop, TIMESENSITIVE(SingleDelayedTaskForTime)) {
   bool checked = false;
   std::thread thread([&checked]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -193,7 +198,7 @@ TEST(MessageLoop, TIME_SENSITIVE(SingleDelayedTaskForTime)) {
   ASSERT_TRUE(checked);
 }
 
-TEST(MessageLoop, TIME_SENSITIVE(MultipleDelayedTasksWithIncreasingDeltas)) {
+TEST(MessageLoop, TIMESENSITIVE(MultipleDelayedTasksWithIncreasingDeltas)) {
   const auto count = 10;
   int checked = false;
   std::thread thread(PLATFORM_SPECIFIC_CAPTURE(&checked)() {
@@ -220,7 +225,7 @@ TEST(MessageLoop, TIME_SENSITIVE(MultipleDelayedTasksWithIncreasingDeltas)) {
   ASSERT_EQ(checked, count);
 }
 
-TEST(MessageLoop, TIME_SENSITIVE(MultipleDelayedTasksWithDecreasingDeltas)) {
+TEST(MessageLoop, TIMESENSITIVE(MultipleDelayedTasksWithDecreasingDeltas)) {
   const auto count = 10;
   int checked = false;
   std::thread thread(PLATFORM_SPECIFIC_CAPTURE(&checked)() {
@@ -277,4 +282,37 @@ TEST(MessageLoop, TaskObserverFire) {
   thread.join();
   ASSERT_TRUE(started);
   ASSERT_TRUE(terminated);
+}
+
+TEST(MessageLoop, ConcurrentMessageLoopHasNonZeroWorkers) {
+  auto loop = fml::ConcurrentMessageLoop::Create(
+      0u /* explicitly specify zero workers */);
+  ASSERT_GT(loop->GetWorkerCount(), 0u);
+}
+
+TEST(MessageLoop, CanCreateAndShutdownConcurrentMessageLoopsOverAndOver) {
+  for (size_t i = 0; i < 10; ++i) {
+    auto loop = fml::ConcurrentMessageLoop::Create(i + 1);
+    ASSERT_EQ(loop->GetWorkerCount(), i + 1);
+  }
+}
+
+TEST(MessageLoop, CanCreateConcurrentMessageLoop) {
+  auto loop = fml::ConcurrentMessageLoop::Create();
+  auto task_runner = loop->GetTaskRunner();
+  const size_t kCount = 10;
+  fml::CountDownLatch latch(kCount);
+  std::mutex thread_ids_mutex;
+  std::set<std::thread::id> thread_ids;
+  for (size_t i = 0; i < kCount; ++i) {
+    task_runner->PostTask([&]() {
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+      std::cout << "Ran on thread: " << std::this_thread::get_id() << std::endl;
+      std::scoped_lock lock(thread_ids_mutex);
+      thread_ids.insert(std::this_thread::get_id());
+      latch.CountDown();
+    });
+  }
+  latch.Wait();
+  ASSERT_GE(thread_ids.size(), 1u);
 }

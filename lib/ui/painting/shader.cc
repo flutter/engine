@@ -6,13 +6,13 @@
 
 #include "flutter/lib/ui/ui_dart_state.h"
 
-namespace blink {
+namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Shader);
 
-Shader::Shader(flow::SkiaGPUObject<SkShader> shader)
+Shader::Shader(flutter::SkiaGPUObject<SkShader> shader)
     : shader_(std::move(shader)) {}
 
 Shader::~Shader() = default;
 
-}  // namespace blink
+}  // namespace flutter

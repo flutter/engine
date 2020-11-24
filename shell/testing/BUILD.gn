@@ -2,38 +2,27 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-executable("testing") {
-  testonly = true
+import("//build/fuchsia/sdk.gni")
 
+executable("testing") {
   output_name = "flutter_tester"
 
-  public_configs = [ "$flutter_root:config" ]
-
-  sources = [
-    "tester_main.cc",
+  public_configs = [
+    "//flutter:config",
+    "//flutter:export_dynamic_symbols",
   ]
 
+  sources = [ "tester_main.cc" ]
+
   deps = [
-    "$flutter_root/assets",
-    "$flutter_root/common",
-    "$flutter_root/fml",
-    "$flutter_root/lib/snapshot",
-    "$flutter_root/shell/common",
+    "//flutter/assets",
+    "//flutter/common",
+    "//flutter/fml",
+    "//flutter/lib/snapshot",
+    "//flutter/shell/common",
+    "//flutter/third_party/tonic",
     "//third_party/dart/runtime:libdart_jit",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
-    "//third_party/tonic",
   ]
-
-  if (is_fuchsia) {
-    deps += [
-      "//garnet/public/lib/ui/scenic:client",
-      "//zircon/public/lib/trace",
-      "//zircon/public/lib/trace-provider",
-    ]
-  }
-
-  if (is_linux) {
-    ldflags = [ "-rdynamic" ]
-  }
 }

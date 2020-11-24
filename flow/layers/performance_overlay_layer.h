@@ -7,10 +7,13 @@
 
 #include <string>
 
+#include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/fml/macros.h"
 
-namespace flow {
+class SkTextBlob;
+
+namespace flutter {
 
 const int kDisplayRasterizerStatistics = 1 << 0;
 const int kVisualizeRasterizerStatistics = 1 << 1;
@@ -19,6 +22,10 @@ const int kVisualizeEngineStatistics = 1 << 3;
 
 class PerformanceOverlayLayer : public Layer {
  public:
+  static sk_sp<SkTextBlob> MakeStatisticsText(const Stopwatch& stopwatch,
+                                              const std::string& label_prefix,
+                                              const std::string& font_path);
+
   explicit PerformanceOverlayLayer(uint64_t options,
                                    const char* font_path = nullptr);
 
@@ -31,6 +38,6 @@ class PerformanceOverlayLayer : public Layer {
   FML_DISALLOW_COPY_AND_ASSIGN(PerformanceOverlayLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_PERFORMANCE_OVERLAY_LAYER_H_

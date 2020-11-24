@@ -48,42 +48,113 @@ void FlutterDesktopTerminate() {
   }
 }
 
-FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
-                                                   int initial_height,
-                                                   const char* assets_path,
-                                                   const char* icu_data_path,
-                                                   const char** arguments,
-                                                   size_t argument_count) {
+FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
+    const FlutterDesktopWindowProperties& window_properties,
+    const FlutterDesktopEngineProperties& engine_properties) {
   if (s_stub_implementation) {
-    return s_stub_implementation->CreateWindow(initial_width, initial_height,
-                                               assets_path, icu_data_path,
-                                               arguments, argument_count);
+    return s_stub_implementation->CreateWindow(window_properties,
+                                               engine_properties);
   }
   return nullptr;
 }
 
-void FlutterDesktopSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
-                                   bool enabled) {
+void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
+  if (s_stub_implementation) {
+    s_stub_implementation->DestroyWindow();
+  }
+}
+
+void FlutterDesktopWindowSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
+                                         bool enabled) {
   if (s_stub_implementation) {
     s_stub_implementation->SetHoverEnabled(enabled);
   }
 }
 
-void FlutterDesktopRunWindowLoop(FlutterDesktopWindowRef flutter_window) {
+void FlutterDesktopWindowSetTitle(FlutterDesktopWindowRef flutter_window,
+                                  const char* title) {
   if (s_stub_implementation) {
-    s_stub_implementation->RunWindowLoop();
+    s_stub_implementation->SetWindowTitle(title);
   }
 }
 
-FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
-                                                const char* icu_data_path,
-                                                const char** arguments,
-                                                size_t argument_count) {
+void FlutterDesktopWindowSetIcon(FlutterDesktopWindowRef flutter_window,
+                                 uint8_t* pixel_data,
+                                 int width,
+                                 int height) {
   if (s_stub_implementation) {
-    return s_stub_implementation->RunEngine(assets_path, icu_data_path,
-                                            arguments, argument_count);
+    s_stub_implementation->SetWindowIcon(pixel_data, width, height);
+  }
+}
+
+void FlutterDesktopWindowGetFrame(FlutterDesktopWindowRef flutter_window,
+                                  int* x,
+                                  int* y,
+                                  int* width,
+                                  int* height) {
+  if (s_stub_implementation) {
+    s_stub_implementation->GetWindowFrame(x, y, width, height);
+  }
+}
+
+void FlutterDesktopWindowSetFrame(FlutterDesktopWindowRef flutter_window,
+                                  int x,
+                                  int y,
+                                  int width,
+                                  int height) {
+  if (s_stub_implementation) {
+    s_stub_implementation->SetWindowFrame(x, y, width, height);
+  }
+}
+
+void FlutterDesktopWindowSetSizeLimits(FlutterDesktopWindowRef flutter_window,
+                                       FlutterDesktopSize minimum_size,
+                                       FlutterDesktopSize maximum_size) {
+  if (s_stub_implementation) {
+    s_stub_implementation->SetSizeLimits(minimum_size, maximum_size);
+  }
+}
+
+double FlutterDesktopWindowGetScaleFactor(
+    FlutterDesktopWindowRef flutter_window) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->GetWindowScaleFactor();
+  }
+  return 1.0;
+}
+
+void FlutterDesktopWindowSetPixelRatioOverride(
+    FlutterDesktopWindowRef flutter_window,
+    double pixel_ratio) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->SetPixelRatioOverride(pixel_ratio);
+  }
+}
+
+bool FlutterDesktopRunWindowEventLoopWithTimeout(
+    FlutterDesktopWindowControllerRef controller,
+    uint32_t millisecond_timeout) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->RunWindowEventLoopWithTimeout(
+        millisecond_timeout);
+  }
+  return true;
+}
+
+FlutterDesktopEngineRef FlutterDesktopRunEngine(
+    const FlutterDesktopEngineProperties& properties) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->RunEngine(properties);
   }
   return nullptr;
+}
+
+void FlutterDesktopRunEngineEventLoopWithTimeout(
+    FlutterDesktopEngineRef engine,
+    uint32_t timeout_milliseconds) {
+  if (s_stub_implementation) {
+    s_stub_implementation->RunEngineEventLoopWithTimeout(timeout_milliseconds);
+  }
 }
 
 bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
@@ -93,9 +164,35 @@ bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
   return true;
 }
 
+FlutterDesktopWindowRef FlutterDesktopGetWindow(
+    FlutterDesktopWindowControllerRef controller) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopWindowRef>(1);
+}
+
+FlutterDesktopEngineRef FlutterDesktopGetEngine(
+    FlutterDesktopWindowControllerRef controller) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopEngineRef>(3);
+}
+
 FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
-    FlutterDesktopWindowRef flutter_window,
+    FlutterDesktopEngineRef engine,
     const char* plugin_name) {
   // The stub ignores this, so just return an arbitrary non-zero value.
-  return reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1);
+  return reinterpret_cast<FlutterDesktopPluginRegistrarRef>(2);
+}
+
+FlutterDesktopWindowRef FlutterDesktopPluginRegistrarGetWindow(
+    FlutterDesktopPluginRegistrarRef registrar) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopWindowRef>(3);
+}
+
+void FlutterDesktopPluginRegistrarEnableInputBlocking(
+    FlutterDesktopPluginRegistrarRef registrar,
+    const char* channel) {
+  if (s_stub_implementation) {
+    s_stub_implementation->PluginRegistrarEnableInputBlocking(channel);
+  }
 }

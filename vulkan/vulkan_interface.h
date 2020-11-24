@@ -10,8 +10,6 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 
-#define VULKAN_LINK_STATICALLY OS_FUCHSIA
-
 #if OS_ANDROID
 #ifndef VK_USE_PLATFORM_ANDROID_KHR
 #define VK_USE_PLATFORM_ANDROID_KHR 1

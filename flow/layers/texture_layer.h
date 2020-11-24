@@ -6,20 +6,19 @@
 #define FLUTTER_FLOW_LAYERS_TEXTURE_LAYER_H_
 
 #include "flutter/flow/layers/layer.h"
+#include "third_party/skia/include/core/SkFilterQuality.h"
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkSize.h"
 
-namespace flow {
+namespace flutter {
 
 class TextureLayer : public Layer {
  public:
-  TextureLayer();
-  ~TextureLayer() override;
-
-  void set_offset(const SkPoint& offset) { offset_ = offset; }
-  void set_size(const SkSize& size) { size_ = size; }
-  void set_texture_id(int64_t texture_id) { texture_id_ = texture_id; }
-  void set_freeze(bool freeze) { freeze_ = freeze; }
+  TextureLayer(const SkPoint& offset,
+               const SkSize& size,
+               int64_t texture_id,
+               bool freeze,
+               SkFilterQuality filter_quality);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
@@ -29,10 +28,11 @@ class TextureLayer : public Layer {
   SkSize size_;
   int64_t texture_id_;
   bool freeze_;
+  SkFilterQuality filter_quality_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextureLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_TEXTURE_LAYER_H_

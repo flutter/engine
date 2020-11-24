@@ -3,25 +3,27 @@
 // found in the LICENSE file.
 
 #include "flutter/runtime/dart_vm.h"
+
+#include "flutter/runtime/dart_vm_lifecycle.h"
+#include "flutter/testing/fixture_test.h"
 #include "gtest/gtest.h"
 
-namespace blink {
+namespace flutter {
+namespace testing {
 
-TEST(DartVM, SimpleInitialization) {
-  Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
-  auto vm = DartVM::ForProcess(settings);
+using DartVMTest = FixtureTest;
+
+TEST_F(DartVMTest, SimpleInitialization) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto vm = DartVMRef::Create(CreateSettingsForFixture());
   ASSERT_TRUE(vm);
-  ASSERT_EQ(vm, DartVM::ForProcess(settings));
-  ASSERT_FALSE(DartVM::IsRunningPrecompiledCode());
 }
 
-TEST(DartVM, SimpleIsolateNameServer) {
-  Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
-  auto vm = DartVM::ForProcess(settings);
+TEST_F(DartVMTest, SimpleIsolateNameServer) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto vm = DartVMRef::Create(CreateSettingsForFixture());
+  ASSERT_TRUE(vm);
+  ASSERT_TRUE(vm.GetVMData());
   auto ns = vm->GetIsolateNameServer();
   ASSERT_EQ(ns->LookupIsolatePortByName("foobar"), ILLEGAL_PORT);
   ASSERT_FALSE(ns->RemoveIsolateNameMapping("foobar"));
@@ -31,4 +33,15 @@ TEST(DartVM, SimpleIsolateNameServer) {
   ASSERT_TRUE(ns->RemoveIsolateNameMapping("foobar"));
 }
 
-}  // namespace blink
+TEST_F(DartVMTest, OldGenHeapSize) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto settings = CreateSettingsForFixture();
+  settings.old_gen_heap_size = 1024;
+  auto vm = DartVMRef::Create(settings);
+  // There is no way to introspect on the heap size so we just assert the vm was
+  // created.
+  ASSERT_TRUE(vm);
+}
+
+}  // namespace testing
+}  // namespace flutter

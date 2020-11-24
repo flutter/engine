@@ -10,25 +10,51 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/vsync_waiter.h"
 
-@class VSyncClient;
+@interface DisplayLinkManager : NSObject
 
-namespace shell {
+- (instancetype)init;
+
+//------------------------------------------------------------------------------
+/// @brief      The display refresh rate used for reporting purposes. The engine does not care
+///             about this for frame scheduling. It is only used by tools for instrumentation. The
+///             engine uses the duration field of the link per frame for frame scheduling.
+///
+/// @attention  Do not use the this call in frame scheduling. It is only meant for reporting.
+///
+/// @return     The refresh rate in frames per second.
+///
+- (double)displayRefreshRate;
+
+@end
+
+@interface VSyncClient : NSObject
+
+- (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
+                          callback:(flutter::VsyncWaiter::Callback)callback;
+
+- (void)await;
+
+- (void)invalidate;
+
+@end
+
+namespace flutter {
 
 class VsyncWaiterIOS final : public VsyncWaiter {
  public:
-  VsyncWaiterIOS(blink::TaskRunners task_runners);
+  VsyncWaiterIOS(flutter::TaskRunners task_runners);
 
   ~VsyncWaiterIOS() override;
 
  private:
   fml::scoped_nsobject<VSyncClient> client_;
 
-  // |shell::VsyncWaiter|
+  // |VsyncWaiter|
   void AwaitVSync() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterIOS);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_VSYNC_WAITER_IOS_H_

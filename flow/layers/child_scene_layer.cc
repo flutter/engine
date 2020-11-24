@@ -4,32 +4,30 @@
 
 #include "flutter/flow/layers/child_scene_layer.h"
 
-namespace flow {
+namespace flutter {
 
-ChildSceneLayer::ChildSceneLayer() = default;
-
-ChildSceneLayer::~ChildSceneLayer() = default;
+ChildSceneLayer::ChildSceneLayer(zx_koid_t layer_id,
+                                 const SkPoint& offset,
+                                 const SkSize& size,
+                                 bool hit_testable)
+    : layer_id_(layer_id),
+      offset_(offset),
+      size_(size),
+      hit_testable_(hit_testable) {}
 
 void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  set_needs_system_composite(true);
+  TRACE_EVENT0("flutter", "ChildSceneLayer::Preroll");
+
+  context->child_scene_layer_exists_below = true;
+  CheckForChildLayerBelow(context);
 }
 
-void ChildSceneLayer::Paint(PaintContext& context) const {
-  FXL_NOTREACHED() << "This layer never needs painting.";
-}
+void ChildSceneLayer::Paint(PaintContext& context) const {}
 
-void ChildSceneLayer::UpdateScene(SceneUpdateContext& context) {
+void ChildSceneLayer::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {
+  TRACE_EVENT0("flutter", "ChildSceneLayer::UpdateScene");
   FML_DCHECK(needs_system_composite());
-
-  // TODO(MZ-191): Set clip.
-  // It's worth asking whether all children should be clipped implicitly
-  // or whether we should leave this up to the Flutter application to decide.
-  // In some situations, it might be useful to allow children to draw
-  // outside of their layout bounds.
-  if (export_node_holder_) {
-    context.AddChildScene(export_node_holder_->export_node(), offset_,
-                          hit_testable_);
-  }
+  context->UpdateView(layer_id_, offset_, size_, hit_testable_);
 }
 
-}  // namespace flow
+}  // namespace flutter

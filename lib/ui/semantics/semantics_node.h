@@ -5,16 +5,15 @@
 #ifndef FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_NODE_H_
 #define FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_NODE_H_
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "third_party/skia/include/core/SkMatrix44.h"
+#include "third_party/skia/include/core/SkM44.h"
 #include "third_party/skia/include/core/SkRect.h"
 
-namespace blink {
+namespace flutter {
 
 // Must match the SemanticsAction enum in semantics.dart and in each of the
 // embedders.
@@ -48,7 +47,12 @@ const int kScrollableSemanticsActions =
     static_cast<int32_t>(SemanticsAction::kScrollUp) |
     static_cast<int32_t>(SemanticsAction::kScrollDown);
 
-// Must match the SemanticsFlags enum in semantics.dart.
+/// C/C++ representation of `SemanticsFlags` defined in
+/// `lib/ui/semantics.dart`.
+///\warning This must match the `SemanticsFlags` enum in
+///         `lib/ui/semantics.dart`.
+/// See also:
+///   - file://./../../../lib/ui/semantics.dart
 enum class SemanticsFlags : int32_t {
   kHasCheckedState = 1 << 0,
   kIsChecked = 1 << 1,
@@ -69,7 +73,16 @@ enum class SemanticsFlags : int32_t {
   kHasToggledState = 1 << 16,
   kIsToggled = 1 << 17,
   kHasImplicitScrolling = 1 << 18,
+  // The Dart API defines the following flag but it isn't used in iOS.
+  // kIsMultiline = 1 << 19,
+  kIsReadOnly = 1 << 20,
+  kIsFocusable = 1 << 21,
+  kIsLink = 1 << 22,
+  kIsSlider = 1 << 23,
 };
+
+const int kScrollableSemanticsFlags =
+    static_cast<int32_t>(SemanticsFlags::kHasImplicitScrolling);
 
 struct SemanticsNode {
   SemanticsNode();
@@ -78,12 +91,17 @@ struct SemanticsNode {
 
   ~SemanticsNode();
 
-  bool HasAction(SemanticsAction action);
-  bool HasFlag(SemanticsFlags flag);
+  bool HasAction(SemanticsAction action) const;
+  bool HasFlag(SemanticsFlags flag) const;
+
+  // Whether this node is for embedded platform views.
+  bool IsPlatformViewNode() const;
 
   int32_t id = 0;
   int32_t flags = 0;
   int32_t actions = 0;
+  int32_t maxValueLength = -1;
+  int32_t currentValueLength = -1;
   int32_t textSelectionBase = -1;
   int32_t textSelectionExtent = -1;
   int32_t platformViewId = -1;
@@ -101,8 +119,8 @@ struct SemanticsNode {
   std::string decreasedValue;
   int32_t textDirection = 0;  // 0=unknown, 1=rtl, 2=ltr
 
-  SkRect rect = SkRect::MakeEmpty();
-  SkMatrix44 transform = SkMatrix44(SkMatrix44::kIdentity_Constructor);
+  SkRect rect = SkRect::MakeEmpty();  // Local space, relative to parent.
+  SkM44 transform = SkM44{};          // Identity
   std::vector<int32_t> childrenInTraversalOrder;
   std::vector<int32_t> childrenInHitTestOrder;
   std::vector<int32_t> customAccessibilityActions;
@@ -114,6 +132,6 @@ struct SemanticsNode {
 // semantic information for the node corresponding to the ID.
 using SemanticsNodeUpdates = std::unordered_map<int32_t, SemanticsNode>;
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_NODE_H_

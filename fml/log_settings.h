@@ -5,9 +5,9 @@
 #ifndef FLUTTER_FML_LOG_SETTINGS_H_
 #define FLUTTER_FML_LOG_SETTINGS_H_
 
-#include "flutter/fml/log_level.h"
-
 #include <string>
+
+#include "flutter/fml/log_level.h"
 
 namespace fml {
 
@@ -34,6 +34,15 @@ LogSettings GetLogSettings();
 // Gets the minimum log level for the current process. Never returs a value
 // higher than LOG_FATAL.
 int GetMinLogLevel();
+
+class ScopedSetLogSettings {
+ public:
+  ScopedSetLogSettings(const LogSettings& settings);
+  ~ScopedSetLogSettings();
+
+ private:
+  LogSettings old_settings_;
+};
 
 }  // namespace fml
 

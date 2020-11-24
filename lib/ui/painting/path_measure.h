@@ -11,7 +11,7 @@
 #include "flutter/lib/ui/painting/path.h"
 #include "third_party/skia/include/core/SkContourMeasure.h"
 #include "third_party/skia/include/core/SkPath.h"
-#include "third_party/tonic/typed_data/float64_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -20,7 +20,7 @@ class DartLibraryNatives;
 // Be sure that the client doesn't modify a path on us before Skia finishes
 // See AOSP's reasoning in PathMeasure.cpp
 
-namespace blink {
+namespace flutter {
 
 class CanvasPathMeasure : public RefCountedDartWrappable<CanvasPathMeasure> {
   DEFINE_WRAPPERTYPEINFO();
@@ -32,13 +32,14 @@ class CanvasPathMeasure : public RefCountedDartWrappable<CanvasPathMeasure> {
                                                bool forceClosed);
 
   void setPath(const CanvasPath* path, bool isClosed);
-  float getLength(int contourIndex);
-  tonic::Float32List getPosTan(int contourIndex, float distance);
-  fml::RefPtr<CanvasPath> getSegment(int contourIndex,
-                                     float startD,
-                                     float stopD,
-                                     bool startWithMoveTo);
-  bool isClosed(int contourIndex);
+  float getLength(int contour_index);
+  tonic::Float32List getPosTan(int contour_index, float distance);
+  void getSegment(Dart_Handle path_handle,
+                  int contour_index,
+                  float start_d,
+                  float stop_d,
+                  bool start_with_move_to);
+  bool isClosed(int contour_index);
   bool nextContour();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
@@ -52,6 +53,6 @@ class CanvasPathMeasure : public RefCountedDartWrappable<CanvasPathMeasure> {
   std::vector<sk_sp<SkContourMeasure>> measures_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_PATH_MEASURE_H_

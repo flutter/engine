@@ -4,14 +4,17 @@
 
 #include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 
-#include "flutter/shell/common/io_manager.h"
+#include "flutter/shell/common/shell_io_manager.h"
 
-namespace shell {
+namespace flutter {
 
-EmbedderSurfaceGL::EmbedderSurfaceGL(GLDispatchTable gl_dispatch_table,
-                                     bool fbo_reset_after_present)
+EmbedderSurfaceGL::EmbedderSurfaceGL(
+    GLDispatchTable gl_dispatch_table,
+    bool fbo_reset_after_present,
+    std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : gl_dispatch_table_(gl_dispatch_table),
-      fbo_reset_after_present_(fbo_reset_after_present) {
+      fbo_reset_after_present_(fbo_reset_after_present),
+      external_view_embedder_(external_view_embedder) {
   // Make sure all required members of the dispatch table are checked.
   if (!gl_dispatch_table_.gl_make_current_callback ||
       !gl_dispatch_table_.gl_clear_current_callback ||
@@ -25,37 +28,38 @@ EmbedderSurfaceGL::EmbedderSurfaceGL(GLDispatchTable gl_dispatch_table,
 
 EmbedderSurfaceGL::~EmbedderSurfaceGL() = default;
 
-// |shell::EmbedderSurface|
+// |EmbedderSurface|
 bool EmbedderSurfaceGL::IsValid() const {
   return valid_;
 }
 
-// |shell::GPUSurfaceGLDelegate|
-bool EmbedderSurfaceGL::GLContextMakeCurrent() {
-  return gl_dispatch_table_.gl_make_current_callback();
+// |GPUSurfaceGLDelegate|
+std::unique_ptr<GLContextResult> EmbedderSurfaceGL::GLContextMakeCurrent() {
+  return std::make_unique<GLContextDefaultResult>(
+      gl_dispatch_table_.gl_make_current_callback());
 }
 
-// |shell::GPUSurfaceGLDelegate|
+// |GPUSurfaceGLDelegate|
 bool EmbedderSurfaceGL::GLContextClearCurrent() {
   return gl_dispatch_table_.gl_clear_current_callback();
 }
 
-// |shell::GPUSurfaceGLDelegate|
-bool EmbedderSurfaceGL::GLContextPresent() {
-  return gl_dispatch_table_.gl_present_callback();
+// |GPUSurfaceGLDelegate|
+bool EmbedderSurfaceGL::GLContextPresent(uint32_t fbo_id) {
+  return gl_dispatch_table_.gl_present_callback(fbo_id);
 }
 
-// |shell::GPUSurfaceGLDelegate|
-intptr_t EmbedderSurfaceGL::GLContextFBO() const {
-  return gl_dispatch_table_.gl_fbo_callback();
+// |GPUSurfaceGLDelegate|
+intptr_t EmbedderSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
+  return gl_dispatch_table_.gl_fbo_callback(frame_info);
 }
 
-// |shell::GPUSurfaceGLDelegate|
+// |GPUSurfaceGLDelegate|
 bool EmbedderSurfaceGL::GLContextFBOResetAfterPresent() const {
   return fbo_reset_after_present_;
 }
 
-// |shell::GPUSurfaceGLDelegate|
+// |GPUSurfaceGLDelegate|
 SkMatrix EmbedderSurfaceGL::GLContextSurfaceTransformation() const {
   auto callback = gl_dispatch_table_.gl_surface_transformation_callback;
   if (!callback) {
@@ -66,21 +70,25 @@ SkMatrix EmbedderSurfaceGL::GLContextSurfaceTransformation() const {
   return callback();
 }
 
-// |shell::GPUSurfaceGLDelegate|
+// |GPUSurfaceGLDelegate|
 EmbedderSurfaceGL::GLProcResolver EmbedderSurfaceGL::GetGLProcResolver() const {
   return gl_dispatch_table_.gl_proc_resolver;
 }
 
-// |shell::EmbedderSurface|
+// |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
-  return std::make_unique<GPUSurfaceGL>(this);
+  const bool render_to_surface = !external_view_embedder_;
+  return std::make_unique<GPUSurfaceGL>(this,  // GPU surface GL delegate
+                                        render_to_surface  // render to surface
+
+  );
 }
 
-// |shell::EmbedderSurface|
-sk_sp<GrContext> EmbedderSurfaceGL::CreateResourceContext() const {
+// |EmbedderSurface|
+sk_sp<GrDirectContext> EmbedderSurfaceGL::CreateResourceContext() const {
   auto callback = gl_dispatch_table_.gl_make_resource_current_callback;
   if (callback && callback()) {
-    if (auto context = IOManager::CreateCompatibleResourceLoadingContext(
+    if (auto context = ShellIOManager::CreateCompatibleResourceLoadingContext(
             GrBackend::kOpenGL_GrBackend, GetGLInterface())) {
       return context;
     } else {
@@ -99,4 +107,4 @@ sk_sp<GrContext> EmbedderSurfaceGL::CreateResourceContext() const {
   return nullptr;
 }
 
-}  // namespace shell
+}  // namespace flutter
