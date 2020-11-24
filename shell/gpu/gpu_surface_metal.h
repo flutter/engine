@@ -42,10 +42,10 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetal : public Surface {
   std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
 
   std::unique_ptr<SurfaceFrame> AcquireFrameFromCAMetalLayer(
-      const MTLFrameInfo& frame_info);
+      const SkISize& frame_info);
 
   std::unique_ptr<SurfaceFrame> AcquireFrameFromMTLTexture(
-      const MTLFrameInfo& frame_info);
+      const SkISize& frame_info);
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetal);
 };

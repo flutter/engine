@@ -33,6 +33,7 @@ static GrContextOptions CreateMetalGrContextOptions() {
 
     if (!_mtlDevice) {
       FML_DLOG(ERROR) << "Could not acquire Metal device.";
+      [self release];
       return nil;
     }
 
@@ -40,6 +41,7 @@ static GrContextOptions CreateMetalGrContextOptions() {
 
     if (!_mtlCommandQueue) {
       FML_DLOG(ERROR) << "Could not create Metal command queue.";
+      [self release];
       return nil;
     }
 
@@ -56,6 +58,7 @@ static GrContextOptions CreateMetalGrContextOptions() {
 
     if (!_mainContext || !_resourceContext) {
       FML_DLOG(ERROR) << "Could not create Skia Metal contexts.";
+      [self release];
       return nil;
     }
 

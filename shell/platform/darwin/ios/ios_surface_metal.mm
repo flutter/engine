@@ -48,7 +48,7 @@ std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrDirectContext* /* u
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUCAMetalLayerHandle IOSSurfaceMetal::GetCAMetalLayer(MTLFrameInfo frame_info) const {
+GPUCAMetalLayerHandle IOSSurfaceMetal::GetCAMetalLayer(const SkISize& frame_info) const {
   CAMetalLayer* layer = layer_.get();
   layer.device = device_;
 
@@ -57,7 +57,7 @@ GPUCAMetalLayerHandle IOSSurfaceMetal::GetCAMetalLayer(MTLFrameInfo frame_info) 
   // backdrop filters.
   layer.framebufferOnly = NO;
 
-  const auto drawable_size = CGSizeMake(frame_info.width, frame_info.height);
+  const auto drawable_size = CGSizeMake(frame_info.width(), frame_info.height());
   if (!CGSizeEqualToSize(drawable_size, layer.drawableSize)) {
     layer.drawableSize = drawable_size;
   }
@@ -90,7 +90,7 @@ bool IOSSurfaceMetal::PresentDrawable(GrMTLHandle drawable) const {
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUMTLTextureInfo IOSSurfaceMetal::GetMTLTexture(MTLFrameInfo frame_info) const {
+GPUMTLTextureInfo IOSSurfaceMetal::GetMTLTexture(const SkISize& frame_info) const {
   FML_CHECK(false) << "render to texture not supported on ios";
   return {.texture_id = -1, .texture = nullptr};
 }

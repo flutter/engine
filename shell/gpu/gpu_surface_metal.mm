@@ -5,8 +5,10 @@
 #include "flutter/shell/gpu/gpu_surface_metal.h"
 
 #import <Metal/Metal.h>
+#include "include/core/SkSize.h"
 
 #include "flutter/fml/make_copyable.h"
+#include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -16,16 +18,6 @@
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
 namespace flutter {
-
-namespace {
-struct MTLDrawableDeleter {
-  void operator()(GrMTLHandle* drawable) {
-    if (drawable && *drawable) {
-      CFRelease(*drawable);
-    }
-  }
-};
-}
 
 GPUSurfaceMetal::GPUSurfaceMetal(GPUSurfaceMetalDelegate* delegate, sk_sp<GrDirectContext> context)
     : delegate_(delegate),
@@ -51,15 +43,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
     return nullptr;
   }
 
-  MTLFrameInfo frame_info;
-  frame_info.height = frame_size.height();
-  frame_info.width = frame_size.width();
-
   switch (render_target_type_) {
     case MTLRenderTargetType::kCAMetalLayer:
-      return AcquireFrameFromCAMetalLayer(frame_info);
+      return AcquireFrameFromCAMetalLayer(frame_size);
     case MTLRenderTargetType::kMTLTexture:
-      return AcquireFrameFromMTLTexture(frame_info);
+      return AcquireFrameFromMTLTexture(frame_size);
     default:
       FML_CHECK(false) << "Unknown MTLRenderTargetType type.";
   }
@@ -68,14 +56,14 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromCAMetalLayer(
-    const MTLFrameInfo& frame_info) {
+    const SkISize& frame_info) {
   auto layer = delegate_->GetCAMetalLayer(frame_info);
   if (!layer) {
     FML_LOG(ERROR) << "Invalid CAMetalLayer given by the embedder.";
     return nullptr;
   }
 
-  std::unique_ptr<GrMTLHandle, MTLDrawableDeleter> drawable;
+  GrMTLHandle drawable_raw;
   sk_sp<SkSurface> surface =
       SkSurface::MakeFromCAMetalLayer(context_.get(),            // context
                                       layer,                     // layer
@@ -84,8 +72,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromCAMetalLayer(
                                       kBGRA_8888_SkColorType,    // color type
                                       nullptr,                   // colorspace
                                       nullptr,                   // surface properties
-                                      drawable.get()             // drawable (transfer out)
+                                      &drawable_raw              // drawable (transfer out)
       );
+  fml::CFRef<GrMTLHandle> drawable(drawable_raw);
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not create the SkSurface from the CAMetalLayer.";
@@ -103,14 +92,14 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromCAMetalLayer(
 
         canvas->flush();
 
-        return delegate->PresentDrawable(drawable.get());
+        return delegate->PresentDrawable(drawable);
       });
 
   return std::make_unique<SurfaceFrame>(std::move(surface), true, submit_callback);
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromMTLTexture(
-    const MTLFrameInfo& frame_info) {
+    const SkISize& frame_info) {
   GPUMTLTextureInfo texture = delegate_->GetMTLTexture(frame_info);
   id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture.texture);
 
@@ -121,7 +110,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromMTLTexture(
 
   GrMtlTextureInfo info;
   info.fTexture.reset([mtl_texture retain]);
-  GrBackendTexture backend_texture(frame_info.width, frame_info.height, GrMipmapped::kNo, info);
+  GrBackendTexture backend_texture(frame_info.width(), frame_info.height(), GrMipmapped::kNo, info);
 
   sk_sp<SkSurface> surface =
       SkSurface::MakeFromBackendTexture(context_.get(), backend_texture, kTopLeft_GrSurfaceOrigin,
