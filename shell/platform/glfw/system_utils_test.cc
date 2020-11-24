@@ -19,65 +19,36 @@ std::vector<LanguageInfo> SetAndRestoreLanguageAroundGettingLanguageInfo(
     const char* lc_all,
     const char* lc_messages,
     const char* lang) {
-  std::string old_language;
-  const char* language_env = getenv("LANGUAGE");
-  bool language_was_set = language_env != nullptr;
-  if (language_was_set) {
-    old_language = std::string(language_env);
-  }
-  std::string old_lc_all;
-  const char* lc_all_env = getenv("LC_ALL");
-  bool lc_all_was_set = lc_all_env != nullptr;
-  if (lc_all_was_set) {
-    old_lc_all = std::string(lc_all_env);
-  }
-  std::string old_lc_messages;
-  const char* lc_messages_env = getenv("LC_MESSAGES");
-  bool lc_messages_was_set = lc_messages_env != nullptr;
-  if (lc_messages_was_set) {
-    old_lc_messages = std::string(lc_messages_env);
-  }
-  std::string old_lang;
-  const char* lang_env = getenv("LANG");
-  bool lang_was_set = lang_env != nullptr;
-  if (lang_was_set) {
-    old_lang = std::string(lang_env);
-  }
-
-  if (language != nullptr) {
-    setenv("LANGUAGE", language, 1);
-  } else if (language_was_set) {
-    unsetenv("LANGUAGE");
-  }
-  if (lc_all != nullptr) {
-    setenv("LC_ALL", lc_all, 1);
-  } else if (lc_all_was_set) {
-    unsetenv("LC_ALL");
-  }
-  if (lc_messages != nullptr) {
-    setenv("LC_MESSAGES", lc_messages, 1);
-  } else if (lc_messages_was_set) {
-    unsetenv("LC_MESSAGES");
-  }
-  if (lang != nullptr) {
-    setenv("LANG", lang, 1);
-  } else if (lang_was_set) {
-    unsetenv("LANG");
+  std::vector<const char*> env_vars{
+      "LANGUAGE",
+      "LC_ALL",
+      "LC_MESSAGES",
+      "LANG",
+  };
+  std::map<const char*, const char*> new_values{
+      {env_vars[0], language},
+      {env_vars[1], lc_all},
+      {env_vars[2], lc_messages},
+      {env_vars[3], lang},
+  };
+  std::map<const char*, const char*> prior_values;
+  for (auto var : env_vars) {
+    const char* value = getenv(var);
+    if (value != nullptr) {
+      prior_values.emplace(var, value);
+    }
+    const char* new_value = new_values.at(var);
+    if (new_value != nullptr) {
+      setenv(var, new_value, 1);
+    } else {
+      unsetenv(var);
+    }
   }
 
   std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
 
-  if (language_was_set) {
-    setenv("LANGUAGE", old_language.c_str(), 1);
-  }
-  if (lc_all_was_set) {
-    setenv("LC_ALL", old_lc_all.c_str(), 1);
-  }
-  if (lc_messages_was_set) {
-    setenv("LC_MESSAGES", old_lc_messages.c_str(), 1);
-  }
-  if (lang_was_set) {
-    setenv("LANG", old_lang.c_str(), 1);
+  for (auto [var, value] : prior_values) {
+    setenv(var, value, 1);
   }
 
   return languages;
