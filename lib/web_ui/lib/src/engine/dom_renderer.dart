@@ -49,11 +49,6 @@ class DomRenderer {
   html.ScriptElement? get canvasKitScript => _canvasKitScript;
   html.ScriptElement? _canvasKitScript;
 
-  /// The cached `define` function which we removed while loading CanvasKit.
-  ///
-  /// Once CanvasKit is loaded we will restore it.
-  dynamic _cachedDefine;
-
   /// The element that contains the [sceneElement].
   ///
   /// This element is created and inserted in the HTML DOM once. It is never
@@ -466,14 +461,63 @@ flt-glass-pane * {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitBaseUrl + 'canvaskit.js';
-      // CanvasKit will try to use `define()` if it is available, which will
-      // cause errors because CanvasKit uses an anonymous module.
-      if (js_util.hasProperty(html.window, 'define')) {
-        _cachedDefine = js_util.getProperty(html.window, 'define');
-        js_util.setProperty(html.window, 'define', null);
+
+      // Monkey-patch the top-level `module`  and `exports` objects so that
+      // CanvasKit doesn't attempt to register itself as an anonymous module.
+      //
+      // The idea behind making these fake `exports` and `module` objects is
+      // that `canvaskit.js` contains the following lines of code:
+      //
+      //     if (typeof exports === 'object' && typeof module === 'object')
+      //       module.exports = CanvasKitInit;
+      //     else if (typeof define === 'function' && define['amd'])
+      //       define([], function() { return CanvasKitInit; });
+      //
+      // We need to avoid hitting the case where CanvasKit defines an anonymous
+      // module, since this breaks RequireJS, which DDC and some plugins use.
+      // Temporarily removing the `define` function won't work because RequireJS
+      // could load in between this code running and the CanvasKit code running.
+      // Also, we cannot monkey-patch the `define` function because it is
+      // non-configurable (it is a top-level 'var').
+
+      // First check if `exports` and `module` are already defined. If so, then
+      // CommonJS is being used, and we shouldn't have any problems.
+      js.JsFunction objectConstructor = js.context['Object'];
+      if (js.context['exports'] == null) {
+        js.JsObject exportsAccessor = js.JsObject.jsify({
+          'get': js.allowInterop(() {
+            if (html.document.currentScript == _canvasKitScript) {
+              return js.JsObject(objectConstructor);
+            } else {
+              return js.context['_flutterWebCachedExports'];
+            }
+          }),
+          'set': js.allowInterop((dynamic value) {
+            js.context['_flutterWebCachedExports'] = value;
+          }),
+          'configurable': true,
+        });
+        objectConstructor.callMethod('defineProperty',
+            <dynamic>[js.context, 'exports', exportsAccessor]);
       }
-      html.document.currentScript!.parentNode!
-          .insertBefore(_canvasKitScript!, html.document.currentScript);
+      if (js.context['module'] == null) {
+        js.JsObject moduleAccessor = js.JsObject.jsify({
+          'get': js.allowInterop(() {
+            if (html.document.currentScript == _canvasKitScript) {
+              return js.JsObject(objectConstructor);
+            } else {
+              return js.context['_flutterWebCachedModule'];
+            }
+          }),
+          'set': js.allowInterop((dynamic value) {
+            js.context['_flutterWebCachedModule'] = value;
+          }),
+          'configurable': true,
+        });
+        objectConstructor.callMethod(
+            'defineProperty', <dynamic>[js.context, 'module', moduleAccessor]);
+      }
+      html.document.head!.append(_canvasKitScript!);
     }
 
     if (html.window.visualViewport != null) {

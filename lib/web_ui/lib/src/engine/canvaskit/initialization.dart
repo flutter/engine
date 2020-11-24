@@ -72,9 +72,6 @@ Future<void> initializeCanvasKit() {
       canvasKit = ck;
       windowFlutterCanvasKit = canvasKit;
       canvasKitCompleter.complete();
-      if (domRenderer._cachedDefine != null) {
-        js_util.setProperty(html.window, 'define', domRenderer._cachedDefine);
-      }
     }));
   });
 
