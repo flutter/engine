@@ -514,8 +514,8 @@ void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
 
 void Engine::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
-    std::unique_ptr<fml::Mapping> snapshot_data,
-    std::unique_ptr<fml::Mapping> snapshot_instructions) {
+    std::unique_ptr<const fml::SymbolMapping> snapshot_data,
+    std::unique_ptr<const fml::SymbolMapping> snapshot_instructions) {
   if (runtime_controller_->IsRootIsolateRunning()) {
     runtime_controller_->LoadDartDeferredLibrary(
         loading_unit_id, std::move(snapshot_data),

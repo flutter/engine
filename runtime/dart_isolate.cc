@@ -336,8 +336,8 @@ fml::RefPtr<fml::TaskRunner> DartIsolate::GetMessageHandlingTaskRunner() const {
 
 bool DartIsolate::LoadLoadingUnit(
     intptr_t loading_unit_id,
-    std::unique_ptr<fml::Mapping> snapshot_data,
-    std::unique_ptr<fml::Mapping> snapshot_instructions) {
+    std::unique_ptr<const fml::SymbolMapping> snapshot_data,
+    std::unique_ptr<const fml::SymbolMapping> snapshot_instructions) {
   tonic::DartState::Scope scope(this);
   Dart_Handle result =
       Dart_DeferredLoadComplete(loading_unit_id, snapshot_data->GetMapping(),

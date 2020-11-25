@@ -347,8 +347,8 @@ void PlatformViewAndroid::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
 // |PlatformView|
 void PlatformViewAndroid::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
-    std::unique_ptr<fml::Mapping> snapshot_data,
-    std::unique_ptr<fml::Mapping> snapshot_instructions) {
+    std::unique_ptr<const fml::SymbolMapping> snapshot_data,
+    std::unique_ptr<const fml::SymbolMapping> snapshot_instructions) {
   delegate_.LoadDartDeferredLibrary(loading_unit_id, std::move(snapshot_data),
                                     std::move(snapshot_instructions));
 }

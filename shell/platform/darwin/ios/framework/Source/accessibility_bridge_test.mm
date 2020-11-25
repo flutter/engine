@@ -87,9 +87,10 @@ class MockDelegate : public PlatformView::Delegate {
   void OnPlatformViewUnregisterTexture(int64_t texture_id) override {}
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) override {}
 
-  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
-                               std::unique_ptr<fml::Mapping> snapshot_data,
-                               std::unique_ptr<fml::Mapping> snapshot_instructions) override {}
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::SymbolMapping> snapshot_data,
+      std::unique_ptr<const fml::SymbolMapping> snapshot_instructions) override {}
   void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override {}
 };
 

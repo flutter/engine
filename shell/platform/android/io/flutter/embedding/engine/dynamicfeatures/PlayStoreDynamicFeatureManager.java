@@ -201,7 +201,8 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
       return;
     }
 
-    SplitInstallRequest request = SplitInstallRequest.newBuilder().addModule(resolvedModuleName).build();
+    SplitInstallRequest request =
+        SplitInstallRequest.newBuilder().addModule(resolvedModuleName).build();
 
     splitInstallManager
         // Submits the request to install the module through the

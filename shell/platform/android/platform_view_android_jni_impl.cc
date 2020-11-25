@@ -558,11 +558,11 @@ static void LoadDartDeferredLibrary(JNIEnv* env,
       fml::NativeLibrary::CreateWithHandle(handle, false);
 
   // Resolve symbols.
-  std::unique_ptr<fml::SymbolMapping> data_mapping =
-      std::make_unique<fml::SymbolMapping>(native_lib,
-                                           DartSnapshot::kIsolateDataSymbol);
-  std::unique_ptr<fml::SymbolMapping> instructions_mapping =
-      std::make_unique<fml::SymbolMapping>(
+  std::unique_ptr<const fml::SymbolMapping> data_mapping =
+      std::make_unique<const fml::SymbolMapping>(
+          native_lib, DartSnapshot::kIsolateDataSymbol);
+  std::unique_ptr<const fml::SymbolMapping> instructions_mapping =
+      std::make_unique<const fml::SymbolMapping>(
           native_lib, DartSnapshot::kIsolateInstructionsSymbol);
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->LoadDartDeferredLibrary(

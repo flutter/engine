@@ -96,8 +96,8 @@ class PlatformViewAndroid final : public PlatformView {
   // |PlatformView|
   void LoadDartDeferredLibrary(
       intptr_t loading_unit_id,
-      std::unique_ptr<fml::Mapping> snapshot_data,
-      std::unique_ptr<fml::Mapping> snapshot_instructions) override;
+      std::unique_ptr<const fml::SymbolMapping> snapshot_data,
+      std::unique_ptr<const fml::SymbolMapping> snapshot_instructions) override;
 
   // |PlatformView|
   void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override;

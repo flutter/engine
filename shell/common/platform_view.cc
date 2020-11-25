@@ -163,8 +163,8 @@ void PlatformView::RequestDartDeferredLibrary(intptr_t loading_unit_id) {}
 
 void PlatformView::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
-    std::unique_ptr<fml::Mapping> snapshot_data,
-    std::unique_ptr<fml::Mapping> snapshot_instructions) {}
+    std::unique_ptr<const fml::SymbolMapping> snapshot_data,
+    std::unique_ptr<const fml::SymbolMapping> snapshot_instructions) {}
 
 void PlatformView::UpdateAssetManager(
     std::shared_ptr<AssetManager> asset_manager) {}
