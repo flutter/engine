@@ -29,7 +29,6 @@ AXNode* FlutterAccessibility::GetAXNode() const {
 bool FlutterAccessibility::AccessibilityPerformAction(
     const ax::AXActionData& data) {
   int32_t target = GetAXNode()->id();
-//   FML_LOG(ERROR) << "got action " <<ax::ToString(data.action) <<  " target= " << target;
   switch (data.action) {
      case ax::Action::kDoDefault:
       DispatchAccessibilityAction(target, FlutterSemanticsAction::kFlutterSemanticsActionTap, nullptr, 0);

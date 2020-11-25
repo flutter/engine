@@ -138,10 +138,6 @@ AXTextMarkerRef AXTextMarkerCreate(CFAllocatorRef allocator,
                                    const UInt8* bytes,
                                    CFIndex length);
 
-AXTextMarkerRangeRef AXTextMarkerRangeCreate(CFAllocatorRef allocator,
-                                             AXTextMarkerRef start_marker,
-                                             AXTextMarkerRef end_marker);
-
 // #endif  // MAC_OS_X_VERSION_10_11
 
 }  // extern "C"
@@ -159,6 +155,12 @@ FlutterAccessibilityMac::FlutterAccessibilityMac() {
 
 FlutterAccessibilityMac::~FlutterAccessibilityMac() {
   ax_platform_node_->Destroy();
+}
+
+void FlutterAccessibilityMac::Init(AccessibilityBridge* bridge, AXNode* node) {
+  FlutterAccessibility::Init(bridge, node);
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert;
+  old_text_editing_value_ = convert.from_bytes(GetAXNode()->GetValueForControl());
 }
 
 void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event) {
@@ -237,27 +239,12 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
       const AXTreeData& tree_data = GetBridge()->GetAXTree()->data();
       int32_t focus = tree_data.focus_id;
       if (focus == AXNode::kInvalidAXID || focus != tree_data.sel_anchor_object_id)
-        break;  // Just fire a notification on the root.
+        break; // Just fire a notification on the root.
       FlutterAccessibility* focus_node = GetBridge()->GetFlutterAccessibilityFromID(focus);
       if (!focus_node)
-        break;
-      if (SystemVersionGreaterOrEqualTo({ .majorVersion = 10, .minorVersion = 11 })) {
-        // |NSAccessibilityPostNotificationWithUserInfo| should be used on OS X
-        // 10.11 or later to notify Voiceover about text selection changes. This
-        // API has been present on versions of OS X since 10.7 but doesn't
-        // appear to be needed by Voiceover before version 10.11.
-        NSDictionary* user_info =
-            GetUserInfoForSelectedTextChangedNotification();
-
-        FireNativeMacNotificationWithUserInfo(
-            focus_node->GetNativeViewAccessible(), mac_notification, user_info);
-        FireNativeMacNotificationWithUserInfo(
-            native_node, mac_notification, user_info);
-        return;
-      } else {
-        FireNativeMacNotification(focus_node->GetNativeViewAccessible(),
+        break; // Just fire a notification on the root.
+      FireNativeMacNotification(focus_node->GetNativeViewAccessible(),
                                         mac_notification);
-      }
       break;
     }
     case ax::AXEventGenerator::Event::CHECKED_STATE_CHANGED:
@@ -274,16 +261,17 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
         computeTextEdit(deleted_text, inserted_text, &edit_text_marker);
         NSDictionary* user_info = GetUserInfoForValueChangedNotification(
             native_node, deleted_text, inserted_text, edit_text_marker);
-        FireNativeMacNotification(
-            native_node, mac_notification);
-        FireNativeMacNotification(
-            [NSApp mainWindow], mac_notification);
+        NSLog(@"fire event to %@ with %@", native_node, user_info);
+        // FireNativeMacNotification(
+        //     native_node, mac_notification);
+        // FireNativeMacNotification(
+        //     [NSApp mainWindow], mac_notification);
         FireNativeMacNotificationWithUserInfo(
             native_node, mac_notification, user_info);
         FireNativeMacNotificationWithUserInfo(
             GetBridge()->GetFlutterAccessibilityFromID(kRootNode)->GetNativeViewAccessible(), mac_notification, user_info);
-        FireNativeMacNotificationWithUserInfo(
-            [NSApp mainWindow], mac_notification, user_info);
+        // FireNativeMacNotificationWithUserInfo(
+        //     [NSApp mainWindow], mac_notification, user_info);
         return;
       }
       break;
@@ -358,7 +346,8 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
     case ax::AXEventGenerator::Event::CHILDREN_CHANGED: {
       // NSAccessibilityCreatedNotification seems to be the only way to let
       // Voiceover pick up layout changes.
-      FireNativeMacNotification([NSApp mainWindow], NSAccessibilityCreatedNotification);
+      // FireNativeMacNotification([NSApp mainWindow], NSAccessibilityCreatedNotification);
+      FireNativeMacNotification(native_node, NSAccessibilityFocusedUIElementChangedNotification);
       return;
     }
     case ax::AXEventGenerator::Event::SUBTREE_CREATED:
@@ -464,6 +453,14 @@ void FlutterAccessibilityMac::DispatchAccessibilityAction(uint16_t target, Flutt
 gfx::NativeViewAccessible FlutterAccessibilityMac::GetNativeViewAccessible() {
   FML_DCHECK(ax_platform_node_);
   return ax_platform_node_->GetNativeViewAccessible();
+}
+
+gfx::NativeViewAccessible FlutterAccessibilityMac::GetParent() {
+  gfx::NativeViewAccessible parent = FlutterAccessibility::GetParent();
+  if (!parent) {
+    return GetFlutterEngine().viewController.view;
+  }
+  return parent;
 }
 
 SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinate_system,
@@ -597,60 +594,6 @@ void FlutterAccessibilityMac::computeTextEdit(std::u16string& inserted_text, std
       sizeof(AXNodePosition::SerializedPosition));
   *edit_text_marker = (__bridge id)(cf_text_marker);
   return;
-}
-
-NSDictionary*
-FlutterAccessibilityMac::GetUserInfoForSelectedTextChangedNotification() {
-  NSMutableDictionary* user_info =
-      [[NSMutableDictionary alloc] init];
-  [user_info setObject:@YES forKey:NSAccessibilityTextStateSyncKey];
-  [user_info setObject:@(AXTextSelectionDirectionUnknown)
-                forKey:NSAccessibilityTextSelectionDirection];
-  [user_info setObject:@(AXTextSelectionGranularityUnknown)
-                forKey:NSAccessibilityTextSelectionGranularity];
-  [user_info setObject:@YES
-                forKey:NSAccessibilityTextSelectionChangedFocus];
-
-  // TODO(chunhtai): figure out whether selection has moved or not.
-  [user_info setObject:@(AXTextStateChangeTypeSelectionMove)
-                  forKey:NSAccessibilityTextStateChangeTypeKey];
-
-  ax::AXTree::Selection selection = GetBridge()->GetAXTree()->GetUnignoredSelection();
-  int32_t focus_id = selection.focus_object_id;
-  FlutterAccessibility* focus_object = GetBridge()->GetFlutterAccessibilityFromID(focus_id);
-  if (focus_object) {
-    id native_focus_object = focus_object->GetNativeViewAccessible();
-    [user_info setObject:native_focus_object
-                  forKey:NSAccessibilityTextChangeElement];
-
-    id selected_text = CreateTextMarkerRange(selection);
-    if (selected_text) {
-      NSString* const NSAccessibilitySelectedTextMarkerRangeAttribute =
-          @"AXSelectedTextMarkerRange";
-      [user_info setObject:selected_text
-                    forKey:NSAccessibilitySelectedTextMarkerRangeAttribute];
-    }
-  }
-
-  return user_info;
-}
-
-id FlutterAccessibilityMac::CreateTextMarkerRange(ax::AXTree::Selection selection) {
-  AXNodePosition::AXPositionInstance anchor = AXNodePosition::CreateTextPosition(
-      GetBridge()->GetAXTree()->GetAXTreeID(), selection.anchor_object_id, selection.anchor_offset,  selection.anchor_affinity);
-  AXNodePosition::AXPositionInstance focus = AXNodePosition::CreateTextPosition(
-      GetBridge()->GetAXTree()->GetAXTreeID(), selection.focus_object_id, selection.focus_offset,  selection.focus_affinity);
-  AXNodePosition::SerializedPosition serialized_anchor = anchor->Serialize();
-  AXNodePosition::SerializedPosition serialized_focus = focus->Serialize();
-  AXTextMarkerRef start_marker = AXTextMarkerCreate(
-      kCFAllocatorDefault, reinterpret_cast<const UInt8*>(&serialized_anchor),
-      sizeof(AXNodePosition::SerializedPosition));
-  AXTextMarkerRef end_marker = AXTextMarkerCreate(
-      kCFAllocatorDefault, reinterpret_cast<const UInt8*>(&serialized_focus),
-      sizeof(AXNodePosition::SerializedPosition));
-  AXTextMarkerRangeRef cf_marker_range =
-      AXTextMarkerRangeCreate(kCFAllocatorDefault, start_marker, end_marker);
-  return (__bridge id)(cf_marker_range);
 }
 
 NSDictionary*
