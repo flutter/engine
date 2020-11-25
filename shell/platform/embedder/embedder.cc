@@ -472,9 +472,11 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
   auto c_create_callback = compositor->create_backing_store_callback;
   auto c_collect_callback = compositor->collect_backing_store_callback;
 
+  bool avoid_cache = false;
   {
     TRACE_EVENT0("flutter", "FlutterCompositorCreateBackingStore");
-    if (!c_create_callback(&config, &backing_store, compositor->user_data)) {
+    if (!c_create_callback(&config, &backing_store, compositor->user_data,
+                           &avoid_cache)) {
       FML_LOG(ERROR) << "Could not create the embedder backing store.";
       return nullptr;
     }
@@ -526,7 +528,8 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
   }
 
   return std::make_unique<flutter::EmbedderRenderTarget>(
-      backing_store, std::move(render_surface), collect_callback.Release());
+      backing_store, std::move(render_surface), collect_callback.Release(),
+      avoid_cache);
 }
 
 static std::pair<std::unique_ptr<flutter::EmbedderExternalViewEmbedder>,

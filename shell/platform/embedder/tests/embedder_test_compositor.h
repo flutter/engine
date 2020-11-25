@@ -24,6 +24,8 @@ class EmbedderTestCompositor {
   using PresentCallback =
       std::function<void(const FlutterLayer** layers, size_t layers_count)>;
 
+  using UpdateAvoidCacheCallback = std::function<void(bool* avoid_cache)>;
+
   EmbedderTestCompositor(SkISize surface_size, sk_sp<GrDirectContext> context);
 
   virtual ~EmbedderTestCompositor();
@@ -32,7 +34,8 @@ class EmbedderTestCompositor {
       std::unique_ptr<EmbedderTestBackingStoreProducer> backingstore_producer);
 
   bool CreateBackingStore(const FlutterBackingStoreConfig* config,
-                          FlutterBackingStore* backing_store_out);
+                          FlutterBackingStore* backing_store_out,
+                          bool* avoid_cache);
 
   bool CollectBackingStore(const FlutterBackingStore* backing_store);
 
@@ -52,6 +55,15 @@ class EmbedderTestCompositor {
 
   void SetPresentCallback(const PresentCallback& present_callback,
                           bool one_shot);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Allows tests to install a callback to update the
+  ///             avoid_cache_callback_ bool.
+  ///
+  /// @param[in]  avoid_cache_callback  The callback to update the
+  /// avoid_cache_callback_.
+  void SetUpdateAvoidCacheCallback(
+      const UpdateAvoidCacheCallback& avoid_cache_callback);
 
   using NextSceneCallback = std::function<void(sk_sp<SkImage> image)>;
   void SetNextSceneCallback(const NextSceneCallback& next_scene_callback);
@@ -85,6 +97,7 @@ class EmbedderTestCompositor {
   bool present_callback_is_one_shot_ = false;
   PresentCallback present_callback_;
   NextSceneCallback next_scene_callback_;
+  UpdateAvoidCacheCallback avoid_cache_callback_;
   sk_sp<SkImage> last_composition_;
   size_t backing_stores_created_ = 0;
   size_t backing_stores_collected_ = 0;

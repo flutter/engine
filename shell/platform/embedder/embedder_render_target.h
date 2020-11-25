@@ -36,7 +36,8 @@ class EmbedderRenderTarget {
   ///
   EmbedderRenderTarget(FlutterBackingStore backing_store,
                        sk_sp<SkSurface> render_surface,
-                       fml::closure on_release);
+                       fml::closure on_release,
+                       bool avoid_cache);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys this instance of the render target and invokes the
@@ -65,10 +66,18 @@ class EmbedderRenderTarget {
   ///
   const FlutterBackingStore* GetBackingStore() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      The render target may want to avoid being cached.
+  ///
+  /// @return     A bool representing if the embedder render target should
+  ///             avoid the cache.
+  bool GetAvoidCache();
+
  private:
   FlutterBackingStore backing_store_;
   sk_sp<SkSurface> render_surface_;
   fml::closure on_release_;
+  bool avoid_cache_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderRenderTarget);
 };

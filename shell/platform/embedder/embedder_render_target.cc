@@ -10,10 +10,12 @@ namespace flutter {
 
 EmbedderRenderTarget::EmbedderRenderTarget(FlutterBackingStore backing_store,
                                            sk_sp<SkSurface> render_surface,
-                                           fml::closure on_release)
+                                           fml::closure on_release,
+                                           bool avoid_cache)
     : backing_store_(backing_store),
       render_surface_(std::move(render_surface)),
-      on_release_(on_release) {
+      on_release_(on_release),
+      avoid_cache_(avoid_cache) {
   // TODO(38468): The optimization to elide backing store updates between frames
   // has not been implemented yet.
   backing_store_.did_update = true;
@@ -32,6 +34,10 @@ const FlutterBackingStore* EmbedderRenderTarget::GetBackingStore() const {
 
 sk_sp<SkSurface> EmbedderRenderTarget::GetRenderSurface() const {
   return render_surface_;
+}
+
+bool EmbedderRenderTarget::GetAvoidCache() {
+  return avoid_cache_;
 }
 
 }  // namespace flutter

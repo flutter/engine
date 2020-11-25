@@ -29,11 +29,15 @@ static void InvokeAllCallbacks(const std::vector<fml::closure>& callbacks) {
 
 bool EmbedderTestCompositor::CreateBackingStore(
     const FlutterBackingStoreConfig* config,
-    FlutterBackingStore* backing_store_out) {
+    FlutterBackingStore* backing_store_out,
+    bool* avoid_cache) {
   bool success = backingstore_producer_->Create(config, backing_store_out);
   if (success) {
     backing_stores_created_++;
     InvokeAllCallbacks(on_create_render_target_callbacks_);
+  }
+  if (avoid_cache_callback_) {
+    avoid_cache_callback_(avoid_cache);
   }
   return success;
 }
@@ -102,6 +106,11 @@ void EmbedderTestCompositor::SetNextSceneCallback(
 void EmbedderTestCompositor::SetPlatformViewRendererCallback(
     const PlatformViewRendererCallback& callback) {
   platform_view_renderer_callback_ = callback;
+}
+
+void EmbedderTestCompositor::SetUpdateAvoidCacheCallback(
+    const UpdateAvoidCacheCallback& avoid_cache_callback) {
+  avoid_cache_callback_ = avoid_cache_callback;
 }
 
 size_t EmbedderTestCompositor::GetPendingBackingStoresCount() const {

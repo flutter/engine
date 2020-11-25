@@ -2950,6 +2950,53 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreRecycled) {
   ASSERT_EQ(context.GetCompositor().GetBackingStoresCollectedCount(), 10u);
 }
 
+//------------------------------------------------------------------------------
+/// The RenderTargetCache being disabled should result in the render targets
+/// always being discarded.
+///
+TEST_F(EmbedderTest, RenderTargetCacheDisabled) {
+  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(300, 200));
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("render_targets_are_recycled");
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
+
+  fml::CountDownLatch latch(2);
+
+  context.AddNativeCallback("SignalNativeTest",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              latch.CountDown();
+                            }));
+
+  context.GetCompositor().SetNextPresentCallback(
+      [&](const FlutterLayer** layers, size_t layers_count) {
+        ASSERT_EQ(layers_count, 20u);
+        latch.CountDown();
+      });
+
+  context.GetCompositor().SetUpdateAvoidCacheCallback(
+      [](bool* avoid_cache) { *avoid_cache = true; });
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 300;
+  event.height = 200;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  latch.Wait();
+  // Instead of being recycled, the 10 render targets should be created for each
+  // of the 7 frames.
+  ASSERT_EQ(context.GetCompositor().GetBackingStoresCreatedCount(), 70u);
+}
+
 TEST_F(EmbedderTest, CompositorRenderTargetsAreInStableOrder) {
   auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
 

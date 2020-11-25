@@ -257,10 +257,10 @@ void EmbedderConfigBuilder::SetCompositor() {
   compositor_.create_backing_store_callback =
       [](const FlutterBackingStoreConfig* config,  //
          FlutterBackingStore* backing_store_out,   //
-         void* user_data                           //
-      ) {
+         void* user_data,                          //
+         bool* avoid_cache) {
         return reinterpret_cast<EmbedderTestCompositor*>(user_data)
-            ->CreateBackingStore(config, backing_store_out);
+            ->CreateBackingStore(config, backing_store_out, avoid_cache);
       };
   compositor_.collect_backing_store_callback =
       [](const FlutterBackingStore* backing_store,  //

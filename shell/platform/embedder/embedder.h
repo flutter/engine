@@ -4,7 +4,6 @@
 
 #ifndef FLUTTER_EMBEDDER_H_
 #define FLUTTER_EMBEDDER_H_
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -905,7 +904,8 @@ typedef struct {
 typedef bool (*FlutterBackingStoreCreateCallback)(
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out,
-    void* user_data);
+    void* user_data,
+    bool* avoid_cache);
 
 typedef bool (*FlutterBackingStoreCollectCallback)(
     const FlutterBackingStore* renderer,
