@@ -320,7 +320,7 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
     return false;
   }
 
-  Dart_SetDeferredLoadHandler(OnDartLoadLibrary);
+  tonic::LogIfError(Dart_SetDeferredLoadHandler(OnDartLoadLibrary));
 
   if (!UpdateThreadPoolNames()) {
     return false;
@@ -340,8 +340,7 @@ bool DartIsolate::LoadLoadingUnit(intptr_t loading_unit_id,
   tonic::DartState::Scope scope(this);
   Dart_Handle result = Dart_DeferredLoadComplete(loading_unit_id, snapshot_data,
                                                  snapshot_instructions);
-  if (Dart_IsApiError(result)) {
-    FML_LOG(ERROR) << "LOADING FAILED " << loading_unit_id;
+  if (tonic::LogIfError(result)) {
     result =
         Dart_DeferredLoadCompleteError(loading_unit_id, Dart_GetError(result),
                                        /*transient*/ true);
