@@ -462,6 +462,10 @@ flt-glass-pane * {
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitBaseUrl + 'canvaskit.js';
 
+      // TODO(hterkelsen): Rather than this monkey-patch hack, we should
+      // build CanvasKit ourselves. See:
+      // https://github.com/flutter/flutter/issues/52588
+
       // Monkey-patch the top-level `module`  and `exports` objects so that
       // CanvasKit doesn't attempt to register itself as an anonymous module.
       //
