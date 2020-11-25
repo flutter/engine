@@ -6,6 +6,8 @@
 
 #include <chrono>
 
+#include "flutter/shell/platform/windows/flutter_keyboard_manager.h"
+
 namespace flutter {
 
 FlutterWindowsView::FlutterWindowsView(
@@ -35,6 +37,11 @@ void FlutterWindowsView::SetEngine(
 
   // Set up the system channel handlers.
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
+  keyboard_hook_handlers_.push_back(
+      std::make_unique<flutter::FlutterKeyboardManager>(
+          [this](const FlutterKeyEvent& event){
+            engine_->SendKeyEvent(event);
+          }));
   keyboard_hook_handlers_.push_back(
       std::make_unique<flutter::KeyEventHandler>(internal_plugin_messenger));
   keyboard_hook_handlers_.push_back(
