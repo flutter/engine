@@ -419,10 +419,11 @@ std::optional<uint32_t> RuntimeController::GetRootIsolateReturnCode() {
 
 void RuntimeController::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
-    const uint8_t* snapshot_data,
-    const uint8_t* snapshot_instructions) {
-  root_isolate_.lock()->LoadLoadingUnit(loading_unit_id, snapshot_data,
-                                        snapshot_instructions);
+    std::unique_ptr<fml::Mapping> snapshot_data,
+    std::unique_ptr<fml::Mapping> snapshot_instructions) {
+  root_isolate_.lock()->LoadLoadingUnit(loading_unit_id,
+                                        std::move(snapshot_data),
+                                        std::move(snapshot_instructions));
 }
 
 void RuntimeController::RequestDartDeferredLibrary(intptr_t loading_unit_id) {

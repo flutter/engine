@@ -11,6 +11,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/mapping.h"
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -481,10 +482,10 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             The Dart compiler may generate separate shared libraries
   ///             files called 'loading units' when libraries are imported
   ///             as deferred. Each of these shared libraries are identified
-  ///             by a unique loading unit id. Callers should dlopen the
-  ///             shared library file and use dlsym to resolve the dart
-  ///             symbols. These symbols can then be passed to this method to
-  ///             be dynamically loaded into the VM.
+  ///             by a unique loading unit id. Callers should open and resolve
+  ///             a SymbolMapping from the shared library. The symbols can
+  ///             then be moved into the dart isolate to be dynamically loaded
+  ///             into the VM via this method.
   ///
   ///             This method is paired with a RequestDartDeferredLibrary
   ///             invocation that provides the embedder with the loading unit id
@@ -501,21 +502,30 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
   ///                              unit's shared library.
   ///
-  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
-                               const uint8_t* snapshot_data,
-                               const uint8_t* snapshot_instructions);
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<fml::Mapping> snapshot_data,
+      std::unique_ptr<fml::Mapping> snapshot_instructions);
 
   // |PlatformConfigurationClient|
   //--------------------------------------------------------------------------
-  /// @brief      Invoked when the dart VM requests that a deferred library
-  ///             be loaded. Notifies the engine that the requested loading
-  ///             unit should be downloaded and loaded.
+  /// @brief      Invoked when the Dart VM requests that a deferred library
+  ///             be loaded. Notifies the engine that the deferred library
+  ///             identified by the specified loading unit id should be
+  ///             downloaded and loaded into the Dart VM via
+  ///             `LoadDartDeferredLibrary`
+  ///
+  ///             Upon encountering errors or otherwise failing to load a
+  ///             loading unit with the specified id, the failure should be
+  ///             directly reported to dart by calling
+  ///             `LoadDartDeferredLibraryFailure` to ensure the waiting dart
+  ///             future completes with an error.
   ///
   /// @param[in]  loading_unit_id  The unique id of the deferred library's
-  ///                              loading unit.
-  ///
-  /// @return     A Dart_Handle that is Dart_Null on success, and a dart error
-  ///             on failure.
+  ///                              loading unit. This id is to be passed
+  ///                              back into LoadDartDeferredLibrary
+  ///                              in order to identify which deferred
+  ///                              library to load.
   ///
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 

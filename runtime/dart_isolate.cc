@@ -334,12 +334,14 @@ fml::RefPtr<fml::TaskRunner> DartIsolate::GetMessageHandlingTaskRunner() const {
   return message_handling_task_runner_;
 }
 
-bool DartIsolate::LoadLoadingUnit(intptr_t loading_unit_id,
-                                  const uint8_t* snapshot_data,
-                                  const uint8_t* snapshot_instructions) {
+bool DartIsolate::LoadLoadingUnit(
+    intptr_t loading_unit_id,
+    std::unique_ptr<fml::Mapping> snapshot_data,
+    std::unique_ptr<fml::Mapping> snapshot_instructions) {
   tonic::DartState::Scope scope(this);
-  Dart_Handle result = Dart_DeferredLoadComplete(loading_unit_id, snapshot_data,
-                                                 snapshot_instructions);
+  Dart_Handle result =
+      Dart_DeferredLoadComplete(loading_unit_id, snapshot_data->GetMapping(),
+                                snapshot_instructions->GetMapping());
   if (tonic::LogIfError(result)) {
     result =
         Dart_DeferredLoadCompleteError(loading_unit_id, Dart_GetError(result),
