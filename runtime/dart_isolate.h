@@ -9,6 +9,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <unordered_set>
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/compiler_specific.h"
@@ -410,6 +411,7 @@ class DartIsolate : public UIDartState {
   Phase phase_ = Phase::Unknown;
   std::vector<std::shared_ptr<const fml::Mapping>> kernel_buffers_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
+  std::unordered_set<fml::RefPtr<DartSnapshot>> loading_unit_snapshots_;
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
   const bool may_insecurely_connect_to_all_domains_;
   std::string domain_network_policy_;

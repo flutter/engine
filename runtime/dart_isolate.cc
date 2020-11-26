@@ -320,7 +320,9 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
     return false;
   }
 
-  tonic::LogIfError(Dart_SetDeferredLoadHandler(OnDartLoadLibrary));
+  if (tonic::LogIfError(Dart_SetDeferredLoadHandler(OnDartLoadLibrary))) {
+    return false;
+  }
 
   if (!UpdateThreadPoolNames()) {
     return false;
@@ -339,15 +341,20 @@ bool DartIsolate::LoadLoadingUnit(
     std::unique_ptr<const fml::SymbolMapping> snapshot_data,
     std::unique_ptr<const fml::SymbolMapping> snapshot_instructions) {
   tonic::DartState::Scope scope(this);
-  Dart_Handle result =
-      Dart_DeferredLoadComplete(loading_unit_id, snapshot_data->GetMapping(),
-                                snapshot_instructions->GetMapping());
+  fml::RefPtr<DartSnapshot> dart_snapshot =
+      DartSnapshot::IsolateSnapshotFromMappings(
+          std::move(snapshot_data), std::move(snapshot_instructions));
+
+  Dart_Handle result = Dart_DeferredLoadComplete(
+      loading_unit_id, dart_snapshot->GetDataMapping(),
+      dart_snapshot->GetInstructionsMapping());
   if (tonic::LogIfError(result)) {
     result =
         Dart_DeferredLoadCompleteError(loading_unit_id, Dart_GetError(result),
                                        /*transient*/ true);
     return false;
   }
+  loading_unit_snapshots_.insert(dart_snapshot);
   return true;
 }
 
@@ -357,9 +364,7 @@ void DartIsolate::LoadLoadingUnitFailure(intptr_t loading_unit_id,
   tonic::DartState::Scope scope(this);
   Dart_Handle result = Dart_DeferredLoadCompleteError(
       loading_unit_id, error_message.c_str(), transient);
-  if (Dart_IsApiError(result)) {
-    FML_LOG(ERROR) << "Dart error: " << Dart_GetError(result);
-  }
+  tonic::LogIfError(result);
 }
 
 void DartIsolate::SetMessageHandlingTaskRunner(
