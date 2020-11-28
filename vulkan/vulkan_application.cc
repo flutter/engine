@@ -94,21 +94,21 @@ VulkanApplication::VulkanApplication(
 
   VkInstance instance = VK_NULL_HANDLE;
 
-  if (VK_CALL_LOG_ERROR(vk.CreateInstance(&create_info, nullptr, &instance)) !=
-      VK_SUCCESS) {
+  if (VK_CALL_LOG_ERROR(vk_->CreateInstance(&create_info, nullptr,
+                                            &instance)) != VK_SUCCESS) {
     FML_DLOG(INFO) << "Could not create application instance.";
     return;
   }
 
   // Now that we have an instance, setup instance proc table entries.
-  if (!vk.SetupInstanceProcAddresses(instance)) {
+  if (!vk_->SetupInstanceProcAddresses(instance)) {
     FML_DLOG(INFO) << "Could not setup instance proc addresses.";
     return;
   }
 
   instance_ = {instance, [this](VkInstance i) {
                  FML_DLOG(INFO) << "Destroying Vulkan instance";
-                 vk.DestroyInstance(i, nullptr);
+                 vk_->DestroyInstance(i, nullptr);
                }};
 
   if (enable_instance_debugging) {
@@ -149,8 +149,8 @@ std::vector<VkPhysicalDevice> VulkanApplication::GetPhysicalDevices() const {
   }
 
   uint32_t device_count = 0;
-  if (VK_CALL_LOG_ERROR(vk.EnumeratePhysicalDevices(instance_, &device_count,
-                                                    nullptr)) != VK_SUCCESS) {
+  if (VK_CALL_LOG_ERROR(vk_->EnumeratePhysicalDevices(instance_, &device_count,
+                                                      nullptr)) != VK_SUCCESS) {
     FML_DLOG(INFO) << "Could not enumerate physical device.";
     return {};
   }
@@ -165,7 +165,7 @@ std::vector<VkPhysicalDevice> VulkanApplication::GetPhysicalDevices() const {
 
   physical_devices.resize(device_count);
 
-  if (VK_CALL_LOG_ERROR(vk.EnumeratePhysicalDevices(
+  if (VK_CALL_LOG_ERROR(vk_->EnumeratePhysicalDevices(
           instance_, &device_count, physical_devices.data())) != VK_SUCCESS) {
     FML_DLOG(INFO) << "Could not enumerate physical device.";
     return {};
@@ -190,12 +190,12 @@ VulkanApplication::AcquireFirstCompatibleLogicalDevice() const {
 std::vector<VkExtensionProperties>
 VulkanApplication::GetSupportedInstanceExtensions(
     const VulkanProcTable& vk) const {
-  if (!vk.EnumerateInstanceExtensionProperties) {
+  if (!vk_->EnumerateInstanceExtensionProperties) {
     return std::vector<VkExtensionProperties>();
   }
 
   uint32_t count = 0;
-  if (VK_CALL_LOG_ERROR(vk.EnumerateInstanceExtensionProperties(
+  if (VK_CALL_LOG_ERROR(vk_->EnumerateInstanceExtensionProperties(
           nullptr, &count, nullptr)) != VK_SUCCESS) {
     return std::vector<VkExtensionProperties>();
   }
@@ -206,7 +206,7 @@ VulkanApplication::GetSupportedInstanceExtensions(
 
   std::vector<VkExtensionProperties> properties;
   properties.resize(count);
-  if (VK_CALL_LOG_ERROR(vk.EnumerateInstanceExtensionProperties(
+  if (VK_CALL_LOG_ERROR(vk_->EnumerateInstanceExtensionProperties(
           nullptr, &count, properties.data())) != VK_SUCCESS) {
     return std::vector<VkExtensionProperties>();
   }

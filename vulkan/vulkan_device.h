@@ -18,19 +18,19 @@ class VulkanSurface;
 
 class VulkanDevice {
  public:
-  VulkanDevice(VulkanProcTable& vk,
-               VulkanHandle<VkPhysicalDevice> physical_device,
+  VulkanDevice(VulkanHandle<VkPhysicalDevice> physical_device,
+               fml::RefPtr<VulkanProcTable> vk,
                bool enable_validation_layers);
 
   ~VulkanDevice();
 
   bool IsValid() const;
 
-  const VulkanHandle<VkDevice>& GetHandle() const;
+  const VulkanHandle<VkPhysicalDevice>& GetPhysicalDevice() const;
 
-  const VulkanHandle<VkPhysicalDevice>& GetPhysicalDeviceHandle() const;
+  const VulkanHandle<VkDevice>& GetDevice() const;
 
-  const VulkanHandle<VkQueue>& GetQueueHandle() const;
+  const VulkanHandle<VkQueue>& GetQueue() const;
 
   const VulkanHandle<VkCommandPool>& GetCommandPool() const;
 
@@ -65,14 +65,13 @@ class VulkanDevice {
   [[nodiscard]] bool WaitIdle() const;
 
  private:
-  VulkanProcTable& vk;
+  fml::RefPtr<VulkanProcTable> vk_;
   VulkanHandle<VkPhysicalDevice> physical_device_;
   VulkanHandle<VkDevice> device_;
   VulkanHandle<VkQueue> queue_;
   VulkanHandle<VkCommandPool> command_pool_;
   uint32_t graphics_queue_index_;
   bool valid_;
-  bool enable_validation_layers_;
 
   std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties() const;
 

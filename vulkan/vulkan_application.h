@@ -6,27 +6,26 @@
 #define FLUTTER_VULKAN_VULKAN_APPLICATION_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "flutter/fml/macros.h"
+
 #include "vulkan_debug_report.h"
 #include "vulkan_handle.h"
+#include "vulkan_proc_table.h"
 
 namespace vulkan {
 
 static const int kGrCacheMaxCount = 8192;
 static const size_t kGrCacheMaxByteSize = 512 * (1 << 20);
 
-class VulkanDevice;
-class VulkanProcTable;
-
 /// Applications using Vulkan acquire a VulkanApplication that attempts to
 /// create a VkInstance (with debug reporting optionally enabled).
 class VulkanApplication {
  public:
-  VulkanApplication(VulkanProcTable& vk,  // NOLINT
-                    const std::string& application_name,
+  VulkanApplication(const std::string& application_name,
                     std::vector<std::string> enabled_extensions,
                     uint32_t application_version = VK_MAKE_VERSION(1, 0, 0),
                     uint32_t api_version = VK_MAKE_VERSION(1, 0, 0),
@@ -36,21 +35,23 @@ class VulkanApplication {
 
   bool IsValid() const;
 
-  uint32_t GetAPIVersion() const;
-
   const VulkanHandle<VkInstance>& GetInstance() const;
+
+  const VulkanDevice* GetDevice() const;
+
+  uint32_t GetAPIVersion() const;
 
   void ReleaseInstanceOwnership();
 
-  std::unique_ptr<VulkanDevice> AcquireFirstCompatibleLogicalDevice() const;
-
  private:
-  VulkanProcTable& vk;
+  fml::RefPtr<VulkanProcTable> vk_;
   VulkanHandle<VkInstance> instance_;
+
+  std::optional<VulkanDebugReport> debug_report_;
+  std::optional<VulkanDevice> device_;
+
   uint32_t api_version_;
-  std::unique_ptr<VulkanDebugReport> debug_report_;
   bool valid_;
-  bool enable_validation_layers_;
 
   std::vector<VkPhysicalDevice> GetPhysicalDevices() const;
   std::vector<VkExtensionProperties> GetSupportedInstanceExtensions(
