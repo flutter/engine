@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
 
+// @dart = 2.12
 part of dart.ui;
 
 /// Whether to slant the glyphs in the font
@@ -2225,7 +2225,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The `scale` parameter will scale the `width` and `height` by the specified amount,
   /// and keep track of the scale. The scales of placeholders added can be accessed
-  /// through [placeholderScales]. This is primarily used for acessibility scaling.
+  /// through [placeholderScales]. This is primarily used for accessibility scaling.
   void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
     double scale = 1.0,
     double? baselineOffset,

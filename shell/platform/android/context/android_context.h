@@ -22,11 +22,11 @@ class AndroidContext {
  public:
   explicit AndroidContext(AndroidRenderingAPI rendering_api);
 
-  ~AndroidContext();
+  virtual ~AndroidContext();
 
   AndroidRenderingAPI RenderingApi() const;
 
-  bool IsValid() const;
+  virtual bool IsValid() const;
 
  private:
   const AndroidRenderingAPI rendering_api_;

@@ -20,13 +20,7 @@ void main() {
 
 void testMain() {
   group('CanvasKit API', () {
-    setUpAll(() async {
-      await ui.webOnlyInitializePlatform();
-    });
-
-    test('Using CanvasKit', () {
-      expect(useCanvasKit, true);
-    });
+    setUpCanvasKitTest();
 
     _blendModeTests();
     _paintStyleTests();
@@ -334,7 +328,7 @@ void _shaderTests() {
 
   test('MakeRadialGradient', () {
     expect(
-        canvasKit.SkShader.MakeRadialGradient(
+        canvasKit.Shader.MakeRadialGradient(
           Float32List.fromList([1, 1]),
           10.0,
           <Float32List>[
@@ -351,7 +345,7 @@ void _shaderTests() {
 
   test('MakeTwoPointConicalGradient', () {
     expect(
-        canvasKit.SkShader.MakeTwoPointConicalGradient(
+        canvasKit.Shader.MakeTwoPointConicalGradient(
           Float32List.fromList([1, 1]),
           10.0,
           Float32List.fromList([1, 1]),
@@ -370,7 +364,7 @@ void _shaderTests() {
 }
 
 SkShader _makeTestShader() {
-  return canvasKit.SkShader.MakeLinearGradient(
+  return canvasKit.Shader.MakeLinearGradient(
     Float32List.fromList([0, 0]),
     Float32List.fromList([1, 1]),
     [
@@ -392,15 +386,15 @@ void _paintTests() {
     paint.setAntiAlias(true);
     paint.setColorInt(0x00FFCCAA);
     paint.setShader(_makeTestShader());
-    paint.setMaskFilter(canvasKit.MakeBlurMaskFilter(
+    paint.setMaskFilter(canvasKit.MaskFilter.MakeBlur(
       canvasKit.BlurStyle.Outer,
       2.0,
       true,
     ));
     paint.setFilterQuality(canvasKit.FilterQuality.High);
-    paint.setColorFilter(canvasKit.SkColorFilter.MakeLinearToSRGBGamma());
+    paint.setColorFilter(canvasKit.ColorFilter.MakeLinearToSRGBGamma());
     paint.setStrokeMiter(1.4);
-    paint.setImageFilter(canvasKit.SkImageFilter.MakeBlur(
+    paint.setImageFilter(canvasKit.ImageFilter.MakeBlur(
       1,
       2,
       canvasKit.TileMode.Repeat,
@@ -410,9 +404,9 @@ void _paintTests() {
 }
 
 void _maskFilterTests() {
-  test('MakeBlurMaskFilter', () {
+  test('MaskFilter.MakeBlur', () {
     expect(
-        canvasKit.MakeBlurMaskFilter(
+        canvasKit.MaskFilter.MakeBlur(
           canvasKit.BlurStyle.Outer,
           5.0,
           false,
@@ -424,7 +418,7 @@ void _maskFilterTests() {
 void _colorFilterTests() {
   test('MakeBlend', () {
     expect(
-      canvasKit.SkColorFilter.MakeBlend(
+      canvasKit.ColorFilter.MakeBlend(
         Float32List.fromList([0, 0, 0, 1]),
         canvasKit.BlendMode.SrcATop,
       ),
@@ -434,7 +428,7 @@ void _colorFilterTests() {
 
   test('MakeMatrix', () {
     expect(
-      canvasKit.SkColorFilter.MakeMatrix(
+      canvasKit.ColorFilter.MakeMatrix(
         Float32List(20),
       ),
       isNotNull,
@@ -443,14 +437,14 @@ void _colorFilterTests() {
 
   test('MakeSRGBToLinearGamma', () {
     expect(
-      canvasKit.SkColorFilter.MakeSRGBToLinearGamma(),
+      canvasKit.ColorFilter.MakeSRGBToLinearGamma(),
       isNotNull,
     );
   });
 
   test('MakeLinearToSRGBGamma', () {
     expect(
-      canvasKit.SkColorFilter.MakeLinearToSRGBGamma(),
+      canvasKit.ColorFilter.MakeLinearToSRGBGamma(),
       isNotNull,
     );
   });
@@ -459,14 +453,14 @@ void _colorFilterTests() {
 void _imageFilterTests() {
   test('MakeBlur', () {
     expect(
-      canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
+      canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
       isNotNull,
     );
   });
 
   test('MakeMatrixTransform', () {
     expect(
-      canvasKit.SkImageFilter.MakeMatrixTransform(
+      canvasKit.ImageFilter.MakeMatrixTransform(
         toSkMatrixFromFloat32(Matrix4.identity().storage),
         canvasKit.FilterQuality.Medium,
         null,
@@ -477,8 +471,8 @@ void _imageFilterTests() {
 
   test('MakeColorFilter', () {
     expect(
-      canvasKit.SkImageFilter.MakeColorFilter(
-        canvasKit.SkColorFilter.MakeLinearToSRGBGamma(),
+      canvasKit.ImageFilter.MakeColorFilter(
+        canvasKit.ColorFilter.MakeLinearToSRGBGamma(),
         null,
       ),
       isNotNull,
@@ -487,9 +481,9 @@ void _imageFilterTests() {
 
   test('MakeCompose', () {
     expect(
-      canvasKit.SkImageFilter.MakeCompose(
-        canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
-        canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
+      canvasKit.ImageFilter.MakeCompose(
+        canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
+        canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
       ),
       isNotNull,
     );
@@ -860,7 +854,7 @@ void _pathTests() {
 }
 
 SkVertices _testVertices() {
-  return canvasKit.MakeSkVertices(
+  return canvasKit.MakeVertices(
     canvasKit.VertexMode.Triangles,
     [
       Float32List.fromList([0, 0]),
@@ -930,7 +924,7 @@ void _canvasTests() {
     canvas.saveLayer(
       SkPaint(),
       toSkRect(ui.Rect.fromLTRB(0, 0, 100, 100)),
-      canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
+      canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
       0,
     );
   });
@@ -1187,10 +1181,10 @@ void _canvasTests() {
     final CkImage image = await picture.toImage(1, 1);
     final ByteData rawData =
         await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    expect(rawData, isNotNull);
+    expect(rawData.lengthInBytes, greaterThan(0));
     final ByteData pngData =
         await image.toByteData(format: ui.ImageByteFormat.png);
-    expect(pngData, isNotNull);
+    expect(pngData.lengthInBytes, greaterThan(0));
   });
 }
 
