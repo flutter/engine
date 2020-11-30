@@ -43,19 +43,17 @@ public class KeyEventChannel {
     /**
      * Called whenever the framework responds that a given key event was handled by the framework.
      *
-     * @param id the event id of the event to be marked as being handled by the framework. Must not
-     *     be null.
+     * @param event the event to be marked as being handled by the framework. Must not be null.
      */
-    public void onKeyEventHandled(long id);
+    public void onKeyEventHandled(KeyEvent event);
 
     /**
      * Called whenever the framework responds that a given key event wasn't handled by the
      * framework.
      *
-     * @param id the event id of the event to be marked as not being handled by the framework. Must
-     *     not be null.
+     * @param event the event to be marked as not being handled by the framework. Must not be null.
      */
-    public void onKeyEventNotHandled(long id);
+    public void onKeyEventNotHandled(KeyEvent event);
   }
 
   /**
@@ -69,11 +67,11 @@ public class KeyEventChannel {
   }
 
   /**
-   * Creates a reply handler for this an event with the given eventId.
+   * Creates a reply handler for the given key event.
    *
-   * @param eventId the event ID to create a reply for.
+   * @param event the Android key event to create a reply for.
    */
-  BasicMessageChannel.Reply<Object> createReplyHandler(long eventId) {
+  BasicMessageChannel.Reply<Object> createReplyHandler(KeyEvent event) {
     return message -> {
       if (eventResponseHandler == null) {
         return;
@@ -81,19 +79,19 @@ public class KeyEventChannel {
 
       try {
         if (message == null) {
-          eventResponseHandler.onKeyEventNotHandled(eventId);
+          eventResponseHandler.onKeyEventNotHandled(event);
           return;
         }
         final JSONObject annotatedEvent = (JSONObject) message;
         final boolean handled = annotatedEvent.getBoolean("handled");
         if (handled) {
-          eventResponseHandler.onKeyEventHandled(eventId);
+          eventResponseHandler.onKeyEventHandled(event);
         } else {
-          eventResponseHandler.onKeyEventNotHandled(eventId);
+          eventResponseHandler.onKeyEventNotHandled(event);
         }
       } catch (JSONException e) {
         Log.e(TAG, "Unable to unpack JSON message: " + e);
-        eventResponseHandler.onKeyEventNotHandled(eventId);
+        eventResponseHandler.onKeyEventNotHandled(event);
       }
     };
   }
@@ -106,7 +104,7 @@ public class KeyEventChannel {
     message.put("keymap", "android");
     encodeKeyEvent(keyEvent, message);
 
-    channel.send(message, createReplyHandler(keyEvent.eventId));
+    channel.send(message, createReplyHandler(keyEvent.event));
   }
 
   public void keyDown(@NonNull FlutterKeyEvent keyEvent) {
@@ -115,7 +113,7 @@ public class KeyEventChannel {
     message.put("keymap", "android");
     encodeKeyEvent(keyEvent, message);
 
-    channel.send(message, createReplyHandler(keyEvent.eventId));
+    channel.send(message, createReplyHandler(keyEvent.event));
   }
 
   private void encodeKeyEvent(
@@ -222,25 +220,12 @@ public class KeyEventChannel {
      */
     public final int repeatCount;
     /**
-     * The unique id for this Flutter key event.
+     * The Android key event that this Flutter key event was created from.
      *
-     * <p>This id is used to identify pending events when results are received from the framework.
-     * This ID does not come from Android, but instead is derived from attributes of this event that
-     * can be recognized if the event is re-dispatched.
-     */
-    public final long eventId;
-
-    /**
-     * Creates a unique id for a Flutter key event from an Android KeyEvent.
-     *
-     * <p>This id is used to identify pending key events when results are received from the
+     * <p>This event is used to identify pending events when results are received from the
      * framework.
      */
-    public static long computeEventId(@NonNull KeyEvent event) {
-      return (event.getEventTime() & 0xffffffff)
-          | ((long) (event.getAction() == KeyEvent.ACTION_DOWN ? 0x1 : 0x0)) << 32
-          | ((long) (event.getScanCode() & 0xffff)) << 33;
-    }
+    public final KeyEvent event;
 
     public FlutterKeyEvent(@NonNull KeyEvent androidKeyEvent) {
       this(androidKeyEvent, null);
@@ -259,7 +244,7 @@ public class KeyEventChannel {
           androidKeyEvent.getMetaState(),
           androidKeyEvent.getSource(),
           androidKeyEvent.getRepeatCount(),
-          computeEventId(androidKeyEvent));
+          androidKeyEvent);
     }
 
     public FlutterKeyEvent(
@@ -273,7 +258,7 @@ public class KeyEventChannel {
         int metaState,
         int source,
         int repeatCount,
-        long eventId) {
+        KeyEvent event) {
       this.deviceId = deviceId;
       this.flags = flags;
       this.plainCodePoint = plainCodePoint;
@@ -284,7 +269,7 @@ public class KeyEventChannel {
       this.metaState = metaState;
       this.source = source;
       this.repeatCount = repeatCount;
-      this.eventId = eventId;
+      this.event = event;
       InputDevice device = InputDevice.getDevice(deviceId);
       if (device != null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
