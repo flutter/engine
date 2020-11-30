@@ -1,4 +1,4 @@
-Signature: ce56fa73157dfb94ff3edf0e65cf6627
+Signature: e3e8a465e12a516bb22f7fa8f82b44a5
 
 UNUSED LICENSES:
 
@@ -4019,6 +4019,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSampleUsage.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionPrototype.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLInlineMarker.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPrefixExpression.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLStructDefinition.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSymbolAlias.h
 FILE: ../../../third_party/skia/src/utils/SkCustomTypeface.cpp
 ----------------------------------------------------------------------------------------------------
@@ -4167,6 +4168,7 @@ FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.h
 FILE: ../../../third_party/skia/src/core/SkM44.cpp
 FILE: ../../../third_party/skia/src/core/SkMarkerStack.cpp
 FILE: ../../../third_party/skia/src/core/SkMarkerStack.h
+FILE: ../../../third_party/skia/src/core/SkMipmapBuilder.h
 FILE: ../../../third_party/skia/src/core/SkOpts_erms.cpp
 FILE: ../../../third_party/skia/src/core/SkVerticesPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.cpp
