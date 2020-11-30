@@ -9,12 +9,15 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/mapping.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 
 namespace flutter {
 namespace testing {
 
 inline constexpr const char* kAOTAppELFFileName = "app_elf_snapshot.so";
+inline constexpr const char* kAOTAppELFSplitFileName =
+    "app_elf_snapshot.so-2.part.so";
 
 struct LoadedELFDeleter {
   void operator()(Dart_LoadedElf* elf) { ::Dart_UnloadELF(elf); }
@@ -39,6 +42,11 @@ struct ELFAOTSymbols {
 /// @return     The loaded ELF symbols.
 ///
 ELFAOTSymbols LoadELFSymbolFromFixturesIfNeccessary();
+
+ELFAOTSymbols LoadELFSplitSymbolFromFixturesIfNeccessary();
+
+std::unique_ptr<const fml::Mapping> LoadELFSplitSymbolFromFixturesIfNeccessary(
+    std::string symbol_name);
 
 //------------------------------------------------------------------------------
 /// @brief      Prepare the settings objects various AOT mappings resolvers with

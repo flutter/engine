@@ -387,8 +387,8 @@ class DartIsolate : public UIDartState {
 
   bool LoadLoadingUnit(
       intptr_t loading_unit_id,
-      std::unique_ptr<const fml::SymbolMapping> snapshot_data,
-      std::unique_ptr<const fml::SymbolMapping> snapshot_instructions);
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions);
 
   void LoadLoadingUnitFailure(intptr_t loading_unit_id,
                               const std::string error_message,

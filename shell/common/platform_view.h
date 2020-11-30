@@ -637,10 +637,12 @@ class PlatformView {
   ///             The Dart compiler may generate separate shared libraries
   ///             files called 'loading units' when libraries are imported
   ///             as deferred. Each of these shared libraries are identified
-  ///             by a unique loading unit id. Callers should dlopen the
-  ///             shared library file and use dlsym to resolve the dart
-  ///             symbols. These symbols can then be passed to this method to
-  ///             be dynamically loaded into the VM.
+  ///             by a unique loading unit id. Callers should open and resolve
+  ///             a SymbolMapping from the shared library. The Mappings should
+  ///             be moved into this method, as ownership will be assumed by the
+  ///             dart isolate after successful loading and released after
+  ///             shutdown of the dart isolate. If loading fails, the mappings
+  ///             will naturally go out of scope.
   ///
   ///             This method is paired with a RequestDartDeferredLibrary
   ///             invocation that provides the embedder with the loading unit id

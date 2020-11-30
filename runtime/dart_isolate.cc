@@ -338,9 +338,10 @@ fml::RefPtr<fml::TaskRunner> DartIsolate::GetMessageHandlingTaskRunner() const {
 
 bool DartIsolate::LoadLoadingUnit(
     intptr_t loading_unit_id,
-    std::unique_ptr<const fml::SymbolMapping> snapshot_data,
-    std::unique_ptr<const fml::SymbolMapping> snapshot_instructions) {
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {
   tonic::DartState::Scope scope(this);
+
   fml::RefPtr<DartSnapshot> dart_snapshot =
       DartSnapshot::IsolateSnapshotFromMappings(
           std::move(snapshot_data), std::move(snapshot_instructions));
@@ -349,9 +350,8 @@ bool DartIsolate::LoadLoadingUnit(
       loading_unit_id, dart_snapshot->GetDataMapping(),
       dart_snapshot->GetInstructionsMapping());
   if (tonic::LogIfError(result)) {
-    result =
-        Dart_DeferredLoadCompleteError(loading_unit_id, Dart_GetError(result),
-                                       /*transient*/ true);
+    LoadLoadingUnitFailure(loading_unit_id, Dart_GetError(result),
+                           /*transient*/ true);
     return false;
   }
   loading_unit_snapshots_.insert(dart_snapshot);
@@ -1039,8 +1039,14 @@ void DartIsolate::OnShutdownCallback() {
 }
 
 Dart_Handle DartIsolate::OnDartLoadLibrary(intptr_t loading_unit_id) {
-  Current()->platform_configuration()->client()->RequestDartDeferredLibrary(
-      loading_unit_id);
+  if (Current()->platform_configuration()) {
+    Current()->platform_configuration()->client()->RequestDartDeferredLibrary(
+        loading_unit_id);
+  } else {
+    FML_LOG(ERROR) << "Platform Configuration was null. Deferred library load "
+                      "request was not sent for loading unit "
+                   << loading_unit_id << ".";
+  }
   return Dart_Null();
 }
 

@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "flutter/common/settings.h"
+#include "flutter/fml/mapping.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/testing/elf_loader.h"
 #include "flutter/testing/test_dart_native_resolver.h"
@@ -29,6 +30,8 @@ class FixtureTest : public ThreadTest {
   void SetSnapshotsAndAssets(Settings& settings);
 
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
+
+  ELFAOTSymbols split_aot_symbols_;
 
  private:
   fml::UniqueFD assets_dir_;
