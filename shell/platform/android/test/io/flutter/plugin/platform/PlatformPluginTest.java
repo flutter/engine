@@ -187,6 +187,7 @@ public class PlatformPluginTest {
     verify(mockFragmentActivity, never()).finish();
     verify(mockPlatformPluginDelegate, times(1)).popSystemNavigator();
     verify(mockFragmentActivity, times(1)).getOnBackPressedDispatcher();
+    verify(onBackPressedDispatcher, times(1)).onBackPressed();
   }
 
   @Test
