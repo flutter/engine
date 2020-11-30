@@ -673,6 +673,8 @@ FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_metal.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_metal.mm
+FILE: ../../../flutter/shell/gpu/gpu_surface_metal_delegate.cc
+FILE: ../../../flutter/shell/gpu/gpu_surface_metal_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_software_delegate.cc
@@ -747,6 +749,8 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/Flutte
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartExecutor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dynamicfeatures/DynamicFeatureManager.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dynamicfeatures/PlayStoreDynamicFeatureManager.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/ApplicationInfoLoader.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/FlutterApplicationInfo.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/FlutterLoader.java
@@ -930,6 +934,8 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStan
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_codecs_unittest.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_standard_codec_unittest.mm
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Flutter.podspec
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h
@@ -1052,6 +1058,10 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngin
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h
@@ -1292,6 +1302,9 @@ FILE: ../../../flutter/shell/platform/glfw/keyboard_hook_handler.h
 FILE: ../../../flutter/shell/platform/glfw/platform_handler.cc
 FILE: ../../../flutter/shell/platform/glfw/platform_handler.h
 FILE: ../../../flutter/shell/platform/glfw/public/flutter_glfw.h
+FILE: ../../../flutter/shell/platform/glfw/system_utils.cc
+FILE: ../../../flutter/shell/platform/glfw/system_utils.h
+FILE: ../../../flutter/shell/platform/glfw/system_utils_test.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/linux/egl_utils.cc

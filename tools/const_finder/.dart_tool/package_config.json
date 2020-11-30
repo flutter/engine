@@ -26,6 +26,12 @@
       "languageVersion": "2.3"
     },
     {
+      "name": "collection",
+      "rootUri": "../../../../third_party/dart/third_party/pkg/collection",
+      "packageUri": "lib",
+      "languageVersion": "2.10"
+    },
+    {
       "name": "path",
       "rootUri": "../../../../third_party/dart/third_party/pkg/path",
       "packageUri": "lib",
