@@ -16,9 +16,10 @@ import io.flutter.embedding.engine.dynamicfeatures.PlayStoreDynamicFeatureManage
  * <p>To use this class, either have your custom application class extend
  * FlutterPlayStoreSplitApplication or use it directly in the app's AndroidManifest.xml by adding
  * the following line:
+ *
  * <pre>{@code
  * <manifest
-      ...
+ *    ...
  *    <application
  *       android:name="io.flutter.app.FlutterPlayStoreSplitApplication"
  *       ...>
@@ -29,6 +30,7 @@ import io.flutter.embedding.engine.dynamicfeatures.PlayStoreDynamicFeatureManage
  * This class is meant to be used with the Google Play store. Custom non-play store applications do
  * not need to extend SplitCompatApplication and should inject a custom {@link
  * io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager} implementation like so:
+ *
  * <pre>{@code
  * FlutterInjector.setInstance(
  *      new FlutterInjector.Builder().setDynamicFeatureManager(yourCustomManager).build());
