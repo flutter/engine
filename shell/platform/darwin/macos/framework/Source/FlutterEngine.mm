@@ -370,6 +370,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (FlutterCompositor*)createFlutterCompositor {
+  // TODO(richardjcai): Add support for creating a FlutterGLCompositor
+  // with a nil _viewController for headless engines.
+  // https://github.com/flutter/flutter/issues/71606
+  if (_viewController == nullptr) {
+    return nullptr;
+  }
+
   [_mainOpenGLContext makeCurrentContext];
 
   _macOSGLCompositor = std::make_unique<flutter::FlutterGLCompositor>(_viewController);
@@ -404,6 +411,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   __weak FlutterEngine* weak_self = self;
   _macOSGLCompositor->SetPresentCallback(
       [weak_self]() { return [weak_self engineCallbackOnPresent]; });
+
+  _compositor.avoid_backing_store_cache = true;
 
   return &_compositor;
 }
