@@ -1021,7 +1021,7 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 
   if (engine_) {
     engine_->NotifyIdle(deadline);
-    volatile_path_tracker_->onFrame();
+    volatile_path_tracker_->OnFrame();
   }
 }
 

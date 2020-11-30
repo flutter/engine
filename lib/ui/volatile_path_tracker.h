@@ -14,6 +14,13 @@
 
 namespace flutter {
 
+/// A cache for paths drawn from dart:ui.
+///
+/// Whenever a flutter::CanvasPath is created, it must Insert an entry into
+/// this cache. Whenever a frame is drawn, the shell must call OnFrame. The
+/// cache will flip the volatility bit on the SkPath and remove it from the
+/// cache. If the Dart object is released, Erase must be called to avoid
+/// tracking a path that is no longer referenced in Dart code.
 class VolatilePathTracker {
  public:
   struct Path {
@@ -28,12 +35,12 @@ class VolatilePathTracker {
 
   // Starts tracking a path.
   // Must be called from the UI task runner.
-  void insert(std::shared_ptr<Path> path);
+  void Insert(std::shared_ptr<Path> path);
 
   // Removes a path from tracking.
   //
   // May be called from any thread.
-  void erase(std::shared_ptr<Path> path);
+  void Erase(std::shared_ptr<Path> path);
 
   // Called by the shell at the end of a frame after notifying Dart about idle
   // time.
@@ -42,7 +49,7 @@ class VolatilePathTracker {
   // survived the |number_of_frames_until_non_volatile|.
   //
   // Must be called from the UI task runner.
-  void onFrame();
+  void OnFrame();
 
  private:
   fml::RefPtr<fml::TaskRunner> ui_task_runner_;

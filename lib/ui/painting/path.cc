@@ -79,14 +79,17 @@ CanvasPath::~CanvasPath() = default;
 void CanvasPath::resetVolatility() {
   if (!tracked_path_->tracking_volatility) {
     mutable_path().setIsVolatile(true);
+    tracked_path_->frame_count = 0;
     tracked_path_->tracking_volatility = true;
-    path_tracker_->insert(tracked_path_);
+    path_tracker_->Insert(tracked_path_);
   }
 }
 
 void CanvasPath::ReleaseDartWrappableReference() const {
   FML_DCHECK(path_tracker_);
-  path_tracker_->erase(tracked_path_);
+  if (tracked_path_->tracking_volatility) {
+    path_tracker_->Erase(tracked_path_);
+  }
 }
 
 int CanvasPath::getFillType() {
@@ -276,8 +279,7 @@ void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
         ToDart("Path.extendWithPath called with non-genuine Path."));
     return;
   }
-  path->mutable_path().addPath(path->path(), dx, dy,
-                               SkPath::kExtend_AddPathMode);
+  mutable_path().addPath(path->path(), dx, dy, SkPath::kExtend_AddPathMode);
   resetVolatility();
 }
 
@@ -294,8 +296,7 @@ void CanvasPath::extendWithPathAndMatrix(CanvasPath* path,
   SkMatrix matrix = ToSkMatrix(matrix4);
   matrix.setTranslateX(matrix.getTranslateX() + dx);
   matrix.setTranslateY(matrix.getTranslateY() + dy);
-  path->mutable_path().addPath(path->path(), matrix,
-                               SkPath::kExtend_AddPathMode);
+  mutable_path().addPath(path->path(), matrix, SkPath::kExtend_AddPathMode);
   matrix4.Release();
   resetVolatility();
 }
@@ -324,15 +325,16 @@ void CanvasPath::shift(Dart_Handle path_handle, double dx, double dy) {
 void CanvasPath::transform(Dart_Handle path_handle,
                            tonic::Float64List& matrix4) {
   fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
-  auto other_mutable_path = path->mutable_path();
+  auto& other_mutable_path = path->mutable_path();
   mutable_path().transform(ToSkMatrix(matrix4), &other_mutable_path);
   matrix4.Release();
-  resetVolatility();
 }
 
 tonic::Float32List CanvasPath::getBounds() {
   tonic::Float32List rect(Dart_NewTypedData(Dart_TypedData_kFloat32, 4));
   const SkRect& bounds = path().getBounds();
+  FML_DLOG(ERROR) << "Bounds " << bounds.left() << " " << bounds.top() << " "
+                  << bounds.right() << " " << bounds.bottom();
   rect[0] = bounds.left();
   rect[1] = bounds.top();
   rect[2] = bounds.right();
@@ -350,7 +352,7 @@ void CanvasPath::clone(Dart_Handle path_handle) {
   fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
   // per Skia docs, this will create a fast copy
   // data is shared until the source path or dest path are mutated
-  path->tracked_path_->path_ = this->path();
+  path->mutable_path() = this->path();
 }
 
 // This is doomed to be called too early, since Paths are mutable.

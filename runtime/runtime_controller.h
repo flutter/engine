@@ -111,7 +111,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///                                         data that the root isolate can
   ///                                         access in a synchronous manner.
   /// @param[in]  volatile_path_tracker       Cache for tracking path
-  /// volatility.
+  ///                                         volatility.
   ///
   RuntimeController(
       RuntimeDelegate& client,
