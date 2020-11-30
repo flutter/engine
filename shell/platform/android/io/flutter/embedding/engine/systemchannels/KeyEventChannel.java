@@ -117,108 +117,34 @@ public class KeyEventChannel {
   }
 
   private void encodeKeyEvent(
-      @NonNull FlutterKeyEvent event, @NonNull Map<String, Object> message) {
-    message.put("flags", event.flags);
-    message.put("plainCodePoint", event.plainCodePoint);
-    message.put("codePoint", event.codePoint);
-    message.put("keyCode", event.keyCode);
-    message.put("scanCode", event.scanCode);
-    message.put("metaState", event.metaState);
-    if (event.complexCharacter != null) {
-      message.put("character", event.complexCharacter.toString());
+      @NonNull FlutterKeyEvent keyEvent, @NonNull Map<String, Object> message) {
+    message.put("flags", keyEvent.event.getFlags());
+    message.put("plainCodePoint", keyEvent.event.getUnicodeChar(0x0));
+    message.put("codePoint", keyEvent.event.getUnicodeChar());
+    message.put("keyCode", keyEvent.event.getKeyCode());
+    message.put("scanCode", keyEvent.event.getScanCode());
+    message.put("metaState", keyEvent.event.getMetaState());
+    if (keyEvent.complexCharacter != null) {
+      message.put("character", keyEvent.complexCharacter.toString());
     }
-    message.put("source", event.source);
-    message.put("vendorId", event.vendorId);
-    message.put("productId", event.productId);
-    message.put("deviceId", event.deviceId);
-    message.put("repeatCount", event.repeatCount);
+    message.put("source", keyEvent.event.getSource());
+    InputDevice device = InputDevice.getDevice(keyEvent.event.getDeviceId());
+    int vendorId = 0;
+    int productId = 0;
+    if (device != null) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        vendorId = device.getVendorId();
+        productId = device.getProductId();
+      }
+    }
+    message.put("vendorId", vendorId);
+    message.put("productId", productId);
+    message.put("deviceId", keyEvent.event.getDeviceId());
+    message.put("repeatCount", keyEvent.event.getRepeatCount());
   }
 
   /** A key event as defined by Flutter. */
   public static class FlutterKeyEvent {
-    /**
-     * The id for the device this event came from.
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getDeviceId()">KeyEvent.getDeviceId()</a>
-     */
-    public final int deviceId;
-    /**
-     * The flags for this key event.
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getFlags()">KeyEvent.getFlags()</a>
-     */
-    public final int flags;
-    /**
-     * The code point for the Unicode character produced by this event if no meta keys were pressed
-     * (by passing 0 to {@code KeyEvent.getUnicodeChar(int)}).
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getUnicodeChar(int)">KeyEvent.getUnicodeChar(int)</a>
-     */
-    public final int plainCodePoint;
-    /**
-     * The code point for the Unicode character produced by this event, taking into account the meta
-     * keys currently pressed.
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getUnicodeChar()">KeyEvent.getUnicodeChar()</a>
-     */
-    public final int codePoint;
-    /**
-     * The Android key code for this event.
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getKeyCode()">KeyEvent.getKeyCode()</a>
-     */
-    public final int keyCode;
-    /**
-     * The character produced by this event, including any combining characters pressed before it.
-     */
-    @Nullable public final Character complexCharacter;
-    /**
-     * The Android scan code for the key pressed.
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getScanCode()">KeyEvent.getScanCode()</a>
-     */
-    public final int scanCode;
-    /**
-     * The meta key state for the Android key event.
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getMetaState()">KeyEvent.getMetaState()</a>
-     */
-    public final int metaState;
-    /**
-     * The source of the key event.
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getSource()">KeyEvent.getSource()</a>
-     */
-    public final int source;
-    /**
-     * The vendorId of the device that produced this key event.
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/InputDevice?hl=en#getVendorId()">InputDevice.getVendorId()</a>
-     */
-    public final int vendorId;
-    /**
-     * The productId of the device that produced this key event.
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/InputDevice?hl=en#getProductId()">InputDevice.getProductId()</a>
-     */
-    public final int productId;
-    /**
-     * The repeat count for this event.
-     *
-     * @see <a
-     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getRepeatCount()">KeyEvent.getRepeatCount()</a>
-     */
-    public final int repeatCount;
     /**
      * The Android key event that this Flutter key event was created from.
      *
@@ -226,6 +152,10 @@ public class KeyEventChannel {
      * framework.
      */
     public final KeyEvent event;
+    /**
+     * The character produced by this event, including any combining characters pressed before it.
+     */
+    @Nullable public final Character complexCharacter;
 
     public FlutterKeyEvent(@NonNull KeyEvent androidKeyEvent) {
       this(androidKeyEvent, null);
@@ -233,56 +163,8 @@ public class KeyEventChannel {
 
     public FlutterKeyEvent(
         @NonNull KeyEvent androidKeyEvent, @Nullable Character complexCharacter) {
-      this(
-          androidKeyEvent.getDeviceId(),
-          androidKeyEvent.getFlags(),
-          androidKeyEvent.getUnicodeChar(0x0),
-          androidKeyEvent.getUnicodeChar(),
-          androidKeyEvent.getKeyCode(),
-          complexCharacter,
-          androidKeyEvent.getScanCode(),
-          androidKeyEvent.getMetaState(),
-          androidKeyEvent.getSource(),
-          androidKeyEvent.getRepeatCount(),
-          androidKeyEvent);
-    }
-
-    public FlutterKeyEvent(
-        int deviceId,
-        int flags,
-        int plainCodePoint,
-        int codePoint,
-        int keyCode,
-        @Nullable Character complexCharacter,
-        int scanCode,
-        int metaState,
-        int source,
-        int repeatCount,
-        KeyEvent event) {
-      this.deviceId = deviceId;
-      this.flags = flags;
-      this.plainCodePoint = plainCodePoint;
-      this.codePoint = codePoint;
-      this.keyCode = keyCode;
+      this.event = androidKeyEvent;
       this.complexCharacter = complexCharacter;
-      this.scanCode = scanCode;
-      this.metaState = metaState;
-      this.source = source;
-      this.repeatCount = repeatCount;
-      this.event = event;
-      InputDevice device = InputDevice.getDevice(deviceId);
-      if (device != null) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-          this.vendorId = device.getVendorId();
-          this.productId = device.getProductId();
-        } else {
-          this.vendorId = 0;
-          this.productId = 0;
-        }
-      } else {
-        this.vendorId = 0;
-        this.productId = 0;
-      }
     }
   }
 }

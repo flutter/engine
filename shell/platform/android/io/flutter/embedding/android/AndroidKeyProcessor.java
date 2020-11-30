@@ -85,27 +85,27 @@ public class AndroidKeyProcessor {
    * @return true if the key event should not be propagated to other Android components. Delayed
    *     synthesis events will return false, so that other components may handle them.
    */
-  public boolean onKeyEvent(@NonNull KeyEvent event) {
-    int action = event.getAction();
-    if (action != event.ACTION_DOWN && action != event.ACTION_UP) {
+  public boolean onKeyEvent(@NonNull KeyEvent keyEvent) {
+    int action = keyEvent.getAction();
+    if (action != KeyEvent.ACTION_DOWN && action != KeyEvent.ACTION_UP) {
       // There is theoretically a KeyEvent.ACTION_MULTIPLE, but theoretically
       // that isn't sent by Android anymore, so this is just for protection in
       // case the theory is wrong.
       return false;
     }
-    if (eventResponder.isHeadEvent(event)) {
-      // If the event is at the head of the queue of pending events we've seen,
-      // and has the same id, then we know that this is a re-dispatched event, and
+    if (eventResponder.isHeadEvent(keyEvent)) {
+      // If the keyEvent is at the head of the queue of pending events we've seen,
+      // and has the same id, then we know that this is a re-dispatched keyEvent, and
       // we shouldn't respond to it, but we should remove it from tracking now.
       eventResponder.removeHeadEvent();
       return false;
     }
 
-    Character complexCharacter = applyCombiningCharacterToBaseCharacter(event.getUnicodeChar());
+    Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());
     KeyEventChannel.FlutterKeyEvent flutterEvent =
-        new KeyEventChannel.FlutterKeyEvent(event, complexCharacter);
+        new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter);
 
-    eventResponder.addEvent(event);
+    eventResponder.addEvent(keyEvent);
     if (action == KeyEvent.ACTION_DOWN) {
       keyEventChannel.keyDown(flutterEvent);
     } else {
