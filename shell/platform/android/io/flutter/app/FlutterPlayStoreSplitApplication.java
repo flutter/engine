@@ -40,8 +40,7 @@ public class FlutterPlayStoreSplitApplication extends SplitCompatApplication {
   public void onCreate() {
     super.onCreate();
     // Create and inject a PlayStoreDynamicFeatureManager, which is the default manager for
-    // interacting
-    // with the Google Play Store.
+    // interacting with the Google Play Store.
     PlayStoreDynamicFeatureManager dynamicFeatureManager =
         new PlayStoreDynamicFeatureManager(this, null);
     FlutterInjector.setInstance(
