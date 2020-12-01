@@ -31,8 +31,9 @@ void VolatilePathTracker::Erase(std::shared_ptr<Path> path) {
 
 void VolatilePathTracker::OnFrame() {
   FML_DCHECK(ui_task_runner_->RunsTasksOnCurrentThread());
+  std::string total_count = std::to_string(paths_.size());
   TRACE_EVENT1("flutter", "VolatilePathTracker::OnFrame", "count",
-               std::to_string(paths_.size()).c_str());
+               total_count.c_str());
 
   Drain();
 
@@ -47,9 +48,9 @@ void VolatilePathTracker::OnFrame() {
       ++it;
     }
   }
-  std::string count = std::to_string(paths_.size());
+  std::string post_removal_count = std::to_string(paths_.size());
   TRACE_EVENT_INSTANT1("flutter", "VolatilePathTracker::OnFrame", "count",
-                       count.c_str());
+                       post_removal_count.c_str());
 }
 
 void VolatilePathTracker::Drain() {
