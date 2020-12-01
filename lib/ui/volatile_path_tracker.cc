@@ -24,8 +24,8 @@ void VolatilePathTracker::Erase(std::shared_ptr<Path> path) {
     return;
   }
 
-  needs_drain_ = true;
   std::scoped_lock lock(paths_to_remove_mutex_);
+  needs_drain_ = true;
   paths_to_remove_.push_back(path);
 }
 
@@ -58,13 +58,13 @@ void VolatilePathTracker::Drain() {
     {
       std::scoped_lock lock(paths_to_remove_mutex_);
       paths_to_remove.swap(paths_to_remove_);
+      needs_drain_ = false;
     }
     TRACE_EVENT_INSTANT1("flutter", "VolatilePathTracker::Drain", "count",
                          std::to_string(paths_to_remove.size()).c_str());
     for (auto path : paths_to_remove) {
       paths_.erase(path);
     }
-    needs_drain_ = false;
   }
 }
 

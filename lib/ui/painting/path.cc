@@ -317,7 +317,7 @@ bool CanvasPath::contains(double x, double y) {
 
 void CanvasPath::shift(Dart_Handle path_handle, double dx, double dy) {
   fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
-  auto other_mutable_path = path->mutable_path();
+  auto& other_mutable_path = path->mutable_path();
   mutable_path().offset(dx, dy, &other_mutable_path);
   resetVolatility();
 }
@@ -333,8 +333,6 @@ void CanvasPath::transform(Dart_Handle path_handle,
 tonic::Float32List CanvasPath::getBounds() {
   tonic::Float32List rect(Dart_NewTypedData(Dart_TypedData_kFloat32, 4));
   const SkRect& bounds = path().getBounds();
-  FML_DLOG(ERROR) << "Bounds " << bounds.left() << " " << bounds.top() << " "
-                  << bounds.right() << " " << bounds.bottom();
   rect[0] = bounds.left();
   rect[1] = bounds.top();
   rect[2] = bounds.right();
