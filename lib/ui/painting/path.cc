@@ -344,7 +344,7 @@ tonic::Float32List CanvasPath::getBounds() {
 
 bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
   return Op(path1->path(), path2->path(), static_cast<SkPathOp>(operation),
-            &tracked_path_->path_);
+            &tracked_path_->path);
   resetVolatility();
 }
 

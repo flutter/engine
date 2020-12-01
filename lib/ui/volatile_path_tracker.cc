@@ -13,25 +13,34 @@ VolatilePathTracker::VolatilePathTracker(
 void VolatilePathTracker::Insert(std::shared_ptr<Path> path) {
   FML_DCHECK(ui_task_runner_->RunsTasksOnCurrentThread());
   FML_DCHECK(path);
-  FML_DCHECK(path->path_.isVolatile());
+  FML_DCHECK(path->path.isVolatile());
   paths_.insert(path);
 }
 
 void VolatilePathTracker::Erase(std::shared_ptr<Path> path) {
   FML_DCHECK(path);
-  fml::TaskRunner::RunNowOrPostTask(ui_task_runner_,
-                                    [&]() { paths_.erase(path); });
+  if (ui_task_runner_->RunsTasksOnCurrentThread()) {
+    paths_.erase(path);
+    return;
+  }
+
+  needs_drain_ = true;
+  std::scoped_lock lock(paths_to_remove_mutex_);
+  paths_to_remove_.push_back(path);
 }
 
 void VolatilePathTracker::OnFrame() {
   FML_DCHECK(ui_task_runner_->RunsTasksOnCurrentThread());
   TRACE_EVENT1("flutter", "VolatilePathTracker::OnFrame", "count",
                std::to_string(paths_.size()).c_str());
+
+  Drain();
+
   for (auto it = paths_.begin(), last = paths_.end(); it != last;) {
     auto path = *it;
     path->frame_count++;
-    if (path->frame_count >= number_of_frames_until_non_volatile) {
-      path->path_.setIsVolatile(false);
+    if (path->frame_count >= kFramesOfVolatility) {
+      path->path.setIsVolatile(false);
       path->tracking_volatility = false;
       it = paths_.erase(it);
     } else {
@@ -40,6 +49,23 @@ void VolatilePathTracker::OnFrame() {
   }
   TRACE_EVENT_INSTANT1("flutter", "VolatilePathTracker::OnFrame", "count",
                        std::to_string(paths_.size()).c_str());
+}
+
+void VolatilePathTracker::Drain() {
+  if (needs_drain_) {
+    TRACE_EVENT0("flutter", "VolatilePathTracker::Drain");
+    std::deque<std::shared_ptr<Path>> paths_to_remove;
+    {
+      std::scoped_lock lock(paths_to_remove_mutex_);
+      paths_to_remove.swap(paths_to_remove_);
+    }
+    TRACE_EVENT_INSTANT1("flutter", "VolatilePathTracker::Drain", "count",
+                         std::to_string(paths_to_remove.size()).c_str());
+    for (auto path : paths_to_remove) {
+      paths_.erase(path);
+    }
+    needs_drain_ = false;
+  }
 }
 
 }  // namespace flutter

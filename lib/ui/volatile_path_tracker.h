@@ -5,6 +5,8 @@
 #ifndef FLUTTER_LIB_VOLATILE_PATH_TRACKER_H_
 #define FLUTTER_LIB_VOLATILE_PATH_TRACKER_H_
 
+#include <deque>
+#include <mutex>
 #include <unordered_set>
 
 #include "flutter/fml/macros.h"
@@ -26,12 +28,12 @@ class VolatilePathTracker {
   struct Path {
     bool tracking_volatility = false;
     int frame_count = 0;
-    SkPath path_;
+    SkPath path;
   };
 
   explicit VolatilePathTracker(fml::RefPtr<fml::TaskRunner> ui_task_runner);
 
-  static constexpr int number_of_frames_until_non_volatile = 2;
+  static constexpr int kFramesOfVolatility = 2;
 
   // Starts tracking a path.
   // Must be called from the UI task runner.
@@ -46,14 +48,20 @@ class VolatilePathTracker {
   // time.
   //
   // This method will flip the volatility bit to false for any paths that have
-  // survived the |number_of_frames_until_non_volatile|.
+  // survived the |kFramesOfVolatility|.
   //
   // Must be called from the UI task runner.
   void OnFrame();
 
  private:
   fml::RefPtr<fml::TaskRunner> ui_task_runner_;
+  std::atomic_bool needs_drain_ = false;
+  std::mutex paths_to_remove_mutex_;
+  std::deque<std::shared_ptr<Path>> paths_to_remove_;
   std::unordered_set<std::shared_ptr<Path>> paths_;
+
+  void Drain();
+
   FML_DISALLOW_COPY_AND_ASSIGN(VolatilePathTracker);
 };
 

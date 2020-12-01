@@ -37,7 +37,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   static fml::RefPtr<CanvasPath> CreateFrom(Dart_Handle path_handle,
                                             const SkPath& src) {
     fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
-    path->tracked_path_->path_ = src;
+    path->tracked_path_->path = src;
     return path;
   }
 
@@ -109,7 +109,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   bool op(CanvasPath* path1, CanvasPath* path2, int operation);
   void clone(Dart_Handle path_handle);
 
-  const SkPath& path() const { return tracked_path_->path_; }
+  const SkPath& path() const { return tracked_path_->path; }
 
   size_t GetAllocationSize() const override;
 
@@ -126,7 +126,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   // Must be called whenever the path is created or mutated.
   void resetVolatility();
 
-  SkPath& mutable_path() { return tracked_path_->path_; }
+  SkPath& mutable_path() { return tracked_path_->path; }
 };
 
 }  // namespace flutter

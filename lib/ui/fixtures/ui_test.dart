@@ -148,3 +148,12 @@ Future<void> pumpImage() async {
 }
 void _captureImageAndPicture(Image image, Picture picture) native 'CaptureImageAndPicture';
 Future<void> _onBeginFrameDone() native 'OnBeginFrameDone';
+
+@pragma('vm:entry-point')
+void create100CollectablePaths() {
+  const int numberOfPaths = 100;
+  final List<Path> paths = List<Path>.generate(numberOfPaths, (int index) {
+    return Path()..lineTo(index.toDouble(), index.toDouble() * 2);
+  });
+  assert(paths.length == numberOfPaths);
+}
