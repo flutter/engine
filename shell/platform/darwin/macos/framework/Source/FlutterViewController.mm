@@ -84,7 +84,7 @@ struct KeyboardState {
 /**
  * A list of additional responders to keyboard events. Keybord events are forwarded to all of them.
  */
-@property(nonatomic) NSMutableOrderedSet<NSResponder*>* additionalKeyResponders;
+@property(nonatomic) NSMutableOrderedSet<FlutterIntermediateKeyResponder*>* additionalKeyResponders;
 
 /**
  * The tracking area used to generate hover events, if enabled.
@@ -318,11 +318,11 @@ static void CommonInit(FlutterViewController* controller) {
   return static_cast<FlutterView*>(self.view);
 }
 
-- (void)addKeyResponder:(NSResponder*)responder {
+- (void)addKeyResponder:(FlutterIntermediateKeyResponder*)responder {
   [self.additionalKeyResponders addObject:responder];
 }
 
-- (void)removeKeyResponder:(NSResponder*)responder {
+- (void)removeKeyResponder:(FlutterIntermediateKeyResponder*)responder {
   [self.additionalKeyResponders removeObject:responder];
 }
 
@@ -493,18 +493,22 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type {
   if ([type isEqual:@"keydown"]) {
-    for (NSResponder* responder in self.additionalKeyResponders) {
-      if ([responder respondsToSelector:@selector(keyDown:)]) {
-        [responder keyDown:event];
+    for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
+      if ([responder respondsToSelector:@selector(handleKeyDown:)]) {
+        if ([responder handleKeyDown:event]) {
+          return;
+        }
       }
     }
     if ([self.nextResponder respondsToSelector:@selector(keyDown:)]) {
       [self.nextResponder keyDown:event];
     }
   } else if ([type isEqual:@"keyup"]) {
-    for (NSResponder* responder in self.additionalKeyResponders) {
-      if ([responder respondsToSelector:@selector(keyUp:)]) {
-        [responder keyUp:event];
+    for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
+      if ([responder respondsToSelector:@selector(handleKeyUp:)]) {
+        if ([responder handleKeyUp:event]) {
+          return;
+        }
       }
     }
     if ([self.nextResponder respondsToSelector:@selector(keyUp:)]) {

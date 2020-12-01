@@ -143,7 +143,7 @@ TEST(FlutterViewControllerTest, TestKeyEventsAreNotPropagatedIfHandled) {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
                                                                                  bundle:nil];
-  id responderMock = OCMClassMock([NSResponder class]);
+  id responderMock = OCMClassMock([FlutterIntermediateKeyResponder class]);
   [viewController addKeyResponder:responderMock];
   NSDictionary* expectedEvent = @{
     @"keymap" : @"macos",
@@ -173,7 +173,7 @@ TEST(FlutterViewControllerTest, TestKeyEventsAreNotPropagatedIfHandled) {
   [viewController keyDown:event];
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [responderMock keyDown:[OCMArg any]]);
+        [responderMock handleKeyDown:[OCMArg any]]);
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
         [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
                                    message:encodedKeyEvent
@@ -193,7 +193,7 @@ TEST(FlutterViewControllerTest, TestKeyEventsAreNotPropagatedIfHandled) {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
                                                                                  bundle:nil];
-  id responderMock = OCMClassMock([NSResponder class]);
+  id responderMock = OCMClassMock([FlutterIntermediateKeyResponder class]);
   [viewController addKeyResponder:responderMock];
   NSDictionary* expectedEvent = @{
     @"keymap" : @"macos",
@@ -223,7 +223,7 @@ TEST(FlutterViewControllerTest, TestKeyEventsAreNotPropagatedIfHandled) {
   [viewController keyDown:event];
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        never(), [responderMock keyDown:[OCMArg any]]);
+        never(), [responderMock handleKeyDown:[OCMArg any]]);
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
         [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
                                    message:encodedKeyEvent

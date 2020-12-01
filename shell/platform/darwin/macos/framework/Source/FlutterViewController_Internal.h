@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
 @interface FlutterViewController ()
@@ -17,14 +18,14 @@
 @property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
 
 /**
- * Adds a responder for keyboard events. Key up and key down events are forwarded to all added
- * responders.
+ * Adds an intermediate responder for keyboard events. Key up and key down events are forwarded to
+ * all added responders, and they either handle the keys or not.
  */
-- (void)addKeyResponder:(nonnull NSResponder*)responder;
+- (void)addKeyResponder:(nonnull FlutterIntermediateKeyResponder*)responder;
 
 /**
- * Removes a responder for keyboard events.
+ * Removes an intermediate responder for keyboard events.
  */
-- (void)removeKeyResponder:(nonnull NSResponder*)responder;
+- (void)removeKeyResponder:(nonnull FlutterIntermediateKeyResponder*)responder;
 
 @end
