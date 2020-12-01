@@ -434,7 +434,7 @@ class DartIsolate : public UIDartState {
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
               bool is_root_isolate,
-              std::shared_ptr<VolatilePathTracker> volatile_path_tracker_);
+              std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
 
   [[nodiscard]] bool Initialize(Dart_Isolate isolate);
 
