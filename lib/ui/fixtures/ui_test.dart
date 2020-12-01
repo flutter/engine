@@ -38,7 +38,7 @@ void createVertices() {
 void _validateVertices(Vertices vertices) native 'ValidateVertices';
 
 @pragma('vm:entry-point')
-void createRetainedPath() {
+void createPath() {
   final Path path = Path()..lineTo(10, 10);
   _validatePath(path);
   // Arbitrarily hold a reference to the path to make sure it does not get
@@ -46,11 +46,6 @@ void createRetainedPath() {
   Future<void>.delayed(const Duration(days: 100)).then((_) {
     path.lineTo(100, 100);
   });
-}
-@pragma('vm:entry-point')
-void createCollectablePath() {
-  final Path path = Path()..lineTo(10, 10);
-  _validatePath(path);
 }
 void _validatePath(Path path) native 'ValidatePath';
 

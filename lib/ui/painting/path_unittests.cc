@@ -20,16 +20,19 @@ TEST_F(ShellTest, PathVolatilityTracking) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
   CanvasPath* path;
-  auto native_validate_path = [message_latch,
-                               &path](Dart_NativeArguments args) {
+  std::shared_ptr<VolatilePathTracker> tracker;
+  auto native_validate_path = [message_latch, &path,
+                               &tracker](Dart_NativeArguments args) {
     auto handle = Dart_GetNativeArgument(args, 0);
     intptr_t peer = 0;
     Dart_Handle result = Dart_GetNativeInstanceField(
         handle, tonic::DartWrappable::kPeerIndex, &peer);
-    ASSERT_FALSE(Dart_IsError(result));
+    EXPECT_FALSE(Dart_IsError(result));
     path = reinterpret_cast<CanvasPath*>(peer);
-    ASSERT_TRUE(path);
-    ASSERT_TRUE(path->path().isVolatile());
+    EXPECT_TRUE(path);
+    EXPECT_TRUE(path->path().isVolatile());
+    tracker = UIDartState::Current()->GetVolatilePathTracker();
+    EXPECT_TRUE(tracker);
     message_latch->Signal();
   };
 
@@ -48,7 +51,7 @@ TEST_F(ShellTest, PathVolatilityTracking) {
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("createRetainedPath");
+  configuration.SetEntrypoint("createPath");
   PlatformViewNotifyCreated(shell.get());
 
   shell->RunEngine(std::move(configuration), [](auto result) {
@@ -57,11 +60,16 @@ TEST_F(ShellTest, PathVolatilityTracking) {
 
   message_latch->Wait();
   ASSERT_TRUE(path);
-  PumpOneFrame(shell.get());
-  ASSERT_TRUE(path->path().isVolatile());
-  PumpOneFrame(shell.get());
-  ASSERT_FALSE(path->path().isVolatile());
 
+  message_latch->Reset();
+  task_runners.GetUITaskRunner()->PostTask([&tracker, &path, &message_latch]() {
+    tracker->OnFrame();
+    EXPECT_TRUE(path->path().isVolatile());
+    tracker->OnFrame();
+    EXPECT_FALSE(path->path().isVolatile());
+    message_latch->Signal();
+  });
+  message_latch->Wait();
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
@@ -69,16 +77,19 @@ TEST_F(ShellTest, PathVolatilityTrackingCollected) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
   CanvasPath* path;
-  auto native_validate_path = [message_latch,
-                               &path](Dart_NativeArguments args) {
+  std::shared_ptr<VolatilePathTracker> tracker;
+  auto native_validate_path = [message_latch, &path,
+                               &tracker](Dart_NativeArguments args) {
     auto handle = Dart_GetNativeArgument(args, 0);
     intptr_t peer = 0;
     Dart_Handle result = Dart_GetNativeInstanceField(
         handle, tonic::DartWrappable::kPeerIndex, &peer);
-    ASSERT_FALSE(Dart_IsError(result));
+    EXPECT_FALSE(Dart_IsError(result));
     path = reinterpret_cast<CanvasPath*>(peer);
-    ASSERT_TRUE(path);
-    ASSERT_TRUE(path->path().isVolatile());
+    EXPECT_TRUE(path);
+    EXPECT_TRUE(path->path().isVolatile());
+    tracker = UIDartState::Current()->GetVolatilePathTracker();
+    EXPECT_TRUE(tracker);
     message_latch->Signal();
   };
 
@@ -97,7 +108,7 @@ TEST_F(ShellTest, PathVolatilityTrackingCollected) {
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("createCollectablePath");
+  configuration.SetEntrypoint("createPath");
   PlatformViewNotifyCreated(shell.get());
 
   shell->RunEngine(std::move(configuration), [](auto result) {
@@ -106,12 +117,22 @@ TEST_F(ShellTest, PathVolatilityTrackingCollected) {
 
   message_latch->Wait();
   ASSERT_TRUE(path);
-  PumpOneFrame(shell.get());
-  ASSERT_TRUE(path->path().isVolatile());
-  PumpOneFrame(shell.get());
-  // Because the path got GC'd, it was removed from the cache and we're the
-  // only one holding it.
-  ASSERT_TRUE(path->path().isVolatile());
+
+  message_latch->Reset();
+  task_runners.GetUITaskRunner()->PostTask([&tracker, &path, &message_latch]() {
+    tracker->OnFrame();
+    EXPECT_TRUE(path->path().isVolatile());
+
+    // simulate GC
+    path->ReleaseDartWrappableReference();
+
+    tracker->OnFrame();
+    // Because the path got GC'd, it was removed from the cache and we're the
+    // only one holding it.
+    EXPECT_TRUE(path->path().isVolatile());
+    message_latch->Signal();
+  });
+  message_latch->Wait();
 
   DestroyShell(std::move(shell), std::move(task_runners));
 }
