@@ -6,7 +6,6 @@
 
 #include <cstddef>
 
-// #include "base/optional.h"
 #include "../ax_enums.h"
 #include "../ax_node_data.h"
 #include "ax_platform_node_delegate.h"

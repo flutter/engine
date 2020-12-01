@@ -11,22 +11,12 @@
 #include <utility>
 
 #include "base/auto_reset.h"
-// #include "base/check_op.h"
-// #include "base/command_line.h"
-// #include "base/memory/ptr_util.h"
-// #include "base/no_destructor.h"
-// #include "base/FML_DCHECK(false).h"
-// #include "base/stl_util.h"
-// #include "base/strings/stringprintf.h"
-#include "accessibility_switches.h"
 #include "ax_enums.h"
-// #include "ax_language_detection.h"
 #include "ax_node.h"
 #include "ax_node_position.h"
 #include "ax_role_properties.h"
 #include "ax_table_info.h"
 #include "ax_tree_observer.h"
-// #include "ui/gfx/transform.h"
 
 namespace ax {
 
@@ -278,9 +268,11 @@ struct AXTreeUpdateState {
 
   // Returns whether this update reparents |node|.
   bool IsReparentedNode(const AXNode* node) const {
-    FML_DCHECK(AXTreePendingStructureStatus::kComplete == pending_update_status)
-        << "This method should not be called before pending changes have "
-           "finished computing.";
+    if (AXTreePendingStructureStatus::kComplete != pending_update_status) {
+      FML_LOG(ERROR) << "This method should not be called before pending changes have "
+                        "finished computing.";
+      FML_DCHECK(false);
+    }
     PendingStructureChanges* data = GetPendingStructureChanges(node->id());
     if (!data)
       return false;
@@ -297,18 +289,22 @@ struct AXTreeUpdateState {
   // Returns true if the node should exist in the tree but doesn't have
   // any node data yet.
   bool DoesPendingNodeRequireInit(AXNode::AXID node_id) const {
-    FML_DCHECK(AXTreePendingStructureStatus::kComputing == pending_update_status)
-        << "This method should only be called while computing pending changes, "
-           "before updates are made to the tree.";
+    if (AXTreePendingStructureStatus::kComputing != pending_update_status) {
+      FML_LOG(ERROR) << "This method should only be called while computing pending changes, "
+                        "before updates are made to the tree.";
+      FML_DCHECK(false);
+    }
     PendingStructureChanges* data = GetPendingStructureChanges(node_id);
     return data && data->DoesNodeRequireInit();
   }
 
   // Returns the parent node id for the pending node.
   std::optional<AXNode::AXID> GetParentIdForPendingNode(AXNode::AXID node_id) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComputing == pending_update_status)
-        << "This method should only be called while computing pending changes, "
-           "before updates are made to the tree.";
+    if (AXTreePendingStructureStatus::kComputing != pending_update_status) {
+      FML_LOG(ERROR) << "This method should only be called while computing pending changes, "
+                        "before updates are made to the tree.";
+      FML_DCHECK(false);
+    }
     PendingStructureChanges* data = GetOrCreatePendingStructureChanges(node_id);
     FML_DCHECK(!data->parent_node_id ||
            ShouldPendingNodeExistInTree(*data->parent_node_id));
@@ -317,17 +313,21 @@ struct AXTreeUpdateState {
 
   // Returns true if this node should exist in the tree.
   bool ShouldPendingNodeExistInTree(AXNode::AXID node_id) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComputing == pending_update_status)
-        << "This method should only be called while computing pending changes, "
-           "before updates are made to the tree.";
+    if (AXTreePendingStructureStatus::kComputing != pending_update_status) {
+      FML_LOG(ERROR) << "This method should only be called while computing pending changes, "
+                        "before updates are made to the tree.";
+      FML_DCHECK(false);
+    }
     return GetOrCreatePendingStructureChanges(node_id)->node_exists;
   }
 
   // Returns the last known node data for a pending node.
   const AXNodeData& GetLastKnownPendingNodeData(AXNode::AXID node_id) const {
-    FML_DCHECK(AXTreePendingStructureStatus::kComputing == pending_update_status)
-        << "This method should only be called while computing pending changes, "
-           "before updates are made to the tree.";
+    if (AXTreePendingStructureStatus::kComputing != pending_update_status) {
+      FML_LOG(ERROR) << "This method should only be called while computing pending changes, "
+                        "before updates are made to the tree.";
+      FML_DCHECK(false);
+    }
     static base::NoDestructor<ax::AXNodeData> empty_data;
     PendingStructureChanges* data = GetPendingStructureChanges(node_id);
     return (data && data->last_known_data) ? *data->last_known_data
@@ -336,17 +336,21 @@ struct AXTreeUpdateState {
 
   // Clear the last known pending data for |node_id|.
   void ClearLastKnownPendingNodeData(AXNode::AXID node_id) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComputing == pending_update_status)
-        << "This method should only be called while computing pending changes, "
-           "before updates are made to the tree.";
+    if (AXTreePendingStructureStatus::kComputing != pending_update_status) {
+      FML_LOG(ERROR) << "This method should only be called while computing pending changes, "
+                        "before updates are made to the tree.";
+      FML_DCHECK(false);
+    }
     GetOrCreatePendingStructureChanges(node_id)->last_known_data = nullptr;
   }
 
   // Update the last known pending node data for |node_data.id|.
   void SetLastKnownPendingNodeData(const AXNodeData* node_data) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComputing == pending_update_status)
-        << "This method should only be called while computing pending changes, "
-           "before updates are made to the tree.";
+    if (AXTreePendingStructureStatus::kComputing != pending_update_status) {
+      FML_LOG(ERROR) << "This method should only be called while computing pending changes, "
+                        "before updates are made to the tree.";
+      FML_DCHECK(false);
+    }
     GetOrCreatePendingStructureChanges(node_data->id)->last_known_data =
         node_data;
   }
@@ -354,9 +358,11 @@ struct AXTreeUpdateState {
   // Returns the number of times the update is expected to destroy a
   // subtree rooted at |node_id|.
   int32_t GetPendingDestroySubtreeCount(AXNode::AXID node_id) const {
-    FML_DCHECK(AXTreePendingStructureStatus::kComplete == pending_update_status)
-        << "This method should not be called before pending changes have "
-           "finished computing.";
+    if (AXTreePendingStructureStatus::kComplete != pending_update_status) {
+      FML_LOG(ERROR) << "This method should not be called before pending changes have "
+                        "finished computing.";
+      FML_DCHECK(false);
+    }
     if (PendingStructureChanges* data = GetPendingStructureChanges(node_id))
       return data->destroy_subtree_count;
     return 0;
@@ -366,9 +372,11 @@ struct AXTreeUpdateState {
   // destroy a subtree rooted at |node_id|.
   // Returns true on success, false on failure when the node will not exist.
   bool IncrementPendingDestroySubtreeCount(AXNode::AXID node_id) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComputing == pending_update_status)
-        << "This method should only be called while computing pending changes, "
-           "before updates are made to the tree.";
+    if (AXTreePendingStructureStatus::kComputing != pending_update_status) {
+      FML_LOG(ERROR) << "This method should only be called while computing pending changes, "
+                        "before updates are made to the tree.";
+      FML_DCHECK(false);
+    }
     PendingStructureChanges* data = GetOrCreatePendingStructureChanges(node_id);
     if (!data->node_exists)
       return false;
@@ -380,9 +388,11 @@ struct AXTreeUpdateState {
   // Decrements the number of times the update is expected to
   // destroy a subtree rooted at |node_id|.
   void DecrementPendingDestroySubtreeCount(AXNode::AXID node_id) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComplete == pending_update_status)
-        << "This method should not be called before pending changes have "
-           "finished computing.";
+    if (AXTreePendingStructureStatus::kComplete != pending_update_status) {
+      FML_LOG(ERROR) << "This method should not be called before pending changes have "
+                        "finished computing.";
+      FML_DCHECK(false);
+    }
     if (PendingStructureChanges* data = GetPendingStructureChanges(node_id)) {
       FML_DCHECK(data->destroy_subtree_count > 0);
       --data->destroy_subtree_count;
@@ -392,9 +402,11 @@ struct AXTreeUpdateState {
   // Returns the number of times the update is expected to destroy
   // a node with |node_id|.
   int32_t GetPendingDestroyNodeCount(AXNode::AXID node_id) const {
-    FML_DCHECK(AXTreePendingStructureStatus::kComplete == pending_update_status)
-        << "This method should not be called before pending changes have "
-           "finished computing.";
+    if (AXTreePendingStructureStatus::kComplete != pending_update_status) {
+      FML_LOG(ERROR) << "This method should not be called before pending changes have "
+                        "finished computing.";
+      FML_DCHECK(false);
+    }
     if (PendingStructureChanges* data = GetPendingStructureChanges(node_id))
       return data->destroy_node_count;
     return 0;
@@ -404,9 +416,11 @@ struct AXTreeUpdateState {
   // destroy a node with |node_id|.
   // Returns true on success, false on failure when the node will not exist.
   bool IncrementPendingDestroyNodeCount(AXNode::AXID node_id) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComputing == pending_update_status)
-        << "This method should only be called while computing pending changes, "
-           "before updates are made to the tree.";
+    if (AXTreePendingStructureStatus::kComputing != pending_update_status) {
+      FML_LOG(ERROR) << "This method should only be called while computing pending changes, "
+                        "before updates are made to the tree.";
+      FML_DCHECK(false);
+    }
     PendingStructureChanges* data = GetOrCreatePendingStructureChanges(node_id);
     if (!data->node_exists)
       return false;
@@ -423,9 +437,11 @@ struct AXTreeUpdateState {
   // Decrements the number of times the update is expected to
   // destroy a node with |node_id|.
   void DecrementPendingDestroyNodeCount(AXNode::AXID node_id) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComplete == pending_update_status)
-        << "This method should not be called before pending changes have "
-           "finished computing.";
+    if (AXTreePendingStructureStatus::kComplete != pending_update_status) {
+      FML_LOG(ERROR) << "This method should not be called before pending changes have "
+                        "finished computing.";
+      FML_DCHECK(false);
+    }
     if (PendingStructureChanges* data = GetPendingStructureChanges(node_id)) {
       FML_DCHECK(data->destroy_node_count > 0);
       --data->destroy_node_count;
@@ -435,9 +451,11 @@ struct AXTreeUpdateState {
   // Returns the number of times the update is expected to create
   // a node with |node_id|.
   int32_t GetPendingCreateNodeCount(AXNode::AXID node_id) const {
-    FML_DCHECK(AXTreePendingStructureStatus::kComplete == pending_update_status)
-        << "This method should not be called before pending changes have "
-           "finished computing.";
+    if (AXTreePendingStructureStatus::kComplete != pending_update_status) {
+      FML_LOG(ERROR) << "This method should not be called before pending changes have "
+                        "finished computing.";
+      FML_DCHECK(false);
+    }
     if (PendingStructureChanges* data = GetPendingStructureChanges(node_id))
       return data->create_node_count;
     return 0;
@@ -449,9 +467,11 @@ struct AXTreeUpdateState {
   bool IncrementPendingCreateNodeCount(
       AXNode::AXID node_id,
       std::optional<AXNode::AXID> parent_node_id) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComputing == pending_update_status)
-        << "This method should only be called while computing pending changes, "
-           "before updates are made to the tree.";
+    if (AXTreePendingStructureStatus::kComputing != pending_update_status) {
+      FML_LOG(ERROR) << "This method should only be called while computing pending changes, "
+                        "before updates are made to the tree.";
+      FML_DCHECK(false);
+    }
     PendingStructureChanges* data = GetOrCreatePendingStructureChanges(node_id);
     if (data->node_exists)
       return false;
@@ -465,9 +485,11 @@ struct AXTreeUpdateState {
   // Decrements the number of times the update is expected to
   // create a node with |node_id|.
   void DecrementPendingCreateNodeCount(AXNode::AXID node_id) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComplete == pending_update_status)
-        << "This method should not be called before pending changes have "
-           "finished computing.";
+    if (AXTreePendingStructureStatus::kComplete != pending_update_status) {
+      FML_LOG(ERROR) << "This method should not be called before pending changes have "
+                        "finished computing.";
+      FML_DCHECK(false);
+    }
     if (PendingStructureChanges* data = GetPendingStructureChanges(node_id)) {
       FML_DCHECK(data->create_node_count > 0);
       --data->create_node_count;
@@ -483,9 +505,11 @@ struct AXTreeUpdateState {
   // Adds the parent of |node_id| to the list of nodes to invalidate unignored
   // cached values.
   void InvalidateParentNodeUnignoredCacheValues(AXNode::AXID node_id) {
-    FML_DCHECK(AXTreePendingStructureStatus::kComputing == pending_update_status)
-        << "This method should only be called while computing pending changes, "
-           "before updates are made to the tree.";
+    if (AXTreePendingStructureStatus::kComputing != pending_update_status) {
+      FML_LOG(ERROR) << "This method should only be called while computing pending changes, "
+                        "before updates are made to the tree.";
+      FML_DCHECK(false);
+    }
     std::optional<AXNode::AXID> parent_node_id =
         GetParentIdForPendingNode(node_id);
     if (parent_node_id) {
@@ -648,19 +672,10 @@ AXTree::AXTree() {
   initial_state.root_id = AXNode::kInvalidAXID;
   initial_state.nodes.push_back(root);
   FML_DCHECK(Unserialize(initial_state)) << error();
-  // TODO(chrishall): should language_detection_manager be a member or pointer?
-  // TODO(chrishall): do we want to initialize all the time, on demand, or only
-  //                  when feature flag is set?
-  // FML_DCHECK(!language_detection_manager);
-  // language_detection_manager =
-  //     std::make_unique<AXLanguageDetectionManager>(this);
 }
 
 AXTree::AXTree(const AXTreeUpdate& initial_state) {
   FML_DCHECK(Unserialize(initial_state)) << error();
-  // FML_DCHECK(!language_detection_manager);
-  // language_detection_manager =
-  //     std::make_unique<AXLanguageDetectionManager>(this);
 }
 
 AXTree::~AXTree() {
@@ -951,10 +966,6 @@ const std::set<AXTreeID> AXTree::GetAllChildTreeIds() const {
 }
 
 bool AXTree::Unserialize(const AXTreeUpdate& update) {
-  // event_intents_ = update.event_intents;
-  // base::ScopedClosureRunner clear_event_intents(base::BindOnce(
-  //     [](std::vector<AXEventIntent>* event_intents) { event_intents->clear(); },
-  //     &event_intents_));
   AXTreeUpdateState update_state(*this);
   const AXNode::AXID old_root_id = root_ ? root_->id() : AXNode::kInvalidAXID;
 
@@ -1254,9 +1265,11 @@ AXNode* AXTree::CreateNode(AXNode* parent,
 
 bool AXTree::ComputePendingChanges(const AXTreeUpdate& update,
                                    AXTreeUpdateState* update_state) {
-  FML_DCHECK(AXTreePendingStructureStatus::kNotStarted ==
-            update_state->pending_update_status)
-      << "Pending changes have already started being computed.";
+  if (AXTreePendingStructureStatus::kNotStarted !=
+      update_state->pending_update_status) {
+    FML_LOG(ERROR) << "Pending changes have already started being computed.";
+    FML_DCHECK(false);
+  }
   update_state->pending_update_status =
       AXTreePendingStructureStatus::kComputing;
 
@@ -1547,8 +1560,10 @@ void AXTree::NotifyNodeWillBeReparentedOrDeleted(
     }
   }
 
-  FML_DCHECK(table_info_map_.find(id) == table_info_map_.end())
-      << "Table info should never be recreated during node deletion";
+  if (table_info_map_.find(id) != table_info_map_.end()) {
+    FML_LOG(ERROR) << "Table info should never be recreated during node deletion";
+    FML_DCHECK(false);
+  }
 }
 
 void AXTree::RecursivelyNotifyNodeDeletedForTreeTeardown(AXNode* node) {
@@ -1940,8 +1955,8 @@ void AXTree::SetEnableExtraMacNodes(bool enabled) {
   if (enable_extra_mac_nodes_ == enabled)
     return;  // No change.
   if (enable_extra_mac_nodes_ && !enabled) {
-    FML_DCHECK(false)
-        << "We don't support disabling the extra Mac nodes once enabled.";
+    FML_LOG(ERROR) << "We don't support disabling the extra Mac nodes once enabled.";
+    FML_DCHECK(false);
     return;
   }
 

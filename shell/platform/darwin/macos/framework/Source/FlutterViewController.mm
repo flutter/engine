@@ -289,32 +289,11 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)setupNotificationCenterObservers {
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-  // [center addObserverForName:nil 
-  //                           object:nil 
-  //                             queue:nil 
-  //                       usingBlock:^(NSNotification *notification){
-  //                           // Explore notification
-  //                           // if ([[notification name] containsString:@"ibility"])
-  //                           NSLog(@"Notification found with:%@",[notification name]);
-  //                       }];
+  // The macOS fires this private message When voiceover turns on or off.
   [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
                  name:@"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification"
                object:nil];
-  // [center addObserver:self
-  //            selector:@selector(onAccessibilityStatusChanged:)
-  //                name:UIAccessibilityVoiceOverStatusDidChangeNotification
-  //              object:nil];
-
-  // [center addObserver:self
-  //            selector:@selector(onAccessibilityStatusChanged:)
-  //                name:UIAccessibilitySwitchControlStatusDidChangeNotification
-  //              object:nil];
-
-  // [center addObserver:self
-  //            selector:@selector(onAccessibilityStatusChanged:)
-  //                name:UIAccessibilitySpeakScreenStatusDidChangeNotification
-  //              object:nil];
 }
 
 #pragma mark - Public methods
@@ -526,7 +505,6 @@ static void CommonInit(FlutterViewController* controller) {
   }
   if(@available(macOS 10.13, *)) {
     NSWorkspace * ws = [NSWorkspace sharedWorkspace];
-    NSLog(@"got notification voiceover enabled ? %d",ws.voiceOverEnabled);
     [_engine updateSemanticsEnabled:ws.voiceOverEnabled];
   }
 }

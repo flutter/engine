@@ -15,10 +15,6 @@
 #include <utility>
 #include <vector>
 
-// #include "base/no_destructor.h"
-// #include "base/strings/string_number_conversions.h"
-// #include "base/strings/string_util.h"
-// #include "base/strings/utf_string_conversions.h"
 #include "third_party/skia/include/core/SkColor.h"
 
 #include "../ax_action_data.h"
@@ -28,7 +24,6 @@
 #include "../ax_tree_data.h"
 #include "ax_platform_node_delegate.h"
 #include "compute_attributes.h"
-// #include "ui/gfx/geometry/rect_conversions.h"
 
 namespace ax {
 
@@ -71,15 +66,6 @@ const char16_t AXPlatformNodeBase::kEmbeddedCharacter = L'\xfffc';
 using UniqueIdMap = std::unordered_map<int32_t, AXPlatformNode*>;
 UniqueIdMap g_unique_id_map;
 
-// #if !BUILDFLAG_INTERNAL_HAS_NATIVE_ACCESSIBILITY()
-// static
-// AXPlatformNode* AXPlatformNode::Create(AXPlatformNodeDelegate* delegate) {
-//   AXPlatformNodeBase* node = new AXPlatformNodeBase();
-//   node->Init(delegate);
-//   return node;
-// }
-// #endif
-
 // static
 AXPlatformNode* AXPlatformNodeBase::GetFromUniqueId(int32_t unique_id) {
   auto iter = g_unique_id_map.find(unique_id);
@@ -88,18 +74,6 @@ AXPlatformNode* AXPlatformNodeBase::GetFromUniqueId(int32_t unique_id) {
 
   return nullptr;
 }
-
-// // static
-// size_t AXPlatformNodeBase::GetInstanceCountForTesting() {
-//   return g_unique_id_map.Get().size();
-// }
-
-// // static
-// void AXPlatformNodeBase::SetOnNotifyEventCallbackForTesting(
-//     ax::Event event_type,
-//     base::RepeatingClosure callback) {
-//   g_on_notify_event_for_testing.Get()[event_type] = std::move(callback);
-// }
 
 AXPlatformNodeBase::AXPlatformNodeBase() = default;
 
@@ -273,9 +247,11 @@ std::optional<int> AXPlatformNodeBase::CompareTo(AXPlatformNodeBase& other) {
 
     int this_uncommon_ancestor_index = this_index_in_parent.value();
     int other_uncommon_ancestor_index = other_index_in_parent.value();
-    FML_DCHECK(this_uncommon_ancestor_index != other_uncommon_ancestor_index)
-        << "Deepest uncommon ancestors should truly be uncommon, i.e. not "
+    if (this_uncommon_ancestor_index == other_uncommon_ancestor_index) {
+      FML_LOG(ERROR) << "Deepest uncommon ancestors should truly be uncommon, i.e. not "
            "the same.";
+      FML_DCHECK(false);
+    }
 
     return std::optional<int>(this_uncommon_ancestor_index -
                                other_uncommon_ancestor_index);
@@ -303,13 +279,7 @@ gfx::NativeViewAccessible AXPlatformNodeBase::GetNativeViewAccessible() {
   return nullptr;
 }
 
-void AXPlatformNodeBase::NotifyAccessibilityEvent(ax::Event event_type) {
-  // if (g_on_notify_event_for_testing.Get().find(event_type) !=
-  //         g_on_notify_event_for_testing.Get().end() &&
-  //     g_on_notify_event_for_testing.Get()[event_type]) {
-  //   g_on_notify_event_for_testing.Get()[event_type].Run();
-  // }
-}
+void AXPlatformNodeBase::NotifyAccessibilityEvent(ax::Event event_type) {}
 
 #if defined(OS_APPLE)
 void AXPlatformNodeBase::AnnounceText(const std::u16string& text) {}
@@ -950,20 +920,16 @@ bool AXPlatformNodeBase::IsScrollable() const {
 }
 
 bool AXPlatformNodeBase::IsHorizontallyScrollable() const {
-  FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollXMin) >= 0)
-      << "Pixel sizes should be non-negative.";
-  FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollXMax) >= 0)
-      << "Pixel sizes should be non-negative.";
+  FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollXMin) >= 0);
+  FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollXMax) >= 0);
   return IsScrollable() &&
          GetIntAttribute(ax::IntAttribute::kScrollXMin) <
              GetIntAttribute(ax::IntAttribute::kScrollXMax);
 }
 
 bool AXPlatformNodeBase::IsVerticallyScrollable() const {
-  FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollYMin) >= 0)
-      << "Pixel sizes should be non-negative.";
-  FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollYMax) >= 0)
-      << "Pixel sizes should be non-negative.";
+  FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollYMin) >= 0);
+  FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollYMax) >= 0);
   return IsScrollable() &&
          GetIntAttribute(ax::IntAttribute::kScrollYMin) <
              GetIntAttribute(ax::IntAttribute::kScrollYMax);
@@ -993,8 +959,7 @@ std::u16string AXPlatformNodeBase::GetValue() const {
 }
 
 void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
-  FML_DCHECK(delegate_) << "Many attributes need to be retrieved from our "
-                       "AXPlatformNodeDelegate.";
+  FML_DCHECK(delegate_);
   // Expose some HTML and ARIA attributes in the IAccessible2 attributes string
   // "display", "tag", and "xml-roles" have somewhat unusual names for
   // historical reasons. Aside from that virtually every ARIA attribute
@@ -1302,15 +1267,6 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
   if (IsTextField())
     AddAttributeToList("text-model", "a1", attributes);
 
-  // Expose input-text type attribute.
-  // std::string type;
-  // std::string html_tag =
-  //     GetStringAttribute(ax::StringAttribute::kHtmlTag);
-  // if (IsPlainTextField() && base::LowerCaseEqualsASCII(html_tag, "input") &&
-  //     GetData().GetHtmlAttribute("type", &type)) {
-  //   AddAttributeToList("text-input-type", type, attributes);
-  // }
-
   std::string details_roles = ComputeDetailsRoles();
   if (!details_roles.empty())
     AddAttributeToList("details-roles", details_roles, attributes);
@@ -1421,7 +1377,7 @@ bool AXPlatformNodeBase::ScrollToNode(ScrollType scroll_type) {
   // coords.
   SkRect r = GetData().relative_bounds.bounds;
   
-  r.offsetTo(0, 0); // r -= r.OffsetFromOrigin();
+  r.offsetTo(0, 0);
   switch (scroll_type) {
     case ScrollType::TopLeft:
       r = SkRect::MakeXYWH(r.x(), r.y(), 0, 0);
@@ -1463,15 +1419,9 @@ bool AXPlatformNodeBase::ScrollToNode(ScrollType scroll_type) {
 void AXPlatformNodeBase::SanitizeStringAttribute(const std::string& input,
                                                  std::string* output) {
   FML_DCHECK(output);
-  // According to the IA2 spec and AT-SPI2, these characters need to be escaped
+  // TODO(chunhtai): According to the IA2 spec and AT-SPI2, these characters need to be escaped
   // with a backslash: backslash, colon, comma, equals and semicolon.  Note
   // that backslash must be replaced first.
-
-  // base::ReplaceChars(input, "\\", "\\\\", output);
-  // base::ReplaceChars(*output, ":", "\\:", output);
-  // base::ReplaceChars(*output, ",", "\\,", output);
-  // base::ReplaceChars(*output, "=", "\\=", output);
-  // base::ReplaceChars(*output, ";", "\\;", output);
 }
 
 AXPlatformNodeBase* AXPlatformNodeBase::GetHyperlinkFromHypertextOffset(
@@ -1583,7 +1533,7 @@ int AXPlatformNodeBase::GetHypertextOffsetFromEndpoint(
   // IsDescendantOf includes the case when endpoint_object == this.
   if (IsDescendantOf(endpoint_object)) {
     if (endpoint_object->IsLeaf()) {
-      FML_DCHECK(endpoint_object == this) << "Text objects cannot have children.";
+      FML_DCHECK(endpoint_object == this);
       return endpoint_offset;
     } else {
       FML_DCHECK(endpoint_offset >= 0);

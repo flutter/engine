@@ -739,27 +739,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   _bridge->AddFlutterSemanticsNodeUpdate(node);
 }
 
-// - (void)printTree:(NSAccessibilityElement*)element msgs:(std::vector<std::string>&)msgs level:(int)level {
-//   NSString* m = [NSString stringWithFormat:@"%@, ",element];
-
-//   msgs[level] += [m UTF8String];
-//   // if (element.isAccessibilityElement)
-//   //   msgs[level] += "true,";
-//   // else
-//   //   msgs[level] += "false,";
-//   // for (id child in element.accessibilityChildren) {
-//   //   NSLog(@"%@ has child %@", element, child);
-//   // }
-//   // NSLog(@"in print tree for level %d accessibilityValue %@, screen bound origin %@, size %@, enabled %d, accessibilityElement %d",level, element.accessibilityValue, NSStringFromPoint(element.accessibilityFrame.origin), NSStringFromSize(element.accessibilityFrame.size), element.accessibilityEnabled, element.accessibilityElement);
-//   for (id child in element.accessibilityChildren) {
-//     [self printTree:child msgs:msgs level:level+1];
-//   }
-// }
-
 - (void)updateSemanticsCustomActions:(const FlutterSemanticsCustomAction*)action {
   FML_DCHECK(_bridge);
   if (action->id == kFlutterSemanticsNodeIdBatchEnd) {
+    // Custom action with id = kFlutterSemanticsNodeIdBatchEnd indicates this is
+    // the end of the update batch.
     _bridge->CommitUpdates();
+    // Retach the accessibility root to the flutter view.
     if (_bridge->GetFlutterAccessibilityFromID(0)) {
       if ((!self.viewController.view.accessibilityChildren || [self.viewController.view.accessibilityChildren count] == 0)) {
         NSAccessibilityElement* root = _bridge->GetFlutterAccessibilityFromID(0)->GetNativeViewAccessible();
@@ -768,12 +754,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     } else {
       self.viewController.view.accessibilityChildren = nil;
     }
-
-    // std::vector<std::string> msgs(10);
-    // [self printTree:self.viewController.view.accessibilityChildren[0] msgs:msgs level:0];
-    // for (auto msg : msgs) {
-    //   NSLog(@"%@", [NSString stringWithUTF8String:msg.data()]);
-    // }
   }
   _bridge->AddFlutterSemanticsCustomActionUpdate(action);
 }

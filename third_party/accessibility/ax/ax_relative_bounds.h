@@ -12,8 +12,6 @@
 
 #include "ax_base_export.h"
 #include "ax_enums.h"
-// #include "ui/gfx/geometry/rect_f.h"
-// #include "ui/gfx/transform.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkRect.h"
 

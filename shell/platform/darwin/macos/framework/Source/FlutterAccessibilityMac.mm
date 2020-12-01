@@ -14,7 +14,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 
 #include "flutter/third_party/accessibility/accessibility_bridge.h"
-// #include "flutter/third_party/accessibility/flutter_accessibility_position.h"
 #include "flutter/third_party/accessibility/ax/ax_node_position.h"
 #include "flutter/third_party/accessibility/ax/ax_action_data.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node.h"
@@ -71,12 +70,6 @@ NSString* const NSAccessibilityMenuItemSelectedNotification =
 NSString* const NSAccessibilityTextStateChangeTypeKey =
     @"AXTextStateChangeType";
 NSString* const NSAccessibilityTextStateSyncKey = @"AXTextStateSync";
-NSString* const NSAccessibilityTextSelectionDirection =
-    @"AXTextSelectionDirection";
-NSString* const NSAccessibilityTextSelectionGranularity =
-    @"AXTextSelectionGranularity";
-NSString* const NSAccessibilityTextSelectionChangedFocus =
-    @"AXTextSelectionChangedFocus";
 NSString* const NSAccessibilityTextChangeElement = @"AXTextChangeElement";
 NSString* const NSAccessibilityTextEditType = @"AXTextEditType";
 NSString* const NSAccessibilityTextChangeValue = @"AXTextChangeValue";
@@ -104,41 +97,17 @@ enum AXTextEditType {
   AXTextEditTypeAttributesChange
 };
 
-enum AXTextSelectionDirection {
-  AXTextSelectionDirectionUnknown,
-  AXTextSelectionDirectionBeginning,
-  AXTextSelectionDirectionEnd,
-  AXTextSelectionDirectionPrevious,
-  AXTextSelectionDirectionNext,
-  AXTextSelectionDirectionDiscontiguous
-};
-
-enum AXTextSelectionGranularity {
-  AXTextSelectionGranularityUnknown,
-  AXTextSelectionGranularityCharacter,
-  AXTextSelectionGranularityWord,
-  AXTextSelectionGranularityLine,
-  AXTextSelectionGranularitySentence,
-  AXTextSelectionGranularityParagraph,
-  AXTextSelectionGranularityPage,
-  AXTextSelectionGranularityDocument,
-  AXTextSelectionGranularityAll
-};
-
 const int kLiveRegionChangeIntervalMS = 20;
 
 extern "C" {
 
-// // The following are private accessibility APIs required for cursor navigation
-// // and text selection. VoiceOver started relying on them in Mac OS X 10.11.
-// #if !defined(MAC_OS_X_VERSION_10_11) || \
-//     MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_11
+// The following are private accessibility APIs required for cursor navigation
+// and text selection. VoiceOver started relying on them in Mac OS X 10.11.
 
 AXTextMarkerRef AXTextMarkerCreate(CFAllocatorRef allocator,
                                    const UInt8* bytes,
                                    CFIndex length);
 
-// #endif  // MAC_OS_X_VERSION_10_11
 
 }  // extern "C"
 
@@ -168,7 +137,6 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
   ax::AXEventGenerator::Event event_type = targeted_event.event_params.event;
   gfx::NativeViewAccessible native_node = GetNativeViewAccessible();
   FML_DCHECK(native_node);
-  FML_LOG(ERROR) << "receives event_type= " << event_type;
 
   NSString* mac_notification = nil;
 
@@ -261,17 +229,12 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
         computeTextEdit(deleted_text, inserted_text, &edit_text_marker);
         NSDictionary* user_info = GetUserInfoForValueChangedNotification(
             native_node, deleted_text, inserted_text, edit_text_marker);
-        NSLog(@"fire event to %@ with %@", native_node, user_info);
-        // FireNativeMacNotification(
-        //     native_node, mac_notification);
-        // FireNativeMacNotification(
-        //     [NSApp mainWindow], mac_notification);
-        FireNativeMacNotificationWithUserInfo(
-            native_node, mac_notification, user_info);
-        FireNativeMacNotificationWithUserInfo(
-            GetBridge()->GetFlutterAccessibilityFromID(kRootNode)->GetNativeViewAccessible(), mac_notification, user_info);
-        // FireNativeMacNotificationWithUserInfo(
-        //     [NSApp mainWindow], mac_notification, user_info);
+        if (user_info) {
+          FireNativeMacNotificationWithUserInfo(
+              native_node, mac_notification, user_info);
+          FireNativeMacNotificationWithUserInfo(
+              GetBridge()->GetFlutterAccessibilityFromID(kRootNode)->GetNativeViewAccessible(), mac_notification, user_info);
+        }
         return;
       }
       break;
@@ -346,8 +309,7 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
     case ax::AXEventGenerator::Event::CHILDREN_CHANGED: {
       // NSAccessibilityCreatedNotification seems to be the only way to let
       // Voiceover pick up layout changes.
-      // FireNativeMacNotification([NSApp mainWindow], NSAccessibilityCreatedNotification);
-      FireNativeMacNotification(native_node, NSAccessibilityFocusedUIElementChangedNotification);
+      FireNativeMacNotification([NSApp mainWindow], NSAccessibilityCreatedNotification);
       return;
     }
     case ax::AXEventGenerator::Event::SUBTREE_CREATED:
@@ -415,7 +377,6 @@ void FlutterAccessibilityMac::OnAccessibilityEvent(AXEventGenerator::TargetedEve
 void FlutterAccessibilityMac::FireNativeMacNotification(
     gfx::NativeViewAccessible native_node,
     NSString* mac_notification) {
-  NSLog(@"fire native mac notification: %@, ", mac_notification);
   FML_DCHECK(mac_notification);
   // FML_DCHECK(native_node);
   NSAccessibilityPostNotification(native_node, mac_notification);
@@ -425,7 +386,6 @@ void FlutterAccessibilityMac::FireNativeMacNotificationWithUserInfo(
     gfx::NativeViewAccessible native_node,
     NSString* mac_notification,
     NSDictionary* user_info) {
-  NSLog(@"fire native mac notification with user info: %@, ", mac_notification);
   FML_DCHECK(mac_notification);
   FML_DCHECK(native_node);
   FML_DCHECK(user_info);
@@ -443,7 +403,6 @@ bool FlutterAccessibilityMac::IsInGeneratedEventBatch(
 
 // FlutterAccessibilityMac override
 void FlutterAccessibilityMac::DispatchAccessibilityAction(uint16_t target, FlutterSemanticsAction action, uint8_t* data, size_t data_size) {
-  FML_LOG(ERROR) << "dispatch action to engine" << action;
   [GetFlutterEngine() dispatchSemanticsAction:target
                                        action:action
                                          data:data
@@ -466,26 +425,11 @@ gfx::NativeViewAccessible FlutterAccessibilityMac::GetParent() {
 SkRect FlutterAccessibilityMac::GetBoundsRect(const AXCoordinateSystem coordinate_system,
                      const AXClippingBehavior clipping_behavior,
                       AXOffscreenResult* offscreen_result) const {
-  // TODO: consider screen dpr and figureout what is offscreen_result.
-  // switch (coordinate_system) {
-  //   case AXCoordinateSystem::kScreenPhysicalPixels:
-  //     NSLog(@"AXCoordinateSystem::kScreenPhysicalPixels");
-  //     break;
-  //   case AXCoordinateSystem::kRootFrame:
-  //     NSLog(@"AXCoordinateSystem::kRootFrame");
-  //     break;
-  //   case AXCoordinateSystem::kFrame:
-  //     NSLog(@"AXCoordinateSystem::kFrame");
-  //     break;
-  //   case AXCoordinateSystem::kScreenDIPs:
-  //     NSLog(@"AXCoordinateSystem::kScreenDIPs");
-  //     break;
-  // }
+  // TODO: consider screen dpr.
   const bool clip_bounds = clipping_behavior == ax::AXClippingBehavior::kClipped;
   bool offscreen = false;
   SkRect bounds = GetBridge()->GetAXTree()->RelativeToTreeBounds(GetAXNode(), GetData().relative_bounds.bounds,
                                                       &offscreen, clip_bounds);
-  // FML_LOG(ERROR) << "id=" << GetData().id<<" offscreen= " << offscreen;
   // Applies window transform.
   NSRect local_bound;
   local_bound.origin.x = bounds.x();

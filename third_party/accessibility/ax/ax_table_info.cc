@@ -8,14 +8,12 @@
 
 #include "flutter/fml/logging.h"
 
-// #include "base/strings/string_util.h"
 #include "ax_constants.h"
 #include "ax_enums.h"
 #include "ax_node.h"
 #include "ax_role_properties.h"
 #include "ax_tree.h"
 #include "ax_tree_observer.h"
-// #include "ui/gfx/geometry/rect_f.h"
 
 using ax::IntAttribute;
 

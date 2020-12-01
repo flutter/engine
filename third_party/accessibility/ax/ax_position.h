@@ -19,20 +19,12 @@
 
 #include "flutter/fml/logging.h"
 
-// #include "base/containers/stack.h"
-// #include "base/i18n/break_iterator.h"
-// #include "base/optional.h"
-// #include "base/stl_util.h"
-// #include "base/strings/string16.h"
-// #include "base/strings/string_number_conversions.h"
-// #include "base/strings/utf_string_conversions.h"
 #include "ax_enum_util.h"
 #include "ax_enums.h"
 #include "ax_node.h"
 #include "ax_node_text_styles.h"
 #include "ax_role_properties.h"
 #include "ax_tree_id.h"
-// #include "ui/gfx/utf16_indexing.h"
 
 namespace ax {
 
@@ -1245,8 +1237,7 @@ class AXPosition {
       //
       // We test for INVALID_OFFSET first, due to the possible performance
       // implications of calling MaxTextOffset().
-      FML_DCHECK(copy->text_offset_ >= INVALID_OFFSET)
-          << "Unrecognized text offset.";
+      FML_DCHECK(copy->text_offset_ >= INVALID_OFFSET);
       if (copy->text_offset_ == INVALID_OFFSET ||
           (copy->text_offset_ > 0 &&
            copy->text_offset_ >= copy->MaxTextOffset())) {
@@ -1625,21 +1616,26 @@ class AXPosition {
         break;
 
       case ax::TextBoundary::kSentenceEnd:
-        FML_DCHECK(false) << "Sentence boundaries are not yet supported.";
+        FML_LOG(ERROR) << "Sentence boundaries are not yet supported.";
+        FML_DCHECK(false);
         return CreateNullPosition();
 
       case ax::TextBoundary::kSentenceStart:
-        FML_DCHECK(false) << "Sentence boundaries are not yet supported.";
+        FML_LOG(ERROR) << "Sentence boundaries are not yet supported.";
+        FML_DCHECK(false);
         return CreateNullPosition();
 
       case ax::TextBoundary::kSentenceStartOrEnd:
-        FML_DCHECK(false) << "Sentence boundaries are not yet supported.";
+        FML_LOG(ERROR) << "Sentence boundaries are not yet supported.";
+        FML_DCHECK(false);
         return CreateNullPosition();
 
       case ax::TextBoundary::kWebPage:
-        FML_DCHECK(boundary_behavior == AXBoundaryBehavior::CrossBoundary)
-            << "We can't reach the start of the document if we are disallowed "
+        if (boundary_behavior != AXBoundaryBehavior::CrossBoundary) {
+          FML_LOG(ERROR) << "We can't reach the start of the document if we are disallowed "
                "from crossing boundaries.";
+          FML_DCHECK(false);
+        }
         switch (direction) {
           case ax::MoveDirection::kBackward:
             resulting_position = CreatePositionAtStartOfDocument();
@@ -2061,32 +2057,7 @@ class AXPosition {
     // position will always be "before character".
     text_position->affinity_ = ax::TextAffinity::kDownstream;
     text_position = text_position->AsLeafTextPosition();
-    FML_DCHECK(!text_position->IsNullPosition())
-        << "Adjusting to a leaf position should never turn a non-null position "
-           "into a null one.";
-
-    // if (!text_position->IsIgnored() && !text_position->AtEndOfAnchor()) {
-    //   std::unique_ptr<base::i18n::BreakIterator> grapheme_iterator =
-    //       text_position->GetGraphemeIterator();
-    //   FML_DCHECK(text_position->text_offset_ >= 0);
-    //   FML_DCHECK(text_position->text_offset_ <=
-    //             int{text_position->name_.length()});
-    //   while (
-    //       !text_position->AtStartOfAnchor() &&
-    //       (!gfx::IsValidCodePointIndex(text_position->name_,
-    //                                    size_t{text_position->text_offset_}) ||
-    //        (grapheme_iterator && !grapheme_iterator->IsGraphemeBoundary(
-    //                                  size_t{text_position->text_offset_})))) {
-    //     --text_position->text_offset_;
-    //   }
-    //   return text_position;
-    // }
-
-    // text_position = text_position->CreateNextLeafTextPosition();
-    // while (!text_position->IsNullPosition() &&
-    //        (text_position->IsIgnored() || !text_position->MaxTextOffset())) {
-    //   text_position = text_position->CreateNextLeafTextPosition();
-    // }
+    FML_DCHECK(!text_position->IsNullPosition());
     return text_position;
   }
 
@@ -2108,44 +2079,7 @@ class AXPosition {
     // position will always be "after character".
     text_position->affinity_ = ax::TextAffinity::kUpstream;
     text_position = text_position->AsLeafTextPosition();
-    FML_DCHECK(!text_position->IsNullPosition())
-        << "Adjusting to a leaf position should never turn a non-null position "
-           "into a null one.";
-
-    // if (!text_position->IsIgnored() && !text_position->AtStartOfAnchor()) {
-    //   std::unique_ptr<base::i18n::BreakIterator> grapheme_iterator =
-    //       text_position->GetGraphemeIterator();
-    //   // The following situation should not be possible but there are existing
-    //   // crashes in the field.
-    //   //
-    //   // TODO(nektar): Remove this workaround as soon as the source of the bug
-    //   // is identified.
-    //   if (text_position->text_offset_ > int{text_position->name_.length()})
-    //     return CreateNullPosition();
-
-    //   FML_DCHECK(text_position->text_offset_ >= 0);
-    //   FML_DCHECK(text_position->text_offset_ <=
-    //             int{text_position->name_.length()});
-    //   while (
-    //       !text_position->AtEndOfAnchor() &&
-    //       (!gfx::IsValidCodePointIndex(text_position->name_,
-    //                                    size_t{text_position->text_offset_}) ||
-    //        (grapheme_iterator && !grapheme_iterator->IsGraphemeBoundary(
-    //                                  size_t{text_position->text_offset_})))) {
-    //     ++text_position->text_offset_;
-    //   }
-
-    //   // Reset the affinity to downstream, because an upstream affinity doesn't
-    //   // make sense on a leaf anchor.
-    //   text_position->affinity_ = ax::TextAffinity::kDownstream;
-    //   return text_position;
-    // }
-
-    // text_position = text_position->CreatePreviousLeafTextPosition();
-    // while (!text_position->IsNullPosition() &&
-    //        (text_position->IsIgnored() || !text_position->MaxTextOffset())) {
-    //   text_position = text_position->CreatePreviousLeafTextPosition();
-    // }
+    FML_DCHECK(!text_position->IsNullPosition());
     return text_position->CreatePositionAtEndOfAnchor();
   }
 
@@ -2181,37 +2115,6 @@ class AXPosition {
     }
 
     FML_DCHECK(text_position->text_offset_ < text_position->MaxTextOffset());
-    // std::unique_ptr<base::i18n::BreakIterator> grapheme_iterator =
-    //     text_position->GetGraphemeIterator();
-    // do {
-    //   ++text_position->text_offset_;
-    // } while (!text_position->AtEndOfAnchor() && grapheme_iterator &&
-    //          !grapheme_iterator->IsGraphemeBoundary(
-    //              size_t{text_position->text_offset_}));
-    // FML_DCHECK(text_position->text_offset_ > 0);
-    // FML_DCHECK(text_position->text_offset_ <= text_position->MaxTextOffset());
-
-    // // If the character boundary is in the same subtree, return a position
-    // // rooted at this position's anchor. This is necessary because we don't want
-    // // to return a position that might be in the shadow DOM when this position
-    // // is not.
-    // const AXNodeType* common_anchor = text_position->LowestCommonAnchor(*this);
-    // if (GetAnchor() == common_anchor) {
-    //   text_position = text_position->CreateAncestorPosition(
-    //       common_anchor, ax::MoveDirection::kForward);
-    // } else if (boundary_behavior == AXBoundaryBehavior::StopAtAnchorBoundary) {
-    //   // If the next character position crosses the current anchor boundary
-    //   // with StopAtAnchorBoundary, snap to the end of the current anchor.
-    //   return CreatePositionAtEndOfAnchor();
-    // }
-
-    // // Even if the resulting position is right on a soft line break, affinity is
-    // // defaulted to downstream so that this method will always produce the same
-    // // result regardless of the direction of motion or the input affinity.
-    // text_position->affinity_ = ax::TextAffinity::kDownstream;
-
-    // if (IsTreePosition())
-    //   return text_position->AsTreePosition();
     return text_position;
   }
 
@@ -2244,37 +2147,6 @@ class AXPosition {
     }
 
     FML_DCHECK(text_position->text_offset_ > 0);
-    // std::unique_ptr<base::i18n::BreakIterator> grapheme_iterator =
-    //     text_position->GetGraphemeIterator();
-    // do {
-    //   --text_position->text_offset_;
-    // } while (!text_position->AtStartOfAnchor() && grapheme_iterator &&
-    //          !grapheme_iterator->IsGraphemeBoundary(
-    //              size_t{text_position->text_offset_}));
-    // FML_DCHECK(text_position->text_offset_ >= 0);
-    // FML_DCHECK(text_position->text_offset_ < text_position->MaxTextOffset());
-
-    // // The character boundary should be in the same subtree. Return a position
-    // // rooted at this position's anchor. This is necessary because we don't want
-    // // to return a position that might be in the shadow DOM when this position
-    // // is not.
-    // const AXNodeType* common_anchor = text_position->LowestCommonAnchor(*this);
-    // if (GetAnchor() == common_anchor) {
-    //   text_position = text_position->CreateAncestorPosition(
-    //       common_anchor, ax::MoveDirection::kBackward);
-    // } else if (boundary_behavior == AXBoundaryBehavior::StopAtAnchorBoundary) {
-    //   // If the previous character position crosses the current anchor boundary
-    //   // with StopAtAnchorBoundary, snap to the start of the current anchor.
-    //   return CreatePositionAtStartOfAnchor();
-    // }
-
-    // // Even if the resulting position is right on a soft line break, affinity is
-    // // defaulted to downstream so that this method will always produce the same
-    // // result regardless of the direction of motion or the input affinity.
-    // text_position->affinity_ = ax::TextAffinity::kDownstream;
-
-    // if (IsTreePosition())
-    //   return text_position->AsTreePosition();
     return text_position;
   }
 
@@ -2974,9 +2846,7 @@ class AXPosition {
           0 /*child_index*/);
       int other_uncommon_ancestor_index =
           other_uncommon_tree_position->AnchorIndexInParent();
-      FML_DCHECK(this_uncommon_ancestor_index != other_uncommon_ancestor_index)
-          << "Deepest uncommon ancestors should truly be uncommon, i.e. not "
-             "the same.";
+      FML_DCHECK(this_uncommon_ancestor_index != other_uncommon_ancestor_index);
       int result = this_uncommon_ancestor_index - other_uncommon_ancestor_index;
 
       // On platforms that support embedded objects, if a text position is
@@ -3309,25 +3179,6 @@ class AXPosition {
     }
     return offset_in_parent;
   }
-
-  // In the case of a text position, lazily initializes or returns the existing
-  // grapheme iterator for the position's text. The grapheme iterator breaks at
-  // every grapheme cluster boundary.
-  //
-  // We only allow creating this iterator on leaf nodes. We currently don't need
-  // to move by grapheme boundaries on non-leaf nodes and computing plus caching
-  // the inner text for all nodes is costly.
-  // std::unique_ptr<base::i18n::BreakIterator> GetGraphemeIterator() const {
-  //   if (!IsTextPosition() || !IsLeaf())
-  //     return {};
-
-  //   name_ = GetText();
-  //   auto grapheme_iterator = std::make_unique<base::i18n::BreakIterator>(
-  //       name_, base::i18n::BreakIterator::BREAK_CHARACTER);
-  //   if (!grapheme_iterator->Init())
-  //     return {};
-  //   return grapheme_iterator;
-  // }
 
   void Initialize(AXPositionKind kind,
                   AXTreeID tree_id,

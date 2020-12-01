@@ -25,6 +25,7 @@ class FlutterAccessibility : public AXPlatformNodeDelegateBase {
 
   AccessibilityBridge* GetBridge() const;
   AXNode* GetAXNode() const;
+
   // AXPlatformNodeDelegateBase override;
   const AXNodeData& GetData() const override;
   bool AccessibilityPerformAction(const AXActionData& data) override;

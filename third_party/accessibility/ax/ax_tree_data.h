@@ -11,14 +11,10 @@
 #include <string>
 #include <vector>
 
-// #include "base/optional.h"
-// #include "base/strings/string16.h"
-// #include "base/strings/string_split.h"
 #include "ax_enums.h"
 #include "ax_export.h"
 #include "ax_node.h"
 #include "ax_tree_id_registry.h"
-// #include "ui/gfx/geometry/rect.h"
 
 namespace ax {
 

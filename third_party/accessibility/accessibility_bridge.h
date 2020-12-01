@@ -18,20 +18,79 @@
 
 namespace ax {
 
+//------------------------------------------------------------------------------
+/// Use this class to maintain an accessibility tree. This class consumes semantics
+/// updates from the embedder API and produces an accessibility tree in the native
+/// format.
+///
+/// To use this class, you must provide your own implementation of
+/// FlutterAccessibility.
 class AccessibilityBridge : public AXTreeObserver {
  public:
+  //------------------------------------------------------------------------------
+  /// @brief      Creates a new instance of a accessibility bridge.
+  ///
+  /// @param[in]  user_data           A custom pointer to the data of your
+  ///                                 choice. This pointer can be retrieve later
+  ///                                 through GetUserData().
   AccessibilityBridge(void* user_data);
   ~AccessibilityBridge();
 
+  //------------------------------------------------------------------------------
+  /// @brief      Adds a semantics node update to the pending semantics update.
+  ///             Calling this method alone will NOT update the semantics tree.
+  ///             To flush the the pending updates, call the CommitUpdates().
+  ///
+  /// @param[in]  node           A pointer to the semantics node update.
   void AddFlutterSemanticsNodeUpdate(const FlutterSemanticsNode* node);
+
+  //------------------------------------------------------------------------------
+  /// @brief      Adds a custom semantics action update to the pending semantics
+  ///             update. Calling this method alone will NOT update the
+  ///             semantics tree. To flush the the pending updates, call
+  ///             the CommitUpdates().
+  ///
+  /// @param[in]  action           A pointer to the custom semantics action update.
   void AddFlutterSemanticsCustomActionUpdate(const FlutterSemanticsCustomAction* action);
+  
+  //------------------------------------------------------------------------------
+  /// @brief      Flushes the pending updates and applies them to this
+  ///             accessibility bridge.
   void CommitUpdates();
+
+  //------------------------------------------------------------------------------
+  /// @brief      Get the underlying AXTree.
   ax::AXTree* GetAXTree();
+
+  //------------------------------------------------------------------------------
+  /// @brief      The event generator of this accessibility bridge. It contains
+  ///             the pending accessibility events generated as a result of a
+  ///             semantics update.
   AXEventGenerator* GetEventGenerator();
+
+  //------------------------------------------------------------------------------
+  /// @brief      Get the user data.
   void* GetUserData();
+
+  //------------------------------------------------------------------------------
+  /// @brief      Get the flutter accessibility node with the given id from this
+  ///             accessibility bridge.
+  ///
+  /// @param[in]  id           The id of the flutter accessibility node you want
+  ///                          to retrieve.
   FlutterAccessibility* GetFlutterAccessibilityFromID(int32_t id) const;
+  
+  //------------------------------------------------------------------------------
+  /// @brief      Update the currently focused flutter accessibility node.
+  ///
+  /// @param[in]  id           The id of the currently focused flutter
+  ///                          accessibility node.
   void SetFocusedNode(int32_t node_id);
+
+  //------------------------------------------------------------------------------
+  /// @brief      Get the last focused node.
   int32_t GetLastFocusedNode();
+
   // AXTreeObserver implementation.
   void OnNodeWillBeDeleted(ax::AXTree* tree, ax::AXNode* node) override;
   void OnSubtreeWillBeDeleted(ax::AXTree* tree, ax::AXNode* node) override;

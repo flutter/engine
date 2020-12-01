@@ -9,16 +9,10 @@
 
 #include "third_party/skia/include/core/SkColor.h"
 
-// #include "base/strings/string16.h"
-// #include "base/strings/string_util.h"
-// #include "base/strings/utf_string_conversions.h"
-// #include "ax_build/build_config.h"
 #include "ax_enums.h"
-// #include "ax_language_detection.h"
 #include "ax_role_properties.h"
 #include "ax_table_info.h"
 #include "ax_tree.h"
-// #include "ui/gfx/transform.h"
 
 namespace ax {
 
@@ -464,23 +458,6 @@ const std::string& AXNode::GetInheritedStringAttribute(
   return *s;
 }
 
-// std::u16string AXNode::GetInheritedString16Attribute(
-//     ax::StringAttribute attribute) const {
-//   return base::UTF8ToUTF16(GetInheritedStringAttribute(attribute));
-// }
-
-// AXLanguageInfo* AXNode::GetLanguageInfo() const {
-//   return language_info_.get();
-// }
-
-// void AXNode::SetLanguageInfo(std::unique_ptr<AXLanguageInfo> lang_info) {
-//   language_info_ = std::move(lang_info);
-// }
-
-// void AXNode::ClearLanguageInfo() {
-//   language_info_.reset();
-// }
-
 std::string AXNode::GetInnerText() const {
   // If a text field has no descendants, then we compute its inner text from its
   // value or its placeholder. Otherwise we prefer to look at its descendant
@@ -542,21 +519,6 @@ std::string AXNode::GetInnerText() const {
 }
 
 std::string AXNode::GetLanguage() const {
-  // Walk up tree considering both detected and author declared languages.
-  // for (const AXNode* cur = this; cur; cur = cur->parent()) {
-  //   // If language detection has assigned a language then we prefer that.
-  //   const AXLanguageInfo* lang_info = cur->GetLanguageInfo();
-  //   if (lang_info && !lang_info->language.empty()) {
-  //     return lang_info->language;
-  //   }
-
-  //   // If the page author has declared a language attribute we fallback to that.
-  //   const AXNodeData& data = cur->data();
-  //   if (data.HasStringAttribute(ax::StringAttribute::kLanguage)) {
-  //     return data.GetStringAttribute(ax::StringAttribute::kLanguage);
-  //   }
-  // }
-
   return std::string();
 }
 

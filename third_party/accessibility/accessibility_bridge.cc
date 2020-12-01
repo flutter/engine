@@ -282,9 +282,6 @@ void AccessibilityBridge::SetActionsFromFlutterUpdate(AXNodeData& node_data, con
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionTap) {
     node_data.AddAction(Action::kDoDefault);
   }
-  // if (actions & FlutterSemanticsAction::kFlutterSemanticsActionLongPress) {
-    
-  // }
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionScrollLeft) {
     node_data.AddAction(Action::kScrollLeft);
   }
@@ -305,24 +302,10 @@ void AccessibilityBridge::SetActionsFromFlutterUpdate(AXNodeData& node_data, con
   }
   // Every node has show on screen action.
   node_data.AddAction(Action::kScrollToMakeVisible);
-  // if (actions & FlutterSemanticsAction::kFlutterSemanticsActionMoveCursorForwardByCharacter) {
-    
-  // }
-  // if (actions & FlutterSemanticsAction::kFlutterSemanticsActionMoveCursorBackwardByCharacter) {
-    
-  // }
+
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionSetSelection) {
     node_data.AddAction(Action::kSetSelection);
   }
-  // if (actions & FlutterSemanticsAction::kFlutterSemanticsActionCopy) {
-    
-  // }
-  // if (actions & FlutterSemanticsAction::kFlutterSemanticsActionCut) {
-    
-  // }
-  // if (actions & FlutterSemanticsAction::kFlutterSemanticsActionPaste) {
-    
-  // }
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionDidGainAccessibilityFocus) {
     node_data.AddAction(Action::kSetAccessibilityFocus);
   }
@@ -332,15 +315,6 @@ void AccessibilityBridge::SetActionsFromFlutterUpdate(AXNodeData& node_data, con
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionCustomAction) {
     node_data.AddAction(Action::kCustomAction);
   }
-  // if (actions & FlutterSemanticsAction::kFlutterSemanticsActionDismiss) {
-
-  // }
-  // if (actions & FlutterSemanticsAction::kFlutterSemanticsActionMoveCursorForwardByWord) {
-
-  // }
-  // if (actions & FlutterSemanticsAction::kFlutterSemanticsActionMoveCursorBackwardByWord) {
-
-  // }
 }
 
 void AccessibilityBridge::SetBooleanAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {

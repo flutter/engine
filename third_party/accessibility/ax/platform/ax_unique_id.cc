@@ -7,9 +7,7 @@
 #include <memory>
 #include <unordered_set>
 
-// #include "base/lazy_instance.h"
 #include "flutter/fml/logging.h"
-// #include "base/stl_util.h"
 
 namespace ax {
 

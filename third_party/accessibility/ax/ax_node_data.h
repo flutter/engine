@@ -13,8 +13,6 @@
 #include <utility>
 #include <vector>
 
-// #include "base/strings/string16.h"
-// #include "base/strings/string_split.h"
 #include "ax_base_export.h"
 #include "ax_enums.h"
 #include "ax_node_text_styles.h"
@@ -99,7 +97,6 @@ struct AX_BASE_EXPORT AXNodeData {
   bool GetStringListAttribute(ax::StringListAttribute attribute,
                               std::vector<std::string>* value) const;
 
-//   bool GetHtmlAttribute(const char* attribute, std::u16string* value) const;
   bool GetHtmlAttribute(const char* attribute, std::string* value) const;
 
   //
@@ -143,18 +140,15 @@ struct AX_BASE_EXPORT AXNodeData {
   // Adds the name attribute or replaces it if already present. Also sets the
   // NameFrom attribute if not already set.
   void SetName(const std::string& name);
-//   void SetName(const std::u16string& name);
 
   // Allows nameless objects to pass accessibility checks.
   void SetNameExplicitlyEmpty();
 
   // Adds the description attribute or replaces it if already present.
   void SetDescription(const std::string& description);
-//   void SetDescription(const std::u16string& description);
 
   // Adds the value attribute or replaces it if already present.
   void SetValue(const std::string& value);
-//   void SetValue(const std::u16string& value);
 
   // Returns true if the given enum bit is 1.
   bool HasState(ax::State state) const;

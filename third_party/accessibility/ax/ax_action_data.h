@@ -8,7 +8,6 @@
 #include "ax_enums.h"
 #include "ax_export.h"
 #include "ax_tree_id.h"
-// #include "ui/gfx/geometry/rect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkPoint.h"
 

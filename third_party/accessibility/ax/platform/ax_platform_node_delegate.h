@@ -19,7 +19,6 @@
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkRect.h"
 
-// #include "base/optional.h"
 #include "../ax_clipping_behavior.h"
 #include "../ax_coordinate_system.h"
 #include "../ax_enums.h"
@@ -27,18 +26,10 @@
 #include "../ax_node_position.h"
 #include "../ax_offscreen_result.h"
 #include "../ax_position.h"
-// #include "../ax_text_utils.h"
 #include "../ax_tree.h"
 #include "../ax_tree_id.h"
 #include "ax_unique_id.h"
-// #include "ui/gfx/geometry/vector2d.h"
 #include "gfx/native_widget_types.h"
-
-// namespace gfx {
-
-// class Rect;
-
-// }  // namespace gfx
 
 namespace ax {
 

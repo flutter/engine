@@ -16,7 +16,6 @@
 
 #include "third_party/skia/include/core/SkRect.h"
 
-// #include "base/observer_list.h"
 #include "ax_enums.h"
 #include "ax_export.h"
 #include "ax_node.h"
@@ -29,7 +28,6 @@ namespace ax {
 class AXTableInfo;
 class AXTreeObserver;
 struct AXTreeUpdateState;
-// class AXLanguageDetectionManager;
 
 // AXTree is a live, managed tree of AXNode objects that can receive
 // updates from another AXTreeSource via AXTreeUpdates, and it can be
@@ -166,11 +164,6 @@ class AX_EXPORT AXTree : public AXNode::OwnerTree {
   // AXNode::OwnerTree override.
   // Returns true if the tree represents a paginated document
   bool HasPaginationSupport() const override;
-
-  // Language detection manager, entry point to language detection features.
-  // TODO(chrishall): Should this be stored by pointer or value?
-  //                  When should we initialize this?
-//   std::unique_ptr<AXLanguageDetectionManager> language_detection_manager;
 
   // A list of intents active during a tree update/unserialization.
   const std::vector<AXEventIntent>& event_intents() const {

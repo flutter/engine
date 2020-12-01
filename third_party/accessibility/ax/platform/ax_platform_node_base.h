@@ -12,15 +12,12 @@
 #include "third_party/skia/include/core/SkPoint.h"
 #include "flutter/fml/macros.h"
 
-// #include "base/macros.h"
 #include "ax_build/build_config.h"
 #include "../ax_enums.h"
 #include "../ax_node.h"
 #include "ax_platform_node.h"
 #include "ax_platform_node_delegate.h"
 #include "ax_platform_text_boundary.h"
-// #include "ui/base/buildflags.h"
-// #include "ui/gfx/geometry/rect.h"
 #include "gfx/native_widget_types.h"
 
 // #if BUILDFLAG(USE_ATK)

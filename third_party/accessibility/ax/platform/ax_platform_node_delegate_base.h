@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-// #include "base/optional.h"
 #include "ax_platform_node_delegate.h"
 
 namespace ax {

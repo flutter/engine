@@ -9,11 +9,7 @@
 
 #include "flutter/fml/logging.h"
 
-// #include "base/check.h"
 #include "base/no_destructor.h"
-// #include "base/FML_DCHECK(false).h"
-// #include "base/util/values/values_util.h"
-// #include "base/values.h"
 #include "ax_enums.h"
 
 namespace ax {
@@ -22,20 +18,13 @@ AXTreeID::AXTreeID() : AXTreeID(ax::AXTreeIDType::kUnknown) {}
 
 AXTreeID::AXTreeID(const AXTreeID& other) = default;
 
-AXTreeID::AXTreeID(ax::AXTreeIDType type) : type_(type) {
-  // if (type_ == ax::AXTreeIDType::kToken)
-  //   token_ = base::UnguessableToken::Create();
-}
+AXTreeID::AXTreeID(ax::AXTreeIDType type) : type_(type) {}
 
 AXTreeID::AXTreeID(const std::string& string) {
   if (string.empty()) {
     type_ = ax::AXTreeIDType::kUnknown;
   } else {
-    // type_ = ax::AXTreeIDType::kToken;
-    // std::optional<base::UnguessableToken> token =
-    //     util::ValueToUnguessableToken(base::Value(string));
-    // CHECK(token);
-    // token_ = *token;
+    FML_DCHECK(false);
   }
 }
 
@@ -43,11 +32,6 @@ AXTreeID::AXTreeID(const std::string& string) {
 AXTreeID AXTreeID::FromString(const std::string& string) {
   return AXTreeID(string);
 }
-
-// static
-// AXTreeID AXTreeID::FromToken(const base::UnguessableToken& token) {
-//   return AXTreeID(token.ToString());
-// }
 
 // static
 AXTreeID AXTreeID::CreateNewAXTreeID() {
@@ -62,7 +46,6 @@ std::string AXTreeID::ToString() const {
       return "";
     case ax::AXTreeIDType::kToken:
       return "";
-      // return util::UnguessableTokenToValue(*token_).GetString();
   }
 
   FML_DCHECK(false);
@@ -71,7 +54,6 @@ std::string AXTreeID::ToString() const {
 
 void swap(AXTreeID& first, AXTreeID& second) {
   std::swap(first.type_, second.type_);
-  // std::swap(first.token_, second.token_);
 }
 
 bool AXTreeID::operator==(const AXTreeID& rhs) const {
@@ -100,7 +82,6 @@ bool AXTreeID::operator>=(const AXTreeID& rhs) const {
 
 size_t AXTreeIDHash::operator()(const ax::AXTreeID& tree_id) const {
   FML_DCHECK(tree_id.type() == ax::AXTreeIDType::kToken);
-  // return base::UnguessableTokenHash()(tree_id.token().value());
   return 0;
 }
 

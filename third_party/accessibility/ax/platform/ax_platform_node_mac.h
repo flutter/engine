@@ -13,11 +13,6 @@
 #include "../ax_export.h"
 #include "ax_platform_node_base.h"
 
-// #include "base/mac/scoped_nsobject.h"
-// #include "base/macros.h"
-// #include "ui/accessibility/ax_export.h"
-// #include "ui/accessibility/platform/ax_platform_node_base.h"
-
 @class AXPlatformNodeCocoa;
 
 namespace ax {

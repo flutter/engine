@@ -13,13 +13,7 @@
 #include "flutter/fml/logging.h"
 
 #include "base/no_destructor.h"
-// #include "base/stl_util.h"
-// #include "base/strings/string_number_conversions.h"
-// #include "base/strings/string_util.h"
-// #include "base/strings/stringprintf.h"
-// #include "base/strings/utf_string_conversions.h"
 #include "ax_enum_util.h"
-// #include "ui/accessibility/ax_enums.mojom.h"
 #include "ax_role_properties.h"
 
 namespace ax {
@@ -454,15 +448,6 @@ bool AXNodeData::GetHtmlAttribute(const char* html_attr,
   return false;
 }
 
-// bool AXNodeData::GetHtmlAttribute(const char* html_attr,
-//                                   std::u16string* value) const {
-//   std::string value_utf8;
-//   if (!GetHtmlAttribute(html_attr, &value_utf8))
-//     return false;
-//   *value = base::UTF8ToUTF16(value_utf8);
-//   return true;
-// }
-
 void AXNodeData::AddStringAttribute(ax::StringAttribute attribute,
                                     const std::string& value) {
   FML_DCHECK(attribute != ax::StringAttribute::kNone);
@@ -609,9 +594,11 @@ AXNodeTextStyles AXNodeData::GetTextStyles() const {
 }
 
 void AXNodeData::SetName(const std::string& name) {
-  FML_DCHECK(role != ax::Role::kNone)
-      << "A valid role is required before setting the name attribute, because "
-         "the role is used for setting the required NameFrom attribute.";
+  if (role == ax::Role::kNone) {
+    FML_LOG(ERROR) << "A valid role is required before setting the name attribute, because "
+      "the role is used for setting the required NameFrom attribute.";
+    FML_DCHECK(false);
+  }
 
   auto iter = std::find_if(string_attributes.begin(), string_attributes.end(),
                            [](const auto& string_attribute) {
@@ -647,10 +634,6 @@ void AXNodeData::SetName(const std::string& name) {
   }
 }
 
-// void AXNodeData::SetName(const std::u16string& name) {
-//   SetName(base::UTF16ToUTF8(name));
-// }
-
 void AXNodeData::SetNameExplicitlyEmpty() {
   SetNameFrom(ax::NameFrom::kAttributeExplicitlyEmpty);
 }
@@ -659,17 +642,9 @@ void AXNodeData::SetDescription(const std::string& description) {
   AddStringAttribute(ax::StringAttribute::kDescription, description);
 }
 
-// void AXNodeData::SetDescription(const std::u16string& description) {
-//   SetDescription(base::UTF16ToUTF8(description));
-// }
-
 void AXNodeData::SetValue(const std::string& value) {
   AddStringAttribute(ax::StringAttribute::kValue, value);
 }
-
-// void AXNodeData::SetValue(const std::u16string& value) {
-//   SetValue(base::UTF16ToUTF8(value));
-// }
 
 bool AXNodeData::HasState(ax::State state_enum) const {
   return IsFlagSet(state, static_cast<uint32_t>(state_enum));

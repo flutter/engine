@@ -161,7 +161,7 @@ class AX_EXPORT AXNode final {
   // Update this node's location. This is separate from |SetData| just because
   // changing only the location is common and should be more efficient than
   // re-copying all of the data.
-//
+  //
   // The node's location is stored as a relative bounding box, the ID of
   // the element it's relative to, and an optional transformation matrix.
   // See ax_node_data.h for details.
@@ -272,9 +272,6 @@ class AX_EXPORT AXNode final {
     return data().GetStringListAttribute(attribute, value);
   }
 
-  // bool GetHtmlAttribute(const char* attribute, std::u16string* value) const {
-  //   return data().GetHtmlAttribute(attribute, value);
-  // }
   bool GetHtmlAttribute(const char* attribute, std::string* value) const {
     return data().GetHtmlAttribute(attribute, value);
   }
@@ -299,8 +296,6 @@ class AX_EXPORT AXNode final {
 
   const std::string& GetInheritedStringAttribute(
       ax::StringAttribute attribute) const;
-  // std::u16string GetInheritedString16Attribute(
-  //     ax::StringAttribute attribute) const;
 
   // Returns the text of this node and all descendant nodes; including text
   // found in embedded objects.

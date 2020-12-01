@@ -4,22 +4,12 @@
 
 #include "ax_platform_node.h"
 
-// #include "base/debug/crash_logging.h"
-// #include "base/lazy_instance.h"
 #include "ax_build/build_config.h"
 #include "../ax_node_data.h"
 #include "ax_platform_node_delegate.h"
-// #include "ui/base/buildflags.h"
 
 namespace ax {
 
-// // static
-// base::LazyInstance<base::ObserverList<AXModeObserver>::Unchecked>::Leaky
-//     AXPlatformNode::ax_mode_observers_ = LAZY_INSTANCE_INITIALIZER;
-
-// // static
-// base::LazyInstance<AXPlatformNode::NativeWindowHandlerCallback>::Leaky
-//     AXPlatformNode::native_window_handler_ = LAZY_INSTANCE_INITIALIZER;
 std::vector<AXModeObserver*> AXPlatformNode::ax_mode_observers_;
 
 std::function<AXPlatformNode::NativeWindowHandlerCallback> AXPlatformNode::native_window_handler_;
@@ -37,15 +27,6 @@ AXPlatformNode* AXPlatformNode::FromNativeWindow(
   return nullptr;
 }
 
-// #if !BUILDFLAG_INTERNAL_HAS_NATIVE_ACCESSIBILITY()
-// static
-// AXPlatformNode* AXPlatformNode::FromNativeViewAccessible(
-//     gfx::NativeViewAccessible accessible) {
-//   return nullptr;
-// }
-//  #endif  // !BUILDFLAG_INTERNAL_HAS_NATIVE_ACCESSIBILITY()
-
-// static
 void AXPlatformNode::RegisterNativeWindowHandler(
     std::function<AXPlatformNode::NativeWindowHandlerCallback> handler) {
   native_window_handler_ = handler;
@@ -60,7 +41,7 @@ void AXPlatformNode::Destroy() {
 }
 
 int32_t AXPlatformNode::GetUniqueId() const {
-  FML_DCHECK(GetDelegate()) << "|GetUniqueId| must be called after |Init|.";
+  FML_DCHECK(GetDelegate());
   return GetDelegate() ? GetDelegate()->GetUniqueId().Get() : -1;
 }
 

@@ -8,8 +8,6 @@
 
 namespace ax {
 
-// Mojo enums are initialized here so the header can include the much smaller
-// mojom-forward.h header.
 AXActionData::AXActionData()
     : action(ax::Action::kNone),
       hit_test_event_to_fire(ax::Event::kNone),

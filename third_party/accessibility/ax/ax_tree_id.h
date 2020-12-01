@@ -7,7 +7,6 @@
 
 #include <string>
 
-// #include "base/unguessable_token.h"
 #include "base/no_destructor.h"
 #include "ax_base_export.h"
 #include "ax_enums.h"
@@ -51,7 +50,6 @@ class AX_BASE_EXPORT AXTreeID {
   std::string ToString() const;
 
   ax::AXTreeIDType type() const { return type_; }
-  // const std::optional<base::UnguessableToken>& token() const { return token_; }
 
   bool operator==(const AXTreeID& rhs) const;
   bool operator!=(const AXTreeID& rhs) const;
@@ -64,12 +62,10 @@ class AX_BASE_EXPORT AXTreeID {
   explicit AXTreeID(ax::AXTreeIDType type);
   explicit AXTreeID(const std::string& string);
 
-  // friend struct mojo::UnionTraits<ax::AXTreeIDDataView, ax::AXTreeID>;
   friend class base::NoDestructor<AXTreeID>;
   friend void swap(AXTreeID& first, AXTreeID& second);
 
   ax::AXTreeIDType type_;
-  // std::optional<base::UnguessableToken> token_ = std::nullopt;
 };
 
 // For use in std::unordered_map.

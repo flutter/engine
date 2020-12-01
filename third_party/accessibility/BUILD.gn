@@ -20,8 +20,6 @@ source_set("accessibility") {
     # base/
     
     "base/auto_reset.h",
-    "base/feature_list.cc",
-    "base/feature_list.h",
     "base/no_destructor.h",
 
     # gfx/
@@ -48,10 +46,6 @@ source_set("accessibility") {
     
     # ax/
 
-    "ax/accessibility_features.cc",
-    "ax/accessibility_features.h",
-    "ax/accessibility_switches.cc",
-    "ax/accessibility_switches.h",
     "ax/ax_action_data.cc",
     "ax/ax_action_data.h",
     "ax/ax_action_handler_base.cc",
@@ -70,8 +64,6 @@ source_set("accessibility") {
     "ax/ax_event_intent.cc",
     "ax/ax_event_intent.h",
     "ax/ax_export.h",
-#    "ax/ax_language_detection.cc",
-#    "ax/ax_language_detection.h",
     "ax/ax_mode_observer.h",
     "ax/ax_mode.cc",
     "ax/ax_mode.h",
