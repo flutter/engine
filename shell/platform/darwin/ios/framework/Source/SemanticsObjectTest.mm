@@ -89,6 +89,17 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   XCTAssertEqualObjects(parent.children, @[ child2 ]);
 }
 
+- (void)testPlainSemanticsObjectWithLabelHasStaticTextTrait {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitStaticText);
+}
+
 - (void)testShouldTriggerAnnouncement {
   fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
       new flutter::MockAccessibilityBridge());
