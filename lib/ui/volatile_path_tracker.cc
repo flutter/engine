@@ -47,8 +47,9 @@ void VolatilePathTracker::OnFrame() {
       ++it;
     }
   }
+  std::string count = std::to_string(paths_.size());
   TRACE_EVENT_INSTANT1("flutter", "VolatilePathTracker::OnFrame", "count",
-                       std::to_string(paths_.size()).c_str());
+                       count.c_str());
 }
 
 void VolatilePathTracker::Drain() {
@@ -60,8 +61,9 @@ void VolatilePathTracker::Drain() {
       paths_to_remove.swap(paths_to_remove_);
       needs_drain_ = false;
     }
+    std::string count = std::to_string(paths_to_remove.size());
     TRACE_EVENT_INSTANT1("flutter", "VolatilePathTracker::Drain", "count",
-                         std::to_string(paths_to_remove.size()).c_str());
+                         count.c_str());
     for (auto path : paths_to_remove) {
       paths_.erase(path);
     }
