@@ -458,7 +458,11 @@ class TestCommand extends Command<bool> with ArgUtils {
           continue;
         }
 
-        if (path.split(testFilePath.relativeToWebUi).contains('golden_tests')) {
+        // All files under test/golden_tests are considered golden tests.
+        final bool isUnderGoldenTestsDirectory = path.split(testFilePath.relativeToWebUi).contains('golden_tests');
+        // Any file whose name ends with "_golden_test.dart" is run as a golden test.
+        final bool isGoldenTestFile = path.basename(testFilePath.relativeToWebUi).endsWith('_golden_test.dart');
+        if (isUnderGoldenTestsDirectory || isGoldenTestFile) {
           screenshotTestFiles.add(testFilePath);
         } else {
           unitTestFiles.add(testFilePath);

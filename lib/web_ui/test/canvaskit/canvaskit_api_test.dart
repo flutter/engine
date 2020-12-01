@@ -1177,7 +1177,7 @@ void _canvasTests() {
       SkPaint(),
     );
     final CkPicture picture =
-        CkPicture(otherRecorder.finishRecordingAsPicture(), null);
+        CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
     final CkImage image = await picture.toImage(1, 1);
     final ByteData rawData =
         await image.toByteData(format: ui.ImageByteFormat.rawRgba);
