@@ -510,6 +510,11 @@ class BitmapCanvas extends EngineCanvas {
         drawRect(pathAsRect, paint);
         return;
       }
+      final ui.RRect ? pathAsRRect = surfacePath.toRoundedRect();
+      if (pathAsRRect != null) {
+        drawRRect(pathAsRRect, paint);
+        return;
+      }
       final ui.Rect pathBounds = surfacePath.getBounds();
       html.Element svgElm = _pathToSvgElement(
           surfacePath, paint, '${pathBounds.right}', '${pathBounds.bottom}');
