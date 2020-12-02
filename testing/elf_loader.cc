@@ -4,11 +4,7 @@
 
 #include "flutter/testing/elf_loader.h"
 
-#include <dlfcn.h>
-
 #include "flutter/fml/file.h"
-#include "flutter/fml/mapping.h"
-#include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/testing/testing.h"
