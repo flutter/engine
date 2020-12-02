@@ -510,8 +510,8 @@ class Shell final : public PlatformView::Delegate,
   // |PlatformView::Delegate|
   void LoadDartDeferredLibrary(
       intptr_t loading_unit_id,
-      std::unique_ptr<const fml::SymbolMapping> snapshot_data,
-      std::unique_ptr<const fml::SymbolMapping> snapshot_instructions) override;
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions) override;
 
   // |PlatformView::Delegate|
   void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override;

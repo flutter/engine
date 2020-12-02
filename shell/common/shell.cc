@@ -1187,8 +1187,8 @@ std::unique_ptr<std::vector<std::string>> Shell::ComputePlatformResolvedLocale(
 
 void Shell::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
-    std::unique_ptr<const fml::SymbolMapping> snapshot_data,
-    std::unique_ptr<const fml::SymbolMapping> snapshot_instructions) {
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {
   engine_->LoadDartDeferredLibrary(loading_unit_id, std::move(snapshot_data),
                                    std::move(snapshot_instructions));
 }

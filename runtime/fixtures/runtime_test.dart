@@ -8,7 +8,6 @@ import 'dart:ui';
 
 import 'split_lib_test.dart' deferred as splitlib;
 
-
 void main() {
 }
 
@@ -32,7 +31,7 @@ void canRegisterNativeCallback() async {
 Future<void>? splitLoadFuture = null;
 
 @pragma('vm:entry-point')
-void canCallDeferredLibrary() async {
+void canCallDeferredLibrary() {
   print('In function canCallDeferredLibrary');
   splitLoadFuture = splitlib.loadLibrary()
     .then((_) {

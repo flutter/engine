@@ -496,7 +496,7 @@ TEST_F(DartIsolateTest, ValidLoadingUnitSucceeds) {
                       Signal();
                     })));
   AddNativeCallback(
-      "NotifySuccess", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+      "NotifySuccess", CREATE_NATIVE_ENTRY([this](Dart_NativeArguments args) {
         auto bool_handle = Dart_GetNativeArgument(args, 0);
         ASSERT_FALSE(tonic::LogIfError(bool_handle));
         ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(bool_handle));

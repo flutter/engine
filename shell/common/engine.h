@@ -800,9 +800,10 @@ class Engine final : public RuntimeDelegate,
   ///             by a unique loading unit id. Callers should open and resolve
   ///             a SymbolMapping from the shared library. The Mappings should
   ///             be moved into this method, as ownership will be assumed by the
-  ///             dart isolate after successful loading and released after
-  ///             shutdown of the dart isolate. If loading fails, the mappings
-  ///             will naturally go out of scope.
+  ///             dart root isolate after successful loading and released after
+  ///             shutdown of the root isolate. The loading unit may not be
+  ///             used after isolate shutdown. If loading fails, the mappings
+  ///             will be released.
   ///
   ///             This method is paired with a RequestDartDeferredLibrary
   ///             invocation that provides the embedder with the loading unit id
@@ -821,8 +822,8 @@ class Engine final : public RuntimeDelegate,
   ///
   void LoadDartDeferredLibrary(
       intptr_t loading_unit_id,
-      std::unique_ptr<const fml::SymbolMapping> snapshot_data,
-      std::unique_ptr<const fml::SymbolMapping> snapshot_instructions);
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions);
 
  private:
   Engine::Delegate& delegate_;

@@ -43,10 +43,16 @@ struct ELFAOTSymbols {
 ///
 ELFAOTSymbols LoadELFSymbolFromFixturesIfNeccessary();
 
+//------------------------------------------------------------------------------
+/// @brief      Attempts to resolve split loading unit AOT symbols from the
+///             portable ELF loader. If the dart code does not make use of
+///             deferred libraries, then there will be no split .so to load.
+///             This only returns valid symbols when the VM is configured for
+///             AOT.
+///
+/// @return     The loaded ELF symbols.
+///
 ELFAOTSymbols LoadELFSplitSymbolFromFixturesIfNeccessary();
-
-std::unique_ptr<const fml::Mapping> LoadELFSplitSymbolFromFixturesIfNeccessary(
-    std::string symbol_name);
 
 //------------------------------------------------------------------------------
 /// @brief      Prepare the settings objects various AOT mappings resolvers with
