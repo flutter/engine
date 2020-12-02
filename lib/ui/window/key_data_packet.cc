@@ -28,7 +28,9 @@ void KeyDataPacketBuilder::SetKeyData(const KeyData& event) {
 }
 
 void KeyDataPacketBuilder::SetCharacter(const char* character) {
-  memcpy(&data()[CharacterStart_()], character, data().size() - CharacterStart_());
+  if (character != nullptr) {
+    memcpy(data().data() + CharacterStart_(), character, data().size() - CharacterStart_());
+  }
 }
 
 }  // namespace flutter

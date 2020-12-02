@@ -16,6 +16,14 @@
 
 namespace flutter {
 
+namespace {
+// An arbitrary size for the character cache in bytes.
+//
+// It should hold a UTF-32 character encoded in UTF-8 as long as the trailing
+// '\0'.
+constexpr size_t kCharacterCacheSize = 8;
+}
+
 class FlutterWindowsView;
 
 // Implements a KeyboardHookHandler
@@ -40,8 +48,11 @@ class FlutterKeyboardManager : public KeyboardHookHandler {
                 const std::u16string& text) override;
 
  private:
+  void cacheUtf8String(char32_t ch);
+
   std::function<void(const FlutterKeyEvent&)> onEvent_;
   std::map<uint64_t, uint64_t> pressingRecords_;
+  char character_cache_[kCharacterCacheSize];
 };
 
 }  // namespace flutter

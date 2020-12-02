@@ -35,6 +35,16 @@ static uint64_t keyCodeToLogicalKey(char32_t character) {
   return 1;
 }
 
+void FlutterKeyboardManager::cacheUtf8String(char32_t character) {
+  if (character == 0) {
+    character_cache_[0] = '\0';
+    return;
+  }
+  // TODO: Correctly handle UTF-32
+  std::wstring text({static_cast<wchar_t>(character)});
+  strcpy_s(character_cache_, kCharacterCacheSize, Utf8FromUtf16(text).c_str());
+}
+
 void FlutterKeyboardManager::KeyboardHook(FlutterWindowsView* view,
                                           int key,
                                           int scancode,
@@ -111,9 +121,8 @@ void FlutterKeyboardManager::KeyboardHook(FlutterWindowsView* view,
   keyData.kind = change;
   keyData.physical = physical_key;
   keyData.logical = logical_key;
-  // TODO: Correctly handle UTF-32
-  std::wstring text({static_cast<wchar_t>(character)});
-  keyData.character = Utf8FromUtf16(text).c_str();
+  cacheUtf8String(character);
+  keyData.character = character_cache_;
   keyData.synthesized = false;
   onEvent_(keyData);
 }
