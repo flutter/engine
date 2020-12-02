@@ -53,6 +53,9 @@ class FlutterKeyboardManager : public KeyboardHookHandler {
   std::function<void(const FlutterKeyEvent&)> onEvent_;
   std::map<uint64_t, uint64_t> pressingRecords_;
   char character_cache_[kCharacterCacheSize];
+
+  static std::map<uint64_t, uint64_t> windowsToPhysicalMap_;
+  static std::map<uint64_t, uint64_t> windowsToLogicalMap_;
 };
 
 }  // namespace flutter

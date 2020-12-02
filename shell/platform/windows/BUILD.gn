@@ -44,6 +44,7 @@ source_set("flutter_windows_source") {
     "cursor_handler.h",
     "flutter_keyboard_manager.cc",
     "flutter_keyboard_manager.h",
+    "flutter_key_map.cc",
     "flutter_project_bundle.cc",
     "flutter_project_bundle.h",
     "flutter_windows.cc",
