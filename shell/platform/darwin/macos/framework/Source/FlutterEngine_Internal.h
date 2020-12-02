@@ -37,4 +37,19 @@
  */
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event;
 
+/**
+ * Registers an external texture with the given id. Returns true on success.
+ */
+- (bool)embedderRegisterTextureWithId:(int64_t)textureId;
+
+/**
+ * Marks texture with the given id as available. Returns true on success.
+ */
+- (bool)embedderMarkTextureFrameAvailable:(int64_t)textureID;
+
+/**
+ * Unregisters an external texture with the given id. Returns true on success.
+ */
+- (bool)embedderUnregisterTextureWithId:(int64_t)textureID;
+
 @end

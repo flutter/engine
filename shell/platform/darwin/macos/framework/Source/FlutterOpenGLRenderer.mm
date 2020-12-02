@@ -140,13 +140,12 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (int64_t)registerTexture:(id<FlutterTexture>)texture {
-  FlutterExternalTextureGL* FlutterTexture =
+  FlutterExternalTextureGL* externalTexture =
       [[FlutterExternalTextureGL alloc] initWithFlutterTexture:texture];
-  int64_t textureID = [FlutterTexture textureID];
-  FlutterEngineResult success =
-      _flutterEngine.embedderAPI.RegisterExternalTexture(_engine, textureID);
-  if (success == FlutterEngineResult::kSuccess) {
-    _textures[@(textureID)] = FlutterTexture;
+  int64_t textureID = [externalTexture textureID];
+  bool success = [_flutterEngine embedderRegisterTextureWithId:textureID];
+  if (success) {
+    _textures[@(textureID)] = externalTexture;
     return textureID;
   } else {
     NSLog(@"Unable to register the texture with id: %lld.", textureID);
@@ -155,24 +154,22 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (void)textureFrameAvailable:(int64_t)textureID {
-  FlutterEngineResult success =
-      _flutterEngine.embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID);
-  if (success != FlutterEngineResult::kSuccess) {
+  bool success = [_flutterEngine embedderMarkTextureFrameAvailable:textureID];
+  if (success) {
     NSLog(@"Unable to mark texture with id %lld as available.", textureID);
   }
 }
 
 - (void)unregisterTexture:(int64_t)textureID {
-  FlutterEngineResult success =
-      _flutterEngine.embedderAPI.UnregisterExternalTexture(_engine, textureID);
-  if (success == FlutterEngineResult::kSuccess) {
+  bool success = [_flutterEngine embedderUnregisterTextureWithId:textureID];
+  if (success) {
     [_textures removeObjectForKey:@(textureID)];
   } else {
     NSLog(@"Unable to unregister texture with id: %lld.", textureID);
   }
 }
 
-#pragma mark - Helper methods to create rendering config for embedder.
+#pragma mark - Private methods
 
 - (FlutterRendererConfig)createRendererConfig {
   const FlutterRendererConfig rendererConfig = {

@@ -568,12 +568,24 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return [_openGLRenderer registerTexture:texture];
 }
 
+- (bool)embedderRegisterTextureWithId:(int64_t)textureId {
+  return _embedderAPI.RegisterExternalTexture(_engine, textureId) == kSuccess;
+}
+
 - (void)textureFrameAvailable:(int64_t)textureID {
-  return [_openGLRenderer textureFrameAvailable:textureID];
+  [_openGLRenderer textureFrameAvailable:textureID];
+}
+
+- (bool)embedderMarkTextureFrameAvailable:(int64_t)textureID {
+  return _embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID) == kSuccess;
 }
 
 - (void)unregisterTexture:(int64_t)textureID {
-  return [_openGLRenderer unregisterTexture:textureID];
+  [_openGLRenderer unregisterTexture:textureID];
+}
+
+- (bool)embedderUnregisterTextureWithId:(int64_t)textureID {
+  return _embedderAPI.UnregisterExternalTexture(_engine, textureID) == kSuccess;
 }
 
 #pragma mark - Task runner integration
