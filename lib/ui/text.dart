@@ -578,6 +578,7 @@ Int32List _encodeTextStyle(
   double? letterSpacing,
   double? wordSpacing,
   double? height,
+  double? lineHeight,
   Locale? locale,
   Paint? background,
   Paint? foreground,
@@ -636,24 +637,28 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 13;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (lineHeight != null) {
     result[0] |= 1 << 14;
     // Passed separately to native.
   }
-  if (background != null) {
+  if (locale != null) {
     result[0] |= 1 << 15;
     // Passed separately to native.
   }
-  if (foreground != null) {
+  if (background != null) {
     result[0] |= 1 << 16;
     // Passed separately to native.
   }
-  if (shadows != null) {
+  if (foreground != null) {
     result[0] |= 1 << 17;
     // Passed separately to native.
   }
-  if (fontFeatures != null) {
+  if (shadows != null) {
     result[0] |= 1 << 18;
+    // Passed separately to native.
+  }
+  if (fontFeatures != null) {
+    result[0] |= 1 << 19;
     // Passed separately to native.
   }
   return result;
@@ -690,6 +695,8 @@ class TextStyle {
   /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
   /// * `height`: The height of this text span, as a multiplier of the font size. Omitting `height` will allow the line height
   ///   to take the height as defined by the font, which may not be exactly the height of the fontSize.
+  /// * `lineHeight`: The height of this text span, as a multiplier of the font size. Omitting `lineHeight` will allow the line height
+  ///   to take the height as defined by the font, which may not be exactly the height of the fontSize.
   /// * `locale`: The locale used to select region-specific glyphs.
   /// * `background`: The paint drawn as a background for the text.
   /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
@@ -709,6 +716,7 @@ class TextStyle {
     double? letterSpacing,
     double? wordSpacing,
     double? height,
+    double? lineHeight,
     Locale? locale,
     Paint? background,
     Paint? foreground,
@@ -733,6 +741,7 @@ class TextStyle {
          letterSpacing,
          wordSpacing,
          height,
+         lineHeight,
          locale,
          background,
          foreground,
@@ -745,6 +754,7 @@ class TextStyle {
        _letterSpacing = letterSpacing,
        _wordSpacing = wordSpacing,
        _height = height,
+       _lineHeight = lineHeight,
        _decorationThickness = decorationThickness,
        _locale = locale,
        _background = background,
@@ -759,6 +769,7 @@ class TextStyle {
   final double? _letterSpacing;
   final double? _wordSpacing;
   final double? _height;
+  final double? _lineHeight;
   final double? _decorationThickness;
   final Locale? _locale;
   final Paint? _background;
@@ -776,6 +787,7 @@ class TextStyle {
         && other._letterSpacing == _letterSpacing
         && other._wordSpacing == _wordSpacing
         && other._height == _height
+        && other._lineHeight == _lineHeight
         && other._decorationThickness == _decorationThickness
         && other._locale == _locale
         && other._background == _background
@@ -810,6 +822,7 @@ class TextStyle {
              'letterSpacing: ${      _encoded[0] & 0x00800 == 0x00800  ? "${_letterSpacing}x"                    : "unspecified"}, '
              'wordSpacing: ${        _encoded[0] & 0x01000 == 0x01000  ? "${_wordSpacing}x"                      : "unspecified"}, '
              'height: ${             _encoded[0] & 0x02000 == 0x02000  ? "${_height}x"                           : "unspecified"}, '
+             'lineHeight: ${         _encoded[0] & 0x03000 == 0x03000  ? "${_lineHeight}x"                           : "unspecified"}, '
              'locale: ${             _encoded[0] & 0x04000 == 0x04000  ? _locale                                 : "unspecified"}, '
              'background: ${         _encoded[0] & 0x08000 == 0x08000  ? _background                             : "unspecified"}, '
              'foreground: ${         _encoded[0] & 0x10000 == 0x10000  ? _foreground                             : "unspecified"}, '
@@ -847,6 +860,7 @@ Int32List _encodeParagraphStyle(
   String? fontFamily,
   double? fontSize,
   double? height,
+  double? lineHeight,
   TextHeightBehavior? textHeightBehavior,
   FontWeight? fontWeight,
   FontStyle? fontStyle,
@@ -891,16 +905,20 @@ Int32List _encodeParagraphStyle(
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
-  if (strutStyle != null) {
+  if (lineHeight != null) {
     result[0] |= 1 << 10;
     // Passed separately to native.
   }
-  if (ellipsis != null) {
+  if (strutStyle != null) {
     result[0] |= 1 << 11;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (ellipsis != null) {
     result[0] |= 1 << 12;
+    // Passed separately to native.
+  }
+  if (locale != null) {
+    result[0] |= 1 << 13;
     // Passed separately to native.
   }
   return result;
@@ -940,6 +958,12 @@ class ParagraphStyle {
   ///   [TextStyle.height]. Omitting `height` here and in [TextStyle] will allow
   ///   the line height to take the height as defined by the font, which may not
   ///   be exactly the height of the `fontSize`.
+  /// 
+  /// * `lineHeight`: The fallback height of the spans as a multiplier of the font
+  ///   size. The fallback height is used when no height is provided through
+  ///   [TextStyle.height]. Omitting `height` here and in [TextStyle] will allow
+  ///   the line height to take the height as defined by the font, which may not
+  ///   be exactly the height of the `fontSize`.
   ///
   /// * `textHeightBehavior`: Specifies how the `height` multiplier is
   ///   applied to ascent of the first line and the descent of the last line.
@@ -971,6 +995,7 @@ class ParagraphStyle {
     String? fontFamily,
     double? fontSize,
     double? height,
+    double? lineHeight,
     TextHeightBehavior? textHeightBehavior,
     FontWeight? fontWeight,
     FontStyle? fontStyle,
@@ -984,6 +1009,7 @@ class ParagraphStyle {
          fontFamily,
          fontSize,
          height,
+         lineHeight,
          textHeightBehavior,
          fontWeight,
          fontStyle,
@@ -994,6 +1020,7 @@ class ParagraphStyle {
        _fontFamily = fontFamily,
        _fontSize = fontSize,
        _height = height,
+       _lineHeight = lineHeight,
        _strutStyle = strutStyle,
        _ellipsis = ellipsis,
        _locale = locale;
@@ -1002,6 +1029,7 @@ class ParagraphStyle {
   final String? _fontFamily;
   final double? _fontSize;
   final double? _height;
+  final double? _lineHeight;
   final StrutStyle? _strutStyle;
   final String? _ellipsis;
   final Locale? _locale;
@@ -1016,6 +1044,7 @@ class ParagraphStyle {
         && other._fontFamily == _fontFamily
         && other._fontSize == _fontSize
         && other._height == _height
+        && other._lineHeight == _lineHeight
         && other._strutStyle == _strutStyle
         && other._ellipsis == _ellipsis
         && other._locale == _locale
@@ -1039,6 +1068,7 @@ class ParagraphStyle {
              'fontFamily: ${    _encoded[0] & 0x080 == 0x080 ? _fontFamily                       : "unspecified"}, '
              'fontSize: ${      _encoded[0] & 0x100 == 0x100 ? _fontSize                         : "unspecified"}, '
              'height: ${        _encoded[0] & 0x200 == 0x200 ? "${_height}x"                     : "unspecified"}, '
+             'lineHeight: ${    _encoded[0] & 0x300 == 0x300 ? "${_lineHeight}x"                 : "unspecified"}, '
              'ellipsis: ${      _encoded[0] & 0x400 == 0x400 ? "\"$_ellipsis\""                  : "unspecified"}, '
              'locale: ${        _encoded[0] & 0x800 == 0x800 ? _locale                           : "unspecified"}'
            ')';
@@ -1141,7 +1171,7 @@ class StrutStyle {
   ///   baseline alignment or large [TextStyle.fontSize] may cause the actual line
   ///   height after layout to be taller than specified here. The `fontSize` must
   ///   be provided for this property to take effect.
-  ///
+  /// 
   /// * `leading`: The minimum amount of leading between lines as a multiple of
   ///   the font size. `fontSize` must be provided for this property to take effect.
   ///
@@ -2131,6 +2161,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       style._letterSpacing,
       style._wordSpacing,
       style._height,
+      style._lineHeight,
       style._decorationThickness,
       _encodeLocale(style._locale),
       style._background?._objects,
@@ -2149,6 +2180,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     double? letterSpacing,
     double? wordSpacing,
     double? height,
+    double? lineHeight,
     double? decorationThickness,
     String locale,
     List<dynamic>? backgroundObjects,

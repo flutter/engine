@@ -45,11 +45,12 @@ const int tsFontSizeIndex = 10;
 const int tsLetterSpacingIndex = 11;
 const int tsWordSpacingIndex = 12;
 const int tsHeightIndex = 13;
-const int tsLocaleIndex = 14;
-const int tsBackgroundIndex = 15;
-const int tsForegroundIndex = 16;
-const int tsTextShadowsIndex = 17;
-const int tsFontFeaturesIndex = 18;
+const int tsLineHeightIndex = 14;
+const int tsLocaleIndex = 15;
+const int tsBackgroundIndex = 16;
+const int tsForegroundIndex = 17;
+const int tsTextShadowsIndex = 18;
+const int tsFontFeaturesIndex = 19;
 
 const int tsColorMask = 1 << tsColorIndex;
 const int tsTextDecorationMask = 1 << tsTextDecorationIndex;
@@ -64,6 +65,7 @@ const int tsFontSizeMask = 1 << tsFontSizeIndex;
 const int tsLetterSpacingMask = 1 << tsLetterSpacingIndex;
 const int tsWordSpacingMask = 1 << tsWordSpacingIndex;
 const int tsHeightMask = 1 << tsHeightIndex;
+const int tsLineHeightMask = 1 << tsLineHeightIndex;
 const int tsLocaleMask = 1 << tsLocaleIndex;
 const int tsBackgroundMask = 1 << tsBackgroundIndex;
 const int tsForegroundMask = 1 << tsForegroundIndex;
@@ -81,9 +83,10 @@ const int psTextHeightBehaviorIndex = 6;
 const int psFontFamilyIndex = 7;
 const int psFontSizeIndex = 8;
 const int psHeightIndex = 9;
-const int psStrutStyleIndex = 10;
-const int psEllipsisIndex = 11;
-const int psLocaleIndex = 12;
+const int psLineHeightIndex = 10;
+const int psStrutStyleIndex = 11;
+const int psEllipsisIndex = 12;
+const int psLocaleIndex = 13;
 
 const int psTextAlignMask = 1 << psTextAlignIndex;
 const int psTextDirectionMask = 1 << psTextDirectionIndex;
@@ -93,6 +96,7 @@ const int psMaxLinesMask = 1 << psMaxLinesIndex;
 const int psFontFamilyMask = 1 << psFontFamilyIndex;
 const int psFontSizeMask = 1 << psFontSizeIndex;
 const int psHeightMask = 1 << psHeightIndex;
+const int psLineHeightMask = 1 << psLineHeightIndex;
 const int psTextHeightBehaviorMask = 1 << psTextHeightBehaviorIndex;
 const int psStrutStyleMask = 1 << psStrutStyleIndex;
 const int psEllipsisMask = 1 << psEllipsisIndex;
@@ -160,11 +164,12 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     const std::vector<std::string>& strutFontFamilies,
     double fontSize,
     double height,
+    double lineHeight,
     const std::u16string& ellipsis,
     const std::string& locale) {
   return fml::MakeRefCounted<ParagraphBuilder>(encoded, strutData, fontFamily,
                                                strutFontFamilies, fontSize,
-                                               height, ellipsis, locale);
+                                               height, lineHeight, ellipsis, locale);
 }
 
 // returns true if there is a font family defined. Font family is the only
@@ -235,6 +240,7 @@ ParagraphBuilder::ParagraphBuilder(
     const std::vector<std::string>& strutFontFamilies,
     double fontSize,
     double height,
+    double lineHeight,
     const std::u16string& ellipsis,
     const std::string& locale) {
   int32_t mask = encoded[0];
@@ -268,6 +274,11 @@ ParagraphBuilder::ParagraphBuilder(
   if (mask & psHeightMask) {
     style.height = height;
     style.has_height_override = true;
+  }
+
+  if (mask & psLineHeightMask) {
+    style.line_height = lineHeight;
+    style.has_line_height_override = true;
   }
 
   if (mask & psTextHeightBehaviorMask) {
@@ -356,6 +367,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  double letterSpacing,
                                  double wordSpacing,
                                  double height,
+                                 double lineHeight,
                                  double decorationThickness,
                                  const std::string& locale,
                                  Dart_Handle background_objects,
@@ -428,6 +440,11 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
   if (mask & tsHeightMask) {
     style.height = height;
     style.has_height_override = true;
+  }
+
+  if (mask & tsLineHeightMask) {
+    style.line_height = lineHeight;
+    style.has_line_height_override = true;
   }
 
   if (mask & tsLocaleMask) {

@@ -46,7 +46,11 @@ bool TextStyle::equals(const TextStyle& other) const {
     return false;
   if (height != other.height)
     return false;
+  if (line_height != other.line_height)
+    return false;
   if (has_height_override != other.has_height_override)
+    return false;
+  if (has_line_height_override != other.has_line_height_override)
     return false;
   if (locale != other.locale)
     return false;

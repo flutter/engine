@@ -1185,7 +1185,19 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
   if (!strut_.force_strut) {
     double ascent;
     double descent;
-    if (style.has_height_override) {
+    if (style.has_line_height_override) {
+      double metrics_height = -metrics.fAscent + metrics.fDescent;
+      double custom_line_height = style.line_height * style.font_size;
+
+      if (custom_line_height >= metrics_height) {
+        double extra_leading = custom_line_height - metrics_height;
+        ascent = -metrics.fAscent + extra_leading / 2;
+        descent = metrics.fDescent + extra_leading / 2;
+      } else {
+        ascent = (-metrics.fAscent / metrics_height) * style.line_height * style.font_size;
+        descent = (metrics.fDescent / metrics_height) * style.line_height * style.font_size;
+      }
+    } else if (style.has_height_override) {
       // Scale the ascent and descent such that the sum of ascent and
       // descent is `fontsize * style.height * style.font_size`.
       //
