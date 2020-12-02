@@ -56,7 +56,6 @@ TEST_F(ShellTest, PathVolatilityTracking) {
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("createPath");
-  PlatformViewNotifyCreated(shell.get());
 
   shell->RunEngine(std::move(configuration), [](auto result) {
     ASSERT_EQ(result, Engine::RunStatus::Success);
@@ -114,7 +113,6 @@ TEST_F(ShellTest, PathVolatilityTrackingCollected) {
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("createPath");
-  PlatformViewNotifyCreated(shell.get());
 
   shell->RunEngine(std::move(configuration), [](auto result) {
     ASSERT_EQ(result, Engine::RunStatus::Success);
