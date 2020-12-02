@@ -633,6 +633,7 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
     'text_editing_integration.dart',
     'url_strategy_integration.dart',
 
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/71583
     // The following tests are blocked to reduce the load on the build bot.
     // The bot currently frequently exceeds the timeout limit.
     'image_loading_integration.dart',
@@ -642,6 +643,7 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
   ],
   'profile': [],
   'release': [
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/71583
     // The following tests are blocked to reduce the load on the build bot.
     // The bot currently frequently exceeds the timeout limit.
     'image_loading_integration.dart',
