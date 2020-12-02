@@ -480,8 +480,8 @@ class PhysicalShapeLayer extends ContainerLayer
     assert(needsPainting);
 
     if (_elevation != 0) {
-      drawShadow(paintContext.leafNodesCanvas!, _path, _shadowColor!, _elevation,
-          _color.alpha != 0xff);
+      drawShadow(paintContext.leafNodesCanvas!, _path, _shadowColor!,
+          _elevation, _color.alpha != 0xff);
     }
 
     final ui.Paint paint = ui.Paint()..color = _color;
@@ -525,6 +525,25 @@ class PhysicalShapeLayer extends ContainerLayer
   static void drawShadow(CkCanvas canvas, ui.Path path, ui.Color color,
       double elevation, bool transparentOccluder) {
     canvas.drawShadow(path, color, elevation, transparentOccluder);
+  }
+}
+
+/// A layer which contains a [ui.ColorFilter].
+class ColorFilterLayer extends ContainerLayer {
+  ColorFilterLayer(this.filter);
+
+  final ui.ColorFilter filter;
+
+  @override
+  void paint(PaintContext paintContext) {
+    assert(needsPainting);
+
+    CkPaint paint = CkPaint();
+    paint.colorFilter = filter;
+
+    paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
+    paintChildren(paintContext);
+    paintContext.internalNodesCanvas.restore();
   }
 }
 
