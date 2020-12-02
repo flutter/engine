@@ -665,9 +665,9 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
         if (!codeUnitsSupported[i]) {
           missingCodeUnits.add(codeUnits[i]);
           print('We do not support the Unicode code point: ${codeUnits[i]}');
-          _findFontsForMissingCodeunit(codeUnits[i]);
         }
       }
+      _findFontsForMissingCodeunits(missingCodeUnits);
     }
   }
 

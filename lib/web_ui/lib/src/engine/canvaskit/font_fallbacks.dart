@@ -5,10 +5,93 @@
 // @dart = 2.12
 part of engine;
 
-void _findFontsForMissingCodeunit(int codeunit) {
+Future<void> _findFontsForMissingCodeunits(List<int> codeunits) async {
   _ensureNotoFontTreeCreated();
-  List<String> families = _lookupNotoFontsForCodeunit(codeunit);
-  print('Fonts which match $codeunit: $families');
+  Set<_NotoFont> fonts = <_NotoFont>{};
+  for (int codeunit in codeunits) {
+    fonts.addAll(_lookupNotoFontsForCodeunit(codeunit));
+  }
+  fonts = _findMinimumFontsForCodeunits(codeunits, fonts);
+  for (_NotoFont font in fonts) {
+    String googleFontCss = await html.window.fetch(font.googleFontsCssUrl).then(
+        (dynamic response) =>
+            response.text().then<String>((dynamic x) => x as String));
+    print(googleFontCss);
+  }
+  print('Fonts which match missing code units: ${fonts.map((f) => f.name)}');
+}
+
+_NotoFont _makeResolvedNotoFontFromCss(String css, String family) {
+  List<_ResolvedNotoSubset> subsets = <_ResolvedNotoSubset>[];
+  for (String line in LineSplitter.split(css)) {
+  }
+}
+
+/// Finds the minimum set of fonts which covers all of the [codeunits].
+///
+/// Since set cover is NP-complete, we approximate using a greedy algorithm
+/// which finds the font which covers the most codeunits. If multiple CJK
+/// fonts match the same number of codeunits, we choose one based on the user's
+/// locale.
+Set<_NotoFont> _findMinimumFontsForCodeunits(
+    List<int> codeunits, Set<_NotoFont> fonts) {
+  List<int> unmatchedCodeunits = List<int>.from(codeunits);
+  Set<_NotoFont> minimumFonts = <_NotoFont>{};
+  List<_NotoFont> bestFonts = <_NotoFont>[];
+  int maxCodeunitsCovered = 0;
+
+  while (unmatchedCodeunits.isNotEmpty) {
+    for (var font in fonts) {
+      int codeunitsCovered = 0;
+      for (int codeunit in unmatchedCodeunits) {
+        if (font.matchesCodeunit(codeunit)) {
+          codeunitsCovered++;
+        }
+      }
+      if (codeunitsCovered > maxCodeunitsCovered) {
+        bestFonts.clear();
+        bestFonts.add(font);
+        maxCodeunitsCovered = codeunitsCovered;
+      } else if (codeunitsCovered == maxCodeunitsCovered) {
+        bestFonts.add(font);
+      }
+    }
+    assert(bestFonts.isNotEmpty);
+    // If the list of best fonts are all CJK fonts, choose the best one based
+    // on locale. Otherwise just choose the first font.
+    _NotoFont bestFont = bestFonts.first;
+    if (bestFonts.length > 1) {
+      if (bestFonts.every((font) => _cjkFonts.contains(font))) {
+        String language = html.window.navigator.language;
+        if (language == 'zh-Hans' ||
+            language == 'zh-CN' ||
+            language == 'zh-SG' ||
+            language == 'zh-MY') {
+          if (bestFonts.contains(_notoSansSC)) {
+            bestFont = _notoSansSC;
+          }
+        } else if (language == 'zh-Hant' ||
+            language == 'zh-TW' ||
+            language == 'zh-MO') {
+          if (bestFonts.contains(_notoSansTC)) {
+            bestFont = _notoSansTC;
+          }
+        } else if (language == 'zh-HK') {
+          if (bestFonts.contains(_notoSansHK)) {
+            bestFont = _notoSansHK;
+          }
+        } else if (language == 'ja') {
+          if (bestFonts.contains(_notoSansJP)) {
+            bestFont = _notoSansJP;
+          }
+        }
+      }
+    }
+    unmatchedCodeunits
+        .removeWhere((codeunit) => bestFont.matchesCodeunit(codeunit));
+    minimumFonts.add(bestFont);
+  }
+  return minimumFonts;
 }
 
 void _ensureNotoFontTreeCreated() {
@@ -18,29 +101,29 @@ void _ensureNotoFontTreeCreated() {
 
   for (_NotoFont font in _notoFonts) {
     for (_UnicodeRange range in font.unicodeRanges) {
-      _insertNotoFontRange(range, font);
+      _notoTreeRoot = _insertNotoFontRange(range, font, _notoTreeRoot);
     }
   }
 }
 
-List<String> _lookupNotoFontsForCodeunit(int codeunit) {
-  List<String> lookupHelper(_NotoTreeNode node) {
+List<_NotoFont> _lookupNotoFontsForCodeunit(int codeunit) {
+  List<_NotoFont> lookupHelper(_NotoTreeNode<_NotoFont> node) {
     if (node.range.contains(codeunit)) {
-      return node.fonts.map((_NotoFont f) => f.name).toList();
+      return node.fonts.toList();
     }
     if (node.range.start > codeunit) {
       if (node.left != null) {
         return lookupHelper(node.left!);
       } else {
         print('Could not find font to match $codeunit');
-        return <String>[];
+        return <_NotoFont>[];
       }
     } else {
       if (node.right != null) {
         return lookupHelper(node.right!);
       } else {
         print('Could not find font to match $codeunit');
-        return <String>[];
+        return <_NotoFont>[];
       }
     }
   }
@@ -53,6 +136,15 @@ class _NotoFont {
   final List<_UnicodeRange> unicodeRanges;
 
   const _NotoFont(this.name, this.unicodeRanges);
+
+  bool matchesCodeunit(int codeunit) {
+    for (_UnicodeRange range in unicodeRanges) {
+      if (range.contains(codeunit)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   String get googleFontsCssUrl =>
       'https://fonts.googleapis.com/css2?family=${name.replaceAll(' ', '+')}';
@@ -77,7 +169,58 @@ class _UnicodeRange {
   }
 }
 
+class _ResolvedNotoFont {
+  final String name;
+  final List<_ResolvedNotoSubset> subsets;
+
+  const _ResolvedNotoFont(this.name, this.subsets);
+}
+
+class _ResolvedNotoSubset {
+  final String url;
+  final List<_UnicodeRange> ranges;
+
+  const _ResolvedNotoSubset(this.url, this.ranges);
+}
+
+const _NotoFont _notoSansSC = _NotoFont('Noto Sans SC', <_UnicodeRange>[
+  _UnicodeRange(12288, 12591),
+  _UnicodeRange(12800, 13311),
+  _UnicodeRange(19968, 40959),
+  _UnicodeRange(65072, 65135),
+  _UnicodeRange(65280, 65519),
+]);
+
+const _NotoFont _notoSansTC = _NotoFont('Noto Sans TC', <_UnicodeRange>[
+  _UnicodeRange(12288, 12351),
+  _UnicodeRange(12549, 12585),
+  _UnicodeRange(19968, 40959),
+]);
+
+const _NotoFont _notoSansHK = _NotoFont('Noto Sans HK', <_UnicodeRange>[
+  _UnicodeRange(12288, 12351),
+  _UnicodeRange(12549, 12585),
+  _UnicodeRange(19968, 40959),
+]);
+
+const _NotoFont _notoSansJP = _NotoFont('Noto Sans JP', <_UnicodeRange>[
+  _UnicodeRange(12288, 12543),
+  _UnicodeRange(19968, 40959),
+  _UnicodeRange(65280, 65519),
+]);
+
+const List<_NotoFont> _cjkFonts = <_NotoFont>[
+  _notoSansSC,
+  _notoSansTC,
+  _notoSansHK,
+  _notoSansJP,
+];
+
 const List<_NotoFont> _notoFonts = <_NotoFont>[
+  _notoSansSC,
+  _notoSansTC,
+  _notoSansHK,
+  _notoSansJP,
   _NotoFont('Noto Naskh Arabic UI', <_UnicodeRange>[
     _UnicodeRange(1536, 1791),
     _UnicodeRange(8204, 8206),
@@ -102,23 +245,6 @@ const List<_NotoFont> _notoFonts = <_NotoFont>[
     _UnicodeRange(4096, 4255),
     _UnicodeRange(8204, 8205),
     _UnicodeRange(9676, 9676),
-  ]),
-  _NotoFont('Noto Sans HK', <_UnicodeRange>[
-    _UnicodeRange(12288, 12351),
-    _UnicodeRange(12549, 12585),
-    _UnicodeRange(19968, 40959),
-  ]),
-  _NotoFont('Noto Sans SC', <_UnicodeRange>[
-    _UnicodeRange(12288, 12591),
-    _UnicodeRange(12800, 13311),
-    _UnicodeRange(19968, 40959),
-    _UnicodeRange(65072, 65135),
-    _UnicodeRange(65280, 65519),
-  ]),
-  _NotoFont('Noto Sans TC', <_UnicodeRange>[
-    _UnicodeRange(12288, 12351),
-    _UnicodeRange(12549, 12585),
-    _UnicodeRange(19968, 40959),
   ]),
   _NotoFont('Noto Sans Egyptian Hieroglyphs', <_UnicodeRange>[
     _UnicodeRange(77824, 78894),
@@ -166,11 +292,6 @@ const List<_NotoFont> _notoFonts = <_NotoFont>[
     _UnicodeRange(9676, 9676),
     _UnicodeRange(43056, 43065),
     _UnicodeRange(43232, 43259),
-  ]),
-  _NotoFont('Noto Sans JP', <_UnicodeRange>[
-    _UnicodeRange(12288, 12543),
-    _UnicodeRange(19968, 40959),
-    _UnicodeRange(65280, 65519),
   ]),
   _NotoFont('Noto Sans Kannada UI', <_UnicodeRange>[
     _UnicodeRange(2404, 2405),
@@ -282,43 +403,46 @@ const List<_NotoFont> _notoFonts = <_NotoFont>[
 ];
 
 /// A node in a red-black tree for Noto Fonts.
-class _NotoTreeNode {
-  _NotoTreeNode? parent;
-  _NotoTreeNode? left;
-  _NotoTreeNode? right;
+class _NotoTreeNode<T> {
+  _NotoTreeNode<T>? parent;
+  _NotoTreeNode<T>? left;
+  _NotoTreeNode<T>? right;
 
   /// If `true`, then this node is black. Otherwise it is red.
   bool isBlack = false;
   bool get isRed => !isBlack;
 
   final _UnicodeRange range;
-  final List<_NotoFont> fonts;
+  final List<T> fonts;
 
-  _NotoTreeNode(this.range) : this.fonts = <_NotoFont>[];
+  _NotoTreeNode(this.range) : this.fonts = <T>[];
 }
 
 /// Associates [range] with [font] in the Noto Font tree.
-void _insertNotoFontRange(_UnicodeRange range, _NotoFont font) {
-  _NotoTreeNode? newNode =
-      _insertNotoFontRangeHelper(_notoTreeRoot, range, font);
+///
+/// Returns the root node.
+_NotoTreeNode<T>? _insertNotoFontRange<T>(
+    _UnicodeRange range, T font, _NotoTreeNode<T>? root) {
+  _NotoTreeNode<T>? newNode = _insertNotoFontRangeHelper(root, range, font);
   if (newNode != null) {
     _repairNotoFontTree(newNode);
 
     // Make sure the root node is correctly set.
-    _NotoTreeNode newRoot = newNode;
+    _NotoTreeNode<T> newRoot = newNode;
     while (newRoot.parent != null) {
       newRoot = newRoot.parent!;
     }
 
-    _notoTreeRoot = newRoot;
+    return newRoot;
   }
+  return root;
 }
 
 /// Recurses the font tree and associates [range] with [font].
 ///
 /// If a new node is created, it is returned so we can repair the tree.
-_NotoTreeNode? _insertNotoFontRangeHelper(
-    _NotoTreeNode? root, _UnicodeRange range, _NotoFont font) {
+_NotoTreeNode<T>? _insertNotoFontRangeHelper<T>(
+    _NotoTreeNode<T>? root, _UnicodeRange range, T font) {
   if (root != null) {
     if (root.range == range) {
       // The root node range is the same as the range we're inserting.
@@ -327,9 +451,9 @@ _NotoTreeNode? _insertNotoFontRangeHelper(
     }
     if (range.start < root.range.start) {
       if (root.left != null) {
-        return _insertNotoFontRangeHelper(root.left, range, font);
+        return _insertNotoFontRangeHelper<T>(root.left, range, font);
       } else {
-        _NotoTreeNode newNode = _NotoTreeNode(range);
+        _NotoTreeNode<T> newNode = _NotoTreeNode<T>(range);
         newNode.fonts.add(font);
         newNode.parent = root;
         root.left = newNode;
@@ -339,7 +463,7 @@ _NotoTreeNode? _insertNotoFontRangeHelper(
       if (root.right != null) {
         return _insertNotoFontRangeHelper(root.right, range, font);
       } else {
-        _NotoTreeNode newNode = _NotoTreeNode(range);
+        _NotoTreeNode<T> newNode = _NotoTreeNode<T>(range);
         newNode.fonts.add(font);
         newNode.parent = root;
         root.right = newNode;
@@ -349,7 +473,7 @@ _NotoTreeNode? _insertNotoFontRangeHelper(
   } else {
     // If [root] is null, then the root of the entire Noto Font tree is null.
     assert(_notoTreeRoot == null);
-    _NotoTreeNode newRoot = _NotoTreeNode(range);
+    _NotoTreeNode<T> newRoot = _NotoTreeNode<T>(range);
     newRoot.fonts.add(font);
     _notoTreeRoot = newRoot;
     return newRoot;
@@ -458,4 +582,4 @@ void _repairNotoFontTree(_NotoTreeNode node) {
   grandparent.isBlack = false;
 }
 
-_NotoTreeNode? _notoTreeRoot;
+_NotoTreeNode<_NotoFont>? _notoTreeRoot;
