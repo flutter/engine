@@ -593,6 +593,7 @@ FILE: ../../../flutter/runtime/dart_vm_unittests.cc
 FILE: ../../../flutter/runtime/embedder_resources.cc
 FILE: ../../../flutter/runtime/embedder_resources.h
 FILE: ../../../flutter/runtime/fixtures/runtime_test.dart
+FILE: ../../../flutter/runtime/fixtures/split_lib_test.dart
 FILE: ../../../flutter/runtime/isolate_configuration.cc
 FILE: ../../../flutter/runtime/isolate_configuration.h
 FILE: ../../../flutter/runtime/platform_data.cc
@@ -676,6 +677,8 @@ FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_metal.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_metal.mm
+FILE: ../../../flutter/shell/gpu/gpu_surface_metal_delegate.cc
+FILE: ../../../flutter/shell/gpu/gpu_surface_metal_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_software_delegate.cc
@@ -936,6 +939,8 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStan
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_codecs_unittest.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_standard_codec_unittest.mm
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Flutter.podspec
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h
