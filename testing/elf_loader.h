@@ -15,6 +15,12 @@ namespace flutter {
 namespace testing {
 
 inline constexpr const char* kAOTAppELFFileName = "app_elf_snapshot.so";
+
+// This file name is what gen_snapshot defaults to. It is based off of the
+// name of the base file, with the `2` indicating that this split corresponds
+// to loading unit id of 2. The base module id is 1 and is omitted as it is not
+// considered a split. If dart changes the naming convention, this should be
+// changed to match, however, this is considered unlikely to happen.
 inline constexpr const char* kAOTAppELFSplitFileName =
     "app_elf_snapshot.so-2.part.so";
 

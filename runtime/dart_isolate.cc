@@ -1042,8 +1042,14 @@ Dart_Handle DartIsolate::OnDartLoadLibrary(intptr_t loading_unit_id) {
   if (Current()->platform_configuration()) {
     Current()->platform_configuration()->client()->RequestDartDeferredLibrary(
         loading_unit_id);
+    return Dart_Null();
   }
-  return Dart_Null();
+  const std::string error_message =
+      "Platform Configuration was null. Deferred library load request"
+      "for loading unit id " +
+      std::to_string(loading_unit_id) + " was not sent.";
+  FML_LOG(ERROR) << error_message;
+  return Dart_NewApiError(error_message.c_str());
 }
 
 DartIsolate::AutoFireClosure::AutoFireClosure(const fml::closure& closure)
