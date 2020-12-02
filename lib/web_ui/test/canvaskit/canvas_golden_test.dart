@@ -58,7 +58,8 @@ void testMain() {
       expect(restoredPixels.buffer.asUint8List(), originalPixels.buffer.asUint8List());
     });
   // TODO: https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  // TODO: https://github.com/flutter/flutter/issues/71520
+  }, skip: isIosSafari || isFirefox);
 }
 
 void drawTestPicture(CkCanvas canvas) {
