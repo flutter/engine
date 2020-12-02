@@ -387,7 +387,7 @@ class _ButtonSanitizer {
     );
   }
 
-  static const int kRightMouseButton = 1;
+  static const int kRightMouseButton = 2;
 
   _SanitizedDetails sanitizeMoveEvent({required int buttons}) {
     final int newPressedButtons = _htmlButtonsToFlutterButtons(buttons);
@@ -413,7 +413,7 @@ class _ButtonSanitizer {
       );
     }
 
-    if (_pressedButtons == kRightMouseButton) {
+    if ((_pressedButtons & kRightMouseButton) != 0) {
       _pressedButtons = newPressedButtons;
     }
 

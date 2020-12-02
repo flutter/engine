@@ -1040,7 +1040,7 @@ void testMain() {
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
       expect(packets[0].data[0].synthesized, equals(false));
-      expect(packets[0].data[0].buttons, equals(5));
+      expect(packets[0].data[0].buttons, equals(1));
       packets.clear();
 
       // Release LMB.
@@ -1052,7 +1052,8 @@ void testMain() {
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
       expect(packets[0].data[0].synthesized, equals(false));
-      expect(packets[0].data[0].buttons, equals(4));
+      // Left button should stay in buttons until mouse up is received.
+      expect(packets[0].data[0].buttons, equals(1));
       packets.clear();
 
       // Release MMB.
