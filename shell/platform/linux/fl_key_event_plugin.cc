@@ -10,21 +10,6 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_message_codec.h"
 
-// Definition of the FlKeyEventPlugin GObject class.
-
-struct _FlKeyEventPlugin {
-  GObject parent_instance;
-
-  FlBasicMessageChannel* channel = nullptr;
-  FlTextInputPlugin* text_input_plugin = nullptr;
-  FlKeyEventPluginCallback response_callback = nullptr;
-  GPtrArray* pending_events;
-};
-
-G_DEFINE_TYPE(FlKeyEventPlugin, fl_key_event_plugin, G_TYPE_OBJECT)
-
-namespace {
-
 static constexpr char kChannelName[] = "flutter/keyevent";
 static constexpr char kTypeKey[] = "type";
 static constexpr char kTypeValueUp[] = "keyup";
@@ -40,6 +25,19 @@ static constexpr char kGtkToolkit[] = "gtk";
 static constexpr char kLinuxKeymap[] = "linux";
 
 static constexpr uint64_t kMaxPendingEvents = 1000;
+
+// Definition of the FlKeyEventPlugin GObject class.
+
+struct _FlKeyEventPlugin {
+  GObject parent_instance;
+
+  FlBasicMessageChannel* channel = nullptr;
+  FlTextInputPlugin* text_input_plugin = nullptr;
+  FlKeyEventPluginCallback response_callback = nullptr;
+  GPtrArray* pending_events;
+};
+
+G_DEFINE_TYPE(FlKeyEventPlugin, fl_key_event_plugin, G_TYPE_OBJECT)
 
 // Declare and define a private pair object to bind the id and the event
 // together.
@@ -271,8 +269,6 @@ static void fl_key_event_plugin_dispose(GObject* object) {
 
   G_OBJECT_CLASS(fl_key_event_plugin_parent_class)->dispose(object);
 }
-
-}  // namespace
 
 // Initializes the FlKeyEventPlugin class methods.
 static void fl_key_event_plugin_class_init(FlKeyEventPluginClass* klass) {

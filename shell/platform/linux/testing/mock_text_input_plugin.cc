@@ -14,8 +14,6 @@ G_DEFINE_TYPE(FlMockTextInputPlugin,
               fl_mock_text_input_plugin,
               fl_text_input_plugin_get_type())
 
-namespace {
-
 static gboolean mock_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
                                                        GdkEventKey* event) {
   FlMockTextInputPlugin* mock_self = FL_MOCK_TEXT_INPUT_PLUGIN(self);
@@ -24,8 +22,6 @@ static gboolean mock_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
   }
   return FALSE;
 }
-
-}  // namespace
 
 static void fl_mock_text_input_plugin_class_init(
     FlMockTextInputPluginClass* klass) {

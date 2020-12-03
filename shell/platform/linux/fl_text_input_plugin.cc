@@ -10,6 +10,40 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_method_codec.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
 
+static constexpr char kChannelName[] = "flutter/textinput";
+
+static constexpr char kBadArgumentsError[] = "Bad Arguments";
+
+static constexpr char kSetClientMethod[] = "TextInput.setClient";
+static constexpr char kShowMethod[] = "TextInput.show";
+static constexpr char kSetEditingStateMethod[] = "TextInput.setEditingState";
+static constexpr char kClearClientMethod[] = "TextInput.clearClient";
+static constexpr char kHideMethod[] = "TextInput.hide";
+static constexpr char kUpdateEditingStateMethod[] =
+    "TextInputClient.updateEditingState";
+static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
+static constexpr char kSetEditableSizeAndTransform[] =
+    "TextInput.setEditableSizeAndTransform";
+static constexpr char kSetMarkedTextRect[] = "TextInput.setMarkedTextRect";
+
+static constexpr char kInputActionKey[] = "inputAction";
+static constexpr char kTextInputTypeKey[] = "inputType";
+static constexpr char kTextInputTypeNameKey[] = "name";
+static constexpr char kTextKey[] = "text";
+static constexpr char kSelectionBaseKey[] = "selectionBase";
+static constexpr char kSelectionExtentKey[] = "selectionExtent";
+static constexpr char kSelectionAffinityKey[] = "selectionAffinity";
+static constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
+static constexpr char kComposingBaseKey[] = "composingBase";
+static constexpr char kComposingExtentKey[] = "composingExtent";
+
+static constexpr char kTransform[] = "transform";
+
+static constexpr char kTextAffinityDownstream[] = "TextAffinity.downstream";
+static constexpr char kMultilineInputType[] = "TextInputType.multiline";
+
+static constexpr int64_t kClientIdUnset = -1;
+
 struct FlTextInputPluginPrivate {
   GObject parent_instance;
 
@@ -46,42 +80,6 @@ struct FlTextInputPluginPrivate {
 G_DEFINE_TYPE_WITH_PRIVATE(FlTextInputPlugin,
                            fl_text_input_plugin,
                            G_TYPE_OBJECT)
-
-namespace {
-
-static constexpr char kChannelName[] = "flutter/textinput";
-
-static constexpr char kBadArgumentsError[] = "Bad Arguments";
-
-static constexpr char kSetClientMethod[] = "TextInput.setClient";
-static constexpr char kShowMethod[] = "TextInput.show";
-static constexpr char kSetEditingStateMethod[] = "TextInput.setEditingState";
-static constexpr char kClearClientMethod[] = "TextInput.clearClient";
-static constexpr char kHideMethod[] = "TextInput.hide";
-static constexpr char kUpdateEditingStateMethod[] =
-    "TextInputClient.updateEditingState";
-static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
-static constexpr char kSetEditableSizeAndTransform[] =
-    "TextInput.setEditableSizeAndTransform";
-static constexpr char kSetMarkedTextRect[] = "TextInput.setMarkedTextRect";
-
-static constexpr char kInputActionKey[] = "inputAction";
-static constexpr char kTextInputTypeKey[] = "inputType";
-static constexpr char kTextInputTypeNameKey[] = "name";
-static constexpr char kTextKey[] = "text";
-static constexpr char kSelectionBaseKey[] = "selectionBase";
-static constexpr char kSelectionExtentKey[] = "selectionExtent";
-static constexpr char kSelectionAffinityKey[] = "selectionAffinity";
-static constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
-static constexpr char kComposingBaseKey[] = "composingBase";
-static constexpr char kComposingExtentKey[] = "composingExtent";
-
-static constexpr char kTransform[] = "transform";
-
-static constexpr char kTextAffinityDownstream[] = "TextAffinity.downstream";
-static constexpr char kMultilineInputType[] = "TextInputType.multiline";
-
-static constexpr int64_t kClientIdUnset = -1;
 
 // Completes method call and returns TRUE if the call was successful.
 static gboolean finish_method(GObject* object,
@@ -546,8 +544,6 @@ static gboolean fl_text_input_plugin_filter_keypress_default(
 
   return changed;
 }
-
-}  // namespace
 
 // Initializes the FlTextInputPlugin class.
 static void fl_text_input_plugin_class_init(FlTextInputPluginClass* klass) {
