@@ -411,6 +411,8 @@ class _ButtonSanitizer {
       );
     }
 
+    _pressedButtons = newPressedButtons;
+
     return _SanitizedDetails(
       change: _pressedButtons == 0
           ? ui.PointerChange.hover
