@@ -520,21 +520,20 @@ void testMain() async {
     paragraph = plain(onelineStyle, 'abcd efg')..layout(constrain(60.0));
     // expect(paragraph.height, 10);
     expectLines(paragraph, [
-      l('abc...', 0, 8, hardBreak: false, width: 60.0, left: 0.0),
+      l('abc...', 0, 3, hardBreak: false, width: 60.0, left: 0.0),
     ]);
 
     // Another simple overflow case.
     paragraph = plain(onelineStyle, 'a bcde fgh')..layout(constrain(60.0));
     // expect(paragraph.height, 10);
     expectLines(paragraph, [
-      l('a b...', 0, 10, hardBreak: false, width: 60.0, left: 0.0),
+      l('a b...', 0, 3, hardBreak: false, width: 60.0, left: 0.0),
     ]);
 
     // The ellipsis is supposed to go on the second line, but because the
     // 2nd line doesn't overflow, no ellipsis is shown.
     paragraph = plain(multilineStyle, 'abcdef ghijkl')..layout(constrain(60.0));
     // expect(paragraph.height, 20);
-
     expectLines(paragraph, [
       l('abcdef ', 0, 7, hardBreak: false, width: 60.0, left: 0.0),
       l('ghijkl', 7, 13, hardBreak: true, width: 60.0, left: 0.0),
@@ -543,10 +542,9 @@ void testMain() async {
     // But when the 2nd line is long enough, the ellipsis is shown.
     paragraph = plain(multilineStyle, 'abcd efghijkl')..layout(constrain(60.0));
     // expect(paragraph.height, 20);
-
     expectLines(paragraph, [
       l('abcd ', 0, 5, hardBreak: false, width: 40.0, left: 0.0),
-      l('efg...', 5, 13, hardBreak: false, width: 60.0, left: 0.0),
+      l('efg...', 5, 8, hardBreak: false, width: 60.0, left: 0.0),
     ]);
 
     // Even if the second line can be broken, we don't break it, we just
@@ -554,16 +552,14 @@ void testMain() async {
     paragraph = plain(multilineStyle, 'abcde f gh ijk')
       ..layout(constrain(60.0));
     // expect(paragraph.height, 20);
-
     expectLines(paragraph, [
       l('abcde ', 0, 6, hardBreak: false, width: 50.0, left: 0.0),
-      l('f g...', 6, 14, hardBreak: false, width: 60.0, left: 0.0),
+      l('f g...', 6, 9, hardBreak: false, width: 60.0, left: 0.0),
     ]);
 
     // First line overflows but second line doesn't.
     paragraph = plain(multilineStyle, 'abcdefg hijk')..layout(constrain(60.0));
     // expect(paragraph.height, 20);
-
     expectLines(paragraph, [
       l('abcdef', 0, 6, hardBreak: false, width: 60.0, left: 0.0),
       l('g hijk', 6, 12, hardBreak: true, width: 60.0, left: 0.0),
@@ -573,10 +569,9 @@ void testMain() async {
     paragraph = plain(multilineStyle, 'abcdefg hijklmnop')
       ..layout(constrain(60.0));
     // expect(paragraph.height, 20);
-
     expectLines(paragraph, [
       l('abcdef', 0, 6, hardBreak: false, width: 60.0, left: 0.0),
-      l('g h...', 6, 17, hardBreak: false, width: 60.0, left: 0.0),
+      l('g h...', 6, 9, hardBreak: false, width: 60.0, left: 0.0),
     ]);
   }, skip: skipOverflow || skipMaxLines);
 
