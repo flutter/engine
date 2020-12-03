@@ -354,10 +354,12 @@ void PlatformViewAndroid::LoadDartDeferredLibrary(
 }
 
 // |PlatformView|
-void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                  const std::string error_message,
-                                  bool transient) {
-  delegate_.LoadDartDeferredLibrary(loading_unit_id, error_message, transient);
+void PlatformViewAndroid::LoadDartDeferredLibraryError(
+    intptr_t loading_unit_id,
+    const std::string error_message,
+    bool transient) {
+  delegate_.LoadDartDeferredLibraryError(loading_unit_id, error_message,
+                                         transient);
 }
 
 // |PlatformView|
