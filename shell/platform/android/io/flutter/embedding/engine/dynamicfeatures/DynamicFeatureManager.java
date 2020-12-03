@@ -20,14 +20,14 @@ import io.flutter.embedding.engine.FlutterJNI;
  * deferred imported library. See https://dart.dev/guides/language/language-tour#deferred-loading
  * This call retrieves a unique identifier called the loading unit id, which is assigned by
  * gen_snapshot during compilation. The loading unit id is passed down through the engine and
- * invokes downloadDynamicFeature. Once the feature module is downloaded, loadAssets and
+ * invokes installDynamicFeature. Once the feature module is downloaded, loadAssets and
  * loadDartLibrary should be invoked. loadDartLibrary should find shared library .so files for the
  * engine to open and pass the .so path to FlutterJNI.loadDartDeferredLibrary. loadAssets should
  * typically ensure the new assets are available to the engine's asset manager by passing an updated
  * Android AssetManager to the engine via FlutterJNI.updateAssetManager.
  *
  * <p>The loadAssets and loadDartLibrary methods are separated out because they may also be called
- * manually via platform channel messages. A full downloadDynamicFeature implementation should call
+ * manually via platform channel messages. A full installDynamicFeature implementation should call
  * these two methods as needed.
  *
  * <p>A dynamic feature module is uniquely identified by a module name as defined in
@@ -85,7 +85,36 @@ public interface DynamicFeatureManager {
    *     associated Dart deferred library, loading unit id should a negative value and moduleName
    *     must be non-null.
    */
-  public abstract void downloadDynamicFeature(int loadingUnitId, String moduleName);
+  public abstract void installDynamicFeature(int loadingUnitId, String moduleName);
+
+  /**
+   * Gets the current state of the installation session corresponding to the specified
+   * loadingUnitId and/or moduleName.
+   *
+   * <p>Invocations of {@link installDynamicFeature} typically result in asynchronous downloading
+   * and other tasks. This method enables querying of the state of the installation. If no dynamic
+   * feature has been installed or requested to be installed by the provided loadingUnitId or
+   * moduleName, then this method will return null.
+   *
+   * <p>Depending on the implementation, the returned String may vary. The Play store default
+   * implementation begins in the "Requested" state before transitioning to the "Downloading" and
+   * "Installed" states.
+   *
+   * <p>Only sucessfully requested modules have state. Modules that are invalid or have not been
+   * requested with {@link installDynamicFeature} will not have a state. Due to the asynchronous
+   * nature of the download process, modules may not immediately have a valid state upon return of
+   * {@link installDynamicFeature}, though valid modules will eventually obtain a state.
+   *
+   * <p>Both parameters are not always necessary to identify which module to install. Asset-only
+   * modules do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be passed
+   * to query only with moduleName. On the other hand, it can be possible to resolve the
+   * moduleName based on the loadingUnitId. This resolution is done if moduleName is null. At least
+   * one of loadingUnitId or moduleName must be valid or non-null.
+   *
+   * @param loadingUnitId The unique identifier associated with a Dart deferred library.
+   * @param moduleName The dynamic feature module name as defined in bundle_config.yaml.
+   */
+  public abstract String getDynamicFeatureInstallState(int loadingUnitId, String moduleName);
 
   /**
    * Extract and load any assets and resources from the module for use by Flutter.
@@ -102,7 +131,7 @@ public interface DynamicFeatureManager {
    *
    * <p>Assets shoud be loaded before the Dart deferred library is loaded, as successful loading of
    * the Dart loading unit indicates the dynamic feature is fully loaded. Implementations of
-   * downloadDynamicFeature should invoke this after successful download.
+   * installDynamicFeature should invoke this after successful download.
    *
    * @param loadingUnitId The unique identifier associated with a Dart deferred library.
    * @param moduleName The dynamic feature module name as defined in bundle_config.yaml.

@@ -12,9 +12,11 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager;
 import io.flutter.plugin.common.JSONMethodCodec;
+import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-/** Sends the platform's locales to Dart. */
 public class SplitAotChannel {
   private static final String TAG = "SplitAotChannel";
 
@@ -30,15 +32,52 @@ public class SplitAotChannel {
             // If no DynamicFeatureManager has been injected, then this channel is a no-op.
             return;
           }
-
           String method = call.method;
           Object args = call.arguments;
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
-            case "SplitAot.installModule":
+            case "SplitAot.installDynamicFeature":
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final int loadingUnitId = arguments.getInt("loadingUnitId");
+                final String moduleName = arguments.getString("moduleName");
+                dynamicFeatureManager.installDynamicFeature(loadingUnitId, moduleName);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
               result.success(null);
               break;
-            case "SplitAot.installLoadingUnit":
+            case "SplitAot.getDynamicFeatureInstallState":
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final int loadingUnitId = arguments.getInt("loadingUnitId");
+                final String moduleName = arguments.getString("moduleName");
+                dynamicFeatureManager.getDynamicFeatureInstallState(loadingUnitId, moduleName);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
+              result.success(null);
+              break;
+            case "SplitAot.loadAssets":
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final int loadingUnitId = arguments.getInt("loadingUnitId");
+                final String moduleName = arguments.getString("moduleName");
+                dynamicFeatureManager.loadAssets(loadingUnitId, moduleName);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
+              result.success(null);
+              break;
+            case "SplitAot.loadDartLibrary":
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final int loadingUnitId = arguments.getInt("loadingUnitId");
+                final String moduleName = arguments.getString("moduleName");
+                dynamicFeatureManager.loadAssets(loadingUnitId, moduleName);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
               result.success(null);
               break;
             default:
