@@ -149,11 +149,13 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
   SaveLayerStrategy getSaveLayerStrategy(const SaveLayerRec& rec) override;
   void willRestore() override;
   void didRestore() override {}
+#ifdef SK_SUPPORT_LEGACY_CANVASMATRIX33
   void didConcat(const SkMatrix& matrix) override;
+  void didSetMatrix(const SkMatrix& matrix) override;
+#endif
   void didConcat44(const SkM44&) override;
   void didScale(SkScalar x, SkScalar y) override;
   void didTranslate(SkScalar x, SkScalar y) override;
-  void didSetMatrix(const SkMatrix& matrix) override;
 
   // Draw and clip operations that we track.
   void onDrawRect(const SkRect& rect, const SkPaint& paint) override;

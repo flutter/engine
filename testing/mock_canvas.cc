@@ -56,9 +56,14 @@ void MockCanvas::willRestore() {
   current_layer_--;  // Must go here; func params order of eval is undefined
 }
 
+#ifdef SK_SUPPORT_LEGACY_CANVASMATRIX33
 void MockCanvas::didConcat(const SkMatrix& matrix) {
   draw_calls_.emplace_back(DrawCall{current_layer_, ConcatMatrixData{matrix}});
 }
+void MockCanvas::didSetMatrix(const SkMatrix& matrix) {
+  draw_calls_.emplace_back(DrawCall{current_layer_, SetMatrixData{matrix}});
+}
+#endif
 
 void MockCanvas::didConcat44(const SkM44& matrix) {
   draw_calls_.emplace_back(
@@ -66,19 +71,11 @@ void MockCanvas::didConcat44(const SkM44& matrix) {
 }
 
 void MockCanvas::didScale(SkScalar x, SkScalar y) {
-  SkMatrix m;
-  m.setScale(x, y);
-  this->didConcat(m);
+  this->didConcat44(SkM44::Scale(x, y));
 }
 
 void MockCanvas::didTranslate(SkScalar x, SkScalar y) {
-  SkMatrix m;
-  m.setTranslate(x, y);
-  this->didConcat(m);
-}
-
-void MockCanvas::didSetMatrix(const SkMatrix& matrix) {
-  draw_calls_.emplace_back(DrawCall{current_layer_, SetMatrixData{matrix}});
+  this->didConcat44(SkM44::Translate(x, y));
 }
 
 void MockCanvas::onDrawTextBlob(const SkTextBlob* text,
