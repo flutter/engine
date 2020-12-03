@@ -29,7 +29,7 @@ import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.RestorationChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
-import io.flutter.embedding.engine.systemchannels.SplitAotChannel;
+import io.flutter.embedding.engine.systemchannels.DynamicFeaturesChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -90,7 +90,7 @@ public class FlutterEngine {
   @NonNull private final RestorationChannel restorationChannel;
   @NonNull private final PlatformChannel platformChannel;
   @NonNull private final SettingsChannel settingsChannel;
-  @NonNull private final SplitAotChannel splitAotChannel;
+  @NonNull private final DynamicFeaturesChannel DynamicFeaturesChannel;
   @NonNull private final SystemChannel systemChannel;
   @NonNull private final TextInputChannel textInputChannel;
 
@@ -286,7 +286,7 @@ public class FlutterEngine {
     platformChannel = new PlatformChannel(dartExecutor);
     restorationChannel = new RestorationChannel(dartExecutor, waitForRestorationData);
     settingsChannel = new SettingsChannel(dartExecutor);
-    splitAotChannel = new SplitAotChannel(dartExecutor);
+    DynamicFeaturesChannel = new DynamicFeaturesChannel(dartExecutor);
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
@@ -485,6 +485,12 @@ public class FlutterEngine {
   @NonNull
   public SettingsChannel getSettingsChannel() {
     return settingsChannel;
+  }
+
+  /** System channel that allows manual installation and state querying of dynamic features. */
+  @NonNull
+  public DynamicFeaturesChannel getDynamicFeaturesChannel() {
+    return DynamicFeaturesChannel;
   }
 
   /** System channel that sends memory pressure warnings from Android to Flutter. */

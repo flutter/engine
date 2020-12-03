@@ -17,8 +17,8 @@ import io.flutter.plugin.common.MethodChannel;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class SplitAotChannel {
-  private static final String TAG = "SplitAotChannel";
+public class DynamicFeaturesChannel {
+  private static final String TAG = "DynamicFeaturesChannel";
 
   @NonNull public final MethodChannel channel;
   @Nullable DynamicFeatureManager dynamicFeatureManager;
@@ -88,14 +88,14 @@ public class SplitAotChannel {
       };
 
   /**
-   * Constructs a {@code SplitAotChannel} that connects Android to the Dart code running in {@code
+   * Constructs a {@code DynamicFeaturesChannel} that connects Android to the Dart code running in {@code
    * dartExecutor}.
    *
    * <p>The given {@code dartExecutor} is permitted to be idle or executing code.
    *
    * <p>See {@link DartExecutor}.
    */
-  public SplitAotChannel(@NonNull DartExecutor dartExecutor) {
+  public DynamicFeaturesChannel(@NonNull DartExecutor dartExecutor) {
     this.channel =
         new MethodChannel(dartExecutor, "flutter/splitaot", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
