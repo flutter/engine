@@ -227,8 +227,7 @@ public class PlatformPluginTest {
   public void performsDefaultBehaviorWhenNoDelegateProvided() {
     Activity mockActivity = mock(Activity.class);
     PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
-    PlatformPlugin platformPlugin =
-        new PlatformPlugin(mockActivity, mockPlatformChannel);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
 
     platformPlugin.mPlatformMessageHandler.popSystemNavigator();
 
