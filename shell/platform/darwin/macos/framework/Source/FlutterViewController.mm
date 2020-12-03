@@ -82,7 +82,12 @@ struct KeyboardState {
 @interface FlutterViewController () <FlutterViewReshapeListener>
 
 /**
- * A list of additional responders to keyboard events. Keybord events are forwarded to all of them.
+ * A list of additional responders to keyboard events.
+ *
+ * Keyboard events received by FlutterViewController are first dispatched to
+ * each additional responder in order. If any of them handle the event (by
+ * returning true), the event is not dispatched to later additional responders
+ * or to the nextResponder.
  */
 @property(nonatomic) NSMutableOrderedSet<FlutterIntermediateKeyResponder*>* additionalKeyResponders;
 
@@ -135,7 +140,8 @@ struct KeyboardState {
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event phase:(FlutterPointerPhase)phase;
 
 /**
- * Sends |event| to all responders in additionalKeyResponders and then to the nextResponder.
+ * Sends |event| to all responders in additionalKeyResponders and then to the
+ * nextResponder if none of the additional responders handled the event.
  */
 - (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type;
 
@@ -494,10 +500,8 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type {
   if ([type isEqual:@"keydown"]) {
     for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
-      if ([responder respondsToSelector:@selector(handleKeyDown:)]) {
-        if ([responder handleKeyDown:event]) {
-          return;
-        }
+      if ([responder handleKeyDown:event]) {
+        return;
       }
     }
     if ([self.nextResponder respondsToSelector:@selector(keyDown:)]) {
@@ -505,10 +509,8 @@ static void CommonInit(FlutterViewController* controller) {
     }
   } else if ([type isEqual:@"keyup"]) {
     for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
-      if ([responder respondsToSelector:@selector(handleKeyUp:)]) {
-        if ([responder handleKeyUp:event]) {
-          return;
-        }
+      if ([responder handleKeyUp:event]) {
+        return;
       }
     }
     if ([self.nextResponder respondsToSelector:@selector(keyUp:)]) {

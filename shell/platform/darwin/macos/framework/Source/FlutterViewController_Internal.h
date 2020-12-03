@@ -28,4 +28,16 @@
  */
 - (void)removeKeyResponder:(nonnull FlutterIntermediateKeyResponder*)responder;
 
+/**
+ * Initializes this FlutterViewController with the specified `FlutterEngine`.
+ *
+ * The initialized viewcontroller will attach itself to the engine as part of this process.
+ *
+ * @param engine The `FlutterEngine` instance to attach to. Cannot be nil.
+ * @param nibName The NIB name to initialize this controller with.
+ * @param nibBundle The NIB bundle.
+ */
+- (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
+                               nibName:(nullable NSString*)nibName
+                                bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
 @end
