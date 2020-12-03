@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #define RAPIDJSON_HAS_STDSTRING 1
+
 #include "flutter/shell/common/shell.h"
 
 #include <memory>
@@ -22,6 +23,7 @@
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/engine.h"
+#include "flutter/shell/common/sk_trace_memory_dump_json.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
@@ -344,7 +346,10 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
       }));
 
   // Install service protocol handlers.
-
+  service_protocol_handlers_[ServiceProtocol::kDumpSkiaMemoryExtensionName] = {
+      task_runners_.GetRasterTaskRunner(),
+      std::bind(&Shell::OnServiceProtocolDumpSkiaMemory, this,
+                std::placeholders::_1, std::placeholders::_2)};
   service_protocol_handlers_[ServiceProtocol::kScreenshotExtensionName] = {
       task_runners_.GetRasterTaskRunner(),
       std::bind(&Shell::OnServiceProtocolScreenshot, this,
@@ -1356,6 +1361,36 @@ static void ServiceProtocolFailureError(rapidjson::Document* response,
   const int64_t kJsonServerError = -32000;
   response->AddMember("code", kJsonServerError, allocator);
   response->AddMember("message", message, allocator);
+}
+
+bool Shell::OnServiceProtocolDumpSkiaMemory(
+    const ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document* response) {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetIOTaskRunner(),
+      [&response, &latch, io_manager = GetIOManager()]() {
+        if (!io_manager) {
+          latch.Signal();
+          return;
+        }
+        auto context = io_manager->GetResourceContext();
+        if (!context) {
+          latch.Signal();
+          return;
+        }
+        SkTraceMemoryDumpJson traceMemoryDump;
+        context->dumpMemoryStatistics(&traceMemoryDump);
+        traceMemoryDump.finish("ioContext", response);
+        latch.Signal();
+      });
+  latch.Wait();
+  response->SetObject();
+  response->AddMember("type", "DumpSkiaMemory", response->GetAllocator());
+  rasterizer_->WriteGraphicsContextStatistics(response);
+  return true;
 }
 
 // Service protocol handler

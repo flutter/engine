@@ -10,6 +10,7 @@
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
+#include "flutter/shell/common/sk_trace_memory_dump_json.h"
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -683,9 +684,7 @@ void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
 
   GrDirectContext* context = surface_->GetContext();
   if (context) {
-    int max_resources;
-    context->getResourceCacheLimits(&max_resources, nullptr);
-    context->setResourceCacheLimits(max_resources, max_bytes);
+    context->setResourceCacheLimit(max_bytes);
   }
 }
 
@@ -695,11 +694,22 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
   }
   GrDirectContext* context = surface_->GetContext();
   if (context) {
-    size_t max_bytes;
-    context->getResourceCacheLimits(nullptr, &max_bytes);
-    return max_bytes;
+    return context->getResourceCacheLimit();
   }
   return std::nullopt;
+}
+
+void Rasterizer::WriteGraphicsContextStatistics(rapidjson::Document* response) {
+  if (!surface_) {
+    return;
+  }
+  auto context = surface_->GetContext();
+  if (!context) {
+    return;
+  }
+  SkTraceMemoryDumpJson traceMemoryDump;
+  context->dumpMemoryStatistics(&traceMemoryDump);
+  traceMemoryDump.finish("graphicsContext", response);
 }
 
 Rasterizer::Screenshot::Screenshot() {}

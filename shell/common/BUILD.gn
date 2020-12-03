@@ -85,6 +85,8 @@ source_set("common") {
     "shell.h",
     "shell_io_manager.cc",
     "shell_io_manager.h",
+    "sk_trace_memory_dump_json.cc",
+    "sk_trace_memory_dump_json.h",
     "skia_event_tracer_impl.cc",
     "skia_event_tracer_impl.h",
     "switches.cc",

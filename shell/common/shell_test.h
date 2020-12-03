@@ -97,6 +97,7 @@ class ShellTest : public FixtureTest {
     kEstimateRasterCacheMemory,
     kSetAssetBundlePath,
     kRunInView,
+    kDumpSkiaMemory,
   };
 
   // Helper method to test private method Shell::OnServiceProtocolGetSkSLs.
