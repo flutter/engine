@@ -247,6 +247,10 @@ class PlatformView {
         std::unique_ptr<const fml::Mapping> snapshot_data,
         std::unique_ptr<const fml::Mapping> snapshot_instructions) = 0;
 
+    virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                              const std::string error_message,
+                                              bool transient) = 0;
+
     // TODO(garyq): Implement a proper asset_resolver replacement instead of
     // overwriting the entire asset manager.
     //--------------------------------------------------------------------------
@@ -666,6 +670,10 @@ class PlatformView {
       intptr_t loading_unit_id,
       std::unique_ptr<const fml::Mapping> snapshot_data,
       std::unique_ptr<const fml::Mapping> snapshot_instructions);
+
+  virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                            const std::string error_message,
+                                            bool transient);
 
   // TODO(garyq): Implement a proper asset_resolver replacement instead of
   // overwriting the entire asset manager.

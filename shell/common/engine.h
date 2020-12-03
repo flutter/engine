@@ -825,6 +825,10 @@ class Engine final : public RuntimeDelegate,
       std::unique_ptr<const fml::Mapping> snapshot_data,
       std::unique_ptr<const fml::Mapping> snapshot_instructions);
 
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient);
+
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;

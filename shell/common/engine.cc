@@ -523,4 +523,13 @@ void Engine::LoadDartDeferredLibrary(
   }
 }
 
+void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                  const std::string error_message,
+                                  bool transient) {
+  if (runtime_controller_->IsRootIsolateRunning()) {
+    runtime_controller_->LoadDartDeferredLibraryError(loading_unit_id,
+                                                      error_message, transient);
+  }
+}
+
 }  // namespace flutter
