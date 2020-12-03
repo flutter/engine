@@ -387,8 +387,6 @@ class _ButtonSanitizer {
     );
   }
 
-  static const int kRightMouseButton = 2;
-
   _SanitizedDetails sanitizeMoveEvent({required int buttons}) {
     final int newPressedButtons = _htmlButtonsToFlutterButtons(buttons);
     // This could happen when the context menu is active and the user clicks
@@ -411,10 +409,6 @@ class _ButtonSanitizer {
         change: ui.PointerChange.hover,
         buttons: _pressedButtons,
       );
-    }
-
-    if ((_pressedButtons & kRightMouseButton) != 0) {
-      _pressedButtons = newPressedButtons;
     }
 
     return _SanitizedDetails(
