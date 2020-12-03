@@ -18,7 +18,8 @@ G_DECLARE_FINAL_TYPE(FlSettingsPlugin,
 /**
  * FlSettingsPlugin:
  *
- * #FlSettingsPlugin is a plugin that implements FIXME.
+ * #FlSettingsPlugin is a plugin that implements the Flutter user settings
+ * channel.
  */
 
 /**
