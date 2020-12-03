@@ -10,6 +10,21 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_message_codec.h"
 
+// Definition of the FlKeyEventPlugin GObject class.
+
+struct _FlKeyEventPlugin {
+  GObject parent_instance;
+
+  FlBasicMessageChannel* channel = nullptr;
+  FlTextInputPlugin* text_input_plugin = nullptr;
+  FlKeyEventPluginCallback response_callback = nullptr;
+  GPtrArray* pending_events;
+};
+
+G_DEFINE_TYPE(FlKeyEventPlugin, fl_key_event_plugin, G_TYPE_OBJECT)
+
+namespace {
+
 static constexpr char kChannelName[] = "flutter/keyevent";
 static constexpr char kTypeKey[] = "type";
 static constexpr char kTypeValueUp[] = "keyup";
@@ -29,13 +44,11 @@ static constexpr uint64_t kMaxPendingEvents = 1000;
 // Declare and define a private pair object to bind the id and the event
 // together.
 
-G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE(FlKeyEventPair,
                      fl_key_event_pair,
                      FL,
                      KEY_EVENT_PAIR,
                      GObject);
-G_END_DECLS
 
 struct _FlKeyEventPair {
   GObject parent_instance;
@@ -46,18 +59,27 @@ struct _FlKeyEventPair {
 
 G_DEFINE_TYPE(FlKeyEventPair, fl_key_event_pair, G_TYPE_OBJECT)
 
+// Dispose method for FlKeyEventPair.
 static void fl_key_event_pair_dispose(GObject* object) {
+  // Redundant, but added so that we don't get a warning about unused function
+  // for FL_IS_KEY_EVENT_PAIR.
   g_return_if_fail(FL_IS_KEY_EVENT_PAIR(object));
+
   FlKeyEventPair* self = FL_KEY_EVENT_PAIR(object);
-  gdk_event_free(reinterpret_cast<GdkEvent*>(self->event));
+  g_clear_pointer(&self->event, gdk_event_free);
+  G_OBJECT_CLASS(fl_key_event_pair_parent_class)->dispose(object);
 }
 
+// Class Initialization method for FlKeyEventPair class.
 static void fl_key_event_pair_class_init(FlKeyEventPairClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_key_event_pair_dispose;
 }
 
+// Initialization for FlKeyEventPair instances.
 static void fl_key_event_pair_init(FlKeyEventPair* self) {}
 
+// Creates a new FlKeyEventPair instance, given a unique ID, and an event struct
+// to keep.
 FlKeyEventPair* fl_key_event_pair_new(uint64_t id, GdkEventKey* event) {
   FlKeyEventPair* self =
       FL_KEY_EVENT_PAIR(g_object_new(fl_key_event_pair_get_type(), nullptr));
@@ -72,14 +94,11 @@ FlKeyEventPair* fl_key_event_pair_new(uint64_t id, GdkEventKey* event) {
 }
 
 // Declare and define a private class to hold response data from the framework.
-
-G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE(FlKeyEventResponseData,
                      fl_key_event_response_data,
                      FL,
                      KEY_EVENT_RESPONSE_DATA,
                      GObject);
-G_END_DECLS
 
 struct _FlKeyEventResponseData {
   GObject parent_instance;
@@ -89,8 +108,10 @@ struct _FlKeyEventResponseData {
   gpointer user_data;
 };
 
+// Definition for FlKeyEventResponseData private class.
 G_DEFINE_TYPE(FlKeyEventResponseData, fl_key_event_response_data, G_TYPE_OBJECT)
 
+// Dispose method for FlKeyEventResponseData private class.
 static void fl_key_event_response_data_dispose(GObject* object) {
   g_return_if_fail(FL_IS_KEY_EVENT_RESPONSE_DATA(object));
   FlKeyEventResponseData* self = FL_KEY_EVENT_RESPONSE_DATA(object);
@@ -99,13 +120,18 @@ static void fl_key_event_response_data_dispose(GObject* object) {
                                reinterpret_cast<gpointer*>(&(self->plugin)));
 }
 
+// Class initialization method for FlKeyEventResponseData private class.
 static void fl_key_event_response_data_class_init(
     FlKeyEventResponseDataClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_key_event_response_data_dispose;
 }
 
+// Instance initialization method for FlKeyEventResponseData private class.
 static void fl_key_event_response_data_init(FlKeyEventResponseData* self) {}
 
+// Creates a new FlKeyEventResponseData private class with a plugin that created
+// the request, a unique ID for tracking, and optional user data.
+// Will keep a weak pointer to the plugin.
 FlKeyEventResponseData* fl_key_event_response_data_new(FlKeyEventPlugin* plugin,
                                                        uint64_t id,
                                                        gpointer user_data) {
@@ -122,64 +148,9 @@ FlKeyEventResponseData* fl_key_event_response_data_new(FlKeyEventPlugin* plugin,
   return self;
 }
 
-// Definition of the FlKeyEventPlugin GObject class.
-
-struct _FlKeyEventPlugin {
-  GObject parent_instance;
-
-  FlBasicMessageChannel* channel = nullptr;
-  FlTextInputPlugin* text_input_plugin = nullptr;
-  FlKeyEventPluginCallback response_callback = nullptr;
-  GPtrArray* pending_events;
-};
-
-G_DEFINE_TYPE(FlKeyEventPlugin, fl_key_event_plugin, G_TYPE_OBJECT)
-
-static void fl_key_event_plugin_dispose(GObject* object) {
-  FlKeyEventPlugin* self = FL_KEY_EVENT_PLUGIN(object);
-
-  g_clear_object(&self->channel);
-  g_object_remove_weak_pointer(
-      G_OBJECT(self->text_input_plugin),
-      reinterpret_cast<gpointer*>(&(self->text_input_plugin)));
-  g_ptr_array_free(self->pending_events, TRUE);
-
-  G_OBJECT_CLASS(fl_key_event_plugin_parent_class)->dispose(object);
-}
-
-static void fl_key_event_plugin_class_init(FlKeyEventPluginClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_key_event_plugin_dispose;
-}
-
-static void fl_key_event_plugin_init(FlKeyEventPlugin* self) {}
-
-FlKeyEventPlugin* fl_key_event_plugin_new(
-    FlBinaryMessenger* messenger,
-    FlTextInputPlugin* text_input_plugin,
-    FlKeyEventPluginCallback response_callback,
-    const char* channel_name) {
-  g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
-  g_return_val_if_fail(FL_IS_TEXT_INPUT_PLUGIN(text_input_plugin), nullptr);
-
-  FlKeyEventPlugin* self = FL_KEY_EVENT_PLUGIN(
-      g_object_new(fl_key_event_plugin_get_type(), nullptr));
-
-  g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
-  self->channel = fl_basic_message_channel_new(
-      messenger, channel_name == nullptr ? kChannelName : channel_name,
-      FL_MESSAGE_CODEC(codec));
-  self->response_callback = response_callback;
-  // Add a weak pointer so we know if the text input plugin goes away.
-  g_object_add_weak_pointer(
-      G_OBJECT(text_input_plugin),
-      reinterpret_cast<gpointer*>(&(self->text_input_plugin)));
-  self->text_input_plugin = text_input_plugin;
-
-  self->pending_events = g_ptr_array_new_with_free_func(g_object_unref);
-  return self;
-}
-
-uint64_t fl_get_event_id(GdkEventKey* event) {
+// Calculates a unique ID for a given GdkEventKey object to use for
+// identification of responses from the framework.
+static uint64_t get_event_id(GdkEventKey* event) {
   // Combine the event timestamp, the type of event, and the hardware keycode
   // (scan code) of the event to come up with a unique id for this event that
   // can be derived solely from the event data itself, so that we can identify
@@ -189,7 +160,8 @@ uint64_t fl_get_event_id(GdkEventKey* event) {
          (static_cast<uint64_t>(event->hardware_keycode) & 0xffff) << 48;
 }
 
-GdkEventKey* fl_find_pending_event(FlKeyEventPlugin* self, uint64_t id) {
+// Finds an event in the event queue that was sent to the framework by its ID.
+static GdkEventKey* find_pending_event(FlKeyEventPlugin* self, uint64_t id) {
   if (self->pending_events->len == 0 ||
       FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))->id != id) {
     return nullptr;
@@ -198,7 +170,8 @@ GdkEventKey* fl_find_pending_event(FlKeyEventPlugin* self, uint64_t id) {
   return FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))->event;
 }
 
-void fl_remove_pending_event(FlKeyEventPlugin* self, uint64_t id) {
+// Removes an event from the pending event queue.
+static void remove_pending_event(FlKeyEventPlugin* self, uint64_t id) {
   if (self->pending_events->len == 0 ||
       FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))->id != id) {
     g_warning(
@@ -210,9 +183,11 @@ void fl_remove_pending_event(FlKeyEventPlugin* self, uint64_t id) {
   g_ptr_array_remove_index(self->pending_events, 0);
 }
 
-void fl_add_pending_event(FlKeyEventPlugin* self,
-                          uint64_t id,
-                          GdkEventKey* event) {
+// Adds an GdkEventKey to the pending event queue, with a unique ID, and the
+// plugin that added it.
+static void add_pending_event(FlKeyEventPlugin* self,
+                              uint64_t id,
+                              GdkEventKey* event) {
   if (self->pending_events->len > kMaxPendingEvents) {
     g_warning(
         "There are %d keyboard events that have not yet received a "
@@ -222,14 +197,18 @@ void fl_add_pending_event(FlKeyEventPlugin* self,
   g_ptr_array_add(self->pending_events, fl_key_event_pair_new(id, event));
 }
 
-void fl_handle_response(GObject* object,
-                        GAsyncResult* result,
-                        gpointer user_data) {
+// Handles a response from the framework to a key event sent to the framework
+// earlier.
+static void handle_response(GObject* object,
+                            GAsyncResult* result,
+                            gpointer user_data) {
   g_autoptr(FlKeyEventResponseData) data =
       FL_KEY_EVENT_RESPONSE_DATA(user_data);
 
   // Will also return if the weak pointer has been destroyed.
-  g_return_if_fail(FL_IS_KEY_EVENT_PLUGIN(data->plugin));
+  if (data->plugin == nullptr) {
+    return;
+  }
 
   FlKeyEventPlugin* self = data->plugin;
 
@@ -238,14 +217,13 @@ void fl_handle_response(GObject* object,
   FlValue* message =
       fl_basic_message_channel_send_finish(messageChannel, result, &error);
   if (error != nullptr) {
-    g_error("Unable to retrieve framework response: %s", error->message);
-    g_error_free(error);
+    g_warning("Unable to retrieve framework response: %s", error->message);
     return;
   }
   g_autoptr(FlValue) handled_value = fl_value_lookup_string(message, "handled");
-  bool handled = false;
+  bool handled = FALSE;
   if (handled_value != nullptr) {
-    GdkEventKey* event = fl_find_pending_event(self, data->id);
+    GdkEventKey* event = find_pending_event(self, data->id);
     if (event == nullptr) {
       g_warning(
           "Event response for event id %ld received, but event was received "
@@ -273,7 +251,7 @@ void fl_handle_response(GObject* object,
   if (handled) {
     // Because the event was handled, we no longer need to track it. Unhandled
     // events will be removed when the event is re-dispatched to the window.
-    fl_remove_pending_event(self, data->id);
+    remove_pending_event(self, data->id);
   }
 
   if (self->response_callback != nullptr) {
@@ -281,25 +259,80 @@ void fl_handle_response(GObject* object,
   }
 }
 
+// Disposes of an FlKeyEventPlugin instance.
+static void fl_key_event_plugin_dispose(GObject* object) {
+  FlKeyEventPlugin* self = FL_KEY_EVENT_PLUGIN(object);
+
+  g_clear_object(&self->channel);
+  g_object_remove_weak_pointer(
+      G_OBJECT(self->text_input_plugin),
+      reinterpret_cast<gpointer*>(&(self->text_input_plugin)));
+  g_ptr_array_free(self->pending_events, TRUE);
+
+  G_OBJECT_CLASS(fl_key_event_plugin_parent_class)->dispose(object);
+}
+
+}  // namespace
+
+// Initializes the FlKeyEventPlugin class methods.
+static void fl_key_event_plugin_class_init(FlKeyEventPluginClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_key_event_plugin_dispose;
+}
+
+// Initializes an FlKeyEventPlugin instance.
+static void fl_key_event_plugin_init(FlKeyEventPlugin* self) {}
+
+// Creates a new FlKeyEventPlugin instance, with a messenger used to send
+// messages to the framework, an FlTextInputPlugin used to handle key events
+// that the framework doesn't handle. Mainly for testing purposes, it also takes
+// an optional callback to call when a response is received, and an optional
+// channel name to use when sending messages.
+FlKeyEventPlugin* fl_key_event_plugin_new(
+    FlBinaryMessenger* messenger,
+    FlTextInputPlugin* text_input_plugin,
+    FlKeyEventPluginCallback response_callback,
+    const char* channel_name) {
+  g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
+  g_return_val_if_fail(FL_IS_TEXT_INPUT_PLUGIN(text_input_plugin), nullptr);
+
+  FlKeyEventPlugin* self = FL_KEY_EVENT_PLUGIN(
+      g_object_new(fl_key_event_plugin_get_type(), nullptr));
+
+  g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
+  self->channel = fl_basic_message_channel_new(
+      messenger, channel_name == nullptr ? kChannelName : channel_name,
+      FL_MESSAGE_CODEC(codec));
+  self->response_callback = response_callback;
+  // Add a weak pointer so we know if the text input plugin goes away.
+  g_object_add_weak_pointer(
+      G_OBJECT(text_input_plugin),
+      reinterpret_cast<gpointer*>(&(self->text_input_plugin)));
+  self->text_input_plugin = text_input_plugin;
+
+  self->pending_events = g_ptr_array_new_with_free_func(g_object_unref);
+  return self;
+}
+
+// Sends a key event to the framework.
 bool fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
                                         GdkEventKey* event,
                                         gpointer user_data) {
-  g_return_val_if_fail(FL_IS_KEY_EVENT_PLUGIN(self), false);
-  g_return_val_if_fail(event != nullptr, false);
+  g_return_val_if_fail(FL_IS_KEY_EVENT_PLUGIN(self), FALSE);
+  g_return_val_if_fail(event != nullptr, FALSE);
 
   // Get an ID for the event, so we can match them up when we get a response
   // from the framework. Use the event time, type, and hardware keycode as a
   // unique ID, since they are part of the event structure that we can look up
   // when we receive a random event that may or may not have been
   // tracked/produced by this code.
-  uint64_t id = fl_get_event_id(event);
+  uint64_t id = get_event_id(event);
   if (self->pending_events->len != 0 &&
       FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))->id == id) {
     // If the event is at the head of the queue of pending events we've seen,
     // and has the same id, then we know that this is a re-dispatched event, and
     // we shouldn't respond to it, but we should remove it from tracking.
-    fl_remove_pending_event(self, id);
-    return false;
+    remove_pending_event(self, id);
+    return FALSE;
   }
 
   const gchar* type;
@@ -311,7 +344,7 @@ bool fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
       type = kTypeValueUp;
       break;
     default:
-      return false;
+      return FALSE;
   }
 
   int64_t scan_code = event->hardware_keycode;
@@ -345,9 +378,9 @@ bool fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
   // Remove lock states from state mask.
   guint state = event->state & ~(GDK_LOCK_MASK | GDK_MOD2_MASK);
 
-  static bool shift_lock_pressed = false;
-  static bool caps_lock_pressed = false;
-  static bool num_lock_pressed = false;
+  static bool shift_lock_pressed = FALSE;
+  static bool caps_lock_pressed = FALSE;
+  static bool num_lock_pressed = FALSE;
   switch (event->keyval) {
     case GDK_KEY_Num_Lock:
       num_lock_pressed = event->type == GDK_KEY_PRESS;
@@ -381,13 +414,13 @@ bool fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
   }
 
   // Track the event as pending a response from the framework.
-  fl_add_pending_event(self, id, event);
+  add_pending_event(self, id, event);
   FlKeyEventResponseData* data =
       fl_key_event_response_data_new(self, id, user_data);
   // Send the message off to the framework for handling (or not).
   fl_basic_message_channel_send(self->channel, message, nullptr,
-                                fl_handle_response, data);
+                                handle_response, data);
   // Return true before we know what the framework will do, because if it
   // doesn't handle the key, we'll re-dispatch it later.
-  return true;
+  return TRUE;
 }

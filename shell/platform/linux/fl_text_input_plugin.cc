@@ -10,40 +10,6 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_method_codec.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
 
-static constexpr char kChannelName[] = "flutter/textinput";
-
-static constexpr char kBadArgumentsError[] = "Bad Arguments";
-
-static constexpr char kSetClientMethod[] = "TextInput.setClient";
-static constexpr char kShowMethod[] = "TextInput.show";
-static constexpr char kSetEditingStateMethod[] = "TextInput.setEditingState";
-static constexpr char kClearClientMethod[] = "TextInput.clearClient";
-static constexpr char kHideMethod[] = "TextInput.hide";
-static constexpr char kUpdateEditingStateMethod[] =
-    "TextInputClient.updateEditingState";
-static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
-static constexpr char kSetEditableSizeAndTransform[] =
-    "TextInput.setEditableSizeAndTransform";
-static constexpr char kSetMarkedTextRect[] = "TextInput.setMarkedTextRect";
-
-static constexpr char kInputActionKey[] = "inputAction";
-static constexpr char kTextInputTypeKey[] = "inputType";
-static constexpr char kTextInputTypeNameKey[] = "name";
-static constexpr char kTextKey[] = "text";
-static constexpr char kSelectionBaseKey[] = "selectionBase";
-static constexpr char kSelectionExtentKey[] = "selectionExtent";
-static constexpr char kSelectionAffinityKey[] = "selectionAffinity";
-static constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
-static constexpr char kComposingBaseKey[] = "composingBase";
-static constexpr char kComposingExtentKey[] = "composingExtent";
-
-static constexpr char kTransform[] = "transform";
-
-static constexpr char kTextAffinityDownstream[] = "TextAffinity.downstream";
-static constexpr char kMultilineInputType[] = "TextInputType.multiline";
-
-static constexpr int64_t kClientIdUnset = -1;
-
 struct FlTextInputPluginPrivate {
   GObject parent_instance;
 
@@ -80,6 +46,42 @@ struct FlTextInputPluginPrivate {
 G_DEFINE_TYPE_WITH_PRIVATE(FlTextInputPlugin,
                            fl_text_input_plugin,
                            G_TYPE_OBJECT)
+
+namespace {
+
+static constexpr char kChannelName[] = "flutter/textinput";
+
+static constexpr char kBadArgumentsError[] = "Bad Arguments";
+
+static constexpr char kSetClientMethod[] = "TextInput.setClient";
+static constexpr char kShowMethod[] = "TextInput.show";
+static constexpr char kSetEditingStateMethod[] = "TextInput.setEditingState";
+static constexpr char kClearClientMethod[] = "TextInput.clearClient";
+static constexpr char kHideMethod[] = "TextInput.hide";
+static constexpr char kUpdateEditingStateMethod[] =
+    "TextInputClient.updateEditingState";
+static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
+static constexpr char kSetEditableSizeAndTransform[] =
+    "TextInput.setEditableSizeAndTransform";
+static constexpr char kSetMarkedTextRect[] = "TextInput.setMarkedTextRect";
+
+static constexpr char kInputActionKey[] = "inputAction";
+static constexpr char kTextInputTypeKey[] = "inputType";
+static constexpr char kTextInputTypeNameKey[] = "name";
+static constexpr char kTextKey[] = "text";
+static constexpr char kSelectionBaseKey[] = "selectionBase";
+static constexpr char kSelectionExtentKey[] = "selectionExtent";
+static constexpr char kSelectionAffinityKey[] = "selectionAffinity";
+static constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
+static constexpr char kComposingBaseKey[] = "composingBase";
+static constexpr char kComposingExtentKey[] = "composingExtent";
+
+static constexpr char kTransform[] = "transform";
+
+static constexpr char kTextAffinityDownstream[] = "TextAffinity.downstream";
+static constexpr char kMultilineInputType[] = "TextInputType.multiline";
+
+static constexpr int64_t kClientIdUnset = -1;
 
 // Completes method call and returns TRUE if the call was successful.
 static gboolean finish_method(GObject* object,
@@ -465,6 +467,7 @@ static void method_call_cb(FlMethodChannel* channel,
   }
 }
 
+// Disposes of an FlTextInputPlugin.
 static void fl_text_input_plugin_dispose(GObject* object) {
   FlTextInputPlugin* self = FL_TEXT_INPUT_PLUGIN(object);
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
@@ -482,64 +485,10 @@ static void fl_text_input_plugin_dispose(GObject* object) {
   G_OBJECT_CLASS(fl_text_input_plugin_parent_class)->dispose(object);
 }
 
-static void fl_text_input_plugin_init(FlTextInputPlugin* self) {
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
-
-  priv->client_id = kClientIdUnset;
-  priv->im_context = gtk_im_multicontext_new();
-  priv->input_multiline = FALSE;
-  g_signal_connect_object(priv->im_context, "preedit-start",
-                          G_CALLBACK(im_preedit_start_cb), self,
-                          G_CONNECT_SWAPPED);
-  g_signal_connect_object(priv->im_context, "preedit-end",
-                          G_CALLBACK(im_preedit_end_cb), self,
-                          G_CONNECT_SWAPPED);
-  g_signal_connect_object(priv->im_context, "preedit-changed",
-                          G_CALLBACK(im_preedit_changed_cb), self,
-                          G_CONNECT_SWAPPED);
-  g_signal_connect_object(priv->im_context, "commit", G_CALLBACK(im_commit_cb),
-                          self, G_CONNECT_SWAPPED);
-  g_signal_connect_object(priv->im_context, "retrieve-surrounding",
-                          G_CALLBACK(im_retrieve_surrounding_cb), self,
-                          G_CONNECT_SWAPPED);
-  g_signal_connect_object(priv->im_context, "delete-surrounding",
-                          G_CALLBACK(im_delete_surrounding_cb), self,
-                          G_CONNECT_SWAPPED);
-  priv->text_model = new flutter::TextInputModel();
-}
-
-FlTextInputPlugin* fl_text_input_plugin_new(FlBinaryMessenger* messenger,
-                                            FlView* view) {
-  g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
-
-  FlTextInputPlugin* self = FL_TEXT_INPUT_PLUGIN(
-      g_object_new(fl_text_input_plugin_get_type(), nullptr));
-
-  g_autoptr(FlJsonMethodCodec) codec = fl_json_method_codec_new();
-  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
-      fl_text_input_plugin_get_instance_private(self));
-  priv->channel =
-      fl_method_channel_new(messenger, kChannelName, FL_METHOD_CODEC(codec));
-  fl_method_channel_set_method_call_handler(priv->channel, method_call_cb, self,
-                                            nullptr);
-  priv->view = view;
-
-  return self;
-}
-
-gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
-                                              GdkEventKey* event) {
-  g_return_val_if_fail(FL_IS_TEXT_INPUT_PLUGIN(self), FALSE);
-  if (FL_TEXT_INPUT_PLUGIN_GET_CLASS(self)->filter_keypress) {
-    return FL_TEXT_INPUT_PLUGIN_GET_CLASS(self)->filter_keypress(self, event);
-  }
-  return FALSE;
-}
-
 // Implements FlTextInputPlugin::filter_keypress.
-gboolean fl_text_input_plugin_filter_keypress_default(FlTextInputPlugin* self,
-                                                      GdkEventKey* event) {
+static gboolean fl_text_input_plugin_filter_keypress_default(
+    FlTextInputPlugin* self,
+    GdkEventKey* event) {
   g_return_val_if_fail(FL_IS_TEXT_INPUT_PLUGIN(self), false);
 
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
@@ -598,8 +547,69 @@ gboolean fl_text_input_plugin_filter_keypress_default(FlTextInputPlugin* self,
   return changed;
 }
 
+}  // namespace
+
+// Initializes the FlTextInputPlugin class.
 static void fl_text_input_plugin_class_init(FlTextInputPluginClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_text_input_plugin_dispose;
   FL_TEXT_INPUT_PLUGIN_CLASS(klass)->filter_keypress =
       fl_text_input_plugin_filter_keypress_default;
+}
+
+// Initializes an instance of the FlTextInputPlugin class.
+static void fl_text_input_plugin_init(FlTextInputPlugin* self) {
+  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
+      fl_text_input_plugin_get_instance_private(self));
+
+  priv->client_id = kClientIdUnset;
+  priv->im_context = gtk_im_multicontext_new();
+  priv->input_multiline = FALSE;
+  g_signal_connect_object(priv->im_context, "preedit-start",
+                          G_CALLBACK(im_preedit_start_cb), self,
+                          G_CONNECT_SWAPPED);
+  g_signal_connect_object(priv->im_context, "preedit-end",
+                          G_CALLBACK(im_preedit_end_cb), self,
+                          G_CONNECT_SWAPPED);
+  g_signal_connect_object(priv->im_context, "preedit-changed",
+                          G_CALLBACK(im_preedit_changed_cb), self,
+                          G_CONNECT_SWAPPED);
+  g_signal_connect_object(priv->im_context, "commit", G_CALLBACK(im_commit_cb),
+                          self, G_CONNECT_SWAPPED);
+  g_signal_connect_object(priv->im_context, "retrieve-surrounding",
+                          G_CALLBACK(im_retrieve_surrounding_cb), self,
+                          G_CONNECT_SWAPPED);
+  g_signal_connect_object(priv->im_context, "delete-surrounding",
+                          G_CALLBACK(im_delete_surrounding_cb), self,
+                          G_CONNECT_SWAPPED);
+  priv->text_model = new flutter::TextInputModel();
+}
+
+FlTextInputPlugin* fl_text_input_plugin_new(FlBinaryMessenger* messenger,
+                                            FlView* view) {
+  g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
+
+  FlTextInputPlugin* self = FL_TEXT_INPUT_PLUGIN(
+      g_object_new(fl_text_input_plugin_get_type(), nullptr));
+
+  g_autoptr(FlJsonMethodCodec) codec = fl_json_method_codec_new();
+  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
+      fl_text_input_plugin_get_instance_private(self));
+  priv->channel =
+      fl_method_channel_new(messenger, kChannelName, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(priv->channel, method_call_cb, self,
+                                            nullptr);
+  priv->view = view;
+
+  return self;
+}
+
+// Filters the a keypress given to the plugin through the plugin's
+// filter_keypress callback.
+gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
+                                              GdkEventKey* event) {
+  g_return_val_if_fail(FL_IS_TEXT_INPUT_PLUGIN(self), FALSE);
+  if (FL_TEXT_INPUT_PLUGIN_GET_CLASS(self)->filter_keypress) {
+    return FL_TEXT_INPUT_PLUGIN_GET_CLASS(self)->filter_keypress(self, event);
+  }
+  return FALSE;
 }

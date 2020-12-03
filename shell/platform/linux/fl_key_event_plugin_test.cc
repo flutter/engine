@@ -12,7 +12,7 @@
 #include "flutter/shell/platform/linux/testing/mock_text_input_plugin.h"
 
 const char* expected_value = nullptr;
-bool expected_handled = false;
+gboolean expected_handled = FALSE;
 
 // Called when the message response is received in the send_key_event test.
 static void echo_response_cb(GObject* object,
@@ -28,11 +28,11 @@ static void echo_response_cb(GObject* object,
 }
 
 static gboolean handle_keypress(FlTextInputPlugin* plugin, GdkEventKey* event) {
-  return true;
+  return TRUE;
 }
 
 static gboolean ignore_keypress(FlTextInputPlugin* plugin, GdkEventKey* event) {
-  return false;
+  return FALSE;
 }
 
 // Test sending a letter "A";
@@ -64,7 +64,7 @@ TEST(FlKeyEventPluginTest, SendKeyEvent) {
   expected_value =
       "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, "
       "modifiers: 0, unicodeScalarValues: 65}";
-  expected_handled = false;
+  expected_handled = FALSE;
   fl_key_event_plugin_send_key_event(plugin, &key_event, loop);
 
   // Blocks here until echo_response_cb is called.
@@ -87,7 +87,7 @@ TEST(FlKeyEventPluginTest, SendKeyEvent) {
   expected_value =
       "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, "
       "modifiers: 0, unicodeScalarValues: 65}";
-  expected_handled = false;
+  expected_handled = FALSE;
   bool handled = fl_key_event_plugin_send_key_event(plugin, &key_event, loop);
   EXPECT_TRUE(handled);
 
@@ -122,7 +122,7 @@ void test_lock_event(guint key_code,
   };
 
   expected_value = down_expected;
-  expected_handled = false;
+  expected_handled = FALSE;
   bool handled = fl_key_event_plugin_send_key_event(plugin, &key_event, loop);
   EXPECT_TRUE(handled);
 
@@ -133,7 +133,7 @@ void test_lock_event(guint key_code,
   key_event.time++;
 
   expected_value = up_expected;
-  expected_handled = false;
+  expected_handled = FALSE;
   fl_key_event_plugin_send_key_event(plugin, &key_event, loop);
 
   // Blocks here until echo_response_cb is called.
@@ -192,7 +192,7 @@ TEST(FlKeyEventPluginTest, TestKeyEventHandledByFramework) {
   };
 
   expected_value = "{handled: true}";
-  expected_handled = true;
+  expected_handled = TRUE;
   bool handled = fl_key_event_plugin_send_key_event(plugin, &key_event, loop);
   // Should always be true, because the event was delayed.
   EXPECT_TRUE(handled);
@@ -227,7 +227,7 @@ TEST(FlKeyEventPluginTest, TestKeyEventHandledByTextInputPlugin) {
   };
 
   expected_value = "{handled: false}";
-  expected_handled = true;
+  expected_handled = TRUE;
   bool handled = fl_key_event_plugin_send_key_event(plugin, &key_event, loop);
   // Should always be true, because the event was delayed.
   EXPECT_TRUE(handled);
@@ -262,7 +262,7 @@ TEST(FlKeyEventPluginTest, TestKeyEventNotHandledByTextInputPlugin) {
   };
 
   expected_value = "{handled: false}";
-  expected_handled = false;
+  expected_handled = FALSE;
   bool handled = fl_key_event_plugin_send_key_event(plugin, &key_event, loop);
   // Should always be true, because the event was delayed.
   EXPECT_TRUE(handled);

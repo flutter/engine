@@ -349,9 +349,7 @@ static gboolean fl_view_motion_notify_event(GtkWidget* widget,
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  return fl_key_event_plugin_send_key_event(self->key_event_plugin, event)
-             ? TRUE
-             : FALSE;
+  return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 }
 
 // Implements GtkWidget::key_release_event.
@@ -359,9 +357,7 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  return fl_key_event_plugin_send_key_event(self->key_event_plugin, event)
-             ? TRUE
-             : FALSE;
+  return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 }
 
 static void fl_view_class_init(FlViewClass* klass) {

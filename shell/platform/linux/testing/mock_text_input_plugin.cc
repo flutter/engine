@@ -14,8 +14,10 @@ G_DEFINE_TYPE(FlMockTextInputPlugin,
               fl_mock_text_input_plugin,
               fl_text_input_plugin_get_type())
 
-gboolean fl_mock_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
-                                                   GdkEventKey* event) {
+namespace {
+
+static gboolean mock_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
+                                                       GdkEventKey* event) {
   FlMockTextInputPlugin* mock_self = FL_MOCK_TEXT_INPUT_PLUGIN(self);
   if (mock_self->filter_keypress) {
     return mock_self->filter_keypress(self, event);
@@ -23,10 +25,12 @@ gboolean fl_mock_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
   return FALSE;
 }
 
+}  // namespace
+
 static void fl_mock_text_input_plugin_class_init(
     FlMockTextInputPluginClass* klass) {
   FL_TEXT_INPUT_PLUGIN_CLASS(klass)->filter_keypress =
-      fl_mock_text_input_plugin_filter_keypress;
+      mock_text_input_plugin_filter_keypress;
 }
 
 static void fl_mock_text_input_plugin_init(FlMockTextInputPlugin* self) {}
