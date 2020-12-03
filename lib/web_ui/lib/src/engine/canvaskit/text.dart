@@ -703,7 +703,6 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     _styleStack.add(skStyle);
     _commands.add(_ParagraphCommand.pushStyle(ckStyle));
     if (skStyle.foreground != null || skStyle.background != null) {
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/71512
       final SkPaint foreground = skStyle.foreground?.skiaObject ?? SkPaint();
       final SkPaint background = skStyle.background?.skiaObject ?? SkPaint();
       _paragraphBuilder.pushPaintStyle(

@@ -1169,6 +1169,10 @@ void _canvasTests() {
   });
 
   test('toImage.toByteData', () async {
+    // Pretend that FinalizationRegistry is supported, so we can run this
+    // test in older browsers (the test will use a TestCollector instead of
+    // ProductionCollector)
+    browserSupportsFinalizationRegistry = true;
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas =
         otherRecorder.beginRecording(Float32List.fromList([0, 0, 1, 1]));

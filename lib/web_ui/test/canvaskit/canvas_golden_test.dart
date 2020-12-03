@@ -35,7 +35,18 @@ void testMain() {
   group('CkCanvas', () {
     setUpCanvasKitTest();
 
-    test('can restore a picture from a snapshot', () async {
+    test('renders using non-recording canvas if weak refs are supported', () async {
+      expect(browserSupportsFinalizationRegistry, isTrue,
+          reason: 'This test specifically tests non-recording canvas, which '
+                  'only works if FinalizationRegistry is available.');
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(region);
+      expect(canvas.runtimeType, CkCanvas);
+      drawTestPicture(canvas);
+      await matchPictureGolden('canvaskit_picture_original.png', recorder.endRecording());
+    });
+
+    test('renders using a recording canvas if weak refs are not supported', () async {
       browserSupportsFinalizationRegistry = false;
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(region);
@@ -47,6 +58,7 @@ void testMain() {
 
       final ByteData originalPixels = await (await originalPicture.toImage(50, 50)).toByteData() as ByteData;
 
+      // Test that a picture restored from a snapshot looks the same.
       final CkPictureSnapshot? snapshot = canvas.pictureSnapshot;
       expect(snapshot, isNotNull);
       final SkPicture restoredSkPicture = snapshot!.toPicture();
