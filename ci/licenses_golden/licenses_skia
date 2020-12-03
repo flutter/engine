@@ -1,4 +1,4 @@
-Signature: 65de7ca5e4a2b4443d939a06697d8ffe
+Signature: b26a08a189a29d22eacb92a6a628649c
 
 UNUSED LICENSES:
 
@@ -560,6 +560,7 @@ FILE: ../../../third_party/skia/samplecode/SampleAndroidShadows.cpp
 FILE: ../../../third_party/skia/samplecode/SampleMegaStroke.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePathOverstroke.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSVGFile.cpp
+FILE: ../../../third_party/skia/src/codec/SkCodecAnimationPriv.h
 FILE: ../../../third_party/skia/src/codec/SkRawCodec.cpp
 FILE: ../../../third_party/skia/src/codec/SkRawCodec.h
 FILE: ../../../third_party/skia/src/codec/SkStreamBuffer.cpp
@@ -5606,7 +5607,6 @@ FILE: ../../../third_party/skia/docs/examples/unexpected_setAlphaType.cpp
 FILE: ../../../third_party/skia/docs/examples/upscale_checkerboard.cpp
 FILE: ../../../third_party/skia/docs/examples/weird_RRect_bug.cpp
 FILE: ../../../third_party/skia/docs/examples/zero_off_dashing.cpp
-FILE: ../../../third_party/skia/gm/clear_swizzle.cpp
 FILE: ../../../third_party/skia/gm/gpu_blur_utils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFinishCallbacks.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFinishCallbacks.h
