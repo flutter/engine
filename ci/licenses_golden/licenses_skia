@@ -1,4 +1,4 @@
-Signature: 338061e82cd7ec18f061642323f2c9cc
+Signature: 1bb283136150a671071af688bb59838d
 
 UNUSED LICENSES:
 
@@ -627,7 +627,6 @@ FILE: ../../../third_party/skia/src/gpu/GrOpsRenderPass.h
 FILE: ../../../third_party/skia/src/gpu/GrProgramDesc.cpp
 FILE: ../../../third_party/skia/src/gpu/GrReducedClip.cpp
 FILE: ../../../third_party/skia/src/gpu/GrReducedClip.h
-FILE: ../../../third_party/skia/src/gpu/GrRenderTargetContextPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrRenderTargetProxy.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRenderTargetProxy.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceHandle.h
@@ -639,7 +638,6 @@ FILE: ../../../third_party/skia/src/gpu/GrStyle.cpp
 FILE: ../../../third_party/skia/src/gpu/GrStyle.h
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceContext.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceContext.h
-FILE: ../../../third_party/skia/src/gpu/GrSurfaceContextPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceProxy.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceProxy.h
 FILE: ../../../third_party/skia/src/gpu/GrSwizzle.h
@@ -2364,7 +2362,6 @@ FILE: ../../../third_party/skia/include/core/SkPixmap.h
 FILE: ../../../third_party/skia/include/core/SkPngChunkReader.h
 FILE: ../../../third_party/skia/include/core/SkPoint3.h
 FILE: ../../../third_party/skia/include/core/SkRSXform.h
-FILE: ../../../third_party/skia/include/core/SkRWBuffer.h
 FILE: ../../../third_party/skia/include/core/SkTraceMemoryDump.h
 FILE: ../../../third_party/skia/include/effects/SkImageSource.h
 FILE: ../../../third_party/skia/include/effects/SkTableColorFilter.h
@@ -2454,7 +2451,6 @@ FILE: ../../../third_party/skia/src/core/SkPictureImageGenerator.cpp
 FILE: ../../../third_party/skia/src/core/SkPixmap.cpp
 FILE: ../../../third_party/skia/src/core/SkPixmapPriv.h
 FILE: ../../../third_party/skia/src/core/SkPoint3.cpp
-FILE: ../../../third_party/skia/src/core/SkRWBuffer.cpp
 FILE: ../../../third_party/skia/src/core/SkRecord.cpp
 FILE: ../../../third_party/skia/src/core/SkRecordPattern.h
 FILE: ../../../third_party/skia/src/core/SkRecords.cpp
@@ -4019,6 +4015,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSampleUsage.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionPrototype.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLInlineMarker.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPrefixExpression.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLStructDefinition.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSymbolAlias.h
 FILE: ../../../third_party/skia/src/utils/SkCustomTypeface.cpp
 ----------------------------------------------------------------------------------------------------
@@ -4167,6 +4164,7 @@ FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.h
 FILE: ../../../third_party/skia/src/core/SkM44.cpp
 FILE: ../../../third_party/skia/src/core/SkMarkerStack.cpp
 FILE: ../../../third_party/skia/src/core/SkMarkerStack.h
+FILE: ../../../third_party/skia/src/core/SkMipmapBuilder.h
 FILE: ../../../third_party/skia/src/core/SkOpts_erms.cpp
 FILE: ../../../third_party/skia/src/core/SkVerticesPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.cpp

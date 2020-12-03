@@ -81,24 +81,23 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromCAMetalLayer(
     return nullptr;
   }
 
-  auto submit_callback =
-      fml::MakeCopyable([drawable = next_drawable_, delegate = delegate_](
-                            const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
-        TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
-        if (canvas == nullptr) {
-          FML_DLOG(ERROR) << "Canvas not available.";
-          return false;
-        }
+  auto submit_callback = [this](const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
+    TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
+    if (canvas == nullptr) {
+      FML_DLOG(ERROR) << "Canvas not available.";
+      return false;
+    }
 
-        canvas->flush();
+    canvas->flush();
 
-        if (!drawable) {
-          FML_DLOG(ERROR) << "Unable to obtain a metal drawable.";
-          return false;
-        }
+    GrMTLHandle drawable = next_drawable_;
+    if (!drawable) {
+      FML_DLOG(ERROR) << "Unable to obtain a metal drawable.";
+      return false;
+    }
 
-        return delegate->PresentDrawable(drawable);
-      });
+    return delegate_->PresentDrawable(drawable);
+  };
 
   return std::make_unique<SurfaceFrame>(std::move(surface), true, submit_callback);
 }

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:topaz.runtime.dart_runner.examples.greeting/greeting.dart';
+library splitlib;
 
-void main(List<String> args) {
-  print('${greeting()}, Dart!');
+int splitAdd(int i, int j) {
+  return i + j;
 }
