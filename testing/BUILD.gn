@@ -147,7 +147,12 @@ if (enable_unittests) {
     defines = []
 
     if (shell_enable_metal) {
-      sources += [ "test_metal_surface_impl.mm" ]
+      sources += [
+        "test_metal_context.h",
+        "test_metal_context.mm",
+        "test_metal_surface_impl.h",
+        "test_metal_surface_impl.mm",
+      ]
       defines += [ "TESTING_ENABLE_METAL" ]
     }
 

@@ -72,6 +72,7 @@ typedef enum {
 typedef enum {
   kOpenGL,
   kSoftware,
+  kMetal,
 } FlutterRendererType;
 
 /// Additional accessibility features that may be enabled by the platform.
@@ -434,6 +435,52 @@ typedef struct {
   BoolPresentInfoCallback present_with_info;
 } FlutterOpenGLRendererConfig;
 
+/// Handle for the MTLDevice.
+typedef const void* FlutterMetalDevice;
+
+/// Handle for the MTLCommandQueue.
+typedef const void* FlutterMetalCommandQueue;
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterMetalTexture).
+  size_t struct_size;
+  /// Embedder provided unique identifier to the texture buffer. Given that the
+  /// `texture` handle is passed to the engine to render to, the texture buffer
+  /// is itseld owned by the embedder. This `texture_id` is then also given to
+  /// the embedder in the present callback.
+  int64_t texture_id;
+  /// Handle to the MTLTexture that is owned by the embedder. Engine will render
+  /// the frame into this texture.
+  void* texture;
+} FlutterMetalTexture;
+
+/// Callback for when a metal texture is requested.
+typedef void (*FlutterMetalTextureCallback)(
+    void* /* user data */,
+    const FlutterFrameInfo* /* frame info */,
+    FlutterMetalTexture* /* texture out */);
+
+/// Callback for when a metal texture is presented. The texture_id here
+/// corresponds to the texture_id provided by the embedder in the
+/// `FlutterMetalTextureCallback` callback.
+typedef bool (*FlutterMetalPresentCallback)(void* /* user data */,
+                                            int64_t /* texture id */);
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterMetalRendererConfig).
+  size_t struct_size;
+  /// Handle for the MTLDevice.
+  FlutterMetalDevice device;
+  /// Handle for the MTLCommandQueue.
+  FlutterMetalCommandQueue command_queue;
+  /// The callback that gets invoked when the engine requests the embedder for a
+  /// texture to render to.
+  FlutterMetalTextureCallback texture_callback;
+  /// The callback presented to the embedder to present a fully populated metal
+  /// texture to the user.
+  FlutterMetalPresentCallback present_callback;
+} FlutterMetalRendererConfig;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterSoftwareRendererConfig).
   size_t struct_size;
@@ -449,6 +496,7 @@ typedef struct {
   union {
     FlutterOpenGLRendererConfig open_gl;
     FlutterSoftwareRendererConfig software;
+    FlutterMetalRendererConfig metal;
   };
 } FlutterRendererConfig;
 
