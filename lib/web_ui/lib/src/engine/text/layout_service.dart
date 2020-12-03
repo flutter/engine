@@ -43,7 +43,21 @@ class TextLayoutService {
   bool get unlimitedLines => maxLines == null;
   bool get hasEllipsis => paragraph.paragraphStyle._ellipsis != null;
 
-  void perform(ui.ParagraphConstraints constraints) {
+  /// Performs the layout on a paragraph given the [constraints].
+  ///
+  /// The function starts by resetting all layout-related properties. Then it
+  /// starts looping through the paragraph to calculate all layout metrics.
+  ///
+  /// It uses a [Spanometer] to perform measurements within spans of the
+  /// paragraph. It also uses [LineBuilders] to generate [EngineLineMetrics] as
+  /// it iterates through the paragraph.
+  ///
+  /// The main loop keeps going until:
+  ///
+  /// 1. The end of the paragraph is reached (i.e. LineBreakType.endOfText).
+  /// 2. Enough lines have been computed to satisfy [maxLines].
+  /// 3. An ellipsis is appended because of an overflow.
+  void performLayout(ui.ParagraphConstraints constraints) {
     final int spanCount = paragraph.spans.length;
 
     // Reset results from previous layout.
@@ -179,6 +193,18 @@ class TextLayoutService {
   }
 }
 
+/// Builds instances of [EngineLineMetrics] for the given [paragraph].
+///
+/// Usage of this class starts by calling [LineBuilder.first] to start building
+/// the first line of the paragraph.
+///
+/// Then new line breaks can be found by calling [LineBuilder.findNextBreak].
+///
+/// The line can be extended one or more times before it's built by calling
+/// [LineBuilder.build] which generates the [EngineLineMetrics] instace.
+///
+/// To start building the next line, simply call [LineBuilder.nextLine] which
+/// creates a new [LineBuilder] that can be extended and built and so on.
 class LineBuilder {
   LineBuilder._(
     this.paragraph,
@@ -187,6 +213,7 @@ class LineBuilder {
     required this.lineNumber,
   }) : end = start;
 
+  /// Creates a [LineBuilder] for the first line in a paragraph.
   factory LineBuilder.first(CanvasParagraph paragraph, Spanometer spanometer) {
     return LineBuilder._(
       paragraph,
@@ -203,14 +230,22 @@ class LineBuilder {
 
   LineBreakResult end;
 
+  /// The width of the line so far, excluding trailing white space.
   double width = 0.0;
+
+  /// The width of trailing white space in the line.
   double widthOfTrailingSpace = 0.0;
+
+  /// The width of the line so far, including trailing white space.
   double get widthIncludingSpace => width + widthOfTrailingSpace;
+
+  /// The width of the last extension to the line made via [extendTo].
   double widthOfLastExtension = 0.0;
 
   bool get isEmpty => start == end;
   bool get isNotEmpty => !isEmpty;
 
+  /// Measures the width of text between the end of this line and [newEnd].
   double getAdditionalWidthTo(LineBreakResult newEnd) {
     // If the extension is all made of space characters, it shouldn't add
     // anything to the width.
@@ -221,6 +256,7 @@ class LineBuilder {
     return widthOfTrailingSpace + spanometer.measure(end, newEnd);
   }
 
+  /// Extends the line by setting a [newEnd].
   void extendTo(LineBreakResult newEnd) {
     // If the current end of the line is a hard break, the line shouldn't be
     // extended any further.
@@ -240,6 +276,7 @@ class LineBuilder {
     end = newEnd;
   }
 
+  /// Builds the [EngineLineMetrics] instance that represents this line.
   EngineLineMetrics build() {
     final String text = paragraph.toPlainText();
     return EngineLineMetrics.withText(
@@ -256,10 +293,12 @@ class LineBuilder {
     );
   }
 
+  /// Finds the next line break after the end of this line.
   LineBreakResult findNextBreak(int maxEnd) {
     return nextLineBreak(paragraph.toPlainText(), end.index, maxEnd: maxEnd);
   }
 
+  /// Creates a new [LineBuilder] to build the next line in the paragraph.
   LineBuilder nextLine() {
     return LineBuilder._(
       paragraph,
@@ -270,6 +309,14 @@ class LineBuilder {
   }
 }
 
+/// Responsible for taking measurements within spans of a paragraph.
+///
+/// Can't perform measurements across spans. To measure across spans, multiple
+/// measurements have to be taken.
+///
+/// Before performing any measurement, the [currentSpan] has to be set. Once
+/// it's set, the [Spanometer] updates the underlying [context] so that
+/// subsequent measurements use the correct styles.
 class Spanometer {
   Spanometer(this.paragraph, this.context);
 
@@ -300,10 +347,16 @@ class Spanometer {
     }
   }
 
+  /// Measures the width of text between two line breaks.
+  ///
+  /// Doesn't include the width of any trailing white space.
   double measure(LineBreakResult start, LineBreakResult end) {
     return _measure(start.index, end.indexWithoutTrailingSpaces);
   }
 
+  /// Measures the width of text between two line breaks.
+  ///
+  /// Includes the width of trailing white space, if any.
   double measureIncludingSpace(LineBreakResult start, LineBreakResult end) {
     return _measure(start.index, end.indexWithoutTrailingNewlines);
   }

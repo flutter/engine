@@ -83,7 +83,7 @@ class CanvasParagraph implements EngineParagraph {
     if (Profiler.isBenchmarkMode) {
       stopwatch = Stopwatch()..start();
     }
-    _layoutService.perform(constraints);
+    _layoutService.performLayout(constraints);
     if (Profiler.isBenchmarkMode) {
       stopwatch.stop();
       Profiler.instance
