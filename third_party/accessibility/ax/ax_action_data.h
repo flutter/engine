@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_ACTION_DATA_H_
-#define UI_ACCESSIBILITY_AX_ACTION_DATA_H_
+#ifndef ACCESSIBILITY_AX_AX_ACTION_DATA_H_
+#define ACCESSIBILITY_AX_AX_ACTION_DATA_H_
+
+#include "third_party/skia/include/core/SkRect.h"
+#include "third_party/skia/include/core/SkPoint.h"
 
 #include "ax_enums.h"
 #include "ax_export.h"
 #include "ax_tree_id.h"
-#include "third_party/skia/include/core/SkRect.h"
-#include "third_party/skia/include/core/SkPoint.h"
 
 namespace ax {
 
@@ -85,4 +86,4 @@ struct AX_EXPORT AXActionData {
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_ACTION_DATA_H_
+#endif  // ACCESSIBILITY_AX_AX_ACTION_DATA_H_

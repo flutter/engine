@@ -2,18 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef ACCESSIBILITY_AX_RELATIVE_BOUNDS_H_
-#define ACCESSIBILITY_AX_RELATIVE_BOUNDS_H_
+#ifndef ACCESSIBILITY_AX_AX_RELATIVE_BOUNDS_H_
+#define ACCESSIBILITY_AX_AX_RELATIVE_BOUNDS_H_
 
 #include <stdint.h>
 
 #include <memory>
 #include <ostream>
 
-#include "ax_base_export.h"
-#include "ax_enums.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkRect.h"
+
+#include "ax_base_export.h"
+#include "ax_enums.h"
 
 namespace ax {
 
@@ -62,4 +63,4 @@ AX_BASE_EXPORT std::ostream& operator<<(std::ostream& stream,
 
 }  // namespace ax
 
-#endif  // ACCESSIBILITY_AX_RELATIVE_BOUNDS_H_
+#endif  // ACCESSIBILITY_AX_AX_RELATIVE_BOUNDS_H_

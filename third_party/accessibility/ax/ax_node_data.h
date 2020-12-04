@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef ACCESSIBILITY_AX_NODE_DATA_H_
-#define ACCESSIBILITY_AX_NODE_DATA_H_
+#ifndef ACCESSIBILITY_AX_AX_NODE_DATA_H_
+#define ACCESSIBILITY_AX_AX_NODE_DATA_H_
 
 #include <stdint.h>
 
@@ -290,4 +290,4 @@ struct AX_BASE_EXPORT AXNodeData {
 
 }  // namespace ax
 
-#endif  // ACCESSIBILITY_AX_NODE_DATA_H_
+#endif  // ACCESSIBILITY_AX_AX_NODE_DATA_H_

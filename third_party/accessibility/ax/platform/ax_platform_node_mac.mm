@@ -8,12 +8,13 @@
 #include <stddef.h>
 
 #include "base/no_destructor.h"
-#include "../ax_action_data.h"
-#include "../ax_node_data.h"
-#include "../ax_role_properties.h"
+#include "ax/ax_action_data.h"
+#include "ax/ax_node_data.h"
+#include "ax/ax_role_properties.h"
+#import "gfx/mac/coordinate_conversion.h"
+
 #include "ax_platform_node.h"
 #include "ax_platform_node_delegate.h"
-#import "gfx/mac/coordinate_conversion.h"
 
 namespace {
 

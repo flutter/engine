@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_TREE_ID_REGISTRY_H_
-#define UI_ACCESSIBILITY_AX_TREE_ID_REGISTRY_H_
+#ifndef ACCESSIBILITY_AX_AX_TREE_ID_REGISTRY_H_
+#define ACCESSIBILITY_AX_AX_TREE_ID_REGISTRY_H_
 
 #include <map>
 #include <string>
 #include <utility>
 
 #include "flutter/fml/macros.h"
+
 #include "ax_action_handler.h"
 #include "ax_export.h"
 #include "ax_tree_id.h"
@@ -84,4 +85,4 @@ class AX_EXPORT AXTreeIDRegistry {
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_TREE_ID_REGISTRY_H_
+#endif  // ACCESSIBILITY_AX_AX_TREE_ID_REGISTRY_H_

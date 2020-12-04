@@ -155,6 +155,10 @@ def RunCCTests(build_dir, filter):
     RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags)
     RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, non_repeatable_shuffle_flags)
 
+  # The accessibility library only support Mac for now.
+  if IsMac():
+    RunEngineExecutable(build_dir, 'accessibility_unittests', filter, shuffle_flags)
+
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():
     RunEngineExecutable(build_dir, 'txt_unittests', filter, shuffle_flags)

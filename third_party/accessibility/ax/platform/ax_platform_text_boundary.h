@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_TEXT_BOUNDARY_H_
-#define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_TEXT_BOUNDARY_H_
+#ifndef ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_TEXT_BOUNDARY_H_
+#define ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_TEXT_BOUNDARY_H_
 
 #include "ax_build/build_config.h"
-#include "../ax_enums.h"
-#include "../ax_export.h"
+#include "ax/ax_enums.h"
+#include "ax/ax_export.h"
 
 // #if BUILDFLAG(USE_ATK)
 // #include <atk/atk.h>
@@ -44,4 +44,4 @@ AX_EXPORT ax::TextBoundary FromUIATextUnit(TextUnit unit);
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_TEXT_BOUNDARY_H_
+#endif  // ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_TEXT_BOUNDARY_H_

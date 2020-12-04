@@ -101,6 +101,7 @@ group("flutter") {
       "//flutter/testing:testing_unittests",
       "//flutter/third_party/tonic/tests:tonic_unittests",
       "//flutter/third_party/txt:txt_unittests",
+      "//flutter/third_party/accessibility:accessibility_unittests",
     ]
 
     if (is_fuchsia) {

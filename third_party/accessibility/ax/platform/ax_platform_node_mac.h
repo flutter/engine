@@ -2,15 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_MAC_H_
-#define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_MAC_H_
+#ifndef ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_MAC_H_
+#define ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_MAC_H_
 
 #import <Cocoa/Cocoa.h>
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/fml/macros.h"
 
-#include "../ax_export.h"
+#include "ax/ax_export.h"
+
 #include "ax_platform_node_base.h"
 
 @class AXPlatformNodeCocoa;
@@ -70,4 +71,4 @@ AX_EXPORT
 
 @end
 
-#endif  // UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_MAC_H_
+#endif  // ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_MAC_H_

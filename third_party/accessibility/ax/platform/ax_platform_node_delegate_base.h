@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_DELEGATE_BASE_H_
-#define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_DELEGATE_BASE_H_
+#ifndef ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_DELEGATE_BASE_H_
+#define ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_DELEGATE_BASE_H_
 
 #include <stdint.h>
 
@@ -307,4 +307,4 @@ class AX_EXPORT AXPlatformNodeDelegateBase : public AXPlatformNodeDelegate {
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_DELEGATE_BASE_H_
+#endif  // ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_DELEGATE_BASE_H_

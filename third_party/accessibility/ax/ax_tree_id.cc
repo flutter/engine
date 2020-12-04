@@ -10,6 +10,7 @@
 #include "flutter/fml/logging.h"
 
 #include "base/no_destructor.h"
+
 #include "ax_enums.h"
 
 namespace ax {

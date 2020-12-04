@@ -7,11 +7,12 @@
 #include <vector>
 
 #include "base/no_destructor.h"
-#include "../ax_action_data.h"
-#include "../ax_constants.h"
-#include "../ax_node_data.h"
-#include "../ax_role_properties.h"
-#include "../ax_tree_data.h"
+#include "ax/ax_action_data.h"
+#include "ax/ax_constants.h"
+#include "ax/ax_node_data.h"
+#include "ax/ax_role_properties.h"
+#include "ax/ax_tree_data.h"
+
 #include "ax_platform_node.h"
 #include "ax_platform_node_base.h"
 

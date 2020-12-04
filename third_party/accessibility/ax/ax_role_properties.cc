@@ -5,6 +5,7 @@
 #include "ax_role_properties.h"
 
 #include "ax_build/build_config.h"
+
 #include "ax_enums.h"
 
 namespace ax {

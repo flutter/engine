@@ -5,7 +5,8 @@
 #include "ax_platform_node.h"
 
 #include "ax_build/build_config.h"
-#include "../ax_node_data.h"
+#include "ax/ax_node_data.h"
+
 #include "ax_platform_node_delegate.h"
 
 namespace ax {

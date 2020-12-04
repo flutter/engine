@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef ACCESSIBILITY_AX_ROLE_PROPERTIES_H_
-#define ACCESSIBILITY_AX_ROLE_PROPERTIES_H_
+#ifndef ACCESSIBILITY_AX_AX_ROLE_PROPERTIES_H_
+#define ACCESSIBILITY_AX_AX_ROLE_PROPERTIES_H_
 
 #include "ax_base_export.h"
 #include "ax_enums.h"
@@ -193,4 +193,4 @@ AX_BASE_EXPORT bool ShouldHaveReadonlyStateByDefault(
 
 }  // namespace ax
 
-#endif  // ACCESSIBILITY_AX_ROLE_PROPERTIES_H_
+#endif  // ACCESSIBILITY_AX_AX_ROLE_PROPERTIES_H_

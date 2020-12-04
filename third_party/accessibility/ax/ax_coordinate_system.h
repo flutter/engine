@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_COORDINATE_SYSTEM_H_
-#define UI_ACCESSIBILITY_AX_COORDINATE_SYSTEM_H_
+#ifndef ACCESSIBILITY_AX_AX_COORDINATE_SYSTEM_H_
+#define ACCESSIBILITY_AX_AX_COORDINATE_SYSTEM_H_
 
 namespace ax {
 
@@ -33,4 +33,4 @@ enum class AXCoordinateSystem {
 };
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_COORDINATE_SYSTEM_H_
+#endif  // ACCESSIBILITY_AX_AX_COORDINATE_SYSTEM_H_

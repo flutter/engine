@@ -13,12 +13,13 @@
 #include "flutter/fml/macros.h"
 
 #include "ax_build/build_config.h"
-#include "../ax_enums.h"
-#include "../ax_node.h"
+#include "ax/ax_enums.h"
+#include "ax/ax_node.h"
+#include "gfx/native_widget_types.h"
+
 #include "ax_platform_node.h"
 #include "ax_platform_node_delegate.h"
 #include "ax_platform_text_boundary.h"
-#include "gfx/native_widget_types.h"
 
 // #if BUILDFLAG(USE_ATK)
 // #include <atk/atk.h>

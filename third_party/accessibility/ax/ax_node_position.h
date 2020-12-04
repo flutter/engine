@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_NODE_POSITION_H_
-#define UI_ACCESSIBILITY_AX_NODE_POSITION_H_
+#ifndef ACCESSIBILITY_AX_AX_NODE_POSITION_H_
+#define ACCESSIBILITY_AX_AX_NODE_POSITION_H_
 
 #include <stdint.h>
 
@@ -77,4 +77,4 @@ class AX_EXPORT AXNodePosition : public AXPosition<AXNodePosition, AXNode> {
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_NODE_POSITION_H_
+#endif  // ACCESSIBILITY_AX_AX_NODE_POSITION_H_

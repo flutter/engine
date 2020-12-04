@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_EVENT_GENERATOR_H_
-#define UI_ACCESSIBILITY_AX_EVENT_GENERATOR_H_
+#ifndef ACCESSIBILITY_AX_AX_EVENT_GENERATOR_H_
+#define ACCESSIBILITY_AX_AX_EVENT_GENERATOR_H_
 
 #include <bitset>
 #include <map>
@@ -322,4 +322,4 @@ AX_EXPORT const char* ToString(AXEventGenerator::Event event);
 
 }  // namespace ui
 
-#endif  // UI_ACCESSIBILITY_AX_EVENT_GENERATOR_H_
+#endif  // ACCESSIBILITY_AX_AX_EVENT_GENERATOR_H_

@@ -754,6 +754,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     } else {
       self.viewController.view.accessibilityChildren = nil;
     }
+    return;
   }
   _bridge->AddFlutterSemanticsCustomActionUpdate(action);
 }

@@ -82,6 +82,10 @@ source_set("flutter_framework_source") {
 
   sources += _flutter_framework_headers
 
+  public_deps = [
+    "//flutter/third_party/accessibility",
+  ]
+
   deps = [
     "//flutter/flow:flow",
     "//flutter/fml",
@@ -89,7 +93,6 @@ source_set("flutter_framework_source") {
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//third_party/skia",
-    "//flutter/third_party/accessibility",
   ]
 
   public_configs = [
@@ -131,6 +134,7 @@ executable("flutter_desktop_darwin_unittests") {
   testonly = true
 
   sources = [
+    "framework/Source/FlutterAccessibilityMacTest.mm",
     "framework/Source/FlutterEngineTest.mm",
     "framework/Source/FlutterGLCompositorUnittests.mm",
     "framework/Source/FlutterViewControllerTest.mm",

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_EVENT_INTENT_H_
-#define UI_ACCESSIBILITY_AX_EVENT_INTENT_H_
+#ifndef ACCESSIBILITY_AX_AX_EVENT_INTENT_H_
+#define ACCESSIBILITY_AX_AX_EVENT_INTENT_H_
 
 #include <string>
 
@@ -41,4 +41,4 @@ struct AX_BASE_EXPORT AXEventIntent final {
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_EVENT_INTENT_H_
+#endif  // ACCESSIBILITY_AX_AX_EVENT_INTENT_H_

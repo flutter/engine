@@ -4,8 +4,9 @@
 
 #include "flutter_accessibility.h"
 
-#include "accessibility_bridge.h"
 #include "ax/ax_action_data.h"
+
+#include "accessibility_bridge.h"
 
 namespace ax {
 

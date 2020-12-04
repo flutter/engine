@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef ACCESSIBILITY_AX_ENUM_UTIL_H_
-#define ACCESSIBILITY_AX_ENUM_UTIL_H_
+#ifndef ACCESSIBILITY_AX_AX_ENUM_UTIL_H_
+#define ACCESSIBILITY_AX_AX_ENUM_UTIL_H_
 
 #include <string>
 
@@ -194,4 +194,4 @@ AX_BASE_EXPORT ax::Dropeffect ParseDropeffect(const char* dropeffect);
 
 }  // namespace ax
 
-#endif  // ACCESSIBILITY_AX_ENUM_UTIL_H_
+#endif  // ACCESSIBILITY_AX_AX_ENUM_UTIL_H_

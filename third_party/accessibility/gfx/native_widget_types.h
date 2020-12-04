@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_GFX_NATIVE_WIDGET_TYPES_H_
-#define UI_GFX_NATIVE_WIDGET_TYPES_H_
+#ifndef ACCESSIBILITY_GFX_NATIVE_WIDGET_TYPES_H_
+#define ACCESSIBILITY_GFX_NATIVE_WIDGET_TYPES_H_
 
 #include <stdint.h>
 
@@ -252,4 +252,4 @@ constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
 
 }  // namespace gfx
 
-#endif  // UI_GFX_NATIVE_WIDGET_TYPES_H_
+#endif  // ACCESSIBILITY_GFX_NATIVE_WIDGET_TYPES_H_

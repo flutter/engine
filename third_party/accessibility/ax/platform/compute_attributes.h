@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_PLATFORM_COMPUTE_ATTRIBUTES_H_
-#define UI_ACCESSIBILITY_PLATFORM_COMPUTE_ATTRIBUTES_H_
+#ifndef ACCESSIBILITY_AX_PLATFORM_COMPUTE_ATTRIBUTES_H_
+#define ACCESSIBILITY_AX_PLATFORM_COMPUTE_ATTRIBUTES_H_
 
 #include <cstddef>
 #include <optional>
 
-#include "../ax_enums.h"
-#include "../ax_export.h"
+#include "ax/ax_enums.h"
+#include "ax/ax_export.h"
 
 namespace ax {
 
@@ -23,4 +23,4 @@ AX_EXPORT std::optional<int32_t> ComputeAttribute(
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_PLATFORM_COMPUTE_ATTRIBUTES_H_
+#endif  // ACCESSIBILITY_AX_PLATFORM_COMPUTE_ATTRIBUTES_H_

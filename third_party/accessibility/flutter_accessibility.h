@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef AX_FLUTTER_ACCESSIBILITY_H
-#define AX_FLUTTER_ACCESSIBILITY_H
+#ifndef ACCESSIBILITY_FLUTTER_ACCESSIBILITY_H
+#define ACCESSIBILITY_FLUTTER_ACCESSIBILITY_H
 
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -50,4 +50,4 @@ class FlutterAccessibility : public AXPlatformNodeDelegateBase {
 };
 } // namespace ax
 
-#endif // AX_FLUTTER_ACCESSIBILITY_H
+#endif // ACCESSIBILITY_FLUTTER_ACCESSIBILITY_H

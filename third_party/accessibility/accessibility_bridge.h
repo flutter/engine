@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_ACCESSIBILITYBRIDGE_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_ACCESSIBILITYBRIDGE_H_
+#ifndef ACCESSIBILITY_ACCESSIBILITY_BRIDGE_H_
+#define ACCESSIBILITY_ACCESSIBILITY_BRIDGE_H_
 
 #include <unordered_map>
 
@@ -39,7 +39,7 @@ class AccessibilityBridge : public AXTreeObserver {
   //------------------------------------------------------------------------------
   /// @brief      Adds a semantics node update to the pending semantics update.
   ///             Calling this method alone will NOT update the semantics tree.
-  ///             To flush the the pending updates, call the CommitUpdates().
+  ///             To flush the pending updates, call the CommitUpdates().
   ///
   /// @param[in]  node           A pointer to the semantics node update.
   void AddFlutterSemanticsNodeUpdate(const FlutterSemanticsNode* node);
@@ -47,8 +47,8 @@ class AccessibilityBridge : public AXTreeObserver {
   //------------------------------------------------------------------------------
   /// @brief      Adds a custom semantics action update to the pending semantics
   ///             update. Calling this method alone will NOT update the
-  ///             semantics tree. To flush the the pending updates, call
-  ///             the CommitUpdates().
+  ///             semantics tree. To flush the pending updates, call the
+  ///             CommitUpdates().
   ///
   /// @param[in]  action           A pointer to the custom semantics action update.
   void AddFlutterSemanticsCustomActionUpdate(const FlutterSemanticsCustomAction* action);
@@ -171,4 +171,4 @@ class AccessibilityBridge : public AXTreeObserver {
 
 } // namespace ax
 
-#endif
+#endif // ACCESSIBILITY_ACCESSIBILITY_BRIDGE_H_

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_GFX_MAC_COORDINATE_CONVERSION_H_
-#define UI_GFX_MAC_COORDINATE_CONVERSION_H_
+#ifndef ACCESSIBILITY_GFX_MAC_COORDINATE_CONVERSION_H_
+#define ACCESSIBILITY_GFX_MAC_COORDINATE_CONVERSION_H_
 
 #import <Foundation/Foundation.h>
 
@@ -32,4 +32,4 @@ AX_EXPORT SkPoint ScreenPointFromNSPoint(const NSPoint& point);
 
 }  // namespace gfx
 
-#endif  // UI_GFX_MAC_COORDINATE_CONVERSION_H_
+#endif  // ACCESSIBILITY_GFX_MAC_COORDINATE_CONVERSION_H_

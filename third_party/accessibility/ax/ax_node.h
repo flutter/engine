@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef AX_AX_NODE_H_
-#define AX_AX_NODE_H_
+#ifndef ACCESSIBILITY_AX_AX_NODE_H_
+#define ACCESSIBILITY_AX_AX_NODE_H_
 
 #include <optional>
 #include <stdint.h>
@@ -18,6 +18,7 @@
 #include "third_party/skia/include/core/SkRect.h"
 
 #include "ax_build/build_config.h"
+
 #include "ax_export.h"
 #include "ax_node_data.h"
 #include "ax_tree_id.h"
@@ -649,4 +650,4 @@ NodeType* AXNode::ChildIteratorBase<NodeType,
 
 }  // namespace ax
 
-#endif  // AX_AX_NODE_H_
+#endif  // ACCESSIBILITY_AX_AX_NODE_H_

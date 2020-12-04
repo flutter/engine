@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_PLATFORM_AX_UNIQUE_ID_H_
-#define UI_ACCESSIBILITY_PLATFORM_AX_UNIQUE_ID_H_
+#ifndef ACCESSIBILITY_AX_PLATFORM_AX_UNIQUE_ID_H_
+#define ACCESSIBILITY_AX_PLATFORM_AX_UNIQUE_ID_H_
 
 #include <stdint.h>
 
 #include "flutter/fml/macros.h"
 
-#include "../ax_export.h"
+#include "ax/ax_export.h"
 
 namespace ax {
 
@@ -50,4 +50,4 @@ class AX_EXPORT AXUniqueId {
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_PLATFORM_AX_UNIQUE_ID_H_
+#endif  // ACCESSIBILITY_AX_PLATFORM_AX_UNIQUE_ID_H_

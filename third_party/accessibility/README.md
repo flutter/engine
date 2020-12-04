@@ -15,12 +15,12 @@ You can find the corresponding upstream files for all of the files in
 Update to this Library
 ==============
 Bug fixes to the forked files in the the four directories should proceed as usual.
-New features or changes that change the behavior of the class are discouraged. All
+New features or changes that change the behaviors of these classes are discouraged. All
 of these changes will increase our tech debts, please only proceed as the last resort.
 
-If you do need to make such change, please log the change at the end of this readme.
+If you do need to make such change, please log the change at the end of this file.
 
-To Use this Library
+Use this Library
 ==============
 To use this library, each platform must provide their own implementations of
 `FlutterAccessibility` and override the static method

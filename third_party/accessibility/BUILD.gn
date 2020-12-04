@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
+import("//flutter/testing/testing.gni")
 
 config("accessibility_config") {
   visibility = [ ":*" ]
@@ -132,6 +133,29 @@ source_set("accessibility") {
       "CoreGraphics.framework",
       "CoreText.framework",
       "IOSurface.framework",
+    ]
+  }
+}
+
+if (enable_unittests) {
+  test_fixtures("accessibility_fixtures") {
+    fixtures = []
+  }
+
+  executable("accessibility_unittests") {
+    testonly = true
+
+    sources = [
+      "accessibility_bridge_unittests.cc",
+      "flutter_accessibility_unittests.cc",
+      "test_flutter_accessibility.cc",
+      "test_flutter_accessibility.h",
+    ]
+
+    deps = [
+      ":accessibility_fixtures",
+      ":accessibility",
+      "//flutter/testing",
     ]
   }
 }

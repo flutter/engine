@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_TREE_MANAGER_H_
-#define UI_ACCESSIBILITY_AX_TREE_MANAGER_H_
+#ifndef ACCESSIBILITY_AX_AX_TREE_MANAGER_H_
+#define ACCESSIBILITY_AX_AX_TREE_MANAGER_H_
 
 #include "ax_export.h"
 #include "ax_node.h"
@@ -44,4 +44,4 @@ class AX_EXPORT AXTreeManager {
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_TREE_MANAGER_H_
+#endif  // ACCESSIBILITY_AX_AX_TREE_MANAGER_H_

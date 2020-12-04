@@ -437,13 +437,21 @@ AccessibilityBridge::SemanticsNode AccessibilityBridge::FromFlutterSemanticsNode
   if (flutter_node->value) {
     result.value = std::string(flutter_node->value);
   }
-  result.increased_value = std::string(flutter_node->increased_value);
-  result.decreased_value = std::string(flutter_node->decreased_value);
+  if (flutter_node->increased_value) {
+    result.increased_value = std::string(flutter_node->increased_value);
+  }
+  if (flutter_node->decreased_value) {
+    result.decreased_value = std::string(flutter_node->decreased_value);
+  }
   result.text_direction = flutter_node->text_direction;
   result.rect = flutter_node->rect;
   result.transform = flutter_node->transform;
-  result.children_in_traversal_order = std::vector<int32_t>(flutter_node->children_in_traversal_order, flutter_node->children_in_traversal_order + flutter_node->child_count);
-  result.custom_accessibility_actions = std::vector<int32_t>(flutter_node->custom_accessibility_actions, flutter_node->custom_accessibility_actions + flutter_node->custom_accessibility_actions_count);
+  if (flutter_node->child_count > 0) {
+    result.children_in_traversal_order = std::vector<int32_t>(flutter_node->children_in_traversal_order, flutter_node->children_in_traversal_order + flutter_node->child_count);
+  }
+  if (flutter_node->custom_accessibility_actions_count > 0) {
+    result.custom_accessibility_actions = std::vector<int32_t>(flutter_node->custom_accessibility_actions, flutter_node->custom_accessibility_actions + flutter_node->custom_accessibility_actions_count);
+  }
   return result;
 }
 

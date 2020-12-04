@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_AX_TREE_ID_H_
-#define UI_ACCESSIBILITY_AX_AX_TREE_ID_H_
+#ifndef ACCESSIBILITY_AX_AX_TREE_ID_H_
+#define ACCESSIBILITY_AX_AX_TREE_ID_H_
 
 #include <string>
 
 #include "base/no_destructor.h"
+
 #include "ax_base_export.h"
 #include "ax_enums.h"
 
@@ -81,4 +82,4 @@ AX_BASE_EXPORT extern const AXTreeID& AXTreeIDUnknown();
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_AX_TREE_ID_H_
+#endif  // ACCESSIBILITY_AX_AX_TREE_ID_H_

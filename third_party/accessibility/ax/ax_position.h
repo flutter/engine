@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_POSITION_H_
-#define UI_ACCESSIBILITY_AX_POSITION_H_
+#ifndef ACCESSIBILITY_AX_AX_POSITION_H_
+#define ACCESSIBILITY_AX_AX_POSITION_H_
 
 #include <math.h>
 #include <stdint.h>
@@ -3972,4 +3972,4 @@ std::ostream& operator<<(
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_POSITION_H_
+#endif  // ACCESSIBILITY_AX_AX_POSITION_H_

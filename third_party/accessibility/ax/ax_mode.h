@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_MODE_H_
-#define UI_ACCESSIBILITY_AX_MODE_H_
+#ifndef ACCESSIBILITY_AX_AX_MODE_H_
+#define ACCESSIBILITY_AX_AX_MODE_H_
 
 #include <stdint.h>
 
@@ -112,4 +112,4 @@ AX_BASE_EXPORT std::ostream& operator<<(std::ostream& stream,
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_MODE_H_
+#endif  // ACCESSIBILITY_AX_AX_MODE_H_

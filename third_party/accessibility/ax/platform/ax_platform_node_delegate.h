@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_DELEGATE_H_
-#define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_DELEGATE_H_
+#ifndef ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_DELEGATE_H_
+#define ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_DELEGATE_H_
 
 #include <stdint.h>
 
@@ -19,17 +19,18 @@
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkRect.h"
 
-#include "../ax_clipping_behavior.h"
-#include "../ax_coordinate_system.h"
-#include "../ax_enums.h"
-#include "../ax_export.h"
-#include "../ax_node_position.h"
-#include "../ax_offscreen_result.h"
-#include "../ax_position.h"
-#include "../ax_tree.h"
-#include "../ax_tree_id.h"
-#include "ax_unique_id.h"
+#include "ax/ax_clipping_behavior.h"
+#include "ax/ax_coordinate_system.h"
+#include "ax/ax_enums.h"
+#include "ax/ax_export.h"
+#include "ax/ax_node_position.h"
+#include "ax/ax_offscreen_result.h"
+#include "ax/ax_position.h"
+#include "ax/ax_tree.h"
+#include "ax/ax_tree_id.h"
 #include "gfx/native_widget_types.h"
+
+#include "ax_unique_id.h"
 
 namespace ax {
 
@@ -441,4 +442,4 @@ class AX_EXPORT AXPlatformNodeDelegate {
 
 }  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_DELEGATE_H_
+#endif  // ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_DELEGATE_H_

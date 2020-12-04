@@ -4,7 +4,7 @@
 
 #include "ax_platform_text_boundary.h"
 
-#include "../ax_enums.h"
+#include "ax/ax_enums.h"
 
 namespace ax {
 
