@@ -495,11 +495,6 @@ class BitmapCanvas extends EngineCanvas {
           paint);
       element.style.borderRadius = '50%';
     } else {
-      print('preserve=$_preserveImageData');
-      print('3d = $_contains3dTransform');
-      print('overdraw = $_childOverdraw');
-      print('canvas = ${_canvasPool._canvas}');
-      print('maskfilter=${paint.maskFilter} shader=${paint.shader}');
       _setUpPaint(paint, paint.shader != null
           ? ui.Rect.fromCircle(center: c, radius: radius) : null);
       _canvasPool.drawCircle(c, radius, paint.style);
