@@ -6,9 +6,8 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_METAL_H_
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
+#include "flutter/testing/test_metal_context.h"
 #include "flutter/testing/test_metal_surface.h"
-#include "include/core/SkSize.h"
-#include "testing/test_metal_context.h"
 
 namespace flutter {
 namespace testing {

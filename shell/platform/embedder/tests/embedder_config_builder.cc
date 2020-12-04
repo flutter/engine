@@ -15,7 +15,6 @@
 
 #ifdef SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_metal.h"
-#include "flutter/testing/test_metal_context.h"
 #endif
 
 namespace flutter {
