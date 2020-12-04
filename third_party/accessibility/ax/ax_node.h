@@ -5,8 +5,8 @@
 #ifndef ACCESSIBILITY_AX_AX_NODE_H_
 #define ACCESSIBILITY_AX_AX_NODE_H_
 
-#include <optional>
 #include <stdint.h>
+#include <optional>
 
 #include <memory>
 #include <ostream>
@@ -213,8 +213,7 @@ class AX_EXPORT AXNode final {
   float GetFloatAttribute(ax::FloatAttribute attribute) const {
     return data().GetFloatAttribute(attribute);
   }
-  bool GetFloatAttribute(ax::FloatAttribute attribute,
-                         float* value) const {
+  bool GetFloatAttribute(ax::FloatAttribute attribute, float* value) const {
     return data().GetFloatAttribute(attribute, value);
   }
 
@@ -231,8 +230,7 @@ class AX_EXPORT AXNode final {
   bool HasStringAttribute(ax::StringAttribute attribute) const {
     return data().HasStringAttribute(attribute);
   }
-  const std::string& GetStringAttribute(
-      ax::StringAttribute attribute) const {
+  const std::string& GetStringAttribute(ax::StringAttribute attribute) const {
     return data().GetStringAttribute(attribute);
   }
   bool GetStringAttribute(ax::StringAttribute attribute,
@@ -244,8 +242,7 @@ class AX_EXPORT AXNode final {
                             std::u16string* value) const {
     return data().GetString16Attribute(attribute, value);
   }
-  std::u16string GetString16Attribute(
-      ax::StringAttribute attribute) const {
+  std::u16string GetString16Attribute(ax::StringAttribute attribute) const {
     return data().GetString16Attribute(attribute);
   }
 

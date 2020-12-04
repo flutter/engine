@@ -67,23 +67,20 @@ struct AX_BASE_EXPORT AXNodeData {
 
   bool HasFloatAttribute(ax::FloatAttribute attribute) const;
   float GetFloatAttribute(ax::FloatAttribute attribute) const;
-  bool GetFloatAttribute(ax::FloatAttribute attribute,
-                         float* value) const;
+  bool GetFloatAttribute(ax::FloatAttribute attribute, float* value) const;
 
   bool HasIntAttribute(ax::IntAttribute attribute) const;
   int GetIntAttribute(ax::IntAttribute attribute) const;
   bool GetIntAttribute(ax::IntAttribute attribute, int* value) const;
 
   bool HasStringAttribute(ax::StringAttribute attribute) const;
-  const std::string& GetStringAttribute(
-      ax::StringAttribute attribute) const;
+  const std::string& GetStringAttribute(ax::StringAttribute attribute) const;
   bool GetStringAttribute(ax::StringAttribute attribute,
                           std::string* value) const;
 
   bool GetString16Attribute(ax::StringAttribute attribute,
                             std::u16string* value) const;
-  std::u16string GetString16Attribute(
-      ax::StringAttribute attribute) const;
+  std::u16string GetString16Attribute(ax::StringAttribute attribute) const;
 
   bool HasIntListAttribute(ax::IntListAttribute attribute) const;
   const std::vector<int32_t>& GetIntListAttribute(
@@ -102,9 +99,9 @@ struct AX_BASE_EXPORT AXNodeData {
   //
   // Setting accessibility attributes.
   //
-  // Replaces an attribute if present. This is safer than crashing via a FML_DCHECK
-  // or doing nothing, because most likely replacing is what the caller would
-  // have wanted or what existing code already assumes.
+  // Replaces an attribute if present. This is safer than crashing via a
+  // FML_DCHECK or doing nothing, because most likely replacing is what the
+  // caller would have wanted or what existing code already assumes.
   //
 
   void AddStringAttribute(ax::StringAttribute attribute,
@@ -272,15 +269,13 @@ struct AX_BASE_EXPORT AXNodeData {
   ax::Role role;
   uint32_t state;
   uint64_t actions;
-  std::vector<std::pair<ax::StringAttribute, std::string>>
-      string_attributes;
+  std::vector<std::pair<ax::StringAttribute, std::string>> string_attributes;
   std::vector<std::pair<ax::IntAttribute, int32_t>> int_attributes;
   std::vector<std::pair<ax::FloatAttribute, float>> float_attributes;
   std::vector<std::pair<ax::BoolAttribute, bool>> bool_attributes;
   std::vector<std::pair<ax::IntListAttribute, std::vector<int32_t>>>
       intlist_attributes;
-  std::vector<
-      std::pair<ax::StringListAttribute, std::vector<std::string>>>
+  std::vector<std::pair<ax::StringListAttribute, std::vector<std::string>>>
       stringlist_attributes;
   std::vector<std::pair<std::string, std::string>> html_attributes;
   std::vector<int32_t> child_ids;

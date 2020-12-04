@@ -320,6 +320,6 @@ AX_EXPORT std::ostream& operator<<(std::ostream& os,
                                    AXEventGenerator::Event event);
 AX_EXPORT const char* ToString(AXEventGenerator::Event event);
 
-}  // namespace ui
+}  // namespace ax
 
 #endif  // ACCESSIBILITY_AX_AX_EVENT_GENERATOR_H_

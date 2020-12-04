@@ -503,8 +503,8 @@ static void CommonInit(FlutterViewController* controller) {
   if (!_engine) {
     return;
   }
-  if(@available(macOS 10.13, *)) {
-    NSWorkspace * ws = [NSWorkspace sharedWorkspace];
+  if (@available(macOS 10.13, *)) {
+    NSWorkspace* ws = [NSWorkspace sharedWorkspace];
     [_engine updateSemanticsEnabled:ws.voiceOverEnabled];
   }
 }

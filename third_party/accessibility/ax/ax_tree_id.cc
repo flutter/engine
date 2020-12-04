@@ -58,7 +58,7 @@ void swap(AXTreeID& first, AXTreeID& second) {
 }
 
 bool AXTreeID::operator==(const AXTreeID& rhs) const {
-  return type_ == rhs.type_ ;//&& token_ == rhs.token_;
+  return type_ == rhs.type_;  //&& token_ == rhs.token_;
 }
 
 bool AXTreeID::operator!=(const AXTreeID& rhs) const {

@@ -80,9 +80,9 @@ enum class Event {
   kShow,                     // Native / Automation
   kStateChanged,             // Native / Automation
   kTextChanged,
-  kWindowActivated,             // Native
-  kWindowDeactivated,           // Native
-  kWindowVisibilityChanged,     // Native
+  kWindowActivated,          // Native
+  kWindowDeactivated,        // Native
+  kWindowVisibilityChanged,  // Native
   kTextSelectionChanged,
   kTooltipClosed,
   kTooltipOpened,
@@ -253,7 +253,7 @@ enum class Role {
   kNote,
   kPane,
   kParagraph,
-  kPdfActionableHighlight, // PDF specific highlight role.
+  kPdfActionableHighlight,  // PDF specific highlight role.
   kPluginObject,
   kPopUpButton,
   kPortal,
@@ -331,7 +331,8 @@ enum class State {
   // Grows vertically, e.g. menu or combo box.
   kVertical,
   kVisited,
-  // Used for looping through the enum, This must be the last value of this enum.
+  // Used for looping through the enum, This must be the last value of this
+  // enum.
   kMaxValue
 };
 
@@ -434,7 +435,8 @@ enum class Action {
   // Send an event signaling the end of a test.
   kSignalEndOfTest,
   kShowTooltip,
-  // Used for looping through the enum, This must be the last value of this enum.
+  // Used for looping through the enum, This must be the last value of this
+  // enum.
   kMaxValue
 };
 
@@ -833,7 +835,7 @@ enum class ListStyle {
   kImage,
   kNumeric,
   kSquare,
-  kOther, // Language specific ordering (alpha, roman, cjk-ideographic, etc...)
+  kOther,  // Language specific ordering (alpha, roman, cjk-ideographic, etc...)
 };
 
 enum class MarkerType {
@@ -851,11 +853,7 @@ enum class MarkerType {
 // the left-to-right or right-to-left direction of the text. For example, a
 // forward movement will always move to the next node in depth-first pre-order
 // traversal.
-enum class MoveDirection {
-  kForward,
-  kBackward,
-  kNone = kForward
-};
+enum class MoveDirection { kForward, kBackward, kNone = kForward };
 
 // Describes the edit or selection command that resulted in a selection or a
 // text changed event.
@@ -865,9 +863,9 @@ enum class Command {
   kDelete,
   kDictate,
   kExtendSelection,  // The existing selection has been extended or shrunk.
-  kFormat,  // The text attributes, such as font size, have changed.
+  kFormat,           // The text attributes, such as font size, have changed.
   kInsert,
-  kMarker,  // A document marker has been added or removed.
+  kMarker,         // A document marker has been added or removed.
   kMoveSelection,  // The selection has been moved by a specific granularity.
   kPaste,
   kReplace,
@@ -1017,10 +1015,10 @@ enum class NameFrom {
   kAttributeExplicitlyEmpty,
   kCaption,  // E.g. in the case of a table, from a caption element.
   kContents,
-  kPlaceholder,  // E.g. from an HTML placeholder attribute on a text field.
-  kRelatedElement, // E.g. from a figcaption Element in a figure.
-  kTitle,  // E.g. <input type="text" title="title">.
-  kValue,  // E.g. <input type="button" value="Button's name">.
+  kPlaceholder,     // E.g. from an HTML placeholder attribute on a text field.
+  kRelatedElement,  // E.g. from a figcaption Element in a figure.
+  kTitle,           // E.g. <input type="text" title="title">.
+  kValue,           // E.g. <input type="button" value="Button's name">.
 };
 
 enum class DescriptionFrom {
@@ -1144,6 +1142,6 @@ enum class Dropeffect {
   kMaxValue,
 };
 
-}
+}  // namespace ax
 
 #endif  // ACCESSIBILITY_AX_AX_ENUMS_H_

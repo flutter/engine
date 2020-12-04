@@ -49,9 +49,14 @@ TEST(AccessibilityBridgeTest, basicTest) {
 
   bridge.CommitUpdates();
 
-  TestFlutterAccessibility* root_node = static_cast<TestFlutterAccessibility*>(bridge.GetFlutterAccessibilityFromID(0));
-  TestFlutterAccessibility* child1_node = static_cast<TestFlutterAccessibility*>(bridge.GetFlutterAccessibilityFromID(1));
-  TestFlutterAccessibility* child2_node = static_cast<TestFlutterAccessibility*>(bridge.GetFlutterAccessibilityFromID(2));
+  TestFlutterAccessibility* root_node = static_cast<TestFlutterAccessibility*>(
+      bridge.GetFlutterAccessibilityFromID(0));
+  TestFlutterAccessibility* child1_node =
+      static_cast<TestFlutterAccessibility*>(
+          bridge.GetFlutterAccessibilityFromID(1));
+  TestFlutterAccessibility* child2_node =
+      static_cast<TestFlutterAccessibility*>(
+          bridge.GetFlutterAccessibilityFromID(2));
   ASSERT_EQ(root_node->GetChildCount(), 2);
   ASSERT_EQ(root_node->GetData().child_ids[0], 1);
   ASSERT_EQ(root_node->GetData().child_ids[1], 2);
@@ -100,8 +105,11 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
 
   bridge.CommitUpdates();
 
-  TestFlutterAccessibility* root_node = static_cast<TestFlutterAccessibility*>(bridge.GetFlutterAccessibilityFromID(0));
-  TestFlutterAccessibility* child1_node = static_cast<TestFlutterAccessibility*>(bridge.GetFlutterAccessibilityFromID(1));
+  TestFlutterAccessibility* root_node = static_cast<TestFlutterAccessibility*>(
+      bridge.GetFlutterAccessibilityFromID(0));
+  TestFlutterAccessibility* child1_node =
+      static_cast<TestFlutterAccessibility*>(
+          bridge.GetFlutterAccessibilityFromID(1));
   ASSERT_EQ(root_node->GetChildCount(), 1);
   ASSERT_EQ(root_node->GetData().child_ids[0], 1);
   ASSERT_EQ(root_node->GetName(), "root");
@@ -133,13 +141,15 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
 
   bridge.CommitUpdates();
 
-  root_node = static_cast<TestFlutterAccessibility*>(bridge.GetFlutterAccessibilityFromID(0));
+  root_node = static_cast<TestFlutterAccessibility*>(
+      bridge.GetFlutterAccessibilityFromID(0));
 
   ASSERT_EQ(root_node->GetChildCount(), 2);
   ASSERT_EQ(root_node->GetData().child_ids[0], 1);
   ASSERT_EQ(root_node->GetData().child_ids[1], 2);
   ASSERT_EQ(root_node->accessibilitiy_events.size(), size_t{1});
-  ASSERT_EQ(root_node->accessibilitiy_events[0].event_params.event, AXEventGenerator::Event::CHILDREN_CHANGED);
+  ASSERT_EQ(root_node->accessibilitiy_events[0].event_params.event,
+            AXEventGenerator::Event::CHILDREN_CHANGED);
 }
 
 TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrect) {
@@ -161,7 +171,8 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrect) {
 
   bridge.CommitUpdates();
 
-  TestFlutterAccessibility* root_node = static_cast<TestFlutterAccessibility*>(bridge.GetFlutterAccessibilityFromID(0));
+  TestFlutterAccessibility* root_node = static_cast<TestFlutterAccessibility*>(
+      bridge.GetFlutterAccessibilityFromID(0));
   AXTree* tree = bridge.GetAXTree();
   ASSERT_EQ(tree->data().sel_anchor_object_id, AXNode::kInvalidAXID);
   root_node->accessibilitiy_events.clear();
@@ -178,9 +189,11 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrect) {
   ASSERT_EQ(tree->data().sel_focus_object_id, 0);
   ASSERT_EQ(tree->data().sel_focus_offset, 5);
   ASSERT_EQ(root_node->accessibilitiy_events.size(), size_t{2});
-  ASSERT_EQ(root_node->accessibilitiy_events[0].event_params.event, AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED);
-  ASSERT_EQ(root_node->accessibilitiy_events[1].event_params.event, AXEventGenerator::Event::OTHER_ATTRIBUTE_CHANGED);
+  ASSERT_EQ(root_node->accessibilitiy_events[0].event_params.event,
+            AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED);
+  ASSERT_EQ(root_node->accessibilitiy_events[1].event_params.event,
+            AXEventGenerator::Event::OTHER_ATTRIBUTE_CHANGED);
 }
 
 }  // namespace testing
-}  // namespace flutter
+}  // namespace ax

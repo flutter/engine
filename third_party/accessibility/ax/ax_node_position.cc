@@ -96,7 +96,8 @@ int AXNodePosition::AnchorUnignoredChildCount() const {
 }
 
 int AXNodePosition::AnchorIndexInParent() const {
-  return GetAnchor() ? static_cast<int>(GetAnchor()->index_in_parent()) : INVALID_INDEX;
+  return GetAnchor() ? static_cast<int>(GetAnchor()->index_in_parent())
+                     : INVALID_INDEX;
 }
 
 int AXNodePosition::AnchorSiblingCount() const {
@@ -108,7 +109,7 @@ int AXNodePosition::AnchorSiblingCount() const {
 }
 
 std::stack<AXNode*> AXNodePosition::GetAncestorAnchors() const {
- std::stack<AXNode*> anchors;
+  std::stack<AXNode*> anchors;
   AXNode* current_anchor = GetAnchor();
 
   AXNode::AXID current_anchor_id = GetAnchor()->id();
@@ -194,15 +195,13 @@ std::u16string AXNodePosition::GetText() const {
   if (!AnchorChildCount()) {
     // Special case: Allows us to get text even in non-web content, e.g. in the
     // browser's UI.
-    text =
-        anchor->data().GetString16Attribute(ax::StringAttribute::kValue);
+    text = anchor->data().GetString16Attribute(ax::StringAttribute::kValue);
     if (!text.empty())
       return text;
   }
 
   if (anchor->IsText()) {
-    return anchor->data().GetString16Attribute(
-        ax::StringAttribute::kName);
+    return anchor->data().GetString16Attribute(ax::StringAttribute::kName);
   }
 
   for (int i = 0; i < AnchorChildCount(); ++i)
@@ -233,9 +232,8 @@ bool AXNodePosition::IsInWhiteSpace() const {
     return true;
   }
   std::u16string text = GetText();
-  return std::find_if(text.begin(), text.end(), [](char16_t ch) {
-    return ch != u' ';
-  }) == text.end();
+  return std::find_if(text.begin(), text.end(),
+                      [](char16_t ch) { return ch != u' '; }) == text.end();
 }
 
 // This override is an optimized version AXPosition::MaxTextOffset. Instead of
@@ -357,8 +355,8 @@ AXNode::AXID AXNodePosition::GetNextOnLineID(AXNode::AXID node_id) const {
     return AXNode::kInvalidAXID;
   AXNode* node = GetNodeInTree(tree_id(), node_id);
   int next_on_line_id;
-  if (!node || !node->data().GetIntAttribute(
-                   ax::IntAttribute::kNextOnLineId, &next_on_line_id)) {
+  if (!node || !node->data().GetIntAttribute(ax::IntAttribute::kNextOnLineId,
+                                             &next_on_line_id)) {
     return AXNode::kInvalidAXID;
   }
   return static_cast<AXNode::AXID>(next_on_line_id);
@@ -369,9 +367,8 @@ AXNode::AXID AXNodePosition::GetPreviousOnLineID(AXNode::AXID node_id) const {
     return AXNode::kInvalidAXID;
   AXNode* node = GetNodeInTree(tree_id(), node_id);
   int previous_on_line_id;
-  if (!node ||
-      !node->data().GetIntAttribute(ax::IntAttribute::kPreviousOnLineId,
-                                    &previous_on_line_id)) {
+  if (!node || !node->data().GetIntAttribute(
+                   ax::IntAttribute::kPreviousOnLineId, &previous_on_line_id)) {
     return AXNode::kInvalidAXID;
   }
   return static_cast<AXNode::AXID>(previous_on_line_id);

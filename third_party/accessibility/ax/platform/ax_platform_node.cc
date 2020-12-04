@@ -4,8 +4,8 @@
 
 #include "ax_platform_node.h"
 
-#include "ax_build/build_config.h"
 #include "ax/ax_node_data.h"
+#include "ax_build/build_config.h"
 
 #include "ax_platform_node_delegate.h"
 
@@ -13,7 +13,8 @@ namespace ax {
 
 std::vector<AXModeObserver*> AXPlatformNode::ax_mode_observers_;
 
-std::function<AXPlatformNode::NativeWindowHandlerCallback> AXPlatformNode::native_window_handler_;
+std::function<AXPlatformNode::NativeWindowHandlerCallback>
+    AXPlatformNode::native_window_handler_;
 // static
 AXMode AXPlatformNode::ax_mode_;
 
@@ -35,11 +36,9 @@ void AXPlatformNode::RegisterNativeWindowHandler(
 
 AXPlatformNode::AXPlatformNode() {}
 
-AXPlatformNode::~AXPlatformNode() {
-}
+AXPlatformNode::~AXPlatformNode() {}
 
-void AXPlatformNode::Destroy() {
-}
+void AXPlatformNode::Destroy() {}
 
 int32_t AXPlatformNode::GetUniqueId() const {
   FML_DCHECK(GetDelegate());
@@ -73,7 +72,8 @@ void AXPlatformNode::AddAXModeObserver(AXModeObserver* observer) {
 
 // static
 void AXPlatformNode::RemoveAXModeObserver(AXModeObserver* observer) {
-  ax_mode_observers_.erase(std::find(ax_mode_observers_.begin(), ax_mode_observers_.end(), observer));
+  ax_mode_observers_.erase(std::find(ax_mode_observers_.begin(),
+                                     ax_mode_observers_.end(), observer));
 }
 
 // static

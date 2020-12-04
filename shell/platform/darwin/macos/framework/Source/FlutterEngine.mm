@@ -287,14 +287,16 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   flutterArguments.command_line_argc = static_cast<int>(argv.size());
   flutterArguments.command_line_argv = argv.size() > 0 ? argv.data() : nullptr;
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
-  flutterArguments.update_semantics_node_callback = [](const FlutterSemanticsNode* node, void* user_data) {
-            FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-            [engine updateSemanticsNode:node];
-          };
-    flutterArguments.update_semantics_custom_action_callback = [](const FlutterSemanticsCustomAction* action, void* user_data) {
-            FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-            [engine updateSemanticsCustomActions:action];
-          };
+  flutterArguments.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
+                                                       void* user_data) {
+    FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+    [engine updateSemanticsNode:node];
+  };
+  flutterArguments.update_semantics_custom_action_callback =
+      [](const FlutterSemanticsCustomAction* action, void* user_data) {
+        FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+        [engine updateSemanticsCustomActions:action];
+      };
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
   flutterArguments.dart_entrypoint_argc = dartEntrypointArgs.size();
@@ -508,7 +510,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 - (void)updateSemanticsEnabled:(BOOL)enabled {
   if (!enabled && _bridge) {
     _bridge.reset(nullptr);
-  } else if (enabled && !_bridge){
+  } else if (enabled && !_bridge) {
     _bridge.reset(new ax::AccessibilityBridge((void*)CFBridgingRetain(self)));
   }
   if (!enabled) {
@@ -747,9 +749,11 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     _bridge->CommitUpdates();
     // Retach the accessibility root to the flutter view.
     if (_bridge->GetFlutterAccessibilityFromID(0)) {
-      if ((!self.viewController.view.accessibilityChildren || [self.viewController.view.accessibilityChildren count] == 0)) {
-        NSAccessibilityElement* root = _bridge->GetFlutterAccessibilityFromID(0)->GetNativeViewAccessible();
-        self.viewController.view.accessibilityChildren = @[root];
+      if ((!self.viewController.view.accessibilityChildren ||
+           [self.viewController.view.accessibilityChildren count] == 0)) {
+        NSAccessibilityElement* root =
+            _bridge->GetFlutterAccessibilityFromID(0)->GetNativeViewAccessible();
+        self.viewController.view.accessibilityChildren = @[ root ];
       }
     } else {
       self.viewController.view.accessibilityChildren = nil;

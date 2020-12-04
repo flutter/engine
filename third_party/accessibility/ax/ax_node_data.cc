@@ -5,16 +5,16 @@
 #include "ax_node_data.h"
 
 #include <stddef.h>
-#include <codecvt>
 #include <algorithm>
+#include <codecvt>
 #include <set>
 #include <utility>
 
 #include "flutter/fml/logging.h"
 
-#include "base/no_destructor.h"
 #include "ax_enum_util.h"
 #include "ax_role_properties.h"
+#include "base/no_destructor.h"
 
 namespace ax {
 
@@ -49,8 +49,7 @@ std::string StateBitfieldToString(uint32_t state_enum) {
   for (uint32_t i = static_cast<uint32_t>(ax::State::kNone) + 1;
        i <= static_cast<uint32_t>(ax::State::kMaxValue); ++i) {
     if (IsFlagSet(state_enum, i))
-      str += " " +
-             ToUpperASCII(ax::ToString(static_cast<ax::State>(i)));
+      str += " " + ToUpperASCII(ax::ToString(static_cast<ax::State>(i)));
   }
   return str;
 }
@@ -212,8 +211,7 @@ bool IsNodeIdIntListAttribute(ax::IntListAttribute attr) {
   return false;
 }
 
-AXNodeData::AXNodeData()
-    : role(ax::Role::kUnknown), state(0U), actions(0ULL) {}
+AXNodeData::AXNodeData() : role(ax::Role::kUnknown), state(0U), actions(0ULL) {}
 
 AXNodeData::~AXNodeData() = default;
 
@@ -324,19 +322,17 @@ int AXNodeData::GetIntAttribute(ax::IntAttribute attribute) const {
   return 0;
 }
 
-bool AXNodeData::GetIntAttribute(ax::IntAttribute attribute,
-                                 int* value) const {
+bool AXNodeData::GetIntAttribute(ax::IntAttribute attribute, int* value) const {
   auto iter = FindInVectorOfPairs(attribute, int_attributes);
   if (iter != int_attributes.end()) {
-    *value =  static_cast<int>(iter->second);
+    *value = static_cast<int>(iter->second);
     return true;
   }
 
   return false;
 }
 
-bool AXNodeData::HasStringAttribute(
-    ax::StringAttribute attribute) const {
+bool AXNodeData::HasStringAttribute(ax::StringAttribute attribute) const {
   auto iter = FindInVectorOfPairs(attribute, string_attributes);
   return iter != string_attributes.end();
 }
@@ -367,7 +363,7 @@ std::u16string AXNodeData::GetString16Attribute(
   std::string value_utf8;
   if (!GetStringAttribute(attribute, &value_utf8))
     return std::u16string();
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert; 
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
   return convert.from_bytes(value_utf8);
 }
 
@@ -376,13 +372,12 @@ bool AXNodeData::GetString16Attribute(ax::StringAttribute attribute,
   std::string value_utf8;
   if (!GetStringAttribute(attribute, &value_utf8))
     return false;
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert; 
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
   *value = convert.from_bytes(value_utf8);
   return true;
 }
 
-bool AXNodeData::HasIntListAttribute(
-    ax::IntListAttribute attribute) const {
+bool AXNodeData::HasIntListAttribute(ax::IntListAttribute attribute) const {
   auto iter = FindInVectorOfPairs(attribute, intlist_attributes);
   return iter != intlist_attributes.end();
 }
@@ -422,9 +417,8 @@ const std::vector<std::string>& AXNodeData::GetStringListAttribute(
   return empty_vector;
 }
 
-bool AXNodeData::GetStringListAttribute(
-    ax::StringListAttribute attribute,
-    std::vector<std::string>* value) const {
+bool AXNodeData::GetStringListAttribute(ax::StringListAttribute attribute,
+                                        std::vector<std::string>* value) const {
   auto iter = FindInVectorOfPairs(attribute, stringlist_attributes);
   if (iter != stringlist_attributes.end()) {
     *value = iter->second;
@@ -463,16 +457,14 @@ void AXNodeData::AddIntAttribute(ax::IntAttribute attribute, int value) {
   int_attributes.push_back(std::make_pair(attribute, value));
 }
 
-void AXNodeData::AddFloatAttribute(ax::FloatAttribute attribute,
-                                   float value) {
+void AXNodeData::AddFloatAttribute(ax::FloatAttribute attribute, float value) {
   FML_DCHECK(attribute != ax::FloatAttribute::kNone);
   if (HasFloatAttribute(attribute))
     RemoveFloatAttribute(attribute);
   float_attributes.push_back(std::make_pair(attribute, value));
 }
 
-void AXNodeData::AddBoolAttribute(ax::BoolAttribute attribute,
-                                  bool value) {
+void AXNodeData::AddBoolAttribute(ax::BoolAttribute attribute, bool value) {
   FML_DCHECK(attribute != ax::BoolAttribute::kNone);
   if (HasBoolAttribute(attribute))
     RemoveBoolAttribute(attribute);
@@ -487,9 +479,8 @@ void AXNodeData::AddIntListAttribute(ax::IntListAttribute attribute,
   intlist_attributes.push_back(std::make_pair(attribute, value));
 }
 
-void AXNodeData::AddStringListAttribute(
-    ax::StringListAttribute attribute,
-    const std::vector<std::string>& value) {
+void AXNodeData::AddStringListAttribute(ax::StringListAttribute attribute,
+                                        const std::vector<std::string>& value) {
   FML_DCHECK(attribute != ax::StringListAttribute::kNone);
   if (HasStringListAttribute(attribute))
     RemoveStringListAttribute(attribute);
@@ -499,68 +490,61 @@ void AXNodeData::AddStringListAttribute(
 void AXNodeData::RemoveStringAttribute(ax::StringAttribute attribute) {
   FML_DCHECK(attribute != ax::StringAttribute::kNone);
   string_attributes.erase(
-    std::remove_if(string_attributes.begin(), string_attributes.end(),
-    [attribute](const auto& string_attribute) {
-      return string_attribute.first == attribute;
-    }),
-    string_attributes.end()
-  );
+      std::remove_if(string_attributes.begin(), string_attributes.end(),
+                     [attribute](const auto& string_attribute) {
+                       return string_attribute.first == attribute;
+                     }),
+      string_attributes.end());
 }
 
 void AXNodeData::RemoveIntAttribute(ax::IntAttribute attribute) {
   FML_DCHECK(attribute != ax::IntAttribute::kNone);
   int_attributes.erase(
-    std::remove_if(int_attributes.begin(), int_attributes.end(),
-    [attribute](const auto& int_attribute) {
-      return int_attribute.first == attribute;
-    }),
-    int_attributes.end()
-  );
+      std::remove_if(int_attributes.begin(), int_attributes.end(),
+                     [attribute](const auto& int_attribute) {
+                       return int_attribute.first == attribute;
+                     }),
+      int_attributes.end());
 }
 
 void AXNodeData::RemoveFloatAttribute(ax::FloatAttribute attribute) {
   FML_DCHECK(attribute != ax::FloatAttribute::kNone);
   float_attributes.erase(
-    std::remove_if(float_attributes.begin(), float_attributes.end(),
-    [attribute](const auto& float_attribute) {
-      return float_attribute.first == attribute;
-    }),
-    float_attributes.end()
-  );
+      std::remove_if(float_attributes.begin(), float_attributes.end(),
+                     [attribute](const auto& float_attribute) {
+                       return float_attribute.first == attribute;
+                     }),
+      float_attributes.end());
 }
 
 void AXNodeData::RemoveBoolAttribute(ax::BoolAttribute attribute) {
   FML_DCHECK(attribute != ax::BoolAttribute::kNone);
   bool_attributes.erase(
-    std::remove_if(bool_attributes.begin(), bool_attributes.end(),
-    [attribute](const auto& bool_attribute) {
-      return bool_attribute.first == attribute;
-    }),
-    bool_attributes.end()
-  );
+      std::remove_if(bool_attributes.begin(), bool_attributes.end(),
+                     [attribute](const auto& bool_attribute) {
+                       return bool_attribute.first == attribute;
+                     }),
+      bool_attributes.end());
 }
 
 void AXNodeData::RemoveIntListAttribute(ax::IntListAttribute attribute) {
   FML_DCHECK(attribute != ax::IntListAttribute::kNone);
   intlist_attributes.erase(
-    std::remove_if(intlist_attributes.begin(), intlist_attributes.end(),
-    [attribute](const auto& intlist_attribute) {
-      return intlist_attribute.first == attribute;
-    }),
-    intlist_attributes.end()
-  );
+      std::remove_if(intlist_attributes.begin(), intlist_attributes.end(),
+                     [attribute](const auto& intlist_attribute) {
+                       return intlist_attribute.first == attribute;
+                     }),
+      intlist_attributes.end());
 }
 
-void AXNodeData::RemoveStringListAttribute(
-    ax::StringListAttribute attribute) {
+void AXNodeData::RemoveStringListAttribute(ax::StringListAttribute attribute) {
   FML_DCHECK(attribute != ax::StringListAttribute::kNone);
   stringlist_attributes.erase(
-    std::remove_if(stringlist_attributes.begin(), stringlist_attributes.end(),
-    [attribute](const auto& stringlist_attribute) {
-      return stringlist_attribute.first == attribute;
-    }),
-    stringlist_attributes.end()
-  );
+      std::remove_if(stringlist_attributes.begin(), stringlist_attributes.end(),
+                     [attribute](const auto& stringlist_attribute) {
+                       return stringlist_attribute.first == attribute;
+                     }),
+      stringlist_attributes.end());
 }
 
 AXNodeTextStyles AXNodeData::GetTextStyles() const {
@@ -579,12 +563,10 @@ AXNodeTextStyles AXNodeData::GetTextStyles() const {
                   &style_attributes.text_position);
   GetIntAttribute(ax::IntAttribute::kTextStrikethroughStyle,
                   &style_attributes.strikethrough_style);
-  GetIntAttribute(ax::IntAttribute::kTextStyle,
-                  &style_attributes.text_style);
+  GetIntAttribute(ax::IntAttribute::kTextStyle, &style_attributes.text_style);
   GetIntAttribute(ax::IntAttribute::kTextUnderlineStyle,
                   &style_attributes.underline_style);
-  GetFloatAttribute(ax::FloatAttribute::kFontSize,
-                    &style_attributes.font_size);
+  GetFloatAttribute(ax::FloatAttribute::kFontSize, &style_attributes.font_size);
   GetFloatAttribute(ax::FloatAttribute::kFontWeight,
                     &style_attributes.font_weight);
   GetStringAttribute(ax::StringAttribute::kFontFamily,
@@ -595,8 +577,10 @@ AXNodeTextStyles AXNodeData::GetTextStyles() const {
 
 void AXNodeData::SetName(const std::string& name) {
   if (role == ax::Role::kNone) {
-    FML_LOG(ERROR) << "A valid role is required before setting the name attribute, because "
-      "the role is used for setting the required NameFrom attribute.";
+    FML_LOG(ERROR)
+        << "A valid role is required before setting the name attribute, "
+           "because "
+           "the role is used for setting the required NameFrom attribute.";
     FML_DCHECK(false);
   }
 
@@ -667,18 +651,16 @@ bool AXNodeData::HasDropeffect(ax::Dropeffect dropeffect_enum) const {
 }
 
 void AXNodeData::AddState(ax::State state_enum) {
-  FML_DCHECK(static_cast<int>(state_enum) >
-            static_cast<int>(ax::State::kNone));
+  FML_DCHECK(static_cast<int>(state_enum) > static_cast<int>(ax::State::kNone));
   FML_DCHECK(static_cast<int>(state_enum) <=
-            static_cast<int>(ax::State::kMaxValue));
+             static_cast<int>(ax::State::kMaxValue));
   state = ModifyFlag(state, static_cast<uint32_t>(state_enum), true);
 }
 
 void AXNodeData::RemoveState(ax::State state_enum) {
-  FML_DCHECK(static_cast<int>(state_enum) >
-            static_cast<int>(ax::State::kNone));
+  FML_DCHECK(static_cast<int>(state_enum) > static_cast<int>(ax::State::kNone));
   FML_DCHECK(static_cast<int>(state_enum) <=
-            static_cast<int>(ax::State::kMaxValue));
+             static_cast<int>(ax::State::kMaxValue));
   state = ModifyFlag(state, static_cast<uint32_t>(state_enum), false);
 }
 
@@ -694,9 +676,9 @@ void AXNodeData::AddAction(ax::Action action_enum) {
     // actions that can be performed on a UI control at the same time.
     case ax::Action::kBlur:
     case ax::Action::kFocus: {
-      ax::Action excluded_action =
-          (action_enum == ax::Action::kBlur) ? ax::Action::kFocus
-                                                    : ax::Action::kBlur;
+      ax::Action excluded_action = (action_enum == ax::Action::kBlur)
+                                       ? ax::Action::kFocus
+                                       : ax::Action::kBlur;
       FML_DCHECK(!HasAction(excluded_action));
       break;
     }
@@ -845,8 +827,7 @@ ax::DescriptionFrom AXNodeData::GetDescriptionFrom() const {
       GetIntAttribute(ax::IntAttribute::kDescriptionFrom));
 }
 
-void AXNodeData::SetDescriptionFrom(
-    ax::DescriptionFrom description_from) {
+void AXNodeData::SetDescriptionFrom(ax::DescriptionFrom description_from) {
   if (HasIntAttribute(ax::IntAttribute::kDescriptionFrom))
     RemoveIntAttribute(ax::IntAttribute::kDescriptionFrom);
   if (description_from != ax::DescriptionFrom::kNone) {
@@ -874,8 +855,7 @@ ax::ImageAnnotationStatus AXNodeData::GetImageAnnotationStatus() const {
       GetIntAttribute(ax::IntAttribute::kImageAnnotationStatus));
 }
 
-void AXNodeData::SetImageAnnotationStatus(
-    ax::ImageAnnotationStatus status) {
+void AXNodeData::SetImageAnnotationStatus(ax::ImageAnnotationStatus status) {
   if (HasIntAttribute(ax::IntAttribute::kImageAnnotationStatus))
     RemoveIntAttribute(ax::IntAttribute::kImageAnnotationStatus);
   if (status != ax::ImageAnnotationStatus::kNone) {
@@ -971,8 +951,7 @@ bool AXNodeData::IsSelectable() const {
 }
 
 bool AXNodeData::IsIgnored() const {
-  return HasState(ax::State::kIgnored) ||
-         role == ax::Role::kIgnored;
+  return HasState(ax::State::kIgnored) || role == ax::Role::kIgnored;
 }
 
 bool AXNodeData::IsInvisibleOrIgnored() const {
@@ -1057,8 +1036,7 @@ bool AXNodeData::IsRangeValueSupported() const {
 }
 
 bool AXNodeData::SupportsExpandCollapse() const {
-  if (GetHasPopup() != ax::HasPopup::kFalse ||
-      HasState(ax::State::kExpanded) ||
+  if (GetHasPopup() != ax::HasPopup::kFalse || HasState(ax::State::kExpanded) ||
       HasState(ax::State::kCollapsed))
     return true;
 
@@ -1082,8 +1060,8 @@ std::string AXNodeData::ToString() const {
     switch (int_attribute.first) {
       case ax::IntAttribute::kDefaultActionVerb:
         result += std::string(" action=") +
-                  ax::ToString(static_cast<ax::DefaultActionVerb>(
-                      int_attribute.second));
+                  ax::ToString(
+                      static_cast<ax::DefaultActionVerb>(int_attribute.second));
         break;
       case ax::IntAttribute::kScrollX:
         result += " scroll_x=" + value;
@@ -1183,8 +1161,7 @@ std::string AXNodeData::ToString() const {
         break;
       case ax::IntAttribute::kNameFrom:
         result += " name_from=";
-        result += ax::ToString(
-            static_cast<ax::NameFrom>(int_attribute.second));
+        result += ax::ToString(static_cast<ax::NameFrom>(int_attribute.second));
         break;
       case ax::IntAttribute::kDescriptionFrom:
         result += " description_from=";
@@ -1216,8 +1193,7 @@ std::string AXNodeData::ToString() const {
         result += " color_value=&" + std::to_string(int_attribute.second);
         break;
       case ax::IntAttribute::kAriaCurrentState:
-        switch (
-            static_cast<ax::AriaCurrentState>(int_attribute.second)) {
+        switch (static_cast<ax::AriaCurrentState>(int_attribute.second)) {
           case ax::AriaCurrentState::kFalse:
             result += " aria_current_state=false";
             break;
@@ -1275,12 +1251,11 @@ std::string AXNodeData::ToString() const {
         break;
       case ax::IntAttribute::kTextAlign:
         result += " text_align=";
-        result += ax::ToString(
-            static_cast<ax::TextAlign>(int_attribute.second));
+        result +=
+            ax::ToString(static_cast<ax::TextAlign>(int_attribute.second));
         break;
       case ax::IntAttribute::kTextDirection:
-        switch (
-            static_cast<ax::WritingDirection>(int_attribute.second)) {
+        switch (static_cast<ax::WritingDirection>(int_attribute.second)) {
           case ax::WritingDirection::kLtr:
             result += " text_direction=ltr";
             break;
@@ -1437,8 +1412,8 @@ std::string AXNodeData::ToString() const {
     }
   }
 
-  for (const std::pair<ax::StringAttribute, std::string>&
-           string_attribute : string_attributes) {
+  for (const std::pair<ax::StringAttribute, std::string>& string_attribute :
+       string_attributes) {
     std::string value = string_attribute.second;
     switch (string_attribute.first) {
       case ax::StringAttribute::kAccessKey:
@@ -1473,8 +1448,7 @@ std::string AXNodeData::ToString() const {
         break;
       case ax::StringAttribute::kImageDataUrl:
         result += " image_data_url=(" +
-                  std::to_string(static_cast<int>(value.size())) +
-                  " bytes)";
+                  std::to_string(static_cast<int>(value.size())) + " bytes)";
         break;
       case ax::StringAttribute::kInnerHtml:
         result += " inner_html=" + value;
@@ -1663,8 +1637,7 @@ std::string AXNodeData::ToString() const {
             types_str += "grammar&";
           if (type & static_cast<int32_t>(ax::MarkerType::kTextMatch))
             types_str += "text_match&";
-          if (type &
-              static_cast<int32_t>(ax::MarkerType::kActiveSuggestion))
+          if (type & static_cast<int32_t>(ax::MarkerType::kActiveSuggestion))
             types_str += "active_suggestion&";
           if (type & static_cast<int32_t>(ax::MarkerType::kSuggestion))
             types_str += "suggestion&";
@@ -1703,9 +1676,8 @@ std::string AXNodeData::ToString() const {
     }
   }
 
-  for (const std::pair<ax::StringListAttribute,
-                       std::vector<std::string>>& stringlist_attribute :
-       stringlist_attributes) {
+  for (const std::pair<ax::StringListAttribute, std::vector<std::string>>&
+           stringlist_attribute : stringlist_attributes) {
     const std::vector<std::string>& values = stringlist_attribute.second;
     switch (stringlist_attribute.first) {
       case ax::StringListAttribute::kNone:
@@ -1714,9 +1686,8 @@ std::string AXNodeData::ToString() const {
         const char* const delim = ",";
         std::ostringstream imploded;
         std::copy(values.begin(), values.end(),
-           std::ostream_iterator<std::string>(imploded, delim));
-        result +=
-            " custom_action_descriptions: " + imploded.str();
+                  std::ostream_iterator<std::string>(imploded, delim));
+        result += " custom_action_descriptions: " + imploded.str();
         break;
     }
   }

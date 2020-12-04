@@ -276,8 +276,7 @@ class AX_EXPORT AXPlatformNodeDelegate {
   // Given a node ID attribute (one where IsNodeIdIntAttribute is true), return
   // a target nodes for which this delegate's node has that relationship
   // attribute or NULL if there is no such relationship.
-  virtual AXPlatformNode* GetTargetNodeForRelation(
-      ax::IntAttribute attr) = 0;
+  virtual AXPlatformNode* GetTargetNodeForRelation(ax::IntAttribute attr) = 0;
 
   // Given a node ID attribute (one where IsNodeIdIntListAttribute is true),
   // return a vector of all target nodes for which this delegate's node has that
@@ -368,7 +367,7 @@ class AX_EXPORT AXPlatformNodeDelegate {
   virtual std::optional<int> GetTableCellAriaColIndex() const = 0;
   virtual std::optional<int> GetTableCellAriaRowIndex() const = 0;
   virtual std::optional<int32_t> GetCellId(int row_index,
-                                            int col_index) const = 0;
+                                           int col_index) const = 0;
   virtual std::optional<int32_t> CellIndexToId(int cell_index) const = 0;
 
   // Helper methods to check if a cell is an ARIA-1.1+ 'cell' or 'gridcell'

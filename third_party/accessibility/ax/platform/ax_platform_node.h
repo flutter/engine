@@ -10,11 +10,11 @@
 
 #include "flutter/fml/macros.h"
 
-#include "ax_build/build_config.h"
 #include "ax/ax_enums.h"
 #include "ax/ax_export.h"
 #include "ax/ax_mode.h"
 #include "ax/ax_mode_observer.h"
+#include "ax_build/build_config.h"
 #include "gfx/native_widget_types.h"
 
 namespace ax {
@@ -44,7 +44,8 @@ class AX_EXPORT AXPlatformNode {
 
   // Provide a function that returns the AXPlatformNode at the root of the
   // tree for a native window.
-  static void RegisterNativeWindowHandler(std::function<NativeWindowHandlerCallback> handler);
+  static void RegisterNativeWindowHandler(
+      std::function<NativeWindowHandlerCallback> handler);
 
   // Register and unregister to receive notifications about AXMode changes
   // for this node.
@@ -115,9 +116,9 @@ class AX_EXPORT AXPlatformNode {
 
   // Global ObserverList for AXMode changes.
   // static base::LazyInstance<
-  //     base::ObserverList<AXModeObserver>::Unchecked>::Leaky ax_mode_observers_;
+  //     base::ObserverList<AXModeObserver>::Unchecked>::Leaky
+  //     ax_mode_observers_;
   static std::vector<AXModeObserver*> ax_mode_observers_;
-
 
   // static base::LazyInstance<NativeWindowHandlerCallback>::Leaky
   //     native_window_handler_;

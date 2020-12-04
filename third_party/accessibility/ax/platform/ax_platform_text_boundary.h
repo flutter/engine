@@ -5,9 +5,9 @@
 #ifndef ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_TEXT_BOUNDARY_H_
 #define ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_TEXT_BOUNDARY_H_
 
-#include "ax_build/build_config.h"
 #include "ax/ax_enums.h"
 #include "ax/ax_export.h"
+#include "ax_build/build_config.h"
 
 // #if BUILDFLAG(USE_ATK)
 // #include <atk/atk.h>
@@ -35,8 +35,7 @@ namespace ax {
 
 #ifdef OS_WIN
 // Converts from an IAccessible2 text boundary to an ax::TextBoundary.
-AX_EXPORT ax::TextBoundary FromIA2TextBoundary(
-    IA2TextBoundaryType boundary);
+AX_EXPORT ax::TextBoundary FromIA2TextBoundary(IA2TextBoundaryType boundary);
 
 // Converts from a UI Automation text unit to an ax::TextBoundary.
 AX_EXPORT ax::TextBoundary FromUIATextUnit(TextUnit unit);

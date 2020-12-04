@@ -30,8 +30,7 @@ namespace {
 // in-between a table row and its cells.
 void FindCellsInRow(AXNode* node, std::vector<AXNode*>* cell_nodes) {
   for (AXNode* child : node->children()) {
-    if (child->IsIgnored() ||
-        child->data().role == ax::Role::kGenericContainer)
+    if (child->IsIgnored() || child->data().role == ax::Role::kGenericContainer)
       FindCellsInRow(child, cell_nodes);
     else if (IsCellOrTableHeader(child->data().role))
       cell_nodes->push_back(child);
@@ -115,10 +114,10 @@ bool AXTableInfo::Update() {
 
   // Note - GetIntAttribute returns 0 if no value has been specified for the
   // attribute.
-  aria_row_count =
-       static_cast<int>(table_node_->GetIntAttribute(IntAttribute::kAriaRowCount));
-  aria_col_count =
-       static_cast<int>(table_node_->GetIntAttribute(IntAttribute::kAriaColumnCount));
+  aria_row_count = static_cast<int>(
+      table_node_->GetIntAttribute(IntAttribute::kAriaRowCount));
+  aria_col_count = static_cast<int>(
+      table_node_->GetIntAttribute(IntAttribute::kAriaColumnCount));
 
   // Iterate over the cells and build up an array of CellData
   // entries, one for each cell. Compute the actual row and column
@@ -297,14 +296,14 @@ void AXTableInfo::BuildCellDataVectorFromRowAndCellNodes(
       row_count = std::max(row_count, cell_data.row_index + cell_data.row_span);
       col_count = std::max(col_count, cell_data.col_index + cell_data.col_span);
       if (aria_row_count != ax::kUnknownAriaColumnOrRowCount) {
-        aria_row_count =
-            std::max((aria_row_count),
-                      static_cast<int>(current_aria_row_index + cell_data.row_span - 1));
+        aria_row_count = std::max(
+            (aria_row_count),
+            static_cast<int>(current_aria_row_index + cell_data.row_span - 1));
       }
       if (aria_col_count != ax::kUnknownAriaColumnOrRowCount) {
-        aria_col_count =
-            std::max((aria_col_count),
-                      static_cast<int>(current_aria_col_index + cell_data.col_span - 1));
+        aria_col_count = std::max(
+            (aria_col_count),
+            static_cast<int>(current_aria_col_index + cell_data.col_span - 1));
       }
       // Update |current_col_index| to reflect the next available index after
       // this cell including its colspan. The next column index in this row
@@ -480,7 +479,8 @@ void AXTableInfo::UpdateExtraMacColumnNodeAttributes(size_t col_index) {
   data.int_attributes.clear();
 
   // Update the column index.
-  data.AddIntAttribute(IntAttribute::kTableColumnIndex, static_cast<int32_t>(col_index));
+  data.AddIntAttribute(IntAttribute::kTableColumnIndex,
+                       static_cast<int32_t>(col_index));
 
   // Update the column header.
   if (!col_headers[col_index].empty()) {
@@ -498,8 +498,7 @@ void AXTableInfo::UpdateExtraMacColumnNodeAttributes(size_t col_index) {
       col_nodes.push_back(cell_id);
     last = cell_id;
   }
-  data.AddIntListAttribute(ax::IntListAttribute::kIndirectChildIds,
-                           col_nodes);
+  data.AddIntListAttribute(ax::IntListAttribute::kIndirectChildIds, col_nodes);
   extra_mac_nodes[col_index]->SetData(data);
 }
 

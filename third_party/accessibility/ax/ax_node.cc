@@ -364,8 +364,7 @@ bool AXNode::IsText() const {
 bool AXNode::IsLineBreak() const {
   return data().role == ax::Role::kLineBreak ||
          (data().role == ax::Role::kInlineTextBox &&
-          data().GetBoolAttribute(
-              ax::BoolAttribute::kIsLineBreakingObject));
+          data().GetBoolAttribute(ax::BoolAttribute::kIsLineBreakingObject));
 }
 
 void AXNode::SetData(const AXNodeData& src) {
@@ -432,8 +431,8 @@ void AXNode::ComputeLineStartOffsets(std::vector<int>* line_offsets,
     }
 
     // Don't report if the first piece of text starts a new line or not.
-    if (*start_offset && !child->data().HasIntAttribute(
-                             ax::IntAttribute::kPreviousOnLineId)) {
+    if (*start_offset &&
+        !child->data().HasIntAttribute(ax::IntAttribute::kPreviousOnLineId)) {
       // If there are multiple objects with an empty accessible label at the
       // start of a line, only include a single line start offset.
       if (line_offsets->empty() || line_offsets->back() != *start_offset)
@@ -466,8 +465,7 @@ std::string AXNode::GetInnerText() const {
   const bool is_plain_text_field_without_descendants =
       (data().IsTextField() && !GetUnignoredChildCount());
   if (is_plain_text_field_without_descendants) {
-    std::string value =
-        data().GetStringAttribute(ax::StringAttribute::kValue);
+    std::string value = data().GetStringAttribute(ax::StringAttribute::kValue);
     // If the value is empty, then there might be some placeholder text in the
     // text field, or any other name that is derived from visible contents, even
     // if the text field has no children.
@@ -592,11 +590,13 @@ AXNode* AXNode::GetTableCellFromIndex(int index) const {
     return nullptr;
 
   // There is a table but there is no cell with the given index.
-  if (index < 0 || static_cast<size_t>(index) >= table_info->unique_cell_ids.size()) {
+  if (index < 0 ||
+      static_cast<size_t>(index) >= table_info->unique_cell_ids.size()) {
     return nullptr;
   }
 
-  return tree_->GetFromId(table_info->unique_cell_ids[static_cast<size_t>(index)]);
+  return tree_->GetFromId(
+      table_info->unique_cell_ids[static_cast<size_t>(index)]);
 }
 
 AXNode* AXNode::GetTableCaption() const {
@@ -613,13 +613,15 @@ AXNode* AXNode::GetTableCellFromCoords(int row_index, int col_index) const {
     return nullptr;
 
   // There is a table but the given coordinates are outside the table.
-  if (row_index < 0 || static_cast<size_t>(row_index) >= table_info->row_count ||
-      col_index < 0 || static_cast<size_t>(col_index) >= table_info->col_count) {
+  if (row_index < 0 ||
+      static_cast<size_t>(row_index) >= table_info->row_count ||
+      col_index < 0 ||
+      static_cast<size_t>(col_index) >= table_info->col_count) {
     return nullptr;
   }
 
-  return tree_->GetFromId(
-      table_info->cell_ids[static_cast<size_t>(row_index)][static_cast<size_t>(col_index)]);
+  return tree_->GetFromId(table_info->cell_ids[static_cast<size_t>(row_index)]
+                                              [static_cast<size_t>(col_index)]);
 }
 
 std::vector<AXNode::AXID> AXNode::GetTableColHeaderNodeIds() const {
@@ -647,7 +649,8 @@ std::vector<AXNode::AXID> AXNode::GetTableColHeaderNodeIds(
   if (col_index < 0 || static_cast<size_t>(col_index) >= table_info->col_count)
     return std::vector<AXNode::AXID>();
 
-  return std::vector<AXNode::AXID>(table_info->col_headers[static_cast<size_t>(col_index)]);
+  return std::vector<AXNode::AXID>(
+      table_info->col_headers[static_cast<size_t>(col_index)]);
 }
 
 std::vector<AXNode::AXID> AXNode::GetTableRowHeaderNodeIds(
@@ -659,7 +662,8 @@ std::vector<AXNode::AXID> AXNode::GetTableRowHeaderNodeIds(
   if (row_index < 0 || static_cast<size_t>(row_index) >= table_info->row_count)
     return std::vector<AXNode::AXID>();
 
-  return std::vector<AXNode::AXID>(table_info->row_headers[static_cast<size_t>(row_index)]);
+  return std::vector<AXNode::AXID>(
+      table_info->row_headers[static_cast<size_t>(row_index)]);
 }
 
 std::vector<AXNode::AXID> AXNode::GetTableUniqueCellIds() const {
@@ -1089,14 +1093,14 @@ std::string AXNode::GetValueForColorWell() const {
   unsigned int green = SkColorGetG(color);
   unsigned int blue = SkColorGetB(color);
   std::ostringstream stringStream;
-  stringStream << red * 100 / 255 << "% red " << green * 100 / 255 << "% green " << blue * 100 / 255 << "% blue";
+  stringStream << red * 100 / 255 << "% red " << green * 100 / 255 << "% green "
+               << blue * 100 / 255 << "% blue";
   return stringStream.str();
 }
 
 std::string AXNode::GetValueForTextField() const {
   FML_DCHECK(data().IsTextField());
-  std::string value =
-      data().GetStringAttribute(ax::StringAttribute::kValue);
+  std::string value = data().GetStringAttribute(ax::StringAttribute::kValue);
   // Some screen readers like Jaws and VoiceOver require a value to be set in
   // text fields with rich content, even though the same information is
   // available on the children.

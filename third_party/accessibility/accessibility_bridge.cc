@@ -11,43 +11,46 @@
 
 #include "ax/ax_tree_update.h"
 
-namespace ax { // namespace
+namespace ax {  // namespace
 
-constexpr int khasScrollingAction = FlutterSemanticsAction::kFlutterSemanticsActionScrollLeft |
-  FlutterSemanticsAction::kFlutterSemanticsActionScrollRight |
-  FlutterSemanticsAction::kFlutterSemanticsActionScrollUp |
-  FlutterSemanticsAction::kFlutterSemanticsActionScrollDown;
+constexpr int khasScrollingAction =
+    FlutterSemanticsAction::kFlutterSemanticsActionScrollLeft |
+    FlutterSemanticsAction::kFlutterSemanticsActionScrollRight |
+    FlutterSemanticsAction::kFlutterSemanticsActionScrollUp |
+    FlutterSemanticsAction::kFlutterSemanticsActionScrollDown;
 
 // AccessibilityBridge
 AccessibilityBridge::AccessibilityBridge(void* user_data)
-  : tree_(std::make_unique<AXTree>()),
-    event_generator_(tree_.get()) {
+    : tree_(std::make_unique<AXTree>()), event_generator_(tree_.get()) {
   user_data_ = user_data;
-  tree_->AddObserver((ax::AXTreeObserver *)this);
+  tree_->AddObserver((ax::AXTreeObserver*)this);
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
   event_generator_.ReleaseTree();
-  tree_->RemoveObserver((ax::AXTreeObserver *)this);
+  tree_->RemoveObserver((ax::AXTreeObserver*)this);
 }
 
-void AccessibilityBridge::AddFlutterSemanticsNodeUpdate(const FlutterSemanticsNode* node) {
+void AccessibilityBridge::AddFlutterSemanticsNodeUpdate(
+    const FlutterSemanticsNode* node) {
   _pending_semantics_node_updates[node->id] = FromFlutterSemanticsNode(node);
 }
 
-void AccessibilityBridge::AddFlutterSemanticsCustomActionUpdate(const FlutterSemanticsCustomAction* action) {
-  _pending_semantics_custom_action_updates[action->id] = FromFlutterSemanticsCustomAction(action);
+void AccessibilityBridge::AddFlutterSemanticsCustomActionUpdate(
+    const FlutterSemanticsCustomAction* action) {
+  _pending_semantics_custom_action_updates[action->id] =
+      FromFlutterSemanticsCustomAction(action);
 }
 
 void AccessibilityBridge::CommitUpdates() {
-  AXTreeUpdate update{ .tree_data = GetAXTree()->data() };
+  AXTreeUpdate update{.tree_data = GetAXTree()->data()};
   // Figure out update order, AXTree only accepts update in tree order, where
   // parent node must come before the child node in AXTreeUpdate.nodes.
   // We start with picking a random node and turn the entire subtree into a
-  // list. We pick another node from the remaining update, and keep doing so until
-  // the update map is empty.
-  // We then concatenate the lists in the reversed order, this guarantees parent
-  // updates always come before child updates.
+  // list. We pick another node from the remaining update, and keep doing so
+  // until the update map is empty. We then concatenate the lists in the
+  // reversed order, this guarantees parent updates always come before child
+  // updates.
   std::vector<std::vector<SemanticsNode>> results;
   while (!_pending_semantics_node_updates.empty()) {
     auto begin = _pending_semantics_node_updates.begin();
@@ -75,7 +78,8 @@ void AccessibilityBridge::CommitUpdates() {
   }
   // Handles accessibility events as the result of the semantics update.
   for (const auto& targeted_event : event_generator_) {
-    FlutterAccessibility* event_target = GetFlutterAccessibilityFromID(targeted_event.node->id());
+    FlutterAccessibility* event_target =
+        GetFlutterAccessibilityFromID(targeted_event.node->id());
     if (!event_target)
       continue;
 
@@ -96,7 +100,8 @@ AXEventGenerator* AccessibilityBridge::GetEventGenerator() {
   return &event_generator_;
 }
 
-FlutterAccessibility* AccessibilityBridge::GetFlutterAccessibilityFromID(int32_t id) const {
+FlutterAccessibility* AccessibilityBridge::GetFlutterAccessibilityFromID(
+    int32_t id) const {
   const auto iter = id_wrapper_map_.find(id);
   if (iter != id_wrapper_map_.end())
     return iter->second;
@@ -106,9 +111,14 @@ FlutterAccessibility* AccessibilityBridge::GetFlutterAccessibilityFromID(int32_t
 
 void AccessibilityBridge::SetFocusedNode(int32_t node_id) {
   if (last_focused_node_ != node_id) {
-    FlutterAccessibility* last_focused_child = GetFlutterAccessibilityFromID(last_focused_node_);
+    FlutterAccessibility* last_focused_child =
+        GetFlutterAccessibilityFromID(last_focused_node_);
     if (last_focused_child) {
-      last_focused_child->DispatchAccessibilityAction(last_focused_node_, FlutterSemanticsAction::kFlutterSemanticsActionDidLoseAccessibilityFocus, nullptr, 0);
+      last_focused_child->DispatchAccessibilityAction(
+          last_focused_node_,
+          FlutterSemanticsAction::
+              kFlutterSemanticsActionDidLoseAccessibilityFocus,
+          nullptr, 0);
     }
     last_focused_node_ = node_id;
   }
@@ -118,29 +128,28 @@ int32_t AccessibilityBridge::GetLastFocusedNode() {
   return last_focused_node_;
 }
 
-void AccessibilityBridge::OnNodeWillBeDeleted(ax::AXTree* tree, ax::AXNode* node) {}
+void AccessibilityBridge::OnNodeWillBeDeleted(ax::AXTree* tree,
+                                              ax::AXNode* node) {}
 
 void AccessibilityBridge::OnSubtreeWillBeDeleted(ax::AXTree* tree,
-                                                         ax::AXNode* node) {}
+                                                 ax::AXNode* node) {}
 
-void AccessibilityBridge::OnNodeReparented(ax::AXTree* tree,
-                                                   ax::AXNode* node) {}
+void AccessibilityBridge::OnNodeReparented(ax::AXTree* tree, ax::AXNode* node) {
+}
 
 void AccessibilityBridge::OnRoleChanged(ax::AXTree* tree,
-                                                ax::AXNode* node,
-                                                ax::Role old_role,
-                                                ax::Role new_role) {}
+                                        ax::AXNode* node,
+                                        ax::Role old_role,
+                                        ax::Role new_role) {}
 
-void AccessibilityBridge::OnNodeCreated(ax::AXTree* tree,
-                                                ax::AXNode* node) {
+void AccessibilityBridge::OnNodeCreated(ax::AXTree* tree, ax::AXNode* node) {
   FML_DCHECK(node);
   FlutterAccessibility* wrapper = FlutterAccessibility::Create();
   id_wrapper_map_[node->id()] = wrapper;
   wrapper->Init(this, node);
 }
 
-void AccessibilityBridge::OnNodeDeleted(ax::AXTree* tree,
-                                                int32_t node_id) {
+void AccessibilityBridge::OnNodeDeleted(ax::AXTree* tree, int32_t node_id) {
   FML_DCHECK(node_id != ax::AXNode::kInvalidAXID);
   if (FlutterAccessibility* wrapper = GetFlutterAccessibilityFromID(node_id)) {
     id_wrapper_map_.erase(node_id);
@@ -162,12 +171,14 @@ void AccessibilityBridge::OnAtomicUpdateFinished(
     if (node->parent()) {
       offset_container_id = node->parent()->id();
     }
-    node->SetLocation(offset_container_id, data.relative_bounds.bounds, data.relative_bounds.transform);
+    node->SetLocation(offset_container_id, data.relative_bounds.bounds,
+                      data.relative_bounds.transform);
   }
 }
 
 // Private method.
-void AccessibilityBridge::GetSubTreeList(SemanticsNode target, std::vector<SemanticsNode>& result) {
+void AccessibilityBridge::GetSubTreeList(SemanticsNode target,
+                                         std::vector<SemanticsNode>& result) {
   result.push_back(target);
   for (int32_t child : target.children_in_traversal_order) {
     auto iter = _pending_semantics_node_updates.find(child);
@@ -179,7 +190,8 @@ void AccessibilityBridge::GetSubTreeList(SemanticsNode target, std::vector<Seman
   }
 }
 
-void AccessibilityBridge::ConvertFluterUpdate(const SemanticsNode& node, AXTreeUpdate& tree_update) {
+void AccessibilityBridge::ConvertFluterUpdate(const SemanticsNode& node,
+                                              AXTreeUpdate& tree_update) {
   AXNodeData node_data;
   node_data.id = node.id;
   SetRoleFromFlutterUpdate(node_data, node);
@@ -191,31 +203,21 @@ void AccessibilityBridge::ConvertFluterUpdate(const SemanticsNode& node, AXTreeU
   SetStringListAttributesFromFlutterUpdate(node_data, node);
   SetNameFromFlutterUpdate(node_data, node);
   SetValueFromFlutterUpdate(node_data, node);
-  node_data.relative_bounds.bounds.setLTRB(
-    node.rect.left,
-    node.rect.top,
-    node.rect.right,
-    node.rect.bottom
-  );
+  node_data.relative_bounds.bounds.setLTRB(node.rect.left, node.rect.top,
+                                           node.rect.right, node.rect.bottom);
   node_data.relative_bounds.transform.setAll(
-    node.transform.scaleX,
-    node.transform.skewX,
-    node.transform.transX,
-    node.transform.skewY,
-    node.transform.scaleY,
-    node.transform.transY,
-    node.transform.pers0,
-    node.transform.pers1,
-    node.transform.pers2
-  );
-  for (auto child: node.children_in_traversal_order) {
+      node.transform.scaleX, node.transform.skewX, node.transform.transX,
+      node.transform.skewY, node.transform.scaleY, node.transform.transY,
+      node.transform.pers0, node.transform.pers1, node.transform.pers2);
+  for (auto child : node.children_in_traversal_order) {
     node_data.child_ids.push_back(child);
   }
   SetTreeData(node, tree_update);
   tree_update.nodes.push_back(node_data);
 }
 
-void AccessibilityBridge::SetRoleFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
+void AccessibilityBridge::SetRoleFromFlutterUpdate(AXNodeData& node_data,
+                                                   const SemanticsNode& node) {
   FlutterSemanticsFlag flags = node.flags;
   if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsButton) {
     node_data.role = Role::kButton;
@@ -256,28 +258,29 @@ void AccessibilityBridge::SetRoleFromFlutterUpdate(AXNodeData& node_data, const 
   }
 }
 
-void AccessibilityBridge::SetStateFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
+void AccessibilityBridge::SetStateFromFlutterUpdate(AXNodeData& node_data,
+                                                    const SemanticsNode& node) {
   FlutterSemanticsFlag flags = node.flags;
   FlutterSemanticsAction actions = node.actions;
-  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField && 
+  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
       (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) == 0) {
     node_data.AddState(State::kEditable);
   }
   if (node_data.role == Role::kStaticText &&
-      (actions & khasScrollingAction) == 0 &&
-      node.value.empty() &&
-      node.label.empty() &&
-      node.hint.empty()) {
+      (actions & khasScrollingAction) == 0 && node.value.empty() &&
+      node.label.empty() && node.hint.empty()) {
     node_data.AddState(State::kIgnored);
   } else {
-    // kFlutterSemanticsFlagIsFocusable means a keyboard focusable, it is different
-    // from semantics focusable.
+    // kFlutterSemanticsFlagIsFocusable means a keyboard focusable, it is
+    // different from semantics focusable.
     // TODO(chunhtai): figure out whether something is not semantics focusable.
     node_data.AddState(State::kFocusable);
   }
 }
 
-void AccessibilityBridge::SetActionsFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
+void AccessibilityBridge::SetActionsFromFlutterUpdate(
+    AXNodeData& node_data,
+    const SemanticsNode& node) {
   FlutterSemanticsAction actions = node.actions;
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionTap) {
     node_data.AddAction(Action::kDoDefault);
@@ -306,10 +309,12 @@ void AccessibilityBridge::SetActionsFromFlutterUpdate(AXNodeData& node_data, con
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionSetSelection) {
     node_data.AddAction(Action::kSetSelection);
   }
-  if (actions & FlutterSemanticsAction::kFlutterSemanticsActionDidGainAccessibilityFocus) {
+  if (actions & FlutterSemanticsAction::
+                    kFlutterSemanticsActionDidGainAccessibilityFocus) {
     node_data.AddAction(Action::kSetAccessibilityFocus);
   }
-  if (actions & FlutterSemanticsAction::kFlutterSemanticsActionDidLoseAccessibilityFocus) {
+  if (actions & FlutterSemanticsAction::
+                    kFlutterSemanticsActionDidLoseAccessibilityFocus) {
     node_data.AddAction(Action::kClearAccessibilityFocus);
   }
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionCustomAction) {
@@ -317,18 +322,31 @@ void AccessibilityBridge::SetActionsFromFlutterUpdate(AXNodeData& node_data, con
   }
 }
 
-void AccessibilityBridge::SetBooleanAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
+void AccessibilityBridge::SetBooleanAttributesFromFlutterUpdate(
+    AXNodeData& node_data,
+    const SemanticsNode& node) {
   FlutterSemanticsAction actions = node.actions;
   FlutterSemanticsFlag flags = node.flags;
-  node_data.AddBoolAttribute(BoolAttribute::kScrollable, actions & khasScrollingAction);
-  node_data.AddBoolAttribute(BoolAttribute::kClickable, actions & FlutterSemanticsAction::kFlutterSemanticsActionTap);
-  node_data.AddBoolAttribute(BoolAttribute::kClipsChildren, actions & khasScrollingAction && node.children_in_traversal_order.size() != 0);
-  node_data.AddBoolAttribute(BoolAttribute::kSelected, flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsSelected);
-  node_data.AddBoolAttribute(BoolAttribute::kEditableRoot, flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField && 
-                                                                      (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) > 0);
+  node_data.AddBoolAttribute(BoolAttribute::kScrollable,
+                             actions & khasScrollingAction);
+  node_data.AddBoolAttribute(
+      BoolAttribute::kClickable,
+      actions & FlutterSemanticsAction::kFlutterSemanticsActionTap);
+  node_data.AddBoolAttribute(BoolAttribute::kClipsChildren,
+                             actions & khasScrollingAction &&
+                                 node.children_in_traversal_order.size() != 0);
+  node_data.AddBoolAttribute(
+      BoolAttribute::kSelected,
+      flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsSelected);
+  node_data.AddBoolAttribute(
+      BoolAttribute::kEditableRoot,
+      flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
+          (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) > 0);
 }
 
-void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
+void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(
+    AXNodeData& node_data,
+    const SemanticsNode& node) {
   FlutterSemanticsFlag flags = node.flags;
   node_data.AddIntAttribute(IntAttribute::kTextDirection, node.text_direction);
 
@@ -345,43 +363,59 @@ void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(AXNodeData& node_dat
   node_data.AddIntAttribute(IntAttribute::kTextSelEnd, sel_end);
 
   if (node_data.role == ax::Role::kRadioButton) {
-    node_data.AddIntAttribute(IntAttribute::kCheckedState, static_cast<int32_t>(flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked ? ax::CheckedState::kTrue : ax::CheckedState::kFalse));
+    node_data.AddIntAttribute(
+        IntAttribute::kCheckedState,
+        static_cast<int32_t>(
+            flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked
+                ? ax::CheckedState::kTrue
+                : ax::CheckedState::kFalse));
   }
 }
 
-void AccessibilityBridge::SetIntListAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
+void AccessibilityBridge::SetIntListAttributesFromFlutterUpdate(
+    AXNodeData& node_data,
+    const SemanticsNode& node) {
   FlutterSemanticsAction actions = node.actions;
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionCustomAction) {
     std::vector<int32_t> custom_action_ids;
     for (size_t i = 0; i < node.custom_accessibility_actions.size(); i++) {
       custom_action_ids.push_back(node.custom_accessibility_actions[i]);
     }
-    node_data.AddIntListAttribute(IntListAttribute::kCustomActionIds, custom_action_ids);
+    node_data.AddIntListAttribute(IntListAttribute::kCustomActionIds,
+                                  custom_action_ids);
   }
 }
 
-void AccessibilityBridge::SetStringListAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
+void AccessibilityBridge::SetStringListAttributesFromFlutterUpdate(
+    AXNodeData& node_data,
+    const SemanticsNode& node) {
   FlutterSemanticsAction actions = node.actions;
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionCustomAction) {
     std::vector<std::string> custom_action_description;
     for (size_t i = 0; i < node.custom_accessibility_actions.size(); i++) {
-      auto iter = _pending_semantics_custom_action_updates.find(node.custom_accessibility_actions[i]);
+      auto iter = _pending_semantics_custom_action_updates.find(
+          node.custom_accessibility_actions[i]);
       FML_DCHECK(iter != _pending_semantics_custom_action_updates.end());
       custom_action_description.push_back(iter->second.label);
     }
-    node_data.AddStringListAttribute(StringListAttribute::kCustomActionDescriptions, custom_action_description);
+    node_data.AddStringListAttribute(
+        StringListAttribute::kCustomActionDescriptions,
+        custom_action_description);
   }
 }
 
-void AccessibilityBridge::SetNameFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
+void AccessibilityBridge::SetNameFromFlutterUpdate(AXNodeData& node_data,
+                                                   const SemanticsNode& node) {
   node_data.SetName(node.label);
 }
 
-void AccessibilityBridge::SetValueFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node) {
+void AccessibilityBridge::SetValueFromFlutterUpdate(AXNodeData& node_data,
+                                                    const SemanticsNode& node) {
   node_data.SetValue(node.value);
 }
 
-void AccessibilityBridge::SetTreeData(const SemanticsNode& node, AXTreeUpdate& tree_update) {
+void AccessibilityBridge::SetTreeData(const SemanticsNode& node,
+                                      AXTreeUpdate& tree_update) {
   FlutterSemanticsFlag flags = node.flags;
   // Set selection if:
   // 1. this text field has a valid selection
@@ -407,14 +441,17 @@ void AccessibilityBridge::SetTreeData(const SemanticsNode& node, AXTreeUpdate& t
       tree_update.tree_data.focus_id != node.id) {
     tree_update.tree_data.focus_id = node.id;
     tree_update.has_tree_data = true;
-  } else if ((flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsFocused) == 0 &&
+  } else if ((flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsFocused) ==
+                 0 &&
              tree_update.tree_data.focus_id == node.id) {
     tree_update.tree_data.focus_id = AXNode::kInvalidAXID;
     tree_update.has_tree_data = true;
   }
 }
 
-AccessibilityBridge::SemanticsNode AccessibilityBridge::FromFlutterSemanticsNode(const FlutterSemanticsNode* flutter_node) {
+AccessibilityBridge::SemanticsNode
+AccessibilityBridge::FromFlutterSemanticsNode(
+    const FlutterSemanticsNode* flutter_node) {
   SemanticsNode result;
   result.id = flutter_node->id;
   result.flags = flutter_node->flags;
@@ -447,15 +484,22 @@ AccessibilityBridge::SemanticsNode AccessibilityBridge::FromFlutterSemanticsNode
   result.rect = flutter_node->rect;
   result.transform = flutter_node->transform;
   if (flutter_node->child_count > 0) {
-    result.children_in_traversal_order = std::vector<int32_t>(flutter_node->children_in_traversal_order, flutter_node->children_in_traversal_order + flutter_node->child_count);
+    result.children_in_traversal_order = std::vector<int32_t>(
+        flutter_node->children_in_traversal_order,
+        flutter_node->children_in_traversal_order + flutter_node->child_count);
   }
   if (flutter_node->custom_accessibility_actions_count > 0) {
-    result.custom_accessibility_actions = std::vector<int32_t>(flutter_node->custom_accessibility_actions, flutter_node->custom_accessibility_actions + flutter_node->custom_accessibility_actions_count);
+    result.custom_accessibility_actions = std::vector<int32_t>(
+        flutter_node->custom_accessibility_actions,
+        flutter_node->custom_accessibility_actions +
+            flutter_node->custom_accessibility_actions_count);
   }
   return result;
 }
 
-AccessibilityBridge::SemanticsCustomAction AccessibilityBridge::FromFlutterSemanticsCustomAction(const FlutterSemanticsCustomAction* flutter_custom_action) {
+AccessibilityBridge::SemanticsCustomAction
+AccessibilityBridge::FromFlutterSemanticsCustomAction(
+    const FlutterSemanticsCustomAction* flutter_custom_action) {
   SemanticsCustomAction result;
   result.id = flutter_custom_action->id;
   result.override_action = flutter_custom_action->override_action;

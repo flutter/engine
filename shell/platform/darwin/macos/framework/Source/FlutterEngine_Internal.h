@@ -39,14 +39,14 @@
 // Accessibility API.
 
 /**
- * To enable of disable the semantics in the Flutter framework. The Flutter framework starts sending semantics update through the embedder as soon
- * as it is enabled. 
+ * To enable of disable the semantics in the Flutter framework. The Flutter framework starts sending
+ * semantics update through the embedder as soon as it is enabled.
  */
 - (void)updateSemanticsEnabled:(BOOL)enabled;
 
 /**
- * To enable of disable the semantics in the Flutter framework. The Flutter framework starts sending semantics update through the embedder as soon
- * as it is enabled. 
+ * To enable of disable the semantics in the Flutter framework. The Flutter framework starts sending
+ * semantics update through the embedder as soon as it is enabled.
  */
 - (void)dispatchSemanticsAction:(uint16_t)target
                          action:(FlutterSemanticsAction)action

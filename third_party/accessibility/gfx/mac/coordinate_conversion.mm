@@ -19,16 +19,13 @@ CGFloat PrimaryDisplayHeight() {
 }  // namespace
 
 NSRect ScreenRectToNSRect(const SkRect& rect) {
-  return NSMakeRect(rect.x(),
-                    PrimaryDisplayHeight() - rect.y() - rect.height(),
-                    rect.width(),
+  return NSMakeRect(rect.x(), PrimaryDisplayHeight() - rect.y() - rect.height(), rect.width(),
                     rect.height());
 }
 
 SkRect ScreenRectFromNSRect(const NSRect& rect) {
-  return SkRect::MakeXYWH(rect.origin.x,
-              PrimaryDisplayHeight() - rect.origin.y - rect.size.height,
-              rect.size.width, rect.size.height);
+  return SkRect::MakeXYWH(rect.origin.x, PrimaryDisplayHeight() - rect.origin.y - rect.size.height,
+                          rect.size.width, rect.size.height);
 }
 
 NSPoint ScreenPointToNSPoint(const SkPoint& point) {

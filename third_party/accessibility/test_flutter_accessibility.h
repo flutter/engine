@@ -11,13 +11,17 @@ namespace ax {
 
 class TestFlutterAccessibility : public FlutterAccessibility {
  public:
-  void OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event) override;
-  void DispatchAccessibilityAction(uint16_t target, FlutterSemanticsAction action, uint8_t* data, size_t data_size) override;
+  void OnAccessibilityEvent(
+      AXEventGenerator::TargetedEvent targeted_event) override;
+  void DispatchAccessibilityAction(uint16_t target,
+                                   FlutterSemanticsAction action,
+                                   uint8_t* data,
+                                   size_t data_size) override;
 
   std::vector<AXEventGenerator::TargetedEvent> accessibilitiy_events;
   std::vector<FlutterSemanticsAction> performed_actions;
 };
 
-} // namespace ax
+}  // namespace ax
 
-#endif // ACCESSIBILITY_TEST_FLUTTER_ACCESSIBILITY_H
+#endif  // ACCESSIBILITY_TEST_FLUTTER_ACCESSIBILITY_H

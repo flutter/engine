@@ -31,15 +31,23 @@ bool FlutterAccessibility::AccessibilityPerformAction(
     const ax::AXActionData& data) {
   int32_t target = GetAXNode()->id();
   switch (data.action) {
-     case ax::Action::kDoDefault:
-      DispatchAccessibilityAction(target, FlutterSemanticsAction::kFlutterSemanticsActionTap, nullptr, 0);
+    case ax::Action::kDoDefault:
+      DispatchAccessibilityAction(
+          target, FlutterSemanticsAction::kFlutterSemanticsActionTap, nullptr,
+          0);
       return true;
     case ax::Action::kFocus:
       bridge_->SetFocusedNode(target);
-      DispatchAccessibilityAction(target, FlutterSemanticsAction::kFlutterSemanticsActionDidGainAccessibilityFocus, nullptr, 0);
+      DispatchAccessibilityAction(
+          target,
+          FlutterSemanticsAction::
+              kFlutterSemanticsActionDidGainAccessibilityFocus,
+          nullptr, 0);
       return true;
     case ax::Action::kScrollToMakeVisible:
-      DispatchAccessibilityAction(target, FlutterSemanticsAction::kFlutterSemanticsActionShowOnScreen, nullptr, 0);
+      DispatchAccessibilityAction(
+          target, FlutterSemanticsAction::kFlutterSemanticsActionShowOnScreen,
+          nullptr, 0);
       return true;
     // TODO(chunhtai): support more actions.
     default:
@@ -56,7 +64,9 @@ gfx::NativeViewAccessible FlutterAccessibility::GetParent() {
   if (!GetAXNode()->parent()) {
     return nullptr;
   }
-  return GetBridge()->GetFlutterAccessibilityFromID(GetAXNode()->parent()->id())->GetNativeViewAccessible();
+  return GetBridge()
+      ->GetFlutterAccessibilityFromID(GetAXNode()->parent()->id())
+      ->GetNativeViewAccessible();
 }
 
 gfx::NativeViewAccessible FlutterAccessibility::GetFocus() {
@@ -64,10 +74,13 @@ gfx::NativeViewAccessible FlutterAccessibility::GetFocus() {
   if (focused_node == ax::AXNode::kInvalidAXID) {
     return nullptr;
   }
-  FlutterAccessibility* focus = GetBridge()->GetFlutterAccessibilityFromID(focused_node);
+  FlutterAccessibility* focus =
+      GetBridge()->GetFlutterAccessibilityFromID(focused_node);
   if (!focus)
     return nullptr;
-  return GetBridge()->GetFlutterAccessibilityFromID(focused_node)->GetNativeViewAccessible();
+  return GetBridge()
+      ->GetFlutterAccessibilityFromID(focused_node)
+      ->GetNativeViewAccessible();
 }
 
 int FlutterAccessibility::GetChildCount() const {
@@ -76,7 +89,9 @@ int FlutterAccessibility::GetChildCount() const {
 
 gfx::NativeViewAccessible FlutterAccessibility::ChildAtIndex(int index) {
   int32_t child = GetAXNode()->GetUnignoredChildAtIndex(index)->id();
-  return GetBridge()->GetFlutterAccessibilityFromID(child)->GetNativeViewAccessible();
+  return GetBridge()
+      ->GetFlutterAccessibilityFromID(child)
+      ->GetNativeViewAccessible();
 }
 
 }  // namespace ax

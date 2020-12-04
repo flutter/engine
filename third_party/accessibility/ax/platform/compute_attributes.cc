@@ -85,7 +85,7 @@ std::optional<int> GetOrderedSetAttribute(
 }
 
 std::optional<int32_t> GetFromData(const ax::AXPlatformNodeDelegate* delegate,
-                                    ax::IntAttribute attribute) {
+                                   ax::IntAttribute attribute) {
   int32_t value;
   if (delegate->GetData().GetIntAttribute(attribute, &value)) {
     return value;

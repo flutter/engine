@@ -7,8 +7,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 
 #include "ax/ax_export.h"
 
@@ -51,7 +51,7 @@ AX_EXPORT bool IsNameExposedInAXValueForRole(ax::Role role);
 }  // namespace ax
 
 AX_EXPORT
-@interface AXPlatformNodeCocoa : NSAccessibilityElement<NSAccessibility>
+@interface AXPlatformNodeCocoa : NSAccessibilityElement <NSAccessibility>
 
 // Maps AX roles to native roles. Returns NSAccessibilityUnknownRole if not
 // found.

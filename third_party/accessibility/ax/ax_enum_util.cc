@@ -1351,8 +1351,7 @@ const char* ToString(ax::DefaultActionVerb default_action_verb) {
   return "";
 }
 
-ax::DefaultActionVerb ParseDefaultActionVerb(
-    const char* default_action_verb) {
+ax::DefaultActionVerb ParseDefaultActionVerb(const char* default_action_verb) {
   if (0 == strcmp(default_action_verb, "none"))
     return ax::DefaultActionVerb::kNone;
   if (0 == strcmp(default_action_verb, "activate"))
@@ -1956,8 +1955,7 @@ const char* ToString(ax::IntListAttribute int_list_attribute) {
   return "";
 }
 
-ax::IntListAttribute ParseIntListAttribute(
-    const char* int_list_attribute) {
+ax::IntListAttribute ParseIntListAttribute(const char* int_list_attribute) {
   if (0 == strcmp(int_list_attribute, "none"))
     return ax::IntListAttribute::kNone;
   if (0 == strcmp(int_list_attribute, "indirectChildIds"))
@@ -2395,7 +2393,7 @@ const char* ToString(ax::TextStyle text_style) {
       return "overline";
     case ax::TextStyle::kMaxValue:
     case ax::TextStyle::kMinValue:
-     break;
+      break;
   }
 
   return "";
@@ -2442,8 +2440,7 @@ const char* ToString(ax::AriaCurrentState aria_current_state) {
   return "";
 }
 
-ax::AriaCurrentState ParseAriaCurrentState(
-    const char* aria_current_state) {
+ax::AriaCurrentState ParseAriaCurrentState(const char* aria_current_state) {
   if (0 == strcmp(aria_current_state, "none"))
     return ax::AriaCurrentState::kNone;
   if (0 == strcmp(aria_current_state, "false"))
@@ -2904,8 +2901,7 @@ const char* ToString(ax::ImageAnnotationStatus status) {
   return "";
 }
 
-ax::ImageAnnotationStatus ParseImageAnnotationStatus(
-    const char* status) {
+ax::ImageAnnotationStatus ParseImageAnnotationStatus(const char* status) {
   if (0 == strcmp(status, "none"))
     return ax::ImageAnnotationStatus::kNone;
   if (0 == strcmp(status, "kWillNotAnnotateDueToScheme"))
@@ -2946,7 +2942,7 @@ const char* ToString(ax::Dropeffect dropeffect) {
       return "none";
     case ax::Dropeffect::kMaxValue:
     case ax::Dropeffect::kMinValue:
-     break;
+      break;
   }
 
   return "";

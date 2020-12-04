@@ -10,8 +10,8 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 
 #include "ax/ax_event_generator.h"
-#include "ax/ax_tree_observer.h"
 #include "ax/ax_tree.h"
+#include "ax/ax_tree_observer.h"
 #include "ax/platform/ax_platform_node_delegate.h"
 
 #include "flutter_accessibility.h"
@@ -19,9 +19,9 @@
 namespace ax {
 
 //------------------------------------------------------------------------------
-/// Use this class to maintain an accessibility tree. This class consumes semantics
-/// updates from the embedder API and produces an accessibility tree in the native
-/// format.
+/// Use this class to maintain an accessibility tree. This class consumes
+/// semantics updates from the embedder API and produces an accessibility tree
+/// in the native format.
 ///
 /// To use this class, you must provide your own implementation of
 /// FlutterAccessibility.
@@ -50,9 +50,11 @@ class AccessibilityBridge : public AXTreeObserver {
   ///             semantics tree. To flush the pending updates, call the
   ///             CommitUpdates().
   ///
-  /// @param[in]  action           A pointer to the custom semantics action update.
-  void AddFlutterSemanticsCustomActionUpdate(const FlutterSemanticsCustomAction* action);
-  
+  /// @param[in]  action           A pointer to the custom semantics action
+  /// update.
+  void AddFlutterSemanticsCustomActionUpdate(
+      const FlutterSemanticsCustomAction* action);
+
   //------------------------------------------------------------------------------
   /// @brief      Flushes the pending updates and applies them to this
   ///             accessibility bridge.
@@ -79,7 +81,7 @@ class AccessibilityBridge : public AXTreeObserver {
   /// @param[in]  id           The id of the flutter accessibility node you want
   ///                          to retrieve.
   FlutterAccessibility* GetFlutterAccessibilityFromID(int32_t id) const;
-  
+
   //------------------------------------------------------------------------------
   /// @brief      Update the currently focused flutter accessibility node.
   ///
@@ -105,8 +107,6 @@ class AccessibilityBridge : public AXTreeObserver {
       ax::AXTree* tree,
       bool root_changed,
       const std::vector<ax::AXTreeObserver::Change>& changes) override;
-
-
 
  private:
   // See FlutterSemanticsNode in embedder.h
@@ -147,28 +147,41 @@ class AccessibilityBridge : public AXTreeObserver {
   std::unique_ptr<AXTree> tree_;
   AXEventGenerator event_generator_;
   std::unordered_map<int32_t, SemanticsNode> _pending_semantics_node_updates;
-  std::unordered_map<int32_t, SemanticsCustomAction> _pending_semantics_custom_action_updates;
+  std::unordered_map<int32_t, SemanticsCustomAction>
+      _pending_semantics_custom_action_updates;
   int32_t last_focused_node_ = ax::AXNode::kInvalidAXID;
   void* user_data_;
 
   void InitAXTree(const AXTreeUpdate& initial_state);
   void GetSubTreeList(SemanticsNode target, std::vector<SemanticsNode>& result);
-  void ConvertFluterUpdate(const SemanticsNode& node, AXTreeUpdate& tree_update);
-  void SetRoleFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
-  void SetStateFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
-  void SetActionsFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
-  void SetBooleanAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
-  void SetIntAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
-  void SetIntListAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
-  void SetStringListAttributesFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
-  void SetNameFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
-  void SetValueFromFlutterUpdate(AXNodeData& node_data, const SemanticsNode& node);
+  void ConvertFluterUpdate(const SemanticsNode& node,
+                           AXTreeUpdate& tree_update);
+  void SetRoleFromFlutterUpdate(AXNodeData& node_data,
+                                const SemanticsNode& node);
+  void SetStateFromFlutterUpdate(AXNodeData& node_data,
+                                 const SemanticsNode& node);
+  void SetActionsFromFlutterUpdate(AXNodeData& node_data,
+                                   const SemanticsNode& node);
+  void SetBooleanAttributesFromFlutterUpdate(AXNodeData& node_data,
+                                             const SemanticsNode& node);
+  void SetIntAttributesFromFlutterUpdate(AXNodeData& node_data,
+                                         const SemanticsNode& node);
+  void SetIntListAttributesFromFlutterUpdate(AXNodeData& node_data,
+                                             const SemanticsNode& node);
+  void SetStringListAttributesFromFlutterUpdate(AXNodeData& node_data,
+                                                const SemanticsNode& node);
+  void SetNameFromFlutterUpdate(AXNodeData& node_data,
+                                const SemanticsNode& node);
+  void SetValueFromFlutterUpdate(AXNodeData& node_data,
+                                 const SemanticsNode& node);
   void SetTreeData(const SemanticsNode& node, AXTreeUpdate& tree_update);
-  SemanticsNode FromFlutterSemanticsNode(const FlutterSemanticsNode* flutter_node);
-  SemanticsCustomAction FromFlutterSemanticsCustomAction(const FlutterSemanticsCustomAction* flutter_custom_action);
+  SemanticsNode FromFlutterSemanticsNode(
+      const FlutterSemanticsNode* flutter_node);
+  SemanticsCustomAction FromFlutterSemanticsCustomAction(
+      const FlutterSemanticsCustomAction* flutter_custom_action);
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };
 
-} // namespace ax
+}  // namespace ax
 
-#endif // ACCESSIBILITY_ACCESSIBILITY_BRIDGE_H_
+#endif  // ACCESSIBILITY_ACCESSIBILITY_BRIDGE_H_

@@ -50,9 +50,10 @@ int32_t AXUniqueId::GetNextAXUniqueId(const int32_t max_id) {
       ++current_id;
     }
     if (current_id == prev_id) {
-      FML_LOG(ERROR) << "There are over 2 billion available IDs, so the newly "
-                    "created ID cannot be equal to the most recently created "
-                    "ID.";
+      FML_LOG(ERROR)
+          << "There are over 2 billion available IDs, so the newly "
+             "created ID cannot be equal to the most recently created "
+             "ID.";
     }
     // If it |has_wrapped| then we need to continue until we find the first
     // unassigned ID.

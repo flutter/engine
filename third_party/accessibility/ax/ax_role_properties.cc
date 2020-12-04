@@ -61,8 +61,7 @@ bool IsButton(const ax::Role role) {
   // If the button has |aria-pressed| set, then it takes on
   // Role::kToggleButton.
   // https://www.w3.org/TR/wai-aria-1.1/#button
-  return role == ax::Role::kButton ||
-         role == ax::Role::kPopUpButton ||
+  return role == ax::Role::kButton || role == ax::Role::kPopUpButton ||
          role == ax::Role::kToggleButton;
 }
 

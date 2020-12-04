@@ -7,8 +7,8 @@
 
 #include <stdint.h>
 
-#include "ax_build/build_config.h"
 #include "ax/ax_export.h"
+#include "ax_build/build_config.h"
 
 #if defined(OS_ANDROID)
 #include "base/android/scoped_java_ref.h"

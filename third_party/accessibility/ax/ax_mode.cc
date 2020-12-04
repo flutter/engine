@@ -53,7 +53,7 @@ std::string AXMode::ToString() const {
   }
   std::ostringstream imploded;
   for (size_t i = 0; i < tokens.size(); i++) {
-    if (i == tokens.size() -1) {
+    if (i == tokens.size() - 1) {
       imploded << tokens[i];
     } else {
       imploded << tokens[i] << " | ";

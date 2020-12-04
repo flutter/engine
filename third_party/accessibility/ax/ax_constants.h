@@ -14,4 +14,4 @@ namespace ax {
 // See: AXTableInfo
 const int32_t kUnknownAriaColumnOrRowCount = -1;
 
-}
+}  // namespace ax

@@ -9,12 +9,12 @@
 #include <string>
 #include <vector>
 
-#include "third_party/skia/include/core/SkPoint.h"
 #include "flutter/fml/macros.h"
+#include "third_party/skia/include/core/SkPoint.h"
 
-#include "ax_build/build_config.h"
 #include "ax/ax_enums.h"
 #include "ax/ax_node.h"
+#include "ax_build/build_config.h"
 #include "gfx/native_widget_types.h"
 
 #include "ax_platform_node.h"
@@ -77,7 +77,7 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
 
   // Returns a stack of ancestors of this node. The node at the top of the stack
   // is the top most ancestor.
- std::stack<gfx::NativeViewAccessible> GetAncestors();
+  std::stack<gfx::NativeViewAccessible> GetAncestors();
 
   // Returns an optional integer indicating the logical order of this node
   // compared to another node or returns an empty optional if the nodes
@@ -128,14 +128,12 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   bool GetIntAttribute(ax::IntAttribute attribute, int* value) const;
 
   bool HasStringAttribute(ax::StringAttribute attribute) const;
-  const std::string& GetStringAttribute(
-      ax::StringAttribute attribute) const;
+  const std::string& GetStringAttribute(ax::StringAttribute attribute) const;
   bool GetStringAttribute(ax::StringAttribute attribute,
                           std::string* value) const;
   bool GetString16Attribute(ax::StringAttribute attribute,
                             std::u16string* value) const;
-  std::u16string GetString16Attribute(
-      ax::StringAttribute attribute) const;
+  std::u16string GetString16Attribute(ax::StringAttribute attribute) const;
   bool HasInheritedStringAttribute(ax::StringAttribute attribute) const;
   const std::string& GetInheritedStringAttribute(
       ax::StringAttribute attribute) const;
@@ -385,12 +383,12 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   // Sets the hypertext selection in this object if possible.
   bool SetHypertextSelection(int start_offset, int end_offset);
 
-// #if BUILDFLAG(USE_ATK)
-//   using PlatformAttributeList = AtkAttributeSet*;
-// #else
-//   using PlatformAttributeList = std::vector<std::u16string>;
-// #endif
-using PlatformAttributeList = std::vector<std::u16string>;
+  // #if BUILDFLAG(USE_ATK)
+  //   using PlatformAttributeList = AtkAttributeSet*;
+  // #else
+  //   using PlatformAttributeList = std::vector<std::u16string>;
+  // #endif
+  using PlatformAttributeList = std::vector<std::u16string>;
 
   // Compute the attributes exposed via platform accessibility objects and put
   // them into an attribute list, |attributes|. Currently only used by

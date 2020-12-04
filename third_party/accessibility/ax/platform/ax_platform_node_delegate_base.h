@@ -107,8 +107,8 @@ class AX_EXPORT AXPlatformNodeDelegateBase : public AXPlatformNodeDelegate {
   std::string GetInheritedFontFamilyName() const override;
 
   SkRect GetBoundsRect(const AXCoordinateSystem coordinate_system,
-                          const AXClippingBehavior clipping_behavior,
-                          AXOffscreenResult* offscreen_result) const override;
+                       const AXClippingBehavior clipping_behavior,
+                       AXOffscreenResult* offscreen_result) const override;
 
   SkRect GetHypertextRangeBoundsRect(
       const int start_offset,
@@ -174,8 +174,7 @@ class AX_EXPORT AXPlatformNodeDelegateBase : public AXPlatformNodeDelegate {
   // Given a node ID attribute (one where IsNodeIdIntAttribute is true), return
   // a target nodes for which this delegate's node has that relationship
   // attribute or NULL if there is no such relationship.
-  AXPlatformNode* GetTargetNodeForRelation(
-      ax::IntAttribute attr) override;
+  AXPlatformNode* GetTargetNodeForRelation(ax::IntAttribute attr) override;
 
   // Given a node ID attribute (one where IsNodeIdIntListAttribute is true),
   // return a vector of all target nodes for which this delegate's node has that
@@ -186,8 +185,7 @@ class AX_EXPORT AXPlatformNodeDelegateBase : public AXPlatformNodeDelegate {
   // Given a node ID attribute (one where IsNodeIdIntAttribute is true), return
   // a set of all source nodes that have that relationship attribute between
   // them and this delegate's node.
-  std::set<AXPlatformNode*> GetReverseRelations(
-      ax::IntAttribute attr) override;
+  std::set<AXPlatformNode*> GetReverseRelations(ax::IntAttribute attr) override;
 
   // Given a node ID list attribute (one where IsNodeIdIntListAttribute is
   // true) return a set of all source nodes that have that relationship
@@ -199,11 +197,10 @@ class AX_EXPORT AXPlatformNodeDelegateBase : public AXPlatformNodeDelegate {
 
   const AXUniqueId& GetUniqueId() const override;
 
-  std::optional<int> FindTextBoundary(
-      ax::TextBoundary boundary,
-      int offset,
-      ax::MoveDirection direction,
-      ax::TextAffinity affinity) const override;
+  std::optional<int> FindTextBoundary(ax::TextBoundary boundary,
+                                      int offset,
+                                      ax::MoveDirection direction,
+                                      ax::TextAffinity affinity) const override;
 
   const std::vector<gfx::NativeViewAccessible> GetUIADescendants()
       const override;
@@ -240,8 +237,7 @@ class AX_EXPORT AXPlatformNodeDelegateBase : public AXPlatformNodeDelegate {
   std::optional<int> GetTableCellRowSpan() const override;
   std::optional<int> GetTableCellAriaColIndex() const override;
   std::optional<int> GetTableCellAriaRowIndex() const override;
-  std::optional<int32_t> GetCellId(int row_index,
-                                    int col_index) const override;
+  std::optional<int32_t> GetCellId(int row_index, int col_index) const override;
   std::optional<int32_t> CellIndexToId(int cell_index) const override;
 
   // Helper methods to check if a cell is an ARIA-1.1+ 'cell' or 'gridcell'

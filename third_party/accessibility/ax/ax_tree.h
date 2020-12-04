@@ -39,8 +39,7 @@ class AX_EXPORT AXTree : public AXNode::OwnerTree {
   using IntReverseRelationMap =
       std::map<ax::IntAttribute, std::map<int32_t, std::set<int32_t>>>;
   using IntListReverseRelationMap =
-      std::map<ax::IntListAttribute,
-               std::map<int32_t, std::set<int32_t>>>;
+      std::map<ax::IntListAttribute, std::map<int32_t, std::set<int32_t>>>;
 
   AXTree();
   explicit AXTree(const AXTreeUpdate& initial_state);
@@ -86,9 +85,9 @@ class AX_EXPORT AXTree : public AXNode::OwnerTree {
   // |offscreen| will be propagated.
   // If |clip_bounds| is true, result bounds will be clipped.
   SkRect RelativeToTreeBounds(const AXNode* node,
-                                  SkRect node_bounds,
-                                  bool* offscreen = nullptr,
-                                  bool clip_bounds = true) const;
+                              SkRect node_bounds,
+                              bool* offscreen = nullptr,
+                              bool clip_bounds = true) const;
 
   // Get the bounds of a node in the coordinate space of the tree.
   // If set, updates |offscreen| boolean to be true if the node is offscreen
@@ -97,8 +96,8 @@ class AX_EXPORT AXTree : public AXNode::OwnerTree {
   // |offscreen| will be propagated.
   // If |clip_bounds| is true, result bounds will be clipped.
   SkRect GetTreeBounds(const AXNode* node,
-                           bool* offscreen = nullptr,
-                           bool clip_bounds = true) const;
+                       bool* offscreen = nullptr,
+                       bool clip_bounds = true) const;
 
   // Given a node ID attribute (one where IsNodeIdIntAttribute is true),
   // and a destination node ID, return a set of all source node IDs that
@@ -289,10 +288,10 @@ class AX_EXPORT AXTree : public AXNode::OwnerTree {
   // Internal implementation of RelativeToTreeBounds. It calls itself
   // recursively but ensures that it can only do so exactly once!
   SkRect RelativeToTreeBoundsInternal(const AXNode* node,
-                                          SkRect node_bounds,
-                                          bool* offscreen,
-                                          bool clip_bounds,
-                                          bool allow_recursion) const;
+                                      SkRect node_bounds,
+                                      bool* offscreen,
+                                      bool clip_bounds,
+                                      bool allow_recursion) const;
 
   std::vector<AXTreeObserver*> observers_;
   AXNode* root_ = nullptr;

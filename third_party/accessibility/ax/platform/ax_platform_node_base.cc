@@ -128,7 +128,7 @@ std::u16string AXPlatformNodeBase::GetNameAsString16() const {
   std::string name = GetName();
   if (name.empty())
     return std::u16string();
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert; 
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
   return convert.from_bytes(name);
 }
 
@@ -171,7 +171,7 @@ std::optional<int> AXPlatformNodeBase::GetIndexInParent() {
 }
 
 std::stack<gfx::NativeViewAccessible> AXPlatformNodeBase::GetAncestors() {
- std::stack<gfx::NativeViewAccessible> ancestors;
+  std::stack<gfx::NativeViewAccessible> ancestors;
   gfx::NativeViewAccessible current_node = GetNativeViewAccessible();
   while (current_node) {
     ancestors.push(current_node);
@@ -210,8 +210,8 @@ std::optional<int> AXPlatformNodeBase::CompareTo(AXPlatformNodeBase& other) {
   // The first uncommon ancestor is the immediate child of the lowest common
   // ancestor.
   gfx::NativeViewAccessible common_ancestor = nullptr;
- std::stack<gfx::NativeViewAccessible> our_ancestors = GetAncestors();
- std::stack<gfx::NativeViewAccessible> other_ancestors = other.GetAncestors();
+  std::stack<gfx::NativeViewAccessible> our_ancestors = GetAncestors();
+  std::stack<gfx::NativeViewAccessible> other_ancestors = other.GetAncestors();
 
   // Start at the root and traverse down. Keep going until the |this|'s ancestor
   // chain and |other|'s ancestor chain disagree. The last node before they
@@ -249,13 +249,14 @@ std::optional<int> AXPlatformNodeBase::CompareTo(AXPlatformNodeBase& other) {
     int this_uncommon_ancestor_index = this_index_in_parent.value();
     int other_uncommon_ancestor_index = other_index_in_parent.value();
     if (this_uncommon_ancestor_index == other_uncommon_ancestor_index) {
-      FML_LOG(ERROR) << "Deepest uncommon ancestors should truly be uncommon, i.e. not "
-           "the same.";
+      FML_LOG(ERROR)
+          << "Deepest uncommon ancestors should truly be uncommon, i.e. not "
+             "the same.";
       FML_DCHECK(false);
     }
 
     return std::optional<int>(this_uncommon_ancestor_index -
-                               other_uncommon_ancestor_index);
+                              other_uncommon_ancestor_index);
   }
 
   return std::nullopt;
@@ -353,15 +354,13 @@ bool AXPlatformNodeBase::IsDescendant(AXPlatformNodeBase* node) {
   return IsDescendant(parent);
 }
 
-bool AXPlatformNodeBase::HasBoolAttribute(
-    ax::BoolAttribute attribute) const {
+bool AXPlatformNodeBase::HasBoolAttribute(ax::BoolAttribute attribute) const {
   if (!delegate_)
     return false;
   return GetData().HasBoolAttribute(attribute);
 }
 
-bool AXPlatformNodeBase::GetBoolAttribute(
-    ax::BoolAttribute attribute) const {
+bool AXPlatformNodeBase::GetBoolAttribute(ax::BoolAttribute attribute) const {
   if (!delegate_)
     return false;
   return GetData().GetBoolAttribute(attribute);
@@ -374,8 +373,7 @@ bool AXPlatformNodeBase::GetBoolAttribute(ax::BoolAttribute attribute,
   return GetData().GetBoolAttribute(attribute, value);
 }
 
-bool AXPlatformNodeBase::HasFloatAttribute(
-    ax::FloatAttribute attribute) const {
+bool AXPlatformNodeBase::HasFloatAttribute(ax::FloatAttribute attribute) const {
   if (!delegate_)
     return false;
   return GetData().HasFloatAttribute(attribute);
@@ -395,15 +393,13 @@ bool AXPlatformNodeBase::GetFloatAttribute(ax::FloatAttribute attribute,
   return GetData().GetFloatAttribute(attribute, value);
 }
 
-bool AXPlatformNodeBase::HasIntAttribute(
-    ax::IntAttribute attribute) const {
+bool AXPlatformNodeBase::HasIntAttribute(ax::IntAttribute attribute) const {
   if (!delegate_)
     return false;
   return GetData().HasIntAttribute(attribute);
 }
 
-int AXPlatformNodeBase::GetIntAttribute(
-    ax::IntAttribute attribute) const {
+int AXPlatformNodeBase::GetIntAttribute(ax::IntAttribute attribute) const {
   if (!delegate_)
     return 0;
   return GetData().GetIntAttribute(attribute);
@@ -432,9 +428,8 @@ const std::string& AXPlatformNodeBase::GetStringAttribute(
   return GetData().GetStringAttribute(attribute);
 }
 
-bool AXPlatformNodeBase::GetStringAttribute(
-    ax::StringAttribute attribute,
-    std::string* value) const {
+bool AXPlatformNodeBase::GetStringAttribute(ax::StringAttribute attribute,
+                                            std::string* value) const {
   if (!delegate_)
     return false;
   return GetData().GetStringAttribute(attribute, value);
@@ -447,9 +442,8 @@ std::u16string AXPlatformNodeBase::GetString16Attribute(
   return GetData().GetString16Attribute(attribute);
 }
 
-bool AXPlatformNodeBase::GetString16Attribute(
-    ax::StringAttribute attribute,
-    std::u16string* value) const {
+bool AXPlatformNodeBase::GetString16Attribute(ax::StringAttribute attribute,
+                                              std::u16string* value) const {
   if (!delegate_)
     return false;
   return GetData().GetString16Attribute(attribute, value);
@@ -497,7 +491,7 @@ const std::string& AXPlatformNodeBase::GetInheritedStringAttribute(
 
 std::u16string AXPlatformNodeBase::GetInheritedString16Attribute(
     ax::StringAttribute attribute) const {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert; 
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
   return convert.from_bytes(GetInheritedStringAttribute(attribute));
 }
 
@@ -527,7 +521,7 @@ bool AXPlatformNodeBase::GetInheritedString16Attribute(
   std::string value_utf8;
   if (!GetInheritedStringAttribute(attribute, &value_utf8))
     return false;
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert; 
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
   *value = convert.from_bytes(value_utf8);
   return true;
 }
@@ -656,12 +650,11 @@ std::u16string AXPlatformNodeBase::GetInnerText() const {
 
 std::u16string AXPlatformNodeBase::GetRangeValueText() const {
   float fval;
-  std::u16string value =
-      GetString16Attribute(ax::StringAttribute::kValue);
+  std::u16string value = GetString16Attribute(ax::StringAttribute::kValue);
 
   if (value.empty() &&
       GetFloatAttribute(ax::FloatAttribute::kValueForRange, &fval)) {
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert; 
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
     value = convert.from_bytes(std::to_string(fval));
   }
   return value;
@@ -877,8 +870,7 @@ bool AXPlatformNodeBase::HasCaret(
   if (IsInvisibleOrIgnored())
     return false;
 
-  if (IsPlainTextField() &&
-      HasIntAttribute(ax::IntAttribute::kTextSelStart) &&
+  if (IsPlainTextField() && HasIntAttribute(ax::IntAttribute::kTextSelStart) &&
       HasIntAttribute(ax::IntAttribute::kTextSelEnd)) {
     return true;
   }
@@ -923,17 +915,15 @@ bool AXPlatformNodeBase::IsScrollable() const {
 bool AXPlatformNodeBase::IsHorizontallyScrollable() const {
   FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollXMin) >= 0);
   FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollXMax) >= 0);
-  return IsScrollable() &&
-         GetIntAttribute(ax::IntAttribute::kScrollXMin) <
-             GetIntAttribute(ax::IntAttribute::kScrollXMax);
+  return IsScrollable() && GetIntAttribute(ax::IntAttribute::kScrollXMin) <
+                               GetIntAttribute(ax::IntAttribute::kScrollXMax);
 }
 
 bool AXPlatformNodeBase::IsVerticallyScrollable() const {
   FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollYMin) >= 0);
   FML_DCHECK(GetIntAttribute(ax::IntAttribute::kScrollYMax) >= 0);
-  return IsScrollable() &&
-         GetIntAttribute(ax::IntAttribute::kScrollYMin) <
-             GetIntAttribute(ax::IntAttribute::kScrollYMax);
+  return IsScrollable() && GetIntAttribute(ax::IntAttribute::kScrollYMin) <
+                               GetIntAttribute(ax::IntAttribute::kScrollYMax);
 }
 
 std::u16string AXPlatformNodeBase::GetValue() const {
@@ -943,12 +933,11 @@ std::u16string AXPlatformNodeBase::GetValue() const {
 
   // On Windows, the value of a document should be its URL.
   if (ax::IsDocument(GetData().role)) {
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert; 
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
     return convert.from_bytes(delegate_->GetTreeData().url);
   }
 
-  std::u16string value =
-      GetString16Attribute(ax::StringAttribute::kValue);
+  std::u16string value = GetString16Attribute(ax::StringAttribute::kValue);
 
   // Some screen readers like Jaws and VoiceOver require a
   // value to be set in text fields with rich content, even though the same
@@ -966,11 +955,9 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
   // historical reasons. Aside from that virtually every ARIA attribute
   // is exposed in a really straightforward way, i.e. "aria-foo" is exposed
   // as "foo".
-  AddAttributeToList(ax::StringAttribute::kDisplay, "display",
-                     attributes);
+  AddAttributeToList(ax::StringAttribute::kDisplay, "display", attributes);
   AddAttributeToList(ax::StringAttribute::kHtmlTag, "tag", attributes);
-  AddAttributeToList(ax::StringAttribute::kRole, "xml-roles",
-                     attributes);
+  AddAttributeToList(ax::StringAttribute::kRole, "xml-roles", attributes);
   AddAttributeToList(ax::StringAttribute::kPlaceholder, "placeholder",
                      attributes);
 
@@ -985,7 +972,7 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
       GetRoleDescriptionFromImageAnnotationStatusOrFromAttribute();
   if (!role_description.empty() ||
       HasStringAttribute(ax::StringAttribute::kRoleDescription)) {
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert; 
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
     AddAttributeToList("roledescription", convert.to_bytes(role_description),
                        attributes);
   }
@@ -993,11 +980,9 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
   AddAttributeToList(ax::StringAttribute::kKeyShortcuts, "keyshortcuts",
                      attributes);
 
-  AddAttributeToList(ax::IntAttribute::kHierarchicalLevel, "level",
-                     attributes);
+  AddAttributeToList(ax::IntAttribute::kHierarchicalLevel, "level", attributes);
   AddAttributeToList(ax::IntAttribute::kSetSize, "setsize", attributes);
-  AddAttributeToList(ax::IntAttribute::kPosInSet, "posinset",
-                     attributes);
+  AddAttributeToList(ax::IntAttribute::kPosInSet, "posinset", attributes);
 
   if (IsPlatformCheckable())
     AddAttributeToList("checkable", "true", attributes);
@@ -1006,12 +991,10 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
     AddAttributeToList("hidden", "true", attributes);
 
   // Expose live region attributes.
-  AddAttributeToList(ax::StringAttribute::kLiveStatus, "live",
-                     attributes);
+  AddAttributeToList(ax::StringAttribute::kLiveStatus, "live", attributes);
   AddAttributeToList(ax::StringAttribute::kLiveRelevant, "relevant",
                      attributes);
-  AddAttributeToList(ax::BoolAttribute::kLiveAtomic, "atomic",
-                     attributes);
+  AddAttributeToList(ax::BoolAttribute::kLiveAtomic, "atomic", attributes);
   // Busy is usually associated with live regions but can occur anywhere:
   AddAttributeToList(ax::BoolAttribute::kBusy, "busy", attributes);
 
@@ -1022,8 +1005,8 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
                      "container-relevant", attributes);
   AddAttributeToList(ax::BoolAttribute::kContainerLiveAtomic,
                      "container-atomic", attributes);
-  AddAttributeToList(ax::BoolAttribute::kContainerLiveBusy,
-                     "container-busy", attributes);
+  AddAttributeToList(ax::BoolAttribute::kContainerLiveBusy, "container-busy",
+                     attributes);
 
   // Expose the non-standard explicit-name IA2 attribute.
   int name_from;
@@ -1113,8 +1096,7 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
        delegate_->GetTableAriaColCount() != delegate_->GetTableColCount())) {
     AddAttributeToList(ax::IntAttribute::kAriaColumnCount, "colcount",
                        attributes);
-    AddAttributeToList(ax::IntAttribute::kAriaRowCount, "rowcount",
-                       attributes);
+    AddAttributeToList(ax::IntAttribute::kAriaRowCount, "rowcount", attributes);
   }
 
   if (IsCellOrTableHeader(GetData().role) || IsTableRow(GetData().role)) {
@@ -1125,8 +1107,8 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
         delegate_->GetTableCellAriaColIndex() !=
             delegate_->GetTableCellColIndex()) {
       if (!IsTableRow(GetData().role)) {
-        AddAttributeToList(ax::IntAttribute::kAriaCellColumnIndex,
-                           "colindex", attributes);
+        AddAttributeToList(ax::IntAttribute::kAriaCellColumnIndex, "colindex",
+                           attributes);
       }
       AddAttributeToList(ax::IntAttribute::kAriaCellRowIndex, "rowindex",
                          attributes);
@@ -1150,8 +1132,7 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
   // Expose row or column header sort direction.
   int32_t sort_direction;
   if (IsTableHeader(GetData().role) &&
-      GetIntAttribute(ax::IntAttribute::kSortDirection,
-                      &sort_direction)) {
+      GetIntAttribute(ax::IntAttribute::kSortDirection, &sort_direction)) {
     switch (static_cast<ax::SortDirection>(sort_direction)) {
       case ax::SortDirection::kNone:
         break;
@@ -1186,7 +1167,7 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
   // Expose slider value.
   if (GetData().IsRangeValueSupported() ||
       GetData().role == ax::Role::kComboBoxMenuButton) {
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> convert;
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
     std::string value = convert.to_bytes(GetRangeValueText());
     if (!value.empty())
       AddAttributeToList("valuetext", value, attributes);
@@ -1273,10 +1254,9 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
     AddAttributeToList("details-roles", details_roles, attributes);
 }
 
-void AXPlatformNodeBase::AddAttributeToList(
-    const ax::StringAttribute attribute,
-    const char* name,
-    PlatformAttributeList* attributes) {
+void AXPlatformNodeBase::AddAttributeToList(const ax::StringAttribute attribute,
+                                            const char* name,
+                                            PlatformAttributeList* attributes) {
   FML_DCHECK(attributes);
   std::string value;
   if (GetStringAttribute(attribute, &value)) {
@@ -1284,10 +1264,9 @@ void AXPlatformNodeBase::AddAttributeToList(
   }
 }
 
-void AXPlatformNodeBase::AddAttributeToList(
-    const ax::BoolAttribute attribute,
-    const char* name,
-    PlatformAttributeList* attributes) {
+void AXPlatformNodeBase::AddAttributeToList(const ax::BoolAttribute attribute,
+                                            const char* name,
+                                            PlatformAttributeList* attributes) {
   FML_DCHECK(attributes);
   bool value;
   if (GetBoolAttribute(attribute, &value)) {
@@ -1295,10 +1274,9 @@ void AXPlatformNodeBase::AddAttributeToList(
   }
 }
 
-void AXPlatformNodeBase::AddAttributeToList(
-    const ax::IntAttribute attribute,
-    const char* name,
-    PlatformAttributeList* attributes) {
+void AXPlatformNodeBase::AddAttributeToList(const ax::IntAttribute attribute,
+                                            const char* name,
+                                            PlatformAttributeList* attributes) {
   FML_DCHECK(attributes);
 
   auto maybe_value = ComputeAttribute(delegate_, attribute);
@@ -1377,7 +1355,7 @@ bool AXPlatformNodeBase::ScrollToNode(ScrollType scroll_type) {
   // ax::Action::kScrollToMakeVisible wants a target rect in *local*
   // coords.
   SkRect r = GetData().relative_bounds.bounds;
-  
+
   r.offsetTo(0, 0);
   switch (scroll_type) {
     case ScrollType::TopLeft:
@@ -1409,8 +1387,7 @@ bool AXPlatformNodeBase::ScrollToNode(ScrollType scroll_type) {
       ax::ScrollAlignment::kScrollAlignmentCenter;
   action_data.vertical_scroll_alignment =
       ax::ScrollAlignment::kScrollAlignmentCenter;
-  action_data.scroll_behavior =
-      ax::ScrollBehavior::kDoNotScrollIfVisible;
+  action_data.scroll_behavior = ax::ScrollBehavior::kDoNotScrollIfVisible;
   action_data.target_rect = r;
   GetDelegate()->AccessibilityPerformAction(action_data);
   return true;
@@ -1420,9 +1397,9 @@ bool AXPlatformNodeBase::ScrollToNode(ScrollType scroll_type) {
 void AXPlatformNodeBase::SanitizeStringAttribute(const std::string& input,
                                                  std::string* output) {
   FML_DCHECK(output);
-  // TODO(chunhtai): According to the IA2 spec and AT-SPI2, these characters need to be escaped
-  // with a backslash: backslash, colon, comma, equals and semicolon.  Note
-  // that backslash must be replaced first.
+  // TODO(chunhtai): According to the IA2 spec and AT-SPI2, these characters
+  // need to be escaped with a backslash: backslash, colon, comma, equals and
+  // semicolon.  Note that backslash must be replaced first.
 }
 
 AXPlatformNodeBase* AXPlatformNodeBase::GetHyperlinkFromHypertextOffset(
@@ -1539,7 +1516,7 @@ int AXPlatformNodeBase::GetHypertextOffsetFromEndpoint(
     } else {
       FML_DCHECK(endpoint_offset >= 0);
       FML_DCHECK(endpoint_offset <=
-                endpoint_object->GetDelegate()->GetChildCount());
+                 endpoint_object->GetDelegate()->GetChildCount());
 
       // Adjust the |endpoint_offset| because the selection endpoint is a tree
       // position, i.e. it represents a child index and not a text offset.
@@ -1618,7 +1595,7 @@ int AXPlatformNodeBase::GetSelectionAnchor(const AXTree::Selection* selection) {
   if (!anchor_object)
     return -1;
 
-  int anchor_offset =  static_cast<int>(selection->anchor_offset);
+  int anchor_offset = static_cast<int>(selection->anchor_offset);
   return GetHypertextOffsetFromEndpoint(anchor_object, anchor_offset);
 }
 
@@ -1630,7 +1607,7 @@ int AXPlatformNodeBase::GetSelectionFocus(const AXTree::Selection* selection) {
   if (!focus_object)
     return -1;
 
-  int focus_offset =  static_cast<int>(selection->focus_offset);
+  int focus_offset = static_cast<int>(selection->focus_offset);
   return GetHypertextOffsetFromEndpoint(focus_object, focus_offset);
 }
 
@@ -1645,8 +1622,7 @@ void AXPlatformNodeBase::GetSelectionOffsets(const AXTree::Selection* selection,
   FML_DCHECK(selection_start && selection_end);
 
   if (IsPlainTextField() &&
-      GetIntAttribute(ax::IntAttribute::kTextSelStart,
-                      selection_start) &&
+      GetIntAttribute(ax::IntAttribute::kTextSelStart, selection_start) &&
       GetIntAttribute(ax::IntAttribute::kTextSelEnd, selection_end)) {
     return;
   }
@@ -1794,22 +1770,27 @@ bool AXPlatformNodeBase::IsPlatformCheckable() const {
 //   // -- EDITABLE --
 //   // If editable: when part of the text node changes, assume only that part
 //   // changed, and not the entire thing. For example, if "car" changes to
-//   // "cat", assume only 1 letter changed. This code compares common characters
+//   // "cat", assume only 1 letter changed. This code compares common
+//   characters
 //   // to guess what has changed.
 //   // -- NOT EDITABLE --
-//   // When part of the text changes, assume the entire node's text changed. For
+//   // When part of the text changes, assume the entire node's text changed.
+//   For
 //   // example, if "car" changes to "cat" then assume all 3 letters changed.
-//   // Note, it is possible (though rare) that CharacterData methods are used to
+//   // Note, it is possible (though rare) that CharacterData methods are used
+//   to
 //   // remove, insert, replace or append a substring.
 //   bool allow_partial_text_node_changes =
 //       GetData().HasState(ax::State::kEditable);
 //   size_t prefix_index = 0;
 //   size_t common_prefix = 0;
 //   while (prefix_index < old_text.size() && prefix_index < new_text.size() &&
-//          IsSameHypertextCharacter(old_hypertext, prefix_index, prefix_index)) {
+//          IsSameHypertextCharacter(old_hypertext, prefix_index, prefix_index))
+//          {
 //     ++prefix_index;
 //     if (allow_partial_text_node_changes ||
-//         (!IsText(old_text, prefix_index) && !IsText(new_text, prefix_index))) {
+//         (!IsText(old_text, prefix_index) && !IsText(new_text, prefix_index)))
+//         {
 //       common_prefix = prefix_index;
 //     }
 //   }
@@ -1841,7 +1822,8 @@ bool AXPlatformNodeBase::IsPlatformCheckable() const {
 //     ax::TextAffinity affinity) const {
 //   if (boundary != ax::TextBoundary::kSentenceStart) {
 //     std::optional<int> boundary_offset =
-//         GetDelegate()->FindTextBoundary(boundary, offset, direction, affinity);
+//         GetDelegate()->FindTextBoundary(boundary, offset, direction,
+//         affinity);
 //     if (boundary_offset.has_value())
 //       return *boundary_offset;
 //   }
@@ -1870,9 +1852,13 @@ AXPlatformNodeBase* AXPlatformNodeBase::NearestLeafToPoint(
   float shortest_distance;
   while (parent && current_descendant) {
     // Manhattan Distance is used to provide faster distance estimates.
-    SkRect descendant_rect = current_descendant->GetDelegate()->GetClippedScreenBoundsRect();
-    float current_distance = std::max<int>(0, std::max(descendant_rect.x() - point.x(), point.x() - descendant_rect.right())) + 
-    std::max<int>(0, std::max(descendant_rect.y() - point.y(), point.y() - descendant_rect.bottom()));
+    SkRect descendant_rect =
+        current_descendant->GetDelegate()->GetClippedScreenBoundsRect();
+    float current_distance =
+        std::max<int>(0, std::max(descendant_rect.x() - point.x(),
+                                  point.x() - descendant_rect.right())) +
+        std::max<int>(0, std::max(descendant_rect.y() - point.y(),
+                                  point.y() - descendant_rect.bottom()));
 
     if (!nearest_descendant || current_distance < shortest_distance) {
       shortest_distance = current_distance;
@@ -1917,16 +1903,25 @@ int AXPlatformNodeBase::NearestTextIndexToPoint(SkPoint point) {
   // get the distance from the point to the bounds of each character.
   // float shortest_distance = GetDelegate()
   //                               ->GetInnerTextRangeBoundsRect(
-  //                                   0, 1, coordinate_system, clipping_behavior)
+  //                                   0, 1, coordinate_system,
+  //                                   clipping_behavior)
   //                               .ManhattanDistanceToPoint(point);
-  SkRect first_inner_text = GetDelegate()->GetInnerTextRangeBoundsRect(0, 1, coordinate_system, clipping_behavior);
-  float shortest_distance = std::max<int>(0, std::max(first_inner_text.x() - point.x(), point.x() - first_inner_text.right())) + 
-    std::max<int>(0, std::max(first_inner_text.y() - point.y(), point.y() - first_inner_text.bottom()));
+  SkRect first_inner_text = GetDelegate()->GetInnerTextRangeBoundsRect(
+      0, 1, coordinate_system, clipping_behavior);
+  float shortest_distance =
+      std::max<int>(0, std::max(first_inner_text.x() - point.x(),
+                                point.x() - first_inner_text.right())) +
+      std::max<int>(0, std::max(first_inner_text.y() - point.y(),
+                                point.y() - first_inner_text.bottom()));
 
   for (int i = 1, text_length = GetInnerText().length(); i < text_length; ++i) {
-    SkRect inner_text = GetDelegate()->GetInnerTextRangeBoundsRect(i, i + 1, coordinate_system, clipping_behavior);
-    float current_distance = std::max<int>(0, std::max(inner_text.x() - point.x(), point.x() - inner_text.right())) + 
-      std::max<int>(0, std::max(inner_text.y() - point.y(), point.y() - inner_text.bottom()));
+    SkRect inner_text = GetDelegate()->GetInnerTextRangeBoundsRect(
+        i, i + 1, coordinate_system, clipping_behavior);
+    float current_distance =
+        std::max<int>(0, std::max(inner_text.x() - point.x(),
+                                  point.x() - inner_text.right())) +
+        std::max<int>(0, std::max(inner_text.y() - point.y(),
+                                  point.y() - inner_text.bottom()));
     if (current_distance < shortest_distance) {
       shortest_distance = current_distance;
       nearest_index = i;
@@ -1939,9 +1934,8 @@ std::string AXPlatformNodeBase::GetInvalidValue() const {
   const AXPlatformNodeBase* target = this;
   // The aria-invalid=spelling/grammar need to be exposed as text attributes for
   // a range matching the visual underline representing the error.
-  if (static_cast<ax::InvalidState>(
-          target->GetIntAttribute(ax::IntAttribute::kInvalidState)) ==
-          ax::InvalidState::kNone &&
+  if (static_cast<ax::InvalidState>(target->GetIntAttribute(
+          ax::IntAttribute::kInvalidState)) == ax::InvalidState::kNone &&
       target->IsText() && target->GetParent()) {
     // Text nodes need to reflect the invalid state of their parent object,
     // otherwise spelling and grammar errors communicated through aria-invalid
@@ -1964,8 +1958,8 @@ std::string AXPlatformNodeBase::GetInvalidValue() const {
       invalid_value = "true";
       break;
     case ax::InvalidState::kOther: {
-      if (!target->GetStringAttribute(
-              ax::StringAttribute::kAriaInvalidValue, &invalid_value)) {
+      if (!target->GetStringAttribute(ax::StringAttribute::kAriaInvalidValue,
+                                      &invalid_value)) {
         // Set the attribute to "true", since we cannot be more specific.
         invalid_value = "true";
       }
@@ -2019,8 +2013,7 @@ ax::TextAttributeList AXPlatformNodeBase::ComputeTextAttributes() const {
   // AXNodeData instead.
   std::string font_family(GetDelegate()->GetInheritedFontFamilyName());
   if (font_family.empty()) {
-    font_family =
-        GetInheritedStringAttribute(ax::StringAttribute::kFontFamily);
+    font_family = GetInheritedStringAttribute(ax::StringAttribute::kFontFamily);
   }
 
   // Attribute has no default value.
@@ -2143,8 +2136,7 @@ int AXPlatformNodeBase::GetSelectedItems(
     if (!IsItemLike(child_iter->GetData().role)) {
       selected_count += child_iter->GetSelectedItems(max_items - selected_count,
                                                      out_selected_items);
-    } else if (child_iter->GetBoolAttribute(
-                   ax::BoolAttribute::kSelected)) {
+    } else if (child_iter->GetBoolAttribute(ax::BoolAttribute::kSelected)) {
       selected_count++;
       if (out_selected_items)
         out_selected_items->emplace_back(child_iter.get());
@@ -2189,9 +2181,9 @@ std::string AXPlatformNodeBase::ComputeDetailsRoles() const {
         // These should still report comment if there are comments inside them.
         constexpr int kMaxChildrenToCheck = 8;
         constexpr int kMaxDepthToCheck = 4;
-        if (FindDescendantRoleWithMaxDepth(
-                detail_object, ax::Role::kComment, kMaxDepthToCheck,
-                kMaxChildrenToCheck)) {
+        if (FindDescendantRoleWithMaxDepth(detail_object, ax::Role::kComment,
+                                           kMaxDepthToCheck,
+                                           kMaxChildrenToCheck)) {
           details_roles_set.insert("comment");
           break;
         }
@@ -2210,7 +2202,7 @@ std::string AXPlatformNodeBase::ComputeDetailsRoles() const {
                                                 details_roles_set.end());
   std::ostringstream imploded;
   for (size_t i = 0; i < details_roles_vector.size(); i++) {
-    if (i == details_roles_vector.size() -1) {
+    if (i == details_roles_vector.size() - 1) {
       imploded << details_roles_vector[i];
     } else {
       imploded << details_roles_vector[i] << " ";

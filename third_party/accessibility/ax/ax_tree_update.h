@@ -48,7 +48,8 @@ namespace ax {
 //        placeholder must be updated within the same AXTreeUpdate, otherwise
 //        it's a fatal error. This guarantees the tree is always complete
 //        before or after an AXTreeUpdate.
-template<typename AXNodeData, typename AXTreeData> struct AXTreeUpdateBase {
+template <typename AXNodeData, typename AXTreeData>
+struct AXTreeUpdateBase {
   AXTreeUpdateBase() = default;
   ~AXTreeUpdateBase() = default;
 
@@ -58,10 +59,10 @@ template<typename AXNodeData, typename AXTreeData> struct AXTreeUpdateBase {
   AXTreeData tree_data;
 
   // The id of a node to clear, before applying any updates,
-  // or AXNode::kInvalidAXID if no nodes should be cleared. Clearing a node means deleting
-  // all of its children and their descendants, but leaving that node in
-  // the tree. It's an error to clear a node but not subsequently update it
-  // as part of the tree update.
+  // or AXNode::kInvalidAXID if no nodes should be cleared. Clearing a node
+  // means deleting all of its children and their descendants, but leaving that
+  // node in the tree. It's an error to clear a node but not subsequently update
+  // it as part of the tree update.
   int node_id_to_clear = AXNode::kInvalidAXID;
 
   // The id of the root of the tree, if the root is changing. This is
@@ -87,7 +88,7 @@ template<typename AXNodeData, typename AXTreeData> struct AXTreeUpdateBase {
 
 using AXTreeUpdate = AXTreeUpdateBase<AXNodeData, AXTreeData>;
 
-template<typename AXNodeData, typename AXTreeData>
+template <typename AXNodeData, typename AXTreeData>
 std::string AXTreeUpdateBase<AXNodeData, AXTreeData>::ToString() const {
   std::string result;
 
@@ -96,8 +97,8 @@ std::string AXTreeUpdateBase<AXNodeData, AXTreeData>::ToString() const {
   }
 
   if (node_id_to_clear != AXNode::kInvalidAXID) {
-    result += "AXTreeUpdate: clear node " +
-              std::to_string(node_id_to_clear) + "\n";
+    result +=
+        "AXTreeUpdate: clear node " + std::to_string(node_id_to_clear) + "\n";
   }
 
   if (root_id != AXNode::kInvalidAXID) {

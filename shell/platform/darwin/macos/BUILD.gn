@@ -82,9 +82,7 @@ source_set("flutter_framework_source") {
 
   sources += _flutter_framework_headers
 
-  public_deps = [
-    "//flutter/third_party/accessibility",
-  ]
+  public_deps = [ "//flutter/third_party/accessibility" ]
 
   deps = [
     "//flutter/flow:flow",
@@ -96,8 +94,8 @@ source_set("flutter_framework_source") {
   ]
 
   public_configs = [
-    "//flutter:config",
     "//flutter/third_party/accessibility:accessibility_config",
+    "//flutter:config",
   ]
 
   defines = [

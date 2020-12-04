@@ -116,9 +116,9 @@
   return NSAccessibilityGroupRole;
 }
 
-- (NSString*) accessibilityLabel {
+- (NSString*)accessibilityLabel {
   NSString* applicationName =
-    [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+      [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
   if (!applicationName) {
     applicationName = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleName"];
   }

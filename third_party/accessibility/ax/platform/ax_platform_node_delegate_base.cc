@@ -6,12 +6,12 @@
 
 #include <vector>
 
-#include "base/no_destructor.h"
 #include "ax/ax_action_data.h"
 #include "ax/ax_constants.h"
 #include "ax/ax_node_data.h"
 #include "ax/ax_role_properties.h"
 #include "ax/ax_tree_data.h"
+#include "base/no_destructor.h"
 
 #include "ax_platform_node.h"
 #include "ax_platform_node_base.h"
@@ -213,16 +213,16 @@ int AXPlatformNodeDelegateBase::ChildIteratorBase::GetIndexInParent() const {
   return index_;
 }
 
-AXPlatformNodeDelegate& AXPlatformNodeDelegateBase::ChildIteratorBase::
-operator*() const {
+AXPlatformNodeDelegate&
+AXPlatformNodeDelegateBase::ChildIteratorBase::operator*() const {
   AXPlatformNode* platform_node =
       AXPlatformNode::FromNativeViewAccessible(GetNativeViewAccessible());
   FML_DCHECK(platform_node && platform_node->GetDelegate());
   return *(platform_node->GetDelegate());
 }
 
-AXPlatformNodeDelegate* AXPlatformNodeDelegateBase::ChildIteratorBase::
-operator->() const {
+AXPlatformNodeDelegate*
+AXPlatformNodeDelegateBase::ChildIteratorBase::operator->() const {
   AXPlatformNode* platform_node =
       AXPlatformNode::FromNativeViewAccessible(GetNativeViewAccessible());
   return platform_node ? platform_node->GetDelegate() : nullptr;
@@ -406,8 +406,7 @@ bool AXPlatformNodeDelegateBase::IsTableCellOrHeader() const {
 }
 
 std::optional<int> AXPlatformNodeDelegateBase::GetTableCellColIndex() const {
-  return GetData().GetIntAttribute(
-      ax::IntAttribute::kTableCellColumnIndex);
+  return GetData().GetIntAttribute(ax::IntAttribute::kTableCellColumnIndex);
 }
 
 std::optional<int> AXPlatformNodeDelegateBase::GetTableCellRowIndex() const {
@@ -415,8 +414,7 @@ std::optional<int> AXPlatformNodeDelegateBase::GetTableCellRowIndex() const {
 }
 
 std::optional<int> AXPlatformNodeDelegateBase::GetTableCellColSpan() const {
-  return GetData().GetIntAttribute(
-      ax::IntAttribute::kTableCellColumnSpan);
+  return GetData().GetIntAttribute(ax::IntAttribute::kTableCellColumnSpan);
 }
 
 std::optional<int> AXPlatformNodeDelegateBase::GetTableCellRowSpan() const {
@@ -425,8 +423,7 @@ std::optional<int> AXPlatformNodeDelegateBase::GetTableCellRowSpan() const {
 
 std::optional<int> AXPlatformNodeDelegateBase::GetTableCellAriaColIndex()
     const {
-  return GetData().GetIntAttribute(
-      ax::IntAttribute::kAriaCellColumnIndex);
+  return GetData().GetIntAttribute(ax::IntAttribute::kAriaCellColumnIndex);
 }
 
 std::optional<int> AXPlatformNodeDelegateBase::GetTableCellAriaRowIndex()

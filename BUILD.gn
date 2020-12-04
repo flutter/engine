@@ -101,8 +101,13 @@ group("flutter") {
       "//flutter/testing:testing_unittests",
       "//flutter/third_party/tonic/tests:tonic_unittests",
       "//flutter/third_party/txt:txt_unittests",
-      "//flutter/third_party/accessibility:accessibility_unittests",
     ]
+
+    # The accessibility library only supports Mac for now.
+    if (is_mac) {
+      public_deps +=
+          [ "//flutter/third_party/accessibility:accessibility_unittests" ]
+    }
 
     if (is_fuchsia) {
       public_deps += [ "//flutter/shell/platform/fuchsia:tests" ]

@@ -27,7 +27,8 @@ FlutterEngine* CreateTestEngine() {
 
 TEST(FlutterAccessibilityMac, Basics) {
   FlutterEngine* engine = CreateTestEngine();
-  ax::FlutterAccessibilityMac* accessibility = static_cast<ax::FlutterAccessibilityMac*>(ax::FlutterAccessibility::Create());
+  ax::FlutterAccessibilityMac* accessibility =
+      static_cast<ax::FlutterAccessibilityMac*>(ax::FlutterAccessibility::Create());
   ax::AccessibilityBridge bridge((void*)CFBridgingRetain(engine));
   // Initialize ax node data.
   ax::AXNodeData ax_node_data;
@@ -50,7 +51,8 @@ TEST(FlutterAccessibilityMac, Basics) {
 
 TEST(FlutterAccessibilityMac, CanPerformAction) {
   FlutterEngine* engine = CreateTestEngine();
-  ax::FlutterAccessibilityMac* accessibility = static_cast<ax::FlutterAccessibilityMac*>(ax::FlutterAccessibility::Create());
+  ax::FlutterAccessibilityMac* accessibility =
+      static_cast<ax::FlutterAccessibilityMac*>(ax::FlutterAccessibility::Create());
   ax::AccessibilityBridge bridge((void*)CFBridgingRetain(engine));
   // Initialize ax node data.
   ax::AXNodeData ax_node_data;
@@ -68,18 +70,13 @@ TEST(FlutterAccessibilityMac, CanPerformAction) {
   uint64_t called_id;
 
   engine.embedderAPI.DispatchSemanticsAction = MOCK_ENGINE_PROC(
-      DispatchSemanticsAction, ([&called_id, &called_action](
-        auto engine,
-        uint64_t id,
-        FlutterSemanticsAction action,
-        const uint8_t* data,
-        size_t data_length
-      ) {
+      DispatchSemanticsAction,
+      ([&called_id, &called_action](auto engine, uint64_t id, FlutterSemanticsAction action,
+                                    const uint8_t* data, size_t data_length) {
         called_id = id;
         called_action = action;
         return kSuccess;
-      })
-  );
+      }));
 
   // Performs an AXAction.
   ax::AXActionData action_data;
@@ -87,7 +84,7 @@ TEST(FlutterAccessibilityMac, CanPerformAction) {
   accessibility->AccessibilityPerformAction(action_data);
 
   EXPECT_EQ(called_action, FlutterSemanticsAction::kFlutterSemanticsActionTap);
-  EXPECT_EQ(called_id, 1u);  
+  EXPECT_EQ(called_id, 1u);
   [engine shutDownEngine];
 }
 

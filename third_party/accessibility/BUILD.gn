@@ -13,46 +13,47 @@ config("accessibility_config") {
 source_set("accessibility") {
   defines = []
 
-  sources = [
-    # ax_build/
-    
-    "ax_build/build_config.h",
+  # ax_build/
+  sources = [ "ax_build/build_config.h" ]
 
-    # base/
-    
+  # base/
+  sources += [
     "base/auto_reset.h",
     "base/no_destructor.h",
+  ]
 
-    # gfx/
-    
+  # gfx/
+  sources += [
     "gfx/mac/coordinate_conversion.h",
     "gfx/mac/coordinate_conversion.mm",
     "gfx/native_widget_types.h",
+  ]
 
-    # ax/platform
-    
-    "ax/platform/ax_platform_node_base.cc",
-    "ax/platform/ax_platform_node_base.h",
-    "ax/platform/ax_platform_node_delegate_base.cc",
-    "ax/platform/ax_platform_node_delegate_base.h",
-    "ax/platform/ax_platform_node_delegate.h",
+  # ax/platform
+  sources += [
     "ax/platform/ax_platform_node.cc",
     "ax/platform/ax_platform_node.h",
+    "ax/platform/ax_platform_node_base.cc",
+    "ax/platform/ax_platform_node_base.h",
+    "ax/platform/ax_platform_node_delegate.h",
+    "ax/platform/ax_platform_node_delegate_base.cc",
+    "ax/platform/ax_platform_node_delegate_base.h",
     "ax/platform/ax_platform_text_boundary.cc",
     "ax/platform/ax_platform_text_boundary.h",
     "ax/platform/ax_unique_id.cc",
     "ax/platform/ax_unique_id.h",
     "ax/platform/compute_attributes.cc",
     "ax/platform/compute_attributes.h",
-    
-    # ax/
+  ]
 
+  # ax/
+  sources += [
     "ax/ax_action_data.cc",
     "ax/ax_action_data.h",
-    "ax/ax_action_handler_base.cc",
-    "ax/ax_action_handler_base.h",
     "ax/ax_action_handler.cc",
     "ax/ax_action_handler.h",
+    "ax/ax_action_handler_base.cc",
+    "ax/ax_action_handler_base.h",
     "ax/ax_base_export.h",
     "ax/ax_clipping_behavior.h",
     "ax/ax_constants.h",
@@ -65,18 +66,18 @@ source_set("accessibility") {
     "ax/ax_event_intent.cc",
     "ax/ax_event_intent.h",
     "ax/ax_export.h",
-    "ax/ax_mode_observer.h",
     "ax/ax_mode.cc",
     "ax/ax_mode.h",
-    "ax/ax_offscreen_result.h",
+    "ax/ax_mode_observer.h",
+    "ax/ax_node.cc",
+    "ax/ax_node.h",
     "ax/ax_node_data.cc",
     "ax/ax_node_data.h",
     "ax/ax_node_position.cc",
     "ax/ax_node_position.h",
     "ax/ax_node_text_styles.cc",
     "ax/ax_node_text_styles.h",
-    "ax/ax_node.cc",
-    "ax/ax_node.h",
+    "ax/ax_offscreen_result.h",
     "ax/ax_position.h",
     "ax/ax_relative_bounds.cc",
     "ax/ax_relative_bounds.h",
@@ -84,22 +85,24 @@ source_set("accessibility") {
     "ax/ax_role_properties.h",
     "ax/ax_table_info.cc",
     "ax/ax_table_info.h",
+    "ax/ax_tree.cc",
+    "ax/ax_tree.h",
     "ax/ax_tree_data.cc",
     "ax/ax_tree_data.h",
-    "ax/ax_tree_id_registry.cc",
-    "ax/ax_tree_id_registry.h",
     "ax/ax_tree_id.cc",
     "ax/ax_tree_id.h",
+    "ax/ax_tree_id_registry.cc",
+    "ax/ax_tree_id_registry.h",
+    "ax/ax_tree_manager.h",
     "ax/ax_tree_manager_map.cc",
     "ax/ax_tree_manager_map.h",
-    "ax/ax_tree_manager.h",
     "ax/ax_tree_observer.cc",
     "ax/ax_tree_observer.h",
     "ax/ax_tree_update.h",
-    "ax/ax_tree.cc",
-    "ax/ax_tree.h",
+  ]
 
-    # /
+  # /
+  sources += [
     "accessibility_bridge.cc",
     "accessibility_bridge.h",
     "flutter_accessibility.cc",
@@ -120,8 +123,8 @@ source_set("accessibility") {
   ]
 
   public_configs = [
+    ":accessibility_config",
     "//flutter:config",
-    ":accessibility_config"
   ]
 
   deps = [ "//third_party/skia" ]
@@ -153,8 +156,8 @@ if (enable_unittests) {
     ]
 
     deps = [
-      ":accessibility_fixtures",
       ":accessibility",
+      ":accessibility_fixtures",
       "//flutter/testing",
     ]
   }

@@ -23,8 +23,7 @@ bool IsActiveLiveRegion(const AXTreeObserver::Change& change) {
 bool IsContainedInLiveRegion(const AXTreeObserver::Change& change) {
   return change.node->data().HasStringAttribute(
              ax::StringAttribute::kContainerLiveStatus) &&
-         change.node->data().HasStringAttribute(
-             ax::StringAttribute::kName);
+         change.node->data().HasStringAttribute(ax::StringAttribute::kName);
 }
 
 bool HasEvent(const std::set<AXEventGenerator::EventParams>& node_events,
@@ -219,8 +218,7 @@ void AXEventGenerator::AddEvent(AXNode* node, AXEventGenerator::Event event) {
     return;
 
   std::set<EventParams>& node_events = tree_events_[node];
-  node_events.emplace(event, ax::EventFrom::kNone,
-                      tree_->event_intents());
+  node_events.emplace(event, ax::EventFrom::kNone, tree_->event_intents());
 }
 
 void AXEventGenerator::OnNodeDataChanged(AXTree* tree,
@@ -445,8 +443,8 @@ void AXEventGenerator::OnIntAttributeChanged(AXTree* tree,
                            &was_enabled, &was_readonly);
       bool is_enabled;
       bool is_readonly;
-      GetRestrictionStates(static_cast<ax::Restriction>(new_value),
-                           &is_enabled, &is_readonly);
+      GetRestrictionStates(static_cast<ax::Restriction>(new_value), &is_enabled,
+                           &is_readonly);
 
       if (was_enabled != is_enabled) {
         AddEvent(node, Event::ENABLED_CHANGED);
@@ -738,12 +736,10 @@ void AXEventGenerator::FireLiveRegionEvents(AXNode* node) {
 
   if (live_root &&
       !live_root->data().GetBoolAttribute(ax::BoolAttribute::kBusy) &&
-      live_root->data().GetStringAttribute(
-          ax::StringAttribute::kLiveStatus) != "off") {
+      live_root->data().GetStringAttribute(ax::StringAttribute::kLiveStatus) !=
+          "off") {
     // Fire LIVE_REGION_NODE_CHANGED on each node that changed.
-    if (!node->data()
-             .GetStringAttribute(ax::StringAttribute::kName)
-             .empty())
+    if (!node->data().GetStringAttribute(ax::StringAttribute::kName).empty())
       AddEvent(node, Event::LIVE_REGION_NODE_CHANGED);
     // Fire LIVE_REGION_NODE_CHANGED on the root of the live region.
     AddEvent(live_root, Event::LIVE_REGION_CHANGED);
@@ -752,8 +748,8 @@ void AXEventGenerator::FireLiveRegionEvents(AXNode* node) {
 
 void AXEventGenerator::FireActiveDescendantEvents() {
   for (AXNode* node : active_descendant_changed_) {
-    AXNode* descendant = tree_->GetFromId(node->data().GetIntAttribute(
-        ax::IntAttribute::kActivedescendantId));
+    AXNode* descendant = tree_->GetFromId(
+        node->data().GetIntAttribute(ax::IntAttribute::kActivedescendantId));
     if (!descendant)
       continue;
     switch (descendant->data().role) {
@@ -807,16 +803,16 @@ void AXEventGenerator::FireRelationSourceEvents(AXTree* tree,
 
   std::for_each(tree->int_reverse_relations().begin(),
                 tree->int_reverse_relations().end(), callback);
-  std::for_each(
-      tree->intlist_reverse_relations().begin(),
-      tree->intlist_reverse_relations().end(), [&](auto& entry) {
-        // Explicitly exclude relationships for which an additional event on the
-        // source node would cause extra noise. For example, kRadioGroupIds
-        // forms relations among all radio buttons and serves little value for
-        // AT to get events on the previous radio button in the group.
-        if (entry.first != ax::IntListAttribute::kRadioGroupIds)
-          callback(entry);
-      });
+  std::for_each(tree->intlist_reverse_relations().begin(),
+                tree->intlist_reverse_relations().end(), [&](auto& entry) {
+                  // Explicitly exclude relationships for which an additional
+                  // event on the source node would cause extra noise. For
+                  // example, kRadioGroupIds forms relations among all radio
+                  // buttons and serves little value for AT to get events on the
+                  // previous radio button in the group.
+                  if (entry.first != ax::IntListAttribute::kRadioGroupIds)
+                    callback(entry);
+                });
 }
 
 // Attempts to suppress load-related events that we presume no AT will be
@@ -839,8 +835,8 @@ void AXEventGenerator::TrimEventsDueToAncestorIgnoredChanged(
   // Recursively compute and cache ancestor ignored changed results in
   // |ancestor_ignored_changed_map|, if |node|'s ancestors have become ignored
   // and the ancestor's ignored changed results have not been cached.
-  if (node->parent() &&
-      ancestor_ignored_changed_map.find(node->parent()) == ancestor_ignored_changed_map.end()) {
+  if (node->parent() && ancestor_ignored_changed_map.find(node->parent()) ==
+                            ancestor_ignored_changed_map.end()) {
     TrimEventsDueToAncestorIgnoredChanged(node->parent(),
                                           ancestor_ignored_changed_map);
   }
@@ -981,8 +977,10 @@ void AXEventGenerator::PostprocessEvents() {
     // existing node's parent has changed on the platform.
     if (HasEvent(node_events, Event::PARENT_CHANGED)) {
       while (parent && (tree_events_.find(parent) != tree_events_.end() ||
-                        removed_parent_changed_nodes.find(parent) != removed_parent_changed_nodes.end())) {
-        if ((removed_parent_changed_nodes.find(parent) != removed_parent_changed_nodes.end()||
+                        removed_parent_changed_nodes.find(parent) !=
+                            removed_parent_changed_nodes.end())) {
+        if ((removed_parent_changed_nodes.find(parent) !=
+                 removed_parent_changed_nodes.end() ||
              HasEvent(tree_events_[parent], Event::PARENT_CHANGED)) &&
             !HasEvent(tree_events_[parent], Event::SUBTREE_CREATED)) {
           RemoveEvent(&node_events, Event::PARENT_CHANGED);
@@ -997,10 +995,11 @@ void AXEventGenerator::PostprocessEvents() {
     // subtree created.
     parent = node->GetUnignoredParent();
     if (HasEvent(node_events, Event::SUBTREE_CREATED)) {
-      while (parent &&
-             (tree_events_.find(parent) != tree_events_.end() ||
-              removed_subtree_created_nodes.find(parent) != removed_subtree_created_nodes.end())) {
-        if (removed_subtree_created_nodes.find(parent) != removed_subtree_created_nodes.end() ||
+      while (parent && (tree_events_.find(parent) != tree_events_.end() ||
+                        removed_subtree_created_nodes.find(parent) !=
+                            removed_subtree_created_nodes.end())) {
+        if (removed_subtree_created_nodes.find(parent) !=
+                removed_subtree_created_nodes.end() ||
             HasEvent(tree_events_[parent], Event::SUBTREE_CREATED)) {
           RemoveEvent(&node_events, Event::SUBTREE_CREATED);
           removed_subtree_created_nodes.insert(node);

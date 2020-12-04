@@ -44,9 +44,8 @@ AXTreeManager* AXTreeManagerMap::GetManagerForChildTree(
     return nullptr;
   }
 
-  AXTreeID child_tree_id =
-      AXTreeID::FromString(parent_node.data().GetStringAttribute(
-          ax::StringAttribute::kChildTreeId));
+  AXTreeID child_tree_id = AXTreeID::FromString(
+      parent_node.data().GetStringAttribute(ax::StringAttribute::kChildTreeId));
   AXTreeManager* child_tree_manager =
       AXTreeManagerMap::GetInstance().GetManager(child_tree_id);
 
@@ -56,7 +55,7 @@ AXTreeManager* AXTreeManagerMap::GetManagerForChildTree(
     return nullptr;
 
   FML_DCHECK(child_tree_manager->GetParentNodeFromParentTreeAsAXNode()->id() ==
-         parent_node.id());
+             parent_node.id());
 
   return child_tree_manager;
 }

@@ -47,15 +47,13 @@ AX_BASE_EXPORT bool IsCellOrTableHeader(const ax::Role role);
 
 // Returns true if the provided role belongs to a container with selectable
 // children.
-AX_BASE_EXPORT bool IsContainerWithSelectableChildren(
-    const ax::Role role);
+AX_BASE_EXPORT bool IsContainerWithSelectableChildren(const ax::Role role);
 
 // Returns true if the provided role is a control.
 AX_BASE_EXPORT bool IsControl(const ax::Role role);
 
 // Returns true if the provided role is a control on the Android platform.
-AX_BASE_EXPORT bool IsControlOnAndroid(const ax::Role role,
-                                       bool isFocusable);
+AX_BASE_EXPORT bool IsControlOnAndroid(const ax::Role role, bool isFocusable);
 
 // Returns true if the provided role belongs to a document.
 AX_BASE_EXPORT bool IsDocument(const ax::Role role);
@@ -188,8 +186,7 @@ AX_BASE_EXPORT bool SupportsSelected(const ax::Role role);
 AX_BASE_EXPORT bool SupportsToggle(const ax::Role role);
 
 // Returns true if the node should be read only by default
-AX_BASE_EXPORT bool ShouldHaveReadonlyStateByDefault(
-    const ax::Role role);
+AX_BASE_EXPORT bool ShouldHaveReadonlyStateByDefault(const ax::Role role);
 
 }  // namespace ax
 

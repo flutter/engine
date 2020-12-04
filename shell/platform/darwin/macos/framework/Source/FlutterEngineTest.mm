@@ -61,11 +61,8 @@ TEST(FlutterEngine, CanCreateAccessibility) {
   std::function<void(const FlutterSemanticsCustomAction*, void*)> update_action_callback;
   engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
       Initialize, ([&update_action_callback, &update_node_callback, &original_init](
-        size_t version,
-        const FlutterRendererConfig* config,
-        const FlutterProjectArgs* args,
-        void* user_data,
-        auto engine_out) {
+                       size_t version, const FlutterRendererConfig* config,
+                       const FlutterProjectArgs* args, void* user_data, auto engine_out) {
         update_node_callback = args->update_semantics_node_callback;
         update_action_callback = args->update_semantics_custom_action_callback;
         return original_init(version, config, args, user_data, engine_out);
@@ -76,11 +73,11 @@ TEST(FlutterEngine, CanCreateAccessibility) {
   [engine setViewController:viewControllerMock];
   // Enable the semantics.
   bool enabled_called = false;
-  engine.embedderAPI.UpdateSemanticsEnabled = MOCK_ENGINE_PROC(
-      UpdateSemanticsEnabled, ([&enabled_called](auto engine, bool enabled) {
-        enabled_called = enabled; 
-        return kSuccess;
-      }));
+  engine.embedderAPI.UpdateSemanticsEnabled =
+      MOCK_ENGINE_PROC(UpdateSemanticsEnabled, ([&enabled_called](auto engine, bool enabled) {
+                         enabled_called = enabled;
+                         return kSuccess;
+                       }));
 
   [engine updateSemanticsEnabled:true];
   EXPECT_TRUE(enabled_called);

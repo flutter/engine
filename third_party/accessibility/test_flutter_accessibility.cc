@@ -10,11 +10,16 @@ FlutterAccessibility* FlutterAccessibility::Create() {
   return new TestFlutterAccessibility();
 }
 
-void TestFlutterAccessibility::OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event) {
+void TestFlutterAccessibility::OnAccessibilityEvent(
+    AXEventGenerator::TargetedEvent targeted_event) {
   accessibilitiy_events.push_back(targeted_event);
 }
 
-void TestFlutterAccessibility::DispatchAccessibilityAction(uint16_t target, FlutterSemanticsAction action, uint8_t* data, size_t data_size) {
+void TestFlutterAccessibility::DispatchAccessibilityAction(
+    uint16_t target,
+    FlutterSemanticsAction action,
+    uint8_t* data,
+    size_t data_size) {
   performed_actions.push_back(action);
 }
 
