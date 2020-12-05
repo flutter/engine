@@ -29,7 +29,7 @@ class PlatformHandler {
   // value in a dictionary with the given |key|.
   virtual void GetPlainText(
       std::unique_ptr<MethodResult<rapidjson::Document>> result,
-      const char* key) = 0;
+      std::string_view key) = 0;
 
   // Sets the clipboard's plain text to |text|, and reports the result (either
   // an error, or null for success) to |result|.

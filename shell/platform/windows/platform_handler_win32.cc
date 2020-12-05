@@ -200,7 +200,7 @@ PlatformHandlerWin32::~PlatformHandlerWin32() = default;
 
 void PlatformHandlerWin32::GetPlainText(
     std::unique_ptr<MethodResult<rapidjson::Document>> result,
-    const char* key) {
+    std::string_view key) {
   ScopedClipboard clipboard;
   if (!clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()))) {
     rapidjson::Document error_code;
@@ -224,7 +224,7 @@ void PlatformHandlerWin32::GetPlainText(
   document.SetObject();
   rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
   document.AddMember(
-      rapidjson::Value(key, allocator),
+      rapidjson::Value(key.data(), allocator),
       rapidjson::Value(Utf8FromUtf16(*clipboard_string), allocator), allocator);
   result->Success(document);
 }

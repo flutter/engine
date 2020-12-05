@@ -23,7 +23,7 @@ PlatformHandlerWinUwp::~PlatformHandlerWinUwp() = default;
 
 void PlatformHandlerWinUwp::GetPlainText(
     std::unique_ptr<MethodResult<rapidjson::Document>> result,
-    const char* key) {
+    std::string_view key) {
   // TODO: Implement. See https://github.com/flutter/flutter/issues/70214.
   result->NotImplemented();
 }
