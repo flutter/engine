@@ -213,6 +213,9 @@ struct KeyboardState {
 
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
+
+  // A method channel for platform view functionality.
+  FlutterMethodChannel* _platformViewsChannel;
 }
 
 @dynamic view;
@@ -228,6 +231,7 @@ static void CommonInit(FlutterViewController* controller) {
   }
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
+  controller->_factories = [[NSMutableDictionary alloc] init];
 }
 
 - (instancetype)initWithCoder:(NSCoder*)coder {
@@ -435,10 +439,70 @@ static void CommonInit(FlutterViewController* controller) {
       [FlutterMethodChannel methodChannelWithName:@"flutter/platform"
                                   binaryMessenger:_engine.binaryMessenger
                                             codec:[FlutterJSONMethodCodec sharedInstance]];
+
+  _platformViewsChannel =
+      [FlutterMethodChannel methodChannelWithName:@"flutter/platform_views"
+                                  binaryMessenger:_engine.binaryMessenger
+                                            codec:[FlutterStandardMethodCodec sharedInstance]];
+
   __weak FlutterViewController* weakSelf = self;
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [weakSelf handleMethodCall:call result:result];
   }];
+
+  [_platformViewsChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [weakSelf handleMethodCall:call result:result];
+  }];
+}
+
+- (void)onCreate:(nonnull FlutterMethodCall*)call result:(nonnull FlutterResult)result {
+  NSMutableDictionary<NSString*, id>* args = [call arguments];
+  int64_t viewId = [args[@"id"] longValue];
+  NSString* viewType = [NSString stringWithUTF8String:([args[@"viewType"] UTF8String])];
+
+  if (_platformViews.count(viewId) != 0) {
+    result([FlutterError errorWithCode:@"recreating_view"
+                               message:@"trying to create an already created view"
+                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
+  }
+
+  NSObject<FlutterPlatformViewFactory>* factory = _factories[viewType];
+  if (factory == nil) {
+    result([FlutterError errorWithCode:@"unregistered_view_type"
+                               message:@"trying to create a view with an unregistered type"
+                               details:[NSString stringWithFormat:@"unregistered view type: '%@'",
+                                                                  args[@"viewType"]]]);
+    return;
+  }
+
+  NSObject<FlutterPlatformView>* platform_view = [factory createWithFrame:CGRectZero
+                                                           viewIdentifier:viewId
+                                                                arguments:nil];
+
+  _platformViews[viewId] = [platform_view view];
+  result(nil);
+}
+
+- (void)onDispose:(nonnull FlutterMethodCall*)call result:(nonnull FlutterResult)result {
+  NSNumber* arg = [call arguments];
+  int64_t viewId = [arg longLongValue];
+  NSLog(@"onDispose ViewId: %lld", viewId);
+
+  if (_platformViews.count(viewId) == 0) {
+    result([FlutterError errorWithCode:@"unknown_view"
+                               message:@"trying to dispose an unknown"
+                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
+    return;
+  }
+
+  // The following FlutterGLCompositor::Present call will dispose the views.
+  _platformViewsToDispose.insert(viewId);
+  result(nil);
+}
+
+- (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
+                     withId:(nonnull NSString*)factoryId {
+  _factories[factoryId] = factory;
 }
 
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event {
@@ -614,6 +678,10 @@ static void CommonInit(FlutterViewController* controller) {
     result(nil);
   } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
     result(@{@"value" : @([self clipboardHasStrings])});
+  } else if ([[call method] isEqualToString:@"create"]) {
+    [self onCreate:call result:result];
+  } else if ([[call method] isEqualToString:@"dispose"]) {
+    [self onDispose:call result:result];
   } else {
     result(FlutterMethodNotImplemented);
   }

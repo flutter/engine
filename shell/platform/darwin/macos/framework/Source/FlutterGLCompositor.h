@@ -5,6 +5,7 @@
 #include <map>
 
 #include "flutter/fml/macros.h"
+#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -67,8 +68,16 @@ class FlutterGLCompositor {
   // created for the frame.
   bool frame_started_ = false;
 
+  // Update the backing CALayer using the backing store's specifications.
+  void PresentBackingStoreContent(
+      FlutterBackingStoreData* flutter_backing_store_data,
+      size_t layer_position);
+
   // Set frame_started_ to true and reset all layer state.
   void StartFrame();
+
+  // Remove platform views that are specified for deletion.
+  void DisposePlatformViews();
 
   // Creates a CALayer and adds it to ca_layer_map_ and increments
   // ca_layer_count_; Returns the key value (size_t) for the layer in
