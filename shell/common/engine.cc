@@ -507,4 +507,20 @@ const std::string& Engine::GetLastEntrypointLibrary() const {
   return last_entry_point_library_;
 }
 
+// |RuntimeDelegate|
+void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  return delegate_.RequestDartDeferredLibrary(loading_unit_id);
+}
+
+void Engine::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {
+  if (runtime_controller_->IsRootIsolateRunning()) {
+    runtime_controller_->LoadDartDeferredLibrary(
+        loading_unit_id, std::move(snapshot_data),
+        std::move(snapshot_instructions));
+  }
+}
+
 }  // namespace flutter

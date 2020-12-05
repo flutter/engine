@@ -8,11 +8,15 @@
 #include <iostream>
 #include <sstream>
 
+#include "flutter/shell/platform/common/cpp/client_wrapper/binary_messenger_impl.h"
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/basic_message_channel.h"
+#include "flutter/shell/platform/common/cpp/json_message_codec.h"
 #include "flutter/shell/platform/common/cpp/path_utils.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
+#include "third_party/rapidjson/include/rapidjson/document.h"
 
 namespace flutter {
 
@@ -115,12 +119,21 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
   plugin_registrar_->engine = this;
 
+  messenger_wrapper_ = std::make_unique<BinaryMessengerImpl>(messenger_.get());
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_.get());
 #ifndef WINUWP
   window_proc_delegate_manager_ =
       std::make_unique<Win32WindowProcDelegateManager>();
 #endif
+
+  // Set up internal channels.
+  // TODO: Replace this with an embedder.h API. See
+  // https://github.com/flutter/flutter/issues/71099
+  settings_channel_ =
+      std::make_unique<BasicMessageChannel<rapidjson::Document>>(
+          messenger_wrapper_.get(), "flutter/settings",
+          &JsonMessageCodec::GetInstance());
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -332,7 +345,15 @@ void FlutterWindowsEngine::SendSystemSettings() {
   embedder_api_.UpdateLocales(engine_, flutter_locale_list.data(),
                               flutter_locale_list.size());
 
-  // TODO: Send 'flutter/settings' channel settings here as well.
+  rapidjson::Document settings(rapidjson::kObjectType);
+  auto& allocator = settings.GetAllocator();
+  settings.AddMember("alwaysUse24HourFormat",
+                     Prefer24HourTime(GetUserTimeFormat()), allocator);
+  settings.AddMember("textScaleFactor", 1.0, allocator);
+  // TODO: Implement dark mode support.
+  // https://github.com/flutter/flutter/issues/54612
+  settings.AddMember("platformBrightness", "light", allocator);
+  settings_channel_->Send(settings);
 }
 
 }  // namespace flutter

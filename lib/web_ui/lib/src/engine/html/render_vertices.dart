@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 _GlRenderer? _glRenderer;
@@ -126,7 +126,7 @@ class _WebGlRenderer implements _GlRenderer {
     final String fragmentShader = _writeVerticesFragmentShader();
     _GlContext gl = _GlContextCache.createGlContext(widthInPixels, heightInPixels)!;
 
-    _GlProgram glProgram = gl.useAndCacheProgram(vertexShader, fragmentShader)!;
+    _GlProgram glProgram = gl.useAndCacheProgram(vertexShader, fragmentShader);
 
     Object transformUniform = gl.getUniformLocation(glProgram.program,
         'u_ctransform');
@@ -487,7 +487,7 @@ class _GlContext {
           left, top, _widthInPixels, _heightInPixels]);
   }
 
-  _GlProgram? useAndCacheProgram(
+  _GlProgram useAndCacheProgram(
       String vertexShaderSource, String fragmentShaderSource) {
     String cacheKey = '$vertexShaderSource||$fragmentShaderSource';
     _GlProgram? cachedProgram = _programCache[cacheKey];
@@ -833,7 +833,7 @@ class _GlContextCache {
           _GlContext.fromOffscreenCanvas(_offScreenCanvas!._canvas!);
     } else {
       _cachedContext ??= _GlContext.fromCanvas(_offScreenCanvas!._glCanvas!,
-          webGLVersion == 1);
+          webGLVersion == WebGLVersion.webgl1);
     }
     _cachedContext!.setViewportSize(widthInPixels, heightInPixels);
     return _cachedContext;

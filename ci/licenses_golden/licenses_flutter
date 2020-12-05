@@ -530,6 +530,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/shadow.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/test_embedding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/canvas_paragraph.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/font_collection.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/layout_service.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/line_break_properties.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/line_breaker.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/measurement.dart
@@ -590,6 +591,7 @@ FILE: ../../../flutter/runtime/dart_vm_unittests.cc
 FILE: ../../../flutter/runtime/embedder_resources.cc
 FILE: ../../../flutter/runtime/embedder_resources.h
 FILE: ../../../flutter/runtime/fixtures/runtime_test.dart
+FILE: ../../../flutter/runtime/fixtures/split_lib_test.dart
 FILE: ../../../flutter/runtime/isolate_configuration.cc
 FILE: ../../../flutter/runtime/isolate_configuration.h
 FILE: ../../../flutter/runtime/platform_data.cc
@@ -673,6 +675,8 @@ FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_metal.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_metal.mm
+FILE: ../../../flutter/shell/gpu/gpu_surface_metal_delegate.cc
+FILE: ../../../flutter/shell/gpu/gpu_surface_metal_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_software_delegate.cc
@@ -716,6 +720,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityDele
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityEvents.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterApplication.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterFragmentActivity.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPlayStoreSplitApplication.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidKeyProcessor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidTouchProcessor.java
@@ -747,6 +752,8 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/Flutte
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartExecutor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dynamicfeatures/DynamicFeatureManager.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dynamicfeatures/PlayStoreDynamicFeatureManager.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/ApplicationInfoLoader.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/FlutterApplicationInfo.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/FlutterLoader.java
@@ -808,6 +815,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StringCod
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/FlutterTextUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/ImeSyncDeferringInsetsCallback.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputConnectionAdaptor.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/ListenableEditingState.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/localization/LocalizationPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/mouse/MouseCursorPlugin.java
@@ -929,6 +937,8 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStan
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_codecs_unittest.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_standard_codec_unittest.mm
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Flutter.podspec
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h
@@ -1022,8 +1032,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_render_target_gl.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_render_target_gl.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_factory.h
-FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_factory.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_gl.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_gl.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_metal.h
@@ -1046,6 +1054,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPlug
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine.mm
@@ -1053,6 +1063,13 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngin
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositorUnittests.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h
@@ -1067,6 +1084,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.mm
@@ -1153,24 +1172,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/shim.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/snapshot.cc.tmpl
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/snapshot.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/snapshot.h
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/goodbye_dart/goodbye_dart.dart
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/goodbye_dart/goodbye_dart_test
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/goodbye_dart/meta/goodbye_dart_aot.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/goodbye_dart/meta/goodbye_dart_jit.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/greeting/greeting.dart
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/hello_app_dart/interfaces/hello.fidl
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/hello_app_dart/main.dart
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/hello_app_dart/meta/hello_app_dart_aot.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/hello_app_dart/meta/hello_app_dart_jit.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/hello_dart/bin/hello_dart.dart
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/hello_dart/meta/hello_dart_aot.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/hello_dart/meta/hello_dart_aot_product.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/hello_dart/meta/hello_dart_debug.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/hello_dart/meta/hello_dart_jit.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/examples/hello_dart/meta/hello_dart_jit_product.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/integration/main.dart
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/integration/meta/dart_aot_runner_test.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/integration/meta/dart_jit_runner_test.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/kernel/libraries.json
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/logging.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/main.cc
@@ -1293,6 +1294,9 @@ FILE: ../../../flutter/shell/platform/glfw/keyboard_hook_handler.h
 FILE: ../../../flutter/shell/platform/glfw/platform_handler.cc
 FILE: ../../../flutter/shell/platform/glfw/platform_handler.h
 FILE: ../../../flutter/shell/platform/glfw/public/flutter_glfw.h
+FILE: ../../../flutter/shell/platform/glfw/system_utils.cc
+FILE: ../../../flutter/shell/platform/glfw/system_utils.h
+FILE: ../../../flutter/shell/platform/glfw/system_utils_test.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/linux/egl_utils.cc

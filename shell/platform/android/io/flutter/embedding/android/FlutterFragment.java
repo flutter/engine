@@ -432,7 +432,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       this(FlutterFragment.class, engineId);
     }
 
-    protected CachedEngineFragmentBuilder(
+    public CachedEngineFragmentBuilder(
         @NonNull Class<? extends FlutterFragment> subclass, @NonNull String engineId) {
       this.fragmentClass = subclass;
       this.engineId = engineId;
@@ -608,17 +608,17 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     delegate.onAttach(context);
   }
 
+  @Override
+  public void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    delegate.onRestoreInstanceState(savedInstanceState);
+  }
+
   @Nullable
   @Override
   public View onCreateView(
       LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     return delegate.onCreateView(inflater, container, savedInstanceState);
-  }
-
-  @Override
-  public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-    super.onActivityCreated(savedInstanceState);
-    delegate.onActivityCreated(savedInstanceState);
   }
 
   @Override
@@ -984,7 +984,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   public PlatformPlugin providePlatformPlugin(
       @Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
     if (activity != null) {
-      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel());
+      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel(), this);
     } else {
       return null;
     }
@@ -1108,6 +1108,12 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       return false;
     }
     return true;
+  }
+
+  @Override
+  public boolean popSystemNavigator() {
+    // Hook for subclass. No-op if returns false.
+    return false;
   }
 
   private boolean stillAttachedForEvent(String event) {

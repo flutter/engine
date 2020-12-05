@@ -191,7 +191,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
   }
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (external_view_embedder_) {
+  if (surface_ && external_view_embedder_) {
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
   }
@@ -469,8 +469,9 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(surface_->GetContext(),
-                                           std::move(frame));
+      external_view_embedder_->SubmitFrame(
+          surface_->GetContext(), std::move(frame),
+          delegate_.GetIsGpuDisabledSyncSwitch());
     } else {
       frame->Submit();
     }

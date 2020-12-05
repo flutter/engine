@@ -164,9 +164,6 @@ class IntegrationTestsManager {
       e2eTestsToRun.add(basename);
     }
 
-    int numberOfPassedTests = 0;
-    int numberOfFailedTests = 0;
-
     final Set<String> buildModes = _getBuildModes();
 
     for (String fileName in e2eTestsToRun) {
@@ -175,9 +172,9 @@ class IntegrationTestsManager {
 
     final int numberOfTestsRun = _numberOfPassedTests + _numberOfFailedTests;
 
-    print('INFO: ${numberOfTestsRun} tests run. ${numberOfPassedTests} passed '
-        'and ${numberOfFailedTests} failed.');
-    return numberOfFailedTests == 0;
+    print('INFO: ${numberOfTestsRun} tests run. ${_numberOfPassedTests} passed '
+        'and ${_numberOfFailedTests} failed.');
+    return _numberOfFailedTests == 0;
   }
 
   Future<void> _runTestsTarget(
@@ -635,9 +632,28 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
     'treeshaking_integration.dart',
     'text_editing_integration.dart',
     'url_strategy_integration.dart',
+
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/71583
+    // The following tests are blocked to reduce the load on the build bot.
+    // The bot currently frequently exceeds the timeout limit.
+    'image_loading_integration.dart',
+    'platform_messages_integration.dart',
+    'profile_diagnostics_integration.dart',
+    'scroll_wheel_integration.dart',
   ],
   'profile': [],
-  'release': [],
+  'release': [
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/71583
+    // The following tests are blocked to reduce the load on the build bot.
+    // The bot currently frequently exceeds the timeout limit.
+    'image_loading_integration.dart',
+    'platform_messages_integration.dart',
+    'profile_diagnostics_integration.dart',
+    'scroll_wheel_integration.dart',
+    'text_editing_integration.dart',
+    'treeshaking_integration.dart',
+    'url_strategy_integration.dart',
+  ],
 };
 
 /// Tests blocked for one of the rendering backends.
@@ -647,8 +663,24 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
 // TODO(nurhan): Remove the failing test after fixing.
 const Map<String, List<String>> blockedTestsListsMapForRenderBackends =
     <String, List<String>>{
-  'auto': [],
+  'auto': [
+    'image_loading_integration.dart',
+    'platform_messages_integration.dart',
+    'profile_diagnostics_integration.dart',
+    'scroll_wheel_integration.dart',
+    'text_editing_integration.dart',
+    'treeshaking_integration.dart',
+    'url_strategy_integration.dart',
+  ],
   'html': [],
   // This test failed on canvaskit on all three build modes.
-  'canvaskit': ['image_loading_integration.dart'],
+  'canvaskit': [
+    'image_loading_integration.dart',
+    'platform_messages_integration.dart',
+    'profile_diagnostics_integration.dart',
+    'scroll_wheel_integration.dart',
+    'text_editing_integration.dart',
+    'treeshaking_integration.dart',
+    'url_strategy_integration.dart',
+  ],
 };

@@ -130,7 +130,7 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::GPU |
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
                              ThreadHost::Type::IO | ThreadHost::Type::UI);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
@@ -178,7 +178,7 @@ TEST_F(ShellTest,
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::GPU | ThreadHost::Type::IO | ThreadHost::Type::UI);
+      ThreadHost::Type::RASTER | ThreadHost::Type::IO | ThreadHost::Type::UI);
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
@@ -1001,7 +1001,13 @@ TEST_F(ShellTest,
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 // TODO(https://github.com/flutter/flutter/issues/66056): Deflake on all other
 // platforms
-TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
+TEST_F(ShellTest,
+#if defined(OS_FUCHSIA)
+       DISABLED_SkipAndSubmitFrame
+#else
+       SkipAndSubmitFrame
+#endif
+) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
@@ -1009,8 +1015,11 @@ TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-        external_view_embedder->UpdatePostPrerollResult(
-            PostPrerollResult::kSuccess);
+        if (should_resubmit_frame && !raster_thread_merger->IsMerged()) {
+          raster_thread_merger->MergeWithLease(10);
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
+        }
         end_frame_latch.Signal();
       };
   external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
@@ -1031,12 +1040,15 @@ TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
 
   // `EndFrame` changed the post preroll result to `kSuccess`.
   end_frame_latch.Wait();
-  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
-  PumpOneFrame(shell.get());
+  // Let the resubmitted frame to run and `GetSubmittedFrameCount` should be
+  // called.
   end_frame_latch.Wait();
+  // 2 frames are submitted because `kSkipAndRetryFrame`, but only the 2nd frame
+  // should be submitted with `external_view_embedder`, hence the below check.
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
 
+  PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
 }
 
@@ -1084,10 +1096,11 @@ TEST_F(ShellTest,
   // `external_view_embedder->GetSubmittedFrameCount()` is called.
   end_frame_latch.Wait();
   ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
-  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
   // This is the resubmitted frame, which threads are also merged.
   end_frame_latch.Wait();
+  // 2 frames are submitted because `kResubmitFrame`, but only the 2nd frame
+  // should be submitted with `external_view_embedder`, hence the below check.
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
 
   PlatformViewNotifyDestroyed(shell.get());
@@ -2085,13 +2098,11 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
                static_cast<double>(expected_size.height()));
 
   end_frame_latch.Wait();
-  // Even the threads are merged at the end of the frame,
-  // during the frame, the threads are not merged,
-  // So no `external_view_embedder->GetSubmittedFrameCount()` is called.
   ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
-  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
   end_frame_latch.Wait();
+  // 2 frames are submitted because `kResubmitFrame`, but only the 2nd frame
+  // should be submitted with `external_view_embedder`, hence the below check.
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
   ASSERT_EQ(expected_size, external_view_embedder->GetLastSubmittedFrameSize());
 

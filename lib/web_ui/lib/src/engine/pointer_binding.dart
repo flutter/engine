@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Set this flag to true to see all the fired events in the console.
@@ -412,6 +412,7 @@ class _ButtonSanitizer {
     }
 
     _pressedButtons = newPressedButtons;
+
     return _SanitizedDetails(
       change: _pressedButtons == 0
           ? ui.PointerChange.hover

@@ -530,6 +530,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsLink)) {
     traits |= UIAccessibilityTraitLink;
   }
+  if (traits == UIAccessibilityTraitNone && ![self hasChildren] &&
+      [[self accessibilityLabel] length] != 0 &&
+      ![self node].HasFlag(flutter::SemanticsFlags::kIsTextField)) {
+    traits = UIAccessibilityTraitStaticText;
+  }
   return traits;
 }
 
@@ -559,7 +564,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     _semanticsObject = object;
     auto controller = object.bridge->GetPlatformViewsController();
     if (controller) {
-      _platformView = [[controller->GetPlatformViewByID(object.node.platformViewId) view] retain];
+      _platformView = [controller->GetPlatformViewByID(object.node.platformViewId) retain];
     }
   }
   return self;

@@ -62,6 +62,7 @@ static const std::string gAllowedDartFlags[] = {
     "--profile_period",
     "--random_seed",
     "--sample-buffer-duration",
+    "--trace-kernel",
     "--trace-reload",
     "--trace-reload-verbose",
     "--write-service-info",
@@ -404,6 +405,12 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.purge_persistent_cache =
       command_line.HasOption(FlagForSwitch(Switch::PurgePersistentCache));
 
+  if (command_line.HasOption(FlagForSwitch(Switch::OldGenHeapSize))) {
+    std::string old_gen_heap_size;
+    command_line.GetOptionValue(FlagForSwitch(Switch::OldGenHeapSize),
+                                &old_gen_heap_size);
+    settings.old_gen_heap_size = std::stoi(old_gen_heap_size);
+  }
   return settings;
 }
 

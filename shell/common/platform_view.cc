@@ -159,4 +159,14 @@ PlatformView::ComputePlatformResolvedLocales(
   return out;
 }
 
+void PlatformView::RequestDartDeferredLibrary(intptr_t loading_unit_id) {}
+
+void PlatformView::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {}
+
+void PlatformView::UpdateAssetManager(
+    std::shared_ptr<AssetManager> asset_manager) {}
+
 }  // namespace flutter
