@@ -12,7 +12,7 @@ namespace flutter {
 std::unique_ptr<PlatformHandler> PlatformHandler::Create(
     BinaryMessenger* messenger,
     FlutterWindowsView* view) {
-  return std::make_unique<PlatformHandlerWinUwp>(mesenger, view);
+  return std::make_unique<PlatformHandlerWinUwp>(messenger, view);
 }
 
 PlatformHandlerWinUwp::PlatformHandlerWinUwp(BinaryMessenger* messenger,
