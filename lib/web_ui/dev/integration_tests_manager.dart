@@ -632,9 +632,28 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
     'treeshaking_integration.dart',
     'text_editing_integration.dart',
     'url_strategy_integration.dart',
+
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/71583
+    // The following tests are blocked to reduce the load on the build bot.
+    // The bot currently frequently exceeds the timeout limit.
+    'image_loading_integration.dart',
+    'platform_messages_integration.dart',
+    'profile_diagnostics_integration.dart',
+    'scroll_wheel_integration.dart',
   ],
   'profile': [],
-  'release': [],
+  'release': [
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/71583
+    // The following tests are blocked to reduce the load on the build bot.
+    // The bot currently frequently exceeds the timeout limit.
+    'image_loading_integration.dart',
+    'platform_messages_integration.dart',
+    'profile_diagnostics_integration.dart',
+    'scroll_wheel_integration.dart',
+    'text_editing_integration.dart',
+    'treeshaking_integration.dart',
+    'url_strategy_integration.dart',
+  ],
 };
 
 /// Tests blocked for one of the rendering backends.
@@ -644,8 +663,24 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
 // TODO(nurhan): Remove the failing test after fixing.
 const Map<String, List<String>> blockedTestsListsMapForRenderBackends =
     <String, List<String>>{
-  'auto': [],
+  'auto': [
+    'image_loading_integration.dart',
+    'platform_messages_integration.dart',
+    'profile_diagnostics_integration.dart',
+    'scroll_wheel_integration.dart',
+    'text_editing_integration.dart',
+    'treeshaking_integration.dart',
+    'url_strategy_integration.dart',
+  ],
   'html': [],
   // This test failed on canvaskit on all three build modes.
-  'canvaskit': ['image_loading_integration.dart'],
+  'canvaskit': [
+    'image_loading_integration.dart',
+    'platform_messages_integration.dart',
+    'profile_diagnostics_integration.dart',
+    'scroll_wheel_integration.dart',
+    'text_editing_integration.dart',
+    'treeshaking_integration.dart',
+    'url_strategy_integration.dart',
+  ],
 };
