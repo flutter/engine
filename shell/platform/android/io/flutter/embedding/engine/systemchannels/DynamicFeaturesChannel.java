@@ -35,54 +35,33 @@ public class DynamicFeaturesChannel {
           String method = call.method;
           Object args = call.arguments;
           Log.v(TAG, "Received '" + method + "' message.");
-          switch (method) {
-            case "SplitAot.installDynamicFeature":
-              try {
-                final JSONObject arguments = (JSONObject) args;
-                final int loadingUnitId = arguments.getInt("loadingUnitId");
-                final String moduleName = arguments.getString("moduleName");
+          try {
+            final JSONObject arguments = (JSONObject) args;
+            final int loadingUnitId = arguments.getInt("loadingUnitId");
+            final String moduleName = arguments.getString("moduleName");
+            switch (method) {
+              case "SplitAot.installDynamicFeature":
                 dynamicFeatureManager.installDynamicFeature(loadingUnitId, moduleName);
-              } catch (JSONException exception) {
-                result.error("error", exception.getMessage(), null);
-              }
-              result.success(null);
-              break;
-            case "SplitAot.getDynamicFeatureInstallState":
-              try {
-                final JSONObject arguments = (JSONObject) args;
-                final int loadingUnitId = arguments.getInt("loadingUnitId");
-                final String moduleName = arguments.getString("moduleName");
+                result.success(null);
+                break;
+              case "SplitAot.getDynamicFeatureInstallState":
                 dynamicFeatureManager.getDynamicFeatureInstallState(loadingUnitId, moduleName);
-              } catch (JSONException exception) {
-                result.error("error", exception.getMessage(), null);
-              }
-              result.success(null);
-              break;
-            case "SplitAot.loadAssets":
-              try {
-                final JSONObject arguments = (JSONObject) args;
-                final int loadingUnitId = arguments.getInt("loadingUnitId");
-                final String moduleName = arguments.getString("moduleName");
+                result.success(null);
+                break;
+              case "SplitAot.loadAssets":
                 dynamicFeatureManager.loadAssets(loadingUnitId, moduleName);
-              } catch (JSONException exception) {
-                result.error("error", exception.getMessage(), null);
-              }
-              result.success(null);
-              break;
-            case "SplitAot.loadDartLibrary":
-              try {
-                final JSONObject arguments = (JSONObject) args;
-                final int loadingUnitId = arguments.getInt("loadingUnitId");
-                final String moduleName = arguments.getString("moduleName");
+                result.success(null);
+                break;
+              case "SplitAot.loadDartLibrary":
                 dynamicFeatureManager.loadAssets(loadingUnitId, moduleName);
-              } catch (JSONException exception) {
-                result.error("error", exception.getMessage(), null);
-              }
-              result.success(null);
-              break;
-            default:
-              result.notImplemented();
-              break;
+                result.success(null);
+                break;
+              default:
+                result.notImplemented();
+                break;
+            }
+          } catch (JSONException exception) {
+            result.error("error", exception.getMessage(), null);
           }
         }
       };
