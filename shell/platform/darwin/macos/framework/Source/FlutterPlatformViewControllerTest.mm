@@ -11,9 +11,33 @@
 
 namespace flutter::testing {
 
+TEST(FlutterPlatformViewController, EmbeddedViewsDisabled) {
+  // Use id so we can access handleMethodCall method.
+  id platformViewController = [[FlutterPlatformViewController alloc] init];
+  [platformViewController setEmbeddedViewsEnabled:false];
+
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"create"
+                                        arguments:@{
+                                          @"id" : @2,
+                                          @"viewType" : @"FlutterPlatformViewMock"
+                                        }];
+
+  __block bool called = false;
+  FlutterResult result = ^(id result) {
+    called = true;
+  };
+
+  [platformViewController handleMethodCall:methodCall result:result];
+
+  // The call should not have happened if embeddedViewsEnabled is false.
+  EXPECT_FALSE(called);
+}
+
 TEST(FlutterPlatformViewController, TestCreatePlatformViewNoMatchingViewType) {
   // Use id so we can access handleMethodCall method.
   id platformViewController = [[FlutterPlatformViewController alloc] init];
+  [platformViewController setEmbeddedViewsEnabled:true];
 
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"create"
@@ -38,6 +62,7 @@ TEST(FlutterPlatformViewController, TestCreatePlatformViewNoMatchingViewType) {
 TEST(FlutterPlatformViewController, TestRegisterPlatformViewFactoryAndCreate) {
   // Use id so we can access handleMethodCall method.
   id platformViewController = [[FlutterPlatformViewController alloc] init];
+  [platformViewController setEmbeddedViewsEnabled:true];
 
   FlutterPlatformViewMockFactory* factory = [FlutterPlatformViewMockFactory alloc];
 
@@ -65,6 +90,7 @@ TEST(FlutterPlatformViewController, TestRegisterPlatformViewFactoryAndCreate) {
 TEST(FlutterPlatformViewController, TestCreateAndDispose) {
   // Use id so we can access handleMethodCall method.
   id platformViewController = [[FlutterPlatformViewController alloc] init];
+  [platformViewController setEmbeddedViewsEnabled:true];
 
   FlutterPlatformViewMockFactory* factory = [FlutterPlatformViewMockFactory alloc];
 
@@ -108,6 +134,7 @@ TEST(FlutterPlatformViewController, TestCreateAndDispose) {
 TEST(FlutterPlatformViewController, TestDisposeOnMissingViewId) {
   // Use id so we can access handleMethodCall method.
   id platformViewController = [[FlutterPlatformViewController alloc] init];
+  [platformViewController setEmbeddedViewsEnabled:true];
 
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"dispose"

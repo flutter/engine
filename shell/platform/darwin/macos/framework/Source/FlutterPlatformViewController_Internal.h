@@ -55,4 +55,15 @@
  */
 - (void)disposePlatformViews;
 
+/**
+ * Set _embedded_views_preview_enabled value.
+ */
+- (void)setEmbeddedViewsEnabled:(bool)embeddedViewsEnabled;
+
+/**
+ * Return whether or not platform views are enabled by looking for the
+ * io.flutter_embedded_views_preview flag in Info.plist.
+ */
++ (bool)embeddedViewsEnabled;
+
 @end

@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
@@ -15,6 +16,7 @@
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterResizeSynchronizer* _resizeSynchronizer;
   FlutterSurfaceManager* _surfaceManager;
+  bool _embedded_views_preview_enabled;
 }
 
 @end
@@ -42,6 +44,9 @@
 
     _reshapeListener = reshapeListener;
   }
+
+  _embedded_views_preview_enabled = [FlutterPlatformViewController embeddedViewsEnabled];
+
   return self;
 }
 
@@ -67,15 +72,30 @@
 }
 
 - (void)present {
-  [_resizeSynchronizer requestCommit];
+  // If _embedded_views_preview_enabled is true, the main and raster
+  // threads are merged. Thus we cannot call resizeSynchronizer::requestCommit
+  // as it blocks on the raster thread.
+  if (_embedded_views_preview_enabled) {
+    [self resizeSynchronizerFlush:_resizeSynchronizer];
+    [self resizeSynchronizerCommit:_resizeSynchronizer];
+  } else {
+    [_resizeSynchronizer requestCommit];
+  }
 }
 
 - (void)reshaped {
   CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
-  [_resizeSynchronizer beginResize:scaledSize
-                            notify:^{
-                              [_reshapeListener viewDidReshape:self];
-                            }];
+  // If _embedded_views_preview_enabled is true, the main and raster
+  // threads are merged. Thus we cannot call resizeSynchronizer::beginResize
+  // as it blocks on the main thread.
+  if (_embedded_views_preview_enabled) {
+    [_reshapeListener viewDidReshape:self];
+  } else {
+    [_resizeSynchronizer beginResize:scaledSize
+                              notify:^{
+                                [_reshapeListener viewDidReshape:self];
+                              }];
+  }
 }
 
 #pragma mark - NSView overrides

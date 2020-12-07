@@ -4,20 +4,29 @@
 
 #include "flutter/fml/logging.h"
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterConstants.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController_Internal.h"
 
-@implementation FlutterPlatformViewController
+@implementation FlutterPlatformViewController {
+  bool _embeddedViewsEnabled;
+}
 
 - (instancetype)init {
   self = [super init];
 
-  self->_platformViewFactories = [[NSMutableDictionary alloc] init];
+  _platformViewFactories = [[NSMutableDictionary alloc] init];
+  [self setEmbeddedViewsEnabled:[FlutterPlatformViewController embeddedViewsEnabled]];
   return self;
 }
 
 - (void)onCreateWithViewId:(int64_t)viewId
                   viewType:(nonnull NSString*)viewType
                     result:(nonnull FlutterResult)result {
+  if (!_embeddedViewsEnabled) {
+    NSLog(@"Must set `io.flutter_embedded_views_preview` to true in Info.plist to enable platform "
+          @"views");
+    return;
+  }
   if (_platformViews.count(viewId) != 0) {
     result([FlutterError errorWithCode:@"recreating_view"
                                message:@"trying to create an already created view"
@@ -42,6 +51,12 @@
 }
 
 - (void)onDisposeWithViewId:(int64_t)viewId result:(nonnull FlutterResult)result {
+  if (!_embeddedViewsEnabled) {
+    NSLog(@"Must set `io.flutter_embedded_views_preview` to true in Info.plist to enable platform "
+          @"views");
+    return;
+  }
+
   if (_platformViews.count(viewId) == 0) {
     result([FlutterError errorWithCode:@"unknown_view"
                                message:@"trying to dispose an unknown"
@@ -56,6 +71,11 @@
 
 - (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(nonnull NSString*)factoryId {
+  if (!_embeddedViewsEnabled) {
+    NSLog(@"Must set `io.flutter_embedded_views_preview` to true in Info.plist to enable platform "
+          @"views");
+    return;
+  }
   _platformViewFactories[factoryId] = factory;
 }
 
@@ -87,6 +107,14 @@
     _platformViews.erase(viewId);
   }
   _platformViewsToDispose.clear();
+}
+
+- (void)setEmbeddedViewsEnabled:(bool)embeddedViewsEnabled {
+  _embeddedViewsEnabled = embeddedViewsEnabled;
+}
+
++ (bool)embeddedViewsEnabled {
+  return [[[NSBundle mainBundle] objectForInfoDictionaryKey:@(kEmbeddedViewsPreview)] boolValue];
 }
 
 @end

@@ -310,10 +310,17 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       },
       .identifier = ++sTaskRunnerIdentifiers,
   };
+
+  bool embedded_views_preview_enabled = [FlutterPlatformViewController embeddedViewsEnabled];
+
   const FlutterCustomTaskRunners custom_task_runners = {
       .struct_size = sizeof(FlutterCustomTaskRunners),
       .platform_task_runner = &cocoa_task_runner_description,
-  };
+      // If platform views are enabled, set the render thread to the platform thread.
+      // Otherwise the render thread is created separately in embedder_thread_host.cc.
+      .render_task_runner =
+          embedded_views_preview_enabled ? &cocoa_task_runner_description : nullptr};
+
   flutterArguments.custom_task_runners = &custom_task_runners;
 
   [self loadAOTData:_project.assetsPath];
