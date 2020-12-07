@@ -306,9 +306,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return nullptr;
   }
 
-  [_mainOpenGLContext makeCurrentContext];
+  [_openGLRenderer.openGLContext makeCurrentContext];
 
-  _macOSGLCompositor = std::make_unique<flutter::FlutterGLCompositor>(_viewController);
+  _macOSGLCompositor = std::make_unique<flutter::FlutterGLCompositor>(
+      _viewController, _openGLRenderer.openGLContext);
 
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);
@@ -339,7 +340,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   __weak FlutterEngine* weak_self = self;
   _macOSGLCompositor->SetPresentCallback(
-      [weak_self]() { return [weak_self engineCallbackOnPresent]; });
+      [weak_self]() { return [weak_self.openGLRenderer present]; });
 
   _compositor.avoid_backing_store_cache = true;
 
