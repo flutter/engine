@@ -17,7 +17,6 @@
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer_wayland.h"
 #include "flutter/shell/platform/linux/fl_renderer_x11.h"
-#include "flutter/shell/platform/linux/fl_settings_plugin.h"
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
@@ -43,7 +42,6 @@ struct _FlView {
   FlKeyEventPlugin* key_event_plugin;
   FlMouseCursorPlugin* mouse_cursor_plugin;
   FlPlatformPlugin* platform_plugin;
-  FlSettingsPlugin* settings_plugin;
   FlTextInputPlugin* text_input_plugin;
 };
 
@@ -164,7 +162,6 @@ static void fl_view_constructed(GObject* object) {
       fl_key_event_plugin_new(messenger, self->text_input_plugin);
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
-  self->settings_plugin = fl_settings_plugin_new(messenger);
   self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
 }
 
@@ -222,7 +219,6 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->key_event_plugin);
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
-  g_clear_object(&self->settings_plugin);
   g_clear_object(&self->text_input_plugin);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
@@ -244,8 +240,6 @@ static void fl_view_realize(GtkWidget* widget) {
     g_warning("Failed to start Flutter engine: %s", error->message);
     return;
   }
-
-  fl_settings_plugin_start(self->settings_plugin);
 }
 
 // Implements GtkWidget::size-allocate.
