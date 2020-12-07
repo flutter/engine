@@ -673,7 +673,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
       text.length,
       ...utf8.encode(text),
     ]);
-    // random comments.
+
     dispatcher.sendPlatformMessage(
       'flutter/platform_views',
       message.buffer.asByteData(),
