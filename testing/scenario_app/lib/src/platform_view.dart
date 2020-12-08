@@ -617,8 +617,8 @@ class PlatformViewForTouchIOSScenario extends Scenario
 /// For example, it simulates a video being played.
 class PlatformViewWithContinuousTexture extends PlatformViewScenario {
   /// Constructs a platform view with continuous texture layer.
-  PlatformViewWithContinuousTexture(PlatformDispatcher dispatcher, String text, { int id = 0 })
-      : super(dispatcher, text, id: id);
+  PlatformViewWithContinuousTexture(Window window, String text, { int id = 0 })
+      : super(window, text, id: id);
 
   @override
   void onBeginFrame(Duration duration) {
