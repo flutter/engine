@@ -1,4 +1,4 @@
-Signature: 78c2d032f584b8c8642fe77a105756ba
+Signature: 2ff7a4248545ec201d8bf48c6c8d7034
 
 UNUSED LICENSES:
 
@@ -9139,6 +9139,7 @@ FILE: ../../../third_party/dart/runtime/platform/undefined_behavior_sanitizer.h
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/bin/main.dart
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/cquery_driver.dart
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/xref_extractor.dart
+FILE: ../../../third_party/dart/runtime/vm/canonical_tables.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler_tracer.cc
