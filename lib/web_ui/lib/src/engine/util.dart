@@ -334,7 +334,7 @@ String _pathToSvgClipPath(ui.Path path,
 
   final String clipId = 'svgClip$_clipIdCounter';
 
-  if (true || browserEngine == BrowserEngine.firefox) {
+  if (browserEngine == BrowserEngine.firefox) {
     // Firefox objectBoundingBox fails to scale to 1x1 units, instead use
     // no clipPathUnits but write the path in target units.
     sb.write('<clipPath id=$clipId>');
