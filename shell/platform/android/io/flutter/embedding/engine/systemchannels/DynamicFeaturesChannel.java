@@ -82,6 +82,12 @@ public class DynamicFeaturesChannel {
     moduleNameToResults = new HashMap<>();
   }
 
+  /**
+   * Finishes the `installDynamicFeature` method channel call for the specified moduleName
+   * with a success.
+   *
+   * @param moduleName The name of the android dynamic feature module install request to complete.
+   */
   public void completeInstallSuccess(String moduleName) {
     if (moduleNameToResults.containsKey(moduleName)) {
       for (MethodChannel.Result result : moduleNameToResults.get(moduleName)) {
@@ -92,6 +98,13 @@ public class DynamicFeaturesChannel {
     return;
   }
 
+  /**
+   * Finishes the `installDynamicFeature` method channel call for the specified moduleName
+   * with an error/failure.
+   *
+   * @param moduleName The name of the android dynamic feature module install request to complete.
+   * @param errorMessage The error message to display to complete the future with.
+   */
   public void completeInstallError(String moduleName, String errorMessage) {
     if (moduleNameToResults.containsKey(moduleName)) {
       for (MethodChannel.Result result : moduleNameToResults.get(moduleName)) {
@@ -101,5 +114,4 @@ public class DynamicFeaturesChannel {
     }
     return;
   }
-
 }
