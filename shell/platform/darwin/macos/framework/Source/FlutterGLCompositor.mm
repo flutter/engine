@@ -18,10 +18,15 @@
 
 namespace flutter {
 
-FlutterGLCompositor::FlutterGLCompositor(FlutterViewController* view_controller)
+FlutterGLCompositor::FlutterGLCompositor(FlutterViewController* view_controller,
+                                         FlutterPlatformViewController* platform_view_controller)
     : open_gl_context_(view_controller.flutterView.openGLContext) {
   FML_CHECK(view_controller != nullptr) << "FlutterViewController* cannot be nullptr";
+  FML_CHECK(platform_view_controller != nullptr)
+      << "FlutterPlatformViewController* cannot be nullptr";
+
   view_controller_ = view_controller;
+  platform_view_controller_ = platform_view_controller;
 }
 
 bool FlutterGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
@@ -71,7 +76,7 @@ bool FlutterGLCompositor::CollectBackingStore(const FlutterBackingStore* backing
 }
 
 bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
-  DisposePlatformViews();
+  [platform_view_controller_ disposePlatformViews];
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
     FlutterBackingStore* backing_store = const_cast<FlutterBackingStore*>(layer->backing_store);
@@ -85,9 +90,15 @@ bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_cou
         break;
       }
       case kFlutterLayerContentTypePlatformView:
-        FML_CHECK([[NSThread currentThread] isMainThread])
+        FML_DCHECK([[NSThread currentThread] isMainThread])
             << "Must be on the main thread to handle presenting platform views";
-        NSView* platform_view = view_controller_.platformViews[layer->platform_view->identifier];
+
+        FML_DCHECK(platform_view_controller_.platformViews.count(layer->platform_view->identifier))
+            << "Platform view not found for id: " << layer->platform_view->identifier;
+
+        NSView* platform_view =
+            platform_view_controller_.platformViews[layer->platform_view->identifier];
+
         CGFloat scale = [[NSScreen mainScreen] backingScaleFactor];
         platform_view.frame = CGRectMake(layer->offset.x / scale, layer->offset.y / scale,
                                          layer->size.width / scale, layer->size.height / scale);
@@ -108,7 +119,7 @@ bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_cou
 void FlutterGLCompositor::PresentBackingStoreContent(
     FlutterBackingStoreData* flutter_backing_store_data,
     size_t layer_position) {
-  FML_CHECK([[NSThread currentThread] isMainThread])
+  FML_DCHECK([[NSThread currentThread] isMainThread])
       << "Must be on the main thread to update CALayer contents";
 
   FlutterIOSurfaceHolder* io_surface_holder = [flutter_backing_store_data ioSurfaceHolder];
@@ -116,7 +127,7 @@ void FlutterGLCompositor::PresentBackingStoreContent(
 
   CALayer* content_layer = ca_layer_map_[layer_id];
 
-  FML_CHECK(content_layer) << "Unable to find a content layer with layer id " << layer_id;
+  FML_DCHECK(content_layer) << "Unable to find a content layer with layer id " << layer_id;
 
   content_layer.frame = content_layer.superlayer.bounds;
   content_layer.zPosition = layer_position;
@@ -156,22 +167,6 @@ size_t FlutterGLCompositor::CreateCALayer() {
   [view_controller_.flutterView.layer addSublayer:content_layer];
   ca_layer_map_[ca_layer_count_] = content_layer;
   return ca_layer_count_++;
-}
-
-void FlutterGLCompositor::DisposePlatformViews() {
-  auto views_to_dispose = view_controller_.platformViewsToDispose;
-  if (views_to_dispose.empty()) {
-    return;
-  }
-
-  for (int64_t viewId : views_to_dispose) {
-    FML_CHECK([[NSThread currentThread] isMainThread])
-        << "Must be on the main thread to handle disposing platform views";
-    NSView* view = view_controller_.platformViews[viewId];
-    [view removeFromSuperview];
-    view_controller_.platformViews.erase(viewId);
-  }
-  views_to_dispose.clear();
 }
 
 }  // namespace flutter

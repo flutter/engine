@@ -62,6 +62,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterIOSurfaceHolder.mm",
     "framework/Source/FlutterMouseCursorPlugin.h",
     "framework/Source/FlutterMouseCursorPlugin.mm",
+    "framework/Source/FlutterPlatformViewController.mm",
+    "framework/Source/FlutterPlatformViewController_Internal.h",
     "framework/Source/FlutterPlatformViews.h",
     "framework/Source/FlutterResizeSynchronizer.h",
     "framework/Source/FlutterResizeSynchronizer.mm",

@@ -11,6 +11,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
 /**
@@ -204,6 +205,13 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
   // FlutterCompositor is copied and used in embedder.cc.
   FlutterCompositor _compositor;
+
+  // A method channel for platform view functionality.
+  FlutterMethodChannel* _platformViewsChannel;
+
+  // Used to support creation and deletion of platform views and
+  // registering platform view factories.
+  FlutterPlatformViewController* _platformViewController;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -313,6 +321,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     flutterArguments.aot_data = _aotData;
   }
 
+  [self setupPlatformViewChannel];
+  [self createPlatformViewController];
+
   flutterArguments.compositor = [self createFlutterCompositor];
 
   FlutterEngineResult result = _embedderAPI.Initialize(
@@ -367,54 +378,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     [self shutDownEngine];
     _resourceContext = nil;
   }
-}
-
-- (FlutterCompositor*)createFlutterCompositor {
-  // TODO(richardjcai): Add support for creating a FlutterGLCompositor
-  // with a nil _viewController for headless engines.
-  // https://github.com/flutter/flutter/issues/71606
-  if (_viewController == nullptr) {
-    return nullptr;
-  }
-
-  [_mainOpenGLContext makeCurrentContext];
-
-  _macOSGLCompositor = std::make_unique<flutter::FlutterGLCompositor>(_viewController);
-
-  _compositor = {};
-  _compositor.struct_size = sizeof(FlutterCompositor);
-  _compositor.user_data = _macOSGLCompositor.get();
-
-  _compositor.create_backing_store_callback = [](const FlutterBackingStoreConfig* config,  //
-                                                 FlutterBackingStore* backing_store_out,   //
-                                                 void* user_data                           //
-                                              ) {
-    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->CreateBackingStore(
-        config, backing_store_out);
-  };
-
-  _compositor.collect_backing_store_callback = [](const FlutterBackingStore* backing_store,  //
-                                                  void* user_data                            //
-                                               ) {
-    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->CollectBackingStore(
-        backing_store);
-  };
-
-  _compositor.present_layers_callback = [](const FlutterLayer** layers,  //
-                                           size_t layers_count,          //
-                                           void* user_data               //
-                                        ) {
-    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->Present(layers,
-                                                                               layers_count);
-  };
-
-  __weak FlutterEngine* weak_self = self;
-  _macOSGLCompositor->SetPresentCallback(
-      [weak_self]() { return [weak_self engineCallbackOnPresent]; });
-
-  _compositor.avoid_backing_store_cache = true;
-
-  return &_compositor;
 }
 
 - (id<FlutterBinaryMessenger>)binaryMessenger {
@@ -491,6 +454,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {
   _embedderAPI.SendPointerEvent(_engine, &event, 1);
+}
+
+- (FlutterPlatformViewController*)platformViewController {
+  return _platformViewController;
 }
 
 #pragma mark - Private methods
@@ -598,6 +565,71 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     NSLog(@"Failed to shut down Flutter engine: error %d", result);
   }
   _engine = nullptr;
+}
+
+- (FlutterCompositor*)createFlutterCompositor {
+  // TODO(richardjcai): Add support for creating a FlutterGLCompositor
+  // with a nil _viewController for headless engines.
+  // https://github.com/flutter/flutter/issues/71606
+  if (_viewController == nullptr) {
+    return nullptr;
+  }
+
+  [_mainOpenGLContext makeCurrentContext];
+
+  _macOSGLCompositor =
+      std::make_unique<flutter::FlutterGLCompositor>(_viewController, _platformViewController);
+
+  _compositor = {};
+  _compositor.struct_size = sizeof(FlutterCompositor);
+  _compositor.user_data = _macOSGLCompositor.get();
+
+  _compositor.create_backing_store_callback = [](const FlutterBackingStoreConfig* config,  //
+                                                 FlutterBackingStore* backing_store_out,   //
+                                                 void* user_data                           //
+                                              ) {
+    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->CreateBackingStore(
+        config, backing_store_out);
+  };
+
+  _compositor.collect_backing_store_callback = [](const FlutterBackingStore* backing_store,  //
+                                                  void* user_data                            //
+                                               ) {
+    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->CollectBackingStore(
+        backing_store);
+  };
+
+  _compositor.present_layers_callback = [](const FlutterLayer** layers,  //
+                                           size_t layers_count,          //
+                                           void* user_data               //
+                                        ) {
+    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->Present(layers,
+                                                                               layers_count);
+  };
+
+  __weak FlutterEngine* weak_self = self;
+  _macOSGLCompositor->SetPresentCallback(
+      [weak_self]() { return [weak_self engineCallbackOnPresent]; });
+
+  _compositor.avoid_backing_store_cache = true;
+
+  return &_compositor;
+}
+
+- (void)createPlatformViewController {
+  _platformViewController = [[FlutterPlatformViewController alloc] init];
+}
+
+- (void)setupPlatformViewChannel {
+  _platformViewsChannel =
+      [FlutterMethodChannel methodChannelWithName:@"flutter/platform_views"
+                                  binaryMessenger:self.binaryMessenger
+                                            codec:[FlutterStandardMethodCodec sharedInstance]];
+
+  __weak FlutterEngine* weak_self = self;
+  [_platformViewsChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [[weak_self platformViewController] handleMethodCall:call result:result];
+  }];
 }
 
 #pragma mark - FlutterBinaryMessenger
