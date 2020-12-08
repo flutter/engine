@@ -24,7 +24,7 @@ class KeyboardHookHandler {
                             int scancode,
                             int action,
                             char32_t character,
-                            int repeats) = 0;
+                            bool wasDown) = 0;
 
   // A function for hooking into Unicode text input.
   virtual void TextHook(FlutterWindowsView* view,

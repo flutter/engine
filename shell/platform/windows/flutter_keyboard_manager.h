@@ -41,7 +41,7 @@ class FlutterKeyboardManager : public KeyboardHookHandler {
                     int scancode,
                     int action,
                     char32_t character,
-                    int repeats) override;
+                    bool wasDown) override;
 
   // |KeyboardHookHandler|
   void TextHook(FlutterWindowsView* window,
@@ -54,8 +54,12 @@ class FlutterKeyboardManager : public KeyboardHookHandler {
   std::map<uint64_t, uint64_t> pressingRecords_;
   char character_cache_[kCharacterCacheSize];
 
+  static uint64_t getPhysicalKey(int scancode);
+  static uint64_t getLogicalKey(int key, int scancode);
+
   static std::map<uint64_t, uint64_t> windowsToPhysicalMap_;
   static std::map<uint64_t, uint64_t> windowsToLogicalMap_;
+  static std::map<uint64_t, uint64_t> scanCodeToLogicalMap_;
 };
 
 }  // namespace flutter

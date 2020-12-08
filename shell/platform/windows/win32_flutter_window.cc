@@ -159,8 +159,8 @@ void Win32FlutterWindow::OnKey(int key,
                                int scancode,
                                int action,
                                char32_t character,
-                               int repeats) {
-  binding_handler_delegate_->OnKey(key, scancode, action, character, repeats);
+                               bool wasDown) {
+  binding_handler_delegate_->OnKey(key, scancode, action, character, wasDown);
 }
 
 void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {

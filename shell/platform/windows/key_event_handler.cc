@@ -100,7 +100,7 @@ void KeyEventHandler::KeyboardHook(FlutterWindowsView* view,
                                    int scancode,
                                    int action,
                                    char32_t character,
-                                   int repeats) {
+                                   bool wasDown) {
   // TODO: Translate to a cross-platform key code system rather than passing
   // the native key code.
   rapidjson::Document event(rapidjson::kObjectType);
