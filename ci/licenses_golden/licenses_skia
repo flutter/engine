@@ -1,4 +1,4 @@
-Signature: 7c0028fee593a3570d582625663941d7
+Signature: 1d418f7b8c18d1da3d67877158b0eb91
 
 UNUSED LICENSES:
 
@@ -2432,14 +2432,14 @@ FILE: ../../../third_party/skia/src/codec/SkWebpCodec.h
 FILE: ../../../third_party/skia/src/core/Sk4px.h
 FILE: ../../../third_party/skia/src/core/SkBigPicture.cpp
 FILE: ../../../third_party/skia/src/core/SkBigPicture.h
-FILE: ../../../third_party/skia/src/core/SkBitmapController.cpp
-FILE: ../../../third_party/skia/src/core/SkBitmapController.h
 FILE: ../../../third_party/skia/src/core/SkFontMgr.cpp
 FILE: ../../../third_party/skia/src/core/SkLatticeIter.cpp
 FILE: ../../../third_party/skia/src/core/SkLatticeIter.h
 FILE: ../../../third_party/skia/src/core/SkLocalMatrixImageFilter.cpp
 FILE: ../../../third_party/skia/src/core/SkMiniRecorder.cpp
 FILE: ../../../third_party/skia/src/core/SkMiniRecorder.h
+FILE: ../../../third_party/skia/src/core/SkMipmapAccessor.cpp
+FILE: ../../../third_party/skia/src/core/SkMipmapAccessor.h
 FILE: ../../../third_party/skia/src/core/SkNextID.h
 FILE: ../../../third_party/skia/src/core/SkOpts.cpp
 FILE: ../../../third_party/skia/src/core/SkOpts.h
