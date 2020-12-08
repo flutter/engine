@@ -340,7 +340,6 @@ static void fl_engine_init(FlEngine* self) {
   FlutterEngineGetProcAddresses(&self->embedder_api);
 
   self->binary_messenger = fl_binary_messenger_new(self);
-  self->settings_plugin = fl_settings_plugin_new(self->binary_messenger);
 }
 
 FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
@@ -437,6 +436,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   }
 
   setup_locales(self);
+
+  self->settings_plugin = fl_settings_plugin_new(self->binary_messenger);
   fl_settings_plugin_start(self->settings_plugin);
 
   return TRUE;

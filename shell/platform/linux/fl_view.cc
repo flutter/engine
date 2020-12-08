@@ -158,11 +158,11 @@ static void fl_view_constructed(GObject* object) {
 
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
+  self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
   self->key_event_plugin =
       fl_key_event_plugin_new(messenger, self->text_input_plugin);
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
-  self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
 }
 
 static void fl_view_set_property(GObject* object,
