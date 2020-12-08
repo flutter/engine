@@ -75,6 +75,10 @@ class FlutterGLCompositor {
       FlutterBackingStoreData* flutter_backing_store_data,
       size_t layer_position);
 
+  // Add the Platform View's content to the FlutterView at depth
+  // layer_position.
+  void PresentPlatformView(const FlutterLayer* layer, size_t layer_position);
+
   // Set frame_started_ to true and reset all layer state.
   void StartFrame();
 

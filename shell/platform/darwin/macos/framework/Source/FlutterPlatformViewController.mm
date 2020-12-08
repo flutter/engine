@@ -10,8 +10,9 @@
 
 - (instancetype)init {
   self = [super init];
-
-  self->_platformViewFactories = [[NSMutableDictionary alloc] init];
+  if (self) {
+    _platformViewFactories = [[NSMutableDictionary alloc] init];
+  }
   return self;
 }
 

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import <Foundation/Foundation.h>
-#import <Foundation/NSObject.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViews.h"
 

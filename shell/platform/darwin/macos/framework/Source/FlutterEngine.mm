@@ -58,6 +58,16 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
  */
 - (void)loadAOTData:(NSString*)assetsDir;
 
+/**
+ * Creates and returns a FlutterCompositor* to be used by the embedder.
+ */
+- (FlutterCompositor*)createFlutterCompositor;
+
+/**
+ * Create a platform view channel and setup a method call handler.
+ */
+- (void)setupPlatformViewChannel;
+
 @end
 
 #pragma mark -
@@ -257,7 +267,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 
   [self setupPlatformViewChannel];
-  [self createPlatformViewController];
+  _platformViewController = [[FlutterPlatformViewController alloc] init];
 
   flutterArguments.compositor = [self createFlutterCompositor];
 
@@ -559,17 +569,13 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                                                                layers_count);
   };
 
-  __weak FlutterEngine* weak_self = self;
+  __weak FlutterEngine* weakSelf = self;
   _macOSGLCompositor->SetPresentCallback(
-      [weak_self]() { return [weak_self engineCallbackOnPresent]; });
+      [weakSelf]() { return [weakSelf engineCallbackOnPresent]; });
 
   _compositor.avoid_backing_store_cache = true;
 
   return &_compositor;
-}
-
-- (void)createPlatformViewController {
-  _platformViewController = [[FlutterPlatformViewController alloc] init];
 }
 
 - (void)setupPlatformViewChannel {
@@ -578,9 +584,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                   binaryMessenger:self.binaryMessenger
                                             codec:[FlutterStandardMethodCodec sharedInstance]];
 
-  __weak FlutterEngine* weak_self = self;
+  __weak FlutterEngine* weakSelf = self;
   [_platformViewsChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-    [[weak_self platformViewController] handleMethodCall:call result:result];
+    [[weakSelf platformViewController] handleMethodCall:call result:result];
   }];
 }
 
@@ -690,11 +696,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)postMainThreadTask:(FlutterTask)task targetTimeInNanoseconds:(uint64_t)targetTime {
   const auto engine_time = _embedderAPI.GetCurrentTime();
 
-  __weak FlutterEngine* weak_self = self;
+  __weak FlutterEngine* weakSelf = self;
   auto worker = ^{
-    FlutterEngine* strong_self = weak_self;
-    if (strong_self && strong_self->_engine) {
-      auto result = _embedderAPI.RunTask(strong_self->_engine, &task);
+    FlutterEngine* strongSelf = weakSelf;
+    if (strongSelf && strongSelf->_engine) {
+      auto result = _embedderAPI.RunTask(strongSelf->_engine, &task);
       if (result != kSuccess) {
         NSLog(@"Could not post a task to the Flutter engine.");
       }

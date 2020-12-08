@@ -93,23 +93,7 @@ bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_cou
         break;
       }
       case kFlutterLayerContentTypePlatformView:
-        FML_DCHECK([[NSThread currentThread] isMainThread])
-            << "Must be on the main thread to handle presenting platform views";
-
-        FML_DCHECK(platform_view_controller_.platformViews.count(layer->platform_view->identifier))
-            << "Platform view not found for id: " << layer->platform_view->identifier;
-
-        NSView* platform_view =
-            platform_view_controller_.platformViews[layer->platform_view->identifier];
-
-        CGFloat scale = [[NSScreen mainScreen] backingScaleFactor];
-        platform_view.frame = CGRectMake(layer->offset.x / scale, layer->offset.y / scale,
-                                         layer->size.width / scale, layer->size.height / scale);
-        if (platform_view.superview == nil) {
-          [view_controller_.flutterView addSubview:platform_view];
-        } else {
-          platform_view.layer.zPosition = i;
-        }
+        PresentPlatformView(layer, i);
         break;
     };
   }
@@ -140,6 +124,25 @@ void FlutterGLCompositor::PresentBackingStoreContent(
   content_layer.transform = CATransform3DMakeScale(1, -1, 1);
   IOSurfaceRef io_surface_contents = [io_surface_holder ioSurface];
   [content_layer setContents:(__bridge id)io_surface_contents];
+}
+
+void FlutterGLCompositor::PresentPlatformView(const FlutterLayer* layer, size_t layer_position) {
+  FML_DCHECK([[NSThread currentThread] isMainThread])
+      << "Must be on the main thread to handle presenting platform views";
+
+  FML_DCHECK(platform_view_controller_.platformViews.count(layer->platform_view->identifier))
+      << "Platform view not found for id: " << layer->platform_view->identifier;
+
+  NSView* platform_view = platform_view_controller_.platformViews[layer->platform_view->identifier];
+
+  CGFloat scale = [[NSScreen mainScreen] backingScaleFactor];
+  platform_view.frame = CGRectMake(layer->offset.x / scale, layer->offset.y / scale,
+                                   layer->size.width / scale, layer->size.height / scale);
+  if (platform_view.superview == nil) {
+    [view_controller_.flutterView addSubview:platform_view];
+  } else {
+    platform_view.layer.zPosition = layer_position;
+  }
 }
 
 void FlutterGLCompositor::SetPresentCallback(
