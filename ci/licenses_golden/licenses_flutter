@@ -1072,9 +1072,9 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSur
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewControllerTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewMock.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewMock.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViews.h
