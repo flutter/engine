@@ -1,4 +1,4 @@
-Signature: 1bb283136150a671071af688bb59838d
+Signature: 9d8cc68b86cc2f67b799d0903a0c9122
 
 UNUSED LICENSES:
 
@@ -560,7 +560,6 @@ FILE: ../../../third_party/skia/samplecode/SampleAndroidShadows.cpp
 FILE: ../../../third_party/skia/samplecode/SampleMegaStroke.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePathOverstroke.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSVGFile.cpp
-FILE: ../../../third_party/skia/src/codec/SkCodecAnimationPriv.h
 FILE: ../../../third_party/skia/src/codec/SkRawCodec.cpp
 FILE: ../../../third_party/skia/src/codec/SkRawCodec.h
 FILE: ../../../third_party/skia/src/codec/SkStreamBuffer.cpp
@@ -2433,14 +2432,14 @@ FILE: ../../../third_party/skia/src/codec/SkWebpCodec.h
 FILE: ../../../third_party/skia/src/core/Sk4px.h
 FILE: ../../../third_party/skia/src/core/SkBigPicture.cpp
 FILE: ../../../third_party/skia/src/core/SkBigPicture.h
-FILE: ../../../third_party/skia/src/core/SkBitmapController.cpp
-FILE: ../../../third_party/skia/src/core/SkBitmapController.h
 FILE: ../../../third_party/skia/src/core/SkFontMgr.cpp
 FILE: ../../../third_party/skia/src/core/SkLatticeIter.cpp
 FILE: ../../../third_party/skia/src/core/SkLatticeIter.h
 FILE: ../../../third_party/skia/src/core/SkLocalMatrixImageFilter.cpp
 FILE: ../../../third_party/skia/src/core/SkMiniRecorder.cpp
 FILE: ../../../third_party/skia/src/core/SkMiniRecorder.h
+FILE: ../../../third_party/skia/src/core/SkMipmapAccessor.cpp
+FILE: ../../../third_party/skia/src/core/SkMipmapAccessor.h
 FILE: ../../../third_party/skia/src/core/SkNextID.h
 FILE: ../../../third_party/skia/src/core/SkOpts.cpp
 FILE: ../../../third_party/skia/src/core/SkOpts.h
@@ -5607,6 +5606,7 @@ FILE: ../../../third_party/skia/docs/examples/unexpected_setAlphaType.cpp
 FILE: ../../../third_party/skia/docs/examples/upscale_checkerboard.cpp
 FILE: ../../../third_party/skia/docs/examples/weird_RRect_bug.cpp
 FILE: ../../../third_party/skia/docs/examples/zero_off_dashing.cpp
+FILE: ../../../third_party/skia/gm/clear_swizzle.cpp
 FILE: ../../../third_party/skia/gm/gpu_blur_utils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFinishCallbacks.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFinishCallbacks.h
