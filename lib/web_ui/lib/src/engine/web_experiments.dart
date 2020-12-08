@@ -36,6 +36,7 @@ class WebExperiments {
 
   bool _useCanvasText = _defaultUseCanvasText;
 
+  // TODO(mdebbar): Clean up https://github.com/flutter/flutter/issues/71952
   /// Experiment flag for using canvas-based measurement for rich text.
   bool get useCanvasRichText => _useCanvasRichText;
   set useCanvasRichText(bool? enabled) {
