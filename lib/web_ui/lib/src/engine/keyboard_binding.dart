@@ -244,9 +244,9 @@ class KeyboardConverter {
     if (key.length == 2) {
       result += key.codeUnitAt(1) << 16;
     }
-    // Convert lower letters to upper letters
-    if (result >= _kCharLowerA && result <= _kCharLowerZ) {
-      result = result - _kCharLowerA + _kCharUpperA;
+    // Convert upper letters to lower letters
+    if (result >= _kCharUpperA && result <= _kCharUpperZ) {
+      result = result + _kCharLowerA - _kCharUpperA;
     }
     return result;
   }
