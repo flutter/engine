@@ -264,7 +264,7 @@ class HtmlViewEmbedder {
             _clipPathCount += 1;
             html.Node newClipPath = html.DocumentFragment.svg(
               '<clipPath id="svgClip$_clipPathCount">'
-              '<path fill="#FFFFFF" d="${path.toSvgString()}">'
+              '<path d="${path.toSvgString()}">'
               '</path></clipPath>',
               treeSanitizer: _NullTreeSanitizer(),
             );
@@ -278,7 +278,7 @@ class HtmlViewEmbedder {
             _clipPathCount += 1;
             html.Node newClipPath = html.DocumentFragment.svg(
               '<clipPath id="svgClip$_clipPathCount">'
-              '<path fill="#FFFFFF" d="${path.toSvgString()}">'
+              '<path d="${path.toSvgString()}">'
               '</path></clipPath>',
               treeSanitizer: _NullTreeSanitizer(),
             );
