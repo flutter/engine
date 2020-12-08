@@ -43,6 +43,7 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
   'tap_status_bar': () => TouchesScenario(window),
   'text_semantics_focus': () => SendTextFocusScemantics(window),
   'initial_route_reply': () => InitialRouteReply(window),
+  'platform_view_with_continuous_texture': () => PlatformViewWithContinuousTexture(window, 'Platform View', id: _viewId++),
 };
 
 Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};

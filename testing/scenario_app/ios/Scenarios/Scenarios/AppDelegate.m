@@ -4,6 +4,7 @@
 
 #import "AppDelegate.h"
 
+#import "ContinuousTexture.h"
 #import "FlutterEngine+ScenariosTest.h"
 #import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"
@@ -50,7 +51,7 @@
     @"--gesture-reject-eager" : @"platform_view_gesture_reject_eager",
     @"--gesture-accept" : @"platform_view_gesture_accept",
     @"--tap-status-bar" : @"tap_status_bar",
-    @"--text-semantics-focus" : @"text_semantics_focus"
+    @"--platform-view-with-continuous-texture" : @"platform_view_with_continuous_texture"
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap
@@ -69,6 +70,10 @@
   }
 
   [self.window makeKeyAndVisible];
+  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--with-continuous-texture"]) {
+    [ContinuousTexture
+        registerWithRegistrar:[self registrarForPlugin:@"com.constant.firing.texture"]];
+  }
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
