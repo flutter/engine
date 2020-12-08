@@ -250,7 +250,7 @@ Engine::Engine(Delegate& delegate,
   // Setup the callback that will instantiate the rasterizer.
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer;
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-  on_create_rasterizer = [this](flutter::Shell& shell) {
+  on_create_rasterizer = [this, &product_config](flutter::Shell& shell) {
     if (use_legacy_renderer_) {
       FML_DCHECK(session_connection_);
       FML_DCHECK(surface_producer_);
@@ -263,6 +263,15 @@ Engine::Engine(Delegate& delegate,
       return std::make_unique<flutter::Rasterizer>(
           shell, std::move(compositor_context));
     } else {
+      if (product_config.enable_shader_warmup()) {
+        FML_DCHECK(surface_producer_);
+        WarmupSkps(shell.GetDartVM()
+                       ->GetConcurrentMessageLoop()
+                       ->GetTaskRunner()
+                       .get(),
+                   shell.GetTaskRunners().GetRasterTaskRunner().get(),
+                   surface_producer_.value());
+      }
       return std::make_unique<flutter::Rasterizer>(shell);
     }
   };
@@ -655,6 +664,15 @@ void Engine::WarmupSkps(fml::BasicTaskRunner* concurrent_task_runner,
     std::vector<std::unique_ptr<fml::Mapping>> skp_mappings =
         flutter::PersistentCache::GetCacheForProcess()
             ->GetSkpsFromAssetManager();
+
+    size_t total_size = 0;
+    for (auto& mapping : skp_mappings) {
+      total_size += mapping->GetSize();
+    }
+
+    FML_LOG(INFO) << "Shader warmup got " << skp_mappings.size()
+                  << " skp's with a total size of " << total_size << " bytes";
+
     std::vector<sk_sp<SkPicture>> pictures;
     int i = 0;
     for (auto& mapping : skp_mappings) {
