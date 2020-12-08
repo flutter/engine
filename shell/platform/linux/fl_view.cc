@@ -193,11 +193,12 @@ static void fl_view_constructed(GObject* object) {
 
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
-  self->key_event_plugin = fl_key_event_plugin_new(messenger);
+  self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
+  self->key_event_plugin =
+      fl_key_event_plugin_new(messenger, self->text_input_plugin);
+  self->keyboard_manager = fl_keyboard_manager_new();
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
-  self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
-  self->keyboard_manager = fl_keyboard_manager_new();
 }
 
 static void fl_view_set_property(GObject* object,
@@ -385,11 +386,8 @@ static gboolean fl_view_motion_notify_event(GtkWidget* widget,
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
-  fl_text_input_plugin_filter_keypress(self->text_input_plugin, event);
-  fl_view_send_key_event(self, event);
-
-  return TRUE;
+  return fl_view_send_key_event(self, event) ||
+      fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 }
 
 // Implements GtkWidget::key_release_event.
@@ -397,11 +395,8 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
-  fl_text_input_plugin_filter_keypress(self->text_input_plugin, event);
-  fl_view_send_key_event(self, event);
-
-  return TRUE;
+  return fl_view_send_key_event(self, event) ||
+      fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 }
 
 static void fl_view_class_init(FlViewClass* klass) {

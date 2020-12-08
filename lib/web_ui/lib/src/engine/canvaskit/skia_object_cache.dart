@@ -147,6 +147,11 @@ abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> {
     } else {
       // If FinalizationRegistry is _not_ supported we may need to delete
       // and resurrect the object multiple times before deleting it forever.
+      if (Instrumentation.enabled) {
+        Instrumentation.instance.incrementCounter(
+          '${(defaultObject as SkDeletable).constructor.name} created',
+        );
+      }
       if (isResurrectionExpensive) {
         SkiaObjects.manageExpensive(this);
       } else {
@@ -161,6 +166,11 @@ abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> {
   T _doResurrect() {
     assert(!browserSupportsFinalizationRegistry);
     final T skiaObject = resurrect();
+    if (Instrumentation.enabled) {
+      Instrumentation.instance.incrementCounter(
+        '${(skiaObject as SkDeletable).constructor.name} resurrected',
+      );
+    }
     rawSkiaObject = skiaObject;
     if (isResurrectionExpensive) {
       SkiaObjects.manageExpensive(this);
@@ -173,6 +183,11 @@ abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> {
   @override
   void didDelete() {
     assert(!browserSupportsFinalizationRegistry);
+    if (Instrumentation.enabled) {
+      Instrumentation.instance.incrementCounter(
+        '${(rawSkiaObject as SkDeletable).constructor.name} deleted',
+      );
+    }
     rawSkiaObject = null;
   }
 
@@ -202,54 +217,6 @@ abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> {
   ///
   /// Defaults to false.
   bool get isResurrectionExpensive => false;
-}
-
-// TODO(hterkelsen): [OneShotSkiaObject] is dangerous because it might delete
-//     the underlying Skia object while the associated Dart object is still in
-//     use. This issue discusses ways to address this:
-//     https://github.com/flutter/flutter/issues/60401
-/// A [SkiaObject] which is deleted once and cannot be used again.
-///
-/// In browsers that support weak references we use feedback from the garbage
-/// collector to determine when it is safe to release the C++ object. Otherwise,
-/// we use an LRU cache (see [SkiaObjects.manageOneShot]).
-abstract class OneShotSkiaObject<T extends Object> extends SkiaObject<T> {
-  /// Returns the current skia object as is without attempting to
-  /// resurrect it.
-  ///
-  /// If the returned value is `null`, the corresponding C++ object has
-  /// been deleted.
-  ///
-  /// Use this field instead of the [skiaObject] getter when implementing
-  /// the [delete] method.
-  T rawSkiaObject;
-
-  bool _isDeleted = false;
-
-  OneShotSkiaObject(T skObject) : this.rawSkiaObject = skObject {
-    if (browserSupportsFinalizationRegistry) {
-      Collector.instance.register(this, skObject as SkDeletable);
-    } else {
-      SkiaObjects.manageOneShot(this);
-    }
-  }
-
-  @override
-  T get skiaObject {
-    if (browserSupportsFinalizationRegistry) {
-      return rawSkiaObject;
-    }
-    if (_isDeleted) {
-      throw StateError('Attempting to use a Skia object that has been freed.');
-    }
-    SkiaObjects.oneShotCache.markUsed(this);
-    return rawSkiaObject;
-  }
-
-  @override
-  void didDelete() {
-    _isDeleted = true;
-  }
 }
 
 /// Interface that classes wrapping [SkiaObjectBox] must implement.
@@ -303,6 +270,11 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object> extends Skia
 
   void _initialize(R debugReferrer, T initialValue) {
     _update(initialValue);
+    if (Instrumentation.enabled) {
+      Instrumentation.instance.incrementCounter(
+        '${_skDeletable?.constructor.name} created',
+      );
+    }
     if (assertionsEnabled) {
       debugReferrers.add(debugReferrer);
     }
@@ -355,6 +327,11 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object> extends Skia
     assert(_resurrector != null);
     assert(!_isDeletedPermanently, 'Cannot use deleted object.');
     _update(_resurrector!());
+    if (Instrumentation.enabled) {
+      Instrumentation.instance.incrementCounter(
+        '${_skDeletable?.constructor.name} resurrected',
+      );
+    }
     SkiaObjects.manageExpensive(this);
     return skiaObject;
   }
@@ -366,6 +343,11 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object> extends Skia
 
   @override
   void didDelete() {
+    if (Instrumentation.enabled) {
+      Instrumentation.instance.incrementCounter(
+        '${_skDeletable?.constructor.name} deleted',
+      );
+    }
     assert(!browserSupportsFinalizationRegistry);
     _update(null);
   }
@@ -419,7 +401,8 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object> extends Skia
         if (browserSupportsFinalizationRegistry) {
           Collector.instance.collect(_skDeletable!);
         } else {
-          _skDeletable!.delete();
+          delete();
+          didDelete();
         }
       }
       rawSkiaObject = null;
@@ -437,10 +420,7 @@ class SkiaObjects {
       <ManagedSkiaObject>[];
 
   @visibleForTesting
-  static int maximumCacheSize = 8192;
-
-  @visibleForTesting
-  static final SkiaObjectCache oneShotCache = SkiaObjectCache(maximumCacheSize);
+  static int maximumCacheSize = 1024;
 
   @visibleForTesting
   static final SkiaObjectCache expensiveCache =
@@ -466,15 +446,6 @@ class SkiaObjects {
   static void manageResurrectable(ManagedSkiaObject object) {
     registerCleanupCallback();
     resurrectableObjects.add(object);
-  }
-
-  /// Starts managing the lifecycle of a one-shot [object].
-  ///
-  /// We should avoid deleting these whenever we can, since we won't
-  /// be able to resurrect them.
-  static void manageOneShot(OneShotSkiaObject object) {
-    registerCleanupCallback();
-    oneShotCache.add(object);
   }
 
   /// Starts managing the lifecycle of a resurrectable object that is expensive.

@@ -23,7 +23,13 @@
       "name": "args",
       "rootUri": "../../../../third_party/dart/third_party/pkg/args",
       "packageUri": "lib",
-      "languageVersion": "2.3"
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "collection",
+      "rootUri": "../../../../third_party/dart/third_party/pkg/collection",
+      "packageUri": "lib",
+      "languageVersion": "2.10"
     },
     {
       "name": "path",

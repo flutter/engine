@@ -174,6 +174,27 @@ class PlatformConfigurationClient {
   ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) = 0;
 
+  //--------------------------------------------------------------------------
+  /// @brief      Invoked when the Dart VM requests that a deferred library
+  ///             be loaded. Notifies the engine that the deferred library
+  ///             identified by the specified loading unit id should be
+  ///             downloaded and loaded into the Dart VM via
+  ///             `LoadDartDeferredLibrary`
+  ///
+  ///             Upon encountering errors or otherwise failing to load a
+  ///             loading unit with the specified id, the failure should be
+  ///             directly reported to dart by calling
+  ///             `LoadDartDeferredLibraryFailure` to ensure the waiting dart
+  ///             future completes with an error.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit. This id is to be passed
+  ///                              back into LoadDartDeferredLibrary
+  ///                              in order to identify which deferred
+  ///                              library to load.
+  ///
+  virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
+
  protected:
   virtual ~PlatformConfigurationClient();
 };
@@ -312,9 +333,9 @@ class PlatformConfiguration final {
   ///             The frame time given as the argument indicates the point at
   ///             which the current frame interval began. It is very slightly
   ///             (because of scheduling overhead) in the past. If a new layer
-  ///             tree is not produced and given to the GPU task runner within
-  ///             one frame interval from this point, the Flutter application
-  ///             will jank.
+  ///             tree is not produced and given to the raster task runner
+  ///             within one frame interval from this point, the Flutter
+  ///             application will jank.
   ///
   ///             This method calls the `::_beginFrame` method in `hooks.dart`.
   ///
@@ -328,13 +349,13 @@ class PlatformConfiguration final {
   /// @brief      Dart code cannot fully measure the time it takes for a
   ///             specific frame to be rendered. This is because Dart code only
   ///             runs on the UI task runner. That is only a small part of the
-  ///             overall frame workload. The GPU task runner frame workload is
-  ///             executed on a thread where Dart code cannot run (and hence
+  ///             overall frame workload. The raster task runner frame workload
+  ///             is executed on a thread where Dart code cannot run (and hence
   ///             instrument). Besides, due to the pipelined nature of rendering
   ///             in Flutter, there may be multiple frame workloads being
   ///             processed at any given time. However, for non-Timeline based
   ///             profiling, it is useful for trace collection and processing to
-  ///             happen in Dart. To do this, the GPU task runner frame
+  ///             happen in Dart. To do this, the raster task runner frame
   ///             workloads need to be instrumented separately. After a set
   ///             number of these profiles have been gathered, they need to be
   ///             reported back to Dart code. The engine reports this extra
