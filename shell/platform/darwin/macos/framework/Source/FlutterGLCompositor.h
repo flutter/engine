@@ -6,6 +6,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h"
+#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController_Internal.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -51,6 +52,7 @@ class FlutterGLCompositor {
 
  private:
   const FlutterViewController* view_controller_;
+  const FlutterPlatformViewController* platform_view_controller_;
   const NSOpenGLContext* open_gl_context_;
   PresentCallback present_callback_;
 
@@ -75,9 +77,6 @@ class FlutterGLCompositor {
 
   // Set frame_started_ to true and reset all layer state.
   void StartFrame();
-
-  // Remove platform views that are specified for deletion.
-  void DisposePlatformViews();
 
   // Creates a CALayer and adds it to ca_layer_map_ and increments
   // ca_layer_count_; Returns the key value (size_t) for the layer in

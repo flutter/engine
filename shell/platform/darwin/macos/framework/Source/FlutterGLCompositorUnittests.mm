@@ -5,6 +5,7 @@
 #import <Foundation/Foundation.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #import "flutter/testing/testing.h"
 
@@ -12,9 +13,11 @@ namespace flutter::testing {
 
 TEST(FlutterGLCompositorTest, TestPresent) {
   id mockViewController = CreateMockViewController(nil);
+  FlutterPlatformViewController* platformViewController =
+      [[FlutterPlatformViewController alloc] init];
 
   std::unique_ptr<flutter::FlutterGLCompositor> macos_compositor =
-      std::make_unique<FlutterGLCompositor>(mockViewController, nullptr);
+      std::make_unique<FlutterGLCompositor>(mockViewController, platformViewController);
 
   bool flag = false;
   macos_compositor->SetPresentCallback([f = &flag]() {

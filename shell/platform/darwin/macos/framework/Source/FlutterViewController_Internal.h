@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <map>
-#include <unordered_set>
-
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViews.h"
@@ -15,26 +12,12 @@
 // The FlutterView for this view controller.
 @property(nonatomic, readonly, nullable) FlutterView* flutterView;
 
-// NSDictionary maps strings to FlutterPlatformViewFactorys.
-@property(nonnull, nonatomic)
-    NSMutableDictionary<NSString*, NSObject<FlutterPlatformViewFactory>*>* factories;
-
-// A map of platform view ids to views.
-@property(nonatomic) std::map<int, NSView*> platformViews;
-
-// View ids that are going to be disposed on the next present call.
-@property(nonatomic) std::unordered_set<int64_t> platformViewsToDispose;
-
 /**
  * This just returns the NSPasteboard so that it can be mocked in the tests.
  */
 @property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
 
 /**
-<<<<<<< HEAD
- * Adds an intermediate responder for keyboard events. Key up and key down events are forwarded to
- * all added responders, and they either handle the keys or not.
-=======
  * Platform View Methods.
  */
 
@@ -64,10 +47,10 @@
 - (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(nonnull NSString*)factoryId;
 
+
 /**
  * Adds a responder for keyboard events. Key up and key down events are forwarded to all added
  * responders.
->>>>>>> 182b97516 (Add MacOS platform view support to FlutterViewController)
  */
 - (void)addKeyResponder:(nonnull FlutterIntermediateKeyResponder*)responder;
 
