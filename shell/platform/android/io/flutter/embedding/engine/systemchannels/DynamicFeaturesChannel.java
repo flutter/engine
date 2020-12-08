@@ -16,12 +16,17 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DynamicFeaturesChannel {
   private static final String TAG = "DynamicFeaturesChannel";
 
   @NonNull public final MethodChannel channel;
   @Nullable DynamicFeatureManager dynamicFeatureManager;
+  @NonNull Map<String, List<MethodChannel.Result>> moduleNameToResults;
 
 
   private final MethodChannel.MethodCallHandler parsingMethodHandler =
@@ -40,21 +45,16 @@ public class DynamicFeaturesChannel {
             final int loadingUnitId = arguments.getInt("loadingUnitId");
             final String moduleName = arguments.getString("moduleName");
             switch (method) {
-              case "SplitAot.installDynamicFeature":
+              case "DynamicFeatures.installDynamicFeature":
                 dynamicFeatureManager.installDynamicFeature(loadingUnitId, moduleName);
-                result.success(null);
+                if (!moduleNameToResults.containsKey(moduleName)) {
+                  moduleNameToResults.put(moduleName, new ArrayList<>());
+                } else {
+                  moduleNameToResults.get(moduleName).add(result);
+                }
                 break;
-              case "SplitAot.getDynamicFeatureInstallState":
-                dynamicFeatureManager.getDynamicFeatureInstallState(loadingUnitId, moduleName);
-                result.success(null);
-                break;
-              case "SplitAot.loadAssets":
-                dynamicFeatureManager.loadAssets(loadingUnitId, moduleName);
-                result.success(null);
-                break;
-              case "SplitAot.loadDartLibrary":
-                dynamicFeatureManager.loadAssets(loadingUnitId, moduleName);
-                result.success(null);
+              case "DynamicFeatures.getDynamicFeatureInstallState":
+                result.success(dynamicFeatureManager.getDynamicFeatureInstallState(loadingUnitId, moduleName));
                 break;
               default:
                 result.notImplemented();
@@ -79,5 +79,27 @@ public class DynamicFeaturesChannel {
         new MethodChannel(dartExecutor, "flutter/splitaot", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
     dynamicFeatureManager = FlutterInjector.instance().dynamicFeatureManager();
+    moduleNameToResults = new HashMap<>();
   }
+
+  public void completeInstallSuccess(String moduleName) {
+    if (moduleNameToResults.containsKey(moduleName)) {
+      for (MethodChannel.Result result : moduleNameToResults.get(moduleName)) {
+        result.success(null);
+      }
+      moduleNameToResults.get(moduleName).clear();
+    }
+    return;
+  }
+
+  public void completeInstallError(String moduleName, String errorMessage) {
+    if (moduleNameToResults.containsKey(moduleName)) {
+      for (MethodChannel.Result result : moduleNameToResults.get(moduleName)) {
+        result.error("DynamicFeature Install failure", errorMessage, null);
+      }
+      moduleNameToResults.get(moduleName).clear();
+    }
+    return;
+  }
+
 }

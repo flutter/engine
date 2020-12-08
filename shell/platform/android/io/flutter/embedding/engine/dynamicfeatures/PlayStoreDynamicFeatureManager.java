@@ -22,6 +22,7 @@ import com.google.android.play.core.splitinstall.model.SplitInstallErrorCode;
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.systemchannels.DynamicFeaturesChannel;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
 
   private @NonNull SplitInstallManager splitInstallManager;
   private @Nullable FlutterJNI flutterJNI;
+  private @Nullable DynamicFeaturesChannel channel;
   private @NonNull Context context;
   // Each request to install a feature module gets a session ID. These maps associate
   // the session ID with the loading unit and module name that was requested.
@@ -53,7 +55,6 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     public void onStateUpdate(SplitInstallSessionState state) {
       int sessionId = state.sessionId();
       if (sessionIdToName.get(sessionId) != null) {
-        // TODO(garyq): Add system channel for split aot messages.
         switch (state.status()) {
           case SplitInstallSessionStatus.FAILED:
             {
@@ -68,6 +69,11 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   sessionIdToLoadingUnitId.get(sessionId),
                   "Module install failed with " + state.errorCode(),
                   true);
+              if (channel != null) {
+                channel.completeInstallError(
+                    sessionIdToName.get(sessionId),
+                    "Android Dynamic Feature failed to install.");
+              }
               sessionIdToName.delete(sessionId);
               sessionIdToLoadingUnitId.delete(sessionId);
               sessionIdToState.put(sessionId, "Failed");
@@ -89,6 +95,9 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
               loadDartLibrary(
                   sessionIdToLoadingUnitId.get(sessionId),
                   sessionIdToName.get(sessionId));
+              if (channel != null) {
+                channel.completeInstallSuccess(sessionIdToName.get(sessionId));
+              }
               sessionIdToName.delete(sessionId);
               sessionIdToLoadingUnitId.delete(sessionId);
               sessionIdToState.put(sessionId, "Installed");
@@ -101,6 +110,11 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) install canceled.",
                       sessionIdToName.get(sessionId), sessionId));
+              if (channel != null) {
+                channel.completeInstallError(
+                    sessionIdToName.get(sessionId),
+                    "Android Dynamic Feature installation canceled.");
+              }
               sessionIdToName.delete(sessionId);
               sessionIdToLoadingUnitId.delete(sessionId);
               sessionIdToState.put(sessionId, "Cancelled");
@@ -167,7 +181,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
               break;
             }
           default:
-            Log.d(TAG, "Status: " + state.status());
+            Log.d(TAG, "Unknown status: " + state.status());
         }
       }
     }
@@ -197,6 +211,10 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
       return false;
     }
     return true;
+  }
+
+  public void setDynamicFeaturesChannel(DynamicFeaturesChannel channel) {
+    this.channel = channel;
   }
 
   private String loadingUnitIdToModuleName(int loadingUnitId) {

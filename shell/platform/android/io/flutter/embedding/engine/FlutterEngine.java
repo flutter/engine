@@ -21,6 +21,7 @@ import io.flutter.embedding.engine.plugins.service.ServiceControlSurface;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
+import io.flutter.embedding.engine.systemchannels.DynamicFeaturesChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
@@ -29,7 +30,6 @@ import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.RestorationChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
-import io.flutter.embedding.engine.systemchannels.DynamicFeaturesChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -82,6 +82,7 @@ public class FlutterEngine {
 
   // System channels.
   @NonNull private final AccessibilityChannel accessibilityChannel;
+  @NonNull private final DynamicFeaturesChannel dynamicFeaturesChannel;
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final LifecycleChannel lifecycleChannel;
   @NonNull private final LocalizationChannel localizationChannel;
@@ -90,7 +91,6 @@ public class FlutterEngine {
   @NonNull private final RestorationChannel restorationChannel;
   @NonNull private final PlatformChannel platformChannel;
   @NonNull private final SettingsChannel settingsChannel;
-  @NonNull private final DynamicFeaturesChannel DynamicFeaturesChannel;
   @NonNull private final SystemChannel systemChannel;
   @NonNull private final TextInputChannel textInputChannel;
 
@@ -278,6 +278,7 @@ public class FlutterEngine {
     this.dartExecutor.onAttachedToJNI();
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
+    dynamicFeaturesChannel = new DynamicFeaturesChannel(dartExecutor);
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
@@ -286,9 +287,10 @@ public class FlutterEngine {
     platformChannel = new PlatformChannel(dartExecutor);
     restorationChannel = new RestorationChannel(dartExecutor, waitForRestorationData);
     settingsChannel = new SettingsChannel(dartExecutor);
-    DynamicFeaturesChannel = new DynamicFeaturesChannel(dartExecutor);
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
+
+    FlutterInjector.instance().dynamicFeatureManager().setDynamicFeaturesChannel(dynamicFeaturesChannel);
 
     this.localizationPlugin = new LocalizationPlugin(context, localizationChannel);
 
@@ -490,7 +492,7 @@ public class FlutterEngine {
   /** System channel that allows manual installation and state querying of dynamic features. */
   @NonNull
   public DynamicFeaturesChannel getDynamicFeaturesChannel() {
-    return DynamicFeaturesChannel;
+    return dynamicFeaturesChannel;
   }
 
   /** System channel that sends memory pressure warnings from Android to Flutter. */
