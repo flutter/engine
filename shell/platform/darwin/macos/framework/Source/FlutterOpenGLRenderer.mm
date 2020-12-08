@@ -43,9 +43,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - FlutterOpenGLRenderer implementation.
 
 @implementation FlutterOpenGLRenderer {
-  // The embedding-API-level engine object.
-  FLUTTER_API_SYMBOL(FlutterEngine) _engine;
-
   FlutterView* _flutterView;
 
   // The context provided to the Flutter engine for rendering to the FlutterView. This is lazily
@@ -62,11 +59,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   FlutterEngine* _flutterEngine;
 }
 
-- (instancetype)initWithEmbedderEngine:(FLUTTER_API_SYMBOL(FlutterEngine))engine
-                         flutterEngine:(FlutterEngine*)flutterEngine {
+- (instancetype)initWithFlutterEngine:(FlutterEngine*)flutterEngine {
   self = [super init];
   if (self) {
-    _engine = engine;
     _flutterEngine = flutterEngine;
     _textures = [[NSMutableDictionary alloc] init];
   }
@@ -77,7 +72,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   _flutterView = view;
 }
 
-- (bool)makeCurrent {
+- (BOOL)makeCurrent {
   if (!_openGLContext) {
     return false;
   }
@@ -85,12 +80,12 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return true;
 }
 
-- (bool)clearCurrent {
+- (BOOL)clearCurrent {
   [NSOpenGLContext clearCurrentContext];
   return true;
 }
 
-- (bool)present {
+- (BOOL)present {
   if (!_openGLContext) {
     return false;
   }
@@ -123,7 +118,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return _openGLContext;
 }
 
-- (bool)makeResourceCurrent {
+- (BOOL)makeResourceCurrent {
   [self.resourceContext makeCurrentContext];
   return true;
 }
@@ -143,7 +138,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   FlutterExternalTextureGL* externalTexture =
       [[FlutterExternalTextureGL alloc] initWithFlutterTexture:texture];
   int64_t textureID = [externalTexture textureID];
-  bool success = [_flutterEngine embedderRegisterTextureWithId:textureID];
+  bool success = [_flutterEngine registerTextureWithID:textureID];
   if (success) {
     _textures[@(textureID)] = externalTexture;
     return textureID;
@@ -154,14 +149,14 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (void)textureFrameAvailable:(int64_t)textureID {
-  bool success = [_flutterEngine embedderMarkTextureFrameAvailable:textureID];
+  bool success = [_flutterEngine markTextureFrameAvailable:textureID];
   if (success) {
     NSLog(@"Unable to mark texture with id %lld as available.", textureID);
   }
 }
 
 - (void)unregisterTexture:(int64_t)textureID {
-  bool success = [_flutterEngine embedderUnregisterTextureWithId:textureID];
+  bool success = [_flutterEngine unregisterTextureWithID:textureID];
   if (success) {
     [_textures removeObjectForKey:@(textureID)];
   } else {

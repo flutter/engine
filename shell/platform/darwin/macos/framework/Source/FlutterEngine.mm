@@ -153,8 +153,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _allowHeadlessExecution = allowHeadlessExecution;
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
-  _openGLRenderer = [[FlutterOpenGLRenderer alloc] initWithEmbedderEngine:_engine
-                                                            flutterEngine:self];
+  _openGLRenderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -569,7 +568,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return [_openGLRenderer registerTexture:texture];
 }
 
-- (bool)embedderRegisterTextureWithId:(int64_t)textureId {
+- (BOOL)registerTextureWithID:(int64_t)textureId {
   return _embedderAPI.RegisterExternalTexture(_engine, textureId) == kSuccess;
 }
 
@@ -577,7 +576,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [_openGLRenderer textureFrameAvailable:textureID];
 }
 
-- (bool)embedderMarkTextureFrameAvailable:(int64_t)textureID {
+- (BOOL)markTextureFrameAvailable:(int64_t)textureID {
   return _embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID) == kSuccess;
 }
 
@@ -585,7 +584,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [_openGLRenderer unregisterTexture:textureID];
 }
 
-- (bool)embedderUnregisterTextureWithId:(int64_t)textureID {
+- (BOOL)unregisterTextureWithID:(int64_t)textureID {
   return _embedderAPI.UnregisterExternalTexture(_engine, textureID) == kSuccess;
 }
 

@@ -14,7 +14,7 @@
 namespace flutter::testing {
 
 namespace {
-// Returns an engine configured for the text fixture resource configuration.
+// Returns an engine configured for the test fixture resource configuration.
 FlutterEngine* CreateTestEngine() {
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]

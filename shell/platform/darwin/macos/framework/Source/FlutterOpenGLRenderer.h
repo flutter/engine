@@ -8,8 +8,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  * Provides the renderer config needed to initialize the embedder engine and also handles external
  * texture management. This is initialized during FlutterEngine creation and then attached to the
@@ -31,38 +29,37 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Intializes the renderer with the given FlutterEngine.
  */
-- (instancetype)initWithEmbedderEngine:(FLUTTER_API_SYMBOL(FlutterEngine))engine
-                         flutterEngine:(FlutterEngine*)flutterEngine;
+- (nullable instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine;
 
 /**
  * Attaches to the FlutterView and sets up the renderers main OpenGL context.
  */
-- (void)attachToFlutterView:(FlutterView*)view;
+- (void)attachToFlutterView:(nonnull FlutterView*)view;
 
 /**
  * Called by the engine to make the context the engine should draw into current.
  */
-- (bool)makeCurrent;
+- (BOOL)makeCurrent;
 
 /**
  * Called by the engine to clear the context the engine should draw into.
  */
-- (bool)clearCurrent;
+- (BOOL)clearCurrent;
 
 /**
  * Called by the engine when the context's buffers should be swapped.
  */
-- (bool)present;
+- (BOOL)present;
 
 /**
  * Called by the engine when framebuffer object ID is requested.
  */
-- (uint32_t)fboForFrameInfo:(const FlutterFrameInfo*)info;
+- (uint32_t)fboForFrameInfo:(nonnull const FlutterFrameInfo*)info;
 
 /**
  * Makes the resource context the current context.
  */
-- (bool)makeResourceCurrent;
+- (BOOL)makeResourceCurrent;
 
 /**
  * Called by the engine to unset the resource context.
@@ -73,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Populates the texture registry with the provided openGLTexture.
  */
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
-                        openGLTexture:(FlutterOpenGLTexture*)openGLTexture;
+                        openGLTexture:(nonnull FlutterOpenGLTexture*)openGLTexture;
 
 /**
  * Creates a FlutterRendererConfig that renders using OpenGL context(s) held
@@ -82,5 +79,3 @@ NS_ASSUME_NONNULL_BEGIN
 - (FlutterRendererConfig)createRendererConfig;
 
 @end
-
-NS_ASSUME_NONNULL_END
