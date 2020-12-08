@@ -520,6 +520,9 @@ void Engine::LoadDartDeferredLibrary(
     runtime_controller_->LoadDartDeferredLibrary(
         loading_unit_id, std::move(snapshot_data),
         std::move(snapshot_instructions));
+  } else {
+    LoadDartDeferredLibraryError(loading_unit_id, "No running root isolate.",
+                                 true);
   }
 }
 
