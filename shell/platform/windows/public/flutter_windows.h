@@ -9,6 +9,10 @@
 #include <stdint.h>
 #include <windows.h>
 
+#ifdef WINUWP
+#include <windows.ui.core.h>
+#endif
+
 #include "flutter_export.h"
 #include "flutter_messenger.h"
 #include "flutter_plugin_registrar.h"
@@ -57,6 +61,7 @@ typedef struct {
 
 // ========== View Controller ==========
 
+#ifndef WINUWP
 // Creates a view that hosts and displays the given engine instance.
 //
 // This takes ownership of |engine|, so FlutterDesktopEngineDestroy should no
@@ -74,6 +79,13 @@ FLUTTER_EXPORT FlutterDesktopViewControllerRef
 FlutterDesktopViewControllerCreate(int width,
                                    int height,
                                    FlutterDesktopEngineRef engine);
+#else
+//TODO
+FLUTTER_EXPORT FlutterDesktopViewControllerRef
+FlutterDesktopViewControllerCreateFromCoreWindow(
+    ABI::Windows::UI::Core::CoreWindow* window,
+                                   FlutterDesktopEngineRef engine);
+#endif
 
 // Shuts down the engine instance associated with |controller|, and cleans up
 // associated state.
@@ -161,8 +173,10 @@ FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
 
 // ========== View ==========
 
+#ifndef WINUWP
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
+#endif
 
 // ========== Plugin Registrar (extensions) ==========
 // These are Windows-specific extensions to flutter_plugin_registrar.h
@@ -186,6 +200,7 @@ typedef bool (*FlutterDesktopWindowProcCallback)(HWND /* hwnd */,
 FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar);
 
+#ifndef WINUWP
 FLUTTER_EXPORT void
 FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(
     FlutterDesktopPluginRegistrarRef registrar,
@@ -196,6 +211,7 @@ FLUTTER_EXPORT void
 FlutterDesktopPluginRegistrarUnregisterTopLevelWindowProcDelegate(
     FlutterDesktopPluginRegistrarRef registrar,
     FlutterDesktopWindowProcCallback delegate);
+#endif
 
 // ========== Freestanding Utilities ==========
 

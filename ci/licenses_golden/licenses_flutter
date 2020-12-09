@@ -1457,6 +1457,10 @@ FILE: ../../../flutter/shell/platform/windows/task_runner_win32.cc
 FILE: ../../../flutter/shell/platform/windows/task_runner_win32.h
 FILE: ../../../flutter/shell/platform/windows/task_runner_winuwp.cc
 FILE: ../../../flutter/shell/platform/windows/task_runner_winuwp.h
+FILE: ../../../flutter/shell/platform/windows/uwp_flutter_window.cc
+FILE: ../../../flutter/shell/platform/windows/uwp_flutter_window.h
+FILE: ../../../flutter/shell/platform/windows/uwp_game_pad.cc
+FILE: ../../../flutter/shell/platform/windows/uwp_game_pad.h
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/windows/win32_dpi_utils.cc

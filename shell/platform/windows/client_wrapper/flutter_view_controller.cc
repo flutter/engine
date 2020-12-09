@@ -9,6 +9,7 @@
 
 namespace flutter {
 
+#ifndef WINUWP
 FlutterViewController::FlutterViewController(int width,
                                              int height,
                                              const DartProject& project) {
@@ -22,6 +23,22 @@ FlutterViewController::FlutterViewController(int width,
   view_ = std::make_unique<FlutterView>(
       FlutterDesktopViewControllerGetView(controller_));
 }
+#else
+FlutterViewController::FlutterViewController(
+    ABI::Windows::UI::Core::CoreWindow* window,
+                                             const DartProject& project) {
+  engine_ = std::make_unique<FlutterEngine>(project);
+  controller_ = FlutterDesktopViewControllerCreateFromCoreWindow(
+      window,
+                                                   engine_->RelinquishEngine());
+  if (!controller_) {
+    std::cerr << "Failed to create view controller." << std::endl;
+    return;
+  }
+  view_ = std::make_unique<FlutterView>(
+      FlutterDesktopViewControllerGetView(controller_));
+}
+#endif
 
 FlutterViewController::~FlutterViewController() {
   if (controller_) {

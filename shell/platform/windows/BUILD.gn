@@ -13,6 +13,10 @@ config("relative_angle_headers") {
   include_dirs = [ "//third_party/angle/include" ]
 }
 
+config("usecorewindow") {
+  defines = [ "USECOREWINDOW" ]
+}
+
 # Any files that are built by clients (client_wrapper code, library headers for
 # implementations using this shared code, etc.) include the public headers
 # assuming they are in the include path. This configuration should be added to
@@ -80,6 +84,10 @@ source_set("flutter_windows_source") {
       "system_utils_winuwp.cc",
       "task_runner_winuwp.cc",
       "task_runner_winuwp.h",
+      "uwp_flutter_window.cc",
+      "uwp_flutter_window.h",
+      "uwp_game_pad.cc",
+      "uwp_game_pad.h",
     ]
   } else {
     sources += [
@@ -103,6 +111,7 @@ source_set("flutter_windows_source") {
   configs += [
     "//flutter/shell/platform/common/cpp:desktop_library_implementation",
     "//third_party/angle:gl_prototypes",
+    ":usecorewindow",
   ]
 
   public_configs = [ ":relative_angle_headers" ]

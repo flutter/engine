@@ -8,6 +8,10 @@
 #include <flutter_windows.h>
 #include <windows.h>
 
+#ifdef WINUWP
+#include <windows.ui.core.h>
+#endif
+
 #include <memory>
 #include <optional>
 
@@ -26,13 +30,23 @@ namespace flutter {
 // methods in the C API directly, as this class will do that internally.
 class FlutterViewController {
  public:
+#ifndef WINUWP
   // Creates a FlutterView that can be parented into a Windows View hierarchy
-  // either using HWNDs or in the future into a CoreWindow, or using compositor.
+  // either using HWNDs.
   //
   // |dart_project| will be used to configure the engine backing this view.
   explicit FlutterViewController(int width,
                                  int height,
                                  const DartProject& project);
+#else
+  // Creates a FlutterView that can be parented into a Windows View hierarchy
+  // either using CoreWindow.
+  //
+  // |dart_project| will be used to configure the engine backing this view.
+  explicit FlutterViewController(
+      ABI::Windows::UI::Core::CoreWindow* window,
+                                 const DartProject& project);
+#endif
 
   virtual ~FlutterViewController();
 
