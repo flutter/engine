@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import android.view.KeyEvent;
+import android.view.KeyCharacterMap;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -70,6 +71,13 @@ public class HardwareKeyboard {
     final long timeStamp = event.getEventTime() * 1000; // Convert from milliseconds to microseconds.
 
     final long lastLogicalRecord = getLastLogicalRecord(physicalKey);
+
+    final int deviceId = event.getDeviceId();
+    final KeyCharacterMap kcm = KeyCharacterMap.load(deviceId);
+    final int keyCode = event.getKeyCode();
+    final char ch = kcm.getDisplayLabel(keyCode);
+    System.out.printf("Rawkey ID %d keycode %d ch %c\n",
+      deviceId, keyCode, ch);
 
     int change;
 
