@@ -339,7 +339,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   __weak FlutterEngine* weak_self = self;
   _macOSGLCompositor->SetPresentCallback(
-      [weak_self]() { return [weak_self.openGLRenderer present]; });
+      [weak_self]() { return [weak_self.openGLRenderer glPresent]; });
 
   _compositor.avoid_backing_store_cache = true;
 

@@ -49,7 +49,7 @@
 /**
  * Called by the engine when the context's buffers should be swapped.
  */
-- (BOOL)present;
+- (BOOL)glPresent;
 
 /**
  * Called by the engine when framebuffer object ID is requested.

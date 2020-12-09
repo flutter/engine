@@ -20,7 +20,7 @@ static bool OnClearCurrent(FlutterEngine* engine) {
 }
 
 static bool OnPresent(FlutterEngine* engine) {
-  return [engine.openGLRenderer present];
+  return [engine.openGLRenderer glPresent];
 }
 
 static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
@@ -85,7 +85,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return true;
 }
 
-- (BOOL)present {
+- (BOOL)glPresent {
   if (!_openGLContext) {
     return false;
   }

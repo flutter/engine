@@ -7,6 +7,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/testing/testing.h"
@@ -84,6 +86,33 @@ TEST(FlutterOpenGLRenderer, MarkExternalTextureFrameAvailable) {
   EXPECT_TRUE(called);
 
   [engine shutDownEngine];
+}
+
+TEST(FlutterOpenGLRenderer, PresetDelegatesToFlutterView) {
+  FlutterEngine* engine = CreateTestEngine();
+  FlutterOpenGLRenderer* renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:engine];
+  id mockFlutterView = OCMClassMock([FlutterView class]);
+  [[mockFlutterView expect] present];
+  [renderer attachToFlutterView:mockFlutterView];
+  [renderer openGLContext];
+  [renderer glPresent];
+}
+
+TEST(FlutterOpenGLRenderer, FBOReturnedByFlutterView) {
+  FlutterEngine* engine = CreateTestEngine();
+  FlutterOpenGLRenderer* renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:engine];
+  id mockFlutterView = OCMClassMock([FlutterView class]);
+  FlutterFrameInfo frameInfo;
+  frameInfo.struct_size = sizeof(FlutterFrameInfo);
+  FlutterUIntSize dimensions;
+  dimensions.width = 100;
+  dimensions.height = 200;
+  frameInfo.size = dimensions;
+  CGSize size = CGSizeMake(dimensions.width, dimensions.height);
+  [[mockFlutterView expect] frameBufferIDForSize:size];
+  [renderer attachToFlutterView:mockFlutterView];
+  [renderer openGLContext];
+  [renderer fboForFrameInfo:&frameInfo];
 }
 
 }  // namespace flutter::testing
