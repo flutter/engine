@@ -631,7 +631,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
-      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners);
 
