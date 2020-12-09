@@ -248,8 +248,6 @@ TEST_F(EngineTest, PassesLoadDartDeferredLibraryErrorToRuntime) {
         std::make_unique<MockRuntimeController>(client, task_runners_);
     EXPECT_CALL(*mock_runtime_controller, IsRootIsolateRunning())
         .WillRepeatedly(::testing::Return(true));
-    EXPECT_CALL(*mock_runtime_controller, DispatchPlatformMessage(::testing::_))
-        .WillRepeatedly(::testing::Return(true));
     EXPECT_CALL(*mock_runtime_controller,
                 LoadDartDeferredLibraryError(error_id, error_message, true))
         .Times(1);
