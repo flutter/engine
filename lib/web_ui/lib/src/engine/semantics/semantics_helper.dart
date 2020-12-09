@@ -280,10 +280,15 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       return true;
     }
 
+    // ios-safari browsers which starts sending `pointer` events instead of
+    // `touch` events. (Tested with 12.1 which uses touch events vs 13.5
+    // which uses pointer events.)
     const Set<String> kInterestingEventTypes = <String>{
       'click',
       'touchstart',
       'touchend',
+      'pointerdown',
+      'pointerup',
     };
 
     if (!kInterestingEventTypes.contains(event.type)) {
