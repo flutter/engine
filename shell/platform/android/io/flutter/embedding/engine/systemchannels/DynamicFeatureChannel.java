@@ -11,18 +11,16 @@ import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager;
-import io.flutter.plugin.common.JSONMethodCodec;
+import io.flutter.plugin.common.StandardMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import org.json.JSONException;
-import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DynamicFeaturesChannel {
-  private static final String TAG = "DynamicFeaturesChannel";
+public class DynamicFeatureChannel {
+  private static final String TAG = "DynamicFeatureChannel";
 
   @NonNull public final MethodChannel channel;
   @Nullable DynamicFeatureManager dynamicFeatureManager;
@@ -38,45 +36,41 @@ public class DynamicFeaturesChannel {
             return;
           }
           String method = call.method;
-          Object args = call.arguments;
+          // Object args = call.arguments;
+          Map<String, Object> args = call.arguments();
           Log.v(TAG, "Received '" + method + "' message.");
-          try {
-            final JSONObject arguments = (JSONObject) args;
-            final int loadingUnitId = arguments.getInt("loadingUnitId");
-            final String moduleName = arguments.getString("moduleName");
-            switch (method) {
-              case "DynamicFeatures.installDynamicFeature":
-                dynamicFeatureManager.installDynamicFeature(loadingUnitId, moduleName);
-                if (!moduleNameToResults.containsKey(moduleName)) {
-                  moduleNameToResults.put(moduleName, new ArrayList<>());
-                } else {
-                  moduleNameToResults.get(moduleName).add(result);
-                }
-                break;
-              case "DynamicFeatures.getDynamicFeatureInstallState":
-                result.success(dynamicFeatureManager.getDynamicFeatureInstallState(loadingUnitId, moduleName));
-                break;
-              default:
-                result.notImplemented();
-                break;
-            }
-          } catch (JSONException exception) {
-            result.error("error", exception.getMessage(), null);
+          final int loadingUnitId = (int) args.get("loadingUnitId");
+          final String moduleName = (String) args.get("moduleName");
+          switch (method) {
+            case "DynamicFeature.installDynamicFeature":
+              dynamicFeatureManager.installDynamicFeature(loadingUnitId, moduleName);
+              if (!moduleNameToResults.containsKey(moduleName)) {
+                moduleNameToResults.put(moduleName, new ArrayList<>());
+              } else {
+                moduleNameToResults.get(moduleName).add(result);
+              }
+              break;
+            case "DynamicFeature.getDynamicFeatureInstallState":
+              result.success(dynamicFeatureManager.getDynamicFeatureInstallState(loadingUnitId, moduleName));
+              break;
+            default:
+              result.notImplemented();
+              break;
           }
         }
       };
 
   /**
-   * Constructs a {@code DynamicFeaturesChannel} that connects Android to the Dart code running in {@code
+   * Constructs a {@code DynamicFeatureChannel} that connects Android to the Dart code running in {@code
    * dartExecutor}.
    *
    * <p>The given {@code dartExecutor} is permitted to be idle or executing code.
    *
    * <p>See {@link DartExecutor}.
    */
-  public DynamicFeaturesChannel(@NonNull DartExecutor dartExecutor) {
+  public DynamicFeatureChannel(@NonNull DartExecutor dartExecutor) {
     this.channel =
-        new MethodChannel(dartExecutor, "flutter/splitaot", JSONMethodCodec.INSTANCE);
+        new MethodChannel(dartExecutor, "flutter/splitaot", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
     dynamicFeatureManager = FlutterInjector.instance().dynamicFeatureManager();
     moduleNameToResults = new HashMap<>();

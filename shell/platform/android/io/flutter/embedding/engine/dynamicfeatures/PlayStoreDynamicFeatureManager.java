@@ -22,7 +22,7 @@ import com.google.android.play.core.splitinstall.model.SplitInstallErrorCode;
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.systemchannels.DynamicFeaturesChannel;
+import io.flutter.embedding.engine.systemchannels.DynamicFeatureChannel;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,7 +40,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
 
   private @NonNull SplitInstallManager splitInstallManager;
   private @Nullable FlutterJNI flutterJNI;
-  private @Nullable DynamicFeaturesChannel channel;
+  private @Nullable DynamicFeatureChannel channel;
   private @NonNull Context context;
   // Each request to install a feature module gets a session ID. These maps associate
   // the session ID with the loading unit and module name that was requested.
@@ -213,7 +213,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     return true;
   }
 
-  public void setDynamicFeaturesChannel(DynamicFeaturesChannel channel) {
+  public void setDynamicFeatureChannel(DynamicFeatureChannel channel) {
     this.channel = channel;
   }
 

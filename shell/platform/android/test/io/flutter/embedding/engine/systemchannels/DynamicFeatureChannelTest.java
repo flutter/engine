@@ -19,13 +19,13 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
-public class DynamicFeaturesChannelTest {
+public class DynamicFeatureChannelTest {
   @Test
-  public void dynamicFeaturesChannel_hasStringsMessage() {
+  public void dynamicFeatureChannel_hasStringsMessage() {
     MethodChannel rawChannel = mock(MethodChannel.class);
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
-    DynamicFeaturesChannel fakeDynamicFeaturesChannel = new DynamicFeaturesChannel(dartExecutor);
+    DynamicFeatureChannel fakeDynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor);
     // PlatformChannel.PlatformMessageHandler mockMessageHandler =
     //     mock(PlatformChannel.PlatformMessageHandler.class);
     // fakePlatformChannel.setPlatformMessageHandler(mockMessageHandler);

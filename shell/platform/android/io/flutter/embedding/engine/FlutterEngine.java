@@ -21,7 +21,7 @@ import io.flutter.embedding.engine.plugins.service.ServiceControlSurface;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
-import io.flutter.embedding.engine.systemchannels.DynamicFeaturesChannel;
+import io.flutter.embedding.engine.systemchannels.DynamicFeatureChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
@@ -82,7 +82,7 @@ public class FlutterEngine {
 
   // System channels.
   @NonNull private final AccessibilityChannel accessibilityChannel;
-  @NonNull private final DynamicFeaturesChannel dynamicFeaturesChannel;
+  @NonNull private final DynamicFeatureChannel dynamicFeatureChannel;
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final LifecycleChannel lifecycleChannel;
   @NonNull private final LocalizationChannel localizationChannel;
@@ -278,7 +278,7 @@ public class FlutterEngine {
     this.dartExecutor.onAttachedToJNI();
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
-    dynamicFeaturesChannel = new DynamicFeaturesChannel(dartExecutor);
+    dynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor);
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
@@ -290,7 +290,7 @@ public class FlutterEngine {
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
-    FlutterInjector.instance().dynamicFeatureManager().setDynamicFeaturesChannel(dynamicFeaturesChannel);
+    FlutterInjector.instance().dynamicFeatureManager().setDynamicFeatureChannel(dynamicFeatureChannel);
 
     this.localizationPlugin = new LocalizationPlugin(context, localizationChannel);
 
@@ -491,8 +491,8 @@ public class FlutterEngine {
 
   /** System channel that allows manual installation and state querying of dynamic features. */
   @NonNull
-  public DynamicFeaturesChannel getDynamicFeaturesChannel() {
-    return dynamicFeaturesChannel;
+  public DynamicFeatureChannel getDynamicFeatureChannel() {
+    return dynamicFeatureChannel;
   }
 
   /** System channel that sends memory pressure warnings from Android to Flutter. */

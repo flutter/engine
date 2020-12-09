@@ -5,7 +5,7 @@
 package io.flutter.embedding.engine.dynamicfeatures;
 
 import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.systemchannels.DynamicFeaturesChannel;
+import io.flutter.embedding.engine.systemchannels.DynamicFeatureChannel;
 
 // TODO: add links to external documentation on how to use split aot features.
 /**
@@ -48,16 +48,16 @@ public interface DynamicFeatureManager {
   public abstract void setJNI(FlutterJNI flutterJNI);
 
   /**
-   * Sets the DynamicFeaturesChannel system channel to handle the framework API to directly call
+   * Sets the DynamicFeatureChannel system channel to handle the framework API to directly call
    * methods in DynamicFeatureManager.
    *
-   * <p>A DynamicFeaturesChannel is required to handle assets-only dynamic features and manually
+   * <p>A DynamicFeatureChannel is required to handle assets-only dynamic features and manually
    * installed dynamic features.
    *
    * <p>Since this class may be instantiated for injection before the FlutterEngine and System
-   * Channels are initialized, this method should be called to provide the DynamicFeaturesChannel.
+   * Channels are initialized, this method should be called to provide the DynamicFeatureChannel.
    */
-  public abstract void setDynamicFeaturesChannel(DynamicFeaturesChannel channel);
+  public abstract void setDynamicFeatureChannel(DynamicFeatureChannel channel);
 
   /**
    * Request that the feature module be downloaded and installed.
