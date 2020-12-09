@@ -632,7 +632,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
-      /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners);
 
   UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
