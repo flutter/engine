@@ -478,7 +478,7 @@ typedef struct {
   /// Alias for id<MTLDevice>.
   FlutterMetalDevice device;
   /// Alias for id<MTLCommandQueue>.
-  FlutterMetalCommandQueue command_queue;
+  FlutterMetalCommandQueue present_command_queue;
   /// The callback that gets invoked when the engine requests the embedder for a
   /// texture to render to.
   FlutterMetalTextureCallback get_next_drawable_texture_callback;

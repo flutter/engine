@@ -385,7 +385,7 @@ void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
 
   metal_renderer_config_.device =
       metal_context.GetTestMetalContext()->GetMetalDevice();
-  metal_renderer_config_.command_queue =
+  metal_renderer_config_.present_command_queue =
       metal_context.GetTestMetalContext()->GetMetalCommandQueue();
   metal_renderer_config_.get_next_drawable_texture_callback =
       [](void* user_data, const FlutterFrameInfo* frame_info) {

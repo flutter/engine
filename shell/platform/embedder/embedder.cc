@@ -133,7 +133,8 @@ static bool IsMetalRendererConfigValid(const FlutterRendererConfig* config) {
   const FlutterMetalRendererConfig* metal_config = &config->metal;
 
   bool device = SAFE_ACCESS(metal_config, device, nullptr);
-  bool command_queue = SAFE_ACCESS(metal_config, command_queue, nullptr);
+  bool command_queue =
+      SAFE_ACCESS(metal_config, present_command_queue, nullptr);
 
   bool present =
       SAFE_ACCESS(metal_config, present_drawable_texture_callback, nullptr);
@@ -348,7 +349,7 @@ InferMetalPlatformViewCreationCallback(
       std::make_unique<flutter::EmbedderSurfaceMetal>(
           const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
           const_cast<flutter::GPUMTLCommandQueueHandle>(
-              config->metal.command_queue),
+              config->metal.present_command_queue),
           metal_dispatch_table, view_embedder);
 
   return fml::MakeCopyable(
