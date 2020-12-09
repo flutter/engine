@@ -256,8 +256,9 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
   @override
   bool tryEnableSemantics(html.Event event) {
     if (_schedulePlaceholderRemoval) {
-      final bool removeNow =
-          (browserEngine != BrowserEngine.webkit || event.type == 'touchend');
+      final bool removeNow = (browserEngine != BrowserEngine.webkit ||
+          event.type == 'touchend' ||
+          event.type == 'pointerup');
       if (removeNow) {
         _semanticsPlaceholder!.remove();
         _semanticsPlaceholder = null;
@@ -288,6 +289,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       'touchstart',
       'touchend',
       'pointerdown',
+      'pointermove',
       'pointerup',
     };
 
@@ -338,6 +340,11 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
           final html.TouchEvent touch = event as html.TouchEvent;
           activationPoint = touch.changedTouches!.first.client;
           break;
+        case 'pointerdown':
+        case 'pointerup':
+          final html.PointerEvent touch = event as html.PointerEvent;
+          activationPoint = new html.Point(touch.client.x, touch.client.y);
+          break;
         default:
           // The event is not relevant, forward to framework as normal.
           return true;
@@ -346,9 +353,11 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       final html.Rectangle<num> activatingElementRect =
           domRenderer.glassPaneElement!.getBoundingClientRect();
       final double midX = (activatingElementRect.left +
-          (activatingElementRect.right - activatingElementRect.left) / 2).toDouble();
+              (activatingElementRect.right - activatingElementRect.left) / 2)
+          .toDouble();
       final double midY = (activatingElementRect.top +
-          (activatingElementRect.bottom - activatingElementRect.top) / 2).toDouble();
+              (activatingElementRect.bottom - activatingElementRect.top) / 2)
+          .toDouble();
       final double deltaX = activationPoint.x.toDouble() - midX;
       final double deltaY = activationPoint.y.toDouble() - midY;
       final double deltaSquared = deltaX * deltaX + deltaY * deltaY;
