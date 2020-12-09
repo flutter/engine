@@ -741,17 +741,15 @@ void testMain() {
         expect(spy.messages[0].channel, 'flutter/textinput');
         expect(spy.messages[0].methodName,
             'TextInputClient.onConnectionClosed');
+        await Future<void>.delayed(Duration.zero);
         // DOM element loses the focus.
-        Timer.run(expectAsync0(() {
-          expect(document.activeElement, document.body);
-        }));
+        expect(document.activeElement, document.body);
       } else {
         // No connection close message sent.
         expect(spy.messages, hasLength(0));
+        await Future<void>.delayed(Duration.zero);
         // DOM element still keeps the focus.
-        Timer.run(expectAsync0(() {
-          expect(document.activeElement, textEditing.editingElement.domElement);
-        }));
+        expect(document.activeElement, textEditing.editingElement.domElement);
       }
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
