@@ -134,8 +134,11 @@ static bool IsMetalRendererConfigValid(const FlutterRendererConfig* config) {
 
   bool device = SAFE_ACCESS(metal_config, device, nullptr);
   bool command_queue = SAFE_ACCESS(metal_config, command_queue, nullptr);
-  bool present = SAFE_ACCESS(metal_config, present_callback, nullptr);
-  bool get_texture = SAFE_ACCESS(metal_config, texture_callback, nullptr);
+
+  bool present =
+      SAFE_ACCESS(metal_config, present_drawable_texture_callback, nullptr);
+  bool get_texture =
+      SAFE_ACCESS(metal_config, get_next_drawable_texture_callback, nullptr);
 
   return device && command_queue && present && get_texture;
 }
@@ -309,12 +312,17 @@ InferMetalPlatformViewCreationCallback(
   }
 
 #ifdef SHELL_ENABLE_METAL
-  std::function<bool(intptr_t texture_id)> metal_present =
-      [ptr = config->metal.present_callback, user_data](intptr_t texture_id) {
-        return ptr(user_data, texture_id);
+  std::function<bool(flutter::GPUMTLTextureInfo texture)> metal_present =
+      [ptr = config->metal.present_drawable_texture_callback,
+       user_data](flutter::GPUMTLTextureInfo texture) {
+        FlutterMetalTexture embedder_texture;
+        embedder_texture.struct_size = sizeof(FlutterMetalTexture);
+        embedder_texture.texture =
+            reinterpret_cast<FlutterMetalTextureBuffer*>(texture.texture);
+        return ptr(user_data, &embedder_texture);
       };
   auto metal_get_texture =
-      [ptr = config->metal.texture_callback,
+      [ptr = config->metal.get_next_drawable_texture_callback,
        user_data](const SkISize& frame_size) -> flutter::GPUMTLTextureInfo {
     FlutterFrameInfo frame_info = {};
     frame_info.struct_size = sizeof(FlutterFrameInfo);
@@ -322,11 +330,7 @@ InferMetalPlatformViewCreationCallback(
                        static_cast<uint32_t>(frame_size.height())};
     flutter::GPUMTLTextureInfo texture_info;
 
-    FlutterMetalTexture metal_texture;
-    metal_texture.struct_size = sizeof(FlutterMetalTexture);
-    metal_texture.texture = &texture_info.texture;
-
-    ptr(user_data, &frame_info, &metal_texture);
+    FlutterMetalTexture metal_texture = ptr(user_data, &frame_info);
     texture_info.texture_id = metal_texture.texture_id;
     texture_info.texture = metal_texture.texture;
     return texture_info;

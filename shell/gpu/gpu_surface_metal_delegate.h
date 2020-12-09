@@ -87,7 +87,7 @@ class GPUSurfaceMetalDelegate {
   ///
   /// @see |GPUSurfaceMetalDelegate::GetMTLTexture|
   ///
-  virtual bool PresentTexture(intptr_t texture_id) const = 0;
+  virtual bool PresentTexture(GPUMTLTextureInfo texture) const = 0;
 
   MTLRenderTargetType GetRenderTargetType();
 

@@ -387,25 +387,27 @@ void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
       metal_context.GetTestMetalContext()->GetMetalDevice();
   metal_renderer_config_.command_queue =
       metal_context.GetTestMetalContext()->GetMetalCommandQueue();
-  metal_renderer_config_.texture_callback =
-      [](void* user_data, const FlutterFrameInfo* frame_info,
-         FlutterMetalTexture* texture_out) {
+  metal_renderer_config_.get_next_drawable_texture_callback =
+      [](void* user_data, const FlutterFrameInfo* frame_info) {
         EmbedderTestContextMetal* metal_context =
             reinterpret_cast<EmbedderTestContextMetal*>(user_data);
         SkISize surface_size =
             SkISize::Make(frame_info->size.width, frame_info->size.height);
-        texture_out->struct_size = sizeof(FlutterMetalTexture);
         TestMetalContext::TextureInfo texture_info =
             metal_context->GetTestMetalContext()->CreateMetalTexture(
                 surface_size);
-        texture_out->texture_id = texture_info.texture_id;
-        texture_out->texture = texture_info.texture;
+        FlutterMetalTexture texture;
+        texture.struct_size = sizeof(FlutterMetalTexture);
+        texture.texture_id = texture_info.texture_id;
+        texture.texture =
+            reinterpret_cast<FlutterMetalTextureBuffer*>(texture_info.texture);
+        return texture;
       };
-  metal_renderer_config_.present_callback = [](void* user_data,
-                                               int64_t texture_id) -> bool {
+  metal_renderer_config_.present_drawable_texture_callback =
+      [](void* user_data, const FlutterMetalTexture* texture) -> bool {
     EmbedderTestContextMetal* metal_context =
         reinterpret_cast<EmbedderTestContextMetal*>(user_data);
-    return metal_context->Present(texture_id);
+    return metal_context->Present(texture->texture_id);
   };
 }
 

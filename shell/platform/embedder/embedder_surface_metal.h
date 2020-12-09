@@ -17,7 +17,7 @@ class EmbedderSurfaceMetal final : public EmbedderSurface,
                                    public GPUSurfaceMetalDelegate {
  public:
   struct MetalDispatchTable {
-    std::function<bool(intptr_t texture_id)> present;  // required
+    std::function<bool(GPUMTLTextureInfo texture)> present;  // required
     std::function<GPUMTLTextureInfo(const SkISize& frame_size)>
         get_texture;  // required
   };
@@ -58,7 +58,7 @@ class EmbedderSurfaceMetal final : public EmbedderSurface,
   GPUMTLTextureInfo GetMTLTexture(const SkISize& frame_size) const override;
 
   // |GPUSurfaceMetalDelegate|
-  bool PresentTexture(intptr_t texture_id) const override;
+  bool PresentTexture(GPUMTLTextureInfo texture) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceMetal);
 };

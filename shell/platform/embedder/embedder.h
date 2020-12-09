@@ -72,6 +72,9 @@ typedef enum {
 typedef enum {
   kOpenGL,
   kSoftware,
+  /// Metal is only supported on Darwin platforms (macOS / iOS).
+  /// iOS version >= 10.0 (device), 13.0 (simulator)
+  /// macOS version >= 10.14
   kMetal,
 } FlutterRendererType;
 
@@ -435,11 +438,14 @@ typedef struct {
   BoolPresentInfoCallback present_with_info;
 } FlutterOpenGLRendererConfig;
 
-/// Handle for the MTLDevice.
+/// Alias for id<MTLDevice>.
 typedef const void* FlutterMetalDevice;
 
-/// Handle for the MTLCommandQueue.
+/// Alias for id<MTLCommandQueue>.
 typedef const void* FlutterMetalCommandQueue;
+
+/// Alias for id<MTLTexture>.
+typedef const void* FlutterMetalTextureBuffer;
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterMetalTexture).
@@ -451,34 +457,34 @@ typedef struct {
   int64_t texture_id;
   /// Handle to the MTLTexture that is owned by the embedder. Engine will render
   /// the frame into this texture.
-  void* texture;
+  FlutterMetalTextureBuffer* texture;
 } FlutterMetalTexture;
 
 /// Callback for when a metal texture is requested.
-typedef void (*FlutterMetalTextureCallback)(
+typedef FlutterMetalTexture (*FlutterMetalTextureCallback)(
     void* /* user data */,
-    const FlutterFrameInfo* /* frame info */,
-    FlutterMetalTexture* /* texture out */);
+    const FlutterFrameInfo* /* frame info */);
 
 /// Callback for when a metal texture is presented. The texture_id here
 /// corresponds to the texture_id provided by the embedder in the
 /// `FlutterMetalTextureCallback` callback.
-typedef bool (*FlutterMetalPresentCallback)(void* /* user data */,
-                                            int64_t /* texture id */);
+typedef bool (*FlutterMetalPresentCallback)(
+    void* /* user data */,
+    const FlutterMetalTexture* /* texture */);
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterMetalRendererConfig).
   size_t struct_size;
-  /// Handle for the MTLDevice.
+  /// Alias for id<MTLDevice>.
   FlutterMetalDevice device;
-  /// Handle for the MTLCommandQueue.
+  /// Alias for id<MTLCommandQueue>.
   FlutterMetalCommandQueue command_queue;
   /// The callback that gets invoked when the engine requests the embedder for a
   /// texture to render to.
-  FlutterMetalTextureCallback texture_callback;
+  FlutterMetalTextureCallback get_next_drawable_texture_callback;
   /// The callback presented to the embedder to present a fully populated metal
   /// texture to the user.
-  FlutterMetalPresentCallback present_callback;
+  FlutterMetalPresentCallback present_drawable_texture_callback;
 } FlutterMetalRendererConfig;
 
 typedef struct {

@@ -67,8 +67,8 @@ GPUMTLTextureInfo EmbedderSurfaceMetal::GetMTLTexture(const SkISize& frame_info)
   return metal_dispatch_table_.get_texture(frame_info);
 }
 
-bool EmbedderSurfaceMetal::PresentTexture(intptr_t texture_id) const {
-  return metal_dispatch_table_.present(texture_id);
+bool EmbedderSurfaceMetal::PresentTexture(GPUMTLTextureInfo texture) const {
+  return metal_dispatch_table_.present(texture);
 }
 
 }  // namespace flutter
