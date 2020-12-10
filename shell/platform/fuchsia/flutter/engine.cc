@@ -660,9 +660,13 @@ void Engine::WarmupSkps(fml::BasicTaskRunner* concurrent_task_runner,
                         fml::BasicTaskRunner* raster_task_runner,
                         VulkanSurfaceProducer& surface_producer) {
   SkISize size = SkISize::Make(1024, 600);
-  auto skp_warmup_surface = surface_producer.ProduceOffscreenSurface(size);
+  // We use a raw pointer here because we want to keep this alive until all gpu
+  // work is done and the callbacks skia takes for this are function pointers
+  // so we are unable to use a lambda that captures the smart pointer.
+  SurfaceProducerSurface* skp_warmup_surface =
+      surface_producer.ProduceOffscreenSurface(size).release();
   if (!skp_warmup_surface) {
-    FML_LOG(ERROR) << "SkSurface::MakeRenderTarget returned null";
+    FML_LOG(ERROR) << "Failed to create offscreen warmup surface";
     return;
   }
 
@@ -684,7 +688,7 @@ void Engine::WarmupSkps(fml::BasicTaskRunner* concurrent_task_runner,
                   << " skp's with a total size of " << total_size << " bytes";
 
     std::vector<sk_sp<SkPicture>> pictures;
-    int i = 0;
+    unsigned int i = 0;
     for (auto& mapping : skp_mappings) {
       std::unique_ptr<SkMemoryStream> stream =
           SkMemoryStream::MakeDirect(mapping->GetMapping(), mapping->GetSize());
@@ -700,12 +704,28 @@ void Engine::WarmupSkps(fml::BasicTaskRunner* concurrent_task_runner,
 
       // Tell raster task runner to warmup have the compositor
       // context warm up the newly deserialized picture
-      raster_task_runner->PostTask(
-          [skp_warmup_surface, picture, &surface_producer] {
-            TRACE_DURATION("flutter", "WarmupSkp");
-            skp_warmup_surface->getCanvas()->drawPicture(picture);
-            surface_producer.gr_context()->flushAndSubmit();
-          });
+      raster_task_runner->PostTask([skp_warmup_surface, picture,
+                                    &surface_producer, i,
+                                    count = skp_mappings.size()] {
+        TRACE_DURATION("flutter", "WarmupSkp");
+        skp_warmup_surface->GetSkiaSurface()->getCanvas()->drawPicture(picture);
+
+        if (i < count - 1) {
+          // For all but the last skp we fire and forget
+          surface_producer.gr_context()->flushAndSubmit();
+        } else {
+          // For the last skp we provide a callback that frees the warmup
+          // surface
+          struct GrFlushInfo flush_info;
+          flush_info.fFinishedContext = skp_warmup_surface;
+          flush_info.fFinishedProc = [](void* skp_warmup_surface) {
+            delete static_cast<SurfaceProducerSurface*>(skp_warmup_surface);
+          };
+
+          surface_producer.gr_context()->flush(flush_info);
+          surface_producer.gr_context()->submit();
+        }
+      });
       i++;
     }
   });
