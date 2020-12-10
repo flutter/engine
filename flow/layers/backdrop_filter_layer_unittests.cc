@@ -250,7 +250,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 90, 90));
 
   LayerTree l3;
-  auto scale = std::make_shared<TransformLayer>(SkMatrix::MakeScale(2.0, 2.0));
+  auto scale = std::make_shared<TransformLayer>(SkMatrix::Scale(2.0, 2.0));
   scale->Add(clip);
   l3.root()->Add(scale);
 
