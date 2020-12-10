@@ -232,32 +232,32 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
     EXPECT_EQ(readback, SkIRect::MakeLTRB(-30, -30, 40, 40));
   }
 
-  LayerTree l1(SkISize::Make(100, 100));
+  MockLayerTree l1(SkISize::Make(100, 100));
   l1.root()->Add(std::make_shared<BackdropFilterLayer>(filter));
 
   // no clip, effect over entire surface
-  auto damage = DiffLayerTree(l1, LayerTree(SkISize::Make(100, 100)));
+  auto damage = DiffLayerTree(l1, MockLayerTree(SkISize::Make(100, 100)));
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeWH(100, 100));
 
-  LayerTree l2(SkISize::Make(100, 100));
+  MockLayerTree l2(SkISize::Make(100, 100));
 
   auto clip = std::make_shared<ClipRectLayer>(SkRect::MakeLTRB(20, 20, 60, 60),
                                               Clip::hardEdge);
   clip->Add(std::make_shared<BackdropFilterLayer>(filter));
   l2.root()->Add(clip);
-  damage = DiffLayerTree(l2, LayerTree(SkISize::Make(100, 100)));
+  damage = DiffLayerTree(l2, MockLayerTree(SkISize::Make(100, 100)));
 
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 90, 90));
 
-  LayerTree l3;
+  MockLayerTree l3;
   auto scale = std::make_shared<TransformLayer>(SkMatrix::Scale(2.0, 2.0));
   scale->Add(clip);
   l3.root()->Add(scale);
 
-  damage = DiffLayerTree(l3, LayerTree());
+  damage = DiffLayerTree(l3, MockLayerTree());
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 180, 180));
 
-  LayerTree l4;
+  MockLayerTree l4;
   l4.root()->Add(scale);
 
   // path just outside of readback region, doesn't affect blur
@@ -266,7 +266,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   damage = DiffLayerTree(l4, l3);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(180, 180, 190, 190));
 
-  LayerTree l5;
+  MockLayerTree l5;
   l5.root()->Add(scale);
 
   // path just inside of readback region, must trigger backdrop repaint

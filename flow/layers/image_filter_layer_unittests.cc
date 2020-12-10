@@ -350,24 +350,24 @@ TEST_F(ImageFilterLayerDiffTest, ImageFilterLayer) {
     EXPECT_EQ(paint_rect, SkIRect::MakeLTRB(-30, -30, 40, 40));
   }
 
-  LayerTree l1;
+  MockLayerTree l1;
   auto filter_layer = std::make_shared<ImageFilterLayer>(filter);
   auto path = SkPath().addRect(SkRect::MakeLTRB(100, 100, 110, 110));
   filter_layer->Add(std::make_shared<MockLayer>(path));
   l1.root()->Add(filter_layer);
 
-  auto damage = DiffLayerTree(l1, LayerTree());
+  auto damage = DiffLayerTree(l1, MockLayerTree());
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(70, 70, 140, 140));
 
-  LayerTree l2;
+  MockLayerTree l2;
   auto scale = std::make_shared<TransformLayer>(SkMatrix::Scale(2.0, 2.0));
   scale->Add(filter_layer);
   l2.root()->Add(scale);
 
-  damage = DiffLayerTree(l2, LayerTree());
+  damage = DiffLayerTree(l2, MockLayerTree());
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(140, 140, 280, 280));
 
-  LayerTree l3;
+  MockLayerTree l3;
   l3.root()->Add(scale);
 
   // path outside of ImageFilterLayer
@@ -377,7 +377,7 @@ TEST_F(ImageFilterLayerDiffTest, ImageFilterLayer) {
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(130, 130, 140, 140));
 
   // path intersecting ImageFilterLayer, should trigger ImageFilterLayer repaint
-  LayerTree l4;
+  MockLayerTree l4;
   l4.root()->Add(scale);
   auto path2 = SkPath().addRect(SkRect::MakeLTRB(130, 130, 141, 141));
   l4.root()->Add(std::make_shared<MockLayer>(path2));

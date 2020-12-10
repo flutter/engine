@@ -12,10 +12,10 @@ TEST_F(DiffContextTest, DieIfOldLayerTreeWasNeverDiffed) {
   auto path1 = SkPath().addRect(SkRect::MakeLTRB(0, 0, 50, 50));
   auto c1 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
 
-  LayerTree t1;
+  MockLayerTree t1;
   t1.root()->Add(c1);
 
-  LayerTree t2;
+  MockLayerTree t2;
   t2.root()->Add(c1);
 
   // t1 is used as old_layer_tree, but it was never used used during diffing as
@@ -27,7 +27,7 @@ TEST_F(DiffContextTest, DieIfOldLayerTreeWasNeverDiffed) {
                             "Old layer doesn't have paint region");
 
   // Diff t1 with empty layer tree to determine paint regions
-  DiffLayerTree(t1, LayerTree());
+  DiffLayerTree(t1, MockLayerTree());
 
   // Now we can diff t2 and t1
   auto damage = DiffLayerTree(t2, t1);

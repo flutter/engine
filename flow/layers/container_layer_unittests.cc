@@ -279,7 +279,7 @@ TEST_F(ContainerLayerDiffTest, PictureLayerInsertion) {
   auto pic2 = CreatePicture(SkRect::MakeLTRB(100, 0, 150, 50), 1);
   auto pic3 = CreatePicture(SkRect::MakeLTRB(200, 0, 250, 50), 1);
 
-  LayerTree t1;
+  MockLayerTree t1;
 
   auto t1_c1 = CreateContainerLayer(CreatePictureLayer(pic1));
   t1.root()->Add(t1_c1);
@@ -287,12 +287,12 @@ TEST_F(ContainerLayerDiffTest, PictureLayerInsertion) {
   auto t1_c2 = CreateContainerLayer(CreatePictureLayer(pic2));
   t1.root()->Add(t1_c2);
 
-  auto damage = DiffLayerTree(t1, LayerTree());
+  auto damage = DiffLayerTree(t1, MockLayerTree());
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 150, 50));
 
   // Add in the middle
 
-  LayerTree t2;
+  MockLayerTree t2;
   auto t2_c1 = CreateContainerLayer(CreatePictureLayer(pic1));
   t2_c1->AssignOldLayer(t1_c1.get());
   t2.root()->Add(t2_c1);
@@ -308,7 +308,7 @@ TEST_F(ContainerLayerDiffTest, PictureLayerInsertion) {
 
   // Add in the beginning
 
-  t2 = LayerTree();
+  t2 = MockLayerTree();
   t2.root()->Add(CreatePictureLayer(pic3));
   t2.root()->Add(t2_c1);
   t2.root()->Add(t2_c2);
@@ -317,7 +317,7 @@ TEST_F(ContainerLayerDiffTest, PictureLayerInsertion) {
 
   // Add at the end
 
-  t2 = LayerTree();
+  t2 = MockLayerTree();
   t2.root()->Add(t2_c1);
   t2.root()->Add(t2_c2);
   t2.root()->Add(CreatePictureLayer(pic3));
@@ -331,14 +331,14 @@ TEST_F(ContainerLayerDiffTest, PictureInsertion) {
   auto pic2 = CreatePicture(SkRect::MakeLTRB(100, 0, 150, 50), 1);
   auto pic3 = CreatePicture(SkRect::MakeLTRB(200, 0, 250, 50), 1);
 
-  LayerTree t1;
+  MockLayerTree t1;
   t1.root()->Add(CreatePictureLayer(pic1));
   t1.root()->Add(CreatePictureLayer(pic2));
 
-  auto damage = DiffLayerTree(t1, LayerTree());
+  auto damage = DiffLayerTree(t1, MockLayerTree());
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 150, 50));
 
-  LayerTree t2;
+  MockLayerTree t2;
   t2.root()->Add(CreatePictureLayer(pic3));
   t2.root()->Add(CreatePictureLayer(pic1));
   t2.root()->Add(CreatePictureLayer(pic2));
@@ -346,7 +346,7 @@ TEST_F(ContainerLayerDiffTest, PictureInsertion) {
   damage = DiffLayerTree(t2, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 50));
 
-  LayerTree t3;
+  MockLayerTree t3;
   t3.root()->Add(CreatePictureLayer(pic1));
   t3.root()->Add(CreatePictureLayer(pic3));
   t3.root()->Add(CreatePictureLayer(pic2));
@@ -354,7 +354,7 @@ TEST_F(ContainerLayerDiffTest, PictureInsertion) {
   damage = DiffLayerTree(t3, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 50));
 
-  LayerTree t4;
+  MockLayerTree t4;
   t4.root()->Add(CreatePictureLayer(pic1));
   t4.root()->Add(CreatePictureLayer(pic2));
   t4.root()->Add(CreatePictureLayer(pic3));
@@ -372,48 +372,48 @@ TEST_F(ContainerLayerDiffTest, LayerDeletion) {
   auto c2 = CreateContainerLayer(std::make_shared<MockLayer>(path2));
   auto c3 = CreateContainerLayer(std::make_shared<MockLayer>(path3));
 
-  LayerTree t1;
+  MockLayerTree t1;
   t1.root()->Add(c1);
   t1.root()->Add(c2);
   t1.root()->Add(c3);
 
-  auto damage = DiffLayerTree(t1, LayerTree());
+  auto damage = DiffLayerTree(t1, MockLayerTree());
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 250, 50));
 
-  LayerTree t2;
+  MockLayerTree t2;
   t2.root()->Add(c2);
   t2.root()->Add(c3);
 
   damage = DiffLayerTree(t2, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 50, 50));
 
-  LayerTree t3;
+  MockLayerTree t3;
   t3.root()->Add(c1);
   t3.root()->Add(c3);
 
   damage = DiffLayerTree(t3, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(100, 0, 150, 50));
 
-  LayerTree t4;
+  MockLayerTree t4;
   t4.root()->Add(c1);
   t4.root()->Add(c2);
 
   damage = DiffLayerTree(t4, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 50));
 
-  LayerTree t5;
+  MockLayerTree t5;
   t5.root()->Add(c1);
 
   damage = DiffLayerTree(t5, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(100, 0, 250, 50));
 
-  LayerTree t6;
+  MockLayerTree t6;
   t6.root()->Add(c2);
 
   damage = DiffLayerTree(t6, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 250, 50));
 
-  LayerTree t7;
+  MockLayerTree t7;
   t7.root()->Add(c3);
 
   damage = DiffLayerTree(t7, t1);
@@ -433,15 +433,15 @@ TEST_F(ContainerLayerDiffTest, ReplaceLayer) {
   auto c2 = CreateContainerLayer(std::make_shared<MockLayer>(path2));
   auto c3 = CreateContainerLayer(std::make_shared<MockLayer>(path3));
 
-  LayerTree t1;
+  MockLayerTree t1;
   t1.root()->Add(c1);
   t1.root()->Add(c2);
   t1.root()->Add(c3);
 
-  auto damage = DiffLayerTree(t1, LayerTree());
+  auto damage = DiffLayerTree(t1, MockLayerTree());
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 250, 50));
 
-  LayerTree t2;
+  MockLayerTree t2;
   t2.root()->Add(c1);
   t2.root()->Add(c2);
   t2.root()->Add(c3);
@@ -449,7 +449,7 @@ TEST_F(ContainerLayerDiffTest, ReplaceLayer) {
   damage = DiffLayerTree(t2, t1);
   EXPECT_TRUE(damage.surface_damage.isEmpty());
 
-  LayerTree t3;
+  MockLayerTree t3;
   t3.root()->Add(CreateContainerLayer({std::make_shared<MockLayer>(path1a)}));
   t3.root()->Add(c2);
   t3.root()->Add(c3);
@@ -457,7 +457,7 @@ TEST_F(ContainerLayerDiffTest, ReplaceLayer) {
   damage = DiffLayerTree(t3, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 50, 150));
 
-  LayerTree t4;
+  MockLayerTree t4;
   t4.root()->Add(c1);
   t4.root()->Add(CreateContainerLayer(std::make_shared<MockLayer>(path2a)));
   t4.root()->Add(c3);
@@ -465,7 +465,7 @@ TEST_F(ContainerLayerDiffTest, ReplaceLayer) {
   damage = DiffLayerTree(t4, t1);
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(100, 0, 150, 150));
 
-  LayerTree t5;
+  MockLayerTree t5;
   t5.root()->Add(c1);
   t5.root()->Add(c2);
   t5.root()->Add(CreateContainerLayer(std::make_shared<MockLayer>(path3a)));

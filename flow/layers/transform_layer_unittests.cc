@@ -237,10 +237,10 @@ TEST_F(TransformLayerLayerDiffTest, Transform) {
       std::make_shared<TransformLayer>(SkMatrix::Translate(10, 10));
   transform1->Add(m1);
 
-  LayerTree t1;
+  MockLayerTree t1;
   t1.root()->Add(transform1);
 
-  auto damage = DiffLayerTree(t1, LayerTree());
+  auto damage = DiffLayerTree(t1, MockLayerTree());
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
 
   auto transform2 =
@@ -248,7 +248,7 @@ TEST_F(TransformLayerLayerDiffTest, Transform) {
   transform2->Add(m1);
   transform2->AssignOldLayer(transform1.get());
 
-  LayerTree t2;
+  MockLayerTree t2;
   t2.root()->Add(transform2);
 
   damage = DiffLayerTree(t2, t1);
@@ -259,7 +259,7 @@ TEST_F(TransformLayerLayerDiffTest, Transform) {
   transform3->Add(m1);
   transform3->AssignOldLayer(transform2.get());
 
-  LayerTree t3;
+  MockLayerTree t3;
   t3.root()->Add(transform3);
 
   damage = DiffLayerTree(t3, t2);
@@ -289,10 +289,10 @@ TEST_F(TransformLayerLayerDiffTest, TransformNested) {
   transform1_3->Add(m3);
   transform1->Add(transform1_3);
 
-  LayerTree l1;
+  MockLayerTree l1;
   l1.root()->Add(transform1);
 
-  auto damage = DiffLayerTree(l1, LayerTree());
+  auto damage = DiffLayerTree(l1, MockLayerTree());
   EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(20, 20, 500, 500));
 
   auto transform2 = std::make_shared<TransformLayer>(SkMatrix::Scale(2.0, 2.0));
@@ -316,7 +316,7 @@ TEST_F(TransformLayerLayerDiffTest, TransformNested) {
   transform2_3->AssignOldLayer(transform1_3.get());
   transform2->Add(transform2_3);
 
-  LayerTree l2;
+  MockLayerTree l2;
   l2.root()->Add(transform2);
 
   damage = DiffLayerTree(l2, l1);

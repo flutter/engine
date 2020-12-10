@@ -10,8 +10,8 @@ DiffContextTest::DiffContextTest()
           GetCurrentTaskRunner(),
           fml::TimeDelta::FromSeconds(0))) {}
 
-Damage DiffContextTest::DiffLayerTree(LayerTree& layer_tree,
-                                      const LayerTree& old_layer_tree,
+Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
+                                      const MockLayerTree& old_layer_tree,
                                       const SkIRect& additional_damage) {
   FML_CHECK(layer_tree.size() == old_layer_tree.size());
 

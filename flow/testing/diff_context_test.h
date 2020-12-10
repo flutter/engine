@@ -9,9 +9,9 @@ namespace testing {
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-class LayerTree {
+class MockLayerTree {
  public:
-  explicit LayerTree(SkISize size = SkISize::Make(1000, 1000))
+  explicit MockLayerTree(SkISize size = SkISize::Make(1000, 1000))
       : root_(std::make_shared<ContainerLayer>()), size_(size) {}
 
   ContainerLayer* root() { return root_.get(); }
@@ -32,8 +32,8 @@ class DiffContextTest : public ThreadTest {
  public:
   DiffContextTest();
 
-  Damage DiffLayerTree(LayerTree& layer_tree,
-                       const LayerTree& old_layer_tree,
+  Damage DiffLayerTree(MockLayerTree& layer_tree,
+                       const MockLayerTree& old_layer_tree,
                        const SkIRect& additional_damage = SkIRect::MakeEmpty());
 
   // Create picture consisting of filled rect with given color; Being able
