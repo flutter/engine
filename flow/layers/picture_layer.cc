@@ -84,24 +84,22 @@ bool PictureLayer::Compare(DiffContext::Statistics& statistics,
 }
 
 sk_sp<SkData> PictureLayer::SerializedPicture() const {
-  SkSerialProcs procs = {
-      nullptr,
-      nullptr,
-      [](SkImage* i, void* ctx) {
-        auto id = i->uniqueID();
-        return SkData::MakeWithCopy(&id, sizeof(id));
-      },
-      nullptr,
-      [](SkTypeface* tf, void* ctx) {
-        auto id = tf->uniqueID();
-        return SkData::MakeWithCopy(&id, sizeof(id));
-      },
-      nullptr,
-  };
-
   if (!cached_serialized_picture_) {
+    SkSerialProcs procs = {
+        nullptr,
+        nullptr,
+        [](SkImage* i, void* ctx) {
+          auto id = i->uniqueID();
+          return SkData::MakeWithCopy(&id, sizeof(id));
+        },
+        nullptr,
+        [](SkTypeface* tf, void* ctx) {
+          auto id = tf->uniqueID();
+          return SkData::MakeWithCopy(&id, sizeof(id));
+        },
+        nullptr,
+    };
     cached_serialized_picture_ = picture_.get()->serialize(&procs);
-  } else {
   }
   return cached_serialized_picture_;
 }
