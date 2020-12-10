@@ -269,6 +269,8 @@ TEST_F(TransformLayerLayerDiffTest, Transform) {
 TEST_F(TransformLayerLayerDiffTest, TransformNested) {
   auto path1 = SkPath().addRect(SkRect::MakeLTRB(0, 0, 50, 50));
   auto m1 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
+  auto m2 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
+  auto m3 = CreateContainerLayer(std::make_shared<MockLayer>(path1));
 
   auto transform1 = std::make_shared<TransformLayer>(SkMatrix::Scale(2.0, 2.0));
 
@@ -279,12 +281,12 @@ TEST_F(TransformLayerLayerDiffTest, TransformNested) {
 
   auto transform1_2 =
       std::make_shared<TransformLayer>(SkMatrix::Translate(100, 100));
-  transform1_2->Add(m1);
+  transform1_2->Add(m2);
   transform1->Add(transform1_2);
 
   auto transform1_3 =
       std::make_shared<TransformLayer>(SkMatrix::Translate(200, 200));
-  transform1_3->Add(m1);
+  transform1_3->Add(m3);
   transform1->Add(transform1_3);
 
   LayerTree l1;
@@ -301,15 +303,16 @@ TEST_F(TransformLayerLayerDiffTest, TransformNested) {
   transform2_1->AssignOldLayer(transform1_1.get());
   transform2->Add(transform2_1);
 
+  // Offset 1px from transform1_2 so that they're not the same
   auto transform2_2 =
       std::make_shared<TransformLayer>(SkMatrix::Translate(100, 101));
-  transform2_2->Add(m1);
+  transform2_2->Add(m2);
   transform2_2->AssignOldLayer(transform1_2.get());
   transform2->Add(transform2_2);
 
   auto transform2_3 =
       std::make_shared<TransformLayer>(SkMatrix::Translate(200, 200));
-  transform2_3->Add(m1);
+  transform2_3->Add(m3);
   transform2_3->AssignOldLayer(transform1_3.get());
   transform2->Add(transform2_3);
 
