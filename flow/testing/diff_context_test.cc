@@ -20,7 +20,7 @@ Damage DiffContextTest::DiffLayerTree(LayerTree& layer_tree,
   dc.PushCullRect(
       SkRect::MakeIWH(layer_tree.size().width(), layer_tree.size().height()));
   layer_tree.root()->Diff(&dc, old_layer_tree.root());
-  return dc.GetDamage(additional_damage);
+  return dc.ComputeDamage(additional_damage);
 }
 
 sk_sp<SkPicture> DiffContextTest::CreatePicture(const SkRect& bounds,

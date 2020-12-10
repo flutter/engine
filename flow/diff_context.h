@@ -3,9 +3,9 @@
 
 #include <map>
 #include <vector>
+#include "flutter/flow/paint_region.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
-#include "flutter/flow/paint_region.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkRect.h"
 
@@ -27,7 +27,6 @@ struct Damage {
   // upfront may be useful for tile based GPUs.
   SkIRect buffer_damage;
 };
-
 
 using PaintRegionMap = std::map<uint64_t, PaintRegion>;
 
@@ -103,7 +102,7 @@ class DiffContext {
   //
   // additional_damage is the previously accumulated surface_damage for
   // current framebuffer
-  Damage GetDamage(const SkIRect& additional_damage) const;
+  Damage ComputeDamage(const SkIRect& additional_damage) const;
 
   double frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; };
 
