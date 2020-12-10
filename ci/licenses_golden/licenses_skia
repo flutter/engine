@@ -1,4 +1,4 @@
-Signature: 593a19fbc94a3055b117d5aa599e2e4d
+Signature: 2738123459c864d0fcc1b1f95cdd24fc
 
 UNUSED LICENSES:
 
@@ -2485,12 +2485,12 @@ FILE: ../../../third_party/skia/src/gpu/GrOpFlushState.h
 FILE: ../../../third_party/skia/src/gpu/GrPipeline.cpp
 FILE: ../../../third_party/skia/src/gpu/GrPipeline.h
 FILE: ../../../third_party/skia/src/gpu/GrProcessorUnitTest.cpp
-FILE: ../../../third_party/skia/src/gpu/GrRenderTargetContext.cpp
-FILE: ../../../third_party/skia/src/gpu/GrRenderTargetContext.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrResourceProvider.h
 FILE: ../../../third_party/skia/src/gpu/GrSamplerState.h
 FILE: ../../../third_party/skia/src/gpu/GrSimpleMesh.h
+FILE: ../../../third_party/skia/src/gpu/GrSurfaceDrawContext.cpp
+FILE: ../../../third_party/skia/src/gpu/GrSurfaceDrawContext.h
 FILE: ../../../third_party/skia/src/gpu/GrTTopoSort.h
 FILE: ../../../third_party/skia/src/gpu/GrTestUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrTestUtils.h
@@ -4011,6 +4011,19 @@ FILE: ../../../third_party/skia/src/sksl/SkSLPool.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSampleUsage.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSL.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLExpression.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLExpression.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLFunction.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLModifiers.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLType.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLType.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLVar.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLVar.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSL_core.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSL_core.h
+FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLWriter.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLWriter.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionPrototype.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLInlineMarker.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPrefixExpression.cpp
@@ -5628,6 +5641,11 @@ FILE: ../../../third_party/skia/src/sksl/SkSLAnalysis.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLModifiersPool.h
 FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLBlock.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLBlock.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLStatement.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLStatement.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLCodeStringExpression.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructor.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC.
