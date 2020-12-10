@@ -233,16 +233,16 @@ void initializeEngine() {
         // renderer, takes place in the `SceneBuilder.build()`.
         _frameTimingsOnBuildStart();
         if (EnginePlatformDispatcher.instance._onBeginFrame != null) {
-          EnginePlatformDispatcher.instance.invokeOnBeginFrame(
-              Duration(microseconds: highResTimeMicroseconds));
+          Timer.run(() {
+            EnginePlatformDispatcher.instance.invokeOnBeginFrame(
+              Duration(microseconds: highResTimeMicroseconds),
+            );
+          });
         }
-
         if (EnginePlatformDispatcher.instance._onDrawFrame != null) {
-          // TODO(yjbanov): technically Flutter flushes microtasks between
-          //                onBeginFrame and onDrawFrame. We don't, which hasn't
-          //                been an issue yet, but eventually we'll have to
-          //                implement it properly.
-          EnginePlatformDispatcher.instance.invokeOnDrawFrame();
+          Timer.run(() {
+            EnginePlatformDispatcher.instance.invokeOnDrawFrame();
+          });
         }
       });
     }
