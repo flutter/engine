@@ -28,6 +28,7 @@ static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
 
   _dartBundle = bundle ?: [NSBundle bundleWithIdentifier:kAppBundleIdentifier];
   if (_dartBundle == nil) {
+    // The bundle isn't loaded and can't be found by bundle ID. Find it by path.
     _dartBundle = [NSBundle bundleWithURL:[NSBundle.mainBundle.privateFrameworksURL
                                               URLByAppendingPathComponent:@"App.framework"]];
   }
