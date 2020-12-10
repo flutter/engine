@@ -4,7 +4,7 @@ namespace flutter {
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-SkRect PaintRegion::GetBounds() const {
+SkRect PaintRegion::ComputeBounds() const {
   SkRect res = SkRect::MakeEmpty();
   for (const auto& r : *this) {
     res.join(r);

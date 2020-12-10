@@ -28,7 +28,7 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   SkMatrix inverse;
   if (context->GetTransform().invert(&inverse)) {
     auto paint_bounds =
-        inverse.mapRect(context->CurrentSubtreeRegion().GetBounds());
+        inverse.mapRect(context->CurrentSubtreeRegion().ComputeBounds());
 
     auto filter_bounds =
         filter_->filterBounds(paint_bounds.roundOut(), SkMatrix::I(),

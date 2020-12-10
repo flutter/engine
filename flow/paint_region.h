@@ -37,7 +37,7 @@ class PaintRegion {
   }
 
   // Compute bounds for this region
-  SkRect GetBounds() const;
+  SkRect ComputeBounds() const;
 
   bool is_valid() const { return rects_ != nullptr; }
 
