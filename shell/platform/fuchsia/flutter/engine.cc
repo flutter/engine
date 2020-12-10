@@ -704,7 +704,7 @@ void Engine::WarmupSkps(fml::BasicTaskRunner* concurrent_task_runner,
           [skp_warmup_surface, picture, &surface_producer] {
             TRACE_DURATION("flutter", "WarmupSkp");
             skp_warmup_surface->getCanvas()->drawPicture(picture);
-            surface_producer.gr_context()->flush();
+            surface_producer.gr_context()->flushAndSubmit();
           });
       i++;
     }
