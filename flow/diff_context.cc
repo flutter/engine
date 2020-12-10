@@ -147,11 +147,11 @@ void DiffContext::Statistics::LogStatistics() {
 #if !FLUTTER_RELEASE
   FML_TRACE_COUNTER("flutter", "DiffContext", reinterpret_cast<int64_t>(this),
                     "NewPictures", new_pictures_, "PicturesTooComplexToCompare",
-                    picture_too_complex_to_compare_, "DeepComparePictures",
+                    pictures_too_complex_to_compare_, "DeepComparePictures",
                     deep_compare_pictures_, "SameInstancePictures",
                     same_instance_pictures_,
                     "DifferentInstanceButEqualPictures",
-                    difference_instance_but_equal_pictures_);
+                    different_instance_but_equal_pictures_);
 #endif  // !FLUTTER_RELEASE
 }
 

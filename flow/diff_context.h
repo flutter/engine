@@ -130,18 +130,18 @@ class DiffContext {
 
     // Picture that would require deep comparison but was considered too complex
     // to serialize and thus was treated as new picture
-    void AddPictureTooComplexToCompare() { ++picture_too_complex_to_compare_; }
+    void AddPictureTooComplexToCompare() { ++pictures_too_complex_to_compare_; }
 
     // Picture that has identical instance between frames
     void AddSameInstancePicture() { ++same_instance_pictures_; };
 
-    // Pictures that had to be serialized to compare for equality
+    // Picture that had to be serialized to compare for equality
     void AddDeepComparePicture() { ++deep_compare_pictures_; }
 
-    // Pictures that had to be serialized to compare (different instances),
+    // Picture that had to be serialized to compare (different instances),
     // but were equal
     void AddDifferentInstanceButEqualPicture() {
-      ++difference_instance_but_equal_pictures_;
+      ++different_instance_but_equal_pictures_;
     };
 
     // Logs the statistics to trace counter
@@ -149,10 +149,10 @@ class DiffContext {
 
    private:
     int new_pictures_ = 0;
-    int picture_too_complex_to_compare_ = 0;
+    int pictures_too_complex_to_compare_ = 0;
     int same_instance_pictures_ = 0;
     int deep_compare_pictures_ = 0;
-    int difference_instance_but_equal_pictures_ = 0;
+    int different_instance_but_equal_pictures_ = 0;
   };
 
   Statistics& statistics() { return statistics_; }
