@@ -256,9 +256,11 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
   @override
   bool tryEnableSemantics(html.Event event) {
     if (_schedulePlaceholderRemoval) {
+      // The event type can also be click for VoiceOver.
       final bool removeNow = (browserEngine != BrowserEngine.webkit ||
           event.type == 'touchend' ||
-          event.type == 'pointerup');
+          event.type == 'pointerup' ||
+          event.type == 'click');
       if (removeNow) {
         _semanticsPlaceholder!.remove();
         _semanticsPlaceholder = null;
