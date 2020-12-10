@@ -344,7 +344,7 @@ class BitmapCanvas extends EngineCanvas {
 
   /// Same as [_useDomForRenderingFill] but allows stroke as well.
   ///
-  /// DOM canvas be generated for simple strokes using borders.
+  /// DOM canvas is generated for simple strokes using borders.
   bool _useDomForRenderingFillAndStroke(SurfacePaintData paint) =>
       (_preserveImageData == false && _contains3dTransform) ||
           ((_childOverdraw || _renderStrategy.hasImageElements ||
