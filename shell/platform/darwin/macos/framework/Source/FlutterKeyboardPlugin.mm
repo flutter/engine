@@ -252,7 +252,6 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 }
 
 - (void)dispatchCapsLockEvent:(NSEvent*)event {
-  bool lockIsOn = (event.modifierFlags & NSEventModifierFlagCapsLock) != 0;
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = GetFlutterTimestampFrom(event),
