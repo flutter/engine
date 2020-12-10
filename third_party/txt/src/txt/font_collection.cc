@@ -206,8 +206,11 @@ FontCollection::GetMinikinFontCollectionForFamilies(
     }
   }
   // Create the minikin font collection.
-  auto font_collection =
-      std::make_shared<minikin::FontCollection>(std::move(minikin_families));
+  auto font_collection = std::make_shared<minikin::FontCollection>();
+  if (!font_collection || !font_collection->init(std::move(minikin_families))) {
+    font_collections_cache_[family_key] = nullptr;
+    return nullptr;
+  }
   if (enable_font_fallback_) {
     font_collection->set_fallback_font_provider(
         std::make_unique<TxtFallbackFontProvider>(shared_from_this()));
