@@ -6,10 +6,10 @@ namespace flutter {
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-// Every layer has a PaintRegion that covers screen area where the layer subtree
-// painted anything.
+// Corresponds to area on the screen where the layer subtree has painted to.
 //
-// The area is used when adding damage of removed or dirty later.
+// The area is used when adding damage of removed or dirty layer to overall
+// damage.
 //
 // Because there is a PaintRegion for each layer, it must be able to represent
 // the area with minimal overhead. This is accomplished by having one
@@ -19,7 +19,7 @@ namespace flutter {
 // All rects are in screen coordinates.
 class PaintRegion {
  public:
-  PaintRegion() {}
+  PaintRegion() = default;
   PaintRegion(std::shared_ptr<std::vector<SkRect>> rects,
               size_t from,
               size_t to,

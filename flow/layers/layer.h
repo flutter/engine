@@ -101,6 +101,8 @@ class Layer {
   // doesn't need to be diffed, but the paint region needs to be stored in diff
   // context so that it can be used in next frame
   virtual void PreservePaintRegion(DiffContext* context) {
+    // retained layer means same instance so 'this' is used to index into both
+    // current and old region
     context->SetLayerPaintRegion(this, context->GetOldLayerPaintRegion(this));
   }
 

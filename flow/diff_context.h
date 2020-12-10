@@ -86,7 +86,9 @@ class DiffContext {
   // Add paint region for layer; rect is in "local" (layer) coordinates
   void AddPaintRegion(const SkRect& rect);
 
-  // Add entire paint region of retained layer for current subtree
+  // Add entire paint region of retained layer for current subtree. This can
+  // only be used in subtrees that are not dirty, otherwise ancestor transforms
+  // or clips may result in different paint region.
   void AddExistingPaintRegion(const PaintRegion& region);
 
   // The idea of readback region is that if any part of the readback region
@@ -94,8 +96,9 @@ class DiffContext {
   void AddReadbackRegion(const SkRect& rect);
 
   // Returns the paint region for current subtree; Each rect in paint region is
-  // in screen coordinates; The result should be set to layer's paint_region
-  // before closing the subtree
+  // in screen coordinates; Once a layer accumulates the paint regions of its
+  // children, this PaintRegion value can be associated with the current layer
+  // using DiffContext::SetLayerPaintRegion.
   PaintRegion CurrentSubtreeRegion() const;
 
   // Computes final damage
@@ -106,11 +109,18 @@ class DiffContext {
 
   double frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; };
 
-  // Adds the region to current damage
+  // Adds the region to current damage. Used for removed layers, where instead
+  // of diffing the layer its paint region is direcly added to damage.
   void AddDamage(const PaintRegion& damage);
 
+  // Associates the paint region with specified layer and current layer tree.
+  // The paint region can not be stored directly in layer itself, because same
+  // retained layer instance can possibly paint in different locations depending
+  // on ancestor layers.
   void SetLayerPaintRegion(const Layer* layer, const PaintRegion& region);
 
+  // Retrieves the paint region associated with specified layer and previous
+  // frame layer tree.
   PaintRegion GetOldLayerPaintRegion(const Layer* layer) const;
 
   class Statistics {

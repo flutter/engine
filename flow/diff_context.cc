@@ -93,7 +93,7 @@ void DiffContext::AddPaintRegion(const SkRect& rect) {
 
 void DiffContext::AddExistingPaintRegion(const PaintRegion& region) {
   // Adding paint region for retained layer implies that current subtree is not
-  // dirty
+  // dirty, so we know, for example, that the inherited transforms must match
   FML_DCHECK(!IsSubtreeDirty());
   FML_DCHECK(region.is_valid());
   rects_->insert(rects_->end(), region.begin(), region.end());
