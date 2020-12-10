@@ -247,6 +247,32 @@ class PlatformView {
         std::unique_ptr<const fml::Mapping> snapshot_data,
         std::unique_ptr<const fml::Mapping> snapshot_instructions) = 0;
 
+    //--------------------------------------------------------------------------
+    /// @brief      Indicates to the dart VM that the request to load a deferred
+    ///             library with the specified loading unit id has failed.
+    ///
+    ///             The dart future returned by the initiating loadLibrary()
+    ///             call will complete with an error.
+    ///
+    /// @param[in]  loading_unit_id  The unique id of the deferred library's
+    ///                              loading unit, as passed in by
+    ///                              RequestDartDeferredLibrary.
+    ///
+    /// @param[in]  error_message    The error message that will appear in the
+    ///                              dart Future.
+    ///
+    /// @param[in]  transient        A transient error is a failure due to
+    ///                              temporary conditions such as no network.
+    ///                              Transient errors allow the dart VM to
+    ///                              re-request the same deferred library and
+    ///                              and loading_unit_id again. Non-transient
+    ///                              errors are permanent and attempts to
+    ///                              re-request the library will instantly
+    ///                              complete with an error.
+    virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                              const std::string error_message,
+                                              bool transient) = 0;
+
     // TODO(garyq): Implement a proper asset_resolver replacement instead of
     // overwriting the entire asset manager.
     //--------------------------------------------------------------------------
@@ -667,6 +693,33 @@ class PlatformView {
       std::unique_ptr<const fml::Mapping> snapshot_data,
       std::unique_ptr<const fml::Mapping> snapshot_instructions);
 
+  //--------------------------------------------------------------------------
+  /// @brief      Indicates to the dart VM that the request to load a deferred
+  ///             library with the specified loading unit id has failed.
+  ///
+  ///             The dart future returned by the initiating loadLibrary() call
+  ///             will complete with an error.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  error_message    The error message that will appear in the
+  ///                              dart Future.
+  ///
+  /// @param[in]  transient        A transient error is a failure due to
+  ///                              temporary conditions such as no network.
+  ///                              Transient errors allow the dart VM to
+  ///                              re-request the same deferred library and
+  ///                              and loading_unit_id again. Non-transient
+  ///                              errors are permanent and attempts to
+  ///                              re-request the library will instantly
+  ///                              complete with an error.
+  ///
+  virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                            const std::string error_message,
+                                            bool transient);
+
   // TODO(garyq): Implement a proper asset_resolver replacement instead of
   // overwriting the entire asset manager.
   //--------------------------------------------------------------------------
@@ -685,7 +738,7 @@ class PlatformView {
   fml::WeakPtrFactory<PlatformView> weak_factory_;
 
   // Unlike all other methods on the platform view, this is called on the
-  // GPU task runner.
+  // raster task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
 
  private:

@@ -7,10 +7,13 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-/// Whether we are running on iOS Safari.
+/// Whether the current browser is Safari on iOS.
 // TODO: https://github.com/flutter/flutter/issues/60040
 bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs;
+
+/// Whether the current browser is Firefox.
+bool get isFirefox => browserEngine == BrowserEngine.firefox;
 
 /// Used in tests instead of [ProductionCollector] to control Skia object
 /// collection explicitly, and to prevent leaks across tests.
@@ -24,7 +27,7 @@ void setUpCanvasKitTest() {
     expect(useCanvasKit, true,
       reason: 'This test must run in CanvasKit mode.');
     debugResetBrowserSupportsFinalizationRegistry();
-    await ui.webOnlyInitializePlatform();
+    await ui.webOnlyInitializePlatform(assetManager: WebOnlyMockAssetManager());
   });
 
   setUp(() async {
@@ -40,6 +43,16 @@ void setUpCanvasKitTest() {
   tearDownAll(() {
     debugResetBrowserSupportsFinalizationRegistry();
   });
+}
+
+/// Utility function for CanvasKit tests to draw pictures without
+/// the [CkPictureRecorder] boilerplate.
+CkPicture paintPicture(
+    ui.Rect cullRect, void Function(CkCanvas canvas) painter) {
+  final CkPictureRecorder recorder = CkPictureRecorder();
+  final CkCanvas canvas = recorder.beginRecording(cullRect);
+  painter(canvas);
+  return recorder.endRecording();
 }
 
 class _TestFinalizerRegistration {

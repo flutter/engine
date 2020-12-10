@@ -168,6 +168,10 @@ class HtmlViewEmbedder {
     platformView.style.height = '${params.size.height}px';
     platformView.style.position = 'absolute';
 
+    // <flt-scene-host> disables pointer events. Reenable them here because the
+    // underlying platform view would want to handle the pointer events.
+    platformView.style.pointerEvents = 'auto';
+
     final int currentClippingCount = _countClips(params.mutators);
     final int? previousClippingCount = _clipCount[viewId];
     if (currentClippingCount != previousClippingCount) {
@@ -336,7 +340,7 @@ class HtmlViewEmbedder {
           _overlays[viewId]!.surface.acquireFrame(_frameSize);
       final CkCanvas canvas = frame.skiaCanvas;
       canvas.drawPicture(
-        _pictureRecorders[viewId]!.endRecording() as CkPicture,
+        _pictureRecorders[viewId]!.endRecording(),
       );
       frame.submit();
     }
