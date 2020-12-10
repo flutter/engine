@@ -69,7 +69,7 @@ void CanvasPath::RegisterNatives(tonic::DartLibraryNatives* natives) {
 
 CanvasPath::CanvasPath()
     : path_tracker_(UIDartState::Current()->GetVolatilePathTracker()),
-      tracked_path_(std::make_shared<VolatilePathTracker::Path>()) {
+      tracked_path_(std::make_shared<VolatilePathTracker::TrackedPath>()) {
   FML_DCHECK(path_tracker_);
   resetVolatility();
 }
@@ -87,9 +87,7 @@ void CanvasPath::resetVolatility() {
 
 void CanvasPath::ReleaseDartWrappableReference() const {
   FML_DCHECK(path_tracker_);
-  if (tracked_path_->tracking_volatility) {
-    path_tracker_->Erase(tracked_path_);
-  }
+  path_tracker_->Erase(tracked_path_);
 }
 
 int CanvasPath::getFillType() {

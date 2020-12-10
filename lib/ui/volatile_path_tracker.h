@@ -7,7 +7,7 @@
 
 #include <deque>
 #include <mutex>
-#include <unordered_set>
+#include <set>
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/task_runner.h"
@@ -25,7 +25,8 @@ namespace flutter {
 /// tracking a path that is no longer referenced in Dart code.
 class VolatilePathTracker {
  public:
-  struct Path {
+  /// The fields of this struct must only accessed on the UI task runner.
+  struct TrackedPath {
     bool tracking_volatility = false;
     int frame_count = 0;
     SkPath path;
@@ -37,12 +38,14 @@ class VolatilePathTracker {
 
   // Starts tracking a path.
   // Must be called from the UI task runner.
-  void Insert(std::shared_ptr<Path> path);
+  //
+  // Callers should only insert paths that are currently volatile.
+  void Insert(std::shared_ptr<TrackedPath> path);
 
   // Removes a path from tracking.
   //
   // May be called from any thread.
-  void Erase(std::shared_ptr<Path> path);
+  void Erase(std::shared_ptr<TrackedPath> path);
 
   // Called by the shell at the end of a frame after notifying Dart about idle
   // time.
@@ -57,8 +60,8 @@ class VolatilePathTracker {
   fml::RefPtr<fml::TaskRunner> ui_task_runner_;
   std::atomic_bool needs_drain_ = false;
   std::mutex paths_to_remove_mutex_;
-  std::deque<std::shared_ptr<Path>> paths_to_remove_;
-  std::unordered_set<std::shared_ptr<Path>> paths_;
+  std::deque<std::shared_ptr<TrackedPath>> paths_to_remove_;
+  std::set<std::shared_ptr<TrackedPath>> paths_;
 
   void Drain();
 

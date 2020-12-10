@@ -121,7 +121,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   CanvasPath();
 
   std::shared_ptr<VolatilePathTracker> path_tracker_;
-  std::shared_ptr<VolatilePathTracker::Path> tracked_path_;
+  std::shared_ptr<VolatilePathTracker::TrackedPath> tracked_path_;
 
   // Must be called whenever the path is created or mutated.
   void resetVolatility();

@@ -69,7 +69,7 @@ static void BM_PlatformMessageResponseDartComplete(benchmark::State& state) {
 
 static void BM_PathVolatilityTracker(benchmark::State& state) {
   ThreadHost thread_host("test",
-                         ThreadHost::Type::Platform | ThreadHost::Type::GPU |
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
                              ThreadHost::Type::IO | ThreadHost::Type::UI);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
@@ -79,10 +79,10 @@ static void BM_PathVolatilityTracker(benchmark::State& state) {
   VolatilePathTracker tracker(task_runners.GetUITaskRunner());
 
   while (state.KeepRunning()) {
-    std::vector<std::shared_ptr<VolatilePathTracker::Path>> paths;
+    std::vector<std::shared_ptr<VolatilePathTracker::TrackedPath>> paths;
     constexpr int path_count = 1000;
     for (int i = 0; i < path_count; i++) {
-      auto path = std::make_shared<VolatilePathTracker::Path>();
+      auto path = std::make_shared<VolatilePathTracker::TrackedPath>();
       path->path = SkPath();
       path->path.setIsVolatile(true);
       paths.push_back(std::move(path));

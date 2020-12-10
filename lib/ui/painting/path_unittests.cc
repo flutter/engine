@@ -16,7 +16,7 @@
 namespace flutter {
 namespace testing {
 
-TEST_F(ShellTest, PathVolatilityTracking) {
+TEST_F(ShellTest, PathVolatilityOldPathsBecomeNonVolatile) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
   auto native_validate_path = [message_latch](Dart_NativeArguments args) {
@@ -32,10 +32,10 @@ TEST_F(ShellTest, PathVolatilityTracking) {
         UIDartState::Current()->GetVolatilePathTracker();
     EXPECT_TRUE(tracker);
 
-    EXPECT_TRUE(path->path().isVolatile());
-    tracker->OnFrame();
-    EXPECT_TRUE(path->path().isVolatile());
-    tracker->OnFrame();
+    for (int i = 0; i < VolatilePathTracker::kFramesOfVolatility; i++) {
+      EXPECT_TRUE(path->path().isVolatile());
+      tracker->OnFrame();
+    }
     EXPECT_FALSE(path->path().isVolatile());
     message_latch->Signal();
   };
@@ -66,7 +66,7 @@ TEST_F(ShellTest, PathVolatilityTracking) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-TEST_F(ShellTest, PathVolatilityTrackingCollected) {
+TEST_F(ShellTest, PathVolatilityGCRemovesPathFromTracker) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
   auto native_validate_path = [message_latch](Dart_NativeArguments args) {
@@ -82,6 +82,7 @@ TEST_F(ShellTest, PathVolatilityTrackingCollected) {
         UIDartState::Current()->GetVolatilePathTracker();
     EXPECT_TRUE(tracker);
 
+    static_assert(VolatilePathTracker::kFramesOfVolatility > 1);
     EXPECT_TRUE(path->path().isVolatile());
     tracker->OnFrame();
     EXPECT_TRUE(path->path().isVolatile());

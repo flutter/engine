@@ -10,14 +10,14 @@ VolatilePathTracker::VolatilePathTracker(
     fml::RefPtr<fml::TaskRunner> ui_task_runner)
     : ui_task_runner_(ui_task_runner) {}
 
-void VolatilePathTracker::Insert(std::shared_ptr<Path> path) {
+void VolatilePathTracker::Insert(std::shared_ptr<TrackedPath> path) {
   FML_DCHECK(ui_task_runner_->RunsTasksOnCurrentThread());
   FML_DCHECK(path);
   FML_DCHECK(path->path.isVolatile());
   paths_.insert(path);
 }
 
-void VolatilePathTracker::Erase(std::shared_ptr<Path> path) {
+void VolatilePathTracker::Erase(std::shared_ptr<TrackedPath> path) {
   FML_DCHECK(path);
   if (ui_task_runner_->RunsTasksOnCurrentThread()) {
     paths_.erase(path);
@@ -37,17 +37,17 @@ void VolatilePathTracker::OnFrame() {
 
   Drain();
 
-  for (auto it = paths_.begin(), last = paths_.end(); it != last;) {
-    auto path = *it;
+  std::set<std::shared_ptr<TrackedPath>> surviving_paths_;
+  for (const std::shared_ptr<TrackedPath> path : paths_) {
     path->frame_count++;
     if (path->frame_count >= kFramesOfVolatility) {
       path->path.setIsVolatile(false);
       path->tracking_volatility = false;
-      it = paths_.erase(it);
     } else {
-      ++it;
+      surviving_paths_.insert(path);
     }
   }
+  paths_.swap(surviving_paths_);
   std::string post_removal_count = std::to_string(paths_.size());
   TRACE_EVENT_INSTANT1("flutter", "VolatilePathTracker::OnFrame", "count",
                        post_removal_count.c_str());
@@ -56,7 +56,7 @@ void VolatilePathTracker::OnFrame() {
 void VolatilePathTracker::Drain() {
   if (needs_drain_) {
     TRACE_EVENT0("flutter", "VolatilePathTracker::Drain");
-    std::deque<std::shared_ptr<Path>> paths_to_remove;
+    std::deque<std::shared_ptr<TrackedPath>> paths_to_remove;
     {
       std::scoped_lock lock(paths_to_remove_mutex_);
       paths_to_remove.swap(paths_to_remove_);
