@@ -155,19 +155,18 @@ void testMain() {
     test('Not relevant events should be forwarded to the framework', () async {
       html.Event event;
       if (_defaultSupportDetector.hasPointerEvents) {
-         event = html.PointerEvent('pointerdown');
-      } else if(_defaultSupportDetector.hasTouchEvents) {
-         event = html.TouchEvent('touchcancel');
+        event = html.PointerEvent('pointerdown');
+      } else if (_defaultSupportDetector.hasTouchEvents) {
+        event = html.TouchEvent('touchcancel');
       } else {
-         event = html.MouseEvent('mousemove');
+        event = html.MouseEvent('mousemove');
       }
 
       bool shouldForwardToFramework =
           mobileSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, true);
-    },
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('Pointer down is relevant event', () async {
       expect(mobileSemanticsEnabler.semanticsActivationAttempts, isZero);
@@ -176,8 +175,9 @@ void testMain() {
       mobileSemanticsEnabler.tryEnableSemantics(event);
 
       expect(mobileSemanticsEnabler.semanticsActivationAttempts, isNonZero);
-    },
-        skip: browserEngine == BrowserEngine.edge ||
-              browserEngine == BrowserEngine.firefox);
-  });
+    });
+  },  // Run the `MobileSemanticsEnabler` only on mobile browsers.
+      skip: operatingSystem == OperatingSystem.linux ||
+          operatingSystem == OperatingSystem.macOs ||
+          operatingSystem == OperatingSystem.windows);
 }
