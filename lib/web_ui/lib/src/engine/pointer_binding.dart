@@ -593,7 +593,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
           ? _mouseDeviceId : event.pointerId!;
       final double tilt = _computeHighestTilt(event);
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
-      sanitizer._pressedButtons &= ~2;
+      sanitizer._pressedButtons &= ~kContextMenuButton;
       _pointerDataConverter.convert(
         pointerData,
         change: ui.PointerChange.up,
