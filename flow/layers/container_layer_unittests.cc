@@ -470,8 +470,8 @@ TEST_F(ContainerLayerDiffTest, ReplaceLayer) {
   t5.root()->Add(c2);
   t5.root()->Add(CreateContainerLayer(std::make_shared<MockLayer>(path3a)));
 
-  damage = DiffLayerTree(t4, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(100, 0, 150, 150));
+  damage = DiffLayerTree(t5, t1);
+  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(200, 0, 250, 150));
 }
 
 #endif
