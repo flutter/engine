@@ -1,4 +1,4 @@
-Signature: bc27de33b38da169261c9a6fddc4b853
+Signature: 28265cb0ddaa43ff7ec43b1a8569345f
 
 UNUSED LICENSES:
 
@@ -2432,14 +2432,14 @@ FILE: ../../../third_party/skia/src/codec/SkWebpCodec.h
 FILE: ../../../third_party/skia/src/core/Sk4px.h
 FILE: ../../../third_party/skia/src/core/SkBigPicture.cpp
 FILE: ../../../third_party/skia/src/core/SkBigPicture.h
+FILE: ../../../third_party/skia/src/core/SkBitmapController.cpp
+FILE: ../../../third_party/skia/src/core/SkBitmapController.h
 FILE: ../../../third_party/skia/src/core/SkFontMgr.cpp
 FILE: ../../../third_party/skia/src/core/SkLatticeIter.cpp
 FILE: ../../../third_party/skia/src/core/SkLatticeIter.h
 FILE: ../../../third_party/skia/src/core/SkLocalMatrixImageFilter.cpp
 FILE: ../../../third_party/skia/src/core/SkMiniRecorder.cpp
 FILE: ../../../third_party/skia/src/core/SkMiniRecorder.h
-FILE: ../../../third_party/skia/src/core/SkMipmapAccessor.cpp
-FILE: ../../../third_party/skia/src/core/SkMipmapAccessor.h
 FILE: ../../../third_party/skia/src/core/SkNextID.h
 FILE: ../../../third_party/skia/src/core/SkOpts.cpp
 FILE: ../../../third_party/skia/src/core/SkOpts.h
@@ -4196,9 +4196,6 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrMiddleOutPolygonTriangulator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrMidpointContourParser.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrResolveLevelCounter.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeIndirectOp.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeIndirectOp.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeIterator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrVectorXform.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrWangsFormula.h
 FILE: ../../../third_party/skia/src/gpu/text/GrSDFTOptions.cpp
