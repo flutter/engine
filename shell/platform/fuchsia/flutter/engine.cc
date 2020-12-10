@@ -256,6 +256,16 @@ Engine::Engine(Delegate& delegate,
       FML_DCHECK(surface_producer_);
       FML_DCHECK(legacy_external_view_embedder_);
 
+      if (product_config.enable_shader_warmup()) {
+        FML_DCHECK(surface_producer_);
+        WarmupSkps(shell.GetDartVM()
+                       ->GetConcurrentMessageLoop()
+                       ->GetTaskRunner()
+                       .get(),
+                   shell.GetTaskRunners().GetRasterTaskRunner().get(),
+                   surface_producer_.value());
+      }
+
       auto compositor_context =
           std::make_unique<flutter_runner::CompositorContext>(
               session_connection_.value(), surface_producer_.value(),
