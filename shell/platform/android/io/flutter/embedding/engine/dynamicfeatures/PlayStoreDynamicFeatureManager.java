@@ -249,7 +249,9 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
             sessionId -> {
               sessionIdToName.put(sessionId, resolvedModuleName);
               sessionIdToLoadingUnitId.put(sessionId, loadingUnitId);
-              sessionIdToState.remove(nameToSessionId.get(resolvedModuleName));
+              if (nameToSessionId.containsKey(resolvedModuleName)) {
+                sessionIdToState.remove(nameToSessionId.get(resolvedModuleName));
+              }
               nameToSessionId.put(resolvedModuleName, sessionId);
               sessionIdToState.put(sessionId, "Requested");
             })

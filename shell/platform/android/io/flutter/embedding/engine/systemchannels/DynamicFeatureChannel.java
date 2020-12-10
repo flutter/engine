@@ -42,15 +42,14 @@ public class DynamicFeatureChannel {
           final int loadingUnitId = (int) args.get("loadingUnitId");
           final String moduleName = (String) args.get("moduleName");
           switch (method) {
-            case "DynamicFeature.installDynamicFeature":
+            case "installDynamicFeature":
               dynamicFeatureManager.installDynamicFeature(loadingUnitId, moduleName);
               if (!moduleNameToResults.containsKey(moduleName)) {
                 moduleNameToResults.put(moduleName, new ArrayList<>());
-              } else {
-                moduleNameToResults.get(moduleName).add(result);
               }
+              moduleNameToResults.get(moduleName).add(result);
               break;
-            case "DynamicFeature.getDynamicFeatureInstallState":
+            case "getDynamicFeatureInstallState":
               result.success(dynamicFeatureManager.getDynamicFeatureInstallState(loadingUnitId, moduleName));
               break;
             default:
@@ -70,7 +69,7 @@ public class DynamicFeatureChannel {
    */
   public DynamicFeatureChannel(@NonNull DartExecutor dartExecutor) {
     this.channel =
-        new MethodChannel(dartExecutor, "flutter/splitaot", StandardMethodCodec.INSTANCE);
+        new MethodChannel(dartExecutor, "flutter/dynamicfeature", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
     dynamicFeatureManager = FlutterInjector.instance().dynamicFeatureManager();
     moduleNameToResults = new HashMap<>();
