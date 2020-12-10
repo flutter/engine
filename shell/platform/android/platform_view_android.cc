@@ -14,6 +14,8 @@
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 #include "flutter/shell/platform/android/android_surface_gl.h"
 #include "flutter/shell/platform/android/android_surface_software.h"
+#include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
 
 #if SHELL_ENABLE_VULKAN
 #include "flutter/shell/platform/android/android_surface_vulkan.h"
@@ -26,22 +28,26 @@
 
 namespace flutter {
 
-std::unique_ptr<AndroidSurface> SurfaceFactory(
-    std::shared_ptr<AndroidContext> android_context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
-  FML_CHECK(SurfaceFactory);
-  switch (android_context->RenderingApi()) {
+AndroidSurfaceFactoryImpl::AndroidSurfaceFactoryImpl(
+    const AndroidContext& context,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    : android_context_(context), jni_facade_(jni_facade) {}
+
+AndroidSurfaceFactoryImpl::~AndroidSurfaceFactoryImpl() = default;
+
+std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
+  switch (android_context_.RenderingApi()) {
     case AndroidRenderingAPI::kSoftware:
-      return std::make_unique<AndroidSurfaceSoftware>(
-          android_context, jni_facade, SurfaceFactory);
+      return std::make_unique<AndroidSurfaceSoftware>(android_context_,
+                                                      jni_facade_);
     case AndroidRenderingAPI::kOpenGLES:
-      return std::make_unique<AndroidSurfaceGL>(android_context, jni_facade,
-                                                SurfaceFactory);
+      return std::make_unique<AndroidSurfaceGL>(android_context_, jni_facade_);
     case AndroidRenderingAPI::kVulkan:
 #if SHELL_ENABLE_VULKAN
-      return std::make_unique<AndroidSurfaceVulkan>(android_context, jni_facade,
-                                                    SurfaceFactory);
+      return std::make_unique<AndroidSurfaceVulkan>(android_context_,
+                                                    jni_facade_);
 #endif  // SHELL_ENABLE_VULKAN
+    default:
       return nullptr;
   }
   return nullptr;
@@ -55,24 +61,26 @@ PlatformViewAndroid::PlatformViewAndroid(
     : PlatformView(delegate, std::move(task_runners)),
       jni_facade_(jni_facade),
       platform_view_android_delegate_(jni_facade) {
-  std::shared_ptr<AndroidContext> android_context;
   if (use_software_rendering) {
-    android_context =
-        std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+    android_context_ =
+        std::make_unique<AndroidContext>(AndroidRenderingAPI::kSoftware);
   } else {
 #if SHELL_ENABLE_VULKAN
-    android_context =
-        std::make_shared<AndroidContext>(AndroidRenderingAPI::kVulkan);
+    android_context_ =
+        std::make_unique<AndroidContext>(AndroidRenderingAPI::kVulkan);
 #else   // SHELL_ENABLE_VULKAN
-    android_context = std::make_shared<AndroidContextGL>(
+    android_context_ = std::make_unique<AndroidContextGL>(
         AndroidRenderingAPI::kOpenGLES,
         fml::MakeRefCounted<AndroidEnvironmentGL>());
 #endif  // SHELL_ENABLE_VULKAN
   }
-  FML_CHECK(android_context && android_context->IsValid())
+  FML_CHECK(android_context_ && android_context_->IsValid())
       << "Could not create an Android context.";
 
-  android_surface_ = SurfaceFactory(std::move(android_context), jni_facade);
+  surface_factory_ = std::make_shared<AndroidSurfaceFactoryImpl>(
+      *android_context_, jni_facade);
+
+  android_surface_ = surface_factory_->CreateSurface();
   FML_CHECK(android_surface_ && android_surface_->IsValid())
       << "Could not create an OpenGL, Vulkan or Software surface to setup "
          "rendering.";
@@ -287,6 +295,13 @@ std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
 }
 
 // |PlatformView|
+std::shared_ptr<ExternalViewEmbedder>
+PlatformViewAndroid::CreateExternalViewEmbedder() {
+  return std::make_shared<AndroidExternalViewEmbedder>(
+      *android_context_, jni_facade_, surface_factory_);
+}
+
+// |PlatformView|
 sk_sp<GrDirectContext> PlatformViewAndroid::CreateResourceContext() const {
   if (!android_surface_) {
     return nullptr;
@@ -319,6 +334,38 @@ PlatformViewAndroid::ComputePlatformResolvedLocales(
     const std::vector<std::string>& supported_locale_data) {
   return jni_facade_->FlutterViewComputePlatformResolvedLocale(
       supported_locale_data);
+}
+
+// |PlatformView|
+void PlatformViewAndroid::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  if (jni_facade_->RequestDartDeferredLibrary(loading_unit_id)) {
+    return;
+  }
+  return;  // TODO(garyq): Call LoadDartDeferredLibraryFailure()
+}
+
+// |PlatformView|
+void PlatformViewAndroid::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {
+  delegate_.LoadDartDeferredLibrary(loading_unit_id, std::move(snapshot_data),
+                                    std::move(snapshot_instructions));
+}
+
+// |PlatformView|
+void PlatformViewAndroid::LoadDartDeferredLibraryError(
+    intptr_t loading_unit_id,
+    const std::string error_message,
+    bool transient) {
+  delegate_.LoadDartDeferredLibraryError(loading_unit_id, error_message,
+                                         transient);
+}
+
+// |PlatformView|
+void PlatformViewAndroid::UpdateAssetManager(
+    std::shared_ptr<AssetManager> asset_manager) {
+  delegate_.UpdateAssetManager(std::move(asset_manager));
 }
 
 void PlatformViewAndroid::InstallFirstFrameCallback() {

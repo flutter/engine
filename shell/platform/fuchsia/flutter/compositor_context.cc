@@ -4,6 +4,7 @@
 
 #include "compositor_context.h"
 
+#include <algorithm>
 #include <vector>
 
 #include "flutter/flow/layers/layer_tree.h"
@@ -14,7 +15,7 @@ namespace flutter_runner {
 class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
  public:
   ScopedFrame(CompositorContext& context,
-              GrContext* gr_context,
+              GrDirectContext* gr_context,
               SkCanvas* canvas,
               flutter::ExternalViewEmbedder* view_embedder,
               const SkMatrix& root_surface_transformation,
@@ -23,7 +24,7 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
               fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
               SessionConnection& session_connection,
               VulkanSurfaceProducer& surface_producer,
-              flutter::SceneUpdateContext& scene_update_context)
+              std::shared_ptr<flutter::SceneUpdateContext> scene_update_context)
       : flutter::CompositorContext::ScopedFrame(context,
                                                 surface_producer.gr_context(),
                                                 canvas,
@@ -39,7 +40,7 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
  private:
   SessionConnection& session_connection_;
   VulkanSurfaceProducer& surface_producer_;
-  flutter::SceneUpdateContext& scene_update_context_;
+  std::shared_ptr<flutter::SceneUpdateContext> scene_update_context_;
 
   flutter::RasterStatus Raster(flutter::LayerTree& layer_tree,
                                bool ignore_raster_cache) override {
@@ -64,13 +65,21 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
       // Flush all pending session ops: create surfaces and enqueue session
       // Image ops for the frame's paint tasks, then Present.
       TRACE_EVENT0("flutter", "SessionPresent");
-      frame_paint_tasks = scene_update_context_.GetPaintTasks();
+      frame_paint_tasks = scene_update_context_->GetPaintTasks();
+
+      const SkISize& frame_size = layer_tree.frame_size();
       for (auto& task : frame_paint_tasks) {
-        SkISize physical_size =
-            SkISize::Make(layer_tree.device_pixel_ratio() * task.scale_x *
-                              task.paint_bounds.width(),
-                          layer_tree.device_pixel_ratio() * task.scale_y *
-                              task.paint_bounds.height());
+        // Clamp the logical size to the logical frame size in order to avoid
+        // huge surfaces.
+        const SkISize logical_size = SkISize::Make(
+            std::clamp(task.scale_x * task.paint_bounds.width(), 0.f,
+                       static_cast<float>(frame_size.width())),
+            std::clamp(task.scale_y * task.paint_bounds.height(), 0.f,
+                       static_cast<float>(frame_size.height())));
+
+        SkISize physical_size = SkISize::Make(
+            layer_tree.device_pixel_ratio() * logical_size.width(),
+            layer_tree.device_pixel_ratio() * logical_size.height());
         if (physical_size.width() == 0 || physical_size.height() == 0) {
           frame_surfaces.emplace_back(nullptr);
           continue;
@@ -142,10 +151,16 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
 CompositorContext::CompositorContext(
     SessionConnection& session_connection,
     VulkanSurfaceProducer& surface_producer,
-    flutter::SceneUpdateContext& scene_update_context)
+    std::shared_ptr<flutter::SceneUpdateContext> scene_update_context)
     : session_connection_(session_connection),
       surface_producer_(surface_producer),
-      scene_update_context_(scene_update_context) {}
+      scene_update_context_(scene_update_context) {
+  SkISize size = SkISize::Make(1024, 600);
+  skp_warmup_surface_ = surface_producer_.ProduceOffscreenSurface(size);
+  if (!skp_warmup_surface_) {
+    FML_LOG(ERROR) << "SkSurface::MakeRenderTarget returned null";
+  }
+}
 
 CompositorContext::~CompositorContext() = default;
 
@@ -162,6 +177,11 @@ CompositorContext::AcquireFrame(
       *this, gr_context, canvas, view_embedder, root_surface_transformation,
       instrumentation_enabled, surface_supports_readback, raster_thread_merger,
       session_connection_, surface_producer_, scene_update_context_);
+}
+
+void CompositorContext::WarmupSkp(const sk_sp<SkPicture> picture) {
+  skp_warmup_surface_->getCanvas()->drawPicture(picture);
+  surface_producer_.gr_context()->flush();
 }
 
 }  // namespace flutter_runner

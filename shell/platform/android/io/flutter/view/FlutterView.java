@@ -19,7 +19,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.DisplayCutout;
 import android.view.KeyEvent;
@@ -41,11 +40,13 @@ import android.view.inputmethod.InputMethodManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
+import io.flutter.Log;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
+import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
@@ -99,10 +100,10 @@ public class FlutterView extends SurfaceView
     float devicePixelRatio = 1.0f;
     int physicalWidth = 0;
     int physicalHeight = 0;
-    int physicalPaddingTop = 0;
-    int physicalPaddingRight = 0;
-    int physicalPaddingBottom = 0;
-    int physicalPaddingLeft = 0;
+    int physicalViewPaddingTop = 0;
+    int physicalViewPaddingRight = 0;
+    int physicalViewPaddingBottom = 0;
+    int physicalViewPaddingLeft = 0;
     int physicalViewInsetTop = 0;
     int physicalViewInsetRight = 0;
     int physicalViewInsetBottom = 0;
@@ -268,19 +269,20 @@ public class FlutterView extends SurfaceView
   }
 
   @Override
-  public boolean onKeyUp(int keyCode, KeyEvent event) {
-    if (!isAttached()) {
-      return super.onKeyUp(keyCode, event);
+  public boolean dispatchKeyEvent(KeyEvent event) {
+    Log.e(TAG, "dispatchKeyEvent: " + event.toString());
+    if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+      // Tell Android to start tracking this event.
+      getKeyDispatcherState().startTracking(event, this);
+    } else if (event.getAction() == KeyEvent.ACTION_UP) {
+      // Stop tracking the event.
+      getKeyDispatcherState().handleUpEvent(event);
     }
-    return androidKeyProcessor.onKeyUp(event) || super.onKeyUp(keyCode, event);
-  }
-
-  @Override
-  public boolean onKeyDown(int keyCode, KeyEvent event) {
-    if (!isAttached()) {
-      return super.onKeyDown(keyCode, event);
-    }
-    return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
+    // If the key processor doesn't handle it, then send it on to the
+    // superclass. The key processor will typically handle all events except
+    // those where it has re-dispatched the event after receiving a reply from
+    // the framework that the framework did not handle it.
+    return (isAttached() && androidKeyProcessor.onKeyEvent(event)) || super.dispatchKeyEvent(event);
   }
 
   public FlutterNativeView getFlutterNativeView() {
@@ -612,10 +614,10 @@ public class FlutterView extends SurfaceView
         mask = mask | android.view.WindowInsets.Type.statusBars();
       }
       Insets uiInsets = insets.getInsets(mask);
-      mMetrics.physicalPaddingTop = uiInsets.top;
-      mMetrics.physicalPaddingRight = uiInsets.right;
-      mMetrics.physicalPaddingBottom = uiInsets.bottom;
-      mMetrics.physicalPaddingLeft = uiInsets.left;
+      mMetrics.physicalViewPaddingTop = uiInsets.top;
+      mMetrics.physicalViewPaddingRight = uiInsets.right;
+      mMetrics.physicalViewPaddingBottom = uiInsets.bottom;
+      mMetrics.physicalViewPaddingLeft = uiInsets.left;
 
       Insets imeInsets = insets.getInsets(android.view.WindowInsets.Type.ime());
       mMetrics.physicalViewInsetTop = imeInsets.top;
@@ -636,21 +638,21 @@ public class FlutterView extends SurfaceView
       DisplayCutout cutout = insets.getDisplayCutout();
       if (cutout != null) {
         Insets waterfallInsets = cutout.getWaterfallInsets();
-        mMetrics.physicalPaddingTop =
+        mMetrics.physicalViewPaddingTop =
             Math.max(
-                Math.max(mMetrics.physicalPaddingTop, waterfallInsets.top),
+                Math.max(mMetrics.physicalViewPaddingTop, waterfallInsets.top),
                 cutout.getSafeInsetTop());
-        mMetrics.physicalPaddingRight =
+        mMetrics.physicalViewPaddingRight =
             Math.max(
-                Math.max(mMetrics.physicalPaddingRight, waterfallInsets.right),
+                Math.max(mMetrics.physicalViewPaddingRight, waterfallInsets.right),
                 cutout.getSafeInsetRight());
-        mMetrics.physicalPaddingBottom =
+        mMetrics.physicalViewPaddingBottom =
             Math.max(
-                Math.max(mMetrics.physicalPaddingBottom, waterfallInsets.bottom),
+                Math.max(mMetrics.physicalViewPaddingBottom, waterfallInsets.bottom),
                 cutout.getSafeInsetBottom());
-        mMetrics.physicalPaddingLeft =
+        mMetrics.physicalViewPaddingLeft =
             Math.max(
-                Math.max(mMetrics.physicalPaddingLeft, waterfallInsets.left),
+                Math.max(mMetrics.physicalViewPaddingLeft, waterfallInsets.left),
                 cutout.getSafeInsetLeft());
       }
     } else {
@@ -661,15 +663,18 @@ public class FlutterView extends SurfaceView
         zeroSides = calculateShouldZeroSides();
       }
 
-      // Status bar (top) and left/right system insets should partially obscure the content
-      // (padding).
-      mMetrics.physicalPaddingTop = statusBarVisible ? insets.getSystemWindowInsetTop() : 0;
-      mMetrics.physicalPaddingRight =
+      // Status bar (top), navigation bar (bottom) and left/right system insets should
+      // partially obscure the content (padding).
+      mMetrics.physicalViewPaddingTop = statusBarVisible ? insets.getSystemWindowInsetTop() : 0;
+      mMetrics.physicalViewPaddingRight =
           zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
               ? 0
               : insets.getSystemWindowInsetRight();
-      mMetrics.physicalPaddingBottom = 0;
-      mMetrics.physicalPaddingLeft =
+      mMetrics.physicalViewPaddingBottom =
+          navigationBarVisible && guessBottomKeyboardInset(insets) == 0
+              ? insets.getSystemWindowInsetBottom()
+              : 0;
+      mMetrics.physicalViewPaddingLeft =
           zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
               ? 0
               : insets.getSystemWindowInsetLeft();
@@ -677,10 +682,7 @@ public class FlutterView extends SurfaceView
       // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
       mMetrics.physicalViewInsetTop = 0;
       mMetrics.physicalViewInsetRight = 0;
-      mMetrics.physicalViewInsetBottom =
-          navigationBarVisible
-              ? insets.getSystemWindowInsetBottom()
-              : guessBottomKeyboardInset(insets);
+      mMetrics.physicalViewInsetBottom = guessBottomKeyboardInset(insets);
       mMetrics.physicalViewInsetLeft = 0;
     }
 
@@ -693,10 +695,10 @@ public class FlutterView extends SurfaceView
   protected boolean fitSystemWindows(Rect insets) {
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
       // Status bar, left/right system insets partially obscure content (padding).
-      mMetrics.physicalPaddingTop = insets.top;
-      mMetrics.physicalPaddingRight = insets.right;
-      mMetrics.physicalPaddingBottom = 0;
-      mMetrics.physicalPaddingLeft = insets.left;
+      mMetrics.physicalViewPaddingTop = insets.top;
+      mMetrics.physicalViewPaddingRight = insets.right;
+      mMetrics.physicalViewPaddingBottom = 0;
+      mMetrics.physicalViewPaddingLeft = insets.left;
 
       // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
       mMetrics.physicalViewInsetTop = 0;
@@ -755,10 +757,10 @@ public class FlutterView extends SurfaceView
             mMetrics.devicePixelRatio,
             mMetrics.physicalWidth,
             mMetrics.physicalHeight,
-            mMetrics.physicalPaddingTop,
-            mMetrics.physicalPaddingRight,
-            mMetrics.physicalPaddingBottom,
-            mMetrics.physicalPaddingLeft,
+            mMetrics.physicalViewPaddingTop,
+            mMetrics.physicalViewPaddingRight,
+            mMetrics.physicalViewPaddingBottom,
+            mMetrics.physicalViewPaddingLeft,
             mMetrics.physicalViewInsetTop,
             mMetrics.physicalViewInsetRight,
             mMetrics.physicalViewInsetBottom,
@@ -876,18 +878,18 @@ public class FlutterView extends SurfaceView
     surfaceTexture.detachFromGLContext();
     final SurfaceTextureRegistryEntry entry =
         new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture);
-    mNativeView.getFlutterJNI().registerTexture(entry.id(), surfaceTexture);
+    mNativeView.getFlutterJNI().registerTexture(entry.id(), entry.textureWrapper());
     return entry;
   }
 
   final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
     private final long id;
-    private final SurfaceTexture surfaceTexture;
+    private final SurfaceTextureWrapper textureWrapper;
     private boolean released;
 
     SurfaceTextureRegistryEntry(long id, SurfaceTexture surfaceTexture) {
       this.id = id;
-      this.surfaceTexture = surfaceTexture;
+      this.textureWrapper = new SurfaceTextureWrapper(surfaceTexture);
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         // The callback relies on being executed on the UI thread (unsynchronised read of
@@ -895,12 +897,12 @@ public class FlutterView extends SurfaceView
         // and also the engine code check for platform thread in
         // Shell::OnPlatformViewMarkTextureFrameAvailable),
         // so we explicitly pass a Handler for the current thread.
-        this.surfaceTexture.setOnFrameAvailableListener(onFrameListener, new Handler());
+        this.surfaceTexture().setOnFrameAvailableListener(onFrameListener, new Handler());
       } else {
         // Android documentation states that the listener can be called on an arbitrary thread.
         // But in practice, versions of Android that predate the newer API will call the listener
         // on the thread where the SurfaceTexture was constructed.
-        this.surfaceTexture.setOnFrameAvailableListener(onFrameListener);
+        this.surfaceTexture().setOnFrameAvailableListener(onFrameListener);
       }
     }
 
@@ -921,9 +923,13 @@ public class FlutterView extends SurfaceView
           }
         };
 
+    public SurfaceTextureWrapper textureWrapper() {
+      return textureWrapper;
+    }
+
     @Override
     public SurfaceTexture surfaceTexture() {
-      return surfaceTexture;
+      return textureWrapper.surfaceTexture();
     }
 
     @Override
@@ -945,8 +951,8 @@ public class FlutterView extends SurfaceView
 
       // Otherwise onFrameAvailableListener might be called after mNativeView==null
       // (https://github.com/flutter/flutter/issues/20951). See also the check in onFrameAvailable.
-      surfaceTexture.setOnFrameAvailableListener(null);
-      surfaceTexture.release();
+      surfaceTexture().setOnFrameAvailableListener(null);
+      textureWrapper.release();
       mNativeView.getFlutterJNI().unregisterTexture(id);
     }
   }

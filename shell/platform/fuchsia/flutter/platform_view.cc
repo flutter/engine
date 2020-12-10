@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flow/embedded_views.h"
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "platform_view.h"
@@ -14,10 +15,11 @@
 #include "flutter/fml/logging.h"
 #include "flutter/lib/ui/window/pointer_data.h"
 #include "flutter/lib/ui/window/window.h"
+#include "third_party/rapidjson/include/rapidjson/document.h"
+#include "third_party/rapidjson/include/rapidjson/stringbuffer.h"
+#include "third_party/rapidjson/include/rapidjson/writer.h"
+
 #include "logging.h"
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
 #include "runtime/dart/utils/inlines.h"
 #include "vsync_waiter.h"
 
@@ -65,6 +67,7 @@ PlatformView::PlatformView(
     OnUpdateView on_update_view_callback,
     OnDestroyView on_destroy_view_callback,
     OnCreateSurface on_create_surface_callback,
+    std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder,
     fml::TimeDelta vsync_offset,
     zx_handle_t vsync_event_handle)
     : flutter::PlatformView(delegate, std::move(task_runners)),
@@ -79,6 +82,7 @@ PlatformView::PlatformView(
       on_update_view_callback_(std::move(on_update_view_callback)),
       on_destroy_view_callback_(std::move(on_destroy_view_callback)),
       on_create_surface_callback_(std::move(on_create_surface_callback)),
+      external_view_embedder_(external_view_embedder),
       ime_client_(this),
       vsync_offset_(std::move(vsync_offset)),
       vsync_event_handle_(vsync_event_handle) {
@@ -214,7 +218,8 @@ void PlatformView::OnScenicError(std::string error) {
 void PlatformView::OnScenicEvent(
     std::vector<fuchsia::ui::scenic::Event> events) {
   TRACE_EVENT0("flutter", "PlatformView::OnScenicEvent");
-  bool should_update_metrics = false;
+
+  bool metrics_changed = false;
   for (const auto& event : events) {
     switch (event.Which()) {
       case fuchsia::ui::scenic::Event::Tag::kGfx:
@@ -223,34 +228,54 @@ void PlatformView::OnScenicEvent(
             const fuchsia::ui::gfx::Metrics& metrics =
                 event.gfx().metrics().metrics;
             const float new_view_pixel_ratio = metrics.scale_x;
+            if (new_view_pixel_ratio <= 0.f) {
+              FML_DLOG(ERROR)
+                  << "Got an invalid pixel ratio from Scenic; ignoring: "
+                  << new_view_pixel_ratio;
+              break;
+            }
 
             // Avoid metrics update when possible -- it is computationally
             // expensive.
-            if (view_pixel_ratio_ != new_view_pixel_ratio) {
-              view_pixel_ratio_ = new_view_pixel_ratio;
-              should_update_metrics = true;
+            if (view_pixel_ratio_.has_value() &&
+                *view_pixel_ratio_ == new_view_pixel_ratio) {
+              FML_DLOG(ERROR)
+                  << "Got an identical pixel ratio from Scenic; ignoring: "
+                  << new_view_pixel_ratio;
+              break;
             }
+
+            view_pixel_ratio_ = new_view_pixel_ratio;
+            metrics_changed = true;
             break;
           }
           case fuchsia::ui::gfx::Event::Tag::kViewPropertiesChanged: {
             const fuchsia::ui::gfx::BoundingBox& bounding_box =
                 event.gfx().view_properties_changed().properties.bounding_box;
-            const float new_view_width =
-                std::max(bounding_box.max.x - bounding_box.min.x, 0.0f);
-            const float new_view_height =
-                std::max(bounding_box.max.y - bounding_box.min.y, 0.0f);
+            const std::pair<float, float> new_view_size = {
+                std::max(bounding_box.max.x - bounding_box.min.x, 0.0f),
+                std::max(bounding_box.max.y - bounding_box.min.y, 0.0f)};
+            if (new_view_size.first <= 0.f || new_view_size.second <= 0.f) {
+              FML_DLOG(ERROR)
+                  << "Got an invalid view size from Scenic; ignoring: "
+                  << new_view_size.first << " " << new_view_size.second;
+              break;
+            }
 
             // Avoid metrics update when possible -- it is computationally
             // expensive.
-            if (view_width_ != new_view_width ||
-                view_height_ != new_view_width) {
-              view_width_ = new_view_width;
-              view_height_ = new_view_height;
-              should_update_metrics = true;
+            if (view_logical_size_.has_value() &&
+                *view_logical_size_ == new_view_size) {
+              FML_DLOG(ERROR)
+                  << "Got an identical view size from Scenic; ignoring: "
+                  << new_view_size.first << " " << new_view_size.second;
+              break;
             }
+
+            view_logical_size_ = new_view_size;
+            metrics_changed = true;
             break;
           }
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
           case fuchsia::ui::gfx::Event::Tag::kViewConnected:
             OnChildViewConnected(event.gfx().view_connected().view_holder_id);
             break;
@@ -263,7 +288,6 @@ void PlatformView::OnScenicEvent(
                 event.gfx().view_state_changed().view_holder_id,
                 event.gfx().view_state_changed().state.is_rendering);
             break;
-#endif
           case fuchsia::ui::gfx::Event::Tag::Invalid:
             FML_DCHECK(false) << "Flutter PlatformView::OnScenicEvent: Got "
                                  "an invalid GFX event.";
@@ -300,19 +324,22 @@ void PlatformView::OnScenicEvent(
     }
   }
 
-  if (should_update_metrics) {
+  if (view_pixel_ratio_.has_value() && view_logical_size_.has_value() &&
+      metrics_changed) {
+    const float pixel_ratio = *view_pixel_ratio_;
+    const std::pair<float, float> logical_size = *view_logical_size_;
     SetViewportMetrics({
-        view_pixel_ratio_,                 // device_pixel_ratio
-        view_width_ * view_pixel_ratio_,   // physical_width
-        view_height_ * view_pixel_ratio_,  // physical_height
-        0.0f,                              // physical_padding_top
-        0.0f,                              // physical_padding_right
-        0.0f,                              // physical_padding_bottom
-        0.0f,                              // physical_padding_left
-        0.0f,                              // physical_view_inset_top
-        0.0f,                              // physical_view_inset_right
-        0.0f,                              // physical_view_inset_bottom
-        0.0f,                              // physical_view_inset_left
+        pixel_ratio,                        // device_pixel_ratio
+        logical_size.first * pixel_ratio,   // physical_width
+        logical_size.second * pixel_ratio,  // physical_height
+        0.0f,                               // physical_padding_top
+        0.0f,                               // physical_padding_right
+        0.0f,                               // physical_padding_bottom
+        0.0f,                               // physical_padding_left
+        0.0f,                               // physical_view_inset_top
+        0.0f,                               // physical_view_inset_right
+        0.0f,                               // physical_view_inset_bottom
+        0.0f,                               // physical_view_inset_left
         0.0f,  // p_physical_system_gesture_inset_top
         0.0f,  // p_physical_system_gesture_inset_right
         0.0f,  // p_physical_system_gesture_inset_bottom
@@ -321,26 +348,55 @@ void PlatformView::OnScenicEvent(
   }
 }
 
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
 void PlatformView::OnChildViewConnected(scenic::ResourceId view_holder_id) {
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   task_runners_.GetUITaskRunner()->PostTask([view_holder_id]() {
     flutter::SceneHost::OnViewConnected(view_holder_id);
   });
+#endif  // LEGACY_FUCHSIA_EMBEDDER
+  std::string call = "{\"method\":\"View.viewConnected\",\"args\":null}";
+
+  fml::RefPtr<flutter::PlatformMessage> message =
+      fml::MakeRefCounted<flutter::PlatformMessage>(
+          "flutter/platform_views",
+          std::vector<uint8_t>(call.begin(), call.end()), nullptr);
+  DispatchPlatformMessage(message);
 }
 
 void PlatformView::OnChildViewDisconnected(scenic::ResourceId view_holder_id) {
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   task_runners_.GetUITaskRunner()->PostTask([view_holder_id]() {
     flutter::SceneHost::OnViewDisconnected(view_holder_id);
   });
+#endif  // LEGACY_FUCHSIA_EMBEDDER
+  std::string call = "{\"method\":\"View.viewDisconnected\",\"args\":null}";
+
+  fml::RefPtr<flutter::PlatformMessage> message =
+      fml::MakeRefCounted<flutter::PlatformMessage>(
+          "flutter/platform_views",
+          std::vector<uint8_t>(call.begin(), call.end()), nullptr);
+  DispatchPlatformMessage(message);
 }
 
 void PlatformView::OnChildViewStateChanged(scenic::ResourceId view_holder_id,
                                            bool state) {
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   task_runners_.GetUITaskRunner()->PostTask([view_holder_id, state]() {
     flutter::SceneHost::OnViewStateChanged(view_holder_id, state);
   });
+#endif  // LEGACY_FUCHSIA_EMBEDDER
+  std::ostringstream out;
+  std::string str_state = state ? "true" : "false";
+  out << "{\"method\":\"View.viewStateChanged\",\"args\":{\"state\":"
+      << str_state << "}}";
+  auto call = out.str();
+
+  fml::RefPtr<flutter::PlatformMessage> message =
+      fml::MakeRefCounted<flutter::PlatformMessage>(
+          "flutter/platform_views",
+          std::vector<uint8_t>(call.begin(), call.end()), nullptr);
+  DispatchPlatformMessage(message);
 }
-#endif
 
 static flutter::PointerData::Change GetChangeFromPointerEventPhase(
     fuchsia::ui::input::PointerEventPhase phase) {
@@ -394,6 +450,9 @@ bool PlatformView::OnHandlePointerEvent(
       PointerTraceHACK(pointer.radius_major, pointer.radius_minor);
   TRACE_FLOW_END("input", "dispatch_event_to_client", trace_id);
 
+  const float pixel_ratio =
+      view_pixel_ratio_.has_value() ? *view_pixel_ratio_ : 0.f;
+
   flutter::PointerData pointer_data;
   pointer_data.Clear();
   pointer_data.time_stamp = pointer.event_time / 1000;
@@ -401,8 +460,8 @@ bool PlatformView::OnHandlePointerEvent(
   pointer_data.kind = GetKindFromPointerType(pointer.type);
   pointer_data.device = pointer.pointer_id;
   // Pointer events are in logical pixels, so scale to physical.
-  pointer_data.physical_x = pointer.x * view_pixel_ratio_;
-  pointer_data.physical_y = pointer.y * view_pixel_ratio_;
+  pointer_data.physical_x = pointer.x * pixel_ratio;
+  pointer_data.physical_y = pointer.y * pixel_ratio;
   // Buttons are single bit values starting with kMousePrimaryButton = 1.
   pointer_data.buttons = static_cast<uint64_t>(pointer.buttons);
 
@@ -528,6 +587,12 @@ std::unique_ptr<flutter::Surface> PlatformView::CreateRenderingSurface() {
 }
 
 // |flutter::PlatformView|
+std::shared_ptr<flutter::ExternalViewEmbedder>
+PlatformView::CreateExternalViewEmbedder() {
+  return external_view_embedder_;
+}
+
+// |flutter::PlatformView|
 void PlatformView::HandlePlatformMessage(
     fml::RefPtr<flutter::PlatformMessage> message) {
   if (!message) {
@@ -574,7 +639,10 @@ void PlatformView::DispatchSemanticsAction(int32_t node_id,
 void PlatformView::UpdateSemantics(
     flutter::SemanticsNodeUpdates update,
     flutter::CustomAccessibilityActionUpdates actions) {
-  accessibility_bridge_->AddSemanticsNodeUpdate(update, view_pixel_ratio_);
+  const float pixel_ratio =
+      view_pixel_ratio_.has_value() ? *view_pixel_ratio_ : 0.f;
+
+  accessibility_bridge_->AddSemanticsNodeUpdate(update, pixel_ratio);
 }
 
 // Channel handler for kAccessibilityChannel

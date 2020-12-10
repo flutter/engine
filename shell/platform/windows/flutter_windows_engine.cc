@@ -8,10 +8,15 @@
 #include <iostream>
 #include <sstream>
 
+#include "flutter/shell/platform/common/cpp/client_wrapper/binary_messenger_impl.h"
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/basic_message_channel.h"
+#include "flutter/shell/platform/common/cpp/json_message_codec.h"
 #include "flutter/shell/platform/common/cpp/path_utils.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
 #include "flutter/shell/platform/windows/system_utils.h"
+#include "flutter/shell/platform/windows/task_runner.h"
+#include "third_party/rapidjson/include/rapidjson/document.h"
 
 namespace flutter {
 
@@ -90,15 +95,20 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 }  // namespace
 
 FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
-    : project_(std::make_unique<FlutterProjectBundle>(project)) {
-  task_runner_ = std::make_unique<Win32TaskRunner>(
-      GetCurrentThreadId(), [this](const auto* task) {
+    : project_(std::make_unique<FlutterProjectBundle>(project)),
+      aot_data_(nullptr, nullptr) {
+  embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
+  FlutterEngineGetProcAddresses(&embedder_api_);
+
+  task_runner_ = TaskRunner::Create(
+      GetCurrentThreadId(), embedder_api_.GetCurrentTime,
+      [this](const auto* task) {
         if (!engine_) {
           std::cerr << "Cannot post an engine task when engine is not running."
                     << std::endl;
           return;
         }
-        if (FlutterEngineRunTask(engine_, task) != kSuccess) {
+        if (embedder_api_.RunTask(engine_, task) != kSuccess) {
           std::cerr << "Failed to post an engine task." << std::endl;
         }
       });
@@ -109,10 +119,21 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
   plugin_registrar_->engine = this;
 
+  messenger_wrapper_ = std::make_unique<BinaryMessengerImpl>(messenger_.get());
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_.get());
+#ifndef WINUWP
   window_proc_delegate_manager_ =
       std::make_unique<Win32WindowProcDelegateManager>();
+#endif
+
+  // Set up internal channels.
+  // TODO: Replace this with an embedder.h API. See
+  // https://github.com/flutter/flutter/issues/71099
+  settings_channel_ =
+      std::make_unique<BasicMessageChannel<rapidjson::Document>>(
+          messenger_wrapper_.get(), "flutter/settings",
+          &JsonMessageCodec::GetInstance());
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -126,8 +147,8 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   }
   std::string assets_path_string = project_->assets_path().u8string();
   std::string icu_path_string = project_->icu_path().u8string();
-  if (FlutterEngineRunsAOTCompiledDartCode()) {
-    aot_data_ = project_->LoadAotData();
+  if (embedder_api_.RunsAOTCompiledDartCode()) {
+    aot_data_ = project_->LoadAotData(embedder_api_);
     if (!aot_data_) {
       std::cerr << "Unable to start engine without AOT data." << std::endl;
       return false;
@@ -143,18 +164,26 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
       switches.begin(), switches.end(), std::back_inserter(argv),
       [](const std::string& arg) -> const char* { return arg.c_str(); });
 
+  const std::vector<std::string>& entrypoint_args =
+      project_->dart_entrypoint_arguments();
+  std::vector<const char*> entrypoint_argv;
+  std::transform(
+      entrypoint_args.begin(), entrypoint_args.end(),
+      std::back_inserter(entrypoint_argv),
+      [](const std::string& arg) -> const char* { return arg.c_str(); });
+
   // Configure task runners.
   FlutterTaskRunnerDescription platform_task_runner = {};
   platform_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
   platform_task_runner.user_data = task_runner_.get();
   platform_task_runner.runs_task_on_current_thread_callback =
       [](void* user_data) -> bool {
-    return static_cast<Win32TaskRunner*>(user_data)->RunsTasksOnCurrentThread();
+    return static_cast<TaskRunner*>(user_data)->RunsTasksOnCurrentThread();
   };
   platform_task_runner.post_task_callback = [](FlutterTask task,
                                                uint64_t target_time_nanos,
                                                void* user_data) -> void {
-    static_cast<Win32TaskRunner*>(user_data)->PostTask(task, target_time_nanos);
+    static_cast<TaskRunner*>(user_data)->PostTask(task, target_time_nanos);
   };
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
@@ -166,13 +195,18 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   args.icu_data_path = icu_path_string.c_str();
   args.command_line_argc = static_cast<int>(argv.size());
   args.command_line_argv = argv.size() > 0 ? argv.data() : nullptr;
+  args.dart_entrypoint_argc = static_cast<int>(entrypoint_argv.size());
+  args.dart_entrypoint_argv =
+      entrypoint_argv.size() > 0 ? entrypoint_argv.data() : nullptr;
   args.platform_message_callback =
       [](const FlutterPlatformMessage* engine_message,
          void* user_data) -> void {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     return host->HandlePlatformMessage(engine_message);
   };
+
   args.custom_task_runners = &custom_task_runners;
+
   if (aot_data_) {
     args.aot_data = aot_data_.get();
   }
@@ -182,8 +216,8 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
 
   FlutterRendererConfig renderer_config = GetRendererConfig();
 
-  auto result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &renderer_config,
-                                 &args, this, &engine_);
+  auto result = embedder_api_.Run(FLUTTER_ENGINE_VERSION, &renderer_config,
+                                  &args, this, &engine_);
   if (result != kSuccess || engine_ == nullptr) {
     std::cerr << "Failed to start Flutter engine: error " << result
               << std::endl;
@@ -200,7 +234,7 @@ bool FlutterWindowsEngine::Stop() {
     if (plugin_registrar_destruction_callback_) {
       plugin_registrar_destruction_callback_(plugin_registrar_.get());
     }
-    FlutterEngineResult result = FlutterEngineShutdown(engine_);
+    FlutterEngineResult result = embedder_api_.Shutdown(engine_);
     engine_ = nullptr;
     return (result == kSuccess);
   }
@@ -221,6 +255,60 @@ void FlutterWindowsEngine::SetPluginRegistrarDestructionCallback(
   plugin_registrar_destruction_callback_ = callback;
 }
 
+void FlutterWindowsEngine::SendWindowMetricsEvent(
+    const FlutterWindowMetricsEvent& event) {
+  if (engine_) {
+    embedder_api_.SendWindowMetricsEvent(engine_, &event);
+  }
+}
+
+void FlutterWindowsEngine::SendPointerEvent(const FlutterPointerEvent& event) {
+  if (engine_) {
+    embedder_api_.SendPointerEvent(engine_, &event, 1);
+  }
+}
+
+bool FlutterWindowsEngine::SendPlatformMessage(
+    const char* channel,
+    const uint8_t* message,
+    const size_t message_size,
+    const FlutterDesktopBinaryReply reply,
+    void* user_data) {
+  FlutterPlatformMessageResponseHandle* response_handle = nullptr;
+  if (reply != nullptr && user_data != nullptr) {
+    FlutterEngineResult result =
+        embedder_api_.PlatformMessageCreateResponseHandle(
+            engine_, reply, user_data, &response_handle);
+    if (result != kSuccess) {
+      std::cout << "Failed to create response handle\n";
+      return false;
+    }
+  }
+
+  FlutterPlatformMessage platform_message = {
+      sizeof(FlutterPlatformMessage),
+      channel,
+      message,
+      message_size,
+      response_handle,
+  };
+
+  FlutterEngineResult message_result =
+      embedder_api_.SendPlatformMessage(engine_, &platform_message);
+  if (response_handle != nullptr) {
+    embedder_api_.PlatformMessageReleaseResponseHandle(engine_,
+                                                       response_handle);
+  }
+  return message_result == kSuccess;
+}
+
+void FlutterWindowsEngine::SendPlatformMessageResponse(
+    const FlutterDesktopMessageResponseHandle* handle,
+    const uint8_t* data,
+    size_t data_length) {
+  embedder_api_.SendPlatformMessageResponse(engine_, handle, data, data_length);
+}
+
 void FlutterWindowsEngine::HandlePlatformMessage(
     const FlutterPlatformMessage* engine_message) {
   if (engine_message->struct_size != sizeof(FlutterPlatformMessage)) {
@@ -234,6 +322,10 @@ void FlutterWindowsEngine::HandlePlatformMessage(
 
   message_dispatcher_->HandleMessage(
       message, [this] {}, [this] {});
+}
+
+void FlutterWindowsEngine::ReloadSystemFonts() {
+  embedder_api_.ReloadSystemFonts(engine_);
 }
 
 void FlutterWindowsEngine::SendSystemSettings() {
@@ -250,10 +342,18 @@ void FlutterWindowsEngine::SendSystemSettings() {
       flutter_locales.begin(), flutter_locales.end(),
       std::back_inserter(flutter_locale_list),
       [](const auto& arg) -> const auto* { return &arg; });
-  FlutterEngineUpdateLocales(engine_, flutter_locale_list.data(),
-                             flutter_locale_list.size());
+  embedder_api_.UpdateLocales(engine_, flutter_locale_list.data(),
+                              flutter_locale_list.size());
 
-  // TODO: Send 'flutter/settings' channel settings here as well.
+  rapidjson::Document settings(rapidjson::kObjectType);
+  auto& allocator = settings.GetAllocator();
+  settings.AddMember("alwaysUse24HourFormat",
+                     Prefer24HourTime(GetUserTimeFormat()), allocator);
+  settings.AddMember("textScaleFactor", 1.0, allocator);
+  // TODO: Implement dark mode support.
+  // https://github.com/flutter/flutter/issues/54612
+  settings.AddMember("platformBrightness", "light", allocator);
+  settings_channel_->Send(settings);
 }
 
 }  // namespace flutter

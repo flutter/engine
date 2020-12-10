@@ -13,14 +13,9 @@
 namespace flutter {
 
 AndroidSurfaceVulkan::AndroidSurfaceVulkan(
-    std::shared_ptr<AndroidContext> android_context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    AndroidSurface::Factory surface_factory)
-    : external_view_embedder_(
-          std::make_unique<AndroidExternalViewEmbedder>(android_context,
-                                                        jni_facade,
-                                                        surface_factory)),
-      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
+    const AndroidContext& android_context,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    : proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
 
 AndroidSurfaceVulkan::~AndroidSurfaceVulkan() = default;
 
@@ -78,10 +73,6 @@ bool AndroidSurfaceVulkan::SetNativeWindow(
     fml::RefPtr<AndroidNativeWindow> window) {
   native_window_ = std::move(window);
   return native_window_ && native_window_->IsValid();
-}
-
-ExternalViewEmbedder* AndroidSurfaceVulkan::GetExternalViewEmbedder() {
-  return external_view_embedder_.get();
 }
 
 fml::RefPtr<vulkan::VulkanProcTable> AndroidSurfaceVulkan::vk() {

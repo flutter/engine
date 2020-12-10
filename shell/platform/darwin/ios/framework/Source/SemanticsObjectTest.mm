@@ -39,7 +39,9 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   }
   void AccessibilityObjectDidBecomeFocused(int32_t id) override {}
   void AccessibilityObjectDidLoseFocus(int32_t id) override {}
-  FlutterPlatformViewsController* GetPlatformViewsController() const override { return nil; }
+  std::shared_ptr<FlutterPlatformViewsController> GetPlatformViewsController() const override {
+    return nil;
+  }
   std::vector<SemanticsActionObservation> observations;
 
  private:
@@ -85,6 +87,54 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   XCTAssertNil(child1.parent);
   XCTAssertEqual(parent, child2.parent);
   XCTAssertEqualObjects(parent.children, @[ child2 ]);
+}
+
+- (void)testPlainSemanticsObjectWithLabelHasStaticTextTrait {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitStaticText);
+}
+
+- (void)testIntresetingSemanticsObjectWithLabelHasStaticTextTrait {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  SemanticsObject* child1 = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
+  object.children = @[ child1 ];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitNone);
+}
+
+- (void)testIntresetingSemanticsObjectWithLabelHasStaticTextTrait1 {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsTextField);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitNone);
+}
+
+- (void)testIntresetingSemanticsObjectWithLabelHasStaticTextTrait2 {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsButton);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitButton);
 }
 
 - (void)testShouldTriggerAnnouncement {

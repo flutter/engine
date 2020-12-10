@@ -22,9 +22,6 @@
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
-#include "flutter/shell/platform/windows/win32_dpi_utils.h"
-#include "flutter/shell/platform/windows/win32_flutter_window.h"
-#include "flutter/shell/platform/windows/win32_task_runner.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_state.h"
 
@@ -52,32 +49,6 @@ static FlutterDesktopViewRef HandleForView(flutter::FlutterWindowsView* view) {
   return reinterpret_cast<FlutterDesktopViewRef>(view);
 }
 
-FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
-    int width,
-    int height,
-    FlutterDesktopEngineRef engine) {
-  std::unique_ptr<flutter::WindowBindingHandler> window_wrapper =
-      std::make_unique<flutter::Win32FlutterWindow>(width, height);
-
-  auto state = std::make_unique<FlutterDesktopViewControllerState>();
-  state->view =
-      std::make_unique<flutter::FlutterWindowsView>(std::move(window_wrapper));
-  state->view->CreateRenderSurface();
-
-  // Take ownership of the engine, starting it if necessary.
-  state->view->SetEngine(
-      std::unique_ptr<flutter::FlutterWindowsEngine>(EngineFromHandle(engine)));
-  if (!state->view->GetEngine()->running()) {
-    if (!state->view->GetEngine()->RunWithEntrypoint(nullptr)) {
-      return nullptr;
-    }
-  }
-
-  // Must happen after engine is running.
-  state->view->SendInitialBounds();
-  return state.release();
-}
-
 void FlutterDesktopViewControllerDestroy(
     FlutterDesktopViewControllerRef controller) {
   delete controller;
@@ -91,23 +62,6 @@ FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
 FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
     FlutterDesktopViewControllerRef controller) {
   return HandleForView(controller->view.get());
-}
-
-bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
-    FlutterDesktopViewControllerRef controller,
-    HWND hwnd,
-    UINT message,
-    WPARAM wparam,
-    LPARAM lparam,
-    LRESULT* result) {
-  std::optional<LRESULT> delegate_result =
-      controller->view->GetEngine()
-          ->window_proc_delegate_manager()
-          ->OnTopLevelWindowProc(hwnd, message, wparam, lparam);
-  if (delegate_result) {
-    *result = *delegate_result;
-  }
-  return delegate_result.has_value();
 }
 
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
@@ -132,12 +86,8 @@ bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
   return EngineFromHandle(engine)->RunWithEntrypoint(entry_point);
 }
 
-uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
-  return EngineFromHandle(engine)->task_runner()->ProcessTasks().count();
-}
-
 void FlutterDesktopEngineReloadSystemFonts(FlutterDesktopEngineRef engine) {
-  FlutterEngineReloadSystemFonts(EngineFromHandle(engine)->engine());
+  EngineFromHandle(engine)->ReloadSystemFonts();
 }
 
 FlutterDesktopPluginRegistrarRef FlutterDesktopEngineGetPluginRegistrar(
@@ -162,29 +112,6 @@ HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar) {
   return HandleForView(registrar->engine->view());
-}
-
-void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(
-    FlutterDesktopPluginRegistrarRef registrar,
-    FlutterDesktopWindowProcCallback delegate,
-    void* user_data) {
-  registrar->engine->window_proc_delegate_manager()
-      ->RegisterTopLevelWindowProcDelegate(delegate, user_data);
-}
-
-void FlutterDesktopPluginRegistrarUnregisterTopLevelWindowProcDelegate(
-    FlutterDesktopPluginRegistrarRef registrar,
-    FlutterDesktopWindowProcCallback delegate) {
-  registrar->engine->window_proc_delegate_manager()
-      ->UnregisterTopLevelWindowProcDelegate(delegate);
-}
-
-UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
-  return flutter::GetDpiForHWND(hwnd);
-}
-
-UINT FlutterDesktopGetDpiForMonitor(HMONITOR monitor) {
-  return flutter::GetDpiForMonitor(monitor);
 }
 
 void FlutterDesktopResyncOutputStreams() {
@@ -217,33 +144,8 @@ bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
                                           const size_t message_size,
                                           const FlutterDesktopBinaryReply reply,
                                           void* user_data) {
-  FlutterPlatformMessageResponseHandle* response_handle = nullptr;
-  if (reply != nullptr && user_data != nullptr) {
-    FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
-        messenger->engine->engine(), reply, user_data, &response_handle);
-    if (result != kSuccess) {
-      std::cout << "Failed to create response handle\n";
-      return false;
-    }
-  }
-
-  FlutterPlatformMessage platform_message = {
-      sizeof(FlutterPlatformMessage),
-      channel,
-      message,
-      message_size,
-      response_handle,
-  };
-
-  FlutterEngineResult message_result = FlutterEngineSendPlatformMessage(
-      messenger->engine->engine(), &platform_message);
-
-  if (response_handle != nullptr) {
-    FlutterPlatformMessageReleaseResponseHandle(messenger->engine->engine(),
-                                                response_handle);
-  }
-
-  return message_result == kSuccess;
+  return messenger->engine->SendPlatformMessage(channel, message, message_size,
+                                                reply, user_data);
 }
 
 bool FlutterDesktopMessengerSend(FlutterDesktopMessengerRef messenger,
@@ -259,8 +161,7 @@ void FlutterDesktopMessengerSendResponse(
     const FlutterDesktopMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length) {
-  FlutterEngineSendPlatformMessageResponse(messenger->engine->engine(), handle,
-                                           data, data_length);
+  messenger->engine->SendPlatformMessageResponse(handle, data, data_length);
 }
 
 void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,

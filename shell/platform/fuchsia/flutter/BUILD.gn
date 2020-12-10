@@ -104,6 +104,7 @@ template("runner_sources") {
     # The use of these dependencies is temporary and will be moved behind the
     # embedder API.
     flutter_public_deps = [
+      "//flutter/common/graphics",
       "//flutter/flow",
       "//flutter/lib/ui",
       "//flutter/runtime",
@@ -229,8 +230,8 @@ flutter_runner("jit_product") {
   product = true
 
   extra_deps = [
-    "//third_party/dart/runtime:libdart_jit_product",
-    "//third_party/dart/runtime/platform:libdart_platform_jit_product",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
   ]
 }
 
@@ -249,8 +250,8 @@ flutter_runner("aot_product") {
   product = true
 
   extra_deps = [
-    "//third_party/dart/runtime:libdart_precompiled_runtime_product",
-    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime_product",
+    "//third_party/dart/runtime:libdart_precompiled_runtime",
+    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
   ]
 }
 
@@ -447,6 +448,7 @@ executable("flutter_runner_unittests") {
     "fuchsia_intl_unittest.cc",
     "platform_view_unittest.cc",
     "runner_unittest.cc",
+    "tests/engine_unittests.cc",
     "tests/flutter_runner_product_configuration_unittests.cc",
     "tests/vsync_recorder_unittests.cc",
     "vsync_waiter_unittests.cc",
@@ -458,6 +460,8 @@ executable("flutter_runner_unittests") {
   # The use of these dependencies is temporary and will be moved behind the
   # embedder API.
   flutter_deps = [
+    "//flutter/assets:assets",
+    "//flutter/common/graphics",
     "//flutter/flow",
     "//flutter/lib/ui",
     "//flutter/shell/common",

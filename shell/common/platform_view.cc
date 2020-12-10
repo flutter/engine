@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/shell/common/platform_view.h"
 
@@ -137,6 +136,13 @@ std::unique_ptr<Surface> PlatformView::CreateRenderingSurface() {
   return nullptr;
 }
 
+std::shared_ptr<ExternalViewEmbedder>
+PlatformView::CreateExternalViewEmbedder() {
+  FML_DLOG(WARNING)
+      << "This platform doesn't support embedding external views.";
+  return nullptr;
+}
+
 void PlatformView::SetNextFrameCallback(const fml::closure& closure) {
   if (!closure) {
     return;
@@ -152,5 +158,19 @@ PlatformView::ComputePlatformResolvedLocales(
       std::make_unique<std::vector<std::string>>();
   return out;
 }
+
+void PlatformView::RequestDartDeferredLibrary(intptr_t loading_unit_id) {}
+
+void PlatformView::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {}
+
+void PlatformView::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                                const std::string error_message,
+                                                bool transient) {}
+
+void PlatformView::UpdateAssetManager(
+    std::shared_ptr<AssetManager> asset_manager) {}
 
 }  // namespace flutter

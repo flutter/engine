@@ -8,14 +8,15 @@
 #include <gdk/gdk.h>
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 G_BEGIN_DECLS
 
-G_DECLARE_FINAL_TYPE(FlTextInputPlugin,
-                     fl_text_input_plugin,
-                     FL,
-                     TEXT_INPUT_PLUGIN,
-                     GObject);
+G_DECLARE_DERIVABLE_TYPE(FlTextInputPlugin,
+                         fl_text_input_plugin,
+                         FL,
+                         TEXT_INPUT_PLUGIN,
+                         GObject);
 
 /**
  * FlTextInputPlugin:
@@ -24,16 +25,27 @@ G_DECLARE_FINAL_TYPE(FlTextInputPlugin,
  * of SystemChannels.textInput from the Flutter services library.
  */
 
+struct _FlTextInputPluginClass {
+  GObjectClass parent_class;
+
+  /**
+   * Virtual method called to filter a keypress.
+   */
+  gboolean (*filter_keypress)(FlTextInputPlugin* self, GdkEventKey* event);
+};
+
 /**
  * fl_text_input_plugin_new:
  * @messenger: an #FlBinaryMessenger.
+ * @view: the #FlView with which the text input plugin is associated.
  *
  * Creates a new plugin that implements SystemChannels.textInput from the
  * Flutter services library.
  *
  * Returns: a new #FlTextInputPlugin.
  */
-FlTextInputPlugin* fl_text_input_plugin_new(FlBinaryMessenger* messenger);
+FlTextInputPlugin* fl_text_input_plugin_new(FlBinaryMessenger* messenger,
+                                            FlView* view);
 
 /**
  * fl_text_input_plugin_filter_keypress

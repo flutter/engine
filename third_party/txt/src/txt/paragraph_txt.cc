@@ -194,11 +194,9 @@ static const float kDoubleDecorationSpacing = 3.0f;
 ParagraphTxt::GlyphPosition::GlyphPosition(double x_start,
                                            double x_advance,
                                            size_t code_unit_index,
-                                           size_t code_unit_width,
-                                           size_t cluster)
+                                           size_t code_unit_width)
     : code_units(code_unit_index, code_unit_index + code_unit_width),
-      x_pos(x_start, x_start + x_advance),
-      cluster(cluster) {}
+      x_pos(x_start, x_start + x_advance) {}
 
 void ParagraphTxt::GlyphPosition::Shift(double delta) {
   x_pos.Shift(delta);
@@ -231,7 +229,7 @@ void ParagraphTxt::CodeUnitRun::Shift(double delta) {
 }
 
 ParagraphTxt::ParagraphTxt() {
-  breaker_.setLocale(icu::Locale(), nullptr);
+  breaker_.setLocale();
 }
 
 ParagraphTxt::~ParagraphTxt() = default;
@@ -797,7 +795,6 @@ void ParagraphTxt::Layout(double width) {
 
     double run_x_offset = 0;
     double justify_x_offset = 0;
-    size_t cluster_unique_id = 0;
     std::vector<PaintRecord> paint_records;
 
     for (auto line_run_it = line_runs.begin(); line_run_it != line_runs.end();
@@ -945,7 +942,7 @@ void ParagraphTxt::Layout(double width) {
                  offset < glyph_code_units.end; ++offset) {
               if (minikin::GraphemeBreak::isGraphemeBreak(
                       layout_advances.data(), text_ptr, text_start, text_count,
-                      offset)) {
+                      text_start + offset)) {
                 grapheme_code_unit_counts.push_back(code_unit_count);
                 code_unit_count = 1;
               } else {
@@ -954,14 +951,23 @@ void ParagraphTxt::Layout(double width) {
             }
             grapheme_code_unit_counts.push_back(code_unit_count);
           }
-          float glyph_advance = layout.getCharAdvance(glyph_code_units.start);
+          float glyph_advance;
+          if (run.is_placeholder_run()) {
+            // The placeholder run's layout should yield one glyph representing
+            // the object replacement character.  Replace its width with the
+            // placeholder's width.
+            FML_DCHECK(layout.nGlyphs() == 1);
+            glyph_advance = run.placeholder_run()->width;
+          } else {
+            glyph_advance = layout.getCharAdvance(glyph_code_units.start);
+          }
           float grapheme_advance =
               glyph_advance / grapheme_code_unit_counts.size();
 
-          glyph_positions.emplace_back(
-              run_x_offset + glyph_x_offset, grapheme_advance,
-              run.start() + glyph_code_units.start,
-              grapheme_code_unit_counts[0], cluster_unique_id);
+          glyph_positions.emplace_back(run_x_offset + glyph_x_offset,
+                                       grapheme_advance,
+                                       run.start() + glyph_code_units.start,
+                                       grapheme_code_unit_counts[0]);
 
           // Compute positions for the additional graphemes in the ligature.
           for (size_t i = 1; i < grapheme_code_unit_counts.size(); ++i) {
@@ -969,9 +975,8 @@ void ParagraphTxt::Layout(double width) {
                 glyph_positions.back().x_pos.end, grapheme_advance,
                 glyph_positions.back().code_units.start +
                     grapheme_code_unit_counts[i - 1],
-                grapheme_code_unit_counts[i], cluster_unique_id);
+                grapheme_code_unit_counts[i]);
           }
-          cluster_unique_id++;
 
           bool at_word_start = false;
           bool at_word_end = false;
@@ -1020,19 +1025,10 @@ void ParagraphTxt::Layout(double width) {
         Range<double> record_x_pos(
             glyph_positions.front().x_pos.start - run_x_offset,
             glyph_positions.back().x_pos.end - run_x_offset);
-        if (run.is_placeholder_run()) {
-          paint_records.emplace_back(
-              run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
-              builder.make(), *metrics, line_number, record_x_pos.start,
-              record_x_pos.start + run.placeholder_run()->width, run.is_ghost(),
-              run.placeholder_run());
-          run_x_offset += run.placeholder_run()->width;
-        } else {
-          paint_records.emplace_back(
-              run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
-              builder.make(), *metrics, line_number, record_x_pos.start,
-              record_x_pos.end, run.is_ghost());
-        }
+        paint_records.emplace_back(
+            run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
+            builder.make(), *metrics, line_number, record_x_pos.start,
+            record_x_pos.end, run.is_ghost(), run.placeholder_run());
         justify_x_offset += justify_x_offset_delta;
 
         line_glyph_positions.insert(line_glyph_positions.end(),
@@ -1047,10 +1043,7 @@ void ParagraphTxt::Layout(double width) {
                   });
 
         double blob_x_pos_start = glyph_positions.front().x_pos.start;
-        double blob_x_pos_end = run.is_placeholder_run()
-                                    ? glyph_positions.back().x_pos.start +
-                                          run.placeholder_run()->width
-                                    : glyph_positions.back().x_pos.end;
+        double blob_x_pos_end = glyph_positions.back().x_pos.end;
         line_code_unit_runs.emplace_back(
             std::move(code_unit_positions),
             Range<size_t>(run.start(), run.end()),
@@ -1068,13 +1061,17 @@ void ParagraphTxt::Layout(double width) {
         }
       }  // for each in glyph_blobs
 
-      // Do not increase x offset for LTR trailing ghost runs as it should not
-      // impact the layout of visible glyphs. RTL tailing ghost runs have the
-      // advance subtracted, so we do add the advance here to reset the
-      // run_x_offset. We do keep the record though so GetRectsForRange() can
-      // find metrics for trailing spaces.
-      if ((!run.is_ghost() || run.is_rtl()) && !run.is_placeholder_run()) {
-        run_x_offset += layout.getAdvance();
+      if (run.is_placeholder_run()) {
+        run_x_offset += run.placeholder_run()->width;
+      } else {
+        // Do not increase x offset for LTR trailing ghost runs as it should not
+        // impact the layout of visible glyphs. RTL tailing ghost runs have the
+        // advance subtracted, so we do add the advance here to reset the
+        // run_x_offset. We do keep the record though so GetRectsForRange() can
+        // find metrics for trailing spaces.
+        if (!run.is_ghost() || run.is_rtl()) {
+          run_x_offset += layout.getAdvance();
+        }
       }
     }  // for each in line_runs
 
@@ -1876,28 +1873,12 @@ Paragraph::PositionWithAffinity ParagraphTxt::GetGlyphPositionAtCoordinate(
 
   size_t x_index;
   const GlyphPosition* gp = nullptr;
-  const GlyphPosition* gp_cluster = nullptr;
-  bool is_cluster_corection = false;
   for (x_index = 0; x_index < line_glyph_position.size(); ++x_index) {
     double glyph_end = (x_index < line_glyph_position.size() - 1)
                            ? line_glyph_position[x_index + 1].x_pos.start
                            : line_glyph_position[x_index].x_pos.end;
-    if (gp_cluster == nullptr ||
-        gp_cluster->cluster != line_glyph_position[x_index].cluster) {
-      gp_cluster = &line_glyph_position[x_index];
-    }
     if (dx < glyph_end) {
-      // Check if the glyph position is part of a cluster. If it is,
-      // we assign the cluster's root GlyphPosition to represent it.
-      if (gp_cluster->cluster == line_glyph_position[x_index].cluster) {
-        gp = gp_cluster;
-        // Detect if the matching GlyphPosition was non-root for the cluster.
-        if (gp_cluster != &line_glyph_position[x_index]) {
-          is_cluster_corection = true;
-        }
-      } else {
-        gp = &line_glyph_position[x_index];
-      }
+      gp = &line_glyph_position[x_index];
       break;
     }
   }
@@ -1918,13 +1899,8 @@ Paragraph::PositionWithAffinity ParagraphTxt::GetGlyphPositionAtCoordinate(
   }
 
   double glyph_center = (gp->x_pos.start + gp->x_pos.end) / 2;
-  // We want to use the root cluster's start when the cluster
-  // was corrected.
-  // TODO(garyq): Detect if the position is in the middle of the cluster
-  // and properly assign the start/end positions.
   if ((direction == TextDirection::ltr && dx < glyph_center) ||
-      (direction == TextDirection::rtl && dx >= glyph_center) ||
-      is_cluster_corection) {
+      (direction == TextDirection::rtl && dx >= glyph_center)) {
     return PositionWithAffinity(gp->code_units.start, DOWNSTREAM);
   } else {
     return PositionWithAffinity(gp->code_units.end, UPSTREAM);

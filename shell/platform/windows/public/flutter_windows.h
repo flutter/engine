@@ -46,6 +46,13 @@ typedef struct {
   // containing the executable. This can be nullptr for a non-AOT build, as
   // it will be ignored in that case.
   const wchar_t* aot_library_path;
+
+  // Number of elements in the array passed in as dart_entrypoint_argv.
+  int dart_entrypoint_argc;
+
+  // Array of Dart entrypoint arguments. This is deep copied during the call
+  // to FlutterDesktopEngineCreate.
+  const char** dart_entrypoint_argv;
 } FlutterDesktopEngineProperties;
 
 // ========== View Controller ==========
@@ -85,6 +92,7 @@ FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
 FLUTTER_EXPORT FlutterDesktopViewRef
 FlutterDesktopViewControllerGetView(FlutterDesktopViewControllerRef controller);
 
+#ifndef WINUWP
 // Allows the Flutter engine and any interested plugins an opportunity to
 // handle the given message.
 //
@@ -97,6 +105,7 @@ FLUTTER_EXPORT bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
     WPARAM wparam,
     LPARAM lparam,
     LRESULT* result);
+#endif
 
 // ========== Engine ==========
 
@@ -125,6 +134,7 @@ FLUTTER_EXPORT bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine);
 FLUTTER_EXPORT bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
                                             const char* entry_point);
 
+#ifndef WINUWP
 // Processes any pending events in the Flutter engine, and returns the
 // number of nanoseconds until the next scheduled event (or max, if none).
 //
@@ -133,6 +143,7 @@ FLUTTER_EXPORT bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
 // last return value from this function.
 FLUTTER_EXPORT uint64_t
 FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine);
+#endif
 
 FLUTTER_EXPORT void FlutterDesktopEngineReloadSystemFonts(
     FlutterDesktopEngineRef engine);

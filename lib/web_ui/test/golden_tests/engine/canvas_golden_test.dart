@@ -77,7 +77,8 @@ void testMain() async {
   }
 
   test('renders pixels that are not aligned inside the canvas', () async {
-    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 60, 60));
+    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 60, 60),
+        RenderStrategy());
 
     drawMisalignedLines(canvas);
 
@@ -92,29 +93,35 @@ void testMain() async {
     // shift its position back to 0.0 and at the same time it will it will
     // compensate by shifting the contents of the canvas in the opposite
     // direction.
-    canvas = BitmapCanvas(const Rect.fromLTWH(0.5, 0.5, 60, 60));
-
+    canvas = BitmapCanvas(const Rect.fromLTWH(0.5, 0.5, 60, 60),
+        RenderStrategy());
+    canvas.clipRect(const Rect.fromLTWH(0, 0, 50, 50), ClipOp.intersect);
     drawMisalignedLines(canvas);
 
     appendToScene();
 
-    await matchGoldenFile('misaligned_canvas_test.png', region: region);
+    await matchGoldenFile('misaligned_canvas_test.png', region: region,
+      maxDiffRatePercent: 1.0);
   });
 
   test('fill the whole canvas with color even when transformed', () async {
-    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50));
-
+    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50),
+        RenderStrategy());
+    canvas.clipRect(const Rect.fromLTWH(0, 0, 50, 50), ClipOp.intersect);
     canvas.translate(25, 25);
     canvas.drawColor(const Color.fromRGBO(0, 255, 0, 1.0), BlendMode.src);
 
     appendToScene();
 
-    await matchGoldenFile('bitmap_canvas_fills_color_when_transformed.png', region: region);
+    await matchGoldenFile('bitmap_canvas_fills_color_when_transformed.png',
+        region: region,
+        maxDiffRatePercent: 5.0);
   });
 
   test('fill the whole canvas with paint even when transformed', () async {
-    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50));
-
+    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50),
+        RenderStrategy());
+    canvas.clipRect(const Rect.fromLTWH(0, 0, 50, 50), ClipOp.intersect);
     canvas.translate(25, 25);
     canvas.drawPaint(SurfacePaintData()
       ..color = const Color.fromRGBO(0, 255, 0, 1.0)
@@ -122,7 +129,9 @@ void testMain() async {
 
     appendToScene();
 
-    await matchGoldenFile('bitmap_canvas_fills_paint_when_transformed.png', region: region);
+    await matchGoldenFile('bitmap_canvas_fills_paint_when_transformed.png',
+        region: region,
+        maxDiffRatePercent: 5.0);
   });
 
   // This test reproduces text blurriness when two pieces of text appear inside
@@ -155,11 +164,11 @@ void testMain() async {
     final Rect innerClip = Rect.fromLTRB(0.5, canvasSize.bottom / 2 + 0.5,
         canvasSize.right, canvasSize.bottom);
 
-    canvas = BitmapCanvas(canvasSize);
+    canvas = BitmapCanvas(canvasSize, RenderStrategy());
     canvas.debugChildOverdraw = true;
-    canvas.clipRect(outerClip);
+    canvas.clipRect(outerClip, ClipOp.intersect);
     canvas.drawParagraph(paragraph, const Offset(8.5, 8.5));
-    canvas.clipRect(innerClip);
+    canvas.clipRect(innerClip, ClipOp.intersect);
     canvas.drawParagraph(paragraph, Offset(8.5, 8.5 + innerClip.top));
 
     expect(
@@ -196,7 +205,7 @@ void testMain() async {
 
     final Rect canvasSize = Offset.zero & Size(500, 500);
 
-    canvas = BitmapCanvas(canvasSize);
+    canvas = BitmapCanvas(canvasSize, RenderStrategy());
     canvas.debugChildOverdraw = true;
 
     final SurfacePaintData pathPaint = SurfacePaintData()
@@ -227,8 +236,8 @@ void testMain() async {
     );
 
     final SceneBuilder sb = SceneBuilder();
-    sb.pushTransform(Matrix4.diagonal3Values(EngineWindow.browserDevicePixelRatio,
-        EngineWindow.browserDevicePixelRatio, 1.0).toFloat64());
+    sb.pushTransform(Matrix4.diagonal3Values(EnginePlatformDispatcher.browserDevicePixelRatio,
+        EnginePlatformDispatcher.browserDevicePixelRatio, 1.0).toFloat64());
     sb.pushTransform(Matrix4.rotationZ(math.pi / 2).toFloat64());
     sb.pushOffset(0, -500);
     sb.pushClipRect(canvasSize);
@@ -245,7 +254,7 @@ void testMain() async {
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',
       region: canvasSize,
-      maxDiffRatePercent: 0.0,
+      maxDiffRatePercent: 1.0,
       pixelComparison: PixelComparison.precise,
     );
   });

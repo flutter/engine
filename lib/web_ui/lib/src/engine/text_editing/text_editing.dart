@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
@@ -10,6 +10,16 @@ bool _debugVisibleTextEditing = false;
 
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
+
+/// Blink and Webkit engines, bring an overlay on top of the text field when it
+/// is autofilled.
+bool browserHasAutofillOverlay() =>
+    browserEngine == BrowserEngine.blink ||
+    browserEngine == BrowserEngine.webkit;
+
+/// `transparentTextEditing` class is configured to make the autofill overlay
+/// transparent.
+const String transparentTextEditingClass = 'transparentTextEditing';
 
 void _emptyCallback(dynamic _) {}
 
@@ -39,7 +49,11 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
     ..overflow = 'hidden'
     ..transformOrigin = '0 0 0';
 
-  /// This property makes the input's blinking cursor transparent.
+  if (browserHasAutofillOverlay()) {
+    domElement.classes.add(transparentTextEditingClass);
+  }
+
+  // This property makes the input's blinking cursor transparent.
   elementStyle.setProperty('caret-color', 'transparent');
 
   if (_debugVisibleTextEditing) {
@@ -78,6 +92,10 @@ void _hideAutofillElements(html.HtmlElement domElement,
     elementStyle
       ..top = '-9999px'
       ..left = '-9999px';
+  }
+
+  if (browserHasAutofillOverlay()) {
+    domElement.classes.add(transparentTextEditingClass);
   }
 
   /// This property makes the input's blinking cursor transparent.
@@ -258,21 +276,19 @@ class EngineAutofillForm {
 
   /// Sends the 'TextInputClient.updateEditingStateWithTag' message to the framework.
   void _sendAutofillEditingState(String? tag, EditingState editingState) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall(
-            'TextInputClient.updateEditingStateWithTag',
-            <dynamic>[
-              0,
-              <String?, dynamic>{tag: editingState.toFlutter()}
-            ],
-          ),
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall(
+          'TextInputClient.updateEditingStateWithTag',
+          <dynamic>[
+            0,
+            <String?, dynamic>{tag: editingState.toFlutter()}
+          ],
         ),
-        _emptyCallback,
-      );
-    }
+      ),
+      _emptyCallback,
+    );
   }
 }
 
@@ -1246,10 +1262,20 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // Refocus on the domElement after blur, so that user can keep editing the
     // text field.
     _subscriptions.add(domElement.onBlur.listen((_) {
-      domElement.focus();
+      _postponeFocus();
     }));
 
     preventDefaultForMouseEvents();
+  }
+
+  void _postponeFocus() {
+    // Firefox does not focus on the editing element if we call the focus
+    // inside the blur event, therefore we postpone the focus.
+    // Calling focus inside a Timer for `0` milliseconds guarantee that it is
+    // called after blur event propagation is completed.
+    Timer(const Duration(milliseconds: 0), () {
+      domElement.focus();
+    });
   }
 
   @override
@@ -1345,7 +1371,8 @@ class TextEditingChannel {
         throw StateError(
             'Unsupported method call on the flutter/textinput channel: ${call.method}');
     }
-    window._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+    EnginePlatformDispatcher.instance
+        ._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
   }
 
   /// Used for submitting the forms attached on the DOM.
@@ -1374,50 +1401,44 @@ class TextEditingChannel {
 
   /// Sends the 'TextInputClient.updateEditingState' message to the framework.
   void updateEditingState(int? clientId, EditingState? editingState) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall('TextInputClient.updateEditingState', <dynamic>[
-            clientId,
-            editingState!.toFlutter(),
-          ]),
-        ),
-        _emptyCallback,
-      );
-    }
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall('TextInputClient.updateEditingState', <dynamic>[
+          clientId,
+          editingState!.toFlutter(),
+        ]),
+      ),
+      _emptyCallback,
+    );
   }
 
   /// Sends the 'TextInputClient.performAction' message to the framework.
   void performAction(int? clientId, String? inputAction) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall(
-            'TextInputClient.performAction',
-            <dynamic>[clientId, inputAction],
-          ),
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall(
+          'TextInputClient.performAction',
+          <dynamic>[clientId, inputAction],
         ),
-        _emptyCallback,
-      );
-    }
+      ),
+      _emptyCallback,
+    );
   }
 
   /// Sends the 'TextInputClient.onConnectionClosed' message to the framework.
   void onConnectionClosed(int? clientId) {
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/textinput',
-        const JSONMethodCodec().encodeMethodCall(
-          MethodCall(
-            'TextInputClient.onConnectionClosed',
-            <dynamic>[clientId],
-          ),
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall(
+          'TextInputClient.onConnectionClosed',
+          <dynamic>[clientId],
         ),
-        _emptyCallback,
-      );
-    }
+      ),
+      _emptyCallback,
+    );
   }
 }
 
@@ -1646,7 +1667,8 @@ class EditableTextStyle {
 
   String? get align => textAlignToCssValue(textAlign, textDirection);
 
-  String get cssFont => '${fontWeight} ${fontSize}px ${fontFamily}';
+  String get cssFont =>
+      '${fontWeight} ${fontSize}px ${canonicalizeFontFamily(fontFamily)}';
 
   void applyToDomElement(html.HtmlElement domElement) {
     domElement.style

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart=2.10
+
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -34,7 +36,7 @@ void sayHiFromCustomEntrypoint3() native 'SayHiFromCustomEntrypoint3';
 
 @pragma('vm:entry-point')
 void invokePlatformTaskRunner() {
-  window.sendPlatformMessage('OhHi', null, null);
+  PlatformDispatcher.instance.sendPlatformMessage('OhHi', null, null);
 }
 
 
@@ -59,19 +61,19 @@ void notifySemanticsEnabled(bool enabled) native 'NotifySemanticsEnabled';
 void notifyAccessibilityFeatures(bool reduceMotion) native 'NotifyAccessibilityFeatures';
 void notifySemanticsAction(int nodeId, int action, List<int> data) native 'NotifySemanticsAction';
 
-/// Returns a future that completes when `window.onSemanticsEnabledChanged`
-/// fires.
+/// Returns a future that completes when
+/// `PlatformDispatcher.instance.onSemanticsEnabledChanged` fires.
 Future<void> get semanticsChanged {
   final Completer<void> semanticsChanged = Completer<void>();
-  window.onSemanticsEnabledChanged = semanticsChanged.complete;
+  PlatformDispatcher.instance.onSemanticsEnabledChanged = semanticsChanged.complete;
   return semanticsChanged.future;
 }
 
-/// Returns a future that completes when `window.onAccessibilityFeaturesChanged`
-/// fires.
+/// Returns a future that completes when
+/// `PlatformDispatcher.instance.onAccessibilityFeaturesChanged` fires.
 Future<void> get accessibilityFeaturesChanged {
   final Completer<void> featuresChanged = Completer<void>();
-  window.onAccessibilityFeaturesChanged = featuresChanged.complete;
+  PlatformDispatcher.instance.onAccessibilityFeaturesChanged = featuresChanged.complete;
   return featuresChanged.future;
 }
 
@@ -79,12 +81,12 @@ class SemanticsActionData {
   const SemanticsActionData(this.id, this.action, this.args);
   final int id;
   final SemanticsAction action;
-  final ByteData args;
+  final ByteData? args;
 }
 
 Future<SemanticsActionData> get semanticsAction {
   final Completer<SemanticsActionData> actionReceived = Completer<SemanticsActionData>();
-  window.onSemanticsAction = (int id, SemanticsAction action, ByteData args) {
+  PlatformDispatcher.instance.onSemanticsAction = (int id, SemanticsAction action, ByteData? args) {
     actionReceived.complete(SemanticsActionData(id, action, args));
   };
   return actionReceived.future;
@@ -93,18 +95,18 @@ Future<SemanticsActionData> get semanticsAction {
 @pragma('vm:entry-point')
 void a11y_main() async { // ignore: non_constant_identifier_names
   // Return initial state (semantics disabled).
-  notifySemanticsEnabled(window.semanticsEnabled);
+  notifySemanticsEnabled(PlatformDispatcher.instance.semanticsEnabled);
 
   // Await semantics enabled from embedder.
   await semanticsChanged;
-  notifySemanticsEnabled(window.semanticsEnabled);
+  notifySemanticsEnabled(PlatformDispatcher.instance.semanticsEnabled);
 
   // Return initial state of accessibility features.
-  notifyAccessibilityFeatures(window.accessibilityFeatures.reduceMotion);
+  notifyAccessibilityFeatures(PlatformDispatcher.instance.accessibilityFeatures.reduceMotion);
 
   // Await accessibility features changed from embedder.
   await accessibilityFeaturesChanged;
-  notifyAccessibilityFeatures(window.accessibilityFeatures.reduceMotion);
+  notifyAccessibilityFeatures(PlatformDispatcher.instance.accessibilityFeatures.reduceMotion);
 
   // Fire semantics update.
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder()
@@ -115,12 +117,52 @@ void a11y_main() async { // ignore: non_constant_identifier_names
       transform: kTestTransform,
       childrenInTraversalOrder: Int32List.fromList(<int>[84, 96]),
       childrenInHitTestOrder: Int32List.fromList(<int>[96, 84]),
+      actions: 0,
+      flags: 0,
+      maxValueLength: 0,
+      currentValueLength: 0,
+      textSelectionBase: 0,
+      textSelectionExtent: 0,
+      platformViewId: 0,
+      scrollChildren: 0,
+      scrollIndex: 0,
+      scrollPosition: 0.0,
+      scrollExtentMax: 0.0,
+      scrollExtentMin: 0.0,
+      elevation: 0.0,
+      thickness: 0.0,
+      hint: "",
+      value: "",
+      increasedValue: "",
+      decreasedValue: "",
+      additionalActions: Int32List(0),
     )
     ..updateNode(
       id: 84,
       label: 'B: leaf',
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
       transform: kTestTransform,
+      actions: 0,
+      flags: 0,
+      maxValueLength: 0,
+      currentValueLength: 0,
+      textSelectionBase: 0,
+      textSelectionExtent: 0,
+      platformViewId: 0,
+      scrollChildren: 0,
+      scrollIndex: 0,
+      scrollPosition: 0.0,
+      scrollExtentMax: 0.0,
+      scrollExtentMin: 0.0,
+      elevation: 0.0,
+      thickness: 0.0,
+      hint: "",
+      value: "",
+      increasedValue: "",
+      decreasedValue: "",
+      additionalActions: Int32List(0),
+      childrenInHitTestOrder: Int32List(0),
+      childrenInTraversalOrder: Int32List(0),
     )
     ..updateNode(
       id: 96,
@@ -129,6 +171,25 @@ void a11y_main() async { // ignore: non_constant_identifier_names
       transform: kTestTransform,
       childrenInTraversalOrder: Int32List.fromList(<int>[128]),
       childrenInHitTestOrder: Int32List.fromList(<int>[128]),
+      actions: 0,
+      flags: 0,
+      maxValueLength: 0,
+      currentValueLength: 0,
+      textSelectionBase: 0,
+      textSelectionExtent: 0,
+      platformViewId: 0,
+      scrollChildren: 0,
+      scrollIndex: 0,
+      scrollPosition: 0.0,
+      scrollExtentMax: 0.0,
+      scrollExtentMin: 0.0,
+      elevation: 0.0,
+      thickness: 0.0,
+      hint: "",
+      value: "",
+      increasedValue: "",
+      decreasedValue: "",
+      additionalActions: Int32List(0),
     )
     ..updateNode(
       id: 128,
@@ -137,53 +198,72 @@ void a11y_main() async { // ignore: non_constant_identifier_names
       transform: kTestTransform,
       additionalActions: Int32List.fromList(<int>[21]),
       platformViewId: 0x3f3,
+      actions: 0,
+      flags: 0,
+      maxValueLength: 0,
+      currentValueLength: 0,
+      textSelectionBase: 0,
+      textSelectionExtent: 0,
+      scrollChildren: 0,
+      scrollIndex: 0,
+      scrollPosition: 0.0,
+      scrollExtentMax: 0.0,
+      scrollExtentMin: 0.0,
+      elevation: 0.0,
+      thickness: 0.0,
+      hint: "",
+      value: "",
+      increasedValue: "",
+      decreasedValue: "",
+      childrenInHitTestOrder: Int32List(0),
+      childrenInTraversalOrder: Int32List(0),
     )
     ..updateCustomAction(
       id: 21,
       label: 'Archive',
       hint: 'archive message',
     );
-  window.updateSemantics(builder.build());
+  PlatformDispatcher.instance.updateSemantics(builder.build());
   signalNativeTest();
 
   // Await semantics action from embedder.
   final SemanticsActionData data = await semanticsAction;
-  final List<int> actionArgs = <int>[data.args.getInt8(0), data.args.getInt8(1)];
+  final List<int> actionArgs = <int>[data.args!.getInt8(0), data.args!.getInt8(1)];
   notifySemanticsAction(data.id, data.action.index, actionArgs);
 
   // Await semantics disabled from embedder.
   await semanticsChanged;
-  notifySemanticsEnabled(window.semanticsEnabled);
+  notifySemanticsEnabled(PlatformDispatcher.instance.semanticsEnabled);
 }
 
 
 @pragma('vm:entry-point')
 void platform_messages_response() {
-  window.onPlatformMessage = (String name, ByteData data, PlatformMessageResponseCallback callback) {
-    callback(data);
+  PlatformDispatcher.instance.onPlatformMessage = (String name, ByteData? data, PlatformMessageResponseCallback? callback) {
+    callback!(data);
   };
   signalNativeTest();
 }
 
 @pragma('vm:entry-point')
 void platform_messages_no_response() {
-  window.onPlatformMessage = (String name, ByteData data, PlatformMessageResponseCallback callback) {
-    var list = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+  PlatformDispatcher.instance.onPlatformMessage = (String name, ByteData? data, PlatformMessageResponseCallback? callback) {
+    var list = data!.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     signalNativeMessage(utf8.decode(list));
     // This does nothing because no one is listening on the other side. But complete the loop anyway
     // to make sure all null checking on response handles in the engine is in place.
-    callback(data);
+    callback!(data);
   };
   signalNativeTest();
 }
 
 @pragma('vm:entry-point')
 void null_platform_messages() {
-  window.onPlatformMessage =
-      (String name, ByteData data, PlatformMessageResponseCallback callback) {
+  PlatformDispatcher.instance.onPlatformMessage =
+      (String name, ByteData? data, PlatformMessageResponseCallback? callback) {
     // This checks if the platform_message null data is converted to Flutter null.
     signalNativeMessage((null == data).toString());
-    callback(data);
+    callback!(data);
   };
   signalNativeTest();
 }
@@ -198,7 +278,7 @@ Picture CreateSimplePicture() {
 
 @pragma('vm:entry-point')
 void can_composite_platform_views() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
     builder.pushOffset(1.0, 2.0);
@@ -206,15 +286,15 @@ void can_composite_platform_views() {
     builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
     builder.pop(); // offset
     signalNativeTest(); // Signal 2
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
   signalNativeTest(); // Signal 1
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void can_composite_platform_views_with_opacity() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
 
     // Root node
@@ -236,24 +316,24 @@ void can_composite_platform_views_with_opacity() {
     builder.pop();
 
     signalNativeTest(); // Signal 2
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
   signalNativeTest(); // Signal 1
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void can_composite_with_opacity() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.pushOpacity(127);
     builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
     builder.pop(); // offset
     signalNativeTest(); // Signal 2
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
   signalNativeTest(); // Signal 1
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 Picture CreateColoredBox(Color color, Size size) {
@@ -267,7 +347,7 @@ Picture CreateColoredBox(Color color, Size size) {
 
 @pragma('vm:entry-point')
 void can_composite_platform_views_with_known_scene() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     Color red = Color.fromARGB(127, 255, 0, 0);
     Color blue = Color.fromARGB(127, 0, 0, 255);
     Color gray = Color.fromARGB(127, 127, 127, 127);
@@ -298,17 +378,17 @@ void can_composite_platform_views_with_known_scene() {
 
     builder.pop();
 
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
 
     signalNativeTest(); // Signal 2
   };
   signalNativeTest(); // Signal 1
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void can_composite_platform_views_with_root_layer_only() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     Color red = Color.fromARGB(127, 255, 0, 0);
     Size size = Size(50.0, 150.0);
 
@@ -319,17 +399,17 @@ void can_composite_platform_views_with_root_layer_only() {
     builder.addPicture(Offset(10.0, 10.0), CreateColoredBox(red, size)); // red - flutter
     builder.pop();
 
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
 
     signalNativeTest(); // Signal 2
   };
   signalNativeTest(); // Signal 1
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void can_composite_platform_views_with_platform_layer_on_bottom() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     Color red = Color.fromARGB(127, 255, 0, 0);
     Size size = Size(50.0, 150.0);
 
@@ -345,17 +425,17 @@ void can_composite_platform_views_with_platform_layer_on_bottom() {
     builder.pop();
     builder.pop();
 
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
 
     signalNativeTest(); // Signal 2
   };
   signalNativeTest(); // Signal 1
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void can_render_scene_without_custom_compositor() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     Color red = Color.fromARGB(127, 255, 0, 0);
     Color green = Color.fromARGB(127, 0, 255, 0);
     Color blue = Color.fromARGB(127, 0, 0, 255);
@@ -380,9 +460,9 @@ void can_render_scene_without_custom_compositor() {
 
     builder.pop();
 
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 Picture CreateGradientBox(Size size) {
@@ -417,7 +497,7 @@ Picture CreateGradientBox(Size size) {
 
 @pragma('vm:entry-point')
 void render_gradient() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     Size size = Size(800.0, 600.0);
 
     SceneBuilder builder = SceneBuilder();
@@ -428,14 +508,14 @@ void render_gradient() {
 
     builder.pop();
 
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void render_gradient_on_non_root_backing_store() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     Size size = Size(800.0, 600.0);
     Color red = Color.fromARGB(127, 255, 0, 0);
 
@@ -452,14 +532,14 @@ void render_gradient_on_non_root_backing_store() {
 
     builder.pop();
 
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void verify_b141980393() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     // The platform view in the test case is screen sized but with margins of 31
     // and 37 points from the top and bottom.
     double top_margin = 31.0;
@@ -478,14 +558,14 @@ void verify_b141980393() {
 
     builder.pop();
 
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void can_display_platform_view_with_pixel_ratio() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.pushTransform(Float64List.fromList([
       2.0, 0.0, 0.0, 0.0,
@@ -499,15 +579,15 @@ void can_display_platform_view_with_pixel_ratio() {
     builder.pop(); // offset
     builder.addPicture(Offset(0.0, 0.0), CreateColoredBox(Color.fromARGB(128, 255, 0, 0), Size(400.0, 300.0)));
     builder.pop(); // base
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void can_receive_locale_updates() {
-  window.onLocaleChanged = (){
-    signalNativeCount(window.locales.length);
+  PlatformDispatcher.instance.onLocaleChanged = (){
+    signalNativeCount(PlatformDispatcher.instance.locales!.length);
   };
   signalNativeTest();
 }
@@ -515,7 +595,7 @@ void can_receive_locale_updates() {
 // Verifies behavior tracked in https://github.com/flutter/flutter/issues/43732
 @pragma('vm:entry-point')
 void verify_b143464703() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.pushOffset(0.0, 0.0); // base
 
@@ -542,14 +622,14 @@ void verify_b143464703() {
     builder.pop(); // 1
 
     builder.pop(); // base
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void push_frames_over_and_over() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.pushOffset(0.0, 0.0);
     builder.addPicture(Offset(0.0, 0.0), CreateColoredBox(Color.fromARGB(255, 128, 128, 128), Size(1024.0, 600.0)));
@@ -557,17 +637,17 @@ void push_frames_over_and_over() {
     builder.addPlatformView(42, width: 1024.0, height: 540.0);
     builder.pop();
     builder.pop();
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
     signalNativeTest();
-    window.scheduleFrame();
+    PlatformDispatcher.instance.scheduleFrame();
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 
 @pragma('vm:entry-point')
 void platform_view_mutators() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.pushOffset(0.0, 0.0); // base
     builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(800.0, 600.0)));
@@ -581,14 +661,14 @@ void platform_view_mutators() {
     builder.pop(); // opacity
 
     builder.pop(); // base
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void platform_view_mutators_with_pixel_ratio() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.pushOffset(0.0, 0.0); // base
     builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
@@ -602,29 +682,29 @@ void platform_view_mutators_with_pixel_ratio() {
     builder.pop(); // opacity
 
     builder.pop(); // base
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void empty_scene() {
-  window.onBeginFrame = (Duration duration) {
-    window.render(SceneBuilder().build());
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    PlatformDispatcher.instance.views.first.render(SceneBuilder().build());
     signalNativeTest();
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void scene_with_no_container() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
     signalNativeTest();
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 Picture CreateArcEndCapsPicture() {
@@ -646,29 +726,29 @@ Picture CreateArcEndCapsPicture() {
 
 @pragma('vm:entry-point')
 void arc_end_caps_correct() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.addPicture(Offset(0.0, 0.0), CreateArcEndCapsPicture());
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void scene_builder_with_clips() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.pushClipRect(Rect.fromLTRB(10.0, 10.0, 390.0, 290.0));
     builder.addPlatformView(42, width: 400.0, height: 300.0);
     builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void scene_builder_with_complex_clips() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
 
     builder.pushClipRect(Rect.fromLTRB(0.0, 0.0, 1024.0, 600.0));
@@ -679,9 +759,9 @@ void scene_builder_with_complex_clips() {
     builder.addPlatformView(42, width: 1024.0, height: 600.0);
 
     builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(1024.0, 600.0)));
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 void sendObjectToNativeCode(dynamic object) native 'SendObjectToNativeCode';
@@ -695,41 +775,48 @@ void objects_can_be_posted() {
 
 @pragma('vm:entry-point')
 void empty_scene_posts_zero_layers_to_compositor() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     // Should not render anything.
     builder.pushClipRect(Rect.fromLTRB(0.0, 0.0, 300.0, 200.0));
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void compositor_can_post_only_platform_views() {
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     builder.addPlatformView(42, width: 300.0, height: 200.0);
     builder.addPlatformView(24, width: 300.0, height: 200.0);
-    window.render(builder.build());
+    PlatformDispatcher.instance.views.first.render(builder.build());
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
 void render_targets_are_recycled() {
   int frame_count = 0;
-  window.onBeginFrame = (Duration duration) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
     for (int i = 0; i < 10; i++) {
       builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(30.0, 20.0)));
       builder.addPlatformView(42 + i, width: 30.0, height: 20.0);
     }
-    window.render(builder.build());
-    window.scheduleFrame();
+    PlatformDispatcher.instance.views.first.render(builder.build());
+    PlatformDispatcher.instance.scheduleFrame();
     frame_count++;
     if (frame_count == 8) {
       signalNativeTest();
     }
   };
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+void nativeArgumentsCallback(List<String> args) native 'NativeArgumentsCallback';
+
+@pragma('vm:entry-point')
+void dart_entrypoint_args(List<String> args) {
+  nativeArgumentsCallback(args);
 }

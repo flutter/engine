@@ -20,9 +20,11 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
+import io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
+import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -96,6 +98,50 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class FlutterJNI {
   private static final String TAG = "FlutterJNI";
 
+  // BEGIN Methods related to loading for FlutterLoader.
+  /**
+   * Loads the libflutter.so C++ library.
+   *
+   * <p>This must be called before any other native methods, and can be overridden by tests to avoid
+   * loading native libraries.
+   */
+  public void loadLibrary() {
+    System.loadLibrary("flutter");
+  }
+
+  /**
+   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
+   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
+   * noticeable time, but later calls will return a reference to the preexisting font manager.
+   */
+  public void prefetchDefaultFontManager() {
+    FlutterJNI.nativePrefetchDefaultFontManager();
+  }
+
+  /**
+   * Perform one time initialization of the Dart VM and Flutter engine.
+   *
+   * <p>This method must be called only once.
+   *
+   * @param context The application context.
+   * @param args Arguments to the Dart VM/Flutter engine.
+   * @param bundlePath For JIT runtimes, the path to the Dart kernel file for the application.
+   * @param appStoragePath The path to the application data directory.
+   * @param engineCachesPath The path to the application cache directory.
+   * @param initTimeMillis The time, in milliseconds, taken for initialization.
+   */
+  public void init(
+      @NonNull Context context,
+      @NonNull String[] args,
+      @Nullable String bundlePath,
+      @NonNull String appStoragePath,
+      @NonNull String engineCachesPath,
+      long initTimeMillis) {
+    FlutterJNI.nativeInit(
+        context, args, bundlePath, appStoragePath, engineCachesPath, initTimeMillis);
+  }
+  // END methods related to FlutterLoader
+
   @Nullable private static AsyncWaitForVsyncDelegate asyncWaitForVsyncDelegate;
   // This should also be updated by FlutterView when it is attached to a Display.
   // The initial value of 0.0 indicates unknown refresh rate.
@@ -104,7 +150,8 @@ public class FlutterJNI {
   // This is set from native code via JNI.
   @Nullable private static String observatoryUri;
 
-  // TODO(mattcarroll): add javadocs
+  /** @deprecated Use {@link #init(Context, String[], String, String, String, long)} instead. */
+  @Deprecated
   public static native void nativeInit(
       @NonNull Context context,
       @NonNull String[] args,
@@ -113,11 +160,8 @@ public class FlutterJNI {
       @NonNull String engineCachesPath,
       long initTimeMillis);
 
-  /**
-   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
-   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
-   * noticeable time, but later calls will return a reference to the preexisting font manager.
-   */
+  /** @deprecated Use {@link #prefetchDefaultFontManager()} instead. */
+  @Deprecated
   public static native void nativePrefetchDefaultFontManager();
 
   private native boolean nativeGetIsSoftwareRenderingEnabled();
@@ -181,6 +225,8 @@ public class FlutterJNI {
   @Nullable private PlatformMessageHandler platformMessageHandler;
   @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private PlatformViewsController platformViewsController;
+
+  @Nullable private DynamicFeatureManager dynamicFeatureManager;
 
   @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
@@ -581,14 +627,14 @@ public class FlutterJNI {
    * within Flutter's UI.
    */
   @UiThread
-  public void registerTexture(long textureId, @NonNull SurfaceTexture surfaceTexture) {
+  public void registerTexture(long textureId, @NonNull SurfaceTextureWrapper textureWrapper) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeRegisterTexture(nativePlatformViewId, textureId, surfaceTexture);
+    nativeRegisterTexture(nativePlatformViewId, textureId, textureWrapper);
   }
 
   private native void nativeRegisterTexture(
-      long nativePlatformViewId, long textureId, @NonNull SurfaceTexture surfaceTexture);
+      long nativePlatformViewId, long textureId, @NonNull SurfaceTextureWrapper textureWrapper);
 
   /**
    * Call this method to inform Flutter that a texture previously registered with {@link
@@ -937,6 +983,117 @@ public class FlutterJNI {
   }
 
   // ----- End Localization Support ----
+
+  // ----- Start Dynamic Features Support ----
+
+  /** Sets the dynamic feature manager that is used to download and install split features. */
+  @UiThread
+  public void setDynamicFeatureManager(@Nullable DynamicFeatureManager dynamicFeatureManager) {
+    ensureRunningOnMainThread();
+    this.dynamicFeatureManager = dynamicFeatureManager;
+    if (dynamicFeatureManager != null) {
+      dynamicFeatureManager.setJNI(this);
+    }
+  }
+
+  /**
+   * Called by dart to request that a Dart deferred library corresponding to loadingUnitId be
+   * downloaded (if necessary) and loaded into the dart vm.
+   *
+   * <p>This method delegates the task to DynamicFeatureManager, which handles the download and
+   * loading of the dart library and any assets.
+   *
+   * @param loadingUnitId The loadingUnitId is assigned during compile time by gen_snapshot and is
+   *     automatically retrieved when loadLibrary() is called on a dart deferred library.
+   */
+  @SuppressWarnings("unused")
+  @UiThread
+  public void requestDartDeferredLibrary(int loadingUnitId) {
+    if (dynamicFeatureManager != null) {
+      dynamicFeatureManager.downloadDynamicFeature(loadingUnitId, null);
+    } else {
+      // TODO(garyq): Add link to setup/instructions guide wiki.
+      Log.e(
+          TAG,
+          "No DynamicFeatureManager found. Android setup must be completed before using split AOT dynamic features.");
+    }
+  }
+
+  /**
+   * Searches each of the provided paths for a valid Dart shared library .so file and resolves
+   * symbols to load into the dart VM.
+   *
+   * <p>Successful loading of the dart library completes the future returned by loadLibrary() that
+   * triggered the install/load process.
+   *
+   * @param loadingUnitId The loadingUnitId is assigned during compile time by gen_snapshot and is
+   *     automatically retrieved when loadLibrary() is called on a dart deferred library. This is
+   *     used to identify which Dart deferred library the resolved correspond to.
+   * @param searchPaths An array of paths in which to look for valid dart shared libraries. This
+   *     supports paths within zipped apks as long as the apks are not compressed using the
+   *     `path/to/apk.apk!path/inside/apk/lib.so` format. Paths will be tried first to last and ends
+   *     when a library is sucessfully found. When the found library is invalid, no additional paths
+   *     will be attempted.
+   */
+  @UiThread
+  public void loadDartDeferredLibrary(int loadingUnitId, @NonNull String[] searchPaths) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeLoadDartDeferredLibrary(nativePlatformViewId, loadingUnitId, searchPaths);
+  }
+
+  private native void nativeLoadDartDeferredLibrary(
+      long nativePlatformViewId, int loadingUnitId, @NonNull String[] searchPaths);
+
+  /**
+   * Adds the specified AssetManager as an APKAssetResolver in the Flutter Engine's AssetManager.
+   *
+   * <p>This may be used to update the engine AssetManager when a new dynamic feature is installed
+   * and a new Android AssetManager is created with access to new assets.
+   *
+   * @param assetManager An android AssetManager that is able to access the newly downloaded assets.
+   * @param assetBundlePath The subdirectory that the flutter assets are stored in. The typical
+   *     value is `flutter_assets`.
+   */
+  @UiThread
+  public void updateAssetManager(
+      @NonNull AssetManager assetManager, @NonNull String assetBundlePath) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeUpdateAssetManager(nativePlatformViewId, assetManager, assetBundlePath);
+  }
+
+  private native void nativeUpdateAssetManager(
+      long nativePlatformViewId,
+      @NonNull AssetManager assetManager,
+      @NonNull String assetBundlePath);
+
+  /**
+   * Indicates that a failure was encountered during the Android portion of downloading a dynamic
+   * feature module and loading a dart deferred library, which is typically done by
+   * DynamicFeatureManager.
+   *
+   * <p>This will inform dart that the future returned by loadLibrary() should complete with an
+   * error.
+   *
+   * @param loadingUnitId The loadingUnitId that corresponds to the dart deferred library that
+   *     failed to install.
+   * @param error The error message to display.
+   * @param isTransient When isTransient is false, new attempts to install will automatically result
+   *     in same error in Dart before the request is passed to Android.
+   */
+  @SuppressWarnings("unused")
+  @UiThread
+  public void dynamicFeatureInstallFailure(
+      int loadingUnitId, @NonNull String error, boolean isTransient) {
+    ensureRunningOnMainThread();
+    nativeDynamicFeatureInstallFailure(loadingUnitId, error, isTransient);
+  }
+
+  private native void nativeDynamicFeatureInstallFailure(
+      int loadingUnitId, @NonNull String error, boolean isTransient);
+
+  // ----- End Dynamic Features Support ----
 
   // @SuppressWarnings("unused")
   @UiThread

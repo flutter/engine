@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/shell/common/engine.h"
 
@@ -27,11 +26,13 @@ class MockDelegate : public Engine::Delegate {
   MOCK_METHOD1(OnEngineHandlePlatformMessage,
                void(fml::RefPtr<PlatformMessage>));
   MOCK_METHOD0(OnPreEngineRestart, void());
+  MOCK_METHOD0(OnRootIsolateCreated, void());
   MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
   MOCK_METHOD1(SetNeedsReportTimings, void(bool));
   MOCK_METHOD1(ComputePlatformResolvedLocale,
                std::unique_ptr<std::vector<std::string>>(
                    const std::vector<std::string>&));
+  MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
 };
 
 class MockResponse : public PlatformMessageResponse {
@@ -49,19 +50,23 @@ class MockRuntimeDelegate : public RuntimeDelegate {
                void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
   MOCK_METHOD1(HandlePlatformMessage, void(fml::RefPtr<PlatformMessage>));
   MOCK_METHOD0(GetFontCollection, FontCollection&());
+  MOCK_METHOD0(OnRootIsolateCreated, void());
   MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
   MOCK_METHOD1(SetNeedsReportTimings, void(bool));
   MOCK_METHOD1(ComputePlatformResolvedLocale,
                std::unique_ptr<std::vector<std::string>>(
                    const std::vector<std::string>&));
+  MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
 };
 
 class MockRuntimeController : public RuntimeController {
  public:
   MockRuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners)
       : RuntimeController(client, p_task_runners) {}
-  MOCK_CONST_METHOD0(IsRootIsolateRunning, bool());
+  MOCK_METHOD0(IsRootIsolateRunning, bool());
   MOCK_METHOD1(DispatchPlatformMessage, bool(fml::RefPtr<PlatformMessage>));
+  MOCK_METHOD3(LoadDartDeferredLibraryError,
+               void(intptr_t, const std::string, bool));
 };
 
 fml::RefPtr<PlatformMessage> MakePlatformMessage(
@@ -95,7 +100,7 @@ class EngineTest : public ::testing::Test {
   EngineTest()
       : thread_host_("EngineTest",
                      ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                         ThreadHost::Type::UI | ThreadHost::Type::GPU),
+                         ThreadHost::Type::UI | ThreadHost::Type::RASTER),
         task_runners_({
             "EngineTest",
             thread_host_.platform_thread->GetTaskRunner(),  // platform
@@ -231,6 +236,32 @@ TEST_F(EngineTest, DispatchPlatformMessageInitialRouteIgnored) {
         MakePlatformMessage("flutter/navigation", values, response);
     engine->DispatchPlatformMessage(message);
     EXPECT_EQ(engine->InitialRoute(), "");
+  });
+}
+
+TEST_F(EngineTest, PassesLoadDartDeferredLibraryErrorToRuntime) {
+  PostUITaskSync([this] {
+    intptr_t error_id = 123;
+    const std::string error_message = "error message";
+    MockRuntimeDelegate client;
+    auto mock_runtime_controller =
+        std::make_unique<MockRuntimeController>(client, task_runners_);
+    EXPECT_CALL(*mock_runtime_controller, IsRootIsolateRunning())
+        .WillRepeatedly(::testing::Return(true));
+    EXPECT_CALL(*mock_runtime_controller,
+                LoadDartDeferredLibraryError(error_id, error_message, true))
+        .Times(1);
+    auto engine = std::make_unique<Engine>(
+        /*delegate=*/delegate_,
+        /*dispatcher_maker=*/dispatcher_maker_,
+        /*image_decoder_task_runner=*/image_decoder_task_runner_,
+        /*task_runners=*/task_runners_,
+        /*settings=*/settings_,
+        /*animator=*/std::move(animator_),
+        /*io_manager=*/io_manager_,
+        /*runtime_controller=*/std::move(mock_runtime_controller));
+
+    engine->LoadDartDeferredLibraryError(error_id, error_message, true);
   });
 }
 

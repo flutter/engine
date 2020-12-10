@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Set this flag to `true` to cause the engine to visualize the semantics tree
@@ -851,13 +851,25 @@ class SemanticsObject {
         hasIdentityTransform &&
         verticalContainerAdjustment == 0.0 &&
         horizontalContainerAdjustment == 0.0) {
-      element.style
-        ..removeProperty('transform-origin')
-        ..removeProperty('transform');
-      if (containerElement != null) {
-        containerElement.style
+      if (isDesktop) {
+        element.style
           ..removeProperty('transform-origin')
           ..removeProperty('transform');
+      } else {
+        element.style
+          ..removeProperty('top')
+          ..removeProperty('left');
+      }
+      if (containerElement != null) {
+        if (isDesktop) {
+          containerElement.style
+            ..removeProperty('transform-origin')
+            ..removeProperty('transform');
+        } else {
+          containerElement.style
+            ..removeProperty('top')
+            ..removeProperty('left');
+        }
       }
       return;
     }
@@ -882,13 +894,36 @@ class SemanticsObject {
     }
 
     if (!effectiveTransformIsIdentity) {
-      element.style
-        ..transformOrigin = '0 0 0'
-        ..transform = matrix4ToCssTransform(effectiveTransform);
+      if (isDesktop) {
+        element.style
+          ..transformOrigin = '0 0 0'
+          ..transform = matrix4ToCssTransform(effectiveTransform);
+      } else {
+        // Mobile screen readers observed to have errors while calculating the
+        // semantics focus borders if css `transform` properties are used.
+        // See: https://github.com/flutter/flutter/issues/68225
+        // Therefore we are calculating a bounding rectangle for the
+        // effective transform and use that rectangle to set TLWH css style
+        // properties.
+        // Note: Identity matrix is not using this code path.
+        final ui.Rect rect =
+            computeBoundingRectangleFromMatrix(effectiveTransform, _rect!);
+        element.style
+          ..top = '${rect.top}px'
+          ..left = '${rect.left}px'
+          ..width = '${rect.width}px'
+          ..height = '${rect.height}px';
+      }
     } else {
-      element.style
-        ..removeProperty('transform-origin')
-        ..removeProperty('transform');
+      if (isDesktop) {
+        element.style
+          ..removeProperty('transform-origin')
+          ..removeProperty('transform');
+      } else {
+        element.style
+          ..removeProperty('top')
+          ..removeProperty('left');
+      }
     }
 
     if (containerElement != null) {
@@ -897,13 +932,25 @@ class SemanticsObject {
           horizontalContainerAdjustment != 0.0) {
         final double translateX = -_rect!.left + horizontalContainerAdjustment;
         final double translateY = -_rect!.top + verticalContainerAdjustment;
-        containerElement.style
-          ..transformOrigin = '0 0 0'
-          ..transform = 'translate(${translateX}px, ${translateY}px)';
+        if (isDesktop) {
+          containerElement.style
+            ..transformOrigin = '0 0 0'
+            ..transform = 'translate(${translateX}px, ${translateY}px)';
+        } else {
+          containerElement.style
+            ..top = '${translateY}px'
+            ..left = '${translateX}px';
+        }
       } else {
-        containerElement.style
-          ..removeProperty('transform-origin')
-          ..removeProperty('transform');
+        if (isDesktop) {
+          containerElement.style
+            ..removeProperty('transform-origin')
+            ..removeProperty('transform');
+        } else {
+          containerElement.style
+            ..removeProperty('top')
+            ..removeProperty('left');
+        }
       }
     }
   }
@@ -1218,11 +1265,11 @@ class EngineSemanticsOwner {
 
   final SemanticsHelper semanticsHelper = SemanticsHelper();
 
-  /// Whether the user has requested that [updateSemantics] be called when
-  /// the semantic contents of window changes.
+  /// Whether the user has requested that [updateSemantics] be called when the
+  /// semantic contents of window changes.
   ///
-  /// The [ui.Window.onSemanticsEnabledChanged] callback is called whenever this
-  /// value changes.
+  /// The [ui.PlatformDispatcher.onSemanticsEnabledChanged] callback is called
+  /// whenever this value changes.
   ///
   /// This is separate from accessibility [mode], which controls how gestures
   /// are interpreted when this value is true.
@@ -1252,9 +1299,12 @@ class EngineSemanticsOwner {
       _rootSemanticsElement = null;
       _gestureModeClock?.datetime = null;
     }
-
-    if (window._onSemanticsEnabledChanged != null) {
-      window.invokeOnSemanticsEnabledChanged();
+    if (_semanticsEnabled != EnginePlatformDispatcher.instance.semanticsEnabled) {
+      EnginePlatformDispatcher.instance._configuration =
+        EnginePlatformDispatcher.instance._configuration.copyWith(semanticsEnabled: _semanticsEnabled);
+      if (EnginePlatformDispatcher.instance._onSemanticsEnabledChanged != null) {
+        EnginePlatformDispatcher.instance.invokeOnSemanticsEnabledChanged();
+      }
     }
   }
 

@@ -27,7 +27,7 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
-static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
+flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   auto command_line = flutter::CommandLineFromNSProcessInfo();
 
   // Precedence:
@@ -42,6 +42,11 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   bool hasExplicitBundle = bundle != nil;
   if (bundle == nil) {
     bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
+  }
+  if (bundle == nil) {
+    // The bundle isn't loaded and can't be found by bundle ID. Find it by path.
+    bundle = [NSBundle bundleWithURL:[NSBundle.mainBundle.privateFrameworksURL
+                                         URLByAppendingPathComponent:@"App.framework"]];
   }
   if (bundle == nil) {
     bundle = mainBundle;
@@ -181,7 +186,17 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   self = [super init];
 
   if (self) {
-    _settings = DefaultSettingsForProcess(bundle);
+    _settings = FLTDefaultSettingsForBundle(bundle);
+  }
+
+  return self;
+}
+
+- (instancetype)initWithSettings:(const flutter::Settings&)settings {
+  self = [self initWithPrecompiledDartBundle:nil];
+
+  if (self) {
+    _settings = settings;
   }
 
   return self;
@@ -229,11 +244,16 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
   }
   if (bundle == nil) {
-    bundle = [NSBundle mainBundle];
+    // The bundle isn't loaded and can't be found by bundle ID. Find it by path.
+    bundle = [NSBundle bundleWithURL:[NSBundle.mainBundle.privateFrameworksURL
+                                         URLByAppendingPathComponent:@"App.framework"]];
   }
   NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
-  if (flutterAssetsName == nil) {
+  if (bundle == nil) {
+    bundle = [NSBundle mainBundle];
     flutterAssetsName = @"Frameworks/App.framework/flutter_assets";
+  } else if (flutterAssetsName == nil) {
+    flutterAssetsName = @"flutter_assets";
   }
   return flutterAssetsName;
 }

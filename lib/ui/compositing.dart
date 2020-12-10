@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
 
+// @dart = 2.12
 part of dart.ui;
 
 /// An opaque object representing a composited scene.
 ///
 /// To create a Scene object, use a [SceneBuilder].
 ///
-/// Scene objects can be displayed on the screen using the
-/// [Window.render] method.
+/// Scene objects can be displayed on the screen using the [FlutterView.render]
+/// method.
 @pragma('vm:entry-point')
 class Scene extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
@@ -37,7 +37,7 @@ class Scene extends NativeFieldWrapperClass2 {
     );
   }
 
-  String _toImage(int width, int height, _Callback<_Image> callback) native 'Scene_toImage';
+  String? _toImage(int width, int height, _Callback<_Image> callback) native 'Scene_toImage';
 
   /// Releases the resources used by this scene.
   ///
@@ -186,7 +186,7 @@ class PhysicalShapeEngineLayer extends _EngineLayerWrapper {
 
 /// Builds a [Scene] containing the given visuals.
 ///
-/// A [Scene] can then be rendered using [Window.render].
+/// A [Scene] can then be rendered using [FlutterView.render].
 ///
 /// To draw graphical operations onto a [Scene], first create a
 /// [Picture] using a [PictureRecorder] and a [Canvas], and then add
@@ -538,7 +538,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     return layer;
   }
 
-  EngineLayer _pushShaderMask(
+  void _pushShaderMask(
       EngineLayer engineLayer,
       Shader shader,
       double maskRectLeft,
@@ -587,7 +587,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     return layer;
   }
 
-  EngineLayer _pushPhysicalShape(EngineLayer outEngineLayer, Path path, double elevation, int color, int shadowColor,
+  void _pushPhysicalShape(EngineLayer outEngineLayer, Path path, double elevation, int color, int shadowColor,
       int clipBehavior) native 'SceneBuilder_pushPhysicalShape';
 
   /// Ends the effect of the most recently pushed operation.
@@ -655,13 +655,13 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///  - 0x08: visualizeEngineStatistics - graph UI thread frame times
   /// Set enabledOptions to 0x0F to enable all the currently defined features.
   ///
-  /// The "UI thread" is the thread that includes all the execution of
-  /// the main Dart isolate (the isolate that can call
-  /// [Window.render]). The UI thread frame time is the total time
-  /// spent executing the [Window.onBeginFrame] callback. The "raster
-  /// thread" is the thread (running on the CPU) that subsequently
-  /// processes the [Scene] provided by the Dart code to turn it into
-  /// GPU commands and send it to the GPU.
+  /// The "UI thread" is the thread that includes all the execution of the main
+  /// Dart isolate (the isolate that can call [FlutterView.render]). The UI
+  /// thread frame time is the total time spent executing the
+  /// [PlatformDispatcher.onBeginFrame] callback. The "raster thread" is the
+  /// thread (running on the CPU) that subsequently processes the [Scene]
+  /// provided by the Dart code to turn it into GPU commands and send it to the
+  /// GPU.
   ///
   /// See also the [PerformanceOverlayOption] enum in the rendering library.
   /// for more details.
@@ -802,7 +802,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Returns a [Scene] containing the objects that have been added to
   /// this scene builder. The [Scene] can then be displayed on the
-  /// screen with [Window.render].
+  /// screen with [FlutterView.render].
   ///
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.

@@ -76,6 +76,8 @@ class EmbedderConfigBuilder {
 
   void AddCommandLineArgument(std::string arg);
 
+  void AddDartEntrypointArgument(std::string arg);
+
   void SetPlatformTaskRunner(const FlutterTaskRunnerDescription* runner);
 
   void SetRenderTaskRunner(const FlutterTaskRunnerDescription* runner);
@@ -83,7 +85,7 @@ class EmbedderConfigBuilder {
   void SetPlatformMessageCallback(
       const std::function<void(const FlutterPlatformMessage*)>& callback);
 
-  void SetCompositor();
+  void SetCompositor(bool avoid_backing_store_cache = false);
 
   FlutterCompositor& GetCompositor();
 
@@ -106,6 +108,7 @@ class EmbedderConfigBuilder {
   FlutterCustomTaskRunners custom_task_runners_ = {};
   FlutterCompositor compositor_ = {};
   std::vector<std::string> command_line_arguments_;
+  std::vector<std::string> dart_entrypoint_arguments_;
 
   UniqueEngine SetupEngine(bool run) const;
 

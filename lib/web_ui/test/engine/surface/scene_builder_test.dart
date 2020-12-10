@@ -39,8 +39,7 @@ void testMain() {
     test('pushTransform implements surface lifecycle', () {
       testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
         return sceneBuilder.pushTransform(
-            Matrix4.translationValues(10, 20, 0).toFloat64(),
-            oldLayer: oldLayer);
+            (Matrix4.identity()..scale(html.window.devicePixelRatio)).toFloat64());
       }, () {
         return '''<s><flt-transform></flt-transform></s>''';
       });
@@ -133,7 +132,8 @@ void testMain() {
         () {
       final PersistedScene scene1 = PersistedScene(null);
       final PersistedClipRect clip1 =
-          PersistedClipRect(null, const Rect.fromLTRB(10, 10, 20, 20));
+          PersistedClipRect(null, const Rect.fromLTRB(10, 10, 20, 20),
+              Clip.antiAlias);
       final PersistedOpacity opacity = PersistedOpacity(null, 100, Offset.zero);
       final MockPersistedPicture picture = MockPersistedPicture();
 
@@ -158,7 +158,8 @@ void testMain() {
       // because the clip didn't change no repaints should happen.
       final PersistedScene scene2 = PersistedScene(scene1);
       final PersistedClipRect clip2 =
-          PersistedClipRect(clip1, const Rect.fromLTRB(10, 10, 20, 20));
+          PersistedClipRect(clip1, const Rect.fromLTRB(10, 10, 20, 20),
+              Clip.antiAlias);
       clip1.state = PersistedSurfaceState.pendingUpdate;
       scene2.appendChild(clip2);
       opacity.state = PersistedSurfaceState.pendingRetention;
@@ -176,7 +177,8 @@ void testMain() {
       // This should cause the picture to repaint despite being retained.
       final PersistedScene scene3 = PersistedScene(scene2);
       final PersistedClipRect clip3 =
-          PersistedClipRect(clip2, const Rect.fromLTRB(10, 10, 50, 50));
+          PersistedClipRect(clip2, const Rect.fromLTRB(10, 10, 50, 50),
+          Clip.antiAlias);
       clip2.state = PersistedSurfaceState.pendingUpdate;
       scene3.appendChild(clip3);
       opacity.state = PersistedSurfaceState.pendingRetention;
@@ -234,6 +236,7 @@ void testMain() {
       builder.pop();
 
       html.HtmlElement content = builder.build().webOnlyRootElement;
+      html.document.body.append(content);
       expect(content.querySelector('canvas').style.zIndex, '-1');
 
       // Force update to scene which will utilize reuse code path.
@@ -252,6 +255,42 @@ void testMain() {
       expect(list[0].style.zIndex, '-1');
       expect(list[1].style.zIndex, '');
     });
+  });
+
+  /// Verify elementCache is passed during update to reuse existing
+  /// image elements.
+  test('Should retain same image element', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture picture1 = _drawPathImagePath();
+    EngineLayer oldLayer = builder.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+    );
+    builder.addPicture(Offset.zero, picture1);
+    builder.pop();
+
+    html.HtmlElement content = builder.build().webOnlyRootElement;
+    html.document.body.append(content);
+    List<html.ImageElement> list = content.querySelectorAll('img');
+    for (html.ImageElement image in list) {
+      image.alt = 'marked';
+    }
+
+    // Force update to scene which will utilize reuse code path.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    builder2.pushClipRect(
+        const Rect.fromLTRB(5, 10, 300, 300),
+        oldLayer: oldLayer
+    );
+    final Picture picture2 = _drawPathImagePath();
+    builder2.addPicture(Offset.zero, picture2);
+    builder2.pop();
+
+    html.HtmlElement contentAfterReuse = builder2.build().webOnlyRootElement;
+    list = contentAfterReuse.querySelectorAll('img');
+    for (html.ImageElement image in list) {
+      expect(image.alt, 'marked');
+    }
+    expect(list.length, 1);
   });
 
   PersistedPicture findPictureSurfaceChild(PersistedContainerSurface parent) {
@@ -485,6 +524,70 @@ void testMain() {
     await testCase('be', 'remove in the middle', deletions: 2);
     await testCase('', 'remove all', deletions: 2);
   });
+
+  test('Canvas should allocate fewer pixels when zoomed out', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture picture1 = _drawPicture();
+    builder.pushClipRect(const Rect.fromLTRB(10, 10, 300, 300));
+    builder.addPicture(Offset.zero, picture1);
+    builder.pop();
+
+    html.HtmlElement content = builder.build().webOnlyRootElement;
+    html.CanvasElement canvas = content.querySelector('canvas');
+    final int unscaledWidth = canvas.width;
+    final int unscaledHeight = canvas.height;
+
+    // Force update to scene which will utilize reuse code path.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    builder2.pushOffset(0, 0);
+    builder2.pushTransform(Matrix4.identity().scaled(0.5, 0.5).toFloat64());
+    builder2.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+    );
+    builder2.addPicture(Offset.zero, picture1);
+    builder2.pop();
+    builder2.pop();
+    builder2.pop();
+
+    html.HtmlElement contentAfterScale = builder2.build().webOnlyRootElement;
+    html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas');
+    // Although we are drawing same picture, due to scaling the new canvas
+    // should have fewer pixels.
+    expect(canvas2.width < unscaledWidth, true);
+    expect(canvas2.height < unscaledHeight, true);
+  });
+
+  test('Canvas should allocate more pixels when zoomed in', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture picture1 = _drawPicture();
+    builder.pushClipRect(const Rect.fromLTRB(10, 10, 300, 300));
+    builder.addPicture(Offset.zero, picture1);
+    builder.pop();
+
+    html.HtmlElement content = builder.build().webOnlyRootElement;
+    html.CanvasElement canvas = content.querySelector('canvas');
+    final int unscaledWidth = canvas.width;
+    final int unscaledHeight = canvas.height;
+
+    // Force update to scene which will utilize reuse code path.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    builder2.pushOffset(0, 0);
+    builder2.pushTransform(Matrix4.identity().scaled(2, 2).toFloat64());
+    builder2.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+    );
+    builder2.addPicture(Offset.zero, picture1);
+    builder2.pop();
+    builder2.pop();
+    builder2.pop();
+
+    html.HtmlElement contentAfterScale = builder2.build().webOnlyRootElement;
+    html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas');
+    // Although we are drawing same picture, due to scaling the new canvas
+    // should have more pixels.
+    expect(canvas2.width > unscaledWidth, true);
+    expect(canvas2.height > unscaledHeight, true);
+  });
 }
 
 typedef TestLayerBuilder = EngineLayer Function(
@@ -579,7 +682,7 @@ class MockPersistedPicture extends PersistedPicture {
   int updateCount = 0;
   int applyPaintCount = 0;
 
-  final BitmapCanvas _fakeCanvas = BitmapCanvas(const Rect.fromLTRB(0, 0, 10, 10));
+  final BitmapCanvas _fakeCanvas = BitmapCanvas(const Rect.fromLTRB(0, 0, 10, 10), RenderStrategy());
 
   @override
   EngineCanvas get debugCanvas {
@@ -627,8 +730,16 @@ Picture _drawPicture() {
   final EnginePictureRecorder recorder = PictureRecorder();
   final RecordingCanvas canvas =
   recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
+  Shader gradient = Gradient.radial(
+      Offset(100, 100), 50, [
+    const Color.fromARGB(255, 0, 0, 0),
+    const Color.fromARGB(255, 0, 0, 255)
+  ]);
   canvas.drawCircle(
-      Offset(offsetX + 10, offsetY + 10), 10, Paint()..style = PaintingStyle.fill);
+      Offset(offsetX + 10, offsetY + 10), 10,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..shader = gradient);
   canvas.drawCircle(
       Offset(offsetX + 60, offsetY + 10),
       10,
@@ -656,8 +767,16 @@ Picture _drawPathImagePath() {
   final EnginePictureRecorder recorder = PictureRecorder();
   final RecordingCanvas canvas =
   recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
+  Shader gradient = Gradient.radial(
+      Offset(100, 100), 50, [
+    const Color.fromARGB(255, 0, 0, 0),
+    const Color.fromARGB(255, 0, 0, 255)
+  ]);
   canvas.drawCircle(
-      Offset(offsetX + 10, offsetY + 10), 10, Paint()..style = PaintingStyle.fill);
+      Offset(offsetX + 10, offsetY + 10), 10,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..shader = gradient);
   canvas.drawCircle(
       Offset(offsetX + 60, offsetY + 10),
       10,
@@ -671,6 +790,11 @@ Picture _drawPathImagePath() {
         ..style = PaintingStyle.fill
         ..color = const Color.fromRGBO(0, 255, 0, 1));
   canvas.drawImage(createTestImage(), Offset(0, 0), Paint());
+  canvas.drawCircle(
+      Offset(offsetX + 10, offsetY + 10), 10,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..shader = gradient);
   canvas.drawCircle(
       Offset(offsetX + 60, offsetY + 60),
       10,

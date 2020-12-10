@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 class DomRenderer {
@@ -45,7 +45,7 @@ class DomRenderer {
   html.MetaElement? _viewportMeta;
 
   /// The canvaskit script, downloaded from a CDN. Only created if
-  /// [experimentalUseSkia] is set to true.
+  /// [useCanvasKit] is set to true.
   html.ScriptElement? get canvasKitScript => _canvasKitScript;
   html.ScriptElement? _canvasKitScript;
 
@@ -78,7 +78,8 @@ class DomRenderer {
   /// This getter calls the `hasFocus` method of the `Document` interface.
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
-  bool? get windowHasFocus => js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
+  bool? get windowHasFocus =>
+      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
@@ -172,12 +173,18 @@ class DomRenderer {
     js_util.setProperty(element, name, value);
   }
 
-  void setElementStyle(html.Element element, String name, String? value) {
+  static void setElementStyle(
+      html.Element element, String name, String? value) {
     if (value == null) {
       element.style.removeProperty(name);
     } else {
       element.style.setProperty(name, value);
     }
+  }
+
+  static void setElementTransform(html.Element element, String transformValue) {
+    js_util.setProperty(
+        js_util.getProperty(element, 'style'), 'transform', transformValue);
   }
 
   void setText(html.Element element, String text) {
@@ -195,7 +202,8 @@ class DomRenderer {
   }
 
   void setThemeColor(ui.Color color) {
-    html.MetaElement? theme = html.document.querySelector('#flutterweb-theme') as html.MetaElement?;
+    html.MetaElement? theme =
+        html.document.querySelector('#flutterweb-theme') as html.MetaElement?;
     if (theme == null) {
       theme = html.MetaElement()
         ..id = 'flutterweb-theme'
@@ -307,6 +315,20 @@ flt-glass-pane * {
 ''', sheet.cssRules.length);
     }
 
+    // This css prevents an autofill overlay brought by the browser during
+    // text field autofill by delaying the transition effect.
+    // See: https://github.com/flutter/flutter/issues/61132.
+    if (browserHasAutofillOverlay()) {
+      sheet.insertRule('''
+.transparentTextEditing:-webkit-autofill,
+.transparentTextEditing:-webkit-autofill:hover,
+.transparentTextEditing:-webkit-autofill:focus,
+.transparentTextEditing:-webkit-autofill:active {
+    -webkit-transition-delay: 99999s;
+}
+''', sheet.cssRules.length);
+    }
+
     final html.BodyElement bodyElement = html.document.body!;
     setElementStyle(bodyElement, 'position', 'fixed');
     setElementStyle(bodyElement, 'top', '0');
@@ -389,15 +411,14 @@ flt-glass-pane * {
 
     final html.Element _accesibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
-        .prepareAccesibilityPlaceholder();
+        .prepareAccessibilityPlaceholder();
 
     // Insert the semantics placeholder after the scene host. For all widgets
     // in the scene, except for platform widgets, the scene host will pass the
     // pointer events through to the semantics tree. However, for platform
     // views, the pointer events will not pass through, and will be handled
     // by the platform view.
-    glassPaneElement
-        .insertBefore(_accesibilityPlaceholder, _sceneHostElement);
+    glassPaneElement.insertBefore(_accesibilityPlaceholder, _sceneHostElement);
 
     PointerBinding.initInstance(glassPaneElement);
 
@@ -436,10 +457,70 @@ flt-glass-pane * {
       });
     }
 
-    if (experimentalUseSkia) {
+    if (useCanvasKit) {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitBaseUrl + 'canvaskit.js';
+
+      // TODO(hterkelsen): Rather than this monkey-patch hack, we should
+      // build CanvasKit ourselves. See:
+      // https://github.com/flutter/flutter/issues/52588
+
+      // Monkey-patch the top-level `module`  and `exports` objects so that
+      // CanvasKit doesn't attempt to register itself as an anonymous module.
+      //
+      // The idea behind making these fake `exports` and `module` objects is
+      // that `canvaskit.js` contains the following lines of code:
+      //
+      //     if (typeof exports === 'object' && typeof module === 'object')
+      //       module.exports = CanvasKitInit;
+      //     else if (typeof define === 'function' && define['amd'])
+      //       define([], function() { return CanvasKitInit; });
+      //
+      // We need to avoid hitting the case where CanvasKit defines an anonymous
+      // module, since this breaks RequireJS, which DDC and some plugins use.
+      // Temporarily removing the `define` function won't work because RequireJS
+      // could load in between this code running and the CanvasKit code running.
+      // Also, we cannot monkey-patch the `define` function because it is
+      // non-configurable (it is a top-level 'var').
+
+      // First check if `exports` and `module` are already defined. If so, then
+      // CommonJS is being used, and we shouldn't have any problems.
+      js.JsFunction objectConstructor = js.context['Object'];
+      if (js.context['exports'] == null) {
+        js.JsObject exportsAccessor = js.JsObject.jsify({
+          'get': js.allowInterop(() {
+            if (html.document.currentScript == _canvasKitScript) {
+              return js.JsObject(objectConstructor);
+            } else {
+              return js.context['_flutterWebCachedExports'];
+            }
+          }),
+          'set': js.allowInterop((dynamic value) {
+            js.context['_flutterWebCachedExports'] = value;
+          }),
+          'configurable': true,
+        });
+        objectConstructor.callMethod('defineProperty',
+            <dynamic>[js.context, 'exports', exportsAccessor]);
+      }
+      if (js.context['module'] == null) {
+        js.JsObject moduleAccessor = js.JsObject.jsify({
+          'get': js.allowInterop(() {
+            if (html.document.currentScript == _canvasKitScript) {
+              return js.JsObject(objectConstructor);
+            } else {
+              return js.context['_flutterWebCachedModule'];
+            }
+          }),
+          'set': js.allowInterop((dynamic value) {
+            js.context['_flutterWebCachedModule'] = value;
+          }),
+          'configurable': true,
+        });
+        objectConstructor.callMethod(
+            'defineProperty', <dynamic>[js.context, 'module', moduleAccessor]);
+      }
       html.document.head!.append(_canvasKitScript!);
     }
 
@@ -449,35 +530,35 @@ flt-glass-pane * {
     } else {
       _resizeSubscription = html.window.onResize.listen(_metricsDidChange);
     }
-    _localeSubscription = languageChangeEvent.forTarget(html.window)
-      .listen(_languageDidChange);
-    window._updateLocales();
+    _localeSubscription =
+        languageChangeEvent.forTarget(html.window).listen(_languageDidChange);
+    EnginePlatformDispatcher.instance._updateLocales();
   }
 
   /// Called immediately after browser window metrics change.
   ///
   /// When there is a text editing going on in mobile devices, do not change
   /// the physicalSize, change the [window.viewInsets]. See:
-  /// https://api.flutter.dev/flutter/dart-ui/Window/viewInsets.html
-  /// https://api.flutter.dev/flutter/dart-ui/Window/physicalSize.html
+  /// https://api.flutter.dev/flutter/dart-ui/FlutterView/viewInsets.html
+  /// https://api.flutter.dev/flutter/dart-ui/FlutterView/physicalSize.html
   ///
   /// Note: always check for rotations for a mobile device. Update the physical
   /// size if the change is caused by a rotation.
   void _metricsDidChange(html.Event? event) {
-    if(isMobile && !window.isRotation() && textEditing.isEditing) {
+    if (isMobile && !window.isRotation() && textEditing.isEditing) {
       window.computeOnScreenKeyboardInsets();
-      window.invokeOnMetricsChanged();
+      EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     } else {
       window._computePhysicalSize();
       // When physical size changes this value has to be recalculated.
       window.computeOnScreenKeyboardInsets();
-      window.invokeOnMetricsChanged();
+      EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     }
   }
 
   /// Called immediately after browser window language change.
   void _languageDidChange(html.Event event) {
-    window._updateLocales();
+    EnginePlatformDispatcher.instance._updateLocales();
     if (ui.window.onLocaleChanged != null) {
       ui.window.onLocaleChanged!();
     }
@@ -497,13 +578,20 @@ flt-glass-pane * {
   static bool? _ellipseFeatureDetected;
 
   /// Draws CanvasElement ellipse with fallback.
-  static void ellipse(html.CanvasRenderingContext2D context,
-      double centerX, double centerY, double radiusX, double radiusY,
-      double rotation, double startAngle, double endAngle, bool antiClockwise) {
+  static void ellipse(
+      html.CanvasRenderingContext2D context,
+      double centerX,
+      double centerY,
+      double radiusX,
+      double radiusY,
+      double rotation,
+      double startAngle,
+      double endAngle,
+      bool antiClockwise) {
     _ellipseFeatureDetected ??= js_util.getProperty(context, 'ellipse') != null;
     if (_ellipseFeatureDetected!) {
-      context.ellipse(centerX, centerY, radiusX, radiusY,
-          rotation, startAngle, endAngle, antiClockwise);
+      context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
+          endAngle, antiClockwise);
     } else {
       context.save();
       context.translate(centerX, centerY);
@@ -519,9 +607,11 @@ flt-glass-pane * {
   static const String orientationLockTypeLandscape = 'landscape';
   static const String orientationLockTypePortrait = 'portrait';
   static const String orientationLockTypePortraitPrimary = 'portrait-primary';
-  static const String orientationLockTypePortraitSecondary = 'portrait-secondary';
+  static const String orientationLockTypePortraitSecondary =
+      'portrait-secondary';
   static const String orientationLockTypeLandscapePrimary = 'landscape-primary';
-  static const String orientationLockTypeLandscapeSecondary = 'landscape-secondary';
+  static const String orientationLockTypeLandscapeSecondary =
+      'landscape-secondary';
 
   /// Sets preferred screen orientation.
   ///
@@ -536,8 +626,7 @@ flt-glass-pane * {
   Future<bool> setPreferredOrientation(List<dynamic>? orientations) {
     final html.Screen screen = html.window.screen!;
     if (!_unsafeIsNull(screen)) {
-      final html.ScreenOrientation? screenOrientation =
-          screen.orientation;
+      final html.ScreenOrientation? screenOrientation = screen.orientation;
       if (!_unsafeIsNull(screenOrientation)) {
         if (orientations!.isEmpty) {
           screenOrientation!.unlock();
@@ -568,7 +657,7 @@ flt-glass-pane * {
 
   // Converts device orientation to w3c OrientationLockType enum.
   static String? _deviceOrientationToLockType(String deviceOrientation) {
-    switch(deviceOrientation) {
+    switch (deviceOrientation) {
       case 'DeviceOrientation.portraitUp':
         return orientationLockTypePortraitPrimary;
       case 'DeviceOrientation.landscapeLeft':

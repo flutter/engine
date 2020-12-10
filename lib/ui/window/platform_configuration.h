@@ -6,32 +6,16 @@
 #define FLUTTER_LIB_UI_WINDOW_PLATFORM_CONFIGURATION_H_
 
 #include <memory>
-#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
-#include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
 #include "third_party/tonic/dart_persistent_value.h"
-
-namespace tonic {
-class DartLibraryNatives;
-
-// So tonic::ToDart<std::vector<int64_t>> returns List<int> instead of
-// List<dynamic>.
-template <>
-struct DartListFactory<int64_t> {
-  static Dart_Handle NewList(intptr_t length) {
-    return Dart_NewListOf(Dart_CoreType_Int, length);
-  }
-};
-
-}  // namespace tonic
 
 namespace flutter {
 class FontCollection;
@@ -190,6 +174,27 @@ class PlatformConfigurationClient {
   ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) = 0;
 
+  //--------------------------------------------------------------------------
+  /// @brief      Invoked when the Dart VM requests that a deferred library
+  ///             be loaded. Notifies the engine that the deferred library
+  ///             identified by the specified loading unit id should be
+  ///             downloaded and loaded into the Dart VM via
+  ///             `LoadDartDeferredLibrary`
+  ///
+  ///             Upon encountering errors or otherwise failing to load a
+  ///             loading unit with the specified id, the failure should be
+  ///             directly reported to dart by calling
+  ///             `LoadDartDeferredLibraryFailure` to ensure the waiting dart
+  ///             future completes with an error.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit. This id is to be passed
+  ///                              back into LoadDartDeferredLibrary
+  ///                              in order to identify which deferred
+  ///                              library to load.
+  ///
+  virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
+
  protected:
   virtual ~PlatformConfigurationClient();
 };
@@ -328,9 +333,9 @@ class PlatformConfiguration final {
   ///             The frame time given as the argument indicates the point at
   ///             which the current frame interval began. It is very slightly
   ///             (because of scheduling overhead) in the past. If a new layer
-  ///             tree is not produced and given to the GPU task runner within
-  ///             one frame interval from this point, the Flutter application
-  ///             will jank.
+  ///             tree is not produced and given to the raster task runner
+  ///             within one frame interval from this point, the Flutter
+  ///             application will jank.
   ///
   ///             This method calls the `::_beginFrame` method in `hooks.dart`.
   ///
@@ -344,13 +349,13 @@ class PlatformConfiguration final {
   /// @brief      Dart code cannot fully measure the time it takes for a
   ///             specific frame to be rendered. This is because Dart code only
   ///             runs on the UI task runner. That is only a small part of the
-  ///             overall frame workload. The GPU task runner frame workload is
-  ///             executed on a thread where Dart code cannot run (and hence
+  ///             overall frame workload. The raster task runner frame workload
+  ///             is executed on a thread where Dart code cannot run (and hence
   ///             instrument). Besides, due to the pipelined nature of rendering
   ///             in Flutter, there may be multiple frame workloads being
   ///             processed at any given time. However, for non-Timeline based
   ///             profiling, it is useful for trace collection and processing to
-  ///             happen in Dart. To do this, the GPU task runner frame
+  ///             happen in Dart. To do this, the raster task runner frame
   ///             workloads need to be instrumented separately. After a set
   ///             number of these profiles have been gathered, they need to be
   ///             reported back to Dart code. The engine reports this extra
@@ -378,11 +383,14 @@ class PlatformConfiguration final {
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
   //----------------------------------------------------------------------------
-  /// @brief      Retrieves the Window managed by the PlatformConfiguration.
+  /// @brief      Retrieves the Window with the given ID managed by the
+  ///             `PlatformConfiguration`.
+  ///
+  /// @param[in] window_id The id of the window to find and return.
   ///
   /// @return     a pointer to the Window.
   ///
-  Window* window() const { return window_.get(); }
+  Window* get_window(int window_id) { return windows_[window_id].get(); }
 
   //----------------------------------------------------------------------------
   /// @brief      Responds to a previous platform message to the engine from the
@@ -408,7 +416,7 @@ class PlatformConfiguration final {
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue library_;
 
-  std::unique_ptr<Window> window_;
+  std::unordered_map<int64_t, std::unique_ptr<Window>> windows_;
 
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;

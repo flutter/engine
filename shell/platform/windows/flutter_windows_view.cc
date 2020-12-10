@@ -39,8 +39,7 @@ void FlutterWindowsView::SetEngine(
       std::make_unique<flutter::KeyEventHandler>(internal_plugin_messenger));
   keyboard_hook_handlers_.push_back(
       std::make_unique<flutter::TextInputPlugin>(internal_plugin_messenger));
-  platform_handler_ = std::make_unique<flutter::PlatformHandler>(
-      internal_plugin_messenger, this);
+  platform_handler_ = PlatformHandler::Create(internal_plugin_messenger, this);
   cursor_handler_ = std::make_unique<flutter::CursorHandler>(
       internal_plugin_messenger, binding_handler_.get());
 
@@ -109,16 +108,12 @@ void FlutterWindowsView::OnScroll(double x,
 void FlutterWindowsView::SendWindowMetrics(size_t width,
                                            size_t height,
                                            double dpiScale) const {
-  if (engine_->engine() == nullptr) {
-    return;
-  }
-
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
   event.pixel_ratio = dpiScale;
-  auto result = FlutterEngineSendWindowMetricsEvent(engine_->engine(), &event);
+  engine_->SendWindowMetricsEvent(event);
 }
 
 void FlutterWindowsView::SendInitialBounds() {
@@ -237,7 +232,7 @@ void FlutterWindowsView::SendPointerEventWithData(
           std::chrono::high_resolution_clock::now().time_since_epoch())
           .count();
 
-  FlutterEngineSendPointerEvent(engine_->engine(), &event, 1);
+  engine_->SendPointerEvent(event);
 
   if (event_data.phase == FlutterPointerPhase::kAdd) {
     SetMouseFlutterStateAdded(true);

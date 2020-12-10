@@ -88,6 +88,7 @@ struct FlutterPlatformViewLayer {
 class FlutterPlatformViewLayerPool {
  public:
   FlutterPlatformViewLayerPool() = default;
+
   ~FlutterPlatformViewLayerPool() = default;
 
   // Gets a layer from the pool if available, or allocates a new one.
@@ -140,7 +141,8 @@ class FlutterPlatformViewsController {
       NSString* factoryId,
       FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy);
 
-  void SetFrameSize(SkISize frame_size);
+  // Called at the begining of each frame.
+  void BeginFrame(SkISize frame_size);
 
   // Indicates that we don't compisite any platform views or overlays during this frame.
   // Also reverts the composition_order_ to its original state at the begining of the frame.
@@ -149,12 +151,12 @@ class FlutterPlatformViewsController {
   void PrerollCompositeEmbeddedView(int view_id,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params);
 
-  // Returns the `FlutterPlatformView` object associated with the view_id.
+  // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
   //
   // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
   // a `FlutterPlatformView` object asscociated with the view_id cannot be found, the method
   // returns nil.
-  NSObject<FlutterPlatformView>* GetPlatformViewByID(int view_id);
+  UIView* GetPlatformViewByID(int view_id);
 
   PostPrerollResult PostPrerollAction(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
 
@@ -171,13 +173,8 @@ class FlutterPlatformViewsController {
 
   bool SubmitFrame(GrDirectContext* gr_context,
                    std::shared_ptr<IOSContext> ios_context,
-                   std::unique_ptr<SurfaceFrame> frame);
-
-  // Invoked at the very end of a frame.
-  // After invoking this method, nothing should happen on the current TaskRunner during the same
-  // frame.
-  void EndFrame(bool should_resubmit_frame,
-                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+                   std::unique_ptr<SurfaceFrame> frame,
+                   const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
@@ -205,8 +202,8 @@ class FlutterPlatformViewsController {
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
   std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
   std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> touch_interceptors_;
-  // Mapping a platform view ID to the top most parent view (root_view) who is a direct child to
-  // the `flutter_view_`.
+  // Mapping a platform view ID to the top most parent view (root_view) of a platform view. In
+  // |SubmitFrame|, root_views_ are added to flutter_view_ as child views.
   //
   // The platform view with the view ID is a child of the root view; If the platform view is not
   // clipped, and no clipping view is added, the root view will be the intercepting view.
@@ -303,6 +300,13 @@ class FlutterPlatformViewsController {
   // Commit a CATransaction if |BeginCATransaction| has been called during the frame.
   void CommitCATransactionIfNeeded();
 
+  bool SubmitFrameGpuSafe(GrDirectContext* gr_context,
+                          std::shared_ptr<IOSContext> ios_context,
+                          std::unique_ptr<SurfaceFrame> frame);
+
+  // Resets the state of the frame.
+  void ResetFrameState();
+
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 
@@ -325,6 +329,9 @@ class FlutterPlatformViewsController {
 
 // Prevent the touch sequence from ever arriving to the embedded view.
 - (void)blockGesture;
+
+// Get embedded view
+- (UIView*)embeddedView;
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

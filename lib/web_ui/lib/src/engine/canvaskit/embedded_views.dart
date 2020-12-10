@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// This composites HTML views into the [ui.Scene].
@@ -168,6 +168,10 @@ class HtmlViewEmbedder {
     platformView.style.height = '${params.size.height}px';
     platformView.style.position = 'absolute';
 
+    // <flt-scene-host> disables pointer events. Reenable them here because the
+    // underlying platform view would want to handle the pointer events.
+    platformView.style.pointerEvents = 'auto';
+
     final int currentClippingCount = _countClips(params.mutators);
     final int? previousClippingCount = _clipCount[viewId];
     if (currentClippingCount != previousClippingCount) {
@@ -235,7 +239,7 @@ class HtmlViewEmbedder {
     for (final Mutator mutator in mutators) {
       switch (mutator.type) {
         case MutatorType.transform:
-          headTransform.multiply(mutator.matrix!);
+          headTransform = mutator.matrix!.multiplied(headTransform);
           head.style.transform =
               float64ListToCssTransform(headTransform.storage);
           break;
@@ -292,7 +296,7 @@ class HtmlViewEmbedder {
     //
     // HTML elements use logical (CSS) pixels, but we have been using physical
     // pixels, so scale down the head element to match the logical resolution.
-    final double scale = EngineWindow.browserDevicePixelRatio;
+    final double scale = EnginePlatformDispatcher.browserDevicePixelRatio;
     final double inverseScale = 1 / scale;
     final Matrix4 scaleMatrix =
         Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
@@ -320,7 +324,7 @@ class HtmlViewEmbedder {
       return;
     }
     _svgPathDefs = html.Element.html(
-      '<svg width="0" height="0"><defs id="sk_path_defs"></defs></svg>',
+      '$kSvgResourceHeader><defs id="sk_path_defs"></defs></svg>',
       treeSanitizer: _NullTreeSanitizer(),
     );
     skiaSceneHost!.append(_svgPathDefs!);
@@ -336,7 +340,7 @@ class HtmlViewEmbedder {
           _overlays[viewId]!.surface.acquireFrame(_frameSize);
       final CkCanvas canvas = frame.skiaCanvas;
       canvas.drawPicture(
-        _pictureRecorders[viewId]!.endRecording() as CkPicture,
+        _pictureRecorders[viewId]!.endRecording(),
       );
       frame.submit();
     }

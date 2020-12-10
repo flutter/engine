@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Defines canvas interface common across canvases that the [SceneBuilder]
@@ -33,7 +33,7 @@ abstract class EngineCanvas {
 
   void transform(Float32List matrix4);
 
-  void clipRect(ui.Rect rect);
+  void clipRect(ui.Rect rect, ui.ClipOp clipOp);
 
   void clipRRect(ui.RRect rrect);
 
@@ -222,7 +222,7 @@ mixin SaveStackTracking on EngineCanvas {
   ///
   /// Classes that override this method must call `super.clipRect()`.
   @override
-  void clipRect(ui.Rect rect) {
+  void clipRect(ui.Rect rect, ui.ClipOp op) {
     _clipStack ??= <_SaveClipEntry>[];
     _clipStack!.add(_SaveClipEntry.rect(rect, _currentTransform.clone()));
   }
@@ -251,34 +251,18 @@ html.Element _drawParagraphElement(
   ui.Offset offset, {
   Matrix4? transform,
 }) {
-  assert(paragraph._isLaidOut);
+  assert(paragraph.isLaidOut);
 
-  final html.Element paragraphElement = paragraph._paragraphElement.clone(true) as html.Element;
-
-  final html.CssStyleDeclaration paragraphStyle = paragraphElement.style;
-  paragraphStyle
-    ..position = 'absolute'
-    ..whiteSpace = 'pre-wrap'
-    ..overflowWrap = 'break-word'
-    ..overflow = 'hidden'
-    ..height = '${paragraph.height}px'
-    ..width = '${paragraph.width}px';
+  final html.HtmlElement paragraphElement = paragraph.toDomElement();
+  paragraphElement.style
+      ..height = '${paragraph.height}px'
+      ..width = '${paragraph.width}px';
 
   if (transform != null) {
     setElementTransform(
       paragraphElement,
       transformWithOffset(transform, offset).storage,
     );
-  }
-
-  final ParagraphGeometricStyle style = paragraph._geometricStyle;
-
-  // TODO(flutter_web): https://github.com/flutter/flutter/issues/33223
-  if (style.ellipsis != null &&
-      (style.maxLines == null || style.maxLines == 1)) {
-    paragraphStyle
-      ..whiteSpace = 'pre'
-      ..textOverflow = 'ellipsis';
   }
   return paragraphElement;
 }

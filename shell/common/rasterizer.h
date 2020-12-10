@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 
+#include "flow/embedded_views.h"
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/compositor_context.h"
@@ -26,9 +27,10 @@
 namespace flutter {
 
 //------------------------------------------------------------------------------
-/// The rasterizer is a component owned by the shell that resides on the GPU
+/// The rasterizer is a component owned by the shell that resides on the raster
 /// task runner. Each shell owns exactly one instance of a rasterizer. The
-/// rasterizer may only be created, used and collected on the GPU task runner.
+/// rasterizer may only be created, used and collected on the raster task
+/// runner.
 ///
 /// The rasterizer owns the instance of the currently active on-screen render
 /// surface. On this surface, it renders the contents of layer trees submitted
@@ -47,8 +49,8 @@ class Rasterizer final : public SnapshotDelegate {
   ///             It can then forward these events to the engine.
   ///
   ///             Like all rasterizer operation, the rasterizer delegate call
-  ///             are made on the GPU task runner. Any delegate must ensure that
-  ///             they can handle the threading implications.
+  ///             are made on the raster task runner. Any delegate must ensure
+  ///             that they can handle the threading implications.
   ///
   class Delegate {
    public:
@@ -91,9 +93,9 @@ class Rasterizer final : public SnapshotDelegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
-  ///             be created on the GPU task runner. Rasterizers are currently
-  ///             only created by the shell (which also sets itself up as the
-  ///             rasterizer delegate).
+  ///             be created on the raster task runner. Rasterizers are
+  ///             currently only created by the shell (which also sets itself up
+  ///             as the rasterizer delegate).
   ///
   /// @param[in]  delegate            The rasterizer delegate.
   ///
@@ -102,9 +104,9 @@ class Rasterizer final : public SnapshotDelegate {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
-  ///             be created on the GPU task runner. Rasterizers are currently
-  ///             only created by the shell (which also sets itself up as the
-  ///             rasterizer delegate).
+  ///             be created on the raster task runner. Rasterizers are
+  ///             currently only created by the shell (which also sets itself up
+  ///             as the rasterizer delegate).
   ///
   /// @param[in]  delegate            The rasterizer delegate.
   /// @param[in]  compositor_context  The compositor context used to hold all
@@ -115,7 +117,7 @@ class Rasterizer final : public SnapshotDelegate {
 #endif
 
   //----------------------------------------------------------------------------
-  /// @brief      Destroys the rasterizer. This must happen on the GPU task
+  /// @brief      Destroys the rasterizer. This must happen on the raster task
   ///             runner. All GPU resources are collected before this call
   ///             returns. Any context setup by the embedder to hold these
   ///             resources can be immediately collected as well.
@@ -157,7 +159,7 @@ class Rasterizer final : public SnapshotDelegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Gets a weak pointer to the rasterizer. The rasterizer may only
-  ///             be accessed on the GPU task runner.
+  ///             be accessed on the raster task runner.
   ///
   /// @return     The weak pointer to the rasterizer.
   ///
@@ -350,6 +352,16 @@ class Rasterizer final : public SnapshotDelegate {
   void SetNextFrameCallback(const fml::closure& callback);
 
   //----------------------------------------------------------------------------
+  /// @brief Set the External View Embedder. This is done on shell
+  ///        initialization. This is non-null on platforms that support
+  ///        embedding externally composited views.
+  ///
+  /// @param[in] view_embedder The external view embedder object.
+  ///
+  void SetExternalViewEmbedder(
+      const std::shared_ptr<ExternalViewEmbedder>& view_embedder);
+
+  //----------------------------------------------------------------------------
   /// @brief      Returns a pointer to the compositor context used by this
   ///             rasterizer. This pointer will never be `nullptr`.
   ///
@@ -437,6 +449,7 @@ class Rasterizer final : public SnapshotDelegate {
   std::optional<size_t> max_cache_bytes_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
+  std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,

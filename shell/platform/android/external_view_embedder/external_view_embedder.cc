@@ -5,13 +5,14 @@
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 
 #include "flutter/fml/trace_event.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
 
 namespace flutter {
 
 AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
-    std::shared_ptr<AndroidContext> android_context,
+    const AndroidContext& android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    const AndroidSurface::Factory& surface_factory)
+    std::shared_ptr<AndroidSurfaceFactory> surface_factory)
     : ExternalViewEmbedder(),
       android_context_(android_context),
       jni_facade_(jni_facade),
@@ -74,7 +75,8 @@ SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
-    std::unique_ptr<SurfaceFrame> frame) {
+    std::unique_ptr<SurfaceFrame> frame,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) {
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
 
   if (!FrameHasPlatformLayers()) {
@@ -265,15 +267,17 @@ void AndroidExternalViewEmbedder::BeginFrame(
 
   // The surface size changed. Therefore, destroy existing surfaces as
   // the existing surfaces in the pool can't be recycled.
-  if (frame_size_ != frame_size) {
+  if (frame_size_ != frame_size && raster_thread_merger->IsOnPlatformThread()) {
     surface_pool_->DestroyLayers(jni_facade_);
   }
-  frame_size_ = frame_size;
-  device_pixel_ratio_ = device_pixel_ratio;
+  surface_pool_->SetFrameSize(frame_size);
   // JNI method must be called on the platform thread.
   if (raster_thread_merger->IsOnPlatformThread()) {
     jni_facade_->FlutterViewBeginFrame();
   }
+
+  frame_size_ = frame_size;
+  device_pixel_ratio_ = device_pixel_ratio;
 }
 
 // |ExternalViewEmbedder|

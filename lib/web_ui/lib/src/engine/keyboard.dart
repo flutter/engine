@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// After a keydown is received, this is the duration we wait for a repeat event
@@ -81,10 +81,6 @@ class Keyboard {
 
     final html.KeyboardEvent keyboardEvent = event;
 
-    if (window._onPlatformMessage == null) {
-      return;
-    }
-
     if (_shouldPreventDefault(event)) {
       event.preventDefault();
     }
@@ -135,7 +131,7 @@ class Keyboard {
       'metaState': _lastMetaState,
     };
 
-    window.invokeOnPlatformMessage('flutter/keyevent',
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
         _messageCodec.encodeMessage(eventData), _noopCallback);
   }
 
@@ -157,7 +153,7 @@ class Keyboard {
       'metaState': _lastMetaState,
     };
 
-    window.invokeOnPlatformMessage('flutter/keyevent',
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
         _messageCodec.encodeMessage(eventData), _noopCallback);
   }
 }
@@ -177,7 +173,7 @@ int _getMetaState(html.KeyboardEvent event) {
   if (event.getModifierState('Shift')) {
     metaState |= _modifierShift;
   }
-  if (event.getModifierState('Alt')) {
+  if (event.getModifierState('Alt') || event.getModifierState('AltGraph')) {
     metaState |= _modifierAlt;
   }
   if (event.getModifierState('Control')) {

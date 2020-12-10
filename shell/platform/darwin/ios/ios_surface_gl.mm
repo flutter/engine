@@ -15,9 +15,8 @@ static IOSContextGL* CastToGLContext(const std::shared_ptr<IOSContext>& context)
 }
 
 IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-                           std::shared_ptr<IOSContext> context,
-                           FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(context, platform_views_controller) {
+                           std::shared_ptr<IOSContext> context)
+    : IOSSurface(context) {
   render_target_ = CastToGLContext(context)->CreateRenderTarget(std::move(layer));
 }
 
@@ -80,11 +79,6 @@ bool IOSSurfaceGL::GLContextClearCurrent() {
 bool IOSSurfaceGL::GLContextPresent(uint32_t fbo_id) {
   TRACE_EVENT0("flutter", "IOSSurfaceGL::GLContextPresent");
   return IsValid() && render_target_->PresentRenderBuffer();
-}
-
-// |GPUSurfaceGLDelegate|
-ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
-  return this;
 }
 
 }  // namespace flutter

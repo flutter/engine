@@ -14,10 +14,14 @@ import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
+import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
+import java.io.FileNotFoundException;
 import java.util.List;
 
 /** Android implementation of the platform plugin. */
@@ -27,8 +31,29 @@ public class PlatformPlugin {
 
   private final Activity activity;
   private final PlatformChannel platformChannel;
+  private final PlatformPluginDelegate platformPluginDelegate;
   private PlatformChannel.SystemChromeStyle currentTheme;
   private int mEnabledOverlays;
+  private static final String TAG = "PlatformPlugin";
+
+  /**
+   * The {@link PlatformPlugin} generally has default behaviors implemented for platform
+   * functionalities requested by the Flutter framework. However, functionalities exposed through
+   * this interface could be customized by the more public-facing APIs that implement this interface
+   * such as the {@link io.flutter.embedding.android.FlutterActivity} or the {@link
+   * io.flutter.embedding.android.FlutterFragment}.
+   */
+  public interface PlatformPluginDelegate {
+    /**
+     * Allow implementer to customize the behavior needed when the Flutter framework calls to pop
+     * the Android-side navigation stack.
+     *
+     * @return true if the implementation consumed the pop signal. If false, a default behavior of
+     *     finishing the activity or sending the signal to {@link
+     *     androidx.activity.OnBackPressedDispatcher} will be executed.
+     */
+    boolean popSystemNavigator();
+  }
 
   @VisibleForTesting
   final PlatformChannel.PlatformMessageHandler mPlatformMessageHandler =
@@ -97,9 +122,15 @@ public class PlatformPlugin {
       };
 
   public PlatformPlugin(Activity activity, PlatformChannel platformChannel) {
+    this(activity, platformChannel, null);
+  }
+
+  public PlatformPlugin(
+      Activity activity, PlatformChannel platformChannel, PlatformPluginDelegate delegate) {
     this.activity = activity;
     this.platformChannel = platformChannel;
     this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
+    this.platformPluginDelegate = delegate;
 
     mEnabledOverlays = DEFAULT_SYSTEM_UI;
   }
@@ -157,13 +188,14 @@ public class PlatformPlugin {
       return;
     }
 
-    // Linter refuses to believe we're only executing this code in API 28 unless we use distinct if
+    // Linter refuses to believe we're only executing this code in API 28 unless we
+    // use distinct if
     // blocks and
     // hardcode the API 28 constant.
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P
         && Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
       activity.setTaskDescription(
-          new TaskDescription(description.label, /*icon=*/ null, description.color));
+          new TaskDescription(description.label, /* icon= */ null, description.color));
     }
     if (Build.VERSION.SDK_INT >= 28) {
       TaskDescription taskDescription =
@@ -174,14 +206,16 @@ public class PlatformPlugin {
 
   private void setSystemChromeEnabledSystemUIOverlays(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
-    // Start by assuming we want to hide all system overlays (like an immersive game).
+    // Start by assuming we want to hide all system overlays (like an immersive
+    // game).
     int enabledOverlays =
         DEFAULT_SYSTEM_UI
             | View.SYSTEM_UI_FLAG_FULLSCREEN
             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 
-    // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we apply it
+    // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
+    // apply it
     // if desired, and if the current Android version is 19 or greater.
     if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
@@ -229,7 +263,8 @@ public class PlatformPlugin {
     View view = window.getDecorView();
     int flags = view.getSystemUiVisibility();
     // You can change the navigation bar color (including translucent colors)
-    // in Android, but you can't change the color of the navigation buttons until Android O.
+    // in Android, but you can't change the color of the navigation buttons until
+    // Android O.
     // LIGHT vs DARK effectively isn't supported until then.
     // Build.VERSION_CODES.O
     if (Build.VERSION.SDK_INT >= 26) {
@@ -265,16 +300,26 @@ public class PlatformPlugin {
         window.setStatusBarColor(systemChromeStyle.statusBarColor);
       }
     }
-    if (systemChromeStyle.systemNavigationBarDividerColor != null) {
-      // Not available until Android P.
-      // window.setNavigationBarDividerColor(systemNavigationBarDividerColor);
+    if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
+      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+      window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+      window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
     }
     view.setSystemUiVisibility(flags);
     currentTheme = systemChromeStyle;
   }
 
   private void popSystemNavigator() {
-    activity.finish();
+    if (platformPluginDelegate != null && platformPluginDelegate.popSystemNavigator()) {
+      // A custom behavior was executed by the delegate. Don't execute default behavior.
+      return;
+    }
+
+    if (activity instanceof OnBackPressedDispatcherOwner) {
+      ((OnBackPressedDispatcherOwner) activity).getOnBackPressedDispatcher().onBackPressed();
+    } else {
+      activity.finish();
+    }
   }
 
   private CharSequence getClipboardData(PlatformChannel.ClipboardContentFormat format) {
@@ -283,11 +328,25 @@ public class PlatformPlugin {
 
     if (!clipboard.hasPrimaryClip()) return null;
 
-    ClipData clip = clipboard.getPrimaryClip();
-    if (clip == null) return null;
-
-    if (format == null || format == PlatformChannel.ClipboardContentFormat.PLAIN_TEXT) {
-      return clip.getItemAt(0).coerceToText(activity);
+    try {
+      ClipData clip = clipboard.getPrimaryClip();
+      if (clip == null) return null;
+      if (format == null || format == PlatformChannel.ClipboardContentFormat.PLAIN_TEXT) {
+        ClipData.Item item = clip.getItemAt(0);
+        if (item.getUri() != null)
+          activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
+        return item.coerceToText(activity);
+      }
+    } catch (SecurityException e) {
+      Log.w(
+          TAG,
+          "Attempted to get clipboard data that requires additional permission(s).\n"
+              + "See the exception details for which permission(s) are required, and consider adding them to your Android Manifest as described in:\n"
+              + "https://developer.android.com/guide/topics/permissions/overview",
+          e);
+      return null;
+    } catch (FileNotFoundException e) {
+      return null;
     }
 
     return null;

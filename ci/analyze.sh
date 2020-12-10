@@ -59,6 +59,7 @@ function analyze() (
 )
 
 echo "Analyzing dart:ui library..."
+autoninja -C "$SRC_DIR/out/host_debug_unopt" generate_dart_ui
 analyze \
   --options "$FLUTTER_DIR/analysis_options.yaml" \
   --enable-experiment=non-nullable \
@@ -79,7 +80,7 @@ analyze \
 
 echo "Analyzing testing/dart..."
 "$FLUTTER_DIR/tools/gn" --unoptimized
-ninja -C "$SRC_DIR/out/host_debug_unopt" sky_engine sky_services
+autoninja -C "$SRC_DIR/out/host_debug_unopt" sky_engine sky_services
 (cd "$FLUTTER_DIR/testing/dart" && "$PUB" get)
 analyze \
   --packages="$FLUTTER_DIR/testing/dart/.dart_tool/package_config.json" \
@@ -92,3 +93,8 @@ analyze \
   --packages="$FLUTTER_DIR/testing/scenario_app/.dart_tool/package_config.json" \
   --options "$FLUTTER_DIR/analysis_options.yaml" \
   "$FLUTTER_DIR/testing/scenario_app"
+
+# Check that dart libraries conform.
+echo "Checking web_ui api conformance..."
+(cd "$FLUTTER_DIR/web_sdk"; pub get)
+(cd "$FLUTTER_DIR"; dart "web_sdk/test/api_conform_test.dart")

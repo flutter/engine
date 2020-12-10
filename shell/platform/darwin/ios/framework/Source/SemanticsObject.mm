@@ -282,21 +282,20 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return YES;
 }
 
-- (SemanticsObject*)routeFocusObject {
-  // Returns the first SemanticObject in this branch that has
-  // the NamesRoute flag with a non-nil semantic label. Otherwise
-  // returns nil.
+- (NSString*)routeName {
+  // Returns the first non-null and non-empty semantic label of a child
+  // with an NamesRoute flag. Otherwise returns nil.
   if ([self node].HasFlag(flutter::SemanticsFlags::kNamesRoute)) {
     NSString* newName = [self accessibilityLabel];
     if (newName != nil && [newName length] > 0) {
-      return self;
+      return newName;
     }
   }
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      SemanticsObject* focusObject = [child routeFocusObject];
-      if (focusObject != nil) {
-        return focusObject;
+      NSString* newName = [child routeName];
+      if (newName != nil && [newName length] > 0) {
+        return newName;
       }
     }
   }
@@ -531,6 +530,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsLink)) {
     traits |= UIAccessibilityTraitLink;
   }
+  if (traits == UIAccessibilityTraitNone && ![self hasChildren] &&
+      [[self accessibilityLabel] length] != 0 &&
+      ![self node].HasFlag(flutter::SemanticsFlags::kIsTextField)) {
+    traits = UIAccessibilityTraitStaticText;
+  }
   return traits;
 }
 
@@ -558,10 +562,9 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   // `accessibilityContainer` and `accessibilityElementAtIndex`.
   if (self = [super initWithAccessibilityContainer:object.bridge->view()]) {
     _semanticsObject = object;
-    flutter::FlutterPlatformViewsController* controller =
-        object.bridge->GetPlatformViewsController();
+    auto controller = object.bridge->GetPlatformViewsController();
     if (controller) {
-      _platformView = [[controller->GetPlatformViewByID(object.node.platformViewId) view] retain];
+      _platformView = [controller->GetPlatformViewByID(object.node.platformViewId) retain];
     }
   }
   return self;

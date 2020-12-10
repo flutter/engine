@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-import 'package:test/bootstrap/browser.dart';
-import 'package:test/test.dart';
+// @dart = 2.12
+import 'package:test/bootstrap/browser.dart'; // ignore: import_of_legacy_library_into_null_safe
+import 'package:test/test.dart'; // ignore: import_of_legacy_library_into_null_safe
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
@@ -252,6 +252,14 @@ void testMain() {
                   '"$text"\n'
                   '\nExpected line break at {$lastLineBreak - $i} but found line break at {$lastLineBreak - ${result.index}}.',
             );
+
+            // Since this is a line break, passing a `maxEnd` that's greater
+            // should return the same line break.
+            final LineBreakResult maxEndResult =
+                nextLineBreak(text, lastLineBreak, maxEnd: i + 1);
+            expect(maxEndResult.index, i);
+            expect(maxEndResult.type, isNot(LineBreakType.prohibited));
+
             lastLineBreak = i;
           } else {
             // This isn't a line break opportunity so the line break should be
@@ -264,6 +272,13 @@ void testMain() {
                   '"$text"\n'
                   '\nUnexpected line break found at {$lastLineBreak - $i}.',
             );
+
+            // Since this isn't a line break, passing it as a `maxEnd` should
+            // return `maxEnd` as a prohibited line break type.
+            final LineBreakResult maxEndResult =
+                nextLineBreak(text, lastLineBreak, maxEnd: i);
+            expect(maxEndResult.index, i);
+            expect(maxEndResult.type, LineBreakType.prohibited);
           }
         }
       }

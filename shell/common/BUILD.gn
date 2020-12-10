@@ -69,10 +69,6 @@ source_set("common") {
     "display_manager.h",
     "engine.cc",
     "engine.h",
-    "isolate_configuration.cc",
-    "isolate_configuration.h",
-    "persistent_cache.cc",
-    "persistent_cache.h",
     "pipeline.cc",
     "pipeline.h",
     "platform_view.cc",
@@ -113,6 +109,7 @@ source_set("common") {
   deps = [
     "//flutter/assets",
     "//flutter/common",
+    "//flutter/common/graphics",
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/lib/ui",
@@ -144,14 +141,6 @@ template("shell_host_executable") {
 }
 
 if (enable_unittests) {
-  config("test_enable_gl_config") {
-    defines = [ "SHELL_ENABLE_GL" ]
-  }
-
-  config("test_enable_vulkan_config") {
-    defines = [ "SHELL_ENABLE_VULKAN" ]
-  }
-
   shell_gpu_configuration("shell_unittests_gpu_configuration") {
     enable_software = test_enable_software
     enable_vulkan = test_enable_vulkan
@@ -199,6 +188,7 @@ if (enable_unittests) {
     ]
 
     public_deps = [
+      "//flutter/common/graphics",
       "//flutter/flow",
       "//flutter/fml/dart",
       "//flutter/runtime",
@@ -217,7 +207,10 @@ if (enable_unittests) {
       "//third_party/skia",
     ]
 
-    public_configs = [ ":shell_test_fixture_sources_config" ]
+    public_configs = [
+      ":shell_test_fixture_sources_config",
+      ":shell_unittests_gpu_configuration_config",
+    ]
 
     # SwiftShader only supports x86/x64_64
     if (target_cpu == "x86" || target_cpu == "x64") {
@@ -226,8 +219,6 @@ if (enable_unittests) {
           "shell_test_platform_view_gl.cc",
           "shell_test_platform_view_gl.h",
         ]
-
-        public_configs += [ ":test_enable_gl_config" ]
 
         public_deps += [ "//flutter/testing:opengl" ]
       }
@@ -238,8 +229,6 @@ if (enable_unittests) {
         "shell_test_platform_view_vulkan.cc",
         "shell_test_platform_view_vulkan.h",
       ]
-
-      public_configs += [ ":test_enable_vulkan_config" ]
 
       public_deps += [ "//flutter/vulkan" ]
     }
@@ -255,6 +244,7 @@ if (enable_unittests) {
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",
+      "rasterizer_unittests.cc",
       "shell_unittests.cc",
       "skp_shader_warmup_unittests.cc",
     ]
@@ -263,8 +253,20 @@ if (enable_unittests) {
       ":shell_test_fixture_sources",
       ":shell_unittests_fixtures",
       "//flutter/assets",
+      "//flutter/common/graphics",
       "//flutter/shell/version",
       "//third_party/googletest:gmock",
     ]
+
+    if (is_fuchsia) {
+      sources += [ "shell_fuchsia_unittests.cc" ]
+
+      deps += [
+        "$fuchsia_sdk_root/fidl:fuchsia.intl",
+        "$fuchsia_sdk_root/fidl:fuchsia.settings",
+        "$fuchsia_sdk_root/pkg:fidl_cpp",
+        "$fuchsia_sdk_root/pkg:sys_cpp",
+      ]
+    }
   }
 }

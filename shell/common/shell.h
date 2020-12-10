@@ -11,10 +11,10 @@
 #include <unordered_map>
 
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/surface.h"
-#include "flutter/flow/texture.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr.h"
@@ -27,6 +27,7 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/service_protocol.h"
@@ -253,7 +254,7 @@ class Shell final : public PlatformView::Delegate,
   const TaskRunners& GetTaskRunners() const override;
 
   //----------------------------------------------------------------------------
-  /// @brief      Rasterizers may only be accessed on the GPU task runner.
+  /// @brief      Rasterizers may only be accessed on the raster task runner.
   ///
   /// @return     A weak pointer to the rasterizer.
   ///
@@ -394,9 +395,10 @@ class Shell final : public PlatformView::Delegate,
   std::optional<fml::TimePoint> latest_frame_target_time_;
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
   std::unique_ptr<Engine> engine_;               // on UI task runner
-  std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
+  std::unique_ptr<Rasterizer> rasterizer_;       // on raster task runner
   std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
   std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
+  std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
 
   fml::WeakPtr<Engine> weak_engine_;  // to be shared across threads
   fml::TaskRunnerAffineWeakPtr<Rasterizer>
@@ -411,6 +413,7 @@ class Shell final : public PlatformView::Delegate,
                      >
       service_protocol_handlers_;
   bool is_setup_ = false;
+  bool is_added_to_service_protocol_ = false;
   uint64_t next_pointer_flow_id_ = 0;
 
   bool first_frame_rasterized_ = false;
@@ -445,7 +448,10 @@ class Shell final : public PlatformView::Delegate,
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
 
-  Shell(DartVMRef vm, TaskRunners task_runners, Settings settings);
+  Shell(DartVMRef vm,
+        TaskRunners task_runners,
+        Settings settings,
+        std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
 
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
       DartVMRef vm,
@@ -507,8 +513,17 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override;
 
   // |PlatformView::Delegate|
-  std::unique_ptr<std::vector<std::string>> ComputePlatformViewResolvedLocale(
-      const std::vector<std::string>& supported_locale_data) override;
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions) override;
+
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient) override;
+
+  // |PlatformView::Delegate|
+  void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override;
 
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;
@@ -538,6 +553,9 @@ class Shell final : public PlatformView::Delegate,
   void OnPreEngineRestart() override;
 
   // |Engine::Delegate|
+  void OnRootIsolateCreated() override;
+
+  // |Engine::Delegate|
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
 
@@ -547,6 +565,9 @@ class Shell final : public PlatformView::Delegate,
   // |Engine::Delegate|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // |Engine::Delegate|
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;

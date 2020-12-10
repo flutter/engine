@@ -30,7 +30,8 @@ void testMain() async {
       { Rect region = const Rect.fromLTWH(0, 0, 500, 500),
         bool write = false }) async {
 
-    final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
+    final EngineCanvas engineCanvas = BitmapCanvas(screenRect,
+        RenderStrategy());
 
     // Draws the estimated bounds so we can spot the bug in Scuba.
     engineCanvas
@@ -678,7 +679,7 @@ void testMain() async {
       await matchGoldenFile(
         'paint_spread_bounds.png',
         region: const Rect.fromLTRB(0, 0, 250, 600),
-        maxDiffRatePercent: 0.01,
+        maxDiffRatePercent: 0.2,
         pixelComparison: PixelComparison.precise,
       );
     } finally {
@@ -722,6 +723,9 @@ class TestImage implements Image {
 
   @override
   void dispose() {}
+
+  @override
+  bool get debugDisposed => false;
 
   @override
   Image clone() => this;

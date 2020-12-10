@@ -47,6 +47,7 @@ _public_headers = [
   "public/flutter_linux/fl_binary_messenger.h",
   "public/flutter_linux/fl_dart_project.h",
   "public/flutter_linux/fl_engine.h",
+  "public/flutter_linux/fl_event_channel.h",
   "public/flutter_linux/fl_json_message_codec.h",
   "public/flutter_linux/fl_json_method_codec.h",
   "public/flutter_linux/fl_message_codec.h",
@@ -69,9 +70,21 @@ config("relative_flutter_linux_headers") {
 }
 
 source_set("flutter_linux_sources") {
-  public = _public_headers
+  public = _public_headers + [
+             "fl_binary_messenger_private.h",
+             "fl_dart_project_private.h",
+             "fl_engine_private.h",
+             "fl_method_call_private.h",
+             "fl_method_channel_private.h",
+             "fl_method_codec_private.h",
+             "fl_plugin_registrar_private.h",
+             "fl_standard_message_codec_private.h",
+           ]
 
-  configs += [ "//flutter/shell/platform/linux/config:gtk" ]
+  configs += [
+    "//flutter/shell/platform/linux/config:gtk",
+    "//flutter/shell/platform/linux/config:wayland-client",
+  ]
 
   sources = [
     "egl_utils.cc",
@@ -80,6 +93,7 @@ source_set("flutter_linux_sources") {
     "fl_binary_messenger.cc",
     "fl_dart_project.cc",
     "fl_engine.cc",
+    "fl_event_channel.cc",
     "fl_json_message_codec.cc",
     "fl_json_method_codec.cc",
     "fl_key_event_plugin.cc",
@@ -105,10 +119,14 @@ source_set("flutter_linux_sources") {
   ]
 
   # Set flag to stop headers being directly included (library users should not do this)
-  defines = [ "FLUTTER_LINUX_COMPILATION" ]
+  defines = [
+    "FLUTTER_LINUX_COMPILATION",
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+  ]
 
   deps = [
     "//flutter/shell/platform/common/cpp:common_cpp_input",
+    "//flutter/shell/platform/common/cpp:common_cpp_switches",
     "//flutter/shell/platform/embedder:embedder_headers",
     "//third_party/rapidjson",
   ]
@@ -119,8 +137,11 @@ source_set("flutter_linux") {
     "//flutter/shell/platform/linux/config:gtk",
     "//flutter/shell/platform/linux/config:egl",
     "//flutter/shell/platform/linux/config:wayland-egl",
+    "//flutter/shell/platform/linux/config:x11",
     "//third_party/khronos:khronos_headers",
   ]
+
+  defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
   public_deps = [ ":flutter_linux_sources" ]
 
@@ -140,6 +161,7 @@ executable("flutter_linux_unittests") {
     "fl_binary_codec_test.cc",
     "fl_binary_messenger_test.cc",
     "fl_dart_project_test.cc",
+    "fl_event_channel_test.cc",
     "fl_json_message_codec_test.cc",
     "fl_json_method_codec_test.cc",
     "fl_key_event_plugin_test.cc",
@@ -155,6 +177,7 @@ executable("flutter_linux_unittests") {
     "testing/mock_egl.cc",
     "testing/mock_engine.cc",
     "testing/mock_renderer.cc",
+    "testing/mock_text_input_plugin.cc",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -162,16 +185,23 @@ executable("flutter_linux_unittests") {
   configs += [
     "//flutter/shell/platform/linux/config:gtk",
     "//flutter/shell/platform/linux/config:wayland-egl",
+    "//flutter/shell/platform/linux/config:x11",
   ]
 
-  # Set flag to allow public headers to be directly included (library users should not do this)
-  defines = [ "FLUTTER_LINUX_COMPILATION" ]
+  defines = [
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+
+    # Set flag to allow public headers to be directly included
+    # (library users should not do this)
+    "FLUTTER_LINUX_COMPILATION",
+  ]
 
   deps = [
     ":flutter_linux_fixtures",
     ":flutter_linux_sources",
     "//flutter/runtime:libdart",
     "//flutter/shell/platform/embedder:embedder_headers",
+    "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",
   ]
 }

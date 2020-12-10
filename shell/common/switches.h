@@ -79,6 +79,9 @@ DEF_SWITCH(DisableObservatory,
            "disable-observatory",
            "Disable the Dart Observatory. The observatory is never available "
            "in release mode.")
+DEF_SWITCH(DisableObservatoryPublication,
+           "disable-observatory-publication",
+           "Disable mDNS Dart Observatory publication.")
 DEF_SWITCH(IPv6,
            "ipv6",
            "Bind to the IPv6 localhost address for the Dart Observatory. "
@@ -97,7 +100,7 @@ DEF_SWITCH(EnableSoftwareRendering,
            "enable-software-rendering",
            "Enable rendering using the Skia software backend. This is useful "
            "when testing Flutter on emulators. By default, Flutter will "
-           "attempt to either use OpenGL or Vulkan.")
+           "attempt to either use OpenGL, Metal, or Vulkan.")
 DEF_SWITCH(SkiaDeterministicRendering,
            "skia-deterministic-rendering",
            "Skips the call to SkGraphics::Init(), thus avoiding swapping out "
@@ -196,6 +199,9 @@ DEF_SWITCH(
     "Uses separate threads for the platform, UI, GPU and IO task runners. "
     "By default, a single thread is used for all task runners. Only available "
     "in the flutter_tester.")
+DEF_SWITCH(OldGenHeapSize,
+           "old-gen-heap-size",
+           "The size limit in megabytes for the Dart VM old gen heap space.")
 
 DEF_SWITCHES_END
 

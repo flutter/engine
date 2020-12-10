@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// The maximum [semanticsActivationAttempts] before we give up waiting for
@@ -49,8 +49,8 @@ class SemanticsHelper {
     return _semanticsEnabler.shouldEnableSemantics(event);
   }
 
-  html.Element prepareAccesibilityPlaceholder() {
-    return _semanticsEnabler.prepareAccesibilityPlaceholder();
+  html.Element prepareAccessibilityPlaceholder() {
+    return _semanticsEnabler.prepareAccessibilityPlaceholder();
   }
 }
 
@@ -78,15 +78,15 @@ abstract class SemanticsEnabler {
   /// should be forwarded to the framework.
   bool tryEnableSemantics(html.Event event);
 
-  /// Creates the placeholder for accesibility.
+  /// Creates the placeholder for accessibility.
   ///
   /// Puts it inside the glasspane.
   ///
   /// On focus the element announces that accessibility can be enabled by
   /// tapping/clicking. (Announcement depends on the assistive technology)
-  html.Element prepareAccesibilityPlaceholder();
+  html.Element prepareAccessibilityPlaceholder();
 
-  /// Whether platform is still consisering enabling semantics.
+  /// Whether platform is still considering enabling semantics.
   ///
   /// At this stage a relevant set of events are always assessed to see if
   /// they activate the semantics.
@@ -189,7 +189,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
   }
 
   @override
-  html.Element prepareAccesibilityPlaceholder() {
+  html.Element prepareAccessibilityPlaceholder() {
     final html.Element placeholder = _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
 
     // Only listen to "click" because other kinds of events are reported via
@@ -256,8 +256,11 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
   @override
   bool tryEnableSemantics(html.Event event) {
     if (_schedulePlaceholderRemoval) {
-      final bool removeNow =
-          (browserEngine != BrowserEngine.webkit || event.type == 'touchend');
+      // The event type can also be click for VoiceOver.
+      final bool removeNow = (browserEngine != BrowserEngine.webkit ||
+          event.type == 'touchend' ||
+          event.type == 'pointerup' ||
+          event.type == 'click');
       if (removeNow) {
         _semanticsPlaceholder!.remove();
         _semanticsPlaceholder = null;
@@ -280,10 +283,16 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       return true;
     }
 
+    // ios-safari browsers which starts sending `pointer` events instead of
+    // `touch` events. (Tested with 12.1 which uses touch events vs 13.5
+    // which uses pointer events.)
     const Set<String> kInterestingEventTypes = <String>{
       'click',
       'touchstart',
       'touchend',
+      'pointerdown',
+      'pointermove',
+      'pointerup',
     };
 
     if (!kInterestingEventTypes.contains(event.type)) {
@@ -333,6 +342,11 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
           final html.TouchEvent touch = event as html.TouchEvent;
           activationPoint = touch.changedTouches!.first.client;
           break;
+        case 'pointerdown':
+        case 'pointerup':
+          final html.PointerEvent touch = event as html.PointerEvent;
+          activationPoint = new html.Point(touch.client.x, touch.client.y);
+          break;
         default:
           // The event is not relevant, forward to framework as normal.
           return true;
@@ -341,9 +355,11 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       final html.Rectangle<num> activatingElementRect =
           domRenderer.glassPaneElement!.getBoundingClientRect();
       final double midX = (activatingElementRect.left +
-          (activatingElementRect.right - activatingElementRect.left) / 2).toDouble();
+              (activatingElementRect.right - activatingElementRect.left) / 2)
+          .toDouble();
       final double midY = (activatingElementRect.top +
-          (activatingElementRect.bottom - activatingElementRect.top) / 2).toDouble();
+              (activatingElementRect.bottom - activatingElementRect.top) / 2)
+          .toDouble();
       final double deltaX = activationPoint.x.toDouble() - midX;
       final double deltaY = activationPoint.y.toDouble() - midY;
       final double deltaSquared = deltaX * deltaX + deltaY * deltaY;
@@ -366,7 +382,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
   }
 
   @override
-  html.Element prepareAccesibilityPlaceholder() {
+  html.Element prepareAccessibilityPlaceholder() {
     final html.Element placeholder = _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
 
     // Only listen to "click" because other kinds of events are reported via

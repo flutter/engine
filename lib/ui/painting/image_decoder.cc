@@ -53,8 +53,10 @@ static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
     return nullptr;
   }
 
-  if (!image->scalePixels(scaled_bitmap.pixmap(), kLow_SkFilterQuality,
-                          SkImage::kDisallow_CachingHint)) {
+  if (!image->scalePixels(
+          scaled_bitmap.pixmap(),
+          SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone),
+          SkImage::kDisallow_CachingHint)) {
     FML_LOG(ERROR) << "Could not scale pixels";
     return nullptr;
   }
@@ -105,7 +107,8 @@ sk_sp<SkImage> ImageFromCompressedData(fml::RefPtr<ImageDescriptor> descriptor,
 
   if (!descriptor->should_resize(target_width, target_height)) {
     // No resizing requested. Just decode & rasterize the image.
-    return descriptor->image()->makeRasterImage();
+    sk_sp<SkImage> image = descriptor->image();
+    return image ? image->makeRasterImage() : nullptr;
   }
 
   const SkISize source_dimensions = descriptor->image_info().dimensions();
@@ -223,12 +226,13 @@ void ImageDecoder::Decode(fml::RefPtr<ImageDescriptor> descriptor,
   FML_DCHECK(callback);
   FML_DCHECK(runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
-  // Always service the callback on the UI thread.
-  auto result = [callback, ui_runner = runners_.GetUITaskRunner()](
+  // Always service the callback (and cleanup the descriptor) on the UI thread.
+  auto result = [callback, descriptor, ui_runner = runners_.GetUITaskRunner()](
                     SkiaGPUObject<SkImage> image,
                     fml::tracing::TraceFlow flow) {
-    ui_runner->PostTask(fml::MakeCopyable(
-        [callback, image = std::move(image), flow = std::move(flow)]() mutable {
+    ui_runner->PostTask(
+        fml::MakeCopyable([callback, descriptor, image = std::move(image),
+                           flow = std::move(flow)]() mutable {
           // We are going to terminate the trace flow here. Flows cannot
           // terminate without a base trace. Add one explicitly.
           TRACE_EVENT0("flutter", "ImageDecodeCallback");

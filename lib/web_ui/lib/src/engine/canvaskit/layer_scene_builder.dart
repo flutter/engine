@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 class LayerScene implements ui.Scene {
@@ -17,7 +17,8 @@ class LayerScene implements ui.Scene {
 
   @override
   Future<ui.Image> toImage(int width, int height) {
-    throw UnsupportedError('LayerScene.toImage not implemented.');
+    ui.Picture picture = layerTree.flatten();
+    return picture.toImage(width, height);
   }
 }
 
@@ -85,7 +86,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
-  ui.Scene build() {
+  LayerScene build() {
     return LayerScene(rootLayer);
   }
 
@@ -112,7 +113,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.EngineLayer? oldLayer,
   }) {
-    pushLayer(ClipPathLayer(path, clipBehavior));
+    pushLayer(ClipPathLayer(path as CkPath, clipBehavior));
     return null;
   }
 

@@ -46,14 +46,26 @@ source_set("flutter_framework_source") {
 
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
+    "framework/Source/FlutterBackingStoreData.h",
+    "framework/Source/FlutterBackingStoreData.mm",
     "framework/Source/FlutterDartProject.mm",
     "framework/Source/FlutterDartProject_Internal.h",
     "framework/Source/FlutterEngine.mm",
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterExternalTextureGL.h",
     "framework/Source/FlutterExternalTextureGL.mm",
+    "framework/Source/FlutterFrameBufferProvider.h",
+    "framework/Source/FlutterFrameBufferProvider.mm",
+    "framework/Source/FlutterGLCompositor.h",
+    "framework/Source/FlutterGLCompositor.mm",
+    "framework/Source/FlutterIOSurfaceHolder.h",
+    "framework/Source/FlutterIOSurfaceHolder.mm",
     "framework/Source/FlutterMouseCursorPlugin.h",
     "framework/Source/FlutterMouseCursorPlugin.mm",
+    "framework/Source/FlutterResizeSynchronizer.h",
+    "framework/Source/FlutterResizeSynchronizer.mm",
+    "framework/Source/FlutterSurfaceManager.h",
+    "framework/Source/FlutterSurfaceManager.mm",
     "framework/Source/FlutterTextInputModel.h",
     "framework/Source/FlutterTextInputModel.mm",
     "framework/Source/FlutterTextInputPlugin.h",
@@ -62,25 +74,35 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
     "framework/Source/FlutterViewController_Internal.h",
+    "framework/Source/MacOSGLContextSwitch.h",
+    "framework/Source/MacOSGLContextSwitch.mm",
   ]
 
   sources += _flutter_framework_headers
 
   deps = [
+    "//flutter/flow:flow",
+    "//flutter/fml",
     "//flutter/shell/platform/common/cpp:common_cpp_switches",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//third_party/skia",
   ]
 
   public_configs = [ "//flutter:config" ]
 
-  defines = [ "FLUTTER_FRAMEWORK" ]
+  defines = [
+    "FLUTTER_FRAMEWORK",
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+  ]
 
   cflags_objcc = [ "-fobjc-arc" ]
 
   libs = [
     "Cocoa.framework",
     "CoreVideo.framework",
+    "IOSurface.framework",
+    "QuartzCore.framework",
   ]
 }
 
@@ -103,17 +125,23 @@ executable("flutter_desktop_darwin_unittests") {
   testonly = true
 
   sources = [
-    "framework/Source/FlutterEngineUnittests.mm",
+    "framework/Source/FlutterEngineTest.mm",
+    "framework/Source/FlutterGLCompositorUnittests.mm",
     "framework/Source/FlutterViewControllerTest.mm",
+    "framework/Source/FlutterViewControllerTestUtils.h",
+    "framework/Source/FlutterViewControllerTestUtils.mm",
   ]
 
   cflags_objcc = [ "-fobjc-arc" ]
+
+  ldflags = [ "-ObjC" ]
 
   deps = [
     ":flutter_desktop_darwin_fixtures",
     ":flutter_framework_source",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",
     "//flutter/testing:dart",
     "//flutter/testing:skia",

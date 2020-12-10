@@ -9,6 +9,8 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
+const PointerSupportDetector _defaultSupportDetector = PointerSupportDetector();
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -33,7 +35,7 @@ void testMain() {
     });
 
     test('prepare accesibility placeholder', () async {
-      _placeholder = desktopSemanticsEnabler.prepareAccesibilityPlaceholder();
+      _placeholder = desktopSemanticsEnabler.prepareAccessibilityPlaceholder();
 
       expect(_placeholder.getAttribute('role'), 'button');
       expect(_placeholder.getAttribute('aria-live'), 'true');
@@ -54,7 +56,7 @@ void testMain() {
 
     test('Not relevant events should be forwarded to the framework', () async {
       // Prework. Attach the placeholder to dom.
-      _placeholder = desktopSemanticsEnabler.prepareAccesibilityPlaceholder();
+      _placeholder = desktopSemanticsEnabler.prepareAccessibilityPlaceholder();
       html.document.body.append(_placeholder);
 
       html.Event event = html.MouseEvent('mousemove');
@@ -79,7 +81,7 @@ void testMain() {
         'Relevants events targeting placeholder should not be forwarded to the framework',
         () async {
       // Prework. Attach the placeholder to dom.
-      _placeholder = desktopSemanticsEnabler.prepareAccesibilityPlaceholder();
+      _placeholder = desktopSemanticsEnabler.prepareAccessibilityPlaceholder();
       html.document.body.append(_placeholder);
 
       html.Event event = html.MouseEvent('mousedown');
@@ -95,7 +97,7 @@ void testMain() {
         'After max number of relevant events, events should be forwarded to the framework',
         () async {
       // Prework. Attach the placeholder to dom.
-      _placeholder = desktopSemanticsEnabler.prepareAccesibilityPlaceholder();
+      _placeholder = desktopSemanticsEnabler.prepareAccessibilityPlaceholder();
       html.document.body.append(_placeholder);
 
       html.Event event = html.MouseEvent('mousedown');
@@ -134,7 +136,7 @@ void testMain() {
     });
 
     test('prepare accesibility placeholder', () async {
-      _placeholder = mobileSemanticsEnabler.prepareAccesibilityPlaceholder();
+      _placeholder = mobileSemanticsEnabler.prepareAccessibilityPlaceholder();
 
       expect(_placeholder.getAttribute('role'), 'button');
 
@@ -151,15 +153,22 @@ void testMain() {
         skip: browserEngine == BrowserEngine.webkit);
 
     test('Not relevant events should be forwarded to the framework', () async {
-      final html.Event event = html.TouchEvent('touchcancel');
+      html.Event event;
+      if (_defaultSupportDetector.hasPointerEvents) {
+        event = html.PointerEvent('pointermove');
+      } else if (_defaultSupportDetector.hasTouchEvents) {
+        event = html.TouchEvent('touchcancel');
+      } else {
+        event = html.MouseEvent('mousemove');
+      }
+
       bool shouldForwardToFramework =
           mobileSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, true);
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-        skip: browserEngine != BrowserEngine.blink);
-  });
+    });
+  },  // Run the `MobileSemanticsEnabler` only on mobile browsers.
+      skip: operatingSystem == OperatingSystem.linux ||
+          operatingSystem == OperatingSystem.macOs ||
+          operatingSystem == OperatingSystem.windows);
 }

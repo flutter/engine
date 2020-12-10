@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A surface that translates its children using CSS transform and translate.
@@ -33,12 +33,15 @@ class PersistedOffset extends PersistedContainerSurface
 
   @override
   html.Element createElement() {
-    return defaultCreateElement('flt-offset')..style.transformOrigin = '0 0 0';
+    html.Element element = html.document.createElement('flt-offset');
+    DomRenderer.setElementStyle(element, 'position', 'absolute');
+    DomRenderer.setElementStyle(element, 'transform-origin', '0 0 0');
+    return element;
   }
 
   @override
   void apply() {
-    rootElement!.style.transform = 'translate(${dx}px, ${dy}px)';
+    DomRenderer.setElementTransform(rootElement!, 'translate(${dx}px, ${dy}px)');
   }
 
   @override
