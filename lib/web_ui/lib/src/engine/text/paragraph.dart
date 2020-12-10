@@ -380,7 +380,7 @@ class DomParagraph implements EngineParagraph {
     }
 
     final List<EngineLineMetrics> lines = _measurementResult!.lines!;
-    canvas.setFontFromParagraphStyle(_geometricStyle);
+    canvas.setCssFont(_geometricStyle.cssFontString);
 
     // Then paint the text.
     canvas._setUpPaint(_paint!.paintData, null);
@@ -1589,7 +1589,7 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
 /// Holds information for a placeholder in a paragraph.
 ///
 /// [width], [height] and [baselineOffset] are expected to be already scaled.
-class ParagraphPlaceholder extends ParagraphSpan {
+class ParagraphPlaceholder {
   ParagraphPlaceholder(
     this.width,
     this.height,

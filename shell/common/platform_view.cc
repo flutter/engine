@@ -163,8 +163,12 @@ void PlatformView::RequestDartDeferredLibrary(intptr_t loading_unit_id) {}
 
 void PlatformView::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
-    const uint8_t* snapshot_data,
-    const uint8_t* snapshot_instructions) {}
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {}
+
+void PlatformView::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                                const std::string error_message,
+                                                bool transient) {}
 
 void PlatformView::UpdateAssetManager(
     std::shared_ptr<AssetManager> asset_manager) {}

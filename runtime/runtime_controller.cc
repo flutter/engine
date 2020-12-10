@@ -415,6 +415,27 @@ std::optional<uint32_t> RuntimeController::GetRootIsolateReturnCode() {
   return root_isolate_return_code_;
 }
 
+void RuntimeController::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {
+  root_isolate_.lock()->LoadLoadingUnit(loading_unit_id,
+                                        std::move(snapshot_data),
+                                        std::move(snapshot_instructions));
+}
+
+void RuntimeController::LoadDartDeferredLibraryError(
+    intptr_t loading_unit_id,
+    const std::string error_message,
+    bool transient) {
+  root_isolate_.lock()->LoadLoadingUnitError(loading_unit_id, error_message,
+                                             transient);
+}
+
+void RuntimeController::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  return client_.RequestDartDeferredLibrary(loading_unit_id);
+}
+
 RuntimeController::Locale::Locale(std::string language_code_,
                                   std::string country_code_,
                                   std::string script_code_,

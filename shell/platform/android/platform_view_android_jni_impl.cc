@@ -15,6 +15,8 @@
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/file.h"
+#include "flutter/fml/mapping.h"
+#include "flutter/fml/native_library.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
@@ -120,6 +122,7 @@ static fml::jni::ScopedJavaGlobalRef<jclass>* g_mutators_stack_class = nullptr;
 static jmethodID g_mutators_stack_init_method = nullptr;
 static jmethodID g_mutators_stack_push_transform_method = nullptr;
 static jmethodID g_mutators_stack_push_cliprect_method = nullptr;
+static jmethodID g_mutators_stack_push_cliprrect_method = nullptr;
 
 // Called By Java
 static jlong AttachJNI(JNIEnv* env,
@@ -539,12 +542,8 @@ static void LoadDartDeferredLibrary(JNIEnv* env,
   std::vector<std::string> search_paths =
       fml::jni::StringArrayToVector(env, jSearchPaths);
 
-  // TODO: Switch to using the NativeLibrary class, eg:
-  //
-  //      fml::RefPtr<fml::NativeLibrary> native_lib =
-  //          fml::NativeLibrary::Create(lib_name.c_str());
-  //
-  // Find and open the shared library.
+  // Use dlopen here to directly check if handle is nullptr before creating a
+  // NativeLibrary.
   void* handle = nullptr;
   while (handle == nullptr && !search_paths.empty()) {
     std::string path = search_paths.back();
@@ -556,42 +555,20 @@ static void LoadDartDeferredLibrary(JNIEnv* env,
                            "No lib .so found for provided search paths.", true);
     return;
   }
+  fml::RefPtr<fml::NativeLibrary> native_lib =
+      fml::NativeLibrary::CreateWithHandle(handle, false);
 
   // Resolve symbols.
-  uint8_t* isolate_data =
-      static_cast<uint8_t*>(::dlsym(handle, DartSnapshot::kIsolateDataSymbol));
-  if (isolate_data == nullptr) {
-    // Mac sometimes requires an underscore prefix.
-    std::stringstream underscore_symbol_name;
-    underscore_symbol_name << "_" << DartSnapshot::kIsolateDataSymbol;
-    isolate_data = static_cast<uint8_t*>(
-        ::dlsym(handle, underscore_symbol_name.str().c_str()));
-    if (isolate_data == nullptr) {
-      LoadLoadingUnitFailure(loading_unit_id,
-                             "Could not resolve data symbol in library", true);
-      return;
-    }
-  }
-  uint8_t* isolate_instructions = static_cast<uint8_t*>(
-      ::dlsym(handle, DartSnapshot::kIsolateInstructionsSymbol));
-  if (isolate_instructions == nullptr) {
-    // Mac sometimes requires an underscore prefix.
-    std::stringstream underscore_symbol_name;
-    underscore_symbol_name << "_" << DartSnapshot::kIsolateInstructionsSymbol;
-    isolate_instructions = static_cast<uint8_t*>(
-        ::dlsym(handle, underscore_symbol_name.str().c_str()));
-    if (isolate_data == nullptr) {
-      LoadLoadingUnitFailure(loading_unit_id,
-                             "Could not resolve instructions symbol in library",
-                             true);
-      return;
-    }
-  }
+  std::unique_ptr<const fml::SymbolMapping> data_mapping =
+      std::make_unique<const fml::SymbolMapping>(
+          native_lib, DartSnapshot::kIsolateDataSymbol);
+  std::unique_ptr<const fml::SymbolMapping> instructions_mapping =
+      std::make_unique<const fml::SymbolMapping>(
+          native_lib, DartSnapshot::kIsolateInstructionsSymbol);
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->LoadDartDeferredLibrary(
-      loading_unit_id, isolate_data, isolate_instructions);
-
-  // TODO(garyq): fallback on soPath.
+      loading_unit_id, std::move(data_mapping),
+      std::move(instructions_mapping));
 }
 
 // TODO(garyq): persist additional asset resolvers by updating instead of
@@ -942,7 +919,15 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       g_mutators_stack_class->obj(), "pushClipRect", "(IIII)V");
   if (g_mutators_stack_push_cliprect_method == nullptr) {
     FML_LOG(ERROR)
-        << "Could not locate FlutterMutatorsStack.pushCilpRect method";
+        << "Could not locate FlutterMutatorsStack.pushClipRect method";
+    return false;
+  }
+
+  g_mutators_stack_push_cliprrect_method = env->GetMethodID(
+      g_mutators_stack_class->obj(), "pushClipRRect", "(IIII[F)V");
+  if (g_mutators_stack_push_cliprect_method == nullptr) {
+    FML_LOG(ERROR)
+        << "Could not locate FlutterMutatorsStack.pushClipRRect method";
     return false;
   }
 
@@ -1312,9 +1297,28 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
             static_cast<int>(rect.right()), static_cast<int>(rect.bottom()));
         break;
       }
+      case clip_rrect: {
+        const SkRRect& rrect = (*iter)->GetRRect();
+        const SkRect& rect = rrect.rect();
+        const SkVector& upper_left = rrect.radii(SkRRect::kUpperLeft_Corner);
+        const SkVector& upper_right = rrect.radii(SkRRect::kUpperRight_Corner);
+        const SkVector& lower_right = rrect.radii(SkRRect::kLowerRight_Corner);
+        const SkVector& lower_left = rrect.radii(SkRRect::kLowerLeft_Corner);
+        SkScalar radiis[8] = {
+            upper_left.x(),  upper_left.y(),  upper_right.x(), upper_right.y(),
+            lower_right.x(), lower_right.y(), lower_left.x(),  lower_left.y(),
+        };
+        fml::jni::ScopedJavaLocalRef<jfloatArray> radiisArray(
+            env, env->NewFloatArray(8));
+        env->SetFloatArrayRegion(radiisArray.obj(), 0, 8, radiis);
+        env->CallVoidMethod(
+            mutatorsStack, g_mutators_stack_push_cliprrect_method,
+            (int)rect.left(), (int)rect.top(), (int)rect.right(),
+            (int)rect.bottom(), radiisArray.obj());
+        break;
+      }
       // TODO(cyanglaz): Implement other mutators.
       // https://github.com/flutter/flutter/issues/58426
-      case clip_rrect:
       case clip_path:
       case opacity:
         break;
