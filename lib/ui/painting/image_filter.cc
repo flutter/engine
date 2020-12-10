@@ -55,7 +55,8 @@ void ImageFilter::initPicture(Picture* picture) {
   filter_ = SkPictureImageFilter::Make(picture->picture());
 }
 
-void ImageFilter::initBlur(double sigma_x, double sigma_y,
+void ImageFilter::initBlur(double sigma_x,
+                           double sigma_y,
                            SkTileMode tile_mode) {
   filter_ = SkImageFilters::Blur(sigma_x, sigma_y, tile_mode, nullptr, nullptr);
 }

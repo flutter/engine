@@ -3218,11 +3218,20 @@ class _GaussianBlurImageFilter implements ImageFilter {
   @override
   _ImageFilter _toNativeImageFilter() => nativeFilter;
 
-  @override
-  String get _shortDescription => 'blur($sigmaX, $sigmaY, $tileMode)';
+  String get _modeString {
+    switch(tileMode) {
+      case TileMode.clamp: return 'clamp';
+      case TileMode.mirror: return 'mirror';
+      case TileMode.repeated: return 'repeated';
+      case TileMode.decal: return 'decal';
+    }
+  }
 
   @override
-  String toString() => 'ImageFilter.blur($sigmaX, $sigmaY, $tileMode)';
+  String get _shortDescription => 'blur($sigmaX, $sigmaY, $_modeString)';
+
+  @override
+  String toString() => 'ImageFilter.blur($sigmaX, $sigmaY, $_modeString)';
 
   @override
   bool operator ==(Object other) {
