@@ -239,6 +239,10 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
     bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
   }
   if (bundle == nil) {
+    bundle = [NSBundle bundleWithURL:[NSBundle.mainBundle.privateFrameworksURL
+                                         URLByAppendingPathComponent:@"App.framework"]];
+  }
+  if (bundle == nil) {
     bundle = [NSBundle mainBundle];
   }
   NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
