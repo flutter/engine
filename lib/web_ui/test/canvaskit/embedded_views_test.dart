@@ -84,6 +84,36 @@ void testMain() {
         'url("#svgClip1")',
       );
     });
+    test('correctly transforms platform views', () async {
+      ui.platformViewRegistry.registerViewFactory(
+        'test-platform-view',
+        (viewId) => html.DivElement()..id = 'view-0',
+      );
+      await _createPlatformView(0, 'test-platform-view');
+
+      final EnginePlatformDispatcher dispatcher =
+          ui.window.platformDispatcher as EnginePlatformDispatcher;
+      final LayerSceneBuilder sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      Matrix4 scaleMatrix = Matrix4.identity()
+        ..scale(5, 5)
+        ..translate(100, 100);
+      sb.pushTransform(scaleMatrix.toFloat64());
+      sb.pushOffset(3, 3);
+      sb.addPlatformView(0, width: 10, height: 10);
+      dispatcher.rasterizer!.draw(sb.build().layerTree);
+      expect(
+        domRenderer.sceneElement!
+            .querySelectorAll('#view-0')
+            .single
+            .style
+            .transform,
+        // We should apply the scale matrix first, then the offset matrix.
+        // So the translate should be 515 (5 * 100 + 5 * 3), and not
+        // 503 (5 * 100 + 3).
+        'matrix3d(5, 0, 0, 0, 0, 5, 0, 0, 0, 0, 5, 0, 515, 515, 0, 1)',
+      );
+    });
     // TODO: https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
