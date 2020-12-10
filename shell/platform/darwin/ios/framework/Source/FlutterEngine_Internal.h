@@ -22,6 +22,8 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+extern NSString* const FlutterEngineWillDealloc;
+
 @interface FlutterEngine () <FlutterViewEngineDelegate>
 
 - (flutter::Shell&)shell;
@@ -49,6 +51,15 @@
 - (flutter::PlatformViewIOS*)iosPlatformView;
 
 - (void)waitForFirstFrame:(NSTimeInterval)timeout callback:(void (^)(BOOL didTimeout))callback;
+
+/**
+ * Creates one FlutterEngine from another, sharing components between them.
+ * This results in a faster creation time and a smaller memory footprint engine.
+ *
+ * @see http://flutter.dev/go/multiple-engines
+ */
+- (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entryPoint;
+
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERENGINE_INTERNAL_H_
