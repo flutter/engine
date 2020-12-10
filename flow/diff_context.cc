@@ -1,17 +1,9 @@
-#include "diff_context.h"
+#include "flutter/flow/diff_context.h"
 #include "flutter/flow/layers/layer.h"
 
 namespace flutter {
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
-SkRect PaintRegion::GetBounds() const {
-  SkRect res = SkRect::MakeEmpty();
-  for (const auto& r : *this) {
-    res.join(r);
-  }
-  return res;
-}
 
 DiffContext::DiffContext(SkISize frame_size,
                          double frame_device_pixel_ratio,

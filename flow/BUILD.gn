@@ -52,6 +52,8 @@ source_set("flow") {
     "layers/transform_layer.h",
     "matrix_decomposition.cc",
     "matrix_decomposition.h",
+    "paint_region.cc",
+    "paint_region.h",
     "paint_utils.cc",
     "paint_utils.h",
     "raster_cache.cc",
@@ -94,6 +96,13 @@ source_set("flow") {
       "$fuchsia_sdk_root/pkg:scenic_cpp",
     ]
   }
+
+  if (!defined(defines)) {
+    defines = []
+  }
+  if (is_debug) {
+    defines += [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
+  }
 }
 
 if (enable_unittests) {
@@ -129,6 +138,13 @@ if (enable_unittests) {
       ":flow",
       "//flutter/common/graphics",
     ]
+
+    if (!defined(defines)) {
+      defines = []
+    }
+    if (is_debug) {
+      defines += [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
+    }
   }
 
   executable("flow_unittests") {
@@ -187,6 +203,9 @@ if (enable_unittests) {
     if (is_win) {
       # Required for M_PI and others.
       defines += [ "_USE_MATH_DEFINES" ]
+    }
+    if (is_debug) {
+      defines += [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
     }
 
     if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
