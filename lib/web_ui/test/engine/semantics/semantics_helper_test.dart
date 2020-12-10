@@ -155,7 +155,7 @@ void testMain() {
     test('Not relevant events should be forwarded to the framework', () async {
       html.Event event;
       if (_defaultSupportDetector.hasPointerEvents) {
-        event = html.PointerEvent('pointerdown');
+        event = html.PointerEvent('pointermove');
       } else if (_defaultSupportDetector.hasTouchEvents) {
         event = html.TouchEvent('touchcancel');
       } else {
@@ -166,15 +166,6 @@ void testMain() {
           mobileSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, true);
-    });
-
-    test('Pointer down is relevant event', () async {
-      expect(mobileSemanticsEnabler.semanticsActivationAttempts, isZero);
-
-      final html.Event event = html.PointerEvent('pointerdown');
-      mobileSemanticsEnabler.tryEnableSemantics(event);
-
-      expect(mobileSemanticsEnabler.semanticsActivationAttempts, isNonZero);
     });
   },  // Run the `MobileSemanticsEnabler` only on mobile browsers.
       skip: operatingSystem == OperatingSystem.linux ||
