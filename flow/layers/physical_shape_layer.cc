@@ -45,7 +45,7 @@ void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
                                  context->frame_device_pixel_ratio());
   }
 
-  context->AddPaintRegion(bounds);
+  context->AddLayerBounds(bounds);
 
   if (context->PushCullRect(bounds)) {
     DiffChildren(context, prev);

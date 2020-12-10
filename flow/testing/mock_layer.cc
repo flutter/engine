@@ -31,7 +31,7 @@ bool MockLayer::CanDiff(DiffContext* context, const Layer* layer) const {
 
 void MockLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
-  context->AddPaintRegion(fake_paint_path_.getBounds());
+  context->AddLayerBounds(fake_paint_path_.getBounds());
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 

@@ -30,7 +30,7 @@ void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
     // dirty
     context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(prev));
   }
-  context->AddPaintRegion(SkRect::MakeXYWH(offset_.x(), offset_.y(),
+  context->AddLayerBounds(SkRect::MakeXYWH(offset_.x(), offset_.y(),
                                            size_.width(), size_.height()));
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }

@@ -23,7 +23,7 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
   // Backdrop filter paints everywhere in cull rect
   auto paint_bounds = context->GetCullRect();
-  context->AddPaintRegion(paint_bounds);
+  context->AddLayerBounds(paint_bounds);
 
   auto input_filter_bounds = paint_bounds.roundOut();
   auto filter_bounds =  // in screen coordinates

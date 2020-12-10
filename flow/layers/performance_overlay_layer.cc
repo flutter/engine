@@ -84,7 +84,7 @@ void PerformanceOverlayLayer::Diff(DiffContext* context,
     auto prev = old_layer->as_performance_overlay_layer();
     context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(prev));
   }
-  context->AddPaintRegion(paint_bounds());
+  context->AddLayerBounds(paint_bounds());
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 

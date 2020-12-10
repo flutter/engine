@@ -33,7 +33,7 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
     auto filter_bounds =
         filter_->filterBounds(paint_bounds.roundOut(), SkMatrix::I(),
                               SkImageFilter::kForward_MapDirection);
-    context->AddPaintRegion(SkRect::Make(filter_bounds));
+    context->AddLayerBounds(SkRect::Make(filter_bounds));
 
     // Technically, there is no readback with ImageFilterLayer, but we can't
     // clip the filter (because it may sample out of clip rect) so if any part

@@ -83,8 +83,9 @@ class DiffContext {
 
   bool IsSubtreeDirty() const { return state_.dirty; }
 
-  // Add paint region for layer; rect is in "local" (layer) coordinates
-  void AddPaintRegion(const SkRect& rect);
+  // Add layer bounds to current paint region; rect is in "local" (layer)
+  // coordinates
+  void AddLayerBounds(const SkRect& rect);
 
   // Add entire paint region of retained layer for current subtree. This can
   // only be used in subtrees that are not dirty, otherwise ancestor transforms

@@ -78,7 +78,7 @@ void DiffContext::MarkSubtreeDirty(const PaintRegion& previous_paint_region) {
   state_.dirty = true;
 }
 
-void DiffContext::AddPaintRegion(const SkRect& rect) {
+void DiffContext::AddLayerBounds(const SkRect& rect) {
   SkRect r(rect);
   if (r.intersect(state_.cull_rect)) {
     state_.transform.mapRect(&r);
