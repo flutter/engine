@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
@@ -277,8 +278,10 @@ public class FlutterEngine {
     this.dartExecutor = new DartExecutor(flutterJNI, assetManager);
     this.dartExecutor.onAttachedToJNI();
 
+    DynamicFeatureManager dynamicFeatureManager = FlutterInjector.instance().dynamicFeatureManager();
+
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
-    dynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, FlutterInjector.instance().dynamicFeatureManager());
+    dynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, dynamicFeatureManager);
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
@@ -290,7 +293,9 @@ public class FlutterEngine {
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
-    FlutterInjector.instance().dynamicFeatureManager().setDynamicFeatureChannel(dynamicFeatureChannel);
+    if(dynamicFeatureManager != null) {
+      dynamicFeatureManager.setDynamicFeatureChannel(dynamicFeatureChannel);
+    }
 
     this.localizationPlugin = new LocalizationPlugin(context, localizationChannel);
 
