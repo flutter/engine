@@ -76,8 +76,6 @@ public class HardwareKeyboard {
     final KeyCharacterMap kcm = KeyCharacterMap.load(deviceId);
     final int keyCode = event.getKeyCode();
     final char ch = kcm.getDisplayLabel(keyCode);
-    System.out.printf("Rawkey ID %d keycode %d ch %c\n",
-      deviceId, keyCode, ch);
 
     int change;
 
@@ -127,12 +125,15 @@ public class HardwareKeyboard {
       mPressingRecords.put(physicalKey, nextLogicalRecord);
     }
 
+    final int characterChar = event.getUnicodeChar();
+    final String characterStr = characterChar == 0 || (characterChar & KeyCharacterMap.COMBINING_ACCENT) != 0 ?
+        new String() : new String(new char[]{(char)characterChar});
     final KeyDatum keyDatum = new KeyDatum(
       change,
       timeStamp,
       physicalKey,
       logicalKey,
-      event.getCharacters(),
+      characterStr,
       false);
 
     final List<KeyDatum> keyData = new ArrayList<KeyDatum>();
@@ -141,14 +142,19 @@ public class HardwareKeyboard {
   }
 
   public ByteBuffer packDatum(KeyDatum keyDatum) {
-    // The "1" is for the leading "character_size".
-    final ByteBuffer packet =
-        ByteBuffer.allocateDirect((1 + KEY_DATA_FIELD_COUNT) * BYTES_PER_FIELD);
-    packet.order(ByteOrder.LITTLE_ENDIAN);
-    final byte[] bytes = keyDatum.character == null ? new byte[0]
+    System.out.printf("character %s\n", keyDatum.character.length() == 0 ? "N/A" : keyDatum.character);
+    final byte[] charBytes = keyDatum.character.length() == 0 ? new byte[0]
         : keyDatum.character.getBytes(StandardCharsets.UTF_8);
+    // Structure of [packet]:
+    //
+    //  * charBytes.length (1 field)
+    //  * keyDatum (KEY_DATA_FIELD_COUNT fields)
+    //  * characters (charBytes.length bytes)
+    final ByteBuffer packet =
+        ByteBuffer.allocateDirect((1 + KEY_DATA_FIELD_COUNT) * BYTES_PER_FIELD + charBytes.length);
+    packet.order(ByteOrder.LITTLE_ENDIAN);
 
-    packet.putLong(bytes.length);
+    packet.putLong(charBytes.length);
 
     packet.putLong(keyDatum.timeStamp);
     packet.putLong(keyDatum.change);
@@ -156,7 +162,7 @@ public class HardwareKeyboard {
     packet.putLong(keyDatum.logical);
     final long synthesized = keyDatum.synthesized ? 1 : 0;
     packet.putLong(synthesized);
-    packet.put(ByteBuffer.wrap(bytes));
+    packet.put(ByteBuffer.wrap(charBytes));
     return packet;
   }
 
