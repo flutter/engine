@@ -51,11 +51,11 @@ public class DynamicFeatureChannelTest {
     DynamicFeatureChannel fakeDynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
 
     Map<String, Object> args = new HashMap<>();
-    args.put('loadingUnitId', -1);
-    args.put('moduleName', "hello");
+    args.put("loadingUnitId", -1);
+    args.put("moduleName", "hello");
     MethodCall methodCall = new MethodCall("installDynamicFeature", args);
     MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
-    fakePlatformChannel.parsingMethodCallHandler.onMethodCall(methodCall, mockResult);
+    fakeDynamicFeatureChannel.parsingMethodHandler.onMethodCall(methodCall, mockResult);
 
     testDynamicFeatureManager.completeInstall();
     verify(mockResult).success(null);
@@ -66,16 +66,17 @@ public class DynamicFeatureChannelTest {
     MethodChannel rawChannel = mock(MethodChannel.class);
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
-    DynamicFeatureChannel fakeDynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor);
+    TestDynamicFeatureManager testDynamicFeatureManager = new TestDynamicFeatureManager();
+    DynamicFeatureChannel fakeDynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
 
     Map<String, Object> args = new HashMap<>();
-    args.put('loadingUnitId', -1);
-    args.put('moduleName', "hello");
+    args.put("loadingUnitId", -1);
+    args.put("moduleName", "hello");
     MethodCall methodCall = new MethodCall("installDynamicFeature", args);
     MethodChannel.Result mockResult1 = mock(MethodChannel.Result.class);
     MethodChannel.Result mockResult2 = mock(MethodChannel.Result.class);
-    fakePlatformChannel.parsingMethodCallHandler.onMethodCall(methodCall, mockResult1);
-    fakePlatformChannel.parsingMethodCallHandler.onMethodCall(methodCall, mockResult2);
+    fakeDynamicFeatureChannel.parsingMethodHandler.onMethodCall(methodCall, mockResult1);
+    fakeDynamicFeatureChannel.parsingMethodHandler.onMethodCall(methodCall, mockResult2);
 
     testDynamicFeatureManager.completeInstall();
     verify(mockResult1).success(null);
@@ -87,14 +88,15 @@ public class DynamicFeatureChannelTest {
     MethodChannel rawChannel = mock(MethodChannel.class);
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
-    DynamicFeatureChannel fakeDynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor);
+    TestDynamicFeatureManager testDynamicFeatureManager = new TestDynamicFeatureManager();
+    DynamicFeatureChannel fakeDynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
 
     Map<String, Object> args = new HashMap<>();
-    args.put('loadingUnitId', -1);
-    args.put('moduleName', "hello");
+    args.put("loadingUnitId", -1);
+    args.put("moduleName", "hello");
     MethodCall methodCall = new MethodCall("getDynamicFeatureInstallState", args);
     MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
-    fakePlatformChannel.parsingMethodCallHandler.onMethodCall(methodCall, mockResult);
+    fakeDynamicFeatureChannel.parsingMethodHandler.onMethodCall(methodCall, mockResult);
 
     testDynamicFeatureManager.completeInstall();
     verify(mockResult).success("installed");
