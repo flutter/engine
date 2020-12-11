@@ -527,6 +527,20 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
           threadHostType};
 }
 
+static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSString* libraryURI) {
+  if (libraryURI) {
+    FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
+    settings->advisory_script_entrypoint = entrypoint.UTF8String;
+    settings->advisory_script_uri = libraryURI.UTF8String;
+  } else if (entrypoint) {
+    settings->advisory_script_entrypoint = entrypoint.UTF8String;
+    settings->advisory_script_uri = std::string("main.dart");
+  } else {
+    settings->advisory_script_entrypoint = std::string("main");
+    settings->advisory_script_uri = std::string("main.dart");
+  }
+}
+
 - (BOOL)createShell:(NSString*)entrypoint
          libraryURI:(NSString*)libraryURI
        initialRoute:(NSString*)initialRoute {
@@ -542,17 +556,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   auto platformData = [_dartProject.get() defaultPlatformData];
 
-  if (libraryURI) {
-    FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
-    settings.advisory_script_entrypoint = entrypoint.UTF8String;
-    settings.advisory_script_uri = libraryURI.UTF8String;
-  } else if (entrypoint) {
-    settings.advisory_script_entrypoint = entrypoint.UTF8String;
-    settings.advisory_script_uri = std::string("main.dart");
-  } else {
-    settings.advisory_script_entrypoint = std::string("main");
-    settings.advisory_script_uri = std::string("main.dart");
-  }
+  SetEntryPoint(&settings, entrypoint, libraryURI);
 
   NSString* threadLabel = [FlutterEngine generateThreadLabel:_labelPrefix];
   _threadHost = std::make_shared<flutter::ThreadHost>();
@@ -927,21 +931,15 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   });
 }
 
-- (FlutterEngine*)spawnWithEntrypoint:(NSString*)entrypoint {
+- (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entrypoint
+                           libraryURI:(/*nullable*/ NSString*)libraryURI {
   NSAssert(_shell, @"Spawning from an engine without a shell (possibly not run).");
-  FlutterEngine* result =
-      [[FlutterEngine alloc] initWithName:_labelPrefix
-                                  project:_dartProject.get()
-                   allowHeadlessExecution:_allowHeadlessExecution];
+  FlutterEngine* result = [[FlutterEngine alloc] initWithName:_labelPrefix
+                                                      project:_dartProject.get()
+                                       allowHeadlessExecution:_allowHeadlessExecution];
 
   flutter::Settings settings = _shell->GetSettings();
-  if (entrypoint) {
-    settings.advisory_script_entrypoint = entrypoint.UTF8String;
-    settings.advisory_script_uri = std::string("main.dart");
-  } else {
-    settings.advisory_script_entrypoint = std::string("main");
-    settings.advisory_script_uri = std::string("main.dart");
-  }
+  SetEntryPoint(&settings, entrypoint, libraryURI);
 
   flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
       [self](flutter::Shell& shell) {

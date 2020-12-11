@@ -14,5 +14,6 @@ extern NSString* const FlutterEngineWillDealloc;
 - (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger;
 - (flutter::IOSRenderingAPI)platformViewsRenderingAPI;
 - (void)waitForFirstFrame:(NSTimeInterval)timeout callback:(void (^)(BOOL didTimeout))callback;
-- (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entryPoint;
+- (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entrypoint
+                           libraryURI:(/*nullable*/ NSString*)libraryURI;
 @end

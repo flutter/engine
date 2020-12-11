@@ -35,7 +35,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Creates a running `FlutterEngine` that exists in this group.
  */
-- (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint;
+- (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
+                                libraryURI:(nullable NSString*)libraryURI;
 @end
 
 NS_ASSUME_NONNULL_END

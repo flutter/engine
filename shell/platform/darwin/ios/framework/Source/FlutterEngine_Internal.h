@@ -58,7 +58,8 @@ extern NSString* const FlutterEngineWillDealloc;
  *
  * @see http://flutter.dev/go/multiple-engines
  */
-- (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entryPoint;
+- (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entrypoint
+                           libraryURI:(/*nullable*/ NSString*)libraryURI;
 
 @end
 

@@ -33,15 +33,16 @@
   [super dealloc];
 }
 
-- (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint {
+- (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
+                                libraryURI:(nullable NSString*)libraryURI {
   NSString* engineName = [NSString stringWithFormat:@"%@.%d", self.name, ++_enginesCreatedCount];
   FlutterEngine* engine;
   if (self.engines.count <= 0) {
     engine = [[FlutterEngine alloc] initWithName:engineName project:self.project];
-    [engine run];
+    [engine runWithEntrypoint:entrypoint libraryURI:libraryURI];
   } else {
     FlutterEngine* spawner = (FlutterEngine*)[self.engines[0] pointerValue];
-    engine = [spawner spawnWithEntrypoint:entrypoint];
+    engine = [spawner spawnWithEntrypoint:entrypoint libraryURI:libraryURI];
   }
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];

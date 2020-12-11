@@ -16,14 +16,14 @@ FLUTTER_ASSERT_ARC
 
 - (void)testMake {
   FlutterEngineGroup* group = [[FlutterEngineGroup alloc] initWithName:@"foo" project:nil];
-  FlutterEngine* engine = [group makeEngineWithEntrypoint:nil];
+  FlutterEngine* engine = [group makeEngineWithEntrypoint:nil libraryURI:nil];
   XCTAssertNotNil(engine);
 }
 
 - (void)testSpawn {
   FlutterEngineGroup* group = [[FlutterEngineGroup alloc] initWithName:@"foo" project:nil];
-  FlutterEngine* spawner = [group makeEngineWithEntrypoint:nil];
-  FlutterEngine* spawnee = [group makeEngineWithEntrypoint:nil];
+  FlutterEngine* spawner = [group makeEngineWithEntrypoint:nil libraryURI:nil];
+  FlutterEngine* spawnee = [group makeEngineWithEntrypoint:nil libraryURI:nil];
   XCTAssertNotNil(spawner);
   XCTAssertNotNil(spawnee);
 }
@@ -31,10 +31,10 @@ FLUTTER_ASSERT_ARC
 - (void)testDeleteLastEngine {
   FlutterEngineGroup* group = [[FlutterEngineGroup alloc] initWithName:@"foo" project:nil];
   @autoreleasepool {
-    FlutterEngine* spawner = [group makeEngineWithEntrypoint:nil];
+    FlutterEngine* spawner = [group makeEngineWithEntrypoint:nil libraryURI:nil];
     XCTAssertNotNil(spawner);
   }
-  FlutterEngine* spawnee = [group makeEngineWithEntrypoint:nil];
+  FlutterEngine* spawnee = [group makeEngineWithEntrypoint:nil libraryURI:nil];
   XCTAssertNotNil(spawnee);
 }
 
