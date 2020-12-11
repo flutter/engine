@@ -22,6 +22,8 @@ import java.util.Map;
 /**
  * Method channel that handles manual installation requests and queries for installation
  * state for dynamic feature modules.
+ *
+ * This channel is able to handle multiple simultaneous installation requests
  */
 public class DynamicFeatureChannel {
   private static final String TAG = "DynamicFeatureChannel";
@@ -75,16 +77,22 @@ public class DynamicFeatureChannel {
    * <p>See {@link DartExecutor}.
    */
   public DynamicFeatureChannel(
-      @NonNull DartExecutor dartExecutor, @Nullable DynamicFeatureManager featureManager) {
+      @NonNull DartExecutor dartExecutor) {
     this.channel =
         new MethodChannel(dartExecutor, "flutter/dynamicfeature", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
-    ddynamicFeatureManager =
-        featureManager != null
-            ? featureManager
-            : FlutterInjector.instance().dynamicFeatureManager();
-     moduleNameToResults = new HashMap<>();
+    dynamicFeatureManager = FlutterInjector.instance().dynamicFeatureManager();
     moduleNameToResults = new HashMap<>();
+  }
+
+  /**
+   * Sets the DynamicFeatureManager to exectue method channel calls with.
+   *
+   * @param dynamicFeatureManager the DynamicFeatureManager to use.
+   */
+  @VisibleForTesting
+  public void setDynamicFeatureManager(@Nullable DynamicFeatureManager dynamicFeatureManager) {
+    this.dynamicFeatureManager = dynamicFeatureManager;
   }
 
   /**
@@ -118,5 +126,9 @@ public class DynamicFeatureChannel {
       moduleNameToResults.get(moduleName).clear();
     }
     return;
+  }
+
+  public void destroy() {
+    dynamicFeatureManager = null;
   }
 }

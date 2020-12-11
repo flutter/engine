@@ -388,6 +388,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
 
   public void destroy() {
     splitInstallManager.unregisterListener(listener);
+    channel = null;
     flutterJNI = null;
   }
 }

@@ -107,13 +107,16 @@ public interface DynamicFeatureManager {
    * and/or moduleName.
    *
    * <p>Invocations of {@link installDynamicFeature} typically result in asynchronous downloading
-   * and other tasks. This method enables querying of the state of the installation. If no dynamic
-   * feature has been installed or requested to be installed by the provided loadingUnitId or
-   * moduleName, then this method will return null.
+   * and other tasks. This method enables querying of the state of the installation. Querying the
+   * installation state is purely informational and does not impact the installation process. Upon
+   * completion of installation, the Future returned by the installation request will complete.
+   *
+   * <p>If no dynamic feature has been installed or requested to be installed by the provided
+   * loadingUnitId or moduleName, then this method will return null.
    *
    * <p>Depending on the implementation, the returned String may vary. The Play store default
-   * implementation begins in the "Requested" state before transitioning to the "Downloading" and
-   * "Installed" states.
+   * implementation begins in the "requested" state before transitioning to the "downloading" and
+   * "installed" states.
    *
    * <p>Only sucessfully requested modules have state. Modules that are invalid or have not been
    * requested with {@link installDynamicFeature} will not have a state. Due to the asynchronous
