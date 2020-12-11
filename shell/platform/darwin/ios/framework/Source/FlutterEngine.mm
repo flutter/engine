@@ -928,7 +928,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (FlutterEngine*)spawnWithEntrypoint:(NSString*)entrypoint {
-  assert(_shell);
+  NSAssert(_shell, @"Spawning from an engine without a shell (possibly not run).");
   FlutterEngine* result =
       [[FlutterEngine alloc] initWithName:[_labelPrefix stringByAppendingString:@"-spawn"]
                                   project:_dartProject.get()

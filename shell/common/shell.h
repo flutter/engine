@@ -222,7 +222,7 @@ class Shell final : public PlatformView::Delegate,
 
   //----------------------------------------------------------------------------
   /// @brief      Creates one Shell from another Shell where the created Shell
-  ///             takes the opportunity share any internal components it can.
+  ///             takes the opportunity to share any internal components it can.
   ///             This results is a Shell that has a smaller startup time cost
   ///             and a smaller memory footprint than an Shell created with a
   ///             Create function.

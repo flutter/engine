@@ -13,12 +13,28 @@ NS_ASSUME_NONNULL_BEGIN
  * them to be created with less time const and occupy less memory than just
  * creating multiple FlutterEngines.
  *
+ * Deleting a FlutterEngineGroup doesn't invalidate existing FlutterEngines, but
+ * it eliminates the possibility to create more FlutterEngines in that group.
+ *
  * @see http://flutter.dev/go/multiple-engines
  */
 @interface FlutterEngineGroup : NSObject
 - (instancetype)init NS_UNAVAILABLE;
+
+/**
+ * Initialize a new FlutterEngineGroup.
+ *
+ * @param name The name that will present in the threads shared across the
+ * engines in this group.
+ * @param project The `FlutterDartProject` that all FlutterEngines in this group
+ * will be executing.
+ */
 - (instancetype)initWithName:(NSString*)name
                      project:(nullable FlutterDartProject*)project NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Creates a running `FlutterEngine` that exists in this group.
+ */
 - (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint;
 @end
 

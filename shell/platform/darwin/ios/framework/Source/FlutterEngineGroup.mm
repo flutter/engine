@@ -12,7 +12,7 @@
 @end
 
 @implementation FlutterEngineGroup {
-  int _engineCount;
+  int _enginesCreatedCount;
 }
 
 - (instancetype)initWithName:(NSString*)name project:(nullable FlutterDartProject*)project {
@@ -34,7 +34,7 @@
 }
 
 - (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint {
-  NSString* engineName = [NSString stringWithFormat:@"%@.%d", self.name, ++_engineCount];
+  NSString* engineName = [NSString stringWithFormat:@"%@.%d", self.name, ++_enginesCreatedCount];
   FlutterEngine* engine;
   if (self.engines.count <= 0) {
     engine = [[FlutterEngine alloc] initWithName:engineName project:self.project];
