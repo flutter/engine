@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Method channel that handles manual installation requests and queries for installation
- * state for dynamic feature modules.
+ * Method channel that handles manual installation requests and queries for installation state for
+ * dynamic feature modules.
  *
- * This channel is able to handle multiple simultaneous installation requests
+ * <p>This channel is able to handle multiple simultaneous installation requests
  */
 public class DynamicFeatureChannel {
   private static final String TAG = "DynamicFeatureChannel";
@@ -76,8 +76,7 @@ public class DynamicFeatureChannel {
    *
    * <p>See {@link DartExecutor}.
    */
-  public DynamicFeatureChannel(
-      @NonNull DartExecutor dartExecutor) {
+  public DynamicFeatureChannel(@NonNull DartExecutor dartExecutor) {
     this.channel =
         new MethodChannel(dartExecutor, "flutter/dynamicfeature", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
