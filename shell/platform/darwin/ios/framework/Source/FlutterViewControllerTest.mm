@@ -73,6 +73,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (void)tearDown {
+  // We stop mocking here to avoid retain cycles that stop
+  // FlutterViewControllers from deallocing.
   [self.mockEngine stopMocking];
   self.mockEngine = nil;
 }
