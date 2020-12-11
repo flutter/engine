@@ -219,7 +219,7 @@ struct KeyboardState {
  * Performs initialization that's common between the different init paths.
  */
 static void CommonInit(FlutterViewController* controller) {
-  if (controller->_engine == nullptr) {
+  if (!controller->_engine) {
     controller->_engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
                                                       project:controller->_project
                                        allowHeadlessExecution:NO];
@@ -260,11 +260,11 @@ static void CommonInit(FlutterViewController* controller) {
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     if (engine.viewController) {
-      NSLog(@"The supplied FlutterEngine %s is already used with FlutterViewController "
-             "instance %s. One instance of the FlutterEngine can only be attached to one "
+      NSLog(@"The supplied FlutterEngine %@ is already used with FlutterViewController "
+             "instance %@. One instance of the FlutterEngine can only be attached to one "
              "FlutterViewController at a time. Set FlutterEngine.viewController "
              "to nil before attaching it to another FlutterViewController.",
-            [[engine description] UTF8String], [[engine.viewController description] UTF8String]);
+            [engine description], [engine.viewController description]);
     }
     _engine = engine;
     CommonInit(self);

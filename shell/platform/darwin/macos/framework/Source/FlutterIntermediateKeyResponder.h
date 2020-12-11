@@ -5,20 +5,24 @@
 #import <Cocoa/Cocoa.h>
 
 /*
- * An interface for adding key responders that can declare itself as the final
+ * An interface for a key responder that can declare itself as the final
  * responder of the event, terminating the event propagation.
  *
  * It differs from an NSResponder in that it returns a boolean from the
  * handleKeyUp and handleKeyDown calls, where true means it has handled the
- * given event. A handled event is not passed to the next responder.
+ * given event.
  */
 @interface FlutterIntermediateKeyResponder : NSObject
 /*
  * Informs the receiver that the user has released a key.
+ *
+ * Default implementation returns NO.
  */
-- (BOOL)handleKeyUp:(NSEvent*)event;
+- (BOOL)handleKeyUp:(nonnull NSEvent*)event;
 /*
  * Informs the receiver that the user has pressed a key.
+ *
+ * Default implementation returns NO.
  */
-- (BOOL)handleKeyDown:(NSEvent*)event;
+- (BOOL)handleKeyDown:(nonnull NSEvent*)event;
 @end
