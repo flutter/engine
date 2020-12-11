@@ -71,5 +71,7 @@ void testMain() {
         recorder.endRecording(),
       );
     });
-  });
+    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO: https://github.com/flutter/flutter/issues/71520
+  }, skip: isIosSafari || isFirefox);
 }
