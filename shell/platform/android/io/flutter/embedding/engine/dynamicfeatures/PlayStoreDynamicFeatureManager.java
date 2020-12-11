@@ -165,7 +165,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     splitInstallManager = SplitInstallManagerFactory.create(context);
     listener = new FeatureInstallStateUpdatedListener();
     splitInstallManager.registerListener(listener);
-    sessionIdToName = new SparseArray<String>();
+    sessionIdToName = new SparseArray<>();
     sessionIdToLoadingUnitId = new SparseIntArray();
   }
 
@@ -195,13 +195,14 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
 
   public void downloadDynamicFeature(int loadingUnitId, String moduleName) {
     String resolvedModuleName =
-        moduleName == null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
+        moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {
       Log.d(TAG, "Dynamic feature module name was null.");
       return;
     }
 
-    SplitInstallRequest request = SplitInstallRequest.newBuilder().addModule(moduleName).build();
+    SplitInstallRequest request =
+        SplitInstallRequest.newBuilder().addModule(resolvedModuleName).build();
 
     splitInstallManager
         // Submits the request to install the module through the
@@ -212,7 +213,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
         // install which is handled in FeatureInstallStateUpdatedListener.
         .addOnSuccessListener(
             sessionId -> {
-              this.sessionIdToName.put(sessionId, moduleName);
+              this.sessionIdToName.put(sessionId, resolvedModuleName);
               this.sessionIdToLoadingUnitId.put(sessionId, loadingUnitId);
             })
         .addOnFailureListener(
@@ -294,10 +295,10 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     // performant and robust.
 
     // Search directly in APKs first
-    List<String> apkPaths = new ArrayList<String>();
+    List<String> apkPaths = new ArrayList<>();
     // If not found in APKs, we check in extracted native libs for the lib directly.
-    List<String> soPaths = new ArrayList<String>();
-    Queue<File> searchFiles = new LinkedList<File>();
+    List<String> soPaths = new ArrayList<>();
+    Queue<File> searchFiles = new LinkedList<>();
     searchFiles.add(context.getFilesDir());
     while (!searchFiles.isEmpty()) {
       File file = searchFiles.remove();
@@ -317,7 +318,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
       }
     }
 
-    List<String> searchPaths = new ArrayList();
+    List<String> searchPaths = new ArrayList<>();
     for (String path : apkPaths) {
       searchPaths.add(path + "!lib/" + abi + "/" + aotSharedLibraryName);
     }

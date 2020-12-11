@@ -66,7 +66,8 @@ Engine::Engine(Delegate& delegate,
                std::unique_ptr<Animator> animator,
                fml::WeakPtr<IOManager> io_manager,
                fml::RefPtr<SkiaUnrefQueue> unref_queue,
-               fml::WeakPtr<SnapshotDelegate> snapshot_delegate)
+               fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+               std::shared_ptr<VolatilePathTracker> volatile_path_tracker)
     : Engine(delegate,
              dispatcher_maker,
              vm.GetConcurrentWorkerTaskRunner(),
@@ -91,7 +92,8 @@ Engine::Engine(Delegate& delegate,
       platform_data,                         // platform data
       settings_.isolate_create_callback,     // isolate create callback
       settings_.isolate_shutdown_callback,   // isolate shutdown callback
-      settings_.persistent_isolate_data      // persistent isolate data
+      settings_.persistent_isolate_data,     // persistent isolate data
+      std::move(volatile_path_tracker)       // volatile path tracker
   );
 }
 
@@ -507,20 +509,31 @@ const std::string& Engine::GetLastEntrypointLibrary() const {
   return last_entry_point_library_;
 }
 
-// The Following commented out code connects into part 2 of the split AOT
-// feature. Left commented out until it lands:
+// |RuntimeDelegate|
+void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  return delegate_.RequestDartDeferredLibrary(loading_unit_id);
+}
 
-// // |RuntimeDelegate|
-// void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
-//   return delegate_.RequestDartDeferredLibrary(loading_unit_id);
-// }
-
-void Engine::LoadDartDeferredLibrary(intptr_t loading_unit_id,
-                                     const uint8_t* snapshot_data,
-                                     const uint8_t* snapshot_instructions) {
+void Engine::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {
   if (runtime_controller_->IsRootIsolateRunning()) {
-    // runtime_controller_->LoadDartDeferredLibrary(loading_unit_id,
-    //    snapshot_data, snapshot_instructions);
+    runtime_controller_->LoadDartDeferredLibrary(
+        loading_unit_id, std::move(snapshot_data),
+        std::move(snapshot_instructions));
+  } else {
+    LoadDartDeferredLibraryError(loading_unit_id, "No running root isolate.",
+                                 true);
+  }
+}
+
+void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                          const std::string error_message,
+                                          bool transient) {
+  if (runtime_controller_->IsRootIsolateRunning()) {
+    runtime_controller_->LoadDartDeferredLibraryError(loading_unit_id,
+                                                      error_message, transient);
   }
 }
 

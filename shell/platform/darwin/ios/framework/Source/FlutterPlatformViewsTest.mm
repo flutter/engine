@@ -105,8 +105,12 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) override {}
 
   void LoadDartDeferredLibrary(intptr_t loading_unit_id,
-                               const uint8_t* snapshot_data,
-                               const uint8_t* snapshot_instructions) override {}
+                               std::unique_ptr<const fml::Mapping> snapshot_data,
+                               std::unique_ptr<const fml::Mapping> snapshot_instructions) override {
+  }
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient) override {}
   void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override {}
 };
 
@@ -159,10 +163,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::MutatorsStack stack;
   // Layer tree always pushes a screen scale factor to the stack
   SkMatrix screenScaleMatrix =
-      SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+      SkMatrix::Scale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
   stack.PushTransform(screenScaleMatrix);
   // Push a translate matrix
-  SkMatrix translateMatrix = SkMatrix::MakeTrans(100, 100);
+  SkMatrix translateMatrix = SkMatrix::Translate(100, 100);
   stack.PushTransform(translateMatrix);
   SkMatrix finalMatrix;
   finalMatrix.setConcat(screenScaleMatrix, translateMatrix);
@@ -268,10 +272,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::MutatorsStack stack;
   // Layer tree always pushes a screen scale factor to the stack
   SkMatrix screenScaleMatrix =
-      SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+      SkMatrix::Scale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
   stack.PushTransform(screenScaleMatrix);
   // Push a translate matrix
-  SkMatrix translateMatrix = SkMatrix::MakeTrans(100, 100);
+  SkMatrix translateMatrix = SkMatrix::Translate(100, 100);
   stack.PushTransform(translateMatrix);
   SkMatrix finalMatrix;
   finalMatrix.setConcat(screenScaleMatrix, translateMatrix);
@@ -322,7 +326,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::MutatorsStack stack;
   // Layer tree always pushes a screen scale factor to the stack
   SkMatrix screenScaleMatrix =
-      SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+      SkMatrix::Scale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
   stack.PushTransform(screenScaleMatrix);
   // Push a rotate matrix
   SkMatrix rotateMatrix;
@@ -391,7 +395,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::MutatorsStack stack;
   // Layer tree always pushes a screen scale factor to the stack
   SkMatrix screenScaleMatrix =
-      SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+      SkMatrix::Scale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
   stack.PushTransform(screenScaleMatrix);
   // Push a clip rect
   SkRect rect = SkRect::MakeXYWH(2, 2, 3, 3);
@@ -462,7 +466,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::MutatorsStack stack;
   // Layer tree always pushes a screen scale factor to the stack
   SkMatrix screenScaleMatrix =
-      SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+      SkMatrix::Scale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
   stack.PushTransform(screenScaleMatrix);
   // Push a clip rrect
   SkRRect rrect = SkRRect::MakeRectXY(SkRect::MakeXYWH(2, 2, 6, 6), 1, 1);
@@ -533,7 +537,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::MutatorsStack stack;
   // Layer tree always pushes a screen scale factor to the stack
   SkMatrix screenScaleMatrix =
-      SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+      SkMatrix::Scale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
   stack.PushTransform(screenScaleMatrix);
   // Push a clip path
   SkPath path;
