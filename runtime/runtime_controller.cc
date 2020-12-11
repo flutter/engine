@@ -37,7 +37,8 @@ RuntimeController::RuntimeController(
     const PlatformData& p_platform_data,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
-    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data)
+    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
+    std::shared_ptr<VolatilePathTracker> p_volatile_path_tracker)
     : client_(p_client),
       vm_(p_vm),
       isolate_snapshot_(std::move(p_isolate_snapshot)),
@@ -53,7 +54,8 @@ RuntimeController::RuntimeController(
       platform_data_(std::move(p_platform_data)),
       isolate_create_callback_(p_isolate_create_callback),
       isolate_shutdown_callback_(p_isolate_shutdown_callback),
-      persistent_isolate_data_(std::move(p_persistent_isolate_data)) {}
+      persistent_isolate_data_(std::move(p_persistent_isolate_data)),
+      volatile_path_tracker_(std::move(p_volatile_path_tracker)) {}
 
 RuntimeController::~RuntimeController() {
   FML_DCHECK(Dart_CurrentIsolate() == nullptr);
@@ -93,7 +95,8 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
       platform_data_,               //
       isolate_create_callback_,     //
       isolate_shutdown_callback_,   //
-      persistent_isolate_data_      //
+      persistent_isolate_data_,     //
+      volatile_path_tracker_        //
       ));
 }
 
@@ -369,7 +372,8 @@ bool RuntimeController::LaunchRootIsolate(
           isolate_shutdown_callback_,                     //
           dart_entrypoint,                                //
           dart_entrypoint_library,                        //
-          std::move(isolate_configuration)                //
+          std::move(isolate_configuration),               //
+          volatile_path_tracker_                          //
           )
           .lock();
 
@@ -413,6 +417,27 @@ std::optional<std::string> RuntimeController::GetRootIsolateServiceID() const {
 
 std::optional<uint32_t> RuntimeController::GetRootIsolateReturnCode() {
   return root_isolate_return_code_;
+}
+
+void RuntimeController::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {
+  root_isolate_.lock()->LoadLoadingUnit(loading_unit_id,
+                                        std::move(snapshot_data),
+                                        std::move(snapshot_instructions));
+}
+
+void RuntimeController::LoadDartDeferredLibraryError(
+    intptr_t loading_unit_id,
+    const std::string error_message,
+    bool transient) {
+  root_isolate_.lock()->LoadLoadingUnitError(loading_unit_id, error_message,
+                                             transient);
+}
+
+void RuntimeController::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  return client_.RequestDartDeferredLibrary(loading_unit_id);
 }
 
 RuntimeController::Locale::Locale(std::string language_code_,

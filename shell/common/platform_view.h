@@ -12,6 +12,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/mapping.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
@@ -216,12 +217,20 @@ class PlatformView {
     ///             dart library is loaded successfully, the dart future
     ///             returned by the originating loadLibrary() call completes.
     ///
-    ///             The Dart compiler may generate separate shared library .so
+    ///             The Dart compiler may generate separate shared libraries
     ///             files called 'loading units' when libraries are imported
     ///             as deferred. Each of these shared libraries are identified
-    ///             by a unique loading unit id and can be dynamically loaded
-    ///             into the VM by dlopen-ing and resolving the data and
-    ///             instructions symbols.
+    ///             by a unique loading unit id. Callers should open and resolve
+    ///             a SymbolMapping from the shared library. The Mappings should
+    ///             be moved into this method, as ownership will be assumed by
+    ///             the dart root isolate after successful loading and released
+    ///             after shutdown of the root isolate. The loading unit may not
+    ///             be used after isolate shutdown. If loading fails, the
+    ///             mappings will be released.
+    ///
+    ///             This method is paired with a RequestDartDeferredLibrary
+    ///             invocation that provides the embedder with the loading unit
+    ///             id of the deferred library to load.
     ///
     ///
     /// @param[in]  loading_unit_id  The unique id of the deferred library's
@@ -235,8 +244,34 @@ class PlatformView {
     ///
     virtual void LoadDartDeferredLibrary(
         intptr_t loading_unit_id,
-        const uint8_t* snapshot_data,
-        const uint8_t* snapshot_instructions) = 0;
+        std::unique_ptr<const fml::Mapping> snapshot_data,
+        std::unique_ptr<const fml::Mapping> snapshot_instructions) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Indicates to the dart VM that the request to load a deferred
+    ///             library with the specified loading unit id has failed.
+    ///
+    ///             The dart future returned by the initiating loadLibrary()
+    ///             call will complete with an error.
+    ///
+    /// @param[in]  loading_unit_id  The unique id of the deferred library's
+    ///                              loading unit, as passed in by
+    ///                              RequestDartDeferredLibrary.
+    ///
+    /// @param[in]  error_message    The error message that will appear in the
+    ///                              dart Future.
+    ///
+    /// @param[in]  transient        A transient error is a failure due to
+    ///                              temporary conditions such as no network.
+    ///                              Transient errors allow the dart VM to
+    ///                              re-request the same deferred library and
+    ///                              and loading_unit_id again. Non-transient
+    ///                              errors are permanent and attempts to
+    ///                              re-request the library will instantly
+    ///                              complete with an error.
+    virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                              const std::string error_message,
+                                              bool transient) = 0;
 
     // TODO(garyq): Implement a proper asset_resolver replacement instead of
     // overwriting the entire asset manager.
@@ -609,6 +644,12 @@ class PlatformView {
   ///             downloaded and loaded into the Dart VM via
   ///             `LoadDartDeferredLibrary`
   ///
+  ///             Upon encountering errors or otherwise failing to load a
+  ///             loading unit with the specified id, the failure should be
+  ///             directly reported to dart by calling
+  ///             `LoadDartDeferredLibraryFailure` to ensure the waiting dart
+  ///             future completes with an error.
+  ///
   /// @param[in]  loading_unit_id  The unique id of the deferred library's
   ///                              loading unit. This id is to be passed
   ///                              back into LoadDartDeferredLibrary
@@ -625,10 +666,12 @@ class PlatformView {
   ///             The Dart compiler may generate separate shared libraries
   ///             files called 'loading units' when libraries are imported
   ///             as deferred. Each of these shared libraries are identified
-  ///             by a unique loading unit id. Callers should dlopen the
-  ///             shared library file and use dlsym to resolve the dart
-  ///             symbols. These symbols can then be passed to this method to
-  ///             be dynamically loaded into the VM.
+  ///             by a unique loading unit id. Callers should open and resolve
+  ///             a SymbolMapping from the shared library. The Mappings should
+  ///             be moved into this method, as ownership will be assumed by the
+  ///             dart isolate after successful loading and released after
+  ///             shutdown of the dart isolate. If loading fails, the mappings
+  ///             will naturally go out of scope.
   ///
   ///             This method is paired with a RequestDartDeferredLibrary
   ///             invocation that provides the embedder with the loading unit id
@@ -645,9 +688,37 @@ class PlatformView {
   /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
   ///                              unit's shared library.
   ///
-  virtual void LoadDartDeferredLibrary(intptr_t loading_unit_id,
-                                       const uint8_t* snapshot_data,
-                                       const uint8_t* snapshot_instructions);
+  virtual void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Indicates to the dart VM that the request to load a deferred
+  ///             library with the specified loading unit id has failed.
+  ///
+  ///             The dart future returned by the initiating loadLibrary() call
+  ///             will complete with an error.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  error_message    The error message that will appear in the
+  ///                              dart Future.
+  ///
+  /// @param[in]  transient        A transient error is a failure due to
+  ///                              temporary conditions such as no network.
+  ///                              Transient errors allow the dart VM to
+  ///                              re-request the same deferred library and
+  ///                              and loading_unit_id again. Non-transient
+  ///                              errors are permanent and attempts to
+  ///                              re-request the library will instantly
+  ///                              complete with an error.
+  ///
+  virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                            const std::string error_message,
+                                            bool transient);
 
   // TODO(garyq): Implement a proper asset_resolver replacement instead of
   // overwriting the entire asset manager.
@@ -667,7 +738,7 @@ class PlatformView {
   fml::WeakPtrFactory<PlatformView> weak_factory_;
 
   // Unlike all other methods on the platform view, this is called on the
-  // GPU task runner.
+  // raster task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
 
  private:

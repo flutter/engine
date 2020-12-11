@@ -44,7 +44,7 @@ class CanvasKit {
   external SkTextDirectionEnum get TextDirection;
   external SkFontWeightEnum get FontWeight;
   external SkFontSlantEnum get FontSlant;
-  external SkAnimatedImage MakeAnimatedImageFromEncoded(Uint8List imageData);
+  external SkAnimatedImage? MakeAnimatedImageFromEncoded(Uint8List imageData);
   external SkShaderNamespace get Shader;
   external SkMaskFilterNamespace get MaskFilter;
   external SkColorFilterNamespace get ColorFilter;
@@ -642,6 +642,7 @@ class SkTileModeEnum {
   external SkTileMode get Clamp;
   external SkTileMode get Repeat;
   external SkTileMode get Mirror;
+  external SkTileMode get Decal;
 }
 
 @JS()
@@ -653,6 +654,7 @@ final List<SkTileMode> _skTileModes = <SkTileMode>[
   canvasKit.TileMode.Clamp,
   canvasKit.TileMode.Repeat,
   canvasKit.TileMode.Mirror,
+  canvasKit.TileMode.Decal,
 ];
 
 SkTileMode toSkTileMode(ui.TileMode mode) {

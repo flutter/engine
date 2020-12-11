@@ -380,7 +380,7 @@ class DomParagraph implements EngineParagraph {
     }
 
     final List<EngineLineMetrics> lines = _measurementResult!.lines!;
-    canvas.setFontFromParagraphStyle(_geometricStyle);
+    canvas.setCssFont(_geometricStyle.cssFontString);
 
     // Then paint the text.
     canvas._setUpPaint(_paint!.paintData, null);
@@ -1328,7 +1328,7 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
   /// paragraph. Plain text is more efficient to lay out and measure than rich
   /// text.
   EngineParagraph? _tryBuildPlainText() {
-    ui.Color color = _defaultTextColor;
+    ui.Color? color;
     ui.TextDecoration? decoration;
     ui.Color? decorationColor;
     ui.TextDecorationStyle? decorationStyle;
@@ -1416,6 +1416,10 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
       i++;
     }
 
+    if (color == null && foreground == null) {
+      color = _defaultTextColor;
+    }
+
     final EngineTextStyle cumulativeStyle = EngineTextStyle(
       color: color,
       decoration: decoration,
@@ -1443,7 +1447,7 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
       paint = foreground;
     } else {
       paint = ui.Paint();
-      paint.color = color;
+      paint.color = color!;
     }
 
     if (i >= _ops.length) {
@@ -1589,7 +1593,7 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
 /// Holds information for a placeholder in a paragraph.
 ///
 /// [width], [height] and [baselineOffset] are expected to be already scaled.
-class ParagraphPlaceholder extends ParagraphSpan {
+class ParagraphPlaceholder {
   ParagraphPlaceholder(
     this.width,
     this.height,
