@@ -51,20 +51,11 @@ std::string GetFontLocale(uint32_t langListId) {
   return langs.size() ? langs[0].getString() : "";
 }
 
-FontCollection::FontCollection(std::shared_ptr<FontFamily>&& typeface)
+FontCollection::FontCollection()
     : mMaxChar(0) {
-  std::vector<std::shared_ptr<FontFamily>> typefaces;
-  typefaces.push_back(typeface);
-  init(typefaces);
 }
 
-FontCollection::FontCollection(
-    const vector<std::shared_ptr<FontFamily>>& typefaces)
-    : mMaxChar(0) {
-  init(typefaces);
-}
-
-void FontCollection::init(
+bool FontCollection::init(
     const vector<std::shared_ptr<FontFamily>>& typefaces) {
   std::scoped_lock _l(gMinikinLock);
   mId = sNextId++;
@@ -91,10 +82,13 @@ void FontCollection::init(
     mSupportedAxes.insert(supportedAxes.begin(), supportedAxes.end());
   }
   nTypefaces = mFamilies.size();
-  LOG_ALWAYS_FATAL_IF(nTypefaces == 0,
-                      "Font collection must have at least one valid typeface");
-  LOG_ALWAYS_FATAL_IF(nTypefaces > 254,
-                      "Font collection may only have up to 254 font families.");
+  if (nTypefaces == 0 || nTypefaces > 254) {
+    if (nTypefaces == 0)
+      ALOGE("Font collection must have at least one valid typeface.");
+    else
+      ALOGE("Font collection may only have up to 254 font families.");
+    return false;
+  }
   size_t nPages = (mMaxChar + kPageMask) >> kLogCharsPerPage;
   // TODO: Use variation selector map for mRanges construction.
   // A font can have a glyph for a base code point and variation selector pair
@@ -122,9 +116,12 @@ void FontCollection::init(
     }
     range->end = mFamilyVec.size();
   }
-  // See the comment in Range for more details.
-  LOG_ALWAYS_FATAL_IF(mFamilyVec.size() >= 0xFFFF,
-                      "Exceeded the maximum indexable cmap coverage.");
+
+  if (mFamilyVec.size() >= 0xFFFF) {
+    ALOGE("Exceeded the maximum indexable cmap coverage.");
+    return false;
+  }
+  return true;
 }
 
 // Special scores for the font fallback.
@@ -566,7 +563,12 @@ std::shared_ptr<FontCollection> FontCollection::createCollectionWithVariation(
     }
   }
 
-  return std::shared_ptr<FontCollection>(new FontCollection(families));
+  auto font_collection = std::make_shared<FontCollection>();
+  if (!font_collection || !font_collection->init(std::move(families))) {
+    if (font_collection) font_collection.reset();
+    return nullptr;
+  }
+  return font_collection;
 }
 
 uint32_t FontCollection::getId() const {

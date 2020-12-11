@@ -807,6 +807,14 @@ void ParagraphTxt::Layout(double width) {
 
       std::shared_ptr<minikin::FontCollection> minikin_font_collection =
           GetMinikinFontCollectionForStyle(run.style());
+      if (minikin_font_collection == nullptr) {
+        FML_LOG(INFO) << "Could not find font collection for families \""
+                      << (run.style().font_families.empty()
+                              ? ""
+                              : run.style().font_families[0])
+                      << "\".";
+        return;
+      }
 
       // Lay out this run.
       uint16_t* text_ptr = text_.data();
