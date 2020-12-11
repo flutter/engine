@@ -278,7 +278,8 @@ public class FlutterEngine {
     this.dartExecutor = new DartExecutor(flutterJNI, assetManager);
     this.dartExecutor.onAttachedToJNI();
 
-    DynamicFeatureManager dynamicFeatureManager = FlutterInjector.instance().dynamicFeatureManager();
+    DynamicFeatureManager dynamicFeatureManager =
+        FlutterInjector.instance().dynamicFeatureManager();
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
     dynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, dynamicFeatureManager);
@@ -293,7 +294,7 @@ public class FlutterEngine {
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
-    if(dynamicFeatureManager != null) {
+    if (dynamicFeatureManager != null) {
       dynamicFeatureManager.setDynamicFeatureChannel(dynamicFeatureChannel);
     }
 

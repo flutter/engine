@@ -103,8 +103,8 @@ public interface DynamicFeatureManager {
   public abstract void installDynamicFeature(int loadingUnitId, String moduleName);
 
   /**
-   * Gets the current state of the installation session corresponding to the specified
-   * loadingUnitId and/or moduleName.
+   * Gets the current state of the installation session corresponding to the specified loadingUnitId
+   * and/or moduleName.
    *
    * <p>Invocations of {@link installDynamicFeature} typically result in asynchronous downloading
    * and other tasks. This method enables querying of the state of the installation. If no dynamic
@@ -122,9 +122,9 @@ public interface DynamicFeatureManager {
    *
    * <p>Both parameters are not always necessary to identify which module to install. Asset-only
    * modules do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be passed
-   * to query only with moduleName. On the other hand, it can be possible to resolve the
-   * moduleName based on the loadingUnitId. This resolution is done if moduleName is null. At least
-   * one of loadingUnitId or moduleName must be valid or non-null.
+   * to query only with moduleName. On the other hand, it can be possible to resolve the moduleName
+   * based on the loadingUnitId. This resolution is done if moduleName is null. At least one of
+   * loadingUnitId or moduleName must be valid or non-null.
    *
    * @param loadingUnitId The unique identifier associated with a Dart deferred library.
    * @param moduleName The dynamic feature module name as defined in bundle_config.yaml.

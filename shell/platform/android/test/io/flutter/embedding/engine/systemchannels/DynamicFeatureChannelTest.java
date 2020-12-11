@@ -20,22 +20,31 @@ import org.robolectric.annotation.Config;
 class TestDynamicFeatureManager implements DynamicFeatureManager {
   DynamicFeatureChannel channel;
   String moduleName;
+
   public void setJNI(FlutterJNI flutterJNI) {}
+
   public void setDynamicFeatureChannel(DynamicFeatureChannel channel) {
     this.channel = channel;
   }
+
   public void installDynamicFeature(int loadingUnitId, String moduleName) {
     this.moduleName = moduleName;
   }
+
   public void completeInstall() {
     channel.completeInstallSuccess(moduleName);
   }
+
   public String getDynamicFeatureInstallState(int loadingUnitId, String moduleName) {
     return "installed";
   }
+
   public void loadAssets(int loadingUnitId, String moduleName) {}
+
   public void loadDartLibrary(int loadingUnitId, String moduleName) {}
+
   public void uninstallFeature(int loadingUnitId, String moduleName) {}
+
   public void destroy() {}
 }
 
@@ -48,7 +57,8 @@ public class DynamicFeatureChannelTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     TestDynamicFeatureManager testDynamicFeatureManager = new TestDynamicFeatureManager();
-    DynamicFeatureChannel fakeDynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
+    DynamicFeatureChannel fakeDynamicFeatureChannel =
+        new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);
@@ -67,7 +77,8 @@ public class DynamicFeatureChannelTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     TestDynamicFeatureManager testDynamicFeatureManager = new TestDynamicFeatureManager();
-    DynamicFeatureChannel fakeDynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
+    DynamicFeatureChannel fakeDynamicFeatureChannel = new
+        DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);
@@ -89,7 +100,8 @@ public class DynamicFeatureChannelTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     TestDynamicFeatureManager testDynamicFeatureManager = new TestDynamicFeatureManager();
-    DynamicFeatureChannel fakeDynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
+    DynamicFeatureChannel fakeDynamicFeatureChannel =
+        new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);

@@ -4,7 +4,6 @@
 
 package io.flutter.embedding.engine.systemchannels;
 
-import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -12,20 +11,27 @@ import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.dynamicfeatures.DynamicFeatureManager;
-import io.flutter.plugin.common.StandardMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.StandardMethodCodec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Method channel that handles manual installation requests and queries for installation
+ * state for dynamic feature modules.
+ */
 public class DynamicFeatureChannel {
   private static final String TAG = "DynamicFeatureChannel";
 
-  @NonNull public final MethodChannel channel;
-  @Nullable DynamicFeatureManager dynamicFeatureManager;
-  @NonNull Map<String, List<MethodChannel.Result>> moduleNameToResults;
+  @NonNull private final MethodChannel channel;
+  @Nullable private DynamicFeatureManager dynamicFeatureManager;
+  // Track the Result objects to be able to handle multiple install requests of
+  // the same module at a time. When installation enters a terminal state, either
+  // completeInstallSuccess or completeInstallError can be called.
+  @NonNull private Map<String, List<MethodChannel.Result>> moduleNameToResults;
 
   @NonNull @VisibleForTesting
   final MethodChannel.MethodCallHandler parsingMethodHandler =
@@ -50,7 +56,8 @@ public class DynamicFeatureChannel {
               moduleNameToResults.get(moduleName).add(result);
               break;
             case "getDynamicFeatureInstallState":
-              result.success(dynamicFeatureManager.getDynamicFeatureInstallState(loadingUnitId, moduleName));
+              result.success(
+                  dynamicFeatureManager.getDynamicFeatureInstallState(loadingUnitId, moduleName));
               break;
             default:
               result.notImplemented();
@@ -60,24 +67,29 @@ public class DynamicFeatureChannel {
       };
 
   /**
-   * Constructs a {@code DynamicFeatureChannel} that connects Android to the Dart code running in {@code
-   * dartExecutor}.
+   * Constructs a {@code DynamicFeatureChannel} that connects Android to the Dart code running in
+   * {@code dartExecutor}.
    *
    * <p>The given {@code dartExecutor} is permitted to be idle or executing code.
    *
    * <p>See {@link DartExecutor}.
    */
-  public DynamicFeatureChannel(@NonNull DartExecutor dartExecutor, @Nullable DynamicFeatureManager featureManager) {
+  public DynamicFeatureChannel(
+      @NonNull DartExecutor dartExecutor, @Nullable DynamicFeatureManager featureManager) {
     this.channel =
         new MethodChannel(dartExecutor, "flutter/dynamicfeature", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
-    dynamicFeatureManager = featureManager != null ? featureManager : FlutterInjector.instance().dynamicFeatureManager();
+    ddynamicFeatureManager =
+        featureManager != null
+            ? featureManager
+            : FlutterInjector.instance().dynamicFeatureManager();
+     moduleNameToResults = new HashMap<>();
     moduleNameToResults = new HashMap<>();
   }
 
   /**
-   * Finishes the `installDynamicFeature` method channel call for the specified moduleName
-   * with a success.
+   * Finishes the `installDynamicFeature` method channel call for the specified moduleName with a
+   * success.
    *
    * @param moduleName The name of the android dynamic feature module install request to complete.
    */
@@ -92,8 +104,8 @@ public class DynamicFeatureChannel {
   }
 
   /**
-   * Finishes the `installDynamicFeature` method channel call for the specified moduleName
-   * with an error/failure.
+   * Finishes the `installDynamicFeature` method channel call for the specified moduleName with an
+   * error/failure.
    *
    * @param moduleName The name of the android dynamic feature module install request to complete.
    * @param errorMessage The error message to display to complete the future with.

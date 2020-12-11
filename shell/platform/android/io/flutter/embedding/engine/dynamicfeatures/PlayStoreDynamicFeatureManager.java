@@ -62,17 +62,14 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   TAG,
                   String.format(
                       "Module \"%s\" (sessionId %d) install failed with: %s",
-                      sessionIdToName.get(sessionId),
-                      sessionId,
-                      state.errorCode()));
+                      sessionIdToName.get(sessionId), sessionId, state.errorCode()));
               flutterJNI.dynamicFeatureInstallFailure(
                   sessionIdToLoadingUnitId.get(sessionId),
                   "Module install failed with " + state.errorCode(),
                   true);
               if (channel != null) {
                 channel.completeInstallError(
-                    sessionIdToName.get(sessionId),
-                    "Android Dynamic Feature failed to install.");
+                    sessionIdToName.get(sessionId), "Android Dynamic Feature failed to install.");
               }
               sessionIdToName.delete(sessionId);
               sessionIdToLoadingUnitId.delete(sessionId);
@@ -86,17 +83,14 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) install successfully.",
                       sessionIdToName.get(sessionId), sessionId));
-              loadAssets(
-                  sessionIdToLoadingUnitId.get(sessionId),
-                  sessionIdToName.get(sessionId));
+              loadAssets(sessionIdToLoadingUnitId.get(sessionId), sessionIdToName.get(sessionId));
               // We only load Dart shared lib for the loading unit id requested. Other loading units
               // (if present) in the dynamic feature module are not loaded, but can be loaded by
               // calling again with their loading unit id. If no valid loadingUnitId was included in
               // the installation request such as for an asset only feature, then we can skip this.
               if (sessionIdToLoadingUnitId.get(sessionId) > 0) {
                 loadDartLibrary(
-                    sessionIdToLoadingUnitId.get(sessionId),
-                    sessionIdToName.get(sessionId));
+                    sessionIdToLoadingUnitId.get(sessionId), sessionIdToName.get(sessionId));
               }
               if (channel != null) {
                 channel.completeInstallSuccess(sessionIdToName.get(sessionId));
@@ -231,11 +225,12 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   }
 
   public void installDynamicFeature(int loadingUnitId, String moduleName) {
-    Log.e("flutter", "Install: " + loadingUnitId + " " + moduleName);
     String resolvedModuleName =
         moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {
-      Log.d(TAG, "Dynamic feature module name was null and could not be resolved from loading unit id.");
+      Log.d(
+          TAG,
+          "Dynamic feature module name was null and could not be resolved from loading unit id.");
       return;
     }
 
