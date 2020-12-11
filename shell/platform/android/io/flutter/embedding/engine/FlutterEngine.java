@@ -278,7 +278,7 @@ public class FlutterEngine {
     this.dartExecutor.onAttachedToJNI();
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
-    dynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor);
+    dynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, FlutterInjector.instance().dynamicFeatureManager());
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);

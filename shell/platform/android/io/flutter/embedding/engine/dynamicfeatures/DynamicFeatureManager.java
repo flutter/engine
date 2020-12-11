@@ -75,12 +75,14 @@ public interface DynamicFeatureManager {
    * one of loadingUnitId or moduleName must be valid or non-null.
    *
    * <p>Flutter will typically call this method in two ways. When invoked as part of a dart
-   * loadLibrary() call, a valid loadingUnitId is passed in while the moduleName is null. In this
+   * `loadLibrary()` call, a valid loadingUnitId is passed in while the moduleName is null. In this
    * case, this method is responsible for figuring out what module the loadingUnitId corresponds to.
    *
    * <p>When invoked manually as part of loading an assets-only module, loadingUnitId is -1
    * (invalid) and moduleName is supplied. Without a loadingUnitId, this method just downloads the
-   * module by name and attempts to load assets via loadAssets.
+   * module by name and attempts to load assets via loadAssets while loadDartLibrary is skipped,
+   * even if the dynamic feature module includes valid dart libs. To load these libs, call
+   * `loadLibrary()` on the dart library.
    *
    * @param loadingUnitId The unique identifier associated with a Dart deferred library. This id is
    *     assigned by the compiler and can be seen for reference in bundle_config.yaml. This ID is

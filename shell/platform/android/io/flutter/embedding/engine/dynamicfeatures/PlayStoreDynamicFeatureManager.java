@@ -76,7 +76,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
               }
               sessionIdToName.delete(sessionId);
               sessionIdToLoadingUnitId.delete(sessionId);
-              sessionIdToState.put(sessionId, "Failed");
+              sessionIdToState.put(sessionId, "failed");
               break;
             }
           case SplitInstallSessionStatus.INSTALLED:
@@ -91,16 +91,19 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   sessionIdToName.get(sessionId));
               // We only load Dart shared lib for the loading unit id requested. Other loading units
               // (if present) in the dynamic feature module are not loaded, but can be loaded by
-              // calling again with their loading unit id.
-              loadDartLibrary(
-                  sessionIdToLoadingUnitId.get(sessionId),
-                  sessionIdToName.get(sessionId));
+              // calling again with their loading unit id. If no valid loadingUnitId was included in
+              // the installation request such as for an asset only feature, then we can skip this.
+              if (sessionIdToLoadingUnitId.get(sessionId) > 0) {
+                loadDartLibrary(
+                    sessionIdToLoadingUnitId.get(sessionId),
+                    sessionIdToName.get(sessionId));
+              }
               if (channel != null) {
                 channel.completeInstallSuccess(sessionIdToName.get(sessionId));
               }
               sessionIdToName.delete(sessionId);
               sessionIdToLoadingUnitId.delete(sessionId);
-              sessionIdToState.put(sessionId, "Installed");
+              sessionIdToState.put(sessionId, "installed");
               break;
             }
           case SplitInstallSessionStatus.CANCELED:
@@ -117,7 +120,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
               }
               sessionIdToName.delete(sessionId);
               sessionIdToLoadingUnitId.delete(sessionId);
-              sessionIdToState.put(sessionId, "Cancelled");
+              sessionIdToState.put(sessionId, "cancelled");
               break;
             }
           case SplitInstallSessionStatus.CANCELING:
@@ -127,7 +130,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) install canceling.",
                       sessionIdToName.get(sessionId), sessionId));
-              sessionIdToState.put(sessionId, "Canceling");
+              sessionIdToState.put(sessionId, "canceling");
               break;
             }
           case SplitInstallSessionStatus.PENDING:
@@ -137,7 +140,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) install pending.",
                       sessionIdToName.get(sessionId), sessionId));
-              sessionIdToState.put(sessionId, "Pending");
+              sessionIdToState.put(sessionId, "pending");
               break;
             }
           case SplitInstallSessionStatus.REQUIRES_USER_CONFIRMATION:
@@ -147,7 +150,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) install requires user confirmation.",
                       sessionIdToName.get(sessionId), sessionId));
-              sessionIdToState.put(sessionId, "Requires User Confirmation");
+              sessionIdToState.put(sessionId, "requires_user_confirmation");
               break;
             }
           case SplitInstallSessionStatus.DOWNLOADING:
@@ -157,7 +160,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) downloading.",
                       sessionIdToName.get(sessionId), sessionId));
-              sessionIdToState.put(sessionId, "Downloading");
+              sessionIdToState.put(sessionId, "downloading");
               break;
             }
           case SplitInstallSessionStatus.DOWNLOADED:
@@ -167,7 +170,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) downloaded.",
                       sessionIdToName.get(sessionId), sessionId));
-              sessionIdToState.put(sessionId, "Downloaded");
+              sessionIdToState.put(sessionId, "downloaded");
               break;
             }
           case SplitInstallSessionStatus.INSTALLING:
@@ -177,7 +180,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) installing.",
                       sessionIdToName.get(sessionId), sessionId));
-              sessionIdToState.put(sessionId, "Installing");
+              sessionIdToState.put(sessionId, "installing");
               break;
             }
           default:
@@ -228,10 +231,11 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   }
 
   public void installDynamicFeature(int loadingUnitId, String moduleName) {
+    Log.e("flutter", "Install: " + loadingUnitId + " " + moduleName);
     String resolvedModuleName =
         moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {
-      Log.d(TAG, "Dynamic feature module name was null.");
+      Log.d(TAG, "Dynamic feature module name was null and could not be resolved from loading unit id.");
       return;
     }
 

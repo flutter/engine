@@ -7,6 +7,7 @@ package io.flutter.embedding.engine.systemchannels;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -26,8 +27,8 @@ public class DynamicFeatureChannel {
   @Nullable DynamicFeatureManager dynamicFeatureManager;
   @NonNull Map<String, List<MethodChannel.Result>> moduleNameToResults;
 
-
-  private final MethodChannel.MethodCallHandler parsingMethodHandler =
+  @NonNull @VisibleForTesting
+  final MethodChannel.MethodCallHandler parsingMethodHandler =
       new MethodChannel.MethodCallHandler() {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
@@ -36,7 +37,6 @@ public class DynamicFeatureChannel {
             return;
           }
           String method = call.method;
-          // Object args = call.arguments;
           Map<String, Object> args = call.arguments();
           Log.v(TAG, "Received '" + method + "' message.");
           final int loadingUnitId = (int) args.get("loadingUnitId");
@@ -67,11 +67,11 @@ public class DynamicFeatureChannel {
    *
    * <p>See {@link DartExecutor}.
    */
-  public DynamicFeatureChannel(@NonNull DartExecutor dartExecutor) {
+  public DynamicFeatureChannel(@NonNull DartExecutor dartExecutor, @Nullable DynamicFeatureManager featureManager) {
     this.channel =
         new MethodChannel(dartExecutor, "flutter/dynamicfeature", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
-    dynamicFeatureManager = FlutterInjector.instance().dynamicFeatureManager();
+    dynamicFeatureManager = featureManager != null ? featureManager : FlutterInjector.instance().dynamicFeatureManager();
     moduleNameToResults = new HashMap<>();
   }
 
