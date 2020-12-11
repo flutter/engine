@@ -67,8 +67,9 @@ void testMain() {
       canvas.drawRect(region, paint);
 
       await matchPictureGolden(
-          'canvaskit_sweep_gradient.png', recorder.endRecording(),
-          write: true);
+        'canvaskit_sweep_gradient.png',
+        recorder.endRecording(),
+      );
     });
   });
 }
