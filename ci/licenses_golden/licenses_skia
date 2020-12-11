@@ -1,4 +1,4 @@
-Signature: afd615f849a1301557907a57483c076c
+Signature: fe2f73c1af2f63e57eefa3b74f9f8d8f
 
 UNUSED LICENSES:
 
@@ -1052,6 +1052,7 @@ FILE: ../../../third_party/skia/infra/bots/assets/linux_vulkan_sdk/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/lottie-samples/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/mesa_intel_driver_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/mesa_intel_driver_linux/mesa-driver-builder/Dockerfile
+FILE: ../../../third_party/skia/infra/bots/assets/mockery/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/mskp/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/node/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/opencl_headers/VERSION
