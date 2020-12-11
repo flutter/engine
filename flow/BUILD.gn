@@ -6,6 +6,12 @@ import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
 
+config("config") {
+  if (is_debug) {
+    defines = [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
+  }
+}
+
 source_set("flow") {
   sources = [
     "compositor_context.cc",
@@ -70,7 +76,10 @@ source_set("flow") {
     "surface_frame.h",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [
+    "//flutter:config",
+    ":config",
+  ]
 
   deps = [
     "//flutter/common",
@@ -95,13 +104,6 @@ source_set("flow") {
       "$fuchsia_sdk_root/fidl:fuchsia.ui.views",
       "$fuchsia_sdk_root/pkg:scenic_cpp",
     ]
-  }
-
-  if (!defined(defines)) {
-    defines = []
-  }
-  if (is_debug) {
-    defines += [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
   }
 }
 
@@ -138,13 +140,6 @@ if (enable_unittests) {
       ":flow",
       "//flutter/common/graphics",
     ]
-
-    if (!defined(defines)) {
-      defines = []
-    }
-    if (is_debug) {
-      defines += [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
-    }
   }
 
   executable("flow_unittests") {
@@ -203,9 +198,6 @@ if (enable_unittests) {
     if (is_win) {
       # Required for M_PI and others.
       defines += [ "_USE_MATH_DEFINES" ]
-    }
-    if (is_debug) {
-      defines += [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
     }
 
     if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
