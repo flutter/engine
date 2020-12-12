@@ -293,7 +293,9 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     String resolvedModuleName =
         moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {
-      Log.d(TAG, "Dynamic feature module name was null.");
+      Log.e(
+          TAG,
+          "Dynamic feature module name was null and could not be resolved from loading unit id.");
       return null;
     }
     if (!nameToSessionId.containsKey(resolvedModuleName)) {
