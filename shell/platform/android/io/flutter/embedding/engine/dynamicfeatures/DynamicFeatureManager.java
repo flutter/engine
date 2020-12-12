@@ -63,8 +63,8 @@ public interface DynamicFeatureManager {
    * and {@link getDynamicFeatureInstallState} from the method channel to this
    * DynamicFeatureManager. Upon completion of the install process, sucessful installations should
    * notify the DynamicFeatureChannel by calling {@link
-   * DynamicFeatureChannel.completeInstallSuccess} while errors and failures should call
-   * {@link DynamicFeatureChannel.completeInstallError}.
+   * DynamicFeatureChannel.completeInstallSuccess} while errors and failures should call {@link
+   * DynamicFeatureChannel.completeInstallError}.
    */
   public abstract void setDynamicFeatureChannel(DynamicFeatureChannel channel);
 
@@ -98,10 +98,10 @@ public interface DynamicFeatureManager {
    * invocation will not load dart shared libraries.
    *
    * <p>While the Future retuned by either `loadLibary` or the method channel invocation will
-   * indicate when the code and assets are ready to be used, informational querying of the
-   * install process' state can be done with {@link getDynamicFeatureInstallState}, though
-   * the results of this query should not be used to decide if the dynamic feature is ready
-   * to use. Only the Future completion should be used to do this.
+   * indicate when the code and assets are ready to be used, informational querying of the install
+   * process' state can be done with {@link getDynamicFeatureInstallState}, though the results of
+   * this query should not be used to decide if the dynamic feature is ready to use. Only the Future
+   * completion should be used to do this.
    *
    * @param loadingUnitId The unique identifier associated with a Dart deferred library. This id is
    *     assigned by the compiler and can be seen for reference in bundle_config.yaml. This ID is
@@ -128,9 +128,9 @@ public interface DynamicFeatureManager {
    * <p>Invocations of {@link installDynamicFeature} typically result in asynchronous downloading
    * and other tasks. This method enables querying of the state of the installation. Querying the
    * installation state is purely informational and does not impact the installation process. The
-   * results of this query should not be used to decide if the dynamic feature is ready to use.
-   * Upon completion of installation, the Future returned by the installation request will complete.
-   * Only after dart Future completion is it safe to use code and assets from the dynamic feature.
+   * results of this query should not be used to decide if the dynamic feature is ready to use. Upon
+   * completion of installation, the Future returned by the installation request will complete. Only
+   * after dart Future completion is it safe to use code and assets from the dynamic feature.
    *
    * <p>If no dynamic feature has been installed or requested to be installed by the provided
    * loadingUnitId or moduleName, then this method will return null.
