@@ -282,7 +282,7 @@ public class FlutterEngine {
         FlutterInjector.instance().dynamicFeatureManager();
 
     accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
-    dynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor, dynamicFeatureManager);
+    dynamicFeatureChannel = new DynamicFeatureChannel(dartExecutor);
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
@@ -389,9 +389,9 @@ public class FlutterEngine {
     flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.setDynamicFeatureManager(null);
     flutterJNI.detachFromNativeAndReleaseResources();
-    dynamicFeatureChannel.destroy();
     if (FlutterInjector.instance().dynamicFeatureManager() != null) {
       FlutterInjector.instance().dynamicFeatureManager().destroy();
+      dynamicFeatureChannel.setDynamicFeatureManager(null);
     }
   }
 

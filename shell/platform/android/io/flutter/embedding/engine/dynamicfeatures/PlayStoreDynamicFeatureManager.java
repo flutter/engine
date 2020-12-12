@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.engine.dynamicfeatures;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
@@ -52,6 +53,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   private FeatureInstallStateUpdatedListener listener;
 
   private class FeatureInstallStateUpdatedListener implements SplitInstallStateUpdatedListener {
+    @SuppressLint("DefaultLocale")
     public void onStateUpdate(SplitInstallSessionState state) {
       int sessionId = state.sessionId();
       if (sessionIdToName.get(sessionId) != null) {
@@ -228,7 +230,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     String resolvedModuleName =
         moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {
-      Log.d(
+      Log.e(
           TAG,
           "Dynamic feature module name was null and could not be resolved from loading unit id.");
       return;

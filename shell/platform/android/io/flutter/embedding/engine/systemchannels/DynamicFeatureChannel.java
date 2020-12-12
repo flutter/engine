@@ -126,8 +126,4 @@ public class DynamicFeatureChannel {
     }
     return;
   }
-
-  public void destroy() {
-    dynamicFeatureManager = null;
-  }
 }
