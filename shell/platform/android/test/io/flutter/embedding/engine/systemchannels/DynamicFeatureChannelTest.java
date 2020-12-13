@@ -57,7 +57,8 @@ public class DynamicFeatureChannelTest {
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     TestDynamicFeatureManager testDynamicFeatureManager = new TestDynamicFeatureManager();
     DynamicFeatureChannel fakeDynamicFeatureChannel =
-        new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
+        new DynamicFeatureChannel(dartExecutor);
+    fakeDynamicFeatureChannel.setDynamicFeatureManager(testDynamicFeatureManager);
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);
@@ -77,7 +78,8 @@ public class DynamicFeatureChannelTest {
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     TestDynamicFeatureManager testDynamicFeatureManager = new TestDynamicFeatureManager();
     DynamicFeatureChannel fakeDynamicFeatureChannel =
-        new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
+        new DynamicFeatureChannel(dartExecutor);
+    fakeDynamicFeatureChannel.setDynamicFeatureManager(testDynamicFeatureManager);
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);
@@ -100,7 +102,8 @@ public class DynamicFeatureChannelTest {
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     TestDynamicFeatureManager testDynamicFeatureManager = new TestDynamicFeatureManager();
     DynamicFeatureChannel fakeDynamicFeatureChannel =
-        new DynamicFeatureChannel(dartExecutor, testDynamicFeatureManager);
+        new DynamicFeatureChannel(dartExecutor);
+    fakeDynamicFeatureChannel.setDynamicFeatureManager(testDynamicFeatureManager);
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);
