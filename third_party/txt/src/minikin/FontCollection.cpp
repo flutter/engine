@@ -51,12 +51,21 @@ std::string GetFontLocale(uint32_t langListId) {
   return langs.size() ? langs[0].getString() : "";
 }
 
+std::shared_ptr<minikin::FontCollection> FontCollection::Create(
+    const std::vector<std::shared_ptr<FontFamily>>& typefaces) {
+  std::shared_ptr<minikin::FontCollection> font_collection(new minikin::FontCollection());
+  if (!font_collection || !font_collection->init(typefaces)) {
+    return nullptr;
+  }
+  return font_collection;
+}
+
 FontCollection::FontCollection()
     : mMaxChar(0) {
 }
 
 bool FontCollection::init(
-    const vector<std::shared_ptr<FontFamily>>& typefaces) {
+    const std::vector<std::shared_ptr<FontFamily>>& typefaces) {
   std::scoped_lock _l(gMinikinLock);
   mId = sNextId++;
   vector<uint32_t> lastChar;
@@ -563,9 +572,8 @@ std::shared_ptr<FontCollection> FontCollection::createCollectionWithVariation(
     }
   }
 
-  auto font_collection = std::make_shared<FontCollection>();
-  if (!font_collection || !font_collection->init(std::move(families))) {
-    if (font_collection) font_collection.reset();
+  auto font_collection = minikin::FontCollection::Create(std::move(families));
+  if (!font_collection) {
     return nullptr;
   }
   return font_collection;
