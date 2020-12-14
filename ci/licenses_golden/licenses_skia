@@ -1,4 +1,4 @@
-Signature: 69dd6f09c97f4ea7f3dbefc6c3c906ba
+Signature: 0606da214aa6dfe575ee0fa845e71632
 
 UNUSED LICENSES:
 
@@ -1126,9 +1126,9 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-iOS.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-ASAN.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-CommandBuffer.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-Metal.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac10.15.5-Clang-arm64-Debug-iOS.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac10.15.7-Clang-x86_64-Debug-CommandBuffer.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-arm64-Release-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86-Debug-Exceptions.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86_64-Debug-ANGLE.json
@@ -1341,6 +1341,7 @@ FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/test_512x512.png
 FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/test_64x64.png
 FILE: ../../../third_party/skia/modules/canvaskit/perf/canvas.bench.js
 FILE: ../../../third_party/skia/modules/canvaskit/perf/matrix.bench.js
+FILE: ../../../third_party/skia/modules/canvaskit/perf/perfReporter.js
 FILE: ../../../third_party/skia/modules/canvaskit/postamble.js
 FILE: ../../../third_party/skia/modules/canvaskit/preamble.js
 FILE: ../../../third_party/skia/modules/canvaskit/release.js
@@ -1353,6 +1354,7 @@ FILE: ../../../third_party/skia/modules/pathkit/externs.js
 FILE: ../../../third_party/skia/modules/pathkit/helper.js
 FILE: ../../../third_party/skia/modules/pathkit/karma.bench.conf.js
 FILE: ../../../third_party/skia/modules/pathkit/karma.conf.js
+FILE: ../../../third_party/skia/modules/pathkit/package-lock.json
 FILE: ../../../third_party/skia/modules/pathkit/package.json
 FILE: ../../../third_party/skia/modules/pathkit/perf/effects.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/path.bench.js
@@ -4015,6 +4017,19 @@ FILE: ../../../third_party/skia/src/sksl/SkSLPool.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSampleUsage.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSL.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLExpression.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLExpression.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLFunction.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLModifiers.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLType.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLType.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLVar.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLVar.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSL_core.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSL_core.h
+FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLWriter.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLWriter.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionPrototype.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLInlineMarker.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPrefixExpression.cpp
@@ -5634,6 +5649,11 @@ FILE: ../../../third_party/skia/src/sksl/SkSLAnalysis.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLModifiersPool.h
 FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLBlock.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLBlock.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLStatement.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLStatement.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLCodeStringExpression.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructor.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC.
