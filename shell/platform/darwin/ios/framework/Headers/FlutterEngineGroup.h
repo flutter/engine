@@ -16,7 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
  * Deleting a FlutterEngineGroup doesn't invalidate existing FlutterEngines, but
  * it eliminates the possibility to create more FlutterEngines in that group.
  *
- * @see http://flutter.dev/go/multiple-engines
+ * @warning This class is a work-in-progress and may change.
+ * @see https://github.com/flutter/flutter/issues/72009
  */
 @interface FlutterEngineGroup : NSObject
 - (instancetype)init NS_UNAVAILABLE;
@@ -33,7 +34,9 @@ NS_ASSUME_NONNULL_BEGIN
                      project:(nullable FlutterDartProject*)project NS_DESIGNATED_INITIALIZER;
 
 /**
- * Creates a running `FlutterEngine` that exists in this group.
+ * Creates a running `FlutterEngine` that shares components with this group.
+ *
+ * @see FlutterEngineGroup
  */
 - (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
                                 libraryURI:(nullable NSString*)libraryURI;
