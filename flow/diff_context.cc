@@ -43,22 +43,22 @@ void DiffContext::PushTransform(const SkMatrix& transform) {
 
 Damage DiffContext::ComputeDamage(
     const SkIRect& accumulated_buffer_damage) const {
-  SkRect framebuffer = SkRect::Make(accumulated_buffer_damage);
-  framebuffer.join(damage_);
-  SkRect net(damage_);
+  SkRect buffer_damage = SkRect::Make(accumulated_buffer_damage);
+  buffer_damage.join(damage_);
+  SkRect frame_damage(damage_);
 
   for (const auto& r : readbacks_) {
-    if (r.rect.intersects(net)) {
-      net.join(r.rect);
+    if (r.rect.intersects(frame_damage)) {
+      frame_damage.join(r.rect);
     }
-    if (r.rect.intersects(framebuffer)) {
-      framebuffer.join(r.rect);
+    if (r.rect.intersects(buffer_damage)) {
+      buffer_damage.join(r.rect);
     }
   }
 
   Damage res;
-  framebuffer.roundOut(&res.buffer_damage);
-  net.roundOut(&res.frame_damage);
+  buffer_damage.roundOut(&res.buffer_damage);
+  frame_damage.roundOut(&res.frame_damage);
 
   SkIRect frame_clip = SkIRect::MakeSize(frame_size_);
   res.buffer_damage.intersect(frame_clip);
