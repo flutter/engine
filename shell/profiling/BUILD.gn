@@ -17,3 +17,9 @@ source_set("profiling") {
 
   deps = _profiler_deps
 }
+
+source_set("profiling_unittests") {
+  testonly = true
+  sources = [ "sampling_profiler_unittest.cc" ]
+  deps = [ "//flutter/testing" ]
+}
