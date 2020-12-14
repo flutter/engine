@@ -95,8 +95,9 @@ void DiffContext::AddExistingPaintRegion(const PaintRegion& region) {
   // Adding paint region for retained layer implies that current subtree is not
   // dirty, so we know, for example, that the inherited transforms must match
   FML_DCHECK(!IsSubtreeDirty());
-  FML_DCHECK(region.is_valid());
-  rects_->insert(rects_->end(), region.begin(), region.end());
+  if (region.is_valid()) {
+    rects_->insert(rects_->end(), region.begin(), region.end());
+  }
 }
 
 void DiffContext::AddReadbackRegion(const SkRect& rect) {
@@ -138,7 +139,8 @@ PaintRegion DiffContext::GetOldLayerPaintRegion(const Layer* layer) const {
   if (i != last_frame_paint_region_map_.end()) {
     return i->second;
   } else {
-    FML_CHECK(false) << "Old layer doesn't have paint region";
+    // This is valid when Layer::PreservePaintRegion is called for retained
+    // layer with zero sized parent clip (these layers are not diffed)
     return PaintRegion();
   }
 }
