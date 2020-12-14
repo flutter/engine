@@ -57,7 +57,7 @@ TEST(SamplingProfilerTest, DeleteAfterStart) {
     profiler.Start();
   }
   int invoke_count_at_delete = invoke_count.load();
-  usleep(2 * 1000);  // nyquist
+  std::this_thread::sleep_for(std::chrono::milliseconds(2)); // nyquist
   ASSERT_EQ(invoke_count_at_delete, invoke_count.load());
 }
 
