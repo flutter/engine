@@ -69,8 +69,42 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 
 RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
-    bool ignore_raster_cache) {
+    bool ignore_raster_cache,
+    FrameDamage* frame_damage) {
   TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
+
+  SkRect clip_rect = SkRect::MakeIWH(layer_tree.frame_size().width(),
+                                     layer_tree.frame_size().height());
+
+  if (frame_damage) {
+    PaintRegionMap empty_paint_region_map;
+    DiffContext context(layer_tree.frame_size(),
+                        layer_tree.device_pixel_ratio(),
+                        layer_tree.paint_region_map(),
+                        frame_damage->prev_layer_tree
+                            ? frame_damage->prev_layer_tree->paint_region_map()
+                            : empty_paint_region_map);
+    context.PushCullRect(SkRect::MakeIWH(layer_tree.frame_size().width(),
+                                         layer_tree.frame_size().height()));
+
+    {
+      DiffContext::AutoSubtreeRestore subtree(&context);
+      const Layer* prev_root_layer = nullptr;
+      if (!frame_damage->prev_layer_tree ||
+          frame_damage->prev_layer_tree->frame_size() !=
+              layer_tree.frame_size()) {
+        context.MarkSubtreeDirty();
+      } else {
+        prev_root_layer = frame_damage->prev_layer_tree->root_layer();
+      }
+      layer_tree.root_layer()->Diff(&context, prev_root_layer);
+    }
+
+    frame_damage->damage_out =
+        context.ComputeDamage(frame_damage->additional_damage);
+    clip_rect = SkRect::Make(frame_damage->damage_out.buffer_damage);
+  }
+
   bool root_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
@@ -85,6 +119,10 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   if (post_preroll_result == PostPrerollResult::kSkipAndRetryFrame) {
     return RasterStatus::kSkipAndRetry;
   }
+
+  SkAutoCanvasRestore restore(canvas(), true);
+  canvas()->clipRect(clip_rect);
+
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.
   if (canvas()) {
