@@ -91,13 +91,15 @@ bool FontCollection::init(
     mSupportedAxes.insert(supportedAxes.begin(), supportedAxes.end());
   }
   nTypefaces = mFamilies.size();
-  if (nTypefaces == 0 || nTypefaces > 254) {
-    if (nTypefaces == 0)
-      ALOGE("Font collection must have at least one valid typeface.");
-    else
-      ALOGE("Font collection may only have up to 254 font families.");
+  if (nTypefaces == 0) {
+    ALOGE("Font collection must have at least one valid typeface.");
     return false;
   }
+  if (nTypefaces > 254) {
+    ALOGE("Font collection may only have up to 254 font families.");
+    return false;
+  }
+
   size_t nPages = (mMaxChar + kPageMask) >> kLogCharsPerPage;
   // TODO: Use variation selector map for mRanges construction.
   // A font can have a glyph for a base code point and variation selector pair
@@ -572,11 +574,7 @@ std::shared_ptr<FontCollection> FontCollection::createCollectionWithVariation(
     }
   }
 
-  auto font_collection = minikin::FontCollection::Create(std::move(families));
-  if (!font_collection) {
-    return nullptr;
-  }
-  return font_collection;
+  return minikin::FontCollection::Create(std::move(families));
 }
 
 uint32_t FontCollection::getId() const {
