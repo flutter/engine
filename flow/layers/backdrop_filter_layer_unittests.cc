@@ -237,7 +237,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
 
   // no clip, effect over entire surface
   auto damage = DiffLayerTree(l1, MockLayerTree(SkISize::Make(100, 100)));
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeWH(100, 100));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeWH(100, 100));
 
   MockLayerTree l2(SkISize::Make(100, 100));
 
@@ -247,7 +247,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   l2.root()->Add(clip);
   damage = DiffLayerTree(l2, MockLayerTree(SkISize::Make(100, 100)));
 
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 90, 90));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 90, 90));
 
   MockLayerTree l3;
   auto scale = std::make_shared<TransformLayer>(SkMatrix::Scale(2.0, 2.0));
@@ -255,7 +255,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   l3.root()->Add(scale);
 
   damage = DiffLayerTree(l3, MockLayerTree());
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 180, 180));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 180, 180));
 
   MockLayerTree l4;
   l4.root()->Add(scale);
@@ -264,7 +264,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   auto path1 = SkPath().addRect(SkRect::MakeLTRB(180, 180, 190, 190));
   l4.root()->Add(std::make_shared<MockLayer>(path1));
   damage = DiffLayerTree(l4, l3);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(180, 180, 190, 190));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(180, 180, 190, 190));
 
   MockLayerTree l5;
   l5.root()->Add(scale);
@@ -273,7 +273,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   auto path2 = SkPath().addRect(SkRect::MakeLTRB(179, 179, 189, 189));
   l5.root()->Add(std::make_shared<MockLayer>(path2));
   damage = DiffLayerTree(l5, l4);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeLTRB(0, 0, 190, 190));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 190, 190));
 }
 
 #endif

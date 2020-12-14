@@ -31,7 +31,7 @@ TEST_F(DiffContextTest, DieIfOldLayerTreeWasNeverDiffed) {
 
   // Now we can diff t2 and t1
   auto damage = DiffLayerTree(t2, t1);
-  EXPECT_EQ(damage.surface_damage, SkIRect::MakeEmpty());
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeEmpty());
 }
 
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT

@@ -18,13 +18,15 @@ class Layer;
 struct Damage {
   // This is the damage between current and previous frame;
   // If embedder supports partial update, this is the region that needs to be
-  // swapped.
-  SkIRect surface_damage;
+  // repainted.
+  // Corresponds to "surface damage" from EGL_KHR_partial_update.
+  SkIRect frame_damage;
 
-  // Reflects actual change to target framebuffer; This is surface_damage +
+  // Reflects actual change to target framebuffer; This is frame_damage +
   // damage previously acumulated for target framebuffer.
   // All drawing will be clipped to this region. Knowing the affected area
   // upfront may be useful for tile based GPUs.
+  // Corresponds to "buffer damage" from EGL_KHR_partial_update.
   SkIRect buffer_damage;
 };
 
@@ -104,7 +106,7 @@ class DiffContext {
 
   // Computes final damage
   //
-  // additional_damage is the previously accumulated surface_damage for
+  // additional_damage is the previously accumulated frame_damage for
   // current framebuffer
   Damage ComputeDamage(const SkIRect& additional_damage) const;
 

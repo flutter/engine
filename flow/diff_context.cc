@@ -58,11 +58,11 @@ Damage DiffContext::ComputeDamage(
 
   Damage res;
   framebuffer.roundOut(&res.buffer_damage);
-  net.roundOut(&res.surface_damage);
+  net.roundOut(&res.frame_damage);
 
   SkIRect frame_clip = SkIRect::MakeSize(frame_size_);
   res.buffer_damage.intersect(frame_clip);
-  res.surface_damage.intersect(frame_clip);
+  res.frame_damage.intersect(frame_clip);
   return res;
 }
 
