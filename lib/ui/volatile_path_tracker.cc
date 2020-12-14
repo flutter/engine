@@ -55,8 +55,8 @@ void VolatilePathTracker::OnFrame() {
 
 void VolatilePathTracker::Drain() {
   if (needs_drain_) {
-    std::deque<std::shared_ptr<TrackedPath>> paths_to_remove;
     TRACE_EVENT0("flutter", "VolatilePathTracker::Drain");
+    std::deque<std::shared_ptr<TrackedPath>> paths_to_remove;
     {
       std::scoped_lock lock(paths_to_remove_mutex_);
       paths_to_remove.swap(paths_to_remove_);
