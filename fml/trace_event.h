@@ -69,7 +69,7 @@
                                __VA_ARGS__);
 
 // Avoid using the same `name` and `argX_name` for nested traces, which can
-// lead to double free errors. E.g. the following code shoudl be avoided:
+// lead to double free errors. E.g. the following code should be avoided:
 //
 // ```cpp
 // {
