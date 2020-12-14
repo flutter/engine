@@ -6,6 +6,7 @@
 #import <XCTest/XCTest.h>
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngineGroup.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Test.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -26,6 +27,7 @@ FLUTTER_ASSERT_ARC
   FlutterEngine* spawnee = [group makeEngineWithEntrypoint:nil libraryURI:nil];
   XCTAssertNotNil(spawner);
   XCTAssertNotNil(spawnee);
+  XCTAssertEqual(&spawner.threadHost, &spawnee.threadHost);
 }
 
 - (void)testDeleteLastEngine {

@@ -9,6 +9,10 @@ extern NSString* const FlutterEngineWillDealloc;
 
 @class FlutterBinaryMessengerRelay;
 
+namespace flutter {
+class ThreadHost;
+}
+
 // Category to add test-only visibility.
 @interface FlutterEngine (Test) <FlutterBinaryMessenger>
 - (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger;
@@ -16,4 +20,5 @@ extern NSString* const FlutterEngineWillDealloc;
 - (void)waitForFirstFrame:(NSTimeInterval)timeout callback:(void (^)(BOOL didTimeout))callback;
 - (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entrypoint
                            libraryURI:(/*nullable*/ NSString*)libraryURI;
+- (const flutter::ThreadHost&)threadHost;
 @end

@@ -961,6 +961,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   return result;
 }
 
+- (const flutter::ThreadHost&)threadHost {
+  return *_threadHost;
+}
+
 @end
 
 @implementation FlutterEngineRegistrar {

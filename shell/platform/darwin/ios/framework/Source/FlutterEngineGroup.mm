@@ -44,6 +44,7 @@
     FlutterEngine* spawner = (FlutterEngine*)[self.engines[0] pointerValue];
     engine = [spawner spawnWithEntrypoint:entrypoint libraryURI:libraryURI];
   }
+  [_engines addObject:[NSValue valueWithPointer:engine]];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   [center addObserver:self
