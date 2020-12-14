@@ -6,12 +6,6 @@ import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
 
-config("config") {
-  if (is_debug) {
-    defines = [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
-  }
-}
-
 source_set("flow") {
   sources = [
     "compositor_context.cc",
@@ -76,10 +70,7 @@ source_set("flow") {
     "surface_frame.h",
   ]
 
-  public_configs = [
-    "//flutter:config",
-    ":config",
-  ]
+  public_configs = [ "//flutter:config" ]
 
   deps = [
     "//flutter/common",
