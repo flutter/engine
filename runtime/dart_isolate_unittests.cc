@@ -483,7 +483,7 @@ TEST_F(DartIsolateTest, InvalidLoadingUnitFails) {
   ASSERT_TRUE(root_isolate->Shutdown());
 }
 
-TEST_F(DartIsolateTest, ValidLoadingUnitSucceeds) {
+TEST_F(DartIsolateTest, DISABLED_ValidLoadingUnitSucceeds) {
   if (!DartVM::IsRunningPrecompiledCode()) {
     FML_LOG(INFO) << "Split AOT does not work in JIT mode";
     return;
