@@ -797,8 +797,7 @@ Picture _drawPicture() {
 
 Picture _drawEmptyPicture() {
   final EnginePictureRecorder recorder = PictureRecorder();
-  final RecordingCanvas canvas =
-      recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
+  recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
   return recorder.endRecording();
 }
 
