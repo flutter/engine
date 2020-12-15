@@ -13,17 +13,96 @@ Future<void> _findFontsForMissingCodeunits(List<int> codeunits) async {
   }
   fonts = _findMinimumFontsForCodeunits(codeunits, fonts);
   for (_NotoFont font in fonts) {
-    String googleFontCss = await html.window.fetch(font.googleFontsCssUrl).then(
-        (dynamic response) =>
-            response.text().then<String>((dynamic x) => x as String));
-    print(googleFontCss);
+    if (_resolvedNotoFonts[font] == null) {
+      String googleFontCss = await html.window
+          .fetch(font.googleFontsCssUrl)
+          .then((dynamic response) =>
+              response.text().then<String>((dynamic x) => x as String));
+      final _ResolvedNotoFont resolvedFont =
+          _makeResolvedNotoFontFromCss(googleFontCss, font.name);
+      _registerResolvedFont(font, resolvedFont);
+    }
   }
-  print('Fonts which match missing code units: ${fonts.map((f) => f.name)}');
+
+  Set<_ResolvedNotoSubset> resolvedFonts = <_ResolvedNotoSubset>{};
+  for (int codeunit in codeunits) {
+    resolvedFonts.addAll(_lookupResolvedFontsForCodeunit(codeunit));
+  }
+
+  for (_ResolvedNotoSubset resolvedFont in resolvedFonts) {
+    skiaFontCollection.registerFallbackFont(
+        resolvedFont.url, resolvedFont.name);
+  }
+  await skiaFontCollection.ensureFontsLoaded();
+  // TODO(hterkelsen): This doesn't always cause us to re-render the paragraph
+  // with the new fonts.
+  EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
 }
 
-_NotoFont _makeResolvedNotoFontFromCss(String css, String family) {
+_ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
   List<_ResolvedNotoSubset> subsets = <_ResolvedNotoSubset>[];
-  for (String line in LineSplitter.split(css)) {
+  bool resolvingFontFace = false;
+  String? fontFaceUrl;
+  List<_UnicodeRange>? fontFaceUnicodeRanges;
+  for (final String line in LineSplitter.split(css)) {
+    // Search for the beginning of a @font-face.
+    if (!resolvingFontFace) {
+      if (line == '@font-face {') {
+        resolvingFontFace = true;
+      } else {
+        continue;
+      }
+    } else {
+      // We are resolving a @font-face, read out the url and ranges.
+      if (line.startsWith('  src:')) {
+        int urlStart = line.indexOf('url(');
+        if (urlStart == -1) {
+          throw new Exception('Unable to resolve Noto font URL: $line');
+        }
+        int urlEnd = line.indexOf(')');
+        fontFaceUrl = line.substring(urlStart + 4, urlEnd);
+      } else if (line.startsWith('  unicode-range:')) {
+        fontFaceUnicodeRanges = <_UnicodeRange>[];
+        String rangeString = line.substring(17, line.length - 1);
+        List<String> rawRanges = rangeString.split(', ');
+        for (final String rawRange in rawRanges) {
+          List<String> startEnd = rawRange.split('-');
+          if (startEnd.length == 1) {
+            String singleRange = startEnd.single;
+            assert(singleRange.startsWith('U+'));
+            int rangeValue = int.parse(singleRange.substring(2), radix: 16);
+            fontFaceUnicodeRanges.add(_UnicodeRange(rangeValue, rangeValue));
+          } else {
+            assert(startEnd.length == 2);
+            String startRange = startEnd[0];
+            String endRange = startEnd[1];
+            assert(startRange.startsWith('U+'));
+            int startValue = int.parse(startRange.substring(2), radix: 16);
+            int endValue = int.parse(endRange, radix: 16);
+            fontFaceUnicodeRanges.add(_UnicodeRange(startValue, endValue));
+          }
+        }
+      } else if (line == '}') {
+        subsets.add(
+            _ResolvedNotoSubset(fontFaceUrl!, name, fontFaceUnicodeRanges!));
+        resolvingFontFace = false;
+      } else {
+        continue;
+      }
+    }
+  }
+
+  return _ResolvedNotoFont(name, subsets);
+}
+
+void _registerResolvedFont(_NotoFont font, _ResolvedNotoFont resolvedFont) {
+  _resolvedNotoFonts[font] = resolvedFont;
+
+  for (_ResolvedNotoSubset subset in resolvedFont.subsets) {
+    for (_UnicodeRange range in subset.ranges) {
+      _resolvedNotoTreeRoot =
+          _insertNotoFontRange(range, subset, _resolvedNotoTreeRoot);
+    }
   }
 }
 
@@ -115,20 +194,42 @@ List<_NotoFont> _lookupNotoFontsForCodeunit(int codeunit) {
       if (node.left != null) {
         return lookupHelper(node.left!);
       } else {
-        print('Could not find font to match $codeunit');
         return <_NotoFont>[];
       }
     } else {
       if (node.right != null) {
         return lookupHelper(node.right!);
       } else {
-        print('Could not find font to match $codeunit');
         return <_NotoFont>[];
       }
     }
   }
 
   return lookupHelper(_notoTreeRoot!);
+}
+
+List<_ResolvedNotoSubset> _lookupResolvedFontsForCodeunit(int codeunit) {
+  List<_ResolvedNotoSubset> lookupHelper(
+      _NotoTreeNode<_ResolvedNotoSubset> node) {
+    if (node.range.contains(codeunit)) {
+      return node.fonts.toList();
+    }
+    if (node.range.start > codeunit) {
+      if (node.left != null) {
+        return lookupHelper(node.left!);
+      } else {
+        return <_ResolvedNotoSubset>[];
+      }
+    } else {
+      if (node.right != null) {
+        return lookupHelper(node.right!);
+      } else {
+        return <_ResolvedNotoSubset>[];
+      }
+    }
+  }
+
+  return lookupHelper(_resolvedNotoTreeRoot!);
 }
 
 class _NotoFont {
@@ -178,9 +279,10 @@ class _ResolvedNotoFont {
 
 class _ResolvedNotoSubset {
   final String url;
+  final String name;
   final List<_UnicodeRange> ranges;
 
-  const _ResolvedNotoSubset(this.url, this.ranges);
+  const _ResolvedNotoSubset(this.url, this.name, this.ranges);
 }
 
 const _NotoFont _notoSansSC = _NotoFont('Noto Sans SC', <_UnicodeRange>[
@@ -471,11 +573,9 @@ _NotoTreeNode<T>? _insertNotoFontRangeHelper<T>(
       }
     }
   } else {
-    // If [root] is null, then the root of the entire Noto Font tree is null.
-    assert(_notoTreeRoot == null);
+    // If [root] is null, then the tree is empty. Create a new root.
     _NotoTreeNode<T> newRoot = _NotoTreeNode<T>(range);
     newRoot.fonts.add(font);
-    _notoTreeRoot = newRoot;
     return newRoot;
   }
 }
@@ -582,4 +682,11 @@ void _repairNotoFontTree(_NotoTreeNode node) {
   grandparent.isBlack = false;
 }
 
+/// The root of the unresolved Noto font Red-Black Tree.
 _NotoTreeNode<_NotoFont>? _notoTreeRoot;
+
+/// The root of the resolved Noto font Red-Black Tree.
+_NotoTreeNode<_ResolvedNotoSubset>? _resolvedNotoTreeRoot;
+
+Map<_NotoFont, _ResolvedNotoFont> _resolvedNotoFonts =
+    <_NotoFont, _ResolvedNotoFont>{};

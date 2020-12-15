@@ -659,12 +659,10 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     }
 
     if (codeUnitsSupported.any((x) => !x)) {
-      print('Some code units are not supported by any loaded font!!!!!');
       List<int> missingCodeUnits = <int>[];
       for (int i = 0; i < codeUnitsSupported.length; i++) {
         if (!codeUnitsSupported[i]) {
           missingCodeUnits.add(codeUnits[i]);
-          print('We do not support the Unicode code point: ${codeUnits[i]}');
         }
       }
       _findFontsForMissingCodeunits(missingCodeUnits);
@@ -729,8 +727,10 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     _styleStack.add(skStyle);
     _commands.add(_ParagraphCommand.pushStyle(ckStyle));
     if (skStyle.foreground != null || skStyle.background != null) {
-      final SkPaint foreground = skStyle.foreground?.skiaObject ?? _defaultTextStylePaint;
-      final SkPaint background = skStyle.background?.skiaObject ?? _defaultTextStylePaint;
+      final SkPaint foreground =
+          skStyle.foreground?.skiaObject ?? _defaultTextStylePaint;
+      final SkPaint background =
+          skStyle.background?.skiaObject ?? _defaultTextStylePaint;
       _paragraphBuilder.pushPaintStyle(
           skStyle.skTextStyle, foreground, background);
     } else {
@@ -785,5 +785,6 @@ List<String> _getActualFontFamilies(String? fontFamily,
       !fontFamilyFallback.every((font) => fontFamily == font)) {
     fontFamilies.addAll(fontFamilyFallback);
   }
+  fontFamilies.addAll(skiaFontCollection.globalFontFallbacks);
   return fontFamilies;
 }

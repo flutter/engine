@@ -29,6 +29,8 @@ class SkiaFontCollection {
 
   final List<String> globalFontFallbacks = <String>[];
 
+  final Map<String, int> _fontFallbackCounts = <String, int>{};
+
   Future<void> ensureFontsLoaded() async {
     await _loadFonts();
 
@@ -147,6 +149,15 @@ class SkiaFontCollection {
     }
 
     return _RegisteredFont(bytes, family, actualFamily);
+  }
+
+  void registerFallbackFont(String url, String family) {
+    _fontFallbackCounts.putIfAbsent(family, () => 0);
+    int fontFallbackTag = _fontFallbackCounts[family]!;
+    _fontFallbackCounts[family] = _fontFallbackCounts[family]! + 1;
+    String countedFamily = '$family $fontFallbackTag';
+    _unloadedFonts.add(_registerFont(url, countedFamily));
+    globalFontFallbacks.add(countedFamily);
   }
 
   String? _readActualFamilyName(Uint8List bytes) {
