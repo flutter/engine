@@ -290,7 +290,7 @@ class LineBuilder {
     required this.maxWidth,
     required this.start,
     required this.lineNumber,
-    required this.precedentHeight,
+    required this.accumulatedHeight,
   }) : end = start;
 
   /// Creates a [LineBuilder] for the first line in a paragraph.
@@ -305,7 +305,7 @@ class LineBuilder {
       maxWidth: maxWidth,
       lineNumber: 0,
       start: LineBreakResult.sameIndex(0, LineBreakType.prohibited),
-      precedentHeight: 0.0,
+      accumulatedHeight: 0.0,
     );
   }
 
@@ -317,8 +317,8 @@ class LineBuilder {
   final LineBreakResult start;
   final int lineNumber;
 
-  /// The total height of all preceding lines.
-  final double precedentHeight;
+  /// The accumulated height of all preceding lines, excluding the current line.
+  final double accumulatedHeight;
 
   /// The index of the end of the line so far.
   LineBreakResult end;
@@ -558,7 +558,7 @@ class LineBuilder {
       widthWithTrailingSpaces: widthIncludingSpace + ellipsisWidth,
       left: alignOffset,
       height: height,
-      baseline: precedentHeight + alphabeticBaseline,
+      baseline: accumulatedHeight + alphabeticBaseline,
     );
   }
 
@@ -575,7 +575,7 @@ class LineBuilder {
       maxWidth: maxWidth,
       start: end,
       lineNumber: lineNumber + 1,
-      precedentHeight: precedentHeight + height,
+      accumulatedHeight: accumulatedHeight + height,
     );
   }
 }
