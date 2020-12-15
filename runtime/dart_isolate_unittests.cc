@@ -483,6 +483,8 @@ TEST_F(DartIsolateTest, InvalidLoadingUnitFails) {
   ASSERT_TRUE(root_isolate->Shutdown());
 }
 
+// TODO(garyq): Re-enable this test, and resolve dart-side hanging future and
+// threading. See https://github.com/flutter/flutter/issues/72312
 TEST_F(DartIsolateTest, DISABLED_ValidLoadingUnitSucceeds) {
   if (!DartVM::IsRunningPrecompiledCode()) {
     FML_LOG(INFO) << "Split AOT does not work in JIT mode";
@@ -525,6 +527,7 @@ TEST_F(DartIsolateTest, DISABLED_ValidLoadingUnitSucceeds) {
 
   ASSERT_TRUE(isolate->get()->LoadLoadingUnit(2, std::move(isolate_data),
                                               std::move(isolate_instructions)));
+  Wait();
 }
 
 }  // namespace testing
