@@ -54,7 +54,8 @@
     @"--text-semantics-focus" : @"text_semantics_focus",
     @"--animated-color-square" : @"animated_color_square",
     @"--platform-view-with-continuous-texture" : @"platform_view_with_continuous_texture",
-    @"--bogus-font-text" : @"bogus_font_text"
+    @"--bogus-font-text" : @"bogus_font_text",
+    @"--spawn-engine-works" : @"spawn_engine_works",
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap
@@ -80,6 +81,25 @@
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
+// TODO(https://github.com/flutter/flutter/issues/72019) Sharing threads doesn't work correctly yet
+// so we need to keep the Spawning engine alive.  Once this issue is fixed we can remove s_spawner.
+static FlutterEngine* s_spawner;
+
+- (FlutterEngine*)engineForTest:(NSString*)scenarioIdentifier {
+  if ([scenarioIdentifier isEqualToString:@"spawn_engine_works"]) {
+    if (s_spawner == nil) {
+      s_spawner = [[FlutterEngine alloc] initWithName:@"FlutterControllerTest" project:nil];
+      [s_spawner run];
+    }
+    return [s_spawner spawnWithEntrypoint:nil libraryURI:nil];
+  } else {
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"FlutterControllerTest"
+                                                        project:nil];
+    [engine run];
+    return engine;
+  }
+}
+
 - (FlutterViewController*)flutterViewControllerForTest:(NSString*)scenarioIdentifier
                                             withEngine:(FlutterEngine*)engine {
   if ([scenarioIdentifier isEqualToString:@"tap_status_bar"]) {
@@ -90,9 +110,7 @@
 }
 
 - (void)setupFlutterViewControllerTest:(NSString*)scenarioIdentifier {
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"FlutterControllerTest" project:nil];
-  [engine run];
-
+  FlutterEngine* engine = [self engineForTest:scenarioIdentifier];
   FlutterViewController* flutterViewController =
       [self flutterViewControllerForTest:scenarioIdentifier withEngine:engine];
 
