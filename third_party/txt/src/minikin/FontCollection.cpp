@@ -53,16 +53,15 @@ std::string GetFontLocale(uint32_t langListId) {
 
 std::shared_ptr<minikin::FontCollection> FontCollection::Create(
     const std::vector<std::shared_ptr<FontFamily>>& typefaces) {
-  std::shared_ptr<minikin::FontCollection> font_collection(new minikin::FontCollection());
+  std::shared_ptr<minikin::FontCollection> font_collection(
+      new minikin::FontCollection());
   if (!font_collection || !font_collection->init(typefaces)) {
     return nullptr;
   }
   return font_collection;
 }
 
-FontCollection::FontCollection()
-    : mMaxChar(0) {
-}
+FontCollection::FontCollection() : mMaxChar(0) {}
 
 bool FontCollection::init(
     const std::vector<std::shared_ptr<FontFamily>>& typefaces) {

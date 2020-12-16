@@ -33,7 +33,7 @@ class FontCollection {
 
  public:
   static std::shared_ptr<minikin::FontCollection> Create(
-    const std::vector<std::shared_ptr<FontFamily>>& typefaces);
+      const std::vector<std::shared_ptr<FontFamily>>& typefaces);
 
   // libtxt extension: an interface for looking up fallback fonts for characters
   // that do not match this collection's font families.
