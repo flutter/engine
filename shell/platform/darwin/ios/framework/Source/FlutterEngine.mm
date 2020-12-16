@@ -271,6 +271,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
+  _textInputPlugin.get().viewController = [self viewController];
+  [_textInputPlugin.get() setupIndirectScribbleInteraction];
 
   if (viewController) {
     __block FlutterEngine* blockSelf = self;
@@ -471,6 +473,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
   _textInputPlugin.get().textInputDelegate = self;
+  _textInputPlugin.get().viewController = [self viewController];
+  [_textInputPlugin.get() setupIndirectScribbleInteraction];
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
 
@@ -759,6 +763,20 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 #pragma mark - FlutterViewEngineDelegate
+
+- (void)showToolbar:(int)client {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.showToolbar" arguments:@[@(client)]];
+}
+
+- (void)focusElement:(UIScribbleElementIdentifier)elementIdentifier atPoint:(CGPoint)referencePoint result:(id)callback {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.focusElement" arguments:@[elementIdentifier, @(referencePoint.x), @(referencePoint.y)] result:callback];
+}
+
+- (void)requestElementsInRect:(CGRect)rect result:(id)callback {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.requestElementsInRect" arguments:@[@(rect.origin.x), @(rect.origin.y), @(rect.size.width), @(rect.size.height)] result:callback];
+}
+
+#pragma mark - Screenshot Delegate
 
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
                                   asBase64Encoded:(BOOL)base64Encode {

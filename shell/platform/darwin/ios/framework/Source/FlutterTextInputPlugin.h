@@ -9,10 +9,12 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 @interface FlutterTextInputPlugin : NSObject
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
+@property(nonatomic, assign) FlutterViewController* viewController;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
 /**
@@ -22,6 +24,39 @@
  * accessibility system.
  */
 - (UIView<UITextInput>*)textInputView;
+
+// UIIndirectScribbleInteractionDelegate
+- (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
+                   isElementFocused:(UIScribbleElementIdentifier)elementIdentifier
+    API_AVAILABLE(ios(14.0));
+- (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
+               focusElementIfNeeded:(UIScribbleElementIdentifier)elementIdentifier
+                     referencePoint:(CGPoint)focusReferencePoint
+                         completion:(void (^)(UIResponder<UITextInput>* focusedInput))completion
+    API_AVAILABLE(ios(14.0));
+- (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
+         shouldDelayFocusForElement:(UIScribbleElementIdentifier)elementIdentifier
+    API_AVAILABLE(ios(14.0));
+- (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
+          willBeginWritingInElement:(UIScribbleElementIdentifier)elementIdentifier
+    API_AVAILABLE(ios(14.0));
+- (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
+          didFinishWritingInElement:(UIScribbleElementIdentifier)elementIdentifier
+    API_AVAILABLE(ios(14.0));
+- (CGRect)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
+                      frameForElement:(UIScribbleElementIdentifier)elementIdentifier
+    API_AVAILABLE(ios(14.0));
+- (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
+              requestElementsInRect:(CGRect)rect
+                         completion:
+                             (void (^)(NSArray<UIScribbleElementIdentifier>* elements))completion
+    API_AVAILABLE(ios(14.0));
+
+/**
+ * These are used by the UIIndirectScribbleInteractionDelegate methods to handle focusing on the
+ * correct element
+ */
+- (void)setupIndirectScribbleInteraction;
 
 @end
 
@@ -46,12 +81,33 @@
 
 /** A tokenizer used by `FlutterTextInputView` to customize string parsing. */
 @interface FlutterTokenizer : UITextInputStringTokenizer
+
+@interface FlutterTextSelectionRect : UITextSelectionRect
+
+@property(nonatomic, readonly) CGRect rect;
+@property(nonatomic, readonly) NSWritingDirection writingDirection;
+@property(nonatomic, readonly) BOOL containsStart;
+@property(nonatomic, readonly) BOOL containsEnd;
+@property(nonatomic, readonly) BOOL isVertical;
+
++ (instancetype)selectionRectWithRectAndInfo:(CGRect)rect
+                            writingDirection:(NSWritingDirection)writingDirection
+                               containsStart:(BOOL)containsStart
+                                 containsEnd:(BOOL)containsEnd
+                                  isVertical:(BOOL)isVertical;
+
+- (instancetype)initWithRectAndInfo:(CGRect)rect
+                   writingDirection:(NSWritingDirection)writingDirection
+                      containsStart:(BOOL)containsStart
+                        containsEnd:(BOOL)containsEnd
+                         isVertical:(BOOL)isVertical;
+
 @end
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 FLUTTER_DARWIN_EXPORT
 #endif
-@interface FlutterTextInputView : UIView <UITextInput>
+@interface FlutterTextInputView : UIView <UITextInput, UIScribbleInteractionDelegate>
 
 // UITextInput
 @property(nonatomic, readonly) NSMutableString* text;
@@ -74,8 +130,21 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic) UITextSmartDashesType smartDashesType API_AVAILABLE(ios(11.0));
 @property(nonatomic, copy) UITextContentType textContentType API_AVAILABLE(ios(10.0));
 
+// UIScribbleInteractionDelegate
+- (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
+    API_AVAILABLE(ios(14.0));
+- (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction
+    API_AVAILABLE(ios(14.0));
+- (BOOL)scribbleInteraction:(UIScribbleInteraction*)interaction
+      shouldBeginAtLocation:(CGPoint)location API_AVAILABLE(ios(14.0));
+- (BOOL)scribbleInteractionShouldDelayFocus:(UIScribbleInteraction*)interaction
+    API_AVAILABLE(ios(14.0));
+
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 @property(nonatomic, assign) UIAccessibilityElement* backingTextInputAccessibilityObject;
+@property(nonatomic, assign) FlutterViewController* viewController;
+@property(nonatomic) BOOL scribbleFocusing;
+@property(nonatomic) BOOL scribbleFocused;
 
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
