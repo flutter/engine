@@ -34,9 +34,7 @@ Future<void> _findFontsForMissingCodeunits(List<int> codeunits) async {
         resolvedFont.url, resolvedFont.name);
   }
   await skiaFontCollection.ensureFontsLoaded();
-  // TODO(hterkelsen): This doesn't always cause us to re-render the paragraph
-  // with the new fonts.
-  EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
+  sendFontChangeMessage();
 }
 
 _ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
