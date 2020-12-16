@@ -2,17 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_TREE_MANAGER_MAP_H_
-#define UI_ACCESSIBILITY_AX_TREE_MANAGER_MAP_H_
+#ifndef ACCESSIBILITY_AX_AX_TREE_MANAGER_MAP_H_
+#define ACCESSIBILITY_AX_AX_TREE_MANAGER_MAP_H_
 
 #include <unordered_map>
 
-#include "base/macros.h"
 #include "base/no_destructor.h"
-#include "ui/accessibility/ax_tree_id.h"
-#include "ui/accessibility/ax_tree_manager.h"
 
-namespace ui {
+#include "ax_tree_id.h"
+#include "ax_tree_manager.h"
+
+namespace ax {
 
 // This class manages AXTreeManager instances. It is a singleton wrapper
 // around a std::unordered_map. AXTreeID's are used as the key for the map.
@@ -36,6 +36,6 @@ class AX_EXPORT AXTreeManagerMap {
   std::unordered_map<AXTreeID, AXTreeManager*, AXTreeIDHash> map_;
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_TREE_MANAGER_MAP_H_
+#endif  // ACCESSIBILITY_AX_AX_TREE_MANAGER_MAP_H_

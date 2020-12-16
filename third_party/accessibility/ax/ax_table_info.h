@@ -2,18 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_TABLE_INFO_H_
-#define UI_ACCESSIBILITY_AX_TABLE_INFO_H_
+#ifndef ACCESSIBILITY_AX_AX_TABLE_INFO_H_
+#define ACCESSIBILITY_AX_AX_TABLE_INFO_H_
 
 #include <map>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
-#include "base/optional.h"
-#include "ui/accessibility/ax_export.h"
+#include "ax_export.h"
 
-namespace ui {
+namespace ax {
 
 class AXTree;
 class AXNode;
@@ -24,12 +23,12 @@ class AX_EXPORT AXTableInfo {
   struct CellData {
     AXNode* cell;
     int32_t cell_id;
-    size_t col_index;
-    size_t row_index;
-    size_t col_span;
-    size_t row_span;
-    size_t aria_col_index;
-    size_t aria_row_index;
+    int col_index;
+    int row_index;
+    int col_span;
+    int row_span;
+    int aria_col_index;
+    int aria_row_index;
   };
 
   // Returns nullptr if the node is not a valid table or grid node.
@@ -120,6 +119,6 @@ class AX_EXPORT AXTableInfo {
   std::map<int, std::map<int, CellData>> incremental_row_col_map_;
 };
 
-}  // namespace ui
+}  // namespace ax
 
 #endif  // UI_ACCESSIBILITY_AX_TABLE_INFO

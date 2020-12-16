@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_ACTION_HANDLER_H_
-#define UI_ACCESSIBILITY_AX_ACTION_HANDLER_H_
+#ifndef ACCESSIBILITY_AX_AX_ACTION_HANDLER_H_
+#define ACCESSIBILITY_AX_AX_ACTION_HANDLER_H_
 
-#include "ui/accessibility/ax_action_handler_base.h"
-#include "ui/accessibility/ax_export.h"
+#include "ax_action_handler_base.h"
+#include "ax_export.h"
 
-namespace ui {
+namespace ax {
 
 // The class you normally want to inherit from other classes when you want to
 // make them visible to accessibility clients, since it automatically registers
@@ -21,6 +21,6 @@ class AX_EXPORT AXActionHandler : public AXActionHandlerBase {
   AXActionHandler();
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_ACTION_HANDLER_H_
+#endif  // ACCESSIBILITY_AX_AX_ACTION_HANDLER_H_

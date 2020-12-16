@@ -2,29 +2,30 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_BASE_H_
-#define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_BASE_H_
+#ifndef ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_BASE_H_
+#define ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_BASE_H_
 
 #include <map>
 #include <string>
 #include <vector>
 
-#include "base/macros.h"
-#include "build/build_config.h"
-#include "ui/accessibility/ax_enums.mojom-forward.h"
-#include "ui/accessibility/ax_node.h"
-#include "ui/accessibility/platform/ax_platform_node.h"
-#include "ui/accessibility/platform/ax_platform_node_delegate.h"
-#include "ui/accessibility/platform/ax_platform_text_boundary.h"
-#include "ui/base/buildflags.h"
-#include "ui/gfx/geometry/rect.h"
-#include "ui/gfx/native_widget_types.h"
+#include "flutter/fml/macros.h"
+#include "third_party/skia/include/core/SkPoint.h"
 
-#if BUILDFLAG(USE_ATK)
-#include <atk/atk.h>
-#endif
+#include "ax/ax_enums.h"
+#include "ax/ax_node.h"
+#include "ax_build/build_config.h"
+#include "gfx/native_widget_types.h"
 
-namespace ui {
+#include "ax_platform_node.h"
+#include "ax_platform_node_delegate.h"
+#include "ax_platform_text_boundary.h"
+
+// #if BUILDFLAG(USE_ATK)
+// #include <atk/atk.h>
+// #endif
+
+namespace ax {
 
 struct AXNodeData;
 
@@ -50,7 +51,7 @@ struct AX_EXPORT AXHypertext {
   // Hypertext.
   std::vector<int32_t> hyperlinks;
 
-  base::string16 hypertext;
+  std::u16string hypertext;
 };
 
 class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
@@ -68,15 +69,15 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   gfx::NativeViewAccessible ChildAtIndex(int index) const;
 
   std::string GetName() const;
-  base::string16 GetNameAsString16() const;
+  std::u16string GetNameAsString16() const;
 
   // This returns nullopt if there's no parent, it's unable to find the child in
   // the list of its parent's children, or its parent doesn't have children.
-  virtual base::Optional<int> GetIndexInParent();
+  virtual std::optional<int> GetIndexInParent();
 
   // Returns a stack of ancestors of this node. The node at the top of the stack
   // is the top most ancestor.
-  base::stack<gfx::NativeViewAccessible> GetAncestors();
+  std::stack<gfx::NativeViewAccessible> GetAncestors();
 
   // Returns an optional integer indicating the logical order of this node
   // compared to another node or returns an empty optional if the nodes
@@ -84,15 +85,15 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   //    0: if this position is logically equivalent to the other node
   //   <0: if this position is logically less than (before) the other node
   //   >0: if this position is logically greater than (after) the other node
-  base::Optional<int> CompareTo(AXPlatformNodeBase& other);
+  std::optional<int> CompareTo(AXPlatformNodeBase& other);
 
   // AXPlatformNode.
   void Destroy() override;
   gfx::NativeViewAccessible GetNativeViewAccessible() override;
-  void NotifyAccessibilityEvent(ax::mojom::Event event_type) override;
+  void NotifyAccessibilityEvent(ax::Event event_type) override;
 
 #if defined(OS_APPLE)
-  void AnnounceText(const base::string16& text) override;
+  void AnnounceText(const std::u16string& text) override;
 #endif
 
   AXPlatformNodeDelegate* GetDelegate() const override;
@@ -106,7 +107,7 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   bool IsDescendant(AXPlatformNodeBase* descendant);
 
   using AXPlatformNodeChildIterator =
-      ui::AXNode::ChildIteratorBase<AXPlatformNodeBase,
+      ax::AXNode::ChildIteratorBase<AXPlatformNodeBase,
                                     &AXPlatformNodeBase::GetNextSibling,
                                     &AXPlatformNodeBase::GetPreviousSibling,
                                     &AXPlatformNodeBase::GetFirstChild,
@@ -114,42 +115,40 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   AXPlatformNodeChildIterator AXPlatformNodeChildrenBegin() const;
   AXPlatformNodeChildIterator AXPlatformNodeChildrenEnd() const;
 
-  bool HasBoolAttribute(ax::mojom::BoolAttribute attr) const;
-  bool GetBoolAttribute(ax::mojom::BoolAttribute attr) const;
-  bool GetBoolAttribute(ax::mojom::BoolAttribute attr, bool* value) const;
+  bool HasBoolAttribute(ax::BoolAttribute attr) const;
+  bool GetBoolAttribute(ax::BoolAttribute attr) const;
+  bool GetBoolAttribute(ax::BoolAttribute attr, bool* value) const;
 
-  bool HasFloatAttribute(ax::mojom::FloatAttribute attr) const;
-  float GetFloatAttribute(ax::mojom::FloatAttribute attr) const;
-  bool GetFloatAttribute(ax::mojom::FloatAttribute attr, float* value) const;
+  bool HasFloatAttribute(ax::FloatAttribute attr) const;
+  float GetFloatAttribute(ax::FloatAttribute attr) const;
+  bool GetFloatAttribute(ax::FloatAttribute attr, float* value) const;
 
-  bool HasIntAttribute(ax::mojom::IntAttribute attribute) const;
-  int GetIntAttribute(ax::mojom::IntAttribute attribute) const;
-  bool GetIntAttribute(ax::mojom::IntAttribute attribute, int* value) const;
+  bool HasIntAttribute(ax::IntAttribute attribute) const;
+  int GetIntAttribute(ax::IntAttribute attribute) const;
+  bool GetIntAttribute(ax::IntAttribute attribute, int* value) const;
 
-  bool HasStringAttribute(ax::mojom::StringAttribute attribute) const;
-  const std::string& GetStringAttribute(
-      ax::mojom::StringAttribute attribute) const;
-  bool GetStringAttribute(ax::mojom::StringAttribute attribute,
+  bool HasStringAttribute(ax::StringAttribute attribute) const;
+  const std::string& GetStringAttribute(ax::StringAttribute attribute) const;
+  bool GetStringAttribute(ax::StringAttribute attribute,
                           std::string* value) const;
-  bool GetString16Attribute(ax::mojom::StringAttribute attribute,
-                            base::string16* value) const;
-  base::string16 GetString16Attribute(
-      ax::mojom::StringAttribute attribute) const;
-  bool HasInheritedStringAttribute(ax::mojom::StringAttribute attribute) const;
+  bool GetString16Attribute(ax::StringAttribute attribute,
+                            std::u16string* value) const;
+  std::u16string GetString16Attribute(ax::StringAttribute attribute) const;
+  bool HasInheritedStringAttribute(ax::StringAttribute attribute) const;
   const std::string& GetInheritedStringAttribute(
-      ax::mojom::StringAttribute attribute) const;
-  base::string16 GetInheritedString16Attribute(
-      ax::mojom::StringAttribute attribute) const;
-  bool GetInheritedStringAttribute(ax::mojom::StringAttribute attribute,
+      ax::StringAttribute attribute) const;
+  std::u16string GetInheritedString16Attribute(
+      ax::StringAttribute attribute) const;
+  bool GetInheritedStringAttribute(ax::StringAttribute attribute,
                                    std::string* value) const;
-  bool GetInheritedString16Attribute(ax::mojom::StringAttribute attribute,
-                                     base::string16* value) const;
+  bool GetInheritedString16Attribute(ax::StringAttribute attribute,
+                                     std::u16string* value) const;
 
-  bool HasIntListAttribute(ax::mojom::IntListAttribute attribute) const;
+  bool HasIntListAttribute(ax::IntListAttribute attribute) const;
   const std::vector<int32_t>& GetIntListAttribute(
-      ax::mojom::IntListAttribute attribute) const;
+      ax::IntListAttribute attribute) const;
 
-  bool GetIntListAttribute(ax::mojom::IntListAttribute attribute,
+  bool GetIntListAttribute(ax::IntListAttribute attribute,
                            std::vector<int32_t>* value) const;
 
   // Returns the selection container if inside one.
@@ -177,51 +176,51 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
 
   // If inside a table or ARIA grid, returns the zero-based index of the cell.
   // Indices are in row major order and each cell is counted once regardless of
-  // its span. Returns base::nullopt if not a cell or if not inside a table.
-  base::Optional<int> GetTableCellIndex() const;
+  // its span. Returns std::nullopt if not a cell or if not inside a table.
+  std::optional<int> GetTableCellIndex() const;
 
   // If inside a table or ARIA grid, returns the physical column number for the
   // current cell. In contrast to logical columns, physical columns always start
   // from 0 and have no gaps in their numbering. Logical columns can be set
-  // using aria-colindex. Returns base::nullopt if not a cell or if not inside a
+  // using aria-colindex. Returns std::nullopt if not a cell or if not inside a
   // table.
-  base::Optional<int> GetTableColumn() const;
+  std::optional<int> GetTableColumn() const;
 
   // If inside a table or ARIA grid, returns the number of physical columns.
-  // Returns base::nullopt if not inside a table.
-  base::Optional<int> GetTableColumnCount() const;
+  // Returns std::nullopt if not inside a table.
+  std::optional<int> GetTableColumnCount() const;
 
   // If inside a table or ARIA grid, returns the number of ARIA columns.
-  // Returns base::nullopt if not inside a table.
-  base::Optional<int> GetTableAriaColumnCount() const;
+  // Returns std::nullopt if not inside a table.
+  std::optional<int> GetTableAriaColumnCount() const;
 
   // If inside a table or ARIA grid, returns the number of physical columns that
-  // this cell spans. Returns base::nullopt if not a cell or if not inside a
+  // this cell spans. Returns std::nullopt if not a cell or if not inside a
   // table.
-  base::Optional<int> GetTableColumnSpan() const;
+  std::optional<int> GetTableColumnSpan() const;
 
   // If inside a table or ARIA grid, returns the physical row number for the
   // current cell. In contrast to logical rows, physical rows always start from
   // 0 and have no gaps in their numbering. Logical rows can be set using
-  // aria-rowindex. Returns base::nullopt if not a cell or if not inside a
+  // aria-rowindex. Returns std::nullopt if not a cell or if not inside a
   // table.
-  base::Optional<int> GetTableRow() const;
+  std::optional<int> GetTableRow() const;
 
   // If inside a table or ARIA grid, returns the number of physical rows.
-  // Returns base::nullopt if not inside a table.
-  base::Optional<int> GetTableRowCount() const;
+  // Returns std::nullopt if not inside a table.
+  std::optional<int> GetTableRowCount() const;
 
   // If inside a table or ARIA grid, returns the number of ARIA rows.
-  // Returns base::nullopt if not inside a table.
-  base::Optional<int> GetTableAriaRowCount() const;
+  // Returns std::nullopt if not inside a table.
+  std::optional<int> GetTableAriaRowCount() const;
 
   // If inside a table or ARIA grid, returns the number of physical rows that
-  // this cell spans. Returns base::nullopt if not a cell or if not inside a
+  // this cell spans. Returns std::nullopt if not a cell or if not inside a
   // table.
-  base::Optional<int> GetTableRowSpan() const;
+  std::optional<int> GetTableRowSpan() const;
 
   // Returns the font size converted to points, if available.
-  base::Optional<float> GetFontSizeInPoints() const;
+  std::optional<float> GetFontSizeInPoints() const;
 
   // Returns true if either a descendant has selection (sel_focus_object_id) or
   // if this node is a simple text element and has text selection attributes.
@@ -273,7 +272,7 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   // object character", and every leaf child node with its visible accessible
   // name. This is how displayed text and embedded objects are represented in
   // ATK and IA2 APIs.
-  base::string16 GetHypertext() const;
+  std::u16string GetHypertext() const;
 
   // Returns the text of this node and all descendant nodes; including text
   // found in embedded objects.
@@ -281,15 +280,15 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   // Only text displayed on screen is included. Text from ARIA and HTML
   // attributes that is either not displayed on screen, or outside this node,
   // e.g. aria-label and HTML title, is not returned.
-  base::string16 GetInnerText() const;
+  std::u16string GetInnerText() const;
 
-  virtual base::string16 GetValue() const;
+  virtual std::u16string GetValue() const;
 
   // Represents a non-static text node in IAccessibleHypertext (and ATK in the
   // future). This character is embedded in the response to
   // IAccessibleText::get_text, indicating the position where a non-static text
   // child object appears.
-  static const base::char16 kEmbeddedCharacter;
+  static const char16_t kEmbeddedCharacter;
 
   // Get a node given its unique id or null in the case that the id is unknown.
   static AXPlatformNode* GetFromUniqueId(int32_t unique_id);
@@ -298,16 +297,16 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   static size_t GetInstanceCountForTesting();
 
   static void SetOnNotifyEventCallbackForTesting(
-      ax::mojom::Event event_type,
-      base::RepeatingClosure callback);
+      ax::Event event_type,
+      std::function<void()> callback);
 
   // This method finds text boundaries in the text used for platform text APIs.
   // Implementations may use side-channel data such as line or word indices to
   // produce appropriate results.
-  virtual int FindTextBoundary(ax::mojom::TextBoundary boundary,
-                               int offset,
-                               ax::mojom::MoveDirection direction,
-                               ax::mojom::TextAffinity affinity) const;
+  // virtual int FindTextBoundary(ax::TextBoundary boundary,
+  //                              int offset,
+  //                              ax::MoveDirection direction,
+  //                              ax::TextAffinity affinity) const;
 
   enum ScrollType {
     TopLeft,
@@ -325,15 +324,15 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   // AXPlatformNodeDelegate::HitTestSync, which in the case of
   // BrowserAccessibility, may not be accurate after a single call. See
   // BrowserAccessibilityManager::CachingAsyncHitTest
-  AXPlatformNodeBase* NearestLeafToPoint(gfx::Point point) const;
+  AXPlatformNodeBase* NearestLeafToPoint(SkPoint point) const;
 
   // Return the nearest text index to a point in screen coordinates for an
   // accessibility node. If the node is not a text only node, the implicit
   // nearest index is zero. Note this will only find the index of text on the
   // input node. Due to perf concerns, this should only be called on leaf nodes.
-  int NearestTextIndexToPoint(gfx::Point point);
+  int NearestTextIndexToPoint(SkPoint point);
 
-  ui::TextAttributeList ComputeTextAttributes() const;
+  ax::TextAttributeList ComputeTextAttributes() const;
 
   // Get the number of items selected. It checks kMultiselectable and
   // kFocusable. and uses GetSelectedItems to get the selected number.
@@ -366,12 +365,12 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   // Get the range value text, which might come from aria-valuetext or
   // a floating-point value. This is different from the value string
   // attribute used in input controls such as text boxes and combo boxes.
-  base::string16 GetRangeValueText() const;
+  std::u16string GetRangeValueText() const;
 
   // Get the role description from the node data or from the image annotation
   // status.
-  base::string16 GetRoleDescription() const;
-  base::string16 GetRoleDescriptionFromImageAnnotationStatusOrFromAttribute()
+  std::u16string GetRoleDescription() const;
+  std::u16string GetRoleDescriptionFromImageAnnotationStatusOrFromAttribute()
       const;
 
   // Cast a gfx::NativeViewAccessible to an AXPlatformNodeBase if it is one,
@@ -384,11 +383,12 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   // Sets the hypertext selection in this object if possible.
   bool SetHypertextSelection(int start_offset, int end_offset);
 
-#if BUILDFLAG(USE_ATK)
-  using PlatformAttributeList = AtkAttributeSet*;
-#else
-  using PlatformAttributeList = std::vector<base::string16>;
-#endif
+  // #if BUILDFLAG(USE_ATK)
+  //   using PlatformAttributeList = AtkAttributeSet*;
+  // #else
+  //   using PlatformAttributeList = std::vector<std::u16string>;
+  // #endif
+  using PlatformAttributeList = std::vector<std::u16string>;
 
   // Compute the attributes exposed via platform accessibility objects and put
   // them into an attribute list, |attributes|. Currently only used by
@@ -397,19 +397,19 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
 
   // If the string attribute |attribute| is present, add its value as an
   // IAccessible2 attribute with the name |name|.
-  void AddAttributeToList(const ax::mojom::StringAttribute attribute,
+  void AddAttributeToList(const ax::StringAttribute attribute,
                           const char* name,
                           PlatformAttributeList* attributes);
 
   // If the bool attribute |attribute| is present, add its value as an
   // IAccessible2 attribute with the name |name|.
-  void AddAttributeToList(const ax::mojom::BoolAttribute attribute,
+  void AddAttributeToList(const ax::BoolAttribute attribute,
                           const char* name,
                           PlatformAttributeList* attributes);
 
   // If the int attribute |attribute| is present, add its value as an
   // IAccessible2 attribute with the name |name|.
-  void AddAttributeToList(const ax::mojom::IntAttribute attribute,
+  void AddAttributeToList(const ax::IntAttribute attribute,
                           const char* name,
                           PlatformAttributeList* attributes);
 
@@ -485,13 +485,13 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   bool IsSameHypertextCharacter(const AXHypertext& old_hypertext,
                                 size_t old_char_index,
                                 size_t new_char_index);
-  void ComputeHypertextRemovedAndInserted(const AXHypertext& old_hypertext,
-                                          size_t* start,
-                                          size_t* old_len,
-                                          size_t* new_len);
+  // void ComputeHypertextRemovedAndInserted(const AXHypertext& old_hypertext,
+  //                                         size_t* start,
+  //                                         size_t* old_len,
+  //                                         size_t* new_len);
 
-  base::Optional<int> GetPosInSet() const;
-  base::Optional<int> GetSetSize() const;
+  std::optional<int> GetPosInSet() const;
+  std::optional<int> GetSetSize() const;
 
   std::string GetInvalidValue() const;
 
@@ -504,16 +504,16 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
 
  private:
   // Returns true if the index represents a text character.
-  bool IsText(const base::string16& text,
+  bool IsText(const std::u16string& text,
               size_t index,
               bool is_indexed_from_end = false);
 
   // Compute value for object attribute details-roles on aria-details nodes.
   std::string ComputeDetailsRoles() const;
 
-  DISALLOW_COPY_AND_ASSIGN(AXPlatformNodeBase);
+  FML_DISALLOW_COPY_AND_ASSIGN(AXPlatformNodeBase);
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_BASE_H_
+#endif  // ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_BASE_H_

@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_OFFSCREEN_RESULT_H_
-#define UI_ACCESSIBILITY_AX_OFFSCREEN_RESULT_H_
+#ifndef ACCESSIBILITY_AX_AX_OFFSCREEN_RESULT_H_
+#define ACCESSIBILITY_AX_AX_OFFSCREEN_RESULT_H_
 
-namespace ui {
+namespace ax {
 
 // The onscreen state of result bounds or points. Any object is offscreen if
 // it is fully clipped or scrolled out of view by any of its ancestors so that
@@ -15,6 +15,6 @@ namespace ui {
 //   kOnscreen:  The resulting bound or point is onscreen
 //   kOffscreen: The resulting bound or point is offscreen
 enum class AXOffscreenResult { kOnscreen, kOffscreen };
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_OFFSCREEN_RESULT_H_
+#endif  // ACCESSIBILITY_AX_AX_OFFSCREEN_RESULT_H_

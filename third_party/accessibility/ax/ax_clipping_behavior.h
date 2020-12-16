@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_CLIPPING_BEHAVIOR_H_
-#define UI_ACCESSIBILITY_AX_CLIPPING_BEHAVIOR_H_
+#ifndef ACCESSIBILITY_AX_AX_CLIPPING_BEHAVIOR_H_
+#define ACCESSIBILITY_AX_AX_CLIPPING_BEHAVIOR_H_
 
-namespace ui {
+namespace ax {
 
 // The clipping behavior to perform on bounds. Clipping limits a node's bounding
 // box to the visible sizes of it's ancestors - which may be hidden or scrolled
@@ -14,6 +14,6 @@ namespace ui {
 //   kUnclipped: Do not apply clipping to bound results
 //   kClipped:   Apply clipping to bound results
 enum class AXClippingBehavior { kUnclipped, kClipped };
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_CLIPPING_BEHAVIOR_H_
+#endif  // ACCESSIBILITY_AX_AX_CLIPPING_BEHAVIOR_H_

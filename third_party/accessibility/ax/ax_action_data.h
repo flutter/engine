@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_ACTION_DATA_H_
-#define UI_ACCESSIBILITY_AX_ACTION_DATA_H_
+#ifndef ACCESSIBILITY_AX_AX_ACTION_DATA_H_
+#define ACCESSIBILITY_AX_AX_ACTION_DATA_H_
 
-#include "ui/accessibility/ax_enums.mojom-forward.h"
-#include "ui/accessibility/ax_export.h"
-#include "ui/accessibility/ax_tree_id.h"
-#include "ui/gfx/geometry/rect.h"
+#include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/skia/include/core/SkRect.h"
 
-namespace ui {
+#include "ax_enums.h"
+#include "ax_export.h"
+#include "ax_tree_id.h"
+
+namespace ax {
 
 // A compact representation of an accessibility action and the arguments
 // associated with that action.
@@ -22,14 +24,14 @@ struct AX_EXPORT AXActionData {
   // This is a simple serializable struct. All member variables should be
   // public and copyable.
 
-  // See the ax::mojom::Action enums in ax_enums.mojom for explanations of which
+  // See the ax::Action enums in ax_enums.mojom for explanations of which
   // parameters apply.
 
   // The action to take.
-  ax::mojom::Action action;
+  ax::Action action;
 
   // The ID of the tree that this action should be performed on.
-  ui::AXTreeID target_tree_id = ui::AXTreeIDUnknown();
+  ax::AXTreeID target_tree_id = ax::AXTreeIDUnknown();
 
   // The source extension id (if any) of this action.
   std::string source_extension_id;
@@ -40,7 +42,7 @@ struct AX_EXPORT AXActionData {
   // The request id of this action tracked by the client.
   int request_id = -1;
 
-  // Use enums from ax::mojom::ActionFlags
+  // Use enums from ax::ActionFlags
   int flags = 0;
 
   // For an action that creates a selection, the selection anchor and focus
@@ -61,27 +63,27 @@ struct AX_EXPORT AXActionData {
   int custom_action_id = -1;
 
   // The target rect for the action.
-  gfx::Rect target_rect;
+  SkRect target_rect;
 
   // The target point for the action.
-  gfx::Point target_point;
+  SkPoint target_point;
 
   // The new value for a node, for the SET_VALUE action. UTF-8 encoded.
   std::string value;
 
   // The event to fire in response to a HIT_TEST action.
-  ax::mojom::Event hit_test_event_to_fire;
+  ax::Event hit_test_event_to_fire;
 
   // The scroll alignment to use for a SCROLL_TO_MAKE_VISIBLE action. The
   // scroll alignment controls where a node is scrolled within the viewport.
-  ax::mojom::ScrollAlignment horizontal_scroll_alignment;
-  ax::mojom::ScrollAlignment vertical_scroll_alignment;
+  ax::ScrollAlignment horizontal_scroll_alignment;
+  ax::ScrollAlignment vertical_scroll_alignment;
 
   // The behavior to use for a SCROLL_TO_MAKE_VISIBLE. This controls whether or
   // not the viewport is scrolled when the node is already visible.
-  ax::mojom::ScrollBehavior scroll_behavior;
+  ax::ScrollBehavior scroll_behavior;
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_ACTION_DATA_H_
+#endif  // ACCESSIBILITY_AX_AX_ACTION_DATA_H_

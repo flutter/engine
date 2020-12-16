@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_TREE_MANAGER_H_
-#define UI_ACCESSIBILITY_AX_TREE_MANAGER_H_
+#ifndef ACCESSIBILITY_AX_AX_TREE_MANAGER_H_
+#define ACCESSIBILITY_AX_AX_TREE_MANAGER_H_
 
-#include "ui/accessibility/ax_export.h"
-#include "ui/accessibility/ax_node.h"
-#include "ui/accessibility/ax_tree_id.h"
+#include "ax_export.h"
+#include "ax_node.h"
+#include "ax_tree_id.h"
 
-namespace ui {
+namespace ax {
 
 // Abstract interface for a class that owns an AXTree and manages its
 // connections to other AXTrees in the same page or desktop (parent and child
@@ -42,6 +42,6 @@ class AX_EXPORT AXTreeManager {
   virtual AXNode* GetParentNodeFromParentTreeAsAXNode() const = 0;
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_TREE_MANAGER_H_
+#endif  // ACCESSIBILITY_AX_AX_TREE_MANAGER_H_

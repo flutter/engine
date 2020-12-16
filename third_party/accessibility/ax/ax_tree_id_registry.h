@@ -2,24 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_TREE_ID_REGISTRY_H_
-#define UI_ACCESSIBILITY_AX_TREE_ID_REGISTRY_H_
+#ifndef ACCESSIBILITY_AX_AX_TREE_ID_REGISTRY_H_
+#define ACCESSIBILITY_AX_AX_TREE_ID_REGISTRY_H_
 
 #include <map>
 #include <string>
 #include <utility>
 
-#include "base/macros.h"
-#include "ui/accessibility/ax_action_handler.h"
-#include "ui/accessibility/ax_export.h"
-#include "ui/accessibility/ax_tree_id.h"
+#include "flutter/fml/macros.h"
+
+#include "ax_action_handler.h"
+#include "ax_export.h"
+#include "ax_tree_id.h"
 
 namespace base {
 template <typename T>
 struct DefaultSingletonTraits;
 }  // namespace base
 
-namespace ui {
+namespace ax {
 
 class AXActionHandlerBase;
 
@@ -36,7 +37,7 @@ class AX_EXPORT AXTreeIDRegistry {
   using FrameID = std::pair<int, int>;
 
   // Get the single instance of this class.
-  static AXTreeIDRegistry* GetInstance();
+  static AXTreeIDRegistry& GetInstance();
 
   // Gets the frame id based on an ax tree id.
   FrameID GetFrameID(const AXTreeID& ax_tree_id);
@@ -79,9 +80,9 @@ class AX_EXPORT AXTreeIDRegistry {
   // Maps an id to its handler.
   std::map<AXTreeID, AXActionHandlerBase*> id_to_action_handler_;
 
-  DISALLOW_COPY_AND_ASSIGN(AXTreeIDRegistry);
+  FML_DISALLOW_COPY_AND_ASSIGN(AXTreeIDRegistry);
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_TREE_ID_REGISTRY_H_
+#endif  // ACCESSIBILITY_AX_AX_TREE_ID_REGISTRY_H_

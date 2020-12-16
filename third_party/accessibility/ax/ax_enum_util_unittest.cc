@@ -2,19 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_enum_util.h"
+#include "ax_enum_util.h"
 
 #include <string>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
-#include "ui/accessibility/ax_enums.mojom.h"
-#include "ui/accessibility/ax_node_data.h"
+#include "gtest/gtest.h"
 
-namespace ui {
+#include "ax_enums.h"
+#include "ax_node_data.h"
+
+namespace ax {
 
 // Templatized function that tests that for a mojom enum
-// such as ax::mojom::Role, ax::mojom::Event, etc. we can
+// such as ax::Role, ax::Event, etc. we can
 // call ToString() on the enum to get a string, and then
 // ParseEnumName() on the string to get back the original
 // value. Also tests what happens when we call ToString
@@ -71,174 +72,168 @@ void TestAXNodeDataSetter(void (AXNodeData::*Setter)(T, U), U value) {
 }
 
 TEST(AXEnumUtilTest, Event) {
-  TestEnumStringConversion<ax::mojom::Event>(ParseEvent);
+  TestEnumStringConversion<ax::Event>(ParseEvent);
 }
 
 TEST(AXEnumUtilTest, Role) {
-  TestEnumStringConversion<ax::mojom::Role>(ParseRole);
+  TestEnumStringConversion<ax::Role>(ParseRole);
 }
 
 TEST(AXEnumUtilTest, State) {
-  TestEnumStringConversion<ax::mojom::State>(ParseState);
+  TestEnumStringConversion<ax::State>(ParseState);
 }
 
 TEST(AXEnumUtilTest, Action) {
-  TestEnumStringConversion<ax::mojom::Action>(ParseAction);
+  TestEnumStringConversion<ax::Action>(ParseAction);
 }
 
 TEST(AXEnumUtilTest, ActionFlags) {
-  TestEnumStringConversion<ax::mojom::ActionFlags>(ParseActionFlags);
+  TestEnumStringConversion<ax::ActionFlags>(ParseActionFlags);
 }
 
 TEST(AXEnumUtilTest, DefaultActionVerb) {
-  TestEnumStringConversion<ax::mojom::DefaultActionVerb>(
-      ParseDefaultActionVerb);
+  TestEnumStringConversion<ax::DefaultActionVerb>(ParseDefaultActionVerb);
 }
 
 TEST(AXEnumUtilTest, Mutation) {
-  TestEnumStringConversion<ax::mojom::Mutation>(ParseMutation);
+  TestEnumStringConversion<ax::Mutation>(ParseMutation);
 }
 
 TEST(AXEnumUtilTest, StringAttribute) {
-  TestEnumStringConversion<ax::mojom::StringAttribute>(ParseStringAttribute);
-  TestAXNodeDataSetter<ax::mojom::StringAttribute>(
-      &AXNodeData::AddStringAttribute, std::string());
+  TestEnumStringConversion<ax::StringAttribute>(ParseStringAttribute);
+  TestAXNodeDataSetter<ax::StringAttribute>(&AXNodeData::AddStringAttribute,
+                                            std::string());
 }
 
 TEST(AXEnumUtilTest, IntAttribute) {
-  TestEnumStringConversion<ax::mojom::IntAttribute>(ParseIntAttribute);
-  TestAXNodeDataSetter<ax::mojom::IntAttribute>(&AXNodeData::AddIntAttribute,
-                                                0);
+  TestEnumStringConversion<ax::IntAttribute>(ParseIntAttribute);
+  TestAXNodeDataSetter<ax::IntAttribute>(&AXNodeData::AddIntAttribute, 0);
 }
 
 TEST(AXEnumUtilTest, FloatAttribute) {
-  TestEnumStringConversion<ax::mojom::FloatAttribute>(ParseFloatAttribute);
-  TestAXNodeDataSetter<ax::mojom::FloatAttribute>(
-      &AXNodeData::AddFloatAttribute, 0.0f);
+  TestEnumStringConversion<ax::FloatAttribute>(ParseFloatAttribute);
+  TestAXNodeDataSetter<ax::FloatAttribute>(&AXNodeData::AddFloatAttribute,
+                                           0.0f);
 }
 
 TEST(AXEnumUtilTest, BoolAttribute) {
-  TestEnumStringConversion<ax::mojom::BoolAttribute>(ParseBoolAttribute);
-  TestAXNodeDataSetter<ax::mojom::BoolAttribute>(&AXNodeData::AddBoolAttribute,
-                                                 false);
+  TestEnumStringConversion<ax::BoolAttribute>(ParseBoolAttribute);
+  TestAXNodeDataSetter<ax::BoolAttribute>(&AXNodeData::AddBoolAttribute, false);
 }
 
 TEST(AXEnumUtilTest, IntListAttribute) {
-  TestEnumStringConversion<ax::mojom::IntListAttribute>(ParseIntListAttribute);
-  TestAXNodeDataSetter<ax::mojom::IntListAttribute>(
-      &AXNodeData::AddIntListAttribute, std::vector<int32_t>());
+  TestEnumStringConversion<ax::IntListAttribute>(ParseIntListAttribute);
+  TestAXNodeDataSetter<ax::IntListAttribute>(&AXNodeData::AddIntListAttribute,
+                                             std::vector<int32_t>());
 }
 
 TEST(AXEnumUtilTest, StringListAttribute) {
-  TestEnumStringConversion<ax::mojom::StringListAttribute>(
-      ParseStringListAttribute);
-  TestAXNodeDataSetter<ax::mojom::StringListAttribute>(
+  TestEnumStringConversion<ax::StringListAttribute>(ParseStringListAttribute);
+  TestAXNodeDataSetter<ax::StringListAttribute>(
       &AXNodeData::AddStringListAttribute, std::vector<std::string>());
 }
 
 TEST(AXEnumUtilTest, MarkerType) {
-  TestEnumStringConversion<ax::mojom::MarkerType>(
-      ParseMarkerType, [](int32_t val) {
-        return val == 0 ? 1 :
-                        // 8 (Composition) is
-                        // explicitly skipped in
-                        // ax_enums.mojom.
-                   val == 4 ? 16 : val * 2;
-      });
+  TestEnumStringConversion<ax::MarkerType>(ParseMarkerType, [](int32_t val) {
+    return val == 0 ? 1 :
+                    // 8 (Composition) is
+                    // explicitly skipped in
+                    // ax_enums.mojom.
+               val == 4 ? 16 : val * 2;
+  });
 }
 
 TEST(AXEnumUtilTest, Text_Decoration_Style) {
-  TestEnumStringConversion<ax::mojom::TextDecorationStyle>(
-      ParseTextDecorationStyle);
+  TestEnumStringConversion<ax::TextDecorationStyle>(ParseTextDecorationStyle);
 }
 
 TEST(AXEnumUtilTest, ListStyle) {
-  TestEnumStringConversion<ax::mojom::ListStyle>(ParseListStyle);
+  TestEnumStringConversion<ax::ListStyle>(ParseListStyle);
 }
 
 TEST(AXEnumUtilTest, MoveDirection) {
-  TestEnumStringConversion<ax::mojom::MoveDirection>(ParseMoveDirection);
+  TestEnumStringConversion<ax::MoveDirection>(ParseMoveDirection);
 }
 
 TEST(AXEnumUtilTest, Command) {
-  TestEnumStringConversion<ax::mojom::Command>(ParseCommand);
+  TestEnumStringConversion<ax::Command>(ParseCommand);
 }
 
 TEST(AXEnumUtilTest, TextAlign) {
-  TestEnumStringConversion<ax::mojom::TextAlign>(ParseTextAlign);
+  TestEnumStringConversion<ax::TextAlign>(ParseTextAlign);
 }
 
 TEST(AXEnumUtilTest, TextBoundary) {
-  TestEnumStringConversion<ax::mojom::TextBoundary>(ParseTextBoundary);
+  TestEnumStringConversion<ax::TextBoundary>(ParseTextBoundary);
 }
 
 TEST(AXEnumUtilTest, TextDirection) {
-  TestEnumStringConversion<ax::mojom::WritingDirection>(ParseTextDirection);
+  TestEnumStringConversion<ax::WritingDirection>(ParseTextDirection);
 }
 
 TEST(AXEnumUtilTest, TextPosition) {
-  TestEnumStringConversion<ax::mojom::TextPosition>(ParseTextPosition);
+  TestEnumStringConversion<ax::TextPosition>(ParseTextPosition);
 }
 
 TEST(AXEnumUtilTest, TextStyle) {
-  TestEnumStringConversion<ax::mojom::TextStyle>(ParseTextStyle);
+  TestEnumStringConversion<ax::TextStyle>(ParseTextStyle);
 }
 
 TEST(AXEnumUtilTest, AriaCurrentState) {
-  TestEnumStringConversion<ax::mojom::AriaCurrentState>(ParseAriaCurrentState);
+  TestEnumStringConversion<ax::AriaCurrentState>(ParseAriaCurrentState);
 }
 
 TEST(AXEnumUtilTest, HasPopup) {
-  TestEnumStringConversion<ax::mojom::HasPopup>(ParseHasPopup);
+  TestEnumStringConversion<ax::HasPopup>(ParseHasPopup);
 }
 
 TEST(AXEnumUtilTest, InvalidState) {
-  TestEnumStringConversion<ax::mojom::InvalidState>(ParseInvalidState);
+  TestEnumStringConversion<ax::InvalidState>(ParseInvalidState);
 }
 
 TEST(AXEnumUtilTest, Restriction) {
-  TestEnumStringConversion<ax::mojom::Restriction>(ParseRestriction);
+  TestEnumStringConversion<ax::Restriction>(ParseRestriction);
 }
 
 TEST(AXEnumUtilTest, CheckedState) {
-  TestEnumStringConversion<ax::mojom::CheckedState>(ParseCheckedState);
+  TestEnumStringConversion<ax::CheckedState>(ParseCheckedState);
 }
 
 TEST(AXEnumUtilTest, SortDirection) {
-  TestEnumStringConversion<ax::mojom::SortDirection>(ParseSortDirection);
+  TestEnumStringConversion<ax::SortDirection>(ParseSortDirection);
 }
 
 TEST(AXEnumUtilTest, NameFrom) {
-  TestEnumStringConversion<ax::mojom::NameFrom>(ParseNameFrom);
+  TestEnumStringConversion<ax::NameFrom>(ParseNameFrom);
 }
 
 TEST(AXEnumUtilTest, DescriptionFrom) {
-  TestEnumStringConversion<ax::mojom::DescriptionFrom>(ParseDescriptionFrom);
+  TestEnumStringConversion<ax::DescriptionFrom>(ParseDescriptionFrom);
 }
 
 TEST(AXEnumUtilTest, EventFrom) {
-  TestEnumStringConversion<ax::mojom::EventFrom>(ParseEventFrom);
+  TestEnumStringConversion<ax::EventFrom>(ParseEventFrom);
 }
 
 TEST(AXEnumUtilTest, Gesture) {
-  TestEnumStringConversion<ax::mojom::Gesture>(ParseGesture);
+  TestEnumStringConversion<ax::Gesture>(ParseGesture);
 }
 
 TEST(AXEnumUtilTest, TextAffinity) {
-  TestEnumStringConversion<ax::mojom::TextAffinity>(ParseTextAffinity);
+  TestEnumStringConversion<ax::TextAffinity>(ParseTextAffinity);
 }
 
 TEST(AXEnumUtilTest, TreeOrder) {
-  TestEnumStringConversion<ax::mojom::TreeOrder>(ParseTreeOrder);
+  TestEnumStringConversion<ax::TreeOrder>(ParseTreeOrder);
 }
 
 TEST(AXEnumUtilTest, ImageAnnotationStatus) {
-  TestEnumStringConversion<ax::mojom::ImageAnnotationStatus>(
+  TestEnumStringConversion<ax::ImageAnnotationStatus>(
       ParseImageAnnotationStatus);
 }
 
 TEST(AXEnumUtilTest, Dropeffect) {
-  TestEnumStringConversion<ax::mojom::Dropeffect>(ParseDropeffect);
+  TestEnumStringConversion<ax::Dropeffect>(ParseDropeffect);
 }
 
-}  // namespace ui
+}  // namespace ax

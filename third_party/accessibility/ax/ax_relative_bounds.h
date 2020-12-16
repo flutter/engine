@@ -2,20 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_RELATIVE_BOUNDS_H_
-#define UI_ACCESSIBILITY_AX_RELATIVE_BOUNDS_H_
+#ifndef ACCESSIBILITY_AX_AX_RELATIVE_BOUNDS_H_
+#define ACCESSIBILITY_AX_AX_RELATIVE_BOUNDS_H_
 
 #include <stdint.h>
 
 #include <memory>
 #include <ostream>
 
-#include "ui/accessibility/ax_base_export.h"
-#include "ui/accessibility/ax_enums.mojom-forward.h"
-#include "ui/gfx/geometry/rect_f.h"
-#include "ui/gfx/transform.h"
+#include "third_party/skia/include/core/SkMatrix.h"
+#include "third_party/skia/include/core/SkRect.h"
 
-namespace ui {
+#include "ax_base_export.h"
+#include "ax_enums.h"
+
+namespace ax {
 
 // The relative bounding box of an AXNode.
 //
@@ -47,19 +48,19 @@ struct AX_BASE_EXPORT AXRelativeBounds final {
   int32_t offset_container_id;
 
   // The relative bounding box of this node.
-  gfx::RectF bounds;
+  SkRect bounds;
 
   // An additional transform to apply to position this object and its subtree.
   // NOTE: this member is a std::unique_ptr because it's rare and gfx::Transform
   // takes up a fair amount of space. The assignment operator and copy
   // constructor both make a duplicate of the owned pointer, so it acts more
   // like a member than a pointer.
-  std::unique_ptr<gfx::Transform> transform;
+  SkMatrix transform;
 };
 
 AX_BASE_EXPORT std::ostream& operator<<(std::ostream& stream,
                                         const AXRelativeBounds& bounds);
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_RELATIVE_BOUNDS_H_
+#endif  // ACCESSIBILITY_AX_AX_RELATIVE_BOUNDS_H_

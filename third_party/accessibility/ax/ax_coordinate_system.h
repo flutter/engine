@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_COORDINATE_SYSTEM_H_
-#define UI_ACCESSIBILITY_AX_COORDINATE_SYSTEM_H_
+#ifndef ACCESSIBILITY_AX_AX_COORDINATE_SYSTEM_H_
+#define ACCESSIBILITY_AX_AX_COORDINATE_SYSTEM_H_
 
-namespace ui {
+namespace ax {
 
 // The coordinate system of bounds or points. The origin for all coordinate
 // systems is the upper left hand corner of the region. Frame coordinates
@@ -31,6 +31,6 @@ enum class AXCoordinateSystem {
   kRootFrame,
   kFrame
 };
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_COORDINATE_SYSTEM_H_
+#endif  // ACCESSIBILITY_AX_AX_COORDINATE_SYSTEM_H_

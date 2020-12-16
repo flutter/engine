@@ -2,26 +2,31 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_NODE_H_
-#define UI_ACCESSIBILITY_AX_NODE_H_
+#ifndef ACCESSIBILITY_AX_AX_NODE_H_
+#define ACCESSIBILITY_AX_AX_NODE_H_
 
 #include <stdint.h>
+#include <optional>
 
 #include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
 
-#include "base/optional.h"
-#include "build/build_config.h"
-#include "ui/accessibility/ax_export.h"
-#include "ui/accessibility/ax_node_data.h"
-#include "ui/accessibility/ax_tree_id.h"
+#include "flutter/fml/logging.h"
+#include "third_party/skia/include/core/SkMatrix.h"
+#include "third_party/skia/include/core/SkRect.h"
 
-namespace ui {
+#include "ax_build/build_config.h"
+
+#include "ax_export.h"
+#include "ax_node_data.h"
+#include "ax_tree_id.h"
+
+namespace ax {
 
 class AXTableInfo;
-struct AXLanguageInfo;
+// struct AXLanguageInfo;
 
 // One node in an AXTree.
 class AX_EXPORT AXNode final {
@@ -29,9 +34,10 @@ class AX_EXPORT AXNode final {
   // Defines the type used for AXNode IDs.
   using AXID = int32_t;
 
+  // TODO(chunhtai): I modified this to be -1 so it can work with flutter.
   // If a node is not yet or no longer valid, its ID should have a value of
   // kInvalidAXID.
-  static constexpr AXID kInvalidAXID = 0;
+  static constexpr AXID kInvalidAXID = -1;
 
   // Interface to the tree class that owns an AXNode. We use this instead
   // of letting AXNode have a pointer to its AXTree directly so that we're
@@ -43,10 +49,10 @@ class AX_EXPORT AXNode final {
       bool is_backward;
       AXID anchor_object_id;
       int anchor_offset;
-      ax::mojom::TextAffinity anchor_affinity;
+      ax::TextAffinity anchor_affinity;
       AXID focus_object_id;
       int focus_offset;
-      ax::mojom::TextAffinity focus_affinity;
+      ax::TextAffinity focus_affinity;
     };
 
     // See AXTree::GetAXTreeID.
@@ -56,8 +62,8 @@ class AX_EXPORT AXNode final {
     // See AXTree::GetFromId.
     virtual AXNode* GetFromId(int32_t id) const = 0;
 
-    virtual base::Optional<int> GetPosInSet(const AXNode& node) = 0;
-    virtual base::Optional<int> GetSetSize(const AXNode& node) = 0;
+    virtual std::optional<int> GetPosInSet(const AXNode& node) = 0;
+    virtual std::optional<int> GetSetSize(const AXNode& node) = 0;
 
     virtual Selection GetUnignoredSelection() const = 0;
     virtual bool GetTreeUpdateInProgressState() const = 0;
@@ -161,8 +167,8 @@ class AX_EXPORT AXNode final {
   // the element it's relative to, and an optional transformation matrix.
   // See ax_node_data.h for details.
   void SetLocation(int32_t offset_container_id,
-                   const gfx::RectF& location,
-                   gfx::Transform* transform);
+                   const SkRect location,
+                   SkMatrix transform);
 
   // Set the index in parent, for example if siblings were inserted or deleted.
   void SetIndexInParent(size_t index_in_parent);
@@ -191,97 +197,91 @@ class AX_EXPORT AXNode final {
   // Accessing accessibility attributes.
   // See |AXNodeData| for more information.
 
-  bool HasBoolAttribute(ax::mojom::BoolAttribute attribute) const {
+  bool HasBoolAttribute(ax::BoolAttribute attribute) const {
     return data().HasBoolAttribute(attribute);
   }
-  bool GetBoolAttribute(ax::mojom::BoolAttribute attribute) const {
+  bool GetBoolAttribute(ax::BoolAttribute attribute) const {
     return data().GetBoolAttribute(attribute);
   }
-  bool GetBoolAttribute(ax::mojom::BoolAttribute attribute, bool* value) const {
+  bool GetBoolAttribute(ax::BoolAttribute attribute, bool* value) const {
     return data().GetBoolAttribute(attribute, value);
   }
 
-  bool HasFloatAttribute(ax::mojom::FloatAttribute attribute) const {
+  bool HasFloatAttribute(ax::FloatAttribute attribute) const {
     return data().HasFloatAttribute(attribute);
   }
-  float GetFloatAttribute(ax::mojom::FloatAttribute attribute) const {
+  float GetFloatAttribute(ax::FloatAttribute attribute) const {
     return data().GetFloatAttribute(attribute);
   }
-  bool GetFloatAttribute(ax::mojom::FloatAttribute attribute,
-                         float* value) const {
+  bool GetFloatAttribute(ax::FloatAttribute attribute, float* value) const {
     return data().GetFloatAttribute(attribute, value);
   }
 
-  bool HasIntAttribute(ax::mojom::IntAttribute attribute) const {
+  bool HasIntAttribute(ax::IntAttribute attribute) const {
     return data().HasIntAttribute(attribute);
   }
-  int GetIntAttribute(ax::mojom::IntAttribute attribute) const {
+  int GetIntAttribute(ax::IntAttribute attribute) const {
     return data().GetIntAttribute(attribute);
   }
-  bool GetIntAttribute(ax::mojom::IntAttribute attribute, int* value) const {
+  bool GetIntAttribute(ax::IntAttribute attribute, int* value) const {
     return data().GetIntAttribute(attribute, value);
   }
 
-  bool HasStringAttribute(ax::mojom::StringAttribute attribute) const {
+  bool HasStringAttribute(ax::StringAttribute attribute) const {
     return data().HasStringAttribute(attribute);
   }
-  const std::string& GetStringAttribute(
-      ax::mojom::StringAttribute attribute) const {
+  const std::string& GetStringAttribute(ax::StringAttribute attribute) const {
     return data().GetStringAttribute(attribute);
   }
-  bool GetStringAttribute(ax::mojom::StringAttribute attribute,
+  bool GetStringAttribute(ax::StringAttribute attribute,
                           std::string* value) const {
     return data().GetStringAttribute(attribute, value);
   }
 
-  bool GetString16Attribute(ax::mojom::StringAttribute attribute,
-                            base::string16* value) const {
+  bool GetString16Attribute(ax::StringAttribute attribute,
+                            std::u16string* value) const {
     return data().GetString16Attribute(attribute, value);
   }
-  base::string16 GetString16Attribute(
-      ax::mojom::StringAttribute attribute) const {
+  std::u16string GetString16Attribute(ax::StringAttribute attribute) const {
     return data().GetString16Attribute(attribute);
   }
 
-  bool HasIntListAttribute(ax::mojom::IntListAttribute attribute) const {
+  bool HasIntListAttribute(ax::IntListAttribute attribute) const {
     return data().HasIntListAttribute(attribute);
   }
   const std::vector<int32_t>& GetIntListAttribute(
-      ax::mojom::IntListAttribute attribute) const {
+      ax::IntListAttribute attribute) const {
     return data().GetIntListAttribute(attribute);
   }
-  bool GetIntListAttribute(ax::mojom::IntListAttribute attribute,
+  bool GetIntListAttribute(ax::IntListAttribute attribute,
                            std::vector<int32_t>* value) const {
     return data().GetIntListAttribute(attribute, value);
   }
 
-  bool HasStringListAttribute(ax::mojom::StringListAttribute attribute) const {
+  bool HasStringListAttribute(ax::StringListAttribute attribute) const {
     return data().HasStringListAttribute(attribute);
   }
   const std::vector<std::string>& GetStringListAttribute(
-      ax::mojom::StringListAttribute attribute) const {
+      ax::StringListAttribute attribute) const {
     return data().GetStringListAttribute(attribute);
   }
-  bool GetStringListAttribute(ax::mojom::StringListAttribute attribute,
+  bool GetStringListAttribute(ax::StringListAttribute attribute,
                               std::vector<std::string>* value) const {
     return data().GetStringListAttribute(attribute, value);
   }
 
-  bool GetHtmlAttribute(const char* attribute, base::string16* value) const {
-    return data().GetHtmlAttribute(attribute, value);
-  }
   bool GetHtmlAttribute(const char* attribute, std::string* value) const {
     return data().GetHtmlAttribute(attribute, value);
   }
 
   // Return the hierarchical level if supported.
-  base::Optional<int> GetHierarchicalLevel() const;
+  std::optional<int> GetHierarchicalLevel() const;
 
   // PosInSet and SetSize public methods.
   bool IsOrderedSetItem() const;
   bool IsOrderedSet() const;
-  base::Optional<int> GetPosInSet();
-  base::Optional<int> GetSetSize();
+  std::optional<int> GetPosInSet();
+  std::optional<int> GetSetSize();
 
   // Helpers for GetPosInSet and GetSetSize.
   // Returns true if the role of ordered set matches the role of item.
@@ -293,9 +293,7 @@ class AX_EXPORT AXNode final {
   bool IsIgnoredContainerForOrderedSet() const;
 
   const std::string& GetInheritedStringAttribute(
-      ax::mojom::StringAttribute attribute) const;
-  base::string16 GetInheritedString16Attribute(
-      ax::mojom::StringAttribute attribute) const;
+      ax::StringAttribute attribute) const;
 
   // Returns the text of this node and all descendant nodes; including text
   // found in embedded objects.
@@ -315,7 +313,13 @@ class AX_EXPORT AXNode final {
   // Returns empty string if no appropriate language was found.
   std::string GetLanguage() const;
 
-  //
+  // Returns the value of a control such as a text field, a slider, a <select>
+  // element, a date picker or an ARIA combo box. In order to minimize
+  // cross-process communication between the renderer and the browser, this
+  // method may compute the value from the control's inner text in the case of a
+  // text field.
+  std::string GetValueForControl() const;
+
   // Helper functions for tables, table rows, and table cells.
   // Most of these functions construct and cache an AXTableInfo behind
   // the scenes to infer many properties of tables.
@@ -332,15 +336,15 @@ class AX_EXPORT AXNode final {
   // of the table is row 0, column 0, cell index 0 - but that same cell
   // has a minimum ARIA row index of 1 and column index of 1.
   //
-  // The below methods return base::nullopt if the AXNode they are called on is
+  // The below methods return std::nullopt if the AXNode they are called on is
   // not inside a table.
   bool IsTable() const;
-  base::Optional<int> GetTableColCount() const;
-  base::Optional<int> GetTableRowCount() const;
-  base::Optional<int> GetTableAriaColCount() const;
-  base::Optional<int> GetTableAriaRowCount() const;
-  base::Optional<int> GetTableCellCount() const;
-  base::Optional<bool> GetTableHasColumnOrRowHeaderNode() const;
+  std::optional<int> GetTableColCount() const;
+  std::optional<int> GetTableRowCount() const;
+  std::optional<int> GetTableAriaColCount() const;
+  std::optional<int> GetTableAriaRowCount() const;
+  std::optional<int> GetTableCellCount() const;
+  std::optional<bool> GetTableHasColumnOrRowHeaderNode() const;
   AXNode* GetTableCaption() const;
   AXNode* GetTableCellFromIndex(int index) const;
   AXNode* GetTableCellFromCoords(int row_index, int col_index) const;
@@ -358,25 +362,25 @@ class AX_EXPORT AXNode final {
 
   // Table row-like nodes.
   bool IsTableRow() const;
-  base::Optional<int> GetTableRowRowIndex() const;
+  std::optional<int> GetTableRowRowIndex() const;
   // Get the node ids that represent rows in a table.
   std::vector<AXNode::AXID> GetTableRowNodeIds() const;
 
 #if defined(OS_APPLE)
   // Table column-like nodes. These nodes are only present on macOS.
   bool IsTableColumn() const;
-  base::Optional<int> GetTableColColIndex() const;
+  std::optional<int> GetTableColColIndex() const;
 #endif  // defined(OS_APPLE)
 
   // Table cell-like nodes.
   bool IsTableCellOrHeader() const;
-  base::Optional<int> GetTableCellIndex() const;
-  base::Optional<int> GetTableCellColIndex() const;
-  base::Optional<int> GetTableCellRowIndex() const;
-  base::Optional<int> GetTableCellColSpan() const;
-  base::Optional<int> GetTableCellRowSpan() const;
-  base::Optional<int> GetTableCellAriaColIndex() const;
-  base::Optional<int> GetTableCellAriaRowIndex() const;
+  std::optional<int> GetTableCellIndex() const;
+  std::optional<int> GetTableCellColIndex() const;
+  std::optional<int> GetTableCellRowIndex() const;
+  std::optional<int> GetTableCellColSpan() const;
+  std::optional<int> GetTableCellRowSpan() const;
+  std::optional<int> GetTableCellAriaColIndex() const;
+  std::optional<int> GetTableCellAriaRowIndex() const;
   std::vector<AXNode::AXID> GetTableCellColHeaderNodeIds() const;
   std::vector<AXNode::AXID> GetTableCellRowHeaderNodeIds() const;
   void GetTableCellColHeaders(std::vector<AXNode*>* col_headers) const;
@@ -392,11 +396,11 @@ class AX_EXPORT AXNode final {
   // every time it is needed.
   //
   // Returns nullptr if the node has no language info.
-  AXLanguageInfo* GetLanguageInfo() const;
+  // AXLanguageInfo* GetLanguageInfo() const;
 
   // This should only be called by LabelLanguageForSubtree and is used as part
   // of the language detection feature.
-  void SetLanguageInfo(std::unique_ptr<AXLanguageInfo> lang_info);
+  // void SetLanguageInfo(std::unique_ptr<AXLanguageInfo> lang_info);
 
   // Destroy the language info for this node.
   void ClearLanguageInfo();
@@ -459,6 +463,20 @@ class AX_EXPORT AXNode final {
   AXNode* ComputeLastUnignoredChildRecursive() const;
   AXNode* ComputeFirstUnignoredChildRecursive() const;
 
+  // Returns the value of a range control such as a slider or a scroll bar in
+  // text format.
+  std::string GetTextForRangeValue() const;
+
+  // Returns the value of a color well (a color chooser control) in a human
+  // readable format. For example: "50% red 40% green 90% blue".
+  std::string GetValueForColorWell() const;
+
+  // Returns the value of a text field. If necessary, computes the value from
+  // the field's internal representation in the accessibility tree, in order to
+  // minimize cross-process communication between the renderer and the browser
+  // processes.
+  std::string GetValueForTextField() const;
+
   OwnerTree* const tree_;  // Owns this.
   size_t index_in_parent_;
   size_t unignored_index_in_parent_;
@@ -468,7 +486,7 @@ class AX_EXPORT AXNode final {
   AXNodeData data_;
 
   // Stores the detected language computed from the node's text.
-  std::unique_ptr<AXLanguageInfo> language_info_;
+  // std::unique_ptr<AXLanguageInfo> language_info_;
 };
 
 AX_EXPORT std::ostream& operator<<(std::ostream& stream, const AXNode& node);
@@ -595,7 +613,7 @@ NodeType* AXNode::ChildIteratorBase<NodeType,
                                     PreviousSibling,
                                     FirstChild,
                                     LastChild>::get() const {
-  DCHECK(child_);
+  FML_DCHECK(child_);
   return child_;
 }
 
@@ -609,7 +627,7 @@ NodeType& AXNode::ChildIteratorBase<NodeType,
                                     PreviousSibling,
                                     FirstChild,
                                     LastChild>::operator*() const {
-  DCHECK(child_);
+  FML_DCHECK(child_);
   return *child_;
 }
 
@@ -623,10 +641,10 @@ NodeType* AXNode::ChildIteratorBase<NodeType,
                                     PreviousSibling,
                                     FirstChild,
                                     LastChild>::operator->() const {
-  DCHECK(child_);
+  FML_DCHECK(child_);
   return child_;
 }
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_NODE_H_
+#endif  // ACCESSIBILITY_AX_AX_NODE_H_

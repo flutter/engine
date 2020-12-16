@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_NODE_TEXT_STYLES_H_
-#define UI_ACCESSIBILITY_AX_NODE_TEXT_STYLES_H_
+#ifndef ACCESSIBILITY_AX_AX_NODE_TEXT_STYLES_H_
+#define ACCESSIBILITY_AX_AX_NODE_TEXT_STYLES_H_
 
 #include <string>
 
-#include "ui/accessibility/ax_base_export.h"
+#include "ax_base_export.h"
 
-namespace ui {
+namespace ax {
 
 // A compact representation of text styles on an AXNode. This data represents
 // a snapshot at a given time and is not intended to be held for periods of
@@ -46,6 +46,6 @@ struct AX_BASE_EXPORT AXNodeTextStyles {
   std::string font_family;
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_NODE_TEXT_STYLES_H_
+#endif  // ACCESSIBILITY_AX_AX_NODE_TEXT_STYLES_H_

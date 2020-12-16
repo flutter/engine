@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_NODE_DATA_H_
-#define UI_ACCESSIBILITY_AX_NODE_DATA_H_
+#ifndef ACCESSIBILITY_AX_AX_NODE_DATA_H_
+#define ACCESSIBILITY_AX_AX_NODE_DATA_H_
 
 #include <stdint.h>
 
@@ -13,23 +13,20 @@
 #include <utility>
 #include <vector>
 
-#include "base/strings/string16.h"
-#include "base/strings/string_split.h"
-#include "ui/accessibility/ax_base_export.h"
-#include "ui/accessibility/ax_enums.mojom-forward.h"
-#include "ui/accessibility/ax_node_text_styles.h"
-#include "ui/accessibility/ax_relative_bounds.h"
-#include "ui/gfx/geometry/rect_f.h"
+#include "ax_base_export.h"
+#include "ax_enums.h"
+#include "ax_node_text_styles.h"
+#include "ax_relative_bounds.h"
 
-namespace ui {
+namespace ax {
 
 // Return true if |attr| should be interpreted as the id of another node
 // in the same tree.
-AX_BASE_EXPORT bool IsNodeIdIntAttribute(ax::mojom::IntAttribute attr);
+AX_BASE_EXPORT bool IsNodeIdIntAttribute(ax::IntAttribute attr);
 
 // Return true if |attr| should be interpreted as a list of ids of
 // nodes in the same tree.
-AX_BASE_EXPORT bool IsNodeIdIntListAttribute(ax::mojom::IntListAttribute attr);
+AX_BASE_EXPORT bool IsNodeIdIntListAttribute(ax::IntListAttribute attr);
 
 // A compact representation of the accessibility information for a
 // single accessible object, in a form that can be serialized and sent from
@@ -62,75 +59,71 @@ struct AX_BASE_EXPORT AXNodeData {
   // need to distinguish between the default value and a missing attribute),
   // and another that returns the default value for that type if the
   // attribute is not present. In addition, strings can be returned as
-  // either std::string or base::string16, for convenience.
+  // either std::string or std::u16string, for convenience.
 
-  bool HasBoolAttribute(ax::mojom::BoolAttribute attribute) const;
-  bool GetBoolAttribute(ax::mojom::BoolAttribute attribute) const;
-  bool GetBoolAttribute(ax::mojom::BoolAttribute attribute, bool* value) const;
+  bool HasBoolAttribute(ax::BoolAttribute attribute) const;
+  bool GetBoolAttribute(ax::BoolAttribute attribute) const;
+  bool GetBoolAttribute(ax::BoolAttribute attribute, bool* value) const;
 
-  bool HasFloatAttribute(ax::mojom::FloatAttribute attribute) const;
-  float GetFloatAttribute(ax::mojom::FloatAttribute attribute) const;
-  bool GetFloatAttribute(ax::mojom::FloatAttribute attribute,
-                         float* value) const;
+  bool HasFloatAttribute(ax::FloatAttribute attribute) const;
+  float GetFloatAttribute(ax::FloatAttribute attribute) const;
+  bool GetFloatAttribute(ax::FloatAttribute attribute, float* value) const;
 
-  bool HasIntAttribute(ax::mojom::IntAttribute attribute) const;
-  int GetIntAttribute(ax::mojom::IntAttribute attribute) const;
-  bool GetIntAttribute(ax::mojom::IntAttribute attribute, int* value) const;
+  bool HasIntAttribute(ax::IntAttribute attribute) const;
+  int GetIntAttribute(ax::IntAttribute attribute) const;
+  bool GetIntAttribute(ax::IntAttribute attribute, int* value) const;
 
-  bool HasStringAttribute(ax::mojom::StringAttribute attribute) const;
-  const std::string& GetStringAttribute(
-      ax::mojom::StringAttribute attribute) const;
-  bool GetStringAttribute(ax::mojom::StringAttribute attribute,
+  bool HasStringAttribute(ax::StringAttribute attribute) const;
+  const std::string& GetStringAttribute(ax::StringAttribute attribute) const;
+  bool GetStringAttribute(ax::StringAttribute attribute,
                           std::string* value) const;
 
-  bool GetString16Attribute(ax::mojom::StringAttribute attribute,
-                            base::string16* value) const;
-  base::string16 GetString16Attribute(
-      ax::mojom::StringAttribute attribute) const;
+  bool GetString16Attribute(ax::StringAttribute attribute,
+                            std::u16string* value) const;
+  std::u16string GetString16Attribute(ax::StringAttribute attribute) const;
 
-  bool HasIntListAttribute(ax::mojom::IntListAttribute attribute) const;
+  bool HasIntListAttribute(ax::IntListAttribute attribute) const;
   const std::vector<int32_t>& GetIntListAttribute(
-      ax::mojom::IntListAttribute attribute) const;
-  bool GetIntListAttribute(ax::mojom::IntListAttribute attribute,
+      ax::IntListAttribute attribute) const;
+  bool GetIntListAttribute(ax::IntListAttribute attribute,
                            std::vector<int32_t>* value) const;
 
-  bool HasStringListAttribute(ax::mojom::StringListAttribute attribute) const;
+  bool HasStringListAttribute(ax::StringListAttribute attribute) const;
   const std::vector<std::string>& GetStringListAttribute(
-      ax::mojom::StringListAttribute attribute) const;
-  bool GetStringListAttribute(ax::mojom::StringListAttribute attribute,
+      ax::StringListAttribute attribute) const;
+  bool GetStringListAttribute(ax::StringListAttribute attribute,
                               std::vector<std::string>* value) const;
 
-  bool GetHtmlAttribute(const char* attribute, base::string16* value) const;
   bool GetHtmlAttribute(const char* attribute, std::string* value) const;
 
   //
   // Setting accessibility attributes.
   //
-  // Replaces an attribute if present. This is safer than crashing via a DCHECK
-  // or doing nothing, because most likely replacing is what the caller would
-  // have wanted or what existing code already assumes.
+  // Replaces an attribute if present. This is safer than crashing via a
+  // FML_DCHECK or doing nothing, because most likely replacing is what the
+  // caller would have wanted or what existing code already assumes.
   //
 
-  void AddStringAttribute(ax::mojom::StringAttribute attribute,
+  void AddStringAttribute(ax::StringAttribute attribute,
                           const std::string& value);
-  void AddIntAttribute(ax::mojom::IntAttribute attribute, int32_t value);
-  void AddFloatAttribute(ax::mojom::FloatAttribute attribute, float value);
-  void AddBoolAttribute(ax::mojom::BoolAttribute attribute, bool value);
-  void AddIntListAttribute(ax::mojom::IntListAttribute attribute,
+  void AddIntAttribute(ax::IntAttribute attribute, int32_t value);
+  void AddFloatAttribute(ax::FloatAttribute attribute, float value);
+  void AddBoolAttribute(ax::BoolAttribute attribute, bool value);
+  void AddIntListAttribute(ax::IntListAttribute attribute,
                            const std::vector<int32_t>& value);
-  void AddStringListAttribute(ax::mojom::StringListAttribute attribute,
+  void AddStringListAttribute(ax::StringListAttribute attribute,
                               const std::vector<std::string>& value);
 
   //
   // Removing accessibility attributes.
   //
 
-  void RemoveStringAttribute(ax::mojom::StringAttribute attribute);
-  void RemoveIntAttribute(ax::mojom::IntAttribute attribute);
-  void RemoveFloatAttribute(ax::mojom::FloatAttribute attribute);
-  void RemoveBoolAttribute(ax::mojom::BoolAttribute attribute);
-  void RemoveIntListAttribute(ax::mojom::IntListAttribute attribute);
-  void RemoveStringListAttribute(ax::mojom::StringListAttribute attribute);
+  void RemoveStringAttribute(ax::StringAttribute attribute);
+  void RemoveIntAttribute(ax::IntAttribute attribute);
+  void RemoveFloatAttribute(ax::FloatAttribute attribute);
+  void RemoveBoolAttribute(ax::BoolAttribute attribute);
+  void RemoveIntListAttribute(ax::IntListAttribute attribute);
+  void RemoveStringListAttribute(ax::StringListAttribute attribute);
 
   //
   // Text styles.
@@ -144,63 +137,63 @@ struct AX_BASE_EXPORT AXNodeData {
   // Adds the name attribute or replaces it if already present. Also sets the
   // NameFrom attribute if not already set.
   void SetName(const std::string& name);
-  void SetName(const base::string16& name);
+  void SetName(const std::u16string& name);
 
   // Allows nameless objects to pass accessibility checks.
   void SetNameExplicitlyEmpty();
 
   // Adds the description attribute or replaces it if already present.
   void SetDescription(const std::string& description);
-  void SetDescription(const base::string16& description);
+  void SetDescription(const std::u16string& description);
 
   // Adds the value attribute or replaces it if already present.
   void SetValue(const std::string& value);
-  void SetValue(const base::string16& value);
+  void SetValue(const std::u16string& value);
 
   // Returns true if the given enum bit is 1.
-  bool HasState(ax::mojom::State state) const;
-  bool HasAction(ax::mojom::Action action) const;
-  bool HasTextStyle(ax::mojom::TextStyle text_style) const;
+  bool HasState(ax::State state) const;
+  bool HasAction(ax::Action action) const;
+  bool HasTextStyle(ax::TextStyle text_style) const;
   // aria-dropeffect is deprecated in WAI-ARIA 1.1.
-  bool HasDropeffect(ax::mojom::Dropeffect dropeffect) const;
+  bool HasDropeffect(ax::Dropeffect dropeffect) const;
 
   // Set or remove bits in the given enum's corresponding bitfield.
-  void AddState(ax::mojom::State state);
-  void RemoveState(ax::mojom::State state);
-  void AddAction(ax::mojom::Action action);
-  void AddTextStyle(ax::mojom::TextStyle text_style);
+  void AddState(ax::State state);
+  void RemoveState(ax::State state);
+  void AddAction(ax::Action action);
+  void AddTextStyle(ax::TextStyle text_style);
   // aria-dropeffect is deprecated in WAI-ARIA 1.1.
-  void AddDropeffect(ax::mojom::Dropeffect dropeffect);
+  void AddDropeffect(ax::Dropeffect dropeffect);
 
   // Helper functions to get or set some common int attributes with some
   // specific enum types. To remove an attribute, set it to None.
   //
   // Please keep in alphabetic order.
-  ax::mojom::CheckedState GetCheckedState() const;
-  void SetCheckedState(ax::mojom::CheckedState checked_state);
+  ax::CheckedState GetCheckedState() const;
+  void SetCheckedState(ax::CheckedState checked_state);
   bool HasCheckedState() const;
-  ax::mojom::DefaultActionVerb GetDefaultActionVerb() const;
-  void SetDefaultActionVerb(ax::mojom::DefaultActionVerb default_action_verb);
-  ax::mojom::HasPopup GetHasPopup() const;
-  void SetHasPopup(ax::mojom::HasPopup has_popup);
-  ax::mojom::InvalidState GetInvalidState() const;
-  void SetInvalidState(ax::mojom::InvalidState invalid_state);
-  ax::mojom::NameFrom GetNameFrom() const;
-  void SetNameFrom(ax::mojom::NameFrom name_from);
-  ax::mojom::DescriptionFrom GetDescriptionFrom() const;
-  void SetDescriptionFrom(ax::mojom::DescriptionFrom description_from);
-  ax::mojom::TextPosition GetTextPosition() const;
-  void SetTextPosition(ax::mojom::TextPosition text_position);
-  ax::mojom::Restriction GetRestriction() const;
-  void SetRestriction(ax::mojom::Restriction restriction);
-  ax::mojom::ListStyle GetListStyle() const;
-  void SetListStyle(ax::mojom::ListStyle list_style);
-  ax::mojom::TextAlign GetTextAlign() const;
-  void SetTextAlign(ax::mojom::TextAlign text_align);
-  ax::mojom::WritingDirection GetTextDirection() const;
-  void SetTextDirection(ax::mojom::WritingDirection text_direction);
-  ax::mojom::ImageAnnotationStatus GetImageAnnotationStatus() const;
-  void SetImageAnnotationStatus(ax::mojom::ImageAnnotationStatus status);
+  ax::DefaultActionVerb GetDefaultActionVerb() const;
+  void SetDefaultActionVerb(ax::DefaultActionVerb default_action_verb);
+  ax::HasPopup GetHasPopup() const;
+  void SetHasPopup(ax::HasPopup has_popup);
+  ax::InvalidState GetInvalidState() const;
+  void SetInvalidState(ax::InvalidState invalid_state);
+  ax::NameFrom GetNameFrom() const;
+  void SetNameFrom(ax::NameFrom name_from);
+  ax::DescriptionFrom GetDescriptionFrom() const;
+  void SetDescriptionFrom(ax::DescriptionFrom description_from);
+  ax::TextPosition GetTextPosition() const;
+  void SetTextPosition(ax::TextPosition text_position);
+  ax::Restriction GetRestriction() const;
+  void SetRestriction(ax::Restriction restriction);
+  ax::ListStyle GetListStyle() const;
+  void SetListStyle(ax::ListStyle list_style);
+  ax::TextAlign GetTextAlign() const;
+  void SetTextAlign(ax::TextAlign text_align);
+  ax::WritingDirection GetTextDirection() const;
+  void SetTextDirection(ax::WritingDirection text_direction);
+  ax::ImageAnnotationStatus GetImageAnnotationStatus() const;
+  void SetImageAnnotationStatus(ax::ImageAnnotationStatus status);
 
   // Helper to determine if the data belongs to a node that gains focus when
   // clicked, such as a text field or a native HTML list box.
@@ -219,6 +212,9 @@ struct AX_BASE_EXPORT AXNodeData {
 
   // Helper to determine if the data has the ignored state or ignored role.
   bool IsIgnored() const;
+
+  // Helper to determine if the data has the invisible state.
+  bool IsInvisible() const;
 
   // Helper to determine if the data has the ignored state, the invisible state
   // or the ignored role.
@@ -276,25 +272,23 @@ struct AX_BASE_EXPORT AXNodeData {
   // As much as possible this should behave as a simple, serializable,
   // copyable struct.
   int32_t id = -1;
-  ax::mojom::Role role;
+  ax::Role role;
   uint32_t state;
   uint64_t actions;
-  std::vector<std::pair<ax::mojom::StringAttribute, std::string>>
-      string_attributes;
-  std::vector<std::pair<ax::mojom::IntAttribute, int32_t>> int_attributes;
-  std::vector<std::pair<ax::mojom::FloatAttribute, float>> float_attributes;
-  std::vector<std::pair<ax::mojom::BoolAttribute, bool>> bool_attributes;
-  std::vector<std::pair<ax::mojom::IntListAttribute, std::vector<int32_t>>>
+  std::vector<std::pair<ax::StringAttribute, std::string>> string_attributes;
+  std::vector<std::pair<ax::IntAttribute, int32_t>> int_attributes;
+  std::vector<std::pair<ax::FloatAttribute, float>> float_attributes;
+  std::vector<std::pair<ax::BoolAttribute, bool>> bool_attributes;
+  std::vector<std::pair<ax::IntListAttribute, std::vector<int32_t>>>
       intlist_attributes;
-  std::vector<
-      std::pair<ax::mojom::StringListAttribute, std::vector<std::string>>>
+  std::vector<std::pair<ax::StringListAttribute, std::vector<std::string>>>
       stringlist_attributes;
-  base::StringPairs html_attributes;
+  std::vector<std::pair<std::string, std::string>> html_attributes;
   std::vector<int32_t> child_ids;
 
   AXRelativeBounds relative_bounds;
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_NODE_DATA_H_
+#endif  // ACCESSIBILITY_AX_AX_NODE_DATA_H_

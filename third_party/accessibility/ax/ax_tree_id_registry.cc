@@ -2,24 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_tree_id_registry.h"
+#include "ax_tree_id_registry.h"
 
-#include "base/memory/singleton.h"
-#include "base/strings/string_number_conversions.h"
-#include "ui/accessibility/ax_action_handler_base.h"
+#include "flutter/fml/logging.h"
 
-namespace ui {
+#include "ax_action_handler_base.h"
+
+namespace ax {
 
 // static
-AXTreeIDRegistry* AXTreeIDRegistry::GetInstance() {
-  return base::Singleton<AXTreeIDRegistry>::get();
+AXTreeIDRegistry& AXTreeIDRegistry::GetInstance() {
+  static AXTreeIDRegistry INSTANCE;
+  return INSTANCE;
 }
 
 void AXTreeIDRegistry::SetFrameIDForAXTreeID(const FrameID& frame_id,
                                              const AXTreeID& ax_tree_id) {
   auto it = frame_to_ax_tree_id_map_.find(frame_id);
   if (it != frame_to_ax_tree_id_map_.end()) {
-    NOTREACHED();
+    FML_DCHECK(false);
     return;
   }
 
@@ -41,7 +42,7 @@ AXTreeID AXTreeIDRegistry::GetAXTreeID(AXTreeIDRegistry::FrameID frame_id) {
   if (it != frame_to_ax_tree_id_map_.end())
     return it->second;
 
-  return ui::AXTreeIDUnknown();
+  return ax::AXTreeIDUnknown();
 }
 
 AXTreeID AXTreeIDRegistry::GetOrCreateAXTreeID(AXActionHandlerBase* handler) {
@@ -61,9 +62,9 @@ AXActionHandlerBase* AXTreeIDRegistry::GetActionHandler(AXTreeID ax_tree_id) {
   return it->second;
 }
 
-void AXTreeIDRegistry::SetAXTreeID(const ui::AXTreeID& id,
+void AXTreeIDRegistry::SetAXTreeID(const ax::AXTreeID& id,
                                    AXActionHandlerBase* action_handler) {
-  DCHECK(id_to_action_handler_.find(id) == id_to_action_handler_.end());
+  FML_DCHECK(id_to_action_handler_.find(id) == id_to_action_handler_.end());
   id_to_action_handler_[id] = action_handler;
 }
 
@@ -83,4 +84,4 @@ AXTreeIDRegistry::AXTreeIDRegistry() {}
 
 AXTreeIDRegistry::~AXTreeIDRegistry() {}
 
-}  // namespace ui
+}  // namespace ax

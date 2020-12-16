@@ -2,14 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_TREE_OBSERVER_H_
-#define UI_ACCESSIBILITY_AX_TREE_OBSERVER_H_
+#ifndef ACCESSIBILITY_AX_AX_TREE_OBSERVER_H_
+#define ACCESSIBILITY_AX_AX_TREE_OBSERVER_H_
 
-#include "base/observer_list_types.h"
-#include "ui/accessibility/ax_enums.mojom-forward.h"
-#include "ui/accessibility/ax_export.h"
+#include <stdint.h>
+#include <string>
+#include <vector>
 
-namespace ui {
+#include "ax_enums.h"
+#include "ax_export.h"
+
+namespace ax {
 
 class AXNode;
 struct AXNodeData;
@@ -21,10 +24,10 @@ struct AXTreeData;
 // |OnAtomicUpdateFinished| is notified at the end of an atomic update.
 // It provides a vector of nodes that were added or changed, for final
 // postprocessing.
-class AX_EXPORT AXTreeObserver : public base::CheckedObserver {
+class AX_EXPORT AXTreeObserver {
  public:
   AXTreeObserver();
-  ~AXTreeObserver() override;
+  virtual ~AXTreeObserver();
 
   // Called before any tree modifications have occurred, notifying that a single
   // node will change its data. Its id and data will be valid, but its links to
@@ -48,41 +51,41 @@ class AX_EXPORT AXTreeObserver : public base::CheckedObserver {
   // be valid, since the tree is in a stable state after updating.
   virtual void OnRoleChanged(AXTree* tree,
                              AXNode* node,
-                             ax::mojom::Role old_role,
-                             ax::mojom::Role new_role) {}
+                             ax::Role old_role,
+                             ax::Role new_role) {}
   virtual void OnStateChanged(AXTree* tree,
                               AXNode* node,
-                              ax::mojom::State state,
+                              ax::State state,
                               bool new_value) {}
   virtual void OnStringAttributeChanged(AXTree* tree,
                                         AXNode* node,
-                                        ax::mojom::StringAttribute attr,
+                                        ax::StringAttribute attr,
                                         const std::string& old_value,
                                         const std::string& new_value) {}
   virtual void OnIntAttributeChanged(AXTree* tree,
                                      AXNode* node,
-                                     ax::mojom::IntAttribute attr,
+                                     ax::IntAttribute attr,
                                      int32_t old_value,
                                      int32_t new_value) {}
   virtual void OnFloatAttributeChanged(AXTree* tree,
                                        AXNode* node,
-                                       ax::mojom::FloatAttribute attr,
+                                       ax::FloatAttribute attr,
                                        float old_value,
                                        float new_value) {}
   virtual void OnBoolAttributeChanged(AXTree* tree,
                                       AXNode* node,
-                                      ax::mojom::BoolAttribute attr,
+                                      ax::BoolAttribute attr,
                                       bool new_value) {}
   virtual void OnIntListAttributeChanged(
       AXTree* tree,
       AXNode* node,
-      ax::mojom::IntListAttribute attr,
+      ax::IntListAttribute attr,
       const std::vector<int32_t>& old_value,
       const std::vector<int32_t>& new_value) {}
   virtual void OnStringListAttributeChanged(
       AXTree* tree,
       AXNode* node,
-      ax::mojom::StringListAttribute attr,
+      ax::StringListAttribute attr,
       const std::vector<std::string>& old_value,
       const std::vector<std::string>& new_value) {}
 
@@ -153,6 +156,6 @@ class AX_EXPORT AXTreeObserver : public base::CheckedObserver {
                                       const std::vector<Change>& changes) {}
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_TREE_OBSERVER_H_
+#endif  // ACCESSIBILITY_AX_AX_TREE_OBSERVER_H_

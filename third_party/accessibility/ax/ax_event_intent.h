@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_EVENT_INTENT_H_
-#define UI_ACCESSIBILITY_AX_EVENT_INTENT_H_
+#ifndef ACCESSIBILITY_AX_AX_EVENT_INTENT_H_
+#define ACCESSIBILITY_AX_AX_EVENT_INTENT_H_
 
 #include <string>
 
-#include "ui/accessibility/ax_base_export.h"
-#include "ui/accessibility/ax_enums.mojom.h"
+#include "ax_base_export.h"
+#include "ax_enums.h"
 
-namespace ui {
+namespace ax {
 
 // Describes what caused an accessibility event to be raised. For example, a
 // character could have been typed, a word replaced, or a line deleted. Or, the
@@ -18,9 +18,9 @@ namespace ui {
 // it could have been moved to the end of the next line.
 struct AX_BASE_EXPORT AXEventIntent final {
   AXEventIntent();
-  AXEventIntent(ax::mojom::Command command,
-                ax::mojom::TextBoundary text_boundary,
-                ax::mojom::MoveDirection move_direction);
+  AXEventIntent(ax::Command command,
+                ax::TextBoundary text_boundary,
+                ax::MoveDirection move_direction);
   virtual ~AXEventIntent();
   AXEventIntent(const AXEventIntent& intent);
   AXEventIntent& operator=(const AXEventIntent& intent);
@@ -30,15 +30,15 @@ struct AX_BASE_EXPORT AXEventIntent final {
   friend AX_BASE_EXPORT bool operator!=(const AXEventIntent& a,
                                         const AXEventIntent& b);
 
-  ax::mojom::Command command = ax::mojom::Command::kType;
+  ax::Command command = ax::Command::kType;
   // TODO(nektar): Split TextBoundary into TextUnit and TextBoundary.
-  ax::mojom::TextBoundary text_boundary = ax::mojom::TextBoundary::kCharacter;
-  ax::mojom::MoveDirection move_direction = ax::mojom::MoveDirection::kForward;
+  ax::TextBoundary text_boundary = ax::TextBoundary::kCharacter;
+  ax::MoveDirection move_direction = ax::MoveDirection::kForward;
 
   // Returns a string representation of this data, for debugging.
   std::string ToString() const;
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_EVENT_INTENT_H_
+#endif  // ACCESSIBILITY_AX_AX_EVENT_INTENT_H_

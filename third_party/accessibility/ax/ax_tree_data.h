@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_TREE_DATA_H_
-#define UI_ACCESSIBILITY_AX_TREE_DATA_H_
+#ifndef ACCESSIBILITY_AX_AX_TREE_DATA_H_
+#define ACCESSIBILITY_AX_AX_TREE_DATA_H_
 
 #include <stdint.h>
 
@@ -11,16 +11,12 @@
 #include <string>
 #include <vector>
 
-#include "base/optional.h"
-#include "base/strings/string16.h"
-#include "base/strings/string_split.h"
-#include "ui/accessibility/ax_enums.mojom-forward.h"
-#include "ui/accessibility/ax_export.h"
-#include "ui/accessibility/ax_node.h"
-#include "ui/accessibility/ax_tree_id_registry.h"
-#include "ui/gfx/geometry/rect.h"
+#include "ax_enums.h"
+#include "ax_export.h"
+#include "ax_node.h"
+#include "ax_tree_id_registry.h"
 
-namespace ui {
+namespace ax {
 
 // The data associated with an accessibility tree that's global to the
 // tree and not associated with any particular node in the tree.
@@ -62,14 +58,14 @@ struct AX_EXPORT AXTreeData {
   // (selection end). If the offset could correspond to a position on two
   // different lines, sel_upstream_affinity means the cursor is on the first
   // line, otherwise it's on the second line.
-  // Most use cases will want to use ui::OwnerTree::GetUnignoredSelection.
+  // Most use cases will want to use ax::OwnerTree::GetUnignoredSelection.
   bool sel_is_backward = false;
   AXNode::AXID sel_anchor_object_id = AXNode::kInvalidAXID;
   int32_t sel_anchor_offset = -1;
-  ax::mojom::TextAffinity sel_anchor_affinity;
+  ax::TextAffinity sel_anchor_affinity;
   AXNode::AXID sel_focus_object_id = AXNode::kInvalidAXID;
   int32_t sel_focus_offset = -1;
-  ax::mojom::TextAffinity sel_focus_affinity;
+  ax::TextAffinity sel_focus_affinity;
 
   // The node that's used as the root scroller. On some platforms
   // like Android we need to ignore accessibility scroll offsets for
@@ -80,6 +76,6 @@ struct AX_EXPORT AXTreeData {
 AX_EXPORT bool operator==(const AXTreeData& lhs, const AXTreeData& rhs);
 AX_EXPORT bool operator!=(const AXTreeData& lhs, const AXTreeData& rhs);
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_TREE_DATA_H_
+#endif  // ACCESSIBILITY_AX_AX_TREE_DATA_H_

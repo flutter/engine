@@ -2,27 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_tree.h"
+#include "ax_tree.h"
 
 #include <stddef.h>
 #include <stdint.h>
 
 #include <memory>
 
-#include "base/stl_util.h"
-#include "base/strings/string_number_conversions.h"
-#include "base/strings/stringprintf.h"
-#include "testing/gtest/include/gtest/gtest.h"
-#include "ui/accessibility/ax_enum_util.h"
-#include "ui/accessibility/ax_node.h"
-#include "ui/accessibility/ax_node_position.h"
-#include "ui/accessibility/ax_serializable_tree.h"
-#include "ui/accessibility/ax_tree_data.h"
-#include "ui/accessibility/ax_tree_id.h"
-#include "ui/accessibility/ax_tree_observer.h"
-#include "ui/accessibility/ax_tree_serializer.h"
-#include "ui/accessibility/test_ax_tree_manager.h"
-#include "ui/gfx/transform.h"
+#include "gtest/gtest.h"
+
+#include "ax_enum_util.h"
+#include "ax_node.h"
+#include "ax_node_position.h"
+#include "ax_tree_data.h"
+#include "ax_tree_id.h"
+#include "ax_tree_observer.h"
+#include "test_ax_tree_manager.h"
 
 // Helper macro for testing selection values and maintain
 // correct stack tracing and failure causality.
@@ -41,32 +36,53 @@
     EXPECT_EQ(expected.focus_offset, actual.focus_offset);         \
   }
 
-namespace ui {
+namespace ax {
 
 namespace {
+
+template <typename... Args>
+std::string string_format(const std::string& format, Args... args) {
+  // Calculate the buffer size.
+  int size = snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  std::unique_ptr<char[]> buf(new char[size]);
+  snprintf(buf.get(), size, format.c_str(), args...);
+  return std::string(buf.get(), buf.get() + size - 1);
+}
+
+bool Contains(std::set<int32_t> set, int32_t target) {
+  return set.find(target) != set.end();
+}
+
+bool Contains(std::vector<int32_t> vector, int32_t target) {
+  for (int32_t element : vector) {
+    if (element == target)
+      return true;
+  }
+  return false;
+}
 
 std::string IntVectorToString(const std::vector<int>& items) {
   std::string str;
   for (size_t i = 0; i < items.size(); ++i) {
     if (i > 0)
       str += ",";
-    str += base::NumberToString(items[i]);
+    str += std::to_string(items[i]);
   }
   return str;
 }
 
 std::string GetBoundsAsString(const AXTree& tree, int32_t id) {
   AXNode* node = tree.GetFromId(id);
-  gfx::RectF bounds = tree.GetTreeBounds(node);
-  return base::StringPrintf("(%.0f, %.0f) size (%.0f x %.0f)", bounds.x(),
-                            bounds.y(), bounds.width(), bounds.height());
+  SkRect bounds = tree.GetTreeBounds(node);
+  return string_format("(%.0f, %.0f) size (%.0f x %.0f)", bounds.x(),
+                       bounds.y(), bounds.width(), bounds.height());
 }
 
 std::string GetUnclippedBoundsAsString(const AXTree& tree, int32_t id) {
   AXNode* node = tree.GetFromId(id);
-  gfx::RectF bounds = tree.GetTreeBounds(node, nullptr, false);
-  return base::StringPrintf("(%.0f, %.0f) size (%.0f x %.0f)", bounds.x(),
-                            bounds.y(), bounds.width(), bounds.height());
+  SkRect bounds = tree.GetTreeBounds(node, nullptr, false);
+  return string_format("(%.0f, %.0f) size (%.0f x %.0f)", bounds.x(),
+                       bounds.y(), bounds.width(), bounds.height());
 }
 
 bool IsNodeOffscreen(const AXTree& tree, int32_t id) {
@@ -82,7 +98,7 @@ class TestAXTreeObserver : public AXTreeObserver {
       : tree_(tree), tree_data_changed_(false), root_changed_(false) {
     tree_->AddObserver(this);
   }
-  ~TestAXTreeObserver() final { tree_->RemoveObserver(this); }
+  ~TestAXTreeObserver() { tree_->RemoveObserver(this); }
 
   void OnNodeDataWillChange(AXTree* tree,
                             const AXNodeData& old_node_data,
@@ -91,12 +107,12 @@ class TestAXTreeObserver : public AXTreeObserver {
                          const AXNodeData& old_node_data,
                          const AXNodeData& new_node_data) override {}
   void OnTreeDataChanged(AXTree* tree,
-                         const ui::AXTreeData& old_data,
-                         const ui::AXTreeData& new_data) override {
+                         const ax::AXTreeData& old_data,
+                         const ax::AXTreeData& new_data) override {
     tree_data_changed_ = true;
   }
 
-  base::Optional<AXNode::AXID> unignored_parent_id_before_node_deleted;
+  std::optional<AXNode::AXID> unignored_parent_id_before_node_deleted;
   void OnNodeWillBeDeleted(AXTree* tree, AXNode* node) override {
     // When this observer function is called in an update, the actual node
     // deletion has not happened yet. Verify that node still exists in the tree.
@@ -170,68 +186,66 @@ class TestAXTreeObserver : public AXTreeObserver {
 
   void OnRoleChanged(AXTree* tree,
                      AXNode* node,
-                     ax::mojom::Role old_role,
-                     ax::mojom::Role new_role) override {
-    attribute_change_log_.push_back(base::StringPrintf(
+                     ax::Role old_role,
+                     ax::Role new_role) override {
+    attribute_change_log_.push_back(string_format(
         "Role changed from %s to %s", ToString(old_role), ToString(new_role)));
   }
 
   void OnStateChanged(AXTree* tree,
                       AXNode* node,
-                      ax::mojom::State state,
+                      ax::State state,
                       bool new_value) override {
-    attribute_change_log_.push_back(base::StringPrintf(
+    attribute_change_log_.push_back(string_format(
         "%s changed to %s", ToString(state), new_value ? "true" : "false"));
   }
 
   void OnStringAttributeChanged(AXTree* tree,
                                 AXNode* node,
-                                ax::mojom::StringAttribute attr,
+                                ax::StringAttribute attr,
                                 const std::string& old_value,
                                 const std::string& new_value) override {
     attribute_change_log_.push_back(
-        base::StringPrintf("%s changed from %s to %s", ToString(attr),
-                           old_value.c_str(), new_value.c_str()));
+        string_format("%s changed from %s to %s", ToString(attr),
+                      old_value.c_str(), new_value.c_str()));
   }
 
   void OnIntAttributeChanged(AXTree* tree,
                              AXNode* node,
-                             ax::mojom::IntAttribute attr,
+                             ax::IntAttribute attr,
                              int32_t old_value,
                              int32_t new_value) override {
-    attribute_change_log_.push_back(base::StringPrintf(
+    attribute_change_log_.push_back(string_format(
         "%s changed from %d to %d", ToString(attr), old_value, new_value));
   }
 
   void OnFloatAttributeChanged(AXTree* tree,
                                AXNode* node,
-                               ax::mojom::FloatAttribute attr,
+                               ax::FloatAttribute attr,
                                float old_value,
                                float new_value) override {
-    attribute_change_log_.push_back(
-        base::StringPrintf("%s changed from %s to %s", ToString(attr),
-                           base::NumberToString(old_value).c_str(),
-                           base::NumberToString(new_value).c_str()));
+    attribute_change_log_.push_back(string_format(
+        "%s changed from %.1f to %.1f", ToString(attr), old_value, new_value));
   }
 
   void OnBoolAttributeChanged(AXTree* tree,
                               AXNode* node,
-                              ax::mojom::BoolAttribute attr,
+                              ax::BoolAttribute attr,
                               bool new_value) override {
-    attribute_change_log_.push_back(base::StringPrintf(
+    attribute_change_log_.push_back(string_format(
         "%s changed to %s", ToString(attr), new_value ? "true" : "false"));
   }
 
   void OnIntListAttributeChanged(
       AXTree* tree,
       AXNode* node,
-      ax::mojom::IntListAttribute attr,
+      ax::IntListAttribute attr,
       const std::vector<int32_t>& old_value,
       const std::vector<int32_t>& new_value) override {
     attribute_change_log_.push_back(
-        base::StringPrintf("%s changed from %s to %s", ToString(attr),
-                           IntVectorToString(old_value).c_str(),
-                           IntVectorToString(new_value).c_str()));
+        string_format("%s changed from %s to %s", ToString(attr),
+                      IntVectorToString(old_value).c_str(),
+                      IntVectorToString(new_value).c_str()));
   }
 
   bool tree_data_changed() const { return tree_data_changed_; }
@@ -294,7 +308,7 @@ class TestAXTreeObserver : public AXTreeObserver {
 
 }  // namespace
 
-// A macro for testing that a base::Optional has both a value and that its value
+// A macro for testing that a std::optional has both a value and that its value
 // is set to a particular expectation.
 #define EXPECT_OPTIONAL_EQ(expected, actual) \
   EXPECT_TRUE(actual.has_value());           \
@@ -302,86 +316,25 @@ class TestAXTreeObserver : public AXTreeObserver {
     EXPECT_EQ(expected, actual.value());     \
   }
 
-TEST(AXTreeTest, SerializeSimpleAXTree) {
-  AXNodeData root;
-  root.id = 1;
-  root.role = ax::mojom::Role::kDialog;
-  root.AddState(ax::mojom::State::kFocusable);
-  root.relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
-  root.child_ids.push_back(2);
-  root.child_ids.push_back(3);
-
-  AXNodeData button;
-  button.id = 2;
-  button.role = ax::mojom::Role::kButton;
-  button.relative_bounds.bounds = gfx::RectF(20, 20, 200, 30);
-
-  AXNodeData checkbox;
-  checkbox.id = 3;
-  checkbox.role = ax::mojom::Role::kCheckBox;
-  checkbox.relative_bounds.bounds = gfx::RectF(20, 50, 200, 30);
-
-  AXTreeUpdate initial_state;
-  initial_state.root_id = 1;
-  initial_state.nodes.push_back(root);
-  initial_state.nodes.push_back(button);
-  initial_state.nodes.push_back(checkbox);
-  initial_state.has_tree_data = true;
-  initial_state.tree_data.title = "Title";
-  AXSerializableTree src_tree(initial_state);
-
-  std::unique_ptr<AXTreeSource<const AXNode*, AXNodeData, AXTreeData>>
-      tree_source(src_tree.CreateTreeSource());
-  AXTreeSerializer<const AXNode*, AXNodeData, AXTreeData> serializer(
-      tree_source.get());
-  AXTreeUpdate update;
-  serializer.SerializeChanges(src_tree.root(), &update);
-
-  AXTree dst_tree;
-  ASSERT_TRUE(dst_tree.Unserialize(update));
-
-  const AXNode* root_node = dst_tree.root();
-  ASSERT_TRUE(root_node != nullptr);
-  EXPECT_EQ(root.id, root_node->id());
-  EXPECT_EQ(root.role, root_node->data().role);
-
-  ASSERT_EQ(2u, root_node->children().size());
-
-  const AXNode* button_node = root_node->children()[0];
-  EXPECT_EQ(button.id, button_node->id());
-  EXPECT_EQ(button.role, button_node->data().role);
-
-  const AXNode* checkbox_node = root_node->children()[1];
-  EXPECT_EQ(checkbox.id, checkbox_node->id());
-  EXPECT_EQ(checkbox.role, checkbox_node->data().role);
-
-  EXPECT_EQ(
-      "AXTree title=Title\n"
-      "id=1 dialog FOCUSABLE (0, 0)-(800, 600) child_ids=2,3\n"
-      "  id=2 button (20, 20)-(200, 30)\n"
-      "  id=3 checkBox (20, 50)-(200, 30)\n",
-      dst_tree.ToString());
-}
-
 TEST(AXTreeTest, SerializeAXTreeUpdate) {
   AXNodeData list;
   list.id = 3;
-  list.role = ax::mojom::Role::kList;
+  list.role = ax::Role::kList;
   list.child_ids.push_back(4);
   list.child_ids.push_back(5);
   list.child_ids.push_back(6);
 
   AXNodeData list_item_2;
   list_item_2.id = 5;
-  list_item_2.role = ax::mojom::Role::kListItem;
+  list_item_2.role = ax::Role::kListItem;
 
   AXNodeData list_item_3;
   list_item_3.id = 6;
-  list_item_3.role = ax::mojom::Role::kListItem;
+  list_item_3.role = ax::Role::kListItem;
 
   AXNodeData button;
   button.id = 7;
-  button.role = ax::mojom::Role::kButton;
+  button.role = ax::Role::kButton;
 
   AXTreeUpdate update;
   update.root_id = 3;
@@ -551,8 +504,7 @@ TEST(AXTreeTest, NoReparentingIfOnlyRemovedAndChangedNotReAdded) {
   AXTreeUpdate update;
   update.nodes.resize(2);
   update.nodes[0].id = 2;
-  update.nodes[0].AddIntAttribute(ax::mojom::IntAttribute::kActivedescendantId,
-                                  3);
+  update.nodes[0].AddIntAttribute(ax::IntAttribute::kActivedescendantId, 3);
   update.nodes[1].id = 1;
 
   TestAXTreeObserver test_observer(&tree);
@@ -836,7 +788,7 @@ TEST(AXTreeTest, IndexInParentAfterReorderIgnoredNode) {
   initial_state.nodes[0].child_ids[2] = 4;
   initial_state.nodes[1].id = 2;
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].AddState(ax::mojom::State::kIgnored);
+  initial_state.nodes[2].AddState(ax::State::kIgnored);
   initial_state.nodes[2].child_ids.resize(2);
   initial_state.nodes[2].child_ids[0] = 5;
   initial_state.nodes[2].child_ids[1] = 6;
@@ -864,7 +816,7 @@ TEST(AXTreeTest, IndexInParentAfterReorderIgnoredNode) {
   update.nodes[0].child_ids[2] = 4;
   update.nodes[1].id = 2;
   update.nodes[2].id = 3;
-  update.nodes[2].AddState(ax::mojom::State::kIgnored);
+  update.nodes[2].AddState(ax::State::kIgnored);
   update.nodes[2].child_ids.resize(2);
   update.nodes[2].child_ids[0] = 5;
   update.nodes[2].child_ids[1] = 6;
@@ -893,9 +845,8 @@ TEST(AXTreeTest, ImplicitAttributeDelete) {
   AXTree tree(initial_state);
 
   EXPECT_NE(tree.GetFromId(1), nullptr);
-  EXPECT_EQ(
-      tree.GetFromId(1)->GetStringAttribute(ax::mojom::StringAttribute::kName),
-      "Node 1 name");
+  EXPECT_EQ(tree.GetFromId(1)->GetStringAttribute(ax::StringAttribute::kName),
+            "Node 1 name");
 
   // Perform a no-op update of node 1 but omit any mention of the name
   // attribute. This should delete the name attribute.
@@ -907,7 +858,7 @@ TEST(AXTreeTest, ImplicitAttributeDelete) {
   // Check that the name attribute is no longer present.
   EXPECT_NE(tree.GetFromId(1), nullptr);
   EXPECT_FALSE(
-      tree.GetFromId(1)->HasStringAttribute(ax::mojom::StringAttribute::kName));
+      tree.GetFromId(1)->HasStringAttribute(ax::StringAttribute::kName));
 }
 
 TEST(AXTreeTest, TreeObserverIsCalled) {
@@ -1010,9 +961,9 @@ TEST(AXTreeTest, ReparentingDoesNotTriggerNodeCreated) {
       test_observer.subtree_reparented_finished_ids();
   std::vector<int> node_reparented =
       test_observer.node_reparented_finished_ids();
-  ASSERT_FALSE(base::Contains(created, 3));
-  ASSERT_TRUE(base::Contains(subtree_reparented, 3));
-  ASSERT_FALSE(base::Contains(node_reparented, 3));
+  ASSERT_FALSE(Contains(created, 3));
+  ASSERT_TRUE(Contains(subtree_reparented, 3));
+  ASSERT_FALSE(Contains(node_reparented, 3));
 }
 
 TEST(AXTreeTest, MultipleIgnoredChangesDoesNotBreakCache) {
@@ -1023,7 +974,7 @@ TEST(AXTreeTest, MultipleIgnoredChangesDoesNotBreakCache) {
   initial_state.nodes[0].child_ids.push_back(2);
 
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].AddState(ax::mojom::State::kIgnored);
+  initial_state.nodes[1].AddState(ax::State::kIgnored);
   initial_state.nodes[1].child_ids.push_back(3);
 
   initial_state.nodes[2].id = 3;
@@ -1035,15 +986,15 @@ TEST(AXTreeTest, MultipleIgnoredChangesDoesNotBreakCache) {
   AXTreeUpdate update;
   update.nodes.resize(2);
   update.nodes[0].id = 3;
-  update.nodes[0].AddState(ax::mojom::State::kIgnored);
+  update.nodes[0].AddState(ax::State::kIgnored);
 
   update.nodes[1].id = 2;
   update.nodes[1].child_ids.push_back(3);
 
   EXPECT_TRUE(tree.Unserialize(update)) << tree.error();
   EXPECT_EQ(0u, tree.GetFromId(2)->GetUnignoredChildCount());
-  EXPECT_FALSE(tree.GetFromId(2)->data().HasState(ax::mojom::State::kIgnored));
-  EXPECT_TRUE(tree.GetFromId(3)->data().HasState(ax::mojom::State::kIgnored));
+  EXPECT_FALSE(tree.GetFromId(2)->data().HasState(ax::State::kIgnored));
+  EXPECT_TRUE(tree.GetFromId(3)->data().HasState(ax::State::kIgnored));
 }
 
 TEST(AXTreeTest, NodeToClearUpdatesParentUnignoredCount) {
@@ -1053,7 +1004,7 @@ TEST(AXTreeTest, NodeToClearUpdatesParentUnignoredCount) {
   initial_state.nodes[0].id = 1;
   initial_state.nodes[0].child_ids.push_back(2);
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].AddState(ax::mojom::State::kIgnored);
+  initial_state.nodes[1].AddState(ax::State::kIgnored);
   initial_state.nodes[1].child_ids.push_back(3);
   initial_state.nodes[1].child_ids.push_back(4);
   initial_state.nodes[2].id = 3;
@@ -1124,7 +1075,7 @@ TEST(AXTreeTest, BogusAXTree) {
   node.id = 0;
   initial_state.nodes.push_back(node);
   initial_state.nodes.push_back(node);
-  ui::AXTree tree;
+  ax::AXTree tree;
   tree.Unserialize(initial_state);
 }
 
@@ -1139,7 +1090,7 @@ TEST(AXTreeTest, BogusAXTree2) {
   node2.child_ids.push_back(0);
   node2.child_ids.push_back(0);
   initial_state.nodes.push_back(node2);
-  ui::AXTree tree;
+  ax::AXTree tree;
   tree.Unserialize(initial_state);
 }
 
@@ -1157,7 +1108,7 @@ TEST(AXTreeTest, BogusAXTree3) {
   node2.child_ids.push_back(1);
   initial_state.nodes.push_back(node2);
 
-  ui::AXTree tree;
+  ax::AXTree tree;
   tree.Unserialize(initial_state);
 }
 
@@ -1166,9 +1117,9 @@ TEST(AXTreeTest, RoleAndStateChangeCallbacks) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(1);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kButton;
-  initial_state.nodes[0].SetCheckedState(ax::mojom::CheckedState::kTrue);
-  initial_state.nodes[0].AddState(ax::mojom::State::kFocusable);
+  initial_state.nodes[0].role = ax::Role::kButton;
+  initial_state.nodes[0].SetCheckedState(ax::CheckedState::kTrue);
+  initial_state.nodes[0].AddState(ax::State::kFocusable);
   AXTree tree(initial_state);
 
   TestAXTreeObserver test_observer(&tree);
@@ -1178,10 +1129,10 @@ TEST(AXTreeTest, RoleAndStateChangeCallbacks) {
   update.root_id = 1;
   update.nodes.resize(1);
   update.nodes[0].id = 1;
-  update.nodes[0].role = ax::mojom::Role::kCheckBox;
-  update.nodes[0].SetCheckedState(ax::mojom::CheckedState::kFalse);
-  update.nodes[0].AddState(ax::mojom::State::kFocusable);
-  update.nodes[0].AddState(ax::mojom::State::kVisited);
+  update.nodes[0].role = ax::Role::kCheckBox;
+  update.nodes[0].SetCheckedState(ax::CheckedState::kFalse);
+  update.nodes[0].AddState(ax::State::kFocusable);
+  update.nodes[0].AddState(ax::State::kVisited);
   EXPECT_TRUE(tree.Unserialize(update));
 
   const std::vector<std::string>& change_log =
@@ -1197,23 +1148,19 @@ TEST(AXTreeTest, AttributeChangeCallbacks) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(1);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].AddStringAttribute(ax::mojom::StringAttribute::kName,
-                                            "N1");
-  initial_state.nodes[0].AddStringAttribute(
-      ax::mojom::StringAttribute::kDescription, "D1");
-  initial_state.nodes[0].AddBoolAttribute(ax::mojom::BoolAttribute::kLiveAtomic,
-                                          true);
-  initial_state.nodes[0].AddBoolAttribute(ax::mojom::BoolAttribute::kBusy,
-                                          false);
+  initial_state.nodes[0].AddStringAttribute(ax::StringAttribute::kName, "N1");
+  initial_state.nodes[0].AddStringAttribute(ax::StringAttribute::kDescription,
+                                            "D1");
+  initial_state.nodes[0].AddBoolAttribute(ax::BoolAttribute::kLiveAtomic, true);
+  initial_state.nodes[0].AddBoolAttribute(ax::BoolAttribute::kBusy, false);
   initial_state.nodes[0].AddFloatAttribute(
-      ax::mojom::FloatAttribute::kMinValueForRange, 1.0);
+      ax::FloatAttribute::kMinValueForRange, 1.0);
   initial_state.nodes[0].AddFloatAttribute(
-      ax::mojom::FloatAttribute::kMaxValueForRange, 10.0);
+      ax::FloatAttribute::kMaxValueForRange, 10.0);
   initial_state.nodes[0].AddFloatAttribute(
-      ax::mojom::FloatAttribute::kStepValueForRange, 3.0);
-  initial_state.nodes[0].AddIntAttribute(ax::mojom::IntAttribute::kScrollX, 5);
-  initial_state.nodes[0].AddIntAttribute(ax::mojom::IntAttribute::kScrollXMin,
-                                         1);
+      ax::FloatAttribute::kStepValueForRange, 3.0);
+  initial_state.nodes[0].AddIntAttribute(ax::IntAttribute::kScrollX, 5);
+  initial_state.nodes[0].AddIntAttribute(ax::IntAttribute::kScrollXMin, 1);
   AXTree tree(initial_state);
 
   TestAXTreeObserver test_observer(&tree);
@@ -1223,20 +1170,18 @@ TEST(AXTreeTest, AttributeChangeCallbacks) {
   update0.root_id = 1;
   update0.nodes.resize(1);
   update0.nodes[0].id = 1;
-  update0.nodes[0].AddStringAttribute(ax::mojom::StringAttribute::kName, "N2");
-  update0.nodes[0].AddStringAttribute(ax::mojom::StringAttribute::kDescription,
-                                      "D2");
-  update0.nodes[0].AddBoolAttribute(ax::mojom::BoolAttribute::kLiveAtomic,
-                                    false);
-  update0.nodes[0].AddBoolAttribute(ax::mojom::BoolAttribute::kBusy, true);
-  update0.nodes[0].AddFloatAttribute(
-      ax::mojom::FloatAttribute::kMinValueForRange, 2.0);
-  update0.nodes[0].AddFloatAttribute(
-      ax::mojom::FloatAttribute::kMaxValueForRange, 9.0);
-  update0.nodes[0].AddFloatAttribute(
-      ax::mojom::FloatAttribute::kStepValueForRange, 0.5);
-  update0.nodes[0].AddIntAttribute(ax::mojom::IntAttribute::kScrollX, 6);
-  update0.nodes[0].AddIntAttribute(ax::mojom::IntAttribute::kScrollXMin, 2);
+  update0.nodes[0].AddStringAttribute(ax::StringAttribute::kName, "N2");
+  update0.nodes[0].AddStringAttribute(ax::StringAttribute::kDescription, "D2");
+  update0.nodes[0].AddBoolAttribute(ax::BoolAttribute::kLiveAtomic, false);
+  update0.nodes[0].AddBoolAttribute(ax::BoolAttribute::kBusy, true);
+  update0.nodes[0].AddFloatAttribute(ax::FloatAttribute::kMinValueForRange,
+                                     2.0);
+  update0.nodes[0].AddFloatAttribute(ax::FloatAttribute::kMaxValueForRange,
+                                     9.0);
+  update0.nodes[0].AddFloatAttribute(ax::FloatAttribute::kStepValueForRange,
+                                     0.5);
+  update0.nodes[0].AddIntAttribute(ax::IntAttribute::kScrollX, 6);
+  update0.nodes[0].AddIntAttribute(ax::IntAttribute::kScrollXMin, 2);
   EXPECT_TRUE(tree.Unserialize(update0));
 
   const std::vector<std::string>& change_log =
@@ -1246,9 +1191,9 @@ TEST(AXTreeTest, AttributeChangeCallbacks) {
   EXPECT_EQ("description changed from D1 to D2", change_log[1]);
   EXPECT_EQ("liveAtomic changed to false", change_log[2]);
   EXPECT_EQ("busy changed to true", change_log[3]);
-  EXPECT_EQ("minValueForRange changed from 1 to 2", change_log[4]);
-  EXPECT_EQ("maxValueForRange changed from 10 to 9", change_log[5]);
-  EXPECT_EQ("stepValueForRange changed from 3 to 0.5", change_log[6]);
+  EXPECT_EQ("minValueForRange changed from 1.0 to 2.0", change_log[4]);
+  EXPECT_EQ("maxValueForRange changed from 10.0 to 9.0", change_log[5]);
+  EXPECT_EQ("stepValueForRange changed from 3.0 to 0.5", change_log[6]);
   EXPECT_EQ("scrollX changed from 5 to 6", change_log[7]);
   EXPECT_EQ("scrollXMin changed from 1 to 2", change_log[8]);
 
@@ -1259,16 +1204,14 @@ TEST(AXTreeTest, AttributeChangeCallbacks) {
   update1.root_id = 1;
   update1.nodes.resize(1);
   update1.nodes[0].id = 1;
-  update1.nodes[0].AddStringAttribute(ax::mojom::StringAttribute::kDescription,
-                                      "D3");
-  update1.nodes[0].AddStringAttribute(ax::mojom::StringAttribute::kValue, "V3");
-  update1.nodes[0].AddBoolAttribute(ax::mojom::BoolAttribute::kModal, true);
-  update1.nodes[0].AddFloatAttribute(ax::mojom::FloatAttribute::kValueForRange,
-                                     5.0);
-  update1.nodes[0].AddFloatAttribute(
-      ax::mojom::FloatAttribute::kMaxValueForRange, 9.0);
-  update1.nodes[0].AddIntAttribute(ax::mojom::IntAttribute::kScrollX, 7);
-  update1.nodes[0].AddIntAttribute(ax::mojom::IntAttribute::kScrollXMax, 10);
+  update1.nodes[0].AddStringAttribute(ax::StringAttribute::kDescription, "D3");
+  update1.nodes[0].AddStringAttribute(ax::StringAttribute::kValue, "V3");
+  update1.nodes[0].AddBoolAttribute(ax::BoolAttribute::kModal, true);
+  update1.nodes[0].AddFloatAttribute(ax::FloatAttribute::kValueForRange, 5.0);
+  update1.nodes[0].AddFloatAttribute(ax::FloatAttribute::kMaxValueForRange,
+                                     9.0);
+  update1.nodes[0].AddIntAttribute(ax::IntAttribute::kScrollX, 7);
+  update1.nodes[0].AddIntAttribute(ax::IntAttribute::kScrollXMax, 10);
   EXPECT_TRUE(tree.Unserialize(update1));
 
   const std::vector<std::string>& change_log2 =
@@ -1279,9 +1222,9 @@ TEST(AXTreeTest, AttributeChangeCallbacks) {
   EXPECT_EQ("value changed from  to V3", change_log2[2]);
   EXPECT_EQ("busy changed to false", change_log2[3]);
   EXPECT_EQ("modal changed to true", change_log2[4]);
-  EXPECT_EQ("minValueForRange changed from 2 to 0", change_log2[5]);
-  EXPECT_EQ("stepValueForRange changed from 3 to 0.5", change_log[6]);
-  EXPECT_EQ("valueForRange changed from 0 to 5", change_log2[7]);
+  EXPECT_EQ("minValueForRange changed from 2.0 to 0.0", change_log2[5]);
+  EXPECT_EQ("stepValueForRange changed from 3.0 to 0.5", change_log[6]);
+  EXPECT_EQ("valueForRange changed from 0.0 to 5.0", change_log2[7]);
   EXPECT_EQ("scrollXMin changed from 2 to 0", change_log2[8]);
   EXPECT_EQ("scrollX changed from 6 to 7", change_log2[9]);
   EXPECT_EQ("scrollXMax changed from 0 to 10", change_log2[10]);
@@ -1302,10 +1245,10 @@ TEST(AXTreeTest, IntListChangeCallbacks) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(1);
   initial_state.nodes[0].id = 1;
+  initial_state.nodes[0].AddIntListAttribute(ax::IntListAttribute::kControlsIds,
+                                             one);
   initial_state.nodes[0].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kControlsIds, one);
-  initial_state.nodes[0].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kRadioGroupIds, two);
+      ax::IntListAttribute::kRadioGroupIds, two);
   AXTree tree(initial_state);
 
   TestAXTreeObserver test_observer(&tree);
@@ -1315,10 +1258,9 @@ TEST(AXTreeTest, IntListChangeCallbacks) {
   update0.root_id = 1;
   update0.nodes.resize(1);
   update0.nodes[0].id = 1;
-  update0.nodes[0].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kControlsIds, two);
-  update0.nodes[0].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kRadioGroupIds, three);
+  update0.nodes[0].AddIntListAttribute(ax::IntListAttribute::kControlsIds, two);
+  update0.nodes[0].AddIntListAttribute(ax::IntListAttribute::kRadioGroupIds,
+                                       three);
   EXPECT_TRUE(tree.Unserialize(update0));
 
   const std::vector<std::string>& change_log =
@@ -1334,10 +1276,9 @@ TEST(AXTreeTest, IntListChangeCallbacks) {
   update1.root_id = 1;
   update1.nodes.resize(1);
   update1.nodes[0].id = 1;
-  update1.nodes[0].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kRadioGroupIds, two);
-  update1.nodes[0].AddIntListAttribute(ax::mojom::IntListAttribute::kFlowtoIds,
-                                       three);
+  update1.nodes[0].AddIntListAttribute(ax::IntListAttribute::kRadioGroupIds,
+                                       two);
+  update1.nodes[0].AddIntListAttribute(ax::IntListAttribute::kFlowtoIds, three);
   EXPECT_TRUE(tree.Unserialize(update1));
 
   const std::vector<std::string>& change_log2 =
@@ -1355,10 +1296,12 @@ TEST(AXTreeTest, GetBoundsBasic) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(2);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 800, 600);
   tree_update.nodes[0].child_ids.push_back(2);
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].relative_bounds.bounds = gfx::RectF(100, 10, 400, 300);
+  tree_update.nodes[1].relative_bounds.bounds =
+      SkRect::MakeXYWH(100, 10, 400, 300);
   AXTree tree(tree_update);
 
   EXPECT_EQ("(0, 0) size (800 x 600)", GetBoundsAsString(tree, 1));
@@ -1372,17 +1315,20 @@ TEST(AXTreeTest, EmptyNodeBoundsIsUnionOfChildren) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 800, 600);
   tree_update.nodes[0].child_ids.push_back(2);
   tree_update.nodes[1].id = 2;
   tree_update.nodes[1].relative_bounds.bounds =
-      gfx::RectF();  // Deliberately empty.
+      SkRect();  // Deliberately empty.
   tree_update.nodes[1].child_ids.push_back(3);
   tree_update.nodes[1].child_ids.push_back(4);
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].relative_bounds.bounds = gfx::RectF(100, 10, 400, 20);
+  tree_update.nodes[2].relative_bounds.bounds =
+      SkRect::MakeXYWH(100, 10, 400, 20);
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].relative_bounds.bounds = gfx::RectF(200, 30, 400, 20);
+  tree_update.nodes[3].relative_bounds.bounds =
+      SkRect::MakeXYWH(200, 30, 400, 20);
 
   AXTree tree(tree_update);
   EXPECT_EQ("(100, 10) size (500 x 40)", GetBoundsAsString(tree, 2));
@@ -1395,21 +1341,24 @@ TEST(AXTreeTest, EmptyNodeNotOffscreenEvenIfAllChildrenOffscreen) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
-  tree_update.nodes[0].role = ax::mojom::Role::kRootWebArea;
-  tree_update.nodes[0].AddBoolAttribute(
-      ax::mojom::BoolAttribute::kClipsChildren, true);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 800, 600);
+  tree_update.nodes[0].role = ax::Role::kRootWebArea;
+  tree_update.nodes[0].AddBoolAttribute(ax::BoolAttribute::kClipsChildren,
+                                        true);
   tree_update.nodes[0].child_ids.push_back(2);
   tree_update.nodes[1].id = 2;
   tree_update.nodes[1].relative_bounds.bounds =
-      gfx::RectF();  // Deliberately empty.
+      SkRect();  // Deliberately empty.
   tree_update.nodes[1].child_ids.push_back(3);
   tree_update.nodes[1].child_ids.push_back(4);
   // Both children are offscreen
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].relative_bounds.bounds = gfx::RectF(900, 10, 400, 20);
+  tree_update.nodes[2].relative_bounds.bounds =
+      SkRect::MakeXYWH(900, 10, 400, 20);
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].relative_bounds.bounds = gfx::RectF(1000, 30, 400, 20);
+  tree_update.nodes[3].relative_bounds.bounds =
+      SkRect::MakeXYWH(1000, 30, 400, 20);
 
   AXTree tree(tree_update);
   EXPECT_FALSE(IsNodeOffscreen(tree, 2));
@@ -1423,19 +1372,18 @@ TEST(AXTreeTest, GetBoundsWithTransform) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(3);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 400, 300);
-  tree_update.nodes[0].relative_bounds.transform =
-      std::make_unique<gfx::Transform>();
-  tree_update.nodes[0].relative_bounds.transform->Scale(2.0, 2.0);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 400, 300);
+  tree_update.nodes[0].relative_bounds.transform = SkMatrix();
+  tree_update.nodes[0].relative_bounds.transform.setScale(2.0, 2.0);
   tree_update.nodes[0].child_ids.push_back(2);
   tree_update.nodes[0].child_ids.push_back(3);
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].relative_bounds.bounds = gfx::RectF(20, 10, 50, 5);
+  tree_update.nodes[1].relative_bounds.bounds = SkRect::MakeXYWH(20, 10, 50, 5);
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].relative_bounds.bounds = gfx::RectF(20, 30, 50, 5);
-  tree_update.nodes[2].relative_bounds.transform =
-      std::make_unique<gfx::Transform>();
-  tree_update.nodes[2].relative_bounds.transform->Scale(2.0, 2.0);
+  tree_update.nodes[2].relative_bounds.bounds = SkRect::MakeXYWH(20, 30, 50, 5);
+  tree_update.nodes[2].relative_bounds.transform = SkMatrix();
+  tree_update.nodes[2].relative_bounds.transform.setScale(2.0, 2.0);
 
   AXTree tree(tree_update);
   EXPECT_EQ("(0, 0) size (800 x 600)", GetBoundsAsString(tree, 1));
@@ -1450,17 +1398,19 @@ TEST(AXTreeTest, GetBoundsWithContainerId) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 800, 600);
   tree_update.nodes[0].child_ids.push_back(2);
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].relative_bounds.bounds = gfx::RectF(100, 50, 600, 500);
+  tree_update.nodes[1].relative_bounds.bounds =
+      SkRect::MakeXYWH(100, 50, 600, 500);
   tree_update.nodes[1].child_ids.push_back(3);
   tree_update.nodes[1].child_ids.push_back(4);
   tree_update.nodes[2].id = 3;
   tree_update.nodes[2].relative_bounds.offset_container_id = 2;
-  tree_update.nodes[2].relative_bounds.bounds = gfx::RectF(20, 30, 50, 5);
+  tree_update.nodes[2].relative_bounds.bounds = SkRect::MakeXYWH(20, 30, 50, 5);
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].relative_bounds.bounds = gfx::RectF(20, 30, 50, 5);
+  tree_update.nodes[3].relative_bounds.bounds = SkRect::MakeXYWH(20, 30, 50, 5);
 
   AXTree tree(tree_update);
   EXPECT_EQ("(120, 80) size (50 x 5)", GetBoundsAsString(tree, 3));
@@ -1474,16 +1424,18 @@ TEST(AXTreeTest, GetBoundsWithScrolling) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(3);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 800, 600);
   tree_update.nodes[0].child_ids.push_back(2);
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].relative_bounds.bounds = gfx::RectF(100, 50, 600, 500);
-  tree_update.nodes[1].AddIntAttribute(ax::mojom::IntAttribute::kScrollX, 5);
-  tree_update.nodes[1].AddIntAttribute(ax::mojom::IntAttribute::kScrollY, 10);
+  tree_update.nodes[1].relative_bounds.bounds =
+      SkRect::MakeXYWH(100, 50, 600, 500);
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kScrollX, 5);
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kScrollY, 10);
   tree_update.nodes[1].child_ids.push_back(3);
   tree_update.nodes[2].id = 3;
   tree_update.nodes[2].relative_bounds.offset_container_id = 2;
-  tree_update.nodes[2].relative_bounds.bounds = gfx::RectF(20, 30, 50, 5);
+  tree_update.nodes[2].relative_bounds.bounds = SkRect::MakeXYWH(20, 30, 50, 5);
 
   AXTree tree(tree_update);
   EXPECT_EQ("(115, 70) size (50 x 5)", GetBoundsAsString(tree, 3));
@@ -1495,25 +1447,28 @@ TEST(AXTreeTest, GetBoundsOfNodeWithZeroSize) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(5);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 800, 600);
   tree_update.nodes[0].child_ids = {2};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].relative_bounds.bounds = gfx::RectF(100, 100, 300, 200);
+  tree_update.nodes[1].relative_bounds.bounds =
+      SkRect::MakeXYWH(100, 100, 300, 200);
   tree_update.nodes[1].child_ids = {3, 4, 5};
 
   // This child has relative coordinates and no offset and no size.
   tree_update.nodes[2].id = 3;
   tree_update.nodes[2].relative_bounds.offset_container_id = 2;
-  tree_update.nodes[2].relative_bounds.bounds = gfx::RectF(0, 0, 0, 0);
+  tree_update.nodes[2].relative_bounds.bounds = SkRect::MakeXYWH(0, 0, 0, 0);
 
   // This child has relative coordinates and an offset, but no size.
   tree_update.nodes[3].id = 4;
   tree_update.nodes[3].relative_bounds.offset_container_id = 2;
-  tree_update.nodes[3].relative_bounds.bounds = gfx::RectF(20, 20, 0, 0);
+  tree_update.nodes[3].relative_bounds.bounds = SkRect::MakeXYWH(20, 20, 0, 0);
 
   // This child has absolute coordinates, an offset, and no size.
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].relative_bounds.bounds = gfx::RectF(120, 120, 0, 0);
+  tree_update.nodes[4].relative_bounds.bounds =
+      SkRect::MakeXYWH(120, 120, 0, 0);
 
   AXTree tree(tree_update);
   EXPECT_EQ("(100, 100) size (300 x 200)", GetBoundsAsString(tree, 3));
@@ -1526,15 +1481,17 @@ TEST(AXTreeTest, GetBoundsEmptyBoundsInheritsFromParent) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(3);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
-  tree_update.nodes[1].AddBoolAttribute(
-      ax::mojom::BoolAttribute::kClipsChildren, true);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 800, 600);
+  tree_update.nodes[1].AddBoolAttribute(ax::BoolAttribute::kClipsChildren,
+                                        true);
   tree_update.nodes[0].child_ids.push_back(2);
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].relative_bounds.bounds = gfx::RectF(300, 200, 100, 100);
+  tree_update.nodes[1].relative_bounds.bounds =
+      SkRect::MakeXYWH(300, 200, 100, 100);
   tree_update.nodes[1].child_ids.push_back(3);
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].relative_bounds.bounds = gfx::RectF();
+  tree_update.nodes[2].relative_bounds.bounds = SkRect();
 
   AXTree tree(tree_update);
   EXPECT_EQ("(0, 0) size (800 x 600)", GetBoundsAsString(tree, 1));
@@ -1553,9 +1510,10 @@ TEST(AXTreeTest, GetBoundsCropsChildToRoot) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(5);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
-  tree_update.nodes[0].AddBoolAttribute(
-      ax::mojom::BoolAttribute::kClipsChildren, true);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 800, 600);
+  tree_update.nodes[0].AddBoolAttribute(ax::BoolAttribute::kClipsChildren,
+                                        true);
   tree_update.nodes[0].child_ids.push_back(2);
   tree_update.nodes[0].child_ids.push_back(3);
   tree_update.nodes[0].child_ids.push_back(4);
@@ -1563,16 +1521,19 @@ TEST(AXTreeTest, GetBoundsCropsChildToRoot) {
   // Cropped in the top left
   tree_update.nodes[1].id = 2;
   tree_update.nodes[1].relative_bounds.bounds =
-      gfx::RectF(-100, -100, 150, 150);
+      SkRect::MakeXYWH(-100, -100, 150, 150);
   // Cropped in the bottom right
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].relative_bounds.bounds = gfx::RectF(700, 500, 150, 150);
+  tree_update.nodes[2].relative_bounds.bounds =
+      SkRect::MakeXYWH(700, 500, 150, 150);
   // Offscreen on the top
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].relative_bounds.bounds = gfx::RectF(50, -200, 150, 150);
+  tree_update.nodes[3].relative_bounds.bounds =
+      SkRect::MakeXYWH(50, -200, 150, 150);
   // Offscreen on the bottom
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].relative_bounds.bounds = gfx::RectF(50, 700, 150, 150);
+  tree_update.nodes[4].relative_bounds.bounds =
+      SkRect::MakeXYWH(50, 700, 150, 150);
 
   AXTree tree(tree_update);
   EXPECT_EQ("(0, 0) size (50 x 50)", GetBoundsAsString(tree, 2));
@@ -1593,31 +1554,36 @@ TEST(AXTreeTest, GetBoundsSetsOffscreenIfClipsChildren) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(5);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
-  tree_update.nodes[0].AddBoolAttribute(
-      ax::mojom::BoolAttribute::kClipsChildren, true);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 800, 600);
+  tree_update.nodes[0].AddBoolAttribute(ax::BoolAttribute::kClipsChildren,
+                                        true);
   tree_update.nodes[0].child_ids.push_back(2);
   tree_update.nodes[0].child_ids.push_back(3);
 
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].relative_bounds.bounds = gfx::RectF(0, 0, 200, 200);
-  tree_update.nodes[1].AddBoolAttribute(
-      ax::mojom::BoolAttribute::kClipsChildren, true);
+  tree_update.nodes[1].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 200, 200);
+  tree_update.nodes[1].AddBoolAttribute(ax::BoolAttribute::kClipsChildren,
+                                        true);
   tree_update.nodes[1].child_ids.push_back(4);
 
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].relative_bounds.bounds = gfx::RectF(0, 0, 200, 200);
+  tree_update.nodes[2].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 200, 200);
   tree_update.nodes[2].child_ids.push_back(5);
 
   // Clipped by its parent
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].relative_bounds.bounds = gfx::RectF(250, 250, 100, 100);
+  tree_update.nodes[3].relative_bounds.bounds =
+      SkRect::MakeXYWH(250, 250, 100, 100);
   tree_update.nodes[3].relative_bounds.offset_container_id = 2;
 
   // Outside of its parent, but its parent does not clip children,
   // so it should not be offscreen.
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].relative_bounds.bounds = gfx::RectF(250, 250, 100, 100);
+  tree_update.nodes[4].relative_bounds.bounds =
+      SkRect::MakeXYWH(250, 250, 100, 100);
   tree_update.nodes[4].relative_bounds.offset_container_id = 3;
 
   AXTree tree(tree_update);
@@ -1630,26 +1596,31 @@ TEST(AXTreeTest, GetBoundsUpdatesOffscreen) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(5);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].relative_bounds.bounds = gfx::RectF(0, 0, 800, 600);
-  tree_update.nodes[0].role = ax::mojom::Role::kRootWebArea;
-  tree_update.nodes[0].AddBoolAttribute(
-      ax::mojom::BoolAttribute::kClipsChildren, true);
+  tree_update.nodes[0].relative_bounds.bounds =
+      SkRect::MakeXYWH(0, 0, 800, 600);
+  tree_update.nodes[0].role = ax::Role::kRootWebArea;
+  tree_update.nodes[0].AddBoolAttribute(ax::BoolAttribute::kClipsChildren,
+                                        true);
   tree_update.nodes[0].child_ids.push_back(2);
   tree_update.nodes[0].child_ids.push_back(3);
   tree_update.nodes[0].child_ids.push_back(4);
   tree_update.nodes[0].child_ids.push_back(5);
   // Fully onscreen
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].relative_bounds.bounds = gfx::RectF(10, 10, 150, 150);
+  tree_update.nodes[1].relative_bounds.bounds =
+      SkRect::MakeXYWH(10, 10, 150, 150);
   // Cropped in the bottom right
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].relative_bounds.bounds = gfx::RectF(700, 500, 150, 150);
+  tree_update.nodes[2].relative_bounds.bounds =
+      SkRect::MakeXYWH(700, 500, 150, 150);
   // Offscreen on the top
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].relative_bounds.bounds = gfx::RectF(50, -200, 150, 150);
+  tree_update.nodes[3].relative_bounds.bounds =
+      SkRect::MakeXYWH(50, -200, 150, 150);
   // Offscreen on the bottom
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].relative_bounds.bounds = gfx::RectF(50, 700, 150, 150);
+  tree_update.nodes[4].relative_bounds.bounds =
+      SkRect::MakeXYWH(50, 700, 150, 150);
 
   AXTree tree(tree_update);
   EXPECT_FALSE(IsNodeOffscreen(tree, 2));
@@ -1663,65 +1634,62 @@ TEST(AXTreeTest, IntReverseRelations) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(4);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].AddIntAttribute(
-      ax::mojom::IntAttribute::kActivedescendantId, 2);
+  initial_state.nodes[0].AddIntAttribute(ax::IntAttribute::kActivedescendantId,
+                                         2);
   initial_state.nodes[0].child_ids.push_back(2);
   initial_state.nodes[0].child_ids.push_back(3);
   initial_state.nodes[0].child_ids.push_back(4);
   initial_state.nodes[1].id = 2;
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].AddIntAttribute(ax::mojom::IntAttribute::kMemberOfId,
-                                         1);
+  initial_state.nodes[2].AddIntAttribute(ax::IntAttribute::kMemberOfId, 1);
   initial_state.nodes[3].id = 4;
-  initial_state.nodes[3].AddIntAttribute(ax::mojom::IntAttribute::kMemberOfId,
-                                         1);
+  initial_state.nodes[3].AddIntAttribute(ax::IntAttribute::kMemberOfId, 1);
   AXTree tree(initial_state);
 
   auto reverse_active_descendant =
-      tree.GetReverseRelations(ax::mojom::IntAttribute::kActivedescendantId, 2);
+      tree.GetReverseRelations(ax::IntAttribute::kActivedescendantId, 2);
   ASSERT_EQ(1U, reverse_active_descendant.size());
-  EXPECT_TRUE(base::Contains(reverse_active_descendant, 1));
+  EXPECT_TRUE(Contains(reverse_active_descendant, 1));
 
   reverse_active_descendant =
-      tree.GetReverseRelations(ax::mojom::IntAttribute::kActivedescendantId, 1);
+      tree.GetReverseRelations(ax::IntAttribute::kActivedescendantId, 1);
   ASSERT_EQ(0U, reverse_active_descendant.size());
 
   auto reverse_errormessage =
-      tree.GetReverseRelations(ax::mojom::IntAttribute::kErrormessageId, 1);
+      tree.GetReverseRelations(ax::IntAttribute::kErrormessageId, 1);
   ASSERT_EQ(0U, reverse_errormessage.size());
 
   auto reverse_member_of =
-      tree.GetReverseRelations(ax::mojom::IntAttribute::kMemberOfId, 1);
+      tree.GetReverseRelations(ax::IntAttribute::kMemberOfId, 1);
   ASSERT_EQ(2U, reverse_member_of.size());
-  EXPECT_TRUE(base::Contains(reverse_member_of, 3));
-  EXPECT_TRUE(base::Contains(reverse_member_of, 4));
+  EXPECT_TRUE(Contains(reverse_member_of, 3));
+  EXPECT_TRUE(Contains(reverse_member_of, 4));
 
   AXTreeUpdate update = initial_state;
   update.nodes.resize(5);
   update.nodes[0].int_attributes.clear();
-  update.nodes[0].AddIntAttribute(ax::mojom::IntAttribute::kActivedescendantId,
-                                  5);
+  update.nodes[0].AddIntAttribute(ax::IntAttribute::kActivedescendantId, 5);
   update.nodes[0].child_ids.push_back(5);
   update.nodes[2].int_attributes.clear();
   update.nodes[4].id = 5;
-  update.nodes[4].AddIntAttribute(ax::mojom::IntAttribute::kMemberOfId, 1);
+  update.nodes[4].AddIntAttribute(ax::IntAttribute::kMemberOfId, 1);
 
   EXPECT_TRUE(tree.Unserialize(update));
 
   reverse_active_descendant =
-      tree.GetReverseRelations(ax::mojom::IntAttribute::kActivedescendantId, 2);
+      tree.GetReverseRelations(ax::IntAttribute::kActivedescendantId, 2);
   ASSERT_EQ(0U, reverse_active_descendant.size());
 
   reverse_active_descendant =
-      tree.GetReverseRelations(ax::mojom::IntAttribute::kActivedescendantId, 5);
+      tree.GetReverseRelations(ax::IntAttribute::kActivedescendantId, 5);
   ASSERT_EQ(1U, reverse_active_descendant.size());
-  EXPECT_TRUE(base::Contains(reverse_active_descendant, 1));
+  EXPECT_TRUE(Contains(reverse_active_descendant, 1));
 
   reverse_member_of =
-      tree.GetReverseRelations(ax::mojom::IntAttribute::kMemberOfId, 1);
+      tree.GetReverseRelations(ax::IntAttribute::kMemberOfId, 1);
   ASSERT_EQ(2U, reverse_member_of.size());
-  EXPECT_TRUE(base::Contains(reverse_member_of, 4));
-  EXPECT_TRUE(base::Contains(reverse_member_of, 5));
+  EXPECT_TRUE(Contains(reverse_member_of, 4));
+  EXPECT_TRUE(Contains(reverse_member_of, 5));
 }
 
 TEST(AXTreeTest, IntListReverseRelations) {
@@ -1737,7 +1705,7 @@ TEST(AXTreeTest, IntListReverseRelations) {
   initial_state.nodes.resize(3);
   initial_state.nodes[0].id = 1;
   initial_state.nodes[0].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kLabelledbyIds, node_two);
+      ax::IntListAttribute::kLabelledbyIds, node_two);
   initial_state.nodes[0].child_ids.push_back(2);
   initial_state.nodes[0].child_ids.push_back(3);
   initial_state.nodes[1].id = 2;
@@ -1746,25 +1714,25 @@ TEST(AXTreeTest, IntListReverseRelations) {
   AXTree tree(initial_state);
 
   auto reverse_labelled_by =
-      tree.GetReverseRelations(ax::mojom::IntListAttribute::kLabelledbyIds, 2);
+      tree.GetReverseRelations(ax::IntListAttribute::kLabelledbyIds, 2);
   ASSERT_EQ(1U, reverse_labelled_by.size());
-  EXPECT_TRUE(base::Contains(reverse_labelled_by, 1));
+  EXPECT_TRUE(Contains(reverse_labelled_by, 1));
 
   reverse_labelled_by =
-      tree.GetReverseRelations(ax::mojom::IntListAttribute::kLabelledbyIds, 3);
+      tree.GetReverseRelations(ax::IntListAttribute::kLabelledbyIds, 3);
   ASSERT_EQ(0U, reverse_labelled_by.size());
 
   // Change existing attributes.
   AXTreeUpdate update = initial_state;
   update.nodes[0].intlist_attributes.clear();
-  update.nodes[0].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kLabelledbyIds, nodes_two_three);
+  update.nodes[0].AddIntListAttribute(ax::IntListAttribute::kLabelledbyIds,
+                                      nodes_two_three);
   EXPECT_TRUE(tree.Unserialize(update));
 
   reverse_labelled_by =
-      tree.GetReverseRelations(ax::mojom::IntListAttribute::kLabelledbyIds, 3);
+      tree.GetReverseRelations(ax::IntListAttribute::kLabelledbyIds, 3);
   ASSERT_EQ(1U, reverse_labelled_by.size());
-  EXPECT_TRUE(base::Contains(reverse_labelled_by, 1));
+  EXPECT_TRUE(Contains(reverse_labelled_by, 1));
 }
 
 TEST(AXTreeTest, DeletingNodeUpdatesReverseRelations) {
@@ -1775,14 +1743,14 @@ TEST(AXTreeTest, DeletingNodeUpdatesReverseRelations) {
   initial_state.nodes[0].child_ids = {2, 3};
   initial_state.nodes[1].id = 2;
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].AddIntAttribute(
-      ax::mojom::IntAttribute::kActivedescendantId, 2);
+  initial_state.nodes[2].AddIntAttribute(ax::IntAttribute::kActivedescendantId,
+                                         2);
   AXTree tree(initial_state);
 
   auto reverse_active_descendant =
-      tree.GetReverseRelations(ax::mojom::IntAttribute::kActivedescendantId, 2);
+      tree.GetReverseRelations(ax::IntAttribute::kActivedescendantId, 2);
   ASSERT_EQ(1U, reverse_active_descendant.size());
-  EXPECT_TRUE(base::Contains(reverse_active_descendant, 3));
+  EXPECT_TRUE(Contains(reverse_active_descendant, 3));
 
   AXTreeUpdate update;
   update.root_id = 1;
@@ -1792,7 +1760,7 @@ TEST(AXTreeTest, DeletingNodeUpdatesReverseRelations) {
   EXPECT_TRUE(tree.Unserialize(update));
 
   reverse_active_descendant =
-      tree.GetReverseRelations(ax::mojom::IntAttribute::kActivedescendantId, 2);
+      tree.GetReverseRelations(ax::IntAttribute::kActivedescendantId, 2);
   ASSERT_EQ(0U, reverse_active_descendant.size());
 }
 
@@ -1805,10 +1773,10 @@ TEST(AXTreeTest, ReverseRelationsDoNotKeepGrowing) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(2);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].AddIntAttribute(
-      ax::mojom::IntAttribute::kActivedescendantId, 2);
+  initial_state.nodes[0].AddIntAttribute(ax::IntAttribute::kActivedescendantId,
+                                         2);
   initial_state.nodes[0].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kLabelledbyIds, {2});
+      ax::IntListAttribute::kLabelledbyIds, {2});
   initial_state.nodes[0].child_ids.push_back(2);
   initial_state.nodes[1].id = 2;
   AXTree tree(initial_state);
@@ -1819,11 +1787,11 @@ TEST(AXTreeTest, ReverseRelationsDoNotKeepGrowing) {
     update.nodes.resize(2);
     update.nodes[0].id = 1;
     update.nodes[1].id = i + 3;
-    update.nodes[0].AddIntAttribute(
-        ax::mojom::IntAttribute::kActivedescendantId, update.nodes[1].id);
-    update.nodes[0].AddIntListAttribute(
-        ax::mojom::IntListAttribute::kLabelledbyIds, {update.nodes[1].id});
-    update.nodes[1].AddIntAttribute(ax::mojom::IntAttribute::kMemberOfId, 1);
+    update.nodes[0].AddIntAttribute(ax::IntAttribute::kActivedescendantId,
+                                    update.nodes[1].id);
+    update.nodes[0].AddIntListAttribute(ax::IntListAttribute::kLabelledbyIds,
+                                        {update.nodes[1].id});
+    update.nodes[1].AddIntAttribute(ax::IntAttribute::kMemberOfId, 1);
     update.nodes[0].child_ids.push_back(update.nodes[1].id);
     EXPECT_TRUE(tree.Unserialize(update));
   }
@@ -1862,7 +1830,7 @@ TEST(AXTreeTest, SkipIgnoredNodes) {
   tree_update.nodes[0].id = 1;
   tree_update.nodes[0].child_ids = {2, 3};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
   tree_update.nodes[1].child_ids = {4, 5};
   tree_update.nodes[2].id = 3;
   tree_update.nodes[3].id = 4;
@@ -1892,7 +1860,7 @@ TEST(AXTreeTest, CachedUnignoredValues) {
   initial_state.nodes[0].id = 1;
   initial_state.nodes[0].child_ids = {2, 3};
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].AddState(ax::mojom::State::kIgnored);
+  initial_state.nodes[1].AddState(ax::State::kIgnored);
   initial_state.nodes[1].child_ids = {4, 5};
   initial_state.nodes[2].id = 3;
   initial_state.nodes[3].id = 4;
@@ -1917,7 +1885,7 @@ TEST(AXTreeTest, CachedUnignoredValues) {
   // Ensure when a node goes from ignored to unignored, its children have their
   // unignored_index_in_parent updated.
   AXTreeUpdate update = initial_state;
-  update.nodes[1].RemoveState(ax::mojom::State::kIgnored);
+  update.nodes[1].RemoveState(ax::State::kIgnored);
 
   EXPECT_TRUE(tree.Unserialize(update));
 
@@ -1931,7 +1899,7 @@ TEST(AXTreeTest, CachedUnignoredValues) {
   // Ensure when a node goes from unignored to unignored, siblings are correctly
   // updated.
   AXTreeUpdate update2 = update;
-  update2.nodes[3].AddState(ax::mojom::State::kIgnored);
+  update2.nodes[3].AddState(ax::State::kIgnored);
 
   EXPECT_TRUE(tree.Unserialize(update2));
 
@@ -1983,7 +1951,7 @@ TEST(AXTreeTest, CachedUnignoredValues) {
   AXTreeUpdate update6;
   update6.nodes.resize(1);
   update6.nodes[0].id = 7;
-  update6.nodes[0].AddState(ax::mojom::State::kIgnored);
+  update6.nodes[0].AddState(ax::State::kIgnored);
 
   EXPECT_TRUE(tree.Unserialize(update6));
 
@@ -2009,13 +1977,13 @@ TEST(AXTreeTest, TestRecursionUnignoredChildCount) {
   tree_update.nodes[0].id = 1;
   tree_update.nodes[0].child_ids = {2, 3};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
   tree_update.nodes[1].child_ids = {4};
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[2].AddState(ax::State::kIgnored);
   tree_update.nodes[3].id = 4;
   tree_update.nodes[3].child_ids = {5};
-  tree_update.nodes[3].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[3].AddState(ax::State::kIgnored);
   tree_update.nodes[4].id = 5;
   AXTree tree(tree_update);
 
@@ -2034,9 +2002,9 @@ TEST(AXTreeTest, NullUnignoredChildren) {
   tree_update.nodes[0].id = 1;
   tree_update.nodes[0].child_ids = {2, 3};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[2].AddState(ax::State::kIgnored);
   AXTree tree(tree_update);
 
   AXNode* root = tree.root();
@@ -2056,11 +2024,11 @@ TEST(AXTreeTest, UnignoredChildIteratorIncrementDecrementPastEnd) {
   tree_update.nodes.resize(2);
 
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kWebArea;
+  tree_update.nodes[0].role = ax::Role::kWebArea;
   tree_update.nodes[0].child_ids = {2};
 
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[1].role = ax::Role::kStaticText;
   tree_update.nodes[1].SetName("text1");
 
   AXTree tree(tree_update);
@@ -2072,7 +2040,7 @@ TEST(AXTreeTest, UnignoredChildIteratorIncrementDecrementPastEnd) {
           root->UnignoredChildrenBegin();
       EXPECT_EQ(2, root_unignored_iter->id());
       EXPECT_EQ("text1", root_unignored_iter->GetStringAttribute(
-                             ax::mojom::StringAttribute::kName));
+                             ax::StringAttribute::kName));
 
       // Call unignored child iterator on root and increment, we should reach
       // the end since there is only one iterator element.
@@ -2086,7 +2054,7 @@ TEST(AXTreeTest, UnignoredChildIteratorIncrementDecrementPastEnd) {
       --root_unignored_iter;
       EXPECT_EQ(2, root_unignored_iter->id());
       EXPECT_EQ("text1", root_unignored_iter->GetStringAttribute(
-                             ax::mojom::StringAttribute::kName));
+                             ax::StringAttribute::kName));
     }
 
     {
@@ -2094,21 +2062,21 @@ TEST(AXTreeTest, UnignoredChildIteratorIncrementDecrementPastEnd) {
           root->UnignoredChildrenBegin();
       EXPECT_EQ(2, root_unignored_iter->id());
       EXPECT_EQ("text1", root_unignored_iter->GetStringAttribute(
-                             ax::mojom::StringAttribute::kName));
+                             ax::StringAttribute::kName));
 
       // Call unignored child iterator on root and decrement from the beginning,
       // we should stay at the beginning.
       --root_unignored_iter;
       EXPECT_EQ(2, root_unignored_iter->id());
       EXPECT_EQ("text1", root_unignored_iter->GetStringAttribute(
-                             ax::mojom::StringAttribute::kName));
+                             ax::StringAttribute::kName));
 
       // When we decrement past the beginning, we should still stay at the
       // beginning.
       --root_unignored_iter;
       EXPECT_EQ(2, root_unignored_iter->id());
       EXPECT_EQ("text1", root_unignored_iter->GetStringAttribute(
-                             ax::mojom::StringAttribute::kName));
+                             ax::StringAttribute::kName));
 
       // We increment past the end, and we should still reach the end.
       EXPECT_EQ(root->UnignoredChildrenEnd(), ++root_unignored_iter);
@@ -2131,34 +2099,34 @@ TEST(AXTreeTest, UnignoredChildIteratorIgnoredContainerSiblings) {
   tree_update.nodes.resize(7);
 
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kWebArea;
+  tree_update.nodes[0].role = ax::Role::kWebArea;
   tree_update.nodes[0].child_ids = {2, 4, 6};
 
   tree_update.nodes[1].id = 2;
   tree_update.nodes[1].child_ids = {3};
-  tree_update.nodes[1].role = ax::mojom::Role::kGenericContainer;
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].role = ax::Role::kGenericContainer;
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
 
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[2].role = ax::Role::kStaticText;
   tree_update.nodes[2].SetName("text1");
 
   tree_update.nodes[3].id = 4;
   tree_update.nodes[3].child_ids = {5};
-  tree_update.nodes[3].role = ax::mojom::Role::kGenericContainer;
-  tree_update.nodes[3].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[3].role = ax::Role::kGenericContainer;
+  tree_update.nodes[3].AddState(ax::State::kIgnored);
 
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[4].role = ax::Role::kStaticText;
   tree_update.nodes[4].SetName("text2");
 
   tree_update.nodes[5].id = 6;
   tree_update.nodes[5].child_ids = {7};
-  tree_update.nodes[5].role = ax::mojom::Role::kGenericContainer;
-  tree_update.nodes[5].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[5].role = ax::Role::kGenericContainer;
+  tree_update.nodes[5].AddState(ax::State::kIgnored);
 
   tree_update.nodes[6].id = 7;
-  tree_update.nodes[6].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[6].role = ax::Role::kStaticText;
   tree_update.nodes[6].SetName("text3");
 
   AXTree tree(tree_update);
@@ -2172,16 +2140,16 @@ TEST(AXTreeTest, UnignoredChildIteratorIgnoredContainerSiblings) {
         root->UnignoredChildrenBegin();
     EXPECT_EQ(3, root_unignored_iter->id());
     EXPECT_EQ("text1", root_unignored_iter->GetStringAttribute(
-                           ax::mojom::StringAttribute::kName));
+                           ax::StringAttribute::kName));
 
     EXPECT_EQ(5, (++root_unignored_iter)->id());
-    EXPECT_EQ("text2",
-              (*root_unignored_iter)
-                  .GetStringAttribute(ax::mojom::StringAttribute::kName));
+    EXPECT_EQ(
+        "text2",
+        (*root_unignored_iter).GetStringAttribute(ax::StringAttribute::kName));
 
     EXPECT_EQ(7, (++root_unignored_iter)->id());
     EXPECT_EQ("text3", root_unignored_iter->GetStringAttribute(
-                           ax::mojom::StringAttribute::kName));
+                           ax::StringAttribute::kName));
     EXPECT_EQ(root->UnignoredChildrenEnd(), ++root_unignored_iter);
   }
 
@@ -2194,8 +2162,8 @@ TEST(AXTreeTest, UnignoredChildIteratorIgnoredContainerSiblings) {
     AXNode::UnignoredChildIterator unignored_iter =
         text1_ignored_container->UnignoredChildrenBegin();
     EXPECT_EQ(3, unignored_iter->id());
-    EXPECT_EQ("text1", unignored_iter->GetStringAttribute(
-                           ax::mojom::StringAttribute::kName));
+    EXPECT_EQ("text1",
+              unignored_iter->GetStringAttribute(ax::StringAttribute::kName));
     // The next child of "text1" should be the end.
     EXPECT_EQ(text1_ignored_container->UnignoredChildrenEnd(),
               ++unignored_iter);
@@ -2207,14 +2175,14 @@ TEST(AXTreeTest, UnignoredChildIteratorIgnoredContainerSiblings) {
     AXNode* text2_ignored_container = tree.GetFromId(4);
     unignored_iter = text2_ignored_container->UnignoredChildrenBegin();
     EXPECT_EQ(5, unignored_iter->id());
-    EXPECT_EQ("text2", unignored_iter->GetStringAttribute(
-                           ax::mojom::StringAttribute::kName));
+    EXPECT_EQ("text2",
+              unignored_iter->GetStringAttribute(ax::StringAttribute::kName));
     // Decrement the iterator of "text2" should still remain on "text2" since
     // the beginning of iterator is "text2."
     --unignored_iter;
     EXPECT_EQ(5, unignored_iter->id());
-    EXPECT_EQ("text2", unignored_iter->GetStringAttribute(
-                           ax::mojom::StringAttribute::kName));
+    EXPECT_EQ("text2",
+              unignored_iter->GetStringAttribute(ax::StringAttribute::kName));
   }
 }
 
@@ -2241,7 +2209,7 @@ TEST(AXTreeTest, UnignoredChildIterator) {
 
   tree_update.nodes[1].id = 2;
   tree_update.nodes[1].child_ids = {5, 6, 7, 8};
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
 
   tree_update.nodes[2].id = 3;
   tree_update.nodes[3].id = 4;
@@ -2254,25 +2222,25 @@ TEST(AXTreeTest, UnignoredChildIterator) {
 
   tree_update.nodes[6].id = 7;
   tree_update.nodes[6].child_ids = {11, 12};
-  tree_update.nodes[6].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[6].AddState(ax::State::kIgnored);
 
   tree_update.nodes[7].id = 8;
-  tree_update.nodes[7].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[7].AddState(ax::State::kIgnored);
 
   tree_update.nodes[8].id = 9;
 
   tree_update.nodes[9].id = 10;
   tree_update.nodes[9].child_ids = {13};
-  tree_update.nodes[9].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[9].AddState(ax::State::kIgnored);
 
   tree_update.nodes[10].id = 11;
   tree_update.nodes[10].child_ids = {14, 15};
-  tree_update.nodes[10].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[10].AddState(ax::State::kIgnored);
 
   tree_update.nodes[11].id = 12;
 
   tree_update.nodes[12].id = 13;
-  tree_update.nodes[12].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[12].AddState(ax::State::kIgnored);
 
   tree_update.nodes[13].id = 14;
 
@@ -2366,7 +2334,7 @@ TEST(AXTreeTest, UnignoredAccessors) {
 
   tree_update.nodes[1].id = 2;
   tree_update.nodes[1].child_ids = {5, 6, 7, 8};
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
 
   tree_update.nodes[2].id = 3;
   tree_update.nodes[3].id = 4;
@@ -2379,26 +2347,26 @@ TEST(AXTreeTest, UnignoredAccessors) {
 
   tree_update.nodes[6].id = 7;
   tree_update.nodes[6].child_ids = {11, 12};
-  tree_update.nodes[6].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[6].AddState(ax::State::kIgnored);
 
   tree_update.nodes[7].id = 8;
-  tree_update.nodes[7].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[7].AddState(ax::State::kIgnored);
 
   tree_update.nodes[8].id = 9;
 
   tree_update.nodes[9].id = 10;
   tree_update.nodes[9].child_ids = {13};
-  tree_update.nodes[9].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[9].AddState(ax::State::kIgnored);
 
   tree_update.nodes[10].id = 11;
   tree_update.nodes[10].child_ids = {14, 15};
-  tree_update.nodes[10].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[10].AddState(ax::State::kIgnored);
 
   tree_update.nodes[11].id = 12;
 
   tree_update.nodes[12].id = 13;
   tree_update.nodes[12].child_ids = {16};
-  tree_update.nodes[12].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[12].AddState(ax::State::kIgnored);
 
   tree_update.nodes[13].id = 14;
   tree_update.nodes[13].child_ids = {17};
@@ -2408,7 +2376,7 @@ TEST(AXTreeTest, UnignoredAccessors) {
   tree_update.nodes[15].id = 16;
 
   tree_update.nodes[16].id = 17;
-  tree_update.nodes[16].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[16].AddState(ax::State::kIgnored);
 
   AXTree tree(tree_update);
 
@@ -2456,7 +2424,7 @@ TEST(AXTreeTest, UnignoredNextPreviousChild) {
 
   tree_update.nodes[1].id = 2;
   tree_update.nodes[1].child_ids = {5, 6, 7, 8};
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
 
   tree_update.nodes[2].id = 3;
   tree_update.nodes[3].id = 4;
@@ -2469,26 +2437,26 @@ TEST(AXTreeTest, UnignoredNextPreviousChild) {
 
   tree_update.nodes[6].id = 7;
   tree_update.nodes[6].child_ids = {11, 12};
-  tree_update.nodes[6].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[6].AddState(ax::State::kIgnored);
 
   tree_update.nodes[7].id = 8;
-  tree_update.nodes[7].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[7].AddState(ax::State::kIgnored);
 
   tree_update.nodes[8].id = 9;
 
   tree_update.nodes[9].id = 10;
   tree_update.nodes[9].child_ids = {13};
-  tree_update.nodes[9].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[9].AddState(ax::State::kIgnored);
 
   tree_update.nodes[10].id = 11;
   tree_update.nodes[10].child_ids = {14, 15};
-  tree_update.nodes[10].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[10].AddState(ax::State::kIgnored);
 
   tree_update.nodes[11].id = 12;
 
   tree_update.nodes[12].id = 13;
   tree_update.nodes[12].child_ids = {16};
-  tree_update.nodes[12].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[12].AddState(ax::State::kIgnored);
 
   tree_update.nodes[13].id = 14;
 
@@ -2615,7 +2583,7 @@ TEST(AXTreeTest, GetUnignoredSiblingsChildrenPromoted) {
   tree_update.nodes[0].id = 1;
   tree_update.nodes[0].child_ids = {2, 3};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
   tree_update.nodes[1].child_ids = {4, 5};
   tree_update.nodes[2].id = 3;
   tree_update.nodes[3].id = 4;
@@ -2678,12 +2646,12 @@ TEST(AXTreeTest, GetUnignoredSiblingsIgnoredChildSkipped) {
   tree_update.nodes[0].id = 1;
   tree_update.nodes[0].child_ids = {2, 3};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
   tree_update.nodes[1].child_ids = {4, 5};
   tree_update.nodes[2].id = 3;
   tree_update.nodes[3].id = 4;
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[4].AddState(ax::State::kIgnored);
 
   AXTree tree(tree_update);
 
@@ -2739,7 +2707,7 @@ TEST(AXTreeTest, GetUnignoredSiblingIgnoredParentIrrelevant) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(3);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[0].AddState(ax::State::kIgnored);
   tree_update.nodes[0].child_ids = {2, 3};
   tree_update.nodes[1].id = 2;
   tree_update.nodes[2].id = 3;
@@ -2764,10 +2732,10 @@ TEST(AXTreeTest, GetUnignoredSiblingsAllIgnored) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(2);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[0].AddState(ax::State::kIgnored);
   tree_update.nodes[0].child_ids = {2};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
 
   AXTree tree(tree_update);
 
@@ -2794,11 +2762,11 @@ TEST(AXTreeTest, GetUnignoredSiblingsNestedIgnored) {
   tree_update.nodes[0].child_ids = {2, 3, 4};
   tree_update.nodes[1].id = 2;
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[2].AddState(ax::State::kIgnored);
   tree_update.nodes[2].child_ids = {5};
   tree_update.nodes[3].id = 4;
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[4].AddState(ax::State::kIgnored);
   tree_update.nodes[4].child_ids = {6};
   tree_update.nodes[5].id = 6;
 
@@ -2885,76 +2853,76 @@ TEST(AXTreeTest, UnignoredSelection) {
   // |  |
   // 9  16
   tree_update.has_tree_data = true;
-  tree_update.tree_data.tree_id = ui::AXTreeID::CreateNewAXTreeID();
+  tree_update.tree_data.tree_id = ax::AXTreeID::CreateNewAXTreeID();
   tree_update.root_id = 1;
   tree_update.nodes.resize(16);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[0].role = ax::Role::kGenericContainer;
   tree_update.nodes[0].child_ids = {2, 3, 4};
 
   tree_update.nodes[1].id = 2;
   tree_update.nodes[1].child_ids = {5, 6, 7, 8};
-  tree_update.nodes[1].role = ax::mojom::Role::kGenericContainer;
-  tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].role = ax::Role::kGenericContainer;
+  tree_update.nodes[1].AddState(ax::State::kIgnored);
 
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[2].role = ax::Role::kStaticText;
   tree_update.nodes[2].SetName("text");
 
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[3].role = ax::Role::kStaticText;
   tree_update.nodes[3].SetName("text");
 
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[4].role = ax::Role::kGenericContainer;
   tree_update.nodes[4].child_ids = {9};
 
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[5].role = ax::Role::kGenericContainer;
   tree_update.nodes[5].child_ids = {10};
 
   tree_update.nodes[6].id = 7;
   tree_update.nodes[6].child_ids = {11, 12};
-  tree_update.nodes[6].role = ax::mojom::Role::kGenericContainer;
-  tree_update.nodes[6].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[6].role = ax::Role::kGenericContainer;
+  tree_update.nodes[6].AddState(ax::State::kIgnored);
 
   tree_update.nodes[7].id = 8;
-  tree_update.nodes[7].role = ax::mojom::Role::kGenericContainer;
-  tree_update.nodes[7].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[7].role = ax::Role::kGenericContainer;
+  tree_update.nodes[7].AddState(ax::State::kIgnored);
 
   tree_update.nodes[8].id = 9;
-  tree_update.nodes[8].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[8].role = ax::Role::kStaticText;
   tree_update.nodes[8].SetName("text");
 
   tree_update.nodes[9].id = 10;
   tree_update.nodes[9].child_ids = {13};
-  tree_update.nodes[9].role = ax::mojom::Role::kGenericContainer;
-  tree_update.nodes[9].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[9].role = ax::Role::kGenericContainer;
+  tree_update.nodes[9].AddState(ax::State::kIgnored);
 
   tree_update.nodes[10].id = 11;
   tree_update.nodes[10].child_ids = {14, 15};
-  tree_update.nodes[10].role = ax::mojom::Role::kGenericContainer;
-  tree_update.nodes[10].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[10].role = ax::Role::kGenericContainer;
+  tree_update.nodes[10].AddState(ax::State::kIgnored);
 
   tree_update.nodes[11].id = 12;
-  tree_update.nodes[11].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[11].role = ax::Role::kStaticText;
   tree_update.nodes[11].SetName("text");
 
   tree_update.nodes[12].id = 13;
   tree_update.nodes[12].child_ids = {16};
-  tree_update.nodes[12].role = ax::mojom::Role::kGenericContainer;
-  tree_update.nodes[12].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[12].role = ax::Role::kGenericContainer;
+  tree_update.nodes[12].AddState(ax::State::kIgnored);
 
   tree_update.nodes[13].id = 14;
-  tree_update.nodes[13].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[13].role = ax::Role::kStaticText;
   tree_update.nodes[13].SetName("text");
 
   tree_update.nodes[14].id = 15;
-  tree_update.nodes[14].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[14].role = ax::Role::kStaticText;
   tree_update.nodes[14].SetName("text");
 
   tree_update.nodes[15].id = 16;
-  tree_update.nodes[15].role = ax::mojom::Role::kStaticText;
+  tree_update.nodes[15].role = ax::Role::kStaticText;
   tree_update.nodes[15].SetName("text");
 
   TestAXTreeManager test_ax_tree_manager(std::make_unique<AXTree>(tree_update));
@@ -3085,78 +3053,26 @@ TEST(AXTreeTest, GetChildrenOrSiblings) {
   EXPECT_EQ(nullptr, tree.GetFromId(5)->GetNextSibling());
 }
 
-TEST(AXTreeTest, ChildTreeIds) {
-  ui::AXTreeID tree_id_1 = ui::AXTreeID::CreateNewAXTreeID();
-  ui::AXTreeID tree_id_2 = ui::AXTreeID::CreateNewAXTreeID();
-  ui::AXTreeID tree_id_3 = ui::AXTreeID::CreateNewAXTreeID();
-
-  AXTreeUpdate initial_state;
-  initial_state.root_id = 1;
-  initial_state.nodes.resize(4);
-  initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].child_ids.push_back(2);
-  initial_state.nodes[0].child_ids.push_back(3);
-  initial_state.nodes[0].child_ids.push_back(4);
-  initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].AddStringAttribute(
-      ax::mojom::StringAttribute::kChildTreeId, tree_id_2.ToString());
-  initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].AddStringAttribute(
-      ax::mojom::StringAttribute::kChildTreeId, tree_id_3.ToString());
-  initial_state.nodes[3].id = 4;
-  initial_state.nodes[3].AddStringAttribute(
-      ax::mojom::StringAttribute::kChildTreeId, tree_id_3.ToString());
-  AXTree tree(initial_state);
-
-  auto child_tree_1_nodes = tree.GetNodeIdsForChildTreeId(tree_id_1);
-  EXPECT_EQ(0U, child_tree_1_nodes.size());
-
-  auto child_tree_2_nodes = tree.GetNodeIdsForChildTreeId(tree_id_2);
-  EXPECT_EQ(1U, child_tree_2_nodes.size());
-  EXPECT_TRUE(base::Contains(child_tree_2_nodes, 2));
-
-  auto child_tree_3_nodes = tree.GetNodeIdsForChildTreeId(tree_id_3);
-  EXPECT_EQ(2U, child_tree_3_nodes.size());
-  EXPECT_TRUE(base::Contains(child_tree_3_nodes, 3));
-  EXPECT_TRUE(base::Contains(child_tree_3_nodes, 4));
-
-  AXTreeUpdate update = initial_state;
-  update.nodes[2].string_attributes.clear();
-  update.nodes[2].AddStringAttribute(ax::mojom::StringAttribute::kChildTreeId,
-                                     tree_id_2.ToString());
-  update.nodes[3].string_attributes.clear();
-
-  EXPECT_TRUE(tree.Unserialize(update));
-
-  child_tree_2_nodes = tree.GetNodeIdsForChildTreeId(tree_id_2);
-  EXPECT_EQ(2U, child_tree_2_nodes.size());
-  EXPECT_TRUE(base::Contains(child_tree_2_nodes, 2));
-  EXPECT_TRUE(base::Contains(child_tree_2_nodes, 3));
-
-  child_tree_3_nodes = tree.GetNodeIdsForChildTreeId(tree_id_3);
-  EXPECT_EQ(0U, child_tree_3_nodes.size());
-}
-
 // Tests GetPosInSet and GetSetSize return the assigned int attribute values.
 TEST(AXTreeTest, SetSizePosInSetAssigned) {
   AXTreeUpdate tree_update;
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3, 4};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;
-  tree_update.nodes[1].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 2);
-  tree_update.nodes[1].AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 12);
+  tree_update.nodes[1].role = ax::Role::kListItem;
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kPosInSet, 2);
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kSetSize, 12);
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;
-  tree_update.nodes[2].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 5);
-  tree_update.nodes[2].AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 12);
+  tree_update.nodes[2].role = ax::Role::kListItem;
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kPosInSet, 5);
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kSetSize, 12);
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListItem;
-  tree_update.nodes[3].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 9);
-  tree_update.nodes[3].AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 12);
+  tree_update.nodes[3].role = ax::Role::kListItem;
+  tree_update.nodes[3].AddIntAttribute(ax::IntAttribute::kPosInSet, 9);
+  tree_update.nodes[3].AddIntAttribute(ax::IntAttribute::kSetSize, 12);
   AXTree tree(tree_update);
 
   AXNode* item1 = tree.GetFromId(2);
@@ -3176,14 +3092,14 @@ TEST(AXTreeTest, SetSizePosInSetUnassigned) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3, 4};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[1].role = ax::Role::kListItem;
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[2].role = ax::Role::kListItem;
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[3].role = ax::Role::kListItem;
   AXTree tree(tree_update);
 
   AXNode* item1 = tree.GetFromId(2);
@@ -3204,15 +3120,15 @@ TEST(AXTreeTest, SetSizeAssignedOnContainer) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3, 4};
-  tree_update.nodes[0].AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 7);
+  tree_update.nodes[0].AddIntAttribute(ax::IntAttribute::kSetSize, 7);
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[1].role = ax::Role::kListItem;
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[2].role = ax::Role::kListItem;
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[3].role = ax::Role::kListItem;
   AXTree tree(tree_update);
 
   // Items should inherit SetSize from ordered set if not specified.
@@ -3234,18 +3150,18 @@ TEST(AXTreeTest, SetSizePosInSetDiverseList) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(6);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kMenu;
+  tree_update.nodes[0].role = ax::Role::kMenu;
   tree_update.nodes[0].child_ids = {2, 3, 4, 5, 6};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kMenuItem;  // 1 of 4
+  tree_update.nodes[1].role = ax::Role::kMenuItem;  // 1 of 4
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kMenuItemCheckBox;  // 2 of 4
+  tree_update.nodes[2].role = ax::Role::kMenuItemCheckBox;  // 2 of 4
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kMenuItemRadio;  // 3 of 4
+  tree_update.nodes[3].role = ax::Role::kMenuItemRadio;  // 3 of 4
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kMenuItem;  // 4 of 4
+  tree_update.nodes[4].role = ax::Role::kMenuItem;  // 4 of 4
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kTab;  // 0 of 0
+  tree_update.nodes[5].role = ax::Role::kTab;  // 0 of 0
   AXTree tree(tree_update);
 
   // kMenu is allowed to contain: kMenuItem, kMenuItemCheckbox,
@@ -3274,21 +3190,21 @@ TEST(AXTreeTest, SetSizePosInSetNestedList) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(7);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3, 4, 7};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[1].role = ax::Role::kListItem;
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[2].role = ax::Role::kListItem;
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kList;
+  tree_update.nodes[3].role = ax::Role::kList;
   tree_update.nodes[3].child_ids = {5, 6};
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[4].role = ax::Role::kListItem;
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[5].role = ax::Role::kListItem;
   tree_update.nodes[6].id = 7;
-  tree_update.nodes[6].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[6].role = ax::Role::kListItem;
   AXTree tree(tree_update);
 
   AXNode* outer_item1 = tree.GetFromId(2);
@@ -3317,16 +3233,16 @@ TEST(AXTreeTest, PosInSetMissing) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3, 4};
-  tree_update.nodes[0].AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 20);
+  tree_update.nodes[0].AddIntAttribute(ax::IntAttribute::kSetSize, 20);
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[1].role = ax::Role::kListItem;
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;
-  tree_update.nodes[2].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 13);
+  tree_update.nodes[2].role = ax::Role::kListItem;
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kPosInSet, 13);
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[3].role = ax::Role::kListItem;
   AXTree tree(tree_update);
 
   // Item1 should have pos of 12, since item2 is assigned a pos of 13.
@@ -3348,22 +3264,22 @@ TEST(AXTreeTest, SetSizePosInSetMissingDifficult) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(6);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3, 4, 5, 6};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;  // 1 of 11
+  tree_update.nodes[1].role = ax::Role::kListItem;  // 1 of 11
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;
-  tree_update.nodes[2].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet,
+  tree_update.nodes[2].role = ax::Role::kListItem;
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kPosInSet,
                                        5);  // 5 of 11
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListItem;  // 6 of 11
+  tree_update.nodes[3].role = ax::Role::kListItem;  // 6 of 11
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kListItem;
-  tree_update.nodes[4].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet,
+  tree_update.nodes[4].role = ax::Role::kListItem;
+  tree_update.nodes[4].AddIntAttribute(ax::IntAttribute::kPosInSet,
                                        10);  // 10 of 11
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kListItem;  // 11 of 11
+  tree_update.nodes[5].role = ax::Role::kListItem;  // 11 of 11
   AXTree tree(tree_update);
 
   AXNode* item1 = tree.GetFromId(2);
@@ -3390,16 +3306,16 @@ TEST(AXTreeTest, SetSizeDecreasing) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3, 4};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;  // 1 of 5
+  tree_update.nodes[1].role = ax::Role::kListItem;  // 1 of 5
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;  // 2 of 5
-  tree_update.nodes[2].AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 5);
+  tree_update.nodes[2].role = ax::Role::kListItem;  // 2 of 5
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kSetSize, 5);
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListItem;  // 3 of 5
-  tree_update.nodes[3].AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 4);
+  tree_update.nodes[3].role = ax::Role::kListItem;  // 3 of 5
+  tree_update.nodes[3].AddIntAttribute(ax::IntAttribute::kSetSize, 4);
   AXTree tree(tree_update);
 
   AXNode* item1 = tree.GetFromId(2);
@@ -3419,16 +3335,16 @@ TEST(AXTreeTest, PosInSetDecreasing) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3, 4};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;  // 1 of 8
+  tree_update.nodes[1].role = ax::Role::kListItem;  // 1 of 8
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;  // 7 of 8
-  tree_update.nodes[2].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 7);
+  tree_update.nodes[2].role = ax::Role::kListItem;  // 7 of 8
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kPosInSet, 7);
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListItem;  // 8 of 8
-  tree_update.nodes[3].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 3);
+  tree_update.nodes[3].role = ax::Role::kListItem;  // 8 of 8
+  tree_update.nodes[3].AddIntAttribute(ax::IntAttribute::kPosInSet, 3);
   AXTree tree(tree_update);
 
   AXNode* item1 = tree.GetFromId(2);
@@ -3450,17 +3366,17 @@ TEST(AXTreeTest, PosInSetDuplicates) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3, 4};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;  // 6 of 8
-  tree_update.nodes[1].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 6);
+  tree_update.nodes[1].role = ax::Role::kListItem;  // 6 of 8
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kPosInSet, 6);
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;  // 7 of 8
-  tree_update.nodes[2].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 6);
+  tree_update.nodes[2].role = ax::Role::kListItem;  // 7 of 8
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kPosInSet, 6);
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListItem;  // 8 of 8
-  tree_update.nodes[3].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 7);
+  tree_update.nodes[3].role = ax::Role::kListItem;  // 8 of 8
+  tree_update.nodes[3].AddIntAttribute(ax::IntAttribute::kPosInSet, 7);
   AXTree tree(tree_update);
 
   AXNode* item1 = tree.GetFromId(2);
@@ -3481,22 +3397,22 @@ TEST(AXTreeTest, SetSizePosInSetNestedContainer) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(7);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3, 7};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;  // 1 of 4
+  tree_update.nodes[1].role = ax::Role::kListItem;  // 1 of 4
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[2].role = ax::Role::kGenericContainer;
   tree_update.nodes[2].child_ids = {4, 5};
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListItem;  // 2 of 4
+  tree_update.nodes[3].role = ax::Role::kListItem;  // 2 of 4
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kIgnored;
+  tree_update.nodes[4].role = ax::Role::kIgnored;
   tree_update.nodes[4].child_ids = {6};
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kListItem;  // 3 of 4
+  tree_update.nodes[5].role = ax::Role::kListItem;  // 3 of 4
   tree_update.nodes[6].id = 7;
-  tree_update.nodes[6].role = ax::mojom::Role::kListItem;  // 4 of 4
+  tree_update.nodes[6].role = ax::Role::kListItem;  // 4 of 4
   AXTree tree(tree_update);
 
   AXNode* item1 = tree.GetFromId(2);
@@ -3526,14 +3442,14 @@ TEST(AXTreeTest, SetSizePosInSetDeleteItem) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(4);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kList;
+  initial_state.nodes[0].role = ax::Role::kList;
   initial_state.nodes[0].child_ids = {2, 3, 4};
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kListItem;  // 1 of 3
+  initial_state.nodes[1].role = ax::Role::kListItem;  // 1 of 3
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kListItem;  // 2 of 3
+  initial_state.nodes[2].role = ax::Role::kListItem;  // 2 of 3
   initial_state.nodes[3].id = 4;
-  initial_state.nodes[3].role = ax::mojom::Role::kListItem;  // 3 of 3
+  initial_state.nodes[3].role = ax::Role::kListItem;  // 3 of 3
   AXTree tree(initial_state);
 
   AXNode* item1 = tree.GetFromId(2);
@@ -3569,14 +3485,14 @@ TEST(AXTreeTest, SetSizePosInSetAddItem) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(4);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kList;
+  initial_state.nodes[0].role = ax::Role::kList;
   initial_state.nodes[0].child_ids = {2, 3, 4};
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kListItem;  // 1 of 3
+  initial_state.nodes[1].role = ax::Role::kListItem;  // 1 of 3
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kListItem;  // 2 of 3
+  initial_state.nodes[2].role = ax::Role::kListItem;  // 2 of 3
   initial_state.nodes[3].id = 4;
-  initial_state.nodes[3].role = ax::mojom::Role::kListItem;  // 3 of 3
+  initial_state.nodes[3].role = ax::Role::kListItem;  // 3 of 3
   AXTree tree(initial_state);
 
   AXNode* item1 = tree.GetFromId(2);
@@ -3595,7 +3511,7 @@ TEST(AXTreeTest, SetSizePosInSetAddItem) {
   update.nodes[0].id = 1;
   update.nodes[0].child_ids = {5, 2, 3, 4};
   update.nodes[1].id = 5;
-  update.nodes[1].role = ax::mojom::Role::kListItem;
+  update.nodes[1].role = ax::Role::kListItem;
   ASSERT_TRUE(tree.Unserialize(update));
 
   AXNode* new_item1 = tree.GetFromId(5);
@@ -3620,35 +3536,34 @@ TEST(AXTreeTest, OrderedSetReportsSetSize) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(12);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;  // SetSize = 3
+  tree_update.nodes[0].role = ax::Role::kList;  // SetSize = 3
   tree_update.nodes[0].child_ids = {2, 3, 4, 7, 8, 9, 12};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;  // 1 of 3
+  tree_update.nodes[1].role = ax::Role::kListItem;  // 1 of 3
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;  // 2 of 3
+  tree_update.nodes[2].role = ax::Role::kListItem;  // 2 of 3
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kList;  // SetSize = 2
+  tree_update.nodes[3].role = ax::Role::kList;  // SetSize = 2
   tree_update.nodes[3].child_ids = {5, 6};
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kListItem;  // 1 of 2
+  tree_update.nodes[4].role = ax::Role::kListItem;  // 1 of 2
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kListItem;  // 2 of 2
+  tree_update.nodes[5].role = ax::Role::kListItem;  // 2 of 2
   tree_update.nodes[6].id = 7;
-  tree_update.nodes[6].role = ax::mojom::Role::kListItem;  // 3 of 3
+  tree_update.nodes[6].role = ax::Role::kListItem;  // 3 of 3
   tree_update.nodes[7].id = 8;
-  tree_update.nodes[7].role = ax::mojom::Role::kList;  // SetSize = 0
+  tree_update.nodes[7].role = ax::Role::kList;  // SetSize = 0
   tree_update.nodes[8].id = 9;
-  tree_update.nodes[8].role =
-      ax::mojom::Role::kList;  // SetSize = 1 because only 1 item whose role
-                               // matches
+  tree_update.nodes[8].role = ax::Role::kList;  // SetSize = 1 because only 1
+                                                // item whose role matches
   tree_update.nodes[8].child_ids = {10, 11};
   tree_update.nodes[9].id = 10;
-  tree_update.nodes[9].role = ax::mojom::Role::kArticle;
+  tree_update.nodes[9].role = ax::Role::kArticle;
   tree_update.nodes[10].id = 11;
-  tree_update.nodes[10].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[10].role = ax::Role::kListItem;
   tree_update.nodes[11].id = 12;
-  tree_update.nodes[11].role = ax::mojom::Role::kList;
-  tree_update.nodes[11].AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 5);
+  tree_update.nodes[11].role = ax::Role::kList;
+  tree_update.nodes[11].AddIntAttribute(ax::IntAttribute::kSetSize, 5);
   AXTree tree(tree_update);
 
   AXNode* outer_list = tree.GetFromId(1);
@@ -3702,14 +3617,14 @@ TEST(AXTreeTest, SetSizePosInSetInvalid) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(3);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kListItem;  // 0 of 0
+  tree_update.nodes[0].role = ax::Role::kListItem;  // 0 of 0
   tree_update.nodes[0].child_ids = {2, 3};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;
-  tree_update.nodes[1].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet,
+  tree_update.nodes[1].role = ax::Role::kListItem;
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kPosInSet,
                                        4);  // 0 of 0
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[2].role = ax::Role::kListItem;
   AXTree tree(tree_update);
 
   AXNode* item1 = tree.GetFromId(1);
@@ -3733,62 +3648,60 @@ TEST(AXTreeTest, SetSizePosInSetRadioButtons) {
   tree_update.nodes[0].id = 1;
   tree_update.nodes[0].child_ids = {2, 3, 4, 10, 13};
   // This test passes because the root node is a kRadioGroup.
-  tree_update.nodes[0].role = ax::mojom::Role::kRadioGroup;  // Setsize = 5;
+  tree_update.nodes[0].role = ax::Role::kRadioGroup;  // Setsize = 5;
 
   // Radio buttons are not required to be contained within an ordered set.
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kRadioButton;  // 1 of 5
-  tree_update.nodes[1].AddStringAttribute(ax::mojom::StringAttribute::kName,
-                                          "sports");
-  tree_update.nodes[1].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 1);
+  tree_update.nodes[1].role = ax::Role::kRadioButton;  // 1 of 5
+  tree_update.nodes[1].AddStringAttribute(ax::StringAttribute::kName, "sports");
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kPosInSet, 1);
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kRadioButton;  // 2 of 5
-  tree_update.nodes[2].AddStringAttribute(ax::mojom::StringAttribute::kName,
-                                          "books");
-  tree_update.nodes[2].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 2);
-  tree_update.nodes[2].AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 5);
+  tree_update.nodes[2].role = ax::Role::kRadioButton;  // 2 of 5
+  tree_update.nodes[2].AddStringAttribute(ax::StringAttribute::kName, "books");
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kPosInSet, 2);
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kSetSize, 5);
 
   // Radio group with nested generic container.
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kRadioGroup;  // setsize = 4
+  tree_update.nodes[3].role = ax::Role::kRadioGroup;  // setsize = 4
   tree_update.nodes[3].child_ids = {5, 6, 7};
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kRadioButton;
-  tree_update.nodes[4].AddStringAttribute(ax::mojom::StringAttribute::kName,
+  tree_update.nodes[4].role = ax::Role::kRadioButton;
+  tree_update.nodes[4].AddStringAttribute(ax::StringAttribute::kName,
                                           "recipes");  // 1 of 4
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kRadioButton;
-  tree_update.nodes[5].AddStringAttribute(ax::mojom::StringAttribute::kName,
+  tree_update.nodes[5].role = ax::Role::kRadioButton;
+  tree_update.nodes[5].AddStringAttribute(ax::StringAttribute::kName,
                                           "recipes");  // 2 of 4
   tree_update.nodes[6].id = 7;
-  tree_update.nodes[6].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[6].role = ax::Role::kGenericContainer;
   tree_update.nodes[6].child_ids = {8, 9};
   tree_update.nodes[7].id = 8;
-  tree_update.nodes[7].role = ax::mojom::Role::kRadioButton;
-  tree_update.nodes[7].AddStringAttribute(ax::mojom::StringAttribute::kName,
+  tree_update.nodes[7].role = ax::Role::kRadioButton;
+  tree_update.nodes[7].AddStringAttribute(ax::StringAttribute::kName,
                                           "recipes");  // 3 of 4
   tree_update.nodes[8].id = 9;
-  tree_update.nodes[8].role = ax::mojom::Role::kRadioButton;
-  tree_update.nodes[8].AddStringAttribute(ax::mojom::StringAttribute::kName,
+  tree_update.nodes[8].role = ax::Role::kRadioButton;
+  tree_update.nodes[8].AddStringAttribute(ax::StringAttribute::kName,
                                           "recipes");  // 4 of 4
 
   // Radio buttons are allowed to be contained within forms.
   tree_update.nodes[9].id = 10;
-  tree_update.nodes[9].role = ax::mojom::Role::kForm;
+  tree_update.nodes[9].role = ax::Role::kForm;
   tree_update.nodes[9].child_ids = {11, 12};
   tree_update.nodes[10].id = 11;
-  tree_update.nodes[10].role = ax::mojom::Role::kRadioButton;
-  tree_update.nodes[10].AddStringAttribute(ax::mojom::StringAttribute::kName,
+  tree_update.nodes[10].role = ax::Role::kRadioButton;
+  tree_update.nodes[10].AddStringAttribute(ax::StringAttribute::kName,
                                            "cities");  // 1 of 2
   tree_update.nodes[11].id = 12;
-  tree_update.nodes[11].role = ax::mojom::Role::kRadioButton;
-  tree_update.nodes[11].AddStringAttribute(ax::mojom::StringAttribute::kName,
+  tree_update.nodes[11].role = ax::Role::kRadioButton;
+  tree_update.nodes[11].AddStringAttribute(ax::StringAttribute::kName,
                                            "cities");  // 2 of 2
   tree_update.nodes[12].id = 13;
-  tree_update.nodes[12].role = ax::mojom::Role::kRadioButton;  // 4 of 5
-  tree_update.nodes[12].AddStringAttribute(ax::mojom::StringAttribute::kName,
+  tree_update.nodes[12].role = ax::Role::kRadioButton;  // 4 of 5
+  tree_update.nodes[12].AddStringAttribute(ax::StringAttribute::kName,
                                            "sports");
-  tree_update.nodes[12].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 4);
+  tree_update.nodes[12].AddIntAttribute(ax::IntAttribute::kPosInSet, 4);
 
   AXTree tree(tree_update);
 
@@ -3844,19 +3757,19 @@ TEST(AXTreeTest, SetSizePosInSetRadioButtonsInList) {
   tree_update.nodes.resize(6);
   tree_update.nodes[0].id = 1;
   tree_update.nodes[0].role =
-      ax::mojom::Role::kList;  // SetSize = 2, since only contains 2 ListItems
+      ax::Role::kList;  // SetSize = 2, since only contains 2 ListItems
   tree_update.nodes[0].child_ids = {2, 3, 4, 5, 6};
 
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kRadioButton;  // 1 of 3
+  tree_update.nodes[1].role = ax::Role::kRadioButton;  // 1 of 3
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;  // 1 of 2
+  tree_update.nodes[2].role = ax::Role::kListItem;  // 1 of 2
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kRadioButton;  // 2 of 3
+  tree_update.nodes[3].role = ax::Role::kRadioButton;  // 2 of 3
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kListItem;  // 2 of 2
+  tree_update.nodes[4].role = ax::Role::kListItem;  // 2 of 2
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kRadioButton;  // 3 of 3
+  tree_update.nodes[5].role = ax::Role::kRadioButton;  // 3 of 3
   AXTree tree(tree_update);
 
   AXNode* list = tree.GetFromId(1);
@@ -3894,20 +3807,17 @@ TEST(AXTreeTest, SetSizePosInSetFlatTree) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(4);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kTree;
+  tree_update.nodes[0].role = ax::Role::kTree;
   tree_update.nodes[0].child_ids = {2, 3, 4};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kTreeItem;  // 1 of 1
-  tree_update.nodes[1].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 1);
+  tree_update.nodes[1].role = ax::Role::kTreeItem;  // 1 of 1
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 1);
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kTreeItem;  // 1 of 1
-  tree_update.nodes[2].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 2);
+  tree_update.nodes[2].role = ax::Role::kTreeItem;  // 1 of 1
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 2);
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kTreeItem;  // 1 of 1
-  tree_update.nodes[3].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 3);
+  tree_update.nodes[3].role = ax::Role::kTreeItem;  // 1 of 1
+  tree_update.nodes[3].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 3);
   AXTree tree(tree_update);
 
   AXNode* item1_level1 = tree.GetFromId(2);
@@ -3928,40 +3838,32 @@ TEST(AXTreeTest, SetSizePosInSetFlatTreeLevelsOnly) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(9);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kTree;
+  tree_update.nodes[0].role = ax::Role::kTree;
   tree_update.nodes[0].child_ids = {2, 3, 4, 5, 6, 7, 8, 9};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kTreeItem;  // 1 of 3
-  tree_update.nodes[1].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 1);
+  tree_update.nodes[1].role = ax::Role::kTreeItem;  // 1 of 3
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 1);
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kTreeItem;  // 1 of 2
-  tree_update.nodes[2].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 2);
+  tree_update.nodes[2].role = ax::Role::kTreeItem;  // 1 of 2
+  tree_update.nodes[2].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 2);
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kTreeItem;  // 2 of 2
-  tree_update.nodes[3].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 2);
+  tree_update.nodes[3].role = ax::Role::kTreeItem;  // 2 of 2
+  tree_update.nodes[3].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 2);
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kTreeItem;  // 2 of 3
-  tree_update.nodes[4].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 1);
+  tree_update.nodes[4].role = ax::Role::kTreeItem;  // 2 of 3
+  tree_update.nodes[4].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 1);
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kTreeItem;  // 1 of 3
-  tree_update.nodes[5].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 2);
+  tree_update.nodes[5].role = ax::Role::kTreeItem;  // 1 of 3
+  tree_update.nodes[5].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 2);
   tree_update.nodes[6].id = 7;
-  tree_update.nodes[6].role = ax::mojom::Role::kTreeItem;  // 2 of 3
-  tree_update.nodes[6].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 2);
+  tree_update.nodes[6].role = ax::Role::kTreeItem;  // 2 of 3
+  tree_update.nodes[6].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 2);
   tree_update.nodes[7].id = 8;
-  tree_update.nodes[7].role = ax::mojom::Role::kTreeItem;  // 3 of 3
-  tree_update.nodes[7].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 2);
+  tree_update.nodes[7].role = ax::Role::kTreeItem;  // 3 of 3
+  tree_update.nodes[7].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 2);
   tree_update.nodes[8].id = 9;
-  tree_update.nodes[8].role = ax::mojom::Role::kTreeItem;  // 3 of 3
-  tree_update.nodes[8].AddIntAttribute(
-      ax::mojom::IntAttribute::kHierarchicalLevel, 1);
+  tree_update.nodes[8].role = ax::Role::kTreeItem;  // 3 of 3
+  tree_update.nodes[8].AddIntAttribute(ax::IntAttribute::kHierarchicalLevel, 1);
   AXTree tree(tree_update);
 
   // The order in which we query the nodes should not matter.
@@ -4000,12 +3902,12 @@ TEST(AXTreeTest, SetSizePosInSetSubtreeDeleted) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(3);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kTree;
+  initial_state.nodes[0].role = ax::Role::kTree;
   initial_state.nodes[0].child_ids = {2, 3};
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kTreeItem;
+  initial_state.nodes[1].role = ax::Role::kTreeItem;
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kTreeItem;
+  initial_state.nodes[2].role = ax::Role::kTreeItem;
   AXTree tree(initial_state);
 
   AXNode* tree_node = tree.GetFromId(1);
@@ -4041,12 +3943,12 @@ TEST(AXTreeTest, SetSizePosInSetIgnoredItem) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(3);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kTree;
+  initial_state.nodes[0].role = ax::Role::kTree;
   initial_state.nodes[0].child_ids = {2, 3};
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kTreeItem;
+  initial_state.nodes[1].role = ax::Role::kTreeItem;
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kTreeItem;
+  initial_state.nodes[2].role = ax::Role::kTreeItem;
   AXTree tree(initial_state);
 
   AXNode* tree_node = tree.GetFromId(1);
@@ -4067,7 +3969,7 @@ TEST(AXTreeTest, SetSizePosInSetIgnoredItem) {
   AXTreeUpdate tree_update;
   tree_update.nodes.resize(1);
   tree_update.nodes[0] = initial_state.nodes[1];
-  tree_update.nodes[0].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[0].AddState(ax::State::kIgnored);
 
   ASSERT_TRUE(tree.Unserialize(tree_update));
 
@@ -4091,17 +3993,17 @@ TEST(AXTreeTest, SetSizePosInSetPopUpButton) {
   initial_state.nodes[0].id = 1;
   initial_state.nodes[0].child_ids = {2, 3};
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kPopUpButton;
+  initial_state.nodes[1].role = ax::Role::kPopUpButton;
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kPopUpButton;
+  initial_state.nodes[2].role = ax::Role::kPopUpButton;
   initial_state.nodes[2].child_ids = {4};
   initial_state.nodes[3].id = 4;
-  initial_state.nodes[3].role = ax::mojom::Role::kMenuListPopup;
+  initial_state.nodes[3].role = ax::Role::kMenuListPopup;
   initial_state.nodes[3].child_ids = {5, 6};
   initial_state.nodes[4].id = 5;
-  initial_state.nodes[4].role = ax::mojom::Role::kMenuListOption;
+  initial_state.nodes[4].role = ax::Role::kMenuListOption;
   initial_state.nodes[5].id = 6;
-  initial_state.nodes[5].role = ax::mojom::Role::kMenuListOption;
+  initial_state.nodes[5].role = ax::Role::kMenuListOption;
   AXTree tree(initial_state);
 
   // The first popupbutton should have SetSize of 0.
@@ -4121,17 +4023,17 @@ TEST(AXTreeTest, SetSizePosInSetUnkown) {
   initial_state.nodes.resize(5);
   initial_state.nodes[0].id = 1;
   initial_state.nodes[0].child_ids = {2};
-  initial_state.nodes[0].role = ax::mojom::Role::kMenu;
+  initial_state.nodes[0].role = ax::Role::kMenu;
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kUnknown;
+  initial_state.nodes[1].role = ax::Role::kUnknown;
   initial_state.nodes[1].child_ids = {3};
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kUnknown;
+  initial_state.nodes[2].role = ax::Role::kUnknown;
   initial_state.nodes[2].child_ids = {4, 5};
   initial_state.nodes[3].id = 4;
-  initial_state.nodes[3].role = ax::mojom::Role::kMenuItem;
+  initial_state.nodes[3].role = ax::Role::kMenuItem;
   initial_state.nodes[4].id = 5;
-  initial_state.nodes[4].role = ax::mojom::Role::kMenuItem;
+  initial_state.nodes[4].role = ax::Role::kMenuItem;
   AXTree tree(initial_state);
 
   AXNode* menu = tree.GetFromId(1);
@@ -4150,11 +4052,11 @@ TEST(AXTreeTest, SetSizePosInSetMenuItemValidChildOfMenuListPopup) {
   initial_state.nodes.resize(3);
   initial_state.nodes[0].id = 1;
   initial_state.nodes[0].child_ids = {2, 3};
-  initial_state.nodes[0].role = ax::mojom::Role::kMenuListPopup;
+  initial_state.nodes[0].role = ax::Role::kMenuListPopup;
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kMenuItem;
+  initial_state.nodes[1].role = ax::Role::kMenuItem;
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kMenuListOption;
+  initial_state.nodes[2].role = ax::Role::kMenuListOption;
   AXTree tree(initial_state);
 
   AXNode* menu = tree.GetFromId(1);
@@ -4173,21 +4075,21 @@ TEST(AXTreeTest, SetSizePostInSetListBoxOptionWithGroup) {
   initial_state.nodes.resize(7);
   initial_state.nodes[0].id = 1;
   initial_state.nodes[0].child_ids = {2, 3};
-  initial_state.nodes[0].role = ax::mojom::Role::kListBox;
+  initial_state.nodes[0].role = ax::Role::kListBox;
   initial_state.nodes[1].id = 2;
   initial_state.nodes[1].child_ids = {4, 5};
-  initial_state.nodes[1].role = ax::mojom::Role::kGroup;
+  initial_state.nodes[1].role = ax::Role::kGroup;
   initial_state.nodes[2].id = 3;
   initial_state.nodes[2].child_ids = {6, 7};
-  initial_state.nodes[2].role = ax::mojom::Role::kGroup;
+  initial_state.nodes[2].role = ax::Role::kGroup;
   initial_state.nodes[3].id = 4;
-  initial_state.nodes[3].role = ax::mojom::Role::kListBoxOption;
+  initial_state.nodes[3].role = ax::Role::kListBoxOption;
   initial_state.nodes[4].id = 5;
-  initial_state.nodes[4].role = ax::mojom::Role::kListBoxOption;
+  initial_state.nodes[4].role = ax::Role::kListBoxOption;
   initial_state.nodes[5].id = 6;
-  initial_state.nodes[5].role = ax::mojom::Role::kListBoxOption;
+  initial_state.nodes[5].role = ax::Role::kListBoxOption;
   initial_state.nodes[6].id = 7;
-  initial_state.nodes[6].role = ax::mojom::Role::kListBoxOption;
+  initial_state.nodes[6].role = ax::Role::kListBoxOption;
   AXTree tree(initial_state);
 
   AXNode* listbox_option1 = tree.GetFromId(4);
@@ -4234,19 +4136,19 @@ TEST(AXTreeTest, SetSizePosInSetGroup) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(6);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kMenu;  // SetSize = 4
+  tree_update.nodes[0].role = ax::Role::kMenu;  // SetSize = 4
   tree_update.nodes[0].child_ids = {2, 6};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kGroup;  // SetSize = 0
+  tree_update.nodes[1].role = ax::Role::kGroup;  // SetSize = 0
   tree_update.nodes[1].child_ids = {3, 4, 5};
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kMenuItemRadio;  // 1 of 4
+  tree_update.nodes[2].role = ax::Role::kMenuItemRadio;  // 1 of 4
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kMenuItemRadio;  // 2 of 4
+  tree_update.nodes[3].role = ax::Role::kMenuItemRadio;  // 2 of 4
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kMenuItemRadio;  // 3 of 4
+  tree_update.nodes[4].role = ax::Role::kMenuItemRadio;  // 3 of 4
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kMenuItemRadio;  // 4 of 4
+  tree_update.nodes[5].role = ax::Role::kMenuItemRadio;  // 4 of 4
   AXTree tree(tree_update);
 
   // Get data on kMenu first.
@@ -4266,19 +4168,19 @@ TEST(AXTreeTest, SetSizePosInSetGroup) {
   next_tree_update.root_id = 1;
   next_tree_update.nodes.resize(6);
   next_tree_update.nodes[0].id = 1;
-  next_tree_update.nodes[0].role = ax::mojom::Role::kListBox;  // SetSize = 4
+  next_tree_update.nodes[0].role = ax::Role::kListBox;  // SetSize = 4
   next_tree_update.nodes[0].child_ids = {2, 6};
   next_tree_update.nodes[1].id = 2;
-  next_tree_update.nodes[1].role = ax::mojom::Role::kGroup;  // SetSize = 0
+  next_tree_update.nodes[1].role = ax::Role::kGroup;  // SetSize = 0
   next_tree_update.nodes[1].child_ids = {3, 4, 5};
   next_tree_update.nodes[2].id = 3;
-  next_tree_update.nodes[2].role = ax::mojom::Role::kListBoxOption;  // 1 of 4
+  next_tree_update.nodes[2].role = ax::Role::kListBoxOption;  // 1 of 4
   next_tree_update.nodes[3].id = 4;
-  next_tree_update.nodes[3].role = ax::mojom::Role::kListBoxOption;  // 2 of 4
+  next_tree_update.nodes[3].role = ax::Role::kListBoxOption;  // 2 of 4
   next_tree_update.nodes[4].id = 5;
-  next_tree_update.nodes[4].role = ax::mojom::Role::kListBoxOption;  // 3 of 4
+  next_tree_update.nodes[4].role = ax::Role::kListBoxOption;  // 3 of 4
   next_tree_update.nodes[5].id = 6;
-  next_tree_update.nodes[5].role = ax::mojom::Role::kListBoxOption;  // 4 of 4
+  next_tree_update.nodes[5].role = ax::Role::kListBoxOption;  // 4 of 4
   AXTree next_tree(next_tree_update);
 
   // Get data on kListBoxOption first.
@@ -4305,12 +4207,12 @@ TEST(AXTreeTest, SetSizePosInSetGroup) {
   third_tree_update.root_id = 1;
   third_tree_update.nodes.resize(3);
   third_tree_update.nodes[0].id = 1;
-  third_tree_update.nodes[0].role = ax::mojom::Role::kGroup;
+  third_tree_update.nodes[0].role = ax::Role::kGroup;
   third_tree_update.nodes[0].child_ids = {2, 3};
   third_tree_update.nodes[1].id = 2;
-  third_tree_update.nodes[1].role = ax::mojom::Role::kListItem;
+  third_tree_update.nodes[1].role = ax::Role::kListItem;
   third_tree_update.nodes[2].id = 3;
-  third_tree_update.nodes[2].role = ax::mojom::Role::kListItem;
+  third_tree_update.nodes[2].role = ax::Role::kListItem;
   AXTree third_tree(third_tree_update);
 
   // Ensure that groups can't also stand alone.
@@ -4328,20 +4230,20 @@ TEST(AXTreeTest, SetSizePosInSetGroup) {
   last_tree_update.root_id = 1;
   last_tree_update.nodes.resize(6);
   last_tree_update.nodes[0].id = 1;
-  last_tree_update.nodes[0].role = ax::mojom::Role::kMenuBar;
+  last_tree_update.nodes[0].role = ax::Role::kMenuBar;
   last_tree_update.nodes[0].child_ids = {2};
   last_tree_update.nodes[1].id = 2;
-  last_tree_update.nodes[1].role = ax::mojom::Role::kGroup;
+  last_tree_update.nodes[1].role = ax::Role::kGroup;
   last_tree_update.nodes[1].child_ids = {3, 4};
   last_tree_update.nodes[2].id = 3;
-  last_tree_update.nodes[2].role = ax::mojom::Role::kMenuItemCheckBox;
+  last_tree_update.nodes[2].role = ax::Role::kMenuItemCheckBox;
   last_tree_update.nodes[3].id = 4;
-  last_tree_update.nodes[3].role = ax::mojom::Role::kGroup;
+  last_tree_update.nodes[3].role = ax::Role::kGroup;
   last_tree_update.nodes[3].child_ids = {5, 6};
   last_tree_update.nodes[4].id = 5;
-  last_tree_update.nodes[4].role = ax::mojom::Role::kMenuItemCheckBox;
+  last_tree_update.nodes[4].role = ax::Role::kMenuItemCheckBox;
   last_tree_update.nodes[5].id = 6;
-  last_tree_update.nodes[5].role = ax::mojom::Role::kMenuItemCheckBox;
+  last_tree_update.nodes[5].role = ax::Role::kMenuItemCheckBox;
   AXTree last_tree(last_tree_update);
 
   AXNode* checkbox1 = last_tree.GetFromId(3);
@@ -4366,19 +4268,19 @@ TEST(AXTreeTest, SetSizePosInSetHidden) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(6);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kListBox;  // SetSize = 4
+  tree_update.nodes[0].role = ax::Role::kListBox;  // SetSize = 4
   tree_update.nodes[0].child_ids = {2, 3, 4, 5, 6};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListBoxOption;  // 1 of 4
+  tree_update.nodes[1].role = ax::Role::kListBoxOption;  // 1 of 4
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kListBoxOption;  // 2 of 4
+  tree_update.nodes[2].role = ax::Role::kListBoxOption;  // 2 of 4
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListBoxOption;  // Hidden
-  tree_update.nodes[3].AddState(ax::mojom::State::kInvisible);
+  tree_update.nodes[3].role = ax::Role::kListBoxOption;  // Hidden
+  tree_update.nodes[3].AddState(ax::State::kInvisible);
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kListBoxOption;  // 3 of 4
+  tree_update.nodes[4].role = ax::Role::kListBoxOption;  // 3 of 4
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kListBoxOption;  // 4 of 4
+  tree_update.nodes[5].role = ax::Role::kListBoxOption;  // 4 of 4
   AXTree tree(tree_update);
 
   AXNode* list_box = tree.GetFromId(1);
@@ -4413,33 +4315,33 @@ TEST(AXTreeTest, SetSizePosInSetControls) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(8);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[0].role = ax::Role::kGenericContainer;
   tree_update.nodes[0].child_ids = {2, 3, 7, 8};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kPopUpButton;  // SetSize = 3
-  tree_update.nodes[1].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kControlsIds, three);
-  tree_update.nodes[1].SetHasPopup(ax::mojom::HasPopup::kMenu);
+  tree_update.nodes[1].role = ax::Role::kPopUpButton;  // SetSize = 3
+  tree_update.nodes[1].AddIntListAttribute(ax::IntListAttribute::kControlsIds,
+                                           three);
+  tree_update.nodes[1].SetHasPopup(ax::HasPopup::kMenu);
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kMenu;  // SetSize = 3
+  tree_update.nodes[2].role = ax::Role::kMenu;  // SetSize = 3
   tree_update.nodes[2].child_ids = {4, 5, 6};
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kMenuItem;  // 1 of 3
+  tree_update.nodes[3].role = ax::Role::kMenuItem;  // 1 of 3
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kMenuItem;  // 2 of 3
+  tree_update.nodes[4].role = ax::Role::kMenuItem;  // 2 of 3
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kMenuItem;  // 3 of 3
+  tree_update.nodes[5].role = ax::Role::kMenuItem;  // 3 of 3
   tree_update.nodes[6].id = 7;
   tree_update.nodes[6].role =
-      ax::mojom::Role::kPopUpButton;  // Test an invalid controls id.
-  tree_update.nodes[6].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kControlsIds, hundred);
+      ax::Role::kPopUpButton;  // Test an invalid controls id.
+  tree_update.nodes[6].AddIntListAttribute(ax::IntListAttribute::kControlsIds,
+                                           hundred);
   // GetSetSize should handle self-references e.g. if a popup button controls
   // itself.
   tree_update.nodes[7].id = 8;
-  tree_update.nodes[7].role = ax::mojom::Role::kPopUpButton;
-  tree_update.nodes[7].AddIntListAttribute(
-      ax::mojom::IntListAttribute::kControlsIds, eight);
+  tree_update.nodes[7].role = ax::Role::kPopUpButton;
+  tree_update.nodes[7].AddIntListAttribute(ax::IntListAttribute::kControlsIds,
+                                           eight);
   AXTree tree(tree_update);
 
   AXNode* button = tree.GetFromId(2);
@@ -4469,12 +4371,12 @@ TEST(AXTreeTest, SetSizePosInSetLeafPopUpButton) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(2);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[0].role = ax::Role::kGenericContainer;
   tree_update.nodes[0].child_ids = {2};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kPopUpButton;
-  tree_update.nodes[1].AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 3);
-  tree_update.nodes[1].AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 77);
+  tree_update.nodes[1].role = ax::Role::kPopUpButton;
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kPosInSet, 3);
+  tree_update.nodes[1].AddIntAttribute(ax::IntAttribute::kSetSize, 77);
   AXTree tree(tree_update);
 
   AXNode* pop_up_button = tree.GetFromId(2);
@@ -4487,20 +4389,20 @@ TEST(AXTreeTest, OnNodeWillBeDeletedHasValidUnignoredParent) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(3);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kRootWebArea;
+  initial_state.nodes[0].role = ax::Role::kRootWebArea;
   initial_state.nodes[0].child_ids = {2};
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kGenericContainer;
+  initial_state.nodes[1].role = ax::Role::kGenericContainer;
   initial_state.nodes[1].child_ids = {3};
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kGenericContainer;
+  initial_state.nodes[2].role = ax::Role::kGenericContainer;
   AXTree tree(initial_state);
 
   AXTreeUpdate tree_update;
   tree_update.nodes.resize(1);
   // Remove child from node:2, and add State::kIgnored
   tree_update.nodes[0] = initial_state.nodes[1];
-  tree_update.nodes[0].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[0].AddState(ax::State::kIgnored);
   tree_update.nodes[0].child_ids.clear();
 
   // Before node:3 is deleted, the unignored parent is node:2.
@@ -4516,20 +4418,20 @@ TEST(AXTreeTest, OnNodeHasBeenDeleted) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(6);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kRootWebArea;
+  initial_state.nodes[0].role = ax::Role::kRootWebArea;
   initial_state.nodes[0].child_ids = {2};
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kButton;
+  initial_state.nodes[1].role = ax::Role::kButton;
   initial_state.nodes[1].child_ids = {3, 4};
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kCheckBox;
+  initial_state.nodes[2].role = ax::Role::kCheckBox;
   initial_state.nodes[3].id = 4;
-  initial_state.nodes[3].role = ax::mojom::Role::kStaticText;
+  initial_state.nodes[3].role = ax::Role::kStaticText;
   initial_state.nodes[3].child_ids = {5, 6};
   initial_state.nodes[4].id = 5;
-  initial_state.nodes[4].role = ax::mojom::Role::kInlineTextBox;
+  initial_state.nodes[4].role = ax::Role::kInlineTextBox;
   initial_state.nodes[5].id = 6;
-  initial_state.nodes[5].role = ax::mojom::Role::kInlineTextBox;
+  initial_state.nodes[5].role = ax::Role::kInlineTextBox;
 
   AXTree tree(initial_state);
 
@@ -4565,7 +4467,7 @@ TEST(AXTreeTest, SingleUpdateDeletesNewlyCreatedChildNode) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(1);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kRootWebArea;
+  initial_state.nodes[0].role = ax::Role::kRootWebArea;
   AXTree tree(initial_state);
 
   AXTreeUpdate tree_update;
@@ -4574,14 +4476,14 @@ TEST(AXTreeTest, SingleUpdateDeletesNewlyCreatedChildNode) {
   tree_update.nodes[0] = initial_state.nodes[0];
   tree_update.nodes[0].child_ids = {2};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[1].role = ax::Role::kGenericContainer;
   // Remove child node:2
   tree_update.nodes[2] = initial_state.nodes[0];
   // Add child node:2
   tree_update.nodes[3] = initial_state.nodes[0];
   tree_update.nodes[3].child_ids = {2};
   tree_update.nodes[4].id = 2;
-  tree_update.nodes[4].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[4].role = ax::Role::kGenericContainer;
   // Remove child node:2
   tree_update.nodes[5] = initial_state.nodes[0];
 
@@ -4597,7 +4499,7 @@ TEST(AXTreeTest, SingleUpdateDeletesNewlyCreatedChildNode) {
   tree_update.nodes[6] = initial_state.nodes[0];
   tree_update.nodes[6].child_ids = {2};
   tree_update.nodes[7].id = 2;
-  tree_update.nodes[7].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[7].role = ax::Role::kGenericContainer;
   ASSERT_TRUE(tree.Unserialize(tree_update)) << tree.error();
 
   ASSERT_EQ(
@@ -4619,37 +4521,37 @@ TEST(AXTreeTest, SingleUpdateReparentsNodeMultipleTimes) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(4);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kRootWebArea;
+  initial_state.nodes[0].role = ax::Role::kRootWebArea;
   initial_state.nodes[0].child_ids = {2, 3};
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kList;
+  initial_state.nodes[1].role = ax::Role::kList;
   initial_state.nodes[1].child_ids = {4};
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kList;
+  initial_state.nodes[2].role = ax::Role::kList;
   initial_state.nodes[3].id = 4;
-  initial_state.nodes[3].role = ax::mojom::Role::kListItem;
+  initial_state.nodes[3].role = ax::Role::kListItem;
   AXTree tree(initial_state);
 
   AXTreeUpdate tree_update;
   tree_update.nodes.resize(6);
   // Remove child node:4
   tree_update.nodes[0].id = 2;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   // Reparent child node:4 onto node:3
   tree_update.nodes[1].id = 3;
-  tree_update.nodes[1].role = ax::mojom::Role::kList;
+  tree_update.nodes[1].role = ax::Role::kList;
   tree_update.nodes[1].child_ids = {4};
   tree_update.nodes[2].id = 4;
-  tree_update.nodes[2].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[2].role = ax::Role::kListItem;
   // Remove child ndoe:4
   tree_update.nodes[3].id = 3;
-  tree_update.nodes[3].role = ax::mojom::Role::kList;
+  tree_update.nodes[3].role = ax::Role::kList;
   // Reparent child node:4 onto node:2
   tree_update.nodes[4].id = 2;
-  tree_update.nodes[4].role = ax::mojom::Role::kList;
+  tree_update.nodes[4].role = ax::Role::kList;
   tree_update.nodes[4].child_ids = {4};
   tree_update.nodes[5].id = 4;
-  tree_update.nodes[5].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[5].role = ax::Role::kListItem;
 
   ASSERT_TRUE(tree.Unserialize(tree_update)) << tree.error();
   EXPECT_EQ(
@@ -4682,7 +4584,7 @@ TEST(AXTreeTest, SingleUpdateIgnoresNewlyCreatedUnignoredChildNode) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(1);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kRootWebArea;
+  initial_state.nodes[0].role = ax::Role::kRootWebArea;
   AXTree tree(initial_state);
 
   AXTreeUpdate tree_update;
@@ -4691,10 +4593,10 @@ TEST(AXTreeTest, SingleUpdateIgnoresNewlyCreatedUnignoredChildNode) {
   tree_update.nodes[0] = initial_state.nodes[0];
   tree_update.nodes[0].child_ids = {2};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[1].role = ax::Role::kGenericContainer;
   // Add State::kIgnored to node:2
   tree_update.nodes[2] = tree_update.nodes[1];
-  tree_update.nodes[2].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[2].AddState(ax::State::kIgnored);
 
   ASSERT_TRUE(tree.Unserialize(tree_update)) << tree.error();
 
@@ -4713,7 +4615,7 @@ TEST(AXTreeTest, SingleUpdateTogglesIgnoredStateAfterCreatingNode) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(1);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kRootWebArea;
+  initial_state.nodes[0].role = ax::Role::kRootWebArea;
   AXTree tree(initial_state);
 
   ASSERT_EQ(
@@ -4727,16 +4629,16 @@ TEST(AXTreeTest, SingleUpdateTogglesIgnoredStateAfterCreatingNode) {
   tree_update.nodes[0] = initial_state.nodes[0];
   tree_update.nodes[0].child_ids = {2, 3};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kGenericContainer;
+  tree_update.nodes[1].role = ax::Role::kGenericContainer;
   tree_update.nodes[2].id = 3;
-  tree_update.nodes[2].role = ax::mojom::Role::kGenericContainer;
-  tree_update.nodes[2].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[2].role = ax::Role::kGenericContainer;
+  tree_update.nodes[2].AddState(ax::State::kIgnored);
   // Add State::kIgnored to node:2
   tree_update.nodes[3] = tree_update.nodes[1];
-  tree_update.nodes[3].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[3].AddState(ax::State::kIgnored);
   // Remove State::kIgnored from node:3
   tree_update.nodes[4] = tree_update.nodes[2];
-  tree_update.nodes[4].RemoveState(ax::mojom::State::kIgnored);
+  tree_update.nodes[4].RemoveState(ax::State::kIgnored);
 
   ASSERT_TRUE(tree.Unserialize(tree_update)) << tree.error();
 
@@ -4756,13 +4658,13 @@ TEST(AXTreeTest, SingleUpdateTogglesIgnoredStateBeforeDestroyingNode) {
   initial_state.root_id = 1;
   initial_state.nodes.resize(3);
   initial_state.nodes[0].id = 1;
-  initial_state.nodes[0].role = ax::mojom::Role::kRootWebArea;
+  initial_state.nodes[0].role = ax::Role::kRootWebArea;
   initial_state.nodes[0].child_ids = {2, 3};
   initial_state.nodes[1].id = 2;
-  initial_state.nodes[1].role = ax::mojom::Role::kGenericContainer;
+  initial_state.nodes[1].role = ax::Role::kGenericContainer;
   initial_state.nodes[2].id = 3;
-  initial_state.nodes[2].role = ax::mojom::Role::kGenericContainer;
-  initial_state.nodes[2].AddState(ax::mojom::State::kIgnored);
+  initial_state.nodes[2].role = ax::Role::kGenericContainer;
+  initial_state.nodes[2].AddState(ax::State::kIgnored);
   AXTree tree(initial_state);
 
   ASSERT_EQ(
@@ -4776,10 +4678,10 @@ TEST(AXTreeTest, SingleUpdateTogglesIgnoredStateBeforeDestroyingNode) {
   tree_update.nodes.resize(3);
   // Add State::kIgnored to node:2
   tree_update.nodes[0] = initial_state.nodes[1];
-  tree_update.nodes[0].AddState(ax::mojom::State::kIgnored);
+  tree_update.nodes[0].AddState(ax::State::kIgnored);
   // Remove State::kIgnored from node:3
   tree_update.nodes[1] = initial_state.nodes[2];
-  tree_update.nodes[1].RemoveState(ax::mojom::State::kIgnored);
+  tree_update.nodes[1].RemoveState(ax::State::kIgnored);
   // Remove child node:2, node:3
   tree_update.nodes[2] = initial_state.nodes[0];
   tree_update.nodes[2].child_ids.clear();
@@ -4800,25 +4702,25 @@ TEST(AXTreeTest, TestIsInListMarker) {
   tree_update.root_id = 1;
   tree_update.nodes.resize(8);
   tree_update.nodes[0].id = 1;
-  tree_update.nodes[0].role = ax::mojom::Role::kList;
+  tree_update.nodes[0].role = ax::Role::kList;
   tree_update.nodes[0].child_ids = {2, 3};
   tree_update.nodes[1].id = 2;
-  tree_update.nodes[1].role = ax::mojom::Role::kListItem;
+  tree_update.nodes[1].role = ax::Role::kListItem;
   tree_update.nodes[2].id = 3;
   tree_update.nodes[2].child_ids = {4, 7};
   tree_update.nodes[3].id = 4;
-  tree_update.nodes[3].role = ax::mojom::Role::kListMarker;
+  tree_update.nodes[3].role = ax::Role::kListMarker;
   tree_update.nodes[3].child_ids = {5};
   tree_update.nodes[4].id = 5;
-  tree_update.nodes[4].role = ax::mojom::Role::kStaticText;  // "1. "
+  tree_update.nodes[4].role = ax::Role::kStaticText;  // "1. "
   tree_update.nodes[4].child_ids = {6};
   tree_update.nodes[5].id = 6;
-  tree_update.nodes[5].role = ax::mojom::Role::kInlineTextBox;  // "1. "
+  tree_update.nodes[5].role = ax::Role::kInlineTextBox;  // "1. "
   tree_update.nodes[6].id = 7;
-  tree_update.nodes[6].role = ax::mojom::Role::kStaticText;  // "List item"
+  tree_update.nodes[6].role = ax::Role::kStaticText;  // "List item"
   tree_update.nodes[6].child_ids = {8};
   tree_update.nodes[7].id = 8;
-  tree_update.nodes[7].role = ax::mojom::Role::kInlineTextBox;  // "List item"
+  tree_update.nodes[7].role = ax::Role::kInlineTextBox;  // "List item"
   AXTree tree(tree_update);
 
   AXNode* list_node = tree.GetFromId(1);
@@ -4843,4 +4745,4 @@ TEST(AXTreeTest, TestIsInListMarker) {
   ASSERT_EQ(false, inline_node2->IsInListMarker());
 }
 
-}  // namespace ui
+}  // namespace ax

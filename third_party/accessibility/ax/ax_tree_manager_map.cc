@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_tree_manager_map.h"
+#include "ax_tree_manager_map.h"
 
-#include "base/stl_util.h"
-#include "ui/accessibility/ax_enums.mojom.h"
+#include "flutter/fml/logging.h"
 
-namespace ui {
+#include "ax_enums.h"
+
+namespace ax {
 
 AXTreeManagerMap::AXTreeManagerMap() {}
 
@@ -30,7 +31,7 @@ void AXTreeManagerMap::RemoveTreeManager(AXTreeID tree_id) {
 }
 
 AXTreeManager* AXTreeManagerMap::GetManager(AXTreeID tree_id) {
-  if (tree_id == AXTreeIDUnknown() || !base::Contains(map_, tree_id))
+  if (tree_id == AXTreeIDUnknown() || map_.find(tree_id) == map_.end())
     return nullptr;
 
   return map_.at(tree_id);
@@ -39,13 +40,12 @@ AXTreeManager* AXTreeManagerMap::GetManager(AXTreeID tree_id) {
 AXTreeManager* AXTreeManagerMap::GetManagerForChildTree(
     const AXNode& parent_node) {
   if (!parent_node.data().HasStringAttribute(
-          ax::mojom::StringAttribute::kChildTreeId)) {
+          ax::StringAttribute::kChildTreeId)) {
     return nullptr;
   }
 
-  AXTreeID child_tree_id =
-      AXTreeID::FromString(parent_node.data().GetStringAttribute(
-          ax::mojom::StringAttribute::kChildTreeId));
+  AXTreeID child_tree_id = AXTreeID::FromString(
+      parent_node.data().GetStringAttribute(ax::StringAttribute::kChildTreeId));
   AXTreeManager* child_tree_manager =
       AXTreeManagerMap::GetInstance().GetManager(child_tree_id);
 
@@ -54,10 +54,10 @@ AXTreeManager* AXTreeManagerMap::GetManagerForChildTree(
   if (!child_tree_manager)
     return nullptr;
 
-  DCHECK(child_tree_manager->GetParentNodeFromParentTreeAsAXNode()->id() ==
-         parent_node.id());
+  FML_DCHECK(child_tree_manager->GetParentNodeFromParentTreeAsAXNode()->id() ==
+             parent_node.id());
 
   return child_tree_manager;
 }
 
-}  // namespace ui
+}  // namespace ax

@@ -33,8 +33,8 @@
 //    ARCH_CPU_31_BITS / ARCH_CPU_32_BITS / ARCH_CPU_64_BITS
 //    ARCH_CPU_BIG_ENDIAN / ARCH_CPU_LITTLE_ENDIAN
 
-#ifndef BUILD_BUILD_CONFIG_H_
-#define BUILD_BUILD_CONFIG_H_
+#ifndef ACCESSIBILITY_AX_BUILD_BUILD_CONFIG_H_
+#define ACCESSIBILITY_AX_BUILD_BUILD_CONFIG_H_
 
 // A set of macros to use for platform detection.
 #if defined(__native_client__)
@@ -225,4 +225,4 @@
 #define BASE_STRING16_ITERATOR_IS_CHAR16_POINTER
 #endif
 
-#endif  // BUILD_BUILD_CONFIG_H_
+#endif  // ACCESSIBILITY_AX_BUILD_BUILD_CONFIG_H_

@@ -2,18 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_UNITTEST_H_
-#define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_UNITTEST_H_
+#ifndef ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_UNITTEST_H_
+#define ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_UNITTEST_H_
 
-#include "testing/gtest/include/gtest/gtest.h"
-#include "ui/accessibility/ax_enums.mojom-forward.h"
-#include "ui/accessibility/ax_node.h"
-#include "ui/accessibility/ax_node_data.h"
-#include "ui/accessibility/ax_tree_id.h"
-#include "ui/accessibility/ax_tree_update.h"
-#include "ui/accessibility/test_ax_tree_manager.h"
+#include "gtest/gtest.h"
 
-namespace ui {
+#include "ax/ax_enums.h"
+#include "ax/ax_node.h"
+#include "ax/ax_node_data.h"
+#include "ax/ax_tree_id.h"
+#include "ax/ax_tree_update.h"
+#include "ax/test_ax_tree_manager.h"
+
+namespace ax {
 
 class AXPlatformNodeTest : public testing::Test, public TestAXTreeManager {
  public:
@@ -27,18 +28,18 @@ class AXPlatformNodeTest : public testing::Test, public TestAXTreeManager {
   void Init(const AXTreeUpdate& initial_state);
 
   // Convenience functions to initialize directly from a few AXNodeData objects.
-  void Init(const ui::AXNodeData& node1,
-            const ui::AXNodeData& node2 = ui::AXNodeData(),
-            const ui::AXNodeData& node3 = ui::AXNodeData(),
-            const ui::AXNodeData& node4 = ui::AXNodeData(),
-            const ui::AXNodeData& node5 = ui::AXNodeData(),
-            const ui::AXNodeData& node6 = ui::AXNodeData(),
-            const ui::AXNodeData& node7 = ui::AXNodeData(),
-            const ui::AXNodeData& node8 = ui::AXNodeData(),
-            const ui::AXNodeData& node9 = ui::AXNodeData(),
-            const ui::AXNodeData& node10 = ui::AXNodeData(),
-            const ui::AXNodeData& node11 = ui::AXNodeData(),
-            const ui::AXNodeData& node12 = ui::AXNodeData());
+  void Init(const ax::AXNodeData& node1,
+            const ax::AXNodeData& node2 = ax::AXNodeData(),
+            const ax::AXNodeData& node3 = ax::AXNodeData(),
+            const ax::AXNodeData& node4 = ax::AXNodeData(),
+            const ax::AXNodeData& node5 = ax::AXNodeData(),
+            const ax::AXNodeData& node6 = ax::AXNodeData(),
+            const ax::AXNodeData& node7 = ax::AXNodeData(),
+            const ax::AXNodeData& node8 = ax::AXNodeData(),
+            const ax::AXNodeData& node9 = ax::AXNodeData(),
+            const ax::AXNodeData& node10 = ax::AXNodeData(),
+            const ax::AXNodeData& node11 = ax::AXNodeData(),
+            const ax::AXNodeData& node12 = ax::AXNodeData());
 
   AXTreeUpdate BuildTextField();
   AXTreeUpdate BuildTextFieldWithSelectionRange(int32_t start, int32_t stop);
@@ -48,13 +49,12 @@ class AXPlatformNodeTest : public testing::Test, public TestAXTreeManager {
   AXTreeUpdate Build3X3Table();
   AXTreeUpdate BuildAriaColumnAndRowCountGrids();
 
-  AXTreeUpdate BuildListBox(
-      bool option_1_is_selected,
-      bool option_2_is_selected,
-      bool option_3_is_selected,
-      const std::vector<ax::mojom::State>& additional_state);
+  AXTreeUpdate BuildListBox(bool option_1_is_selected,
+                            bool option_2_is_selected,
+                            bool option_3_is_selected,
+                            const std::vector<ax::State>& additional_state);
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_UNITTEST_H_
+#endif  // ACCESSIBILITY_AX_PLATFORM_AX_PLATFORM_NODE_UNITTEST_H_

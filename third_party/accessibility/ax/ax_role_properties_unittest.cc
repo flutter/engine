@@ -4,29 +4,27 @@
 
 #include <unordered_set>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
-#include "ui/accessibility/ax_enum_util.h"
-#include "ui/accessibility/ax_enums.mojom.h"
-#include "ui/accessibility/ax_role_properties.h"
+#include "ax_enum_util.h"
+#include "ax_enums.h"
+#include "ax_role_properties.h"
 
-namespace ui {
+namespace ax {
 
 TEST(AXRolePropertiesTest, TestSupportsHierarchicalLevel) {
   // Test for iterating through all roles and validate if a role supports
   // hierarchical level.
-  std::unordered_set<ax::mojom::Role>
-      roles_expected_supports_hierarchical_level = {
-          ax::mojom::Role::kComment, ax::mojom::Role::kListItem,
-          ax::mojom::Role::kRow, ax::mojom::Role::kTabList,
-          ax::mojom::Role::kTreeItem};
+  std::unordered_set<ax::Role> roles_expected_supports_hierarchical_level = {
+      ax::Role::kComment, ax::Role::kListItem, ax::Role::kRow,
+      ax::Role::kTabList, ax::Role::kTreeItem};
 
-  for (int role_idx = static_cast<int>(ax::mojom::Role::kMinValue);
-       role_idx <= static_cast<int>(ax::mojom::Role::kMaxValue); role_idx++) {
-    ax::mojom::Role role = static_cast<ax::mojom::Role>(role_idx);
+  for (int role_idx = static_cast<int>(ax::Role::kMinValue);
+       role_idx <= static_cast<int>(ax::Role::kMaxValue); role_idx++) {
+    ax::Role role = static_cast<ax::Role>(role_idx);
     bool supports_hierarchical_level = SupportsHierarchicalLevel(role);
 
-    SCOPED_TRACE(testing::Message() << "ax::mojom::Role=" << ToString(role)
+    SCOPED_TRACE(testing::Message() << "ax::Role=" << ToString(role)
                                     << ", Actual: supportsHierarchicalLevel="
                                     << supports_hierarchical_level
                                     << ", Expected: supportsHierarchicalLevel="
@@ -43,17 +41,17 @@ TEST(AXRolePropertiesTest, TestSupportsHierarchicalLevel) {
 TEST(AXRolePropertiesTest, TestSupportsToggle) {
   // Test for iterating through all roles and validate if a role supports
   // toggle.
-  std::unordered_set<ax::mojom::Role> roles_expected_supports_toggle = {
-      ax::mojom::Role::kCheckBox, ax::mojom::Role::kMenuItemCheckBox,
-      ax::mojom::Role::kSwitch, ax::mojom::Role::kToggleButton};
+  std::unordered_set<ax::Role> roles_expected_supports_toggle = {
+      ax::Role::kCheckBox, ax::Role::kMenuItemCheckBox, ax::Role::kSwitch,
+      ax::Role::kToggleButton};
 
-  for (int role_idx = static_cast<int>(ax::mojom::Role::kMinValue);
-       role_idx <= static_cast<int>(ax::mojom::Role::kMaxValue); role_idx++) {
-    ax::mojom::Role role = static_cast<ax::mojom::Role>(role_idx);
+  for (int role_idx = static_cast<int>(ax::Role::kMinValue);
+       role_idx <= static_cast<int>(ax::Role::kMaxValue); role_idx++) {
+    ax::Role role = static_cast<ax::Role>(role_idx);
     bool supports_toggle = SupportsToggle(role);
 
     SCOPED_TRACE(testing::Message()
-                 << "ax::mojom::Role=" << ToString(role)
+                 << "ax::Role=" << ToString(role)
                  << ", Actual: supportsToggle=" << supports_toggle
                  << ", Expected: supportsToggle=" << !supports_toggle);
 
@@ -64,4 +62,4 @@ TEST(AXRolePropertiesTest, TestSupportsToggle) {
       EXPECT_FALSE(supports_toggle);
   }
 }
-}  // namespace ui
+}  // namespace ax

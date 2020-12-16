@@ -2,22 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_NODE_POSITION_H_
-#define UI_ACCESSIBILITY_AX_NODE_POSITION_H_
+#ifndef ACCESSIBILITY_AX_AX_NODE_POSITION_H_
+#define ACCESSIBILITY_AX_AX_NODE_POSITION_H_
 
 #include <stdint.h>
 
 #include <vector>
 
-#include "base/containers/stack.h"
-#include "base/strings/string16.h"
-#include "ui/accessibility/ax_enums.mojom-forward.h"
-#include "ui/accessibility/ax_export.h"
-#include "ui/accessibility/ax_node.h"
-#include "ui/accessibility/ax_position.h"
-#include "ui/accessibility/ax_tree_id.h"
+#include "ax_enums.h"
+#include "ax_export.h"
+#include "ax_node.h"
+#include "ax_position.h"
+#include "ax_tree_id.h"
 
-namespace ui {
+namespace ax {
 
 // AXNodePosition includes implementations of AXPosition methods which require
 // knowledge of the AXPosition AXNodeType (which is unknown by AXPosition).
@@ -28,7 +26,7 @@ class AX_EXPORT AXNodePosition : public AXPosition<AXNodePosition, AXNode> {
   static AXPositionInstance CreatePosition(
       const AXNode& node,
       int child_index_or_text_offset,
-      ax::mojom::TextAffinity affinity = ax::mojom::TextAffinity::kDownstream);
+      ax::TextAffinity affinity = ax::TextAffinity::kDownstream);
 
   AXNodePosition();
   ~AXNodePosition() override;
@@ -36,7 +34,7 @@ class AX_EXPORT AXNodePosition : public AXPosition<AXNodePosition, AXNode> {
 
   AXPositionInstance Clone() const override;
 
-  base::string16 GetText() const override;
+  std::u16string GetText() const override;
   bool IsInLineBreak() const override;
   bool IsInTextObject() const override;
   bool IsInWhiteSpace() const override;
@@ -50,7 +48,7 @@ class AX_EXPORT AXNodePosition : public AXPosition<AXNodePosition, AXNode> {
   int AnchorUnignoredChildCount() const override;
   int AnchorIndexInParent() const override;
   int AnchorSiblingCount() const override;
-  base::stack<AXNode*> GetAncestorAnchors() const override;
+  std::stack<AXNode*> GetAncestorAnchors() const override;
   AXNode* GetLowestUnignoredAncestor() const override;
   void AnchorParent(AXTreeID* tree_id, AXNode::AXID* parent_id) const override;
   AXNode* GetNodeInTree(AXTreeID tree_id, AXNode::AXID node_id) const override;
@@ -59,8 +57,8 @@ class AX_EXPORT AXNodePosition : public AXPosition<AXNodePosition, AXNode> {
 
   bool IsEmbeddedObjectInParent() const override;
   bool IsInLineBreakingObject() const override;
-  ax::mojom::Role GetAnchorRole() const override;
-  ax::mojom::Role GetRole(AXNode* node) const override;
+  ax::Role GetAnchorRole() const override;
+  ax::Role GetRole(AXNode* node) const override;
   AXNodeTextStyles GetTextStyles() const override;
   std::vector<int32_t> GetWordStartOffsets() const override;
   std::vector<int32_t> GetWordEndOffsets() const override;
@@ -77,6 +75,6 @@ class AX_EXPORT AXNodePosition : public AXPosition<AXNodePosition, AXNode> {
                            AXNode::AXID* parent_id);
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_NODE_POSITION_H_
+#endif  // ACCESSIBILITY_AX_AX_NODE_POSITION_H_

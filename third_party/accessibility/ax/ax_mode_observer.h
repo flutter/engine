@@ -2,22 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_MODE_OBSERVER_H_
-#define UI_ACCESSIBILITY_AX_MODE_OBSERVER_H_
+#ifndef ACCESSIBILITY_AX_AX_MODE_OBSERVER_H_
+#define ACCESSIBILITY_AX_AX_MODE_OBSERVER_H_
 
-#include "ui/accessibility/ax_export.h"
-#include "ui/accessibility/ax_mode.h"
+#include "ax_export.h"
+#include "ax_mode.h"
 
-namespace ui {
+namespace ax {
 
 class AX_EXPORT AXModeObserver {
  public:
   virtual ~AXModeObserver() {}
 
   // Notifies when accessibility mode changes.
-  virtual void OnAXModeAdded(ui::AXMode mode) = 0;
+  virtual void OnAXModeAdded(ax::AXMode mode) = 0;
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_MODE_OBSERVER_H_
+#endif  // ACCESSIBILITY_AX_AX_MODE_OBSERVER_H_

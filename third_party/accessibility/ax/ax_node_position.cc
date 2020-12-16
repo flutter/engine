@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_node_position.h"
+#include "ax_node_position.h"
 
-#include "base/strings/string_util.h"
-#include "build/build_config.h"
-#include "ui/accessibility/ax_enums.mojom.h"
-#include "ui/accessibility/ax_node_data.h"
-#include "ui/accessibility/ax_tree_manager.h"
-#include "ui/accessibility/ax_tree_manager_map.h"
+#include "ax_build/build_config.h"
 
-namespace ui {
+#include "ax_enums.h"
+#include "ax_node_data.h"
+#include "ax_tree_manager.h"
+#include "ax_tree_manager_map.h"
+
+namespace ax {
 
 AXEmbeddedObjectBehavior g_ax_embedded_object_behavior =
 #if defined(OS_WIN)
@@ -24,7 +24,7 @@ AXEmbeddedObjectBehavior g_ax_embedded_object_behavior =
 AXNodePosition::AXPositionInstance AXNodePosition::CreatePosition(
     const AXNode& node,
     int child_index_or_text_offset,
-    ax::mojom::TextAffinity affinity) {
+    ax::TextAffinity affinity) {
   if (!node.tree())
     return CreateNullPosition();
 
@@ -51,8 +51,8 @@ AXNodePosition::AXPositionInstance AXNodePosition::Clone() const {
 void AXNodePosition::AnchorChild(int child_index,
                                  AXTreeID* tree_id,
                                  AXNode::AXID* child_id) const {
-  DCHECK(tree_id);
-  DCHECK(child_id);
+  FML_DCHECK(tree_id);
+  FML_DCHECK(child_id);
 
   if (!GetAnchor() || child_index < 0 || child_index >= AnchorChildCount()) {
     *tree_id = AXTreeIDUnknown();
@@ -68,11 +68,11 @@ void AXNodePosition::AnchorChild(int child_index,
     child = child_tree_manager->GetRootAsAXNode();
     *tree_id = child_tree_manager->GetTreeID();
   } else {
-    child = GetAnchor()->children()[size_t{child_index}];
+    child = GetAnchor()->children()[static_cast<size_t>(child_index)];
     *tree_id = this->tree_id();
   }
 
-  DCHECK(child);
+  FML_DCHECK(child);
   *child_id = child->id();
 }
 
@@ -85,7 +85,7 @@ int AXNodePosition::AnchorChildCount() const {
   if (child_tree_manager)
     return 1;
 
-  return int{GetAnchor()->children().size()};
+  return static_cast<int>(GetAnchor()->children().size());
 }
 
 int AXNodePosition::AnchorUnignoredChildCount() const {
@@ -96,7 +96,8 @@ int AXNodePosition::AnchorUnignoredChildCount() const {
 }
 
 int AXNodePosition::AnchorIndexInParent() const {
-  return GetAnchor() ? int{GetAnchor()->index_in_parent()} : INVALID_INDEX;
+  return GetAnchor() ? static_cast<int>(GetAnchor()->index_in_parent())
+                     : INVALID_INDEX;
 }
 
 int AXNodePosition::AnchorSiblingCount() const {
@@ -107,8 +108,8 @@ int AXNodePosition::AnchorSiblingCount() const {
   return 0;
 }
 
-base::stack<AXNode*> AXNodePosition::GetAncestorAnchors() const {
-  base::stack<AXNode*> anchors;
+std::stack<AXNode*> AXNodePosition::GetAncestorAnchors() const {
+  std::stack<AXNode*> anchors;
   AXNode* current_anchor = GetAnchor();
 
   AXNode::AXID current_anchor_id = GetAnchor()->id();
@@ -116,7 +117,6 @@ base::stack<AXNode*> AXNodePosition::GetAncestorAnchors() const {
 
   AXNode::AXID parent_anchor_id = AXNode::kInvalidAXID;
   AXTreeID parent_tree_id = AXTreeIDUnknown();
-
   while (current_anchor) {
     anchors.push(current_anchor);
     current_anchor = GetParent(
@@ -138,8 +138,8 @@ AXNode* AXNodePosition::GetLowestUnignoredAncestor() const {
 
 void AXNodePosition::AnchorParent(AXTreeID* tree_id,
                                   AXNode::AXID* parent_id) const {
-  DCHECK(tree_id);
-  DCHECK(parent_id);
+  FML_DCHECK(tree_id);
+  FML_DCHECK(parent_id);
 
   *tree_id = AXTreeIDUnknown();
   *parent_id = AXNode::kInvalidAXID;
@@ -165,7 +165,6 @@ AXNode* AXNodePosition::GetNodeInTree(AXTreeID tree_id,
   AXTreeManager* manager = AXTreeManagerMap::GetInstance().GetManager(tree_id);
   if (manager)
     return manager->GetNodeFromTree(tree_id, node_id);
-
   return nullptr;
 }
 
@@ -177,32 +176,30 @@ AXTreeID AXNodePosition::GetTreeID(AXNode* node) const {
   return node->tree()->GetAXTreeID();
 }
 
-base::string16 AXNodePosition::GetText() const {
+std::u16string AXNodePosition::GetText() const {
   if (IsNullPosition())
     return {};
 
-  base::string16 text;
+  std::u16string text;
   if (IsEmptyObjectReplacedByCharacter()) {
     text += kEmbeddedCharacter;
     return text;
   }
 
   const AXNode* anchor = GetAnchor();
-  DCHECK(anchor);
+  FML_DCHECK(anchor);
   // TODO(nektar): Replace with PlatformChildCount when AXNodePosition and
   // BrowserAccessibilityPosition are merged into one class.
   if (!AnchorChildCount()) {
     // Special case: Allows us to get text even in non-web content, e.g. in the
     // browser's UI.
-    text =
-        anchor->data().GetString16Attribute(ax::mojom::StringAttribute::kValue);
+    text = anchor->data().GetString16Attribute(ax::StringAttribute::kValue);
     if (!text.empty())
       return text;
   }
 
   if (anchor->IsText()) {
-    return anchor->data().GetString16Attribute(
-        ax::mojom::StringAttribute::kName);
+    return anchor->data().GetString16Attribute(ax::StringAttribute::kName);
   }
 
   for (int i = 0; i < AnchorChildCount(); ++i)
@@ -214,23 +211,27 @@ base::string16 AXNodePosition::GetText() const {
 bool AXNodePosition::IsInLineBreak() const {
   if (IsNullPosition())
     return false;
-  DCHECK(GetAnchor());
+  FML_DCHECK(GetAnchor());
   return GetAnchor()->IsLineBreak();
 }
 
 bool AXNodePosition::IsInTextObject() const {
   if (IsNullPosition())
     return false;
-  DCHECK(GetAnchor());
+  FML_DCHECK(GetAnchor());
   return GetAnchor()->IsText();
 }
 
 bool AXNodePosition::IsInWhiteSpace() const {
   if (IsNullPosition())
     return false;
-  DCHECK(GetAnchor());
-  return GetAnchor()->IsLineBreak() ||
-         base::ContainsOnlyChars(GetText(), base::kWhitespaceUTF16);
+  FML_DCHECK(GetAnchor());
+  if (GetAnchor()->IsLineBreak()) {
+    return true;
+  }
+  std::u16string text = GetText();
+  return std::find_if(text.begin(), text.end(),
+                      [](char16_t ch) { return ch != u' '; }) == text.end();
 }
 
 // This override is an optimized version AXPosition::MaxTextOffset. Instead of
@@ -246,19 +247,19 @@ int AXNodePosition::MaxTextOffset() const {
     return 1;
 
   const AXNode* anchor = GetAnchor();
-  DCHECK(anchor);
+  FML_DCHECK(anchor);
   // TODO(nektar): Replace with PlatformChildCount when AXNodePosition and
   // BrowserAccessibilityPosition will make one.
   if (!AnchorChildCount()) {
-    base::string16 value =
-        anchor->data().GetString16Attribute(ax::mojom::StringAttribute::kValue);
+    std::u16string value =
+        anchor->data().GetString16Attribute(ax::StringAttribute::kValue);
     if (!value.empty())
       return value.length();
   }
 
   if (anchor->IsText()) {
     return anchor->data()
-        .GetString16Attribute(ax::mojom::StringAttribute::kName)
+        .GetString16Attribute(ax::StringAttribute::kName)
         .length();
   }
 
@@ -285,20 +286,20 @@ bool AXNodePosition::IsEmbeddedObjectInParent() const {
 bool AXNodePosition::IsInLineBreakingObject() const {
   if (IsNullPosition())
     return false;
-  DCHECK(GetAnchor());
+  FML_DCHECK(GetAnchor());
   return GetAnchor()->data().GetBoolAttribute(
-             ax::mojom::BoolAttribute::kIsLineBreakingObject) &&
+             ax::BoolAttribute::kIsLineBreakingObject) &&
          !GetAnchor()->IsInListMarker();
 }
 
-ax::mojom::Role AXNodePosition::GetAnchorRole() const {
+ax::Role AXNodePosition::GetAnchorRole() const {
   if (IsNullPosition())
-    return ax::mojom::Role::kNone;
-  DCHECK(GetAnchor());
+    return ax::Role::kNone;
+  FML_DCHECK(GetAnchor());
   return GetRole(GetAnchor());
 }
 
-ax::mojom::Role AXNodePosition::GetRole(AXNode* node) const {
+ax::Role AXNodePosition::GetRole(AXNode* node) const {
   return node->data().role;
 }
 
@@ -318,7 +319,7 @@ AXNodeTextStyles AXNodePosition::GetTextStyles() const {
 std::vector<int32_t> AXNodePosition::GetWordStartOffsets() const {
   if (IsNullPosition())
     return std::vector<int32_t>();
-  DCHECK(GetAnchor());
+  FML_DCHECK(GetAnchor());
 
   // Embedded object replacement characters are not represented in |kWordStarts|
   // attribute.
@@ -326,13 +327,13 @@ std::vector<int32_t> AXNodePosition::GetWordStartOffsets() const {
     return {0};
 
   return GetAnchor()->data().GetIntListAttribute(
-      ax::mojom::IntListAttribute::kWordStarts);
+      ax::IntListAttribute::kWordStarts);
 }
 
 std::vector<int32_t> AXNodePosition::GetWordEndOffsets() const {
   if (IsNullPosition())
     return std::vector<int32_t>();
-  DCHECK(GetAnchor());
+  FML_DCHECK(GetAnchor());
 
   // Embedded object replacement characters are not represented in |kWordEnds|
   // attribute. Since the whole text exposed inside of an embedded object is of
@@ -344,7 +345,7 @@ std::vector<int32_t> AXNodePosition::GetWordEndOffsets() const {
     return {1};
 
   return GetAnchor()->data().GetIntListAttribute(
-      ax::mojom::IntListAttribute::kWordEnds);
+      ax::IntListAttribute::kWordEnds);
 }
 
 AXNode::AXID AXNodePosition::GetNextOnLineID(AXNode::AXID node_id) const {
@@ -352,8 +353,8 @@ AXNode::AXID AXNodePosition::GetNextOnLineID(AXNode::AXID node_id) const {
     return AXNode::kInvalidAXID;
   AXNode* node = GetNodeInTree(tree_id(), node_id);
   int next_on_line_id;
-  if (!node || !node->data().GetIntAttribute(
-                   ax::mojom::IntAttribute::kNextOnLineId, &next_on_line_id)) {
+  if (!node || !node->data().GetIntAttribute(ax::IntAttribute::kNextOnLineId,
+                                             &next_on_line_id)) {
     return AXNode::kInvalidAXID;
   }
   return static_cast<AXNode::AXID>(next_on_line_id);
@@ -364,9 +365,8 @@ AXNode::AXID AXNodePosition::GetPreviousOnLineID(AXNode::AXID node_id) const {
     return AXNode::kInvalidAXID;
   AXNode* node = GetNodeInTree(tree_id(), node_id);
   int previous_on_line_id;
-  if (!node ||
-      !node->data().GetIntAttribute(ax::mojom::IntAttribute::kPreviousOnLineId,
-                                    &previous_on_line_id)) {
+  if (!node || !node->data().GetIntAttribute(
+                   ax::IntAttribute::kPreviousOnLineId, &previous_on_line_id)) {
     return AXNode::kInvalidAXID;
   }
   return static_cast<AXNode::AXID>(previous_on_line_id);
@@ -376,8 +376,8 @@ AXNode* AXNodePosition::GetParent(AXNode* child,
                                   AXTreeID child_tree_id,
                                   AXTreeID* parent_tree_id,
                                   AXNode::AXID* parent_id) {
-  DCHECK(parent_tree_id);
-  DCHECK(parent_id);
+  FML_DCHECK(parent_tree_id);
+  FML_DCHECK(parent_id);
 
   *parent_tree_id = AXTreeIDUnknown();
   *parent_id = AXNode::kInvalidAXID;
@@ -406,4 +406,4 @@ AXNode* AXNodePosition::GetParent(AXNode* child,
   return parent;
 }
 
-}  // namespace ui
+}  // namespace ax

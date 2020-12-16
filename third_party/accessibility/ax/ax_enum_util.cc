@@ -2,2990 +2,2954 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_enum_util.h"
+#include "ax_enum_util.h"
 
-#include "ui/accessibility/ax_enums.mojom.h"
+namespace ax {
 
-#include "ui/base/l10n/l10n_util.h"
-#include "ui/strings/grit/ui_strings.h"
-
-namespace ui {
-
-const char* ToString(ax::mojom::Event event) {
+const char* ToString(ax::Event event) {
   switch (event) {
-    case ax::mojom::Event::kNone:
+    case ax::Event::kNone:
       return "none";
-    case ax::mojom::Event::kActiveDescendantChanged:
+    case ax::Event::kActiveDescendantChanged:
       return "activedescendantchanged";
-    case ax::mojom::Event::kAlert:
+    case ax::Event::kAlert:
       return "alert";
-    case ax::mojom::Event::kAriaAttributeChanged:
+    case ax::Event::kAriaAttributeChanged:
       return "ariaAttributeChanged";
-    case ax::mojom::Event::kAutocorrectionOccured:
+    case ax::Event::kAutocorrectionOccured:
       return "autocorrectionOccured";
-    case ax::mojom::Event::kBlur:
+    case ax::Event::kBlur:
       return "blur";
-    case ax::mojom::Event::kCheckedStateChanged:
+    case ax::Event::kCheckedStateChanged:
       return "checkedStateChanged";
-    case ax::mojom::Event::kChildrenChanged:
+    case ax::Event::kChildrenChanged:
       return "childrenChanged";
-    case ax::mojom::Event::kClicked:
+    case ax::Event::kClicked:
       return "clicked";
-    case ax::mojom::Event::kControlsChanged:
+    case ax::Event::kControlsChanged:
       return "controlsChanged";
-    case ax::mojom::Event::kDocumentSelectionChanged:
+    case ax::Event::kDocumentSelectionChanged:
       return "documentSelectionChanged";
-    case ax::mojom::Event::kDocumentTitleChanged:
+    case ax::Event::kDocumentTitleChanged:
       return "documentTitleChanged";
-    case ax::mojom::Event::kEndOfTest:
+    case ax::Event::kEndOfTest:
       return "endOfTest";
-    case ax::mojom::Event::kExpandedChanged:
+    case ax::Event::kExpandedChanged:
       return "expandedChanged";
-    case ax::mojom::Event::kFocus:
+    case ax::Event::kFocus:
       return "focus";
-    case ax::mojom::Event::kFocusAfterMenuClose:
+    case ax::Event::kFocusAfterMenuClose:
       return "focusAfterMenuClose";
-    case ax::mojom::Event::kFocusContext:
+    case ax::Event::kFocusContext:
       return "focusContext";
-    case ax::mojom::Event::kHide:
+    case ax::Event::kHide:
       return "hide";
-    case ax::mojom::Event::kHitTestResult:
+    case ax::Event::kHitTestResult:
       return "hitTestResult";
-    case ax::mojom::Event::kHover:
+    case ax::Event::kHover:
       return "hover";
-    case ax::mojom::Event::kImageFrameUpdated:
+    case ax::Event::kImageFrameUpdated:
       return "imageFrameUpdated";
-    case ax::mojom::Event::kInvalidStatusChanged:
+    case ax::Event::kInvalidStatusChanged:
       return "invalidStatusChanged";
-    case ax::mojom::Event::kLayoutComplete:
+    case ax::Event::kLayoutComplete:
       return "layoutComplete";
-    case ax::mojom::Event::kLiveRegionCreated:
+    case ax::Event::kLiveRegionCreated:
       return "liveRegionCreated";
-    case ax::mojom::Event::kLiveRegionChanged:
+    case ax::Event::kLiveRegionChanged:
       return "liveRegionChanged";
-    case ax::mojom::Event::kLoadComplete:
+    case ax::Event::kLoadComplete:
       return "loadComplete";
-    case ax::mojom::Event::kLoadStart:
+    case ax::Event::kLoadStart:
       return "loadStart";
-    case ax::mojom::Event::kLocationChanged:
+    case ax::Event::kLocationChanged:
       return "locationChanged";
-    case ax::mojom::Event::kMediaStartedPlaying:
+    case ax::Event::kMediaStartedPlaying:
       return "mediaStartedPlaying";
-    case ax::mojom::Event::kMediaStoppedPlaying:
+    case ax::Event::kMediaStoppedPlaying:
       return "mediaStoppedPlaying";
-    case ax::mojom::Event::kMenuEnd:
+    case ax::Event::kMenuEnd:
       return "menuEnd";
-    case ax::mojom::Event::kMenuListItemSelected:
+    case ax::Event::kMenuListItemSelected:
       return "menuListItemSelected";
-    case ax::mojom::Event::kMenuListValueChanged:
+    case ax::Event::kMenuListValueChanged:
       return "menuListValueChanged";
-    case ax::mojom::Event::kMenuPopupEnd:
+    case ax::Event::kMenuPopupEnd:
       return "menuPopupEnd";
-    case ax::mojom::Event::kMenuPopupStart:
+    case ax::Event::kMenuPopupStart:
       return "menuPopupStart";
-    case ax::mojom::Event::kMenuStart:
+    case ax::Event::kMenuStart:
       return "menuStart";
-    case ax::mojom::Event::kMouseCanceled:
+    case ax::Event::kMouseCanceled:
       return "mouseCanceled";
-    case ax::mojom::Event::kMouseDragged:
+    case ax::Event::kMouseDragged:
       return "mouseDragged";
-    case ax::mojom::Event::kMouseMoved:
+    case ax::Event::kMouseMoved:
       return "mouseMoved";
-    case ax::mojom::Event::kMousePressed:
+    case ax::Event::kMousePressed:
       return "mousePressed";
-    case ax::mojom::Event::kMouseReleased:
+    case ax::Event::kMouseReleased:
       return "mouseReleased";
-    case ax::mojom::Event::kRowCollapsed:
+    case ax::Event::kRowCollapsed:
       return "rowCollapsed";
-    case ax::mojom::Event::kRowCountChanged:
+    case ax::Event::kRowCountChanged:
       return "rowCountChanged";
-    case ax::mojom::Event::kRowExpanded:
+    case ax::Event::kRowExpanded:
       return "rowExpanded";
-    case ax::mojom::Event::kScrollPositionChanged:
+    case ax::Event::kScrollPositionChanged:
       return "scrollPositionChanged";
-    case ax::mojom::Event::kScrolledToAnchor:
+    case ax::Event::kScrolledToAnchor:
       return "scrolledToAnchor";
-    case ax::mojom::Event::kSelectedChildrenChanged:
+    case ax::Event::kSelectedChildrenChanged:
       return "selectedChildrenChanged";
-    case ax::mojom::Event::kSelection:
+    case ax::Event::kSelection:
       return "selection";
-    case ax::mojom::Event::kSelectionAdd:
+    case ax::Event::kSelectionAdd:
       return "selectionAdd";
-    case ax::mojom::Event::kSelectionRemove:
+    case ax::Event::kSelectionRemove:
       return "selectionRemove";
-    case ax::mojom::Event::kShow:
+    case ax::Event::kShow:
       return "show";
-    case ax::mojom::Event::kStateChanged:
+    case ax::Event::kStateChanged:
       return "stateChanged";
-    case ax::mojom::Event::kTextChanged:
+    case ax::Event::kTextChanged:
       return "textChanged";
-    case ax::mojom::Event::kTextSelectionChanged:
+    case ax::Event::kTextSelectionChanged:
       return "textSelectionChanged";
-    case ax::mojom::Event::kTooltipClosed:
+    case ax::Event::kTooltipClosed:
       return "tooltipClosed";
-    case ax::mojom::Event::kTooltipOpened:
+    case ax::Event::kTooltipOpened:
       return "tooltipOpened";
-    case ax::mojom::Event::kWindowActivated:
+    case ax::Event::kWindowActivated:
       return "windowActivated";
-    case ax::mojom::Event::kWindowDeactivated:
+    case ax::Event::kWindowDeactivated:
       return "windowDeactivated";
-    case ax::mojom::Event::kWindowVisibilityChanged:
+    case ax::Event::kWindowVisibilityChanged:
       return "windowVisibilityChanged";
-    case ax::mojom::Event::kTreeChanged:
+    case ax::Event::kTreeChanged:
       return "treeChanged";
-    case ax::mojom::Event::kValueChanged:
+    case ax::Event::kValueChanged:
       return "valueChanged";
   }
 
   return "";
 }
 
-ax::mojom::Event ParseEvent(const char* event) {
+ax::Event ParseEvent(const char* event) {
   if (0 == strcmp(event, "none"))
-    return ax::mojom::Event::kNone;
+    return ax::Event::kNone;
   if (0 == strcmp(event, "activedescendantchanged"))
-    return ax::mojom::Event::kActiveDescendantChanged;
+    return ax::Event::kActiveDescendantChanged;
   if (0 == strcmp(event, "alert"))
-    return ax::mojom::Event::kAlert;
+    return ax::Event::kAlert;
   if (0 == strcmp(event, "ariaAttributeChanged"))
-    return ax::mojom::Event::kAriaAttributeChanged;
+    return ax::Event::kAriaAttributeChanged;
   if (0 == strcmp(event, "autocorrectionOccured"))
-    return ax::mojom::Event::kAutocorrectionOccured;
+    return ax::Event::kAutocorrectionOccured;
   if (0 == strcmp(event, "blur"))
-    return ax::mojom::Event::kBlur;
+    return ax::Event::kBlur;
   if (0 == strcmp(event, "checkedStateChanged"))
-    return ax::mojom::Event::kCheckedStateChanged;
+    return ax::Event::kCheckedStateChanged;
   if (0 == strcmp(event, "childrenChanged"))
-    return ax::mojom::Event::kChildrenChanged;
+    return ax::Event::kChildrenChanged;
   if (0 == strcmp(event, "clicked"))
-    return ax::mojom::Event::kClicked;
+    return ax::Event::kClicked;
   if (0 == strcmp(event, "controlsChanged"))
-    return ax::mojom::Event::kControlsChanged;
+    return ax::Event::kControlsChanged;
   if (0 == strcmp(event, "documentSelectionChanged"))
-    return ax::mojom::Event::kDocumentSelectionChanged;
+    return ax::Event::kDocumentSelectionChanged;
   if (0 == strcmp(event, "documentTitleChanged"))
-    return ax::mojom::Event::kDocumentTitleChanged;
+    return ax::Event::kDocumentTitleChanged;
   if (0 == strcmp(event, "endOfTest"))
-    return ax::mojom::Event::kEndOfTest;
+    return ax::Event::kEndOfTest;
   if (0 == strcmp(event, "expandedChanged"))
-    return ax::mojom::Event::kExpandedChanged;
+    return ax::Event::kExpandedChanged;
   if (0 == strcmp(event, "focus"))
-    return ax::mojom::Event::kFocus;
+    return ax::Event::kFocus;
   if (0 == strcmp(event, "focusAfterMenuClose"))
-    return ax::mojom::Event::kFocusAfterMenuClose;
+    return ax::Event::kFocusAfterMenuClose;
   if (0 == strcmp(event, "focusContext"))
-    return ax::mojom::Event::kFocusContext;
+    return ax::Event::kFocusContext;
   if (0 == strcmp(event, "hide"))
-    return ax::mojom::Event::kHide;
+    return ax::Event::kHide;
   if (0 == strcmp(event, "hitTestResult"))
-    return ax::mojom::Event::kHitTestResult;
+    return ax::Event::kHitTestResult;
   if (0 == strcmp(event, "hover"))
-    return ax::mojom::Event::kHover;
+    return ax::Event::kHover;
   if (0 == strcmp(event, "imageFrameUpdated"))
-    return ax::mojom::Event::kImageFrameUpdated;
+    return ax::Event::kImageFrameUpdated;
   if (0 == strcmp(event, "invalidStatusChanged"))
-    return ax::mojom::Event::kInvalidStatusChanged;
+    return ax::Event::kInvalidStatusChanged;
   if (0 == strcmp(event, "layoutComplete"))
-    return ax::mojom::Event::kLayoutComplete;
+    return ax::Event::kLayoutComplete;
   if (0 == strcmp(event, "liveRegionCreated"))
-    return ax::mojom::Event::kLiveRegionCreated;
+    return ax::Event::kLiveRegionCreated;
   if (0 == strcmp(event, "liveRegionChanged"))
-    return ax::mojom::Event::kLiveRegionChanged;
+    return ax::Event::kLiveRegionChanged;
   if (0 == strcmp(event, "loadComplete"))
-    return ax::mojom::Event::kLoadComplete;
+    return ax::Event::kLoadComplete;
   if (0 == strcmp(event, "loadStart"))
-    return ax::mojom::Event::kLoadStart;
+    return ax::Event::kLoadStart;
   if (0 == strcmp(event, "locationChanged"))
-    return ax::mojom::Event::kLocationChanged;
+    return ax::Event::kLocationChanged;
   if (0 == strcmp(event, "mediaStartedPlaying"))
-    return ax::mojom::Event::kMediaStartedPlaying;
+    return ax::Event::kMediaStartedPlaying;
   if (0 == strcmp(event, "mediaStoppedPlaying"))
-    return ax::mojom::Event::kMediaStoppedPlaying;
+    return ax::Event::kMediaStoppedPlaying;
   if (0 == strcmp(event, "menuEnd"))
-    return ax::mojom::Event::kMenuEnd;
+    return ax::Event::kMenuEnd;
   if (0 == strcmp(event, "menuListItemSelected"))
-    return ax::mojom::Event::kMenuListItemSelected;
+    return ax::Event::kMenuListItemSelected;
   if (0 == strcmp(event, "menuListValueChanged"))
-    return ax::mojom::Event::kMenuListValueChanged;
+    return ax::Event::kMenuListValueChanged;
   if (0 == strcmp(event, "menuPopupEnd"))
-    return ax::mojom::Event::kMenuPopupEnd;
+    return ax::Event::kMenuPopupEnd;
   if (0 == strcmp(event, "menuPopupStart"))
-    return ax::mojom::Event::kMenuPopupStart;
+    return ax::Event::kMenuPopupStart;
   if (0 == strcmp(event, "menuStart"))
-    return ax::mojom::Event::kMenuStart;
+    return ax::Event::kMenuStart;
   if (0 == strcmp(event, "mouseCanceled"))
-    return ax::mojom::Event::kMouseCanceled;
+    return ax::Event::kMouseCanceled;
   if (0 == strcmp(event, "mouseDragged"))
-    return ax::mojom::Event::kMouseDragged;
+    return ax::Event::kMouseDragged;
   if (0 == strcmp(event, "mouseMoved"))
-    return ax::mojom::Event::kMouseMoved;
+    return ax::Event::kMouseMoved;
   if (0 == strcmp(event, "mousePressed"))
-    return ax::mojom::Event::kMousePressed;
+    return ax::Event::kMousePressed;
   if (0 == strcmp(event, "mouseReleased"))
-    return ax::mojom::Event::kMouseReleased;
+    return ax::Event::kMouseReleased;
   if (0 == strcmp(event, "rowCollapsed"))
-    return ax::mojom::Event::kRowCollapsed;
+    return ax::Event::kRowCollapsed;
   if (0 == strcmp(event, "rowCountChanged"))
-    return ax::mojom::Event::kRowCountChanged;
+    return ax::Event::kRowCountChanged;
   if (0 == strcmp(event, "rowExpanded"))
-    return ax::mojom::Event::kRowExpanded;
+    return ax::Event::kRowExpanded;
   if (0 == strcmp(event, "scrollPositionChanged"))
-    return ax::mojom::Event::kScrollPositionChanged;
+    return ax::Event::kScrollPositionChanged;
   if (0 == strcmp(event, "scrolledToAnchor"))
-    return ax::mojom::Event::kScrolledToAnchor;
+    return ax::Event::kScrolledToAnchor;
   if (0 == strcmp(event, "selectedChildrenChanged"))
-    return ax::mojom::Event::kSelectedChildrenChanged;
+    return ax::Event::kSelectedChildrenChanged;
   if (0 == strcmp(event, "selection"))
-    return ax::mojom::Event::kSelection;
+    return ax::Event::kSelection;
   if (0 == strcmp(event, "selectionAdd"))
-    return ax::mojom::Event::kSelectionAdd;
+    return ax::Event::kSelectionAdd;
   if (0 == strcmp(event, "selectionRemove"))
-    return ax::mojom::Event::kSelectionRemove;
+    return ax::Event::kSelectionRemove;
   if (0 == strcmp(event, "show"))
-    return ax::mojom::Event::kShow;
+    return ax::Event::kShow;
   if (0 == strcmp(event, "stateChanged"))
-    return ax::mojom::Event::kStateChanged;
+    return ax::Event::kStateChanged;
   if (0 == strcmp(event, "textChanged"))
-    return ax::mojom::Event::kTextChanged;
+    return ax::Event::kTextChanged;
   if (0 == strcmp(event, "textSelectionChanged"))
-    return ax::mojom::Event::kTextSelectionChanged;
+    return ax::Event::kTextSelectionChanged;
   if (0 == strcmp(event, "tooltipClosed"))
-    return ax::mojom::Event::kTooltipClosed;
+    return ax::Event::kTooltipClosed;
   if (0 == strcmp(event, "tooltipOpened"))
-    return ax::mojom::Event::kTooltipOpened;
+    return ax::Event::kTooltipOpened;
   if (0 == strcmp(event, "windowActivated"))
-    return ax::mojom::Event::kWindowActivated;
+    return ax::Event::kWindowActivated;
   if (0 == strcmp(event, "windowDeactivated"))
-    return ax::mojom::Event::kWindowDeactivated;
+    return ax::Event::kWindowDeactivated;
   if (0 == strcmp(event, "windowVisibilityChanged"))
-    return ax::mojom::Event::kWindowVisibilityChanged;
+    return ax::Event::kWindowVisibilityChanged;
   if (0 == strcmp(event, "treeChanged"))
-    return ax::mojom::Event::kTreeChanged;
+    return ax::Event::kTreeChanged;
   if (0 == strcmp(event, "valueChanged"))
-    return ax::mojom::Event::kValueChanged;
-  return ax::mojom::Event::kNone;
+    return ax::Event::kValueChanged;
+  return ax::Event::kNone;
 }
 
-const char* ToString(ax::mojom::Role role) {
+const char* ToString(ax::Role role) {
   switch (role) {
-    case ax::mojom::Role::kNone:
+    case ax::Role::kNone:
       return "none";
-    case ax::mojom::Role::kAbbr:
+    case ax::Role::kAbbr:
       return "abbr";
-    case ax::mojom::Role::kAlertDialog:
+    case ax::Role::kAlertDialog:
       return "alertDialog";
-    case ax::mojom::Role::kAlert:
+    case ax::Role::kAlert:
       return "alert";
-    case ax::mojom::Role::kAnchor:
+    case ax::Role::kAnchor:
       return "anchor";
-    case ax::mojom::Role::kApplication:
+    case ax::Role::kApplication:
       return "application";
-    case ax::mojom::Role::kArticle:
+    case ax::Role::kArticle:
       return "article";
-    case ax::mojom::Role::kAudio:
+    case ax::Role::kAudio:
       return "audio";
-    case ax::mojom::Role::kBanner:
+    case ax::Role::kBanner:
       return "banner";
-    case ax::mojom::Role::kBlockquote:
+    case ax::Role::kBlockquote:
       return "blockquote";
-    case ax::mojom::Role::kButton:
+    case ax::Role::kButton:
       return "button";
-    case ax::mojom::Role::kCanvas:
+    case ax::Role::kCanvas:
       return "canvas";
-    case ax::mojom::Role::kCaption:
+    case ax::Role::kCaption:
       return "caption";
-    case ax::mojom::Role::kCaret:
+    case ax::Role::kCaret:
       return "caret";
-    case ax::mojom::Role::kCell:
+    case ax::Role::kCell:
       return "cell";
-    case ax::mojom::Role::kCheckBox:
+    case ax::Role::kCheckBox:
       return "checkBox";
-    case ax::mojom::Role::kClient:
+    case ax::Role::kClient:
       return "client";
-    case ax::mojom::Role::kCode:
+    case ax::Role::kCode:
       return "code";
-    case ax::mojom::Role::kColorWell:
+    case ax::Role::kColorWell:
       return "colorWell";
-    case ax::mojom::Role::kColumnHeader:
+    case ax::Role::kColumnHeader:
       return "columnHeader";
-    case ax::mojom::Role::kColumn:
+    case ax::Role::kColumn:
       return "column";
-    case ax::mojom::Role::kComboBoxGrouping:
+    case ax::Role::kComboBoxGrouping:
       return "comboBoxGrouping";
-    case ax::mojom::Role::kComboBoxMenuButton:
+    case ax::Role::kComboBoxMenuButton:
       return "comboBoxMenuButton";
-    case ax::mojom::Role::kComment:
+    case ax::Role::kComment:
       return "comment";
-    case ax::mojom::Role::kComplementary:
+    case ax::Role::kComplementary:
       return "complementary";
-    case ax::mojom::Role::kContentDeletion:
+    case ax::Role::kContentDeletion:
       return "contentDeletion";
-    case ax::mojom::Role::kContentInsertion:
+    case ax::Role::kContentInsertion:
       return "contentInsertion";
-    case ax::mojom::Role::kContentInfo:
+    case ax::Role::kContentInfo:
       return "contentInfo";
-    case ax::mojom::Role::kDate:
+    case ax::Role::kDate:
       return "date";
-    case ax::mojom::Role::kDateTime:
+    case ax::Role::kDateTime:
       return "dateTime";
-    case ax::mojom::Role::kDefinition:
+    case ax::Role::kDefinition:
       return "definition";
-    case ax::mojom::Role::kDescriptionListDetail:
+    case ax::Role::kDescriptionListDetail:
       return "descriptionListDetail";
-    case ax::mojom::Role::kDescriptionList:
+    case ax::Role::kDescriptionList:
       return "descriptionList";
-    case ax::mojom::Role::kDescriptionListTerm:
+    case ax::Role::kDescriptionListTerm:
       return "descriptionListTerm";
-    case ax::mojom::Role::kDesktop:
+    case ax::Role::kDesktop:
       return "desktop";
-    case ax::mojom::Role::kDetails:
+    case ax::Role::kDetails:
       return "details";
-    case ax::mojom::Role::kDialog:
+    case ax::Role::kDialog:
       return "dialog";
-    case ax::mojom::Role::kDirectory:
+    case ax::Role::kDirectory:
       return "directory";
-    case ax::mojom::Role::kDisclosureTriangle:
+    case ax::Role::kDisclosureTriangle:
       return "disclosureTriangle";
-    case ax::mojom::Role::kDocAbstract:
+    case ax::Role::kDocAbstract:
       return "docAbstract";
-    case ax::mojom::Role::kDocAcknowledgments:
+    case ax::Role::kDocAcknowledgments:
       return "docAcknowledgments";
-    case ax::mojom::Role::kDocAfterword:
+    case ax::Role::kDocAfterword:
       return "docAfterword";
-    case ax::mojom::Role::kDocAppendix:
+    case ax::Role::kDocAppendix:
       return "docAppendix";
-    case ax::mojom::Role::kDocBackLink:
+    case ax::Role::kDocBackLink:
       return "docBackLink";
-    case ax::mojom::Role::kDocBiblioEntry:
+    case ax::Role::kDocBiblioEntry:
       return "docBiblioEntry";
-    case ax::mojom::Role::kDocBibliography:
+    case ax::Role::kDocBibliography:
       return "docBibliography";
-    case ax::mojom::Role::kDocBiblioRef:
+    case ax::Role::kDocBiblioRef:
       return "docBiblioRef";
-    case ax::mojom::Role::kDocChapter:
+    case ax::Role::kDocChapter:
       return "docChapter";
-    case ax::mojom::Role::kDocColophon:
+    case ax::Role::kDocColophon:
       return "docColophon";
-    case ax::mojom::Role::kDocConclusion:
+    case ax::Role::kDocConclusion:
       return "docConclusion";
-    case ax::mojom::Role::kDocCover:
+    case ax::Role::kDocCover:
       return "docCover";
-    case ax::mojom::Role::kDocCredit:
+    case ax::Role::kDocCredit:
       return "docCredit";
-    case ax::mojom::Role::kDocCredits:
+    case ax::Role::kDocCredits:
       return "docCredits";
-    case ax::mojom::Role::kDocDedication:
+    case ax::Role::kDocDedication:
       return "docDedication";
-    case ax::mojom::Role::kDocEndnote:
+    case ax::Role::kDocEndnote:
       return "docEndnote";
-    case ax::mojom::Role::kDocEndnotes:
+    case ax::Role::kDocEndnotes:
       return "docEndnotes";
-    case ax::mojom::Role::kDocEpigraph:
+    case ax::Role::kDocEpigraph:
       return "docEpigraph";
-    case ax::mojom::Role::kDocEpilogue:
+    case ax::Role::kDocEpilogue:
       return "docEpilogue";
-    case ax::mojom::Role::kDocErrata:
+    case ax::Role::kDocErrata:
       return "docErrata";
-    case ax::mojom::Role::kDocExample:
+    case ax::Role::kDocExample:
       return "docExample";
-    case ax::mojom::Role::kDocFootnote:
+    case ax::Role::kDocFootnote:
       return "docFootnote";
-    case ax::mojom::Role::kDocForeword:
+    case ax::Role::kDocForeword:
       return "docForeword";
-    case ax::mojom::Role::kDocGlossary:
+    case ax::Role::kDocGlossary:
       return "docGlossary";
-    case ax::mojom::Role::kDocGlossRef:
+    case ax::Role::kDocGlossRef:
       return "docGlossref";
-    case ax::mojom::Role::kDocIndex:
+    case ax::Role::kDocIndex:
       return "docIndex";
-    case ax::mojom::Role::kDocIntroduction:
+    case ax::Role::kDocIntroduction:
       return "docIntroduction";
-    case ax::mojom::Role::kDocNoteRef:
+    case ax::Role::kDocNoteRef:
       return "docNoteRef";
-    case ax::mojom::Role::kDocNotice:
+    case ax::Role::kDocNotice:
       return "docNotice";
-    case ax::mojom::Role::kDocPageBreak:
+    case ax::Role::kDocPageBreak:
       return "docPageBreak";
-    case ax::mojom::Role::kDocPageList:
+    case ax::Role::kDocPageList:
       return "docPageList";
-    case ax::mojom::Role::kDocPart:
+    case ax::Role::kDocPart:
       return "docPart";
-    case ax::mojom::Role::kDocPreface:
+    case ax::Role::kDocPreface:
       return "docPreface";
-    case ax::mojom::Role::kDocPrologue:
+    case ax::Role::kDocPrologue:
       return "docPrologue";
-    case ax::mojom::Role::kDocPullquote:
+    case ax::Role::kDocPullquote:
       return "docPullquote";
-    case ax::mojom::Role::kDocQna:
+    case ax::Role::kDocQna:
       return "docQna";
-    case ax::mojom::Role::kDocSubtitle:
+    case ax::Role::kDocSubtitle:
       return "docSubtitle";
-    case ax::mojom::Role::kDocTip:
+    case ax::Role::kDocTip:
       return "docTip";
-    case ax::mojom::Role::kDocToc:
+    case ax::Role::kDocToc:
       return "docToc";
-    case ax::mojom::Role::kDocument:
+    case ax::Role::kDocument:
       return "document";
-    case ax::mojom::Role::kEmbeddedObject:
+    case ax::Role::kEmbeddedObject:
       return "embeddedObject";
-    case ax::mojom::Role::kEmphasis:
+    case ax::Role::kEmphasis:
       return "emphasis";
-    case ax::mojom::Role::kFeed:
+    case ax::Role::kFeed:
       return "feed";
-    case ax::mojom::Role::kFigcaption:
+    case ax::Role::kFigcaption:
       return "figcaption";
-    case ax::mojom::Role::kFigure:
+    case ax::Role::kFigure:
       return "figure";
-    case ax::mojom::Role::kFooter:
+    case ax::Role::kFooter:
       return "footer";
-    case ax::mojom::Role::kFooterAsNonLandmark:
+    case ax::Role::kFooterAsNonLandmark:
       return "footerAsNonLandmark";
-    case ax::mojom::Role::kForm:
+    case ax::Role::kForm:
       return "form";
-    case ax::mojom::Role::kGenericContainer:
+    case ax::Role::kGenericContainer:
       return "genericContainer";
-    case ax::mojom::Role::kGraphicsDocument:
+    case ax::Role::kGraphicsDocument:
       return "graphicsDocument";
-    case ax::mojom::Role::kGraphicsObject:
+    case ax::Role::kGraphicsObject:
       return "graphicsObject";
-    case ax::mojom::Role::kGraphicsSymbol:
+    case ax::Role::kGraphicsSymbol:
       return "graphicsSymbol";
-    case ax::mojom::Role::kGrid:
+    case ax::Role::kGrid:
       return "grid";
-    case ax::mojom::Role::kGroup:
+    case ax::Role::kGroup:
       return "group";
-    case ax::mojom::Role::kHeader:
+    case ax::Role::kHeader:
       return "header";
-    case ax::mojom::Role::kHeaderAsNonLandmark:
+    case ax::Role::kHeaderAsNonLandmark:
       return "headerAsNonLandmark";
-    case ax::mojom::Role::kHeading:
+    case ax::Role::kHeading:
       return "heading";
-    case ax::mojom::Role::kIframe:
+    case ax::Role::kIframe:
       return "iframe";
-    case ax::mojom::Role::kIframePresentational:
+    case ax::Role::kIframePresentational:
       return "iframePresentational";
-    case ax::mojom::Role::kIgnored:
+    case ax::Role::kIgnored:
       return "ignored";
-    case ax::mojom::Role::kImageMap:
+    case ax::Role::kImageMap:
       return "imageMap";
-    case ax::mojom::Role::kImage:
+    case ax::Role::kImage:
       return "image";
-    case ax::mojom::Role::kImeCandidate:
+    case ax::Role::kImeCandidate:
       return "imeCandidate";
-    case ax::mojom::Role::kInlineTextBox:
+    case ax::Role::kInlineTextBox:
       return "inlineTextBox";
-    case ax::mojom::Role::kInputTime:
+    case ax::Role::kInputTime:
       return "inputTime";
-    case ax::mojom::Role::kKeyboard:
+    case ax::Role::kKeyboard:
       return "keyboard";
-    case ax::mojom::Role::kLabelText:
+    case ax::Role::kLabelText:
       return "labelText";
-    case ax::mojom::Role::kLayoutTable:
+    case ax::Role::kLayoutTable:
       return "layoutTable";
-    case ax::mojom::Role::kLayoutTableCell:
+    case ax::Role::kLayoutTableCell:
       return "layoutTableCell";
-    case ax::mojom::Role::kLayoutTableRow:
+    case ax::Role::kLayoutTableRow:
       return "layoutTableRow";
-    case ax::mojom::Role::kLegend:
+    case ax::Role::kLegend:
       return "legend";
-    case ax::mojom::Role::kLineBreak:
+    case ax::Role::kLineBreak:
       return "lineBreak";
-    case ax::mojom::Role::kLink:
+    case ax::Role::kLink:
       return "link";
-    case ax::mojom::Role::kList:
+    case ax::Role::kList:
       return "list";
-    case ax::mojom::Role::kListBoxOption:
+    case ax::Role::kListBoxOption:
       return "listBoxOption";
-    case ax::mojom::Role::kListBox:
+    case ax::Role::kListBox:
       return "listBox";
-    case ax::mojom::Role::kListGrid:
+    case ax::Role::kListGrid:
       return "listGrid";
-    case ax::mojom::Role::kListItem:
+    case ax::Role::kListItem:
       return "listItem";
-    case ax::mojom::Role::kListMarker:
+    case ax::Role::kListMarker:
       return "listMarker";
-    case ax::mojom::Role::kLog:
+    case ax::Role::kLog:
       return "log";
-    case ax::mojom::Role::kMain:
+    case ax::Role::kMain:
       return "main";
-    case ax::mojom::Role::kMark:
+    case ax::Role::kMark:
       return "mark";
-    case ax::mojom::Role::kMarquee:
+    case ax::Role::kMarquee:
       return "marquee";
-    case ax::mojom::Role::kMath:
+    case ax::Role::kMath:
       return "math";
-    case ax::mojom::Role::kMenu:
+    case ax::Role::kMenu:
       return "menu";
-    case ax::mojom::Role::kMenuBar:
+    case ax::Role::kMenuBar:
       return "menuBar";
-    case ax::mojom::Role::kMenuItem:
+    case ax::Role::kMenuItem:
       return "menuItem";
-    case ax::mojom::Role::kMenuItemCheckBox:
+    case ax::Role::kMenuItemCheckBox:
       return "menuItemCheckBox";
-    case ax::mojom::Role::kMenuItemRadio:
+    case ax::Role::kMenuItemRadio:
       return "menuItemRadio";
-    case ax::mojom::Role::kMenuListOption:
+    case ax::Role::kMenuListOption:
       return "menuListOption";
-    case ax::mojom::Role::kMenuListPopup:
+    case ax::Role::kMenuListPopup:
       return "menuListPopup";
-    case ax::mojom::Role::kMeter:
+    case ax::Role::kMeter:
       return "meter";
-    case ax::mojom::Role::kNavigation:
+    case ax::Role::kNavigation:
       return "navigation";
-    case ax::mojom::Role::kNote:
+    case ax::Role::kNote:
       return "note";
-    case ax::mojom::Role::kPane:
+    case ax::Role::kPane:
       return "pane";
-    case ax::mojom::Role::kParagraph:
+    case ax::Role::kParagraph:
       return "paragraph";
-    case ax::mojom::Role::kPdfActionableHighlight:
+    case ax::Role::kPdfActionableHighlight:
       return "pdfActionableHighlight";
-    case ax::mojom::Role::kPluginObject:
+    case ax::Role::kPluginObject:
       return "pluginObject";
-    case ax::mojom::Role::kPopUpButton:
+    case ax::Role::kPopUpButton:
       return "popUpButton";
-    case ax::mojom::Role::kPortal:
+    case ax::Role::kPortal:
       return "portal";
-    case ax::mojom::Role::kPre:
+    case ax::Role::kPre:
       return "pre";
-    case ax::mojom::Role::kPresentational:
+    case ax::Role::kPresentational:
       return "presentational";
-    case ax::mojom::Role::kProgressIndicator:
+    case ax::Role::kProgressIndicator:
       return "progressIndicator";
-    case ax::mojom::Role::kRadioButton:
+    case ax::Role::kRadioButton:
       return "radioButton";
-    case ax::mojom::Role::kRadioGroup:
+    case ax::Role::kRadioGroup:
       return "radioGroup";
-    case ax::mojom::Role::kRegion:
+    case ax::Role::kRegion:
       return "region";
-    case ax::mojom::Role::kRootWebArea:
+    case ax::Role::kRootWebArea:
       return "rootWebArea";
-    case ax::mojom::Role::kRow:
+    case ax::Role::kRow:
       return "row";
-    case ax::mojom::Role::kRowGroup:
+    case ax::Role::kRowGroup:
       return "rowGroup";
-    case ax::mojom::Role::kRowHeader:
+    case ax::Role::kRowHeader:
       return "rowHeader";
-    case ax::mojom::Role::kRuby:
+    case ax::Role::kRuby:
       return "ruby";
-    case ax::mojom::Role::kRubyAnnotation:
+    case ax::Role::kRubyAnnotation:
       return "rubyAnnotation";
-    case ax::mojom::Role::kSection:
+    case ax::Role::kSection:
       return "section";
-    case ax::mojom::Role::kStrong:
+    case ax::Role::kStrong:
       return "strong";
-    case ax::mojom::Role::kSuggestion:
+    case ax::Role::kSuggestion:
       return "suggestion";
-    case ax::mojom::Role::kSvgRoot:
+    case ax::Role::kSvgRoot:
       return "svgRoot";
-    case ax::mojom::Role::kScrollBar:
+    case ax::Role::kScrollBar:
       return "scrollBar";
-    case ax::mojom::Role::kScrollView:
+    case ax::Role::kScrollView:
       return "scrollView";
-    case ax::mojom::Role::kSearch:
+    case ax::Role::kSearch:
       return "search";
-    case ax::mojom::Role::kSearchBox:
+    case ax::Role::kSearchBox:
       return "searchBox";
-    case ax::mojom::Role::kSlider:
+    case ax::Role::kSlider:
       return "slider";
-    case ax::mojom::Role::kSliderThumb:
+    case ax::Role::kSliderThumb:
       return "sliderThumb";
-    case ax::mojom::Role::kSpinButton:
+    case ax::Role::kSpinButton:
       return "spinButton";
-    case ax::mojom::Role::kSplitter:
+    case ax::Role::kSplitter:
       return "splitter";
-    case ax::mojom::Role::kStaticText:
+    case ax::Role::kStaticText:
       return "staticText";
-    case ax::mojom::Role::kStatus:
+    case ax::Role::kStatus:
       return "status";
-    case ax::mojom::Role::kSwitch:
+    case ax::Role::kSwitch:
       return "switch";
-    case ax::mojom::Role::kTabList:
+    case ax::Role::kTabList:
       return "tabList";
-    case ax::mojom::Role::kTabPanel:
+    case ax::Role::kTabPanel:
       return "tabPanel";
-    case ax::mojom::Role::kTab:
+    case ax::Role::kTab:
       return "tab";
-    case ax::mojom::Role::kTable:
+    case ax::Role::kTable:
       return "table";
-    case ax::mojom::Role::kTableHeaderContainer:
+    case ax::Role::kTableHeaderContainer:
       return "tableHeaderContainer";
-    case ax::mojom::Role::kTerm:
+    case ax::Role::kTerm:
       return "term";
-    case ax::mojom::Role::kTextField:
+    case ax::Role::kTextField:
       return "textField";
-    case ax::mojom::Role::kTextFieldWithComboBox:
+    case ax::Role::kTextFieldWithComboBox:
       return "textFieldWithComboBox";
-    case ax::mojom::Role::kTime:
+    case ax::Role::kTime:
       return "time";
-    case ax::mojom::Role::kTimer:
+    case ax::Role::kTimer:
       return "timer";
-    case ax::mojom::Role::kTitleBar:
+    case ax::Role::kTitleBar:
       return "titleBar";
-    case ax::mojom::Role::kToggleButton:
+    case ax::Role::kToggleButton:
       return "toggleButton";
-    case ax::mojom::Role::kToolbar:
+    case ax::Role::kToolbar:
       return "toolbar";
-    case ax::mojom::Role::kTreeGrid:
+    case ax::Role::kTreeGrid:
       return "treeGrid";
-    case ax::mojom::Role::kTreeItem:
+    case ax::Role::kTreeItem:
       return "treeItem";
-    case ax::mojom::Role::kTree:
+    case ax::Role::kTree:
       return "tree";
-    case ax::mojom::Role::kUnknown:
+    case ax::Role::kUnknown:
       return "unknown";
-    case ax::mojom::Role::kTooltip:
+    case ax::Role::kTooltip:
       return "tooltip";
-    case ax::mojom::Role::kVideo:
+    case ax::Role::kVideo:
       return "video";
-    case ax::mojom::Role::kWebArea:
+    case ax::Role::kWebArea:
       return "webArea";
-    case ax::mojom::Role::kWebView:
+    case ax::Role::kWebView:
       return "webView";
-    case ax::mojom::Role::kWindow:
+    case ax::Role::kWindow:
       return "window";
   }
 
   return "";
 }
 
-ax::mojom::Role ParseRole(const char* role) {
+ax::Role ParseRole(const char* role) {
   if (0 == strcmp(role, "none"))
-    return ax::mojom::Role::kNone;
+    return ax::Role::kNone;
   if (0 == strcmp(role, "abbr"))
-    return ax::mojom::Role::kAbbr;
+    return ax::Role::kAbbr;
   if (0 == strcmp(role, "alertDialog"))
-    return ax::mojom::Role::kAlertDialog;
+    return ax::Role::kAlertDialog;
   if (0 == strcmp(role, "alert"))
-    return ax::mojom::Role::kAlert;
+    return ax::Role::kAlert;
   if (0 == strcmp(role, "anchor"))
-    return ax::mojom::Role::kAnchor;
+    return ax::Role::kAnchor;
   if (0 == strcmp(role, "application"))
-    return ax::mojom::Role::kApplication;
+    return ax::Role::kApplication;
   if (0 == strcmp(role, "article"))
-    return ax::mojom::Role::kArticle;
+    return ax::Role::kArticle;
   if (0 == strcmp(role, "audio"))
-    return ax::mojom::Role::kAudio;
+    return ax::Role::kAudio;
   if (0 == strcmp(role, "banner"))
-    return ax::mojom::Role::kBanner;
+    return ax::Role::kBanner;
   if (0 == strcmp(role, "blockquote"))
-    return ax::mojom::Role::kBlockquote;
+    return ax::Role::kBlockquote;
   if (0 == strcmp(role, "button"))
-    return ax::mojom::Role::kButton;
+    return ax::Role::kButton;
   if (0 == strcmp(role, "canvas"))
-    return ax::mojom::Role::kCanvas;
+    return ax::Role::kCanvas;
   if (0 == strcmp(role, "caption"))
-    return ax::mojom::Role::kCaption;
+    return ax::Role::kCaption;
   if (0 == strcmp(role, "caret"))
-    return ax::mojom::Role::kCaret;
+    return ax::Role::kCaret;
   if (0 == strcmp(role, "cell"))
-    return ax::mojom::Role::kCell;
+    return ax::Role::kCell;
   if (0 == strcmp(role, "checkBox"))
-    return ax::mojom::Role::kCheckBox;
+    return ax::Role::kCheckBox;
   if (0 == strcmp(role, "client"))
-    return ax::mojom::Role::kClient;
+    return ax::Role::kClient;
   if (0 == strcmp(role, "code"))
-    return ax::mojom::Role::kCode;
+    return ax::Role::kCode;
   if (0 == strcmp(role, "colorWell"))
-    return ax::mojom::Role::kColorWell;
+    return ax::Role::kColorWell;
   if (0 == strcmp(role, "columnHeader"))
-    return ax::mojom::Role::kColumnHeader;
+    return ax::Role::kColumnHeader;
   if (0 == strcmp(role, "column"))
-    return ax::mojom::Role::kColumn;
+    return ax::Role::kColumn;
   if (0 == strcmp(role, "comboBoxGrouping"))
-    return ax::mojom::Role::kComboBoxGrouping;
+    return ax::Role::kComboBoxGrouping;
   if (0 == strcmp(role, "comboBoxMenuButton"))
-    return ax::mojom::Role::kComboBoxMenuButton;
+    return ax::Role::kComboBoxMenuButton;
   if (0 == strcmp(role, "comment"))
-    return ax::mojom::Role::kComment;
+    return ax::Role::kComment;
   if (0 == strcmp(role, "complementary"))
-    return ax::mojom::Role::kComplementary;
+    return ax::Role::kComplementary;
   if (0 == strcmp(role, "contentDeletion"))
-    return ax::mojom::Role::kContentDeletion;
+    return ax::Role::kContentDeletion;
   if (0 == strcmp(role, "contentInsertion"))
-    return ax::mojom::Role::kContentInsertion;
+    return ax::Role::kContentInsertion;
   if (0 == strcmp(role, "contentInfo"))
-    return ax::mojom::Role::kContentInfo;
+    return ax::Role::kContentInfo;
   if (0 == strcmp(role, "date"))
-    return ax::mojom::Role::kDate;
+    return ax::Role::kDate;
   if (0 == strcmp(role, "dateTime"))
-    return ax::mojom::Role::kDateTime;
+    return ax::Role::kDateTime;
   if (0 == strcmp(role, "definition"))
-    return ax::mojom::Role::kDefinition;
+    return ax::Role::kDefinition;
   if (0 == strcmp(role, "descriptionListDetail"))
-    return ax::mojom::Role::kDescriptionListDetail;
+    return ax::Role::kDescriptionListDetail;
   if (0 == strcmp(role, "descriptionList"))
-    return ax::mojom::Role::kDescriptionList;
+    return ax::Role::kDescriptionList;
   if (0 == strcmp(role, "descriptionListTerm"))
-    return ax::mojom::Role::kDescriptionListTerm;
+    return ax::Role::kDescriptionListTerm;
   if (0 == strcmp(role, "desktop"))
-    return ax::mojom::Role::kDesktop;
+    return ax::Role::kDesktop;
   if (0 == strcmp(role, "details"))
-    return ax::mojom::Role::kDetails;
+    return ax::Role::kDetails;
   if (0 == strcmp(role, "dialog"))
-    return ax::mojom::Role::kDialog;
+    return ax::Role::kDialog;
   if (0 == strcmp(role, "directory"))
-    return ax::mojom::Role::kDirectory;
+    return ax::Role::kDirectory;
   if (0 == strcmp(role, "disclosureTriangle"))
-    return ax::mojom::Role::kDisclosureTriangle;
+    return ax::Role::kDisclosureTriangle;
   if (0 == strcmp(role, "docAbstract"))
-    return ax::mojom::Role::kDocAbstract;
+    return ax::Role::kDocAbstract;
   if (0 == strcmp(role, "docAcknowledgments"))
-    return ax::mojom::Role::kDocAcknowledgments;
+    return ax::Role::kDocAcknowledgments;
   if (0 == strcmp(role, "docAfterword"))
-    return ax::mojom::Role::kDocAfterword;
+    return ax::Role::kDocAfterword;
   if (0 == strcmp(role, "docAppendix"))
-    return ax::mojom::Role::kDocAppendix;
+    return ax::Role::kDocAppendix;
   if (0 == strcmp(role, "docBackLink"))
-    return ax::mojom::Role::kDocBackLink;
+    return ax::Role::kDocBackLink;
   if (0 == strcmp(role, "docBiblioEntry"))
-    return ax::mojom::Role::kDocBiblioEntry;
+    return ax::Role::kDocBiblioEntry;
   if (0 == strcmp(role, "docBibliography"))
-    return ax::mojom::Role::kDocBibliography;
+    return ax::Role::kDocBibliography;
   if (0 == strcmp(role, "docBiblioRef"))
-    return ax::mojom::Role::kDocBiblioRef;
+    return ax::Role::kDocBiblioRef;
   if (0 == strcmp(role, "docChapter"))
-    return ax::mojom::Role::kDocChapter;
+    return ax::Role::kDocChapter;
   if (0 == strcmp(role, "docColophon"))
-    return ax::mojom::Role::kDocColophon;
+    return ax::Role::kDocColophon;
   if (0 == strcmp(role, "docConclusion"))
-    return ax::mojom::Role::kDocConclusion;
+    return ax::Role::kDocConclusion;
   if (0 == strcmp(role, "docCover"))
-    return ax::mojom::Role::kDocCover;
+    return ax::Role::kDocCover;
   if (0 == strcmp(role, "docCredit"))
-    return ax::mojom::Role::kDocCredit;
+    return ax::Role::kDocCredit;
   if (0 == strcmp(role, "docCredits"))
-    return ax::mojom::Role::kDocCredits;
+    return ax::Role::kDocCredits;
   if (0 == strcmp(role, "docDedication"))
-    return ax::mojom::Role::kDocDedication;
+    return ax::Role::kDocDedication;
   if (0 == strcmp(role, "docEndnote"))
-    return ax::mojom::Role::kDocEndnote;
+    return ax::Role::kDocEndnote;
   if (0 == strcmp(role, "docEndnotes"))
-    return ax::mojom::Role::kDocEndnotes;
+    return ax::Role::kDocEndnotes;
   if (0 == strcmp(role, "docEpigraph"))
-    return ax::mojom::Role::kDocEpigraph;
+    return ax::Role::kDocEpigraph;
   if (0 == strcmp(role, "docEpilogue"))
-    return ax::mojom::Role::kDocEpilogue;
+    return ax::Role::kDocEpilogue;
   if (0 == strcmp(role, "docErrata"))
-    return ax::mojom::Role::kDocErrata;
+    return ax::Role::kDocErrata;
   if (0 == strcmp(role, "docExample"))
-    return ax::mojom::Role::kDocExample;
+    return ax::Role::kDocExample;
   if (0 == strcmp(role, "docFootnote"))
-    return ax::mojom::Role::kDocFootnote;
+    return ax::Role::kDocFootnote;
   if (0 == strcmp(role, "docForeword"))
-    return ax::mojom::Role::kDocForeword;
+    return ax::Role::kDocForeword;
   if (0 == strcmp(role, "docGlossary"))
-    return ax::mojom::Role::kDocGlossary;
+    return ax::Role::kDocGlossary;
   if (0 == strcmp(role, "docGlossref"))
-    return ax::mojom::Role::kDocGlossRef;
+    return ax::Role::kDocGlossRef;
   if (0 == strcmp(role, "docIndex"))
-    return ax::mojom::Role::kDocIndex;
+    return ax::Role::kDocIndex;
   if (0 == strcmp(role, "docIntroduction"))
-    return ax::mojom::Role::kDocIntroduction;
+    return ax::Role::kDocIntroduction;
   if (0 == strcmp(role, "docNoteRef"))
-    return ax::mojom::Role::kDocNoteRef;
+    return ax::Role::kDocNoteRef;
   if (0 == strcmp(role, "docNotice"))
-    return ax::mojom::Role::kDocNotice;
+    return ax::Role::kDocNotice;
   if (0 == strcmp(role, "docPageBreak"))
-    return ax::mojom::Role::kDocPageBreak;
+    return ax::Role::kDocPageBreak;
   if (0 == strcmp(role, "docPageList"))
-    return ax::mojom::Role::kDocPageList;
+    return ax::Role::kDocPageList;
   if (0 == strcmp(role, "docPart"))
-    return ax::mojom::Role::kDocPart;
+    return ax::Role::kDocPart;
   if (0 == strcmp(role, "docPreface"))
-    return ax::mojom::Role::kDocPreface;
+    return ax::Role::kDocPreface;
   if (0 == strcmp(role, "docPrologue"))
-    return ax::mojom::Role::kDocPrologue;
+    return ax::Role::kDocPrologue;
   if (0 == strcmp(role, "docPullquote"))
-    return ax::mojom::Role::kDocPullquote;
+    return ax::Role::kDocPullquote;
   if (0 == strcmp(role, "docQna"))
-    return ax::mojom::Role::kDocQna;
+    return ax::Role::kDocQna;
   if (0 == strcmp(role, "docSubtitle"))
-    return ax::mojom::Role::kDocSubtitle;
+    return ax::Role::kDocSubtitle;
   if (0 == strcmp(role, "docTip"))
-    return ax::mojom::Role::kDocTip;
+    return ax::Role::kDocTip;
   if (0 == strcmp(role, "docToc"))
-    return ax::mojom::Role::kDocToc;
+    return ax::Role::kDocToc;
   if (0 == strcmp(role, "document"))
-    return ax::mojom::Role::kDocument;
+    return ax::Role::kDocument;
   if (0 == strcmp(role, "embeddedObject"))
-    return ax::mojom::Role::kEmbeddedObject;
+    return ax::Role::kEmbeddedObject;
   if (0 == strcmp(role, "emphasis"))
-    return ax::mojom::Role::kEmphasis;
+    return ax::Role::kEmphasis;
   if (0 == strcmp(role, "feed"))
-    return ax::mojom::Role::kFeed;
+    return ax::Role::kFeed;
   if (0 == strcmp(role, "figcaption"))
-    return ax::mojom::Role::kFigcaption;
+    return ax::Role::kFigcaption;
   if (0 == strcmp(role, "figure"))
-    return ax::mojom::Role::kFigure;
+    return ax::Role::kFigure;
   if (0 == strcmp(role, "footer"))
-    return ax::mojom::Role::kFooter;
+    return ax::Role::kFooter;
   if (0 == strcmp(role, "footerAsNonLandmark"))
-    return ax::mojom::Role::kFooterAsNonLandmark;
+    return ax::Role::kFooterAsNonLandmark;
   if (0 == strcmp(role, "form"))
-    return ax::mojom::Role::kForm;
+    return ax::Role::kForm;
   if (0 == strcmp(role, "genericContainer"))
-    return ax::mojom::Role::kGenericContainer;
+    return ax::Role::kGenericContainer;
   if (0 == strcmp(role, "graphicsDocument"))
-    return ax::mojom::Role::kGraphicsDocument;
+    return ax::Role::kGraphicsDocument;
   if (0 == strcmp(role, "graphicsObject"))
-    return ax::mojom::Role::kGraphicsObject;
+    return ax::Role::kGraphicsObject;
   if (0 == strcmp(role, "graphicsSymbol"))
-    return ax::mojom::Role::kGraphicsSymbol;
+    return ax::Role::kGraphicsSymbol;
   if (0 == strcmp(role, "grid"))
-    return ax::mojom::Role::kGrid;
+    return ax::Role::kGrid;
   if (0 == strcmp(role, "group"))
-    return ax::mojom::Role::kGroup;
+    return ax::Role::kGroup;
   if (0 == strcmp(role, "heading"))
-    return ax::mojom::Role::kHeading;
+    return ax::Role::kHeading;
   if (0 == strcmp(role, "header"))
-    return ax::mojom::Role::kHeader;
+    return ax::Role::kHeader;
   if (0 == strcmp(role, "headerAsNonLandmark"))
-    return ax::mojom::Role::kHeaderAsNonLandmark;
+    return ax::Role::kHeaderAsNonLandmark;
   if (0 == strcmp(role, "pdfActionableHighlight"))
-    return ax::mojom::Role::kPdfActionableHighlight;
+    return ax::Role::kPdfActionableHighlight;
   if (0 == strcmp(role, "iframe"))
-    return ax::mojom::Role::kIframe;
+    return ax::Role::kIframe;
   if (0 == strcmp(role, "iframePresentational"))
-    return ax::mojom::Role::kIframePresentational;
+    return ax::Role::kIframePresentational;
   if (0 == strcmp(role, "ignored"))
-    return ax::mojom::Role::kIgnored;
+    return ax::Role::kIgnored;
   if (0 == strcmp(role, "imageMap"))
-    return ax::mojom::Role::kImageMap;
+    return ax::Role::kImageMap;
   if (0 == strcmp(role, "image"))
-    return ax::mojom::Role::kImage;
+    return ax::Role::kImage;
   if (0 == strcmp(role, "imeCandidate"))
-    return ax::mojom::Role::kImeCandidate;
+    return ax::Role::kImeCandidate;
   if (0 == strcmp(role, "inlineTextBox"))
-    return ax::mojom::Role::kInlineTextBox;
+    return ax::Role::kInlineTextBox;
   if (0 == strcmp(role, "inputTime"))
-    return ax::mojom::Role::kInputTime;
+    return ax::Role::kInputTime;
   if (0 == strcmp(role, "keyboard"))
-    return ax::mojom::Role::kKeyboard;
+    return ax::Role::kKeyboard;
   if (0 == strcmp(role, "labelText"))
-    return ax::mojom::Role::kLabelText;
+    return ax::Role::kLabelText;
   if (0 == strcmp(role, "layoutTable"))
-    return ax::mojom::Role::kLayoutTable;
+    return ax::Role::kLayoutTable;
   if (0 == strcmp(role, "layoutTableCell"))
-    return ax::mojom::Role::kLayoutTableCell;
+    return ax::Role::kLayoutTableCell;
   if (0 == strcmp(role, "layoutTableRow"))
-    return ax::mojom::Role::kLayoutTableRow;
+    return ax::Role::kLayoutTableRow;
   if (0 == strcmp(role, "legend"))
-    return ax::mojom::Role::kLegend;
+    return ax::Role::kLegend;
   if (0 == strcmp(role, "lineBreak"))
-    return ax::mojom::Role::kLineBreak;
+    return ax::Role::kLineBreak;
   if (0 == strcmp(role, "link"))
-    return ax::mojom::Role::kLink;
+    return ax::Role::kLink;
   if (0 == strcmp(role, "listBoxOption"))
-    return ax::mojom::Role::kListBoxOption;
+    return ax::Role::kListBoxOption;
   if (0 == strcmp(role, "listBox"))
-    return ax::mojom::Role::kListBox;
+    return ax::Role::kListBox;
   if (0 == strcmp(role, "listGrid"))
-    return ax::mojom::Role::kListGrid;
+    return ax::Role::kListGrid;
   if (0 == strcmp(role, "listItem"))
-    return ax::mojom::Role::kListItem;
+    return ax::Role::kListItem;
   if (0 == strcmp(role, "listMarker"))
-    return ax::mojom::Role::kListMarker;
+    return ax::Role::kListMarker;
   if (0 == strcmp(role, "list"))
-    return ax::mojom::Role::kList;
+    return ax::Role::kList;
   if (0 == strcmp(role, "log"))
-    return ax::mojom::Role::kLog;
+    return ax::Role::kLog;
   if (0 == strcmp(role, "main"))
-    return ax::mojom::Role::kMain;
+    return ax::Role::kMain;
   if (0 == strcmp(role, "mark"))
-    return ax::mojom::Role::kMark;
+    return ax::Role::kMark;
   if (0 == strcmp(role, "marquee"))
-    return ax::mojom::Role::kMarquee;
+    return ax::Role::kMarquee;
   if (0 == strcmp(role, "math"))
-    return ax::mojom::Role::kMath;
+    return ax::Role::kMath;
   if (0 == strcmp(role, "menu"))
-    return ax::mojom::Role::kMenu;
+    return ax::Role::kMenu;
   if (0 == strcmp(role, "menuBar"))
-    return ax::mojom::Role::kMenuBar;
+    return ax::Role::kMenuBar;
   if (0 == strcmp(role, "menuItem"))
-    return ax::mojom::Role::kMenuItem;
+    return ax::Role::kMenuItem;
   if (0 == strcmp(role, "menuItemCheckBox"))
-    return ax::mojom::Role::kMenuItemCheckBox;
+    return ax::Role::kMenuItemCheckBox;
   if (0 == strcmp(role, "menuItemRadio"))
-    return ax::mojom::Role::kMenuItemRadio;
+    return ax::Role::kMenuItemRadio;
   if (0 == strcmp(role, "menuListOption"))
-    return ax::mojom::Role::kMenuListOption;
+    return ax::Role::kMenuListOption;
   if (0 == strcmp(role, "menuListPopup"))
-    return ax::mojom::Role::kMenuListPopup;
+    return ax::Role::kMenuListPopup;
   if (0 == strcmp(role, "meter"))
-    return ax::mojom::Role::kMeter;
+    return ax::Role::kMeter;
   if (0 == strcmp(role, "navigation"))
-    return ax::mojom::Role::kNavigation;
+    return ax::Role::kNavigation;
   if (0 == strcmp(role, "note"))
-    return ax::mojom::Role::kNote;
+    return ax::Role::kNote;
   if (0 == strcmp(role, "pane"))
-    return ax::mojom::Role::kPane;
+    return ax::Role::kPane;
   if (0 == strcmp(role, "paragraph"))
-    return ax::mojom::Role::kParagraph;
+    return ax::Role::kParagraph;
   if (0 == strcmp(role, "pluginObject"))
-    return ax::mojom::Role::kPluginObject;
+    return ax::Role::kPluginObject;
   if (0 == strcmp(role, "popUpButton"))
-    return ax::mojom::Role::kPopUpButton;
+    return ax::Role::kPopUpButton;
   if (0 == strcmp(role, "portal"))
-    return ax::mojom::Role::kPortal;
+    return ax::Role::kPortal;
   if (0 == strcmp(role, "pre"))
-    return ax::mojom::Role::kPre;
+    return ax::Role::kPre;
   if (0 == strcmp(role, "presentational"))
-    return ax::mojom::Role::kPresentational;
+    return ax::Role::kPresentational;
   if (0 == strcmp(role, "progressIndicator"))
-    return ax::mojom::Role::kProgressIndicator;
+    return ax::Role::kProgressIndicator;
   if (0 == strcmp(role, "radioButton"))
-    return ax::mojom::Role::kRadioButton;
+    return ax::Role::kRadioButton;
   if (0 == strcmp(role, "radioGroup"))
-    return ax::mojom::Role::kRadioGroup;
+    return ax::Role::kRadioGroup;
   if (0 == strcmp(role, "region"))
-    return ax::mojom::Role::kRegion;
+    return ax::Role::kRegion;
   if (0 == strcmp(role, "rootWebArea"))
-    return ax::mojom::Role::kRootWebArea;
+    return ax::Role::kRootWebArea;
   if (0 == strcmp(role, "row"))
-    return ax::mojom::Role::kRow;
+    return ax::Role::kRow;
   if (0 == strcmp(role, "rowGroup"))
-    return ax::mojom::Role::kRowGroup;
+    return ax::Role::kRowGroup;
   if (0 == strcmp(role, "rowHeader"))
-    return ax::mojom::Role::kRowHeader;
+    return ax::Role::kRowHeader;
   if (0 == strcmp(role, "ruby"))
-    return ax::mojom::Role::kRuby;
+    return ax::Role::kRuby;
   if (0 == strcmp(role, "rubyAnnotation"))
-    return ax::mojom::Role::kRubyAnnotation;
+    return ax::Role::kRubyAnnotation;
   if (0 == strcmp(role, "section"))
-    return ax::mojom::Role::kSection;
+    return ax::Role::kSection;
   if (0 == strcmp(role, "scrollBar"))
-    return ax::mojom::Role::kScrollBar;
+    return ax::Role::kScrollBar;
   if (0 == strcmp(role, "scrollView"))
-    return ax::mojom::Role::kScrollView;
+    return ax::Role::kScrollView;
   if (0 == strcmp(role, "search"))
-    return ax::mojom::Role::kSearch;
+    return ax::Role::kSearch;
   if (0 == strcmp(role, "searchBox"))
-    return ax::mojom::Role::kSearchBox;
+    return ax::Role::kSearchBox;
   if (0 == strcmp(role, "slider"))
-    return ax::mojom::Role::kSlider;
+    return ax::Role::kSlider;
   if (0 == strcmp(role, "sliderThumb"))
-    return ax::mojom::Role::kSliderThumb;
+    return ax::Role::kSliderThumb;
   if (0 == strcmp(role, "spinButton"))
-    return ax::mojom::Role::kSpinButton;
+    return ax::Role::kSpinButton;
   if (0 == strcmp(role, "splitter"))
-    return ax::mojom::Role::kSplitter;
+    return ax::Role::kSplitter;
   if (0 == strcmp(role, "staticText"))
-    return ax::mojom::Role::kStaticText;
+    return ax::Role::kStaticText;
   if (0 == strcmp(role, "status"))
-    return ax::mojom::Role::kStatus;
+    return ax::Role::kStatus;
   if (0 == strcmp(role, "suggestion"))
-    return ax::mojom::Role::kSuggestion;
+    return ax::Role::kSuggestion;
   if (0 == strcmp(role, "svgRoot"))
-    return ax::mojom::Role::kSvgRoot;
+    return ax::Role::kSvgRoot;
   if (0 == strcmp(role, "switch"))
-    return ax::mojom::Role::kSwitch;
+    return ax::Role::kSwitch;
   if (0 == strcmp(role, "strong"))
-    return ax::mojom::Role::kStrong;
+    return ax::Role::kStrong;
   if (0 == strcmp(role, "tabList"))
-    return ax::mojom::Role::kTabList;
+    return ax::Role::kTabList;
   if (0 == strcmp(role, "tabPanel"))
-    return ax::mojom::Role::kTabPanel;
+    return ax::Role::kTabPanel;
   if (0 == strcmp(role, "tab"))
-    return ax::mojom::Role::kTab;
+    return ax::Role::kTab;
   if (0 == strcmp(role, "tableHeaderContainer"))
-    return ax::mojom::Role::kTableHeaderContainer;
+    return ax::Role::kTableHeaderContainer;
   if (0 == strcmp(role, "table"))
-    return ax::mojom::Role::kTable;
+    return ax::Role::kTable;
   if (0 == strcmp(role, "term"))
-    return ax::mojom::Role::kTerm;
+    return ax::Role::kTerm;
   if (0 == strcmp(role, "textField"))
-    return ax::mojom::Role::kTextField;
+    return ax::Role::kTextField;
   if (0 == strcmp(role, "textFieldWithComboBox"))
-    return ax::mojom::Role::kTextFieldWithComboBox;
+    return ax::Role::kTextFieldWithComboBox;
   if (0 == strcmp(role, "time"))
-    return ax::mojom::Role::kTime;
+    return ax::Role::kTime;
   if (0 == strcmp(role, "timer"))
-    return ax::mojom::Role::kTimer;
+    return ax::Role::kTimer;
   if (0 == strcmp(role, "titleBar"))
-    return ax::mojom::Role::kTitleBar;
+    return ax::Role::kTitleBar;
   if (0 == strcmp(role, "toggleButton"))
-    return ax::mojom::Role::kToggleButton;
+    return ax::Role::kToggleButton;
   if (0 == strcmp(role, "toolbar"))
-    return ax::mojom::Role::kToolbar;
+    return ax::Role::kToolbar;
   if (0 == strcmp(role, "treeGrid"))
-    return ax::mojom::Role::kTreeGrid;
+    return ax::Role::kTreeGrid;
   if (0 == strcmp(role, "treeItem"))
-    return ax::mojom::Role::kTreeItem;
+    return ax::Role::kTreeItem;
   if (0 == strcmp(role, "tree"))
-    return ax::mojom::Role::kTree;
+    return ax::Role::kTree;
   if (0 == strcmp(role, "unknown"))
-    return ax::mojom::Role::kUnknown;
+    return ax::Role::kUnknown;
   if (0 == strcmp(role, "tooltip"))
-    return ax::mojom::Role::kTooltip;
+    return ax::Role::kTooltip;
   if (0 == strcmp(role, "video"))
-    return ax::mojom::Role::kVideo;
+    return ax::Role::kVideo;
   if (0 == strcmp(role, "webArea"))
-    return ax::mojom::Role::kWebArea;
+    return ax::Role::kWebArea;
   if (0 == strcmp(role, "webView"))
-    return ax::mojom::Role::kWebView;
+    return ax::Role::kWebView;
   if (0 == strcmp(role, "window"))
-    return ax::mojom::Role::kWindow;
-  return ax::mojom::Role::kNone;
+    return ax::Role::kWindow;
+  return ax::Role::kNone;
 }
 
-const char* ToString(ax::mojom::State state) {
+const char* ToString(ax::State state) {
   switch (state) {
-    case ax::mojom::State::kNone:
+    case ax::State::kNone:
       return "none";
-    case ax::mojom::State::kAutofillAvailable:
+    case ax::State::kAutofillAvailable:
       return "autofillAvailable";
-    case ax::mojom::State::kCollapsed:
+    case ax::State::kCollapsed:
       return "collapsed";
-    case ax::mojom::State::kDefault:
+    case ax::State::kDefault:
       return "default";
-    case ax::mojom::State::kEditable:
+    case ax::State::kEditable:
       return "editable";
-    case ax::mojom::State::kExpanded:
+    case ax::State::kExpanded:
       return "expanded";
-    case ax::mojom::State::kFocusable:
+    case ax::State::kFocusable:
       return "focusable";
-    case ax::mojom::State::kHorizontal:
+    case ax::State::kHorizontal:
       return "horizontal";
-    case ax::mojom::State::kHovered:
+    case ax::State::kHovered:
       return "hovered";
-    case ax::mojom::State::kIgnored:
+    case ax::State::kIgnored:
       return "ignored";
-    case ax::mojom::State::kInvisible:
+    case ax::State::kInvisible:
       return "invisible";
-    case ax::mojom::State::kLinked:
+    case ax::State::kLinked:
       return "linked";
-    case ax::mojom::State::kMultiline:
+    case ax::State::kMultiline:
       return "multiline";
-    case ax::mojom::State::kMultiselectable:
+    case ax::State::kMultiselectable:
       return "multiselectable";
-    case ax::mojom::State::kProtected:
+    case ax::State::kProtected:
       return "protected";
-    case ax::mojom::State::kRequired:
+    case ax::State::kRequired:
       return "required";
-    case ax::mojom::State::kRichlyEditable:
+    case ax::State::kRichlyEditable:
       return "richlyEditable";
-    case ax::mojom::State::kVertical:
+    case ax::State::kVertical:
       return "vertical";
-    case ax::mojom::State::kVisited:
+    case ax::State::kVisited:
       return "visited";
   }
 
   return "";
 }
 
-ax::mojom::State ParseState(const char* state) {
+ax::State ParseState(const char* state) {
   if (0 == strcmp(state, "none"))
-    return ax::mojom::State::kNone;
+    return ax::State::kNone;
   if (0 == strcmp(state, "autofillAvailable"))
-    return ax::mojom::State::kAutofillAvailable;
+    return ax::State::kAutofillAvailable;
   if (0 == strcmp(state, "collapsed"))
-    return ax::mojom::State::kCollapsed;
+    return ax::State::kCollapsed;
   if (0 == strcmp(state, "default"))
-    return ax::mojom::State::kDefault;
+    return ax::State::kDefault;
   if (0 == strcmp(state, "editable"))
-    return ax::mojom::State::kEditable;
+    return ax::State::kEditable;
   if (0 == strcmp(state, "expanded"))
-    return ax::mojom::State::kExpanded;
+    return ax::State::kExpanded;
   if (0 == strcmp(state, "focusable"))
-    return ax::mojom::State::kFocusable;
+    return ax::State::kFocusable;
   if (0 == strcmp(state, "horizontal"))
-    return ax::mojom::State::kHorizontal;
+    return ax::State::kHorizontal;
   if (0 == strcmp(state, "hovered"))
-    return ax::mojom::State::kHovered;
+    return ax::State::kHovered;
   if (0 == strcmp(state, "ignored"))
-    return ax::mojom::State::kIgnored;
+    return ax::State::kIgnored;
   if (0 == strcmp(state, "invisible"))
-    return ax::mojom::State::kInvisible;
+    return ax::State::kInvisible;
   if (0 == strcmp(state, "linked"))
-    return ax::mojom::State::kLinked;
+    return ax::State::kLinked;
   if (0 == strcmp(state, "multiline"))
-    return ax::mojom::State::kMultiline;
+    return ax::State::kMultiline;
   if (0 == strcmp(state, "multiselectable"))
-    return ax::mojom::State::kMultiselectable;
+    return ax::State::kMultiselectable;
   if (0 == strcmp(state, "protected"))
-    return ax::mojom::State::kProtected;
+    return ax::State::kProtected;
   if (0 == strcmp(state, "required"))
-    return ax::mojom::State::kRequired;
+    return ax::State::kRequired;
   if (0 == strcmp(state, "richlyEditable"))
-    return ax::mojom::State::kRichlyEditable;
+    return ax::State::kRichlyEditable;
   if (0 == strcmp(state, "vertical"))
-    return ax::mojom::State::kVertical;
+    return ax::State::kVertical;
   if (0 == strcmp(state, "visited"))
-    return ax::mojom::State::kVisited;
-  return ax::mojom::State::kNone;
+    return ax::State::kVisited;
+  return ax::State::kNone;
 }
 
-const char* ToString(ax::mojom::Action action) {
+const char* ToString(ax::Action action) {
   switch (action) {
-    case ax::mojom::Action::kNone:
+    case ax::Action::kNone:
       return "none";
-    case ax::mojom::Action::kBlur:
+    case ax::Action::kBlur:
       return "blur";
-    case ax::mojom::Action::kClearAccessibilityFocus:
+    case ax::Action::kClearAccessibilityFocus:
       return "clearAccessibilityFocus";
-    case ax::mojom::Action::kCollapse:
+    case ax::Action::kCollapse:
       return "collapse";
-    case ax::mojom::Action::kCustomAction:
+    case ax::Action::kCustomAction:
       return "customAction";
-    case ax::mojom::Action::kDecrement:
+    case ax::Action::kDecrement:
       return "decrement";
-    case ax::mojom::Action::kDoDefault:
+    case ax::Action::kDoDefault:
       return "doDefault";
-    case ax::mojom::Action::kExpand:
+    case ax::Action::kExpand:
       return "expand";
-    case ax::mojom::Action::kFocus:
+    case ax::Action::kFocus:
       return "focus";
-    case ax::mojom::Action::kGetImageData:
+    case ax::Action::kGetImageData:
       return "getImageData";
-    case ax::mojom::Action::kHitTest:
+    case ax::Action::kHitTest:
       return "hitTest";
-    case ax::mojom::Action::kIncrement:
+    case ax::Action::kIncrement:
       return "increment";
-    case ax::mojom::Action::kLoadInlineTextBoxes:
+    case ax::Action::kLoadInlineTextBoxes:
       return "loadInlineTextBoxes";
-    case ax::mojom::Action::kReplaceSelectedText:
+    case ax::Action::kReplaceSelectedText:
       return "replaceSelectedText";
-    case ax::mojom::Action::kScrollBackward:
+    case ax::Action::kScrollBackward:
       return "scrollBackward";
-    case ax::mojom::Action::kScrollForward:
+    case ax::Action::kScrollForward:
       return "scrollForward";
-    case ax::mojom::Action::kScrollUp:
+    case ax::Action::kScrollUp:
       return "scrollUp";
-    case ax::mojom::Action::kScrollDown:
+    case ax::Action::kScrollDown:
       return "scrollDown";
-    case ax::mojom::Action::kScrollLeft:
+    case ax::Action::kScrollLeft:
       return "scrollLeft";
-    case ax::mojom::Action::kScrollRight:
+    case ax::Action::kScrollRight:
       return "scrollRight";
-    case ax::mojom::Action::kScrollToMakeVisible:
+    case ax::Action::kScrollToMakeVisible:
       return "scrollToMakeVisible";
-    case ax::mojom::Action::kScrollToPoint:
+    case ax::Action::kScrollToPoint:
       return "scrollToPoint";
-    case ax::mojom::Action::kSetAccessibilityFocus:
+    case ax::Action::kSetAccessibilityFocus:
       return "setAccessibilityFocus";
-    case ax::mojom::Action::kSetScrollOffset:
+    case ax::Action::kSetScrollOffset:
       return "setScrollOffset";
-    case ax::mojom::Action::kSetSelection:
+    case ax::Action::kSetSelection:
       return "setSelection";
-    case ax::mojom::Action::kSetSequentialFocusNavigationStartingPoint:
+    case ax::Action::kSetSequentialFocusNavigationStartingPoint:
       return "setSequentialFocusNavigationStartingPoint";
-    case ax::mojom::Action::kSetValue:
+    case ax::Action::kSetValue:
       return "setValue";
-    case ax::mojom::Action::kShowContextMenu:
+    case ax::Action::kShowContextMenu:
       return "showContextMenu";
-    case ax::mojom::Action::kGetTextLocation:
+    case ax::Action::kGetTextLocation:
       return "getTextLocation";
-    case ax::mojom::Action::kAnnotatePageImages:
+    case ax::Action::kAnnotatePageImages:
       return "annotatePageImages";
-    case ax::mojom::Action::kSignalEndOfTest:
+    case ax::Action::kSignalEndOfTest:
       return "signalEndOfTest";
-    case ax::mojom::Action::kShowTooltip:
+    case ax::Action::kShowTooltip:
       return "showTooltip";
-    case ax::mojom::Action::kHideTooltip:
+    case ax::Action::kHideTooltip:
       return "hideTooltip";
-    case ax::mojom::Action::kInternalInvalidateTree:
+    case ax::Action::kInternalInvalidateTree:
       return "internalInvalidateTree";
   }
 
   return "";
 }
 
-ax::mojom::Action ParseAction(const char* action) {
+ax::Action ParseAction(const char* action) {
   if (0 == strcmp(action, "none"))
-    return ax::mojom::Action::kNone;
+    return ax::Action::kNone;
   if (0 == strcmp(action, "annotatePageImages"))
-    return ax::mojom::Action::kAnnotatePageImages;
+    return ax::Action::kAnnotatePageImages;
   if (0 == strcmp(action, "blur"))
-    return ax::mojom::Action::kBlur;
+    return ax::Action::kBlur;
   if (0 == strcmp(action, "clearAccessibilityFocus"))
-    return ax::mojom::Action::kClearAccessibilityFocus;
+    return ax::Action::kClearAccessibilityFocus;
   if (0 == strcmp(action, "collapse"))
-    return ax::mojom::Action::kCollapse;
+    return ax::Action::kCollapse;
   if (0 == strcmp(action, "customAction"))
-    return ax::mojom::Action::kCustomAction;
+    return ax::Action::kCustomAction;
   if (0 == strcmp(action, "decrement"))
-    return ax::mojom::Action::kDecrement;
+    return ax::Action::kDecrement;
   if (0 == strcmp(action, "doDefault"))
-    return ax::mojom::Action::kDoDefault;
+    return ax::Action::kDoDefault;
   if (0 == strcmp(action, "expand"))
-    return ax::mojom::Action::kExpand;
+    return ax::Action::kExpand;
   if (0 == strcmp(action, "focus"))
-    return ax::mojom::Action::kFocus;
+    return ax::Action::kFocus;
   if (0 == strcmp(action, "getImageData"))
-    return ax::mojom::Action::kGetImageData;
+    return ax::Action::kGetImageData;
   if (0 == strcmp(action, "getTextLocation"))
-    return ax::mojom::Action::kGetTextLocation;
+    return ax::Action::kGetTextLocation;
   if (0 == strcmp(action, "hitTest"))
-    return ax::mojom::Action::kHitTest;
+    return ax::Action::kHitTest;
   if (0 == strcmp(action, "increment"))
-    return ax::mojom::Action::kIncrement;
+    return ax::Action::kIncrement;
   if (0 == strcmp(action, "loadInlineTextBoxes"))
-    return ax::mojom::Action::kLoadInlineTextBoxes;
+    return ax::Action::kLoadInlineTextBoxes;
   if (0 == strcmp(action, "replaceSelectedText"))
-    return ax::mojom::Action::kReplaceSelectedText;
+    return ax::Action::kReplaceSelectedText;
   if (0 == strcmp(action, "scrollBackward"))
-    return ax::mojom::Action::kScrollBackward;
+    return ax::Action::kScrollBackward;
   if (0 == strcmp(action, "scrollForward"))
-    return ax::mojom::Action::kScrollForward;
+    return ax::Action::kScrollForward;
   if (0 == strcmp(action, "scrollUp"))
-    return ax::mojom::Action::kScrollUp;
+    return ax::Action::kScrollUp;
   if (0 == strcmp(action, "scrollDown"))
-    return ax::mojom::Action::kScrollDown;
+    return ax::Action::kScrollDown;
   if (0 == strcmp(action, "scrollLeft"))
-    return ax::mojom::Action::kScrollLeft;
+    return ax::Action::kScrollLeft;
   if (0 == strcmp(action, "scrollRight"))
-    return ax::mojom::Action::kScrollRight;
+    return ax::Action::kScrollRight;
   if (0 == strcmp(action, "scrollToMakeVisible"))
-    return ax::mojom::Action::kScrollToMakeVisible;
+    return ax::Action::kScrollToMakeVisible;
   if (0 == strcmp(action, "scrollToPoint"))
-    return ax::mojom::Action::kScrollToPoint;
+    return ax::Action::kScrollToPoint;
   if (0 == strcmp(action, "setAccessibilityFocus"))
-    return ax::mojom::Action::kSetAccessibilityFocus;
+    return ax::Action::kSetAccessibilityFocus;
   if (0 == strcmp(action, "setScrollOffset"))
-    return ax::mojom::Action::kSetScrollOffset;
+    return ax::Action::kSetScrollOffset;
   if (0 == strcmp(action, "setSelection"))
-    return ax::mojom::Action::kSetSelection;
+    return ax::Action::kSetSelection;
   if (0 == strcmp(action, "setSequentialFocusNavigationStartingPoint"))
-    return ax::mojom::Action::kSetSequentialFocusNavigationStartingPoint;
+    return ax::Action::kSetSequentialFocusNavigationStartingPoint;
   if (0 == strcmp(action, "setValue"))
-    return ax::mojom::Action::kSetValue;
+    return ax::Action::kSetValue;
   if (0 == strcmp(action, "showContextMenu"))
-    return ax::mojom::Action::kShowContextMenu;
+    return ax::Action::kShowContextMenu;
   if (0 == strcmp(action, "signalEndOfTest"))
-    return ax::mojom::Action::kSignalEndOfTest;
+    return ax::Action::kSignalEndOfTest;
   if (0 == strcmp(action, "showTooltip"))
-    return ax::mojom::Action::kShowTooltip;
+    return ax::Action::kShowTooltip;
   if (0 == strcmp(action, "hideTooltip"))
-    return ax::mojom::Action::kHideTooltip;
+    return ax::Action::kHideTooltip;
   if (0 == strcmp(action, "internalInvalidateTree"))
-    return ax::mojom::Action::kInternalInvalidateTree;
-  return ax::mojom::Action::kNone;
+    return ax::Action::kInternalInvalidateTree;
+  return ax::Action::kNone;
 }
 
-const char* ToString(ax::mojom::ActionFlags action_flags) {
+const char* ToString(ax::ActionFlags action_flags) {
   switch (action_flags) {
-    case ax::mojom::ActionFlags::kNone:
+    case ax::ActionFlags::kNone:
       return "none";
-    case ax::mojom::ActionFlags::kRequestImages:
+    case ax::ActionFlags::kRequestImages:
       return "requestImages";
-    case ax::mojom::ActionFlags::kRequestInlineTextBoxes:
+    case ax::ActionFlags::kRequestInlineTextBoxes:
       return "requestInlineTextBoxes";
   }
 
   return "";
 }
 
-ax::mojom::ActionFlags ParseActionFlags(const char* action_flags) {
+ax::ActionFlags ParseActionFlags(const char* action_flags) {
   if (0 == strcmp(action_flags, "none"))
-    return ax::mojom::ActionFlags::kNone;
+    return ax::ActionFlags::kNone;
   if (0 == strcmp(action_flags, "requestImages"))
-    return ax::mojom::ActionFlags::kRequestImages;
+    return ax::ActionFlags::kRequestImages;
   if (0 == strcmp(action_flags, "requestInlineTextBoxes"))
-    return ax::mojom::ActionFlags::kRequestInlineTextBoxes;
-  return ax::mojom::ActionFlags::kNone;
+    return ax::ActionFlags::kRequestInlineTextBoxes;
+  return ax::ActionFlags::kNone;
 }
 
-const char* ToString(ax::mojom::ScrollAlignment scroll_alignment) {
+const char* ToString(ax::ScrollAlignment scroll_alignment) {
   switch (scroll_alignment) {
-    case ax::mojom::ScrollAlignment::kNone:
+    case ax::ScrollAlignment::kNone:
       return "none";
-    case ax::mojom::ScrollAlignment::kScrollAlignmentCenter:
+    case ax::ScrollAlignment::kScrollAlignmentCenter:
       return "scrollAlignmentCenter";
-    case ax::mojom::ScrollAlignment::kScrollAlignmentTop:
+    case ax::ScrollAlignment::kScrollAlignmentTop:
       return "scrollAlignmentTop";
-    case ax::mojom::ScrollAlignment::kScrollAlignmentBottom:
+    case ax::ScrollAlignment::kScrollAlignmentBottom:
       return "scrollAlignmentBottom";
-    case ax::mojom::ScrollAlignment::kScrollAlignmentLeft:
+    case ax::ScrollAlignment::kScrollAlignmentLeft:
       return "scrollAlignmentLeft";
-    case ax::mojom::ScrollAlignment::kScrollAlignmentRight:
+    case ax::ScrollAlignment::kScrollAlignmentRight:
       return "scrollAlignmentRight";
-    case ax::mojom::ScrollAlignment::kScrollAlignmentClosestEdge:
+    case ax::ScrollAlignment::kScrollAlignmentClosestEdge:
       return "scrollAlignmentClosestEdge";
   }
 }
 
-ax::mojom::ScrollAlignment ParseScrollAlignment(const char* scroll_alignment) {
+ax::ScrollAlignment ParseScrollAlignment(const char* scroll_alignment) {
   if (0 == strcmp(scroll_alignment, "none"))
-    return ax::mojom::ScrollAlignment::kNone;
+    return ax::ScrollAlignment::kNone;
   if (0 == strcmp(scroll_alignment, "scrollAlignmentCenter"))
-    return ax::mojom::ScrollAlignment::kScrollAlignmentCenter;
+    return ax::ScrollAlignment::kScrollAlignmentCenter;
   if (0 == strcmp(scroll_alignment, "scrollAlignmentTop"))
-    return ax::mojom::ScrollAlignment::kScrollAlignmentTop;
+    return ax::ScrollAlignment::kScrollAlignmentTop;
   if (0 == strcmp(scroll_alignment, "scrollAlignmentBottom"))
-    return ax::mojom::ScrollAlignment::kScrollAlignmentBottom;
+    return ax::ScrollAlignment::kScrollAlignmentBottom;
   if (0 == strcmp(scroll_alignment, "scrollAlignmentLeft"))
-    return ax::mojom::ScrollAlignment::kScrollAlignmentLeft;
+    return ax::ScrollAlignment::kScrollAlignmentLeft;
   if (0 == strcmp(scroll_alignment, "scrollAlignmentRight"))
-    return ax::mojom::ScrollAlignment::kScrollAlignmentRight;
+    return ax::ScrollAlignment::kScrollAlignmentRight;
   if (0 == strcmp(scroll_alignment, "scrollAlignmentClosestEdge"))
-    return ax::mojom::ScrollAlignment::kScrollAlignmentClosestEdge;
-  return ax::mojom::ScrollAlignment::kNone;
+    return ax::ScrollAlignment::kScrollAlignmentClosestEdge;
+  return ax::ScrollAlignment::kNone;
 }
 
-const char* ToString(ax::mojom::DefaultActionVerb default_action_verb) {
+const char* ToString(ax::DefaultActionVerb default_action_verb) {
   switch (default_action_verb) {
-    case ax::mojom::DefaultActionVerb::kNone:
+    case ax::DefaultActionVerb::kNone:
       return "none";
-    case ax::mojom::DefaultActionVerb::kActivate:
+    case ax::DefaultActionVerb::kActivate:
       return "activate";
-    case ax::mojom::DefaultActionVerb::kCheck:
+    case ax::DefaultActionVerb::kCheck:
       return "check";
-    case ax::mojom::DefaultActionVerb::kClick:
+    case ax::DefaultActionVerb::kClick:
       return "click";
-    case ax::mojom::DefaultActionVerb::kClickAncestor:
+    case ax::DefaultActionVerb::kClickAncestor:
       // Some screen readers, such as Jaws, expect the following spelling of
       // this verb.
       return "click-ancestor";
-    case ax::mojom::DefaultActionVerb::kJump:
+    case ax::DefaultActionVerb::kJump:
       return "jump";
-    case ax::mojom::DefaultActionVerb::kOpen:
+    case ax::DefaultActionVerb::kOpen:
       return "open";
-    case ax::mojom::DefaultActionVerb::kPress:
+    case ax::DefaultActionVerb::kPress:
       return "press";
-    case ax::mojom::DefaultActionVerb::kSelect:
+    case ax::DefaultActionVerb::kSelect:
       return "select";
-    case ax::mojom::DefaultActionVerb::kUncheck:
+    case ax::DefaultActionVerb::kUncheck:
       return "uncheck";
   }
 
   return "";
 }
 
-std::string ToLocalizedString(ax::mojom::DefaultActionVerb action_verb) {
-  switch (action_verb) {
-    case ax::mojom::DefaultActionVerb::kNone:
-      return "";
-    case ax::mojom::DefaultActionVerb::kActivate:
-      return l10n_util::GetStringUTF8(IDS_AX_ACTIVATE_ACTION_VERB);
-    case ax::mojom::DefaultActionVerb::kCheck:
-      return l10n_util::GetStringUTF8(IDS_AX_CHECK_ACTION_VERB);
-    case ax::mojom::DefaultActionVerb::kClick:
-      return l10n_util::GetStringUTF8(IDS_AX_CLICK_ACTION_VERB);
-    case ax::mojom::DefaultActionVerb::kClickAncestor:
-      return l10n_util::GetStringUTF8(IDS_AX_CLICK_ANCESTOR_ACTION_VERB);
-    case ax::mojom::DefaultActionVerb::kJump:
-      return l10n_util::GetStringUTF8(IDS_AX_JUMP_ACTION_VERB);
-    case ax::mojom::DefaultActionVerb::kOpen:
-      return l10n_util::GetStringUTF8(IDS_AX_OPEN_ACTION_VERB);
-    case ax::mojom::DefaultActionVerb::kPress:
-      return l10n_util::GetStringUTF8(IDS_AX_PRESS_ACTION_VERB);
-    case ax::mojom::DefaultActionVerb::kSelect:
-      return l10n_util::GetStringUTF8(IDS_AX_SELECT_ACTION_VERB);
-    case ax::mojom::DefaultActionVerb::kUncheck:
-      return l10n_util::GetStringUTF8(IDS_AX_UNCHECK_ACTION_VERB);
-  }
-
-  return "";
-}
-
-ax::mojom::DefaultActionVerb ParseDefaultActionVerb(
-    const char* default_action_verb) {
+ax::DefaultActionVerb ParseDefaultActionVerb(const char* default_action_verb) {
   if (0 == strcmp(default_action_verb, "none"))
-    return ax::mojom::DefaultActionVerb::kNone;
+    return ax::DefaultActionVerb::kNone;
   if (0 == strcmp(default_action_verb, "activate"))
-    return ax::mojom::DefaultActionVerb::kActivate;
+    return ax::DefaultActionVerb::kActivate;
   if (0 == strcmp(default_action_verb, "check"))
-    return ax::mojom::DefaultActionVerb::kCheck;
+    return ax::DefaultActionVerb::kCheck;
   if (0 == strcmp(default_action_verb, "click"))
-    return ax::mojom::DefaultActionVerb::kClick;
+    return ax::DefaultActionVerb::kClick;
   // Some screen readers, such as Jaws, expect the following spelling of this
   // verb.
   if (0 == strcmp(default_action_verb, "click-ancestor"))
-    return ax::mojom::DefaultActionVerb::kClickAncestor;
+    return ax::DefaultActionVerb::kClickAncestor;
   if (0 == strcmp(default_action_verb, "jump"))
-    return ax::mojom::DefaultActionVerb::kJump;
+    return ax::DefaultActionVerb::kJump;
   if (0 == strcmp(default_action_verb, "open"))
-    return ax::mojom::DefaultActionVerb::kOpen;
+    return ax::DefaultActionVerb::kOpen;
   if (0 == strcmp(default_action_verb, "press"))
-    return ax::mojom::DefaultActionVerb::kPress;
+    return ax::DefaultActionVerb::kPress;
   if (0 == strcmp(default_action_verb, "select"))
-    return ax::mojom::DefaultActionVerb::kSelect;
+    return ax::DefaultActionVerb::kSelect;
   if (0 == strcmp(default_action_verb, "uncheck"))
-    return ax::mojom::DefaultActionVerb::kUncheck;
-  return ax::mojom::DefaultActionVerb::kNone;
+    return ax::DefaultActionVerb::kUncheck;
+  return ax::DefaultActionVerb::kNone;
 }
 
-const char* ToString(ax::mojom::Mutation mutation) {
+const char* ToString(ax::Mutation mutation) {
   switch (mutation) {
-    case ax::mojom::Mutation::kNone:
+    case ax::Mutation::kNone:
       return "none";
-    case ax::mojom::Mutation::kNodeCreated:
+    case ax::Mutation::kNodeCreated:
       return "nodeCreated";
-    case ax::mojom::Mutation::kSubtreeCreated:
+    case ax::Mutation::kSubtreeCreated:
       return "subtreeCreated";
-    case ax::mojom::Mutation::kNodeChanged:
+    case ax::Mutation::kNodeChanged:
       return "nodeChanged";
-    case ax::mojom::Mutation::kNodeRemoved:
+    case ax::Mutation::kNodeRemoved:
       return "nodeRemoved";
   }
 
   return "";
 }
 
-ax::mojom::Mutation ParseMutation(const char* mutation) {
+ax::Mutation ParseMutation(const char* mutation) {
   if (0 == strcmp(mutation, "none"))
-    return ax::mojom::Mutation::kNone;
+    return ax::Mutation::kNone;
   if (0 == strcmp(mutation, "nodeCreated"))
-    return ax::mojom::Mutation::kNodeCreated;
+    return ax::Mutation::kNodeCreated;
   if (0 == strcmp(mutation, "subtreeCreated"))
-    return ax::mojom::Mutation::kSubtreeCreated;
+    return ax::Mutation::kSubtreeCreated;
   if (0 == strcmp(mutation, "nodeChanged"))
-    return ax::mojom::Mutation::kNodeChanged;
+    return ax::Mutation::kNodeChanged;
   if (0 == strcmp(mutation, "nodeRemoved"))
-    return ax::mojom::Mutation::kNodeRemoved;
-  return ax::mojom::Mutation::kNone;
+    return ax::Mutation::kNodeRemoved;
+  return ax::Mutation::kNone;
 }
 
-const char* ToString(ax::mojom::StringAttribute string_attribute) {
+const char* ToString(ax::StringAttribute string_attribute) {
   switch (string_attribute) {
-    case ax::mojom::StringAttribute::kNone:
+    case ax::StringAttribute::kNone:
       return "none";
-    case ax::mojom::StringAttribute::kAccessKey:
+    case ax::StringAttribute::kAccessKey:
       return "accessKey";
-    case ax::mojom::StringAttribute::kAriaInvalidValue:
+    case ax::StringAttribute::kAriaInvalidValue:
       return "ariaInvalidValue";
-    case ax::mojom::StringAttribute::kAutoComplete:
+    case ax::StringAttribute::kAutoComplete:
       return "autoComplete";
-    case ax::mojom::StringAttribute::kChildTreeId:
+    case ax::StringAttribute::kChildTreeId:
       return "childTreeId";
-    case ax::mojom::StringAttribute::kClassName:
+    case ax::StringAttribute::kClassName:
       return "className";
-    case ax::mojom::StringAttribute::kContainerLiveRelevant:
+    case ax::StringAttribute::kContainerLiveRelevant:
       return "containerLiveRelevant";
-    case ax::mojom::StringAttribute::kContainerLiveStatus:
+    case ax::StringAttribute::kContainerLiveStatus:
       return "containerLiveStatus";
-    case ax::mojom::StringAttribute::kDescription:
+    case ax::StringAttribute::kDescription:
       return "description";
-    case ax::mojom::StringAttribute::kDisplay:
+    case ax::StringAttribute::kDisplay:
       return "display";
-    case ax::mojom::StringAttribute::kFontFamily:
+    case ax::StringAttribute::kFontFamily:
       return "fontFamily";
-    case ax::mojom::StringAttribute::kHtmlTag:
+    case ax::StringAttribute::kHtmlTag:
       return "htmlTag";
-    case ax::mojom::StringAttribute::kImageAnnotation:
+    case ax::StringAttribute::kImageAnnotation:
       return "imageAnnotation";
-    case ax::mojom::StringAttribute::kImageDataUrl:
+    case ax::StringAttribute::kImageDataUrl:
       return "imageDataUrl";
-    case ax::mojom::StringAttribute::kInnerHtml:
+    case ax::StringAttribute::kInnerHtml:
       return "innerHtml";
-    case ax::mojom::StringAttribute::kInputType:
+    case ax::StringAttribute::kInputType:
       return "inputType";
-    case ax::mojom::StringAttribute::kKeyShortcuts:
+    case ax::StringAttribute::kKeyShortcuts:
       return "keyShortcuts";
-    case ax::mojom::StringAttribute::kLanguage:
+    case ax::StringAttribute::kLanguage:
       return "language";
-    case ax::mojom::StringAttribute::kName:
+    case ax::StringAttribute::kName:
       return "name";
-    case ax::mojom::StringAttribute::kLiveRelevant:
+    case ax::StringAttribute::kLiveRelevant:
       return "liveRelevant";
-    case ax::mojom::StringAttribute::kLiveStatus:
+    case ax::StringAttribute::kLiveStatus:
       return "liveStatus";
-    case ax::mojom::StringAttribute::kPlaceholder:
+    case ax::StringAttribute::kPlaceholder:
       return "placeholder";
-    case ax::mojom::StringAttribute::kRole:
+    case ax::StringAttribute::kRole:
       return "role";
-    case ax::mojom::StringAttribute::kRoleDescription:
+    case ax::StringAttribute::kRoleDescription:
       return "roleDescription";
-    case ax::mojom::StringAttribute::kTooltip:
+    case ax::StringAttribute::kTooltip:
       return "tooltip";
-    case ax::mojom::StringAttribute::kUrl:
+    case ax::StringAttribute::kUrl:
       return "url";
-    case ax::mojom::StringAttribute::kValue:
+    case ax::StringAttribute::kValue:
       return "value";
   }
 
   return "";
 }
 
-ax::mojom::StringAttribute ParseStringAttribute(const char* string_attribute) {
+ax::StringAttribute ParseStringAttribute(const char* string_attribute) {
   if (0 == strcmp(string_attribute, "none"))
-    return ax::mojom::StringAttribute::kNone;
+    return ax::StringAttribute::kNone;
   if (0 == strcmp(string_attribute, "accessKey"))
-    return ax::mojom::StringAttribute::kAccessKey;
+    return ax::StringAttribute::kAccessKey;
   if (0 == strcmp(string_attribute, "ariaInvalidValue"))
-    return ax::mojom::StringAttribute::kAriaInvalidValue;
+    return ax::StringAttribute::kAriaInvalidValue;
   if (0 == strcmp(string_attribute, "autoComplete"))
-    return ax::mojom::StringAttribute::kAutoComplete;
+    return ax::StringAttribute::kAutoComplete;
   if (0 == strcmp(string_attribute, "childTreeId"))
-    return ax::mojom::StringAttribute::kChildTreeId;
+    return ax::StringAttribute::kChildTreeId;
   if (0 == strcmp(string_attribute, "className"))
-    return ax::mojom::StringAttribute::kClassName;
+    return ax::StringAttribute::kClassName;
   if (0 == strcmp(string_attribute, "containerLiveRelevant"))
-    return ax::mojom::StringAttribute::kContainerLiveRelevant;
+    return ax::StringAttribute::kContainerLiveRelevant;
   if (0 == strcmp(string_attribute, "containerLiveStatus"))
-    return ax::mojom::StringAttribute::kContainerLiveStatus;
+    return ax::StringAttribute::kContainerLiveStatus;
   if (0 == strcmp(string_attribute, "description"))
-    return ax::mojom::StringAttribute::kDescription;
+    return ax::StringAttribute::kDescription;
   if (0 == strcmp(string_attribute, "display"))
-    return ax::mojom::StringAttribute::kDisplay;
+    return ax::StringAttribute::kDisplay;
   if (0 == strcmp(string_attribute, "fontFamily"))
-    return ax::mojom::StringAttribute::kFontFamily;
+    return ax::StringAttribute::kFontFamily;
   if (0 == strcmp(string_attribute, "htmlTag"))
-    return ax::mojom::StringAttribute::kHtmlTag;
+    return ax::StringAttribute::kHtmlTag;
   if (0 == strcmp(string_attribute, "imageAnnotation"))
-    return ax::mojom::StringAttribute::kImageAnnotation;
+    return ax::StringAttribute::kImageAnnotation;
   if (0 == strcmp(string_attribute, "imageDataUrl"))
-    return ax::mojom::StringAttribute::kImageDataUrl;
+    return ax::StringAttribute::kImageDataUrl;
   if (0 == strcmp(string_attribute, "innerHtml"))
-    return ax::mojom::StringAttribute::kInnerHtml;
+    return ax::StringAttribute::kInnerHtml;
   if (0 == strcmp(string_attribute, "inputType"))
-    return ax::mojom::StringAttribute::kInputType;
+    return ax::StringAttribute::kInputType;
   if (0 == strcmp(string_attribute, "keyShortcuts"))
-    return ax::mojom::StringAttribute::kKeyShortcuts;
+    return ax::StringAttribute::kKeyShortcuts;
   if (0 == strcmp(string_attribute, "language"))
-    return ax::mojom::StringAttribute::kLanguage;
+    return ax::StringAttribute::kLanguage;
   if (0 == strcmp(string_attribute, "name"))
-    return ax::mojom::StringAttribute::kName;
+    return ax::StringAttribute::kName;
   if (0 == strcmp(string_attribute, "liveRelevant"))
-    return ax::mojom::StringAttribute::kLiveRelevant;
+    return ax::StringAttribute::kLiveRelevant;
   if (0 == strcmp(string_attribute, "liveStatus"))
-    return ax::mojom::StringAttribute::kLiveStatus;
+    return ax::StringAttribute::kLiveStatus;
   if (0 == strcmp(string_attribute, "placeholder"))
-    return ax::mojom::StringAttribute::kPlaceholder;
+    return ax::StringAttribute::kPlaceholder;
   if (0 == strcmp(string_attribute, "role"))
-    return ax::mojom::StringAttribute::kRole;
+    return ax::StringAttribute::kRole;
   if (0 == strcmp(string_attribute, "roleDescription"))
-    return ax::mojom::StringAttribute::kRoleDescription;
+    return ax::StringAttribute::kRoleDescription;
   if (0 == strcmp(string_attribute, "tooltip"))
-    return ax::mojom::StringAttribute::kTooltip;
+    return ax::StringAttribute::kTooltip;
   if (0 == strcmp(string_attribute, "url"))
-    return ax::mojom::StringAttribute::kUrl;
+    return ax::StringAttribute::kUrl;
   if (0 == strcmp(string_attribute, "value"))
-    return ax::mojom::StringAttribute::kValue;
-  return ax::mojom::StringAttribute::kNone;
+    return ax::StringAttribute::kValue;
+  return ax::StringAttribute::kNone;
 }
 
-const char* ToString(ax::mojom::IntAttribute int_attribute) {
+const char* ToString(ax::IntAttribute int_attribute) {
   switch (int_attribute) {
-    case ax::mojom::IntAttribute::kNone:
+    case ax::IntAttribute::kNone:
       return "none";
-    case ax::mojom::IntAttribute::kDefaultActionVerb:
+    case ax::IntAttribute::kDefaultActionVerb:
       return "defaultActionVerb";
-    case ax::mojom::IntAttribute::kDropeffect:
+    case ax::IntAttribute::kDropeffect:
       return "dropeffect";
-    case ax::mojom::IntAttribute::kScrollX:
+    case ax::IntAttribute::kScrollX:
       return "scrollX";
-    case ax::mojom::IntAttribute::kScrollXMin:
+    case ax::IntAttribute::kScrollXMin:
       return "scrollXMin";
-    case ax::mojom::IntAttribute::kScrollXMax:
+    case ax::IntAttribute::kScrollXMax:
       return "scrollXMax";
-    case ax::mojom::IntAttribute::kScrollY:
+    case ax::IntAttribute::kScrollY:
       return "scrollY";
-    case ax::mojom::IntAttribute::kScrollYMin:
+    case ax::IntAttribute::kScrollYMin:
       return "scrollYMin";
-    case ax::mojom::IntAttribute::kScrollYMax:
+    case ax::IntAttribute::kScrollYMax:
       return "scrollYMax";
-    case ax::mojom::IntAttribute::kTextSelStart:
+    case ax::IntAttribute::kTextSelStart:
       return "textSelStart";
-    case ax::mojom::IntAttribute::kTextSelEnd:
+    case ax::IntAttribute::kTextSelEnd:
       return "textSelEnd";
-    case ax::mojom::IntAttribute::kAriaColumnCount:
+    case ax::IntAttribute::kAriaColumnCount:
       return "ariaColumnCount";
-    case ax::mojom::IntAttribute::kAriaCellColumnIndex:
+    case ax::IntAttribute::kAriaCellColumnIndex:
       return "ariaCellColumnIndex";
-    case ax::mojom::IntAttribute::kAriaCellColumnSpan:
+    case ax::IntAttribute::kAriaCellColumnSpan:
       return "ariaCellColumnSpan";
-    case ax::mojom::IntAttribute::kAriaRowCount:
+    case ax::IntAttribute::kAriaRowCount:
       return "ariaRowCount";
-    case ax::mojom::IntAttribute::kAriaCellRowIndex:
+    case ax::IntAttribute::kAriaCellRowIndex:
       return "ariaCellRowIndex";
-    case ax::mojom::IntAttribute::kAriaCellRowSpan:
+    case ax::IntAttribute::kAriaCellRowSpan:
       return "ariaCellRowSpan";
-    case ax::mojom::IntAttribute::kTableRowCount:
+    case ax::IntAttribute::kTableRowCount:
       return "tableRowCount";
-    case ax::mojom::IntAttribute::kTableColumnCount:
+    case ax::IntAttribute::kTableColumnCount:
       return "tableColumnCount";
-    case ax::mojom::IntAttribute::kTableHeaderId:
+    case ax::IntAttribute::kTableHeaderId:
       return "tableHeaderId";
-    case ax::mojom::IntAttribute::kTableRowIndex:
+    case ax::IntAttribute::kTableRowIndex:
       return "tableRowIndex";
-    case ax::mojom::IntAttribute::kTableRowHeaderId:
+    case ax::IntAttribute::kTableRowHeaderId:
       return "tableRowHeaderId";
-    case ax::mojom::IntAttribute::kTableColumnIndex:
+    case ax::IntAttribute::kTableColumnIndex:
       return "tableColumnIndex";
-    case ax::mojom::IntAttribute::kTableColumnHeaderId:
+    case ax::IntAttribute::kTableColumnHeaderId:
       return "tableColumnHeaderId";
-    case ax::mojom::IntAttribute::kTableCellColumnIndex:
+    case ax::IntAttribute::kTableCellColumnIndex:
       return "tableCellColumnIndex";
-    case ax::mojom::IntAttribute::kTableCellColumnSpan:
+    case ax::IntAttribute::kTableCellColumnSpan:
       return "tableCellColumnSpan";
-    case ax::mojom::IntAttribute::kTableCellRowIndex:
+    case ax::IntAttribute::kTableCellRowIndex:
       return "tableCellRowIndex";
-    case ax::mojom::IntAttribute::kTableCellRowSpan:
+    case ax::IntAttribute::kTableCellRowSpan:
       return "tableCellRowSpan";
-    case ax::mojom::IntAttribute::kSortDirection:
+    case ax::IntAttribute::kSortDirection:
       return "sortDirection";
-    case ax::mojom::IntAttribute::kHierarchicalLevel:
+    case ax::IntAttribute::kHierarchicalLevel:
       return "hierarchicalLevel";
-    case ax::mojom::IntAttribute::kNameFrom:
+    case ax::IntAttribute::kNameFrom:
       return "nameFrom";
-    case ax::mojom::IntAttribute::kDescriptionFrom:
+    case ax::IntAttribute::kDescriptionFrom:
       return "descriptionFrom";
-    case ax::mojom::IntAttribute::kActivedescendantId:
+    case ax::IntAttribute::kActivedescendantId:
       return "activedescendantId";
-    case ax::mojom::IntAttribute::kErrormessageId:
+    case ax::IntAttribute::kErrormessageId:
       return "errormessageId";
-    case ax::mojom::IntAttribute::kInPageLinkTargetId:
+    case ax::IntAttribute::kInPageLinkTargetId:
       return "inPageLinkTargetId";
-    case ax::mojom::IntAttribute::kMemberOfId:
+    case ax::IntAttribute::kMemberOfId:
       return "memberOfId";
-    case ax::mojom::IntAttribute::kNextOnLineId:
+    case ax::IntAttribute::kNextOnLineId:
       return "nextOnLineId";
-    case ax::mojom::IntAttribute::kPopupForId:
+    case ax::IntAttribute::kPopupForId:
       return "popupForId";
-    case ax::mojom::IntAttribute::kPreviousOnLineId:
+    case ax::IntAttribute::kPreviousOnLineId:
       return "previousOnLineId";
-    case ax::mojom::IntAttribute::kRestriction:
+    case ax::IntAttribute::kRestriction:
       return "restriction";
-    case ax::mojom::IntAttribute::kSetSize:
+    case ax::IntAttribute::kSetSize:
       return "setSize";
-    case ax::mojom::IntAttribute::kPosInSet:
+    case ax::IntAttribute::kPosInSet:
       return "posInSet";
-    case ax::mojom::IntAttribute::kColorValue:
+    case ax::IntAttribute::kColorValue:
       return "colorValue";
-    case ax::mojom::IntAttribute::kAriaCurrentState:
+    case ax::IntAttribute::kAriaCurrentState:
       return "ariaCurrentState";
-    case ax::mojom::IntAttribute::kBackgroundColor:
+    case ax::IntAttribute::kBackgroundColor:
       return "backgroundColor";
-    case ax::mojom::IntAttribute::kColor:
+    case ax::IntAttribute::kColor:
       return "color";
-    case ax::mojom::IntAttribute::kHasPopup:
+    case ax::IntAttribute::kHasPopup:
       return "haspopup";
-    case ax::mojom::IntAttribute::kInvalidState:
+    case ax::IntAttribute::kInvalidState:
       return "invalidState";
-    case ax::mojom::IntAttribute::kCheckedState:
+    case ax::IntAttribute::kCheckedState:
       return "checkedState";
-    case ax::mojom::IntAttribute::kListStyle:
+    case ax::IntAttribute::kListStyle:
       return "listStyle";
-    case ax::mojom::IntAttribute::kTextAlign:
+    case ax::IntAttribute::kTextAlign:
       return "text-align";
-    case ax::mojom::IntAttribute::kTextDirection:
+    case ax::IntAttribute::kTextDirection:
       return "textDirection";
-    case ax::mojom::IntAttribute::kTextPosition:
+    case ax::IntAttribute::kTextPosition:
       return "textPosition";
-    case ax::mojom::IntAttribute::kTextStyle:
+    case ax::IntAttribute::kTextStyle:
       return "textStyle";
-    case ax::mojom::IntAttribute::kTextOverlineStyle:
+    case ax::IntAttribute::kTextOverlineStyle:
       return "textOverlineStyle";
-    case ax::mojom::IntAttribute::kTextStrikethroughStyle:
+    case ax::IntAttribute::kTextStrikethroughStyle:
       return "textStrikethroughStyle";
-    case ax::mojom::IntAttribute::kTextUnderlineStyle:
+    case ax::IntAttribute::kTextUnderlineStyle:
       return "textUnderlineStyle";
-    case ax::mojom::IntAttribute::kPreviousFocusId:
+    case ax::IntAttribute::kPreviousFocusId:
       return "previousFocusId";
-    case ax::mojom::IntAttribute::kNextFocusId:
+    case ax::IntAttribute::kNextFocusId:
       return "nextFocusId";
-    case ax::mojom::IntAttribute::kImageAnnotationStatus:
+    case ax::IntAttribute::kImageAnnotationStatus:
       return "imageAnnotationStatus";
-    case ax::mojom::IntAttribute::kDOMNodeId:
+    case ax::IntAttribute::kDOMNodeId:
       return "domNodeId";
   }
 
   return "";
 }
 
-ax::mojom::IntAttribute ParseIntAttribute(const char* int_attribute) {
+ax::IntAttribute ParseIntAttribute(const char* int_attribute) {
   if (0 == strcmp(int_attribute, "none"))
-    return ax::mojom::IntAttribute::kNone;
+    return ax::IntAttribute::kNone;
   if (0 == strcmp(int_attribute, "defaultActionVerb"))
-    return ax::mojom::IntAttribute::kDefaultActionVerb;
+    return ax::IntAttribute::kDefaultActionVerb;
   if (0 == strcmp(int_attribute, "dropeffect"))
-    return ax::mojom::IntAttribute::kDropeffect;
+    return ax::IntAttribute::kDropeffect;
   if (0 == strcmp(int_attribute, "scrollX"))
-    return ax::mojom::IntAttribute::kScrollX;
+    return ax::IntAttribute::kScrollX;
   if (0 == strcmp(int_attribute, "scrollXMin"))
-    return ax::mojom::IntAttribute::kScrollXMin;
+    return ax::IntAttribute::kScrollXMin;
   if (0 == strcmp(int_attribute, "scrollXMax"))
-    return ax::mojom::IntAttribute::kScrollXMax;
+    return ax::IntAttribute::kScrollXMax;
   if (0 == strcmp(int_attribute, "scrollY"))
-    return ax::mojom::IntAttribute::kScrollY;
+    return ax::IntAttribute::kScrollY;
   if (0 == strcmp(int_attribute, "scrollYMin"))
-    return ax::mojom::IntAttribute::kScrollYMin;
+    return ax::IntAttribute::kScrollYMin;
   if (0 == strcmp(int_attribute, "scrollYMax"))
-    return ax::mojom::IntAttribute::kScrollYMax;
+    return ax::IntAttribute::kScrollYMax;
   if (0 == strcmp(int_attribute, "textSelStart"))
-    return ax::mojom::IntAttribute::kTextSelStart;
+    return ax::IntAttribute::kTextSelStart;
   if (0 == strcmp(int_attribute, "textSelEnd"))
-    return ax::mojom::IntAttribute::kTextSelEnd;
+    return ax::IntAttribute::kTextSelEnd;
   if (0 == strcmp(int_attribute, "ariaColumnCount"))
-    return ax::mojom::IntAttribute::kAriaColumnCount;
+    return ax::IntAttribute::kAriaColumnCount;
   if (0 == strcmp(int_attribute, "ariaCellColumnIndex"))
-    return ax::mojom::IntAttribute::kAriaCellColumnIndex;
+    return ax::IntAttribute::kAriaCellColumnIndex;
   if (0 == strcmp(int_attribute, "ariaCellColumnSpan"))
-    return ax::mojom::IntAttribute::kAriaCellColumnSpan;
+    return ax::IntAttribute::kAriaCellColumnSpan;
   if (0 == strcmp(int_attribute, "ariaRowCount"))
-    return ax::mojom::IntAttribute::kAriaRowCount;
+    return ax::IntAttribute::kAriaRowCount;
   if (0 == strcmp(int_attribute, "ariaCellRowIndex"))
-    return ax::mojom::IntAttribute::kAriaCellRowIndex;
+    return ax::IntAttribute::kAriaCellRowIndex;
   if (0 == strcmp(int_attribute, "ariaCellRowSpan"))
-    return ax::mojom::IntAttribute::kAriaCellRowSpan;
+    return ax::IntAttribute::kAriaCellRowSpan;
   if (0 == strcmp(int_attribute, "tableRowCount"))
-    return ax::mojom::IntAttribute::kTableRowCount;
+    return ax::IntAttribute::kTableRowCount;
   if (0 == strcmp(int_attribute, "tableColumnCount"))
-    return ax::mojom::IntAttribute::kTableColumnCount;
+    return ax::IntAttribute::kTableColumnCount;
   if (0 == strcmp(int_attribute, "tableHeaderId"))
-    return ax::mojom::IntAttribute::kTableHeaderId;
+    return ax::IntAttribute::kTableHeaderId;
   if (0 == strcmp(int_attribute, "tableRowIndex"))
-    return ax::mojom::IntAttribute::kTableRowIndex;
+    return ax::IntAttribute::kTableRowIndex;
   if (0 == strcmp(int_attribute, "tableRowHeaderId"))
-    return ax::mojom::IntAttribute::kTableRowHeaderId;
+    return ax::IntAttribute::kTableRowHeaderId;
   if (0 == strcmp(int_attribute, "tableColumnIndex"))
-    return ax::mojom::IntAttribute::kTableColumnIndex;
+    return ax::IntAttribute::kTableColumnIndex;
   if (0 == strcmp(int_attribute, "tableColumnHeaderId"))
-    return ax::mojom::IntAttribute::kTableColumnHeaderId;
+    return ax::IntAttribute::kTableColumnHeaderId;
   if (0 == strcmp(int_attribute, "tableCellColumnIndex"))
-    return ax::mojom::IntAttribute::kTableCellColumnIndex;
+    return ax::IntAttribute::kTableCellColumnIndex;
   if (0 == strcmp(int_attribute, "tableCellColumnSpan"))
-    return ax::mojom::IntAttribute::kTableCellColumnSpan;
+    return ax::IntAttribute::kTableCellColumnSpan;
   if (0 == strcmp(int_attribute, "tableCellRowIndex"))
-    return ax::mojom::IntAttribute::kTableCellRowIndex;
+    return ax::IntAttribute::kTableCellRowIndex;
   if (0 == strcmp(int_attribute, "tableCellRowSpan"))
-    return ax::mojom::IntAttribute::kTableCellRowSpan;
+    return ax::IntAttribute::kTableCellRowSpan;
   if (0 == strcmp(int_attribute, "sortDirection"))
-    return ax::mojom::IntAttribute::kSortDirection;
+    return ax::IntAttribute::kSortDirection;
   if (0 == strcmp(int_attribute, "hierarchicalLevel"))
-    return ax::mojom::IntAttribute::kHierarchicalLevel;
+    return ax::IntAttribute::kHierarchicalLevel;
   if (0 == strcmp(int_attribute, "nameFrom"))
-    return ax::mojom::IntAttribute::kNameFrom;
+    return ax::IntAttribute::kNameFrom;
   if (0 == strcmp(int_attribute, "descriptionFrom"))
-    return ax::mojom::IntAttribute::kDescriptionFrom;
+    return ax::IntAttribute::kDescriptionFrom;
   if (0 == strcmp(int_attribute, "activedescendantId"))
-    return ax::mojom::IntAttribute::kActivedescendantId;
+    return ax::IntAttribute::kActivedescendantId;
   if (0 == strcmp(int_attribute, "errormessageId"))
-    return ax::mojom::IntAttribute::kErrormessageId;
+    return ax::IntAttribute::kErrormessageId;
   if (0 == strcmp(int_attribute, "inPageLinkTargetId"))
-    return ax::mojom::IntAttribute::kInPageLinkTargetId;
+    return ax::IntAttribute::kInPageLinkTargetId;
   if (0 == strcmp(int_attribute, "memberOfId"))
-    return ax::mojom::IntAttribute::kMemberOfId;
+    return ax::IntAttribute::kMemberOfId;
   if (0 == strcmp(int_attribute, "nextOnLineId"))
-    return ax::mojom::IntAttribute::kNextOnLineId;
+    return ax::IntAttribute::kNextOnLineId;
   if (0 == strcmp(int_attribute, "popupForId"))
-    return ax::mojom::IntAttribute::kPopupForId;
+    return ax::IntAttribute::kPopupForId;
   if (0 == strcmp(int_attribute, "previousOnLineId"))
-    return ax::mojom::IntAttribute::kPreviousOnLineId;
+    return ax::IntAttribute::kPreviousOnLineId;
   if (0 == strcmp(int_attribute, "restriction"))
-    return ax::mojom::IntAttribute::kRestriction;
+    return ax::IntAttribute::kRestriction;
   if (0 == strcmp(int_attribute, "setSize"))
-    return ax::mojom::IntAttribute::kSetSize;
+    return ax::IntAttribute::kSetSize;
   if (0 == strcmp(int_attribute, "posInSet"))
-    return ax::mojom::IntAttribute::kPosInSet;
+    return ax::IntAttribute::kPosInSet;
   if (0 == strcmp(int_attribute, "colorValue"))
-    return ax::mojom::IntAttribute::kColorValue;
+    return ax::IntAttribute::kColorValue;
   if (0 == strcmp(int_attribute, "ariaCurrentState"))
-    return ax::mojom::IntAttribute::kAriaCurrentState;
+    return ax::IntAttribute::kAriaCurrentState;
   if (0 == strcmp(int_attribute, "backgroundColor"))
-    return ax::mojom::IntAttribute::kBackgroundColor;
+    return ax::IntAttribute::kBackgroundColor;
   if (0 == strcmp(int_attribute, "color"))
-    return ax::mojom::IntAttribute::kColor;
+    return ax::IntAttribute::kColor;
   if (0 == strcmp(int_attribute, "haspopup"))
-    return ax::mojom::IntAttribute::kHasPopup;
+    return ax::IntAttribute::kHasPopup;
   if (0 == strcmp(int_attribute, "invalidState"))
-    return ax::mojom::IntAttribute::kInvalidState;
+    return ax::IntAttribute::kInvalidState;
   if (0 == strcmp(int_attribute, "checkedState"))
-    return ax::mojom::IntAttribute::kCheckedState;
+    return ax::IntAttribute::kCheckedState;
   if (0 == strcmp(int_attribute, "listStyle"))
-    return ax::mojom::IntAttribute::kListStyle;
+    return ax::IntAttribute::kListStyle;
   if (0 == strcmp(int_attribute, "text-align"))
-    return ax::mojom::IntAttribute::kTextAlign;
+    return ax::IntAttribute::kTextAlign;
   if (0 == strcmp(int_attribute, "textDirection"))
-    return ax::mojom::IntAttribute::kTextDirection;
+    return ax::IntAttribute::kTextDirection;
   if (0 == strcmp(int_attribute, "textPosition"))
-    return ax::mojom::IntAttribute::kTextPosition;
+    return ax::IntAttribute::kTextPosition;
   if (0 == strcmp(int_attribute, "textStyle"))
-    return ax::mojom::IntAttribute::kTextStyle;
+    return ax::IntAttribute::kTextStyle;
   if (0 == strcmp(int_attribute, "textOverlineStyle"))
-    return ax::mojom::IntAttribute::kTextOverlineStyle;
+    return ax::IntAttribute::kTextOverlineStyle;
   if (0 == strcmp(int_attribute, "textStrikethroughStyle"))
-    return ax::mojom::IntAttribute::kTextStrikethroughStyle;
+    return ax::IntAttribute::kTextStrikethroughStyle;
   if (0 == strcmp(int_attribute, "textUnderlineStyle"))
-    return ax::mojom::IntAttribute::kTextUnderlineStyle;
+    return ax::IntAttribute::kTextUnderlineStyle;
   if (0 == strcmp(int_attribute, "previousFocusId"))
-    return ax::mojom::IntAttribute::kPreviousFocusId;
+    return ax::IntAttribute::kPreviousFocusId;
   if (0 == strcmp(int_attribute, "nextFocusId"))
-    return ax::mojom::IntAttribute::kNextFocusId;
+    return ax::IntAttribute::kNextFocusId;
   if (0 == strcmp(int_attribute, "imageAnnotationStatus"))
-    return ax::mojom::IntAttribute::kImageAnnotationStatus;
+    return ax::IntAttribute::kImageAnnotationStatus;
   if (0 == strcmp(int_attribute, "domNodeId"))
-    return ax::mojom::IntAttribute::kDOMNodeId;
-  return ax::mojom::IntAttribute::kNone;
+    return ax::IntAttribute::kDOMNodeId;
+  return ax::IntAttribute::kNone;
 }
 
-const char* ToString(ax::mojom::FloatAttribute float_attribute) {
+const char* ToString(ax::FloatAttribute float_attribute) {
   switch (float_attribute) {
-    case ax::mojom::FloatAttribute::kNone:
+    case ax::FloatAttribute::kNone:
       return "none";
-    case ax::mojom::FloatAttribute::kValueForRange:
+    case ax::FloatAttribute::kValueForRange:
       return "valueForRange";
-    case ax::mojom::FloatAttribute::kMinValueForRange:
+    case ax::FloatAttribute::kMinValueForRange:
       return "minValueForRange";
-    case ax::mojom::FloatAttribute::kMaxValueForRange:
+    case ax::FloatAttribute::kMaxValueForRange:
       return "maxValueForRange";
-    case ax::mojom::FloatAttribute::kStepValueForRange:
+    case ax::FloatAttribute::kStepValueForRange:
       return "stepValueForRange";
-    case ax::mojom::FloatAttribute::kFontSize:
+    case ax::FloatAttribute::kFontSize:
       return "fontSize";
-    case ax::mojom::FloatAttribute::kFontWeight:
+    case ax::FloatAttribute::kFontWeight:
       return "fontWeight";
-    case ax::mojom::FloatAttribute::kTextIndent:
+    case ax::FloatAttribute::kTextIndent:
       return "textIndent";
   }
 
   return "";
 }
 
-ax::mojom::FloatAttribute ParseFloatAttribute(const char* float_attribute) {
+ax::FloatAttribute ParseFloatAttribute(const char* float_attribute) {
   if (0 == strcmp(float_attribute, "none"))
-    return ax::mojom::FloatAttribute::kNone;
+    return ax::FloatAttribute::kNone;
   if (0 == strcmp(float_attribute, "valueForRange"))
-    return ax::mojom::FloatAttribute::kValueForRange;
+    return ax::FloatAttribute::kValueForRange;
   if (0 == strcmp(float_attribute, "minValueForRange"))
-    return ax::mojom::FloatAttribute::kMinValueForRange;
+    return ax::FloatAttribute::kMinValueForRange;
   if (0 == strcmp(float_attribute, "maxValueForRange"))
-    return ax::mojom::FloatAttribute::kMaxValueForRange;
+    return ax::FloatAttribute::kMaxValueForRange;
   if (0 == strcmp(float_attribute, "stepValueForRange"))
-    return ax::mojom::FloatAttribute::kStepValueForRange;
+    return ax::FloatAttribute::kStepValueForRange;
   if (0 == strcmp(float_attribute, "fontSize"))
-    return ax::mojom::FloatAttribute::kFontSize;
+    return ax::FloatAttribute::kFontSize;
   if (0 == strcmp(float_attribute, "fontWeight"))
-    return ax::mojom::FloatAttribute::kFontWeight;
+    return ax::FloatAttribute::kFontWeight;
   if (0 == strcmp(float_attribute, "textIndent"))
-    return ax::mojom::FloatAttribute::kTextIndent;
-  return ax::mojom::FloatAttribute::kNone;
+    return ax::FloatAttribute::kTextIndent;
+  return ax::FloatAttribute::kNone;
 }
 
-const char* ToString(ax::mojom::BoolAttribute bool_attribute) {
+const char* ToString(ax::BoolAttribute bool_attribute) {
   switch (bool_attribute) {
-    case ax::mojom::BoolAttribute::kNone:
+    case ax::BoolAttribute::kNone:
       return "none";
-    case ax::mojom::BoolAttribute::kBusy:
+    case ax::BoolAttribute::kBusy:
       return "busy";
-    case ax::mojom::BoolAttribute::kEditableRoot:
+    case ax::BoolAttribute::kEditableRoot:
       return "editableRoot";
-    case ax::mojom::BoolAttribute::kContainerLiveAtomic:
+    case ax::BoolAttribute::kContainerLiveAtomic:
       return "containerLiveAtomic";
-    case ax::mojom::BoolAttribute::kContainerLiveBusy:
+    case ax::BoolAttribute::kContainerLiveBusy:
       return "containerLiveBusy";
-    case ax::mojom::BoolAttribute::kGrabbed:
+    case ax::BoolAttribute::kGrabbed:
       return "grabbed";
-    case ax::mojom::BoolAttribute::kLiveAtomic:
+    case ax::BoolAttribute::kLiveAtomic:
       return "liveAtomic";
-    case ax::mojom::BoolAttribute::kModal:
+    case ax::BoolAttribute::kModal:
       return "modal";
-    case ax::mojom::BoolAttribute::kUpdateLocationOnly:
+    case ax::BoolAttribute::kUpdateLocationOnly:
       return "updateLocationOnly";
-    case ax::mojom::BoolAttribute::kCanvasHasFallback:
+    case ax::BoolAttribute::kCanvasHasFallback:
       return "canvasHasFallback";
-    case ax::mojom::BoolAttribute::kScrollable:
+    case ax::BoolAttribute::kScrollable:
       return "scrollable";
-    case ax::mojom::BoolAttribute::kClickable:
+    case ax::BoolAttribute::kClickable:
       return "clickable";
-    case ax::mojom::BoolAttribute::kClipsChildren:
+    case ax::BoolAttribute::kClipsChildren:
       return "clipsChildren";
-    case ax::mojom::BoolAttribute::kNotUserSelectableStyle:
+    case ax::BoolAttribute::kNotUserSelectableStyle:
       return "notUserSelectableStyle";
-    case ax::mojom::BoolAttribute::kSelected:
+    case ax::BoolAttribute::kSelected:
       return "selected";
-    case ax::mojom::BoolAttribute::kSelectedFromFocus:
+    case ax::BoolAttribute::kSelectedFromFocus:
       return "selectedFromFocus";
-    case ax::mojom::BoolAttribute::kSupportsTextLocation:
+    case ax::BoolAttribute::kSupportsTextLocation:
       return "supportsTextLocation";
-    case ax::mojom::BoolAttribute::kIsLineBreakingObject:
+    case ax::BoolAttribute::kIsLineBreakingObject:
       return "isLineBreakingObject";
-    case ax::mojom::BoolAttribute::kIsPageBreakingObject:
+    case ax::BoolAttribute::kIsPageBreakingObject:
       return "isPageBreakingObject";
-    case ax::mojom::BoolAttribute::kHasAriaAttribute:
+    case ax::BoolAttribute::kHasAriaAttribute:
       return "hasAriaAttribute";
   }
 
   return "";
 }
 
-ax::mojom::BoolAttribute ParseBoolAttribute(const char* bool_attribute) {
+ax::BoolAttribute ParseBoolAttribute(const char* bool_attribute) {
   if (0 == strcmp(bool_attribute, "none"))
-    return ax::mojom::BoolAttribute::kNone;
+    return ax::BoolAttribute::kNone;
   if (0 == strcmp(bool_attribute, "busy"))
-    return ax::mojom::BoolAttribute::kBusy;
+    return ax::BoolAttribute::kBusy;
   if (0 == strcmp(bool_attribute, "editableRoot"))
-    return ax::mojom::BoolAttribute::kEditableRoot;
+    return ax::BoolAttribute::kEditableRoot;
   if (0 == strcmp(bool_attribute, "containerLiveAtomic"))
-    return ax::mojom::BoolAttribute::kContainerLiveAtomic;
+    return ax::BoolAttribute::kContainerLiveAtomic;
   if (0 == strcmp(bool_attribute, "containerLiveBusy"))
-    return ax::mojom::BoolAttribute::kContainerLiveBusy;
+    return ax::BoolAttribute::kContainerLiveBusy;
   if (0 == strcmp(bool_attribute, "grabbed"))
-    return ax::mojom::BoolAttribute::kGrabbed;
+    return ax::BoolAttribute::kGrabbed;
   if (0 == strcmp(bool_attribute, "liveAtomic"))
-    return ax::mojom::BoolAttribute::kLiveAtomic;
+    return ax::BoolAttribute::kLiveAtomic;
   if (0 == strcmp(bool_attribute, "modal"))
-    return ax::mojom::BoolAttribute::kModal;
+    return ax::BoolAttribute::kModal;
   if (0 == strcmp(bool_attribute, "updateLocationOnly"))
-    return ax::mojom::BoolAttribute::kUpdateLocationOnly;
+    return ax::BoolAttribute::kUpdateLocationOnly;
   if (0 == strcmp(bool_attribute, "canvasHasFallback"))
-    return ax::mojom::BoolAttribute::kCanvasHasFallback;
+    return ax::BoolAttribute::kCanvasHasFallback;
   if (0 == strcmp(bool_attribute, "scrollable"))
-    return ax::mojom::BoolAttribute::kScrollable;
+    return ax::BoolAttribute::kScrollable;
   if (0 == strcmp(bool_attribute, "clickable"))
-    return ax::mojom::BoolAttribute::kClickable;
+    return ax::BoolAttribute::kClickable;
   if (0 == strcmp(bool_attribute, "clipsChildren"))
-    return ax::mojom::BoolAttribute::kClipsChildren;
+    return ax::BoolAttribute::kClipsChildren;
   if (0 == strcmp(bool_attribute, "notUserSelectableStyle"))
-    return ax::mojom::BoolAttribute::kNotUserSelectableStyle;
+    return ax::BoolAttribute::kNotUserSelectableStyle;
   if (0 == strcmp(bool_attribute, "selected"))
-    return ax::mojom::BoolAttribute::kSelected;
+    return ax::BoolAttribute::kSelected;
   if (0 == strcmp(bool_attribute, "selectedFromFocus"))
-    return ax::mojom::BoolAttribute::kSelectedFromFocus;
+    return ax::BoolAttribute::kSelectedFromFocus;
   if (0 == strcmp(bool_attribute, "supportsTextLocation"))
-    return ax::mojom::BoolAttribute::kSupportsTextLocation;
+    return ax::BoolAttribute::kSupportsTextLocation;
   if (0 == strcmp(bool_attribute, "isLineBreakingObject"))
-    return ax::mojom::BoolAttribute::kIsLineBreakingObject;
+    return ax::BoolAttribute::kIsLineBreakingObject;
   if (0 == strcmp(bool_attribute, "isPageBreakingObject"))
-    return ax::mojom::BoolAttribute::kIsPageBreakingObject;
+    return ax::BoolAttribute::kIsPageBreakingObject;
   if (0 == strcmp(bool_attribute, "hasAriaAttribute"))
-    return ax::mojom::BoolAttribute::kHasAriaAttribute;
-  return ax::mojom::BoolAttribute::kNone;
+    return ax::BoolAttribute::kHasAriaAttribute;
+  return ax::BoolAttribute::kNone;
 }
 
-const char* ToString(ax::mojom::IntListAttribute int_list_attribute) {
+const char* ToString(ax::IntListAttribute int_list_attribute) {
   switch (int_list_attribute) {
-    case ax::mojom::IntListAttribute::kNone:
+    case ax::IntListAttribute::kNone:
       return "none";
-    case ax::mojom::IntListAttribute::kIndirectChildIds:
+    case ax::IntListAttribute::kIndirectChildIds:
       return "indirectChildIds";
-    case ax::mojom::IntListAttribute::kControlsIds:
+    case ax::IntListAttribute::kControlsIds:
       return "controlsIds";
-    case ax::mojom::IntListAttribute::kDetailsIds:
+    case ax::IntListAttribute::kDetailsIds:
       return "detailsIds";
-    case ax::mojom::IntListAttribute::kDescribedbyIds:
+    case ax::IntListAttribute::kDescribedbyIds:
       return "describedbyIds";
-    case ax::mojom::IntListAttribute::kFlowtoIds:
+    case ax::IntListAttribute::kFlowtoIds:
       return "flowtoIds";
-    case ax::mojom::IntListAttribute::kLabelledbyIds:
+    case ax::IntListAttribute::kLabelledbyIds:
       return "labelledbyIds";
-    case ax::mojom::IntListAttribute::kRadioGroupIds:
+    case ax::IntListAttribute::kRadioGroupIds:
       return "radioGroupIds";
-    case ax::mojom::IntListAttribute::kMarkerTypes:
+    case ax::IntListAttribute::kMarkerTypes:
       return "markerTypes";
-    case ax::mojom::IntListAttribute::kMarkerStarts:
+    case ax::IntListAttribute::kMarkerStarts:
       return "markerStarts";
-    case ax::mojom::IntListAttribute::kMarkerEnds:
+    case ax::IntListAttribute::kMarkerEnds:
       return "markerEnds";
-    case ax::mojom::IntListAttribute::kCharacterOffsets:
+    case ax::IntListAttribute::kCharacterOffsets:
       return "characterOffsets";
-    case ax::mojom::IntListAttribute::kCachedLineStarts:
+    case ax::IntListAttribute::kCachedLineStarts:
       return "cachedLineStarts";
-    case ax::mojom::IntListAttribute::kWordStarts:
+    case ax::IntListAttribute::kWordStarts:
       return "wordStarts";
-    case ax::mojom::IntListAttribute::kWordEnds:
+    case ax::IntListAttribute::kWordEnds:
       return "wordEnds";
-    case ax::mojom::IntListAttribute::kCustomActionIds:
+    case ax::IntListAttribute::kCustomActionIds:
       return "customActionIds";
   }
 
   return "";
 }
 
-ax::mojom::IntListAttribute ParseIntListAttribute(
-    const char* int_list_attribute) {
+ax::IntListAttribute ParseIntListAttribute(const char* int_list_attribute) {
   if (0 == strcmp(int_list_attribute, "none"))
-    return ax::mojom::IntListAttribute::kNone;
+    return ax::IntListAttribute::kNone;
   if (0 == strcmp(int_list_attribute, "indirectChildIds"))
-    return ax::mojom::IntListAttribute::kIndirectChildIds;
+    return ax::IntListAttribute::kIndirectChildIds;
   if (0 == strcmp(int_list_attribute, "controlsIds"))
-    return ax::mojom::IntListAttribute::kControlsIds;
+    return ax::IntListAttribute::kControlsIds;
   if (0 == strcmp(int_list_attribute, "detailsIds"))
-    return ax::mojom::IntListAttribute::kDetailsIds;
+    return ax::IntListAttribute::kDetailsIds;
   if (0 == strcmp(int_list_attribute, "describedbyIds"))
-    return ax::mojom::IntListAttribute::kDescribedbyIds;
+    return ax::IntListAttribute::kDescribedbyIds;
   if (0 == strcmp(int_list_attribute, "flowtoIds"))
-    return ax::mojom::IntListAttribute::kFlowtoIds;
+    return ax::IntListAttribute::kFlowtoIds;
   if (0 == strcmp(int_list_attribute, "labelledbyIds"))
-    return ax::mojom::IntListAttribute::kLabelledbyIds;
+    return ax::IntListAttribute::kLabelledbyIds;
   if (0 == strcmp(int_list_attribute, "radioGroupIds"))
-    return ax::mojom::IntListAttribute::kRadioGroupIds;
+    return ax::IntListAttribute::kRadioGroupIds;
   if (0 == strcmp(int_list_attribute, "markerTypes"))
-    return ax::mojom::IntListAttribute::kMarkerTypes;
+    return ax::IntListAttribute::kMarkerTypes;
   if (0 == strcmp(int_list_attribute, "markerStarts"))
-    return ax::mojom::IntListAttribute::kMarkerStarts;
+    return ax::IntListAttribute::kMarkerStarts;
   if (0 == strcmp(int_list_attribute, "markerEnds"))
-    return ax::mojom::IntListAttribute::kMarkerEnds;
+    return ax::IntListAttribute::kMarkerEnds;
   if (0 == strcmp(int_list_attribute, "characterOffsets"))
-    return ax::mojom::IntListAttribute::kCharacterOffsets;
+    return ax::IntListAttribute::kCharacterOffsets;
   if (0 == strcmp(int_list_attribute, "cachedLineStarts"))
-    return ax::mojom::IntListAttribute::kCachedLineStarts;
+    return ax::IntListAttribute::kCachedLineStarts;
   if (0 == strcmp(int_list_attribute, "wordStarts"))
-    return ax::mojom::IntListAttribute::kWordStarts;
+    return ax::IntListAttribute::kWordStarts;
   if (0 == strcmp(int_list_attribute, "wordEnds"))
-    return ax::mojom::IntListAttribute::kWordEnds;
+    return ax::IntListAttribute::kWordEnds;
   if (0 == strcmp(int_list_attribute, "customActionIds"))
-    return ax::mojom::IntListAttribute::kCustomActionIds;
-  return ax::mojom::IntListAttribute::kNone;
+    return ax::IntListAttribute::kCustomActionIds;
+  return ax::IntListAttribute::kNone;
 }
 
-const char* ToString(ax::mojom::StringListAttribute string_list_attribute) {
+const char* ToString(ax::StringListAttribute string_list_attribute) {
   switch (string_list_attribute) {
-    case ax::mojom::StringListAttribute::kNone:
+    case ax::StringListAttribute::kNone:
       return "none";
-    case ax::mojom::StringListAttribute::kCustomActionDescriptions:
+    case ax::StringListAttribute::kCustomActionDescriptions:
       return "customActionDescriptions";
   }
 
   return "";
 }
 
-ax::mojom::StringListAttribute ParseStringListAttribute(
+ax::StringListAttribute ParseStringListAttribute(
     const char* string_list_attribute) {
   if (0 == strcmp(string_list_attribute, "none"))
-    return ax::mojom::StringListAttribute::kNone;
+    return ax::StringListAttribute::kNone;
   if (0 == strcmp(string_list_attribute, "customActionDescriptions"))
-    return ax::mojom::StringListAttribute::kCustomActionDescriptions;
-  return ax::mojom::StringListAttribute::kNone;
+    return ax::StringListAttribute::kCustomActionDescriptions;
+  return ax::StringListAttribute::kNone;
 }
 
-const char* ToString(ax::mojom::ListStyle list_style) {
+const char* ToString(ax::ListStyle list_style) {
   switch (list_style) {
-    case ax::mojom::ListStyle::kNone:
+    case ax::ListStyle::kNone:
       return "none";
-    case ax::mojom::ListStyle::kCircle:
+    case ax::ListStyle::kCircle:
       return "circle";
-    case ax::mojom::ListStyle::kDisc:
+    case ax::ListStyle::kDisc:
       return "disc";
-    case ax::mojom::ListStyle::kImage:
+    case ax::ListStyle::kImage:
       return "image";
-    case ax::mojom::ListStyle::kNumeric:
+    case ax::ListStyle::kNumeric:
       return "numeric";
-    case ax::mojom::ListStyle::kOther:
+    case ax::ListStyle::kOther:
       return "other";
-    case ax::mojom::ListStyle::kSquare:
+    case ax::ListStyle::kSquare:
       return "square";
   }
 
   return "";
 }
 
-ax::mojom::ListStyle ParseListStyle(const char* list_style) {
+ax::ListStyle ParseListStyle(const char* list_style) {
   if (0 == strcmp(list_style, "none"))
-    return ax::mojom::ListStyle::kNone;
+    return ax::ListStyle::kNone;
   if (0 == strcmp(list_style, "circle"))
-    return ax::mojom::ListStyle::kCircle;
+    return ax::ListStyle::kCircle;
   if (0 == strcmp(list_style, "disc"))
-    return ax::mojom::ListStyle::kDisc;
+    return ax::ListStyle::kDisc;
   if (0 == strcmp(list_style, "image"))
-    return ax::mojom::ListStyle::kImage;
+    return ax::ListStyle::kImage;
   if (0 == strcmp(list_style, "numeric"))
-    return ax::mojom::ListStyle::kNumeric;
+    return ax::ListStyle::kNumeric;
   if (0 == strcmp(list_style, "other"))
-    return ax::mojom::ListStyle::kOther;
+    return ax::ListStyle::kOther;
   if (0 == strcmp(list_style, "square"))
-    return ax::mojom::ListStyle::kSquare;
-  return ax::mojom::ListStyle::kNone;
+    return ax::ListStyle::kSquare;
+  return ax::ListStyle::kNone;
 }
 
-const char* ToString(ax::mojom::MarkerType marker_type) {
+const char* ToString(ax::MarkerType marker_type) {
   switch (marker_type) {
-    case ax::mojom::MarkerType::kNone:
+    case ax::MarkerType::kNone:
       return "none";
-    case ax::mojom::MarkerType::kSpelling:
+    case ax::MarkerType::kSpelling:
       return "spelling";
-    case ax::mojom::MarkerType::kGrammar:
+    case ax::MarkerType::kGrammar:
       return "grammar";
-    case ax::mojom::MarkerType::kTextMatch:
+    case ax::MarkerType::kTextMatch:
       return "textMatch";
-    case ax::mojom::MarkerType::kActiveSuggestion:
+    case ax::MarkerType::kActiveSuggestion:
       return "activeSuggestion";
-    case ax::mojom::MarkerType::kSuggestion:
+    case ax::MarkerType::kSuggestion:
       return "suggestion";
   }
 
   return "";
 }
 
-ax::mojom::MarkerType ParseMarkerType(const char* marker_type) {
+ax::MarkerType ParseMarkerType(const char* marker_type) {
   if (0 == strcmp(marker_type, "none"))
-    return ax::mojom::MarkerType::kNone;
+    return ax::MarkerType::kNone;
   if (0 == strcmp(marker_type, "spelling"))
-    return ax::mojom::MarkerType::kSpelling;
+    return ax::MarkerType::kSpelling;
   if (0 == strcmp(marker_type, "grammar"))
-    return ax::mojom::MarkerType::kGrammar;
+    return ax::MarkerType::kGrammar;
   if (0 == strcmp(marker_type, "textMatch"))
-    return ax::mojom::MarkerType::kTextMatch;
+    return ax::MarkerType::kTextMatch;
   if (0 == strcmp(marker_type, "activeSuggestion"))
-    return ax::mojom::MarkerType::kActiveSuggestion;
+    return ax::MarkerType::kActiveSuggestion;
   if (0 == strcmp(marker_type, "suggestion"))
-    return ax::mojom::MarkerType::kSuggestion;
-  return ax::mojom::MarkerType::kNone;
+    return ax::MarkerType::kSuggestion;
+  return ax::MarkerType::kNone;
 }
 
-const char* ToString(ax::mojom::MoveDirection move_direction) {
+const char* ToString(ax::MoveDirection move_direction) {
   switch (move_direction) {
-    case ax::mojom::MoveDirection::kForward:
+    case ax::MoveDirection::kForward:
       return "forward";
-    case ax::mojom::MoveDirection::kBackward:
+    case ax::MoveDirection::kBackward:
       return "backward";
   }
 
   return "";
 }
 
-ax::mojom::MoveDirection ParseMoveDirection(const char* move_direction) {
+ax::MoveDirection ParseMoveDirection(const char* move_direction) {
   if (0 == strcmp(move_direction, "forward"))
-    return ax::mojom::MoveDirection::kForward;
+    return ax::MoveDirection::kForward;
   if (0 == strcmp(move_direction, "backward"))
-    return ax::mojom::MoveDirection::kBackward;
-  return ax::mojom::MoveDirection::kForward;
+    return ax::MoveDirection::kBackward;
+  return ax::MoveDirection::kForward;
 }
 
-const char* ToString(ax::mojom::Command command) {
+const char* ToString(ax::Command command) {
   switch (command) {
-    case ax::mojom::Command::kClearSelection:
+    case ax::Command::kClearSelection:
       return "clearSelection";
-    case ax::mojom::Command::kCut:
+    case ax::Command::kCut:
       return "cut";
-    case ax::mojom::Command::kDelete:
+    case ax::Command::kDelete:
       return "delete";
-    case ax::mojom::Command::kDictate:
+    case ax::Command::kDictate:
       return "dictate";
-    case ax::mojom::Command::kExtendSelection:
+    case ax::Command::kExtendSelection:
       return "extendSelection";
-    case ax::mojom::Command::kFormat:
+    case ax::Command::kFormat:
       return "format";
-    case ax::mojom::Command::kInsert:
+    case ax::Command::kInsert:
       return "insert";
-    case ax::mojom::Command::kMarker:
+    case ax::Command::kMarker:
       return "marker";
-    case ax::mojom::Command::kMoveSelection:
+    case ax::Command::kMoveSelection:
       return "moveSelection";
-    case ax::mojom::Command::kPaste:
+    case ax::Command::kPaste:
       return "paste";
-    case ax::mojom::Command::kReplace:
+    case ax::Command::kReplace:
       return "replace";
-    case ax::mojom::Command::kSetSelection:
+    case ax::Command::kSetSelection:
       return "setSelection";
-    case ax::mojom::Command::kType:
+    case ax::Command::kType:
       return "type";
   }
 
   return "";
 }
 
-ax::mojom::Command ParseCommand(const char* command) {
+ax::Command ParseCommand(const char* command) {
   if (0 == strcmp(command, "clearSelection"))
-    return ax::mojom::Command::kClearSelection;
+    return ax::Command::kClearSelection;
   if (0 == strcmp(command, "cut"))
-    return ax::mojom::Command::kCut;
+    return ax::Command::kCut;
   if (0 == strcmp(command, "delete"))
-    return ax::mojom::Command::kDelete;
+    return ax::Command::kDelete;
   if (0 == strcmp(command, "dictate"))
-    return ax::mojom::Command::kDictate;
+    return ax::Command::kDictate;
   if (0 == strcmp(command, "extendSelection"))
-    return ax::mojom::Command::kExtendSelection;
+    return ax::Command::kExtendSelection;
   if (0 == strcmp(command, "format"))
-    return ax::mojom::Command::kFormat;
+    return ax::Command::kFormat;
   if (0 == strcmp(command, "insert"))
-    return ax::mojom::Command::kInsert;
+    return ax::Command::kInsert;
   if (0 == strcmp(command, "marker"))
-    return ax::mojom::Command::kMarker;
+    return ax::Command::kMarker;
   if (0 == strcmp(command, "moveSelection"))
-    return ax::mojom::Command::kMoveSelection;
+    return ax::Command::kMoveSelection;
   if (0 == strcmp(command, "paste"))
-    return ax::mojom::Command::kPaste;
+    return ax::Command::kPaste;
   if (0 == strcmp(command, "replace"))
-    return ax::mojom::Command::kReplace;
+    return ax::Command::kReplace;
   if (0 == strcmp(command, "setSelection"))
-    return ax::mojom::Command::kSetSelection;
+    return ax::Command::kSetSelection;
   if (0 == strcmp(command, "type"))
-    return ax::mojom::Command::kType;
+    return ax::Command::kType;
 
   // Return the default command.
-  return ax::mojom::Command::kType;
+  return ax::Command::kType;
 }
 
-const char* ToString(ax::mojom::TextBoundary text_boundary) {
+const char* ToString(ax::TextBoundary text_boundary) {
   switch (text_boundary) {
-    case ax::mojom::TextBoundary::kCharacter:
+    case ax::TextBoundary::kCharacter:
       return "character";
-    case ax::mojom::TextBoundary::kFormat:
+    case ax::TextBoundary::kFormat:
       return "format";
-    case ax::mojom::TextBoundary::kLineEnd:
+    case ax::TextBoundary::kLineEnd:
       return "lineEnd";
-    case ax::mojom::TextBoundary::kLineStart:
+    case ax::TextBoundary::kLineStart:
       return "lineStart";
-    case ax::mojom::TextBoundary::kLineStartOrEnd:
+    case ax::TextBoundary::kLineStartOrEnd:
       return "lineStartOrEnd";
-    case ax::mojom::TextBoundary::kObject:
+    case ax::TextBoundary::kObject:
       return "object";
-    case ax::mojom::TextBoundary::kPageEnd:
+    case ax::TextBoundary::kPageEnd:
       return "pageEnd";
-    case ax::mojom::TextBoundary::kPageStart:
+    case ax::TextBoundary::kPageStart:
       return "pageStart";
-    case ax::mojom::TextBoundary::kPageStartOrEnd:
+    case ax::TextBoundary::kPageStartOrEnd:
       return "pageStartOrEnd";
-    case ax::mojom::TextBoundary::kParagraphEnd:
+    case ax::TextBoundary::kParagraphEnd:
       return "paragraphEnd";
-    case ax::mojom::TextBoundary::kParagraphStart:
+    case ax::TextBoundary::kParagraphStart:
       return "paragraphStart";
-    case ax::mojom::TextBoundary::kParagraphStartOrEnd:
+    case ax::TextBoundary::kParagraphStartOrEnd:
       return "paragraphStartOrEnd";
-    case ax::mojom::TextBoundary::kSentenceEnd:
+    case ax::TextBoundary::kSentenceEnd:
       return "sentenceEnd";
-    case ax::mojom::TextBoundary::kSentenceStart:
+    case ax::TextBoundary::kSentenceStart:
       return "sentenceStart";
-    case ax::mojom::TextBoundary::kSentenceStartOrEnd:
+    case ax::TextBoundary::kSentenceStartOrEnd:
       return "sentenceStartOrEnd";
-    case ax::mojom::TextBoundary::kWebPage:
+    case ax::TextBoundary::kWebPage:
       return "webPage";
-    case ax::mojom::TextBoundary::kWordEnd:
+    case ax::TextBoundary::kWordEnd:
       return "wordEnd";
-    case ax::mojom::TextBoundary::kWordStart:
+    case ax::TextBoundary::kWordStart:
       return "wordStart";
-    case ax::mojom::TextBoundary::kWordStartOrEnd:
+    case ax::TextBoundary::kWordStartOrEnd:
       return "wordStartOrEnd";
   }
 
   return "";
 }
 
-ax::mojom::TextBoundary ParseTextBoundary(const char* text_boundary) {
+ax::TextBoundary ParseTextBoundary(const char* text_boundary) {
   if (0 == strcmp(text_boundary, "object"))
-    return ax::mojom::TextBoundary::kObject;
+    return ax::TextBoundary::kObject;
   if (0 == strcmp(text_boundary, "character"))
-    return ax::mojom::TextBoundary::kCharacter;
+    return ax::TextBoundary::kCharacter;
   if (0 == strcmp(text_boundary, "format"))
-    return ax::mojom::TextBoundary::kFormat;
+    return ax::TextBoundary::kFormat;
   if (0 == strcmp(text_boundary, "lineEnd"))
-    return ax::mojom::TextBoundary::kLineEnd;
+    return ax::TextBoundary::kLineEnd;
   if (0 == strcmp(text_boundary, "lineStart"))
-    return ax::mojom::TextBoundary::kLineStart;
+    return ax::TextBoundary::kLineStart;
   if (0 == strcmp(text_boundary, "lineStartOrEnd"))
-    return ax::mojom::TextBoundary::kLineStartOrEnd;
+    return ax::TextBoundary::kLineStartOrEnd;
   if (0 == strcmp(text_boundary, "pageEnd"))
-    return ax::mojom::TextBoundary::kPageEnd;
+    return ax::TextBoundary::kPageEnd;
   if (0 == strcmp(text_boundary, "pageStart"))
-    return ax::mojom::TextBoundary::kPageStart;
+    return ax::TextBoundary::kPageStart;
   if (0 == strcmp(text_boundary, "pageStartOrEnd"))
-    return ax::mojom::TextBoundary::kPageStartOrEnd;
+    return ax::TextBoundary::kPageStartOrEnd;
   if (0 == strcmp(text_boundary, "paragraphEnd"))
-    return ax::mojom::TextBoundary::kParagraphEnd;
+    return ax::TextBoundary::kParagraphEnd;
   if (0 == strcmp(text_boundary, "paragraphStart"))
-    return ax::mojom::TextBoundary::kParagraphStart;
+    return ax::TextBoundary::kParagraphStart;
   if (0 == strcmp(text_boundary, "paragraphStartOrEnd"))
-    return ax::mojom::TextBoundary::kParagraphStartOrEnd;
+    return ax::TextBoundary::kParagraphStartOrEnd;
   if (0 == strcmp(text_boundary, "sentenceEnd"))
-    return ax::mojom::TextBoundary::kSentenceEnd;
+    return ax::TextBoundary::kSentenceEnd;
   if (0 == strcmp(text_boundary, "sentenceStart"))
-    return ax::mojom::TextBoundary::kSentenceStart;
+    return ax::TextBoundary::kSentenceStart;
   if (0 == strcmp(text_boundary, "sentenceStartOrEnd"))
-    return ax::mojom::TextBoundary::kSentenceStartOrEnd;
+    return ax::TextBoundary::kSentenceStartOrEnd;
   if (0 == strcmp(text_boundary, "webPage"))
-    return ax::mojom::TextBoundary::kWebPage;
+    return ax::TextBoundary::kWebPage;
   if (0 == strcmp(text_boundary, "wordEnd"))
-    return ax::mojom::TextBoundary::kWordEnd;
+    return ax::TextBoundary::kWordEnd;
   if (0 == strcmp(text_boundary, "wordStart"))
-    return ax::mojom::TextBoundary::kWordStart;
+    return ax::TextBoundary::kWordStart;
   if (0 == strcmp(text_boundary, "wordStartOrEnd"))
-    return ax::mojom::TextBoundary::kWordStartOrEnd;
-  return ax::mojom::TextBoundary::kObject;
+    return ax::TextBoundary::kWordStartOrEnd;
+  return ax::TextBoundary::kObject;
 }
 
-const char* ToString(ax::mojom::TextDecorationStyle text_decoration_style) {
+const char* ToString(ax::TextDecorationStyle text_decoration_style) {
   switch (text_decoration_style) {
-    case ax::mojom::TextDecorationStyle::kNone:
+    case ax::TextDecorationStyle::kNone:
       return "none";
-    case ax::mojom::TextDecorationStyle::kSolid:
+    case ax::TextDecorationStyle::kSolid:
       return "solid";
-    case ax::mojom::TextDecorationStyle::kDashed:
+    case ax::TextDecorationStyle::kDashed:
       return "dashed";
-    case ax::mojom::TextDecorationStyle::kDotted:
+    case ax::TextDecorationStyle::kDotted:
       return "dotted";
-    case ax::mojom::TextDecorationStyle::kDouble:
+    case ax::TextDecorationStyle::kDouble:
       return "double";
-    case ax::mojom::TextDecorationStyle::kWavy:
+    case ax::TextDecorationStyle::kWavy:
       return "wavy";
   }
 
   return "";
 }
 
-ax::mojom::TextDecorationStyle ParseTextDecorationStyle(
+ax::TextDecorationStyle ParseTextDecorationStyle(
     const char* text_decoration_style) {
   if (0 == strcmp(text_decoration_style, "none"))
-    return ax::mojom::TextDecorationStyle::kNone;
+    return ax::TextDecorationStyle::kNone;
   if (0 == strcmp(text_decoration_style, "solid"))
-    return ax::mojom::TextDecorationStyle::kSolid;
+    return ax::TextDecorationStyle::kSolid;
   if (0 == strcmp(text_decoration_style, "dashed"))
-    return ax::mojom::TextDecorationStyle::kDashed;
+    return ax::TextDecorationStyle::kDashed;
   if (0 == strcmp(text_decoration_style, "dotted"))
-    return ax::mojom::TextDecorationStyle::kDotted;
+    return ax::TextDecorationStyle::kDotted;
   if (0 == strcmp(text_decoration_style, "double"))
-    return ax::mojom::TextDecorationStyle::kDouble;
+    return ax::TextDecorationStyle::kDouble;
   if (0 == strcmp(text_decoration_style, "wavy"))
-    return ax::mojom::TextDecorationStyle::kWavy;
-  return ax::mojom::TextDecorationStyle::kNone;
+    return ax::TextDecorationStyle::kWavy;
+  return ax::TextDecorationStyle::kNone;
 }
 
-const char* ToString(ax::mojom::TextAlign text_align) {
+const char* ToString(ax::TextAlign text_align) {
   switch (text_align) {
-    case ax::mojom::TextAlign::kNone:
+    case ax::TextAlign::kNone:
       return "none";
-    case ax::mojom::TextAlign::kLeft:
+    case ax::TextAlign::kLeft:
       return "left";
-    case ax::mojom::TextAlign::kRight:
+    case ax::TextAlign::kRight:
       return "right";
-    case ax::mojom::TextAlign::kCenter:
+    case ax::TextAlign::kCenter:
       return "center";
-    case ax::mojom::TextAlign::kJustify:
+    case ax::TextAlign::kJustify:
       return "justify";
   }
 
   return "";
 }
 
-ax::mojom::TextAlign ParseTextAlign(const char* text_align) {
+ax::TextAlign ParseTextAlign(const char* text_align) {
   if (0 == strcmp(text_align, "none"))
-    return ax::mojom::TextAlign::kNone;
+    return ax::TextAlign::kNone;
   if (0 == strcmp(text_align, "left"))
-    return ax::mojom::TextAlign::kLeft;
+    return ax::TextAlign::kLeft;
   if (0 == strcmp(text_align, "right"))
-    return ax::mojom::TextAlign::kRight;
+    return ax::TextAlign::kRight;
   if (0 == strcmp(text_align, "center"))
-    return ax::mojom::TextAlign::kCenter;
+    return ax::TextAlign::kCenter;
   if (0 == strcmp(text_align, "justify"))
-    return ax::mojom::TextAlign::kJustify;
-  return ax::mojom::TextAlign::kNone;
+    return ax::TextAlign::kJustify;
+  return ax::TextAlign::kNone;
 }
 
-const char* ToString(ax::mojom::WritingDirection text_direction) {
+const char* ToString(ax::WritingDirection text_direction) {
   switch (text_direction) {
-    case ax::mojom::WritingDirection::kNone:
+    case ax::WritingDirection::kNone:
       return "none";
-    case ax::mojom::WritingDirection::kLtr:
+    case ax::WritingDirection::kLtr:
       return "ltr";
-    case ax::mojom::WritingDirection::kRtl:
+    case ax::WritingDirection::kRtl:
       return "rtl";
-    case ax::mojom::WritingDirection::kTtb:
+    case ax::WritingDirection::kTtb:
       return "ttb";
-    case ax::mojom::WritingDirection::kBtt:
+    case ax::WritingDirection::kBtt:
       return "btt";
   }
 
   return "";
 }
 
-ax::mojom::WritingDirection ParseTextDirection(const char* text_direction) {
+ax::WritingDirection ParseTextDirection(const char* text_direction) {
   if (0 == strcmp(text_direction, "none"))
-    return ax::mojom::WritingDirection::kNone;
+    return ax::WritingDirection::kNone;
   if (0 == strcmp(text_direction, "ltr"))
-    return ax::mojom::WritingDirection::kLtr;
+    return ax::WritingDirection::kLtr;
   if (0 == strcmp(text_direction, "rtl"))
-    return ax::mojom::WritingDirection::kRtl;
+    return ax::WritingDirection::kRtl;
   if (0 == strcmp(text_direction, "ttb"))
-    return ax::mojom::WritingDirection::kTtb;
+    return ax::WritingDirection::kTtb;
   if (0 == strcmp(text_direction, "btt"))
-    return ax::mojom::WritingDirection::kBtt;
-  return ax::mojom::WritingDirection::kNone;
+    return ax::WritingDirection::kBtt;
+  return ax::WritingDirection::kNone;
 }
 
-const char* ToString(ax::mojom::TextPosition text_position) {
+const char* ToString(ax::TextPosition text_position) {
   switch (text_position) {
-    case ax::mojom::TextPosition::kNone:
+    case ax::TextPosition::kNone:
       return "none";
-    case ax::mojom::TextPosition::kSubscript:
+    case ax::TextPosition::kSubscript:
       return "subscript";
-    case ax::mojom::TextPosition::kSuperscript:
+    case ax::TextPosition::kSuperscript:
       return "superscript";
   }
 
   return "";
 }
 
-ax::mojom::TextPosition ParseTextPosition(const char* text_position) {
+ax::TextPosition ParseTextPosition(const char* text_position) {
   if (0 == strcmp(text_position, "none"))
-    return ax::mojom::TextPosition::kNone;
+    return ax::TextPosition::kNone;
   if (0 == strcmp(text_position, "subscript"))
-    return ax::mojom::TextPosition::kSubscript;
+    return ax::TextPosition::kSubscript;
   if (0 == strcmp(text_position, "superscript"))
-    return ax::mojom::TextPosition::kSuperscript;
-  return ax::mojom::TextPosition::kNone;
+    return ax::TextPosition::kSuperscript;
+  return ax::TextPosition::kNone;
 }
 
-const char* ToString(ax::mojom::TextStyle text_style) {
+const char* ToString(ax::TextStyle text_style) {
   switch (text_style) {
-    case ax::mojom::TextStyle::kNone:
+    case ax::TextStyle::kNone:
       return "none";
-    case ax::mojom::TextStyle::kBold:
+    case ax::TextStyle::kBold:
       return "bold";
-    case ax::mojom::TextStyle::kItalic:
+    case ax::TextStyle::kItalic:
       return "italic";
-    case ax::mojom::TextStyle::kUnderline:
+    case ax::TextStyle::kUnderline:
       return "underline";
-    case ax::mojom::TextStyle::kLineThrough:
+    case ax::TextStyle::kLineThrough:
       return "lineThrough";
-    case ax::mojom::TextStyle::kOverline:
+    case ax::TextStyle::kOverline:
       return "overline";
   }
 
   return "";
 }
 
-ax::mojom::TextStyle ParseTextStyle(const char* text_style) {
+ax::TextStyle ParseTextStyle(const char* text_style) {
   if (0 == strcmp(text_style, "none"))
-    return ax::mojom::TextStyle::kNone;
+    return ax::TextStyle::kNone;
   if (0 == strcmp(text_style, "bold"))
-    return ax::mojom::TextStyle::kBold;
+    return ax::TextStyle::kBold;
   if (0 == strcmp(text_style, "italic"))
-    return ax::mojom::TextStyle::kItalic;
+    return ax::TextStyle::kItalic;
   if (0 == strcmp(text_style, "underline"))
-    return ax::mojom::TextStyle::kUnderline;
+    return ax::TextStyle::kUnderline;
   if (0 == strcmp(text_style, "lineThrough"))
-    return ax::mojom::TextStyle::kLineThrough;
+    return ax::TextStyle::kLineThrough;
   if (0 == strcmp(text_style, "overline"))
-    return ax::mojom::TextStyle::kOverline;
-  return ax::mojom::TextStyle::kNone;
+    return ax::TextStyle::kOverline;
+  return ax::TextStyle::kNone;
 }
 
-const char* ToString(ax::mojom::AriaCurrentState aria_current_state) {
+const char* ToString(ax::AriaCurrentState aria_current_state) {
   switch (aria_current_state) {
-    case ax::mojom::AriaCurrentState::kNone:
+    case ax::AriaCurrentState::kNone:
       return "none";
-    case ax::mojom::AriaCurrentState::kFalse:
+    case ax::AriaCurrentState::kFalse:
       return "false";
-    case ax::mojom::AriaCurrentState::kTrue:
+    case ax::AriaCurrentState::kTrue:
       return "true";
-    case ax::mojom::AriaCurrentState::kPage:
+    case ax::AriaCurrentState::kPage:
       return "page";
-    case ax::mojom::AriaCurrentState::kStep:
+    case ax::AriaCurrentState::kStep:
       return "step";
-    case ax::mojom::AriaCurrentState::kLocation:
+    case ax::AriaCurrentState::kLocation:
       return "location";
-    case ax::mojom::AriaCurrentState::kUnclippedLocation:
+    case ax::AriaCurrentState::kUnclippedLocation:
       return "unclippedLocation";
-    case ax::mojom::AriaCurrentState::kDate:
+    case ax::AriaCurrentState::kDate:
       return "date";
-    case ax::mojom::AriaCurrentState::kTime:
+    case ax::AriaCurrentState::kTime:
       return "time";
   }
 
   return "";
 }
 
-ax::mojom::AriaCurrentState ParseAriaCurrentState(
-    const char* aria_current_state) {
+ax::AriaCurrentState ParseAriaCurrentState(const char* aria_current_state) {
   if (0 == strcmp(aria_current_state, "none"))
-    return ax::mojom::AriaCurrentState::kNone;
+    return ax::AriaCurrentState::kNone;
   if (0 == strcmp(aria_current_state, "false"))
-    return ax::mojom::AriaCurrentState::kFalse;
+    return ax::AriaCurrentState::kFalse;
   if (0 == strcmp(aria_current_state, "true"))
-    return ax::mojom::AriaCurrentState::kTrue;
+    return ax::AriaCurrentState::kTrue;
   if (0 == strcmp(aria_current_state, "page"))
-    return ax::mojom::AriaCurrentState::kPage;
+    return ax::AriaCurrentState::kPage;
   if (0 == strcmp(aria_current_state, "step"))
-    return ax::mojom::AriaCurrentState::kStep;
+    return ax::AriaCurrentState::kStep;
   if (0 == strcmp(aria_current_state, "location"))
-    return ax::mojom::AriaCurrentState::kLocation;
+    return ax::AriaCurrentState::kLocation;
   if (0 == strcmp(aria_current_state, "unclippedLocation"))
-    return ax::mojom::AriaCurrentState::kUnclippedLocation;
+    return ax::AriaCurrentState::kUnclippedLocation;
   if (0 == strcmp(aria_current_state, "date"))
-    return ax::mojom::AriaCurrentState::kDate;
+    return ax::AriaCurrentState::kDate;
   if (0 == strcmp(aria_current_state, "time"))
-    return ax::mojom::AriaCurrentState::kTime;
-  return ax::mojom::AriaCurrentState::kNone;
+    return ax::AriaCurrentState::kTime;
+  return ax::AriaCurrentState::kNone;
 }
 
-const char* ToString(ax::mojom::HasPopup has_popup) {
+const char* ToString(ax::HasPopup has_popup) {
   switch (has_popup) {
-    case ax::mojom::HasPopup::kFalse:
+    case ax::HasPopup::kFalse:
       return "";
-    case ax::mojom::HasPopup::kTrue:
+    case ax::HasPopup::kTrue:
       return "true";
-    case ax::mojom::HasPopup::kMenu:
+    case ax::HasPopup::kMenu:
       return "menu";
-    case ax::mojom::HasPopup::kListbox:
+    case ax::HasPopup::kListbox:
       return "listbox";
-    case ax::mojom::HasPopup::kTree:
+    case ax::HasPopup::kTree:
       return "tree";
-    case ax::mojom::HasPopup::kGrid:
+    case ax::HasPopup::kGrid:
       return "grid";
-    case ax::mojom::HasPopup::kDialog:
+    case ax::HasPopup::kDialog:
       return "dialog";
   }
 
   return "";
 }
 
-ax::mojom::HasPopup ParseHasPopup(const char* has_popup) {
+ax::HasPopup ParseHasPopup(const char* has_popup) {
   if (0 == strcmp(has_popup, "true"))
-    return ax::mojom::HasPopup::kTrue;
+    return ax::HasPopup::kTrue;
   if (0 == strcmp(has_popup, "menu"))
-    return ax::mojom::HasPopup::kMenu;
+    return ax::HasPopup::kMenu;
   if (0 == strcmp(has_popup, "listbox"))
-    return ax::mojom::HasPopup::kListbox;
+    return ax::HasPopup::kListbox;
   if (0 == strcmp(has_popup, "tree"))
-    return ax::mojom::HasPopup::kTree;
+    return ax::HasPopup::kTree;
   if (0 == strcmp(has_popup, "grid"))
-    return ax::mojom::HasPopup::kGrid;
+    return ax::HasPopup::kGrid;
   if (0 == strcmp(has_popup, "dialog"))
-    return ax::mojom::HasPopup::kDialog;
+    return ax::HasPopup::kDialog;
 
-  return ax::mojom::HasPopup::kFalse;
+  return ax::HasPopup::kFalse;
 }
 
-const char* ToString(ax::mojom::InvalidState invalid_state) {
+const char* ToString(ax::InvalidState invalid_state) {
   switch (invalid_state) {
-    case ax::mojom::InvalidState::kNone:
+    case ax::InvalidState::kNone:
       return "none";
-    case ax::mojom::InvalidState::kFalse:
+    case ax::InvalidState::kFalse:
       return "false";
-    case ax::mojom::InvalidState::kTrue:
+    case ax::InvalidState::kTrue:
       return "true";
-    case ax::mojom::InvalidState::kOther:
+    case ax::InvalidState::kOther:
       return "other";
   }
 
   return "";
 }
 
-ax::mojom::InvalidState ParseInvalidState(const char* invalid_state) {
+ax::InvalidState ParseInvalidState(const char* invalid_state) {
   if (0 == strcmp(invalid_state, "none"))
-    return ax::mojom::InvalidState::kNone;
+    return ax::InvalidState::kNone;
   if (0 == strcmp(invalid_state, "false"))
-    return ax::mojom::InvalidState::kFalse;
+    return ax::InvalidState::kFalse;
   if (0 == strcmp(invalid_state, "true"))
-    return ax::mojom::InvalidState::kTrue;
+    return ax::InvalidState::kTrue;
   if (0 == strcmp(invalid_state, "other"))
-    return ax::mojom::InvalidState::kOther;
-  return ax::mojom::InvalidState::kNone;
+    return ax::InvalidState::kOther;
+  return ax::InvalidState::kNone;
 }
 
-const char* ToString(ax::mojom::Restriction restriction) {
+const char* ToString(ax::Restriction restriction) {
   switch (restriction) {
-    case ax::mojom::Restriction::kNone:
+    case ax::Restriction::kNone:
       return "none";
-    case ax::mojom::Restriction::kReadOnly:
+    case ax::Restriction::kReadOnly:
       return "readOnly";
-    case ax::mojom::Restriction::kDisabled:
+    case ax::Restriction::kDisabled:
       return "disabled";
   }
 
   return "";
 }
 
-ax::mojom::Restriction ParseRestriction(const char* restriction) {
+ax::Restriction ParseRestriction(const char* restriction) {
   if (0 == strcmp(restriction, "none"))
-    return ax::mojom::Restriction::kNone;
+    return ax::Restriction::kNone;
   if (0 == strcmp(restriction, "readOnly"))
-    return ax::mojom::Restriction::kReadOnly;
+    return ax::Restriction::kReadOnly;
   if (0 == strcmp(restriction, "disabled"))
-    return ax::mojom::Restriction::kDisabled;
-  return ax::mojom::Restriction::kNone;
+    return ax::Restriction::kDisabled;
+  return ax::Restriction::kNone;
 }
 
-const char* ToString(ax::mojom::CheckedState checked_state) {
+const char* ToString(ax::CheckedState checked_state) {
   switch (checked_state) {
-    case ax::mojom::CheckedState::kNone:
+    case ax::CheckedState::kNone:
       return "none";
-    case ax::mojom::CheckedState::kFalse:
+    case ax::CheckedState::kFalse:
       return "false";
-    case ax::mojom::CheckedState::kTrue:
+    case ax::CheckedState::kTrue:
       return "true";
-    case ax::mojom::CheckedState::kMixed:
+    case ax::CheckedState::kMixed:
       return "mixed";
   }
 
   return "";
 }
 
-ax::mojom::CheckedState ParseCheckedState(const char* checked_state) {
+ax::CheckedState ParseCheckedState(const char* checked_state) {
   if (0 == strcmp(checked_state, "none"))
-    return ax::mojom::CheckedState::kNone;
+    return ax::CheckedState::kNone;
   if (0 == strcmp(checked_state, "false"))
-    return ax::mojom::CheckedState::kFalse;
+    return ax::CheckedState::kFalse;
   if (0 == strcmp(checked_state, "true"))
-    return ax::mojom::CheckedState::kTrue;
+    return ax::CheckedState::kTrue;
   if (0 == strcmp(checked_state, "mixed"))
-    return ax::mojom::CheckedState::kMixed;
-  return ax::mojom::CheckedState::kNone;
+    return ax::CheckedState::kMixed;
+  return ax::CheckedState::kNone;
 }
 
-const char* ToString(ax::mojom::SortDirection sort_direction) {
+const char* ToString(ax::SortDirection sort_direction) {
   switch (sort_direction) {
-    case ax::mojom::SortDirection::kNone:
+    case ax::SortDirection::kNone:
       return "none";
-    case ax::mojom::SortDirection::kUnsorted:
+    case ax::SortDirection::kUnsorted:
       return "unsorted";
-    case ax::mojom::SortDirection::kAscending:
+    case ax::SortDirection::kAscending:
       return "ascending";
-    case ax::mojom::SortDirection::kDescending:
+    case ax::SortDirection::kDescending:
       return "descending";
-    case ax::mojom::SortDirection::kOther:
+    case ax::SortDirection::kOther:
       return "other";
   }
 
   return "";
 }
 
-ax::mojom::SortDirection ParseSortDirection(const char* sort_direction) {
+ax::SortDirection ParseSortDirection(const char* sort_direction) {
   if (0 == strcmp(sort_direction, "none"))
-    return ax::mojom::SortDirection::kNone;
+    return ax::SortDirection::kNone;
   if (0 == strcmp(sort_direction, "unsorted"))
-    return ax::mojom::SortDirection::kUnsorted;
+    return ax::SortDirection::kUnsorted;
   if (0 == strcmp(sort_direction, "ascending"))
-    return ax::mojom::SortDirection::kAscending;
+    return ax::SortDirection::kAscending;
   if (0 == strcmp(sort_direction, "descending"))
-    return ax::mojom::SortDirection::kDescending;
+    return ax::SortDirection::kDescending;
   if (0 == strcmp(sort_direction, "other"))
-    return ax::mojom::SortDirection::kOther;
-  return ax::mojom::SortDirection::kNone;
+    return ax::SortDirection::kOther;
+  return ax::SortDirection::kNone;
 }
 
-const char* ToString(ax::mojom::NameFrom name_from) {
+const char* ToString(ax::NameFrom name_from) {
   switch (name_from) {
-    case ax::mojom::NameFrom::kNone:
+    case ax::NameFrom::kNone:
       return "none";
-    case ax::mojom::NameFrom::kUninitialized:
+    case ax::NameFrom::kUninitialized:
       return "uninitialized";
-    case ax::mojom::NameFrom::kAttribute:
+    case ax::NameFrom::kAttribute:
       return "attribute";
-    case ax::mojom::NameFrom::kAttributeExplicitlyEmpty:
+    case ax::NameFrom::kAttributeExplicitlyEmpty:
       return "attributeExplicitlyEmpty";
-    case ax::mojom::NameFrom::kCaption:
+    case ax::NameFrom::kCaption:
       return "caption";
-    case ax::mojom::NameFrom::kContents:
+    case ax::NameFrom::kContents:
       return "contents";
-    case ax::mojom::NameFrom::kPlaceholder:
+    case ax::NameFrom::kPlaceholder:
       return "placeholder";
-    case ax::mojom::NameFrom::kRelatedElement:
+    case ax::NameFrom::kRelatedElement:
       return "relatedElement";
-    case ax::mojom::NameFrom::kTitle:
+    case ax::NameFrom::kTitle:
       return "title";
-    case ax::mojom::NameFrom::kValue:
+    case ax::NameFrom::kValue:
       return "value";
   }
 
   return "";
 }
 
-ax::mojom::NameFrom ParseNameFrom(const char* name_from) {
+ax::NameFrom ParseNameFrom(const char* name_from) {
   if (0 == strcmp(name_from, "none"))
-    return ax::mojom::NameFrom::kNone;
+    return ax::NameFrom::kNone;
   if (0 == strcmp(name_from, "uninitialized"))
-    return ax::mojom::NameFrom::kUninitialized;
+    return ax::NameFrom::kUninitialized;
   if (0 == strcmp(name_from, "attribute"))
-    return ax::mojom::NameFrom::kAttribute;
+    return ax::NameFrom::kAttribute;
   if (0 == strcmp(name_from, "attributeExplicitlyEmpty"))
-    return ax::mojom::NameFrom::kAttributeExplicitlyEmpty;
+    return ax::NameFrom::kAttributeExplicitlyEmpty;
   if (0 == strcmp(name_from, "caption"))
-    return ax::mojom::NameFrom::kCaption;
+    return ax::NameFrom::kCaption;
   if (0 == strcmp(name_from, "contents"))
-    return ax::mojom::NameFrom::kContents;
+    return ax::NameFrom::kContents;
   if (0 == strcmp(name_from, "placeholder"))
-    return ax::mojom::NameFrom::kPlaceholder;
+    return ax::NameFrom::kPlaceholder;
   if (0 == strcmp(name_from, "relatedElement"))
-    return ax::mojom::NameFrom::kRelatedElement;
+    return ax::NameFrom::kRelatedElement;
   if (0 == strcmp(name_from, "title"))
-    return ax::mojom::NameFrom::kTitle;
+    return ax::NameFrom::kTitle;
   if (0 == strcmp(name_from, "value"))
-    return ax::mojom::NameFrom::kValue;
-  return ax::mojom::NameFrom::kNone;
+    return ax::NameFrom::kValue;
+  return ax::NameFrom::kNone;
 }
 
-const char* ToString(ax::mojom::DescriptionFrom description_from) {
+const char* ToString(ax::DescriptionFrom description_from) {
   switch (description_from) {
-    case ax::mojom::DescriptionFrom::kNone:
+    case ax::DescriptionFrom::kNone:
       return "none";
-    case ax::mojom::DescriptionFrom::kUninitialized:
+    case ax::DescriptionFrom::kUninitialized:
       return "uninitialized";
-    case ax::mojom::DescriptionFrom::kAttribute:
+    case ax::DescriptionFrom::kAttribute:
       return "attribute";
-    case ax::mojom::DescriptionFrom::kContents:
+    case ax::DescriptionFrom::kContents:
       return "contents";
-    case ax::mojom::DescriptionFrom::kRelatedElement:
+    case ax::DescriptionFrom::kRelatedElement:
       return "relatedElement";
-    case ax::mojom::DescriptionFrom::kTitle:
+    case ax::DescriptionFrom::kTitle:
       return "title";
   }
 
   return "";
 }
 
-ax::mojom::DescriptionFrom ParseDescriptionFrom(const char* description_from) {
+ax::DescriptionFrom ParseDescriptionFrom(const char* description_from) {
   if (0 == strcmp(description_from, "none"))
-    return ax::mojom::DescriptionFrom::kNone;
+    return ax::DescriptionFrom::kNone;
   if (0 == strcmp(description_from, "uninitialized"))
-    return ax::mojom::DescriptionFrom::kUninitialized;
+    return ax::DescriptionFrom::kUninitialized;
   if (0 == strcmp(description_from, "attribute"))
-    return ax::mojom::DescriptionFrom::kAttribute;
+    return ax::DescriptionFrom::kAttribute;
   if (0 == strcmp(description_from, "contents"))
-    return ax::mojom::DescriptionFrom::kContents;
+    return ax::DescriptionFrom::kContents;
   if (0 == strcmp(description_from, "relatedElement"))
-    return ax::mojom::DescriptionFrom::kRelatedElement;
+    return ax::DescriptionFrom::kRelatedElement;
   if (0 == strcmp(description_from, "title"))
-    return ax::mojom::DescriptionFrom::kTitle;
-  return ax::mojom::DescriptionFrom::kNone;
+    return ax::DescriptionFrom::kTitle;
+  return ax::DescriptionFrom::kNone;
 }
 
-const char* ToString(ax::mojom::EventFrom event_from) {
+const char* ToString(ax::EventFrom event_from) {
   switch (event_from) {
-    case ax::mojom::EventFrom::kNone:
+    case ax::EventFrom::kNone:
       return "none";
-    case ax::mojom::EventFrom::kUser:
+    case ax::EventFrom::kUser:
       return "user";
-    case ax::mojom::EventFrom::kPage:
+    case ax::EventFrom::kPage:
       return "page";
-    case ax::mojom::EventFrom::kAction:
+    case ax::EventFrom::kAction:
       return "action";
   }
 
   return "";
 }
 
-ax::mojom::EventFrom ParseEventFrom(const char* event_from) {
+ax::EventFrom ParseEventFrom(const char* event_from) {
   if (0 == strcmp(event_from, "none"))
-    return ax::mojom::EventFrom::kNone;
+    return ax::EventFrom::kNone;
   if (0 == strcmp(event_from, "user"))
-    return ax::mojom::EventFrom::kUser;
+    return ax::EventFrom::kUser;
   if (0 == strcmp(event_from, "page"))
-    return ax::mojom::EventFrom::kPage;
+    return ax::EventFrom::kPage;
   if (0 == strcmp(event_from, "action"))
-    return ax::mojom::EventFrom::kAction;
-  return ax::mojom::EventFrom::kNone;
+    return ax::EventFrom::kAction;
+  return ax::EventFrom::kNone;
 }
 
-const char* ToString(ax::mojom::Gesture gesture) {
+const char* ToString(ax::Gesture gesture) {
   switch (gesture) {
-    case ax::mojom::Gesture::kNone:
+    case ax::Gesture::kNone:
       return "none";
-    case ax::mojom::Gesture::kClick:
+    case ax::Gesture::kClick:
       return "click";
-    case ax::mojom::Gesture::kSwipeLeft1:
+    case ax::Gesture::kSwipeLeft1:
       return "swipeLeft1";
-    case ax::mojom::Gesture::kSwipeUp1:
+    case ax::Gesture::kSwipeUp1:
       return "swipeUp1";
-    case ax::mojom::Gesture::kSwipeRight1:
+    case ax::Gesture::kSwipeRight1:
       return "swipeRight1";
-    case ax::mojom::Gesture::kSwipeDown1:
+    case ax::Gesture::kSwipeDown1:
       return "swipeDown1";
-    case ax::mojom::Gesture::kSwipeLeft2:
+    case ax::Gesture::kSwipeLeft2:
       return "swipeLeft2";
-    case ax::mojom::Gesture::kSwipeUp2:
+    case ax::Gesture::kSwipeUp2:
       return "swipeUp2";
-    case ax::mojom::Gesture::kSwipeRight2:
+    case ax::Gesture::kSwipeRight2:
       return "swipeRight2";
-    case ax::mojom::Gesture::kSwipeDown2:
+    case ax::Gesture::kSwipeDown2:
       return "swipeDown2";
-    case ax::mojom::Gesture::kSwipeLeft3:
+    case ax::Gesture::kSwipeLeft3:
       return "swipeLeft3";
-    case ax::mojom::Gesture::kSwipeUp3:
+    case ax::Gesture::kSwipeUp3:
       return "swipeUp3";
-    case ax::mojom::Gesture::kSwipeRight3:
+    case ax::Gesture::kSwipeRight3:
       return "swipeRight3";
-    case ax::mojom::Gesture::kSwipeDown3:
+    case ax::Gesture::kSwipeDown3:
       return "swipeDown3";
-    case ax::mojom::Gesture::kSwipeLeft4:
+    case ax::Gesture::kSwipeLeft4:
       return "swipeLeft4";
-    case ax::mojom::Gesture::kSwipeUp4:
+    case ax::Gesture::kSwipeUp4:
       return "swipeUp4";
-    case ax::mojom::Gesture::kSwipeRight4:
+    case ax::Gesture::kSwipeRight4:
       return "swipeRight4";
-    case ax::mojom::Gesture::kSwipeDown4:
+    case ax::Gesture::kSwipeDown4:
       return "swipeDown4";
-    case ax::mojom::Gesture::kTap2:
+    case ax::Gesture::kTap2:
       return "tap2";
-    case ax::mojom::Gesture::kTap3:
+    case ax::Gesture::kTap3:
       return "tap3";
-    case ax::mojom::Gesture::kTap4:
+    case ax::Gesture::kTap4:
       return "tap4";
-    case ax::mojom::Gesture::kTouchExplore:
+    case ax::Gesture::kTouchExplore:
       return "touchExplore";
   }
 
   return "";
 }
 
-ax::mojom::Gesture ParseGesture(const char* gesture) {
+ax::Gesture ParseGesture(const char* gesture) {
   if (0 == strcmp(gesture, "none"))
-    return ax::mojom::Gesture::kNone;
+    return ax::Gesture::kNone;
   if (0 == strcmp(gesture, "click"))
-    return ax::mojom::Gesture::kClick;
+    return ax::Gesture::kClick;
   if (0 == strcmp(gesture, "swipeLeft1"))
-    return ax::mojom::Gesture::kSwipeLeft1;
+    return ax::Gesture::kSwipeLeft1;
   if (0 == strcmp(gesture, "swipeUp1"))
-    return ax::mojom::Gesture::kSwipeUp1;
+    return ax::Gesture::kSwipeUp1;
   if (0 == strcmp(gesture, "swipeRight1"))
-    return ax::mojom::Gesture::kSwipeRight1;
+    return ax::Gesture::kSwipeRight1;
   if (0 == strcmp(gesture, "swipeDown1"))
-    return ax::mojom::Gesture::kSwipeDown1;
+    return ax::Gesture::kSwipeDown1;
   if (0 == strcmp(gesture, "swipeLeft2"))
-    return ax::mojom::Gesture::kSwipeLeft2;
+    return ax::Gesture::kSwipeLeft2;
   if (0 == strcmp(gesture, "swipeUp2"))
-    return ax::mojom::Gesture::kSwipeUp2;
+    return ax::Gesture::kSwipeUp2;
   if (0 == strcmp(gesture, "swipeRight2"))
-    return ax::mojom::Gesture::kSwipeRight2;
+    return ax::Gesture::kSwipeRight2;
   if (0 == strcmp(gesture, "swipeDown2"))
-    return ax::mojom::Gesture::kSwipeDown2;
+    return ax::Gesture::kSwipeDown2;
   if (0 == strcmp(gesture, "swipeLeft3"))
-    return ax::mojom::Gesture::kSwipeLeft3;
+    return ax::Gesture::kSwipeLeft3;
   if (0 == strcmp(gesture, "swipeUp3"))
-    return ax::mojom::Gesture::kSwipeUp3;
+    return ax::Gesture::kSwipeUp3;
   if (0 == strcmp(gesture, "swipeRight3"))
-    return ax::mojom::Gesture::kSwipeRight3;
+    return ax::Gesture::kSwipeRight3;
   if (0 == strcmp(gesture, "swipeDown3"))
-    return ax::mojom::Gesture::kSwipeDown3;
+    return ax::Gesture::kSwipeDown3;
   if (0 == strcmp(gesture, "swipeLeft4"))
-    return ax::mojom::Gesture::kSwipeLeft4;
+    return ax::Gesture::kSwipeLeft4;
   if (0 == strcmp(gesture, "swipeUp4"))
-    return ax::mojom::Gesture::kSwipeUp4;
+    return ax::Gesture::kSwipeUp4;
   if (0 == strcmp(gesture, "swipeRight4"))
-    return ax::mojom::Gesture::kSwipeRight4;
+    return ax::Gesture::kSwipeRight4;
   if (0 == strcmp(gesture, "swipeDown4"))
-    return ax::mojom::Gesture::kSwipeDown4;
+    return ax::Gesture::kSwipeDown4;
   if (0 == strcmp(gesture, "tap2"))
-    return ax::mojom::Gesture::kTap2;
+    return ax::Gesture::kTap2;
   if (0 == strcmp(gesture, "tap3"))
-    return ax::mojom::Gesture::kTap3;
+    return ax::Gesture::kTap3;
   if (0 == strcmp(gesture, "tap4"))
-    return ax::mojom::Gesture::kTap4;
+    return ax::Gesture::kTap4;
   if (0 == strcmp(gesture, "touchExplore"))
-    return ax::mojom::Gesture::kTouchExplore;
-  return ax::mojom::Gesture::kNone;
+    return ax::Gesture::kTouchExplore;
+  return ax::Gesture::kNone;
 }
 
-const char* ToString(ax::mojom::TextAffinity text_affinity) {
+const char* ToString(ax::TextAffinity text_affinity) {
   switch (text_affinity) {
-    case ax::mojom::TextAffinity::kNone:
+    case ax::TextAffinity::kNone:
       return "none";
-    case ax::mojom::TextAffinity::kDownstream:
+    case ax::TextAffinity::kDownstream:
       return "downstream";
-    case ax::mojom::TextAffinity::kUpstream:
+    case ax::TextAffinity::kUpstream:
       return "upstream";
   }
 
   return "";
 }
 
-ax::mojom::TextAffinity ParseTextAffinity(const char* text_affinity) {
+ax::TextAffinity ParseTextAffinity(const char* text_affinity) {
   if (0 == strcmp(text_affinity, "none"))
-    return ax::mojom::TextAffinity::kNone;
+    return ax::TextAffinity::kNone;
   if (0 == strcmp(text_affinity, "downstream"))
-    return ax::mojom::TextAffinity::kDownstream;
+    return ax::TextAffinity::kDownstream;
   if (0 == strcmp(text_affinity, "upstream"))
-    return ax::mojom::TextAffinity::kUpstream;
-  return ax::mojom::TextAffinity::kNone;
+    return ax::TextAffinity::kUpstream;
+  return ax::TextAffinity::kNone;
 }
 
-const char* ToString(ax::mojom::TreeOrder tree_order) {
+const char* ToString(ax::TreeOrder tree_order) {
   switch (tree_order) {
-    case ax::mojom::TreeOrder::kNone:
+    case ax::TreeOrder::kNone:
       return "none";
-    case ax::mojom::TreeOrder::kUndefined:
+    case ax::TreeOrder::kUndefined:
       return "undefined";
-    case ax::mojom::TreeOrder::kBefore:
+    case ax::TreeOrder::kBefore:
       return "before";
-    case ax::mojom::TreeOrder::kEqual:
+    case ax::TreeOrder::kEqual:
       return "equal";
-    case ax::mojom::TreeOrder::kAfter:
+    case ax::TreeOrder::kAfter:
       return "after";
   }
 
   return "";
 }
 
-ax::mojom::TreeOrder ParseTreeOrder(const char* tree_order) {
+ax::TreeOrder ParseTreeOrder(const char* tree_order) {
   if (0 == strcmp(tree_order, "none"))
-    return ax::mojom::TreeOrder::kNone;
+    return ax::TreeOrder::kNone;
   if (0 == strcmp(tree_order, "undefined"))
-    return ax::mojom::TreeOrder::kUndefined;
+    return ax::TreeOrder::kUndefined;
   if (0 == strcmp(tree_order, "before"))
-    return ax::mojom::TreeOrder::kBefore;
+    return ax::TreeOrder::kBefore;
   if (0 == strcmp(tree_order, "equal"))
-    return ax::mojom::TreeOrder::kEqual;
+    return ax::TreeOrder::kEqual;
   if (0 == strcmp(tree_order, "after"))
-    return ax::mojom::TreeOrder::kAfter;
-  return ax::mojom::TreeOrder::kNone;
+    return ax::TreeOrder::kAfter;
+  return ax::TreeOrder::kNone;
 }
 
-const char* ToString(ax::mojom::ImageAnnotationStatus status) {
+const char* ToString(ax::ImageAnnotationStatus status) {
   switch (status) {
-    case ax::mojom::ImageAnnotationStatus::kNone:
+    case ax::ImageAnnotationStatus::kNone:
       return "none";
-    case ax::mojom::ImageAnnotationStatus::kWillNotAnnotateDueToScheme:
+    case ax::ImageAnnotationStatus::kWillNotAnnotateDueToScheme:
       return "kWillNotAnnotateDueToScheme";
-    case ax::mojom::ImageAnnotationStatus::kIneligibleForAnnotation:
+    case ax::ImageAnnotationStatus::kIneligibleForAnnotation:
       return "ineligibleForAnnotation";
-    case ax::mojom::ImageAnnotationStatus::kEligibleForAnnotation:
+    case ax::ImageAnnotationStatus::kEligibleForAnnotation:
       return "eligibleForAnnotation";
-    case ax::mojom::ImageAnnotationStatus::kSilentlyEligibleForAnnotation:
+    case ax::ImageAnnotationStatus::kSilentlyEligibleForAnnotation:
       return "silentlyEligibleForAnnotation";
-    case ax::mojom::ImageAnnotationStatus::kAnnotationPending:
+    case ax::ImageAnnotationStatus::kAnnotationPending:
       return "annotationPending";
-    case ax::mojom::ImageAnnotationStatus::kAnnotationSucceeded:
+    case ax::ImageAnnotationStatus::kAnnotationSucceeded:
       return "annotationSucceeded";
-    case ax::mojom::ImageAnnotationStatus::kAnnotationEmpty:
+    case ax::ImageAnnotationStatus::kAnnotationEmpty:
       return "annotationEmpty";
-    case ax::mojom::ImageAnnotationStatus::kAnnotationAdult:
+    case ax::ImageAnnotationStatus::kAnnotationAdult:
       return "annotationAdult";
-    case ax::mojom::ImageAnnotationStatus::kAnnotationProcessFailed:
+    case ax::ImageAnnotationStatus::kAnnotationProcessFailed:
       return "annotationProcessFailed";
   }
 
   return "";
 }
 
-ax::mojom::ImageAnnotationStatus ParseImageAnnotationStatus(
-    const char* status) {
+ax::ImageAnnotationStatus ParseImageAnnotationStatus(const char* status) {
   if (0 == strcmp(status, "none"))
-    return ax::mojom::ImageAnnotationStatus::kNone;
+    return ax::ImageAnnotationStatus::kNone;
   if (0 == strcmp(status, "kWillNotAnnotateDueToScheme"))
-    return ax::mojom::ImageAnnotationStatus::kWillNotAnnotateDueToScheme;
+    return ax::ImageAnnotationStatus::kWillNotAnnotateDueToScheme;
   if (0 == strcmp(status, "ineligibleForAnnotation"))
-    return ax::mojom::ImageAnnotationStatus::kIneligibleForAnnotation;
+    return ax::ImageAnnotationStatus::kIneligibleForAnnotation;
   if (0 == strcmp(status, "eligibleForAnnotation"))
-    return ax::mojom::ImageAnnotationStatus::kEligibleForAnnotation;
+    return ax::ImageAnnotationStatus::kEligibleForAnnotation;
   if (0 == strcmp(status, "silentlyEligibleForAnnotation"))
-    return ax::mojom::ImageAnnotationStatus::kSilentlyEligibleForAnnotation;
+    return ax::ImageAnnotationStatus::kSilentlyEligibleForAnnotation;
   if (0 == strcmp(status, "annotationPending"))
-    return ax::mojom::ImageAnnotationStatus::kAnnotationPending;
+    return ax::ImageAnnotationStatus::kAnnotationPending;
   if (0 == strcmp(status, "annotationSucceeded"))
-    return ax::mojom::ImageAnnotationStatus::kAnnotationSucceeded;
+    return ax::ImageAnnotationStatus::kAnnotationSucceeded;
   if (0 == strcmp(status, "annotationEmpty"))
-    return ax::mojom::ImageAnnotationStatus::kAnnotationEmpty;
+    return ax::ImageAnnotationStatus::kAnnotationEmpty;
   if (0 == strcmp(status, "annotationAdult"))
-    return ax::mojom::ImageAnnotationStatus::kAnnotationAdult;
+    return ax::ImageAnnotationStatus::kAnnotationAdult;
   if (0 == strcmp(status, "annotationProcessFailed"))
-    return ax::mojom::ImageAnnotationStatus::kAnnotationProcessFailed;
+    return ax::ImageAnnotationStatus::kAnnotationProcessFailed;
 
-  return ax::mojom::ImageAnnotationStatus::kNone;
+  return ax::ImageAnnotationStatus::kNone;
 }
 
-const char* ToString(ax::mojom::Dropeffect dropeffect) {
+const char* ToString(ax::Dropeffect dropeffect) {
   switch (dropeffect) {
-    case ax::mojom::Dropeffect::kCopy:
+    case ax::Dropeffect::kCopy:
       return "copy";
-    case ax::mojom::Dropeffect::kExecute:
+    case ax::Dropeffect::kExecute:
       return "execute";
-    case ax::mojom::Dropeffect::kLink:
+    case ax::Dropeffect::kLink:
       return "link";
-    case ax::mojom::Dropeffect::kMove:
+    case ax::Dropeffect::kMove:
       return "move";
-    case ax::mojom::Dropeffect::kPopup:
+    case ax::Dropeffect::kPopup:
       return "popup";
-    case ax::mojom::Dropeffect::kNone:
+    case ax::Dropeffect::kNone:
       return "none";
   }
 
   return "";
 }
 
-ax::mojom::Dropeffect ParseDropeffect(const char* dropeffect) {
+ax::Dropeffect ParseDropeffect(const char* dropeffect) {
   if (0 == strcmp(dropeffect, "copy"))
-    return ax::mojom::Dropeffect::kCopy;
+    return ax::Dropeffect::kCopy;
   if (0 == strcmp(dropeffect, "execute"))
-    return ax::mojom::Dropeffect::kExecute;
+    return ax::Dropeffect::kExecute;
   if (0 == strcmp(dropeffect, "link"))
-    return ax::mojom::Dropeffect::kLink;
+    return ax::Dropeffect::kLink;
   if (0 == strcmp(dropeffect, "move"))
-    return ax::mojom::Dropeffect::kMove;
+    return ax::Dropeffect::kMove;
   if (0 == strcmp(dropeffect, "popup"))
-    return ax::mojom::Dropeffect::kPopup;
-  return ax::mojom::Dropeffect::kNone;
+    return ax::Dropeffect::kPopup;
+  return ax::Dropeffect::kNone;
 }
 
-}  // namespace ui
+}  // namespace ax

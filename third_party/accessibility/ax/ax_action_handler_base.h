@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_AX_ACTION_HANDLER_BASE_H_
-#define UI_ACCESSIBILITY_AX_ACTION_HANDLER_BASE_H_
+#ifndef ACCESSIBILITY_AX_AX_ACTION_HANDLER_BASE_H_
+#define ACCESSIBILITY_AX_AX_ACTION_HANDLER_BASE_H_
 
-#include "ui/accessibility/ax_export.h"
-#include "ui/accessibility/ax_tree_id.h"
+#include "ax_export.h"
+#include "ax_tree_id.h"
 
-namespace ui {
+namespace ax {
 
 struct AXActionData;
 
@@ -36,11 +36,11 @@ class AX_EXPORT AXActionHandlerBase {
   const AXTreeID& ax_tree_id() const { return tree_id_; }
 
  protected:
-  // Initializes the AXActionHandlerBase subclass with ui::AXTreeIDUnknown().
+  // Initializes the AXActionHandlerBase subclass with ax::AXTreeIDUnknown().
   AXActionHandlerBase();
 
   // Initializes the AXActionHandlerBase subclass with |ax_tree_id|. It is Ok to
-  // pass ui::AXTreeIDUnknown() and then call SetAXTreeID() at a later point.
+  // pass ax::AXTreeIDUnknown() and then call SetAXTreeID() at a later point.
   explicit AXActionHandlerBase(const AXTreeID& ax_tree_id);
 
   // Change the AXTreeID.
@@ -55,6 +55,6 @@ class AX_EXPORT AXActionHandlerBase {
   AXTreeID tree_id_;
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_AX_ACTION_HANDLER_BASE_H_
+#endif  // ACCESSIBILITY_AX_AX_ACTION_HANDLER_BASE_H_

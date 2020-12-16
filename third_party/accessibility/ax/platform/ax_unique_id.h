@@ -2,15 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_ACCESSIBILITY_PLATFORM_AX_UNIQUE_ID_H_
-#define UI_ACCESSIBILITY_PLATFORM_AX_UNIQUE_ID_H_
+#ifndef ACCESSIBILITY_AX_PLATFORM_AX_UNIQUE_ID_H_
+#define ACCESSIBILITY_AX_PLATFORM_AX_UNIQUE_ID_H_
 
 #include <stdint.h>
 
-#include "base/macros.h"
-#include "ui/accessibility/ax_export.h"
+#include "flutter/fml/macros.h"
 
-namespace ui {
+#include "ax/ax_export.h"
+
+namespace ax {
 
 // AXUniqueID provides IDs for accessibility objects that are guaranteed to be
 // unique for the entire Chrome instance. Instantiating the class is all that
@@ -44,9 +45,9 @@ class AX_EXPORT AXUniqueId {
 
   int32_t id_;
 
-  DISALLOW_COPY_AND_ASSIGN(AXUniqueId);
+  FML_DISALLOW_COPY_AND_ASSIGN(AXUniqueId);
 };
 
-}  // namespace ui
+}  // namespace ax
 
-#endif  // UI_ACCESSIBILITY_PLATFORM_AX_UNIQUE_ID_H_
+#endif  // ACCESSIBILITY_AX_PLATFORM_AX_UNIQUE_ID_H_

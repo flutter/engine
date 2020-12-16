@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/test_ax_tree_manager.h"
+#include "test_ax_tree_manager.h"
 
-#include "ui/accessibility/ax_node.h"
-#include "ui/accessibility/ax_tree_data.h"
-#include "ui/accessibility/ax_tree_manager_map.h"
+#include "ax_node.h"
+#include "ax_tree_data.h"
+#include "ax_tree_manager_map.h"
 
-namespace ui {
+namespace ax {
 
 TestAXTreeManager::TestAXTreeManager() = default;
 
@@ -31,7 +31,10 @@ void TestAXTreeManager::DestroyTree() {
 }
 
 AXTree* TestAXTreeManager::GetTree() const {
-  DCHECK(tree_) << "Did you forget to call SetTree?";
+  if (!tree_) {
+    FML_LOG(ERROR) << "Did you forget to call SetTree?";
+    FML_DCHECK(false);
+  }
   return tree_.get();
 }
 
@@ -69,4 +72,4 @@ AXNode* TestAXTreeManager::GetParentNodeFromParentTreeAsAXNode() const {
   return nullptr;
 }
 
-}  // namespace ui
+}  // namespace ax
