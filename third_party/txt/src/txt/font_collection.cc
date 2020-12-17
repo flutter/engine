@@ -206,8 +206,9 @@ FontCollection::GetMinikinFontCollectionForFamilies(
     }
   }
   // Create the minikin font collection.
-  auto font_collection = std::make_shared<minikin::FontCollection>();
-  if (!font_collection || !font_collection->init(std::move(minikin_families))) {
+  auto font_collection =
+      minikin::FontCollection::Create(std::move(minikin_families));
+  if (!font_collection) {
     font_collections_cache_[family_key] = nullptr;
     return nullptr;
   }

@@ -28,8 +28,12 @@
 namespace minikin {
 
 class FontCollection {
- public:
+ private:
   explicit FontCollection();
+
+ public:
+  static std::shared_ptr<minikin::FontCollection> Create(
+      const std::vector<std::shared_ptr<FontFamily>>& typefaces);
 
   // libtxt extension: an interface for looking up fallback fonts for characters
   // that do not match this collection's font families.
@@ -76,9 +80,6 @@ class FontCollection {
     mFallbackFontProvider = std::move(ffp);
   }
 
-  // Initialize the FontCollection.
-  bool init(const std::vector<std::shared_ptr<FontFamily>>& typefaces);
-
  private:
   static const int kLogCharsPerPage = 8;
   static const int kPageMask = (1 << kLogCharsPerPage) - 1;
@@ -93,6 +94,9 @@ class FontCollection {
     uint16_t start;
     uint16_t end;
   };
+
+  // Initialize the FontCollection.
+  bool init(const std::vector<std::shared_ptr<FontFamily>>& typefaces);
 
   const std::shared_ptr<FontFamily>& getFamilyForChar(uint32_t ch,
                                                       uint32_t vs,

@@ -51,12 +51,20 @@ std::string GetFontLocale(uint32_t langListId) {
   return langs.size() ? langs[0].getString() : "";
 }
 
-FontCollection::FontCollection()
-    : mMaxChar(0) {
+std::shared_ptr<minikin::FontCollection> FontCollection::Create(
+    const std::vector<std::shared_ptr<FontFamily>>& typefaces) {
+  std::shared_ptr<minikin::FontCollection> font_collection(
+      new minikin::FontCollection());
+  if (!font_collection || !font_collection->init(typefaces)) {
+    return nullptr;
+  }
+  return font_collection;
 }
 
+FontCollection::FontCollection() : mMaxChar(0) {}
+
 bool FontCollection::init(
-    const vector<std::shared_ptr<FontFamily>>& typefaces) {
+    const std::vector<std::shared_ptr<FontFamily>>& typefaces) {
   std::scoped_lock _l(gMinikinLock);
   mId = sNextId++;
   vector<uint32_t> lastChar;
@@ -82,11 +90,12 @@ bool FontCollection::init(
     mSupportedAxes.insert(supportedAxes.begin(), supportedAxes.end());
   }
   nTypefaces = mFamilies.size();
-  if (nTypefaces == 0 || nTypefaces > 254) {
-    if (nTypefaces == 0)
-      ALOGE("Font collection must have at least one valid typeface.");
-    else
-      ALOGE("Font collection may only have up to 254 font families.");
+  if (nTypefaces == 0) {
+    ALOGE("Font collection must have at least one valid typeface.");
+    return false;
+  }
+  if (nTypefaces > 254) {
+    ALOGE("Font collection may only have up to 254 font families.");
     return false;
   }
   size_t nPages = (mMaxChar + kPageMask) >> kLogCharsPerPage;
@@ -563,12 +572,7 @@ std::shared_ptr<FontCollection> FontCollection::createCollectionWithVariation(
     }
   }
 
-  auto font_collection = std::make_shared<FontCollection>();
-  if (!font_collection || !font_collection->init(std::move(families))) {
-    if (font_collection) font_collection.reset();
-    return nullptr;
-  }
-  return font_collection;
+  return FontCollection::Create(std::move(families));
 }
 
 uint32_t FontCollection::getId() const {
