@@ -102,13 +102,13 @@ FLUTTER_ASSERT_ARC
                                        message:encodedSetInitialRouteMethod]);
 }
 
-- (void)testPlatformViewsControllerRenderingMetalBackend {
-  FlutterEngine* engine = [[FlutterEngine alloc] init];
-  [engine run];
-  flutter::IOSRenderingAPI renderingApi = [engine platformViewsRenderingAPI];
-
-  XCTAssertEqual(renderingApi, flutter::IOSRenderingAPI::kMetal);
-}
+//- (void)testPlatformViewsControllerRenderingMetalBackend {
+//  FlutterEngine* engine = [[FlutterEngine alloc] init];
+//  [engine run];
+//  flutter::IOSRenderingAPI renderingApi = [engine platformViewsRenderingAPI];
+//
+//  XCTAssertEqual(renderingApi, flutter::IOSRenderingAPI::kMetal);
+//}
 
 - (void)testPlatformViewsControllerRenderingSoftware {
   auto settings = FLTDefaultSettingsForBundle();
