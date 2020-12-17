@@ -1,4 +1,8 @@
 name: android_lint
+
+environment:
+  sdk: ">=2.4.0 <3.0.0"
+
 dependencies:
   args: 1.5.0
   path: ^1.6.2
