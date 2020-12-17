@@ -173,7 +173,7 @@ class TextLayoutService {
 
       // Only go to the next span if we've reached the end of this span.
       if (currentLine.end.index >= span.end && spanIndex < spanCount - 1) {
-        currentLine.cutBox();
+        currentLine.createBox();
         span = paragraph.spans[++spanIndex];
       }
     }
@@ -686,11 +686,11 @@ class LineBuilder {
   ///
   /// A box should be cut whenever the end of line is reached, or when switching
   /// from one span to another.
-  void cutBox() {
+  void createBox() {
     final LineBreakResult boxStart = _boxStart;
     final LineBreakResult boxEnd = end;
     // Avoid creating empty boxes. This could happen when the end of a span
-    // coincides with the end of a line. In this case, `cutBox` is called twice.
+    // coincides with the end of a line. In this case, `createBox` is called twice.
     if (boxStart == boxEnd) {
       return;
     }
@@ -706,7 +706,7 @@ class LineBuilder {
   /// Builds the [EngineLineMetrics] instance that represents this line.
   EngineLineMetrics build({String? ellipsis}) {
     // At the end of each line, we cut the last box of the line.
-    cutBox();
+    createBox();
 
     final double ellipsisWidth =
         ellipsis == null ? 0.0 : spanometer.measureText(ellipsis);
