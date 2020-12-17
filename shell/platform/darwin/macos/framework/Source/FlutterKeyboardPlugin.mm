@@ -10,6 +10,13 @@
 #import "FlutterKeyboardPlugin.h"
 #import "KeyCodeMap_internal.h"
 
+// Values of `characterIgnoringModifiers` that must not be directly converted to
+// a logical key value, but should look up `keyCodeToLogical` by `keyCode`.
+// This is because each of these of character codes is mapped from multiple
+// logical keys, usually because of numpads.
+// static const NSSet* kAmbiguousCharacters = @{
+// }
+
 // Whether a string represents a control character.
 static bool IsControlCharacter(NSUInteger length, NSString *label) {
   if (length > 1) {
@@ -33,11 +40,11 @@ static uint64_t KeyOfPlane(uint64_t baseKey, uint64_t plane) {
   return plane | (baseKey & kValueMask);
 }
 
-// Find the sibling key for a physical key by looking up `siblingPhysicalKeys`.
+// Find the sibling key for a physical key by looking up `siblingKeyCodes`.
 //
 // Returns 0 if not found.
-static uint64_t GetSiblingKeyForKey(uint64_t physicalKey) {
-  NSNumber* siblingKey = [siblingPhysicalKeys objectForKey:@(physicalKey)];
+static uint64_t GetSiblingKeyCodeForKey(uint64_t physicalKey) {
+  NSNumber* siblingKey = [siblingKeyCodes objectForKey:@(physicalKey)];
   if (siblingKey == nil)
     return 0;
   return siblingKey.unsignedLongLongValue;
@@ -53,29 +60,30 @@ static uint64_t GetModifierFlagForKey(uint64_t physicalKey) {
   return modifierFlag.unsignedLongLongValue;
 }
 
-// Returns the physical key for an event.
-static uint64_t GetPhysicalKeyForEvent(NSEvent* event) {
-  NSNumber* physicalKeyKey = [keyCodeToPhysicalKey objectForKey:@(event.keyCode)];
+// Returns the physical key for a key code.
+static uint64_t GetPhysicalKeyForKeyCode(uint64_t keyCode) {
+  NSNumber* physicalKeyKey = [keyCodeToPhysicalKey objectForKey:@(keyCode)];
   if (physicalKeyKey == nil)
     return 0;
   return physicalKeyKey.unsignedLongLongValue;
 }
 
 // Returns the logical key for a modifier physical key.
-static uint64_t GetLogicalKeyForModifier(uint64_t physicalKey) {
-  return KeyOfPlane(physicalKey, kHidPlane);
+static uint64_t GetLogicalKeyForModifier(uint64_t keyCode, uint64_t hidCode) {
+  NSNumber* fromKeyCode = [keyCodeToLogicalKey objectForKey:@(keyCode)];
+  if (fromKeyCode != nil)
+    return fromKeyCode.unsignedLongLongValue;
+  return KeyOfPlane(hidCode, kHidPlane);
 }
 
 // Returns the logical key of a KeyUp or KeyDown event.
 //
 // For FlagsChanged event, use GetLogicalKeyForModifier.
 static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
-  // Look to see if the keyCode is a printable number pad key, so that a
-  // difference between regular keys (e.g. "=") and the number pad version (e.g.
-  // the "=" on the number pad) can be determined.
-  NSNumber* numPadKey = [keyCodeToNumpad objectForKey:@(event.keyCode)];
-  if (numPadKey != nil)
-    return numPadKey.unsignedLongLongValue;
+  // Look to see if the keyCode can be mapped from keycode.
+  NSNumber* fromKeyCode = [keyCodeToLogicalKey objectForKey:@(event.keyCode)];
+  if (fromKeyCode != nil)
+    return fromKeyCode.unsignedLongLongValue;
 
   NSString* keyLabel = event.charactersIgnoringModifiers;
   NSUInteger keyLabelLength = [keyLabel length];
@@ -97,6 +105,12 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
     if (keyLabelLength == 2) {
       uint64_t secondCode = (uint64_t)[keyLabel characterAtIndex:1];
       codeUnit = (codeUnit << 16) | secondCode;
+    }
+    if (codeUnit < 256) {
+      if (isupper(codeUnit)) {
+        return tolower(codeUnit);
+      }
+      return codeUnit;
     }
     return KeyOfPlane(codeUnit, kUnicodePlane);
   }
@@ -187,7 +201,8 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 }
 
 - (void)dispatchDownEvent:(NSEvent*)event {
-  uint64_t physicalKey = GetPhysicalKeyForEvent(event);
+  printf("Down event keyCode %d cIM %s c %s\n", [event keyCode], [[event charactersIgnoringModifiers] UTF8String], [[event characters] UTF8String]);
+  uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
 
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
@@ -230,7 +245,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   NSAssert(!event.isARepeat,
       @"Unexpected repeated Up event. Please report this to Flutter.", event.characters);
 
-  uint64_t physicalKey = GetPhysicalKeyForEvent(event);
+  uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
   if (!pressedLogicalKey) {
     // The physical key has been released before. It indicates multiple
@@ -252,12 +267,17 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 }
 
 - (void)dispatchCapsLockEvent:(NSEvent*)event {
+  NSNumber* logicalKey = [keyCodeToLogicalKey objectForKey:@(event.keyCode)];
+  if (logicalKey == nil)
+    return;
+  uint64_t logical = logicalKey.unsignedLongLongValue;
+
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = GetFlutterTimestampFrom(event),
       .kind = kFlutterKeyEventKindDown,
       .physical = kCapsLockPhysicalKey,
-      .logical = GetLogicalKeyForModifier(kCapsLockPhysicalKey),
+      .logical = logical,
       .character = nil,
       .synthesized = false,
   };
@@ -267,7 +287,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   // the lock is enabled or disabled. This event should always be converted to
   // a Down and a cancel, since we don't know how long it will be pressed.
   flutterEvent.kind = kFlutterKeyEventKindUp;
-  flutterEvent.synthesized = false;
+  flutterEvent.synthesized = true;
   [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
 }
 
@@ -300,7 +320,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   // For non-pair keys, lastSiblingPressed is always set to 0, resulting in the
   // top half of the table.
 
-  uint64_t targetKey = GetPhysicalKeyForEvent(event);
+  uint64_t targetKey = GetPhysicalKeyForKeyCode(event.keyCode);
   if (targetKey == kCapsLockPhysicalKey) {
     return [self dispatchCapsLockEvent:event];
   }
@@ -309,11 +329,13 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
     // Unrecognized modifier.
     return;
   }
-  // The `siblingKey` may be 0, which means it doesn't have a sibling key.
-  uint64_t siblingKey = GetSiblingKeyForKey(targetKey);
+  // The `siblingKeyCode` may be 0, which means it doesn't have a sibling key.
+  uint64_t siblingKeyCode = GetSiblingKeyCodeForKey(event.keyCode);
+  uint64_t siblingKeyPhysical = siblingKeyCode == 0 ? 0 : GetPhysicalKeyForKeyCode(siblingKeyCode);
+  uint64_t siblingKeyLogical = siblingKeyCode == 0 ? 0 : GetLogicalKeyForModifier(siblingKeyCode, siblingKeyPhysical);
 
   bool lastTargetPressed = [_pressingRecords objectForKey:@(targetKey)] != nil;
-  bool lastSiblingPressed = siblingKey == 0 ? false : [_pressingRecords objectForKey:@(siblingKey)] != nil;
+  bool lastSiblingPressed = siblingKeyCode == 0 ? false : [_pressingRecords objectForKey:@(siblingKeyPhysical)] != nil;
   bool nowEitherPressed = (event.modifierFlags & modifierFlag) != 0;
 
   bool targetKeyShouldDown = !lastTargetPressed && nowEitherPressed;
@@ -327,15 +349,15 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   };
   if (siblingKeyShouldUp) {
     flutterEvent.kind = kFlutterKeyEventKindUp;
-    flutterEvent.physical = siblingKey;
-    flutterEvent.logical = GetLogicalKeyForModifier(siblingKey);
+    flutterEvent.physical = siblingKeyPhysical;
+    flutterEvent.logical = siblingKeyLogical;
     flutterEvent.synthesized = true;
-    [self updateKey:siblingKey asPressed:0];
+    [self updateKey:siblingKeyPhysical asPressed:0];
     [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
   }
 
   if (targetKeyShouldDown || targetKeyShouldUp) {
-    uint64_t logicalKey = GetLogicalKeyForModifier(targetKey);
+    uint64_t logicalKey = GetLogicalKeyForModifier(event.keyCode, targetKey);
     flutterEvent.kind = targetKeyShouldDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp;
     flutterEvent.physical = targetKey;
     flutterEvent.logical = logicalKey;

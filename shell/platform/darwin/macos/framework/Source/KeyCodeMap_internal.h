@@ -10,17 +10,12 @@
 extern const NSDictionary* keyCodeToPhysicalKey;
 
 /**
- * A map of macOS key codes which have printable representations, but appear
- * on the number pad. Used to provide different key objects for keys like
- * KEY_EQUALS and NUMPAD_EQUALS.
+ * A map from macOS key codes to Flutter's logical key values.
+ *
+ * This is used to derive logical keys that can't or shouldn't be derived from
+ * `charactersIgnoringModifiers`.
  */
-extern const NSDictionary* keyCodeToNumpad;
-
-/**
- * A map of macOS key codes which are numbered function keys, so that they
- * can be excluded when asking "is the Fn modifier down?".
- */
-extern const NSDictionary* keyCodeToFunctionKey;
+extern const NSDictionary* keyCodeToLogicalKey;
 
 // Several mask constants. See KeyCodeMap.mm for their descriptions.
 
@@ -38,12 +33,12 @@ extern const uint64_t kSynonymMask;
 static const uint64_t kMacosPlane = 0x00500000000;
 
 /**
- * Map the physical key code of a key to that of its sibling key.
+ * Map the key code of a key to that of its sibling key.
  *
  * A sibling key is the other key of a pair of keys that share the same modifier
  * flag, such as left and right shift keys.
  */
-extern const NSDictionary* siblingPhysicalKeys;
+extern const NSDictionary* siblingKeyCodes;
 
 /**
  * Map the physical key code of a key to its corresponding bitmask of

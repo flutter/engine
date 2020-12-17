@@ -98,7 +98,7 @@ part 'engine/html/transform.dart';
 part 'engine/html_image_codec.dart';
 part 'engine/keyboard_binding.dart';
 part 'engine/keyboard.dart';
-part 'engine/keycodes/keyboard_map_web.dart';
+part 'engine/key_map.dart';
 part 'engine/mouse_cursor.dart';
 part 'engine/onscreen_logging.dart';
 part 'engine/picture.dart';

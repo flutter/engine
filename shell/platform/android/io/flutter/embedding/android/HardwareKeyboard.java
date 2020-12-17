@@ -40,6 +40,9 @@ public class HardwareKeyboard {
   }
 
   static long logicalKeyFromEvent(KeyEvent event) {
+    // `KeyEvent#getDisplayLabel` may be another source of "key without
+    // modifier", but tests so far have shown that they yield the same result
+    // as from `KeyEvent#getKeyCode.
     final int keyCode = event.getKeyCode();
     final Long mapResult = KeyboardMap.keyCodeToLogical.get(Long.valueOf(keyCode));
     if (mapResult != null)
