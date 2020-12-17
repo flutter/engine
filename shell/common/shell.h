@@ -536,7 +536,8 @@ class Shell final : public PlatformView::Delegate,
                                     bool transient) override;
 
   // |PlatformView::Delegate|
-  void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override;
+  void UpdateAssetResolvers(const std::vector<std::shared_ptr<AssetResolver>>&
+                                asset_resolvers) override;
 
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;

@@ -280,8 +280,8 @@ class PlatformView {
     ///
     /// @param[in]  asset_manager  The asset manager to use.
     ///
-    virtual void UpdateAssetManager(
-        std::shared_ptr<AssetManager> asset_manager) = 0;
+    virtual void UpdateAssetResolvers(
+        const std::vector<std::shared_ptr<AssetResolver>>& asset_resolvers) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -727,7 +727,8 @@ class PlatformView {
   ///
   /// @param[in]  asset_manager  The asset manager to use.
   ///
-  virtual void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager);
+  virtual void UpdateAssetResolvers(
+      const std::vector<std::shared_ptr<AssetResolver>>& asset_resolvers);
 
  protected:
   PlatformView::Delegate& delegate_;

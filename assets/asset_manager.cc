@@ -79,4 +79,9 @@ bool AssetManager::IsValidAfterAssetManagerChange() const {
   return false;
 }
 
+// |AssetResolver|
+bool AssetManager::IsUpdatable() const {
+  return false;
+}
+
 }  // namespace flutter

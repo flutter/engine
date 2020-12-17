@@ -31,6 +31,9 @@ class DirectoryAssetBundle : public AssetResolver {
   bool IsValidAfterAssetManagerChange() const override;
 
   // |AssetResolver|
+  bool IsUpdatable() const override;
+
+  // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override;
 

@@ -37,6 +37,11 @@ bool DirectoryAssetBundle::IsValidAfterAssetManagerChange() const {
 }
 
 // |AssetResolver|
+bool DirectoryAssetBundle::IsUpdatable() const {
+  return false;
+}
+
+// |AssetResolver|
 std::unique_ptr<fml::Mapping> DirectoryAssetBundle::GetAsMapping(
     const std::string& asset_name) const {
   if (!is_valid_) {

@@ -573,22 +573,30 @@ static void LoadDartDeferredLibrary(JNIEnv* env,
 
 // TODO(garyq): persist additional asset resolvers by updating instead of
 // replacing with newly created asset_manager
-static void UpdateAssetManager(JNIEnv* env,
-                               jobject obj,
-                               jlong shell_holder,
-                               jobject jAssetManager,
-                               jstring jAssetBundlePath) {
-  auto asset_manager = std::make_shared<flutter::AssetManager>();
-  asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
-      env,                                                  // jni environment
-      jAssetManager,                                        // asset manager
-      fml::jni::JavaStringToString(env, jAssetBundlePath))  // apk asset dir
-  );
+static void UpdateJavaAssetManager(JNIEnv* env,
+                                   jobject obj,
+                                   jlong shell_holder,
+                                   jobject jAssetManager,
+                                   jstring jAssetBundlePath) {
+  // auto asset_manager = std::make_shared<flutter::AssetManager>();
+  // asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
+  //     env,                                                  // jni
+  //     environment jAssetManager,                                        //
+  //     asset manager fml::jni::JavaStringToString(env, jAssetBundlePath))  //
+  //     apk asset dir
+  // );
   // Create config to set persistent cache asset manager
-  RunConfiguration config(nullptr, std::move(asset_manager));
+  // RunConfiguration config(nullptr, std::move(asset_manager));
+  auto asset_resolver = std::make_unique<flutter::APKAssetProvider>(
+      env,                                                   // jni environment
+      jAssetManager,                                         // asset manager
+      fml::jni::JavaStringToString(env, jAssetBundlePath));  // apk asset dir
+  std::unique_ptr<std::vector<std::shared_ptr<AssetResolver>>> resolver_vector =
+      std::make_unique<std::vector<std::shared_ptr<AssetResolver>>>();
+  resolver_vector->push_back(std::move(asset_resolver));
 
-  ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetManager(
-      config.GetAssetManager());
+  ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetResolvers(
+      *resolver_vector);
 }
 
 bool RegisterApi(JNIEnv* env) {
@@ -753,10 +761,10 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&LoadDartDeferredLibrary),
       },
       {
-          .name = "nativeUpdateAssetManager",
+          .name = "nativeUpdateJavaAssetManager",
           .signature =
               "(JLandroid/content/res/AssetManager;Ljava/lang/String;)V",
-          .fnPtr = reinterpret_cast<void*>(&UpdateAssetManager),
+          .fnPtr = reinterpret_cast<void*>(&UpdateJavaAssetManager),
       },
       {
           .name = "nativeDynamicFeatureInstallFailure",

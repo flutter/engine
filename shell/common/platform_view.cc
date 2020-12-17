@@ -170,7 +170,7 @@ void PlatformView::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
                                                 const std::string error_message,
                                                 bool transient) {}
 
-void PlatformView::UpdateAssetManager(
-    std::shared_ptr<AssetManager> asset_manager) {}
+void PlatformView::UpdateAssetResolvers(
+    const std::vector<std::shared_ptr<AssetResolver>>& asset_resolvers) {}
 
 }  // namespace flutter
