@@ -265,6 +265,10 @@ class TextLayoutService {
   }
 
   ui.TextPosition getPositionForOffset(ui.Offset offset) {
+    // After layout, each line has boxes that contain enough information to make
+    // it possible to do hit testing. Once we find the box, we look inside that
+    // box to find where exactly the `offset` is located.
+
     // [offset] is above all the lines.
     if (offset.dy < 0) {
       return ui.TextPosition(offset: 0, affinity: ui.TextAffinity.downstream);
@@ -306,6 +310,9 @@ class TextLayoutService {
   }
 
   EngineLineMetrics _findLineForY(double y) {
+    // We could do a binary search here but it's not worth it because the number
+    // of line is typically low, and each iteration is a cheap comparison of
+    // doubles.
     for (EngineLineMetrics line in lines) {
       if (y <= line.height) {
         return line;
@@ -435,8 +442,8 @@ class RangeBox {
       );
     }
 
-    final double lowWidth = spanometer._measure(start.index, cutoff);
-    final double highWidth = spanometer._measure(start.index, cutoff + 1);
+    final double lowWidth = spanometer._measure(startIndex, cutoff);
+    final double highWidth = spanometer._measure(startIndex, cutoff + 1);
 
     // See if `x` is closer to `cutoff` or `cutoff + 1`.
     if (x - lowWidth < highWidth - x) {

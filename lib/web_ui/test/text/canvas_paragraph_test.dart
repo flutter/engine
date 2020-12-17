@@ -325,6 +325,11 @@ void testMain() async {
         paragraph.getPositionForOffset(ui.Offset(0, -5)),
         pos(0, ui.TextAffinity.downstream),
       );
+      // At the top left corner of the line.
+      expect(
+        paragraph.getPositionForOffset(ui.Offset(0, 0)),
+        pos(0, ui.TextAffinity.downstream),
+      );
       // At the beginning of the line.
       expect(
         paragraph.getPositionForOffset(ui.Offset(0, 5)),
@@ -350,6 +355,16 @@ void testMain() async {
         paragraph.getPositionForOffset(ui.Offset(76, 5)),
         pos(8, ui.TextAffinity.upstream),
       );
+      // At the top of the line, on the left half of "p" in "ipsum".
+      expect(
+        paragraph.getPositionForOffset(ui.Offset(74, 0)),
+        pos(7, ui.TextAffinity.downstream),
+      );
+      // At the top of the line, on the right half of "p" in "ipsum".
+      expect(
+        paragraph.getPositionForOffset(ui.Offset(76, 0)),
+        pos(8, ui.TextAffinity.upstream),
+      );
     });
 
     test('handles multi-line single-span paragraphs', () {
@@ -366,6 +381,11 @@ void testMain() async {
       // Above the first line.
       expect(
         paragraph.getPositionForOffset(ui.Offset(0, -5)),
+        pos(0, ui.TextAffinity.downstream),
+      );
+      // At the top left corner of the line.
+      expect(
+        paragraph.getPositionForOffset(ui.Offset(0, 0)),
         pos(0, ui.TextAffinity.downstream),
       );
       // At the beginning of the first line.
