@@ -5,12 +5,16 @@
 // @dart = 2.12
 part of engine;
 
+/// Responsible for painting a [CanvasParagraph] on a [BitmapCanvas].
 class TextPaintService {
   TextPaintService(this.paragraph);
 
   final CanvasParagraph paragraph;
 
   void paint(BitmapCanvas canvas, ui.Offset offset) {
+    // Loop through all the lines, for each line, loop through all the boxes and
+    // paint them. The boxes have enough information so they can be painted
+    // individually.
     final List<EngineLineMetrics> lines = paragraph.computeLineMetrics();
 
     for (final EngineLineMetrics line in lines) {
@@ -28,7 +32,10 @@ class TextPaintService {
   ) {
     final ParagraphSpan span = box.span;
 
+    // Placeholder spans don't need any painting. Their boxes should remain
+    // empty so that their underlying widgets do their own painting.
     if (span is FlatTextSpan) {
+      // Paint the background of the box, if the span has a background.
       final SurfacePaint? background = span.style._background as SurfacePaint?;
       if (background != null) {
         canvas.drawRect(
@@ -37,6 +44,7 @@ class TextPaintService {
         );
       }
 
+      // Paint the actual text.
       _applySpanStyleToCanvas(span, canvas);
       final double x = offset.dx + line.left + box.left;
       final double y = offset.dy + line.baseline;
@@ -46,7 +54,7 @@ class TextPaintService {
           );
       canvas.fillText(text, x, y);
 
-      // Paint the ellipsis.
+      // Paint the ellipsis using the same span styles.
       final String? ellipsis = line.ellipsis;
       if (ellipsis != null && box == line.boxes!.last) {
         final double x = offset.dx + line.left + box.right;

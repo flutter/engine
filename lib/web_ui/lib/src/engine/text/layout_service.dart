@@ -312,6 +312,10 @@ class RangeBox {
     return startIndex < this.end.index && this.start.index < endIndex;
   }
 
+  /// Returns a [ui.TextBox] representing this range box in the given [line].
+  ///
+  /// The coordinates of the resulting [ui.TextBox] are relative to the
+  /// paragraph, not to the line.
   ui.TextBox toTextBox(EngineLineMetrics line) {
     return intersect(line, start.index, end.index);
   }
