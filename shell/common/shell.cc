@@ -1224,8 +1224,25 @@ void Shell::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
 }
 
 void Shell::UpdateAssetResolvers(
-    const std::vector<std::shared_ptr<AssetResolver>>& asset_resolvers) {
-  // engine_->UpdateAssetManager(std::move(asset_manager));
+    const std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers) {
+  size_t index = 0;
+  auto asset_manager = std::make_shared<AssetManager>();
+  auto old_asset_manager = engine_->GetAssetManager();
+  if (old_asset_manager != nullptr) {
+    for (auto& old_resolver : old_asset_manager->TakeResolvers()) {
+      if (old_resolver->IsUpdatable()) {
+        if (index < asset_resolvers.size()) {
+          asset_manager->PushBack(std::move(asset_resolvers[index++]));
+        }
+      } else {
+        asset_manager->PushBack(std::move(old_resolver));
+      }
+    }
+  }
+  while (index < asset_resolvers.size()) {
+    asset_manager->PushBack(std::move(asset_resolvers[index++]));
+  }
+  engine_->UpdateAssetManager(std::move(asset_manager));
 }
 
 // |Engine::Delegate|

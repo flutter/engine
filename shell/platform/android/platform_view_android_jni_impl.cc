@@ -571,32 +571,23 @@ static void LoadDartDeferredLibrary(JNIEnv* env,
       std::move(instructions_mapping));
 }
 
-// TODO(garyq): persist additional asset resolvers by updating instead of
-// replacing with newly created asset_manager
 static void UpdateJavaAssetManager(JNIEnv* env,
                                    jobject obj,
                                    jlong shell_holder,
                                    jobject jAssetManager,
                                    jstring jAssetBundlePath) {
-  // auto asset_manager = std::make_shared<flutter::AssetManager>();
-  // asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
-  //     env,                                                  // jni
-  //     environment jAssetManager,                                        //
-  //     asset manager fml::jni::JavaStringToString(env, jAssetBundlePath))  //
-  //     apk asset dir
-  // );
-  // Create config to set persistent cache asset manager
-  // RunConfiguration config(nullptr, std::move(asset_manager));
   auto asset_resolver = std::make_unique<flutter::APKAssetProvider>(
       env,                                                   // jni environment
       jAssetManager,                                         // asset manager
       fml::jni::JavaStringToString(env, jAssetBundlePath));  // apk asset dir
-  std::unique_ptr<std::vector<std::shared_ptr<AssetResolver>>> resolver_vector =
-      std::make_unique<std::vector<std::shared_ptr<AssetResolver>>>();
-  resolver_vector->push_back(std::move(asset_resolver));
+  std::vector<std::unique_ptr<AssetResolver>> resolver_vector;
+  // auto resolver_vector =
+  //     std::make_unique<std::vector<std::unique_ptr<AssetResolver>>>();
+  // resolver_vector->push_back(std::move(asset_resolver));
+  resolver_vector.push_back(std::move(asset_resolver));
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetResolvers(
-      *resolver_vector);
+      resolver_vector);
 }
 
 bool RegisterApi(JNIEnv* env) {

@@ -281,7 +281,7 @@ class PlatformView {
     /// @param[in]  asset_manager  The asset manager to use.
     ///
     virtual void UpdateAssetResolvers(
-        const std::vector<std::shared_ptr<AssetResolver>>& asset_resolvers) = 0;
+        const std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -720,15 +720,23 @@ class PlatformView {
                                             const std::string error_message,
                                             bool transient);
 
-  // TODO(garyq): Implement a proper asset_resolver replacement instead of
-  // overwriting the entire asset manager.
   //--------------------------------------------------------------------------
-  /// @brief      Sets the asset manager of the engine to asset_manager
+  /// @brief      Replaces asset resolvers in the current engine's
+  ///             `AssetManager` that are marked as updatable
+  ///             (`IsUpdateable()` returns true). Updatable AssetResolvers
+  ///             are removed and replaced with the next available resolver
+  ///             in `asset_resolvers`. If less resolvers are provided than
+  ///             existing resolvers marked updatable, then the extra
+  ///             existing resolvers will be removed without replacement. If
+  ///             more resolvers are provided than existing resolvers marked
+  ///             updatable, then the extra provided resolvers will be added
+  ///             to the end of the resolver deque.
   ///
-  /// @param[in]  asset_manager  The asset manager to use.
+  /// @param[in]  asset_resolvers  The asset resolvers to replace updatable
+  ///                              existing resolvers with.
   ///
   virtual void UpdateAssetResolvers(
-      const std::vector<std::shared_ptr<AssetResolver>>& asset_resolvers);
+      const std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers);
 
  protected:
   PlatformView::Delegate& delegate_;
