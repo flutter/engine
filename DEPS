@@ -360,7 +360,7 @@ deps = {
 
   'src/third_party/skia':
    #Var('skia_git') + '/skia.git' + '@' +  Var('skia_revision'),
-   Var('liguisheng_skia_git') + '@' + '86f0aac62b4fa093420a1676ae1e3968f5fde9e1',
+   Var('liguisheng_skia_git') + '@' + 'cbf49b0b7a004313856f19ad99606cf2c09011a4',
 
   'src/third_party/ocmock':
    Var('ocmock_git') + '@' +  Var('ocmock_tag'),
