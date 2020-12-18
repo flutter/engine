@@ -62,7 +62,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
       skTextStyle.fontSize = fontSize;
     }
 
-    skTextStyle.fontFamilies = _getActualFontFamilies(fontFamily);
+    skTextStyle.fontFamilies = _getEffectiveFontFamilies(fontFamily);
 
     return skTextStyle;
   }
@@ -71,7 +71,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     EngineStrutStyle style = value as EngineStrutStyle;
     final SkStrutStyleProperties skStrutStyle = SkStrutStyleProperties();
     skStrutStyle.fontFamilies =
-        _getActualFontFamilies(style._fontFamily, style._fontFamilyFallback);
+        _getEffectiveFontFamilies(style._fontFamily, style._fontFamilyFallback);
 
     if (style._fontSize != null) {
       skStrutStyle.fontSize = style._fontSize;
@@ -264,7 +264,7 @@ class CkTextStyle implements ui.TextStyle {
     }
 
     properties.fontFamilies =
-        _getActualFontFamilies(fontFamily, fontFamilyFallback);
+        _getEffectiveFontFamilies(fontFamily, fontFamilyFallback);
 
     if (fontWeight != null || fontStyle != null) {
       properties.fontStyle = toSkFontStyle(fontWeight, fontStyle);
@@ -635,10 +635,24 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   /// Determines if the given [text] contains any code points which are not
   /// supported by the current set of fonts.
-  void _verifyFontsSupportText(String text) {
+  void _ensureFontsSupportText(String text) {
+    // TODO(hterkelsen): Make this faster for the common case where the text
+    // is supported by the given fonts.
+
+    // If the text is ASCII, then skip this check.
+    bool isAscii = true;
+    for (int i = 0; i < text.length; i++) {
+      if (text.codeUnitAt(i) >= 160) {
+        isAscii = false;
+        break;
+      }
+    }
+    if (isAscii) {
+      return;
+    }
     CkTextStyle style = _peekStyle();
     List<String> fontFamilies =
-        _getActualFontFamilies(style.fontFamily, style.fontFamilyFallback);
+        _getEffectiveFontFamilies(style.fontFamily, style.fontFamilyFallback);
     List<SkTypeface> typefaces = <SkTypeface>[];
     for (var font in fontFamilies) {
       List<SkTypeface>? typefacesForFamily =
@@ -647,14 +661,15 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
         typefaces.addAll(typefacesForFamily);
       }
     }
-    List<int> codeUnits = text.codeUnits;
-    List<bool> codeUnitsSupported = List<bool>.filled(codeUnits.length, false);
+    // List<int> codeUnits = text.codeUnits;
+    List<bool> codeUnitsSupported = List<bool>.filled(text.length, false);
     for (SkTypeface typeface in typefaces) {
       SkFont font = SkFont(typeface);
       Uint8List glyphs = font.getGlyphIDs(text);
       assert(glyphs.length == codeUnitsSupported.length);
       for (int i = 0; i < glyphs.length; i++) {
-        codeUnitsSupported[i] |= glyphs[i] != 0 || _isControlCode(codeUnits[i]);
+        codeUnitsSupported[i] |=
+            glyphs[i] != 0 || _isControlCode(text.codeUnitAt(i));
       }
     }
 
@@ -662,7 +677,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
       List<int> missingCodeUnits = <int>[];
       for (int i = 0; i < codeUnitsSupported.length; i++) {
         if (!codeUnitsSupported[i]) {
-          missingCodeUnits.add(codeUnits[i]);
+          missingCodeUnits.add(text.codeUnitAt(i));
         }
       }
       _findFontsForMissingCodeunits(missingCodeUnits);
@@ -676,7 +691,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
-    _verifyFontsSupportText(text);
+    _ensureFontsSupportText(text);
     _commands.add(_ParagraphCommand.addText(text));
     _paragraphBuilder.addText(text);
   }
@@ -774,7 +789,7 @@ enum _ParagraphCommandType {
   addPlaceholder,
 }
 
-List<String> _getActualFontFamilies(String? fontFamily,
+List<String> _getEffectiveFontFamilies(String? fontFamily,
     [List<String>? fontFamilyFallback]) {
   if (fontFamily == null ||
       !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
