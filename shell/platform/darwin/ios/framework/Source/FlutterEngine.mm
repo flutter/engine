@@ -851,7 +851,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 #pragma mark - Notifications
 
 - (void)applicationBecameActive:(NSNotification*)notification {
-  setGpuRenderDisabled(false);  
+  setGpuRenderDisabled(false);
   [self setIsGpuDisabled:NO];
 }
 
