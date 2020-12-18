@@ -852,11 +852,11 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   [self setIsGpuDisabled:NO];
-  setGpuRenderDisabled(false);
+  //setGpuRenderDisabled(false);
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
-  setGpuRenderDisabled(true);
+  //setGpuRenderDisabled(true);
   [self setIsGpuDisabled:YES];
 }
 
