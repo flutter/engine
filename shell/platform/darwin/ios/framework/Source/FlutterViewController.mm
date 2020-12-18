@@ -629,6 +629,9 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
 
   [super viewDidAppear:animated];
+  if (UIApplication.sharedApplication.applicationState == UIApplicationStateBackground) {
+    [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+  }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
