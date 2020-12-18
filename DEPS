@@ -24,7 +24,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'liguisheng_skia_git': 'git@github.com:liguisheng/skia.git',
+  'liguisheng_skia_git': 'https://github.com/liguisheng/skia.git',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
   'skia_revision': 'dfc880bd9ba05c5097355469c328c6d64208bc0f',
