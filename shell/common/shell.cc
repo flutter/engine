@@ -1224,7 +1224,7 @@ void Shell::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
 }
 
 void Shell::UpdateAssetResolvers(
-    const std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers) {
+    std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers) {
   size_t index = 0;
   auto asset_manager = std::make_shared<AssetManager>();
   auto old_asset_manager = engine_->GetAssetManager();

@@ -281,7 +281,7 @@ class PlatformView {
     /// @param[in]  asset_manager  The asset manager to use.
     ///
     virtual void UpdateAssetResolvers(
-        const std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers) = 0;
+        std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -725,18 +725,26 @@ class PlatformView {
   ///             `AssetManager` that are marked as updatable
   ///             (`IsUpdateable()` returns true). Updatable AssetResolvers
   ///             are removed and replaced with the next available resolver
-  ///             in `asset_resolvers`. If less resolvers are provided than
-  ///             existing resolvers marked updatable, then the extra
-  ///             existing resolvers will be removed without replacement. If
-  ///             more resolvers are provided than existing resolvers marked
-  ///             updatable, then the extra provided resolvers will be added
-  ///             to the end of the resolver deque.
+  ///             in `asset_resolvers`.
+  ///
+  ///             AssetResolvers should be updated when the exisitng resolver
+  ///             becomes obsolete and a newer one becomes available that
+  ///             provides updated access to the same type of assets as the
+  ///             existing one. This update process is meant to be performed at
+  ///             runtime.
+  ///
+  ///             If less resolvers are provided than existing updatable
+  ///             resolvers, the the extra existing updatable resolvers will be
+  ///             removed without replacement. If more resolvers are provided
+  ///             than existing updatable resolvers, then the extra provided
+  ///             resolvers will be added to the end of the AssetManager
+  ///             resolvers list.
   ///
   /// @param[in]  asset_resolvers  The asset resolvers to replace updatable
   ///                              existing resolvers with.
   ///
   virtual void UpdateAssetResolvers(
-      const std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers);
+      std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers);
 
  protected:
   PlatformView::Delegate& delegate_;
