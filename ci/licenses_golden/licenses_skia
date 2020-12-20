@@ -1,4 +1,4 @@
-Signature: 0e50d6e7e1601e0c06f64671fcfaf5e3
+Signature: ee8aeb3b67c5ee87ff824c60dddc1114
 
 UNUSED LICENSES:
 
@@ -4165,6 +4165,7 @@ FILE: ../../../third_party/skia/src/core/SkMarkerStack.cpp
 FILE: ../../../third_party/skia/src/core/SkMarkerStack.h
 FILE: ../../../third_party/skia/src/core/SkMipmapBuilder.h
 FILE: ../../../third_party/skia/src/core/SkOpts_erms.cpp
+FILE: ../../../third_party/skia/src/core/SkSamplingPriv.h
 FILE: ../../../third_party/skia/src/core/SkVerticesPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.h
