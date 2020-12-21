@@ -53,9 +53,11 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     return nullptr;
   }
 
-  auto shell = std::unique_ptr<Shell>(new Shell(
-      std::move(vm), task_runners, settings,
-      std::make_shared<VolatilePathTracker>(task_runners.GetUITaskRunner())));
+  auto shell = std::unique_ptr<Shell>(
+      new Shell(std::move(vm), task_runners, settings,
+                std::make_shared<VolatilePathTracker>(
+                    task_runners.GetUITaskRunner(),
+                    !settings.skia_deterministic_rendering_on_cpu)));
 
   // Create the rasterizer on the raster thread.
   std::promise<std::unique_ptr<Rasterizer>> rasterizer_promise;

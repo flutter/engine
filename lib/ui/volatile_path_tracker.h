@@ -23,6 +23,11 @@ namespace flutter {
 /// cache will flip the volatility bit on the SkPath and remove it from the
 /// cache. If the Dart object is released, Erase must be called to avoid
 /// tracking a path that is no longer referenced in Dart code.
+///
+/// Enabling this cache may cause difficult to predict minor pixel differences
+/// when paths are rendered. If deterministic rendering is needed, e.g. for a
+/// screen diffing test, this class will not cache any paths and will
+/// automatically set the volatility of the path to false.
 class VolatilePathTracker {
  public:
   /// The fields of this struct must only accessed on the UI task runner.
@@ -32,7 +37,8 @@ class VolatilePathTracker {
     SkPath path;
   };
 
-  explicit VolatilePathTracker(fml::RefPtr<fml::TaskRunner> ui_task_runner);
+  VolatilePathTracker(fml::RefPtr<fml::TaskRunner> ui_task_runner,
+                      bool enabled);
 
   static constexpr int kFramesOfVolatility = 2;
 
@@ -62,6 +68,7 @@ class VolatilePathTracker {
   std::mutex paths_to_remove_mutex_;
   std::deque<std::shared_ptr<TrackedPath>> paths_to_remove_;
   std::set<std::shared_ptr<TrackedPath>> paths_;
+  bool enabled_ = true;
 
   void Drain();
 
