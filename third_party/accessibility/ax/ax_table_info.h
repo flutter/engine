@@ -10,8 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "base/optional.h"
-#include "ui/accessibility/ax_export.h"
+#include "ax_export.h"
 
 namespace ui {
 
@@ -24,12 +23,12 @@ class AX_EXPORT AXTableInfo {
   struct CellData {
     AXNode* cell;
     int32_t cell_id;
-    size_t col_index;
-    size_t row_index;
-    size_t col_span;
-    size_t row_span;
-    size_t aria_col_index;
-    size_t aria_row_index;
+    int col_index;
+    int row_index;
+    int col_span;
+    int row_span;
+    int aria_col_index;
+    int aria_row_index;
   };
 
   // Returns nullptr if the node is not a valid table or grid node.
@@ -122,4 +121,4 @@ class AX_EXPORT AXTableInfo {
 
 }  // namespace ui
 
-#endif  // UI_ACCESSIBILITY_AX_TABLE_INFO
+#endif  // UI_UI_ACCESSIBILITY_TABLE_INFO

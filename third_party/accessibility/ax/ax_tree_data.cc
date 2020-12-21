@@ -2,16 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_tree_data.h"
+#include "ax_tree_data.h"
 
 #include <set>
 
-#include "base/strings/string_number_conversions.h"
-#include "base/strings/string_util.h"
-#include "base/strings/stringprintf.h"
-#include "base/strings/utf_string_conversions.h"
-#include "ui/accessibility/ax_enum_util.h"
-#include "ui/accessibility/ax_enums.mojom.h"
+#include "ax_enum_util.h"
+#include "ax_enums.h"
 
 namespace ui {
 
@@ -39,7 +35,7 @@ std::string AXTreeData::ToString() const {
   if (loaded)
     result += " loaded=true";
   if (loading_progress != 0.0f)
-    result += " loading_progress=" + base::NumberToString(loading_progress);
+    result += " loading_progress=" + std::to_string(loading_progress);
   if (!mimetype.empty())
     result += " mimetype=" + mimetype;
   if (!url.empty())
@@ -48,21 +44,19 @@ std::string AXTreeData::ToString() const {
     result += " title=" + title;
 
   if (focus_id != AXNode::kInvalidAXID)
-    result += " focus_id=" + base::NumberToString(focus_id);
+    result += " focus_id=" + std::to_string(focus_id);
 
   if (sel_anchor_object_id != AXNode::kInvalidAXID) {
     result +=
         (sel_is_backward ? " sel_is_backward=true" : " sel_is_backward=false");
-    result +=
-        " sel_anchor_object_id=" + base::NumberToString(sel_anchor_object_id);
-    result += " sel_anchor_offset=" + base::NumberToString(sel_anchor_offset);
+    result += " sel_anchor_object_id=" + std::to_string(sel_anchor_object_id);
+    result += " sel_anchor_offset=" + std::to_string(sel_anchor_offset);
     result += " sel_anchor_affinity=";
     result += ui::ToString(sel_anchor_affinity);
   }
   if (sel_focus_object_id != AXNode::kInvalidAXID) {
-    result +=
-        " sel_focus_object_id=" + base::NumberToString(sel_focus_object_id);
-    result += " sel_focus_offset=" + base::NumberToString(sel_focus_offset);
+    result += " sel_focus_object_id=" + std::to_string(sel_focus_object_id);
+    result += " sel_focus_offset=" + std::to_string(sel_focus_offset);
     result += " sel_focus_affinity=";
     result += ui::ToString(sel_focus_affinity);
   }

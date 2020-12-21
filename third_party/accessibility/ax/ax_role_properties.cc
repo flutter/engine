@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_role_properties.h"
+#include "ax_role_properties.h"
 
-#include "build/build_config.h"
-#include "ui/accessibility/ax_enums.mojom.h"
+#include "ax_build/build_config.h"
+
+#include "ax_enums.h"
 
 namespace ui {
 
@@ -551,6 +552,18 @@ bool IsSelect(const ax::mojom::Role role) {
     case ax::mojom::Role::kRadioGroup:
     case ax::mojom::Role::kTree:
     case ax::mojom::Role::kTreeGrid:  // Subclass of kTree.
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool IsSelectElement(const ax::mojom::Role role) {
+  // Depending on their "size" attribute, <select> elements come in two flavors:
+  // the first appears like a list box and the second like a popup menu.
+  switch (role) {
+    case ax::mojom::Role::kListBox:
+    case ax::mojom::Role::kPopUpButton:
       return true;
     default:
       return false;

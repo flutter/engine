@@ -5,8 +5,8 @@
 #ifndef UI_ACCESSIBILITY_AX_ROLE_PROPERTIES_H_
 #define UI_ACCESSIBILITY_AX_ROLE_PROPERTIES_H_
 
-#include "ui/accessibility/ax_base_export.h"
-#include "ui/accessibility/ax_enums.mojom-forward.h"
+#include "ax_base_export.h"
+#include "ax_enums.h"
 
 namespace ui {
 
@@ -133,6 +133,10 @@ AX_BASE_EXPORT bool IsRowContainer(const ax::mojom::Role role);
 
 // Returns true if the role is a subclass of the ARIA Section abstract role.
 AX_BASE_EXPORT bool IsSection(const ax::mojom::Role role);
+
+// Returns true if the role is one of those exposed by the HTML <select>
+// element.
+AX_BASE_EXPORT bool IsSelectElement(const ax::mojom::Role role);
 
 // Returns true if the role is a subclass of the ARIA Sectionhead role.
 AX_BASE_EXPORT bool IsSectionhead(const ax::mojom::Role role);

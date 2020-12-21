@@ -8,20 +8,9 @@
 #include <string>
 
 #include "base/no_destructor.h"
-#include "base/unguessable_token.h"
-#include "ui/accessibility/ax_base_export.h"
-#include "ui/accessibility/ax_enums.mojom-forward.h"
 
-namespace mojo {
-template <typename DataViewType, typename T>
-struct UnionTraits;
-}
-
-namespace ax {
-namespace mojom {
-class AXTreeIDDataView;
-}
-}  // namespace ax
+#include "ax_base_export.h"
+#include "ax_enums.h"
 
 namespace ui {
 
@@ -43,15 +32,11 @@ class AX_BASE_EXPORT AXTreeID {
   // automation API.
   static AXTreeID FromString(const std::string& string);
 
-  // Convenience method to unserialize an AXTreeID from an UnguessableToken.
-  static AXTreeID FromToken(const base::UnguessableToken& token);
-
   AXTreeID& operator=(const AXTreeID& other);
 
   std::string ToString() const;
 
   ax::mojom::AXTreeIDType type() const { return type_; }
-  const base::Optional<base::UnguessableToken>& token() const { return token_; }
 
   bool operator==(const AXTreeID& rhs) const;
   bool operator!=(const AXTreeID& rhs) const;
@@ -64,12 +49,10 @@ class AX_BASE_EXPORT AXTreeID {
   explicit AXTreeID(ax::mojom::AXTreeIDType type);
   explicit AXTreeID(const std::string& string);
 
-  friend struct mojo::UnionTraits<ax::mojom::AXTreeIDDataView, ui::AXTreeID>;
   friend class base::NoDestructor<AXTreeID>;
   friend void swap(AXTreeID& first, AXTreeID& second);
 
   ax::mojom::AXTreeIDType type_;
-  base::Optional<base::UnguessableToken> token_ = base::nullopt;
 };
 
 // For use in std::unordered_map.

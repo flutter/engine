@@ -2,16 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_table_info.h"
+#include "ax_table_info.h"
 
-#include "base/strings/string_util.h"
-#include "ui/accessibility/ax_constants.mojom.h"
-#include "ui/accessibility/ax_enums.mojom.h"
-#include "ui/accessibility/ax_node.h"
-#include "ui/accessibility/ax_role_properties.h"
-#include "ui/accessibility/ax_tree.h"
-#include "ui/accessibility/ax_tree_observer.h"
-#include "ui/gfx/geometry/rect_f.h"
+#include <stddef.h>
+
+#include "base/logging.h"
+
+#include "ax_constants.h"
+#include "ax_enums.h"
+#include "ax_node.h"
+#include "ax_role_properties.h"
+#include "ax_tree.h"
+#include "ax_tree_observer.h"
 
 using ax::mojom::IntAttribute;
 
@@ -64,23 +66,23 @@ void FindRowsAndThenCells(AXNode* node,
   }
 }
 
-size_t GetSizeTAttribute(const AXNode& node, IntAttribute attribute) {
-  return base::saturated_cast<size_t>(node.GetIntAttribute(attribute));
+int GetAttribute(const AXNode& node, IntAttribute attribute) {
+  return node.GetIntAttribute(attribute);
 }
 
 }  // namespace
 
 // static
 AXTableInfo* AXTableInfo::Create(AXTree* tree, AXNode* table_node) {
-  DCHECK(tree);
-  DCHECK(table_node);
+  BASE_DCHECK(tree);
+  BASE_DCHECK(table_node);
 
-#if DCHECK_IS_ON()
+#ifndef NDEBUG
   // Sanity check, make sure the node is in the tree.
   AXNode* node = table_node;
   while (node && node != tree->root())
     node = node->parent();
-  DCHECK(node == tree->root());
+  BASE_DCHECK(node == tree->root());
 #endif
 
   if (!IsTableLike(table_node->data().role))
@@ -88,7 +90,7 @@ AXTableInfo* AXTableInfo::Create(AXTree* tree, AXNode* table_node) {
 
   AXTableInfo* info = new AXTableInfo(tree, table_node);
   bool success = info->Update();
-  DCHECK(success);
+  BASE_DCHECK(success);
 
   return info;
 }
@@ -103,20 +105,20 @@ bool AXTableInfo::Update() {
   caption_id = 0;
   FindRowsAndThenCells(table_node_, &row_nodes, &cell_nodes_per_row,
                        caption_id);
-  DCHECK_EQ(cell_nodes_per_row.size(), row_nodes.size());
+  BASE_DCHECK(cell_nodes_per_row.size() == row_nodes.size());
 
   // Get the optional row and column count from the table. If we encounter
   // a cell with an index or span larger than this, we'll update the
   // table row and column count to be large enough to fit all cells.
-  row_count = GetSizeTAttribute(*table_node_, IntAttribute::kTableRowCount);
-  col_count = GetSizeTAttribute(*table_node_, IntAttribute::kTableColumnCount);
+  row_count = GetAttribute(*table_node_, IntAttribute::kTableRowCount);
+  col_count = GetAttribute(*table_node_, IntAttribute::kTableColumnCount);
 
   // Note - GetIntAttribute returns 0 if no value has been specified for the
   // attribute.
-  aria_row_count =
-      int{table_node_->GetIntAttribute(IntAttribute::kAriaRowCount)};
-  aria_col_count =
-      int{table_node_->GetIntAttribute(IntAttribute::kAriaColumnCount)};
+  aria_row_count = static_cast<int>(
+      table_node_->GetIntAttribute(IntAttribute::kAriaRowCount));
+  aria_col_count = static_cast<int>(
+      table_node_->GetIntAttribute(IntAttribute::kAriaColumnCount));
 
   // Iterate over the cells and build up an array of CellData
   // entries, one for each cell. Compute the actual row and column
@@ -167,23 +169,22 @@ void AXTableInfo::BuildCellDataVectorFromRowAndCellNodes(
   // indices for each cell by taking the specified row and column
   // index in the accessibility tree if legal, but replacing it with
   // valid table coordinates otherwise.
-  size_t cell_index = 0;
-  size_t current_aria_row_index = 1;
-  size_t next_row_index = 0;
+  int cell_index = 0;
+  int current_aria_row_index = 1;
+  int next_row_index = 0;
   for (size_t i = 0; i < cell_nodes_per_row.size(); i++) {
     auto& cell_nodes_in_this_row = cell_nodes_per_row[i];
     AXNode* row_node = row_node_list[i];
     bool is_first_cell_in_row = true;
-    size_t current_col_index = 0;
-    size_t current_aria_col_index = 1;
+    int current_col_index = 0;
+    int current_aria_col_index = 1;
 
     // Make sure the row index is always at least as high as the one reported by
     // the source tree.
-    row_id_to_index[row_node->id()] =
-        std::max(next_row_index,
-                 GetSizeTAttribute(*row_node, IntAttribute::kTableRowIndex));
+    row_id_to_index[row_node->id()] = std::max(
+        next_row_index, GetAttribute(*row_node, IntAttribute::kTableRowIndex));
     size_t* current_row_index = &row_id_to_index[row_node->id()];
-    size_t spanned_col_index = 0;
+    int spanned_col_index = 0;
     for (AXNode* cell : cell_nodes_in_this_row) {
       // Fill in basic info in CellData.
       CellData cell_data;
@@ -194,21 +195,20 @@ void AXTableInfo::BuildCellDataVectorFromRowAndCellNodes(
       // Get table cell accessibility attributes - note that these may
       // be missing or invalid, we'll correct them next.
       cell_data.row_index =
-          GetSizeTAttribute(*cell, IntAttribute::kTableCellRowIndex);
-      cell_data.row_span =
-          GetSizeTAttribute(*cell, IntAttribute::kTableCellRowSpan);
+          GetAttribute(*cell, IntAttribute::kTableCellRowIndex);
+      cell_data.row_span = GetAttribute(*cell, IntAttribute::kTableCellRowSpan);
       cell_data.aria_row_index =
-          GetSizeTAttribute(*cell, IntAttribute::kAriaCellRowIndex);
+          GetAttribute(*cell, IntAttribute::kAriaCellRowIndex);
       cell_data.col_index =
-          GetSizeTAttribute(*cell, IntAttribute::kTableCellColumnIndex);
+          GetAttribute(*cell, IntAttribute::kTableCellColumnIndex);
       cell_data.aria_col_index =
-          GetSizeTAttribute(*cell, IntAttribute::kAriaCellColumnIndex);
+          GetAttribute(*cell, IntAttribute::kAriaCellColumnIndex);
       cell_data.col_span =
-          GetSizeTAttribute(*cell, IntAttribute::kTableCellColumnSpan);
+          GetAttribute(*cell, IntAttribute::kTableCellColumnSpan);
 
       // The col span and row span must be at least 1.
-      cell_data.row_span = std::max(size_t{1}, cell_data.row_span);
-      cell_data.col_span = std::max(size_t{1}, cell_data.col_span);
+      cell_data.row_span = std::max(1, cell_data.row_span);
+      cell_data.col_span = std::max(1, cell_data.col_span);
 
       // Ensure the column index must always be incrementing.
       cell_data.col_index = std::max(cell_data.col_index, current_col_index);
@@ -222,7 +222,7 @@ void AXTableInfo::BuildCellDataVectorFromRowAndCellNodes(
         // If it's the first cell in the row, ensure the row index is
         // incrementing. The rest of the cells in this row are forced to have
         // the same row index.
-        if (cell_data.row_index > *current_row_index) {
+        if (cell_data.row_index > static_cast<int>(*current_row_index)) {
           *current_row_index = cell_data.row_index;
         } else {
           cell_data.row_index = *current_row_index;
@@ -232,11 +232,11 @@ void AXTableInfo::BuildCellDataVectorFromRowAndCellNodes(
         // the row node, we should check there.
         if (!cell_data.aria_row_index) {
           cell_data.aria_row_index =
-              GetSizeTAttribute(*row_node, IntAttribute::kAriaCellRowIndex);
+              GetAttribute(*row_node, IntAttribute::kAriaCellRowIndex);
         }
         if (!cell_data.aria_col_index) {
           cell_data.aria_col_index =
-              GetSizeTAttribute(*row_node, IntAttribute::kAriaCellColumnIndex);
+              GetAttribute(*row_node, IntAttribute::kAriaCellColumnIndex);
         }
         cell_data.aria_row_index =
             std::max(cell_data.aria_row_index, current_aria_row_index);
@@ -275,9 +275,9 @@ void AXTableInfo::BuildCellDataVectorFromRowAndCellNodes(
       }
 
       // Memoize the cell data using our incremental row col map.
-      for (size_t r = cell_data.row_index;
+      for (int r = cell_data.row_index;
            r < (cell_data.row_index + cell_data.row_span); r++) {
-        for (size_t c = cell_data.col_index;
+        for (int c = cell_data.col_index;
              c < (cell_data.col_index + cell_data.col_span); c++) {
           incremental_row_col_map_[r][c] = cell_data;
         }
@@ -292,17 +292,19 @@ void AXTableInfo::BuildCellDataVectorFromRowAndCellNodes(
       // sure they're large enough to fit this cell, including its spans.
       // The -1 in the ARIA calculations is because ARIA indices are 1-based,
       // whereas all other indices are zero-based.
-      row_count = std::max(row_count, cell_data.row_index + cell_data.row_span);
-      col_count = std::max(col_count, cell_data.col_index + cell_data.col_span);
+      row_count = static_cast<size_t>(
+          std::max(static_cast<int>(row_count),
+                   cell_data.row_index + cell_data.row_span));
+      col_count = static_cast<size_t>(
+          std::max(static_cast<int>(col_count),
+                   cell_data.col_index + cell_data.col_span));
       if (aria_row_count != ax::mojom::kUnknownAriaColumnOrRowCount) {
-        aria_row_count =
-            std::max((aria_row_count),
-                     int{current_aria_row_index + cell_data.row_span - 1});
+        aria_row_count = std::max((aria_row_count), (current_aria_row_index +
+                                                     cell_data.row_span - 1));
       }
       if (aria_col_count != ax::mojom::kUnknownAriaColumnOrRowCount) {
-        aria_col_count =
-            std::max((aria_col_count),
-                     int{current_aria_col_index + cell_data.col_span - 1});
+        aria_col_count = std::max((aria_col_count), (current_aria_col_index +
+                                                     cell_data.col_span - 1));
       }
       // Update |current_col_index| to reflect the next available index after
       // this cell including its colspan. The next column index in this row
@@ -356,12 +358,12 @@ void AXTableInfo::BuildCellAndHeaderVectorsFromCellData() {
 
   // For relations.
   for (auto& cell_data : cell_data_vector) {
-    for (size_t r = cell_data.row_index;
+    for (int r = cell_data.row_index;
          r < cell_data.row_index + cell_data.row_span; r++) {
-      DCHECK_LT(r, row_count);
-      for (size_t c = cell_data.col_index;
+      BASE_DCHECK(r < static_cast<int>(row_count));
+      for (int c = cell_data.col_index;
            c < cell_data.col_index + cell_data.col_span; c++) {
-        DCHECK_LT(c, col_count);
+        BASE_DCHECK(c < static_cast<int>(col_count));
         AXNode* cell = cell_data.cell;
         if (cell->data().role == ax::mojom::Role::kColumnHeader) {
           col_headers[c].push_back(cell->id());
@@ -434,8 +436,8 @@ void AXTableInfo::UpdateExtraMacNodes() {
 
   changes.push_back(AXTreeObserver::Change(
       table_node_, AXTreeObserver::ChangeType::NODE_CHANGED));
-  for (AXTreeObserver& observer : tree_->observers()) {
-    observer.OnAtomicUpdateFinished(tree_, false, changes);
+  for (AXTreeObserver* observer : tree_->observers()) {
+    observer->OnAtomicUpdateFinished(tree_, false, changes);
   }
 }
 
@@ -450,8 +452,8 @@ AXNode* AXTableInfo::CreateExtraMacColumnNode(size_t col_index) {
   data.id = id;
   data.role = ax::mojom::Role::kColumn;
   node->SetData(data);
-  for (AXTreeObserver& observer : tree_->observers())
-    observer.OnNodeCreated(tree_, node);
+  for (AXTreeObserver* observer : tree_->observers())
+    observer->OnNodeCreated(tree_, node);
   return node;
 }
 
@@ -467,8 +469,8 @@ AXNode* AXTableInfo::CreateExtraMacTableHeaderNode() {
   data.role = ax::mojom::Role::kTableHeaderContainer;
   node->SetData(data);
 
-  for (AXTreeObserver& observer : tree_->observers())
-    observer.OnNodeCreated(tree_, node);
+  for (AXTreeObserver* observer : tree_->observers())
+    observer->OnNodeCreated(tree_, node);
 
   return node;
 }
@@ -478,7 +480,8 @@ void AXTableInfo::UpdateExtraMacColumnNodeAttributes(size_t col_index) {
   data.int_attributes.clear();
 
   // Update the column index.
-  data.AddIntAttribute(IntAttribute::kTableColumnIndex, int32_t{col_index});
+  data.AddIntAttribute(IntAttribute::kTableColumnIndex,
+                       static_cast<int32_t>(col_index));
 
   // Update the column header.
   if (!col_headers[col_index].empty()) {
@@ -503,12 +506,12 @@ void AXTableInfo::UpdateExtraMacColumnNodeAttributes(size_t col_index) {
 
 void AXTableInfo::ClearExtraMacNodes() {
   for (AXNode* extra_mac_node : extra_mac_nodes) {
-    for (AXTreeObserver& observer : tree_->observers())
-      observer.OnNodeWillBeDeleted(tree_, extra_mac_node);
+    for (AXTreeObserver* observer : tree_->observers())
+      observer->OnNodeWillBeDeleted(tree_, extra_mac_node);
     AXNode::AXID deleted_id = extra_mac_node->id();
     delete extra_mac_node;
-    for (AXTreeObserver& observer : tree_->observers())
-      observer.OnNodeDeleted(tree_, deleted_id);
+    for (AXTreeObserver* observer : tree_->observers())
+      observer->OnNodeDeleted(tree_, deleted_id);
   }
   extra_mac_nodes.clear();
 }
@@ -528,7 +531,7 @@ std::string AXTableInfo::ToString() const {
     result += "|";
     for (size_t c = 0; c < col_count; c++) {
       int cell_id = cell_ids[r][c];
-      result += base::NumberToString(cell_id);
+      result += std::to_string(cell_id);
       int cell_padding = padding;
       if (cell_id != 0)
         cell_padding = padding - static_cast<int>(log10(cell_id));
@@ -545,8 +548,8 @@ AXTableInfo::AXTableInfo(AXTree* tree, AXNode* table_node)
 AXTableInfo::~AXTableInfo() {
   if (!extra_mac_nodes.empty()) {
     ClearExtraMacNodes();
-    for (AXTreeObserver& observer : tree_->observers()) {
-      observer.OnAtomicUpdateFinished(
+    for (AXTreeObserver* observer : tree_->observers()) {
+      observer->OnAtomicUpdateFinished(
           tree_, false,
           {{table_node_, AXTreeObserver::ChangeType::NODE_CHANGED}});
     }

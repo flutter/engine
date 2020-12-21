@@ -2,17 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_tree_id.h"
+#include "ax_tree_id.h"
 
 #include <algorithm>
 #include <iostream>
 
-#include "base/check.h"
+#include "base/logging.h"
+
 #include "base/no_destructor.h"
-#include "base/notreached.h"
-#include "base/util/values/values_util.h"
-#include "base/values.h"
-#include "ui/accessibility/ax_enums.mojom.h"
+
+#include "ax_enums.h"
 
 namespace ui {
 
@@ -20,31 +19,23 @@ AXTreeID::AXTreeID() : AXTreeID(ax::mojom::AXTreeIDType::kUnknown) {}
 
 AXTreeID::AXTreeID(const AXTreeID& other) = default;
 
-AXTreeID::AXTreeID(ax::mojom::AXTreeIDType type) : type_(type) {
-  if (type_ == ax::mojom::AXTreeIDType::kToken)
-    token_ = base::UnguessableToken::Create();
-}
+AXTreeID::AXTreeID(ax::mojom::AXTreeIDType type) : type_(type) {}
 
 AXTreeID::AXTreeID(const std::string& string) {
+  // TODO(chunhtai): either remove the ax tree id entirely or implement token
+  // for real.
   if (string.empty()) {
     type_ = ax::mojom::AXTreeIDType::kUnknown;
-  } else {
+  } else if (string == "kToken") {
     type_ = ax::mojom::AXTreeIDType::kToken;
-    base::Optional<base::UnguessableToken> token =
-        util::ValueToUnguessableToken(base::Value(string));
-    CHECK(token);
-    token_ = *token;
+  } else {
+    BASE_UNREACHABLE();
   }
 }
 
 // static
 AXTreeID AXTreeID::FromString(const std::string& string) {
   return AXTreeID(string);
-}
-
-// static
-AXTreeID AXTreeID::FromToken(const base::UnguessableToken& token) {
-  return AXTreeID(token.ToString());
 }
 
 // static
@@ -55,24 +46,25 @@ AXTreeID AXTreeID::CreateNewAXTreeID() {
 AXTreeID& AXTreeID::operator=(const AXTreeID& other) = default;
 
 std::string AXTreeID::ToString() const {
+  // TODO(chunhtai): either remove the ax tree id entirely or implement token
+  // for real.
   switch (type_) {
     case ax::mojom::AXTreeIDType::kUnknown:
       return "";
     case ax::mojom::AXTreeIDType::kToken:
-      return util::UnguessableTokenToValue(*token_).GetString();
+      return "kToken";
   }
 
-  NOTREACHED();
+  BASE_UNREACHABLE();
   return std::string();
 }
 
 void swap(AXTreeID& first, AXTreeID& second) {
   std::swap(first.type_, second.type_);
-  std::swap(first.token_, second.token_);
 }
 
 bool AXTreeID::operator==(const AXTreeID& rhs) const {
-  return type_ == rhs.type_ && token_ == rhs.token_;
+  return type_ == rhs.type_;  //&& token_ == rhs.token_;
 }
 
 bool AXTreeID::operator!=(const AXTreeID& rhs) const {
@@ -80,11 +72,11 @@ bool AXTreeID::operator!=(const AXTreeID& rhs) const {
 }
 
 bool AXTreeID::operator<(const AXTreeID& rhs) const {
-  return std::tie(type_, token_) < std::tie(rhs.type_, rhs.token_);
+  return type_ < rhs.type_;
 }
 
 bool AXTreeID::operator<=(const AXTreeID& rhs) const {
-  return std::tie(type_, token_) <= std::tie(rhs.type_, rhs.token_);
+  return type_ <= rhs.type_;
 }
 
 bool AXTreeID::operator>(const AXTreeID& rhs) const {
@@ -96,8 +88,8 @@ bool AXTreeID::operator>=(const AXTreeID& rhs) const {
 }
 
 size_t AXTreeIDHash::operator()(const ui::AXTreeID& tree_id) const {
-  DCHECK(tree_id.type() == ax::mojom::AXTreeIDType::kToken);
-  return base::UnguessableTokenHash()(tree_id.token().value());
+  BASE_DCHECK(tree_id.type() == ax::mojom::AXTreeIDType::kToken);
+  return 0;
 }
 
 std::ostream& operator<<(std::ostream& stream, const AXTreeID& value) {

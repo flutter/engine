@@ -2,15 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/ax_node_data.h"
+#include "ax_node_data.h"
 
 #include <set>
+#include <unordered_set>
+// #include "base/stl_util.h"
+#include "gtest/gtest.h"
 
-#include "base/stl_util.h"
-#include "testing/gtest/include/gtest/gtest.h"
-#include "ui/accessibility/ax_enum_util.h"
-#include "ui/accessibility/ax_enums.mojom.h"
-#include "ui/accessibility/ax_role_properties.h"
+#include "ax_enum_util.h"
+#include "ax_enums.h"
+#include "ax_role_properties.h"
 
 namespace ui {
 
@@ -202,7 +203,8 @@ TEST(AXNodeDataTest, IsClickable) {
                  << ", Actual: isClickable=" << is_clickable
                  << ", Expected: isClickable=" << !is_clickable);
 
-    EXPECT_EQ(base::Contains(roles_expected_is_clickable, data.role),
+    EXPECT_EQ(roles_expected_is_clickable.find(data.role) !=
+                  roles_expected_is_clickable.end(),
               is_clickable);
   }
 }
@@ -259,7 +261,7 @@ TEST(AXNodeDataTest, IsMenuButton) {
 
     SCOPED_TRACE(testing::Message()
                  << "ax::mojom::Role=" << ToString(button_with_popup.role)
-                 << ", hasPopup=" << button_with_popup.GetHasPopup()
+                 << ", hasPopup=" << ToString(button_with_popup.GetHasPopup())
                  << ", Actual: isMenuButton=" << is_menu_button
                  << ", Expected: isMenuButton=" << !is_menu_button);
 

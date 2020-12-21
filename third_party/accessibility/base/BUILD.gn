@@ -1,0 +1,33 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/common/config.gni")
+
+source_set("base") {
+  visibility = [ "//flutter/third_party/accessibility/*" ]
+  include_dirs = [ "//flutter/third_party/accessibility" ]
+
+  sources = [
+    "auto_reset.h",
+    "compiler_specific.h",
+    "logging.cc",
+    "logging.h",
+    "macros.h",
+    "no_destructor.h",
+    "string_utils.cc",
+    "string_utils.h",
+  ]
+
+  if (is_mac) {
+    sources += [
+      "platform/darwin/scoped_nsobject.h",
+      "platform/darwin/scoped_nsobject.mm",
+    ]
+  }
+
+  public_deps = [
+    "numerics",
+    "//flutter/third_party/accessibility/ax_build",
+  ]
+}
