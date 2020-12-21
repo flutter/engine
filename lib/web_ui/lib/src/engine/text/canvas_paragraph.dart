@@ -58,9 +58,13 @@ class CanvasParagraph implements EngineParagraph {
   @override
   bool get didExceedMaxLines => _layoutService.didExceedMaxLines;
 
+  @override
+  bool isLaidOut = false;
+
   ui.ParagraphConstraints? _lastUsedConstraints;
 
   late final TextLayoutService _layoutService = TextLayoutService(this);
+  late final TextPaintService _paintService = TextPaintService(this);
 
   @override
   void layout(ui.ParagraphConstraints constraints) {
@@ -90,6 +94,7 @@ class CanvasParagraph implements EngineParagraph {
           .benchmark('text_layout', stopwatch.elapsedMicroseconds.toDouble());
     }
 
+    isLaidOut = true;
     _lastUsedConstraints = constraints;
   }
 
@@ -100,10 +105,7 @@ class CanvasParagraph implements EngineParagraph {
 
   @override
   void paint(BitmapCanvas canvas, ui.Offset offset) {
-    // TODO(mdebbar): Loop through the spans and for each box in the span:
-    // 1. Paint the background rect.
-    // 2. Paint the text shadows?
-    // 3. Paint the text.
+    _paintService.paint(canvas, offset);
   }
 
   @override
@@ -154,6 +156,7 @@ class CanvasParagraph implements EngineParagraph {
           style: span.style,
           isSpan: true,
         );
+        domRenderer.appendText(spanElement, span.textOf(this));
         domRenderer.append(element, spanElement);
       } else if (span is PlaceholderSpan) {
         domRenderer.append(
@@ -182,32 +185,18 @@ class CanvasParagraph implements EngineParagraph {
   final bool drawOnCanvas = true;
 
   @override
-  bool isLaidOut = false;
-
-  @override
   List<ui.TextBox> getBoxesForRange(
     int start,
     int end, {
     ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
     ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight,
   }) {
-    // TODO(mdebbar): After layout, each paragraph span should have info about
-    // its position and dimensions.
-    //
-    // 1. Find the spans where the `start` and `end` indices fall.
-    // 2. If it's the same span, find the sub-box from `start` to `end`.
-    // 3. Else, find the trailing box(es) of the `start` span, and the `leading`
-    //    box(es) of the `end` span.
-    // 4. Include the boxes of all the spans in between.
-    return <ui.TextBox>[];
+    return _layoutService.getBoxesForRange(start, end, boxHeightStyle, boxWidthStyle);
   }
 
   @override
   ui.TextPosition getPositionForOffset(ui.Offset offset) {
-    // TODO(mdebbar): After layout, each paragraph span should have info about
-    // its position and dimensions. Use that information to find which span the
-    // offset belongs to, then search within that span for the exact character.
-    return const ui.TextPosition(offset: 0);
+    return _layoutService.getPositionForOffset(offset);
   }
 
   @override
@@ -227,7 +216,7 @@ class CanvasParagraph implements EngineParagraph {
   }
 
   @override
-  List<ui.LineMetrics> computeLineMetrics() {
+  List<EngineLineMetrics> computeLineMetrics() {
     return _layoutService.lines;
   }
 }
