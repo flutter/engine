@@ -387,7 +387,17 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
   }
 
   public void uninstallFeature(int loadingUnitId, String moduleName) {
-    // TODO(garyq): support uninstalling.
+    String resolvedModuleName =
+        moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
+    if (resolvedModuleName == null) {
+      Log.e(
+          TAG,
+          "Dynamic feature module name was null and could not be resolved from loading unit id.");
+      return;
+    }
+    List<String> modules_to_uninstall = new ArrayList<>();
+    modules_to_uninstall.add(resolvedModuleName);
+    splitInstallManager.deferredUninstall(modules_to_uninstall);
   }
 
   public void destroy() {
