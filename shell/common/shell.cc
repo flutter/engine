@@ -1232,13 +1232,15 @@ void Shell::UpdateAssetResolvers(
     for (auto& old_resolver : old_asset_manager->TakeResolvers()) {
       if (old_resolver->IsUpdatable()) {
         if (index < asset_resolvers.size()) {
+          // Push the replacement updated resolver in place of the old_resolver.
           asset_manager->PushBack(std::move(asset_resolvers[index++]));
-        }
+        }  // Drop the resolver if no replacement available.
       } else {
         asset_manager->PushBack(std::move(old_resolver));
       }
     }
   }
+  // Append all extra resolvers to the end.
   while (index < asset_resolvers.size()) {
     asset_manager->PushBack(std::move(asset_resolvers[index++]));
   }

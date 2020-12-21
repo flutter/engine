@@ -32,6 +32,9 @@ bool APKAssetProvider::IsValidAfterAssetManagerChange() const {
 }
 
 bool APKAssetProvider::IsUpdatable() const {
+  // APKAssetProvider is always updatable to allow dynamic features to
+  // runtime-update the Java AssetManager instance being used when a new dynamic
+  // feature is installed.
   return true;
 }
 

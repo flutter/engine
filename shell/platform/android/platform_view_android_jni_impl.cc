@@ -581,9 +581,6 @@ static void UpdateJavaAssetManager(JNIEnv* env,
       jAssetManager,                                         // asset manager
       fml::jni::JavaStringToString(env, jAssetBundlePath));  // apk asset dir
   std::vector<std::unique_ptr<AssetResolver>> resolver_vector;
-  // auto resolver_vector =
-  //     std::make_unique<std::vector<std::unique_ptr<AssetResolver>>>();
-  // resolver_vector->push_back(std::move(asset_resolver));
   resolver_vector.push_back(std::move(asset_resolver));
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetResolvers(

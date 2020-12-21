@@ -41,16 +41,19 @@ class AssetResolver {
 
   //----------------------------------------------------------------------------
   /// @brief      Some asset resolvers may be replaced by an updated version
-  ///             during runtime. For example, when downloading a dynamic
-  ///             feature, Android provides a new java asset manager that has
-  ///             access to the newly installed assets. This new manager should
-  ///             replace the existing java asset manager resolver. We call
-  ///             this replacement an update as the old resolver is obsolete and
-  ///             the new one should assume responsibility for providing access
-  ///             to android assets. Updatable asset resolvers will be removed
-  ///             in favor of the replacement resolvers at runtime.
+  ///             during runtime. Resolvers marked `Updatable` are removed and
+  ///             invalidated when an update is processed and is replaced by a
+  ///             new resolver that provides the latest availablity state of
+  ///             assets. This usually adds access to new assets or removes
+  ///             access to old/invalid/deleted assets. For example, when
+  ///             downloading a dynamic feature, Android provides a new java
+  ///             asset manager that has access to the newly installed assets.
+  ///             This new manager should replace the existing java asset
+  ///             manager resolver. We call this replacement an update as the
+  ///             old resolver is obsolete and the new one should assume
+  ///             responsibility for providing access to android assets.
   ///
-  /// @return     Returns whether this resolver should be updated.
+  /// @return     Returns whether this resolver can be updated.
   ///
   virtual bool IsUpdatable() const = 0;
 
