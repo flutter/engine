@@ -44,6 +44,8 @@ class AssetManager final : public AssetResolver {
   std::vector<std::unique_ptr<fml::Mapping>> GetAsMappings(
       const std::string& asset_pattern) const override;
 
+  size_t Size() { return resolvers_.size(); }
+
  private:
   std::deque<std::unique_ptr<AssetResolver>> resolvers_;
 

@@ -116,17 +116,19 @@ class MockPlatformView : public PlatformView {
 };
 }  // namespace
 
-class TestAssetResolver final : public AssetResolver {
+class TestAssetResolver : public AssetResolver {
  public:
-  TestAssetResolver(bool updatable) : updatable_(updatable) {}
-
-  // ~TestAssetResolver() {}
+  TestAssetResolver(bool updatable, int valid)
+      : updatable_(updatable), valid_(valid) {}
 
   bool IsValid() const override { return true; }
 
-  bool IsValidAfterAssetManagerChange() const override { return true; }
+  bool IsValidAfterAssetManagerChange() const override { return valid_; }
 
-  bool IsUpdatable() const override { return updatable_; }
+  bool IsUpdatable() const override {
+    FML_LOG(ERROR) << "Returning updatable_ " << updatable_;
+    return updatable_;
+  }
 
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override {
@@ -140,6 +142,7 @@ class TestAssetResolver final : public AssetResolver {
 
  private:
   bool updatable_;
+  int valid_;
 };
 
 static bool ValidateShell(Shell* shell) {
@@ -215,7 +218,53 @@ static void TestDartVmFlags(std::vector<const char*>& flags) {
     EXPECT_EQ(settings.dart_flags[i], flags[i]);
   }
 }
-TEST_F(ShellTest, UpdateAssetResolvers) {
+
+TEST_F(ShellTest, UpdateAssetResolversReplaces) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform);
+  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  auto shell = CreateShell(std::move(settings), task_runners);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  auto platform_view =
+      std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
+
+  auto asset_manager = shell->GetEngine()->GetAssetManager();
+
+  auto old_resolver = std::make_unique<TestAssetResolver>(true, true);
+  ASSERT_TRUE(old_resolver->IsUpdatable());
+  ASSERT_TRUE(old_resolver->IsValid());
+  asset_manager->PushBack(std::move(old_resolver));
+
+  std::vector<std::unique_ptr<AssetResolver>> resolver_vector;
+  auto updated_resolver = std::make_unique<TestAssetResolver>(true, false);
+  ASSERT_TRUE(updated_resolver->IsUpdatable());
+  ASSERT_FALSE(updated_resolver->IsValidAfterAssetManagerChange());
+  resolver_vector.push_back(std::move(updated_resolver));
+  platform_view->UpdateAssetResolvers(resolver_vector);
+
+  auto resolvers = shell->GetEngine()->GetAssetManager()->TakeResolvers();
+  ASSERT_EQ(resolvers.size(), 2ull);
+  ASSERT_FALSE(resolvers[0]->IsUpdatable());
+  ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
+
+  ASSERT_TRUE(resolvers[1]->IsUpdatable());
+  ASSERT_FALSE(resolvers[1]->IsValidAfterAssetManagerChange());
+
+  DestroyShell(std::move(shell), std::move(task_runners));
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, UpdateAssetResolversAppends) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
@@ -235,10 +284,59 @@ TEST_F(ShellTest, UpdateAssetResolvers) {
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
 
   std::vector<std::unique_ptr<AssetResolver>> resolver_vector;
-  resolver_vector.push_back(std::make_unique<TestAssetResolver>(true));
+  auto updated_resolver = std::make_unique<TestAssetResolver>(true, false);
+  ASSERT_TRUE(updated_resolver->IsUpdatable());
+  ASSERT_FALSE(updated_resolver->IsValidAfterAssetManagerChange());
+  resolver_vector.push_back(std::move(updated_resolver));
   platform_view->UpdateAssetResolvers(resolver_vector);
 
-  // DestroyShell(std::move(shell), std::move(task_runners));
+  auto resolvers = shell->GetEngine()->GetAssetManager()->TakeResolvers();
+  ASSERT_EQ(resolvers.size(), 2ull);
+  ASSERT_FALSE(resolvers[0]->IsUpdatable());
+  ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
+
+  ASSERT_TRUE(resolvers[1]->IsUpdatable());
+  ASSERT_FALSE(resolvers[1]->IsValidAfterAssetManagerChange());
+
+  DestroyShell(std::move(shell), std::move(task_runners));
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, UpdateAssetResolversRemoves) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform);
+  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  auto shell = CreateShell(std::move(settings), task_runners);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  auto platform_view =
+      std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
+
+  auto asset_manager = shell->GetEngine()->GetAssetManager();
+
+  auto old_resolver = std::make_unique<TestAssetResolver>(true, true);
+  ASSERT_TRUE(old_resolver->IsUpdatable());
+  ASSERT_TRUE(old_resolver->IsValid());
+  asset_manager->PushBack(std::move(old_resolver));
+
+  std::vector<std::unique_ptr<AssetResolver>> resolver_vector;
+  platform_view->UpdateAssetResolvers(resolver_vector);
+
+  auto resolvers = shell->GetEngine()->GetAssetManager()->TakeResolvers();
+  ASSERT_EQ(resolvers.size(), 1ull);
+  ASSERT_FALSE(resolvers[0]->IsUpdatable());
+  ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
+
+  DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
