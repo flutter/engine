@@ -254,12 +254,12 @@ struct AXTreeUpdateState {
 
   // Returns whether this update removes |node|.
   bool IsRemovedNode(const AXNode* node) const {
-    return removed_node_ids.find(node->id()) != removed_node_ids.end();
+    return base::Contains(removed_node_ids, node->id());
   }
 
   // Returns whether this update creates a node marked by |node_id|.
   bool IsCreatedNode(AXNode::AXID node_id) const {
-    return new_node_ids.find(node_id) != new_node_ids.end();
+    return base::Contains(new_node_ids, node_id);
   }
 
   // Returns whether this update creates |node|.
@@ -516,8 +516,7 @@ struct AXTreeUpdateState {
   // Returns whether this update must invalidate the unignored cached
   // values for |node_id|.
   bool InvalidatesUnignoredCachedValues(AXNode::AXID node_id) {
-    return invalidate_unignored_cached_values_ids.find(node_id) !=
-           invalidate_unignored_cached_values_ids.end();
+    return base::Contains(invalidate_unignored_cached_values_ids, node_id);
   }
 
   // Adds the parent of |node_id| to the list of nodes to invalidate unignored
@@ -1369,7 +1368,7 @@ bool AXTree::ComputePendingChangesToNode(const AXNodeData& new_data,
   // have been added and removed. Returns false if a duplicate is found.
   std::set<AXNode::AXID> new_child_id_set;
   for (AXNode::AXID new_child_id : new_data.child_ids) {
-    if (new_child_id_set.find(new_child_id) != new_child_id_set.end()) {
+    if (base::Contains(new_child_id_set, new_child_id)) {
       error_ = base::StringPrintf("Node %d has duplicate child id %d",
                                   new_data.id, new_child_id);
       return false;
@@ -1429,7 +1428,7 @@ bool AXTree::ComputePendingChangesToNode(const AXNodeData& new_data,
   }
 
   for (AXNode::AXID child_id : create_or_destroy_ids) {
-    if (new_child_id_set.find(child_id) != new_child_id_set.end()) {
+    if (base::Contains(new_child_id_set, child_id)) {
       // This is a serious error - nodes should never be reparented without
       // first being removed from the tree. If a node exists in the tree already
       // then adding it to a new parent would mean stealing the node from its
@@ -1896,7 +1895,7 @@ void AXTree::DeleteOldChildren(AXNode* node,
 
   // Delete the old children.
   for (AXNode* child : node->children()) {
-    if (new_child_id_set.find(child->id()) == new_child_id_set.end())
+    if (!base::Contains(new_child_id_set, child->id()))
       DestroySubtree(child, update_state);
   }
 }

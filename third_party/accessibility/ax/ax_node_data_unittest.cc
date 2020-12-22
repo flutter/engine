@@ -12,6 +12,7 @@
 #include "ax_enum_util.h"
 #include "ax_enums.h"
 #include "ax_role_properties.h"
+#include "base/container_utils.h"
 
 namespace ui {
 
@@ -203,8 +204,7 @@ TEST(AXNodeDataTest, IsClickable) {
                  << ", Actual: isClickable=" << is_clickable
                  << ", Expected: isClickable=" << !is_clickable);
 
-    EXPECT_EQ(roles_expected_is_clickable.find(data.role) !=
-                  roles_expected_is_clickable.end(),
+    EXPECT_EQ(base::Contains(roles_expected_is_clickable, data.role),
               is_clickable);
   }
 }

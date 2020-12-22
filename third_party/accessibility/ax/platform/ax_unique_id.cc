@@ -7,6 +7,7 @@
 #include <memory>
 #include <unordered_set>
 
+#include "base/container_utils.h"
 #include "base/logging.h"
 
 namespace ui {
@@ -34,7 +35,7 @@ bool AXUniqueId::operator!=(const AXUniqueId& other) const {
 }
 
 bool AXUniqueId::IsAssigned(const int32_t id) const {
-  return g_assigned_ids.find(id) != g_assigned_ids.end();
+  return base::Contains(g_assigned_ids, id);
 }
 
 int32_t AXUniqueId::GetNextAXUniqueId(const int32_t max_id) {

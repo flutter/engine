@@ -10,8 +10,8 @@ source_set("base") {
 
   sources = [
     "auto_reset.h",
+    "color_utils.h",
     "compiler_specific.h",
-    "container_utils.cc",
     "container_utils.h",
     "logging.cc",
     "logging.h",
