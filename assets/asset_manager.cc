@@ -102,11 +102,6 @@ bool AssetManager::IsValidAfterAssetManagerChange() const {
 }
 
 // |AssetResolver|
-bool AssetManager::IsUpdatable() const {
-  return false;
-}
-
-// |AssetResolver|
 AssetResolver::AssetResolverType AssetManager::GetType() const {
   return AssetResolverType::kAssetManager;
 }

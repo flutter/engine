@@ -31,16 +31,9 @@ bool APKAssetProvider::IsValidAfterAssetManagerChange() const {
   return true;
 }
 
-bool APKAssetProvider::IsUpdatable() const {
-  // APKAssetProvider is always updatable to allow dynamic features to
-  // runtime-update the Java AssetManager instance being used when a new dynamic
-  // feature is installed.
-  return true;
-}
-
 // |AssetResolver|
 AssetResolver::AssetResolverType APKAssetProvider::GetType() const {
-  return AssetResolver::AssetResolverType::kAssetManager;
+  return AssetResolver::AssetResolverType::kApkAssetProvider;
 }
 
 class APKAssetMapping : public fml::Mapping {

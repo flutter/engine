@@ -32,9 +32,6 @@ class APKAssetProvider final : public AssetResolver {
   // |flutter::AssetResolver|
   bool IsValidAfterAssetManagerChange() const override;
 
-  // |flutter::AssetResolver|
-  bool IsUpdatable() const override;
-
   // |AssetResolver|
   AssetResolver::AssetResolverType GetType() const override;
 

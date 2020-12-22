@@ -31,9 +31,6 @@ class DirectoryAssetBundle : public AssetResolver {
   bool IsValidAfterAssetManagerChange() const override;
 
   // |AssetResolver|
-  bool IsUpdatable() const override;
-
-  // |AssetResolver|
   AssetResolver::AssetResolverType GetType() const override;
 
   // |AssetResolver|

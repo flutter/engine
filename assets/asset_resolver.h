@@ -46,23 +46,11 @@ class AssetResolver {
   virtual bool IsValidAfterAssetManagerChange() const = 0;
 
   //----------------------------------------------------------------------------
-  /// @brief      Some asset resolvers may be replaced by an updated version
-  ///             during runtime. Resolvers marked `Updatable` are removed and
-  ///             invalidated when an update is processed and is replaced by a
-  ///             new resolver that provides the latest availablity state of
-  ///             assets. This usually adds access to new assets or removes
-  ///             access to old/invalid/deleted assets. For example, when
-  ///             downloading a dynamic feature, Android provides a new java
-  ///             asset manager that has access to the newly installed assets.
-  ///             This new manager should replace the existing java asset
-  ///             manager resolver. We call this replacement an update as the
-  ///             old resolver is obsolete and the new one should assume
-  ///             responsibility for providing access to android assets.
+  /// @brief      Gets the type of AssetResolver this is. Types are defined in
+  ///             AssetResolverType.
   ///
-  /// @return     Returns whether this resolver can be updated.
+  /// @return     Returns the AssetResolverType that this resolver is.
   ///
-  virtual bool IsUpdatable() const = 0;
-
   virtual AssetResolverType GetType() const = 0;
 
   [[nodiscard]] virtual std::unique_ptr<fml::Mapping> GetAsMapping(

@@ -37,11 +37,6 @@ bool DirectoryAssetBundle::IsValidAfterAssetManagerChange() const {
 }
 
 // |AssetResolver|
-bool DirectoryAssetBundle::IsUpdatable() const {
-  return false;
-}
-
-// |AssetResolver|
 AssetResolver::AssetResolverType DirectoryAssetBundle::GetType() const {
   return AssetResolver::AssetResolverType::kDirectoryAssetBundle;
 }
