@@ -254,11 +254,13 @@ public class KeyboardMap {
   public static final HashMap<Long, Long> keyCodeToLogical  = new HashMap<Long, Long>() {
     private static final long serialVersionUID = 1L;
     {
+      put(0x0000000000L, 0x0000000000L);    // none
       put(0x0000000043L, 0x0000000008L);    // backspace
       put(0x000000003dL, 0x0000000009L);    // tab
       put(0x0000000042L, 0x000000000dL);    // enter
       put(0x000000006fL, 0x000000001bL);    // escape
       put(0x000000003eL, 0x0000000020L);    // space
+      put(0x000000004bL, 0x0000000022L);    // quote
       put(0x0000000037L, 0x000000002cL);    // comma
       put(0x0000000045L, 0x000000002dL);    // minus
       put(0x0000000038L, 0x000000002eL);    // period
@@ -439,6 +441,38 @@ public class KeyboardMap {
       put(0x00000000ebL, 0x0000001119L);    // tvTerrestrialAnalog
       put(0x00000000ecL, 0x000000111aL);    // tvTerrestrialDigital
       put(0x0000000102L, 0x000000111bL);    // tvTimer
+      put(0x00000000bcL, 0x000005ff01L);    // gameButton1
+      put(0x00000000bdL, 0x000005ff02L);    // gameButton2
+      put(0x00000000beL, 0x000005ff03L);    // gameButton3
+      put(0x00000000bfL, 0x000005ff04L);    // gameButton4
+      put(0x00000000c0L, 0x000005ff05L);    // gameButton5
+      put(0x00000000c1L, 0x000005ff06L);    // gameButton6
+      put(0x00000000c2L, 0x000005ff07L);    // gameButton7
+      put(0x00000000c3L, 0x000005ff08L);    // gameButton8
+      put(0x00000000c4L, 0x000005ff09L);    // gameButton9
+      put(0x00000000c5L, 0x000005ff0aL);    // gameButton10
+      put(0x00000000c6L, 0x000005ff0bL);    // gameButton11
+      put(0x00000000c7L, 0x000005ff0cL);    // gameButton12
+      put(0x00000000c8L, 0x000005ff0dL);    // gameButton13
+      put(0x00000000c9L, 0x000005ff0eL);    // gameButton14
+      put(0x00000000caL, 0x000005ff0fL);    // gameButton15
+      put(0x00000000cbL, 0x000005ff10L);    // gameButton16
+      put(0x0000000060L, 0x000005ff11L);    // gameButtonA
+      put(0x0000000061L, 0x000005ff12L);    // gameButtonB
+      put(0x0000000062L, 0x000005ff13L);    // gameButtonC
+      put(0x0000000066L, 0x000005ff14L);    // gameButtonLeft1
+      put(0x0000000068L, 0x000005ff15L);    // gameButtonLeft2
+      put(0x000000006eL, 0x000005ff16L);    // gameButtonMode
+      put(0x0000000067L, 0x000005ff17L);    // gameButtonRight1
+      put(0x0000000069L, 0x000005ff18L);    // gameButtonRight2
+      put(0x000000006dL, 0x000005ff19L);    // gameButtonSelect
+      put(0x000000006cL, 0x000005ff1aL);    // gameButtonStart
+      put(0x000000006aL, 0x000005ff1bL);    // gameButtonThumbLeft
+      put(0x000000006bL, 0x000005ff1cL);    // gameButtonThumbRight
+      put(0x0000000063L, 0x000005ff1dL);    // gameButtonX
+      put(0x0000000064L, 0x000005ff1eL);    // gameButtonY
+      put(0x0000000065L, 0x000005ff1fL);    // gameButtonZ
+      put(0x00000000dfL, 0x0100010082L);    // sleep
       put(0x00000000a0L, 0x020000000dL);    // numpadEnter
       put(0x00000000a2L, 0x0200000028L);    // numpadParenLeft
       put(0x00000000a3L, 0x0200000029L);    // numpadParenRight

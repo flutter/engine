@@ -184,6 +184,7 @@ std::map<uint64_t, uint64_t> FlutterKeyboardManager::windowsToLogicalMap_ = {
   { 0x0000000d, 0x0000000000d },    // enter
   { 0x0000001b, 0x0000000001b },    // escape
   { 0x00000020, 0x00000000020 },    // space
+  { 0x000000de, 0x00000000022 },    // quote
   { 0x000000bc, 0x0000000002c },    // comma
   { 0x000000bd, 0x0000000002d },    // minus
   { 0x000000be, 0x0000000002e },    // period
@@ -257,6 +258,16 @@ std::map<uint64_t, uint64_t> FlutterKeyboardManager::windowsToLogicalMap_ = {
   { 0x000000a8, 0x00000000c05 },    // browserRefresh
   { 0x000000aa, 0x00000000c06 },    // browserSearch
   { 0x000000a9, 0x00000000c07 },    // browserStop
+  { 0x000000c3, 0x0000005ff08 },    // gameButton8
+  { 0x000000c4, 0x0000005ff09 },    // gameButton9
+  { 0x000000c5, 0x0000005ff0a },    // gameButton10
+  { 0x000000c6, 0x0000005ff0b },    // gameButton11
+  { 0x000000c7, 0x0000005ff0c },    // gameButton12
+  { 0x000000c8, 0x0000005ff0d },    // gameButton13
+  { 0x000000c9, 0x0000005ff0e },    // gameButton14
+  { 0x000000ca, 0x0000005ff0f },    // gameButton15
+  { 0x000000cb, 0x0000005ff10 },    // gameButton16
+  { 0x0000005f, 0x00100010082 },    // sleep
   { 0x0000006a, 0x0020000002a },    // numpadMultiply
   { 0x0000006b, 0x0020000002b },    // numpadAdd
   { 0x0000006d, 0x0020000002d },    // numpadSubtract

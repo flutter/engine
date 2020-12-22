@@ -373,6 +373,8 @@ void initialize_gtk_keyval_to_logical_key(GHashTable* table) {
   insert_record(table, 0x1008ff14, 0x00000d2f);    // AudioPlay
   insert_record(table, 0x1008ff1c, 0x00000d30);    // AudioRecord
   insert_record(table, 0x1008ff3e, 0x00000d31);    // AudioRewind
+  insert_record(table, 0x1008ffa7, 0x100000014);    // Suspend
+  insert_record(table, 0x1008ff2f, 0x100010082);    // Sleep
   insert_record(table, 0x0000ff8d, 0x20000000d);    // KP_Enter
   insert_record(table, 0x0000ffaa, 0x20000002a);    // KP_Multiply
   insert_record(table, 0x0000ffab, 0x20000002b);    // KP_Add
