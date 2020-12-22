@@ -493,6 +493,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   _embedderAPI.SendPointerEvent(_engine, &event, 1);
 }
 
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event {
+  _embedderAPI.SendKeyEvent(_engine, &event);
+}
+
 #pragma mark - Private methods
 
 - (void)sendUserLocales {

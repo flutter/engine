@@ -496,6 +496,19 @@ public class FlutterJNI {
       long nativePlatformViewId, @NonNull ByteBuffer buffer, int position);
   // ------ End Touch Interaction Support ---
 
+  // ------ Start Key Interaction Support ---
+  /** Sends a packet of pointer data to Flutter's engine. */
+  @UiThread
+  public void dispatchKeyDataPacket(@NonNull ByteBuffer buffer, int position) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeDispatchKeyDataPacket(nativePlatformViewId, buffer, position);
+  }
+
+  private native void nativeDispatchKeyDataPacket(
+      long nativePlatformViewId, @NonNull ByteBuffer buffer, int position);
+  // ------ End Key Interaction Support ---
+
   @UiThread
   public void setPlatformViewsController(@NonNull PlatformViewsController platformViewsController) {
     ensureRunningOnMainThread();

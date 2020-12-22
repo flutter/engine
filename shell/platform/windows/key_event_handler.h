@@ -32,7 +32,8 @@ class KeyEventHandler : public KeyboardHookHandler {
                     int key,
                     int scancode,
                     int action,
-                    char32_t character) override;
+                    char32_t character,
+                    bool wasDown) override;
 
   // |KeyboardHookHandler|
   void TextHook(FlutterWindowsView* window,

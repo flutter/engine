@@ -557,6 +557,34 @@ typedef struct {
   int64_t buttons;
 } FlutterPointerEvent;
 
+
+typedef enum {
+  kFlutterKeyEventKindUp = 1,
+  kFlutterKeyEventKindDown,
+  kFlutterKeyEventKindRepeat,
+} FlutterKeyEventKind;
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterKeyEvent).
+  size_t struct_size;
+  // Timestamp in microseconds.
+  double timestamp;
+  // The event kind.
+  FlutterKeyEventKind kind;
+  // The physical key of the event, distinguished by the HID code.
+  uint64_t physical;
+  // The logical key of the event, usually the effect of the key without
+  // modifier, but might include modifier if the information is not available.
+  // Can be 0 for empty.
+  uint64_t logical;
+  // Null-terminated character input from the event. Can be null. Not available
+  // to up events.
+  const char* character;
+  // Whether the event is synthesized by Flutter.
+  bool synthesized;
+} FlutterKeyEvent;
+
+
 struct _FlutterPlatformMessageResponseHandle;
 typedef struct _FlutterPlatformMessageResponseHandle
     FlutterPlatformMessageResponseHandle;
@@ -1496,6 +1524,11 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     size_t events_count);
 
 FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSendKeyEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterKeyEvent* event);
+
+FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessage* message);
@@ -2008,6 +2041,9 @@ typedef FlutterEngineResult (*FlutterEngineSendPointerEventFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPointerEvent* events,
     size_t events_count);
+typedef FlutterEngineResult (*FlutterEngineSendKeyEventFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterKeyEvent* event);
 typedef FlutterEngineResult (*FlutterEngineSendPlatformMessageFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessage* message);
@@ -2101,6 +2137,7 @@ typedef struct {
   FlutterEngineRunInitializedFnPtr RunInitialized;
   FlutterEngineSendWindowMetricsEventFnPtr SendWindowMetricsEvent;
   FlutterEngineSendPointerEventFnPtr SendPointerEvent;
+  FlutterEngineSendKeyEventFnPtr SendKeyEvent;
   FlutterEngineSendPlatformMessageFnPtr SendPlatformMessage;
   FlutterEnginePlatformMessageCreateResponseHandleFnPtr
       PlatformMessageCreateResponseHandle;

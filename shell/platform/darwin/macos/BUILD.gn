@@ -58,6 +58,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterFrameBufferProvider.mm",
     "framework/Source/FlutterGLCompositor.h",
     "framework/Source/FlutterGLCompositor.mm",
+    "framework/Source/FlutterKeyboardPlugin.h",
+    "framework/Source/FlutterKeyboardPlugin.mm",
     "framework/Source/FlutterIOSurfaceHolder.h",
     "framework/Source/FlutterIOSurfaceHolder.mm",
     "framework/Source/FlutterIntermediateKeyResponder.h",
@@ -76,6 +78,7 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
     "framework/Source/FlutterViewController_Internal.h",
+    "framework/Source/KeyCodeMap.mm",
     "framework/Source/MacOSGLContextSwitch.h",
     "framework/Source/MacOSGLContextSwitch.mm",
   ]

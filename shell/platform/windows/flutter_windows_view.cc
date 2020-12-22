@@ -6,6 +6,8 @@
 
 #include <chrono>
 
+#include "flutter/shell/platform/windows/flutter_keyboard_manager.h"
+
 namespace flutter {
 
 FlutterWindowsView::FlutterWindowsView(
@@ -35,6 +37,11 @@ void FlutterWindowsView::SetEngine(
 
   // Set up the system channel handlers.
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
+  keyboard_hook_handlers_.push_back(
+      std::make_unique<flutter::FlutterKeyboardManager>(
+          [this](const FlutterKeyEvent& event){
+            engine_->SendKeyEvent(event);
+          }));
   keyboard_hook_handlers_.push_back(
       std::make_unique<flutter::KeyEventHandler>(internal_plugin_messenger));
   keyboard_hook_handlers_.push_back(
@@ -92,8 +99,9 @@ void FlutterWindowsView::OnText(const std::u16string& text) {
 void FlutterWindowsView::OnKey(int key,
                                int scancode,
                                int action,
-                               char32_t character) {
-  SendKey(key, scancode, action, character);
+                               char32_t character,
+                               bool wasDown) {
+  SendKey(key, scancode, action, character, wasDown);
 }
 
 void FlutterWindowsView::OnScroll(double x,
@@ -180,9 +188,10 @@ void FlutterWindowsView::SendText(const std::u16string& text) {
 void FlutterWindowsView::SendKey(int key,
                                  int scancode,
                                  int action,
-                                 char32_t character) {
+                                 char32_t character,
+                                 bool wasDown) {
   for (const auto& handler : keyboard_hook_handlers_) {
-    handler->KeyboardHook(this, key, scancode, action, character);
+    handler->KeyboardHook(this, key, scancode, action, character, wasDown);
   }
 }
 

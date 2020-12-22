@@ -41,7 +41,7 @@ class WindowBindingHandlerDelegate {
 
   // Notifies delegate that backing window size has received key press.
   // Typically called by currently configured WindowBindingHandler
-  virtual void OnKey(int key, int scancode, int action, char32_t character) = 0;
+  virtual void OnKey(int key, int scancode, int action, char32_t character, bool wasDown) = 0;
 
   // Notifies delegate that backing window size has recevied scroll.
   // Typically called by currently configured WindowBindingHandler

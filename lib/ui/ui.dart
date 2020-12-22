@@ -30,6 +30,7 @@ part 'geometry.dart';
 part 'hash_codes.dart';
 part 'hooks.dart';
 part 'isolate_name_server.dart';
+part 'key.dart';
 part 'lerp.dart';
 part 'natives.dart';
 part 'painting.dart';

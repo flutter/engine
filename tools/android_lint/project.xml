@@ -20,6 +20,8 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterFragment.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSurfaceView.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidKeyProcessor.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/HardwareKeyboard.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyboardMap.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/FlutterRenderer.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/OnFirstFrameRenderedListener.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartExecutor.java" />

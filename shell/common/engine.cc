@@ -38,6 +38,7 @@ static constexpr char kIsolateChannel[] = "flutter/isolate";
 Engine::Engine(
     Delegate& delegate,
     const PointerDataDispatcherMaker& dispatcher_maker,
+    const KeyDataDispatcherMaker& key_dispatcher_maker,
     std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
     TaskRunners task_runners,
     Settings settings,
@@ -54,10 +55,12 @@ Engine::Engine(
       task_runners_(std::move(task_runners)),
       weak_factory_(this) {
   pointer_data_dispatcher_ = dispatcher_maker(*this);
+  key_data_dispatcher_ = key_dispatcher_maker(*this);
 }
 
 Engine::Engine(Delegate& delegate,
                const PointerDataDispatcherMaker& dispatcher_maker,
+               const KeyDataDispatcherMaker& key_dispatcher_maker,
                DartVM& vm,
                fml::RefPtr<const DartSnapshot> isolate_snapshot,
                TaskRunners task_runners,
@@ -69,6 +72,7 @@ Engine::Engine(Delegate& delegate,
                fml::WeakPtr<SnapshotDelegate> snapshot_delegate)
     : Engine(delegate,
              dispatcher_maker,
+             key_dispatcher_maker,
              vm.GetConcurrentWorkerTaskRunner(),
              task_runners,
              settings,
@@ -382,6 +386,12 @@ void Engine::DispatchPointerDataPacket(
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
+void Engine::DispatchKeyDataPacket(
+    std::unique_ptr<KeyDataPacket> packet) {
+  TRACE_EVENT0("flutter", "Engine::DispatchKeyDataPacket");
+  key_data_dispatcher_->DispatchKeyPacket(std::move(packet));
+}
+
 void Engine::DispatchSemanticsAction(int id,
                                      SemanticsAction action,
                                      std::vector<uint8_t> args) {
@@ -476,6 +486,12 @@ void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
 
 void Engine::ScheduleSecondaryVsyncCallback(const fml::closure& callback) {
   animator_->ScheduleSecondaryVsyncCallback(callback);
+}
+
+void Engine::DoDispatchKeyPacket(std::unique_ptr<KeyDataPacket> packet) {
+  if (runtime_controller_) {
+    runtime_controller_->DispatchKeyDataPacket(*packet);
+  }
 }
 
 void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {

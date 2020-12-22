@@ -268,6 +268,12 @@ void FlutterWindowsEngine::SendPointerEvent(const FlutterPointerEvent& event) {
   }
 }
 
+void FlutterWindowsEngine::SendKeyEvent(const FlutterKeyEvent& event) {
+  if (engine_) {
+    embedder_api_.SendKeyEvent(engine_, &event);
+  }
+}
+
 bool FlutterWindowsEngine::SendPlatformMessage(
     const char* channel,
     const uint8_t* message,

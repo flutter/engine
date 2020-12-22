@@ -69,6 +69,8 @@ source_set("common") {
     "display_manager.h",
     "engine.cc",
     "engine.h",
+    "key_data_dispatcher.cc",
+    "key_data_dispatcher.h",
     "pipeline.cc",
     "pipeline.h",
     "platform_view.cc",

@@ -123,10 +123,14 @@ class EngineTest : public ::testing::Test {
     dispatcher_maker_ = [](PointerDataDispatcher::Delegate&) {
       return nullptr;
     };
+    key_dispatcher_maker_ = [](KeyDataDispatcher::Delegate&) {
+      return nullptr;
+    };
   }
 
   MockDelegate delegate_;
   PointerDataDispatcherMaker dispatcher_maker_;
+  KeyDataDispatcherMaker key_dispatcher_maker_;
   ThreadHost thread_host_;
   TaskRunners task_runners_;
   Settings settings_;
@@ -142,6 +146,7 @@ TEST_F(EngineTest, Create) {
     auto engine = std::make_unique<Engine>(
         /*delegate=*/delegate_,
         /*dispatcher_maker=*/dispatcher_maker_,
+        /*key_dispatcher_maker=*/key_dispatcher_maker_,
         /*image_decoder_task_runner=*/image_decoder_task_runner_,
         /*task_runners=*/task_runners_,
         /*settings=*/settings_,
@@ -162,6 +167,7 @@ TEST_F(EngineTest, DispatchPlatformMessageUnknown) {
     auto engine = std::make_unique<Engine>(
         /*delegate=*/delegate_,
         /*dispatcher_maker=*/dispatcher_maker_,
+        /*key_dispatcher_maker=*/key_dispatcher_maker_,
         /*image_decoder_task_runner=*/image_decoder_task_runner_,
         /*task_runners=*/task_runners_,
         /*settings=*/settings_,
@@ -187,6 +193,7 @@ TEST_F(EngineTest, DispatchPlatformMessageInitialRoute) {
     auto engine = std::make_unique<Engine>(
         /*delegate=*/delegate_,
         /*dispatcher_maker=*/dispatcher_maker_,
+        /*key_dispatcher_maker=*/key_dispatcher_maker_,
         /*image_decoder_task_runner=*/image_decoder_task_runner_,
         /*task_runners=*/task_runners_,
         /*settings=*/settings_,
@@ -219,6 +226,7 @@ TEST_F(EngineTest, DispatchPlatformMessageInitialRouteIgnored) {
     auto engine = std::make_unique<Engine>(
         /*delegate=*/delegate_,
         /*dispatcher_maker=*/dispatcher_maker_,
+        /*key_dispatcher_maker=*/key_dispatcher_maker_,
         /*image_decoder_task_runner=*/image_decoder_task_runner_,
         /*task_runners=*/task_runners_,
         /*settings=*/settings_,

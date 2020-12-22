@@ -12,6 +12,7 @@
 
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
+#include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
@@ -37,6 +38,8 @@ struct _FlView {
 
   // Pointer button state recorded for sending status updates.
   int64_t button_state;
+
+  FlKeyboardManager* keyboard_manager;
 
   // Flutter system channel handlers.
   FlKeyEventPlugin* key_event_plugin;
@@ -107,6 +110,38 @@ static gboolean fl_view_send_pointer_button_event(FlView* self,
   return TRUE;
 }
 
+static FlutterKeyEventKind convertKeyEventKind(FlKeyEventKind kind) {
+  switch (kind) {
+    case kFlKeyDataKindDown:
+      return kFlutterKeyEventKindDown;
+    case kFlKeyDataKindUp:
+      return kFlutterKeyEventKindUp;
+    case kFlKeyDataKindRepeat:
+      return kFlutterKeyEventKindRepeat;
+  }
+}
+
+// Sends a Flutter key event to the engine.
+static gboolean fl_view_send_key_event(FlView* self, const GdkEventKey* event) {
+  FlKeyDatum key_data[kMaxConvertedKeyData] = {};
+  size_t result_count = fl_keyboard_manager_convert_key_event(
+      self->keyboard_manager, event, key_data);
+  for (size_t data_index = 0; data_index < result_count; data_index++) {
+    FlKeyDatum* key_datum = key_data + data_index;
+    FlutterKeyEvent fl_event = {};
+    fl_event.struct_size = sizeof(fl_event);
+    fl_event.timestamp = key_datum->timestamp;
+    fl_event.kind = convertKeyEventKind(key_datum->kind);
+    fl_event.physical = key_datum->physical;
+    fl_event.logical = key_datum->logical;
+    fl_event.character = key_datum->character;
+    fl_event.synthesized = key_datum->synthesized;
+
+    fl_engine_send_key_event(self->engine, &fl_event);
+  }
+  return TRUE;
+}
+
 // Updates the engine with the current window metrics.
 static void fl_view_geometry_changed(FlView* self) {
   GtkAllocation allocation;
@@ -161,6 +196,7 @@ static void fl_view_constructed(GObject* object) {
   self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
   self->key_event_plugin =
       fl_key_event_plugin_new(messenger, self->text_input_plugin);
+  self->keyboard_manager = fl_keyboard_manager_new();
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
 }
@@ -220,6 +256,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
   g_clear_object(&self->text_input_plugin);
+  g_clear_object(&self->keyboard_manager);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
 }
@@ -349,7 +386,8 @@ static gboolean fl_view_motion_notify_event(GtkWidget* widget,
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
+  return fl_view_send_key_event(self, event) ||
+      fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 }
 
 // Implements GtkWidget::key_release_event.
@@ -357,7 +395,8 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
+  return fl_view_send_key_event(self, event) ||
+      fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 }
 
 static void fl_view_class_init(FlViewClass* klass) {

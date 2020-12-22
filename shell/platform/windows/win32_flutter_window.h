@@ -54,7 +54,7 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
   void OnText(const std::u16string& text) override;
 
   // |Win32Window|
-  void OnKey(int key, int scancode, int action, char32_t character) override;
+  void OnKey(int key, int scancode, int action, char32_t character, bool wasDown) override;
 
   // |Win32Window|
   void OnScroll(double delta_x, double delta_y) override;

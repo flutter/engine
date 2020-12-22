@@ -158,8 +158,9 @@ void Win32FlutterWindow::OnText(const std::u16string& text) {
 void Win32FlutterWindow::OnKey(int key,
                                int scancode,
                                int action,
-                               char32_t character) {
-  binding_handler_delegate_->OnKey(key, scancode, action, character);
+                               char32_t character,
+                               bool wasDown) {
+  binding_handler_delegate_->OnKey(key, scancode, action, character, wasDown);
 }
 
 void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
