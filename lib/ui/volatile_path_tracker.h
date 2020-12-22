@@ -62,6 +62,8 @@ class VolatilePathTracker {
   // Must be called from the UI task runner.
   void OnFrame();
 
+  bool enabled() const { return enabled_; }
+
  private:
   fml::RefPtr<fml::TaskRunner> ui_task_runner_;
   std::atomic_bool needs_drain_ = false;
