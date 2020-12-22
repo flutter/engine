@@ -196,7 +196,7 @@ PlatformConfiguration::PlatformConfiguration(
 PlatformConfiguration::~PlatformConfiguration() {}
 
 void PlatformConfiguration::DidCreateIsolate() {
-  auto* library = Dart_LookupLibrary(tonic::ToDart("dart:ui"));
+  Dart_Handle library = Dart_LookupLibrary(tonic::ToDart("dart:ui"));
   update_locales_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_updateLocales")));
   update_user_settings_data_.Set(
