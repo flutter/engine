@@ -38,11 +38,22 @@ void setUpCanvasKitTest() {
   tearDown(() {
     testCollector.cleanUpAfterTest();
     debugResetBrowserSupportsFinalizationRegistry();
+    OverlayCache.instance.debugClear();
   });
 
   tearDownAll(() {
     debugResetBrowserSupportsFinalizationRegistry();
   });
+}
+
+/// Utility function for CanvasKit tests to draw pictures without
+/// the [CkPictureRecorder] boilerplate.
+CkPicture paintPicture(
+    ui.Rect cullRect, void Function(CkCanvas canvas) painter) {
+  final CkPictureRecorder recorder = CkPictureRecorder();
+  final CkCanvas canvas = recorder.beginRecording(cullRect);
+  painter(canvas);
+  return recorder.endRecording();
 }
 
 class _TestFinalizerRegistration {

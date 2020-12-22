@@ -177,7 +177,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 /**
  * Processes all kinds of events.
  */
-- (void)dispatchEvent:(NSEvent*)event;
+- (bool)dispatchEvent:(NSEvent*)event;
 
 @end
 
@@ -367,7 +367,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   }
 }
 
-- (void)dispatchEvent:(NSEvent*)event {
+- (bool)dispatchEvent:(NSEvent*)event {
   switch (event.type) {
     case NSEventTypeKeyDown:
       [self dispatchDownEvent:event];
@@ -382,6 +382,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       NSAssert(false, @"Unexpected key event type: |%@|.", @(event.type));
   }
 
+  return true; // TODO
 }
 
 #pragma mark - Private

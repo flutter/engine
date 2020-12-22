@@ -439,6 +439,21 @@ Shell::~Shell() {
   platform_latch.Wait();
 }
 
+std::unique_ptr<Shell> Shell::Spawn(
+    Settings settings,
+    const CreateCallback<PlatformView>& on_create_platform_view,
+    const CreateCallback<Rasterizer>& on_create_rasterizer) {
+  RunConfiguration configuration =
+      RunConfiguration::InferFromSettings(settings);
+  TaskRunners task_runners = task_runners_;
+  FML_DCHECK(task_runners.IsValid());
+  std::unique_ptr<Shell> result(Shell::Create(std::move(task_runners), settings,
+                                              on_create_platform_view,
+                                              on_create_rasterizer));
+  result->RunEngine(std::move(configuration));
+  return result;
+}
+
 void Shell::NotifyLowMemoryWarning() const {
   auto trace_id = fml::tracing::TraceNonce();
   TRACE_EVENT_ASYNC_BEGIN0("flutter", "Shell::NotifyLowMemoryWarning",
@@ -1209,6 +1224,13 @@ void Shell::LoadDartDeferredLibrary(
     std::unique_ptr<const fml::Mapping> snapshot_instructions) {
   engine_->LoadDartDeferredLibrary(loading_unit_id, std::move(snapshot_data),
                                    std::move(snapshot_instructions));
+}
+
+void Shell::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                         const std::string error_message,
+                                         bool transient) {
+  engine_->LoadDartDeferredLibraryError(loading_unit_id, error_message,
+                                        transient);
 }
 
 void Shell::UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) {

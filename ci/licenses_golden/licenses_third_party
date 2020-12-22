@@ -1,4 +1,4 @@
-Signature: 78c2d032f584b8c8642fe77a105756ba
+Signature: 4e9e4c15524013d0d7bd4380045f3a8f
 
 UNUSED LICENSES:
 
@@ -9124,6 +9124,7 @@ FILE: ../../../third_party/dart/runtime/bin/ffi_unit_test/run_ffi_unit_tests.cc
 FILE: ../../../third_party/dart/runtime/bin/file_win.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos_test.cc
+FILE: ../../../third_party/dart/runtime/bin/priority_heap_test.cc
 FILE: ../../../third_party/dart/runtime/include/dart_api_dl.c
 FILE: ../../../third_party/dart/runtime/include/dart_api_dl.h
 FILE: ../../../third_party/dart/runtime/include/dart_version.h
@@ -9134,11 +9135,13 @@ FILE: ../../../third_party/dart/runtime/observatory_2/bin/heap_snapshot.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/process_snapshot.dart
 FILE: ../../../third_party/dart/runtime/platform/allocation.cc
 FILE: ../../../third_party/dart/runtime/platform/leak_sanitizer.h
+FILE: ../../../third_party/dart/runtime/platform/priority_queue.h
 FILE: ../../../third_party/dart/runtime/platform/unaligned.h
 FILE: ../../../third_party/dart/runtime/platform/undefined_behavior_sanitizer.h
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/bin/main.dart
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/cquery_driver.dart
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/xref_extractor.dart
+FILE: ../../../third_party/dart/runtime/vm/canonical_tables.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler_tracer.cc
@@ -9196,10 +9199,6 @@ FILE: ../../../third_party/dart/runtime/vm/stub_code_test.cc
 FILE: ../../../third_party/dart/runtime/vm/tagged_pointer.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
 FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.h
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm64.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/visitor.cc
 FILE: ../../../third_party/dart/samples/ffi/async/async_test.dart
 FILE: ../../../third_party/dart/samples/ffi/async/sample_async_callback.dart
@@ -10792,12 +10791,10 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/scrip
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/sentinel.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/source_location.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/target.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/thread.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/timeline_event.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/type_arguments.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/unknown.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/vm.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/zone.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/repositories/allocation_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/repositories/breakpoint.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/repositories/class.dart
@@ -10939,12 +10936,10 @@ FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/scr
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/sentinel.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/source_location.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/target.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/thread.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/timeline_event.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/type_arguments.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/unknown.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/vm.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/objects/zone.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/allocation_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/breakpoint.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/models/repositories/class.dart

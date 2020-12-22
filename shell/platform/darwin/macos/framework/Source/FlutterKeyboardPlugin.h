@@ -23,6 +23,6 @@
  * Returns a FlutterError if the arguments can not be recognized. Otherwise
  * returns nil.
  */
-- (void)dispatchEvent:(nonnull NSEvent*)event;
+- (bool)dispatchEvent:(nonnull NSEvent*)event;
 
 @end
