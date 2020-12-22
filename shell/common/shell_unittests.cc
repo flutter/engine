@@ -2481,12 +2481,11 @@ TEST_F(ShellTest, UpdateAssetResolversReplaces) {
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
+  auto asset_manager = configuration.GetAssetManager();
   RunEngine(shell.get(), std::move(configuration));
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
-
-  auto asset_manager = shell->GetEngine()->GetAssetManager();
 
   auto old_resolver = std::make_unique<TestAssetResolver>(
       true, AssetResolver::AssetResolverType::kApkAssetProvider);
@@ -2501,7 +2500,7 @@ TEST_F(ShellTest, UpdateAssetResolversReplaces) {
   platform_view->UpdateAssetResolvers(
       resolver_vector, AssetResolver::AssetResolverType::kApkAssetProvider);
 
-  auto resolvers = shell->GetEngine()->GetAssetManager()->TakeResolvers();
+  auto resolvers = asset_manager->TakeResolvers();
   ASSERT_EQ(resolvers.size(), 2ull);
   ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
 
@@ -2525,6 +2524,7 @@ TEST_F(ShellTest, UpdateAssetResolversAppends) {
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
+  auto asset_manager = configuration.GetAssetManager();
   RunEngine(shell.get(), std::move(configuration));
 
   auto platform_view =
@@ -2538,7 +2538,7 @@ TEST_F(ShellTest, UpdateAssetResolversAppends) {
   platform_view->UpdateAssetResolvers(
       resolver_vector, AssetResolver::AssetResolverType::kApkAssetProvider);
 
-  auto resolvers = shell->GetEngine()->GetAssetManager()->TakeResolvers();
+  auto resolvers = asset_manager->TakeResolvers();
   ASSERT_EQ(resolvers.size(), 2ull);
   ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
 
@@ -2562,12 +2562,11 @@ TEST_F(ShellTest, UpdateAssetResolversRemoves) {
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
+  auto asset_manager = configuration.GetAssetManager();
   RunEngine(shell.get(), std::move(configuration));
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
-
-  auto asset_manager = shell->GetEngine()->GetAssetManager();
 
   auto old_resolver = std::make_unique<TestAssetResolver>(
       true, AssetResolver::AssetResolverType::kApkAssetProvider);
@@ -2578,7 +2577,7 @@ TEST_F(ShellTest, UpdateAssetResolversRemoves) {
   platform_view->UpdateAssetResolvers(
       resolver_vector, AssetResolver::AssetResolverType::kApkAssetProvider);
 
-  auto resolvers = shell->GetEngine()->GetAssetManager()->TakeResolvers();
+  auto resolvers = asset_manager->TakeResolvers();
   ASSERT_EQ(resolvers.size(), 1ull);
   ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
 
@@ -2600,12 +2599,11 @@ TEST_F(ShellTest, UpdateAssetResolversDoesNotReplaceMismatchType) {
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
+  auto asset_manager = configuration.GetAssetManager();
   RunEngine(shell.get(), std::move(configuration));
 
   auto platform_view =
       std::make_unique<PlatformView>(*shell.get(), std::move(task_runners));
-
-  auto asset_manager = shell->GetEngine()->GetAssetManager();
 
   auto old_resolver = std::make_unique<TestAssetResolver>(
       true, AssetResolver::AssetResolverType::kAssetManager);
@@ -2620,7 +2618,7 @@ TEST_F(ShellTest, UpdateAssetResolversDoesNotReplaceMismatchType) {
   platform_view->UpdateAssetResolvers(
       resolver_vector, AssetResolver::AssetResolverType::kApkAssetProvider);
 
-  auto resolvers = shell->GetEngine()->GetAssetManager()->TakeResolvers();
+  auto resolvers = asset_manager->TakeResolvers();
   ASSERT_EQ(resolvers.size(), 3ull);
   ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
 
