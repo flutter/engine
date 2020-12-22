@@ -128,8 +128,6 @@ class TestAssetResolver : public AssetResolver {
   // This is used to identify if replacement was made or not.
   bool IsValidAfterAssetManagerChange() const override { return valid_; }
 
-  bool IsUpdatable() const override { return true; }
-
   AssetResolver::AssetResolverType GetType() const override { return type_; }
 
   std::unique_ptr<fml::Mapping> GetAsMapping(
@@ -2492,14 +2490,12 @@ TEST_F(ShellTest, UpdateAssetResolversReplaces) {
 
   auto old_resolver = std::make_unique<TestAssetResolver>(
       true, AssetResolver::AssetResolverType::kApkAssetProvider);
-  ASSERT_TRUE(old_resolver->IsUpdatable());
   ASSERT_TRUE(old_resolver->IsValid());
   asset_manager->PushBack(std::move(old_resolver));
 
   std::vector<std::unique_ptr<AssetResolver>> resolver_vector;
   auto updated_resolver = std::make_unique<TestAssetResolver>(
       false, AssetResolver::AssetResolverType::kApkAssetProvider);
-  ASSERT_TRUE(updated_resolver->IsUpdatable());
   ASSERT_FALSE(updated_resolver->IsValidAfterAssetManagerChange());
   resolver_vector.push_back(std::move(updated_resolver));
   platform_view->UpdateAssetResolvers(
@@ -2507,10 +2503,8 @@ TEST_F(ShellTest, UpdateAssetResolversReplaces) {
 
   auto resolvers = shell->GetEngine()->GetAssetManager()->TakeResolvers();
   ASSERT_EQ(resolvers.size(), 2ull);
-  ASSERT_FALSE(resolvers[0]->IsUpdatable());
   ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
 
-  ASSERT_TRUE(resolvers[1]->IsUpdatable());
   ASSERT_FALSE(resolvers[1]->IsValidAfterAssetManagerChange());
 
   DestroyShell(std::move(shell), std::move(task_runners));
@@ -2539,7 +2533,6 @@ TEST_F(ShellTest, UpdateAssetResolversAppends) {
   std::vector<std::unique_ptr<AssetResolver>> resolver_vector;
   auto updated_resolver = std::make_unique<TestAssetResolver>(
       false, AssetResolver::AssetResolverType::kApkAssetProvider);
-  ASSERT_TRUE(updated_resolver->IsUpdatable());
   ASSERT_FALSE(updated_resolver->IsValidAfterAssetManagerChange());
   resolver_vector.push_back(std::move(updated_resolver));
   platform_view->UpdateAssetResolvers(
@@ -2547,10 +2540,8 @@ TEST_F(ShellTest, UpdateAssetResolversAppends) {
 
   auto resolvers = shell->GetEngine()->GetAssetManager()->TakeResolvers();
   ASSERT_EQ(resolvers.size(), 2ull);
-  ASSERT_FALSE(resolvers[0]->IsUpdatable());
   ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
 
-  ASSERT_TRUE(resolvers[1]->IsUpdatable());
   ASSERT_FALSE(resolvers[1]->IsValidAfterAssetManagerChange());
 
   DestroyShell(std::move(shell), std::move(task_runners));
