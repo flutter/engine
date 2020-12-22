@@ -161,7 +161,7 @@ std::optional<int> AXPlatformNodeBase::GetIndexInParent() {
 
   BASE_LOG()
       << "Unable to find the child in the list of its parent's children.";
-  BASE_DCHECK(false);
+  BASE_UNREACHABLE();
   return std::nullopt;
 }
 
@@ -1404,9 +1404,9 @@ bool AXPlatformNodeBase::ScrollToNode(ScrollType scroll_type) {
 void AXPlatformNodeBase::SanitizeStringAttribute(const std::string& input,
                                                  std::string* output) {
   BASE_DCHECK(output);
-  // According to the IA2 spec and AT-SPI2, these characters
-  // need to be escaped with a backslash: backslash, colon, comma, equals and
-  // semicolon.  Note that backslash must be replaced first.
+  // According to the IA2 spec and AT-SPI2, these characters need to be escaped
+  // with a backslash: backslash, colon, comma, equals and semicolon.  Note
+  // that backslash must be replaced first.
   base::ReplaceChars(input, "\\", "\\\\", output);
   base::ReplaceChars(*output, ":", "\\:", output);
   base::ReplaceChars(*output, ",", "\\,", output);

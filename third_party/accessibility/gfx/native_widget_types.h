@@ -164,8 +164,8 @@ class GFX_EXPORT NativeWindow {
   // TODO(ccameron): Make this constructor explicit.
   constexpr NativeWindow(NSWindow* ns_window) : ns_window_(ns_window) {}
 
-  // // This function name is verbose (that is, not just GetNSWindow) so that it
-  // // is easily grep-able.
+  // This function name is verbose (that is, not just GetNSWindow) so that it
+  // is easily grep-able.
   NSWindow* GetNativeNSWindow() const { return ns_window_; }
 
   operator bool() const { return ns_window_ != 0; }
@@ -182,7 +182,6 @@ class GFX_EXPORT NativeWindow {
  private:
   NSWindow* ns_window_ = nullptr;
 };
-// This can't be constexpr after c++ 17
 const NativeView kNullNativeView = NativeView(nullptr);
 const NativeWindow kNullNativeWindow = NativeWindow(nullptr);
 #elif defined(OS_ANDROID)

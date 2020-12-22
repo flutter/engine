@@ -51,8 +51,6 @@ AXTreeID AXTreeID::CreateNewAXTreeID() {
 AXTreeID& AXTreeID::operator=(const AXTreeID& other) = default;
 
 std::string AXTreeID::ToString() const {
-  // TODO(chunhtai): either remove the ax tree id entirely or implement token
-  // for real.
   switch (type_) {
     case ax::mojom::AXTreeIDType::kUnknown:
       return "";
