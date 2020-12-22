@@ -19,6 +19,9 @@ class AssetResolver {
 
   virtual ~AssetResolver() = default;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Identifies the type of AssetResolver an instance is.
+  ///
   enum AssetResolverType {
     kAssetManager,
     kApkAssetProvider,
