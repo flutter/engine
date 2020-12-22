@@ -14,8 +14,7 @@
 namespace base {
 
 std::u16string ASCIIToUTF16(std::string src) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.from_bytes(src);
+  return std::u16string(src.begin(), src.end());
 }
 
 std::u16string UTF8ToUTF16(std::string src) {
