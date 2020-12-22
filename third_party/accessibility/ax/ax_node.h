@@ -269,6 +269,7 @@ class AX_EXPORT AXNode final {
                               std::vector<std::string>* value) const {
     return data().GetStringListAttribute(attribute, value);
   }
+
   bool GetHtmlAttribute(const char* attribute, std::u16string* value) const {
     return data().GetHtmlAttribute(attribute, value);
   }

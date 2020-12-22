@@ -41,18 +41,6 @@ namespace ui {
 
 namespace {
 
-bool Contains(std::set<int32_t> set, int32_t target) {
-  return set.find(target) != set.end();
-}
-
-bool Contains(std::vector<int32_t> vector, int32_t target) {
-  for (int32_t element : vector) {
-    if (element == target)
-      return true;
-  }
-  return false;
-}
-
 std::string IntVectorToString(const std::vector<int>& items) {
   std::string str;
   for (size_t i = 0; i < items.size(); ++i) {
@@ -955,9 +943,9 @@ TEST(AXTreeTest, ReparentingDoesNotTriggerNodeCreated) {
       test_observer.subtree_reparented_finished_ids();
   std::vector<int> node_reparented =
       test_observer.node_reparented_finished_ids();
-  ASSERT_FALSE(Contains(created, 3));
-  ASSERT_TRUE(Contains(subtree_reparented, 3));
-  ASSERT_FALSE(Contains(node_reparented, 3));
+  ASSERT_FALSE(base::Contains(created, 3));
+  ASSERT_TRUE(base::Contains(subtree_reparented, 3));
+  ASSERT_FALSE(base::Contains(node_reparented, 3));
 }
 
 TEST(AXTreeTest, MultipleIgnoredChangesDoesNotBreakCache) {
@@ -1625,7 +1613,7 @@ TEST(AXTreeTest, IntReverseRelations) {
   auto reverse_active_descendant =
       tree.GetReverseRelations(ax::mojom::IntAttribute::kActivedescendantId, 2);
   ASSERT_EQ(1U, reverse_active_descendant.size());
-  EXPECT_TRUE(Contains(reverse_active_descendant, 1));
+  EXPECT_TRUE(base::Contains(reverse_active_descendant, 1));
 
   reverse_active_descendant =
       tree.GetReverseRelations(ax::mojom::IntAttribute::kActivedescendantId, 1);
@@ -1638,8 +1626,8 @@ TEST(AXTreeTest, IntReverseRelations) {
   auto reverse_member_of =
       tree.GetReverseRelations(ax::mojom::IntAttribute::kMemberOfId, 1);
   ASSERT_EQ(2U, reverse_member_of.size());
-  EXPECT_TRUE(Contains(reverse_member_of, 3));
-  EXPECT_TRUE(Contains(reverse_member_of, 4));
+  EXPECT_TRUE(base::Contains(reverse_member_of, 3));
+  EXPECT_TRUE(base::Contains(reverse_member_of, 4));
 
   AXTreeUpdate update = initial_state;
   update.nodes.resize(5);
@@ -1660,13 +1648,13 @@ TEST(AXTreeTest, IntReverseRelations) {
   reverse_active_descendant =
       tree.GetReverseRelations(ax::mojom::IntAttribute::kActivedescendantId, 5);
   ASSERT_EQ(1U, reverse_active_descendant.size());
-  EXPECT_TRUE(Contains(reverse_active_descendant, 1));
+  EXPECT_TRUE(base::Contains(reverse_active_descendant, 1));
 
   reverse_member_of =
       tree.GetReverseRelations(ax::mojom::IntAttribute::kMemberOfId, 1);
   ASSERT_EQ(2U, reverse_member_of.size());
-  EXPECT_TRUE(Contains(reverse_member_of, 4));
-  EXPECT_TRUE(Contains(reverse_member_of, 5));
+  EXPECT_TRUE(base::Contains(reverse_member_of, 4));
+  EXPECT_TRUE(base::Contains(reverse_member_of, 5));
 }
 
 TEST(AXTreeTest, IntListReverseRelations) {
@@ -1693,7 +1681,7 @@ TEST(AXTreeTest, IntListReverseRelations) {
   auto reverse_labelled_by =
       tree.GetReverseRelations(ax::mojom::IntListAttribute::kLabelledbyIds, 2);
   ASSERT_EQ(1U, reverse_labelled_by.size());
-  EXPECT_TRUE(Contains(reverse_labelled_by, 1));
+  EXPECT_TRUE(base::Contains(reverse_labelled_by, 1));
 
   reverse_labelled_by =
       tree.GetReverseRelations(ax::mojom::IntListAttribute::kLabelledbyIds, 3);
@@ -1709,7 +1697,7 @@ TEST(AXTreeTest, IntListReverseRelations) {
   reverse_labelled_by =
       tree.GetReverseRelations(ax::mojom::IntListAttribute::kLabelledbyIds, 3);
   ASSERT_EQ(1U, reverse_labelled_by.size());
-  EXPECT_TRUE(Contains(reverse_labelled_by, 1));
+  EXPECT_TRUE(base::Contains(reverse_labelled_by, 1));
 }
 
 TEST(AXTreeTest, DeletingNodeUpdatesReverseRelations) {
@@ -1727,7 +1715,7 @@ TEST(AXTreeTest, DeletingNodeUpdatesReverseRelations) {
   auto reverse_active_descendant =
       tree.GetReverseRelations(ax::mojom::IntAttribute::kActivedescendantId, 2);
   ASSERT_EQ(1U, reverse_active_descendant.size());
-  EXPECT_TRUE(Contains(reverse_active_descendant, 3));
+  EXPECT_TRUE(base::Contains(reverse_active_descendant, 3));
 
   AXTreeUpdate update;
   update.root_id = 1;
@@ -2502,8 +2490,8 @@ TEST(AXTreeTest, UnignoredNextPreviousChild) {
 }
 
 TEST(AXTreeTest, GetSiblingsNoIgnored) {
-  // Since this tree contains no ignored nodes, PreviousSibling and NextSibling
-  // are equivalent to their unignored counterparts.
+  // Since this tree base::contains no ignored nodes, PreviousSibling and
+  // NextSibling are equivalent to their unignored counterparts.
   //
   // 1
   // ├── 2
@@ -3737,7 +3725,8 @@ TEST(AXTreeTest, SetSizePosInSetRadioButtonsInList) {
   tree_update.nodes.resize(6);
   tree_update.nodes[0].id = 1;
   tree_update.nodes[0].role =
-      ax::mojom::Role::kList;  // SetSize = 2, since only contains 2 ListItems
+      ax::mojom::Role::kList;  // SetSize = 2, since only base::contains 2
+                               // ListItems
   tree_update.nodes[0].child_ids = {2, 3, 4, 5, 6};
 
   tree_update.nodes[1].id = 2;

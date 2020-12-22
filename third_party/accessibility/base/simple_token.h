@@ -42,12 +42,10 @@ class SimpleToken {
   }
 
  private:
-
   std::string token_;
 };
 
-std::ostream& operator<<(std::ostream& out,
-                                     const SimpleToken& token);
+std::ostream& operator<<(std::ostream& out, const SimpleToken& token);
 
 std::optional<base::SimpleToken> ValueToSimpleToken(std::string str);
 

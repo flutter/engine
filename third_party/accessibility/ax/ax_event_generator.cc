@@ -9,6 +9,7 @@
 #include "ax_enums.h"
 #include "ax_node.h"
 #include "ax_role_properties.h"
+#include "base/container_utils.h"
 
 namespace ui {
 namespace {
@@ -840,8 +841,8 @@ void AXEventGenerator::TrimEventsDueToAncestorIgnoredChanged(
   // Recursively compute and cache ancestor ignored changed results in
   // |ancestor_ignored_changed_map|, if |node|'s ancestors have become ignored
   // and the ancestor's ignored changed results have not been cached.
-  if (node->parent() && ancestor_ignored_changed_map.find(node->parent()) ==
-                            ancestor_ignored_changed_map.end()) {
+  if (node->parent() &&
+      !base::Contains(ancestor_ignored_changed_map, node->parent())) {
     TrimEventsDueToAncestorIgnoredChanged(node->parent(),
                                           ancestor_ignored_changed_map);
   }
@@ -982,10 +983,8 @@ void AXEventGenerator::PostprocessEvents() {
     // existing node's parent has changed on the platform.
     if (HasEvent(node_events, Event::PARENT_CHANGED)) {
       while (parent && (tree_events_.find(parent) != tree_events_.end() ||
-                        removed_parent_changed_nodes.find(parent) !=
-                            removed_parent_changed_nodes.end())) {
-        if ((removed_parent_changed_nodes.find(parent) !=
-                 removed_parent_changed_nodes.end() ||
+                        base::Contains(removed_parent_changed_nodes, parent))) {
+        if ((base::Contains(removed_parent_changed_nodes, parent) ||
              HasEvent(tree_events_[parent], Event::PARENT_CHANGED)) &&
             !HasEvent(tree_events_[parent], Event::SUBTREE_CREATED)) {
           RemoveEvent(&node_events, Event::PARENT_CHANGED);
@@ -1000,11 +999,10 @@ void AXEventGenerator::PostprocessEvents() {
     // subtree created.
     parent = node->GetUnignoredParent();
     if (HasEvent(node_events, Event::SUBTREE_CREATED)) {
-      while (parent && (tree_events_.find(parent) != tree_events_.end() ||
-                        removed_subtree_created_nodes.find(parent) !=
-                            removed_subtree_created_nodes.end())) {
-        if (removed_subtree_created_nodes.find(parent) !=
-                removed_subtree_created_nodes.end() ||
+      while (parent &&
+             (tree_events_.find(parent) != tree_events_.end() ||
+              base::Contains(removed_subtree_created_nodes, parent))) {
+        if (base::Contains(removed_subtree_created_nodes, parent) ||
             HasEvent(tree_events_[parent], Event::SUBTREE_CREATED)) {
           RemoveEvent(&node_events, Event::SUBTREE_CREATED);
           removed_subtree_created_nodes.insert(node);

@@ -6,7 +6,6 @@
 
 #include <stddef.h>
 #include <algorithm>
-#include <codecvt>
 #include <set>
 #include <utility>
 
@@ -337,9 +336,6 @@ bool AXNodeData::HasStringAttribute(
 const std::string& AXNodeData::GetStringAttribute(
     ax::mojom::StringAttribute attribute) const {
   auto iter = FindInVectorOfPairs(attribute, string_attributes);
-  if (iter != string_attributes.end()) {
-    return iter->second;
-  }
   return iter != string_attributes.end() ? iter->second : base::EmptyString();
 }
 

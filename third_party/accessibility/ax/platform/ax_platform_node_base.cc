@@ -5,7 +5,6 @@
 #include "ax_platform_node_base.h"
 
 #include <algorithm>
-#include <codecvt>
 #include <iomanip>
 #include <limits>
 #include <set>
@@ -124,8 +123,7 @@ std::u16string AXPlatformNodeBase::GetNameAsString16() const {
   std::string name = GetName();
   if (name.empty())
     return std::u16string();
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.from_bytes(name);
+  return base::UTF8ToUTF16(name);
 }
 
 std::optional<int> AXPlatformNodeBase::GetIndexInParent() {

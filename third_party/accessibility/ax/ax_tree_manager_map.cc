@@ -4,9 +4,9 @@
 
 #include "ax_tree_manager_map.h"
 
-#include "base/logging.h"
-
 #include "ax_enums.h"
+#include "base/container_utils.h"
+#include "base/logging.h"
 
 namespace ui {
 
@@ -31,7 +31,7 @@ void AXTreeManagerMap::RemoveTreeManager(AXTreeID tree_id) {
 }
 
 AXTreeManager* AXTreeManagerMap::GetManager(AXTreeID tree_id) {
-  if (tree_id == AXTreeIDUnknown() || map_.find(tree_id) == map_.end())
+  if (tree_id == AXTreeIDUnknown() || !base::Contains(map_, tree_id))
     return nullptr;
 
   return map_.at(tree_id);

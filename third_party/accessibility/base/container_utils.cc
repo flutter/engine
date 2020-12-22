@@ -4,6 +4,4 @@
 
 #include "container_utils.h"
 
-namespace base {
-
-}  // namespace base
+namespace base {}  // namespace base

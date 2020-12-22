@@ -16,14 +16,14 @@ SimpleToken::SimpleToken(const std::string& token) : token_(token) {}
 // static
 SimpleToken SimpleToken::Create() {
   const char charset[] =
-    "0123456789"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "abcdefghijklmnopqrstuvwxyz";
+      "0123456789"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz";
   const size_t max_index = (sizeof(charset) - 1);
 
   std::string str;
   for (size_t i = 0; i < kRandomTokenLength; i++) {
-    str.push_back(charset[ rand() % max_index ]);
+    str.push_back(charset[rand() % max_index]);
   }
   return SimpleToken(str);
 }

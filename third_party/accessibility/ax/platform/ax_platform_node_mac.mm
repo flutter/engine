@@ -428,8 +428,7 @@ bool AlsoUseShowMenuActionForDefaultAction(const ui::AXNodeData& data) {
   NSString* name = [self getName];
   NSString* announcementText = name;
   if ([announcementText length] <= 0) {
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-    announcementText = @(convert.to_bytes(_node->GetInnerText()).data());
+    announcementText = @(base::UTF16ToUTF8(_node->GetInnerText()).data());
   }
   if ([announcementText length] == 0)
     return nullptr;
@@ -1115,8 +1114,7 @@ void AXPlatformNodeMac::NotifyAccessibilityEvent(ax::mojom::Event event_type) {
 }
 
 void AXPlatformNodeMac::AnnounceText(const std::u16string& text) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  PostAnnouncementNotification(@(convert.to_bytes(text).data()), [native_node_ AXWindowInternal],
+  PostAnnouncementNotification(@(base::UTF16ToUTF8(text).data()), [native_node_ AXWindowInternal],
                                false);
 }
 

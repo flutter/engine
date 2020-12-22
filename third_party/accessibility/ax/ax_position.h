@@ -7,7 +7,6 @@
 
 #include <math.h>
 #include <stdint.h>
-#include <codecvt>
 #include <functional>
 #include <memory>
 #include <ostream>
@@ -23,6 +22,7 @@
 #include "ax_node_text_styles.h"
 #include "ax_role_properties.h"
 #include "ax_tree_id.h"
+#include "base/container_utils.h"
 #include "base/logging.h"
 #include "base/string_utils.h"
 
@@ -300,8 +300,7 @@ class AXPosition {
                        text[text_offset_] + u">" +
                        text.substr(text_offset_ + 1);
     }
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-    return str + " annotated_text=" + convert.to_bytes(annotated_text);
+    return str + " annotated_text=" + base::UTF16ToUTF8(annotated_text);
   }
 
   AXTreeID tree_id() const { return tree_id_; }
@@ -473,9 +472,8 @@ class AXPosition {
       case AXPositionKind::TEXT_POSITION: {
         const std::vector<int32_t> word_starts =
             text_position->GetWordStartOffsets();
-        return std::find(word_starts.begin(), word_starts.end(),
-                         static_cast<int32_t>(text_position->text_offset_)) !=
-               word_starts.end();
+        return base::Contains(word_starts,
+                              int32_t{text_position->text_offset_});
       }
     }
   }
@@ -491,9 +489,7 @@ class AXPosition {
       case AXPositionKind::TEXT_POSITION: {
         const std::vector<int32_t> word_ends =
             text_position->GetWordEndOffsets();
-        return std::find(word_ends.begin(), word_ends.end(),
-                         static_cast<int32_t>(text_position->text_offset_)) !=
-               word_ends.end();
+        return base::Contains(word_ends, int32_t{text_position->text_offset_});
       }
     }
   }

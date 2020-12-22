@@ -9,6 +9,8 @@
 #include "ax_enum_util.h"
 #include "base/string_utils.h"
 
+using base::NumberToString;
+
 namespace ui {
 
 AXRelativeBounds::AXRelativeBounds() : offset_container_id(-1) {}
@@ -52,16 +54,14 @@ std::string AXRelativeBounds::ToString() const {
   std::string result;
 
   if (offset_container_id != -1)
-    result +=
-        "offset_container_id=" +
-        base::NumberToString(static_cast<int>(round(offset_container_id))) +
-        " ";
+    result += "offset_container_id=" +
+              NumberToString(static_cast<int>(round(offset_container_id))) +
+              " ";
 
-  result +=
-      "(" + base::NumberToString(static_cast<int>(round(bounds.x()))) + ", " +
-      base::NumberToString(static_cast<int>(round(bounds.y()))) + ")-(" +
-      base::NumberToString(static_cast<int>(round(bounds.width()))) + ", " +
-      base::NumberToString(static_cast<int>(round(bounds.height()))) + ")";
+  result += "(" + NumberToString(static_cast<int>(round(bounds.x()))) + ", " +
+            NumberToString(static_cast<int>(round(bounds.y()))) + ")-(" +
+            NumberToString(static_cast<int>(round(bounds.width()))) + ", " +
+            NumberToString(static_cast<int>(round(bounds.height()))) + ")";
 
   if (transform && !transform->IsIdentity())
     result += " transform=" + transform->ToString();
