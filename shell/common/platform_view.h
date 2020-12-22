@@ -742,24 +742,24 @@ class PlatformView {
                                             bool transient);
 
   //--------------------------------------------------------------------------
-  /// @brief      Replaces asset resolvers in the current engine's
-  ///             `AssetManager` that are marked as updatable
-  ///             (`IsUpdateable()` returns true). Updatable AssetResolvers
-  ///             are removed and replaced with the next available resolver
-  ///             in `asset_resolvers`.
+  /// @brief      Replaces asset resolvers handled by the engine's
+  ///             AssetManager that are of the specified `type` with the
+  ///             resolvers provided in `updated_asset_resolvers`. Updatable
+  ///             AssetResolvers are removed and replaced with the next
+  ///             available resolver in `updated_asset_resolvers`.
   ///
   ///             AssetResolvers should be updated when the exisitng resolver
   ///             becomes obsolete and a newer one becomes available that
   ///             provides updated access to the same type of assets as the
-  ///             existing one. This update process is meant to be performed at
-  ///             runtime.
+  ///             existing one. This update process is meant to be performed
+  ///             at runtime.
   ///
-  ///             If less resolvers are provided than existing updatable
-  ///             resolvers, the the extra existing updatable resolvers will be
-  ///             removed without replacement. If more resolvers are provided
-  ///             than existing updatable resolvers, then the extra provided
-  ///             resolvers will be added to the end of the AssetManager
-  ///             resolvers list.
+  ///             If less resolvers are provided than existing resolvers of
+  ///             matching type, the the extra existing resolvers will
+  ///             be removed without replacement. If more resolvers are
+  ///             provided than existing matching resolvers, then the extra
+  ///             provided resolvers will be added to the end of the
+  ///             AssetManager resolvers queue.
   ///
   /// @param[in]  asset_resolvers  The asset resolvers to replace updatable
   ///                              existing resolvers with.
