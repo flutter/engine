@@ -35,6 +35,9 @@ class APKAssetProvider final : public AssetResolver {
   // |flutter::AssetResolver|
   bool IsUpdatable() const override;
 
+  // |AssetResolver|
+  AssetResolver::AssetResolverType GetType() const override;
+
   // |flutter::AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override;

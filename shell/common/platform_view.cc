@@ -171,8 +171,9 @@ void PlatformView::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
                                                 bool transient) {}
 
 void PlatformView::UpdateAssetResolvers(
-    std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers) {
-  delegate_.UpdateAssetResolvers(asset_resolvers);
+    std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers,
+    AssetResolver::AssetResolverType type) {
+  delegate_.UpdateAssetResolvers(asset_resolvers, type);
 }
 
 }  // namespace flutter

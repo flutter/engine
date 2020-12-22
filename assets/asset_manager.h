@@ -25,6 +25,10 @@ class AssetManager final : public AssetResolver {
 
   void PushBack(std::unique_ptr<AssetResolver> resolver);
 
+  void UpdateResolversByType(
+      std::vector<std::unique_ptr<AssetResolver>>& updated_asset_resolvers,
+      AssetResolver::AssetResolverType type);
+
   std::deque<std::unique_ptr<AssetResolver>> TakeResolvers();
 
   // |AssetResolver|
@@ -35,6 +39,9 @@ class AssetManager final : public AssetResolver {
 
   // |AssetResolver|
   bool IsUpdatable() const override;
+
+  // |AssetResolver|
+  AssetResolver::AssetResolverType GetType() const override;
 
   // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(

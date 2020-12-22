@@ -537,7 +537,8 @@ class Shell final : public PlatformView::Delegate,
 
   // |PlatformView::Delegate|
   void UpdateAssetResolvers(
-      std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers) override;
+      std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers,
+      AssetResolver::AssetResolverType type) override;
 
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;

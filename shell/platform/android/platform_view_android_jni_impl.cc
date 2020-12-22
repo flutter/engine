@@ -584,7 +584,7 @@ static void UpdateJavaAssetManager(JNIEnv* env,
   resolver_vector.push_back(std::move(asset_resolver));
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetResolvers(
-      resolver_vector);
+      resolver_vector, AssetResolver::AssetResolverType::kApkAssetProvider);
 }
 
 bool RegisterApi(JNIEnv* env) {

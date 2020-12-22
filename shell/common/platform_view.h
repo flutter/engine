@@ -281,7 +281,8 @@ class PlatformView {
     /// @param[in]  asset_manager  The asset manager to use.
     ///
     virtual void UpdateAssetResolvers(
-        std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers) = 0;
+        std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers,
+        AssetResolver::AssetResolverType type) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -744,7 +745,8 @@ class PlatformView {
   ///                              existing resolvers with.
   ///
   virtual void UpdateAssetResolvers(
-      std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers);
+      std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers,
+      AssetResolver::AssetResolverType type);
 
  protected:
   PlatformView::Delegate& delegate_;

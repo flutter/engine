@@ -19,6 +19,12 @@ class AssetResolver {
 
   virtual ~AssetResolver() = default;
 
+  enum AssetResolverType {
+    kAssetManager,
+    kApkAssetProvider,
+    kDirectoryAssetBundle
+  };
+
   virtual bool IsValid() const = 0;
 
   //----------------------------------------------------------------------------
@@ -56,6 +62,8 @@ class AssetResolver {
   /// @return     Returns whether this resolver can be updated.
   ///
   virtual bool IsUpdatable() const = 0;
+
+  virtual AssetResolverType GetType() const = 0;
 
   [[nodiscard]] virtual std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const = 0;

@@ -38,6 +38,11 @@ bool APKAssetProvider::IsUpdatable() const {
   return true;
 }
 
+// |AssetResolver|
+AssetResolver::AssetResolverType APKAssetProvider::GetType() const {
+  return AssetResolver::AssetResolverType::kAssetManager;
+}
+
 class APKAssetMapping : public fml::Mapping {
  public:
   APKAssetMapping(AAsset* asset) : asset_(asset) {}

@@ -29,6 +29,28 @@ void AssetManager::PushBack(std::unique_ptr<AssetResolver> resolver) {
   resolvers_.push_back(std::move(resolver));
 }
 
+void AssetManager::UpdateResolversByType(
+    std::vector<std::unique_ptr<AssetResolver>>& updated_asset_resolvers,
+    AssetResolver::AssetResolverType type) {
+  size_t index = 0;
+  std::deque<std::unique_ptr<AssetResolver>> new_resolvers;
+  for (auto& old_resolver : resolvers_) {
+    if (old_resolver->GetType() == type) {
+      if (index < updated_asset_resolvers.size()) {
+        // Push the replacement updated resolver in place of the old_resolver.
+        new_resolvers.push_back(std::move(updated_asset_resolvers[index++]));
+      }  // Drop the resolver if no replacement available.
+    } else {
+      new_resolvers.push_back(std::move(old_resolver));
+    }
+  }
+  // Append all extra resolvers to the end.
+  while (index < updated_asset_resolvers.size()) {
+    new_resolvers.push_back(std::move(updated_asset_resolvers[index++]));
+  }
+  resolvers_.swap(new_resolvers);
+}
+
 std::deque<std::unique_ptr<AssetResolver>> AssetManager::TakeResolvers() {
   return std::move(resolvers_);
 }
@@ -82,6 +104,11 @@ bool AssetManager::IsValidAfterAssetManagerChange() const {
 // |AssetResolver|
 bool AssetManager::IsUpdatable() const {
   return false;
+}
+
+// |AssetResolver|
+AssetResolver::AssetResolverType AssetManager::GetType() const {
+  return AssetResolverType::kAssetManager;
 }
 
 }  // namespace flutter
