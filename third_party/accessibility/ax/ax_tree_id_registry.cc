@@ -4,9 +4,8 @@
 
 #include "ax_tree_id_registry.h"
 
-#include "base/logging.h"
-
 #include "ax_action_handler_base.h"
+#include "base/logging.h"
 
 namespace ui {
 

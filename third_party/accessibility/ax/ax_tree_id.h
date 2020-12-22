@@ -7,10 +7,10 @@
 
 #include <string>
 
-#include "base/no_destructor.h"
-
 #include "ax_base_export.h"
 #include "ax_enums.h"
+#include "base/no_destructor.h"
+#include "base/simple_token.h"
 
 namespace ui {
 
@@ -32,11 +32,15 @@ class AX_BASE_EXPORT AXTreeID {
   // automation API.
   static AXTreeID FromString(const std::string& string);
 
+  // Convenience method to unserialize an AXTreeID from an SimpleToken.
+  static AXTreeID FromToken(const base::SimpleToken& token);
+
   AXTreeID& operator=(const AXTreeID& other);
 
   std::string ToString() const;
 
   ax::mojom::AXTreeIDType type() const { return type_; }
+  const std::optional<base::SimpleToken>& token() const { return token_; }
 
   bool operator==(const AXTreeID& rhs) const;
   bool operator!=(const AXTreeID& rhs) const;
@@ -53,6 +57,7 @@ class AX_BASE_EXPORT AXTreeID {
   friend void swap(AXTreeID& first, AXTreeID& second);
 
   ax::mojom::AXTreeIDType type_;
+  std::optional<base::SimpleToken> token_ = std::nullopt;
 };
 
 // For use in std::unordered_map.

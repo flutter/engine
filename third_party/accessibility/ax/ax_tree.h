@@ -14,14 +14,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "gfx/geometry/rect.h"
-
 #include "ax_enums.h"
 #include "ax_export.h"
 #include "ax_node.h"
 #include "ax_node_data.h"
 #include "ax_tree_data.h"
 #include "ax_tree_update.h"
+#include "gfx/geometry/rect.h"
 
 namespace ui {
 
@@ -86,9 +85,9 @@ class AX_EXPORT AXTree : public AXNode::OwnerTree {
   // |offscreen| will be propagated.
   // If |clip_bounds| is true, result bounds will be clipped.
   gfx::RectF RelativeToTreeBounds(const AXNode* node,
-                                  gfx::RectF bounds,
-                                  bool* offscreen,
-                                  bool clip_bounds) const;
+                                  gfx::RectF node_bounds,
+                                  bool* offscreen = nullptr,
+                                  bool clip_bounds = true) const;
 
   // Get the bounds of a node in the coordinate space of the tree.
   // If set, updates |offscreen| boolean to be true if the node is offscreen

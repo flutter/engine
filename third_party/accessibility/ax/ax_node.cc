@@ -7,12 +7,12 @@
 #include <algorithm>
 #include <utility>
 
-#include "base/color_utils.h"
-
 #include "ax_enums.h"
 #include "ax_role_properties.h"
 #include "ax_table_info.h"
 #include "ax_tree.h"
+#include "base/color_utils.h"
+#include "base/string_utils.h"
 
 namespace ui {
 
@@ -445,8 +445,8 @@ void AXNode::ComputeLineStartOffsets(std::vector<int>* line_offsets,
         line_offsets->push_back(*start_offset);
     }
 
-    std::string text =
-        child->data().GetStringAttribute(ax::mojom::StringAttribute::kName);
+    std::u16string text =
+        child->data().GetString16Attribute(ax::mojom::StringAttribute::kName);
     *start_offset += static_cast<int>(text.length());
   }
 }
@@ -459,8 +459,12 @@ const std::string& AXNode::GetInheritedStringAttribute(
       return current_node->data().GetStringAttribute(attribute);
     current_node = current_node->parent();
   } while (current_node);
-  static const base::NoDestructor<std::string> s;
-  return *s;
+  return base::EmptyString();
+}
+
+std::u16string AXNode::GetInheritedString16Attribute(
+    ax::mojom::StringAttribute attribute) const {
+  return base::UTF8ToUTF16(GetInheritedStringAttribute(attribute));
 }
 
 std::string AXNode::GetInnerText() const {
@@ -1085,7 +1089,7 @@ std::string AXNode::GetTextForRangeValue() const {
   if (range_value.empty() &&
       data().GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange,
                                &numeric_value)) {
-    range_value = std::to_string(numeric_value);
+    range_value = base::NumberToString(numeric_value);
   }
   return range_value;
 }

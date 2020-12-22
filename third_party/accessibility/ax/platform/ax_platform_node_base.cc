@@ -22,16 +22,13 @@
 #include "ax/ax_tree_data.h"
 #include "ax_platform_node_delegate.h"
 #include "base/color_utils.h"
+#include "base/string_utils.h"
 #include "compute_attributes.h"
 #include "gfx/geometry/rect_conversions.h"
 
 namespace ui {
 
 namespace {
-
-// A function to call when focus changes, for testing only.
-// base::LazyInstance<std::map<ax::mojom::Event, base::RepeatingClosure>>::
-//     DestructorAtExit g_on_notify_event_for_testing;
 
 // Check for descendant comment, using limited depth first search.
 bool FindDescendantRoleWithMaxDepth(AXPlatformNodeBase* node,
@@ -427,10 +424,8 @@ bool AXPlatformNodeBase::HasStringAttribute(
 
 const std::string& AXPlatformNodeBase::GetStringAttribute(
     ax::mojom::StringAttribute attribute) const {
-  if (!delegate_) {
-    static const base::NoDestructor<std::string> s;
-    return *s;
-  }
+  if (!delegate_)
+    return base::EmptyString();
   return GetData().GetStringAttribute(attribute);
 }
 
@@ -481,10 +476,8 @@ const std::string& AXPlatformNodeBase::GetInheritedStringAttribute(
   const AXPlatformNodeBase* current_node = this;
 
   do {
-    if (!current_node->delegate_) {
-      static const base::NoDestructor<std::string> s;
-      return *s;
-    }
+    if (!current_node->delegate_)
+      return base::EmptyString();
 
     if (current_node->GetData().HasStringAttribute(attribute)) {
       return current_node->GetData().GetStringAttribute(attribute);
@@ -493,14 +486,12 @@ const std::string& AXPlatformNodeBase::GetInheritedStringAttribute(
     current_node = FromNativeViewAccessible(current_node->GetParent());
   } while (current_node);
 
-  static const base::NoDestructor<std::string> s;
-  return *s;
+  return base::EmptyString();
 }
 
 std::u16string AXPlatformNodeBase::GetInheritedString16Attribute(
     ax::mojom::StringAttribute attribute) const {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.from_bytes(GetInheritedStringAttribute(attribute));
+  return base::UTF8ToUTF16(GetInheritedStringAttribute(attribute));
 }
 
 bool AXPlatformNodeBase::GetInheritedStringAttribute(
@@ -529,8 +520,7 @@ bool AXPlatformNodeBase::GetInheritedString16Attribute(
   std::string value_utf8;
   if (!GetInheritedStringAttribute(attribute, &value_utf8))
     return false;
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  *value = convert.from_bytes(value_utf8);
+  *value = base::UTF8ToUTF16(value_utf8);
   return true;
 }
 
@@ -663,8 +653,7 @@ std::u16string AXPlatformNodeBase::GetRangeValueText() const {
 
   if (value.empty() &&
       GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange, &fval)) {
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-    value = convert.from_bytes(std::to_string(fval));
+    value = base::NumberToString16(fval);
   }
   return value;
 }
@@ -944,10 +933,8 @@ std::u16string AXPlatformNodeBase::GetValue() const {
     return GetRangeValueText();
 
   // On Windows, the value of a document should be its URL.
-  if (ui::IsDocument(GetData().role)) {
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-    return convert.from_bytes(delegate_->GetTreeData().url);
-  }
+  if (ui::IsDocument(GetData().role))
+    return base::UTF8ToUTF16(delegate_->GetTreeData().url);
 
   std::u16string value =
       GetString16Attribute(ax::mojom::StringAttribute::kValue);
@@ -987,8 +974,7 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
       GetRoleDescriptionFromImageAnnotationStatusOrFromAttribute();
   if (!role_description.empty() ||
       HasStringAttribute(ax::mojom::StringAttribute::kRoleDescription)) {
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-    AddAttributeToList("roledescription", convert.to_bytes(role_description),
+    AddAttributeToList("roledescription", base::UTF16ToUTF8(role_description),
                        attributes);
   }
 
@@ -1101,7 +1087,7 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
   if (IsCellOrTableHeader(GetData().role)) {
     std::optional<int> index = delegate_->GetTableCellIndex();
     if (index) {
-      std::string str_index(std::to_string(*index));
+      std::string str_index(base::NumberToString(*index));
       AddAttributeToList("table-cell-index", str_index, attributes);
     }
   }
@@ -1188,8 +1174,7 @@ void AXPlatformNodeBase::ComputeAttributes(PlatformAttributeList* attributes) {
   // Expose slider value.
   if (GetData().IsRangeValueSupported() ||
       GetData().role == ax::mojom::Role::kComboBoxMenuButton) {
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-    std::string value = convert.to_bytes(GetRangeValueText());
+    std::string value = base::UTF16ToUTF8(GetRangeValueText());
     if (!value.empty())
       AddAttributeToList("valuetext", value, attributes);
   }
@@ -1305,7 +1290,7 @@ void AXPlatformNodeBase::AddAttributeToList(
 
   auto maybe_value = ComputeAttribute(delegate_, attribute);
   if (maybe_value.has_value()) {
-    std::string str_value = std::to_string(maybe_value.value());
+    std::string str_value = base::NumberToString(maybe_value.value());
     AddAttributeToList(name, str_value, attributes);
   }
 }
@@ -1421,9 +1406,14 @@ bool AXPlatformNodeBase::ScrollToNode(ScrollType scroll_type) {
 void AXPlatformNodeBase::SanitizeStringAttribute(const std::string& input,
                                                  std::string* output) {
   BASE_DCHECK(output);
-  // TODO(chunhtai): According to the IA2 spec and AT-SPI2, these characters
+  // According to the IA2 spec and AT-SPI2, these characters
   // need to be escaped with a backslash: backslash, colon, comma, equals and
   // semicolon.  Note that backslash must be replaced first.
+  base::ReplaceChars(input, "\\", "\\\\", output);
+  base::ReplaceChars(*output, ":", "\\:", output);
+  base::ReplaceChars(*output, ",", "\\,", output);
+  base::ReplaceChars(*output, "=", "\\=", output);
+  base::ReplaceChars(*output, ";", "\\;", output);
 }
 
 AXPlatformNodeBase* AXPlatformNodeBase::GetHyperlinkFromHypertextOffset(
@@ -1909,9 +1899,9 @@ ui::TextAttributeList AXPlatformNodeBase::ComputeTextAttributes() const {
     unsigned int blue = ColorGetB(color);
     // Don't expose default value of pure white.
     if (alpha && (red != 255 || green != 255 || blue != 255)) {
-      std::string color_value = "rgb(" + std::to_string(red) + ',' +
-                                std::to_string(green) + ',' +
-                                std::to_string(blue) + ')';
+      std::string color_value = "rgb(" + base::NumberToString(red) + ',' +
+                                base::NumberToString(green) + ',' +
+                                base::NumberToString(blue) + ')';
       SanitizeTextAttributeValue(color_value, &color_value);
       attributes.push_back(std::make_pair("background-color", color_value));
     }
@@ -1923,9 +1913,9 @@ ui::TextAttributeList AXPlatformNodeBase::ComputeTextAttributes() const {
     unsigned int blue = ColorGetB(color);
     // Don't expose default value of black.
     if (red || green || blue) {
-      std::string color_value = "rgb(" + std::to_string(red) + ',' +
-                                std::to_string(green) + ',' +
-                                std::to_string(blue) + ')';
+      std::string color_value = "rgb(" + base::NumberToString(red) + ',' +
+                                base::NumberToString(green) + ',' +
+                                base::NumberToString(blue) + ')';
       SanitizeTextAttributeValue(color_value, &color_value);
       attributes.push_back(std::make_pair("color", color_value));
     }
@@ -1950,7 +1940,7 @@ ui::TextAttributeList AXPlatformNodeBase::ComputeTextAttributes() const {
   // Attribute has no default value.
   if (font_size_in_points) {
     attributes.push_back(std::make_pair(
-        "font-size", std::to_string(*font_size_in_points) + "pt"));
+        "font-size", base::NumberToString(*font_size_in_points) + "pt"));
   }
 
   // TODO(nektar): Add Blink support for the following attributes:
@@ -2125,15 +2115,7 @@ std::string AXPlatformNodeBase::ComputeDetailsRoles() const {
   // are not very many possible types.
   std::vector<std::string> details_roles_vector(details_roles_set.begin(),
                                                 details_roles_set.end());
-  std::ostringstream imploded;
-  for (size_t i = 0; i < details_roles_vector.size(); i++) {
-    if (i == details_roles_vector.size() - 1) {
-      imploded << details_roles_vector[i];
-    } else {
-      imploded << details_roles_vector[i] << " ";
-    }
-  }
-  return imploded.str();
+  return base::JoinString(details_roles_vector, " ");
 }
 
 int AXPlatformNodeBase::GetMaxSelectableItems() const {

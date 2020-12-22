@@ -5,11 +5,11 @@
 #include "ax_node_position.h"
 
 #include "ax_build/build_config.h"
-
 #include "ax_enums.h"
 #include "ax_node_data.h"
 #include "ax_tree_manager.h"
 #include "ax_tree_manager_map.h"
+#include "base/string_utils.h"
 
 namespace ui {
 
@@ -117,6 +117,7 @@ std::stack<AXNode*> AXNodePosition::GetAncestorAnchors() const {
 
   AXNode::AXID parent_anchor_id = AXNode::kInvalidAXID;
   AXTreeID parent_tree_id = AXTreeIDUnknown();
+
   while (current_anchor) {
     anchors.push(current_anchor);
     current_anchor = GetParent(
@@ -228,12 +229,8 @@ bool AXNodePosition::IsInWhiteSpace() const {
   if (IsNullPosition())
     return false;
   BASE_DCHECK(GetAnchor());
-  if (GetAnchor()->IsLineBreak()) {
-    return true;
-  }
-  std::u16string text = GetText();
-  return std::find_if(text.begin(), text.end(),
-                      [](char16_t ch) { return ch != u' '; }) == text.end();
+  return GetAnchor()->IsLineBreak() ||
+         base::ContainsOnlyChars(GetText(), base::kWhitespaceUTF16);
 }
 
 // This override is an optimized version AXPosition::MaxTextOffset. Instead of

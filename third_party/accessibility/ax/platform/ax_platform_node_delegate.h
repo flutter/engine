@@ -16,9 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "base/macros.h"
-#include "gfx/geometry/rect.h"
-
 #include "ax/ax_clipping_behavior.h"
 #include "ax/ax_coordinate_system.h"
 #include "ax/ax_enums.h"
@@ -28,9 +25,10 @@
 #include "ax/ax_position.h"
 #include "ax/ax_tree.h"
 #include "ax/ax_tree_id.h"
-#include "gfx/native_widget_types.h"
-
 #include "ax_unique_id.h"
+#include "base/macros.h"
+#include "gfx/geometry/rect.h"
+#include "gfx/native_widget_types.h"
 
 namespace ui {
 

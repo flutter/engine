@@ -9,21 +9,15 @@
 #include <string>
 #include <vector>
 
-#include "base/macros.h"
-#include "gfx/geometry/point.h"
-
 #include "ax/ax_enums.h"
 #include "ax/ax_node.h"
 #include "ax_build/build_config.h"
-#include "gfx/native_widget_types.h"
-
 #include "ax_platform_node.h"
 #include "ax_platform_node_delegate.h"
 #include "ax_platform_text_boundary.h"
-
-// #if BUILDFLAG(USE_ATK)
-// #include <atk/atk.h>
-// #endif
+#include "base/macros.h"
+#include "gfx/geometry/point.h"
+#include "gfx/native_widget_types.h"
 
 namespace ui {
 
@@ -302,14 +296,6 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
       ax::mojom::Event event_type,
       std::function<void()> callback);
 
-  // This method finds text boundaries in the text used for platform text APIs.
-  // Implementations may use side-channel data such as line or word indices to
-  // produce appropriate results.
-  // virtual int FindTextBoundary(ax::mojom::TextBoundary boundary,
-  //                              int offset,
-  //                              ax::mojom::MoveDirection direction,
-  //                              ax::mojom::TextAffinity affinity) const;
-
   enum ScrollType {
     TopLeft,
     BottomRight,
@@ -385,11 +371,6 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   // Sets the hypertext selection in this object if possible.
   bool SetHypertextSelection(int start_offset, int end_offset);
 
-  // #if BUILDFLAG(USE_ATK)
-  //   using PlatformAttributeList = AtkAttributeSet*;
-  // #else
-  //   using PlatformAttributeList = std::vector<std::u16string>;
-  // #endif
   using PlatformAttributeList = std::vector<std::u16string>;
 
   // Compute the attributes exposed via platform accessibility objects and put
@@ -487,10 +468,6 @@ class AX_EXPORT AXPlatformNodeBase : public AXPlatformNode {
   bool IsSameHypertextCharacter(const AXHypertext& old_hypertext,
                                 size_t old_char_index,
                                 size_t new_char_index);
-  // void ComputeHypertextRemovedAndInserted(const AXHypertext& old_hypertext,
-  //                                         size_t* start,
-  //                                         size_t* old_len,
-  //                                         size_t* new_len);
 
   std::optional<int> GetPosInSet() const;
   std::optional<int> GetSetSize() const;

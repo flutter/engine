@@ -7,6 +7,7 @@
 #include <math.h>
 
 #include "ax_enum_util.h"
+#include "base/string_utils.h"
 
 namespace ui {
 
@@ -51,14 +52,16 @@ std::string AXRelativeBounds::ToString() const {
   std::string result;
 
   if (offset_container_id != -1)
-    result += "offset_container_id=" +
-              std::to_string(static_cast<int>(round(offset_container_id))) +
-              " ";
+    result +=
+        "offset_container_id=" +
+        base::NumberToString(static_cast<int>(round(offset_container_id))) +
+        " ";
 
-  result += "(" + std::to_string(static_cast<int>(round(bounds.x()))) + ", " +
-            std::to_string(static_cast<int>(round(bounds.y()))) + ")-(" +
-            std::to_string(static_cast<int>(round(bounds.width()))) + ", " +
-            std::to_string(static_cast<int>(round(bounds.height()))) + ")";
+  result +=
+      "(" + base::NumberToString(static_cast<int>(round(bounds.x()))) + ", " +
+      base::NumberToString(static_cast<int>(round(bounds.y()))) + ")-(" +
+      base::NumberToString(static_cast<int>(round(bounds.width()))) + ", " +
+      base::NumberToString(static_cast<int>(round(bounds.height()))) + ")";
 
   if (transform && !transform->IsIdentity())
     result += " transform=" + transform->ToString();

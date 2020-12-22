@@ -9,10 +9,6 @@
 #include "ax/ax_export.h"
 #include "ax_build/build_config.h"
 
-// #if BUILDFLAG(USE_ATK)
-// #include <atk/atk.h>
-// #endif  // BUILDFLAG(USE_ATK)
-
 #ifdef OS_WIN
 #include <oleacc.h>
 #include <uiautomation.h>
@@ -21,18 +17,6 @@
 #endif  // OS_WIN
 
 namespace ui {
-
-// #if BUILDFLAG(USE_ATK)
-// // Converts from an ATK text boundary to an ax::mojom::TextBoundary.
-// AX_EXPORT ax::mojom::TextBoundary FromAtkTextBoundary(AtkTextBoundary
-// boundary);
-
-// #if ATK_CHECK_VERSION(2, 10, 0)
-// // Same as above, but for an older version of the API.
-// AX_EXPORT ax::mojom::TextBoundary FromAtkTextGranularity(
-//     AtkTextGranularity granularity);
-// #endif  // ATK_CHECK_VERSION(2, 10, 0)
-// #endif  // BUILDFLAG(USE_ATK)
 
 #ifdef OS_WIN
 // Converts from an IAccessible2 text boundary to an ax::mojom::TextBoundary.

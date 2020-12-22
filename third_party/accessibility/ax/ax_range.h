@@ -15,6 +15,7 @@
 #include "ax_offscreen_result.h"
 #include "ax_role_properties.h"
 #include "ax_tree_manager_map.h"
+#include "base/string_utils.h"
 
 namespace ui {
 
@@ -319,7 +320,7 @@ class AXRange {
           // When preserving layout line breaks, don't append `\n` next if the
           // previous leaf position was a <br> (already ending with a newline).
           if (crossed_paragraph_boundary && !found_trailing_newline) {
-            range_text += u"\n";
+            range_text += base::ASCIIToUTF16("\n");
             computed_newlines_count++;
           }
 

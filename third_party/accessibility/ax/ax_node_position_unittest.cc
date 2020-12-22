@@ -6728,6 +6728,7 @@ TEST_F(AXPositionTest, OperatorEquals) {
   ASSERT_NE(nullptr, text_position2);
   ASSERT_TRUE(text_position2->IsTextPosition());
   EXPECT_EQ(*text_position1, *text_position2);
+
   // Two text positions that are consecutive, one "before text" and one "after
   // text".
   text_position1 = AXNodePosition::CreateTextPosition(

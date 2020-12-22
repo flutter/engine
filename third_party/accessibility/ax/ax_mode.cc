@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "base/logging.h"
+#include "base/string_utils.h"
 
 namespace ui {
 
@@ -51,15 +52,8 @@ std::string AXMode::ToString() const {
     if (has_mode(mode_flag))
       tokens.push_back(flag_name);
   }
-  std::ostringstream imploded;
-  for (size_t i = 0; i < tokens.size(); i++) {
-    if (i == tokens.size() - 1) {
-      imploded << tokens[i];
-    } else {
-      imploded << tokens[i] << " | ";
-    }
-  }
-  return imploded.str();
+
+  return base::JoinString(tokens, " | ");
 }
 
 }  // namespace ui

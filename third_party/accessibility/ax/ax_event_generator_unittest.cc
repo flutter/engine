@@ -27,8 +27,6 @@ bool HasEvent(AXEventGenerator& src,
 
 }  // namespace
 
-// }  // namespace
-
 TEST(AXEventGeneratorTest, LoadCompleteSameTree) {
   AXTreeUpdate initial_state;
   initial_state.root_id = 1;

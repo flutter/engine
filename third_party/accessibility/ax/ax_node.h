@@ -13,15 +13,13 @@
 #include <string>
 #include <vector>
 
-#include "base/logging.h"
-#include "gfx/geometry/rect.h"
-#include "gfx/transform.h"
-
 #include "ax_build/build_config.h"
-
 #include "ax_export.h"
 #include "ax_node_data.h"
 #include "ax_tree_id.h"
+#include "base/logging.h"
+#include "gfx/geometry/rect.h"
+#include "gfx/transform.h"
 
 namespace ui {
 
@@ -271,7 +269,9 @@ class AX_EXPORT AXNode final {
                               std::vector<std::string>* value) const {
     return data().GetStringListAttribute(attribute, value);
   }
-
+  bool GetHtmlAttribute(const char* attribute, std::u16string* value) const {
+    return data().GetHtmlAttribute(attribute, value);
+  }
   bool GetHtmlAttribute(const char* attribute, std::string* value) const {
     return data().GetHtmlAttribute(attribute, value);
   }
@@ -296,7 +296,8 @@ class AX_EXPORT AXNode final {
 
   const std::string& GetInheritedStringAttribute(
       ax::mojom::StringAttribute attribute) const;
-
+  std::u16string GetInheritedString16Attribute(
+      ax::mojom::StringAttribute attribute) const;
   // Returns the text of this node and all descendant nodes; including text
   // found in embedded objects.
   //
@@ -392,21 +393,6 @@ class AX_EXPORT AXNode final {
   bool IsCellOrHeaderOfARIATable() const;
   bool IsCellOrHeaderOfARIAGrid() const;
 
-  // Return an object containing information about the languages detected on
-  // this node.
-  // Callers should not retain this pointer, instead they should request it
-  // every time it is needed.
-  //
-  // Returns nullptr if the node has no language info.
-  // AXLanguageInfo* GetLanguageInfo() const;
-
-  // This should only be called by LabelLanguageForSubtree and is used as part
-  // of the language detection feature.
-  // void SetLanguageInfo(std::unique_ptr<AXLanguageInfo> lang_info);
-
-  // Destroy the language info for this node.
-  void ClearLanguageInfo();
-
   // Returns true if node is a group and is a direct descendant of a set-like
   // element.
   bool IsEmbeddedGroup() const;
@@ -486,9 +472,6 @@ class AX_EXPORT AXNode final {
   AXNode* const parent_;
   std::vector<AXNode*> children_;
   AXNodeData data_;
-
-  // Stores the detected language computed from the node's text.
-  // std::unique_ptr<AXLanguageInfo> language_info_;
 };
 
 AX_EXPORT std::ostream& operator<<(std::ostream& stream, const AXNode& node);

@@ -7,11 +7,9 @@
 #include <algorithm>
 #include <iostream>
 
-#include "base/logging.h"
-
-#include "base/no_destructor.h"
-
 #include "ax_enums.h"
+#include "base/logging.h"
+#include "base/no_destructor.h"
 
 namespace ui {
 
@@ -19,23 +17,30 @@ AXTreeID::AXTreeID() : AXTreeID(ax::mojom::AXTreeIDType::kUnknown) {}
 
 AXTreeID::AXTreeID(const AXTreeID& other) = default;
 
-AXTreeID::AXTreeID(ax::mojom::AXTreeIDType type) : type_(type) {}
+AXTreeID::AXTreeID(ax::mojom::AXTreeIDType type) : type_(type) {
+  if (type_ == ax::mojom::AXTreeIDType::kToken)
+    token_ = base::SimpleToken::Create();
+}
 
 AXTreeID::AXTreeID(const std::string& string) {
-  // TODO(chunhtai): either remove the ax tree id entirely or implement token
-  // for real.
   if (string.empty()) {
     type_ = ax::mojom::AXTreeIDType::kUnknown;
-  } else if (string == "kToken") {
-    type_ = ax::mojom::AXTreeIDType::kToken;
   } else {
-    BASE_UNREACHABLE();
+    type_ = ax::mojom::AXTreeIDType::kToken;
+    std::optional<base::SimpleToken> token = base::ValueToSimpleToken(string);
+    BASE_DCHECK(token);
+    token_ = *token;
   }
 }
 
 // static
 AXTreeID AXTreeID::FromString(const std::string& string) {
   return AXTreeID(string);
+}
+
+// static
+AXTreeID AXTreeID::FromToken(const base::SimpleToken& token) {
+  return AXTreeID(token.ToString());
 }
 
 // static
@@ -52,7 +57,7 @@ std::string AXTreeID::ToString() const {
     case ax::mojom::AXTreeIDType::kUnknown:
       return "";
     case ax::mojom::AXTreeIDType::kToken:
-      return "kToken";
+      return base::SimpleTokenToValue(*token_);
   }
 
   BASE_UNREACHABLE();
@@ -61,10 +66,11 @@ std::string AXTreeID::ToString() const {
 
 void swap(AXTreeID& first, AXTreeID& second) {
   std::swap(first.type_, second.type_);
+  std::swap(first.token_, second.token_);
 }
 
 bool AXTreeID::operator==(const AXTreeID& rhs) const {
-  return type_ == rhs.type_;  //&& token_ == rhs.token_;
+  return type_ == rhs.type_ && token_ == rhs.token_;
 }
 
 bool AXTreeID::operator!=(const AXTreeID& rhs) const {
@@ -72,11 +78,11 @@ bool AXTreeID::operator!=(const AXTreeID& rhs) const {
 }
 
 bool AXTreeID::operator<(const AXTreeID& rhs) const {
-  return type_ < rhs.type_;
+  return std::tie(type_, token_) < std::tie(rhs.type_, rhs.token_);
 }
 
 bool AXTreeID::operator<=(const AXTreeID& rhs) const {
-  return type_ <= rhs.type_;
+  return std::tie(type_, token_) <= std::tie(rhs.type_, rhs.token_);
 }
 
 bool AXTreeID::operator>(const AXTreeID& rhs) const {
@@ -89,7 +95,7 @@ bool AXTreeID::operator>=(const AXTreeID& rhs) const {
 
 size_t AXTreeIDHash::operator()(const ui::AXTreeID& tree_id) const {
   BASE_DCHECK(tree_id.type() == ax::mojom::AXTreeIDType::kToken);
-  return 0;
+  return base::SimpleTokenHash(tree_id.token().value());
 }
 
 std::ostream& operator<<(std::ostream& stream, const AXTreeID& value) {

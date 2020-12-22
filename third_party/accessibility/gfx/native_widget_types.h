@@ -116,7 +116,7 @@ namespace gfx {
 typedef ui::Cursor NativeCursor;
 typedef aura::Window* NativeView;
 typedef aura::Window* NativeWindow;
-typedef ax::mojom::Event* NativeEvent;
+typedef ui::Event* NativeEvent;
 constexpr NativeView kNullNativeView = nullptr;
 constexpr NativeWindow kNullNativeWindow = nullptr;
 #elif defined(OS_IOS)
@@ -166,7 +166,7 @@ class GFX_EXPORT NativeWindow {
 
   // // This function name is verbose (that is, not just GetNSWindow) so that it
   // // is easily grep-able.
-  // NSWindow* GetNativeNSWindow() const { return ns_window_; }
+  NSWindow* GetNativeNSWindow() const { return ns_window_; }
 
   operator bool() const { return ns_window_ != 0; }
   bool operator==(const NativeWindow& other) const {
@@ -182,7 +182,7 @@ class GFX_EXPORT NativeWindow {
  private:
   NSWindow* ns_window_ = nullptr;
 };
-// This can be constexpr after c++ 17
+// This can't be constexpr after c++ 17
 const NativeView kNullNativeView = NativeView(nullptr);
 const NativeWindow kNullNativeWindow = NativeWindow(nullptr);
 #elif defined(OS_ANDROID)

@@ -17,6 +17,7 @@
 #include "ax_event_intent.h"
 #include "ax_node_data.h"
 #include "ax_tree_data.h"
+#include "base/string_utils.h"
 
 namespace ui {
 
@@ -97,12 +98,12 @@ std::string AXTreeUpdateBase<AXNodeData, AXTreeData>::ToString() const {
   }
 
   if (node_id_to_clear != AXNode::kInvalidAXID) {
-    result +=
-        "AXTreeUpdate: clear node " + std::to_string(node_id_to_clear) + "\n";
+    result += "AXTreeUpdate: clear node " +
+              base::NumberToString(node_id_to_clear) + "\n";
   }
 
   if (root_id != AXNode::kInvalidAXID) {
-    result += "AXTreeUpdate: root id " + std::to_string(root_id) + "\n";
+    result += "AXTreeUpdate: root id " + base::NumberToString(root_id) + "\n";
   }
 
   if (event_from != ax::mojom::EventFrom::kNone)

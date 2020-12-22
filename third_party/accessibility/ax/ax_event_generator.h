@@ -310,10 +310,6 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
   std::vector<AXNode*> active_descendant_changed_;
 
   bool always_fire_load_complete_ = false;
-
-  // Please make sure that this ScopedObserver is always declared last in order
-  // to prevent any use-after-free.
-  // ScopedObserver<AXTree, AXTreeObserver> tree_event_observer_{this};
 };
 
 AX_EXPORT std::ostream& operator<<(std::ostream& os,

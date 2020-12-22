@@ -6,15 +6,11 @@
 
 #include "gtest/gtest.h"
 
+#include "base/string_utils.h"
 #include "test_ax_node_wrapper.h"
 
 namespace ui {
 namespace {
-
-std::u16string ASCIIToUTF16(std::string src) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.from_bytes(src);
-}
 
 void MakeStaticText(AXNodeData* node, int id, const std::string& text) {
   node->id = id;
@@ -77,19 +73,19 @@ TEST(AXPlatformNodeBaseTest, GetHypertext) {
   AXPlatformNodeBase* root = static_cast<AXPlatformNodeBase*>(
       TestAXNodeWrapper::GetOrCreate(&tree, tree.root())->ax_platform_node());
 
-  EXPECT_EQ(root->GetHypertext(), ASCIIToUTF16("text1text2text3"));
+  EXPECT_EQ(root->GetHypertext(), base::UTF8ToUTF16("text1text2text3"));
 
   AXPlatformNodeBase* text1 = static_cast<AXPlatformNodeBase*>(
       AXPlatformNode::FromNativeViewAccessible(root->ChildAtIndex(0)));
-  EXPECT_EQ(text1->GetHypertext(), ASCIIToUTF16("text1"));
+  EXPECT_EQ(text1->GetHypertext(), base::UTF8ToUTF16("text1"));
 
   AXPlatformNodeBase* text2 = static_cast<AXPlatformNodeBase*>(
       AXPlatformNode::FromNativeViewAccessible(root->ChildAtIndex(1)));
-  EXPECT_EQ(text2->GetHypertext(), ASCIIToUTF16("text2"));
+  EXPECT_EQ(text2->GetHypertext(), base::UTF8ToUTF16("text2"));
 
   AXPlatformNodeBase* text3 = static_cast<AXPlatformNodeBase*>(
       AXPlatformNode::FromNativeViewAccessible(root->ChildAtIndex(2)));
-  EXPECT_EQ(text3->GetHypertext(), ASCIIToUTF16("text3"));
+  EXPECT_EQ(text3->GetHypertext(), base::UTF8ToUTF16("text3"));
 }
 
 TEST(AXPlatformNodeBaseTest, GetHypertextIgnoredContainerSiblings) {
@@ -136,22 +132,25 @@ TEST(AXPlatformNodeBaseTest, GetHypertextIgnoredContainerSiblings) {
   AXPlatformNodeBase* root = static_cast<AXPlatformNodeBase*>(
       TestAXNodeWrapper::GetOrCreate(&tree, tree.root())->ax_platform_node());
 
-  EXPECT_EQ(root->GetHypertext(), ASCIIToUTF16("text1text2text3"));
+  EXPECT_EQ(root->GetHypertext(), base::UTF8ToUTF16("text1text2text3"));
 
   AXPlatformNodeBase* text1_ignored_container =
       static_cast<AXPlatformNodeBase*>(
           AXPlatformNode::FromNativeViewAccessible(root->ChildAtIndex(0)));
-  EXPECT_EQ(text1_ignored_container->GetHypertext(), ASCIIToUTF16("text1"));
+  EXPECT_EQ(text1_ignored_container->GetHypertext(),
+            base::UTF8ToUTF16("text1"));
 
   AXPlatformNodeBase* text2_ignored_container =
       static_cast<AXPlatformNodeBase*>(
           AXPlatformNode::FromNativeViewAccessible(root->ChildAtIndex(1)));
-  EXPECT_EQ(text2_ignored_container->GetHypertext(), ASCIIToUTF16("text2"));
+  EXPECT_EQ(text2_ignored_container->GetHypertext(),
+            base::UTF8ToUTF16("text2"));
 
   AXPlatformNodeBase* text3_ignored_container =
       static_cast<AXPlatformNodeBase*>(
           AXPlatformNode::FromNativeViewAccessible(root->ChildAtIndex(2)));
-  EXPECT_EQ(text3_ignored_container->GetHypertext(), ASCIIToUTF16("text3"));
+  EXPECT_EQ(text3_ignored_container->GetHypertext(),
+            base::UTF8ToUTF16("text3"));
 }
 
 TEST(AXPlatformNodeBaseTest, InnerTextIgnoresInvisibleAndIgnored) {
@@ -178,32 +177,32 @@ TEST(AXPlatformNodeBaseTest, InnerTextIgnoresInvisibleAndIgnored) {
   // determine if it should enable accessibility.
   AXPlatformNodeBase::NotifyAddAXModeFlags(kAXModeComplete);
 
-  EXPECT_EQ(root->GetInnerText(), ASCIIToUTF16("abde"));
+  EXPECT_EQ(root->GetInnerText(), base::UTF8ToUTF16("abde"));
 
   // Setting invisible or ignored on a static text node causes it to be included
   // or excluded from the root node's inner text:
   {
     SetIsInvisible(&tree, 2, true);
-    EXPECT_EQ(root->GetInnerText(), ASCIIToUTF16("bde"));
+    EXPECT_EQ(root->GetInnerText(), base::UTF8ToUTF16("bde"));
 
     SetIsInvisible(&tree, 2, false);
-    EXPECT_EQ(root->GetInnerText(), ASCIIToUTF16("abde"));
+    EXPECT_EQ(root->GetInnerText(), base::UTF8ToUTF16("abde"));
 
     SetRole(&tree, 2, ax::mojom::Role::kIgnored);
-    EXPECT_EQ(root->GetInnerText(), ASCIIToUTF16("bde"));
+    EXPECT_EQ(root->GetInnerText(), base::UTF8ToUTF16("bde"));
 
     SetRole(&tree, 2, ax::mojom::Role::kStaticText);
-    EXPECT_EQ(root->GetInnerText(), ASCIIToUTF16("abde"));
+    EXPECT_EQ(root->GetInnerText(), base::UTF8ToUTF16("abde"));
   }
 
   // Setting invisible or ignored on a group node has no effect on the inner
   // text:
   {
     SetIsInvisible(&tree, 4, true);
-    EXPECT_EQ(root->GetInnerText(), ASCIIToUTF16("abde"));
+    EXPECT_EQ(root->GetInnerText(), base::UTF8ToUTF16("abde"));
 
     SetRole(&tree, 4, ax::mojom::Role::kIgnored);
-    EXPECT_EQ(root->GetInnerText(), ASCIIToUTF16("abde"));
+    EXPECT_EQ(root->GetInnerText(), base::UTF8ToUTF16("abde"));
   }
 }
 
@@ -520,11 +519,11 @@ TEST(AXPlatformNodeBaseTest, CompareTo) {
         actual_result = 1;
 
       SCOPED_TRACE(testing::Message()
-                   << "lhs.id=" << std::to_string(lhs->GetData().id)
-                   << ", rhs.id=" << std::to_string(rhs->GetData().id)
+                   << "lhs.id=" << base::NumberToString(lhs->GetData().id)
+                   << ", rhs.id=" << base::NumberToString(rhs->GetData().id)
                    << ", lhs->CompareTo(*rhs)={actual:"
-                   << std::to_string(actual_result)
-                   << ", expected:" << std::to_string(expected_result) << "}");
+                   << base::NumberToString(actual_result) << ", expected:"
+                   << base::NumberToString(expected_result) << "}");
 
       EXPECT_EQ(expected_result, actual_result);
     }

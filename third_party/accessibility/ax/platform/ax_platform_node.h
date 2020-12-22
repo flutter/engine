@@ -8,13 +8,12 @@
 #include <ostream>
 #include <string>
 
-#include "base/macros.h"
-
 #include "ax/ax_enums.h"
 #include "ax/ax_export.h"
 #include "ax/ax_mode.h"
 #include "ax/ax_mode_observer.h"
 #include "ax_build/build_config.h"
+#include "base/macros.h"
 #include "gfx/native_widget_types.h"
 
 namespace ui {
@@ -112,16 +111,7 @@ class AX_EXPORT AXPlatformNode {
   virtual ~AXPlatformNode();
 
  private:
-  // FRIEND_TEST_ALL_PREFIXES(AtkUtilAuraLinuxTest, KeySnooping);
-
-  // Global ObserverList for AXMode changes.
-  // static base::LazyInstance<
-  //     base::ObserverList<AXModeObserver>::Unchecked>::Leaky
-  //     ax_mode_observers_;
   static std::vector<AXModeObserver*> ax_mode_observers_;
-
-  // static base::LazyInstance<NativeWindowHandlerCallback>::Leaky
-  //     native_window_handler_;
   static std::function<NativeWindowHandlerCallback> native_window_handler_;
 
   static AXMode ax_mode_;

@@ -10,23 +10,16 @@
 #include <set>
 #include <utility>
 
-#include "base/logging.h"
-
 #include "ax_enum_util.h"
 #include "ax_role_properties.h"
+#include "base/container_utils.h"
+#include "base/logging.h"
 #include "base/no_destructor.h"
+#include "base/string_utils.h"
 
 namespace ui {
 
 namespace {
-
-std::string ToUpperASCII(std::string str) {
-  std::string ret;
-  ret.reserve(str.size());
-  for (size_t i = 0; i < str.size(); i++)
-    ret.push_back(std::toupper(str[i]));
-  return ret;
-}
 
 bool IsFlagSet(uint32_t bitfield, uint32_t flag) {
   return (bitfield & (1U << flag)) != 0;
@@ -49,7 +42,8 @@ std::string StateBitfieldToString(uint32_t state_enum) {
   for (uint32_t i = static_cast<uint32_t>(ax::mojom::State::kNone) + 1;
        i <= static_cast<uint32_t>(ax::mojom::State::kMaxValue); ++i) {
     if (IsFlagSet(state_enum, i))
-      str += " " + ToUpperASCII(ui::ToString(static_cast<ax::mojom::State>(i)));
+      str += " " +
+             base::ToUpperASCII(ui::ToString(static_cast<ax::mojom::State>(i)));
   }
   return str;
 }
@@ -72,7 +66,7 @@ std::string IntVectorToString(const std::vector<int>& items) {
   for (size_t i = 0; i < items.size(); ++i) {
     if (i > 0)
       str += ",";
-    str += std::to_string(items[i]);
+    str += base::NumberToString(items[i]);
   }
   return str;
 }
@@ -346,8 +340,7 @@ const std::string& AXNodeData::GetStringAttribute(
   if (iter != string_attributes.end()) {
     return iter->second;
   }
-  static const base::NoDestructor<std::string> s;
-  return *s;
+  return iter != string_attributes.end() ? iter->second : base::EmptyString();
 }
 
 bool AXNodeData::GetStringAttribute(ax::mojom::StringAttribute attribute,
@@ -366,8 +359,7 @@ std::u16string AXNodeData::GetString16Attribute(
   std::string value_utf8;
   if (!GetStringAttribute(attribute, &value_utf8))
     return std::u16string();
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.from_bytes(value_utf8);
+  return base::UTF8ToUTF16(value_utf8);
 }
 
 bool AXNodeData::GetString16Attribute(ax::mojom::StringAttribute attribute,
@@ -375,8 +367,7 @@ bool AXNodeData::GetString16Attribute(ax::mojom::StringAttribute attribute,
   std::string value_utf8;
   if (!GetStringAttribute(attribute, &value_utf8))
     return false;
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  *value = convert.from_bytes(value_utf8);
+  *value = base::UTF8ToUTF16(value_utf8);
   return true;
 }
 
@@ -388,11 +379,11 @@ bool AXNodeData::HasIntListAttribute(
 
 const std::vector<int32_t>& AXNodeData::GetIntListAttribute(
     ax::mojom::IntListAttribute attribute) const {
-  static const std::vector<int32_t> empty_vector;
+  static const base::NoDestructor<std::vector<int32_t>> empty_vector;
   auto iter = FindInVectorOfPairs(attribute, intlist_attributes);
   if (iter != intlist_attributes.end())
     return iter->second;
-  return empty_vector;
+  return *empty_vector;
 }
 
 bool AXNodeData::GetIntListAttribute(ax::mojom::IntListAttribute attribute,
@@ -414,11 +405,11 @@ bool AXNodeData::HasStringListAttribute(
 
 const std::vector<std::string>& AXNodeData::GetStringListAttribute(
     ax::mojom::StringListAttribute attribute) const {
-  static const std::vector<std::string> empty_vector;
+  static const base::NoDestructor<std::vector<std::string>> empty_vector;
   auto iter = FindInVectorOfPairs(attribute, stringlist_attributes);
   if (iter != stringlist_attributes.end())
     return iter->second;
-  return empty_vector;
+  return *empty_vector;
 }
 
 bool AXNodeData::GetStringListAttribute(
@@ -438,13 +429,22 @@ bool AXNodeData::GetHtmlAttribute(const char* html_attr,
   for (const std::pair<std::string, std::string>& html_attribute :
        html_attributes) {
     const std::string& attr = html_attribute.first;
-    if (attr.compare(html_attr)) {
+    if (base::LowerCaseEqualsASCII(attr, html_attr)) {
       *value = html_attribute.second;
       return true;
     }
   }
 
   return false;
+}
+
+bool AXNodeData::GetHtmlAttribute(const char* html_attr,
+                                  std::u16string* value) const {
+  std::string value_utf8;
+  if (!GetHtmlAttribute(html_attr, &value_utf8))
+    return false;
+  *value = base::UTF8ToUTF16(value_utf8);
+  return true;
 }
 
 void AXNodeData::AddStringAttribute(ax::mojom::StringAttribute attribute,
@@ -497,63 +497,46 @@ void AXNodeData::AddStringListAttribute(
 
 void AXNodeData::RemoveStringAttribute(ax::mojom::StringAttribute attribute) {
   BASE_DCHECK(attribute != ax::mojom::StringAttribute::kNone);
-  string_attributes.erase(
-      std::remove_if(string_attributes.begin(), string_attributes.end(),
-                     [attribute](const auto& string_attribute) {
-                       return string_attribute.first == attribute;
-                     }),
-      string_attributes.end());
+  base::EraseIf(string_attributes, [attribute](const auto& string_attribute) {
+    return string_attribute.first == attribute;
+  });
 }
 
 void AXNodeData::RemoveIntAttribute(ax::mojom::IntAttribute attribute) {
   BASE_DCHECK(attribute != ax::mojom::IntAttribute::kNone);
-  int_attributes.erase(
-      std::remove_if(int_attributes.begin(), int_attributes.end(),
-                     [attribute](const auto& int_attribute) {
-                       return int_attribute.first == attribute;
-                     }),
-      int_attributes.end());
+  base::EraseIf(int_attributes, [attribute](const auto& int_attribute) {
+    return int_attribute.first == attribute;
+  });
 }
 
 void AXNodeData::RemoveFloatAttribute(ax::mojom::FloatAttribute attribute) {
   BASE_DCHECK(attribute != ax::mojom::FloatAttribute::kNone);
-  float_attributes.erase(
-      std::remove_if(float_attributes.begin(), float_attributes.end(),
-                     [attribute](const auto& float_attribute) {
-                       return float_attribute.first == attribute;
-                     }),
-      float_attributes.end());
+  base::EraseIf(float_attributes, [attribute](const auto& float_attribute) {
+    return float_attribute.first == attribute;
+  });
 }
 
 void AXNodeData::RemoveBoolAttribute(ax::mojom::BoolAttribute attribute) {
   BASE_DCHECK(attribute != ax::mojom::BoolAttribute::kNone);
-  bool_attributes.erase(
-      std::remove_if(bool_attributes.begin(), bool_attributes.end(),
-                     [attribute](const auto& bool_attribute) {
-                       return bool_attribute.first == attribute;
-                     }),
-      bool_attributes.end());
+  base::EraseIf(bool_attributes, [attribute](const auto& bool_attribute) {
+    return bool_attribute.first == attribute;
+  });
 }
 
 void AXNodeData::RemoveIntListAttribute(ax::mojom::IntListAttribute attribute) {
   BASE_DCHECK(attribute != ax::mojom::IntListAttribute::kNone);
-  intlist_attributes.erase(
-      std::remove_if(intlist_attributes.begin(), intlist_attributes.end(),
-                     [attribute](const auto& intlist_attribute) {
-                       return intlist_attribute.first == attribute;
-                     }),
-      intlist_attributes.end());
+  base::EraseIf(intlist_attributes, [attribute](const auto& intlist_attribute) {
+    return intlist_attribute.first == attribute;
+  });
 }
 
 void AXNodeData::RemoveStringListAttribute(
     ax::mojom::StringListAttribute attribute) {
   BASE_DCHECK(attribute != ax::mojom::StringListAttribute::kNone);
-  stringlist_attributes.erase(
-      std::remove_if(stringlist_attributes.begin(), stringlist_attributes.end(),
-                     [attribute](const auto& stringlist_attribute) {
-                       return stringlist_attribute.first == attribute;
-                     }),
-      stringlist_attributes.end());
+  base::EraseIf(stringlist_attributes,
+                [attribute](const auto& stringlist_attribute) {
+                  return stringlist_attribute.first == attribute;
+                });
 }
 
 AXNodeTextStyles AXNodeData::GetTextStyles() const {
@@ -630,8 +613,7 @@ void AXNodeData::SetName(const std::string& name) {
 }
 
 void AXNodeData::SetName(const std::u16string& name) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  SetName(convert.to_bytes(name));
+  SetName(base::UTF16ToUTF8(name));
 }
 
 void AXNodeData::SetNameExplicitlyEmpty() {
@@ -643,8 +625,7 @@ void AXNodeData::SetDescription(const std::string& description) {
 }
 
 void AXNodeData::SetDescription(const std::u16string& description) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  SetDescription(convert.to_bytes(description));
+  SetDescription(base::UTF16ToUTF8(description));
 }
 
 void AXNodeData::SetValue(const std::string& value) {
@@ -652,8 +633,7 @@ void AXNodeData::SetValue(const std::string& value) {
 }
 
 void AXNodeData::SetValue(const std::u16string& value) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  SetValue(convert.to_bytes(value));
+  SetValue(base::UTF16ToUTF8(value));
 }
 
 bool AXNodeData::HasState(ax::mojom::State state_enum) const {
@@ -1079,7 +1059,7 @@ bool AXNodeData::SupportsExpandCollapse() const {
 std::string AXNodeData::ToString() const {
   std::string result;
 
-  result += "id=" + std::to_string(id);
+  result += "id=" + base::NumberToString(id);
   result += " ";
   result += ui::ToString(role);
 
@@ -1089,7 +1069,7 @@ std::string AXNodeData::ToString() const {
 
   for (const std::pair<ax::mojom::IntAttribute, int32_t>& int_attribute :
        int_attributes) {
-    std::string value = std::to_string(int_attribute.second);
+    std::string value = base::NumberToString(int_attribute.second);
     switch (int_attribute.first) {
       case ax::mojom::IntAttribute::kDefaultActionVerb:
         result += std::string(" action=") +
@@ -1224,7 +1204,7 @@ std::string AXNodeData::ToString() const {
         result += " previous_on_line_id=" + value;
         break;
       case ax::mojom::IntAttribute::kColorValue:
-        result += " color_value=&" + std::to_string(int_attribute.second);
+        result += base::StringPrintf(" color_value=&%X", int_attribute.second);
         break;
       case ax::mojom::IntAttribute::kAriaCurrentState:
         switch (
@@ -1255,10 +1235,11 @@ std::string AXNodeData::ToString() const {
         }
         break;
       case ax::mojom::IntAttribute::kBackgroundColor:
-        result += " background_color=&" + std::to_string(int_attribute.second);
+        result +=
+            base::StringPrintf(" background_color=&%X", int_attribute.second);
         break;
       case ax::mojom::IntAttribute::kColor:
-        result += " color=&" + std::to_string(int_attribute.second);
+        result += base::StringPrintf(" color=&%X", int_attribute.second);
         break;
       case ax::mojom::IntAttribute::kListStyle:
         switch (static_cast<ax::mojom::ListStyle>(int_attribute.second)) {
@@ -1484,7 +1465,8 @@ std::string AXNodeData::ToString() const {
         break;
       case ax::mojom::StringAttribute::kImageDataUrl:
         result += " image_data_url=(" +
-                  std::to_string(static_cast<int>(value.size())) + " bytes)";
+                  base::NumberToString(static_cast<int>(value.size())) +
+                  " bytes)";
         break;
       case ax::mojom::StringAttribute::kInnerHtml:
         result += " inner_html=" + value;
@@ -1538,7 +1520,7 @@ std::string AXNodeData::ToString() const {
 
   for (const std::pair<ax::mojom::FloatAttribute, float>& float_attribute :
        float_attributes) {
-    std::string value = std::to_string(float_attribute.second);
+    std::string value = base::NumberToString(float_attribute.second);
     switch (float_attribute.first) {
       case ax::mojom::FloatAttribute::kValueForRange:
         result += " value_for_range=" + value;
@@ -1718,14 +1700,11 @@ std::string AXNodeData::ToString() const {
        stringlist_attributes) {
     const std::vector<std::string>& values = stringlist_attribute.second;
     switch (stringlist_attribute.first) {
-      case ax::mojom::StringListAttribute::kNone:
-        break;
       case ax::mojom::StringListAttribute::kCustomActionDescriptions:
-        const char* const delim = ",";
-        std::ostringstream imploded;
-        std::copy(values.begin(), values.end(),
-                  std::ostream_iterator<std::string>(imploded, delim));
-        result += " custom_action_descriptions: " + imploded.str();
+        result +=
+            " custom_action_descriptions: " + base::JoinString(values, ",");
+        break;
+      case ax::mojom::StringListAttribute::kNone:
         break;
     }
   }

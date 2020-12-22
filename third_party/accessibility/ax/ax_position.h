@@ -17,14 +17,14 @@
 #include <utility>
 #include <vector>
 
-#include "base/logging.h"
-
 #include "ax_enum_util.h"
 #include "ax_enums.h"
 #include "ax_node.h"
 #include "ax_node_text_styles.h"
 #include "ax_role_properties.h"
 #include "ax_tree_id.h"
+#include "base/logging.h"
+#include "base/string_utils.h"
 
 namespace ui {
 
@@ -264,10 +264,10 @@ class AXPosition {
         } else if (child_index_ == INVALID_INDEX) {
           str_child_index = "invalid";
         } else {
-          str_child_index = std::to_string(child_index_);
+          str_child_index = base::NumberToString(child_index_);
         }
         str = "TreePosition tree_id=" + tree_id_.ToString() +
-              " anchor_id=" + std::to_string(anchor_id_) +
+              " anchor_id=" + base::NumberToString(anchor_id_) +
               " child_index=" + str_child_index;
         break;
       }
@@ -276,9 +276,9 @@ class AXPosition {
         if (text_offset_ == INVALID_OFFSET) {
           str_text_offset = "invalid";
         } else {
-          str_text_offset = std::to_string(text_offset_);
+          str_text_offset = base::NumberToString(text_offset_);
         }
-        str = "TextPosition anchor_id=" + std::to_string(anchor_id_) +
+        str = "TextPosition anchor_id=" + base::NumberToString(anchor_id_) +
               " text_offset=" + str_text_offset + " affinity=" +
               ui::ToString(static_cast<ax::mojom::TextAffinity>(affinity_));
         break;

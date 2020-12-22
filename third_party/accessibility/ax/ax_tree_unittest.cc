@@ -17,6 +17,7 @@
 #include "ax_tree_data.h"
 #include "ax_tree_id.h"
 #include "ax_tree_observer.h"
+#include "base/string_utils.h"
 #include "test_ax_tree_manager.h"
 
 // Helper macro for testing selection values and maintain
@@ -40,15 +41,6 @@ namespace ui {
 
 namespace {
 
-template <typename... Args>
-std::string string_format(const std::string& format, Args... args) {
-  // Calculate the buffer size.
-  int size = snprintf(nullptr, 0, format.c_str(), args...) + 1;
-  std::unique_ptr<char[]> buf(new char[size]);
-  snprintf(buf.get(), size, format.c_str(), args...);
-  return std::string(buf.get(), buf.get() + size - 1);
-}
-
 bool Contains(std::set<int32_t> set, int32_t target) {
   return set.find(target) != set.end();
 }
@@ -66,7 +58,7 @@ std::string IntVectorToString(const std::vector<int>& items) {
   for (size_t i = 0; i < items.size(); ++i) {
     if (i > 0)
       str += ",";
-    str += std::to_string(items[i]);
+    str += base::NumberToString(items[i]);
   }
   return str;
 }
@@ -74,15 +66,15 @@ std::string IntVectorToString(const std::vector<int>& items) {
 std::string GetBoundsAsString(const AXTree& tree, int32_t id) {
   AXNode* node = tree.GetFromId(id);
   gfx::RectF bounds = tree.GetTreeBounds(node);
-  return string_format("(%.0f, %.0f) size (%.0f x %.0f)", bounds.x(),
-                       bounds.y(), bounds.width(), bounds.height());
+  return base::StringPrintf("(%.0f, %.0f) size (%.0f x %.0f)", bounds.x(),
+                            bounds.y(), bounds.width(), bounds.height());
 }
 
 std::string GetUnclippedBoundsAsString(const AXTree& tree, int32_t id) {
   AXNode* node = tree.GetFromId(id);
   gfx::RectF bounds = tree.GetTreeBounds(node, nullptr, false);
-  return string_format("(%.0f, %.0f) size (%.0f x %.0f)", bounds.x(),
-                       bounds.y(), bounds.width(), bounds.height());
+  return base::StringPrintf("(%.0f, %.0f) size (%.0f x %.0f)", bounds.x(),
+                            bounds.y(), bounds.width(), bounds.height());
 }
 
 bool IsNodeOffscreen(const AXTree& tree, int32_t id) {
@@ -188,7 +180,7 @@ class TestAXTreeObserver : public AXTreeObserver {
                      AXNode* node,
                      ax::mojom::Role old_role,
                      ax::mojom::Role new_role) override {
-    attribute_change_log_.push_back(string_format(
+    attribute_change_log_.push_back(base::StringPrintf(
         "Role changed from %s to %s", ToString(old_role), ToString(new_role)));
   }
 
@@ -196,7 +188,7 @@ class TestAXTreeObserver : public AXTreeObserver {
                       AXNode* node,
                       ax::mojom::State state,
                       bool new_value) override {
-    attribute_change_log_.push_back(string_format(
+    attribute_change_log_.push_back(base::StringPrintf(
         "%s changed to %s", ToString(state), new_value ? "true" : "false"));
   }
 
@@ -206,8 +198,8 @@ class TestAXTreeObserver : public AXTreeObserver {
                                 const std::string& old_value,
                                 const std::string& new_value) override {
     attribute_change_log_.push_back(
-        string_format("%s changed from %s to %s", ToString(attr),
-                      old_value.c_str(), new_value.c_str()));
+        base::StringPrintf("%s changed from %s to %s", ToString(attr),
+                           old_value.c_str(), new_value.c_str()));
   }
 
   void OnIntAttributeChanged(AXTree* tree,
@@ -215,7 +207,7 @@ class TestAXTreeObserver : public AXTreeObserver {
                              ax::mojom::IntAttribute attr,
                              int32_t old_value,
                              int32_t new_value) override {
-    attribute_change_log_.push_back(string_format(
+    attribute_change_log_.push_back(base::StringPrintf(
         "%s changed from %d to %d", ToString(attr), old_value, new_value));
   }
 
@@ -224,7 +216,7 @@ class TestAXTreeObserver : public AXTreeObserver {
                                ax::mojom::FloatAttribute attr,
                                float old_value,
                                float new_value) override {
-    attribute_change_log_.push_back(string_format(
+    attribute_change_log_.push_back(base::StringPrintf(
         "%s changed from %.1f to %.1f", ToString(attr), old_value, new_value));
   }
 
@@ -232,7 +224,7 @@ class TestAXTreeObserver : public AXTreeObserver {
                               AXNode* node,
                               ax::mojom::BoolAttribute attr,
                               bool new_value) override {
-    attribute_change_log_.push_back(string_format(
+    attribute_change_log_.push_back(base::StringPrintf(
         "%s changed to %s", ToString(attr), new_value ? "true" : "false"));
   }
 
@@ -243,9 +235,9 @@ class TestAXTreeObserver : public AXTreeObserver {
       const std::vector<int32_t>& old_value,
       const std::vector<int32_t>& new_value) override {
     attribute_change_log_.push_back(
-        string_format("%s changed from %s to %s", ToString(attr),
-                      IntVectorToString(old_value).c_str(),
-                      IntVectorToString(new_value).c_str()));
+        base::StringPrintf("%s changed from %s to %s", ToString(attr),
+                           IntVectorToString(old_value).c_str(),
+                           IntVectorToString(new_value).c_str()));
   }
 
   bool tree_data_changed() const { return tree_data_changed_; }

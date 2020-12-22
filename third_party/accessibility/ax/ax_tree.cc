@@ -10,14 +10,14 @@
 #include <numeric>
 #include <utility>
 
-#include "base/auto_reset.h"
-
 #include "ax_enums.h"
 #include "ax_node.h"
 #include "ax_node_position.h"
 #include "ax_role_properties.h"
 #include "ax_table_info.h"
 #include "ax_tree_observer.h"
+#include "base/auto_reset.h"
+#include "base/string_utils.h"
 
 namespace ui {
 
@@ -1345,10 +1345,8 @@ bool AXTree::ComputePendingChangesToNode(const AXNodeData& new_data,
   // is the new root and it can be created.
   if (!update_state->ShouldPendingNodeExistInTree(new_data.id)) {
     if (!is_new_root) {
-      std::ostringstream stringStream;
-      stringStream << new_data.id
-                   << " will not be in the tree and is not the new root";
-      error_ = stringStream.str();
+      error_ = base::StringPrintf(
+          "%d will not be in the tree and is not the new root", new_data.id);
       return false;
     }
 
@@ -1356,11 +1354,9 @@ bool AXTree::ComputePendingChangesToNode(const AXNodeData& new_data,
     // pending for creation, then it must be a duplicate entry in the tree.
     if (!update_state->IncrementPendingCreateNodeCount(new_data.id,
                                                        std::nullopt)) {
-      std::ostringstream stringStream;
-      stringStream
-          << "Node " << new_data.id
-          << " is already pending for creation, cannot be the new root";
-      error_ = stringStream.str();
+      error_ = base::StringPrintf(
+          "Node %d is already pending for creation, cannot be the new root",
+          new_data.id);
       return false;
     }
     if (update_state->pending_root_id) {
@@ -1374,10 +1370,8 @@ bool AXTree::ComputePendingChangesToNode(const AXNodeData& new_data,
   std::set<AXNode::AXID> new_child_id_set;
   for (AXNode::AXID new_child_id : new_data.child_ids) {
     if (new_child_id_set.find(new_child_id) != new_child_id_set.end()) {
-      std::ostringstream stringStream;
-      stringStream << "Node " << new_data.id << " has duplicate child id "
-                   << new_child_id;
-      error_ = stringStream.str();
+      error_ = base::StringPrintf("Node %d has duplicate child id %d",
+                                  new_data.id, new_child_id);
       return false;
     }
     new_child_id_set.insert(new_child_id);
@@ -1399,11 +1393,9 @@ bool AXTree::ComputePendingChangesToNode(const AXNodeData& new_data,
       update_state->invalidate_unignored_cached_values_ids.insert(child_id);
       if (!update_state->IncrementPendingCreateNodeCount(child_id,
                                                          new_data.id)) {
-        std::ostringstream stringStream;
-        stringStream
-            << "Node " << child_id
-            << " is already pending for creation, cannot be a new child";
-        error_ = stringStream.str();
+        error_ = base::StringPrintf(
+            "Node %d is already pending for creation, cannot be a new child",
+            child_id);
         return false;
       }
     }
@@ -1443,12 +1435,9 @@ bool AXTree::ComputePendingChangesToNode(const AXNodeData& new_data,
       // then adding it to a new parent would mean stealing the node from its
       // old parent which hadn't been updated to reflect the change.
       if (update_state->ShouldPendingNodeExistInTree(child_id)) {
-        std::ostringstream stringStream;
-        stringStream
-            << "Node " << child_id
-            << " is not marked for destruction, would be reparented to "
-            << new_data.id;
-        error_ = stringStream.str();
+        error_ = base::StringPrintf(
+            "Node %d is not marked for destruction, would be reparented to %d",
+            child_id, new_data.id);
         return false;
       }
 
@@ -1457,11 +1446,9 @@ bool AXTree::ComputePendingChangesToNode(const AXNodeData& new_data,
       update_state->invalidate_unignored_cached_values_ids.insert(child_id);
       if (!update_state->IncrementPendingCreateNodeCount(child_id,
                                                          new_data.id)) {
-        std::ostringstream stringStream;
-        stringStream
-            << "Node " << child_id
-            << " is already pending for creation, cannot be a new child";
-        error_ = stringStream.str();
+        error_ = base::StringPrintf(
+            "Node %d is already pending for creation, cannot be a new child",
+            child_id);
         return false;
       }
     } else {
@@ -1498,9 +1485,8 @@ bool AXTree::UpdateNode(const AXNodeData& src,
     node->SetData(src);
   } else {
     if (!is_new_root) {
-      std::ostringstream stringStream;
-      stringStream << src.id << " is not in the tree and not the new root";
-      error_ = stringStream.str();
+      error_ = base::StringPrintf("%d is not in the tree and not the new root",
+                                  src.id);
       return false;
     }
 
@@ -1796,9 +1782,7 @@ bool AXTree::ValidatePendingChangesComplete(
   if (!update_state.pending_nodes.empty()) {
     error_ = "Nodes left pending by the update:";
     for (const AXNode::AXID pending_id : update_state.pending_nodes) {
-      std::ostringstream stringStream;
-      stringStream << " " << pending_id;
-      error_ += stringStream.str();
+      error_ += base::StringPrintf(" %d", pending_id);
     }
     return false;
   }
@@ -1813,21 +1797,12 @@ bool AXTree::ValidatePendingChangesComplete(
       const AXNode::AXID pending_id = pair.first;
       const std::unique_ptr<PendingStructureChanges>& data = pair.second;
       if (data->DoesNodeExpectAnyStructureChanges()) {
-        if (data->DoesNodeExpectSubtreeWillBeDestroyed()) {
-          std::ostringstream stringStream;
-          stringStream << " " << pending_id;
-          destroy_subtree_ids += stringStream.str();
-        }
-        if (data->DoesNodeExpectNodeWillBeDestroyed()) {
-          std::ostringstream stringStream;
-          stringStream << " " << pending_id;
-          destroy_node_ids += stringStream.str();
-        }
-        if (data->DoesNodeExpectNodeWillBeCreated()) {
-          std::ostringstream stringStream;
-          stringStream << " " << pending_id;
-          create_node_ids += stringStream.str();
-        }
+        if (data->DoesNodeExpectSubtreeWillBeDestroyed())
+          destroy_subtree_ids += base::StringPrintf(" %d", pending_id);
+        if (data->DoesNodeExpectNodeWillBeDestroyed())
+          destroy_node_ids += base::StringPrintf(" %d", pending_id);
+        if (data->DoesNodeExpectNodeWillBeCreated())
+          create_node_ids += base::StringPrintf(" %d", pending_id);
         has_pending_changes = true;
       }
     }
@@ -1940,11 +1915,9 @@ bool AXTree::CreateNewChildVector(AXNode* node,
         // This is a serious error - nodes should never be reparented.
         // If this case occurs, continue so this node isn't left in an
         // inconsistent state, but return failure at the end.
-        std::ostringstream stringStream;
-        stringStream << "Node " << child->id() << " reparented from "
-                     << (child->parent() ? child->parent()->id() : 0) << " to "
-                     << node->id();
-        error_ = stringStream.str();
+        error_ = base::StringPrintf(
+            "Node %d reparented from %d to %d", child->id(),
+            child->parent() ? child->parent()->id() : 0, node->id());
         success = false;
         continue;
       }
