@@ -307,7 +307,7 @@ class HtmlViewEmbedder {
     final double inverseScale = 1 / scale;
     final Matrix4 scaleMatrix =
         Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
-    headTransform.multiply(scaleMatrix);
+    headTransform = scaleMatrix.multiplied(headTransform);
     head.style.transform = float64ListToCssTransform(headTransform.storage);
   }
 
