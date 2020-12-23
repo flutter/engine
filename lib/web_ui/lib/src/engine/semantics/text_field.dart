@@ -98,8 +98,6 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   }
 }
 
-EditingState previousText = EditingState.empty();
-
 /// Manages semantics objects that represent editable text fields.
 ///
 /// This role is implemented via a content-editable HTML element. This role does
@@ -109,7 +107,6 @@ EditingState previousText = EditingState.empty();
 /// used to detect text box invocation. This is because Safari issues touch
 /// events even when Voiceover is enabled.
 class TextField extends RoleManager {
-  bool previouslyFocused = false;
   TextField(SemanticsObject semanticsObject)
       : super(Role.textField, semanticsObject) {
     final html.HtmlElement editableDomElement =
@@ -120,7 +117,6 @@ class TextField extends RoleManager {
       textEditing,
       editableDomElement,
     );
-    previouslyFocused = semanticsObject.hasFocus;
     _setupDomElement();
   }
 
