@@ -207,7 +207,7 @@ public interface DynamicFeatureManager {
   /**
    * Request that the specified feature module be uninstalled.
    *
-   * Since uninstallation requires significant disk i/o, this method only signals the intent to
+   * <p>Since uninstallation requires significant disk i/o, this method only signals the intent to
    * uninstall. Actual uninstallation (eg, removal of assets and files) may occur at a later time.
    * However, once uninstallation is requested, the dynamic feature should not be used anymore until
    * {@link installDynamicFeature} is called again.
