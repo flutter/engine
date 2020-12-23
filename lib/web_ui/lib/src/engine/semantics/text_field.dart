@@ -193,10 +193,16 @@ class TextField extends RoleManager {
   /// events are present regardless of whether accessibility is enabled or not,
   /// this mode is always enabled.
   void _initializeForWebkit() {
+    // Safari for desktop is also initialized as the other browsers.
+    if (operatingSystem == OperatingSystem.macOs) {
+       _initializeForBlink();
+       return;
+    }
     num? lastTouchStartOffsetX;
     num? lastTouchStartOffsetY;
 
     _textFieldElement.addEventListener('touchstart', (html.Event event) {
+      print('touch start');
       textEditing.useCustomEditableElement(textEditingElement);
       final html.TouchEvent touchEvent = event as html.TouchEvent;
       lastTouchStartOffsetX = touchEvent.changedTouches!.last.client.x;
