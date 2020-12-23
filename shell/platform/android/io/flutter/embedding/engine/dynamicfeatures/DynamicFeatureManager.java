@@ -205,7 +205,12 @@ public interface DynamicFeatureManager {
   public abstract void loadDartLibrary(int loadingUnitId, String moduleName);
 
   /**
-   * Uninstall the specified feature module.
+   * Request that the specified feature module be uninstalled.
+   *
+   * Since uninstallation requires significant disk i/o, this method only signals the intent to
+   * uninstall. Actual uninstallation (eg, removal of assets and files) may occur at a later time.
+   * However, once uninstallation is requested, the dynamic feature should not be used anymore until
+   * {@link installDynamicFeature} is called again.
    *
    * <p>Both parameters are not always necessary to identify which module to uninstall. Asset-only
    * modules do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be passed

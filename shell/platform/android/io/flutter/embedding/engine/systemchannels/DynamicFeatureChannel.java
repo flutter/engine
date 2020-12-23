@@ -61,6 +61,10 @@ public class DynamicFeatureChannel {
               result.success(
                   dynamicFeatureManager.getDynamicFeatureInstallState(loadingUnitId, moduleName));
               break;
+            case "uninstallDynamicFeature":
+              dynamicFeatureManager.uninstallDynamicFeature(loadingUnitId, moduleName);
+              result.success();
+              break;
             default:
               result.notImplemented();
               break;
