@@ -32,15 +32,16 @@ void AssetManager::PushBack(std::unique_ptr<AssetResolver> resolver) {
 void AssetManager::UpdateResolverByType(
     std::unique_ptr<AssetResolver> updated_asset_resolver,
     AssetResolver::AssetResolverType type) {
+  if (updated_asset_resolver == nullptr) {
+    return;
+  }
   bool updated = false;
   std::deque<std::unique_ptr<AssetResolver>> new_resolvers;
   for (auto& old_resolver : resolvers_) {
     if (!updated && old_resolver->GetType() == type) {
-      if (updated_asset_resolver != nullptr) {
-        // Push the replacement updated resolver in place of the old_resolver.
-        new_resolvers.push_back(std::move(updated_asset_resolver));
-        updated = true;
-      }  // Drop the resolver if no replacement available.
+      // Push the replacement updated resolver in place of the old_resolver.
+      new_resolvers.push_back(std::move(updated_asset_resolver));
+      updated = true;
     } else {
       new_resolvers.push_back(std::move(old_resolver));
     }
