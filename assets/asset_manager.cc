@@ -29,24 +29,25 @@ void AssetManager::PushBack(std::unique_ptr<AssetResolver> resolver) {
   resolvers_.push_back(std::move(resolver));
 }
 
-void AssetManager::UpdateResolversByType(
-    std::vector<std::unique_ptr<AssetResolver>>& updated_asset_resolvers,
+void AssetManager::UpdateResolverByType(
+    std::unique_ptr<AssetResolver> updated_asset_resolver,
     AssetResolver::AssetResolverType type) {
-  size_t index = 0;
+  bool updated = false;
   std::deque<std::unique_ptr<AssetResolver>> new_resolvers;
   for (auto& old_resolver : resolvers_) {
-    if (old_resolver->GetType() == type) {
-      if (index < updated_asset_resolvers.size()) {
+    if (!updated && old_resolver->GetType() == type) {
+      if (updated_asset_resolver != nullptr) {
         // Push the replacement updated resolver in place of the old_resolver.
-        new_resolvers.push_back(std::move(updated_asset_resolvers[index++]));
+        new_resolvers.push_back(std::move(updated_asset_resolver));
+        updated = true;
       }  // Drop the resolver if no replacement available.
     } else {
       new_resolvers.push_back(std::move(old_resolver));
     }
   }
-  // Append all extra resolvers to the end.
-  while (index < updated_asset_resolvers.size()) {
-    new_resolvers.push_back(std::move(updated_asset_resolvers[index++]));
+  // Append resolver to the end if not used as a replacement.
+  if (!updated && updated_asset_resolver != nullptr) {
+    new_resolvers.push_back(std::move(updated_asset_resolver));
   }
   resolvers_.swap(new_resolvers);
 }

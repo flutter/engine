@@ -1223,10 +1223,11 @@ void Shell::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
                                         transient);
 }
 
-void Shell::UpdateAssetResolvers(
-    std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers,
+void Shell::UpdateAssetResolverByType(
+    std::unique_ptr<AssetResolver> updated_asset_resolver,
     AssetResolver::AssetResolverType type) {
-  engine_->GetAssetManager()->UpdateResolversByType(asset_resolvers, type);
+  engine_->GetAssetManager()->UpdateResolverByType(
+      std::move(updated_asset_resolver), type);
 }
 
 // |Engine::Delegate|

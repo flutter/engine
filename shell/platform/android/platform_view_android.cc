@@ -363,10 +363,10 @@ void PlatformViewAndroid::LoadDartDeferredLibraryError(
 }
 
 // |PlatformView|
-void PlatformViewAndroid::UpdateAssetResolvers(
-    std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers,
+void PlatformViewAndroid::UpdateAssetResolverByType(
+    std::unique_ptr<AssetResolver> updated_asset_resolver,
     AssetResolver::AssetResolverType type) {
-  delegate_.UpdateAssetResolvers(asset_resolvers, type);
+  delegate_.UpdateAssetResolverByType(std::move(updated_asset_resolver), type);
 }
 
 void PlatformViewAndroid::InstallFirstFrameCallback() {

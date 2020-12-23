@@ -274,11 +274,10 @@ class PlatformView {
                                               bool transient) = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      Replaces asset resolvers handled by the engine's
-    ///             AssetManager that are of the specified `type` with the
-    ///             resolvers provided in `updated_asset_resolvers`. Updatable
-    ///             AssetResolvers are removed and replaced with the next
-    ///             available resolver in `updated_asset_resolvers`.
+    /// @brief      Replaces the asset resolver handled by the engine's
+    ///             AssetManager of the specified `type` with
+    ///             `updated_asset_resolver`. The matching AssetResolver is
+    ///             removed and replaced with `updated_asset_resolvers`.
     ///
     ///             AssetResolvers should be updated when the exisitng resolver
     ///             becomes obsolete and a newer one becomes available that
@@ -286,22 +285,22 @@ class PlatformView {
     ///             existing one. This update process is meant to be performed
     ///             at runtime.
     ///
-    ///             If less resolvers are provided than existing resolvers of
-    ///             matching type, the the extra existing resolvers will
-    ///             be removed without replacement. If more resolvers are
-    ///             provided than existing matching resolvers, then the extra
-    ///             provided resolvers will be added to the end of the
-    ///             AssetManager resolvers queue.
+    ///             If a null resolver is provided, any existing matching
+    ///             resolvers will be removed without replacement. If no
+    ///             matching resolver is found, the provided resolver will be
+    ///             added to the end of the AssetManager resolvers queue. The
+    ///             replacement only occurs with the first matching resolver.
+    ///             Any additional matching resolvers are untouched.
     ///
-    /// @param[in]  asset_resolvers  The asset resolvers to replace updatable
-    ///                              existing resolvers with.
+    /// @param[in]  updated_asset_resolver  The asset resolver to replace the
+    ///             resolver of matching type with.
     ///
     /// @param[in]  type  The type of AssetResolver to update. Only resolvers of
-    ///                   the specified type will be replaced by an updated
+    ///                   the specified type will be replaced by the updated
     ///                   resolver.
     ///
-    virtual void UpdateAssetResolvers(
-        std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers,
+    virtual void UpdateAssetResolverByType(
+        std::unique_ptr<AssetResolver> updated_asset_resolver,
         AssetResolver::AssetResolverType type) = 0;
   };
 
@@ -742,11 +741,10 @@ class PlatformView {
                                             bool transient);
 
   //--------------------------------------------------------------------------
-  /// @brief      Replaces asset resolvers handled by the engine's
-  ///             AssetManager that are of the specified `type` with the
-  ///             resolvers provided in `updated_asset_resolvers`. Updatable
-  ///             AssetResolvers are removed and replaced with the next
-  ///             available resolver in `updated_asset_resolvers`.
+  /// @brief      Replaces the asset resolver handled by the engine's
+  ///             AssetManager of the specified `type` with
+  ///             `updated_asset_resolver`. The matching AssetResolver is
+  ///             removed and replaced with `updated_asset_resolvers`.
   ///
   ///             AssetResolvers should be updated when the exisitng resolver
   ///             becomes obsolete and a newer one becomes available that
@@ -754,22 +752,22 @@ class PlatformView {
   ///             existing one. This update process is meant to be performed
   ///             at runtime.
   ///
-  ///             If less resolvers are provided than existing resolvers of
-  ///             matching type, the the extra existing resolvers will
-  ///             be removed without replacement. If more resolvers are
-  ///             provided than existing matching resolvers, then the extra
-  ///             provided resolvers will be added to the end of the
-  ///             AssetManager resolvers queue.
+  ///             If a null resolver is provided, any existing matching
+  ///             resolvers will be removed without replacement. If no
+  ///             matching resolver is found, the provided resolver will be
+  ///             added to the end of the AssetManager resolvers queue. The
+  ///             replacement only occurs with the first matching resolver.
+  ///             Any additional matching resolvers are untouched.
   ///
-  /// @param[in]  asset_resolvers  The asset resolvers to replace updatable
-  ///                              existing resolvers with.
+  /// @param[in]  updated_asset_resolver  The asset resolver to replace the
+  ///             resolver of matching type with.
   ///
   /// @param[in]  type  The type of AssetResolver to update. Only resolvers of
-  ///                   the specified type will be replaced by an updated
+  ///                   the specified type will be replaced by the updated
   ///                   resolver.
   ///
-  virtual void UpdateAssetResolvers(
-      std::vector<std::unique_ptr<AssetResolver>>& asset_resolvers,
+  virtual void UpdateAssetResolverByType(
+      std::unique_ptr<AssetResolver> updated_asset_resolver,
       AssetResolver::AssetResolverType type);
 
  protected:

@@ -580,11 +580,10 @@ static void UpdateJavaAssetManager(JNIEnv* env,
       env,                                                   // jni environment
       jAssetManager,                                         // asset manager
       fml::jni::JavaStringToString(env, jAssetBundlePath));  // apk asset dir
-  std::vector<std::unique_ptr<AssetResolver>> resolver_vector;
-  resolver_vector.push_back(std::move(asset_resolver));
 
-  ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetResolvers(
-      resolver_vector, AssetResolver::AssetResolverType::kApkAssetProvider);
+  ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetResolverByType(
+      std::move(asset_resolver),
+      AssetResolver::AssetResolverType::kApkAssetProvider);
 }
 
 bool RegisterApi(JNIEnv* env) {
