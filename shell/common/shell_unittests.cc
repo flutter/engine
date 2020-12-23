@@ -2545,7 +2545,7 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeAppends) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
-TEST_F(ShellTest, UpdateAssetResolverByTypeRemoves) {
+TEST_F(ShellTest, UpdateAssetResolverByTypeNull) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
@@ -2574,8 +2574,9 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeRemoves) {
       std::move(nullptr), AssetResolver::AssetResolverType::kApkAssetProvider);
 
   auto resolvers = asset_manager->TakeResolvers();
-  ASSERT_EQ(resolvers.size(), 1ull);
+  ASSERT_EQ(resolvers.size(), 2ull);
   ASSERT_TRUE(resolvers[0]->IsValidAfterAssetManagerChange());
+  ASSERT_TRUE(resolvers[1]->IsValidAfterAssetManagerChange());
 
   DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());

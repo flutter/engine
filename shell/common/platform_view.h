@@ -285,8 +285,7 @@ class PlatformView {
     ///             existing one. This update process is meant to be performed
     ///             at runtime.
     ///
-    ///             If a null resolver is provided, any existing matching
-    ///             resolvers will be removed without replacement. If no
+    ///             If a null resolver is provided, nothing will be done. If no
     ///             matching resolver is found, the provided resolver will be
     ///             added to the end of the AssetManager resolvers queue. The
     ///             replacement only occurs with the first matching resolver.
@@ -752,8 +751,7 @@ class PlatformView {
   ///             existing one. This update process is meant to be performed
   ///             at runtime.
   ///
-  ///             If a null resolver is provided, any existing matching
-  ///             resolvers will be removed without replacement. If no
+  ///             If a null resolver is provided, nothing will be done. If no
   ///             matching resolver is found, the provided resolver will be
   ///             added to the end of the AssetManager resolvers queue. The
   ///             replacement only occurs with the first matching resolver.
