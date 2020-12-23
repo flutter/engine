@@ -431,6 +431,12 @@ class EditingState {
     }
   }
 
+  /// Creates an [EditingState] with empty text and no selection.
+  factory EditingState.empty() {
+    return EditingState(text: '', baseOffset: 0, extentOffset: 0);
+  }
+
+
   /// The counterpart of [EditingState.fromFrameworkMessage]. It generates a Map that
   /// can be sent to Flutter.
   // TODO(mdebbar): Should we get `selectionAffinity` and other properties from flutter's editing state?

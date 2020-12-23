@@ -582,6 +582,10 @@ class SemanticsObject {
       hasAction(ui.SemanticsAction.scrollDown) ||
       hasAction(ui.SemanticsAction.scrollUp);
 
+  bool get hasFocus => hasFlag(ui.SemanticsFlag.isFocused);
+  // bool get looseFocus => hasAction(ui.SemanticsAction.didLoseAccessibilityFocus);
+  // bool get gainFocus => hasAction(ui.SemanticsAction.didGainAccessibilityFocus);
+
   /// Whether this object represents a hotizontally scrollable area.
   bool get isHorizontalScrollContainer =>
       hasAction(ui.SemanticsAction.scrollLeft) ||
@@ -732,6 +736,9 @@ class SemanticsObject {
     // Apply updates to the DOM.
     _updateRoles();
     _updateChildrenInTraversalOrder();
+
+
+    // print('has focus: ${hasFocus}');
 
     // All properties that affect positioning and sizing are checked together
     // any one of them triggers position and size recomputation.

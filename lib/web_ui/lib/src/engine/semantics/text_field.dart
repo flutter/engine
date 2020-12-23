@@ -31,12 +31,44 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   @override
   void disable() {
     // We don't want to remove the DOM element because the caller is responsible
-    // for that.
-    //
-    // Remove focus from the editable element to cause the keyboard to hide.
+    // for that. However we still want to stop editing, cleanup the handlers.
+    assert(isEnabled);
+
+    isEnabled = false;
+    _style = null;
+    _geometry = null;
+
+    for (int i = 0; i < _subscriptions.length; i++) {
+      _subscriptions[i].cancel();
+    }
+    _subscriptions.clear();
+    _lastEditingState = null;
+
+    // If the text element still has focus, remove focus from the editable
+    // element to cause the keyboard to hide.
     // Otherwise, the keyboard stays on screen even when the user navigates to
     // a different screen (e.g. by hitting the "back" button).
-    domElement.blur();
+    if (operatingSystem == OperatingSystem.android ||
+        operatingSystem == OperatingSystem.iOs) {
+      domElement.blur();
+    }
+  }
+
+  @override
+  void addEventHandlers() {
+    if (_inputConfiguration.autofillGroup != null) {
+      _subscriptions
+          .addAll(_inputConfiguration.autofillGroup!.addInputEventListeners());
+    }
+
+    // Subscribe to text and selection changes.
+    _subscriptions.add(domElement.onInput.listen(_handleChange));
+
+    _subscriptions.add(domElement.onKeyDown.listen(_maybeSendAction));
+
+    _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
+
+    preventDefaultForMouseEvents();
   }
 
   @override
@@ -55,8 +87,6 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
     _inputConfiguration = inputConfig;
     _onChange = onChange;
     _onAction = onAction;
-
-    domElement.focus();
   }
 
   @override
@@ -68,6 +98,8 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   }
 }
 
+EditingState previousText = EditingState.empty();
+
 /// Manages semantics objects that represent editable text fields.
 ///
 /// This role is implemented via a content-editable HTML element. This role does
@@ -77,6 +109,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 /// used to detect text box invocation. This is because Safari issues touch
 /// events even when Voiceover is enabled.
 class TextField extends RoleManager {
+  bool previouslyFocused = false;
   TextField(SemanticsObject semanticsObject)
       : super(Role.textField, semanticsObject) {
     final html.HtmlElement editableDomElement =
@@ -87,11 +120,12 @@ class TextField extends RoleManager {
       textEditing,
       editableDomElement,
     );
+    previouslyFocused = semanticsObject.hasFocus;
     _setupDomElement();
   }
 
   SemanticsTextEditingStrategy? textEditingElement;
-  html.Element get _textFieldElement => textEditingElement!.domElement;
+  html.HtmlElement get _textFieldElement => textEditingElement!.domElement;
 
   void _setupDomElement() {
     // On iOS, even though the semantic text field is transparent, the cursor
@@ -148,8 +182,8 @@ class TextField extends RoleManager {
       }
 
       textEditing.useCustomEditableElement(textEditingElement);
-      EnginePlatformDispatcher.instance
-          .invokeOnSemanticsAction(semanticsObject.id, ui.SemanticsAction.tap, null);
+      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+          semanticsObject.id, ui.SemanticsAction.tap, null);
     });
   }
 
