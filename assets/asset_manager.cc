@@ -47,7 +47,7 @@ void AssetManager::UpdateResolverByType(
     }
   }
   // Append resolver to the end if not used as a replacement.
-  if (!updated && updated_asset_resolver != nullptr) {
+  if (!updated) {
     new_resolvers.push_back(std::move(updated_asset_resolver));
   }
   resolvers_.swap(new_resolvers);

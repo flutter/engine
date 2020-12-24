@@ -279,7 +279,7 @@ class PlatformView {
     ///             `updated_asset_resolver`. The matching AssetResolver is
     ///             removed and replaced with `updated_asset_resolvers`.
     ///
-    ///             AssetResolvers should be updated when the exisitng resolver
+    ///             AssetResolvers should be updated when the existing resolver
     ///             becomes obsolete and a newer one becomes available that
     ///             provides updated access to the same type of assets as the
     ///             existing one. This update process is meant to be performed
@@ -745,7 +745,7 @@ class PlatformView {
   ///             `updated_asset_resolver`. The matching AssetResolver is
   ///             removed and replaced with `updated_asset_resolvers`.
   ///
-  ///             AssetResolvers should be updated when the exisitng resolver
+  ///             AssetResolvers should be updated when the existing resolver
   ///             becomes obsolete and a newer one becomes available that
   ///             provides updated access to the same type of assets as the
   ///             existing one. This update process is meant to be performed
