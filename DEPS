@@ -358,7 +358,6 @@ deps = {
    Var('dart_git') + '/root_certificates.git' + '@' + Var('dart_root_certificates_rev'),
 
   'src/third_party/skia':
-   #Var('skia_git') + '/skia.git' + '@' +  Var('skia_revision'),
    Var('liguisheng_skia_git') + '@' + 'de5307125a9f10a5665a90008e82b69c2709fb88',
 
   'src/third_party/ocmock':
