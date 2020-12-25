@@ -12,9 +12,14 @@ size_t MessageSerializable::GetSerializableTag() const {
   return 0;
 };
 
-Message::Message() = default;
+Message::Message() : buffer_(nullptr) {}
 
-Message::~Message() = default;
+Message::~Message() {
+  if (buffer_) {
+    free(buffer_);
+    buffer_ = nullptr;
+  }
+}
 
 static uint32_t NextPowerOfTwoSize(uint32_t x) {
   if (x == 0) {
