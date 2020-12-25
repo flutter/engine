@@ -21,6 +21,7 @@ Message::~Message() {
   }
 }
 
+
 static uint32_t NextPowerOfTwoSize(uint32_t x) {
   if (x == 0) {
     return 1;
