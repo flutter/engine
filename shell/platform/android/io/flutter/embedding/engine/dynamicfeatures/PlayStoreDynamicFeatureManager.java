@@ -389,7 +389,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
         loadingUnitId, searchPaths.toArray(new String[apkPaths.size()]));
   }
 
-  public void uninstallFeature(int loadingUnitId, String moduleName) {
+  public void uninstallDynamicFeature(int loadingUnitId, String moduleName) {
     String resolvedModuleName =
         moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {

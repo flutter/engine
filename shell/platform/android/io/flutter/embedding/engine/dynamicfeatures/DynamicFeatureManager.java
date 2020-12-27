@@ -218,7 +218,7 @@ public interface DynamicFeatureManager {
    * moduleName based on the loadingUnitId. This resolution is done if moduleName is null. At least
    * one of loadingUnitId or moduleName must be valid or non-null.
    */
-  public abstract void uninstallFeature(int loadingUnitId, String moduleName);
+  public abstract void uninstallDynamicFeature(int loadingUnitId, String moduleName);
 
   /**
    * Cleans up and releases resources. This object is no longer usable after calling this method.
