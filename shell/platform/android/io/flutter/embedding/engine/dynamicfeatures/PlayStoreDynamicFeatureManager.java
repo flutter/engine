@@ -146,7 +146,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) install requires user confirmation.",
                       sessionIdToName.get(sessionId), sessionId));
-              sessionIdToState.put(sessionId, "requires_user_confirmation");
+              sessionIdToState.put(sessionId, "requiresUserConfirmation");
               break;
             }
           case SplitInstallSessionStatus.DOWNLOADING:
@@ -296,10 +296,13 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
       Log.e(
           TAG,
           "Dynamic feature module name was null and could not be resolved from loading unit id.");
-      return null;
+      return "unknown";
     }
     if (!nameToSessionId.containsKey(resolvedModuleName)) {
-      return null;
+      if (splitInstallManager.getInstalledModules().contains(resolvedModuleName)) {
+        return "installedPendingLoad";
+      }
+      return "unknown";
     }
     int sessionId = nameToSessionId.get(resolvedModuleName);
     return sessionIdToState.get(sessionId);
@@ -398,6 +401,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     List<String> modules_to_uninstall = new ArrayList<>();
     modules_to_uninstall.add(resolvedModuleName);
     splitInstallManager.deferredUninstall(modules_to_uninstall);
+    sessionIdToState.delete(nameToSessionId.get(resolvedModuleName));
   }
 
   public void destroy() {
