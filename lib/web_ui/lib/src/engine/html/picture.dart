@@ -52,7 +52,7 @@ List<_PaintRequest> _paintQueue = <_PaintRequest>[];
 
 void _recycleCanvas(EngineCanvas? canvas) {
   /// If a canvas is in the paint queue it maybe be recycled. To
-  /// prevent subsequence dispose recycling again check.
+  /// prevent subsequent dispose recycling again check.
   if (canvas != null && _recycledCanvases.contains(canvas)) {
     return;
   }
