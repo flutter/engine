@@ -163,4 +163,11 @@ public class PlayStoreDynamicFeatureManagerTest {
 
     assertEquals(jni.assetManager, assetManager);
   }
+
+  @Test
+  public void stateGetterReturnsUnknowByDefault() throws NameNotFoundException {
+    TestPlayStoreDynamicFeatureManager playStoreManager =
+        new TestPlayStoreDynamicFeatureManager(spyContext, jni);
+    assetEquals(playStoreManager.getDynamicFeatureInstallState(-1, "invalidName"), "unknown");
+  }
 }

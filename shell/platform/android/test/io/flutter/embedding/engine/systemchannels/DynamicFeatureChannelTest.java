@@ -42,7 +42,7 @@ class TestDynamicFeatureManager implements DynamicFeatureManager {
 
   public void loadDartLibrary(int loadingUnitId, String moduleName) {}
 
-  public void uninstallFeature(int loadingUnitId, String moduleName) {}
+  public void uninstallDynamicFeature(int loadingUnitId, String moduleName) {}
 
   public void destroy() {}
 }
