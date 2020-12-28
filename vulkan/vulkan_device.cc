@@ -288,9 +288,9 @@ int VulkanDevice::ChooseSurfaceFormat(const VulkanSurface& surface,
     return -1;
   }
 
-  std::vector<VkSurfaceFormatKHR> formats; 
+  std::vector<VkSurfaceFormatKHR> formats;
   formats.resize(format_count);
-  
+
   if (VK_CALL_LOG_ERROR(vk.GetPhysicalDeviceSurfaceFormatsKHR(
           physical_device_, surface.Handle(), &format_count, formats.data())) !=
       VK_SUCCESS) {
