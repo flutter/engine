@@ -168,6 +168,6 @@ public class PlayStoreDynamicFeatureManagerTest {
   public void stateGetterReturnsUnknowByDefault() throws NameNotFoundException {
     TestPlayStoreDynamicFeatureManager playStoreManager =
         new TestPlayStoreDynamicFeatureManager(spyContext, jni);
-    assetEquals(playStoreManager.getDynamicFeatureInstallState(-1, "invalidName"), "unknown");
+    assertEquals(playStoreManager.getDynamicFeatureInstallState(-1, "invalidName"), "unknown");
   }
 }
