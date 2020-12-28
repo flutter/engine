@@ -76,7 +76,7 @@ static void BM_PathVolatilityTracker(benchmark::State& state) {
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
 
-  VolatilePathTracker tracker(task_runners.GetUITaskRunner());
+  VolatilePathTracker tracker(task_runners.GetUITaskRunner(), true);
 
   while (state.KeepRunning()) {
     std::vector<std::shared_ptr<VolatilePathTracker::TrackedPath>> paths;

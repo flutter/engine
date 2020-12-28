@@ -1,4 +1,4 @@
-Signature: ddc1a9f278a5de49df3f3deb4a0f67d3
+Signature: 8fdf3837f4f762717eadfe23c8020946
 
 UNUSED LICENSES:
 
@@ -773,7 +773,6 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLLayout.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLModifiers.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLModifiersDeclaration.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLNop.h
-FILE: ../../../third_party/skia/src/sksl/ir/SkSLNullLiteral.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPostfixExpression.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPrefixExpression.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLProgram.h
@@ -1474,8 +1473,8 @@ FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_geom.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_pipeline.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_public.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_runtime.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
 FILE: ../../../third_party/skia/src/sksl/sksl_fp_raw.sksl
@@ -1483,8 +1482,8 @@ FILE: ../../../third_party/skia/src/sksl/sksl_frag.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_geom.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_gpu.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_interp.sksl
-FILE: ../../../third_party/skia/src/sksl/sksl_pipeline.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_public.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_runtime.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_vert.sksl
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2011 Google Inc. All rights reserved.
@@ -4075,6 +4074,7 @@ FILE: ../../../third_party/skia/gm/crbug_1073670.cpp
 FILE: ../../../third_party/skia/gm/crbug_1086705.cpp
 FILE: ../../../third_party/skia/gm/crbug_1113794.cpp
 FILE: ../../../third_party/skia/gm/exoticformats.cpp
+FILE: ../../../third_party/skia/gm/rsxtext.cpp
 FILE: ../../../third_party/skia/gm/skbug_9819.cpp
 FILE: ../../../third_party/skia/gm/strokerect_anisotropic.cpp
 FILE: ../../../third_party/skia/gm/verifiers/gmverifier.cpp
@@ -4165,6 +4165,7 @@ FILE: ../../../third_party/skia/src/core/SkMarkerStack.cpp
 FILE: ../../../third_party/skia/src/core/SkMarkerStack.h
 FILE: ../../../third_party/skia/src/core/SkMipmapBuilder.h
 FILE: ../../../third_party/skia/src/core/SkOpts_erms.cpp
+FILE: ../../../third_party/skia/src/core/SkSamplingPriv.h
 FILE: ../../../third_party/skia/src/core/SkVerticesPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.h

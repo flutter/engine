@@ -7,17 +7,25 @@
 namespace flutter {
 
 VolatilePathTracker::VolatilePathTracker(
-    fml::RefPtr<fml::TaskRunner> ui_task_runner)
-    : ui_task_runner_(ui_task_runner) {}
+    fml::RefPtr<fml::TaskRunner> ui_task_runner,
+    bool enabled)
+    : ui_task_runner_(ui_task_runner), enabled_(enabled) {}
 
 void VolatilePathTracker::Insert(std::shared_ptr<TrackedPath> path) {
   FML_DCHECK(ui_task_runner_->RunsTasksOnCurrentThread());
   FML_DCHECK(path);
   FML_DCHECK(path->path.isVolatile());
+  if (!enabled_) {
+    path->path.setIsVolatile(false);
+    return;
+  }
   paths_.insert(path);
 }
 
 void VolatilePathTracker::Erase(std::shared_ptr<TrackedPath> path) {
+  if (!enabled_) {
+    return;
+  }
   FML_DCHECK(path);
   if (ui_task_runner_->RunsTasksOnCurrentThread()) {
     paths_.erase(path);
@@ -31,6 +39,9 @@ void VolatilePathTracker::Erase(std::shared_ptr<TrackedPath> path) {
 
 void VolatilePathTracker::OnFrame() {
   FML_DCHECK(ui_task_runner_->RunsTasksOnCurrentThread());
+  if (!enabled_) {
+    return;
+  }
   std::string total_count = std::to_string(paths_.size());
   TRACE_EVENT1("flutter", "VolatilePathTracker::OnFrame", "total_count",
                total_count.c_str());
@@ -38,7 +49,7 @@ void VolatilePathTracker::OnFrame() {
   Drain();
 
   std::set<std::shared_ptr<TrackedPath>> surviving_paths_;
-  for (const std::shared_ptr<TrackedPath> path : paths_) {
+  for (const std::shared_ptr<TrackedPath>& path : paths_) {
     path->frame_count++;
     if (path->frame_count >= kFramesOfVolatility) {
       path->path.setIsVolatile(false);
@@ -65,7 +76,7 @@ void VolatilePathTracker::Drain() {
     std::string count = std::to_string(paths_to_remove.size());
     TRACE_EVENT_INSTANT1("flutter", "VolatilePathTracker::Drain", "count",
                          count.c_str());
-    for (auto path : paths_to_remove) {
+    for (auto& path : paths_to_remove) {
       paths_.erase(path);
     }
   }
