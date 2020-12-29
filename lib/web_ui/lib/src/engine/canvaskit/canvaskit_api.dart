@@ -1409,7 +1409,7 @@ class SkCanvas {
   );
   external void drawPoints(
     SkPointMode pointMode,
-    Float32List points,
+    List<Float32List> points,
     SkPaint paint,
   );
   external void drawRRect(
