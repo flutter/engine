@@ -166,6 +166,9 @@ public class PlayStoreDynamicFeatureManagerTest {
 
   @Test
   public void stateGetterReturnsUnknowByDefault() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+    Context spyContext = spy(RuntimeEnvironment.systemContext);
+    doReturn(spyContext).when(spyContext).createPackageContext(any(), anyInt());
     TestPlayStoreDynamicFeatureManager playStoreManager =
         new TestPlayStoreDynamicFeatureManager(spyContext, jni);
     assertEquals(playStoreManager.getDynamicFeatureInstallState(-1, "invalidName"), "unknown");
