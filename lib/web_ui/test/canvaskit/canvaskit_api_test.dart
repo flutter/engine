@@ -1057,10 +1057,7 @@ void _canvasTests() {
       canvasKit.PointMode.Lines,
       <Float32List>[
         Float32List.fromList([0, 0]),
-        Float32List.fromList([
-          10,
-          10,
-        ]),
+        Float32List.fromList([10, 10]),
         Float32List.fromList([0, 10]),
       ],
       SkPaint(),
