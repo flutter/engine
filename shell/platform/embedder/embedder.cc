@@ -136,10 +136,9 @@ static bool IsMetalRendererConfigValid(const FlutterRendererConfig* config) {
   bool command_queue =
       SAFE_ACCESS(metal_config, present_command_queue, nullptr);
 
-  bool present =
-      SAFE_ACCESS(metal_config, present_drawable_texture_callback, nullptr);
+  bool present = SAFE_ACCESS(metal_config, present_drawable_callback, nullptr);
   bool get_texture =
-      SAFE_ACCESS(metal_config, get_next_drawable_texture_callback, nullptr);
+      SAFE_ACCESS(metal_config, get_next_drawable_callback, nullptr);
 
   return device && command_queue && present && get_texture;
 }
@@ -314,16 +313,16 @@ InferMetalPlatformViewCreationCallback(
 
 #ifdef SHELL_ENABLE_METAL
   std::function<bool(flutter::GPUMTLTextureInfo texture)> metal_present =
-      [ptr = config->metal.present_drawable_texture_callback,
+      [ptr = config->metal.present_drawable_callback,
        user_data](flutter::GPUMTLTextureInfo texture) {
         FlutterMetalTexture embedder_texture;
         embedder_texture.struct_size = sizeof(FlutterMetalTexture);
-        embedder_texture.texture =
-            reinterpret_cast<FlutterMetalTextureBuffer*>(texture.texture);
+        embedder_texture.texture = texture.texture;
+        embedder_texture.texture_id = texture.texture_id;
         return ptr(user_data, &embedder_texture);
       };
   auto metal_get_texture =
-      [ptr = config->metal.get_next_drawable_texture_callback,
+      [ptr = config->metal.get_next_drawable_callback,
        user_data](const SkISize& frame_size) -> flutter::GPUMTLTextureInfo {
     FlutterFrameInfo frame_info = {};
     frame_info.struct_size = sizeof(FlutterFrameInfo);

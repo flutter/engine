@@ -387,7 +387,7 @@ void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
       metal_context.GetTestMetalContext()->GetMetalDevice();
   metal_renderer_config_.present_command_queue =
       metal_context.GetTestMetalContext()->GetMetalCommandQueue();
-  metal_renderer_config_.get_next_drawable_texture_callback =
+  metal_renderer_config_.get_next_drawable_callback =
       [](void* user_data, const FlutterFrameInfo* frame_info) {
         EmbedderTestContextMetal* metal_context =
             reinterpret_cast<EmbedderTestContextMetal*>(user_data);
@@ -400,10 +400,10 @@ void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
         texture.struct_size = sizeof(FlutterMetalTexture);
         texture.texture_id = texture_info.texture_id;
         texture.texture =
-            reinterpret_cast<FlutterMetalTextureBuffer*>(texture_info.texture);
+            reinterpret_cast<FlutterMetalTextureHandle>(texture_info.texture);
         return texture;
       };
-  metal_renderer_config_.present_drawable_texture_callback =
+  metal_renderer_config_.present_drawable_callback =
       [](void* user_data, const FlutterMetalTexture* texture) -> bool {
     EmbedderTestContextMetal* metal_context =
         reinterpret_cast<EmbedderTestContextMetal*>(user_data);

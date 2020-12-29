@@ -24,10 +24,10 @@ typedef void* GPUMTLCommandQueueHandle;
 typedef void* GPUCAMetalLayerHandle;
 
 // expected to be id<MTLTexture>
-typedef void* GPUMTLTextureHandle;
+typedef const void* GPUMTLTextureHandle;
 
 struct GPUMTLTextureInfo {
-  intptr_t texture_id;
+  int64_t texture_id;
   GPUMTLTextureHandle texture;
 };
 

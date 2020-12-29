@@ -439,13 +439,13 @@ typedef struct {
 } FlutterOpenGLRendererConfig;
 
 /// Alias for id<MTLDevice>.
-typedef const void* FlutterMetalDevice;
+typedef const void* FlutterMetalDeviceHandle;
 
 /// Alias for id<MTLCommandQueue>.
-typedef const void* FlutterMetalCommandQueue;
+typedef const void* FlutterMetalCommandQueueHandle;
 
 /// Alias for id<MTLTexture>.
-typedef const void* FlutterMetalTextureBuffer;
+typedef const void* FlutterMetalTextureHandle;
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterMetalTexture).
@@ -457,7 +457,7 @@ typedef struct {
   int64_t texture_id;
   /// Handle to the MTLTexture that is owned by the embedder. Engine will render
   /// the frame into this texture.
-  FlutterMetalTextureBuffer* texture;
+  FlutterMetalTextureHandle texture;
 } FlutterMetalTexture;
 
 /// Callback for when a metal texture is requested.
@@ -476,15 +476,15 @@ typedef struct {
   /// The size of this struct. Must be sizeof(FlutterMetalRendererConfig).
   size_t struct_size;
   /// Alias for id<MTLDevice>.
-  FlutterMetalDevice device;
+  FlutterMetalDeviceHandle device;
   /// Alias for id<MTLCommandQueue>.
-  FlutterMetalCommandQueue present_command_queue;
+  FlutterMetalCommandQueueHandle present_command_queue;
   /// The callback that gets invoked when the engine requests the embedder for a
   /// texture to render to.
-  FlutterMetalTextureCallback get_next_drawable_texture_callback;
+  FlutterMetalTextureCallback get_next_drawable_callback;
   /// The callback presented to the embedder to present a fully populated metal
   /// texture to the user.
-  FlutterMetalPresentCallback present_drawable_texture_callback;
+  FlutterMetalPresentCallback present_drawable_callback;
 } FlutterMetalRendererConfig;
 
 typedef struct {
