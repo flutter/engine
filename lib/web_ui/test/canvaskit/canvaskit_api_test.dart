@@ -1055,7 +1055,14 @@ void _canvasTests() {
   test('drawPoints', () {
     canvas.drawPoints(
       canvasKit.PointMode.Lines,
-      Float32List.fromList([0, 0, 10, 10, 0, 10]),
+      <Float32List>[
+        Float32List.fromList([0, 0]),
+        Float32List.fromList([
+          10,
+          10,
+        ]),
+        Float32List.fromList([0, 10]),
+      ],
       SkPaint(),
     );
   });
