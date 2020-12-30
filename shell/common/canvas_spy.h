@@ -132,7 +132,7 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
   void onDrawImage(const SkImage*,
                    SkScalar left,
                    SkScalar top,
-                    const SkPaint*) override;
+                   const SkPaint*) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawImageRect(const SkImage*,
