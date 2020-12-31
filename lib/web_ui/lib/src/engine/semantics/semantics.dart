@@ -927,6 +927,7 @@ class SemanticsObject {
           ..height = '${rect.height}px';
       }
     } else {
+      // This condition creates a issue in scrolling.
       if (isDesktop) {
         element.style
           ..removeProperty('transform-origin')
