@@ -641,7 +641,13 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   void _addPlaceholder(SkPlaceholderStyleProperties placeholderStyle) {
     _commands.add(_ParagraphCommand.addPlaceholder(placeholderStyle));
-    _paragraphBuilder.addPlaceholder(placeholderStyle);
+    _paragraphBuilder.addPlaceholder(
+      placeholderStyle.width,
+      placeholderStyle.height,
+      placeholderStyle.alignment,
+      placeholderStyle.baseline,
+      placeholderStyle.offset,
+    );
   }
 
   static SkPlaceholderStyleProperties toSkPlaceholderStyle(
