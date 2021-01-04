@@ -166,7 +166,14 @@ void PlatformView::LoadDartDeferredLibrary(
     std::unique_ptr<const fml::Mapping> snapshot_data,
     std::unique_ptr<const fml::Mapping> snapshot_instructions) {}
 
-void PlatformView::UpdateAssetManager(
-    std::shared_ptr<AssetManager> asset_manager) {}
+void PlatformView::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                                const std::string error_message,
+                                                bool transient) {}
+
+void PlatformView::UpdateAssetResolverByType(
+    std::unique_ptr<AssetResolver> updated_asset_resolver,
+    AssetResolver::AssetResolverType type) {
+  delegate_.UpdateAssetResolverByType(std::move(updated_asset_resolver), type);
+}
 
 }  // namespace flutter
