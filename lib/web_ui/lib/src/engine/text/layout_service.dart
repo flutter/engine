@@ -353,6 +353,13 @@ abstract class RangeBox {
   /// The coordinates of the resulting [ui.TextBox] are relative to the
   /// paragraph, not to the line.
   ui.TextBox toTextBox(EngineLineMetrics line);
+
+  /// Returns the text position within this box's range that's closest to the
+  /// given [x] offset.
+  ///
+  /// The [x] offset is expected to be relative to the left edge of the line,
+  /// just like the coordinates of this box.
+  ui.TextPosition getPositionForX(double x);
 }
 
 /// Represents a box for a [PlaceholderSpan].
@@ -420,6 +427,16 @@ class PlaceholderBox extends RangeBox {
       right,
       top + placeholder.height,
       direction,
+    );
+  }
+
+  @override
+  ui.TextPosition getPositionForX(double x) {
+    // See if `x` is closer to the left edge or the right edge of the box.
+    final bool closerToLeft = x - left < right - x;
+    return ui.TextPosition(
+      offset: start.index,
+      affinity: closerToLeft ? ui.TextAffinity.upstream : ui.TextAffinity.downstream,
     );
   }
 }
@@ -513,13 +530,9 @@ class SpanBox extends RangeBox {
     );
   }
 
-  /// Returns the text position within this box's range that's closest to the
-  /// given [x] offset.
-  ///
-  /// The [x] offset is expected to be relative to the left edge of the line,
-  /// just like the coordinates of this box.
+  @override
   ui.TextPosition getPositionForX(double x) {
-    spanometer.currentSpan = span as FlatTextSpan;
+    spanometer.currentSpan = span;
 
     // Make `x` relative to this box.
     x -= left;
