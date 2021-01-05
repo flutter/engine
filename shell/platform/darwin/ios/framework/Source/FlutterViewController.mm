@@ -1487,7 +1487,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     flutter::PointerData pointer_data = [self generatePointerDataForMouse];
 
     pointer_data.signal_kind = flutter::PointerData::SignalKind::kNone;
-    packet->SetPointerData(0 /* index */, pointer_data);
+    packet->SetPointerData(/*index=*/0, pointer_data);
 
     [_engine.get() dispatchPointerDataPacket:std::move(packet)];
   }
