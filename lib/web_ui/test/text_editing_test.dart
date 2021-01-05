@@ -365,6 +365,13 @@ void testMain() {
     InputElement testInputElement;
     HybridTextEditing testTextEditing;
 
+    final PlatformMessagesSpy spy = PlatformMessagesSpy();
+
+    /// Emulates sending of a message by the framework to the engine.
+    void sendFrameworkMessage(dynamic message) {
+      textEditing.channel.handleTextInput(message, (ByteData data) {});
+    }
+
     setUp(() {
       testInputElement = InputElement();
       testTextEditing = HybridTextEditing();
@@ -375,18 +382,77 @@ void testMain() {
       testInputElement = null;
     });
 
+    test('autofill form lifecycle works', () async {
+      editingElement = SemanticsTextEditingStrategy(
+          SemanticsObject(5, null), testTextEditing, testInputElement);
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'username',
+              autofillHintsForFields: [
+            'username',
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // The transform is changed. For example after a validation error, red
+      // line appeared under the input field.
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
+      // Form is added to DOM.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      // Confirm that [HybridTextEditing] didn't send any messages.
+      expect(spy.messages, isEmpty);
+      // Form stays on the DOM until autofill context is finalized.
+      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(formsOnTheDom, hasLength(1));
+
+      const MethodCall finishAutofillContext =
+          MethodCall('TextInput.finishAutofillContext', false);
+      sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
+
+      // Form element is removed from DOM.
+      expect(document.getElementsByTagName('form'), hasLength(0));
+      expect(formsOnTheDom, hasLength(0));
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: browserEngine == BrowserEngine.edge);
+
     test('Does not accept dom elements of a wrong type', () {
       // A regular <span> shouldn't be accepted.
       final HtmlElement span = SpanElement();
       expect(
-        () => SemanticsTextEditingStrategy(HybridTextEditing(), span),
+        () => SemanticsTextEditingStrategy(
+            SemanticsObject(5, null), HybridTextEditing(), span),
         throwsAssertionError,
       );
     });
 
-    test('Re-acquire focus', () {
-      editingElement =
-          SemanticsTextEditingStrategy(HybridTextEditing(), testInputElement);
+    test('Do not re-acquire focus', () {
+      editingElement = SemanticsTextEditingStrategy(
+          SemanticsObject(5, null), HybridTextEditing(), testInputElement);
 
       expect(document.activeElement, document.body);
 
@@ -398,21 +464,18 @@ void testMain() {
       );
       expect(document.activeElement, testInputElement);
 
-      // The input should refocus after blur.
+      // The input should not refocus after blur.
       editingElement.domElement.blur();
-      expect(document.activeElement, editingElement.domElement);
+      expect(document.activeElement, document.body);
 
       editingElement.disable();
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.webkit ||
-            browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.firefox));
+        skip: browserEngine == BrowserEngine.edge);
 
     test('Does not dispose and recreate dom elements in persistent mode', () {
-      editingElement =
-          SemanticsTextEditingStrategy(HybridTextEditing(), testInputElement);
+      editingElement = SemanticsTextEditingStrategy(
+          SemanticsObject(5, null), HybridTextEditing(), testInputElement);
 
       // The DOM element should've been eagerly created.
       expect(testInputElement, isNotNull);
@@ -443,21 +506,22 @@ void testMain() {
       // It doesn't remove the DOM element.
       expect(editingElement.domElement, testInputElement);
       expect(document.body.contains(editingElement.domElement), isTrue);
-      // The textArea does not lose focus.
-      // Even though this passes on manual tests it does not work on
-      // Firefox automated unit tests.
-      if (browserEngine != BrowserEngine.firefox) {
+      // Editing element is not enabled.
+      expect(editingElement.isEnabled, isFalse);
+      // For mobile browsers `blur` is called to close the onscreen keyboard.
+      if (operatingSystem == OperatingSystem.iOs &&
+          browserEngine == BrowserEngine.webkit) {
+        expect(document.activeElement, document.body);
+      } else {
         expect(document.activeElement, editingElement.domElement);
       }
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.webkit ||
-            browserEngine == BrowserEngine.edge));
+        skip: browserEngine == BrowserEngine.edge);
 
     test('Refocuses when setting editing state', () {
-      editingElement =
-          SemanticsTextEditingStrategy(HybridTextEditing(), testInputElement);
+      editingElement = SemanticsTextEditingStrategy(
+          SemanticsObject(5, null), HybridTextEditing(), testInputElement);
 
       document.body.append(testInputElement);
       editingElement.enable(
@@ -471,15 +535,13 @@ void testMain() {
 
       editingElement.disable();
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.webkit ||
-            browserEngine == BrowserEngine.edge));
+        skip: browserEngine == BrowserEngine.edge);
 
     test('Works in multi-line mode', () {
       final TextAreaElement textarea = TextAreaElement();
-      editingElement =
-          SemanticsTextEditingStrategy(HybridTextEditing(), textarea);
+      editingElement = SemanticsTextEditingStrategy(
+          SemanticsObject(5, null), HybridTextEditing(), textarea);
 
       expect(editingElement.domElement, textarea);
       expect(document.activeElement, document.body);
@@ -504,21 +566,17 @@ void testMain() {
       expect(document.activeElement, textarea);
 
       textarea.blur();
-      // The textArea does not lose focus.
-      // Even though this passes on manual tests it does not work on
-      // Firefox automated unit tests.
-      if (browserEngine != BrowserEngine.firefox) {
-        expect(document.activeElement, textarea);
-      }
+      // The textArea loses focus.
+      expect(document.activeElement, document.body);
 
       editingElement.disable();
       // It doesn't remove the textarea from the DOM.
       expect(document.body.contains(editingElement.domElement), isTrue);
+      // Editing element is not enabled.
+      expect(editingElement.isEnabled, isFalse);
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.webkit ||
-            browserEngine == BrowserEngine.edge));
+        skip: browserEngine == BrowserEngine.edge);
 
     test('Does not position or size its DOM element', () {
       editingElement.enable(
@@ -706,7 +764,10 @@ void testMain() {
       expect(spy.messages, isEmpty);
     });
 
-    test('do not close connection on blur', () async {
+    test('focus and connection with blur', () async {
+      // In all the desktop browsers we are keeping the connection
+      // open, keep the text editing element focused if it receives a blur
+      // event.
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -731,19 +792,26 @@ void testMain() {
       // DOM element is blurred.
       textEditing.editingElement.domElement.blur();
 
-      expect(spy.messages, hasLength(0));
-
-      // DOM element still has focus.
-      // Even though this passes on manual tests it does not work on
-      // Firefox automated unit tests.
-      if (browserEngine != BrowserEngine.firefox) {
+      // For ios-safari the connection is closed.
+      if (browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.iOs) {
+        expect(spy.messages, hasLength(1));
+        expect(spy.messages[0].channel, 'flutter/textinput');
+        expect(
+            spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
+        await Future<void>.delayed(Duration.zero);
+        // DOM element loses the focus.
+        expect(document.activeElement, document.body);
+      } else {
+        // No connection close message sent.
+        expect(spy.messages, hasLength(0));
+        await Future<void>.delayed(Duration.zero);
+        // DOM element still keeps the focus.
         expect(document.activeElement, textEditing.editingElement.domElement);
       }
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.webkit ||
-            browserEngine == BrowserEngine.edge));
+        skip: (browserEngine == BrowserEngine.edge));
 
     test('finishAutofillContext closes connection no autofill element',
         () async {
@@ -785,10 +853,8 @@ void testMain() {
       // Input element is removed from DOM.
       expect(document.getElementsByTagName('input'), hasLength(0));
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.webkit ||
-            browserEngine == BrowserEngine.edge));
+        skip: browserEngine == BrowserEngine.edge);
 
     test('finishAutofillContext removes form from DOM', () async {
       // Create a configuration with an AutofillGroup of four text fields.
@@ -816,6 +882,13 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
+      // The transform is changed. For example after a validation error, red
+      // line appeared under the input field.
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
       // Form is added to DOM.
       expect(document.getElementsByTagName('form'), isNotEmpty);
 
@@ -836,10 +909,8 @@ void testMain() {
       expect(document.getElementsByTagName('form'), hasLength(0));
       expect(formsOnTheDom, hasLength(0));
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.webkit ||
-            browserEngine == BrowserEngine.edge));
+        skip: browserEngine == BrowserEngine.edge);
 
     test('finishAutofillContext with save submits forms', () async {
       // Create a configuration with an AutofillGroup of four text fields.
@@ -867,6 +938,13 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
+      // The transform is changed. For example after a validation error, red
+      // line appeared under the input field.
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
       // Form is added to DOM.
       expect(document.getElementsByTagName('form'), isNotEmpty);
       FormElement formElement = document.getElementsByTagName('form')[0];
@@ -884,10 +962,8 @@ void testMain() {
       // `submit` action is called on form.
       await expectLater(await submittedForm.future, true);
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.webkit ||
-            browserEngine == BrowserEngine.edge));
+        skip: browserEngine == BrowserEngine.edge);
 
     test('forms submits for focused input', () async {
       // Create a configuration with an AutofillGroup of four text fields.
@@ -915,6 +991,13 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
+      // The transform is changed. For example after a validation error, red
+      // line appeared under the input field.
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
       // Form is added to DOM.
       expect(document.getElementsByTagName('form'), isNotEmpty);
       FormElement formElement = document.getElementsByTagName('form')[0];
@@ -938,10 +1021,8 @@ void testMain() {
       expect(document.getElementsByTagName('form'), hasLength(0));
       expect(formsOnTheDom, hasLength(0));
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.webkit ||
-            browserEngine == BrowserEngine.edge));
+        skip: browserEngine == BrowserEngine.edge);
 
     test('setClient, setEditingState, show, setClient', () {
       final MethodCall setClient = MethodCall(

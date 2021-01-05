@@ -1,4 +1,4 @@
-Signature: 0e93e587e495f9cde8be64237e5b3d7e
+Signature: 38aee45673a438448298244378faae6f
 
 UNUSED LICENSES:
 
@@ -2510,9 +2510,6 @@ notice, this list of conditions and the following disclaimer.
 copyright notice, this list of conditions and the following disclaimer
 in the documentation and/or other materials provided with the
 distribution.
-   * Neither the name of Google LLC. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -9124,6 +9121,7 @@ FILE: ../../../third_party/dart/runtime/bin/ffi_unit_test/run_ffi_unit_tests.cc
 FILE: ../../../third_party/dart/runtime/bin/file_win.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos_test.cc
+FILE: ../../../third_party/dart/runtime/bin/priority_heap_test.cc
 FILE: ../../../third_party/dart/runtime/include/dart_api_dl.c
 FILE: ../../../third_party/dart/runtime/include/dart_api_dl.h
 FILE: ../../../third_party/dart/runtime/include/dart_version.h
@@ -9134,6 +9132,7 @@ FILE: ../../../third_party/dart/runtime/observatory_2/bin/heap_snapshot.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/process_snapshot.dart
 FILE: ../../../third_party/dart/runtime/platform/allocation.cc
 FILE: ../../../third_party/dart/runtime/platform/leak_sanitizer.h
+FILE: ../../../third_party/dart/runtime/platform/priority_queue.h
 FILE: ../../../third_party/dart/runtime/platform/unaligned.h
 FILE: ../../../third_party/dart/runtime/platform/undefined_behavior_sanitizer.h
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/bin/main.dart
@@ -9197,10 +9196,6 @@ FILE: ../../../third_party/dart/runtime/vm/stub_code_test.cc
 FILE: ../../../third_party/dart/runtime/vm/tagged_pointer.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
 FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.h
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm64.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/visitor.cc
 FILE: ../../../third_party/dart/samples/ffi/async/async_test.dart
 FILE: ../../../third_party/dart/samples/ffi/async/sample_async_callback.dart

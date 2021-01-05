@@ -1010,7 +1010,7 @@ public class FlutterJNI {
   @UiThread
   public void requestDartDeferredLibrary(int loadingUnitId) {
     if (dynamicFeatureManager != null) {
-      dynamicFeatureManager.downloadDynamicFeature(loadingUnitId, null);
+      dynamicFeatureManager.installDynamicFeature(loadingUnitId, null);
     } else {
       // TODO(garyq): Add link to setup/instructions guide wiki.
       Log.e(
@@ -1056,14 +1056,14 @@ public class FlutterJNI {
    *     value is `flutter_assets`.
    */
   @UiThread
-  public void updateAssetManager(
+  public void updateJavaAssetManager(
       @NonNull AssetManager assetManager, @NonNull String assetBundlePath) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeUpdateAssetManager(nativePlatformViewId, assetManager, assetBundlePath);
+    nativeUpdateJavaAssetManager(nativePlatformViewId, assetManager, assetBundlePath);
   }
 
-  private native void nativeUpdateAssetManager(
+  private native void nativeUpdateJavaAssetManager(
       long nativePlatformViewId,
       @NonNull AssetManager assetManager,
       @NonNull String assetBundlePath);
