@@ -1898,6 +1898,8 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_metal.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_metal.mm
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_task_runner.cc
@@ -1913,6 +1915,7 @@ FILE: ../../../flutter/shell/platform/embedder/fixtures/compositor_with_root_lay
 FILE: ../../../flutter/shell/platform/embedder/fixtures/dpr_noxform.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/dpr_xform.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/gradient.png
+FILE: ../../../flutter/shell/platform/embedder/fixtures/gradient_metal.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/gradient_xform.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/main.dart
 FILE: ../../../flutter/shell/platform/embedder/fixtures/scene_without_custom_compositor.png
@@ -2094,6 +2097,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_dart_project_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_dart_project_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_engine.cc
 FILE: ../../../flutter/shell/platform/linux/fl_engine_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_engine_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_event_channel.cc
 FILE: ../../../flutter/shell/platform/linux/fl_event_channel_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_json_message_codec.cc
@@ -2130,6 +2134,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_renderer_wayland.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_wayland.h
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_x11.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_x11.h
+FILE: ../../../flutter/shell/platform/linux/fl_settings_plugin.cc
+FILE: ../../../flutter/shell/platform/linux/fl_settings_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec_test.cc

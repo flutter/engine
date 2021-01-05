@@ -56,15 +56,6 @@ void MockCanvas::willRestore() {
   current_layer_--;  // Must go here; func params order of eval is undefined
 }
 
-#ifdef SK_SUPPORT_LEGACY_CANVASMATRIX33
-void MockCanvas::didConcat(const SkMatrix& matrix) {
-  this->didConcat44(SkM44(matrix));
-}
-void MockCanvas::didSetMatrix(const SkMatrix& matrix) {
-  this->didSetM44(SkM44(matrix));
-}
-#endif
-
 void MockCanvas::didConcat44(const SkM44& matrix) {
   draw_calls_.emplace_back(DrawCall{current_layer_, ConcatMatrixData{matrix}});
 }
@@ -230,32 +221,28 @@ void MockCanvas::onDrawRRect(const SkRRect&, const SkPaint&) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawImage(const SkImage*,
-                             SkScalar,
-                             SkScalar,
-                             const SkPaint*) {
+void MockCanvas::onDrawImage2(const SkImage*,
+                              SkScalar,
+                              SkScalar,
+                              const SkSamplingOptions&,
+                              const SkPaint*) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawImageRect(const SkImage*,
-                                 const SkRect*,
-                                 const SkRect&,
-                                 const SkPaint*,
-                                 SrcRectConstraint) {
+void MockCanvas::onDrawImageRect2(const SkImage*,
+                                  const SkRect&,
+                                  const SkRect&,
+                                  const SkSamplingOptions&,
+                                  const SkPaint*,
+                                  SrcRectConstraint) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawImageNine(const SkImage*,
-                                 const SkIRect&,
-                                 const SkRect&,
-                                 const SkPaint*) {
-  FML_DCHECK(false);
-}
-
-void MockCanvas::onDrawImageLattice(const SkImage*,
-                                    const Lattice&,
-                                    const SkRect&,
-                                    const SkPaint*) {
+void MockCanvas::onDrawImageLattice2(const SkImage*,
+                                     const Lattice&,
+                                     const SkRect&,
+                                     SkFilterMode,
+                                     const SkPaint*) {
   FML_DCHECK(false);
 }
 
@@ -265,14 +252,15 @@ void MockCanvas::onDrawVerticesObject(const SkVertices*,
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawAtlas(const SkImage*,
-                             const SkRSXform[],
-                             const SkRect[],
-                             const SkColor[],
-                             int,
-                             SkBlendMode,
-                             const SkRect*,
-                             const SkPaint*) {
+void MockCanvas::onDrawAtlas2(const SkImage*,
+                              const SkRSXform[],
+                              const SkRect[],
+                              const SkColor[],
+                              int,
+                              SkBlendMode,
+                              const SkSamplingOptions&,
+                              const SkRect*,
+                              const SkPaint*) {
   FML_DCHECK(false);
 }
 
