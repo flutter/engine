@@ -181,7 +181,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return NO;
   }
 
-  [_openGLRenderer attachToFlutterView:_viewController.flutterView];
   const FlutterRendererConfig rendererConfig = [_openGLRenderer createRendererConfig];
 
   // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
@@ -285,12 +284,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)setViewController:(FlutterViewController*)controller {
   _viewController = controller;
-
-  if (controller) {
-    [_openGLRenderer attachToFlutterView:controller.flutterView];
-  } else {
-    [_openGLRenderer clearResourceContext];
-  }
+  [_openGLRenderer setFlutterView:controller.flutterView];
 
   if (!controller && !_allowHeadlessExecution) {
     [self shutDownEngine];

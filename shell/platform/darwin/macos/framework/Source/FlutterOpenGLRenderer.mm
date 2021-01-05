@@ -68,8 +68,11 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   return self;
 }
 
-- (void)attachToFlutterView:(FlutterView*)view {
+- (void)setFlutterView:(FlutterView*)view {
   _flutterView = view;
+  if (!view) {
+    _resourceContext = nil;
+  }
 }
 
 - (BOOL)makeCurrent {
@@ -120,11 +123,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (BOOL)makeResourceCurrent {
   [self.resourceContext makeCurrentContext];
-  return true;
-}
-
-- (void)clearResourceContext {
-  _resourceContext = nil;
+  return YES;
 }
 
 #pragma mark - FlutterTextureRegistrar
@@ -138,7 +137,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   FlutterExternalTextureGL* externalTexture =
       [[FlutterExternalTextureGL alloc] initWithFlutterTexture:texture];
   int64_t textureID = [externalTexture textureID];
-  bool success = [_flutterEngine registerTextureWithID:textureID];
+  BOOL success = [_flutterEngine registerTextureWithID:textureID];
   if (success) {
     _textures[@(textureID)] = externalTexture;
     return textureID;
@@ -149,7 +148,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (void)textureFrameAvailable:(int64_t)textureID {
-  bool success = [_flutterEngine markTextureFrameAvailable:textureID];
+  BOOL success = [_flutterEngine markTextureFrameAvailable:textureID];
   if (success) {
     NSLog(@"Unable to mark texture with id %lld as available.", textureID);
   }

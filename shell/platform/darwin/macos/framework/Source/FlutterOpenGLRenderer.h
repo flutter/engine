@@ -32,9 +32,10 @@
 - (nullable instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine;
 
 /**
- * Attaches to the FlutterView and sets up the renderers main OpenGL context.
+ * Sets the FlutterView and the corresponding rendering OpenGL context. Unsets the resource context
+ * if the view is nil.
  */
-- (void)attachToFlutterView:(nonnull FlutterView*)view;
+- (void)setFlutterView:(nullable FlutterView*)view;
 
 /**
  * Called by the engine to make the context the engine should draw into current.
@@ -60,11 +61,6 @@
  * Makes the resource context the current context.
  */
 - (BOOL)makeResourceCurrent;
-
-/**
- * Called by the engine to unset the resource context.
- */
-- (void)clearResourceContext;
 
 /**
  * Populates the texture registry with the provided openGLTexture.

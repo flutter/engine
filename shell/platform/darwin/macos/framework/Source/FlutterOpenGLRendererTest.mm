@@ -93,7 +93,7 @@ TEST(FlutterOpenGLRenderer, PresetDelegatesToFlutterView) {
   FlutterOpenGLRenderer* renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
   [[mockFlutterView expect] present];
-  [renderer attachToFlutterView:mockFlutterView];
+  [renderer setFlutterView:mockFlutterView];
   [renderer openGLContext];
   [renderer glPresent];
 }
@@ -110,7 +110,7 @@ TEST(FlutterOpenGLRenderer, FBOReturnedByFlutterView) {
   frameInfo.size = dimensions;
   CGSize size = CGSizeMake(dimensions.width, dimensions.height);
   [[mockFlutterView expect] frameBufferIDForSize:size];
-  [renderer attachToFlutterView:mockFlutterView];
+  [renderer setFlutterView:mockFlutterView];
   [renderer openGLContext];
   [renderer fboForFrameInfo:&frameInfo];
 }
