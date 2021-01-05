@@ -384,7 +384,7 @@ void testMain() {
 
     test('autofill form lifecycle works', () async {
       editingElement = SemanticsTextEditingStrategy(
-          new SemanticsObject(5, null), testTextEditing, testInputElement);
+          SemanticsObject(5, null), testTextEditing, testInputElement);
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
           createFlutterConfig('text',
@@ -445,14 +445,14 @@ void testMain() {
       final HtmlElement span = SpanElement();
       expect(
         () => SemanticsTextEditingStrategy(
-            new SemanticsObject(5, null), HybridTextEditing(), span),
+            SemanticsObject(5, null), HybridTextEditing(), span),
         throwsAssertionError,
       );
     });
 
     test('Do not re-acquire focus', () {
       editingElement = SemanticsTextEditingStrategy(
-          new SemanticsObject(5, null), HybridTextEditing(), testInputElement);
+          SemanticsObject(5, null), HybridTextEditing(), testInputElement);
 
       expect(document.activeElement, document.body);
 
@@ -475,7 +475,7 @@ void testMain() {
 
     test('Does not dispose and recreate dom elements in persistent mode', () {
       editingElement = SemanticsTextEditingStrategy(
-          new SemanticsObject(5, null), HybridTextEditing(), testInputElement);
+          SemanticsObject(5, null), HybridTextEditing(), testInputElement);
 
       // The DOM element should've been eagerly created.
       expect(testInputElement, isNotNull);
@@ -521,7 +521,7 @@ void testMain() {
 
     test('Refocuses when setting editing state', () {
       editingElement = SemanticsTextEditingStrategy(
-          new SemanticsObject(5, null), HybridTextEditing(), testInputElement);
+          SemanticsObject(5, null), HybridTextEditing(), testInputElement);
 
       document.body.append(testInputElement);
       editingElement.enable(
@@ -541,7 +541,7 @@ void testMain() {
     test('Works in multi-line mode', () {
       final TextAreaElement textarea = TextAreaElement();
       editingElement = SemanticsTextEditingStrategy(
-          new SemanticsObject(5, null), HybridTextEditing(), textarea);
+          SemanticsObject(5, null), HybridTextEditing(), textarea);
 
       expect(editingElement.domElement, textarea);
       expect(document.activeElement, document.body);
