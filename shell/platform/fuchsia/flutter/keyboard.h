@@ -44,7 +44,7 @@ class Keyboard final {
 
   // The flags below show the state of the keyboard modifiers after the last
   // event has been processed.  Stateful keys remain in the same state after
-  // a release and require an addiitonal press to toggle.
+  // a release and require an additional press to toggle.
   bool stateful_caps_lock_ : 1;
   bool left_shift_ : 1;
   bool right_shift_ : 1;

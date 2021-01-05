@@ -26,9 +26,10 @@ using fuchsia::ui::input3::KeyEventType;
 
 namespace {
 
-// A simple keymap from a QWERTY keys to code point. A value 0 means no code
-// point has been defined. Column 0 is the code point without a level modifier
-// active, and Column 1 is the code point with a level modifier active.
+// A simple keymap from a QWERTY keyboard to code points. A value 0 means no
+// code point has been assigned for the respective keypress. Column 0 is the
+// code point without a level modifier active, and Column 1 is the code point
+// with a level modifier (e.g. Shift key) active.
 static const uint32_t QWERTY_TO_CODE_POINTS[][2] = {
     // 0x00
     {},
