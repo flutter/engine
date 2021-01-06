@@ -77,7 +77,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }) async {
     // Prevent any further customization of URL strategy.
     _isUrlStrategySet = true;
-
+    _usingRouter = false;
     await _browserHistory?.tearDown();
     if (useSingle) {
       _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
@@ -114,6 +114,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
             'This can happen if you use non-router versions of MaterialApp/'
             'CupertinoApp/WidgetsApp together with the router versions of them.'
           );
+          return false;
         }
         return true;
       case 'routeInformationUpdated':
