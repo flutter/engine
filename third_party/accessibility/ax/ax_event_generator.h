@@ -30,7 +30,7 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
     ALERT,
     // ATK treats alignment, indentation, and other format-related attributes as
     // text attributes even when they are only applicable to the entire object.
-    // And it lacks an event for use when object attributes have changed.
+    // And it lacks an event for object attributes changing.
     ATK_TEXT_OBJECT_ATTRIBUTE_CHANGED,
     ATOMIC_CHANGED,
     AUTO_COMPLETE_CHANGED,
@@ -45,9 +45,6 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
     DOCUMENT_SELECTION_CHANGED,
     DOCUMENT_TITLE_CHANGED,
     DROPEFFECT_CHANGED,
-    // TODO(nektar): Deprecate this event and replace it with
-    // "VALUE_IN_TEXT_FIELD_CHANGED".
-    EDITABLE_TEXT_CHANGED,
     ENABLED_CHANGED,
     EXPANDED,
     FOCUS_CHANGED,
@@ -62,7 +59,7 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
     KEY_SHORTCUTS_CHANGED,
     LABELED_BY_CHANGED,
     LANGUAGE_CHANGED,
-    LAYOUT_INVALIDATED,   // Fired when aria-busy turns from true to false.
+    LAYOUT_INVALIDATED,   // Fired when aria-busy goes false
     LIVE_REGION_CHANGED,  // Fired on the root of a live region.
     LIVE_REGION_CREATED,
     LIVE_REGION_NODE_CHANGED,  // Fired on a node within a live region.
@@ -76,16 +73,11 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
     NAME_CHANGED,
     OBJECT_ATTRIBUTE_CHANGED,
     OTHER_ATTRIBUTE_CHANGED,
-    PARENT_CHANGED,
     PLACEHOLDER_CHANGED,
     PORTAL_ACTIVATED,
     POSITION_IN_SET_CHANGED,
-    RANGE_VALUE_CHANGED,
-    RANGE_VALUE_MAX_CHANGED,
-    RANGE_VALUE_MIN_CHANGED,
-    RANGE_VALUE_STEP_CHANGED,
-    READONLY_CHANGED,
     RELATED_NODE_CHANGED,
+    READONLY_CHANGED,
     REQUIRED_STATE_CHANGED,
     ROLE_CHANGED,
     ROW_COUNT_CHANGED,
@@ -93,46 +85,42 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
     SCROLL_VERTICAL_POSITION_CHANGED,
     SELECTED_CHANGED,
     SELECTED_CHILDREN_CHANGED,
-    SELECTED_VALUE_CHANGED,
-    SELECTION_IN_TEXT_FIELD_CHANGED,
     SET_SIZE_CHANGED,
     SORT_CHANGED,
     STATE_CHANGED,
     SUBTREE_CREATED,
     TEXT_ATTRIBUTE_CHANGED,
-    VALUE_IN_TEXT_FIELD_CHANGED,
+    VALUE_CHANGED,
+    VALUE_MAX_CHANGED,
+    VALUE_MIN_CHANGED,
+    VALUE_STEP_CHANGED,
 
     // This event is for the exact set of attributes that affect
     // the MSAA/IAccessible state on Windows. Not needed on other platforms,
     // but very natural to compute here.
     WIN_IACCESSIBLE_STATE_CHANGED,
-    MAX_VALUE = WIN_IACCESSIBLE_STATE_CHANGED,
   };
 
   // For distinguishing between show and hide state when a node has
   // IGNORED_CHANGED event.
   enum class IgnoredChangedState : uint8_t { kShow, kHide, kCount = 2 };
 
-  struct AX_EXPORT EventParams {
+  struct EventParams {
     EventParams(Event event,
                 ax::mojom::EventFrom event_from,
                 const std::vector<AXEventIntent>& event_intents);
-    EventParams(const EventParams& other);
     ~EventParams();
-
-    bool operator==(const EventParams& rhs) const;
-    bool operator<(const EventParams& rhs) const;
-
     Event event;
     ax::mojom::EventFrom event_from;
     std::vector<AXEventIntent> event_intents;
+
+    bool operator==(const EventParams& rhs);
+    bool operator<(const EventParams& rhs) const;
   };
 
-  struct TargetedEvent final {
+  struct TargetedEvent {
     // |node| must not be null
     TargetedEvent(ui::AXNode* node, const EventParams& event_params);
-    ~TargetedEvent() = default;
-
     ui::AXNode* node;
     const EventParams& event_params;
   };
@@ -190,15 +178,10 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
   // Null |tree_| without accessing it or destroying it.
   void ReleaseTree();
 
-  //
-  // Methods that make this class behave like an STL container, which simplifies
-  // the process of iterating through generated events.
-  //
-
-  bool empty() const;
-  size_t size() const;
-  Iterator begin() const;
-  Iterator end() const;
+  Iterator begin() const {
+    return Iterator(tree_events_, tree_events_.begin());
+  }
+  Iterator end() const { return Iterator(tree_events_, tree_events_.end()); }
 
   // Clear any previously added events.
   void ClearEvents();
@@ -215,8 +198,6 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
   void set_always_fire_load_complete(bool val) {
     always_fire_load_complete_ = val;
   }
-
-  void AddEventsForTesting(AXNode* node, const std::set<EventParams>& events);
 
  protected:
   // AXTreeObserver overrides.
@@ -263,7 +244,6 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
   void OnSubtreeWillBeDeleted(AXTree* tree, AXNode* node) override;
   void OnNodeWillBeReparented(AXTree* tree, AXNode* node) override;
   void OnSubtreeWillBeReparented(AXTree* tree, AXNode* node) override;
-  void OnNodeReparented(AXTree* tree, AXNode* node) override;
   void OnAtomicUpdateFinished(AXTree* tree,
                               bool root_changed,
                               const std::vector<Change>& changes) override;
@@ -271,7 +251,6 @@ class AX_EXPORT AXEventGenerator : public AXTreeObserver {
  private:
   void FireLiveRegionEvents(AXNode* node);
   void FireActiveDescendantEvents();
-  void FireValueInTextFieldChangedEvent(AXTree* tree, AXNode* target_node);
   void FireRelationSourceEvents(AXTree* tree, AXNode* target_node);
   bool ShouldFireLoadEvents(AXNode* node);
   // Remove excessive events for a tree update containing node.

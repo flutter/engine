@@ -558,18 +558,6 @@ bool IsSelect(const ax::mojom::Role role) {
   }
 }
 
-bool IsSelectElement(const ax::mojom::Role role) {
-  // Depending on their "size" attribute, <select> elements come in two flavors:
-  // the first appears like a list box and the second like a popup menu.
-  switch (role) {
-    case ax::mojom::Role::kListBox:
-    case ax::mojom::Role::kPopUpButton:
-      return true;
-    default:
-      return false;
-  }
-}
-
 bool IsSetLike(const ax::mojom::Role role) {
   switch (role) {
     case ax::mojom::Role::kDescriptionList:

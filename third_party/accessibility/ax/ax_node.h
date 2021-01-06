@@ -317,13 +317,6 @@ class AX_EXPORT AXNode final {
   // Returns empty string if no appropriate language was found.
   std::string GetLanguage() const;
 
-  // Returns the value of a control such as a text field, a slider, a <select>
-  // element, a date picker or an ARIA combo box. In order to minimize
-  // cross-process communication between the renderer and the browser, this
-  // method may compute the value from the control's inner text in the case of a
-  // text field.
-  std::string GetValueForControl() const;
-
   // Helper functions for tables, table rows, and table cells.
   // Most of these functions construct and cache an AXTableInfo behind
   // the scenes to infer many properties of tables.
@@ -451,20 +444,6 @@ class AX_EXPORT AXNode final {
   int UpdateUnignoredCachedValuesRecursive(int startIndex);
   AXNode* ComputeLastUnignoredChildRecursive() const;
   AXNode* ComputeFirstUnignoredChildRecursive() const;
-
-  // Returns the value of a range control such as a slider or a scroll bar in
-  // text format.
-  std::string GetTextForRangeValue() const;
-
-  // Returns the value of a color well (a color chooser control) in a human
-  // readable format. For example: "50% red 40% green 90% blue".
-  std::string GetValueForColorWell() const;
-
-  // Returns the value of a text field. If necessary, computes the value from
-  // the field's internal representation in the accessibility tree, in order to
-  // minimize cross-process communication between the renderer and the browser
-  // processes.
-  std::string GetValueForTextField() const;
 
   OwnerTree* const tree_;  // Owns this.
   size_t index_in_parent_;

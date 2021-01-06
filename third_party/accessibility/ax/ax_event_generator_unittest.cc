@@ -264,9 +264,8 @@ TEST(AXEventGeneratorTest, StringValueChanged) {
                                      "After");
 
   ASSERT_TRUE(tree.Unserialize(update));
-  EXPECT_TRUE(HasEvent(event_generator,
-                       AXEventGenerator::Event::VALUE_IN_TEXT_FIELD_CHANGED,
-                       1));
+  EXPECT_TRUE(
+      HasEvent(event_generator, AXEventGenerator::Event::VALUE_CHANGED, 1));
 }
 
 TEST(AXEventGeneratorTest, FloatValueChanged) {
@@ -286,8 +285,8 @@ TEST(AXEventGeneratorTest, FloatValueChanged) {
                                     2.0);
 
   ASSERT_TRUE(tree.Unserialize(update));
-  EXPECT_TRUE(HasEvent(event_generator,
-                       AXEventGenerator::Event::RANGE_VALUE_CHANGED, 1));
+  EXPECT_TRUE(
+      HasEvent(event_generator, AXEventGenerator::Event::VALUE_CHANGED, 1));
 }
 
 TEST(AXEventGeneratorTest, InvalidStatusChanged) {

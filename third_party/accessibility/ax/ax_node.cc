@@ -531,18 +531,6 @@ std::string AXNode::GetLanguage() const {
   return std::string();
 }
 
-std::string AXNode::GetValueForControl() const {
-  if (data().IsTextField())
-    return GetValueForTextField();
-  if (data().IsRangeValueSupported())
-    return GetTextForRangeValue();
-  if (data().role == ax::mojom::Role::kColorWell)
-    return GetValueForColorWell();
-  if (!IsControl(data().role))
-    return std::string();
-  return data().GetStringAttribute(ax::mojom::StringAttribute::kValue);
-}
-
 std::ostream& operator<<(std::ostream& stream, const AXNode& node) {
   return stream << node.data().ToString();
 }
@@ -1079,46 +1067,6 @@ AXNode* AXNode::ComputeFirstUnignoredChildRecursive() const {
       return descendant;
   }
   return nullptr;
-}
-
-std::string AXNode::GetTextForRangeValue() const {
-  BASE_DCHECK(data().IsRangeValueSupported());
-  std::string range_value =
-      data().GetStringAttribute(ax::mojom::StringAttribute::kValue);
-  float numeric_value;
-  if (range_value.empty() &&
-      data().GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange,
-                               &numeric_value)) {
-    range_value = base::NumberToString(numeric_value);
-  }
-  return range_value;
-}
-
-std::string AXNode::GetValueForColorWell() const {
-  BASE_DCHECK(data().role == ax::mojom::Role::kColorWell);
-  // static cast because SkColor is a 4-byte unsigned int
-  unsigned int color = static_cast<unsigned int>(
-      data().GetIntAttribute(ax::mojom::IntAttribute::kColorValue));
-
-  unsigned int red = ColorGetR(color);
-  unsigned int green = ColorGetG(color);
-  unsigned int blue = ColorGetB(color);
-  std::ostringstream stringStream;
-  stringStream << red * 100 / 255 << "% red " << green * 100 / 255 << "% green "
-               << blue * 100 / 255 << "% blue";
-  return stringStream.str();
-}
-
-std::string AXNode::GetValueForTextField() const {
-  BASE_DCHECK(data().IsTextField());
-  std::string value =
-      data().GetStringAttribute(ax::mojom::StringAttribute::kValue);
-  // Some screen readers like Jaws and VoiceOver require a value to be set in
-  // text fields with rich content, even though the same information is
-  // available on the children.
-  if (value.empty() && data().IsRichTextField())
-    return GetInnerText();
-  return value;
 }
 
 bool AXNode::IsIgnored() const {
