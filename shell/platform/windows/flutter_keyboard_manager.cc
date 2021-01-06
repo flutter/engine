@@ -129,9 +129,6 @@ void FlutterKeyboardManager::KeyboardHook(FlutterWindowsView* view,
                                           int action,
                                           char32_t character,
                                           bool was_down) {
-    action == WM_KEYDOWN ? 'D' : 'U',
-    key, scancode, character, was_down
-  );fflush(stdout);
   const uint64_t physical_key = getPhysicalKey(scancode);
   const uint64_t logical_key = getLogicalKey(key, scancode);
   assert(action == WM_KEYDOWN || action == WM_KEYUP);
