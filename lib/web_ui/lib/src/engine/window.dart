@@ -104,9 +104,17 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 
     switch (decoded.method) {
       case 'routeUpdated':
-        assert(!_usingRouter);
-        await _useSingleEntryBrowserHistory();
-        browserHistory.setRouteName(arguments['routeName']);
+        if (!_usingRouter) {
+          await _useSingleEntryBrowserHistory();
+          browserHistory.setRouteName(arguments['routeName']);
+        } else {
+          assert(
+            false,
+            'Receives old navigator update in a router application. '
+            'This can happen if you use non-router versions of MaterialApp/'
+            'CupertinoApp/WidgetsApp together with the router versions of them.'
+          );
+        }
         return true;
       case 'routeInformationUpdated':
         await _useMultiEntryBrowserHistory();
