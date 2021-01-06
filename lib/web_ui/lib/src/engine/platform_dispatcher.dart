@@ -170,6 +170,31 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     invoke1<ui.PointerDataPacket>(_onPointerDataPacket, _onPointerDataPacketZone, dataPacket);
   }
 
+  /// A callback that is invoked when pointer data is available.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [GestureBinding], the Flutter framework class which manages pointer
+  ///    events.
+  @override
+  ui.KeyDataCallback? get onKeyData => _onKeyData;
+  ui.KeyDataCallback? _onKeyData;
+  Zone? _onKeyDataZone;
+  @override
+  set onKeyData(ui.KeyDataCallback? callback) {
+    _onKeyData = callback;
+    _onKeyDataZone = Zone.current;
+  }
+
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
+  void invokeOnKeyData(ui.KeyData dataPacket) {
+    invoke1<ui.KeyData>(_onKeyData, _onKeyDataZone, dataPacket);
+  }
+
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
   ///
@@ -947,4 +972,3 @@ void invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback, Zone? zon
     });
   }
 }
-
