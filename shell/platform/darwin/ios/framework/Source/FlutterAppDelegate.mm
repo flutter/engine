@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
 
+#include <iostream>
+
 #import "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
@@ -24,6 +26,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 }
 
 - (instancetype)init {
+  NSLog(@"MIKE: HELLOO");
   if (self = [super init]) {
     _lifeCycleDelegate = [[FlutterPluginAppLifeCycleDelegate alloc] init];
   }
@@ -307,5 +310,33 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
     }
   }
 }
+  
+#pragma mark - State Restoration
 
+- (BOOL)application:(UIApplication *)application shouldSaveApplicationState:(NSCoder *)coder {
+  [coder encodeInt64: self.lastAppModificationTime forKey:@"mod-date"];
+  return YES;
+}
+  
+- (BOOL)application:(UIApplication *)application shouldRestoreApplicationState:(NSCoder *)coder {
+  int64_t stateDate = [coder decodeInt64ForKey:@"mod-date"];
+  return self.lastAppModificationTime == stateDate;
+}
+  
+- (BOOL)application:(UIApplication *)application shouldSaveSecureApplicationState:(NSCoder *)coder {
+  [coder encodeInt64: self.lastAppModificationTime forKey:@"mod-date"];
+  return YES;
+}
+
+- (BOOL)application:(UIApplication *)application shouldRestoreSecureApplicationState:(NSCoder *)coder {
+  int64_t stateDate = [coder decodeInt64ForKey:@"mod-date"];
+  return self.lastAppModificationTime == stateDate;
+}
+  
+- (int64_t)lastAppModificationTime {
+  NSDate *fileDate;
+  [[[NSBundle mainBundle] executableURL] getResourceValue:&fileDate forKey:NSURLContentModificationDateKey error:nil];
+  return [fileDate timeIntervalSince1970];
+}
+  
 @end

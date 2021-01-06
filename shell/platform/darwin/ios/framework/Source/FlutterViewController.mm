@@ -112,6 +112,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (instancetype)initWithEngine:(FlutterEngine*)engine
                        nibName:(nullable NSString*)nibName
                         bundle:(nullable NSBundle*)nibBundle {
+  NSLog(@"FlutterViewController: 1");
   NSAssert(engine != nil, @"Engine is required");
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
@@ -140,6 +141,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (instancetype)initWithProject:(FlutterDartProject*)project
                         nibName:(NSString*)nibName
                          bundle:(NSBundle*)nibBundle {
+  NSLog(@"FlutterViewController: 2");
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     [self sharedSetupWithProject:project initialRoute:nil];
@@ -152,6 +154,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
                    initialRoute:(NSString*)initialRoute
                         nibName:(NSString*)nibName
                          bundle:(NSBundle*)nibBundle {
+  NSLog(@"FlutterViewController: 3");
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     [self sharedSetupWithProject:project initialRoute:initialRoute];
@@ -161,11 +164,14 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (instancetype)initWithNibName:(NSString*)nibNameOrNil bundle:(NSBundle*)nibBundleOrNil {
+  NSLog(@"FlutterViewController: 4");
   return [self initWithProject:nil nibName:nil bundle:nil];
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
+  NSLog(@"FlutterViewController: 5");
   self = [super initWithCoder:aDecoder];
+  NSLog(@">> Restoration Identifier: %@", [self restorationIdentifier]);
   return self;
 }
 
@@ -177,6 +183,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (instancetype)init {
+  NSLog(@"FlutterViewController: 6");
   return [self initWithProject:nil nibName:nil bundle:nil];
 }
 
@@ -188,10 +195,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
     project = [[[FlutterDartProject alloc] init] autorelease];
   }
   FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
+  NSLog(@">> NEW ENGINE");
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
-      allowHeadlessExecution:self.engineAllowHeadlessExecution]};
+      allowHeadlessExecution:self.engineAllowHeadlessExecution
+          restorationEnabled:[self restorationIdentifier] != nil]};
 
   if (!engine) {
     return;
@@ -618,6 +627,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 #pragma mark - UIViewController lifecycle notifications
 
 - (void)viewDidLoad {
+  NSLog(@">>>> viewDidLoad");
   TRACE_EVENT0("flutter", "viewDidLoad");
 
   if (_engine && _engineNeedsLaunch) {
@@ -644,6 +654,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
+  NSLog(@">>>> viewWillAppear");
 
   // Send platform settings to Flutter, e.g., platform brightness.
   [self onUserSettingsChanged:nil];
@@ -654,6 +665,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
     [self surfaceUpdated:YES];
   }
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [[_engine.get() restorationPlugin] restorationComplete];
 
   [super viewWillAppear:animated];
 }
@@ -1521,6 +1533,19 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   packet->SetPointerData(/*index=*/0, pointer_data);
 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+  
+#pragma mark - State Restoration
+
+- (void)encodeRestorableStateWithCoder:(NSCoder *)coder {
+  NSLog(@"FlutterViewController: encodeRestorableStateWithCoder");
+  NSData* restorationData = [[_engine.get() restorationPlugin] restorationData];
+  [coder encodeDataObject:restorationData];
+}
+
+- (void)decodeRestorableStateWithCoder:(NSCoder *)coder {
+  NSLog(@"FlutterViewController: decodeRestorableStateWithCoder");
+  NSData* restorationData = [coder decodeDataObject];
+  [[_engine.get() restorationPlugin] restorationData:restorationData];
 }
 
 @end

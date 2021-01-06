@@ -1,0 +1,98 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
+
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+
+#include "flutter/fml/logging.h"
+
+
+@implementation FlutterRestorationPlugin {
+  BOOL _waitForData;
+  BOOL _restorationEnabled;
+  FlutterResult _pendingRequest;
+  NSData* _restorationData;
+}
+
+- (instancetype)init {
+  @throw([NSException exceptionWithName:@"FlutterRestorationPlugin must initWithEngine"
+                                 reason:nil
+                               userInfo:nil]);
+  /Users/goderbauer/dev/engine/src/flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h
+}
+
+- (instancetype)initWithChannel:(fml::WeakPtr<FlutterMethodChannel>)channel restorationEnabled:(BOOL)restorationEnabled {
+  FML_DCHECK(channel) << "channel must be set";
+  self = [super init];
+  if (self) {
+    [channel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+      [self handleMethodCall:call result:result];
+    }];
+    _restorationEnabled = restorationEnabled;
+    _waitForData = restorationEnabled;
+  }
+  return self;
+}
+
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
+  if ([[call method] isEqualToString:@"put"]) {
+    FlutterStandardTypedData* data = [call arguments];
+    NSData* newData = [[data data] retain];
+    if (_restorationData != nil) {
+      [_restorationData release];
+    }
+    _restorationData = newData;
+    result(nil);
+  } else if ([[call method] isEqualToString:@"get"]) {
+    if (!_restorationEnabled || !_waitForData) {
+      result( [self dataForFramework] );
+      return;
+    }
+    _pendingRequest = [result retain];
+  } else {
+    result(FlutterMethodNotImplemented);
+  }
+}
+
+_ (NSData*)restorationData {
+  return _restorationData;
+}
+
+- (void)restorationData:(NSData*)data {
+  NSData* newData = [data retain];
+  if (_restorationData != nil) {
+    [_restorationData release];
+  }
+  _restorationData = newData;
+  if (_pendingRequest != nil) {
+    _pendingRequest( [self dataForFramework] );
+    [_pendingRequest release];
+    _pendingRequest = nil;
+    _waitForData = NO;
+  }
+}
+
+- (void)restorationComplete {
+  _waitForData = NO;
+  if (_pendingRequest != nil) {
+    NSAssert(_restorationEnabled, @"No request can be pending when restoration is disabled.");
+    _pendingRequest( [self dataForFramework] );
+    [_pendingRequest release];
+    _pendingRequest = nil;
+  }
+}
+
+- (NSDictionary*)dataForFramework {
+  if (!_restorationEnabled) {
+    return @{ @"enabled": @NO };
+  }
+  if (_restorationData == nil) {
+    return @{ @"enabled": @YES };
+  }
+  return @{@"enabled": @YES, @"data": [FlutterStandardTypedData typedDataWithBytes:_restorationData]};
+}
+
+@end
