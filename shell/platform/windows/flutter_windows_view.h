@@ -89,7 +89,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   void OnText(const std::u16string&) override;
 
   // |WindowBindingHandlerDelegate|
-  void OnKey(int key, int scancode, int action, char32_t character) override;
+  void OnKey(int key, int scancode, int action, char32_t character, bool wasDown) override;
 
   // |WindowBindingHandlerDelegate|
   void OnScroll(double x,
@@ -139,7 +139,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   void SendText(const std::u16string&);
 
   // Reports a raw keyboard message to Flutter engine.
-  void SendKey(int key, int scancode, int action, char32_t character);
+  void SendKey(int key, int scancode, int action, char32_t character, bool wasDown);
 
   // Reports scroll wheel events to Flutter engine.
   void SendScroll(double x,

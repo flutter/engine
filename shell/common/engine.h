@@ -711,6 +711,17 @@ class Engine final : public RuntimeDelegate,
                                  uint64_t trace_flow_id);
 
   //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that the embedder has sent it a key data
+  ///             packet. A key data packet contains one physical key event and
+  ///             one or multiple logical key events. This call originates in
+  ///             the platform view and the shell has forwarded the same to the
+  ///             engine on the UI task runner here.
+  ///
+  /// @param[in]  packet         The key data packet.
+  ///
+  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an
   ///             accessibility related action on the specified node. This call
   ///             originates on the platform view and has been forwarded to the

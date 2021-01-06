@@ -241,8 +241,9 @@ Win32Window::HandleMessage(UINT const message,
       // WM_CHAR. In order to send the full key press information, the keycode
       // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
       if (keycode_for_char_message_ != 0) {
-        const unsigned int scancode = (lparam >> 16) & 0xff;
-        OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN, code_point);
+        const unsigned int scancode = (lparam >> 16) & 0x1ff;
+        const bool wasDown = lparam & 0x40000000;
+        OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN, code_point, wasDown);
         keycode_for_char_message_ = 0;
       }
       break;
@@ -262,13 +263,14 @@ Win32Window::HandleMessage(UINT const message,
         break;
       }
       unsigned int keyCode(wparam);
-      const unsigned int scancode = (lparam >> 16) & 0xff;
+      const unsigned int scancode = (lparam >> 16) & 0x1ff;
       // If the key is a modifier, get its side.
       if (keyCode == VK_SHIFT || keyCode == VK_MENU || keyCode == VK_CONTROL) {
         keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
       }
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
-      OnKey(keyCode, scancode, action, 0);
+      const bool wasDown = lparam & 0x40000000;
+      OnKey(keyCode, scancode, action, 0, wasDown);
       break;
   }
 

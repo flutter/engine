@@ -384,6 +384,14 @@ void Engine::DispatchPointerDataPacket(
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
+void Engine::DispatchKeyDataPacket(
+    std::unique_ptr<KeyDataPacket> packet) {
+  TRACE_EVENT0("flutter", "Engine::DispatchKeyDataPacket");
+  if (runtime_controller_) {
+    runtime_controller_->DispatchKeyDataPacket(*packet);
+  }
+}
+
 void Engine::DispatchSemanticsAction(int id,
                                      SemanticsAction action,
                                      std::vector<uint8_t> args) {
