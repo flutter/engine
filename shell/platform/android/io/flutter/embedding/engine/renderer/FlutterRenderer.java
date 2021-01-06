@@ -302,6 +302,11 @@ public class FlutterRenderer implements TextureRegistry {
     flutterJNI.dispatchPointerDataPacket(buffer, position);
   }
 
+  // TODO(dkwingsmt): describe the native behavior that this invokes
+  public void dispatchKeyDataPacket(@NonNull ByteBuffer buffer, int position) {
+    flutterJNI.dispatchKeyDataPacket(buffer, position);
+  }
+
   // TODO(mattcarroll): describe the native behavior that this invokes
   private void registerTexture(long textureId, @NonNull SurfaceTextureWrapper textureWrapper) {
     flutterJNI.registerTexture(textureId, textureWrapper);

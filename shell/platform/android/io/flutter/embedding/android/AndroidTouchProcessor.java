@@ -57,7 +57,7 @@ public class AndroidTouchProcessor {
     int UNKNOWN = 2;
   }
 
-  // Must match the unpacking code in hooks.dart.
+  // Must match _kPointerDataFieldCount in platform_dispatcher.dart.
   private static final int POINTER_DATA_FIELD_COUNT = 29;
   private static final int BYTES_PER_FIELD = 8;
 

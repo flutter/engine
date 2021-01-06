@@ -395,6 +395,17 @@ static void DispatchPointerDataPacket(JNIEnv* env,
       std::move(packet));
 }
 
+static void DispatchKeyDataPacket(JNIEnv* env,
+                                  jobject jcaller,
+                                  jlong shell_holder,
+                                  jobject buffer,
+                                  jint position) {
+  uint8_t* data = static_cast<uint8_t*>(env->GetDirectBufferAddress(buffer));
+  auto packet = std::make_unique<flutter::KeyDataPacket>(data, position);
+  ANDROID_SHELL_HOLDER->GetPlatformView()->DispatchKeyDataPacket(
+      std::move(packet));
+}
+
 static void DispatchSemanticsAction(JNIEnv* env,
                                     jobject jcaller,
                                     jlong shell_holder,
@@ -668,6 +679,11 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeDispatchPointerDataPacket",
           .signature = "(JLjava/nio/ByteBuffer;I)V",
           .fnPtr = reinterpret_cast<void*>(&DispatchPointerDataPacket),
+      },
+      {
+          .name = "nativeDispatchKeyDataPacket",
+          .signature = "(JLjava/nio/ByteBuffer;I)V",
+          .fnPtr = reinterpret_cast<void*>(&DispatchKeyDataPacket),
       },
       {
           .name = "nativeDispatchSemanticsAction",
