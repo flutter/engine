@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of dart.ui;
 
 /// Signature of callbacks that have no arguments and return no data.
@@ -549,9 +549,10 @@ class PlatformDispatcher {
   /// This is the first locale selected by the user and is the user's primary
   /// locale (the locale the device UI is displayed in)
   ///
-  /// This is equivalent to `locales.first` and will provide an empty non-null
-  /// locale if the [locales] list has not been set or is empty.
-  Locale get locale => locales.first;
+  /// This is equivalent to `locales.first`, except that it will provide an
+  /// undefined (using the language tag "und") non-null locale if the [locales]
+  /// list has not been set or is empty.
+  Locale get locale => locales.isEmpty ? const Locale.fromSubtags() : locales.first;
 
   /// The full system-reported supported locales of the device.
   ///
@@ -1285,8 +1286,8 @@ class Locale {
   ///
   /// The subtag values are _case sensitive_ and must be one of the valid
   /// subtags according to CLDR supplemental data:
-  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
-  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml). The
+  /// [language](https://github.com/unicode-org/cldr/blob/master/common/validity/language.xml),
+  /// [region](https://github.com/unicode-org/cldr/blob/master/common/validity/region.xml). The
   /// primary language subtag must be at least two and at most eight lowercase
   /// letters, but not four letters. The region region subtag must be two
   /// uppercase letters or three digits. See the [Unicode Language
@@ -1313,10 +1314,14 @@ class Locale {
   ///
   /// The subtag values are _case sensitive_ and must be valid subtags according
   /// to CLDR supplemental data:
-  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
-  /// [script](http://unicode.org/cldr/latest/common/validity/script.xml) and
-  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml) for
+  /// [language](https://github.com/unicode-org/cldr/blob/master/common/validity/language.xml),
+  /// [script](https://github.com/unicode-org/cldr/blob/master/common/validity/script.xml) and
+  /// [region](https://github.com/unicode-org/cldr/blob/master/common/validity/region.xml) for
   /// each of languageCode, scriptCode and countryCode respectively.
+  ///
+  /// The [languageCode] subtag is optional. When there is no language subtag,
+  /// the parameter should be omitted or set to "und". When not supplied, the
+  /// [languageCode] defaults to "und", an undefined language code.
   ///
   /// The [countryCode] subtag is optional. When there is no country subtag,
   /// the parameter should be omitted or passed `null` instead of an empty-string.
@@ -1351,7 +1356,7 @@ class Locale {
   ///
   /// This must be a valid Unicode Language subtag as listed in [Unicode CLDR
   /// supplemental
-  /// data](http://unicode.org/cldr/latest/common/validity/language.xml).
+  /// data](https://github.com/unicode-org/cldr/blob/master/common/validity/language.xml).
   ///
   /// See also:
   ///
@@ -1449,7 +1454,7 @@ class Locale {
   ///
   /// This must be a valid Unicode Language Identifier script subtag as listed
   /// in [Unicode CLDR supplemental
-  /// data](http://unicode.org/cldr/latest/common/validity/script.xml).
+  /// data](https://github.com/unicode-org/cldr/blob/master/common/validity/script.xml).
   ///
   /// See also:
   ///

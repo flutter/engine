@@ -9,6 +9,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -1029,166 +1030,46 @@ public class InputConnectionAdaptorTest {
   }
 
   @Test
-  public void testSendKeyEvent_delKeyDeletesBackward() {
-    int selStart = 29;
-    ListenableEditingState editable = sampleEditable(selStart, selStart, SAMPLE_RTL_TEXT);
-    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+  public void testSendKeyEvent_sendSoftKeyEvents() {
+    ListenableEditingState editable = sampleEditable(5, 5);
+    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
+    when(mockKeyProcessor.isCurrentEvent(any())).thenReturn(true);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable, mockKeyProcessor);
 
-    KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
+    KeyEvent shiftKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SHIFT_LEFT);
 
-    for (int i = 0; i < 9; i++) {
-      boolean didConsume = adaptor.sendKeyEvent(downKeyDown);
-      assertTrue(didConsume);
-    }
-    assertEquals(Selection.getSelectionStart(editable), 19);
-
-    for (int i = 0; i < 9; i++) {
-      boolean didConsume = adaptor.sendKeyEvent(downKeyDown);
-      assertTrue(didConsume);
-    }
-    assertEquals(Selection.getSelectionStart(editable), 10);
+    boolean didConsume = adaptor.sendKeyEvent(shiftKeyDown);
+    assertFalse(didConsume);
+    verify(mockKeyProcessor, never()).onKeyEvent(shiftKeyDown);
   }
 
   @Test
-  public void testSendKeyEvent_delKeyDeletesBackwardComplexEmojis() {
-    int selStart = 75;
-    ListenableEditingState editable = sampleEditable(selStart, selStart, SAMPLE_EMOJI_TEXT);
+  public void testSendKeyEvent_sendHardwareKeyEvents() {
+    ListenableEditingState editable = sampleEditable(5, 5);
+    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
+    when(mockKeyProcessor.isCurrentEvent(any())).thenReturn(false);
+    when(mockKeyProcessor.onKeyEvent(any())).thenReturn(true);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable, mockKeyProcessor);
+
+    KeyEvent shiftKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SHIFT_LEFT);
+
+    boolean didConsume = adaptor.sendKeyEvent(shiftKeyDown);
+    assertTrue(didConsume);
+    verify(mockKeyProcessor, times(1)).onKeyEvent(shiftKeyDown);
+  }
+
+  @Test
+  public void testSendKeyEvent_delKeyNotConsumed() {
+    ListenableEditingState editable = sampleEditable(5, 5);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
     KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
-    boolean didConsume;
 
-    // Normal Character
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 74);
-
-    // Non-Spacing Mark
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 73);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 72);
-
-    // Keycap
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 69);
-
-    // Keycap with invalid base
-    adaptor.setSelection(68, 68);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 66);
-    adaptor.setSelection(67, 67);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 66);
-
-    // Zero Width Joiner
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 55);
-
-    // Zero Width Joiner with invalid base
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 53);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 52);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 51);
-
-    // ----- Start Emoji Tag Sequence with invalid base testing ----
-    // Delete base tag
-    adaptor.setSelection(39, 39);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 37);
-
-    // Delete the sequence
-    adaptor.setSelection(49, 49);
-    for (int i = 0; i < 6; i++) {
-      didConsume = adaptor.sendKeyEvent(downKeyDown);
-      assertTrue(didConsume);
+    for (int i = 0; i < 4; i++) {
+      boolean didConsume = adaptor.sendKeyEvent(downKeyDown);
+      assertFalse(didConsume);
     }
-    assertEquals(Selection.getSelectionStart(editable), 37);
-    // ----- End Emoji Tag Sequence with invalid base testing ----
-
-    // Emoji Tag Sequence
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 23);
-
-    // Variation Selector with invalid base
-    adaptor.setSelection(22, 22);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 21);
-    adaptor.setSelection(22, 22);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 21);
-
-    // Variation Selector
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 19);
-
-    // Emoji Modifier
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 16);
-
-    // Emoji Modifier with invalid base
-    adaptor.setSelection(14, 14);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 13);
-    adaptor.setSelection(14, 14);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 13);
-
-    // Line Feed
-    adaptor.setSelection(12, 12);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 11);
-
-    // Carriage Return
-    adaptor.setSelection(12, 12);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 11);
-
-    // Carriage Return and Line Feed
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 9);
-
-    // Regional Indicator Symbol odd
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 7);
-
-    // Regional Indicator Symbol even
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 3);
-
-    // Simple Emoji
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 1);
-
-    // First CodePoint
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 0);
+    assertEquals(5, Selection.getSelectionStart(editable));
   }
 
   @Test
@@ -1245,11 +1126,15 @@ public class InputConnectionAdaptorTest {
 
   private static InputConnectionAdaptor sampleInputConnectionAdaptor(
       ListenableEditingState editable) {
+    return sampleInputConnectionAdaptor(editable, mock(AndroidKeyProcessor.class));
+  }
+
+  private static InputConnectionAdaptor sampleInputConnectionAdaptor(
+      ListenableEditingState editable, AndroidKeyProcessor mockKeyProcessor) {
     View testView = new View(RuntimeEnvironment.application);
     int client = 0;
     TextInputChannel textInputChannel = mock(TextInputChannel.class);
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     when(mockFlutterJNI.nativeFlutterTextUtilsIsEmoji(anyInt()))
         .thenAnswer((invocation) -> Emoji.isEmoji((int) invocation.getArguments()[0]));
     when(mockFlutterJNI.nativeFlutterTextUtilsIsEmojiModifier(anyInt()))

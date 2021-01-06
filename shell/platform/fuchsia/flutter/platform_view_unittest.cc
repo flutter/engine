@@ -104,6 +104,19 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
       const std::vector<std::string>& supported_locale_data) {
     return nullptr;
   }
+  // |flutter::PlatformView::Delegate|
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions) {}
+  // |flutter::PlatformView::Delegate|
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient) {}
+  // |flutter::PlatformView::Delegate|
+  void UpdateAssetResolverByType(
+      std::unique_ptr<flutter::AssetResolver> updated_asset_resolver,
+      flutter::AssetResolver::AssetResolverType type) {}
 
   flutter::Surface* surface() const { return surface_.get(); }
   flutter::PlatformMessage* message() const { return message_.get(); }

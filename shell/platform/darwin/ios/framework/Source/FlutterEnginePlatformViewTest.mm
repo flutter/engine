@@ -33,6 +33,16 @@ class MockDelegate : public PlatformView::Delegate {
   void OnPlatformViewRegisterTexture(std::shared_ptr<Texture> texture) override {}
   void OnPlatformViewUnregisterTexture(int64_t texture_id) override {}
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) override {}
+
+  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                               std::unique_ptr<const fml::Mapping> snapshot_data,
+                               std::unique_ptr<const fml::Mapping> snapshot_instructions) override {
+  }
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient) override {}
+  void UpdateAssetResolverByType(std::unique_ptr<AssetResolver> updated_asset_resolver,
+                                 AssetResolver::AssetResolverType type) override {}
 };
 
 }  // namespace

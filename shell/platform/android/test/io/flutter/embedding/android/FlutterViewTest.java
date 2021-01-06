@@ -19,6 +19,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Insets;
+import android.graphics.Region;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
@@ -234,7 +235,7 @@ public class FlutterViewTest {
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
@@ -246,11 +247,11 @@ public class FlutterViewTest {
 
     // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     // Padding bottom is always 0.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
   }
 
   // This test uses the pre-API 30 Algorithm for window insets.
@@ -276,7 +277,7 @@ public class FlutterViewTest {
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
@@ -288,10 +289,10 @@ public class FlutterViewTest {
 
     // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingBottom);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
   }
 
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
@@ -316,7 +317,7 @@ public class FlutterViewTest {
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
@@ -329,11 +330,11 @@ public class FlutterViewTest {
     // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is reported as-is.
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingTop);
     // Padding bottom is always 0.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
   }
 
   // This test uses the pre-API 30 Algorithm for window insets.
@@ -357,7 +358,7 @@ public class FlutterViewTest {
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
@@ -370,10 +371,10 @@ public class FlutterViewTest {
     // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is reported as-is.
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingTop);
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
   }
 
   @Test
@@ -402,7 +403,7 @@ public class FlutterViewTest {
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
@@ -415,12 +416,12 @@ public class FlutterViewTest {
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is removed due to full screen.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     // Bottom padding is removed due to hide navigation.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
     // Right padding is zero because the rotation is 90deg
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingRight);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingRight);
   }
 
   @Test
@@ -449,7 +450,7 @@ public class FlutterViewTest {
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
@@ -462,12 +463,12 @@ public class FlutterViewTest {
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is removed due to full screen.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     // Bottom padding is removed due to hide navigation.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
     // Left padding is zero because the rotation is 270deg
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingLeft);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
   }
 
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
@@ -500,7 +501,7 @@ public class FlutterViewTest {
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
     Insets insets = Insets.of(100, 100, 100, 100);
     // Then we simulate the system applying a window inset.
@@ -515,12 +516,12 @@ public class FlutterViewTest {
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is removed due to full screen.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     // Padding bottom is always 0.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
     // Left padding is zero because the rotation is 270deg
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingLeft);
+    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
   }
 
   // This test uses the pre-API 30 Algorithm for window insets.
@@ -552,7 +553,7 @@ public class FlutterViewTest {
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
@@ -565,12 +566,12 @@ public class FlutterViewTest {
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is removed due to full screen.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     // Bottom padding is removed due to hide navigation.
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
     // Left padding is zero because the rotation is 270deg
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingLeft);
-    assertEquals(103, viewportMetricsCaptor.getValue().paddingRight);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingLeft);
+    assertEquals(103, viewportMetricsCaptor.getValue().viewPaddingRight);
   }
 
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
@@ -601,7 +602,7 @@ public class FlutterViewTest {
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
 
     Insets insets = Insets.of(100, 100, 100, 100);
     Insets systemGestureInsets = Insets.of(110, 110, 110, 110);
@@ -626,10 +627,10 @@ public class FlutterViewTest {
     flutterView.onApplyWindowInsets(windowInsets);
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(150, viewportMetricsCaptor.getValue().paddingTop);
-    assertEquals(150, viewportMetricsCaptor.getValue().paddingBottom);
-    assertEquals(200, viewportMetricsCaptor.getValue().paddingLeft);
-    assertEquals(200, viewportMetricsCaptor.getValue().paddingRight);
+    assertEquals(150, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(150, viewportMetricsCaptor.getValue().viewPaddingBottom);
+    assertEquals(200, viewportMetricsCaptor.getValue().viewPaddingLeft);
+    assertEquals(200, viewportMetricsCaptor.getValue().viewPaddingRight);
 
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);
   }
@@ -793,6 +794,20 @@ public class FlutterViewTest {
     // Then, the second image is closed.
     imageView.onDraw(mock(Canvas.class));
     verify(mockImage, times(2)).close();
+  }
+
+  @Test
+  public void flutterSurfaceView_GathersTransparentRegion() {
+    final Region mockRegion = mock(Region.class);
+    final FlutterSurfaceView surfaceView = new FlutterSurfaceView(RuntimeEnvironment.application);
+
+    surfaceView.setAlpha(0.0f);
+    assertFalse(surfaceView.gatherTransparentRegion(mockRegion));
+    verify(mockRegion, times(0)).op(anyInt(), anyInt(), anyInt(), anyInt(), any());
+
+    surfaceView.setAlpha(1.0f);
+    assertTrue(surfaceView.gatherTransparentRegion(mockRegion));
+    verify(mockRegion, times(1)).op(0, 0, 0, 0, Region.Op.DIFFERENCE);
   }
 
   /*

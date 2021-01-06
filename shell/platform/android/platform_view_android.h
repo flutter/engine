@@ -93,6 +93,21 @@ class PlatformViewAndroid final : public PlatformView {
       int64_t texture_id,
       const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
 
+  // |PlatformView|
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions) override;
+
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient) override;
+
+  // |PlatformView|
+  void UpdateAssetResolverByType(
+      std::unique_ptr<AssetResolver> updated_asset_resolver,
+      AssetResolver::AssetResolverType type) override;
+
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
   std::unique_ptr<AndroidContext> android_context_;
@@ -136,6 +151,9 @@ class PlatformViewAndroid final : public PlatformView {
   // |PlatformView|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // |PlatformView|
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 
   void InstallFirstFrameCallback();
 

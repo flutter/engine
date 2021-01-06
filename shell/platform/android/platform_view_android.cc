@@ -336,6 +336,39 @@ PlatformViewAndroid::ComputePlatformResolvedLocales(
       supported_locale_data);
 }
 
+// |PlatformView|
+void PlatformViewAndroid::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  if (jni_facade_->RequestDartDeferredLibrary(loading_unit_id)) {
+    return;
+  }
+  return;  // TODO(garyq): Call LoadDartDeferredLibraryFailure()
+}
+
+// |PlatformView|
+void PlatformViewAndroid::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {
+  delegate_.LoadDartDeferredLibrary(loading_unit_id, std::move(snapshot_data),
+                                    std::move(snapshot_instructions));
+}
+
+// |PlatformView|
+void PlatformViewAndroid::LoadDartDeferredLibraryError(
+    intptr_t loading_unit_id,
+    const std::string error_message,
+    bool transient) {
+  delegate_.LoadDartDeferredLibraryError(loading_unit_id, error_message,
+                                         transient);
+}
+
+// |PlatformView|
+void PlatformViewAndroid::UpdateAssetResolverByType(
+    std::unique_ptr<AssetResolver> updated_asset_resolver,
+    AssetResolver::AssetResolverType type) {
+  delegate_.UpdateAssetResolverByType(std::move(updated_asset_resolver), type);
+}
+
 void PlatformViewAndroid::InstallFirstFrameCallback() {
   // On Platform Task Runner.
   SetNextFrameCallback(

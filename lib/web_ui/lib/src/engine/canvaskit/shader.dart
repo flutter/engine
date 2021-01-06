@@ -35,6 +35,7 @@ class CkGradientSweep extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
+    const double toDegrees = 180.0 / math.pi;
     return canvasKit.Shader.MakeSweepGradient(
       center.dx,
       center.dy,
@@ -43,8 +44,8 @@ class CkGradientSweep extends CkShader implements ui.Gradient {
       toSkTileMode(tileMode),
       matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
       0,
-      startAngle,
-      endAngle,
+      toDegrees * startAngle,
+      toDegrees * endAngle,
     );
   }
 
@@ -66,7 +67,7 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
         assert(_offsetIsValid(to)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
-        this.matrix4 = matrix == null ? null : _FastMatrix64(matrix) {
+        this.matrix4 = matrix {
     if (assertionsEnabled) {
       _validateColorStops(colors, colorStops);
     }
@@ -77,7 +78,7 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
   final List<ui.Color> colors;
   final List<double>? colorStops;
   final ui.TileMode tileMode;
-  final _FastMatrix64? matrix4;
+  final Float64List? matrix4;
 
   @override
   SkShader createDefault() {
