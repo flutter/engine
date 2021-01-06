@@ -51,7 +51,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   BrowserHistory? _browserHistory;
-
+  bool _usingRouter = false;
   Future<void> _useSingleEntryBrowserHistory() async {
     if (_browserHistory is SingleEntryBrowserHistory) {
       return;
@@ -59,6 +59,15 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     final UrlStrategy? strategy = _browserHistory?.urlStrategy;
     await _browserHistory?.tearDown();
     _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
+  }
+
+  Future<void> _useMultiEntryBrowserHistory() async {
+    if (_browserHistory is MultiEntriesBrowserHistory) {
+      return;
+    }
+    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    await _browserHistory?.tearDown();
+    _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
   }
 
   @visibleForTesting
@@ -95,11 +104,13 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 
     switch (decoded.method) {
       case 'routeUpdated':
+        assert(!_usingRouter);
         await _useSingleEntryBrowserHistory();
         browserHistory.setRouteName(arguments['routeName']);
         return true;
       case 'routeInformationUpdated':
-        assert(browserHistory is MultiEntriesBrowserHistory);
+        await _useMultiEntryBrowserHistory();
+        _usingRouter = true;
         browserHistory.setRouteName(
           arguments['location'],
           state: arguments['state'],
