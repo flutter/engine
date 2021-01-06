@@ -10,13 +10,19 @@
 #include <optional>
 #include <vector>
 
+#include "flutter/shell/platform/common/cpp/client_wrapper/binary_messenger_impl.h"
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
-#include "flutter/shell/platform/windows/win32_task_runner.h"
-#include "flutter/shell/platform/windows/win32_window_proc_delegate_manager.h"
+#include "flutter/shell/platform/windows/task_runner.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "third_party/rapidjson/include/rapidjson/document.h"
+
+#ifndef WINUWP
+#include "flutter/shell/platform/windows/win32_window_proc_delegate_manager.h"  // nogncheck
+#endif
 
 namespace flutter {
 
@@ -72,11 +78,13 @@ class FlutterWindowsEngine {
     return message_dispatcher_.get();
   }
 
-  Win32TaskRunner* task_runner() { return task_runner_.get(); }
+  TaskRunner* task_runner() { return task_runner_.get(); }
 
+#ifndef WINUWP
   Win32WindowProcDelegateManager* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
   }
+#endif
 
   // Informs the engine that the window metrics have changed.
   void SendWindowMetricsEvent(const FlutterWindowMetricsEvent& event);
@@ -129,10 +137,13 @@ class FlutterWindowsEngine {
   FlutterWindowsView* view_ = nullptr;
 
   // Task runner for tasks posted from the engine.
-  std::unique_ptr<Win32TaskRunner> task_runner_;
+  std::unique_ptr<TaskRunner> task_runner_;
 
   // The plugin messenger handle given to API clients.
   std::unique_ptr<FlutterDesktopMessenger> messenger_;
+
+  // A wrapper around messenger_ for interacting with client_wrapper-level APIs.
+  std::unique_ptr<BinaryMessengerImpl> messenger_wrapper_;
 
   // Message dispatch manager for messages from engine_.
   std::unique_ptr<IncomingMessageDispatcher> message_dispatcher_;
@@ -140,13 +151,18 @@ class FlutterWindowsEngine {
   // The plugin registrar handle given to API clients.
   std::unique_ptr<FlutterDesktopPluginRegistrar> plugin_registrar_;
 
+  // The MethodChannel used for communication with the Flutter engine.
+  std::unique_ptr<BasicMessageChannel<rapidjson::Document>> settings_channel_;
+
   // A callback to be called when the engine (and thus the plugin registrar)
   // is being destroyed.
   FlutterDesktopOnPluginRegistrarDestroyed
-      plugin_registrar_destruction_callback_;
+      plugin_registrar_destruction_callback_ = nullptr;
 
+#ifndef WINUWP
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<Win32WindowProcDelegateManager> window_proc_delegate_manager_;
+#endif
 };
 
 }  // namespace flutter

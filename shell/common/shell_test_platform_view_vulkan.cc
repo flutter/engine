@@ -4,7 +4,7 @@
 
 #include "flutter/shell/common/shell_test_platform_view_vulkan.h"
 
-#include "flutter/shell/common/persistent_cache.h"
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/vulkan/vulkan_utilities.h"
 
 namespace flutter {
@@ -196,11 +196,6 @@ SkMatrix ShellTestPlatformViewVulkan::OffScreenSurface::GetRootTransformation()
   SkMatrix matrix;
   matrix.reset();
   return matrix;
-}
-
-flutter::ExternalViewEmbedder*
-ShellTestPlatformViewVulkan::OffScreenSurface::GetExternalViewEmbedder() {
-  return shell_test_external_view_embedder_.get();
 }
 
 }  // namespace testing

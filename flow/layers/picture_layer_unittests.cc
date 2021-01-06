@@ -39,7 +39,7 @@ TEST_F(PictureLayerTest, PaintBeforePreollDies) {
 
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 
 TEST_F(PictureLayerTest, PaintingEmptyLayerDies) {
@@ -51,11 +51,11 @@ TEST_F(PictureLayerTest, PaintingEmptyLayerDies) {
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
-  EXPECT_FALSE(layer->needs_painting());
+  EXPECT_FALSE(layer->needs_painting(paint_context()));
   EXPECT_FALSE(layer->needs_system_composite());
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 #endif
 
@@ -81,18 +81,18 @@ TEST_F(PictureLayerTest, SimplePicture) {
   EXPECT_EQ(layer->paint_bounds(),
             picture_bounds.makeOffset(layer_offset.fX, layer_offset.fY));
   EXPECT_EQ(layer->picture(), mock_picture.get());
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_FALSE(layer->needs_system_composite());
 
   layer->Paint(paint_context());
   auto expected_draw_calls = std::vector(
       {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-       MockCanvas::DrawCall{1,
-                            MockCanvas::ConcatMatrixData{layer_offset_matrix}},
+       MockCanvas::DrawCall{
+           1, MockCanvas::ConcatMatrixData{SkM44(layer_offset_matrix)}},
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
        MockCanvas::DrawCall{
-           1, MockCanvas::SetMatrixData{RasterCache::GetIntegralTransCTM(
-                  layer_offset_matrix)}},
+           1, MockCanvas::SetMatrixData{SkM44(
+                  RasterCache::GetIntegralTransCTM(layer_offset_matrix))}},
 #endif
        MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);

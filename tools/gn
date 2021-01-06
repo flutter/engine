@@ -3,6 +3,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import argparse
 import subprocess
 import sys
@@ -35,6 +39,9 @@ def get_out_dir(args):
     if args.ios_cpu != 'arm64':
         target_dir.append(args.ios_cpu)
 
+    if args.simulator_cpu != 'x64':
+        target_dir.append(args.simulator_cpu)
+
     if args.linux_cpu is not None:
       target_dir.append(args.linux_cpu)
 
@@ -46,6 +53,9 @@ def get_out_dir(args):
 
     if args.enable_vulkan:
         target_dir.append('vulkan')
+
+    if args.macos_enable_metal:
+      target_dir.append('metal')
 
     return os.path.join(args.out_dir, 'out', '_'.join(target_dir))
 
@@ -139,6 +149,8 @@ def to_gn_args(args):
     elif args.target_os == 'fuchsia':
         gn_args['target_os'] = 'fuchsia'
         gn_args['flutter_enable_legacy_fuchsia_embedder'] = args.fuchsia_legacy
+    elif args.target_os == 'winuwp':
+        gn_args['target_os'] = 'winuwp'
     elif args.target_os is not None:
         gn_args['target_os'] = args.target_os
 
@@ -162,7 +174,7 @@ def to_gn_args(args):
         gn_args['target_cpu'] = args.android_cpu
     elif args.target_os == 'ios':
         if args.simulator:
-            gn_args['target_cpu'] = 'x64'
+            gn_args['target_cpu'] = args.simulator_cpu
         else:
             gn_args['target_cpu'] = args.ios_cpu
     elif args.target_os == 'linux':
@@ -207,6 +219,7 @@ def to_gn_args(args):
 
     goma_dir = os.environ.get('GOMA_DIR')
     goma_home_dir = os.path.join(os.getenv('HOME', ''), 'goma')
+    depot_tools_bin_dir = os.path.join(args.depot_tools, '.cipd_bin')
 
     # GOMA has a different default (home) path on gWindows.
     if not os.path.exists(goma_home_dir) and sys.platform.startswith(('cygwin', 'win')):
@@ -218,9 +231,18 @@ def to_gn_args(args):
     elif args.goma and os.path.exists(goma_home_dir):
       gn_args['use_goma'] = True
       gn_args['goma_dir'] = goma_home_dir
+    elif args.goma and os.path.exists(depot_tools_bin_dir):
+      gn_args['use_goma'] = True
+      gn_args['goma_dir'] = depot_tools_bin_dir
     else:
+      if args.goma:
+        print("GOMA usage was specified but can't be found, falling back to local builds. Set the GOMA_DIR environment variable to fix GOMA.")
       gn_args['use_goma'] = False
       gn_args['goma_dir'] = None
+
+    if gn_args['use_goma']:
+      if args.xcode_symlinks:
+        gn_args['create_xcode_symlinks'] = True
 
     # Enable Metal on iOS builds.
     if args.target_os == 'ios':
@@ -231,16 +253,30 @@ def to_gn_args(args):
       # attributes in release modes till the toolchain is updated.
       gn_args['skia_enable_api_available_macro'] = args.runtime_mode != "release"
 
+    if sys.platform == 'darwin' and args.macos_enable_metal:
+      # OpenGL is deprecated on macOS > 10.11.
+      # This is not neccessarily needed but enabling this until we have a way to
+      # build a macOS metal only shell and a gl only shell.
+      gn_args['allow_deprecated_api_calls'] = True
+      gn_args['skia_use_metal'] = True
+      gn_args['shell_enable_metal'] = True
+      # Skia has Metal support on macOS version >= 10.14.
+      MACOS_SKIA_METAL_SUPPORTED_MIN_VERSION = '10.14'
+      gn_args['mac_sdk_min'] = MACOS_SKIA_METAL_SUPPORTED_MIN_VERSION
+      gn_args['mac_deployment_target'] = MACOS_SKIA_METAL_SUPPORTED_MIN_VERSION
+
     if args.enable_vulkan:
       # Enable vulkan in the Flutter shell.
       gn_args['shell_enable_vulkan'] = True
       # Configure Skia for Vulkan support.
       gn_args['skia_use_vulkan'] = True
 
-    # The buildroot currently isn't set up to support Vulkan in the
-    # Windows ANGLE build, so disable it regardless of enable_vulkan's value.
     if sys.platform.startswith(('cygwin', 'win')):
-       gn_args['angle_enable_vulkan'] = False
+      # The buildroot currently isn't set up to support Vulkan in the
+      # Windows ANGLE build, so disable it regardless of enable_vulkan's value.
+      gn_args['angle_enable_vulkan'] = False
+      # Don't build unnecessary portions of the ANGLE tree.
+      gn_args['angle_build_all'] = False
 
     # We should not need a special case for x86, but this seems to introduce text relocations
     # even with -fPIC everywhere.
@@ -316,14 +352,23 @@ def parse_args(args):
   parser.add_argument('--fuchsia', dest='target_os', action='store_const', const='fuchsia')
   parser.add_argument('--fuchsia-legacy', default=True, action='store_true')
   parser.add_argument('--no-fuchsia-legacy', dest='fuchsia_legacy', action='store_false')
+  parser.add_argument('--winuwp', dest='target_os', action='store_const', const='winuwp')
 
   parser.add_argument('--linux-cpu', type=str, choices=['x64', 'x86', 'arm64', 'arm'])
   parser.add_argument('--fuchsia-cpu', type=str, choices=['x64', 'arm64'], default = 'x64')
   parser.add_argument('--windows-cpu', type=str, choices=['x64', 'arm64'], default = 'x64')
+  parser.add_argument('--simulator-cpu', type=str, choices=['x64', 'arm64'], default = 'x64')
   parser.add_argument('--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp'])
 
   parser.add_argument('--goma', default=True, action='store_true')
   parser.add_argument('--no-goma', dest='goma', action='store_false')
+  parser.add_argument('--xcode-symlinks', action='store_true', help='Set to true for builds targetting macOS or iOS ' +
+      'when using goma. If set, symlinks to the Xcode provided sysroot and SDKs will be created in a generated ' +
+      'folder, which will avoid potential backend errors in Fuchsia RBE.')
+  parser.add_argument('--no-xcode-symlinks', dest='xcode_symlinks', default=False, action='store_false')
+  parser.add_argument('--depot-tools', default='~/depot_tools', type=str,
+                      help='Depot tools provides an alternative location for gomacc in ' +
+                      '/path/to/depot_tools/.cipd_bin')
 
   parser.add_argument('--lto', default=True, action='store_true')
   parser.add_argument('--no-lto', dest='lto', action='store_false')
@@ -339,6 +384,7 @@ def parse_args(args):
   parser.add_argument('--target-triple', type=str)
   parser.add_argument('--operator-new-alignment', dest='operator_new_alignment', type=str, default=None)
 
+  parser.add_argument('--macos-enable-metal', action='store_true', default=False)
   parser.add_argument('--enable-vulkan', action='store_true', default=False)
 
   parser.add_argument('--enable-fontconfig', action='store_true', default=False)
@@ -408,11 +454,11 @@ def main(argv):
   out_dir = get_out_dir(args)
   command.append(out_dir)
   command.append('--args=%s' % ' '.join(gn_args))
-  print "Generating GN files in: %s" % out_dir
+  print("Generating GN files in: %s" % out_dir)
   try:
     gn_call_result = subprocess.call(command, cwd=SRC_ROOT)
   except subprocess.CalledProcessError as exc:
-    print "Failed to generate gn files: ", exc.returncode, exc.output
+    print("Failed to generate gn files: ", exc.returncode, exc.output)
     sys.exit(1)
 
   if gn_call_result == 0:
@@ -433,7 +479,7 @@ def main(argv):
     try:
       contents = subprocess.check_output(compile_cmd_gen_cmd, cwd=SRC_ROOT)
     except subprocess.CalledProcessError as exc:
-      print "Failed to run ninja: ", exc.returncode, exc.output
+      print("Failed to run ninja: ", exc.returncode, exc.output)
       sys.exit(1)
     compile_commands = open('%s/out/compile_commands.json' % SRC_ROOT, 'w+')
     compile_commands.write(contents)

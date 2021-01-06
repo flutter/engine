@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Generic callback signature, used by [_futurize].
@@ -526,10 +526,10 @@ FutureOr<void> sendFontChangeMessage() async {
 }
 
 // Stores matrix in a form that allows zero allocation transforms.
-class _FastMatrix64 {
-  final Float64List matrix;
+class _FastMatrix32 {
+  final Float32List matrix;
   double transformedX = 0, transformedY = 0;
-  _FastMatrix64(this.matrix);
+  _FastMatrix32(this.matrix);
 
   void transform(double x, double y) {
     transformedX = matrix[12] + (matrix[0] * x) + (matrix[4] * y);

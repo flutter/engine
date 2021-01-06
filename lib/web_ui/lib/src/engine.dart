@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 @JS()
 library engine;
 
@@ -125,9 +125,11 @@ part 'engine/services/serialization.dart';
 part 'engine/shadow.dart';
 part 'engine/test_embedding.dart';
 part 'engine/text/font_collection.dart';
+part 'engine/text/layout_service.dart';
 part 'engine/text/line_break_properties.dart';
 part 'engine/text/line_breaker.dart';
 part 'engine/text/measurement.dart';
+part 'engine/text/paint_service.dart';
 part 'engine/text/paragraph.dart';
 part 'engine/text/canvas_paragraph.dart';
 part 'engine/text/ruler.dart';
@@ -173,6 +175,10 @@ void initializeEngine() {
   if (_engineInitialized) {
     return;
   }
+
+  // Setup the hook that allows users to customize URL strategy before running
+  // the app.
+  _addUrlStrategyListener();
 
   // Called by the Web runtime just before hot restarting the app.
   //
@@ -245,6 +251,16 @@ void initializeEngine() {
 
   Keyboard.initialize();
   MouseCursor.initialize();
+}
+
+void _addUrlStrategyListener() {
+  _jsSetUrlStrategy = allowInterop((JsUrlStrategy? jsStrategy) {
+    customUrlStrategy =
+        jsStrategy == null ? null : CustomUrlStrategy.fromJs(jsStrategy);
+  });
+  registerHotRestartListener(() {
+    _jsSetUrlStrategy = null;
+  });
 }
 
 class _NullTreeSanitizer implements html.NodeTreeSanitizer {

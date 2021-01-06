@@ -5,7 +5,9 @@
 #include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
 
 #include <android/native_window_jni.h>
+#include <dlfcn.h>
 #include <jni.h>
+#include <sstream>
 #include <utility>
 
 #include "unicode/uchar.h"
@@ -13,6 +15,8 @@
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/file.h"
+#include "flutter/fml/mapping.h"
+#include "flutter/fml/native_library.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
@@ -100,6 +104,8 @@ static jmethodID g_detach_from_gl_context_method = nullptr;
 
 static jmethodID g_compute_platform_resolved_locale_method = nullptr;
 
+static jmethodID g_request_dart_deferred_library_method = nullptr;
+
 // Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
 
@@ -116,6 +122,7 @@ static fml::jni::ScopedJavaGlobalRef<jclass>* g_mutators_stack_class = nullptr;
 static jmethodID g_mutators_stack_init_method = nullptr;
 static jmethodID g_mutators_stack_push_transform_method = nullptr;
 static jmethodID g_mutators_stack_push_cliprect_method = nullptr;
+static jmethodID g_mutators_stack_push_cliprrect_method = nullptr;
 
 // Called By Java
 static jlong AttachJNI(JNIEnv* env,
@@ -508,6 +515,77 @@ static jboolean FlutterTextUtilsIsRegionalIndicator(JNIEnv* env,
                                                     jint codePoint) {
   return u_hasBinaryProperty(codePoint, UProperty::UCHAR_REGIONAL_INDICATOR);
 }
+
+static void LoadLoadingUnitFailure(intptr_t loading_unit_id,
+                                   std::string message,
+                                   bool transient) {
+  // TODO(garyq): Implement
+}
+
+static void DynamicFeatureInstallFailure(JNIEnv* env,
+                                         jobject obj,
+                                         jint jLoadingUnitId,
+                                         jstring jError,
+                                         jboolean jTransient) {
+  LoadLoadingUnitFailure(static_cast<intptr_t>(jLoadingUnitId),
+                         fml::jni::JavaStringToString(env, jError),
+                         static_cast<bool>(jTransient));
+}
+
+static void LoadDartDeferredLibrary(JNIEnv* env,
+                                    jobject obj,
+                                    jlong shell_holder,
+                                    jint jLoadingUnitId,
+                                    jobjectArray jSearchPaths) {
+  // Convert java->c++
+  intptr_t loading_unit_id = static_cast<intptr_t>(jLoadingUnitId);
+  std::vector<std::string> search_paths =
+      fml::jni::StringArrayToVector(env, jSearchPaths);
+
+  // Use dlopen here to directly check if handle is nullptr before creating a
+  // NativeLibrary.
+  void* handle = nullptr;
+  while (handle == nullptr && !search_paths.empty()) {
+    std::string path = search_paths.back();
+    handle = ::dlopen(path.c_str(), RTLD_NOW);
+    search_paths.pop_back();
+  }
+  if (handle == nullptr) {
+    LoadLoadingUnitFailure(loading_unit_id,
+                           "No lib .so found for provided search paths.", true);
+    return;
+  }
+  fml::RefPtr<fml::NativeLibrary> native_lib =
+      fml::NativeLibrary::CreateWithHandle(handle, false);
+
+  // Resolve symbols.
+  std::unique_ptr<const fml::SymbolMapping> data_mapping =
+      std::make_unique<const fml::SymbolMapping>(
+          native_lib, DartSnapshot::kIsolateDataSymbol);
+  std::unique_ptr<const fml::SymbolMapping> instructions_mapping =
+      std::make_unique<const fml::SymbolMapping>(
+          native_lib, DartSnapshot::kIsolateInstructionsSymbol);
+
+  ANDROID_SHELL_HOLDER->GetPlatformView()->LoadDartDeferredLibrary(
+      loading_unit_id, std::move(data_mapping),
+      std::move(instructions_mapping));
+}
+
+static void UpdateJavaAssetManager(JNIEnv* env,
+                                   jobject obj,
+                                   jlong shell_holder,
+                                   jobject jAssetManager,
+                                   jstring jAssetBundlePath) {
+  auto asset_resolver = std::make_unique<flutter::APKAssetProvider>(
+      env,                                                   // jni environment
+      jAssetManager,                                         // asset manager
+      fml::jni::JavaStringToString(env, jAssetBundlePath));  // apk asset dir
+
+  ANDROID_SHELL_HOLDER->GetPlatformView()->UpdateAssetResolverByType(
+      std::move(asset_resolver),
+      AssetResolver::AssetResolverType::kApkAssetProvider);
+}
+
 bool RegisterApi(JNIEnv* env) {
   static const JNINativeMethod flutter_jni_methods[] = {
       // Start of methods from FlutterJNI
@@ -663,6 +741,22 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(I)Z",
           .fnPtr =
               reinterpret_cast<void*>(&FlutterTextUtilsIsRegionalIndicator),
+      },
+      {
+          .name = "nativeLoadDartDeferredLibrary",
+          .signature = "(JI[Ljava/lang/String;)V",
+          .fnPtr = reinterpret_cast<void*>(&LoadDartDeferredLibrary),
+      },
+      {
+          .name = "nativeUpdateJavaAssetManager",
+          .signature =
+              "(JLandroid/content/res/AssetManager;Ljava/lang/String;)V",
+          .fnPtr = reinterpret_cast<void*>(&UpdateJavaAssetManager),
+      },
+      {
+          .name = "nativeDynamicFeatureInstallFailure",
+          .signature = "(ILjava/lang/String;Z)V",
+          .fnPtr = reinterpret_cast<void*>(&DynamicFeatureInstallFailure),
       },
   };
 
@@ -820,7 +914,15 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       g_mutators_stack_class->obj(), "pushClipRect", "(IIII)V");
   if (g_mutators_stack_push_cliprect_method == nullptr) {
     FML_LOG(ERROR)
-        << "Could not locate FlutterMutatorsStack.pushCilpRect method";
+        << "Could not locate FlutterMutatorsStack.pushClipRect method";
+    return false;
+  }
+
+  g_mutators_stack_push_cliprrect_method = env->GetMethodID(
+      g_mutators_stack_class->obj(), "pushClipRRect", "(IIII[F)V");
+  if (g_mutators_stack_push_cliprect_method == nullptr) {
+    FML_LOG(ERROR)
+        << "Could not locate FlutterMutatorsStack.pushClipRRect method";
     return false;
   }
 
@@ -904,6 +1006,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   if (g_compute_platform_resolved_locale_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate computePlatformResolvedLocale method";
+    return false;
+  }
+
+  g_request_dart_deferred_library_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "requestDartDeferredLibrary", "(I)V");
+
+  if (g_request_dart_deferred_library_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate requestDartDeferredLibrary method";
     return false;
   }
 
@@ -1182,9 +1292,28 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
             static_cast<int>(rect.right()), static_cast<int>(rect.bottom()));
         break;
       }
+      case clip_rrect: {
+        const SkRRect& rrect = (*iter)->GetRRect();
+        const SkRect& rect = rrect.rect();
+        const SkVector& upper_left = rrect.radii(SkRRect::kUpperLeft_Corner);
+        const SkVector& upper_right = rrect.radii(SkRRect::kUpperRight_Corner);
+        const SkVector& lower_right = rrect.radii(SkRRect::kLowerRight_Corner);
+        const SkVector& lower_left = rrect.radii(SkRRect::kLowerLeft_Corner);
+        SkScalar radiis[8] = {
+            upper_left.x(),  upper_left.y(),  upper_right.x(), upper_right.y(),
+            lower_right.x(), lower_right.y(), lower_left.x(),  lower_left.y(),
+        };
+        fml::jni::ScopedJavaLocalRef<jfloatArray> radiisArray(
+            env, env->NewFloatArray(8));
+        env->SetFloatArrayRegion(radiisArray.obj(), 0, 8, radiis);
+        env->CallVoidMethod(
+            mutatorsStack, g_mutators_stack_push_cliprrect_method,
+            (int)rect.left(), (int)rect.top(), (int)rect.right(),
+            (int)rect.bottom(), radiisArray.obj());
+        break;
+      }
       // TODO(cyanglaz): Implement other mutators.
       // https://github.com/flutter/flutter/issues/58426
-      case clip_rrect:
       case clip_path:
       case opacity:
         break;
@@ -1332,6 +1461,23 @@ double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
 
   jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
   return static_cast<double>(env->GetStaticFloatField(clazz, fid));
+}
+
+bool PlatformViewAndroidJNIImpl::RequestDartDeferredLibrary(
+    int loading_unit_id) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return true;
+  }
+
+  env->CallObjectMethod(java_object.obj(),
+                        g_request_dart_deferred_library_method,
+                        loading_unit_id);
+
+  FML_CHECK(CheckException(env));
+  return true;
 }
 
 }  // namespace flutter

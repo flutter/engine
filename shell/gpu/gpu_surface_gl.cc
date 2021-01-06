@@ -4,11 +4,11 @@
 
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/base32.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
@@ -331,11 +331,6 @@ sk_sp<SkSurface> GPUSurfaceGL::AcquireRenderSurface(
 // |Surface|
 GrDirectContext* GPUSurfaceGL::GetContext() {
   return context_.get();
-}
-
-// |Surface|
-flutter::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
-  return delegate_->GetExternalViewEmbedder();
 }
 
 // |Surface|

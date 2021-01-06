@@ -18,6 +18,7 @@ import io.flutter.embedding.engine.LocalizationPluginTest;
 import io.flutter.embedding.engine.RenderingComponentTest;
 import io.flutter.embedding.engine.dart.DartExecutorTest;
 import io.flutter.embedding.engine.dart.DartMessengerTest;
+import io.flutter.embedding.engine.dynamicfeatures.PlayStoreDynamicFeatureManagerTest;
 import io.flutter.embedding.engine.loader.ApplicationInfoLoaderTest;
 import io.flutter.embedding.engine.loader.FlutterLoaderTest;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorViewTest;
@@ -30,6 +31,7 @@ import io.flutter.external.FlutterLaunchTests;
 import io.flutter.plugin.common.StandardMessageCodecTest;
 import io.flutter.plugin.common.StandardMethodCodecTest;
 import io.flutter.plugin.editing.InputConnectionAdaptorTest;
+import io.flutter.plugin.editing.ListenableEditingStateTest;
 import io.flutter.plugin.editing.TextInputPluginTest;
 import io.flutter.plugin.mouse.MouseCursorPluginTest;
 import io.flutter.plugin.platform.PlatformPluginTest;
@@ -70,11 +72,13 @@ import test.io.flutter.embedding.engine.PluginComponentTest;
   FlutterViewTest.class,
   InputConnectionAdaptorTest.class,
   KeyEventChannelTest.class,
+  ListenableEditingStateTest.class,
   LocalizationPluginTest.class,
   MouseCursorPluginTest.class,
   PlatformChannelTest.class,
   PlatformPluginTest.class,
   PlatformViewsControllerTest.class,
+  PlayStoreDynamicFeatureManagerTest.class,
   PluginComponentTest.class,
   PreconditionsTest.class,
   RenderingComponentTest.class,

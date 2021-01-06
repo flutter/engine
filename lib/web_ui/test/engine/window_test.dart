@@ -271,7 +271,7 @@ void testMain() {
     expect(responded, true);
   });
 
-  test('Window implements locale, locales, and locale change notifications', () async {
+  test('SingletonFlutterWindow implements locale, locales, and locale change notifications', () async {
     // This will count how many times we notified about locale changes.
     int localeChangedCount = 0;
     window.onLocaleChanged = () {
@@ -292,6 +292,7 @@ void testMain() {
     // that the list is populated again).
     EnginePlatformDispatcher.instance.debugResetLocales();
     expect(window.locales, isEmpty);
+    expect(window.locale, equals(const ui.Locale.fromSubtags()));
     expect(localeChangedCount, 0);
     html.window.dispatchEvent(html.Event('languagechange'));
     expect(window.locales, isNotEmpty);

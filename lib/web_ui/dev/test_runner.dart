@@ -90,6 +90,8 @@ class TestCommand extends Command<bool> with ArgUtils {
 
     SupportedBrowsers.instance.argParsers
         .forEach((t) => t.populateOptions(argParser));
+    GeneralTestsArgumentParser.instance.populateOptions(argParser);
+    IntegrationTestsArgumentParser.instance.populateOptions(argParser);
   }
 
   @override
@@ -133,6 +135,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   Future<bool> run() async {
     SupportedBrowsers.instance
       ..argParsers.forEach((t) => t.parseOptions(argResults));
+    GeneralTestsArgumentParser.instance.parseOptions(argResults);
 
     // Check the flags to see what type of integration tests are requested.
     testTypesRequested = findTestType();
@@ -165,6 +168,8 @@ class TestCommand extends Command<bool> with ArgUtils {
   }
 
   Future<bool> runIntegrationTests() async {
+    // Parse additional arguments specific for integration testing.
+    IntegrationTestsArgumentParser.instance.parseOptions(argResults);
     if(!_testPreparationReady) {
       await _prepare();
     }
@@ -204,7 +209,9 @@ class TestCommand extends Command<bool> with ArgUtils {
 
     // If screenshot tests are available, fetch the screenshot goldens.
     if (isScreenshotTestsAvailable) {
-      print('screenshot tests available');
+      if (isVerboseLoggingEnabled) {
+        print('INFO: Screenshot tests available');
+      }
       final GoldensRepoFetcher goldensRepoFetcher = GoldensRepoFetcher(
           environment.webUiGoldensRepositoryDirectory,
           path.join(environment.webUiDevDir.path, 'goldens_lock.yaml'));
@@ -429,35 +436,39 @@ class TestCommand extends Command<bool> with ArgUtils {
       'test',
     ));
 
-    if (isUnitTestsScreenshotsAvailable) {
-      // Separate screenshot tests from unit-tests. Screenshot tests must run
-      // one at a time. Otherwise, they will end up screenshotting each other.
-      // This is not an issue for unit-tests.
-      final FilePath failureSmokeTestPath = FilePath.fromWebUi(
-        'test/golden_tests/golden_failure_smoke_test.dart',
-      );
-      final List<FilePath> screenshotTestFiles = <FilePath>[];
-      final List<FilePath> unitTestFiles = <FilePath>[];
+    // Separate screenshot tests from unit-tests. Screenshot tests must run
+    // one at a time. Otherwise, they will end up screenshotting each other.
+    // This is not an issue for unit-tests.
+    final FilePath failureSmokeTestPath = FilePath.fromWebUi(
+      'test/golden_tests/golden_failure_smoke_test.dart',
+    );
+    final List<FilePath> screenshotTestFiles = <FilePath>[];
+    final List<FilePath> unitTestFiles = <FilePath>[];
 
-      for (io.File testFile
-          in testDir.listSync(recursive: true).whereType<io.File>()) {
-        final FilePath testFilePath = FilePath.fromCwd(testFile.path);
-        if (!testFilePath.absolute.endsWith('_test.dart')) {
-          // Not a test file at all. Skip.
-          continue;
-        }
-        if (testFilePath == failureSmokeTestPath) {
-          // A smoke test that fails on purpose. Skip.
-          continue;
-        }
-
-        if (path.split(testFilePath.relativeToWebUi).contains('golden_tests')) {
-          screenshotTestFiles.add(testFilePath);
-        } else {
-          unitTestFiles.add(testFilePath);
-        }
+    for (io.File testFile
+        in testDir.listSync(recursive: true).whereType<io.File>()) {
+      final FilePath testFilePath = FilePath.fromCwd(testFile.path);
+      if (!testFilePath.absolute.endsWith('_test.dart')) {
+        // Not a test file at all. Skip.
+        continue;
+      }
+      if (testFilePath == failureSmokeTestPath) {
+        // A smoke test that fails on purpose. Skip.
+        continue;
       }
 
+      // All files under test/golden_tests are considered golden tests.
+      final bool isUnderGoldenTestsDirectory = path.split(testFilePath.relativeToWebUi).contains('golden_tests');
+      // Any file whose name ends with "_golden_test.dart" is run as a golden test.
+      final bool isGoldenTestFile = path.basename(testFilePath.relativeToWebUi).endsWith('_golden_test.dart');
+      if (isUnderGoldenTestsDirectory || isGoldenTestFile) {
+        screenshotTestFiles.add(testFilePath);
+      } else {
+        unitTestFiles.add(testFilePath);
+      }
+    }
+
+    if (isUnitTestsScreenshotsAvailable) {
       // This test returns a non-zero exit code on purpose. Run it separately.
       if (io.Platform.environment['CIRRUS_CI'] != 'true') {
         await _runTestBatch(
@@ -467,11 +478,13 @@ class TestCommand extends Command<bool> with ArgUtils {
         );
         _checkExitCode();
       }
+    }
 
-      // Run all unit-tests as a single batch.
-      await _runTestBatch(unitTestFiles, concurrency: 10, expectFailure: false);
-      _checkExitCode();
+    // Run all unit-tests as a single batch.
+    await _runTestBatch(unitTestFiles, concurrency: 10, expectFailure: false);
+    _checkExitCode();
 
+    if (isUnitTestsScreenshotsAvailable) {
       // Run screenshot tests one at a time.
       for (FilePath testFilePath in screenshotTestFiles) {
         await _runTestBatch(
@@ -481,24 +494,6 @@ class TestCommand extends Command<bool> with ArgUtils {
         );
         _checkExitCode();
       }
-    } else {
-      final List<FilePath> unitTestFiles = <FilePath>[];
-      for (io.File testFile
-          in testDir.listSync(recursive: true).whereType<io.File>()) {
-        final FilePath testFilePath = FilePath.fromCwd(testFile.path);
-        if (!testFilePath.absolute.endsWith('_test.dart')) {
-          // Not a test file at all. Skip.
-          continue;
-        }
-        if (!path
-            .split(testFilePath.relativeToWebUi)
-            .contains('golden_tests')) {
-          unitTestFiles.add(testFilePath);
-        }
-      }
-      // Run all unit-tests as a single batch.
-      await _runTestBatch(unitTestFiles, concurrency: 10, expectFailure: false);
-      _checkExitCode();
     }
   }
 

@@ -15,6 +15,7 @@
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
@@ -24,20 +25,16 @@ namespace flutter {
 
 class AndroidSurfaceFactoryImpl : public AndroidSurfaceFactory {
  public:
-  AndroidSurfaceFactoryImpl(std::shared_ptr<AndroidContext> context,
+  AndroidSurfaceFactoryImpl(const AndroidContext& context,
                             std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   ~AndroidSurfaceFactoryImpl() override;
 
   std::unique_ptr<AndroidSurface> CreateSurface() override;
 
-  void SetExternalViewEmbedder(
-      std::shared_ptr<AndroidExternalViewEmbedder> external_view_embedder);
-
  private:
-  std::shared_ptr<AndroidContext> android_context_;
+  const AndroidContext& android_context_;
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
-  std::weak_ptr<AndroidExternalViewEmbedder> external_view_embedder_;
 };
 
 class PlatformViewAndroid final : public PlatformView {
@@ -96,9 +93,24 @@ class PlatformViewAndroid final : public PlatformView {
       int64_t texture_id,
       const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
 
+  // |PlatformView|
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions) override;
+
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient) override;
+
+  // |PlatformView|
+  void UpdateAssetResolverByType(
+      std::unique_ptr<AssetResolver> updated_asset_resolver,
+      AssetResolver::AssetResolverType type) override;
+
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
-  std::shared_ptr<AndroidExternalViewEmbedder> external_view_embedder_;
+  std::unique_ptr<AndroidContext> android_context_;
   std::shared_ptr<AndroidSurfaceFactoryImpl> surface_factory_;
 
   PlatformViewAndroidDelegate platform_view_android_delegate_;
@@ -139,6 +151,9 @@ class PlatformViewAndroid final : public PlatformView {
   // |PlatformView|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // |PlatformView|
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 
   void InstallFirstFrameCallback();
 

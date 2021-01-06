@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Requests that the browser schedule a frame.
@@ -174,7 +174,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// rasterized frames.
   ///
   /// It's preferred to use [SchedulerBinding.addTimingsCallback] than to use
-  /// [Window.onReportTimings] directly because
+  /// [PlatformDispatcher.onReportTimings] directly because
   /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
   ///
   /// This can be used to see if the application has missed frames (through
@@ -546,6 +546,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     EngineSemanticsOwner.instance.updateSemantics(update);
   }
 
+  /// This is equivalent to `locales.first`, except that it will provide an
+  /// undefined (using the language tag "und") non-null locale if the [locales]
+  /// list has not been set or is empty.
+  ///
   /// We use the first locale in the [locales] list instead of the browser's
   /// built-in `navigator.language` because browsers do not agree on the
   /// implementation.
@@ -554,7 +558,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorLanguage/languages,
   ///   which explains browser quirks in the implementation notes.
-  ui.Locale get locale => locales.first;
+  ui.Locale get locale => locales.isEmpty ? const ui.Locale.fromSubtags() : locales.first;
 
   /// The full system-reported supported locales of the device.
   ///

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Set this flag to `true` to cause the engine to visualize the semantics tree
@@ -582,6 +582,8 @@ class SemanticsObject {
       hasAction(ui.SemanticsAction.scrollDown) ||
       hasAction(ui.SemanticsAction.scrollUp);
 
+  bool get hasFocus => hasFlag(ui.SemanticsFlag.isFocused);
+
   /// Whether this object represents a hotizontally scrollable area.
   bool get isHorizontalScrollContainer =>
       hasAction(ui.SemanticsAction.scrollLeft) ||
@@ -889,7 +891,17 @@ class SemanticsObject {
         effectiveTransformIsIdentity = effectiveTransform.isIdentity();
       }
     } else if (!hasIdentityTransform) {
-      effectiveTransform = Matrix4.fromFloat32List(transform!);
+      // After https://github.com/dart-lang/language/issues/1274 is implemented,
+      // `transform` will be promoted to non-nullable so we won't need to null
+      // check it (and it will cause a build failure to try to do so).  Until
+      // then, we need to null check it in such a way that won't cause a build
+      // failure once the feature is implemented.  We can do that using an
+      // explicit "if" test.
+      // TODO(paulberry): remove this check once the feature is implemented.
+      if (transform == null) { // ignore: unnecessary_null_comparison
+        throw 'impossible';
+      }
+      effectiveTransform = Matrix4.fromFloat32List(transform);
       effectiveTransformIsIdentity = false;
     }
 
@@ -915,6 +927,7 @@ class SemanticsObject {
           ..height = '${rect.height}px';
       }
     } else {
+      // TODO: https://github.com/flutter/flutter/issues/73347
       if (isDesktop) {
         element.style
           ..removeProperty('transform-origin')
@@ -1265,11 +1278,11 @@ class EngineSemanticsOwner {
 
   final SemanticsHelper semanticsHelper = SemanticsHelper();
 
-  /// Whether the user has requested that [updateSemantics] be called when
-  /// the semantic contents of window changes.
+  /// Whether the user has requested that [updateSemantics] be called when the
+  /// semantic contents of window changes.
   ///
-  /// The [ui.Window.onSemanticsEnabledChanged] callback is called whenever this
-  /// value changes.
+  /// The [ui.PlatformDispatcher.onSemanticsEnabledChanged] callback is called
+  /// whenever this value changes.
   ///
   /// This is separate from accessibility [mode], which controls how gestures
   /// are interpreted when this value is true.

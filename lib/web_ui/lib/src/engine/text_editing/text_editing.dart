@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
@@ -1262,10 +1262,20 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // Refocus on the domElement after blur, so that user can keep editing the
     // text field.
     _subscriptions.add(domElement.onBlur.listen((_) {
-      domElement.focus();
+      _postponeFocus();
     }));
 
     preventDefaultForMouseEvents();
+  }
+
+  void _postponeFocus() {
+    // Firefox does not focus on the editing element if we call the focus
+    // inside the blur event, therefore we postpone the focus.
+    // Calling focus inside a Timer for `0` milliseconds guarantee that it is
+    // called after blur event propagation is completed.
+    Timer(const Duration(milliseconds: 0), () {
+      domElement.focus();
+    });
   }
 
   @override
