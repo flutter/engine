@@ -19,7 +19,8 @@ namespace flutter {
 class PixelBufferTexture {
  public:
   // A callback used for retrieving pixel buffers.
-  typedef std::function<FlutterDesktopPixelBuffer*(size_t width, size_t height)>
+  typedef std::function<const FlutterDesktopPixelBuffer*(size_t width,
+                                                         size_t height)>
       CopyBufferCb;
 
   // Creates a pixel buffer texture that uses the provided |copy_buffer_cb| to
