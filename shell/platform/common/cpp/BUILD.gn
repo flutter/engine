@@ -162,8 +162,6 @@ if (enable_unittests) {
       "engine_switches_unittests.cc",
       "json_message_codec_unittests.cc",
       "json_method_codec_unittests.cc",
-      "test_accessibility_bridge.cc",
-      "test_accessibility_bridge.h",
       "text_input_model_unittests.cc",
       "text_range_unittests.cc",
     ]
@@ -183,6 +181,8 @@ if (enable_unittests) {
       sources += [
         "accessibility_bridge_unittests.cc",
         "flutter_accessibility_unittests.cc",
+        "test_accessibility_bridge.cc",
+        "test_accessibility_bridge.h",
       ]
 
       deps += [":common_cpp_accessibility"]
