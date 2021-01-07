@@ -10,8 +10,6 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 
-#include <iostream>
-
 namespace {
 
 typedef void (*glGenTexturesProc)(GLsizei n, GLuint* textures);
@@ -93,7 +91,6 @@ bool ExternalTextureGL::PopulateTexture(size_t width,
                                         size_t height,
                                         FlutterOpenGLTexture* opengl_texture) {
   if (!CopyPixelBuffer(width, height)) {
-    std::cerr << "Failed to copy pixel buffer from provider." << std::endl;
     return false;
   }
 
