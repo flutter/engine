@@ -1,4 +1,4 @@
-Signature: d3b14917ea726cd3cf6eca85b735025e
+Signature: 94e03e24564e1b5e9d8e242710d66a6a
 
 UNUSED LICENSES:
 
@@ -9139,6 +9139,8 @@ FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/bin/main.dart
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/cquery_driver.dart
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/xref_extractor.dart
 FILE: ../../../third_party/dart/runtime/vm/canonical_tables.cc
+FILE: ../../../third_party/dart/runtime/vm/closure_functions_cache.cc
+FILE: ../../../third_party/dart/runtime/vm/closure_functions_cache.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler_tracer.cc
