@@ -116,7 +116,7 @@ void testMain() {
     ).catchError((Object e) {
       caughtAssertion = e as AssertionError;
     });
-    
+
     expect(
       caughtAssertion.message,
       'Receives old navigator update in a router application. This can '
