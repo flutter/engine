@@ -39,15 +39,13 @@ TEST(FlutterWindowsTextureRegistrarTest, RegisterUnregisterTexture) {
 
   FlutterWindowsTextureRegistrar registrar(engine.get());
 
-  FlutterDesktopPixelBufferTextureConfig config = {};
-  config.callback = [](size_t width, size_t height,
-                       void* user_data) -> const FlutterDesktopPixelBuffer* {
-    return nullptr;
-  };
-
   FlutterDesktopTextureInfo texture_info = {};
   texture_info.type = kFlutterDesktopPixelBufferTexture;
-  texture_info.pixel_buffer = config;
+  texture_info.pixel_buffer_config.callback =
+      [](size_t width, size_t height,
+         void* user_data) -> const FlutterDesktopPixelBuffer* {
+    return nullptr;
+  };
 
   int64_t registered_texture_id = 0;
   bool register_called = false;

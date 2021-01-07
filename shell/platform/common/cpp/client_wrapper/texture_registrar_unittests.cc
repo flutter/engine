@@ -15,14 +15,6 @@ namespace flutter {
 
 namespace {
 
-class TestPixelBufferTextureDelegate : public PixelBufferTextureDelegate {
- public:
-  const FlutterDesktopPixelBuffer* CopyPixelBuffer(size_t width,
-                                                   size_t height) override {
-    return nullptr;
-  }
-};
-
 // Stub implementation to validate calls to the API.
 class TestApi : public testing::StubFlutterApi {
  public:
@@ -39,8 +31,8 @@ class TestApi : public testing::StubFlutterApi {
     last_texture_id_++;
 
     auto texture = std::make_unique<FakePixelBufferTexture>();
-    texture->texture_callback = info->pixel_buffer.callback;
-    texture->user_data = info->pixel_buffer.user_data;
+    texture->texture_callback = info->pixel_buffer_config.callback;
+    texture->user_data = info->pixel_buffer_config.user_data;
     texture->mark_count = 0;
     texture->texture_id = last_texture_id_;
 
@@ -101,7 +93,7 @@ TEST(TextureRegistrarTest, RegisterUnregisterTexture) {
   EXPECT_EQ(texture, nullptr);
 
   auto pixel_buffer_texture = std::make_unique<TextureVariant>(
-      PixelBufferTexture(std::make_unique<TestPixelBufferTextureDelegate>()));
+      PixelBufferTexture([](size_t width, size_t height) { return nullptr; }));
   int64_t texture_id = textures->RegisterTexture(pixel_buffer_texture.get());
   EXPECT_EQ(test_api->last_texture_id(), texture_id);
   EXPECT_EQ(test_api->textures_size(), static_cast<size_t>(1));

@@ -21,8 +21,13 @@ class TextureRegistrarImpl : public TextureRegistrar {
   TextureRegistrarImpl(TextureRegistrarImpl const&) = delete;
   TextureRegistrarImpl& operator=(TextureRegistrarImpl const&) = delete;
 
+  // |flutter::TextureRegistrar|
   int64_t RegisterTexture(TextureVariant* texture) override;
+
+  // |flutter::TextureRegistrar|
   bool MarkTextureFrameAvailable(int64_t texture_id) override;
+
+  // |flutter::TextureRegistrar|
   bool UnregisterTexture(int64_t texture_id) override;
 
  private:

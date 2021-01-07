@@ -160,12 +160,12 @@ int64_t TextureRegistrarImpl::RegisterTexture(TextureVariant* texture) {
   if (auto pixel_buffer_texture = std::get_if<PixelBufferTexture>(texture)) {
     FlutterDesktopTextureInfo info = {};
     info.type = kFlutterDesktopPixelBufferTexture;
-    info.pixel_buffer.user_data = pixel_buffer_texture;
-    info.pixel_buffer.callback =
+    info.pixel_buffer_config.user_data = pixel_buffer_texture;
+    info.pixel_buffer_config.callback =
         [](size_t width, size_t height,
            void* user_data) -> const FlutterDesktopPixelBuffer* {
       auto texture = static_cast<PixelBufferTexture*>(user_data);
-      auto buffer = texture->delegate()->CopyPixelBuffer(width, height);
+      auto buffer = texture->CopyPixelBuffer(width, height);
       return buffer;
     };
 

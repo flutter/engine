@@ -22,14 +22,14 @@ int64_t FlutterWindowsTextureRegistrar::RegisterTexture(
     return -1;
   }
 
-  if (!texture_info->pixel_buffer.callback) {
+  if (!texture_info->pixel_buffer_config.callback) {
     std::cerr << "Invalid pixel buffer texture callback." << std::endl;
     return -1;
   }
 
   auto texture_gl = std::make_unique<flutter::ExternalTextureGL>(
-      engine_, texture_info->pixel_buffer.callback,
-      texture_info->pixel_buffer.user_data);
+      engine_, texture_info->pixel_buffer_config.callback,
+      texture_info->pixel_buffer_config.user_data);
 
   int64_t texture_id = texture_gl->texture_id();
   textures_[texture_id] = std::move(texture_gl);

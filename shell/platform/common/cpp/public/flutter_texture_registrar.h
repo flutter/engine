@@ -19,6 +19,8 @@ struct FlutterDesktopTextureRegistrar;
 typedef struct FlutterDesktopTextureRegistrar*
     FlutterDesktopTextureRegistrarRef;
 
+// Possible values for the type specified in FlutterDesktopTextureInfo.
+// Additional types may be added in the future.
 typedef enum {
   // A Pixel buffer-based texture.
   kFlutterDesktopPixelBufferTexture
@@ -36,6 +38,8 @@ typedef struct {
 
 // The pixel buffer copy callback definition provided to
 // the Flutter engine to copy the texture.
+// It is invoked with the intended surface size specified by |width| and
+// |height| and the |user_data| held by FlutterDesktopPixelBufferTextureConfig.
 typedef const FlutterDesktopPixelBuffer* (
     *FlutterDesktopPixelBufferTextureCallback)(size_t width,
                                                size_t height,
@@ -52,7 +56,7 @@ typedef struct {
 typedef struct {
   FlutterDesktopTextureType type;
   union {
-    FlutterDesktopPixelBufferTextureConfig pixel_buffer;
+    FlutterDesktopPixelBufferTextureConfig pixel_buffer_config;
   };
 } FlutterDesktopTextureInfo;
 

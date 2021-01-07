@@ -6,35 +6,43 @@
 #define FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_TEXTURE_REGISTRAR_H_
 
 #include <flutter_texture_registrar.h>
-#include <stdint.h>
+#include <cstdint>
 
 #include <memory>
 #include <variant>
 
+#include <functional>
+
 namespace flutter {
-
-// An interface used as an image source by pixel buffer textures.
-class PixelBufferTextureDelegate {
- public:
-  virtual ~PixelBufferTextureDelegate() = default;
-
-  // Returns a FlutterDesktopPixelBuffer that contains the actual pixel data.
-  // The intended surface size is specified by |width| and |height|.
-  virtual const FlutterDesktopPixelBuffer* CopyPixelBuffer(size_t width,
-                                                           size_t height) = 0;
-};
 
 // A pixel buffer texture.
 class PixelBufferTexture {
  public:
-  PixelBufferTexture(std::unique_ptr<PixelBufferTextureDelegate>&& delegate)
-      : delegate_(std::move(delegate)) {}
-  PixelBufferTextureDelegate* delegate() const { return delegate_.get(); };
+  // A callback used for retrieving pixel buffers.
+  typedef std::function<FlutterDesktopPixelBuffer*(size_t width, size_t height)>
+      CopyBufferCb;
+
+  // Creates a pixel buffer texture that uses the provided |copy_buffer_cb| to
+  // retrieve the buffer.
+  PixelBufferTexture(CopyBufferCb copy_buffer_cb)
+      : copy_buffer_cb_(copy_buffer_cb) {}
+
+  // Returns the callback-provided FlutterDesktopPixelBuffer that contains the
+  // actual pixel data. The intended surface size is specified by |width| and
+  // |height|.
+  const FlutterDesktopPixelBuffer* CopyPixelBuffer(size_t width,
+                                                   size_t height) const {
+    return copy_buffer_cb_(width, height);
+  }
 
  private:
-  std::unique_ptr<PixelBufferTextureDelegate> delegate_;
+  const CopyBufferCb copy_buffer_cb_;
 };
 
+// The available texture variants.
+// While PixelBufferTexture is the only implementation we currently have,
+// this is going to be extended once we have additional implementations like
+// PBO-based textures etc.
 typedef std::variant<PixelBufferTexture> TextureVariant;
 
 // An object keeping track of external textures.
