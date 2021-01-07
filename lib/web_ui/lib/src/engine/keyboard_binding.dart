@@ -5,7 +5,7 @@
 // @dart = 2.12
 part of engine;
 
-typedef VoidCallback = void Function();
+typedef _VoidCallback = void Function();
 typedef ValueGetter<T> = T Function();
 typedef _ModifierGetter = bool Function(FlutterHtmlKeyboardEvent event);
 
@@ -149,7 +149,7 @@ class AsyncKeyboardDispatching {
   });
 
   final ui.KeyData keyData;
-  final VoidCallback? callback;
+  final _VoidCallback? callback;
 }
 
 // A wrapper of [html.KeyboardEvent] with reduced methods delegated to the event
@@ -275,7 +275,7 @@ class KeyboardConverter {
   //
   // Returns a callback that cancels the schedule. Disposal of
   // `KeyBoardConverter` also cancels the shedule automatically.
-  VoidCallback _scheduleAsyncEvent(Duration duration, ValueGetter<ui.KeyData> getData, VoidCallback callback) {
+  _VoidCallback _scheduleAsyncEvent(Duration duration, ValueGetter<ui.KeyData> getData, _VoidCallback callback) {
     bool canceled = false;
     Future<void>.delayed(duration).then<void>((_) {
       if (!canceled && !_disposed) {
@@ -296,10 +296,10 @@ class KeyboardConverter {
   // while the key is held down by the user. If we don't receive a repeat
   // event within a specific duration ([_keydownCancelDuration]) we assume
   // the user has released the key and we synthesize a keyup event.
-  final Map<int, VoidCallback> _keyGuards = <int, VoidCallback>{};
+  final Map<int, _VoidCallback> _keyGuards = <int, _VoidCallback>{};
   // Call this method on the down or repeated event of a non-modifier key.
   void _startGuardingKey(int physicalKey, int logicalKey, Duration currentTimeStamp) {
-    final VoidCallback cancelingCallback = _scheduleAsyncEvent(
+    final _VoidCallback cancelingCallback = _scheduleAsyncEvent(
       _keydownCancelDuration,
       () => ui.KeyData(
         timeStamp: currentTimeStamp + _keydownCancelDuration,
