@@ -102,8 +102,11 @@ gfx::Rect FlutterAccessibility::GetBoundsRect(
   // TODO(chunhtai): consider screen dpr.
   const bool clip_bounds = clipping_behavior == AXClippingBehavior::kClipped;
   bool offscreen = false;
-  return gfx::ToEnclosingRect(GetBridge()->GetAXTree()->RelativeToTreeBounds(
-      GetAXNode(), GetData().relative_bounds.bounds, &offscreen, clip_bounds));
+  gfx::RectF bounds = GetBridge()->GetAXTree()->RelativeToTreeBounds(
+      GetAXNode(), gfx::RectF(), &offscreen, clip_bounds);
+  *offscreen_result =
+      offscreen ? AXOffscreenResult::kOffscreen : AXOffscreenResult::kOnscreen;
+  return gfx::ToEnclosingRect(bounds);
 }
 
 }  // namespace ui

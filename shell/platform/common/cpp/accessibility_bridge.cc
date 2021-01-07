@@ -342,9 +342,9 @@ void AccessibilityBridge::SetBooleanAttributesFromFlutterUpdate(
   node_data.AddBoolAttribute(
       ax::mojom::BoolAttribute::kClickable,
       actions & FlutterSemanticsAction::kFlutterSemanticsActionTap);
+  // TODO(chunhtai): figure out if there is a node that does not clip overflow.
   node_data.AddBoolAttribute(ax::mojom::BoolAttribute::kClipsChildren,
-                             actions & khasScrollingAction &&
-                                 node.children_in_traversal_order.size() != 0);
+                             node.children_in_traversal_order.size() != 0);
   node_data.AddBoolAttribute(
       ax::mojom::BoolAttribute::kSelected,
       flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsSelected);

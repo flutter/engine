@@ -54,16 +54,16 @@ TEST(AccessibilityBridgeTest, basicTest) {
   FlutterAccessibility* root_node = bridge.GetFlutterAccessibilityFromID(0);
   FlutterAccessibility* child1_node = bridge.GetFlutterAccessibilityFromID(1);
   FlutterAccessibility* child2_node = bridge.GetFlutterAccessibilityFromID(2);
-  ASSERT_EQ(root_node->GetChildCount(), 2);
-  ASSERT_EQ(root_node->GetData().child_ids[0], 1);
-  ASSERT_EQ(root_node->GetData().child_ids[1], 2);
-  ASSERT_EQ(root_node->GetName(), "root");
+  EXPECT_EQ(root_node->GetChildCount(), 2);
+  EXPECT_EQ(root_node->GetData().child_ids[0], 1);
+  EXPECT_EQ(root_node->GetData().child_ids[1], 2);
+  EXPECT_EQ(root_node->GetName(), "root");
 
-  ASSERT_EQ(child1_node->GetChildCount(), 0);
-  ASSERT_EQ(child1_node->GetName(), "child 1");
+  EXPECT_EQ(child1_node->GetChildCount(), 0);
+  EXPECT_EQ(child1_node->GetName(), "child 1");
 
-  ASSERT_EQ(child2_node->GetChildCount(), 0);
-  ASSERT_EQ(child2_node->GetName(), "child 2");
+  EXPECT_EQ(child2_node->GetChildCount(), 0);
+  EXPECT_EQ(child2_node->GetName(), "child 2");
 }
 
 TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
@@ -107,12 +107,12 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
 
   FlutterAccessibility* root_node = bridge.GetFlutterAccessibilityFromID(0);
   FlutterAccessibility* child1_node = bridge.GetFlutterAccessibilityFromID(1);
-  ASSERT_EQ(root_node->GetChildCount(), 1);
-  ASSERT_EQ(root_node->GetData().child_ids[0], 1);
-  ASSERT_EQ(root_node->GetName(), "root");
+  EXPECT_EQ(root_node->GetChildCount(), 1);
+  EXPECT_EQ(root_node->GetData().child_ids[0], 1);
+  EXPECT_EQ(root_node->GetName(), "root");
 
-  ASSERT_EQ(child1_node->GetChildCount(), 0);
-  ASSERT_EQ(child1_node->GetName(), "child 1");
+  EXPECT_EQ(child1_node->GetChildCount(), 0);
+  EXPECT_EQ(child1_node->GetName(), "child 1");
   delegate->accessibilitiy_events.clear();
 
   // Add a child to root.
@@ -140,17 +140,20 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
 
   root_node = bridge.GetFlutterAccessibilityFromID(0);
 
-  ASSERT_EQ(root_node->GetChildCount(), 2);
-  ASSERT_EQ(root_node->GetData().child_ids[0], 1);
-  ASSERT_EQ(root_node->GetData().child_ids[1], 2);
-  ASSERT_EQ(delegate->accessibilitiy_events.size(), size_t{2});
-  ASSERT_EQ(delegate->accessibilitiy_events[0].event_params.event,
-            AXEventGenerator::Event::CHILDREN_CHANGED);
-  ASSERT_EQ(delegate->accessibilitiy_events[1].event_params.event,
-            AXEventGenerator::Event::SUBTREE_CREATED);
+  EXPECT_EQ(root_node->GetChildCount(), 2);
+  EXPECT_EQ(root_node->GetData().child_ids[0], 1);
+  EXPECT_EQ(root_node->GetData().child_ids[1], 2);
+  EXPECT_EQ(delegate->accessibilitiy_events.size(), size_t{2});
+  std::set<AXEventGenerator::Event> actual_event;
+  actual_event.insert(delegate->accessibilitiy_events[0].event_params.event);
+  actual_event.insert(delegate->accessibilitiy_events[1].event_params.event);
+  EXPECT_NE(actual_event.find(AXEventGenerator::Event::CHILDREN_CHANGED),
+            actual_event.end());
+  EXPECT_NE(actual_event.find(AXEventGenerator::Event::SUBTREE_CREATED),
+            actual_event.end());
 }
 
-TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrect) {
+TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrectly) {
   AccessibilityBridge bridge(
       std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
   FlutterSemanticsNode root;
@@ -173,7 +176,7 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrect) {
   TestAccessibilityBridgeDelegate* delegate =
       (TestAccessibilityBridgeDelegate*)bridge.GetDelegate();
   AXTree* tree = bridge.GetAXTree();
-  ASSERT_EQ(tree->data().sel_anchor_object_id, AXNode::kInvalidAXID);
+  EXPECT_EQ(tree->data().sel_anchor_object_id, AXNode::kInvalidAXID);
   delegate->accessibilitiy_events.clear();
 
   // Update the selection.
@@ -183,14 +186,14 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrect) {
 
   bridge.CommitUpdates();
 
-  ASSERT_EQ(tree->data().sel_anchor_object_id, 0);
-  ASSERT_EQ(tree->data().sel_anchor_offset, 0);
-  ASSERT_EQ(tree->data().sel_focus_object_id, 0);
-  ASSERT_EQ(tree->data().sel_focus_offset, 5);
-  ASSERT_EQ(delegate->accessibilitiy_events.size(), size_t{2});
-  ASSERT_EQ(delegate->accessibilitiy_events[0].event_params.event,
+  EXPECT_EQ(tree->data().sel_anchor_object_id, 0);
+  EXPECT_EQ(tree->data().sel_anchor_offset, 0);
+  EXPECT_EQ(tree->data().sel_focus_object_id, 0);
+  EXPECT_EQ(tree->data().sel_focus_offset, 5);
+  EXPECT_EQ(delegate->accessibilitiy_events.size(), size_t{2});
+  EXPECT_EQ(delegate->accessibilitiy_events[0].event_params.event,
             AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED);
-  ASSERT_EQ(delegate->accessibilitiy_events[1].event_params.event,
+  EXPECT_EQ(delegate->accessibilitiy_events[1].event_params.event,
             AXEventGenerator::Event::OTHER_ATTRIBUTE_CHANGED);
 }
 
