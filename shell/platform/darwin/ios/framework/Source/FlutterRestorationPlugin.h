@@ -14,7 +14,7 @@
 
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
-- (instancetype)initWithChannel:(fml::WeakPtr<FlutterMethodChannel>)channel restorationEnabled:(BOOL)waitForData  NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithChannel:(FlutterMethodChannel*)channel restorationEnabled:(BOOL)waitForData  NS_DESIGNATED_INITIALIZER;
 
 - (NSData*)restorationData;
 - (void)restorationData:(NSData *)data;

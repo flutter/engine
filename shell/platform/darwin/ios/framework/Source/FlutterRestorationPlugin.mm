@@ -18,17 +18,16 @@
 }
 
 - (instancetype)init {
-  @throw([NSException exceptionWithName:@"FlutterRestorationPlugin must initWithEngine"
+  @throw([NSException exceptionWithName:@"FlutterRestorationPlugin must initWithChannel:restorationEnabled:"
                                  reason:nil
                                userInfo:nil]);
-  /Users/goderbauer/dev/engine/src/flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h
 }
 
-- (instancetype)initWithChannel:(fml::WeakPtr<FlutterMethodChannel>)channel restorationEnabled:(BOOL)restorationEnabled {
+- (instancetype)initWithChannel:(FlutterMethodChannel*)channel restorationEnabled:(BOOL)restorationEnabled {
   FML_DCHECK(channel) << "channel must be set";
   self = [super init];
   if (self) {
-    [channel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [self handleMethodCall:call result:result];
     }];
     _restorationEnabled = restorationEnabled;
@@ -57,7 +56,7 @@
   }
 }
 
-_ (NSData*)restorationData {
+- (NSData*)restorationData {
   return _restorationData;
 }
 
