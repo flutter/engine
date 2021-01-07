@@ -389,19 +389,20 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
         loadingUnitId, searchPaths.toArray(new String[apkPaths.size()]));
   }
 
-  public void uninstallDeferredComponent(int loadingUnitId, String moduleName) {
+  public boolean uninstallDeferredComponent(int loadingUnitId, String moduleName) {
     String resolvedModuleName =
         moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {
       Log.e(
           TAG,
           "Deferred component module name was null and could not be resolved from loading unit id.");
-      return;
+      return false;
     }
-    List<String> modules_to_uninstall = new ArrayList<>();
-    modules_to_uninstall.add(resolvedModuleName);
-    splitInstallManager.deferredUninstall(modules_to_uninstall);
+    List<String> modulesToUninstall = new ArrayList<>();
+    modulesToUninstall.add(resolvedModuleName);
+    splitInstallManager.deferredUninstall(modulesToUninstall);
     sessionIdToState.delete(nameToSessionId.get(resolvedModuleName));
+    return true;
   }
 
   public void destroy() {

@@ -217,8 +217,14 @@ public interface DeferredComponentManager {
    * to download only with moduleName. On the other hand, it can be possible to resolve the
    * moduleName based on the loadingUnitId. This resolution is done if moduleName is null. At least
    * one of loadingUnitId or moduleName must be valid or non-null.
+   *
+   * @return false if no deferred component was found matching the input, true if an uninstall
+   *         was successfully requested.
+   *
+   * @param loadingUnitId The unique identifier associated with a Dart deferred library.
+   * @param moduleName The deferred component module name as defined in bundle_config.yaml.
    */
-  public abstract void uninstallDeferredComponent(int loadingUnitId, String moduleName);
+  public abstract boolean uninstallDeferredComponent(int loadingUnitId, String moduleName);
 
   /**
    * Cleans up and releases resources. This object is no longer usable after calling this method.
