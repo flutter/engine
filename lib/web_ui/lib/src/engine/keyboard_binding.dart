@@ -41,10 +41,11 @@ final Map<int, _ModifierGetter> _kLogicalKeyToModifierGetter = {
 const Duration _kKeydownCancelDurationNormal = Duration(milliseconds: 1000);
 const Duration _kKeydownCancelDurationMacOs = Duration(milliseconds: 2000);
 
-late final int _kCharLowerA = 'a'.codeUnitAt(0);
-late final int _kCharLowerZ = 'z'.codeUnitAt(0);
-late final int _kCharUpperA = 'A'.codeUnitAt(0);
-late final int _kCharUpperZ = 'Z'.codeUnitAt(0);
+// ASCII for a, z, A, and Z
+const int _kCharLowerA = 0x61;
+const int _kCharLowerZ = 0x7a;
+const int _kCharUpperA = 0x41;
+const int _kCharUpperZ = 0x5a;
 bool isAlphabet(int charCode) {
   return (charCode >= _kCharLowerA && charCode <= _kCharLowerZ)
       || (charCode >= _kCharUpperA && charCode <= _kCharUpperZ);
@@ -445,7 +446,6 @@ class KeyboardConverter {
     // events can not be deduced since we don't know which physical key they
     // represent.
     _kLogicalKeyToModifierGetter.forEach((int logicalKey, _ModifierGetter getModifier) {
-      // print(_pressingRecords);
       if (_pressingRecords.containsValue(logicalKey) && !getModifier(event)) {
         _pressingRecords.removeWhere((int physicalKey, int logicalRecord) {
           if (logicalRecord != logicalKey)

@@ -27,8 +27,8 @@ const int kPhysicalTab = 0x0007002b;
 const int kPhysicalCapsLock = 0x00070039;
 const int kPhysicalScrollLock = 0x00070047;
 
-const int kLogicalKeyA = 0x00000000041;
-const int kLogicalKeyU = 0x00000000055;
+const int kLogicalKeyA = 0x00000000061;
+const int kLogicalKeyU = 0x00000000075;
 const int kLogicalDigit1 = 0x00000000031;
 const int kLogicalNumpad1 = 0x00200000031;
 const int kLogicalShiftLeft = 0x030000010d;
