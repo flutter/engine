@@ -11,15 +11,16 @@ FlutterAccessibility* FlutterAccessibility::Create() {
 };
 
 void TestAccessibilityBridgeDelegate::OnAccessibilityEvent(
-    AXEventGenerator::TargetedEvent targeted_event, AccessibilityBridge* bridge) {
+    AXEventGenerator::TargetedEvent targeted_event,
+    AccessibilityBridge* bridge) {
   accessibilitiy_events.push_back(targeted_event);
 }
 
 void TestAccessibilityBridgeDelegate::DispatchAccessibilityAction(
-  uint16_t target,
-  FlutterSemanticsAction action,
-  uint8_t* data,
-  size_t data_size) {
+    uint16_t target,
+    FlutterSemanticsAction action,
+    uint8_t* data,
+    size_t data_size) {
   performed_actions.push_back(action);
 }
 

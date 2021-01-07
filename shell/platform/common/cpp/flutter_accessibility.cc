@@ -95,16 +95,15 @@ gfx::NativeViewAccessible FlutterAccessibility::ChildAtIndex(int index) {
       ->GetNativeViewAccessible();
 }
 
-gfx::Rect FlutterAccessibility::GetBoundsRect(const AXCoordinateSystem coordinate_system,
-                                              const AXClippingBehavior clipping_behavior,
-                                              AXOffscreenResult* offscreen_result) const {
+gfx::Rect FlutterAccessibility::GetBoundsRect(
+    const AXCoordinateSystem coordinate_system,
+    const AXClippingBehavior clipping_behavior,
+    AXOffscreenResult* offscreen_result) const {
   // TODO(chunhtai): consider screen dpr.
   const bool clip_bounds = clipping_behavior == AXClippingBehavior::kClipped;
   bool offscreen = false;
-  return gfx::ToEnclosingRect(
-    GetBridge()->GetAXTree()->RelativeToTreeBounds(
-      GetAXNode(), GetData().relative_bounds.bounds, &offscreen, clip_bounds)
-  );
+  return gfx::ToEnclosingRect(GetBridge()->GetAXTree()->RelativeToTreeBounds(
+      GetAXNode(), GetData().relative_bounds.bounds, &offscreen, clip_bounds));
 }
 
 }  // namespace ui

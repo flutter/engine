@@ -19,8 +19,9 @@ constexpr int khasScrollingAction =
     FlutterSemanticsAction::kFlutterSemanticsActionScrollDown;
 
 // AccessibilityBridge
-AccessibilityBridge::AccessibilityBridge(std::unique_ptr<AccessibilityBridgeDelegate> delegate,
-                                         void* user_data)
+AccessibilityBridge::AccessibilityBridge(
+    std::unique_ptr<AccessibilityBridgeDelegate> delegate,
+    void* user_data)
     : delegate_(std::move(delegate)),
       tree_(std::make_unique<AXTree>()),
       event_generator_(tree_.get()) {
@@ -94,7 +95,8 @@ void* AccessibilityBridge::GetUserData() {
   return user_data_;
 }
 
-AccessibilityBridge::AccessibilityBridgeDelegate* AccessibilityBridge::GetDelegate() {
+AccessibilityBridge::AccessibilityBridgeDelegate*
+AccessibilityBridge::GetDelegate() {
   return delegate_.get();
 }
 
@@ -210,12 +212,13 @@ void AccessibilityBridge::ConvertFluterUpdate(const SemanticsNode& node,
   SetNameFromFlutterUpdate(node_data, node);
   SetValueFromFlutterUpdate(node_data, node);
   node_data.relative_bounds.bounds.SetRect(node.rect.left, node.rect.top,
-                                           node.rect.right - node.rect.left, node.rect.bottom - node.rect.top);
+                                           node.rect.right - node.rect.left,
+                                           node.rect.bottom - node.rect.top);
   node_data.relative_bounds.transform = std::make_unique<gfx::Transform>(
       node.transform.scaleX, node.transform.skewX, node.transform.transX, 0,
       node.transform.skewY, node.transform.scaleY, node.transform.transY, 0,
-      node.transform.pers0, node.transform.pers1, node.transform.pers2, 0,
-      0, 0, 0, 0);
+      node.transform.pers0, node.transform.pers1, node.transform.pers2, 0, 0, 0,
+      0, 0);
   for (auto child : node.children_in_traversal_order) {
     node_data.child_ids.push_back(child);
   }
@@ -355,7 +358,8 @@ void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(
     AXNodeData& node_data,
     const SemanticsNode& node) {
   FlutterSemanticsFlag flags = node.flags;
-  node_data.AddIntAttribute(ax::mojom::IntAttribute::kTextDirection, node.text_direction);
+  node_data.AddIntAttribute(ax::mojom::IntAttribute::kTextDirection,
+                            node.text_direction);
 
   int sel_start = node.text_selection_base;
   int sel_end = node.text_selection_extent;

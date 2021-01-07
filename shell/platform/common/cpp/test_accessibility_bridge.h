@@ -9,16 +9,17 @@
 
 namespace ui {
 
-class TestAccessibilityBridgeDelegate : public AccessibilityBridge::AccessibilityBridgeDelegate {
+class TestAccessibilityBridgeDelegate
+    : public AccessibilityBridge::AccessibilityBridgeDelegate {
  public:
   TestAccessibilityBridgeDelegate() = default;
 
-  void OnAccessibilityEvent(
-    AXEventGenerator::TargetedEvent targeted_event, AccessibilityBridge* bridge) override;
+  void OnAccessibilityEvent(AXEventGenerator::TargetedEvent targeted_event,
+                            AccessibilityBridge* bridge) override;
   void DispatchAccessibilityAction(uint16_t target,
-                                           FlutterSemanticsAction action,
-                                           uint8_t* data,
-                                           size_t data_size) override;
+                                   FlutterSemanticsAction action,
+                                   uint8_t* data,
+                                   size_t data_size) override;
 
   std::vector<AXEventGenerator::TargetedEvent> accessibilitiy_events;
   std::vector<FlutterSemanticsAction> performed_actions;

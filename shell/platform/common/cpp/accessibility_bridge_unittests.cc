@@ -12,7 +12,8 @@ namespace ui {
 namespace testing {
 
 TEST(AccessibilityBridgeTest, basicTest) {
-  AccessibilityBridge bridge(std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
+  AccessibilityBridge bridge(
+      std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
   FlutterSemanticsNode root;
   root.id = 0;
   root.label = "root";
@@ -66,8 +67,10 @@ TEST(AccessibilityBridgeTest, basicTest) {
 }
 
 TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
-  AccessibilityBridge bridge(std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
-  TestAccessibilityBridgeDelegate* delegate = (TestAccessibilityBridgeDelegate*)bridge.GetDelegate();
+  AccessibilityBridge bridge(
+      std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
+  TestAccessibilityBridgeDelegate* delegate =
+      (TestAccessibilityBridgeDelegate*)bridge.GetDelegate();
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = static_cast<FlutterSemanticsFlag>(0);
@@ -148,7 +151,8 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
 }
 
 TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrect) {
-  AccessibilityBridge bridge(std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
+  AccessibilityBridge bridge(
+      std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
@@ -166,7 +170,8 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrect) {
 
   bridge.CommitUpdates();
 
-  TestAccessibilityBridgeDelegate* delegate = (TestAccessibilityBridgeDelegate*)bridge.GetDelegate();
+  TestAccessibilityBridgeDelegate* delegate =
+      (TestAccessibilityBridgeDelegate*)bridge.GetDelegate();
   AXTree* tree = bridge.GetAXTree();
   ASSERT_EQ(tree->data().sel_anchor_object_id, AXNode::kInvalidAXID);
   delegate->accessibilitiy_events.clear();

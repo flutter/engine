@@ -15,8 +15,10 @@ namespace testing {
 TEST(FlutterAccessibilityTest, canPerfomActions) {
   // Set up a flutter accessibility node.
   FlutterAccessibility* accessibility = FlutterAccessibility::Create();
-  AccessibilityBridge bridge(std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
-  TestAccessibilityBridgeDelegate* delegate = (TestAccessibilityBridgeDelegate*)bridge.GetDelegate();
+  AccessibilityBridge bridge(
+      std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
+  TestAccessibilityBridgeDelegate* delegate =
+      (TestAccessibilityBridgeDelegate*)bridge.GetDelegate();
 
   AXNode ax_node(bridge.GetAXTree(), 0, -1, -1);
   accessibility->Init(&bridge, &ax_node);

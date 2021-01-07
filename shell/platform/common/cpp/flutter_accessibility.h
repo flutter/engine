@@ -60,8 +60,8 @@ class FlutterAccessibility : public AXPlatformNodeDelegateBase {
   int GetChildCount() const override;
   gfx::NativeViewAccessible ChildAtIndex(int index) override;
   gfx::Rect GetBoundsRect(const AXCoordinateSystem coordinate_system,
-                       const AXClippingBehavior clipping_behavior,
-                       AXOffscreenResult* offscreen_result) const override;
+                          const AXClippingBehavior clipping_behavior,
+                          AXOffscreenResult* offscreen_result) const override;
   //------------------------------------------------------------------------------
   /// @brief      Called only once, immediately after construction. The
   ///             constructor doesn't take any arguments because in the Windows
