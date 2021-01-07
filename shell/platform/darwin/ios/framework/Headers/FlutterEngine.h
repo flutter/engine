@@ -303,7 +303,7 @@ FLUTTER_EXPORT
  * Can be nil after `destroyContext` is called.
  *
  * @see [Restoration
- * Channel](https://docs.flutter.io/flutter/services/SystemChannels/restoration-constant.html)
+ * Channel](https://api.flutter.dev/flutter/services/SystemChannels/restoration-constant.html)
  */
 @property(nonatomic, readonly) FlutterMethodChannel* restorationChannel;
 

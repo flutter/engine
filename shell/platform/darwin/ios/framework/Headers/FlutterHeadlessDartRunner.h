@@ -34,7 +34,7 @@ FLUTTER_DEPRECATED("FlutterEngine should be used rather than FlutterHeadlessDart
 @interface FlutterHeadlessDartRunner : FlutterEngine
 
 /**
- * Iniitalize this FlutterHeadlessDartRunner with a `FlutterDartProject`.
+ * Initialize this FlutterHeadlessDartRunner with a `FlutterDartProject`.
  *
  * If the FlutterDartProject is not specified, the FlutterHeadlessDartRunner will attempt to locate
  * the project in a default location.
@@ -49,7 +49,7 @@ FLUTTER_DEPRECATED("FlutterEngine should be used rather than FlutterHeadlessDart
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil;
 
 /**
- * Iniitalize this FlutterHeadlessDartRunner with a `FlutterDartProject`.
+ * Initialize this FlutterHeadlessDartRunner with a `FlutterDartProject`.
  *
  * If the FlutterDartProject is not specified, the FlutterHeadlessDartRunner will attempt to locate
  * the project in a default location.
@@ -67,7 +67,7 @@ FLUTTER_DEPRECATED("FlutterEngine should be used rather than FlutterHeadlessDart
       allowHeadlessExecution:(BOOL)allowHeadlessExecution;
 
 /**
- * Iniitalize this FlutterHeadlessDartRunner with a `FlutterDartProject`.
+ * Initialize this FlutterHeadlessDartRunner with a `FlutterDartProject`.
  *
  * If the FlutterDartProject is not specified, the FlutterHeadlessDartRunner will attempt to locate
  * the project in a default location.
