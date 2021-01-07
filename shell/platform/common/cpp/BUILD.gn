@@ -159,9 +159,7 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
-      "accessibility_bridge_unittests.cc",
       "engine_switches_unittests.cc",
-      "flutter_accessibility_unittests.cc",
       "json_message_codec_unittests.cc",
       "json_method_codec_unittests.cc",
       "test_accessibility_bridge.cc",
@@ -172,7 +170,6 @@ if (enable_unittests) {
 
     deps = [
       ":common_cpp",
-      ":common_cpp_accessibility",
       ":common_cpp_fixtures",
       ":common_cpp_input",
       ":common_cpp_switches",
@@ -180,6 +177,16 @@ if (enable_unittests) {
       "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper_library_stubs",
       "//flutter/testing",
     ]
+
+    # The accessibility bridge only supports MacOS for now.
+    if (is_mac) {
+      sources += [
+        "accessibility_bridge_unittests.cc",
+        "flutter_accessibility_unittests.cc",
+      ]
+
+      deps += [":common_cpp_accessibility"]
+    }
 
     public_configs = [ "//flutter:config" ]
   }
