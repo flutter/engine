@@ -42,7 +42,9 @@ class TestDeferredComponentManager implements DeferredComponentManager {
 
   public void loadDartLibrary(int loadingUnitId, String moduleName) {}
 
-  public void uninstallDeferredComponent(int loadingUnitId, String moduleName) {}
+  public boolean uninstallDeferredComponent(int loadingUnitId, String moduleName) {
+    return true;
+  }
 
   public void destroy() {}
 }
