@@ -2139,7 +2139,6 @@ typedef struct {
   FlutterEngineTraceEventDurationBeginFnPtr TraceEventDurationBegin;
   FlutterEngineTraceEventDurationEndFnPtr TraceEventDurationEnd;
   FlutterEngineTraceEventInstantFnPtr TraceEventInstant;
-  FlutterEnginePostPlatformThreadTaskFnPtr PostPlatformThreadTask;
   FlutterEnginePostRenderThreadTaskFnPtr PostRenderThreadTask;
   FlutterEngineGetCurrentTimeFnPtr GetCurrentTime;
   FlutterEngineRunTaskFnPtr RunTask;
@@ -2150,6 +2149,7 @@ typedef struct {
   FlutterEnginePostCallbackOnAllNativeThreadsFnPtr
       PostCallbackOnAllNativeThreads;
   FlutterEngineNotifyDisplayUpdateFnPtr NotifyDisplayUpdate;
+  FlutterEnginePostPlatformThreadTaskFnPtr PostPlatformThreadTask;
 } FlutterEngineProcTable;
 
 //------------------------------------------------------------------------------
