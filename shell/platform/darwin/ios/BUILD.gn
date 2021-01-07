@@ -223,6 +223,7 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterEngineGroupTest.mm",
     "framework/Source/FlutterEngineTest.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.m",
+    "framework/Source/FlutterRestorationPluginTest.mm",
     "framework/Source/FlutterTextInputPluginTest.m",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",

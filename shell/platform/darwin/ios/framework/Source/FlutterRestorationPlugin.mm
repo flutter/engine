@@ -66,11 +66,11 @@
     [_restorationData release];
   }
   _restorationData = newData;
+  _waitForData = NO;
   if (_pendingRequest != nil) {
     _pendingRequest( [self dataForFramework] );
     [_pendingRequest release];
     _pendingRequest = nil;
-    _waitForData = NO;
   }
 }
 
