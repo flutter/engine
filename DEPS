@@ -24,6 +24,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
+  'liguisheng_skia_git': 'https://github.com/liguisheng/skia.git',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
   'skia_revision': 'd64a3193cd493e6ecabffd5061962f94c4e8cd54',
@@ -357,7 +358,8 @@ deps = {
    Var('dart_git') + '/root_certificates.git' + '@' + Var('dart_root_certificates_rev'),
 
   'src/third_party/skia':
-   Var('skia_git') + '/skia.git' + '@' +  Var('skia_revision'),
+   #Var('skia_git') + '/skia.git' + '@' +  Var('skia_revision'),
+   Var('liguisheng_skia_git') + '@' + '99cac3c3ace05969d7bcf62578de274cca071df9',
 
   'src/third_party/ocmock':
    Var('ocmock_git') + '@' +  Var('ocmock_tag'),
