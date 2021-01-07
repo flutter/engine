@@ -33,8 +33,8 @@ import java.util.Map;
 import java.util.Queue;
 
 /**
- * Flutter default implementation of DeferredComponentManager that downloads deferred component modules
- * from the Google Play store.
+ * Flutter default implementation of DeferredComponentManager that downloads deferred component
+ * modules from the Google Play store.
  */
 public class PlayStoreDeferredComponentManager implements DeferredComponentManager {
   private static final String TAG = "PlayStoreDeferredComponentManager";
@@ -71,7 +71,8 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
                   true);
               if (channel != null) {
                 channel.completeInstallError(
-                    sessionIdToName.get(sessionId), "Android Deferred Component failed to install.");
+                    sessionIdToName.get(sessionId),
+                    "Android Deferred Component failed to install.");
               }
               sessionIdToName.delete(sessionId);
               sessionIdToLoadingUnitId.delete(sessionId);
@@ -186,7 +187,8 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     }
   }
 
-  public PlayStoreDeferredComponentManager(@NonNull Context context, @Nullable FlutterJNI flutterJNI) {
+  public PlayStoreDeferredComponentManager(
+      @NonNull Context context, @Nullable FlutterJNI flutterJNI) {
     this.context = context;
     this.flutterJNI = flutterJNI;
     splitInstallManager = SplitInstallManagerFactory.create(context);

@@ -56,7 +56,8 @@ public class DeferredComponentChannelTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     TestDeferredComponentManager testDeferredComponentManager = new TestDeferredComponentManager();
-    DeferredComponentChannel fakeDeferredComponentChannel = new DeferredComponentChannel(dartExecutor);
+    DeferredComponentChannel fakeDeferredComponentChannel =
+        new DeferredComponentChannel(dartExecutor);
     fakeDeferredComponentChannel.setDeferredComponentManager(testDeferredComponentManager);
 
     Map<String, Object> args = new HashMap<>();
@@ -76,7 +77,8 @@ public class DeferredComponentChannelTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     TestDeferredComponentManager testDeferredComponentManager = new TestDeferredComponentManager();
-    DeferredComponentChannel fakeDeferredComponentChannel = new DeferredComponentChannel(dartExecutor);
+    DeferredComponentChannel fakeDeferredComponentChannel =
+        new DeferredComponentChannel(dartExecutor);
     fakeDeferredComponentChannel.setDeferredComponentManager(testDeferredComponentManager);
 
     Map<String, Object> args = new HashMap<>();
@@ -99,7 +101,8 @@ public class DeferredComponentChannelTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     TestDeferredComponentManager testDeferredComponentManager = new TestDeferredComponentManager();
-    DeferredComponentChannel fakeDeferredComponentChannel = new DeferredComponentChannel(dartExecutor);
+    DeferredComponentChannel fakeDeferredComponentChannel =
+        new DeferredComponentChannel(dartExecutor);
     fakeDeferredComponentChannel.setDeferredComponentManager(testDeferredComponentManager);
 
     Map<String, Object> args = new HashMap<>();

@@ -59,7 +59,8 @@ public class DeferredComponentChannel {
               break;
             case "getDeferredComponentInstallState":
               result.success(
-                  deferredComponentManager.getDeferredComponentInstallState(loadingUnitId, moduleName));
+                  deferredComponentManager.getDeferredComponentInstallState(
+                      loadingUnitId, moduleName));
               break;
             case "uninstallDeferredComponent":
               deferredComponentManager.uninstallDeferredComponent(loadingUnitId, moduleName);
@@ -94,7 +95,8 @@ public class DeferredComponentChannel {
    * @param deferredComponentManager the DeferredComponentManager to use.
    */
   @VisibleForTesting
-  public void setDeferredComponentManager(@Nullable DeferredComponentManager deferredComponentManager) {
+  public void setDeferredComponentManager(
+      @Nullable DeferredComponentManager deferredComponentManager) {
     this.deferredComponentManager = deferredComponentManager;
   }
 
@@ -102,7 +104,8 @@ public class DeferredComponentChannel {
    * Finishes the `installDeferredComponent` method channel call for the specified moduleName with a
    * success.
    *
-   * @param moduleName The name of the android deferred component module install request to complete.
+   * @param moduleName The name of the android deferred component module install request to
+   *     complete.
    */
   public void completeInstallSuccess(String moduleName) {
     if (moduleNameToResults.containsKey(moduleName)) {
@@ -115,10 +118,11 @@ public class DeferredComponentChannel {
   }
 
   /**
-   * Finishes the `installDeferredComponent` method channel call for the specified moduleName with an
-   * error/failure.
+   * Finishes the `installDeferredComponent` method channel call for the specified moduleName with
+   * an error/failure.
    *
-   * @param moduleName The name of the android deferred component module install request to complete.
+   * @param moduleName The name of the android deferred component module install request to
+   *     complete.
    * @param errorMessage The error message to display to complete the future with.
    */
   public void completeInstallError(String moduleName, String errorMessage) {

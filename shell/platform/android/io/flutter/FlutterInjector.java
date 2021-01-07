@@ -107,7 +107,8 @@ public final class FlutterInjector {
       return this;
     }
 
-    public Builder setDeferredComponentManager(@Nullable DeferredComponentManager deferredComponentManager) {
+    public Builder setDeferredComponentManager(
+        @Nullable DeferredComponentManager deferredComponentManager) {
       this.deferredComponentManager = deferredComponentManager;
       return this;
     }
