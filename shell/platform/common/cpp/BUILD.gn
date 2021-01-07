@@ -185,7 +185,7 @@ if (enable_unittests) {
         "test_accessibility_bridge.h",
       ]
 
-      deps += [":common_cpp_accessibility"]
+      deps += [ ":common_cpp_accessibility" ]
     }
 
     public_configs = [ "//flutter:config" ]
