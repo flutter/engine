@@ -44,7 +44,7 @@
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(FlutterDartProject*)projectOrNil
       allowHeadlessExecution:(BOOL)allowHeadlessExecution
-          restorationEnabled:(BOOL)restorationEnabled{
+          restorationEnabled:(BOOL)restorationEnabled {
   NSAssert(allowHeadlessExecution == YES,
            @"Cannot initialize a FlutterHeadlessDartRunner without headless execution.");
   return [super initWithName:labelPrefix

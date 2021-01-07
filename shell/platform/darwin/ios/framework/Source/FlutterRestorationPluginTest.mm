@@ -7,9 +7,8 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
-
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -38,154 +37,157 @@ FLUTTER_ASSERT_ARC
 #pragma mark - Tests
 
 - (void)testRestorationEnabledWaitsForData {
-  FlutterRestorationPlugin* restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel: restorationChannel restorationEnabled: YES];
-  
-  FlutterMethodCall* methodCall =[FlutterMethodCall methodCallWithMethodName:@"get"
-                                        arguments:nil];
+  FlutterRestorationPlugin* restorationPlugin =
+      [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
+
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"get" arguments:nil];
   __block id capturedResult;
   [restorationPlugin handleMethodCall:methodCall
-                               result:^(id _Nullable result){
-                                capturedResult = result;
+                               result:^(id _Nullable result) {
+                                 capturedResult = result;
                                }];
   XCTAssertNil(capturedResult);
-  
+
   NSData* data = [@"testrestortiondata" dataUsingEncoding:NSUTF8StringEncoding];
-  [restorationPlugin restorationData: data];
+  [restorationPlugin restorationData:data];
   XCTAssertEqual([capturedResult count], 2u);
-  XCTAssertEqual([capturedResult objectForKey: @"enabled"], @YES);
-  XCTAssertEqual([[capturedResult objectForKey: @"data"] data], data);
+  XCTAssertEqual([capturedResult objectForKey:@"enabled"], @YES);
+  XCTAssertEqual([[capturedResult objectForKey:@"data"] data], data);
 }
 
 - (void)testRestorationDisabledRespondsRightAway {
-  FlutterRestorationPlugin* restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel: restorationChannel restorationEnabled: NO];
+  FlutterRestorationPlugin* restorationPlugin =
+      [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:NO];
 
-  FlutterMethodCall* methodCall =[FlutterMethodCall methodCallWithMethodName:@"get"
-                                        arguments:nil];
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"get" arguments:nil];
   __block id capturedResult;
   [restorationPlugin handleMethodCall:methodCall
-                               result:^(id _Nullable result){
-                                capturedResult = result;
+                               result:^(id _Nullable result) {
+                                 capturedResult = result;
                                }];
   XCTAssertEqual([capturedResult count], 1u);
-  XCTAssertEqual([capturedResult objectForKey: @"enabled"], @NO);
+  XCTAssertEqual([capturedResult objectForKey:@"enabled"], @NO);
 }
 
 - (void)testRespondsRightAwayWhenDataIsSet {
-  FlutterRestorationPlugin* restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel: restorationChannel restorationEnabled: YES];
+  FlutterRestorationPlugin* restorationPlugin =
+      [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
 
   NSData* data = [@"testrestortiondata" dataUsingEncoding:NSUTF8StringEncoding];
-  [restorationPlugin restorationData: data];
+  [restorationPlugin restorationData:data];
 
   __block id capturedResult;
-  FlutterMethodCall* methodCall =[FlutterMethodCall methodCallWithMethodName:@"get"
-                                        arguments:nil];
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"get" arguments:nil];
   [restorationPlugin handleMethodCall:methodCall
-                               result:^(id _Nullable result){
-                                capturedResult = result;
+                               result:^(id _Nullable result) {
+                                 capturedResult = result;
                                }];
   XCTAssertEqual([capturedResult count], 2u);
-  XCTAssertEqual([capturedResult objectForKey: @"enabled"], @YES);
-  XCTAssertEqual([[capturedResult objectForKey: @"data"] data], data);
+  XCTAssertEqual([capturedResult objectForKey:@"enabled"], @YES);
+  XCTAssertEqual([[capturedResult objectForKey:@"data"] data], data);
 }
 
 - (void)testRespondsWithNoDataWhenRestorationIsCompletedWithoutData {
-  FlutterRestorationPlugin* restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel: restorationChannel restorationEnabled: YES];
-  
-  FlutterMethodCall* methodCall =[FlutterMethodCall methodCallWithMethodName:@"get"
-                                        arguments:nil];
+  FlutterRestorationPlugin* restorationPlugin =
+      [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
+
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"get" arguments:nil];
   __block id capturedResult;
   [restorationPlugin handleMethodCall:methodCall
-                               result:^(id _Nullable result){
-                                capturedResult = result;
+                               result:^(id _Nullable result) {
+                                 capturedResult = result;
                                }];
   XCTAssertNil(capturedResult);
-  
+
   [restorationPlugin restorationComplete];
   XCTAssertEqual([capturedResult count], 1u);
-  XCTAssertEqual([capturedResult objectForKey: @"enabled"], @YES);
+  XCTAssertEqual([capturedResult objectForKey:@"enabled"], @YES);
 }
 
 - (void)testRespondsRightAwayWithNoDataWhenRestorationIsCompleted {
-  FlutterRestorationPlugin* restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel: restorationChannel restorationEnabled: YES];
+  FlutterRestorationPlugin* restorationPlugin =
+      [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
 
   [restorationPlugin restorationComplete];
 
   __block id capturedResult;
-  FlutterMethodCall* methodCall =[FlutterMethodCall methodCallWithMethodName:@"get"
-                                        arguments:nil];
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"get" arguments:nil];
   [restorationPlugin handleMethodCall:methodCall
-                               result:^(id _Nullable result){
-                                capturedResult = result;
+                               result:^(id _Nullable result) {
+                                 capturedResult = result;
                                }];
   XCTAssertEqual([capturedResult count], 1u);
-  XCTAssertEqual([capturedResult objectForKey: @"enabled"], @YES);
+  XCTAssertEqual([capturedResult objectForKey:@"enabled"], @YES);
 }
 
 - (void)testReturnsDataSetByFramework {
-  FlutterRestorationPlugin* restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel: restorationChannel restorationEnabled: YES];
+  FlutterRestorationPlugin* restorationPlugin =
+      [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
   [restorationPlugin restorationComplete];
 
   NSData* data = [@"testrestortiondata" dataUsingEncoding:NSUTF8StringEncoding];
-  FlutterMethodCall* methodCall =[FlutterMethodCall methodCallWithMethodName:@"put"
-                                        arguments:[FlutterStandardTypedData typedDataWithBytes:data]];
+  FlutterMethodCall* methodCall = [FlutterMethodCall
+      methodCallWithMethodName:@"put"
+                     arguments:[FlutterStandardTypedData typedDataWithBytes:data]];
   [restorationPlugin handleMethodCall:methodCall
-                               result:^(id _Nullable result){
-    XCTAssertNil(result);
+                               result:^(id _Nullable result) {
+                                 XCTAssertNil(result);
                                }];
   XCTAssertEqual([restorationPlugin restorationData], data);
 }
 
 - (void)testRespondsWithDataSetByFramework {
-  FlutterRestorationPlugin* restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel: restorationChannel restorationEnabled: YES];
+  FlutterRestorationPlugin* restorationPlugin =
+      [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
   [restorationPlugin restorationComplete];
-  
+
   NSData* data = [@"testrestortiondata" dataUsingEncoding:NSUTF8StringEncoding];
-  FlutterMethodCall* methodCall =[FlutterMethodCall methodCallWithMethodName:@"put"
-                                        arguments:[FlutterStandardTypedData typedDataWithBytes:data]];
+  FlutterMethodCall* methodCall = [FlutterMethodCall
+      methodCallWithMethodName:@"put"
+                     arguments:[FlutterStandardTypedData typedDataWithBytes:data]];
   [restorationPlugin handleMethodCall:methodCall
-                               result:^(id _Nullable result){
-    XCTAssertNil(result);
+                               result:^(id _Nullable result) {
+                                 XCTAssertNil(result);
                                }];
   XCTAssertEqual([restorationPlugin restorationData], data);
-  
+
   __block id capturedResult;
-  methodCall = [FlutterMethodCall methodCallWithMethodName:@"get"
-                                        arguments:nil];
+  methodCall = [FlutterMethodCall methodCallWithMethodName:@"get" arguments:nil];
   [restorationPlugin handleMethodCall:methodCall
-                               result:^(id _Nullable result){
-                                capturedResult = result;
+                               result:^(id _Nullable result) {
+                                 capturedResult = result;
                                }];
   XCTAssertEqual([capturedResult count], 2u);
-  XCTAssertEqual([capturedResult objectForKey: @"enabled"], @YES);
-  XCTAssertEqual([[capturedResult objectForKey: @"data"] data], data);
+  XCTAssertEqual([capturedResult objectForKey:@"enabled"], @YES);
+  XCTAssertEqual([[capturedResult objectForKey:@"data"] data], data);
 }
 
 - (void)testResetClearsData {
-  FlutterRestorationPlugin* restorationPlugin = [[FlutterRestorationPlugin alloc] initWithChannel: restorationChannel restorationEnabled: YES];
+  FlutterRestorationPlugin* restorationPlugin =
+      [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
   [restorationPlugin restorationComplete];
-  
+
   NSData* data = [@"testrestortiondata" dataUsingEncoding:NSUTF8StringEncoding];
-  FlutterMethodCall* methodCall =[FlutterMethodCall methodCallWithMethodName:@"put"
-                                        arguments:[FlutterStandardTypedData typedDataWithBytes:data]];
+  FlutterMethodCall* methodCall = [FlutterMethodCall
+      methodCallWithMethodName:@"put"
+                     arguments:[FlutterStandardTypedData typedDataWithBytes:data]];
   [restorationPlugin handleMethodCall:methodCall
-                               result:^(id _Nullable result){
-    XCTAssertNil(result);
+                               result:^(id _Nullable result) {
+                                 XCTAssertNil(result);
                                }];
   XCTAssertEqual([restorationPlugin restorationData], data);
-  
+
   [restorationPlugin reset];
   XCTAssertNil([restorationPlugin restorationData]);
 
-  
   __block id capturedResult;
-  methodCall = [FlutterMethodCall methodCallWithMethodName:@"get"
-                                        arguments:nil];
+  methodCall = [FlutterMethodCall methodCallWithMethodName:@"get" arguments:nil];
   [restorationPlugin handleMethodCall:methodCall
-                               result:^(id _Nullable result){
-                                capturedResult = result;
+                               result:^(id _Nullable result) {
+                                 capturedResult = result;
                                }];
   XCTAssertEqual([capturedResult count], 1u);
-  XCTAssertEqual([capturedResult objectForKey: @"enabled"], @YES);
+  XCTAssertEqual([capturedResult objectForKey:@"enabled"], @YES);
 }
 
 @end

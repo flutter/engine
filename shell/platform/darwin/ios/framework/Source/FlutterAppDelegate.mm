@@ -309,33 +309,36 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
     }
   }
 }
-  
+
 #pragma mark - State Restoration
 
-- (BOOL)application:(UIApplication *)application shouldSaveApplicationState:(NSCoder *)coder {
-  [coder encodeInt64: self.lastAppModificationTime forKey:@"mod-date"];
-  return YES;
-}
-  
-- (BOOL)application:(UIApplication *)application shouldRestoreApplicationState:(NSCoder *)coder {
-  int64_t stateDate = [coder decodeInt64ForKey:@"mod-date"];
-  return self.lastAppModificationTime == stateDate;
-}
-  
-- (BOOL)application:(UIApplication *)application shouldSaveSecureApplicationState:(NSCoder *)coder {
-  [coder encodeInt64: self.lastAppModificationTime forKey:@"mod-date"];
+- (BOOL)application:(UIApplication*)application shouldSaveApplicationState:(NSCoder*)coder {
+  [coder encodeInt64:self.lastAppModificationTime forKey:@"mod-date"];
   return YES;
 }
 
-- (BOOL)application:(UIApplication *)application shouldRestoreSecureApplicationState:(NSCoder *)coder {
+- (BOOL)application:(UIApplication*)application shouldRestoreApplicationState:(NSCoder*)coder {
   int64_t stateDate = [coder decodeInt64ForKey:@"mod-date"];
   return self.lastAppModificationTime == stateDate;
 }
-  
+
+- (BOOL)application:(UIApplication*)application shouldSaveSecureApplicationState:(NSCoder*)coder {
+  [coder encodeInt64:self.lastAppModificationTime forKey:@"mod-date"];
+  return YES;
+}
+
+- (BOOL)application:(UIApplication*)application
+    shouldRestoreSecureApplicationState:(NSCoder*)coder {
+  int64_t stateDate = [coder decodeInt64ForKey:@"mod-date"];
+  return self.lastAppModificationTime == stateDate;
+}
+
 - (int64_t)lastAppModificationTime {
-  NSDate *fileDate;
-  [[[NSBundle mainBundle] executableURL] getResourceValue:&fileDate forKey:NSURLContentModificationDateKey error:nil];
+  NSDate* fileDate;
+  [[[NSBundle mainBundle] executableURL] getResourceValue:&fileDate
+                                                   forKey:NSURLContentModificationDateKey
+                                                    error:nil];
   return [fileDate timeIntervalSince1970];
 }
-  
+
 @end

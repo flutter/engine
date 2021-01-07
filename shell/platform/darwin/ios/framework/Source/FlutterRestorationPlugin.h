@@ -13,10 +13,11 @@
 @interface FlutterRestorationPlugin : NSObject
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
-- (instancetype)initWithChannel:(FlutterMethodChannel*)channel restorationEnabled:(BOOL)waitForData  NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithChannel:(FlutterMethodChannel*)channel
+             restorationEnabled:(BOOL)waitForData NS_DESIGNATED_INITIALIZER;
 
 - (NSData*)restorationData;
-- (void)restorationData:(NSData *)data;
+- (void)restorationData:(NSData*)data;
 - (void)restorationComplete;
 - (void)reset;
 @end

@@ -9,7 +9,6 @@
 
 #include "flutter/fml/logging.h"
 
-
 @implementation FlutterRestorationPlugin {
   BOOL _waitForData;
   BOOL _restorationEnabled;
@@ -18,12 +17,14 @@
 }
 
 - (instancetype)init {
-  @throw([NSException exceptionWithName:@"FlutterRestorationPlugin must initWithChannel:restorationEnabled:"
-                                 reason:nil
-                               userInfo:nil]);
+  @throw([NSException
+      exceptionWithName:@"FlutterRestorationPlugin must initWithChannel:restorationEnabled:"
+                 reason:nil
+               userInfo:nil]);
 }
 
-- (instancetype)initWithChannel:(FlutterMethodChannel*)channel restorationEnabled:(BOOL)restorationEnabled {
+- (instancetype)initWithChannel:(FlutterMethodChannel*)channel
+             restorationEnabled:(BOOL)restorationEnabled {
   FML_DCHECK(channel) << "channel must be set";
   self = [super init];
   if (self) {
@@ -47,7 +48,7 @@
     result(nil);
   } else if ([[call method] isEqualToString:@"get"]) {
     if (!_restorationEnabled || !_waitForData) {
-      result( [self dataForFramework] );
+      result([self dataForFramework]);
       return;
     }
     _pendingRequest = [result retain];
@@ -68,7 +69,7 @@
   _restorationData = newData;
   _waitForData = NO;
   if (_pendingRequest != nil) {
-    _pendingRequest( [self dataForFramework] );
+    _pendingRequest([self dataForFramework]);
     [_pendingRequest release];
     _pendingRequest = nil;
   }
@@ -78,7 +79,7 @@
   _waitForData = NO;
   if (_pendingRequest != nil) {
     NSAssert(_restorationEnabled, @"No request can be pending when restoration is disabled.");
-    _pendingRequest( [self dataForFramework] );
+    _pendingRequest([self dataForFramework]);
     [_pendingRequest release];
     _pendingRequest = nil;
   }
@@ -97,12 +98,15 @@
 
 - (NSDictionary*)dataForFramework {
   if (!_restorationEnabled) {
-    return @{ @"enabled": @NO };
+    return @{@"enabled" : @NO};
   }
   if (_restorationData == nil) {
-    return @{ @"enabled": @YES };
+    return @{@"enabled" : @YES};
   }
-  return @{@"enabled": @YES, @"data": [FlutterStandardTypedData typedDataWithBytes:_restorationData]};
+  return @{
+    @"enabled" : @YES,
+    @"data" : [FlutterStandardTypedData typedDataWithBytes:_restorationData]
+  };
 }
 
 @end

@@ -1526,12 +1526,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   
 #pragma mark - State Restoration
 
-- (void)encodeRestorableStateWithCoder:(NSCoder *)coder {
+- (void)encodeRestorableStateWithCoder:(NSCoder*)coder {
   NSData* restorationData = [[_engine.get() restorationPlugin] restorationData];
   [coder encodeDataObject:restorationData];
 }
 
-- (void)decodeRestorableStateWithCoder:(NSCoder *)coder {
+- (void)decodeRestorableStateWithCoder:(NSCoder*)coder {
   NSData* restorationData = [coder decodeDataObject];
   [[_engine.get() restorationPlugin] restorationData:restorationData];
 }

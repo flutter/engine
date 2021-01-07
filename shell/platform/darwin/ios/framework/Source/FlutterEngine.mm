@@ -106,7 +106,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(FlutterDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
-  return [self initWithName:labelPrefix project:project allowHeadlessExecution:allowHeadlessExecution restorationEnabled:NO];
+  return [self initWithName:labelPrefix
+                     project:project
+      allowHeadlessExecution:allowHeadlessExecution
+          restorationEnabled:NO];
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix
@@ -435,7 +438,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
          initWithName:@"flutter/restoration"
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterStandardMethodCodec sharedInstance]]);
-  
+
   _platformChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform"
       binaryMessenger:self.binaryMessenger
@@ -475,8 +478,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _textInputPlugin.get().textInputDelegate = self;
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
-  
-  _restorationPlugin.reset([[FlutterRestorationPlugin alloc] initWithChannel:_restorationChannel.get() restorationEnabled:_restorationEnabled]);
+
+  _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
+         initWithChannel:_restorationChannel.get()
+      restorationEnabled:_restorationEnabled]);
 }
 
 - (void)maybeSetupPlatformViewChannels {
