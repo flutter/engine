@@ -42,11 +42,16 @@ static sk_sp<SkData> NormalizeImage(sk_sp<SkImage> image) {
   size_t row_bytes = norm_image_info.minRowBytes();
   size_t size = norm_image_info.computeByteSize(row_bytes);
   sk_sp<SkData> data = SkData::MakeUninitialized(size);
+  if (!data) {
+    FML_CHECK(false) << "Unable to allocate data.";
+  }
+
   bool success = image->readPixels(norm_image_info, data->writable_data(),
                                    row_bytes, 0, 0);
   if (!success) {
     FML_CHECK(false) << "Unable to read pixels.";
   }
+
   return data;
 }
 
