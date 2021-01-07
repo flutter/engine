@@ -153,7 +153,8 @@ FLUTTER_EXPORT
  * @param project The `FlutterDartProject` to run.
  * @param allowHeadlessExecution Whether or not to allow this instance to continue
  *   running after passing a nil `FlutterViewController` to `-setViewController:`.
- * @param restorationEnabled Whether state restoration is enabled. When true, the framework will wait for the attached view controller to provide restoration data.
+ * @param restorationEnabled Whether state restoration is enabled. When true, the framework will
+ *   wait for the attached view controller to provide restoration data.
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(nullable FlutterDartProject*)project
