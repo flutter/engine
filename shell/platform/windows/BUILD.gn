@@ -48,9 +48,9 @@ source_set("flutter_windows_source") {
     "angle_surface_manager.h",
     "cursor_handler.cc",
     "cursor_handler.h",
+    "flutter_key_map.cc",
     "flutter_keyboard_manager.cc",
     "flutter_keyboard_manager.h",
-    "flutter_key_map.cc",
     "flutter_project_bundle.cc",
     "flutter_project_bundle.h",
     "flutter_windows.cc",
@@ -161,8 +161,8 @@ if (target_os == "winuwp") {
     testonly = true
 
     sources = [
-      "flutter_project_bundle_unittests.cc",
       "flutter_keyboard_manager_unittests.cc",
+      "flutter_project_bundle_unittests.cc",
       "flutter_windows_engine_unittests.cc",
       "string_conversion_unittests.cc",
       "system_utils_unittests.cc",
