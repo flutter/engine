@@ -162,23 +162,30 @@ static uint64_t get_event_id(GdkEventKey* event) {
 // Finds an event in the event queue that was sent to the framework by its ID.
 static GdkEventKey* find_pending_event(FlKeyEventPlugin* self, uint64_t id) {
   for (guint i = 0; i <= self->pending_events->len; ++i) {
-    if (FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))->id == id) {
-      return FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))->event;
+    if (FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))->id ==
+        id) {
+      return FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))
+          ->event;
     }
   }
-  g_warning("Tried to find pending event with id %ld, but the event was not found.", id);
+  g_warning(
+      "Tried to find pending event with id %ld, but the event was not found.",
+      id);
   return nullptr;
 }
 
 // Removes an event from the pending event queue.
 static void remove_pending_event(FlKeyEventPlugin* self, uint64_t id) {
   for (guint i = 0; i <= self->pending_events->len; ++i) {
-    if (FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))->id == id) {
+    if (FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))->id ==
+        id) {
       g_ptr_array_remove_index(self->pending_events, i);
       return;
     }
   }
-  g_warning("Tried to remove pending event with id %ld, but the event was not found.", id);
+  g_warning(
+      "Tried to remove pending event with id %ld, but the event was not found.",
+      id);
 }
 
 // Adds an GdkEventKey to the pending event queue, with a unique ID, and the
