@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package io.flutter.embedding.engine.dynamicfeatures;
+package io.flutter.embedding.engine.deferredcomponents;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -23,7 +23,7 @@ import com.google.android.play.core.splitinstall.model.SplitInstallErrorCode;
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.systemchannels.DynamicFeatureChannel;
+import io.flutter.embedding.engine.systemchannels.DeferredComponentChannel;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,15 +33,15 @@ import java.util.Map;
 import java.util.Queue;
 
 /**
- * Flutter default implementation of DynamicFeatureManager that downloads dynamic feature modules
+ * Flutter default implementation of DeferredComponentManager that downloads deferred component modules
  * from the Google Play store.
  */
-public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
-  private static final String TAG = "PlayStoreDynamicFeatureManager";
+public class PlayStoreDeferredComponentManager implements DeferredComponentManager {
+  private static final String TAG = "PlayStoreDeferredComponentManager";
 
   private @NonNull SplitInstallManager splitInstallManager;
   private @Nullable FlutterJNI flutterJNI;
-  private @Nullable DynamicFeatureChannel channel;
+  private @Nullable DeferredComponentChannel channel;
   private @NonNull Context context;
   // Each request to install a feature module gets a session ID. These maps associate
   // the session ID with the loading unit and module name that was requested.
@@ -65,13 +65,13 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                   String.format(
                       "Module \"%s\" (sessionId %d) install failed with: %s",
                       sessionIdToName.get(sessionId), sessionId, state.errorCode()));
-              flutterJNI.dynamicFeatureInstallFailure(
+              flutterJNI.deferredComponentInstallFailure(
                   sessionIdToLoadingUnitId.get(sessionId),
                   "Module install failed with " + state.errorCode(),
                   true);
               if (channel != null) {
                 channel.completeInstallError(
-                    sessionIdToName.get(sessionId), "Android Dynamic Feature failed to install.");
+                    sessionIdToName.get(sessionId), "Android Deferred Component failed to install.");
               }
               sessionIdToName.delete(sessionId);
               sessionIdToLoadingUnitId.delete(sessionId);
@@ -87,7 +87,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
                       sessionIdToName.get(sessionId), sessionId));
               loadAssets(sessionIdToLoadingUnitId.get(sessionId), sessionIdToName.get(sessionId));
               // We only load Dart shared lib for the loading unit id requested. Other loading units
-              // (if present) in the dynamic feature module are not loaded, but can be loaded by
+              // (if present) in the deferred component module are not loaded, but can be loaded by
               // calling again with their loading unit id. If no valid loadingUnitId was included in
               // the installation request such as for an asset only feature, then we can skip this.
               if (sessionIdToLoadingUnitId.get(sessionId) > 0) {
@@ -112,7 +112,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
               if (channel != null) {
                 channel.completeInstallError(
                     sessionIdToName.get(sessionId),
-                    "Android Dynamic Feature installation canceled.");
+                    "Android Deferred Component installation canceled.");
               }
               sessionIdToName.delete(sessionId);
               sessionIdToLoadingUnitId.delete(sessionId);
@@ -186,7 +186,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     }
   }
 
-  public PlayStoreDynamicFeatureManager(@NonNull Context context, @Nullable FlutterJNI flutterJNI) {
+  public PlayStoreDeferredComponentManager(@NonNull Context context, @Nullable FlutterJNI flutterJNI) {
     this.context = context;
     this.flutterJNI = flutterJNI;
     splitInstallManager = SplitInstallManagerFactory.create(context);
@@ -206,13 +206,13 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     if (flutterJNI == null) {
       Log.e(
           TAG,
-          "No FlutterJNI provided. `setJNI` must be called on the DynamicFeatureManager before attempting to load dart libraries or invoking with platform channels.");
+          "No FlutterJNI provided. `setJNI` must be called on the DeferredComponentManager before attempting to load dart libraries or invoking with platform channels.");
       return false;
     }
     return true;
   }
 
-  public void setDynamicFeatureChannel(DynamicFeatureChannel channel) {
+  public void setDeferredComponentChannel(DeferredComponentChannel channel) {
     this.channel = channel;
   }
 
@@ -226,13 +226,13 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     return context.getResources().getString(moduleNameIdentifier);
   }
 
-  public void installDynamicFeature(int loadingUnitId, String moduleName) {
+  public void installDeferredComponent(int loadingUnitId, String moduleName) {
     String resolvedModuleName =
         moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {
       Log.e(
           TAG,
-          "Dynamic feature module name was null and could not be resolved from loading unit id.");
+          "Deferred component module name was null and could not be resolved from loading unit id.");
       return;
     }
 
@@ -260,26 +260,26 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
             exception -> {
               switch (((SplitInstallException) exception).getErrorCode()) {
                 case SplitInstallErrorCode.NETWORK_ERROR:
-                  flutterJNI.dynamicFeatureInstallFailure(
+                  flutterJNI.deferredComponentInstallFailure(
                       loadingUnitId,
                       String.format(
-                          "Install of dynamic feature module \"%s\" failed with a network error",
+                          "Install of deferred component module \"%s\" failed with a network error",
                           moduleName),
                       true);
                   break;
                 case SplitInstallErrorCode.MODULE_UNAVAILABLE:
-                  flutterJNI.dynamicFeatureInstallFailure(
+                  flutterJNI.deferredComponentInstallFailure(
                       loadingUnitId,
                       String.format(
-                          "Install of dynamic feature module \"%s\" failed as it is unavailable",
+                          "Install of deferred component module \"%s\" failed as it is unavailable",
                           moduleName),
                       false);
                   break;
                 default:
-                  flutterJNI.dynamicFeatureInstallFailure(
+                  flutterJNI.deferredComponentInstallFailure(
                       loadingUnitId,
                       String.format(
-                          "Install of dynamic feature module \"%s\" failed with error %d: %s",
+                          "Install of deferred component module \"%s\" failed with error %d: %s",
                           moduleName,
                           ((SplitInstallException) exception).getErrorCode(),
                           ((SplitInstallException) exception).getMessage()),
@@ -289,13 +289,13 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
             });
   }
 
-  public String getDynamicFeatureInstallState(int loadingUnitId, String moduleName) {
+  public String getDeferredComponentInstallState(int loadingUnitId, String moduleName) {
     String resolvedModuleName =
         moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {
       Log.e(
           TAG,
-          "Dynamic feature module name was null and could not be resolved from loading unit id.");
+          "Deferred component module name was null and could not be resolved from loading unit id.");
       return "unknown";
     }
     if (!nameToSessionId.containsKey(resolvedModuleName)) {
@@ -312,7 +312,7 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
     if (!verifyJNI()) {
       return;
     }
-    // Since android dynamic feature asset manager is handled through
+    // Since android deferred component asset manager is handled through
     // context, neither parameter is used here. Assets are stored in
     // the apk's `assets` directory allowing them to be accessed by
     // Android's AssetManager directly.
@@ -389,13 +389,13 @@ public class PlayStoreDynamicFeatureManager implements DynamicFeatureManager {
         loadingUnitId, searchPaths.toArray(new String[apkPaths.size()]));
   }
 
-  public void uninstallDynamicFeature(int loadingUnitId, String moduleName) {
+  public void uninstallDeferredComponent(int loadingUnitId, String moduleName) {
     String resolvedModuleName =
         moduleName != null ? moduleName : loadingUnitIdToModuleName(loadingUnitId);
     if (resolvedModuleName == null) {
       Log.e(
           TAG,
-          "Dynamic feature module name was null and could not be resolved from loading unit id.");
+          "Deferred component module name was null and could not be resolved from loading unit id.");
       return;
     }
     List<String> modules_to_uninstall = new ArrayList<>();
