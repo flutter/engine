@@ -61,6 +61,7 @@ public class DeferredComponentChannelTest {
     DeferredComponentChannel fakeDeferredComponentChannel =
         new DeferredComponentChannel(dartExecutor);
     fakeDeferredComponentChannel.setDeferredComponentManager(testDeferredComponentManager);
+    testDeferredComponentManager.setDeferredComponentChannel(fakeDeferredComponentChannel);
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);
@@ -82,6 +83,7 @@ public class DeferredComponentChannelTest {
     DeferredComponentChannel fakeDeferredComponentChannel =
         new DeferredComponentChannel(dartExecutor);
     fakeDeferredComponentChannel.setDeferredComponentManager(testDeferredComponentManager);
+    testDeferredComponentManager.setDeferredComponentChannel(fakeDeferredComponentChannel);
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);
@@ -106,6 +108,7 @@ public class DeferredComponentChannelTest {
     DeferredComponentChannel fakeDeferredComponentChannel =
         new DeferredComponentChannel(dartExecutor);
     fakeDeferredComponentChannel.setDeferredComponentManager(testDeferredComponentManager);
+    testDeferredComponentManager.setDeferredComponentChannel(fakeDeferredComponentChannel);
 
     Map<String, Object> args = new HashMap<>();
     args.put("loadingUnitId", -1);

@@ -45,8 +45,8 @@ public class FlutterPlayStoreSplitApplication extends SplitCompatApplication {
     // interacting with the Google Play Store.
     PlayStoreDeferredComponentManager deferredComponentManager =
         new PlayStoreDeferredComponentManager(this, null);
-    new FlutterInjector.Builder()
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder()
             .setDeferredComponentManager(deferredComponentManager)
-            .build();
-  }
+            .build());
 }

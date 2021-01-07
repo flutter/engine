@@ -51,7 +51,9 @@ public class FlutterInjectorTest {
   @Test
   public void canInjectDeferredComponentManager() {
     FlutterInjector.setInstance(
-        new FlutterInjector.Builder().setDeferredComponentManager(mockDeferredComponentManager).build());
+        new FlutterInjector.Builder()
+            .setDeferredComponentManager(mockDeferredComponentManager)
+            .build());
     FlutterInjector injector = FlutterInjector.instance();
     assertEquals(injector.deferredComponentManager(), mockDeferredComponentManager);
   }

@@ -224,7 +224,6 @@ public interface DeferredComponentManager {
    *
    * @return false if no deferred component was found matching the input, true if an uninstall was
    *     successfully requested.
-   *
    * @param loadingUnitId The unique identifier associated with a Dart deferred library.
    * @param moduleName The deferred component module name as defined in bundle_config.yaml.
    */
