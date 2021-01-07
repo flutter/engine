@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "flutter/lib/ui/window/key_data_packet.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -27,6 +28,7 @@ class Window final {
   const ViewportMetrics& viewport_metrics() const { return viewport_metrics_; }
 
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
+  void DispatchKeyDataPacket(const KeyDataPacket& packet);
   void UpdateWindowMetrics(const ViewportMetrics& metrics);
 
  private:

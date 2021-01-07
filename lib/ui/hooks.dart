@@ -98,6 +98,12 @@ void _dispatchPointerDataPacket(ByteData packet) {
 
 @pragma('vm:entry-point')
 // ignore: unused_element
+void _dispatchKeyData(ByteData packet) {
+  PlatformDispatcher.instance._dispatchKeyData(packet);
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
 void _dispatchSemanticsAction(int id, int action, ByteData? args) {
   PlatformDispatcher.instance._dispatchSemanticsAction(id, action, args);
 }
