@@ -13,7 +13,7 @@
 FLUTTER_ASSERT_ARC
 
 namespace flutter {
-  class PointerDataPacket {};
+class PointerDataPacket {};
 }
 
 @interface FlutterEngine ()
@@ -694,7 +694,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
   [vc scrollEvent:mockPanGestureRecognizer];
 
-  [[[self.mockEngine verify] ignoringNonObjectArgs] dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>()];
+  [[[self.mockEngine verify] ignoringNonObjectArgs]
+      dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>()];
 }
 
 - (NSSet<UIPress*>*)fakeUiPressSetForPhase:(UIPressPhase)phase
