@@ -1091,6 +1091,7 @@ FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server.cc
 FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server.h
 FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server_natives.cc
 FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server_natives.h
+FILE: ../../../flutter/lib/ui/key.dart
 FILE: ../../../flutter/lib/ui/lerp.dart
 FILE: ../../../flutter/lib/ui/natives.dart
 FILE: ../../../flutter/lib/ui/painting.dart
@@ -1178,6 +1179,10 @@ FILE: ../../../flutter/lib/ui/ui_dart_state.h
 FILE: ../../../flutter/lib/ui/volatile_path_tracker.cc
 FILE: ../../../flutter/lib/ui/volatile_path_tracker.h
 FILE: ../../../flutter/lib/ui/window.dart
+FILE: ../../../flutter/lib/ui/window/key_data.cc
+FILE: ../../../flutter/lib/ui/window/key_data.h
+FILE: ../../../flutter/lib/ui/window/key_data_packet.cc
+FILE: ../../../flutter/lib/ui/window/key_data_packet.h
 FILE: ../../../flutter/lib/ui/window/platform_configuration.cc
 FILE: ../../../flutter/lib/ui/window/platform_configuration.h
 FILE: ../../../flutter/lib/ui/window/platform_configuration_unittests.cc
@@ -2185,6 +2190,10 @@ FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/plu
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/plugin_registrar_windows_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/cursor_handler.cc
 FILE: ../../../flutter/shell/platform/windows/cursor_handler.h
+FILE: ../../../flutter/shell/platform/windows/flutter_key_map.cc
+FILE: ../../../flutter/shell/platform/windows/flutter_keyboard_manager.cc
+FILE: ../../../flutter/shell/platform/windows/flutter_keyboard_manager.h
+FILE: ../../../flutter/shell/platform/windows/flutter_keyboard_manager_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.h
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle_unittests.cc
