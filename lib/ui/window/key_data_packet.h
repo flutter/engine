@@ -11,11 +11,10 @@
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/window/key_data.h"
 
-
 namespace flutter {
 
 // Bitstream that contains a KeyData.
-// 
+//
 // This class provides interface to read the opaque bits. For constructing such
 // a bitstream from KeyData, checkout KeyDataPacketBuilder.
 class KeyDataPacket {

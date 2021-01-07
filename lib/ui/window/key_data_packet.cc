@@ -10,8 +10,7 @@ namespace flutter {
 KeyDataPacket::KeyDataPacket(uint8_t* data, size_t num_bytes)
     : data_(data, data + num_bytes) {}
 
-KeyDataPacket::KeyDataPacket(size_t num_bytes)
-    : data_(num_bytes) {}
+KeyDataPacket::KeyDataPacket(size_t num_bytes) : data_(num_bytes) {}
 
 KeyDataPacket::~KeyDataPacket() = default;
 
@@ -29,7 +28,8 @@ void KeyDataPacketBuilder::SetKeyData(const KeyData& event) {
 
 void KeyDataPacketBuilder::SetCharacter(const char* character) {
   if (character != nullptr) {
-    memcpy(data().data() + CharacterStart_(), character, data().size() - CharacterStart_());
+    memcpy(data().data() + CharacterStart_(), character,
+           data().size() - CharacterStart_());
   }
 }
 

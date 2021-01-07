@@ -1514,9 +1514,9 @@ inline flutter::KeyChange ToKeyChange(FlutterKeyEventKind key_change) {
 // i.e. 8 bytes.
 constexpr size_t kKeyEventCharacterMaxBytes = 8;
 
-FlutterEngineResult FlutterEngineSendKeyEvent(
-    FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterKeyEvent* event) {
+FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                  engine,
+                                              const FlutterKeyEvent* event) {
   if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
@@ -1527,15 +1527,17 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
 
   const char* character = SAFE_ACCESS(event, character, nullptr);
 
-  size_t character_data_size = character == nullptr ? 0 :
-      strnlen(character, kKeyEventCharacterMaxBytes);
+  size_t character_data_size =
+      character == nullptr ? 0 : strnlen(character, kKeyEventCharacterMaxBytes);
 
-  auto packet = std::make_unique<flutter::KeyDataPacketBuilder>(character_data_size);
+  auto packet =
+      std::make_unique<flutter::KeyDataPacketBuilder>(character_data_size);
 
   flutter::KeyData key_data;
   key_data.Clear();
   key_data.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
-  key_data.change = ToKeyChange(SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindUp));
+  key_data.change = ToKeyChange(
+      SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindUp));
   key_data.physical = SAFE_ACCESS(event, physical, 0);
   key_data.logical = SAFE_ACCESS(event, logical, 0);
   key_data.synthesized = !!SAFE_ACCESS(event, synthesized, false);

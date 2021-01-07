@@ -39,7 +39,7 @@ void FlutterWindowsView::SetEngine(
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
   keyboard_hook_handlers_.push_back(
       std::make_unique<flutter::FlutterKeyboardManager>(
-          [this](const FlutterKeyEvent& event){
+          [this](const FlutterKeyEvent& event) {
             engine_->SendKeyEvent(event);
           }));
   keyboard_hook_handlers_.push_back(

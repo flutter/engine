@@ -39,7 +39,7 @@ class TestFlutterKeyEvent : public FlutterKeyEvent {
   std::unique_ptr<char[]> character_ptr;
 };
 
-} // namespace
+}  // namespace
 
 namespace testing {
 
@@ -52,21 +52,22 @@ constexpr uint64_t kLogicalKeyA = 0x41;
 constexpr uint64_t kLogicalNumpad1 = 0x61;
 constexpr uint64_t kLogicalNumpadEnd = 0x23;
 constexpr uint64_t kLogicalNumLock = 0x90;
-}
+}  // namespace
 
 TEST(FlutterKeyboardManager, BasicKeyPressingAndHolding) {
   std::vector<TestFlutterKeyEvent> results;
   TestFlutterKeyEvent* event;
 
-  std::unique_ptr<FlutterKeyboardManager> manager = std::make_unique<FlutterKeyboardManager>(
-    [&results](const FlutterKeyEvent& event) {
-      results.emplace_back(event);
-    }
-  );
+  std::unique_ptr<FlutterKeyboardManager> manager =
+      std::make_unique<FlutterKeyboardManager>(
+          [&results](const FlutterKeyEvent& event) {
+            results.emplace_back(event);
+          });
 
   // On a US keyboard:
   // Press Numpad1.
-  manager->KeyboardHook(nullptr, kLogicalKeyA, kPhysicalKeyA, WM_KEYDOWN, 'a', false);
+  manager->KeyboardHook(nullptr, kLogicalKeyA, kPhysicalKeyA, WM_KEYDOWN, 'a',
+                        false);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->kind, kFlutterKeyEventKindDown);
@@ -77,7 +78,8 @@ TEST(FlutterKeyboardManager, BasicKeyPressingAndHolding) {
   results.clear();
 
   // Hold KeyA.
-  manager->KeyboardHook(nullptr, kLogicalKeyA, kPhysicalKeyA, WM_KEYDOWN, 'a', true);
+  manager->KeyboardHook(nullptr, kLogicalKeyA, kPhysicalKeyA, WM_KEYDOWN, 'a',
+                        true);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->kind, kFlutterKeyEventKindRepeat);
@@ -88,7 +90,8 @@ TEST(FlutterKeyboardManager, BasicKeyPressingAndHolding) {
   results.clear();
 
   // Release KeyA.
-  manager->KeyboardHook(nullptr, kLogicalKeyA, kPhysicalKeyA, WM_KEYUP, 0, true);
+  manager->KeyboardHook(nullptr, kLogicalKeyA, kPhysicalKeyA, WM_KEYUP, 0,
+                        true);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->kind, kFlutterKeyEventKindUp);
@@ -96,22 +99,22 @@ TEST(FlutterKeyboardManager, BasicKeyPressingAndHolding) {
   EXPECT_EQ(event->logical, 0x00000061);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
-
 }
 
 TEST(FlutterKeyboardManager, ToggleNumLockDuringNumpadPress) {
   std::vector<TestFlutterKeyEvent> results;
   TestFlutterKeyEvent* event;
 
-  std::unique_ptr<FlutterKeyboardManager> manager = std::make_unique<FlutterKeyboardManager>(
-    [&results](const FlutterKeyEvent& event) {
-      results.emplace_back(event);
-    }
-  );
+  std::unique_ptr<FlutterKeyboardManager> manager =
+      std::make_unique<FlutterKeyboardManager>(
+          [&results](const FlutterKeyEvent& event) {
+            results.emplace_back(event);
+          });
 
   // On a US keyboard:
   // Press NumPad1.
-  manager->KeyboardHook(nullptr, kLogicalNumpad1, kPhysicalNumpad1, WM_KEYDOWN, 0, false);
+  manager->KeyboardHook(nullptr, kLogicalNumpad1, kPhysicalNumpad1, WM_KEYDOWN,
+                        0, false);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->kind, kFlutterKeyEventKindDown);
@@ -122,7 +125,8 @@ TEST(FlutterKeyboardManager, ToggleNumLockDuringNumpadPress) {
   results.clear();
 
   // Press NumLock.
-  manager->KeyboardHook(nullptr, kLogicalNumLock, kPhysicalNumLock, WM_KEYDOWN, 0, false);
+  manager->KeyboardHook(nullptr, kLogicalNumLock, kPhysicalNumLock, WM_KEYDOWN,
+                        0, false);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->kind, kFlutterKeyEventKindDown);
@@ -133,7 +137,8 @@ TEST(FlutterKeyboardManager, ToggleNumLockDuringNumpadPress) {
   results.clear();
 
   // Release NumLock.
-  manager->KeyboardHook(nullptr, kLogicalNumLock, kPhysicalNumLock, WM_KEYUP, 0, false);
+  manager->KeyboardHook(nullptr, kLogicalNumLock, kPhysicalNumLock, WM_KEYUP, 0,
+                        false);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->kind, kFlutterKeyEventKindUp);
@@ -144,7 +149,8 @@ TEST(FlutterKeyboardManager, ToggleNumLockDuringNumpadPress) {
   results.clear();
 
   // Release NumPad1. (The logical key is now NumpadEnd)
-  manager->KeyboardHook(nullptr, kLogicalNumpadEnd, kPhysicalNumpad1, WM_KEYUP, 0, false);
+  manager->KeyboardHook(nullptr, kLogicalNumpadEnd, kPhysicalNumpad1, WM_KEYUP,
+                        0, false);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->kind, kFlutterKeyEventKindUp);
@@ -153,7 +159,6 @@ TEST(FlutterKeyboardManager, ToggleNumLockDuringNumpadPress) {
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
   results.clear();
-
 }
 
 }  // namespace testing

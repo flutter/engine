@@ -132,7 +132,8 @@ class PlatformView {
     ///             the running root isolate hosted by the engine on the UI
     ///             thread.
     ///
-    /// @param[in]  packet  The key data packet containing one physical key event
+    /// @param[in]  packet  The key data packet containing one physical key
+    /// event
     ///                     and multiple logical key events.
     ///
     virtual void OnPlatformViewDispatchKeyDataPacket(
@@ -590,8 +591,9 @@ class PlatformView {
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatches key events from the embedder to the framework. Each
-  ///             key data packet contains one physical event and multiple logical key
-  ///             events. Each call to this method wakes up the UI thread.
+  ///             key data packet contains one physical event and multiple
+  ///             logical key events. Each call to this method wakes up the UI
+  ///             thread.
   ///
   /// @param[in]  packet  The key data packet to dispatch to the framework.
   ///

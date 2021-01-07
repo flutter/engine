@@ -243,11 +243,10 @@ bool RuntimeController::DispatchPointerDataPacket(
   return false;
 }
 
-bool RuntimeController::DispatchKeyDataPacket(
-    const KeyDataPacket& packet) {
+bool RuntimeController::DispatchKeyDataPacket(const KeyDataPacket& packet) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    TRACE_EVENT1("flutter", "RuntimeController::DispatchKeyDataPacket",
-                 "mode", "basic");
+    TRACE_EVENT1("flutter", "RuntimeController::DispatchKeyDataPacket", "mode",
+                 "basic");
     platform_configuration->get_window(0)->DispatchKeyDataPacket(packet);
     return true;
   }

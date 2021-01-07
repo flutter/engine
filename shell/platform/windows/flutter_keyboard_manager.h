@@ -22,7 +22,7 @@ namespace {
 // It should hold a UTF-32 character encoded in UTF-8 as long as the trailing
 // '\0'.
 constexpr size_t kCharacterCacheSize = 8;
-}
+}  // namespace
 
 class FlutterWindowsView;
 
@@ -31,7 +31,8 @@ class FlutterWindowsView;
 // Handles key events and forwards them to the Flutter engine.
 class FlutterKeyboardManager : public KeyboardHookHandler {
  public:
-  explicit FlutterKeyboardManager(std::function<void(const FlutterKeyEvent&)> onEvent);
+  explicit FlutterKeyboardManager(
+      std::function<void(const FlutterKeyEvent&)> onEvent);
 
   virtual ~FlutterKeyboardManager();
 

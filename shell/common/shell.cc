@@ -882,8 +882,8 @@ void Shell::OnPlatformViewDispatchKeyDataPacket(
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet)]() mutable {
+  task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
+      [engine = weak_engine_, packet = std::move(packet)]() mutable {
         if (engine) {
           engine->DispatchKeyDataPacket(std::move(packet));
         }

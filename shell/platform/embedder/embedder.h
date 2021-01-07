@@ -611,7 +611,6 @@ typedef struct {
   int64_t buttons;
 } FlutterPointerEvent;
 
-
 typedef enum {
   kFlutterKeyEventKindUp = 1,
   kFlutterKeyEventKindDown,
@@ -641,7 +640,6 @@ typedef struct {
 struct _FlutterPlatformKeyEventResponseHandle;
 typedef struct _FlutterPlatformKeyEventResponseHandle
     FlutterPlatformKeyEventResponseHandle;
-
 
 struct _FlutterPlatformMessageResponseHandle;
 typedef struct _FlutterPlatformMessageResponseHandle

@@ -243,7 +243,8 @@ Win32Window::HandleMessage(UINT const message,
       if (keycode_for_char_message_ != 0) {
         const unsigned int scancode = (lparam >> 16) & 0x1ff;
         const bool wasDown = lparam & 0x40000000;
-        OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN, code_point, wasDown);
+        OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN, code_point,
+              wasDown);
         keycode_for_char_message_ = 0;
       }
       break;
