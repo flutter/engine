@@ -79,7 +79,7 @@ FLUTTER_DEPRECATED("FlutterEngine should be used rather than FlutterHeadlessDart
  * be unique across FlutterEngine instances
  * @param projectOrNil The `FlutterDartProject` to run.
  * @param allowHeadlessExecution Must be set to `YES`.
- * @param restorationEnabled TODO
+ * @param restorationEnabled Must be set to `NO`.
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(FlutterDartProject*)projectOrNil

@@ -26,7 +26,6 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 }
 
 - (instancetype)init {
-  NSLog(@"MIKE: HELLOO");
   if (self = [super init]) {
     _lifeCycleDelegate = [[FlutterPluginAppLifeCycleDelegate alloc] init];
   }

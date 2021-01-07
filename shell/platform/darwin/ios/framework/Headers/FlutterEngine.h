@@ -153,7 +153,7 @@ FLUTTER_EXPORT
  * @param project The `FlutterDartProject` to run.
  * @param allowHeadlessExecution Whether or not to allow this instance to continue
  *   running after passing a nil `FlutterViewController` to `-setViewController:`.
- * @param waitForRestorationData TODO
+ * @param restorationEnabled Whether state restoration is enabled. When true, the framework will wait for the attached view controller to provide restoration data.
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(nullable FlutterDartProject*)project
@@ -301,7 +301,7 @@ FLUTTER_EXPORT
  *
  * Can be nil after `destroyContext` is called.
  *
- * @see [Navigation
+ * @see [Restoration
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/restoration-constant.html)
  */
 @property(nonatomic, readonly) FlutterMethodChannel* restorationChannel;
