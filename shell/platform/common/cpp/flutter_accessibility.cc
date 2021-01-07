@@ -104,8 +104,10 @@ gfx::Rect FlutterAccessibility::GetBoundsRect(
   bool offscreen = false;
   gfx::RectF bounds = GetBridge()->GetAXTree()->RelativeToTreeBounds(
       GetAXNode(), gfx::RectF(), &offscreen, clip_bounds);
-  *offscreen_result =
-      offscreen ? AXOffscreenResult::kOffscreen : AXOffscreenResult::kOnscreen;
+  if (offscreen_result != nullptr) {
+    *offscreen_result = offscreen ? AXOffscreenResult::kOffscreen
+                                  : AXOffscreenResult::kOnscreen;
+  }
   return gfx::ToEnclosingRect(bounds);
 }
 
