@@ -11,7 +11,6 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
 @interface FlutterRestorationPlugin : NSObject
-
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)initWithChannel:(FlutterMethodChannel*)channel restorationEnabled:(BOOL)waitForData  NS_DESIGNATED_INITIALIZER;
@@ -19,5 +18,6 @@
 - (NSData*)restorationData;
 - (void)restorationData:(NSData *)data;
 - (void)restorationComplete;
+- (void)reset;
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERRESTORATIONPLUGIN_H_

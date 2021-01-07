@@ -84,6 +84,17 @@
   }
 }
 
+- (void)reset {
+  if (_restorationData != nil) {
+    [_restorationData release];
+  }
+  _restorationData = nil;
+  if (_pendingRequest != nil) {
+    [_pendingRequest release];
+  }
+  _pendingRequest = nil;
+}
+
 - (NSDictionary*)dataForFramework {
   if (!_restorationEnabled) {
     return @{ @"enabled": @NO };

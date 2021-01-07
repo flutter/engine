@@ -1548,4 +1548,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [[_engine.get() restorationPlugin] restorationData:restorationData];
 }
 
+- (FlutterRestorationPlugin*)restorationPlugin {
+  return [_engine.get() restorationPlugin];
+}
+
 @end
