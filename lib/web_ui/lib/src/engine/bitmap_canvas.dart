@@ -834,19 +834,20 @@ class BitmapCanvas extends EngineCanvas {
   /// The text is drawn starting at coordinates ([x], [y]). It uses the current
   /// font set by the most recent call to [setCssFont].
   void fillText(String text, double x, double y, {List<ui.Shadow>? shadows}) {
+    final html.CanvasRenderingContext2D ctx = _canvasPool.context;
     if (shadows != null) {
-      _canvasPool.context.save();
+      ctx.save();
       for (final ui.Shadow shadow in shadows) {
-        _canvasPool.context.shadowColor = colorToCssString(shadow.color)!;
-        _canvasPool.context.shadowBlur = shadow.blurRadius;
-        _canvasPool.context.shadowOffsetX = shadow.offset.dx;
-        _canvasPool.context.shadowOffsetY = shadow.offset.dy;
+        ctx.shadowColor = colorToCssString(shadow.color)!;
+        ctx.shadowBlur = shadow.blurRadius;
+        ctx.shadowOffsetX = shadow.offset.dx;
+        ctx.shadowOffsetY = shadow.offset.dy;
 
-        _canvasPool.context.fillText(text, x, y);
+        ctx.fillText(text, x, y);
       }
-      _canvasPool.context.restore();
+      ctx.restore();
     }
-    _canvasPool.context.fillText(text, x, y);
+    ctx.fillText(text, x, y);
   }
 
   @override
