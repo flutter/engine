@@ -4,8 +4,6 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
 
-#include <iostream>
-
 #import "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
