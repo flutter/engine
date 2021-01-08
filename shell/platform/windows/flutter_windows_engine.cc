@@ -194,7 +194,8 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   platform_task_runner.post_task_callback = [](FlutterTask task,
                                                uint64_t target_time_nanos,
                                                void* user_data) -> void {
-    static_cast<TaskRunner*>(user_data)->PostTask(task, target_time_nanos);
+    static_cast<TaskRunner*>(user_data)->PostFlutterTask(task,
+                                                         target_time_nanos);
   };
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
