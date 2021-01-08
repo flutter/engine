@@ -25,6 +25,9 @@ class PixelBufferTexture {
 
   // Creates a pixel buffer texture that uses the provided |copy_buffer_cb| to
   // retrieve the buffer.
+  // As the callback is usually invoked from the render thread, the callee must
+  // take care of proper synchronization. It also needs to be ensured that the
+  // returned buffer isn't released prior to unregistering this texture.
   PixelBufferTexture(CopyBufferCb copy_buffer_cb)
       : copy_buffer_cb_(copy_buffer_cb) {}
 
@@ -47,6 +50,9 @@ class PixelBufferTexture {
 typedef std::variant<PixelBufferTexture> TextureVariant;
 
 // An object keeping track of external textures.
+//
+// Thread safety:
+// It's safe to call the member methods from any thread.
 class TextureRegistrar {
  public:
   virtual ~TextureRegistrar() = default;
@@ -55,10 +61,14 @@ class TextureRegistrar {
   virtual int64_t RegisterTexture(TextureVariant* texture) = 0;
 
   // Notifies the flutter engine that the texture object corresponding
-  // to |texure_id| needs to render a new texture.
+  // to |texure_id| needs to render a new frame.
+  //
+  // For PixelBufferTextures, this will effectively make the engine invoke
+  // the callback that was provided upon creating the texture.
   virtual bool MarkTextureFrameAvailable(int64_t texture_id) = 0;
 
   // Unregisters an existing Texture object.
+  // Textures must not be unregistered while they're in use.
   virtual bool UnregisterTexture(int64_t texture_id) = 0;
 };
 

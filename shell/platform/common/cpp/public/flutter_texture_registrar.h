@@ -40,6 +40,11 @@ typedef struct {
 // the Flutter engine to copy the texture.
 // It is invoked with the intended surface size specified by |width| and
 // |height| and the |user_data| held by FlutterDesktopPixelBufferTextureConfig.
+//
+// As this is usually called from the render thread, the callee must take
+// care of proper synchronization. It also needs to be ensured that the
+// returned FlutterDesktopPixelBuffer isn't released prior to unregistering
+// the corresponding texture.
 typedef const FlutterDesktopPixelBuffer* (
     *FlutterDesktopPixelBufferTextureCallback)(size_t width,
                                                size_t height,
@@ -61,18 +66,22 @@ typedef struct {
 } FlutterDesktopTextureInfo;
 
 // Registers a new texture with the Flutter engine and returns the texture ID.
+// This function can be called from any thread.
 FLUTTER_EXPORT int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
     const FlutterDesktopTextureInfo* info);
 
 // Unregisters an existing texture from the Flutter engine for a |texture_id|.
 // Returns true on success or false if the specified texture doesn't exist.
+// This function can be called from any thread.
+// However, textures must not be unregistered while they're in use.
 FLUTTER_EXPORT bool FlutterDesktopTextureRegistrarUnregisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
     int64_t texture_id);
 
 // Marks that a new texture frame is available for a given |texture_id|.
 // Returns true on success or false if the specified texture doesn't exist.
+// This function can be called from any thread.
 FLUTTER_EXPORT bool
 FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
     FlutterDesktopTextureRegistrarRef texture_registrar,
