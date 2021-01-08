@@ -1787,24 +1787,6 @@ FLUTTER_EXPORT
 void FlutterEngineTraceEventInstant(const char* name);
 
 //------------------------------------------------------------------------------
-/// @brief      Posts a task onto the Flutter platform thread. Typically, this
-///             may be called from any thread as long as a
-///             `FlutterEngineShutdown` on the specific engine has not already
-///             been initiated.
-///
-/// @param[in]  engine         A running engine instance.
-/// @param[in]  callback       The callback to execute on the platform thread.
-/// @param      callback_data  The callback context.
-///
-/// @return     The result of the call.
-///
-FLUTTER_EXPORT
-FlutterEngineResult FlutterEnginePostPlatformThreadTask(
-    FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    VoidCallback callback,
-    void* callback_data);
-
-//------------------------------------------------------------------------------
 /// @brief      Posts a task onto the Flutter render thread. Typically, this may
 ///             be called from any thread as long as a `FlutterEngineShutdown`
 ///             on the specific engine has not already been initiated.
@@ -2080,8 +2062,6 @@ typedef FlutterEngineResult (*FlutterEnginePostRenderThreadTaskFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     VoidCallback callback,
     void* callback_data);
-typedef FlutterEnginePostRenderThreadTaskFnPtr
-    FlutterEnginePostPlatformThreadTaskFnPtr;
 typedef uint64_t (*FlutterEngineGetCurrentTimeFnPtr)();
 typedef FlutterEngineResult (*FlutterEngineRunTaskFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
@@ -2149,7 +2129,6 @@ typedef struct {
   FlutterEnginePostCallbackOnAllNativeThreadsFnPtr
       PostCallbackOnAllNativeThreads;
   FlutterEngineNotifyDisplayUpdateFnPtr NotifyDisplayUpdate;
-  FlutterEnginePostPlatformThreadTaskFnPtr PostPlatformThreadTask;
 } FlutterEngineProcTable;
 
 //------------------------------------------------------------------------------

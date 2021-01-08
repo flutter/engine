@@ -244,15 +244,6 @@ bool EmbedderEngine::ReloadSystemFonts() {
   return shell_->ReloadSystemFonts();
 }
 
-bool EmbedderEngine::PostPlatformThreadTask(const fml::closure& task) {
-  if (!IsValid()) {
-    return false;
-  }
-
-  shell_->GetTaskRunners().GetPlatformTaskRunner()->PostTask(task);
-  return true;
-}
-
 bool EmbedderEngine::PostRenderThreadTask(const fml::closure& task) {
   if (!IsValid()) {
     return false;

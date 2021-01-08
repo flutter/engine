@@ -384,10 +384,4 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
 }
 
-bool FlutterWindowsEngine::PostPlatformThreadTask(VoidCallback callback,
-                                                  void* callback_data) {
-  return (embedder_api_.PostPlatformThreadTask(engine_, callback,
-                                               callback_data) == kSuccess);
-}
-
 }  // namespace flutter

@@ -128,9 +128,6 @@ class FlutterWindowsEngine {
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
 
-  // Posts a task onto the platform thread.
-  bool PostPlatformThreadTask(VoidCallback callback, void* callback_data);
-
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineEmbedderApiModifier;
