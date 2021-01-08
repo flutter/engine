@@ -7,6 +7,7 @@
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
 #include <iostream>
+#include <mutex>
 
 namespace flutter {
 
@@ -28,40 +29,41 @@ int64_t FlutterWindowsTextureRegistrar::RegisterTexture(
   }
 
   auto texture_gl = std::make_unique<flutter::ExternalTextureGL>(
-      engine_, texture_info->pixel_buffer_config.callback,
+      texture_info->pixel_buffer_config.callback,
       texture_info->pixel_buffer_config.user_data);
-
   int64_t texture_id = texture_gl->texture_id();
-  textures_[texture_id] = std::move(texture_gl);
 
-  if (engine_->RegisterExternalTexture(texture_id)) {
-    return texture_id;
+  {
+    std::lock_guard<std::mutex> lock(map_mutex_);
+    textures_[texture_id] = std::move(texture_gl);
   }
 
-  return -1;
+  engine_->task_runner()->RunNowOrPostTask(
+      [texture_id, this]() { engine_->RegisterExternalTexture(texture_id); });
+
+  return texture_id;
 }
 
 bool FlutterWindowsTextureRegistrar::UnregisterTexture(int64_t texture_id) {
+  std::lock_guard<std::mutex> lock(map_mutex_);
+
   auto it = textures_.find(texture_id);
   if (it != textures_.end()) {
     textures_.erase(it);
+    engine_->task_runner()->RunNowOrPostTask([texture_id, this]() {
+      engine_->UnregisterExternalTexture(texture_id);
+    });
+    return true;
   }
-  return engine_->UnregisterExternalTexture(texture_id);
+  return false;
 }
 
 bool FlutterWindowsTextureRegistrar::MarkTextureFrameAvailable(
     int64_t texture_id) {
-  auto it = textures_.find(texture_id);
-  if (it != textures_.end()) {
-    auto texture = it->second.get();
-    if (engine_->task_runner()->RunsTasksOnCurrentThread()) {
-      texture->MarkFrameAvailable();
-    }
-    engine_->task_runner()->PostTask(
-        [texture]() { texture->MarkFrameAvailable(); });
-    return true;
-  }
-  return false;
+  engine_->task_runner()->RunNowOrPostTask([this, texture_id]() {
+    engine_->MarkExternalTextureFrameAvailable(texture_id);
+  });
+  return true;
 }
 
 bool FlutterWindowsTextureRegistrar::PopulateTexture(
@@ -69,6 +71,8 @@ bool FlutterWindowsTextureRegistrar::PopulateTexture(
     size_t width,
     size_t height,
     FlutterOpenGLTexture* texture) {
+  std::lock_guard<std::mutex> lock(map_mutex_);
+
   auto it = textures_.find(texture_id);
   if (it != textures_.end()) {
     return it->second->PopulateTexture(width, height, texture);

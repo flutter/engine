@@ -5,8 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_TEXTURE_REGISTRAR_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_TEXTURE_REGISTRAR_H_
 
-#include <map>
 #include <memory>
+#include <mutex>
+#include <unordered_map>
 
 #include "flutter/shell/platform/windows/external_texture_gl.h"
 
@@ -43,7 +44,9 @@ class FlutterWindowsTextureRegistrar {
   FlutterWindowsEngine* engine_ = nullptr;
 
   // All registered textures, keyed by their IDs.
-  std::map<int64_t, std::unique_ptr<flutter::ExternalTextureGL>> textures_;
+  std::unordered_map<int64_t, std::unique_ptr<flutter::ExternalTextureGL>>
+      textures_;
+  std::mutex map_mutex_;
 };
 
 };  // namespace flutter

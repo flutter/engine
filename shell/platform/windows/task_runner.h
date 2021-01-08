@@ -39,6 +39,16 @@ class TaskRunner {
       TaskClosure task,
       std::optional<TaskTimePoint> target_time = std::nullopt) = 0;
 
+  // Post a task to the event loop or run it immediately if this is being called
+  // from the main thread.
+  void RunNowOrPostTask(TaskClosure task) {
+    if (RunsTasksOnCurrentThread()) {
+      task();
+    } else {
+      PostTask(std::move(task));
+    }
+  }
+
   // Creates a new task runner with the given main thread ID, current time
   // provider, and callback for tasks that are ready to be run.
   static std::unique_ptr<TaskRunner> Create(
