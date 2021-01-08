@@ -49,4 +49,5 @@ public class FlutterPlayStoreSplitApplication extends SplitCompatApplication {
         new FlutterInjector.Builder()
             .setDeferredComponentManager(deferredComponentManager)
             .build());
+  }
 }
