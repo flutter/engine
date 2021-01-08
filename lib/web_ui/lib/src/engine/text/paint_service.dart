@@ -30,11 +30,11 @@ class TextPaintService {
     EngineLineMetrics line,
     RangeBox box,
   ) {
-    final ParagraphSpan span = box.span;
-
     // Placeholder spans don't need any painting. Their boxes should remain
     // empty so that their underlying widgets do their own painting.
-    if (span is FlatTextSpan) {
+    if (box is SpanBox) {
+      final FlatTextSpan span = box.span;
+
       // Paint the background of the box, if the span has a background.
       final SurfacePaint? background = span.style._background as SurfacePaint?;
       if (background != null) {
@@ -52,7 +52,7 @@ class TextPaintService {
             box.start.index,
             box.end.indexWithoutTrailingNewlines,
           );
-      canvas.fillText(text, x, y);
+      canvas.fillText(text, x, y, shadows: span.style._shadows);
 
       // Paint the ellipsis using the same span styles.
       final String? ellipsis = line.ellipsis;
