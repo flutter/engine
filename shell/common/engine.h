@@ -355,6 +355,19 @@ class Engine final : public RuntimeDelegate,
          std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
 
   //----------------------------------------------------------------------------
+  /// @brief      Create a Engine that shares as many resources as
+  ///             possible with the calling Engine such that together
+  ///             they occupy less memory.
+  /// @return     A Engine with a running isolate.
+  /// @see        Engine::Engine
+  ///
+  std::unique_ptr<Engine> Spawn(
+      Delegate& delegate,
+      const PointerDataDispatcherMaker& dispatcher_maker,
+      Settings settings,
+      std::unique_ptr<Animator> animator) const;
+
+  //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
   ///             runner. The running root isolate is terminated and will no
   ///             longer access the task runner after this call returns. This
