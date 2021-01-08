@@ -57,12 +57,29 @@ class KeyData {
   final bool synthesized;
 
   @override
-  String toString() => 'KeyData(timeStamp: $timeStamp, change: $change, physical: $physical, '
-    'logical: $logical, character: $character, synthesized: $synthesized)';
+  String toString() => 'KeyData(change: ${_changeToString(change)}, physical: 0x${physical.toRadixString(16)}, '
+    'logical: 0x${logical.toRadixString(16)}, character: $character)';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
     return '$runtimeType('
+            'change: ${_changeToString(change)}, '
+            'timeStamp: $timeStamp, '
+            'physical: 0x${physical.toRadixString(16)}, '
+            'logical: 0x${logical.toRadixString(16)}, '
+            'character: $character, '
+            'synthesized: $synthesized'
            ')';
+  }
+
+  static String _changeToString(KeyChange change) {
+    switch (change) {
+      case KeyChange.up:
+        return 'up';
+      case KeyChange.down:
+        return 'down';
+      case KeyChange.repeat:
+        return 'repeat';
+    }
   }
 }
