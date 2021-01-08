@@ -221,7 +221,7 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
       # the crash for easier inspection.
       print('Error occurred from the subprocess, with the output:')
       print(error.output)
-      raise 
+      raise
   assert os.path.exists(kernel_file_output)
 
 
