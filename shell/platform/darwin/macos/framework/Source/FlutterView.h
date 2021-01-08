@@ -4,6 +4,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h"
+
 /**
  * Listener for view resizing.
  */
@@ -19,6 +21,11 @@
  * engine.
  */
 @interface FlutterView : NSView
+
+- (nullable instancetype)initWithMTLDevice:(nonnull id<MTLDevice>)device
+                              commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
+                           reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener
+    NS_DESIGNATED_INITIALIZER;
 
 - (nullable instancetype)initWithFrame:(NSRect)frame
                            mainContext:(nonnull NSOpenGLContext*)mainContext
@@ -41,9 +48,9 @@
 - (void)present;
 
 /**
- * Ensures that framebuffer with requested size exists and returns the ID. Expected to be called on
- * raster thread.
+ * Ensures that a backing store with requested size exists and returns the descriptor. Expected to
+ * be called on raster thread.
  */
-- (int)frameBufferIDForSize:(CGSize)size;
+- (nonnull FlutterBackingStoreDescriptor*)backingStoreForSize:(CGSize)size;
 
 @end

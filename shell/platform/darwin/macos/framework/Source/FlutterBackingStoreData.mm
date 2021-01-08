@@ -6,7 +6,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h"
 
-#include <OpenGL/gl.h>
+#import <OpenGL/gl.h>
 
 @implementation FlutterBackingStoreData
 

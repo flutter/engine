@@ -109,7 +109,7 @@ TEST(FlutterOpenGLRenderer, FBOReturnedByFlutterView) {
   dimensions.height = 200;
   frameInfo.size = dimensions;
   CGSize size = CGSizeMake(dimensions.width, dimensions.height);
-  [[mockFlutterView expect] frameBufferIDForSize:size];
+  [[mockFlutterView expect] backingStoreForSize:size];
   [renderer setFlutterView:mockFlutterView];
   [renderer openGLContext];
   [renderer fboForFrameInfo:&frameInfo];

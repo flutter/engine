@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
+#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -98,7 +99,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (uint32_t)fboForFrameInfo:(const FlutterFrameInfo*)info {
   CGSize size = CGSizeMake(info->size.width, info->size.height);
-  return [_flutterView frameBufferIDForSize:size];
+  FlutterBackingStoreDescriptor* backingStore = [_flutterView backingStoreForSize:size];
+  return [backingStore frameBufferId];
 }
 
 - (NSOpenGLContext*)resourceContext {
@@ -162,8 +164,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     NSLog(@"Unable to unregister texture with id: %lld.", textureID);
   }
 }
-
-#pragma mark - Private methods
 
 - (FlutterRendererConfig)createRendererConfig {
   const FlutterRendererConfig rendererConfig = {

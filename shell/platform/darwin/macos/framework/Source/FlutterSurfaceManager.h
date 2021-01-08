@@ -3,16 +3,31 @@
 // found in the LICENSE file.
 
 #import <Cocoa/Cocoa.h>
+#import <QuartzCore/CAMetalLayer.h>
 
-// Manages the IOSurfaces for FlutterView
-@interface FlutterSurfaceManager : NSObject
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
+
+@protocol FlutterSurfaceManager
+
+- (void)ensureSurfaceSize:(CGSize)size;
+
+- (void)swapBuffers;
+
+- (nonnull FlutterBackingStoreDescriptor*)renderBufferDescriptor;
+
+@end
+
+@interface FlutterGLSurfaceManager : NSObject <FlutterSurfaceManager>
 
 - (nullable instancetype)initWithLayer:(nonnull CALayer*)containingLayer
                          openGLContext:(nonnull NSOpenGLContext*)opengLContext;
 
-- (void)ensureSurfaceSize:(CGSize)size;
-- (void)swapBuffers;
+@end
 
-- (uint32_t)glFrameBufferId;
+@interface FlutterMetalSurfaceManager : NSObject <FlutterSurfaceManager>
+
+- (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
+                           commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
+                             metalLayer:(nonnull CAMetalLayer*)layer;
 
 @end

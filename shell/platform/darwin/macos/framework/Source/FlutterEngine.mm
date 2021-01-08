@@ -130,12 +130,19 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Pointer to the Dart AOT snapshot and instruction data.
   _FlutterEngineAOTData* _aotData;
 
+  // If set to true, engine will render using metal. This is controlled by SHELL_ENABLE_METAL
+  // for now, intent is to be made default in the future.
+  BOOL _enableMetalRendering;
+
   // _macOSGLCompositor is created when the engine is created and
   // it's destruction is handled by ARC when the engine is destroyed.
   std::unique_ptr<flutter::FlutterGLCompositor> _macOSGLCompositor;
 
   // FlutterCompositor is copied and used in embedder.cc.
   FlutterCompositor _compositor;
+
+  // Manages the external textures.
+  id<FlutterTextureRegistry> _textureRegistry;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -151,9 +158,21 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _project = project ?: [[FlutterDartProject alloc] init];
   _messageHandlers = [[NSMutableDictionary alloc] init];
   _allowHeadlessExecution = allowHeadlessExecution;
+
+#ifdef SHELL_ENABLE_METAL
+  _enableMetalRendering = YES;
+#endif
+
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
-  _openGLRenderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
+
+  if (_enableMetalRendering) {
+    _metalRenderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:self];
+    _textureRegistry = _metalRenderer;
+  } else {
+    _openGLRenderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
+    _textureRegistry = _openGLRenderer;
+  }
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -181,7 +200,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return NO;
   }
 
-  const FlutterRendererConfig rendererConfig = [_openGLRenderer createRendererConfig];
+  FlutterRendererConfig rendererConfig;
+  if (_enableMetalRendering) {
+    rendererConfig = [_metalRenderer createRendererConfig];
+  } else {
+    rendererConfig = [_openGLRenderer createRendererConfig];
+  }
 
   // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
 
@@ -284,7 +308,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)setViewController:(FlutterViewController*)controller {
   _viewController = controller;
-  [_openGLRenderer setFlutterView:controller.flutterView];
+  if (_enableMetalRendering) {
+    [_metalRenderer setFlutterView:controller.flutterView];
+  } else {
+    [_openGLRenderer setFlutterView:controller.flutterView];
+  }
 
   if (!controller && !_allowHeadlessExecution) {
     [self shutDownEngine];
@@ -292,6 +320,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (FlutterCompositor*)createFlutterCompositor {
+  // When rendering with metal do not support platform views.
+  if (_enableMetalRendering) {
+    return nullptr;
+  }
+
   // TODO(richardjcai): Add support for creating a FlutterGLCompositor
   // with a nil _viewController for headless engines.
   // https://github.com/flutter/flutter/issues/71606
@@ -559,7 +592,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 #pragma mark - FlutterTextureRegistrar
 
 - (int64_t)registerTexture:(id<FlutterTexture>)texture {
-  return [_openGLRenderer registerTexture:texture];
+  return [_textureRegistry registerTexture:texture];
 }
 
 - (BOOL)registerTextureWithID:(int64_t)textureId {
@@ -567,7 +600,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)textureFrameAvailable:(int64_t)textureID {
-  [_openGLRenderer textureFrameAvailable:textureID];
+  [_textureRegistry textureFrameAvailable:textureID];
 }
 
 - (BOOL)markTextureFrameAvailable:(int64_t)textureID {
@@ -575,7 +608,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)unregisterTexture:(int64_t)textureID {
-  [_openGLRenderer unregisterTexture:textureID];
+  [_textureRegistry unregisterTexture:textureID];
 }
 
 - (BOOL)unregisterTextureWithID:(int64_t)textureID {

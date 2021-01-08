@@ -8,11 +8,10 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
-
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h"
+#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h"
-
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
@@ -35,8 +34,9 @@ bool FlutterGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* co
     StartFrame();
     // If the backing store is for the first layer, return the fbo for the
     // FlutterView.
-    auto fbo = [view_controller_.flutterView frameBufferIDForSize:size];
-    backing_store_out->open_gl.framebuffer.name = fbo;
+    FlutterBackingStoreDescriptor* backingStore =
+        [view_controller_.flutterView backingStoreForSize:size];
+    backing_store_out->open_gl.framebuffer.name = [backingStore frameBufferId];
   } else {
     FlutterFrameBufferProvider* fb_provider =
         [[FlutterFrameBufferProvider alloc] initWithOpenGLContext:open_gl_context_];
