@@ -76,13 +76,6 @@ TEST(FlutterWindowsTextureRegistrarTest, RegisterUnregisterTexture) {
                          return kSuccess;
                        }));
 
-  modifier.embedder_api().PostPlatformThreadTask =
-      MOCK_ENGINE_PROC(PostPlatformThreadTask,
-                       ([](auto engine, auto callback, auto callback_data) {
-                         callback(callback_data);
-                         return kSuccess;
-                       }));
-
   auto texture_id = registrar.RegisterTexture(&texture_info);
   EXPECT_TRUE(register_called);
   EXPECT_NE(texture_id, -1);

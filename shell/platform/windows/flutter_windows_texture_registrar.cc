@@ -53,12 +53,13 @@ bool FlutterWindowsTextureRegistrar::MarkTextureFrameAvailable(
     int64_t texture_id) {
   auto it = textures_.find(texture_id);
   if (it != textures_.end()) {
-    return engine_->PostPlatformThreadTask(
-        [](void* data) {
-          auto texture = reinterpret_cast<ExternalTextureGL*>(data);
-          texture->MarkFrameAvailable();
-        },
-        it->second.get());
+    auto texture = it->second.get();
+    if (engine_->task_runner()->RunsTasksOnCurrentThread()) {
+      texture->MarkFrameAvailable();
+    }
+    engine_->task_runner()->PostTask(
+        [texture]() { texture->MarkFrameAvailable(); });
+    return true;
   }
   return false;
 }
