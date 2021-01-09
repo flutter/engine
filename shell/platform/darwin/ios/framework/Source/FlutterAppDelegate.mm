@@ -160,7 +160,7 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
                      } else {
                        NSString* pathAndQuery = url.path;
                        if ([url.query length] != 0) {
-                         pathAndQuery = 
+                         pathAndQuery =
                              [NSString stringWithFormat:@"%@?%@", pathAndQuery, url.query];
                        }
                        [flutterViewController.engine.navigationChannel invokeMethod:@"pushRoute"
