@@ -29,7 +29,7 @@ FLUTTER_ASSERT_ARC
   appDelegate.rootFlutterViewControllerGetter = ^{
     return viewController;
   };
-  NSURL* url = [NSURL URLWithString:@"http://example.com"];
+  NSURL* url = [NSURL URLWithString:@"http://myApp/custom/route?query=test"];
   NSDictionary<UIApplicationOpenURLOptionsKey, id>* options = @{};
   BOOL result = [appDelegate application:[UIApplication sharedApplication]
                                  openURL:url
@@ -38,7 +38,7 @@ FLUTTER_ASSERT_ARC
                            return @{@"FlutterDeepLinkingEnabled" : @(YES)};
                          }];
   XCTAssertTrue(result);
-  OCMVerify([navigationChannel invokeMethod:@"pushRoute" arguments:url.path]);
+  OCMVerify([navigationChannel invokeMethod:@"pushRoute" arguments:@"/custom/route?query=test"]);
 }
 
 @end
