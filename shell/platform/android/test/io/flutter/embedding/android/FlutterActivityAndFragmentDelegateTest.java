@@ -452,7 +452,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onStart();
 
     // Verify that the navigation channel was given the initial route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1)).setInitialRoute("/custom/route/?query=test");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
+        .setInitialRoute("/custom/route/?query=test");
   }
 
   @Test
@@ -496,7 +497,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRoute("/custom/route?query=test");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
+        .pushRoute("/custom/route?query=test");
   }
 
   @Test
