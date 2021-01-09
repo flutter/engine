@@ -433,7 +433,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void
       itSendsInitialRouteFromIntentOnStartIfNoInitialRouteFromActivityAndShouldHandleDeeplinking() {
     Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
-    intent.setData(Uri.parse("http://myApp/custom/route/?query=test"));
+    intent.setData(Uri.parse("http://myApp/custom/route?query=test"));
 
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
@@ -453,7 +453,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel was given the initial route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .setInitialRoute("/custom/route/?query=test");
+        .setInitialRoute("/custom/route?query=test");
   }
 
   @Test
