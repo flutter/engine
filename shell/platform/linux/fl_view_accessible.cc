@@ -15,7 +15,7 @@ struct _FlViewAccessible {
 
 G_DEFINE_TYPE(FlViewAccessible, fl_view_accessible, GTK_TYPE_WIDGET_ACCESSIBLE)
 
-// Get the ATK node for the given id.
+// Gets the ATK node for the given id.
 // If the node doesn't exist it will be created.
 static FlAccessibleNode* get_node(FlViewAccessible* self, int32_t id) {
   FlAccessibleNode* node = FL_ACCESSIBLE_NODE(
