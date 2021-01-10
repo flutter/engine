@@ -87,11 +87,11 @@ G_DEFINE_TYPE_WITH_CODE(
             G_IMPLEMENT_INTERFACE(ATK_TYPE_TEXT,
                                   fl_accessible_node_text_interface_init))
 
-// Returns TRUE if [flag] has changed between [oldFlags] and [flags].
-static gboolean flag_is_changed(FlutterSemanticsFlag oldFlags,
+// Returns TRUE if [flag] has changed between [old_flags] and [flags].
+static gboolean flag_is_changed(FlutterSemanticsFlag old_flags,
                                 FlutterSemanticsFlag flags,
                                 FlutterSemanticsFlag flag) {
-  return (oldFlags & flag) != (flags & flag);
+  return (old_flags & flag) != (flags & flag);
 }
 
 // Returns TRUE if [flag] is set in [flags].
@@ -351,11 +351,11 @@ void fl_accessible_node_set_flags(FlAccessibleNode* self,
                                   FlutterSemanticsFlag flags) {
   g_return_if_fail(FL_IS_ACCESSIBLE_NODE(self));
 
-  FlutterSemanticsFlag oldFlags = self->flags;
+  FlutterSemanticsFlag old_flags = self->flags;
   self->flags = flags;
 
   for (int i = 0; flag_mapping[i].state != ATK_STATE_INVALID; i++) {
-    if (flag_is_changed(oldFlags, flags, flag_mapping[i].flag)) {
+    if (flag_is_changed(old_flags, flags, flag_mapping[i].flag)) {
       gboolean enabled = has_flag(flags, flag_mapping[i].flag);
       if (flag_mapping[i].invert) {
         enabled = !enabled;
