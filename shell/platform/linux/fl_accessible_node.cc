@@ -60,8 +60,12 @@ static ActionData action_mapping[] = {
 struct _FlAccessibleNode {
   AtkObject parent_instance;
 
+  // Weak reference to the engine this node is created for.
   FlEngine* engine;
+
+  // Weak reference to the parent node of this one or %NULL.
   AtkObject* parent;
+
   int32_t id;
   gchar* name;
   gint x, y, width, height;
