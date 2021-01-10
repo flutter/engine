@@ -228,6 +228,11 @@ static void fl_view_notify(GObject* object, GParamSpec* pspec) {
 static void fl_view_dispose(GObject* object) {
   FlView* self = FL_VIEW(object);
 
+  if (self->engine != nullptr) {
+    fl_engine_set_update_semantics_node_handler(self->engine, nullptr, nullptr,
+                                                nullptr);
+  }
+
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
   g_clear_object(&self->engine);
