@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/platform/ax_unique_id.h"
+#include "ax_unique_id.h"
 
 #include <memory>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace ui {
 
@@ -25,13 +25,17 @@ class AXTestSmallBankUniqueId : public AXUniqueId {
 
  private:
   friend class AXUniqueId;
-  DISALLOW_COPY_AND_ASSIGN(AXTestSmallBankUniqueId);
+  BASE_DISALLOW_COPY_AND_ASSIGN(AXTestSmallBankUniqueId);
 };
 
 AXTestSmallBankUniqueId::AXTestSmallBankUniqueId() : AXUniqueId(kMaxId) {}
 AXTestSmallBankUniqueId::~AXTestSmallBankUniqueId() = default;
 
 TEST(AXPlatformUniqueIdTest, UnassignedIdsAreReused) {
+  // TODO(chunhtai): enable this test once the flake has been
+  // resolved.
+  // https://github.com/flutter/flutter/issues/73512
+  GTEST_SKIP() << "Flaky Test: https://github.com/flutter/flutter/issues/73512";
   // Create a bank of ids that uses up all available ids.
   // Then remove an id and replace with a new one. Since it's the only
   // slot available, the id will end up having the same value, rather than
@@ -43,7 +47,8 @@ TEST(AXPlatformUniqueIdTest, UnassignedIdsAreReused) {
   }
 
   static int kIdToReplace = 10;
-  int32_t expected_id = ids[kIdToReplace]->Get();
+  std::unique_ptr<AXTestSmallBankUniqueId>& unique = ids[kIdToReplace];
+  int32_t expected_id = unique->Get();
 
   // Delete one of the ids and replace with a new one.
   ids[kIdToReplace] = nullptr;
