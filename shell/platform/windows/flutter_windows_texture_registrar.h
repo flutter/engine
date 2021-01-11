@@ -16,6 +16,7 @@ namespace flutter {
 class FlutterWindowsEngine;
 
 // An object managing the registration of an external texture.
+// Thread safety: All member methods are thread safe.
 class FlutterWindowsTextureRegistrar {
  public:
   explicit FlutterWindowsTextureRegistrar(FlutterWindowsEngine* engine);

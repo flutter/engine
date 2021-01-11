@@ -38,30 +38,33 @@ int64_t FlutterWindowsTextureRegistrar::RegisterTexture(
     textures_[texture_id] = std::move(texture_gl);
   }
 
-  engine_->task_runner()->RunNowOrPostTask(
-      [texture_id, this]() { engine_->RegisterExternalTexture(texture_id); });
+  engine_->task_runner()->RunNowOrPostTask([engine = engine_, texture_id]() {
+    engine->RegisterExternalTexture(texture_id);
+  });
 
   return texture_id;
 }
 
 bool FlutterWindowsTextureRegistrar::UnregisterTexture(int64_t texture_id) {
-  std::lock_guard<std::mutex> lock(map_mutex_);
-
-  auto it = textures_.find(texture_id);
-  if (it != textures_.end()) {
+  {
+    std::lock_guard<std::mutex> lock(map_mutex_);
+    auto it = textures_.find(texture_id);
+    if (it == textures_.end()) {
+      return false;
+    }
     textures_.erase(it);
-    engine_->task_runner()->RunNowOrPostTask([texture_id, this]() {
-      engine_->UnregisterExternalTexture(texture_id);
-    });
-    return true;
   }
-  return false;
+
+  engine_->task_runner()->RunNowOrPostTask([engine = engine_, texture_id]() {
+    engine->UnregisterExternalTexture(texture_id);
+  });
+  return true;
 }
 
 bool FlutterWindowsTextureRegistrar::MarkTextureFrameAvailable(
     int64_t texture_id) {
-  engine_->task_runner()->RunNowOrPostTask([this, texture_id]() {
-    engine_->MarkExternalTextureFrameAvailable(texture_id);
+  engine_->task_runner()->RunNowOrPostTask([engine = engine_, texture_id]() {
+    engine->MarkExternalTextureFrameAvailable(texture_id);
   });
   return true;
 }
@@ -70,14 +73,17 @@ bool FlutterWindowsTextureRegistrar::PopulateTexture(
     int64_t texture_id,
     size_t width,
     size_t height,
-    FlutterOpenGLTexture* texture) {
-  std::lock_guard<std::mutex> lock(map_mutex_);
-
-  auto it = textures_.find(texture_id);
-  if (it != textures_.end()) {
-    return it->second->PopulateTexture(width, height, texture);
+    FlutterOpenGLTexture* opengl_texture) {
+  flutter::ExternalTextureGL* texture;
+  {
+    std::lock_guard<std::mutex> lock(map_mutex_);
+    auto it = textures_.find(texture_id);
+    if (it == textures_.end()) {
+      return false;
+    }
+    texture = it->second.get();
   }
-  return false;
+  return texture->PopulateTexture(width, height, opengl_texture);
 }
 
 };  // namespace flutter
