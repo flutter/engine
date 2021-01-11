@@ -45,7 +45,7 @@ sk_sp<GrDirectContext> IOSContextGL::CreateResourceContext() {
 
 // |IOSContext|
 sk_sp<GrDirectContext> IOSContextGL::GetMainContext() const {
-  /// TODO(b/tbd): Currently the GPUSurfaceGL creates the main context for
+  /// TODO(73744): Currently the GPUSurfaceGL creates the main context for
   /// OpenGL.  With Metal the IOSContextMetal creates the main context and is
   /// shared across surfaces.  We should refactor the OpenGL Context/Surfaces to
   /// behave like the Metal equivalents.  Until then engines in the same group

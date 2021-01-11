@@ -36,7 +36,7 @@ FLUTTER_ASSERT_NOT_ARC
   // If this assert fails it means we may be using the software or OpenGL
   // renderer when we were expecting Metal.  For software rendering, this is
   // expected to be nullptr.  For OpenGL, implementing this is an outstanding
-  // change see b/tbd.
+  // change see https://github.com/flutter/flutter/issues/73744.
   XCTAssertTrue(engine_context->GetMainContext() != nullptr);
   XCTAssertEqual(engine_context->GetMainContext(), spawn_context->GetMainContext());
   [engine release];
