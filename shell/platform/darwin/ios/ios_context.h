@@ -109,6 +109,9 @@ class IOSContext {
   //----------------------------------------------------------------------------
   /// @brief      Accessor for the Skia context associated with IOSSurfaces and
   ///             the raster thread.
+  /// @details    There can be any number of resource contexts but this is the
+  ///             one context that will be used by surfaces to draw to the
+  ///             screen from the raster thread.
   /// @returns    `nullptr` on failure.
   /// @attention  The software context doesn't have a Skia context, so this
   ///             value will be nullptr.
