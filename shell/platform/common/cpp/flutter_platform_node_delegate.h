@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_COMMON_CPP_FLUTTER_ACCESSIBILITY_H_
-#define FLUTTER_SHELL_PLATFORM_COMMON_CPP_FLUTTER_ACCESSIBILITY_H_
+#ifndef FLUTTER_SHELL_PLATFORM_COMMON_CPP_FLUTTER_PLATFORM_NODE_DELEGATE_H_
+#define FLUTTER_SHELL_PLATFORM_COMMON_CPP_FLUTTER_PLATFORM_NODE_DELEGATE_H_
 
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -15,9 +15,9 @@ namespace flutter {
 class AccessibilityBridge;
 
 //------------------------------------------------------------------------------
-/// The accessibility node to be used in accessibility bridge. This class is
-/// responsible for providing native accessibility object with appropriate
-/// information, such as accessibility label/value/bounds.
+/// The accessibility node delegate to be used in accessibility bridge. This
+/// class is responsible for providing native accessibility object with
+/// appropriate information, such as accessibility label/value/bounds.
 ///
 /// While most methods have default implementations and are ready to be used
 /// as-is, the subclasses must override the GetNativeViewAccessible to return
@@ -28,12 +28,12 @@ class AccessibilityBridge;
 /// For desktop platforms, subclasses also need to override the GetBoundsRect
 /// to apply window-to-screen transform.
 ///
-/// Lastly, each platform needs to implement the FlutterAccessibility::Create
+/// Lastly, each platform needs to implement the FlutterPlatformNodeDelegate::Create
 /// static method to inject its sublcass into accessibility bridge.
-class FlutterAccessibility : public ui::AXPlatformNodeDelegateBase {
+class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
  public:
-  FlutterAccessibility();
-  ~FlutterAccessibility() override;
+  FlutterPlatformNodeDelegate();
+  ~FlutterPlatformNodeDelegate() override;
 
   //------------------------------------------------------------------------------
   /// @brief      Gets the accessibility bridge to which this accessibility node
@@ -69,4 +69,4 @@ class FlutterAccessibility : public ui::AXPlatformNodeDelegateBase {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_COMMON_CPP_FLUTTER_ACCESSIBILITY_H_
+#endif  // FLUTTER_SHELL_PLATFORM_COMMON_CPP_FLUTTER_PLATFORM_NODE_DELEGATE_H_

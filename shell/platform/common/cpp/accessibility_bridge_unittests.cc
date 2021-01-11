@@ -51,9 +51,9 @@ TEST(AccessibilityBridgeTest, basicTest) {
 
   bridge.CommitUpdates();
 
-  auto root_node = bridge.GetFlutterAccessibilityFromID(0).lock();
-  auto child1_node = bridge.GetFlutterAccessibilityFromID(1).lock();
-  auto child2_node = bridge.GetFlutterAccessibilityFromID(2).lock();
+  auto root_node = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
+  auto child1_node = bridge.GetFlutterPlatformNodeDelegateFromID(1).lock();
+  auto child2_node = bridge.GetFlutterPlatformNodeDelegateFromID(2).lock();
   EXPECT_EQ(root_node->GetChildCount(), 2);
   EXPECT_EQ(root_node->GetData().child_ids[0], 1);
   EXPECT_EQ(root_node->GetData().child_ids[1], 2);
@@ -105,8 +105,8 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
 
   bridge.CommitUpdates();
 
-  auto root_node = bridge.GetFlutterAccessibilityFromID(0).lock();
-  auto child1_node = bridge.GetFlutterAccessibilityFromID(1).lock();
+  auto root_node = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
+  auto child1_node = bridge.GetFlutterPlatformNodeDelegateFromID(1).lock();
   EXPECT_EQ(root_node->GetChildCount(), 1);
   EXPECT_EQ(root_node->GetData().child_ids[0], 1);
   EXPECT_EQ(root_node->GetName(), "root");
@@ -138,7 +138,7 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
 
   bridge.CommitUpdates();
 
-  root_node = bridge.GetFlutterAccessibilityFromID(0).lock();
+  root_node = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
 
   EXPECT_EQ(root_node->GetChildCount(), 2);
   EXPECT_EQ(root_node->GetData().child_ids[0], 1);

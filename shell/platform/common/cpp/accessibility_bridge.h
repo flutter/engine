@@ -14,7 +14,7 @@
 #include "flutter/third_party/accessibility/ax/ax_tree_observer.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate.h"
 
-#include "flutter_accessibility.h"
+#include "flutter_platform_node_delegate.h"
 
 namespace flutter {
 
@@ -24,7 +24,7 @@ namespace flutter {
 /// in the native format.
 ///
 /// To use this class, you must provide your own implementation of
-/// FlutterAccessibility and AccessibilityBridgeDelegate.
+/// FlutterPlatformNodeDelegate and AccessibilityBridgeDelegate.
 class AccessibilityBridge : public ui::AXTreeObserver {
  public:
   //-----------------------------------------------------------------------------
@@ -44,20 +44,22 @@ class AccessibilityBridge : public ui::AXTreeObserver {
     virtual ~AccessibilityBridgeDelegate() = default;
     //---------------------------------------------------------------------------
     /// @brief      Handle accessibility events generated due to accessibility
-    ///             tree changes.
+    ///             tree changes. These events are generated in accessibility
+    ///             bridge and needed to be sent to native accessibility system.
+    ///             See ui::AXEventGenerator::Event for possible events.
     ///
     /// @param[in]  targeted_event      The object that contains both the
     ///                                 generated event and the event target.
-    /// @param[in]  bridge              The pointer to the accessibility bridge
-    ///                                 that can be used for querying the
-    ///                                 accessibility information at the time
-    ///                                 the event is fired.
     virtual void OnAccessibilityEvent(
-        ui::AXEventGenerator::TargetedEvent targeted_event,
-        AccessibilityBridge* bridge) = 0;
+        ui::AXEventGenerator::TargetedEvent targeted_event) = 0;
 
     //---------------------------------------------------------------------------
-    /// @brief      Dispatch accessibility action back to the Flutter framework
+    /// @brief      Dispatch accessibility action back to the Flutter framework.
+    ///             These actions are generated in the native accessibility
+    ///             system when users interact with the assistive technologies.
+    ///             For example, a
+    ///             FlutterSemanticsAction::kFlutterSemanticsActionTap is
+    ///             fired when user click or touch the screen.
     ///
     /// @param[in]  target              The semantics node id of the action
     ///                                 target.
@@ -65,18 +67,18 @@ class AccessibilityBridge : public ui::AXTreeObserver {
     /// @param[in]  data                Additional data associated with the
     ///                                 action.
     /// @param[in]  data_size           The length of the additional data.
-    virtual void DispatchAccessibilityAction(uint16_t target,
+    virtual void DispatchAccessibilityAction(ui::AXNode::AXID target,
                                              FlutterSemanticsAction action,
                                              std::unique_ptr<uint8_t[]> data,
                                              size_t data_size) = 0;
 
     //---------------------------------------------------------------------------
-    /// @brief      Creates a platform specific FlutterAccessibility. Ownership
-    ///             passes to the caller. This method will be called by
+    /// @brief      Creates a platform specific FlutterPlatformNodeDelegate.
+    ///             Ownership passes to the caller. This method will be called by
     ///             accessibility bridge when it creates accessibility node.
     ///             Each platform needs to implement this method in order to
     ///             inject its subclass into the accessibility bridge.
-    virtual std::unique_ptr<FlutterAccessibility>
+    virtual std::unique_ptr<FlutterPlatformNodeDelegate>
     CreateFlutterAccessibility() = 0;
   };
   //-----------------------------------------------------------------------------
@@ -109,28 +111,33 @@ class AccessibilityBridge : public ui::AXTreeObserver {
 
   //------------------------------------------------------------------------------
   /// @brief      Flushes the pending updates and applies them to this
-  ///             accessibility bridge.
+  ///             accessibility bridge. Calling this with no pending updates does
+  ///             nothing, and callers should call this method at the end of an
+  ///             automic batch to avoid leaving the tree in a unstable state.
+  ///             For example if a node reparents from A to B, callers should
+  ///             only call this method when both removal from A and addition
+  ///             to B are in the pending updates.
   void CommitUpdates();
 
   //------------------------------------------------------------------------------
-  /// @brief      Get the flutter accessibility node with the given id from this
-  ///             accessibility bridge.
+  /// @brief      Get the flutter platform node delegate with the given id from
+  ///             this accessibility bridge.
   ///
   /// @param[in]  id           The id of the flutter accessibility node you want
   ///                          to retrieve.
-  std::weak_ptr<FlutterAccessibility> GetFlutterAccessibilityFromID(
-      int32_t id) const;
+  std::weak_ptr<FlutterPlatformNodeDelegate> GetFlutterPlatformNodeDelegateFromID(
+      ui::AXNode::AXID id) const;
 
   //------------------------------------------------------------------------------
   /// @brief      Update the currently focused flutter accessibility node.
   ///
   /// @param[in]  id           The id of the currently focused flutter
   ///                          accessibility node.
-  void SetFocusedNode(int32_t node_id);
+  void SetFocusedNode(ui::AXNode::AXID node_id);
 
   //------------------------------------------------------------------------------
   /// @brief      Get the last focused node.
-  int32_t GetLastFocusedNode();
+  ui::AXNode::AXID GetLastFocusedNode();
 
   //------------------------------------------------------------------------------
   /// @brief      Get the ax tree data.
@@ -140,7 +147,7 @@ class AccessibilityBridge : public ui::AXTreeObserver {
   void OnNodeWillBeDeleted(ui::AXTree* tree, ui::AXNode* node) override;
   void OnSubtreeWillBeDeleted(ui::AXTree* tree, ui::AXNode* node) override;
   void OnNodeCreated(ui::AXTree* tree, ui::AXNode* node) override;
-  void OnNodeDeleted(ui::AXTree* tree, int32_t node_id) override;
+  void OnNodeDeleted(ui::AXTree* tree, ui::AXNode::AXID node_id) override;
   void OnNodeReparented(ui::AXTree* tree, ui::AXNode* node) override;
   void OnRoleChanged(ui::AXTree* tree,
                      ui::AXNode* node,
@@ -186,14 +193,14 @@ class AccessibilityBridge : public ui::AXTreeObserver {
     std::string hint;
   } SemanticsCustomAction;
 
-  std::unordered_map<int32_t, std::shared_ptr<FlutterAccessibility>>
+  std::unordered_map<ui::AXNode::AXID, std::shared_ptr<FlutterPlatformNodeDelegate>>
       id_wrapper_map_;
   ui::AXTree tree_;
   ui::AXEventGenerator event_generator_;
   std::unordered_map<int32_t, SemanticsNode> _pending_semantics_node_updates;
   std::unordered_map<int32_t, SemanticsCustomAction>
       _pending_semantics_custom_action_updates;
-  int32_t last_focused_node_ = ui::AXNode::kInvalidAXID;
+  ui::AXNode::AXID last_focused_node_ = ui::AXNode::kInvalidAXID;
   std::unique_ptr<AccessibilityBridgeDelegate> delegate_;
 
   void InitAXTree(const ui::AXTreeUpdate& initial_state);
@@ -223,7 +230,7 @@ class AccessibilityBridge : public ui::AXTreeObserver {
       const FlutterSemanticsNode* flutter_node);
   SemanticsCustomAction FromFlutterSemanticsCustomAction(
       const FlutterSemanticsCustomAction* flutter_custom_action);
-  void DispatchAccessibilityAction(uint16_t target,
+  void DispatchAccessibilityAction(ui::AXNode::AXID target,
                                    FlutterSemanticsAction action,
                                    std::unique_ptr<uint8_t[]> data,
                                    size_t data_size);
@@ -231,7 +238,7 @@ class AccessibilityBridge : public ui::AXTreeObserver {
                                     bool* offscreen,
                                     bool clip_bounds);
 
-  friend class FlutterAccessibility;
+  friend class FlutterPlatformNodeDelegate;
 
   BASE_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };

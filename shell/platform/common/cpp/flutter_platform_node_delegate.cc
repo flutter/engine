@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter_accessibility.h"
+#include "flutter_platform_node_delegate.h"
 
 #include "flutter/third_party/accessibility/ax/ax_action_data.h"
 #include "flutter/third_party/accessibility/gfx/geometry/rect_conversions.h"
@@ -11,26 +11,26 @@
 
 namespace flutter {
 
-FlutterAccessibility::FlutterAccessibility() = default;
+FlutterPlatformNodeDelegate::FlutterPlatformNodeDelegate() = default;
 
-FlutterAccessibility::~FlutterAccessibility() = default;
+FlutterPlatformNodeDelegate::~FlutterPlatformNodeDelegate() = default;
 
-void FlutterAccessibility::Init(AccessibilityBridge* bridge, ui::AXNode* node) {
+void FlutterPlatformNodeDelegate::Init(AccessibilityBridge* bridge, ui::AXNode* node) {
   bridge_ = bridge;
   ax_node_ = node;
 }
 
-AccessibilityBridge* FlutterAccessibility::GetBridge() const {
+AccessibilityBridge* FlutterPlatformNodeDelegate::GetBridge() const {
   return bridge_;
 }
 
-ui::AXNode* FlutterAccessibility::GetAXNode() const {
+ui::AXNode* FlutterPlatformNodeDelegate::GetAXNode() const {
   return ax_node_;
 }
 
-bool FlutterAccessibility::AccessibilityPerformAction(
+bool FlutterPlatformNodeDelegate::AccessibilityPerformAction(
     const ui::AXActionData& data) {
-  int32_t target = GetAXNode()->id();
+  ui::AXNode::AXID target = GetAXNode()->id();
   switch (data.action) {
     case ax::mojom::Action::kDoDefault:
       bridge_->DispatchAccessibilityAction(
@@ -57,46 +57,46 @@ bool FlutterAccessibility::AccessibilityPerformAction(
   return false;
 }
 
-const ui::AXNodeData& FlutterAccessibility::GetData() const {
+const ui::AXNodeData& FlutterPlatformNodeDelegate::GetData() const {
   return GetAXNode()->data();
 }
 
-gfx::NativeViewAccessible FlutterAccessibility::GetParent() {
+gfx::NativeViewAccessible FlutterPlatformNodeDelegate::GetParent() {
   if (!GetAXNode()->parent()) {
     return nullptr;
   }
-  std::shared_ptr<FlutterAccessibility> accessibility =
-      bridge_->GetFlutterAccessibilityFromID(GetAXNode()->parent()->id())
+  std::shared_ptr<FlutterPlatformNodeDelegate> accessibility =
+      bridge_->GetFlutterPlatformNodeDelegateFromID(GetAXNode()->parent()->id())
           .lock();
   BASE_CHECK(accessibility);
   return accessibility->GetNativeViewAccessible();
 }
 
-gfx::NativeViewAccessible FlutterAccessibility::GetFocus() {
-  int32_t focused_node = bridge_->GetLastFocusedNode();
+gfx::NativeViewAccessible FlutterPlatformNodeDelegate::GetFocus() {
+  ui::AXNode::AXID focused_node = bridge_->GetLastFocusedNode();
   if (focused_node == ui::AXNode::kInvalidAXID) {
     return nullptr;
   }
-  std::weak_ptr<FlutterAccessibility> focus =
-      bridge_->GetFlutterAccessibilityFromID(focused_node);
+  std::weak_ptr<FlutterPlatformNodeDelegate> focus =
+      bridge_->GetFlutterPlatformNodeDelegateFromID(focused_node);
   auto focus_ptr = focus.lock();
   if (!focus_ptr)
     return nullptr;
   return focus_ptr->GetNativeViewAccessible();
 }
 
-int FlutterAccessibility::GetChildCount() const {
+int FlutterPlatformNodeDelegate::GetChildCount() const {
   return static_cast<int>(GetAXNode()->GetUnignoredChildCount());
 }
 
-gfx::NativeViewAccessible FlutterAccessibility::ChildAtIndex(int index) {
-  int32_t child = GetAXNode()->GetUnignoredChildAtIndex(index)->id();
-  return bridge_->GetFlutterAccessibilityFromID(child)
+gfx::NativeViewAccessible FlutterPlatformNodeDelegate::ChildAtIndex(int index) {
+  ui::AXNode::AXID child = GetAXNode()->GetUnignoredChildAtIndex(index)->id();
+  return bridge_->GetFlutterPlatformNodeDelegateFromID(child)
       .lock()
       ->GetNativeViewAccessible();
 }
 
-gfx::Rect FlutterAccessibility::GetBoundsRect(
+gfx::Rect FlutterPlatformNodeDelegate::GetBoundsRect(
     const ui::AXCoordinateSystem coordinate_system,
     const ui::AXClippingBehavior clipping_behavior,
     ui::AXOffscreenResult* offscreen_result) const {

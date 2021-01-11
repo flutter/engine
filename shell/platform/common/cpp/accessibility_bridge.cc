@@ -79,27 +79,27 @@ void AccessibilityBridge::CommitUpdates() {
   // Handles accessibility events as the result of the semantics update.
   for (const auto& targeted_event : event_generator_) {
     auto event_target =
-        GetFlutterAccessibilityFromID(targeted_event.node->id());
+        GetFlutterPlatformNodeDelegateFromID(targeted_event.node->id());
     if (event_target.expired())
       continue;
 
-    delegate_->OnAccessibilityEvent(targeted_event, this);
+    delegate_->OnAccessibilityEvent(targeted_event);
   }
   event_generator_.ClearEvents();
 }
 
-std::weak_ptr<FlutterAccessibility>
-AccessibilityBridge::GetFlutterAccessibilityFromID(int32_t id) const {
+std::weak_ptr<FlutterPlatformNodeDelegate>
+AccessibilityBridge::GetFlutterPlatformNodeDelegateFromID(ui::AXNode::AXID id) const {
   const auto iter = id_wrapper_map_.find(id);
   if (iter != id_wrapper_map_.end())
     return iter->second;
 
-  return std::weak_ptr<FlutterAccessibility>();
+  return std::weak_ptr<FlutterPlatformNodeDelegate>();
 }
 
-void AccessibilityBridge::SetFocusedNode(int32_t node_id) {
+void AccessibilityBridge::SetFocusedNode(ui::AXNode::AXID node_id) {
   if (last_focused_node_ != node_id) {
-    auto last_focused_child = GetFlutterAccessibilityFromID(last_focused_node_);
+    auto last_focused_child = GetFlutterPlatformNodeDelegateFromID(last_focused_node_);
     if (!last_focused_child.expired()) {
       delegate_->DispatchAccessibilityAction(
           last_focused_node_,
@@ -111,7 +111,7 @@ void AccessibilityBridge::SetFocusedNode(int32_t node_id) {
   }
 }
 
-int32_t AccessibilityBridge::GetLastFocusedNode() {
+ui::AXNode::AXID AccessibilityBridge::GetLastFocusedNode() {
   return last_focused_node_;
 }
 
@@ -139,7 +139,7 @@ void AccessibilityBridge::OnNodeCreated(ui::AXTree* tree, ui::AXNode* node) {
   id_wrapper_map_[node->id()]->Init(this, node);
 }
 
-void AccessibilityBridge::OnNodeDeleted(ui::AXTree* tree, int32_t node_id) {
+void AccessibilityBridge::OnNodeDeleted(ui::AXTree* tree, ui::AXNode::AXID node_id) {
   BASE_DCHECK(node_id != ui::AXNode::kInvalidAXID);
   if (id_wrapper_map_.find(node_id) != id_wrapper_map_.end()) {
     id_wrapper_map_.erase(node_id);
@@ -156,7 +156,7 @@ void AccessibilityBridge::OnAtomicUpdateFinished(
   for (const auto& change : changes) {
     ui::AXNode* node = change.node;
     const ui::AXNodeData& data = node->data();
-    int32_t offset_container_id = -1;
+    ui::AXNode::AXID offset_container_id = -1;
     if (node->parent()) {
       offset_container_id = node->parent()->id();
     }
@@ -511,7 +511,7 @@ gfx::RectF AccessibilityBridge::RelativeToGlobalBounds(ui::AXNode* node,
 }
 
 void AccessibilityBridge::DispatchAccessibilityAction(
-    uint16_t target,
+    ui::AXNode::AXID target,
     FlutterSemanticsAction action,
     std::unique_ptr<uint8_t[]> data,
     size_t data_size) {

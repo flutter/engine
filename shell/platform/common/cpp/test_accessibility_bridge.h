@@ -14,13 +14,12 @@ class TestAccessibilityBridgeDelegate
  public:
   TestAccessibilityBridgeDelegate() = default;
 
-  void OnAccessibilityEvent(ui::AXEventGenerator::TargetedEvent targeted_event,
-                            AccessibilityBridge* bridge) override;
-  void DispatchAccessibilityAction(uint16_t target,
+  void OnAccessibilityEvent(ui::AXEventGenerator::TargetedEvent targeted_event) override;
+  void DispatchAccessibilityAction(ui::AXNode::AXID target,
                                    FlutterSemanticsAction action,
                                    std::unique_ptr<uint8_t[]> data,
                                    size_t data_size) override;
-  std::unique_ptr<FlutterAccessibility> CreateFlutterAccessibility();
+  std::unique_ptr<FlutterPlatformNodeDelegate> CreateFlutterAccessibility();
 
   std::vector<ui::AXEventGenerator::TargetedEvent> accessibilitiy_events;
   std::vector<FlutterSemanticsAction> performed_actions;

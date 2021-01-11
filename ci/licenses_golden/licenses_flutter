@@ -912,9 +912,9 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/texture_registra
 FILE: ../../../flutter/shell/platform/common/cpp/engine_switches.cc
 FILE: ../../../flutter/shell/platform/common/cpp/engine_switches.h
 FILE: ../../../flutter/shell/platform/common/cpp/engine_switches_unittests.cc
-FILE: ../../../flutter/shell/platform/common/cpp/flutter_accessibility.cc
-FILE: ../../../flutter/shell/platform/common/cpp/flutter_accessibility.h
-FILE: ../../../flutter/shell/platform/common/cpp/flutter_accessibility_unittests.cc
+FILE: ../../../flutter/shell/platform/common/cpp/flutter_platform_node_delegate.cc
+FILE: ../../../flutter/shell/platform/common/cpp/flutter_platform_node_delegate.h
+FILE: ../../../flutter/shell/platform/common/cpp/flutter_platform_node_delegate_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.h
 FILE: ../../../flutter/shell/platform/common/cpp/json_message_codec.cc

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter_accessibility.h"
+#include "flutter_platform_node_delegate.h"
 
 #include "flutter/third_party/accessibility/ax/ax_action_data.h"
 #include "gtest/gtest.h"
@@ -34,7 +34,7 @@ TEST(FlutterAccessibilityTest, canPerfomActions) {
 
   bridge.CommitUpdates();
 
-  auto accessibility = bridge.GetFlutterAccessibilityFromID(0).lock();
+  auto accessibility = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
   // Performs an AXAction.
   ui::AXActionData action_data;
   action_data.action = ax::mojom::Action::kDoDefault;
@@ -78,7 +78,7 @@ TEST(FlutterAccessibilityTest, canGetBridge) {
 
   bridge.CommitUpdates();
 
-  auto accessibility = bridge.GetFlutterAccessibilityFromID(0).lock();
+  auto accessibility = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
   EXPECT_EQ(accessibility->GetBridge(), &bridge);
 }
 
@@ -103,7 +103,7 @@ TEST(FlutterAccessibilityTest, canGetAXNode) {
 
   bridge.CommitUpdates();
 
-  auto accessibility = bridge.GetFlutterAccessibilityFromID(0).lock();
+  auto accessibility = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
   EXPECT_EQ(accessibility->GetAXNode()->data().id, 0);
 }
 
@@ -139,7 +139,7 @@ TEST(FlutterAccessibilityTest, canCalculateBoundsCorrectly) {
   bridge.AddFlutterSemanticsNodeUpdate(&child1);
 
   bridge.CommitUpdates();
-  auto child1_node = bridge.GetFlutterAccessibilityFromID(1).lock();
+  auto child1_node = bridge.GetFlutterPlatformNodeDelegateFromID(1).lock();
   ui::AXOffscreenResult result;
   gfx::Rect bounds =
       child1_node->GetBoundsRect(ui::AXCoordinateSystem::kScreenDIPs,
@@ -183,7 +183,7 @@ TEST(FlutterAccessibilityTest, canCalculateOffScreenBoundsCorrectly) {
   bridge.AddFlutterSemanticsNodeUpdate(&child1);
 
   bridge.CommitUpdates();
-  auto child1_node = bridge.GetFlutterAccessibilityFromID(1).lock();
+  auto child1_node = bridge.GetFlutterPlatformNodeDelegateFromID(1).lock();
   ui::AXOffscreenResult result;
   gfx::Rect bounds =
       child1_node->GetBoundsRect(ui::AXCoordinateSystem::kScreenDIPs,
