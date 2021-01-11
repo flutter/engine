@@ -28,21 +28,8 @@ class AXTestSmallBankUniqueId : public AXUniqueId {
   BASE_DISALLOW_COPY_AND_ASSIGN(AXTestSmallBankUniqueId);
 };
 
-class AXTestBigBankUniqueId : public AXUniqueId {
- public:
-  AXTestBigBankUniqueId();
-  ~AXTestBigBankUniqueId() override;
-
- private:
-  friend class AXUniqueId;
-  BASE_DISALLOW_COPY_AND_ASSIGN(AXTestBigBankUniqueId);
-};
-
 AXTestSmallBankUniqueId::AXTestSmallBankUniqueId() : AXUniqueId(kMaxId) {}
 AXTestSmallBankUniqueId::~AXTestSmallBankUniqueId() = default;
-
-AXTestBigBankUniqueId::AXTestBigBankUniqueId() : AXUniqueId(kMaxId * kMaxId) {}
-AXTestBigBankUniqueId::~AXTestBigBankUniqueId() = default;
 
 TEST(AXPlatformUniqueIdTest, UnassignedIdsAreReused) {
   // Create a bank of ids that uses up all available ids.
@@ -67,12 +54,13 @@ TEST(AXPlatformUniqueIdTest, UnassignedIdsAreReused) {
 }
 
 TEST(AXPlatformUniqueIdTest, DoesCreateCorrectId) {
-  std::unique_ptr<AXTestBigBankUniqueId> ids[kMaxId];
+  int kLargerThanMaxId = kMaxId * 2;
+  std::unique_ptr<AXUniqueId> ids[kLargerThanMaxId];
   // Creates and releases to fill up the internal static counter.
-  for (int i = 0; i < kMaxId; i++) {
-    ids[i] = std::make_unique<AXTestBigBankUniqueId>();
+  for (int i = 0; i < kLargerThanMaxId; i++) {
+    ids[i] = std::make_unique<AXUniqueId>();
   }
-  for (int i = 0; i < kMaxId; i++) {
+  for (int i = 0; i < kLargerThanMaxId; i++) {
     ids[i].reset(nullptr);
   }
   // Creates an unique id whose max value is less than the internal
