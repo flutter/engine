@@ -164,7 +164,7 @@ static GdkEventKey* find_pending_event(FlKeyEventPlugin* self, uint64_t id) {
   for (guint i = 0; i <= self->pending_events->len; ++i) {
     if (FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))->id ==
         id) {
-      return FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))
+      return FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))
           ->event;
     }
   }
