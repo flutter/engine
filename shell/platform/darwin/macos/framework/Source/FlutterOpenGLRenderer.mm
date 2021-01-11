@@ -3,9 +3,6 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
-#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
-#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
-#include "flutter/shell/platform/embedder/embedder.h"
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"

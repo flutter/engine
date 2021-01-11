@@ -10,9 +10,9 @@
 #import "flutter/shell/platform/embedder/embedder.h"
 
 /**
- * Provides the renderer config needed to initialize the embedder engine and also handles external
- * texture management. This is initialized during FlutterEngine creation and then attached to the
- * FlutterView once the FlutterViewController is initializer.
+ * Provides the renderer config needed to initialize the embedder engine. This is initialized during
+ * FlutterEngine creation and then attached to the FlutterView once the FlutterViewController is
+ * initialized.
  */
 @interface FlutterMetalRenderer : NSObject <FlutterTextureRegistry>
 
@@ -35,8 +35,14 @@
  */
 - (FlutterRendererConfig)createRendererConfig;
 
+/**
+ * Creates a Metal texture for the given size.
+ */
 - (FlutterMetalTexture)createTextureForSize:(CGSize)size;
 
+/**
+ * Presents the texture specefied by the texture id.
+ */
 - (bool)present:(int64_t)textureId;
 
 @end
