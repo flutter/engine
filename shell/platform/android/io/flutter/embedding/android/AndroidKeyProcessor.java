@@ -9,8 +9,8 @@ import android.view.KeyEvent;
 import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.Log;
+import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -94,7 +94,7 @@ public class AndroidKeyProcessor {
       // case the theory is wrong.
       return false;
     }
-    if (eventResponder.isPendingEvent(keyEvent)) {
+    if (isPendingEvent(keyEvent)) {
       // If the keyEvent is in the queue of pending events we've seen, and has
       // the same id, then we know that this is a re-dispatched keyEvent, and we
       // shouldn't respond to it, but we should remove it from tracking now.
@@ -124,7 +124,7 @@ public class AndroidKeyProcessor {
    * @return
    */
   public boolean isPendingEvent(@NonNull KeyEvent event) {
-    return eventResponder.isPendingEvent(event);
+    return eventResponder.findPendingEvent(event) != null;
   }
 
   /**
@@ -213,10 +213,6 @@ public class AndroidKeyProcessor {
         }
       }
       return null;
-    }
-
-    private boolean isPendingEvent(KeyEvent event) {
-      return findPendingEvent(event) != null;
     }
 
     /**
