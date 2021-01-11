@@ -24,6 +24,7 @@ class IOSContextMetal final : public IOSContext {
 
   fml::scoped_nsobject<FlutterDarwinContextMetal> GetDarwinContext() const;
 
+  // |IOSContext|
   sk_sp<GrDirectContext> GetMainContext() const override;
 
   sk_sp<GrDirectContext> GetResourceContext() const;

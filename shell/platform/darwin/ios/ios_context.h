@@ -107,10 +107,13 @@ class IOSContext {
       fml::scoped_nsobject<NSObject<FlutterTexture>> texture) = 0;
 
   //----------------------------------------------------------------------------
-  /// @brief      Accessor for the Skia context associated with IOSSurfaces.
-  ///
+  /// @brief      Accessor for the Skia context associated with IOSSurfaces and
+  ///             the raster thread.
+  /// @returns    `nullptr` on failure.
   /// @attention  The software context doesn't have a Skia context, so this
   ///             value will be nullptr.
+  /// @see        For contexts which are used for offscreen work like loading
+  ///             textures see IOSContext::CreateResourceContext.
   ///
   virtual sk_sp<GrDirectContext> GetMainContext() const = 0;
 
