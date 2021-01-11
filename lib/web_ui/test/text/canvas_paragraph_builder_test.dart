@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-const String paragraphStyle = 'style="position: absolute; white-space: pre-wrap; overflow-wrap: break-word; overflow: hidden;"';
+const String paragraphStyle = 'font-family: sans-serif; position: absolute; white-space: pre-wrap; overflow-wrap: break-word; overflow: hidden;';
 const String defaultColor = 'color: rgb(255, 0, 0);';
 const String defaultFontFamily = 'font-family: sans-serif;';
 const String defaultFontSize = 'font-size: 14px;';
@@ -33,7 +33,11 @@ void testMain() {
     expect(paragraph.toPlainText(), 'Hello');
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p $paragraphStyle><span style="$defaultColor font-size: 13px; $defaultFontFamily">Hello</span></p>',
+      '<p style="font-size: 13px; $paragraphStyle">'
+      '<span style="$defaultColor font-size: 13px; $defaultFontFamily">'
+      'Hello'
+      '</span>'
+      '</p>',
     );
     expect(paragraph.spans, hasLength(1));
 
@@ -55,7 +59,7 @@ void testMain() {
     expect(paragraph.toPlainText(), 'Hello');
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p $paragraphStyle><span style="$defaultColor $defaultFontSize $defaultFontFamily">Hello</span></p>',
+      '<p style="$paragraphStyle"><span style="$defaultColor $defaultFontSize $defaultFontFamily">Hello</span></p>',
     );
     expect(paragraph.spans, hasLength(1));
 
@@ -80,7 +84,7 @@ void testMain() {
     expect(paragraph.toPlainText(), 'Hello');
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p $paragraphStyle>'
+      '<p style="line-height: 1.5; font-size: 13px; $paragraphStyle">'
       '<span style="$defaultColor line-height: 1.5; font-size: 9px; font-weight: bold; font-style: italic; $defaultFontFamily letter-spacing: 2px;">'
       'Hello'
       '</span>'
@@ -116,7 +120,7 @@ void testMain() {
     expect(paragraph.toPlainText(), 'Hello world');
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p $paragraphStyle>'
+      '<p style="font-size: 13px; $paragraphStyle">'
       '<span style="$defaultColor font-size: 13px; font-weight: bold; $defaultFontFamily">'
       'Hello'
       '</span>'
@@ -165,7 +169,7 @@ void testMain() {
     expect(paragraph.toPlainText(), 'Hello world!');
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p $paragraphStyle>'
+      '<p style="font-size: 13px; $paragraphStyle">'
       '<span style="$defaultColor line-height: 2; font-size: 13px; font-weight: bold; $defaultFontFamily">'
       'Hello'
       '</span>'

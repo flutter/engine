@@ -127,13 +127,9 @@ class CanvasParagraph implements EngineParagraph {
         domRenderer.createElement('p') as html.HtmlElement;
 
     // 1. Set paragraph-level styles.
+    _applyParagraphStyleToElement(element: element, style: paragraphStyle);
     final html.CssStyleDeclaration cssStyle = element.style;
-    final ui.TextDirection direction =
-        paragraphStyle._textDirection ?? ui.TextDirection.ltr;
-    final ui.TextAlign align = paragraphStyle._textAlign ?? ui.TextAlign.start;
     cssStyle
-      ..direction = _textDirectionToCss(direction)
-      ..textAlign = textAlignToCssValue(align, direction)
       ..position = 'absolute'
       ..whiteSpace = 'pre-wrap'
       ..overflowWrap = 'break-word'
