@@ -41,8 +41,7 @@ void TaskRunnerWinUwp::PostFlutterTask(FlutterTask flutter_task,
       [this, flutter_task]() { on_task_expired_(&flutter_task); });
 }
 
-void TaskRunnerWinUwp::PostTask(TaskClosure task,
-                                std::optional<TaskTimePoint> target_time) {
+void TaskRunnerWinUwp::PostTask(TaskClosure task) {
   // TODO: Handle the target time. See PostFlutterTask()
 
   dispatcher_.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,

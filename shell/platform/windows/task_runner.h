@@ -9,7 +9,6 @@
 
 #include <chrono>
 #include <memory>
-#include <optional>
 
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -33,11 +32,8 @@ class TaskRunner {
   virtual void PostFlutterTask(FlutterTask flutter_task,
                                uint64_t flutter_target_time_nanos) = 0;
 
-  // Post a task to the event loop for delayed execution with an optional target
-  // time.
-  virtual void PostTask(
-      TaskClosure task,
-      std::optional<TaskTimePoint> target_time = std::nullopt) = 0;
+  // Post a task to the event loop.
+  virtual void PostTask(TaskClosure task) = 0;
 
   // Post a task to the event loop or run it immediately if this is being called
   // from the main thread.

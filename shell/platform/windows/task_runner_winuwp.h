@@ -38,8 +38,7 @@ class TaskRunnerWinUwp : public TaskRunner {
                        uint64_t flutter_target_time_nanos) override;
 
   // |TaskRunner|
-  void PostTask(TaskClosure task,
-                std::optional<TaskTimePoint> target_time) override;
+  void PostTask(TaskClosure task) override;
 
  private:
   DWORD main_thread_id_;

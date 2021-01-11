@@ -95,12 +95,10 @@ void TaskRunnerWin32::PostFlutterTask(FlutterTask flutter_task,
   EnqueueTask(std::move(task));
 }
 
-void TaskRunnerWin32::PostTask(TaskClosure closure,
-                               std::optional<TaskTimePoint> target_time) {
+void TaskRunnerWin32::PostTask(TaskClosure closure) {
   Task task;
-  task.fire_time =
-      target_time ? target_time.value() : TaskTimePoint::clock::now();
-  task.variant = closure;
+  task.fire_time = TaskTimePoint::clock::now();
+  task.variant = std::move(closure);
   EnqueueTask(std::move(task));
 }
 
