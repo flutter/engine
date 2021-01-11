@@ -10,7 +10,7 @@
 #include "flutter/third_party/accessibility/ax/ax_event_generator.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_base.h"
 
-namespace ui {
+namespace flutter {
 
 class AccessibilityBridge;
 
@@ -30,16 +30,8 @@ class AccessibilityBridge;
 ///
 /// Lastly, each platform needs to implement the FlutterAccessibility::Create
 /// static method to inject its sublcass into accessibility bridge.
-class FlutterAccessibility : public AXPlatformNodeDelegateBase {
+class FlutterAccessibility : public ui::AXPlatformNodeDelegateBase {
  public:
-  //------------------------------------------------------------------------------
-  /// @brief      Creates a platform specific FlutterAccessibility. Ownership
-  ///             passes to the caller. This method will be called by
-  ///             accessibility bridge when it creates accessibility node. Each
-  ///             platform needs to implement this method in order to inject its
-  ///             subclass into the accessibility bridge.
-  static FlutterAccessibility* Create();
-
   FlutterAccessibility();
   ~FlutterAccessibility() override;
 
@@ -50,30 +42,31 @@ class FlutterAccessibility : public AXPlatformNodeDelegateBase {
 
   //------------------------------------------------------------------------------
   /// @brief      Gets the underlying ax node for this accessibility node.
-  AXNode* GetAXNode() const;
+  ui::AXNode* GetAXNode() const;
 
-  // AXPlatformNodeDelegateBase override;
-  const AXNodeData& GetData() const override;
-  bool AccessibilityPerformAction(const AXActionData& data) override;
+  // ui::AXPlatformNodeDelegateBase override;
+  const ui::AXNodeData& GetData() const override;
+  bool AccessibilityPerformAction(const ui::AXActionData& data) override;
   gfx::NativeViewAccessible GetParent() override;
   gfx::NativeViewAccessible GetFocus() override;
   int GetChildCount() const override;
   gfx::NativeViewAccessible ChildAtIndex(int index) override;
-  gfx::Rect GetBoundsRect(const AXCoordinateSystem coordinate_system,
-                          const AXClippingBehavior clipping_behavior,
-                          AXOffscreenResult* offscreen_result) const override;
+  gfx::Rect GetBoundsRect(
+      const ui::AXCoordinateSystem coordinate_system,
+      const ui::AXClippingBehavior clipping_behavior,
+      ui::AXOffscreenResult* offscreen_result) const override;
   //------------------------------------------------------------------------------
   /// @brief      Called only once, immediately after construction. The
   ///             constructor doesn't take any arguments because in the Windows
   ///             subclass we use a special function to construct a COM object.
   ///             Subclasses must call super.
-  virtual void Init(AccessibilityBridge* bridge, AXNode* node);
+  virtual void Init(AccessibilityBridge* bridge, ui::AXNode* node);
 
  private:
-  AXNode* ax_node_;
+  ui::AXNode* ax_node_;
   AccessibilityBridge* bridge_;
 };
 
-}  // namespace ui
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_COMMON_CPP_FLUTTER_ACCESSIBILITY_H_

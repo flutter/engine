@@ -9,22 +9,34 @@
 
 #include "test_accessibility_bridge.h"
 
-namespace ui {
+namespace flutter {
 namespace testing {
 
 TEST(FlutterAccessibilityTest, canPerfomActions) {
-  // Set up a flutter accessibility node.
-  FlutterAccessibility* accessibility = FlutterAccessibility::Create();
-  AccessibilityBridge bridge(
-      std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
   TestAccessibilityBridgeDelegate* delegate =
-      (TestAccessibilityBridgeDelegate*)bridge.GetDelegate();
+      new TestAccessibilityBridgeDelegate();
+  std::unique_ptr<TestAccessibilityBridgeDelegate> ptr(delegate);
+  AccessibilityBridge bridge(std::move(ptr));
+  FlutterSemanticsNode root;
+  root.id = 0;
+  root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
+  root.actions = static_cast<FlutterSemanticsAction>(0);
+  root.text_selection_base = -1;
+  root.text_selection_extent = -1;
+  root.label = "root";
+  root.hint = "";
+  root.value = "";
+  root.increased_value = "";
+  root.decreased_value = "";
+  root.child_count = 0;
+  root.custom_accessibility_actions_count = 0;
+  bridge.AddFlutterSemanticsNodeUpdate(&root);
 
-  AXNode ax_node(bridge.GetAXTree(), 0, -1, -1);
-  accessibility->Init(&bridge, &ax_node);
+  bridge.CommitUpdates();
 
+  auto accessibility = bridge.GetFlutterAccessibilityFromID(0).lock();
   // Performs an AXAction.
-  AXActionData action_data;
+  ui::AXActionData action_data;
   action_data.action = ax::mojom::Action::kDoDefault;
   accessibility->AccessibilityPerformAction(action_data);
   EXPECT_EQ(delegate->performed_actions.size(), size_t{1});
@@ -47,31 +59,57 @@ TEST(FlutterAccessibilityTest, canPerfomActions) {
 
 TEST(FlutterAccessibilityTest, canGetBridge) {
   // Set up a flutter accessibility node.
-  FlutterAccessibility* accessibility = FlutterAccessibility::Create();
   AccessibilityBridge bridge(
-      std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
+      std::make_unique<TestAccessibilityBridgeDelegate>());
+  FlutterSemanticsNode root;
+  root.id = 0;
+  root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
+  root.actions = static_cast<FlutterSemanticsAction>(0);
+  root.text_selection_base = -1;
+  root.text_selection_extent = -1;
+  root.label = "root";
+  root.hint = "";
+  root.value = "";
+  root.increased_value = "";
+  root.decreased_value = "";
+  root.child_count = 0;
+  root.custom_accessibility_actions_count = 0;
+  bridge.AddFlutterSemanticsNodeUpdate(&root);
 
-  AXNode ax_node(bridge.GetAXTree(), 0, -1, -1);
-  accessibility->Init(&bridge, &ax_node);
+  bridge.CommitUpdates();
 
+  auto accessibility = bridge.GetFlutterAccessibilityFromID(0).lock();
   EXPECT_EQ(accessibility->GetBridge(), &bridge);
 }
 
 TEST(FlutterAccessibilityTest, canGetAXNode) {
   // Set up a flutter accessibility node.
-  FlutterAccessibility* accessibility = FlutterAccessibility::Create();
   AccessibilityBridge bridge(
-      std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
+      std::make_unique<TestAccessibilityBridgeDelegate>());
+  FlutterSemanticsNode root;
+  root.id = 0;
+  root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
+  root.actions = static_cast<FlutterSemanticsAction>(0);
+  root.text_selection_base = -1;
+  root.text_selection_extent = -1;
+  root.label = "root";
+  root.hint = "";
+  root.value = "";
+  root.increased_value = "";
+  root.decreased_value = "";
+  root.child_count = 0;
+  root.custom_accessibility_actions_count = 0;
+  bridge.AddFlutterSemanticsNodeUpdate(&root);
 
-  AXNode ax_node(bridge.GetAXTree(), 0, -1, -1);
-  accessibility->Init(&bridge, &ax_node);
+  bridge.CommitUpdates();
 
-  EXPECT_EQ(accessibility->GetAXNode(), &ax_node);
+  auto accessibility = bridge.GetFlutterAccessibilityFromID(0).lock();
+  EXPECT_EQ(accessibility->GetAXNode()->data().id, 0);
 }
 
 TEST(FlutterAccessibilityTest, canCalculateBoundsCorrectly) {
   AccessibilityBridge bridge(
-      std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
+      std::make_unique<TestAccessibilityBridgeDelegate>());
   FlutterSemanticsNode root;
   root.id = 0;
   root.label = "root";
@@ -101,20 +139,21 @@ TEST(FlutterAccessibilityTest, canCalculateBoundsCorrectly) {
   bridge.AddFlutterSemanticsNodeUpdate(&child1);
 
   bridge.CommitUpdates();
-  FlutterAccessibility* child1_node = bridge.GetFlutterAccessibilityFromID(1);
-  AXOffscreenResult result;
-  gfx::Rect bounds = child1_node->GetBoundsRect(
-      AXCoordinateSystem::kScreenDIPs, AXClippingBehavior::kClipped, &result);
+  auto child1_node = bridge.GetFlutterAccessibilityFromID(1).lock();
+  ui::AXOffscreenResult result;
+  gfx::Rect bounds =
+      child1_node->GetBoundsRect(ui::AXCoordinateSystem::kScreenDIPs,
+                                 ui::AXClippingBehavior::kClipped, &result);
   EXPECT_EQ(bounds.x(), 0);
   EXPECT_EQ(bounds.y(), 0);
   EXPECT_EQ(bounds.width(), 25);
   EXPECT_EQ(bounds.height(), 25);
-  EXPECT_EQ(result, AXOffscreenResult::kOnscreen);
+  EXPECT_EQ(result, ui::AXOffscreenResult::kOnscreen);
 }
 
 TEST(FlutterAccessibilityTest, canCalculateOffScreenBoundsCorrectly) {
   AccessibilityBridge bridge(
-      std::make_unique<TestAccessibilityBridgeDelegate>(), nullptr);
+      std::make_unique<TestAccessibilityBridgeDelegate>());
   FlutterSemanticsNode root;
   root.id = 0;
   root.label = "root";
@@ -144,16 +183,17 @@ TEST(FlutterAccessibilityTest, canCalculateOffScreenBoundsCorrectly) {
   bridge.AddFlutterSemanticsNodeUpdate(&child1);
 
   bridge.CommitUpdates();
-  FlutterAccessibility* child1_node = bridge.GetFlutterAccessibilityFromID(1);
-  AXOffscreenResult result;
-  gfx::Rect bounds = child1_node->GetBoundsRect(
-      AXCoordinateSystem::kScreenDIPs, AXClippingBehavior::kUnclipped, &result);
+  auto child1_node = bridge.GetFlutterAccessibilityFromID(1).lock();
+  ui::AXOffscreenResult result;
+  gfx::Rect bounds =
+      child1_node->GetBoundsRect(ui::AXCoordinateSystem::kScreenDIPs,
+                                 ui::AXClippingBehavior::kUnclipped, &result);
   EXPECT_EQ(bounds.x(), 180);
   EXPECT_EQ(bounds.y(), 180);
   EXPECT_EQ(bounds.width(), 20);
   EXPECT_EQ(bounds.height(), 20);
-  EXPECT_EQ(result, AXOffscreenResult::kOffscreen);
+  EXPECT_EQ(result, ui::AXOffscreenResult::kOffscreen);
 }
 
 }  // namespace testing
-}  // namespace ui
+}  // namespace flutter

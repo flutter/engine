@@ -9,13 +9,13 @@
 
 #include "accessibility_bridge.h"
 
-namespace ui {
+namespace flutter {
 
 FlutterAccessibility::FlutterAccessibility() = default;
 
 FlutterAccessibility::~FlutterAccessibility() = default;
 
-void FlutterAccessibility::Init(AccessibilityBridge* bridge, AXNode* node) {
+void FlutterAccessibility::Init(AccessibilityBridge* bridge, ui::AXNode* node) {
   bridge_ = bridge;
   ax_node_ = node;
 }
@@ -24,31 +24,31 @@ AccessibilityBridge* FlutterAccessibility::GetBridge() const {
   return bridge_;
 }
 
-AXNode* FlutterAccessibility::GetAXNode() const {
+ui::AXNode* FlutterAccessibility::GetAXNode() const {
   return ax_node_;
 }
 
 bool FlutterAccessibility::AccessibilityPerformAction(
-    const AXActionData& data) {
+    const ui::AXActionData& data) {
   int32_t target = GetAXNode()->id();
   switch (data.action) {
     case ax::mojom::Action::kDoDefault:
-      bridge_->GetDelegate()->DispatchAccessibilityAction(
-          target, FlutterSemanticsAction::kFlutterSemanticsActionTap, nullptr,
+      bridge_->DispatchAccessibilityAction(
+          target, FlutterSemanticsAction::kFlutterSemanticsActionTap, {nullptr},
           0);
       return true;
     case ax::mojom::Action::kFocus:
       bridge_->SetFocusedNode(target);
-      bridge_->GetDelegate()->DispatchAccessibilityAction(
+      bridge_->DispatchAccessibilityAction(
           target,
           FlutterSemanticsAction::
               kFlutterSemanticsActionDidGainAccessibilityFocus,
-          nullptr, 0);
+          {nullptr}, 0);
       return true;
     case ax::mojom::Action::kScrollToMakeVisible:
-      bridge_->GetDelegate()->DispatchAccessibilityAction(
+      bridge_->DispatchAccessibilityAction(
           target, FlutterSemanticsAction::kFlutterSemanticsActionShowOnScreen,
-          nullptr, 0);
+          {nullptr}, 0);
       return true;
     // TODO(chunhtai): support more actions.
     default:
@@ -57,7 +57,7 @@ bool FlutterAccessibility::AccessibilityPerformAction(
   return false;
 }
 
-const AXNodeData& FlutterAccessibility::GetData() const {
+const ui::AXNodeData& FlutterAccessibility::GetData() const {
   return GetAXNode()->data();
 }
 
@@ -65,23 +65,24 @@ gfx::NativeViewAccessible FlutterAccessibility::GetParent() {
   if (!GetAXNode()->parent()) {
     return nullptr;
   }
-  return GetBridge()
-      ->GetFlutterAccessibilityFromID(GetAXNode()->parent()->id())
-      ->GetNativeViewAccessible();
+  std::shared_ptr<FlutterAccessibility> accessibility =
+      bridge_->GetFlutterAccessibilityFromID(GetAXNode()->parent()->id())
+          .lock();
+  BASE_CHECK(accessibility);
+  return accessibility->GetNativeViewAccessible();
 }
 
 gfx::NativeViewAccessible FlutterAccessibility::GetFocus() {
-  int32_t focused_node = GetBridge()->GetLastFocusedNode();
-  if (focused_node == AXNode::kInvalidAXID) {
+  int32_t focused_node = bridge_->GetLastFocusedNode();
+  if (focused_node == ui::AXNode::kInvalidAXID) {
     return nullptr;
   }
-  FlutterAccessibility* focus =
-      GetBridge()->GetFlutterAccessibilityFromID(focused_node);
-  if (!focus)
+  std::weak_ptr<FlutterAccessibility> focus =
+      bridge_->GetFlutterAccessibilityFromID(focused_node);
+  auto focus_ptr = focus.lock();
+  if (!focus_ptr)
     return nullptr;
-  return GetBridge()
-      ->GetFlutterAccessibilityFromID(focused_node)
-      ->GetNativeViewAccessible();
+  return focus_ptr->GetNativeViewAccessible();
 }
 
 int FlutterAccessibility::GetChildCount() const {
@@ -90,25 +91,26 @@ int FlutterAccessibility::GetChildCount() const {
 
 gfx::NativeViewAccessible FlutterAccessibility::ChildAtIndex(int index) {
   int32_t child = GetAXNode()->GetUnignoredChildAtIndex(index)->id();
-  return GetBridge()
-      ->GetFlutterAccessibilityFromID(child)
+  return bridge_->GetFlutterAccessibilityFromID(child)
+      .lock()
       ->GetNativeViewAccessible();
 }
 
 gfx::Rect FlutterAccessibility::GetBoundsRect(
-    const AXCoordinateSystem coordinate_system,
-    const AXClippingBehavior clipping_behavior,
-    AXOffscreenResult* offscreen_result) const {
+    const ui::AXCoordinateSystem coordinate_system,
+    const ui::AXClippingBehavior clipping_behavior,
+    ui::AXOffscreenResult* offscreen_result) const {
   // TODO(chunhtai): consider screen dpr.
-  const bool clip_bounds = clipping_behavior == AXClippingBehavior::kClipped;
+  const bool clip_bounds =
+      clipping_behavior == ui::AXClippingBehavior::kClipped;
   bool offscreen = false;
-  gfx::RectF bounds = GetBridge()->GetAXTree()->RelativeToTreeBounds(
-      GetAXNode(), gfx::RectF(), &offscreen, clip_bounds);
+  gfx::RectF bounds =
+      bridge_->RelativeToGlobalBounds(GetAXNode(), &offscreen, clip_bounds);
   if (offscreen_result != nullptr) {
-    *offscreen_result = offscreen ? AXOffscreenResult::kOffscreen
-                                  : AXOffscreenResult::kOnscreen;
+    *offscreen_result = offscreen ? ui::AXOffscreenResult::kOffscreen
+                                  : ui::AXOffscreenResult::kOnscreen;
   }
   return gfx::ToEnclosingRect(bounds);
 }
 
-}  // namespace ui
+}  // namespace flutter
