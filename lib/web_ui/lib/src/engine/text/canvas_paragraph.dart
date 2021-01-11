@@ -132,12 +132,16 @@ class CanvasParagraph implements EngineParagraph {
     cssStyle
       ..position = 'absolute'
       ..whiteSpace = 'pre-wrap'
-      ..overflowWrap = 'break-word'
-      ..overflow = 'hidden';
+      ..overflowWrap = 'break-word';
+
+    if (paragraphStyle._maxLines != null || paragraphStyle._ellipsis != null) {
+      cssStyle..overflowY = 'hidden';
+    }
 
     if (paragraphStyle._ellipsis != null &&
         (paragraphStyle._maxLines == null || paragraphStyle._maxLines == 1)) {
       cssStyle
+        ..overflowX = 'hidden'
         ..whiteSpace = 'pre'
         ..textOverflow = 'ellipsis';
     }
