@@ -147,9 +147,6 @@ TEST(FlEngineTest, PlatformMessageResponse) {
 
 // Checks settings plugin sends settings on startup.
 TEST(FlEngineTest, SettingsPlugin) {
-  GTEST_SKIP()
-      << "disabled: see https://github.com/flutter/flutter/issues/73517";
-
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
@@ -169,20 +166,19 @@ TEST(FlEngineTest, SettingsPlugin) {
             FL_MESSAGE_CODEC(codec), data, &error);
         EXPECT_NE(settings, nullptr);
         EXPECT_EQ(error, nullptr);
-        g_printerr("%s\n", fl_value_to_string(settings));
 
-        g_autoptr(FlValue) text_scale_factor =
+        FlValue* text_scale_factor =
             fl_value_lookup_string(settings, "textScaleFactor");
         EXPECT_NE(text_scale_factor, nullptr);
         EXPECT_EQ(fl_value_get_type(text_scale_factor), FL_VALUE_TYPE_FLOAT);
 
-        g_autoptr(FlValue) always_use_24hr_format =
+        FlValue* always_use_24hr_format =
             fl_value_lookup_string(settings, "alwaysUse24HourFormat");
         EXPECT_NE(always_use_24hr_format, nullptr);
         EXPECT_EQ(fl_value_get_type(always_use_24hr_format),
                   FL_VALUE_TYPE_BOOL);
 
-        g_autoptr(FlValue) platform_brightness =
+        FlValue* platform_brightness =
             fl_value_lookup_string(settings, "platformBrightness");
         EXPECT_NE(platform_brightness, nullptr);
         EXPECT_EQ(fl_value_get_type(platform_brightness), FL_VALUE_TYPE_STRING);
