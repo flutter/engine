@@ -442,8 +442,8 @@ void _testContainer() {
         expect(container.style.transform, 'translate(0px, 0px)');
         expect(container.style.transformOrigin, '0px 0px 0px');
       } else {
-        expect(parentElement.style.top, '20px');
-        expect(parentElement.style.left, '20px');
+        expect(parentElement.style.top, '0px');
+        expect(parentElement.style.left, '0px');
         expect(container.style.top, '0px');
         expect(container.style.left, '0px');
       }
