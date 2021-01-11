@@ -76,7 +76,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
-    const Shell::EngineMaker& engine_maker) {
+    const Shell::EngineCreateCallback& on_create_engine) {
   if (!task_runners.IsValid()) {
     FML_LOG(ERROR) << "Task runners to run the shell were invalid.";
     return nullptr;
@@ -172,7 +172,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          &weak_io_manager_future,                         //
                          &snapshot_delegate_future,                       //
                          &unref_queue_future,                             //
-                         &engine_maker]() mutable {
+                         &on_create_engine]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
 
@@ -182,18 +182,18 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                                                    std::move(vsync_waiter));
 
         engine_promise.set_value(
-            engine_maker(*shell,                          //
-                         dispatcher_maker,                //
-                         *shell->GetDartVM(),             //
-                         std::move(isolate_snapshot),     //
-                         task_runners,                    //
-                         platform_data,                   //
-                         shell->GetSettings(),            //
-                         std::move(animator),             //
-                         weak_io_manager_future.get(),    //
-                         unref_queue_future.get(),        //
-                         snapshot_delegate_future.get(),  //
-                         shell->volatile_path_tracker_));
+            on_create_engine(*shell,                          //
+                             dispatcher_maker,                //
+                             *shell->GetDartVM(),             //
+                             std::move(isolate_snapshot),     //
+                             task_runners,                    //
+                             platform_data,                   //
+                             shell->GetSettings(),            //
+                             std::move(animator),             //
+                             weak_io_manager_future.get(),    //
+                             unref_queue_future.get(),        //
+                             snapshot_delegate_future.get(),  //
+                             shell->volatile_path_tracker_));
       }));
 
   if (!shell->Setup(std::move(platform_view),  //
@@ -316,7 +316,7 @@ std::unique_ptr<Shell> Shell::Create(
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
     DartVMRef vm,
-    const Shell::EngineMaker& engine_maker) {
+    const Shell::EngineCreateCallback& on_create_engine) {
   PerformInitializationTasks(settings);
   PersistentCache::SetCacheSkSL(settings.cache_sksl);
 
@@ -339,7 +339,7 @@ std::unique_ptr<Shell> Shell::Create(
                          settings,                                //
                          on_create_platform_view,                 //
                          on_create_rasterizer,                    //
-                         &engine_maker]() mutable {
+                         &on_create_engine]() mutable {
         auto isolate_snapshot = vm->GetVMData()->GetIsolateSnapshot();
         shell = CreateShellOnPlatformThread(std::move(vm),
                                             std::move(task_runners),      //
@@ -348,7 +348,7 @@ std::unique_ptr<Shell> Shell::Create(
                                             std::move(isolate_snapshot),  //
                                             on_create_platform_view,      //
                                             on_create_rasterizer,         //
-                                            engine_maker);
+                                            on_create_engine);
         latch.Signal();
       }));
   latch.Wait();

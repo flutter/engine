@@ -237,9 +237,13 @@ class DartIsolate : public UIDartState {
   //----------------------------------------------------------------------------
   /// @brief     Creates a running DartIsolate who shares as many resources as
   ///            possible with the caller DartIsolate.  This allows them to
-  ///            occupy less memory together.
+  ///            occupy less memory together and to be created faster.
+  /// @details   Shared components will be destroyed when the last DartIsolate
+  ///            is destroyed.  SpawnIsolate can only be used to create
+  ///            DartIsolates whose executable code is shared with the calling
+  ///            DartIsolate.
   /// @attention Only certain setups can take advantage of the most savings
-  ///            currently, release builds currently.
+  ///            currently, AOT specifically.
   /// @return    A running DartIsolate.
   std::weak_ptr<DartIsolate> SpawnIsolate(
       const Settings& settings,

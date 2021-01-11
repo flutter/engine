@@ -111,7 +111,7 @@ class Shell final : public PlatformView::Delegate,
       fml::RefPtr<SkiaUnrefQueue> unref_queue,
       fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
       std::shared_ptr<VolatilePathTracker> volatile_path_tracker)>
-      EngineMaker;
+      EngineCreateCallback;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
@@ -190,7 +190,7 @@ class Shell final : public PlatformView::Delegate,
   ///             created.
   /// @param[in]  vm             A running DartVMRef where this Shell's Dart
   ///                            code will be executed.
-  /// @param[in]  engine_maker   A function that creates an Engine during
+  /// @param[in]  on_create_engine   A function that creates an Engine during
   ///                            initialization.
   /// @see        Shell::Create
   ///
@@ -202,7 +202,7 @@ class Shell final : public PlatformView::Delegate,
       const CreateCallback<PlatformView>& on_create_platform_view,
       const CreateCallback<Rasterizer>& on_create_rasterizer,
       DartVMRef vm,
-      const EngineMaker& engine_maker);
+      const EngineCreateCallback& on_create_engine);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the shell. This is a synchronous operation and
@@ -465,7 +465,7 @@ class Shell final : public PlatformView::Delegate,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const Shell::CreateCallback<PlatformView>& on_create_platform_view,
       const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
-      const EngineMaker& engine_maker);
+      const EngineCreateCallback& on_create_engine);
 
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,

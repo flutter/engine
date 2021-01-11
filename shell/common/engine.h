@@ -357,9 +357,12 @@ class Engine final : public RuntimeDelegate,
   //----------------------------------------------------------------------------
   /// @brief      Create a Engine that shares as many resources as
   ///             possible with the calling Engine such that together
-  ///             they occupy less memory.
+  ///             they occupy less memory and be created faster.
+  /// @details    This method ultimately calls DartIsolate::SpawnIsolate to make
+  ///             sure resources are shared.
   /// @return     A Engine with a running isolate.
   /// @see        Engine::Engine
+  /// @see        DartIsolate::SpawnIsolate
   ///
   std::unique_ptr<Engine> Spawn(
       Delegate& delegate,
