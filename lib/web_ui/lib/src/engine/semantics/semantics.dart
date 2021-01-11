@@ -849,8 +849,12 @@ class SemanticsObject {
     final bool hasIdentityTransform =
         transform == null || isIdentityFloat32ListTransform(transform);
 
+    // On Mac OS and iOS, VoiceOver requires left=0 top=0 value to correctly
+    // handle order. See https://github.com/flutter/flutter/issues/73347.
     if (hasZeroRectOffset &&
         hasIdentityTransform &&
+        operatingSystem != OperatingSystem.macOs &&
+        operatingSystem != OperatingSystem.iOs &&
         verticalContainerAdjustment == 0.0 &&
         horizontalContainerAdjustment == 0.0) {
       if (isDesktop) {
@@ -905,11 +909,17 @@ class SemanticsObject {
       effectiveTransformIsIdentity = false;
     }
 
-    if (!effectiveTransformIsIdentity) {
+    if (!effectiveTransformIsIdentity ||
+        operatingSystem == OperatingSystem.macOs ||
+        operatingSystem == OperatingSystem.iOs) {
+      if (effectiveTransformIsIdentity) {
+        effectiveTransform = Matrix4.identity();
+      }
       if (isDesktop) {
         element.style
           ..transformOrigin = '0 0 0'
-          ..transform = matrix4ToCssTransform(effectiveTransform);
+          ..transform = (effectiveTransformIsIdentity ? 'translate(0px 0px 0px)'
+              : matrix4ToCssTransform(effectiveTransform));
       } else {
         // Mobile screen readers observed to have errors while calculating the
         // semantics focus borders if css `transform` properties are used.
@@ -941,6 +951,8 @@ class SemanticsObject {
 
     if (containerElement != null) {
       if (!hasZeroRectOffset ||
+          operatingSystem == OperatingSystem.macOs ||
+          operatingSystem == OperatingSystem.iOs ||
           verticalContainerAdjustment != 0.0 ||
           horizontalContainerAdjustment != 0.0) {
         final double translateX = -_rect!.left + horizontalContainerAdjustment;
