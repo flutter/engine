@@ -30,6 +30,8 @@ class CanvasKit {
   external SkFilterQualityEnum get FilterQuality;
   external SkBlurStyleEnum get BlurStyle;
   external SkTileModeEnum get TileMode;
+  external SkFilterModeEnum get FilterMode;
+  external SkMipmapModeEnum get MipmapMode;
   external SkFillTypeEnum get FillType;
   external SkAlphaTypeEnum get AlphaType;
   external SkColorTypeEnum get ColorType;
@@ -53,10 +55,9 @@ class CanvasKit {
   external SkTonalColors computeTonalColors(SkTonalColors inTonalColors);
   external SkVertices MakeVertices(
     SkVertexMode mode,
-    List<Float32List> positions,
-    List<Float32List>? textureCoordinates,
-    // TODO(yjbanov): make this Uint32Array when CanvasKit supports it.
-    List<Float32List>? colors,
+    Float32List positions,
+    Float32List? textureCoordinates,
+    Uint32List? colors,
     Uint16List? indices,
   );
   external SkParagraphBuilderNamespace get ParagraphBuilder;
@@ -109,12 +110,9 @@ class CanvasKit {
   /// parameters specified in [SkImageInfo] passed [SkImage.readPixels] much
   /// match the arguments passed to this method.
   external SkImage MakeImage(
-    Uint8List imageData,
-    int width,
-    int height,
-    SkAlphaType alphaType,
-    SkColorType colorType,
-    ColorSpace colorSpace,
+    SkImageInfo info,
+    Uint8List pixels,
+    int bytesPerRow,
   );
 }
 
@@ -662,6 +660,29 @@ SkTileMode toSkTileMode(ui.TileMode mode) {
 }
 
 @JS()
+class SkFilterModeEnum {
+  external SkFilterMode get Nearest;
+  external SkFilterMode get Linear;
+}
+
+@JS()
+class SkFilterMode {
+  external int get value;
+}
+
+@JS()
+class SkMipmapModeEnum {
+  external SkMipmapMode get None;
+  external SkMipmapMode get Nearest;
+  external SkMipmapMode get Linear;
+}
+
+@JS()
+class SkMipmapMode {
+  external int get value;
+}
+
+@JS()
 class SkAlphaTypeEnum {
   external SkAlphaType get Opaque;
   external SkAlphaType get Premul;
@@ -718,9 +739,11 @@ class SkImage {
   external void delete();
   external int width();
   external int height();
-  external SkShader makeShader(
+  external SkShader makeShaderOptions(
     SkTileMode tileModeX,
     SkTileMode tileModeY,
+    SkFilterMode filterMode,
+    SkMipmapMode mipmapMode,
     Float32List? matrix, // 3x3 matrix
   );
   external Uint8List readPixels(SkImageInfo imageInfo, int srcX, int srcY);
@@ -1262,6 +1285,27 @@ SkFloat32List toMallocedSkPoints(List<ui.Offset> points) {
     list[2 * i + 1] = points[i].dy;
   }
   return skPoints;
+}
+
+/// Converts a list of [ui.Offset] into a flat list of points.
+Float32List toFlatSkPoints(List<ui.Offset> points) {
+  final int len = points.length;
+  final Float32List result = Float32List(len * 2);
+  for (int i = 0; i < len; i++) {
+    result[2 * i] = points[i].dx;
+    result[2 * i + 1] = points[i].dy;
+  }
+  return result;
+}
+
+/// Converts a list of [ui.Color] into a flat list of ints.
+Uint32List toFlatColors(List<ui.Color> colors) {
+  final int len = colors.length;
+  final Uint32List result = Uint32List(len);
+  for (int i = 0; i < len; i++) {
+    result[i] = colors[i].value;
+  }
+  return result;
 }
 
 // TODO(yjbanov): this is inefficient. We should be able to pass points

@@ -296,9 +296,11 @@ void _imageTests() {
 
     expect(nonAnimated.decodeNextFrame(), -1);
     expect(
-      frame.makeShader(
+      frame.makeShaderOptions(
         canvasKit.TileMode.Repeat,
         canvasKit.TileMode.Mirror,
+        canvasKit.FilterMode.Linear,
+        canvasKit.MipmapMode.Nearest,
         toSkMatrixFromFloat32(Matrix4.identity().storage),
       ),
       isNotNull,
@@ -856,21 +858,9 @@ void _pathTests() {
 SkVertices _testVertices() {
   return canvasKit.MakeVertices(
     canvasKit.VertexMode.Triangles,
-    [
-      Float32List.fromList([0, 0]),
-      Float32List.fromList([10, 10]),
-      Float32List.fromList([0, 20]),
-    ],
-    [
-      Float32List.fromList([0, 0]),
-      Float32List.fromList([10, 10]),
-      Float32List.fromList([0, 20]),
-    ],
-    [
-      Float32List.fromList([255, 0, 0, 255]),
-      Float32List.fromList([0, 255, 0, 255]),
-      Float32List.fromList([0, 0, 255, 255]),
-    ],
+    Float32List.fromList([0, 0, 10, 10, 0, 20]),
+    Float32List.fromList([0, 0, 10, 10, 0, 20]),
+    Uint32List.fromList([0xffff0000, 0xff00ff00, 0xff0000ff]),
     Uint16List.fromList([0, 1, 2]),
   );
 }
