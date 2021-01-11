@@ -14,7 +14,8 @@ class TestAccessibilityBridgeDelegate
  public:
   TestAccessibilityBridgeDelegate() = default;
 
-  void OnAccessibilityEvent(ui::AXEventGenerator::TargetedEvent targeted_event) override;
+  void OnAccessibilityEvent(
+      ui::AXEventGenerator::TargetedEvent targeted_event) override;
   void DispatchAccessibilityAction(ui::AXNode::AXID target,
                                    FlutterSemanticsAction action,
                                    std::unique_ptr<uint8_t[]> data,

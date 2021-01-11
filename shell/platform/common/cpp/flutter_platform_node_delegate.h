@@ -27,9 +27,6 @@ class AccessibilityBridge;
 ///
 /// For desktop platforms, subclasses also need to override the GetBoundsRect
 /// to apply window-to-screen transform.
-///
-/// Lastly, each platform needs to implement the FlutterPlatformNodeDelegate::Create
-/// static method to inject its sublcass into accessibility bridge.
 class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
  public:
   FlutterPlatformNodeDelegate();

@@ -15,7 +15,8 @@ FlutterPlatformNodeDelegate::FlutterPlatformNodeDelegate() = default;
 
 FlutterPlatformNodeDelegate::~FlutterPlatformNodeDelegate() = default;
 
-void FlutterPlatformNodeDelegate::Init(AccessibilityBridge* bridge, ui::AXNode* node) {
+void FlutterPlatformNodeDelegate::Init(AccessibilityBridge* bridge,
+                                       ui::AXNode* node) {
   bridge_ = bridge;
   ax_node_ = node;
 }

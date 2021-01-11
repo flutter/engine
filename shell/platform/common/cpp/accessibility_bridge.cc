@@ -89,7 +89,8 @@ void AccessibilityBridge::CommitUpdates() {
 }
 
 std::weak_ptr<FlutterPlatformNodeDelegate>
-AccessibilityBridge::GetFlutterPlatformNodeDelegateFromID(ui::AXNode::AXID id) const {
+AccessibilityBridge::GetFlutterPlatformNodeDelegateFromID(
+    ui::AXNode::AXID id) const {
   const auto iter = id_wrapper_map_.find(id);
   if (iter != id_wrapper_map_.end())
     return iter->second;
@@ -99,7 +100,8 @@ AccessibilityBridge::GetFlutterPlatformNodeDelegateFromID(ui::AXNode::AXID id) c
 
 void AccessibilityBridge::SetFocusedNode(ui::AXNode::AXID node_id) {
   if (last_focused_node_ != node_id) {
-    auto last_focused_child = GetFlutterPlatformNodeDelegateFromID(last_focused_node_);
+    auto last_focused_child =
+        GetFlutterPlatformNodeDelegateFromID(last_focused_node_);
     if (!last_focused_child.expired()) {
       delegate_->DispatchAccessibilityAction(
           last_focused_node_,
@@ -139,7 +141,8 @@ void AccessibilityBridge::OnNodeCreated(ui::AXTree* tree, ui::AXNode* node) {
   id_wrapper_map_[node->id()]->Init(this, node);
 }
 
-void AccessibilityBridge::OnNodeDeleted(ui::AXTree* tree, ui::AXNode::AXID node_id) {
+void AccessibilityBridge::OnNodeDeleted(ui::AXTree* tree,
+                                        ui::AXNode::AXID node_id) {
   BASE_DCHECK(node_id != ui::AXNode::kInvalidAXID);
   if (id_wrapper_map_.find(node_id) != id_wrapper_map_.end()) {
     id_wrapper_map_.erase(node_id);
