@@ -23,7 +23,7 @@ Future<void> _findFontsForMissingCodeunits(List<int> codeunits) async {
   Set<int> coveredCodeUnits = <int>{};
   Set<int> missingCodeUnits = <int>{};
   for (int codeunit in codeunits) {
-    List<_NotoFont> fontsForUnit = _lookupNotoFontsForCodeunit(codeunit);
+    List<_NotoFont> fontsForUnit = _notoTree!.intersections(codeunit);
     fonts.addAll(fontsForUnit);
     if (fontsForUnit.isNotEmpty) {
       coveredCodeUnits.add(codeunit);
@@ -277,68 +277,20 @@ Set<_NotoFont> _findMinimumFontsForCodeunits(
 }
 
 void _ensureNotoFontTreeCreated() {
-  if (_notoTreeRoot != null) {
+  if (_notoTree != null) {
     return;
   }
 
+  Map<_NotoFont, List<_UnicodeRange>> ranges =
+      <_NotoFont, List<_UnicodeRange>>{};
+
   for (_NotoFont font in _notoFonts) {
     for (_UnicodeRange range in font.unicodeRanges) {
-      _notoTreeRoot =
-          _insertNotoFontRange<_NotoFont>(range, font, _notoTreeRoot);
+      ranges.putIfAbsent(font, () => <_UnicodeRange>[]).add(range);
     }
   }
 
-  assert(
-      _verifyNotoTree(_notoTreeRoot),
-      'The Noto font tree is invalid: '
-      '${_verifyNotoSubtree(_notoTreeRoot).reason}');
-}
-
-List<_NotoFont> _lookupNotoFontsForCodeunit(int codeunit) {
-  List<_NotoFont> lookupHelper(_NotoTreeNode<_NotoFont> node) {
-    if (node.range.contains(codeunit)) {
-      return node.fonts;
-    }
-    if (node.range.start > codeunit) {
-      if (node.left != null) {
-        return lookupHelper(node.left!);
-      } else {
-        return const <_NotoFont>[];
-      }
-    } else {
-      if (node.right != null) {
-        return lookupHelper(node.right!);
-      } else {
-        return const <_NotoFont>[];
-      }
-    }
-  }
-
-  return lookupHelper(_notoTreeRoot!);
-}
-
-List<_ResolvedNotoSubset> _lookupResolvedFontsForCodeunit(int codeunit) {
-  List<_ResolvedNotoSubset> lookupHelper(
-      _NotoTreeNode<_ResolvedNotoSubset> node) {
-    if (node.range.contains(codeunit)) {
-      return node.fonts;
-    }
-    if (node.range.start > codeunit) {
-      if (node.left != null) {
-        return lookupHelper(node.left!);
-      } else {
-        return const <_ResolvedNotoSubset>[];
-      }
-    } else {
-      if (node.right != null) {
-        return lookupHelper(node.right!);
-      } else {
-        return const <_ResolvedNotoSubset>[];
-      }
-    }
-  }
-
-  return lookupHelper(_resolvedNotoTreeRoot!);
+  _notoTree = _IntervalTree<_NotoFont>.createFromRanges(ranges);
 }
 
 class _NotoFont {
@@ -381,6 +333,9 @@ class _UnicodeRange {
 
   @override
   int get hashCode => ui.hashValues(start, end);
+
+  @override
+  String toString() => '[$start, $end]';
 }
 
 class _ResolvedNotoFont {
@@ -615,24 +570,6 @@ const List<_NotoFont> _notoFonts = <_NotoFont>[
   ]),
 ];
 
-// TODO(hterkelsen): Add unit tests for the Red-Black tree code.
-
-/// A node in a red-black tree for Noto Fonts.
-class _NotoTreeNode<T> {
-  _NotoTreeNode<T>? parent;
-  _NotoTreeNode<T>? left;
-  _NotoTreeNode<T>? right;
-
-  /// If `true`, then this node is black. Otherwise it is red.
-  bool isBlack = false;
-  bool get isRed => !isBlack;
-
-  final _UnicodeRange range;
-  final List<T> fonts;
-
-  _NotoTreeNode(this.range) : this.fonts = <T>[];
-}
-
 /// Associates [range] with [font] in the Noto Font tree.
 ///
 /// Returns the root node.
@@ -666,7 +603,7 @@ _NotoTreeNode<T>? _insertNotoFontRangeHelper<T>(
     }
     if (range.start < root.range.start) {
       assert(range.end < root.range.start,
-          'Overlapping Unicode range in Noto Tree');
+          'Overlapping Unicode range in Noto Tree. Root: ${root.range}, Range: $range');
       if (root.left != null) {
         return _insertNotoFontRangeHelper<T>(root.left, range, font);
       } else {
@@ -678,7 +615,7 @@ _NotoTreeNode<T>? _insertNotoFontRangeHelper<T>(
       }
     } else {
       assert(root.range.end < range.start,
-          'Overlapping Unicode range in Noto Tree');
+          'Overlapping Unicode range in Noto Tree. Root: ${root.range}, Range: $range');
       if (root.right != null) {
         return _insertNotoFontRangeHelper<T>(root.right, range, font);
       } else {
@@ -857,8 +794,8 @@ class _VerifyNotoTreeResult {
       [this.reason]);
 }
 
-/// The root of the unresolved Noto font Red-Black Tree.
-_NotoTreeNode<_NotoFont>? _notoTreeRoot;
+/// The Noto font interval tree.
+_IntervalTree<_NotoFont>? _notoTree;
 
 /// The root of the resolved Noto font Red-Black Tree.
 _NotoTreeNode<_ResolvedNotoSubset>? _resolvedNotoTreeRoot;

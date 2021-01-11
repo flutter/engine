@@ -36,6 +36,7 @@ part 'engine/canvaskit/font_fallbacks.dart';
 part 'engine/canvaskit/image.dart';
 part 'engine/canvaskit/image_filter.dart';
 part 'engine/canvaskit/initialization.dart';
+part 'engine/canvaskit/interval_tree.dart';
 part 'engine/canvaskit/layer.dart';
 part 'engine/canvaskit/layer_scene_builder.dart';
 part 'engine/canvaskit/layer_tree.dart';
