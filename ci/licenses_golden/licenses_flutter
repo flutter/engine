@@ -1326,6 +1326,7 @@ FILE: ../../../flutter/shell/platform/linux/egl_utils_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_accessibility_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_accessibility_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_accessible_node.cc
+FILE: ../../../flutter/shell/platform/linux/fl_accessible_node_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_accessible_node.h
 FILE: ../../../flutter/shell/platform/linux/fl_basic_message_channel.cc
 FILE: ../../../flutter/shell/platform/linux/fl_basic_message_channel_test.cc

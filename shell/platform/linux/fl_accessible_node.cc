@@ -120,12 +120,16 @@ static ActionData* get_action(FlAccessibleNode* self, gint index) {
 static void fl_accessible_node_dispose(GObject* object) {
   FlAccessibleNode* self = FL_ACCESSIBLE_NODE(object);
 
-  g_object_remove_weak_pointer(G_OBJECT(self),
-                               reinterpret_cast<gpointer*>(&(self->engine)));
-  self->engine = nullptr;
-  g_object_remove_weak_pointer(G_OBJECT(self),
-                               reinterpret_cast<gpointer*>(&(self->parent)));
-  self->parent = nullptr;
+  if (self->engine != nullptr) {
+    g_object_remove_weak_pointer(G_OBJECT(self),
+                                 reinterpret_cast<gpointer*>(&(self->engine)));
+    self->engine = nullptr;
+  }
+  if (self->parent != nullptr) {
+    g_object_remove_weak_pointer(G_OBJECT(self),
+                                 reinterpret_cast<gpointer*>(&(self->parent)));
+    self->parent = nullptr;
+  }
   g_clear_pointer(&self->name, g_free);
   g_clear_pointer(&self->actions, g_ptr_array_unref);
   g_clear_pointer(&self->children, g_ptr_array_unref);
