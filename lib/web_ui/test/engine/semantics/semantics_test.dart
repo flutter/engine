@@ -341,7 +341,7 @@ void _testContainer() {
     expect(parentElement.style.transform, '');
     if (operatingSystem != OperatingSystem.macOs &&
         operatingSystem != OperatingSystem.iOs) {
-      expect(parentElement.style.transformOrigin, '0px 0px 0px');
+      expect(parentElement.style.transformOrigin, '');
       expect(container.style.transform, '');
       expect(container.style.transformOrigin, '');
     } else {
