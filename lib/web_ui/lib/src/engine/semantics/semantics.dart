@@ -853,30 +853,10 @@ class SemanticsObject {
     // handle order. See https://github.com/flutter/flutter/issues/73347.
     if (hasZeroRectOffset &&
         hasIdentityTransform &&
-        operatingSystem != OperatingSystem.macOs &&
-        operatingSystem != OperatingSystem.iOs &&
         verticalContainerAdjustment == 0.0 &&
         horizontalContainerAdjustment == 0.0) {
-      if (isDesktop) {
-        element.style
-          ..removeProperty('transform-origin')
-          ..removeProperty('transform');
-      } else {
-        element.style
-          ..removeProperty('top')
-          ..removeProperty('left');
-      }
-      if (containerElement != null) {
-        if (isDesktop) {
-          containerElement.style
-            ..removeProperty('transform-origin')
-            ..removeProperty('transform');
-        } else {
-          containerElement.style
-            ..removeProperty('top')
-            ..removeProperty('left');
-        }
-      }
+      _resetElementOffsets();
+      _resetContainerOffsets(containerElement);
       return;
     }
 
@@ -909,9 +889,7 @@ class SemanticsObject {
       effectiveTransformIsIdentity = false;
     }
 
-    if (!effectiveTransformIsIdentity ||
-        operatingSystem == OperatingSystem.macOs ||
-        operatingSystem == OperatingSystem.iOs) {
+    if (!effectiveTransformIsIdentity || isMacOrIOS) {
       if (effectiveTransformIsIdentity) {
         effectiveTransform = Matrix4.identity();
       }
@@ -937,22 +915,13 @@ class SemanticsObject {
           ..height = '${rect.height}px';
       }
     } else {
+      _resetElementOffsets();
       // TODO: https://github.com/flutter/flutter/issues/73347
-      if (isDesktop) {
-        element.style
-          ..removeProperty('transform-origin')
-          ..removeProperty('transform');
-      } else {
-        element.style
-          ..removeProperty('top')
-          ..removeProperty('left');
-      }
     }
 
     if (containerElement != null) {
       if (!hasZeroRectOffset ||
-          operatingSystem == OperatingSystem.macOs ||
-          operatingSystem == OperatingSystem.iOs ||
+          isMacOrIOS ||
           verticalContainerAdjustment != 0.0 ||
           horizontalContainerAdjustment != 0.0) {
         final double translateX = -_rect!.left + horizontalContainerAdjustment;
@@ -967,6 +936,26 @@ class SemanticsObject {
             ..left = '${translateX}px';
         }
       } else {
+        _resetContainerOffsets(containerElement);
+      }
+    }
+  }
+
+  void _resetContainerOffsets(html.Element? containerElement) {
+    if (isMacOrIOS) {
+      if (containerElement != null) {
+        if (isDesktop) {
+          containerElement.style
+            ..transformOrigin = '0 0 0'
+            ..transform = 'translate(0px, 0px)';
+        } else {
+          containerElement.style
+            ..top = '0px'
+            ..left = '0px';
+        }
+      }
+    } else {
+      if (containerElement != null) {
         if (isDesktop) {
           containerElement.style
             ..removeProperty('transform-origin')
@@ -976,6 +965,30 @@ class SemanticsObject {
             ..removeProperty('top')
             ..removeProperty('left');
         }
+      }
+    }
+  }
+
+  void _resetElementOffsets() {
+    if (isMacOrIOS) {
+      if (isDesktop) {
+        element.style
+          ..transformOrigin = '0 0 0'
+          ..transform = 'translate(0px, 0px)';
+      } else {
+        element.style
+          ..top = '0px'
+          ..left = '0px';
+      }
+    } else {
+      if (isDesktop) {
+        element.style
+          ..removeProperty('transform-origin')
+          ..removeProperty('transform');
+      } else {
+        element.style
+          ..removeProperty('top')
+          ..removeProperty('left');
       }
     }
   }

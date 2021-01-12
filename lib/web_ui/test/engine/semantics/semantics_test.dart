@@ -7,6 +7,7 @@
 
 import 'dart:async';
 import 'dart:html' as html;
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:mockito/mockito.dart';
@@ -338,18 +339,17 @@ void _testContainer() {
     final html.Element container =
         html.document.querySelector('flt-semantics-container');
 
-    expect(parentElement.style.transform, '');
-    if (operatingSystem != OperatingSystem.macOs &&
-        operatingSystem != OperatingSystem.iOs) {
-      expect(parentElement.style.transformOrigin, '');
-      expect(container.style.transform, '');
-      expect(container.style.transformOrigin, '');
-    } else {
+    if (operatingSystem == OperatingSystem.macOs) {
+      expect(parentElement.style.transform, 'translate(0px, 0px)');
       expect(parentElement.style.transformOrigin, '0px 0px 0px');
       expect(container.style.transform, 'translate(0px, 0px)');
       expect(container.style.transformOrigin, '0px 0px 0px');
+    } else {
+      expect(parentElement.style.transform, '');
+      expect(parentElement.style.transformOrigin, '');
+      expect(container.style.transform, '');
+      expect(container.style.transformOrigin, '');
     }
-
     semantics().semanticsEnabled = false;
   });
 
@@ -437,7 +437,7 @@ void _testContainer() {
     if (operatingSystem == OperatingSystem.macOs ||
         operatingSystem == OperatingSystem.iOs) {
       if (isDesktop) {
-        expect(parentElement.style.transform, '');
+        expect(parentElement.style.transform, 'translate(0px, 0px)');
         expect(parentElement.style.transformOrigin, '0px 0px 0px');
         expect(container.style.transform, 'translate(0px, 0px)');
         expect(container.style.transformOrigin, '0px 0px 0px');
