@@ -4,13 +4,10 @@
 .*.sw?
 .DS_Store
 .ccls-cache
-.cipd/
 .classpath
 .clangd/
 .cproject
 .dart_tool
-.gclient
-.gclient_entries
 .gdb_history
 .checkstyle
 .gdbinit
