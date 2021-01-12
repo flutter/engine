@@ -1086,6 +1086,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterInter
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRendererTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalSurfaceManagerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h

@@ -146,11 +146,19 @@ executable("flutter_desktop_darwin_unittests") {
   sources = [
     "framework/Source/FlutterEngineTest.mm",
     "framework/Source/FlutterGLCompositorUnittests.mm",
-    "framework/Source/FlutterOpenGLRendererTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/FlutterViewControllerTestUtils.h",
     "framework/Source/FlutterViewControllerTestUtils.mm",
   ]
+
+  if (shell_enable_metal) {
+    sources += [
+      "framework/Source/FlutterMetalRendererTest.mm",
+      "framework/Source/FlutterMetalSurfaceManagerTest.mm",
+    ]
+  } else {
+    sources += [ "framework/Source/FlutterOpenGLRendererTest.mm" ]
+  }
 
   cflags_objcc = [ "-fobjc-arc" ]
 
