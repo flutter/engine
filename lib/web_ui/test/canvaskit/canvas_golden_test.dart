@@ -28,7 +28,7 @@ Future<void> matchPictureGolden(String goldenFile, CkPicture picture, { ui.Rect 
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
   dispatcher.rasterizer!.draw(sb.build().layerTree);
-  await matchGoldenFile(goldenFile, region: region, write: write);
+  await matchGoldenFile(goldenFile, region: region, maxDiffRatePercent: 0.0, write: write);
 }
 
 void testMain() {
@@ -45,7 +45,7 @@ void testMain() {
       expect(canvas.runtimeType, CkCanvas);
       drawTestPicture(canvas);
       await matchPictureGolden(
-          'canvaskit_picture_original.png', recorder.endRecording());
+          'canvaskit_picture.png', recorder.endRecording());
     });
 
     test('renders using a recording canvas if weak refs are not supported',
@@ -58,7 +58,7 @@ void testMain() {
 
       final CkPicture originalPicture = recorder.endRecording();
       await matchPictureGolden(
-          'canvaskit_picture_original.png', originalPicture);
+          'canvaskit_picture.png', originalPicture);
 
       final ByteData originalPixels =
           await (await originalPicture.toImage(50, 50)).toByteData()
@@ -76,7 +76,7 @@ void testMain() {
               as ByteData;
 
       await matchPictureGolden(
-          'canvaskit_picture_restored.png', restoredPicture);
+          'canvaskit_picture.png', restoredPicture);
       expect(restoredPixels.buffer.asUint8List(),
           originalPixels.buffer.asUint8List());
     });
@@ -136,7 +136,7 @@ void testMain() {
           canvas.translate(0, 80);
         }
       });
-      await matchPictureGolden('canvaskit_directional_shadows.png', picture, region: region, write: true);
+      await matchPictureGolden('canvaskit_directional_shadows.png', picture, region: region);
     });
 
     test('computes shadow bounds correctly with parent transforms', () async {
@@ -210,7 +210,7 @@ void testMain() {
 
       final EnginePlatformDispatcher dispatcher = ui.window.platformDispatcher as EnginePlatformDispatcher;
       dispatcher.rasterizer!.draw(layerTree);
-      await matchGoldenFile('canvaskit_shadow_bounds.png', region: region, write: true);
+      await matchGoldenFile('canvaskit_shadow_bounds.png', region: region);
     });
     // TODO: https://github.com/flutter/flutter/issues/60040
     // TODO: https://github.com/flutter/flutter/issues/71520
