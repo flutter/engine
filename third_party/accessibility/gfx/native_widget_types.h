@@ -249,7 +249,7 @@ constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
 #else
 // for unknown platform.
 typedef void* AcceleratedWidget;
-constexpr AcceleratedWidget kNullAcceleratedWidget= nullptr;
+constexpr AcceleratedWidget kNullAcceleratedWidget = nullptr;
 #endif
 
 }  // namespace gfx
