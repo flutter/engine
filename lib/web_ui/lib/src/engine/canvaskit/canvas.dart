@@ -70,7 +70,7 @@ class CkCanvas {
     CkImage atlas,
     Float32List rstTransforms,
     Float32List rects,
-    List<Float32List>? colors,
+    Uint32List? colors,
     ui.BlendMode blendMode,
   ) {
     skCanvas.drawAtlas(
@@ -176,8 +176,7 @@ class CkCanvas {
   void drawPoints(CkPaint paint, ui.PointMode pointMode, Float32List points) {
     skCanvas.drawPoints(
       toSkPointMode(pointMode),
-      // TODO(hterkelsen): Don't convert this to 2d after we move to CK 0.21.
-      rawPointsToSkPoints2d(points),
+      points,
       paint.skiaObject,
     );
   }
@@ -322,7 +321,7 @@ class RecordingCkCanvas extends CkCanvas {
     CkImage atlas,
     Float32List rstTransforms,
     Float32List rects,
-    List<Float32List>? colors,
+    Uint32List? colors,
     ui.BlendMode blendMode,
   ) {
     super.drawAtlasRaw(paint, atlas, rstTransforms, rects, colors, blendMode);
@@ -695,7 +694,7 @@ class CkDrawAtlasCommand extends CkPaintCommand {
   final CkImage atlas;
   final Float32List rstTransforms;
   final Float32List rects;
-  final List<Float32List>? colors;
+  final Uint32List? colors;
   final ui.BlendMode blendMode;
 
   @override
@@ -814,8 +813,7 @@ class CkDrawPointsCommand extends CkPaintCommand {
   void apply(SkCanvas canvas) {
     canvas.drawPoints(
       toSkPointMode(pointMode),
-      // TODO(hterkelsen): Don't convert this to 2d after we move to CK 0.21.
-      rawPointsToSkPoints2d(points),
+      points,
       paint.skiaObject,
     );
   }

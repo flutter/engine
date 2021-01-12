@@ -27,10 +27,10 @@ bool _detectRenderer() {
 
 /// Auto detect which rendering backend to use.
 ///
-/// Using flutter tools option "--web-render=auto" would set the value to true.
-/// Otherwise, it would be false.
+/// Using flutter tools option "--web-render=auto" or not specifying one
+/// would set the value to true. Otherwise, it would be false.
 const bool _autoDetect =
-    bool.fromEnvironment('FLUTTER_WEB_AUTO_DETECT', defaultValue: false);
+    bool.fromEnvironment('FLUTTER_WEB_AUTO_DETECT', defaultValue: true);
 
 /// Enable the Skia-based rendering backend.
 ///
@@ -55,7 +55,7 @@ const bool canvasKitForceCpuOnly = bool.fromEnvironment(
 /// NPM, update this URL to `https://unpkg.com/canvaskit-wasm@0.34.0/bin/`.
 const String canvasKitBaseUrl = String.fromEnvironment(
   'FLUTTER_WEB_CANVASKIT_URL',
-  defaultValue: 'https://unpkg.com/canvaskit-wasm@0.20.0/bin/',
+  defaultValue: 'https://unpkg.com/canvaskit-wasm@0.22.0/bin/',
 );
 
 /// Initialize CanvasKit.

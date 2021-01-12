@@ -1,4 +1,4 @@
-Signature: 130b3b2e7b6bd9953138a836dfb1f6bb
+Signature: 84140fb7d65f27df2843eae193e385f4
 
 UNUSED LICENSES:
 
@@ -1120,7 +1120,6 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-arm-Release-Flutter_Android_Docker.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Debug-Chromebook_GLES_Docker.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-Chromebook_GLES_Docker.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm-Debug-iOS.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-iOS.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-ASAN.json
@@ -2370,7 +2369,6 @@ FILE: ../../../third_party/skia/include/private/SkTHash.h
 FILE: ../../../third_party/skia/include/private/SkThreadID.h
 FILE: ../../../third_party/skia/include/svg/SkSVGCanvas.h
 FILE: ../../../third_party/skia/include/utils/SkPaintFilterCanvas.h
-FILE: ../../../third_party/skia/samplecode/PerlinPatch.cpp
 FILE: ../../../third_party/skia/samplecode/SampleAnimatedText.cpp
 FILE: ../../../third_party/skia/samplecode/SampleAtlas.cpp
 FILE: ../../../third_party/skia/samplecode/SampleClipDrawMatch.cpp
@@ -2960,9 +2958,9 @@ FILE: ../../../third_party/skia/src/sksl/SkSLASTNode.h
 FILE: ../../../third_party/skia/src/sksl/SkSLByteCode.h
 FILE: ../../../third_party/skia/src/sksl/SkSLByteCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLByteCodeGenerator.h
-FILE: ../../../third_party/skia/src/sksl/SkSLExternalValue.h
+FILE: ../../../third_party/skia/src/sksl/SkSLExternalFunction.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLExternalFunctionCall.h
-FILE: ../../../third_party/skia/src/sksl/ir/SkSLExternalValueReference.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLExternalFunctionReference.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2019 Google LLC
 
@@ -3915,11 +3913,11 @@ FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrClipStack.cpp
 FILE: ../../../third_party/skia/src/gpu/GrClipStack.h
-FILE: ../../../third_party/skia/src/gpu/GrCommandBufferRef.h
 FILE: ../../../third_party/skia/src/gpu/GrDDLTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDDLTask.h
 FILE: ../../../third_party/skia/src/gpu/GrManagedResource.cpp
 FILE: ../../../third_party/skia/src/gpu/GrPixmap.h
+FILE: ../../../third_party/skia/src/gpu/GrRefCnt.h
 FILE: ../../../third_party/skia/src/gpu/GrRenderTargetContext.h
 FILE: ../../../third_party/skia/src/gpu/GrRingBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRingBuffer.h
@@ -3997,6 +3995,8 @@ FILE: ../../../third_party/skia/src/ports/SkImageGeneratorNDK.cpp
 FILE: ../../../third_party/skia/src/ports/SkNDKConversions.cpp
 FILE: ../../../third_party/skia/src/ports/SkNDKConversions.h
 FILE: ../../../third_party/skia/src/sksl/SkSLAnalysis.h
+FILE: ../../../third_party/skia/src/sksl/SkSLConstantFolder.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLConstantFolder.h
 FILE: ../../../third_party/skia/src/sksl/SkSLDehydrator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLDehydrator.h
 FILE: ../../../third_party/skia/src/sksl/SkSLInliner.cpp
@@ -4009,6 +4009,15 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSampleUsage.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLVMGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLVMGenerator.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSL.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLCore.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLCore.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLExpression.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLExpression.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLType.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLType.h
+FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLWriter.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLWriter.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionPrototype.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLInlineMarker.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPrefixExpression.cpp
@@ -4177,6 +4186,7 @@ FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrHashMapWithCache.h
 FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSTArenaList.h
+FILE: ../../../third_party/skia/src/gpu/GrTCluster.h
 FILE: ../../../third_party/skia/src/gpu/GrThreadSafeCache.cpp
 FILE: ../../../third_party/skia/src/gpu/GrThreadSafeCache.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrAutoMapVertexBuffer.h
@@ -5924,6 +5934,43 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
+ORIGIN: ../../../third_party/skia/gm/colorspace.cpp + ../../../third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/gm/colorspace.cpp
+----------------------------------------------------------------------------------------------------
+Copyright 2021 Google Inc.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
 ORIGIN: ../../../third_party/skia/include/config/SkUserConfig.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/include/config/SkUserConfig.h
@@ -7284,6 +7331,81 @@ all copies or substantial portions of the Materials.
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: skia
+ORIGIN: ../../../third_party/skia/src/sksl/SkSLContext.cpp + ../../../third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/src/sksl/SkSLContext.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLMangler.h
+----------------------------------------------------------------------------------------------------
+Copyright 2021 Google LLC
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
+ORIGIN: ../../../third_party/skia/src/sksl/SkSLMangler.cpp + ../../../third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/src/sksl/SkSLMangler.cpp
+----------------------------------------------------------------------------------------------------
+Copyright 2021 Google LLC.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: vulkanmemoryallocator
 ORIGIN: ../../../third_party/skia/third_party/vulkanmemoryallocator/include/vk_mem_alloc.h
 TYPE: LicenseType.mit
@@ -7309,4 +7431,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ====================================================================================================
-Total license count: 59
+Total license count: 62

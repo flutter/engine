@@ -296,9 +296,11 @@ void _imageTests() {
 
     expect(nonAnimated.decodeNextFrame(), -1);
     expect(
-      frame.makeShader(
+      frame.makeShaderOptions(
         canvasKit.TileMode.Repeat,
         canvasKit.TileMode.Mirror,
+        canvasKit.FilterMode.Linear,
+        canvasKit.MipmapMode.Nearest,
         toSkMatrixFromFloat32(Matrix4.identity().storage),
       ),
       isNotNull,
@@ -331,10 +333,7 @@ void _shaderTests() {
         canvasKit.Shader.MakeRadialGradient(
           Float32List.fromList([1, 1]),
           10.0,
-          <Float32List>[
-            Float32List.fromList([0, 0, 0, 1]),
-            Float32List.fromList([1, 1, 1, 1]),
-          ],
+          Uint32List.fromList(<int>[0xff000000, 0xffffffff]),
           Float32List.fromList([0, 1]),
           canvasKit.TileMode.Repeat,
           toSkMatrixFromFloat32(Matrix4.identity().storage),
@@ -350,10 +349,7 @@ void _shaderTests() {
           10.0,
           Float32List.fromList([1, 1]),
           10.0,
-          <Float32List>[
-            Float32List.fromList([0, 0, 0, 1]),
-            Float32List.fromList([1, 1, 1, 1]),
-          ],
+          Uint32List.fromList(<int>[0xff000000, 0xffffffff]),
           Float32List.fromList([0, 1]),
           canvasKit.TileMode.Repeat,
           toSkMatrixFromFloat32(Matrix4.identity().storage),
@@ -367,9 +363,7 @@ SkShader _makeTestShader() {
   return canvasKit.Shader.MakeLinearGradient(
     Float32List.fromList([0, 0]),
     Float32List.fromList([1, 1]),
-    [
-      Float32List.fromList([255, 0, 0, 255]),
-    ],
+    Uint32List.fromList(<int>[0xff0000ff]),
     Float32List.fromList([0, 1]),
     canvasKit.TileMode.Repeat,
   );
@@ -856,21 +850,9 @@ void _pathTests() {
 SkVertices _testVertices() {
   return canvasKit.MakeVertices(
     canvasKit.VertexMode.Triangles,
-    [
-      Float32List.fromList([0, 0]),
-      Float32List.fromList([10, 10]),
-      Float32List.fromList([0, 20]),
-    ],
-    [
-      Float32List.fromList([0, 0]),
-      Float32List.fromList([10, 10]),
-      Float32List.fromList([0, 20]),
-    ],
-    [
-      Float32List.fromList([255, 0, 0, 255]),
-      Float32List.fromList([0, 255, 0, 255]),
-      Float32List.fromList([0, 0, 255, 255]),
-    ],
+    Float32List.fromList([0, 0, 10, 10, 0, 20]),
+    Float32List.fromList([0, 0, 10, 10, 0, 20]),
+    Uint32List.fromList([0xffff0000, 0xff00ff00, 0xff0000ff]),
     Uint16List.fromList([0, 1, 2]),
   );
 }
@@ -976,10 +958,7 @@ void _canvasTests() {
       Float32List.fromList([1, 0, 2, 3]),
       SkPaint(),
       canvasKit.BlendMode.SrcOver,
-      [
-        Float32List.fromList([0, 0, 0, 1]),
-        Float32List.fromList([1, 1, 1, 1]),
-      ],
+      Uint32List.fromList(<int>[0xff000000, 0xffffffff]),
     );
   });
 
@@ -1055,11 +1034,7 @@ void _canvasTests() {
   test('drawPoints', () {
     canvas.drawPoints(
       canvasKit.PointMode.Lines,
-      <Float32List>[
-        Float32List.fromList([0, 0]),
-        Float32List.fromList([10, 10]),
-        Float32List.fromList([0, 10]),
-      ],
+      Float32List.fromList([0, 0, 10, 10, 0, 10]),
       SkPaint(),
     );
   });

@@ -51,11 +51,6 @@ bool DidDrawCanvas::onDoSaveBehind(const SkRect* bounds) {
 
 void DidDrawCanvas::willRestore() {}
 
-#ifdef SK_SUPPORT_LEGACY_CANVASMATRIX33
-void DidDrawCanvas::didConcat(const SkMatrix& matrix) {}
-void DidDrawCanvas::didSetMatrix(const SkMatrix& matrix) {}
-#endif
-
 void DidDrawCanvas::didConcat44(const SkM44&) {}
 
 void DidDrawCanvas::didScale(SkScalar, SkScalar) {}
@@ -158,6 +153,15 @@ void DidDrawCanvas::onDrawAtlas(const SkImage* image,
                                 const SkPaint* paint) {
   did_draw_ = true;
 }
+
+void DidDrawCanvas::onDrawEdgeAAImageSet(const ImageSetEntry set[],
+                                         int count,
+                                         const SkPoint dstClips[],
+                                         const SkMatrix preViewMatrices[],
+                                         const SkPaint* paint,
+                                         SrcRectConstraint constraint) {
+  did_draw_ = true;
+}
 #endif
 
 void DidDrawCanvas::onDrawImage2(const SkImage* image,
@@ -248,12 +252,13 @@ void DidDrawCanvas::onDrawEdgeAAQuad(const SkRect& rect,
   did_draw_ = true;
 }
 
-void DidDrawCanvas::onDrawEdgeAAImageSet(const ImageSetEntry set[],
-                                         int count,
-                                         const SkPoint dstClips[],
-                                         const SkMatrix preViewMatrices[],
-                                         const SkPaint* paint,
-                                         SrcRectConstraint constraint) {
+void DidDrawCanvas::onDrawEdgeAAImageSet2(const ImageSetEntry set[],
+                                          int count,
+                                          const SkPoint dstClips[],
+                                          const SkMatrix preViewMatrices[],
+                                          const SkSamplingOptions&,
+                                          const SkPaint* paint,
+                                          SrcRectConstraint constraint) {
   did_draw_ = true;
 }
 
