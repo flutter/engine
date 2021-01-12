@@ -22,6 +22,21 @@ TEST(FlAccessibleNodeTest, BuildTree) {
   g_ptr_array_add(children, g_object_ref(child1));
   g_ptr_array_add(children, g_object_ref(child2));
   fl_accessible_node_set_children(root, children);
+
+  EXPECT_EQ(atk_object_get_n_accessible_children(ATK_OBJECT(root)), 2);
+  g_autoptr(AtkObject) c1 =
+      atk_object_ref_accessible_child(ATK_OBJECT(root), 0);
+  EXPECT_EQ(ATK_OBJECT(child1), c1);
+  g_autoptr(AtkObject) c2 =
+      atk_object_ref_accessible_child(ATK_OBJECT(root), 1);
+  EXPECT_EQ(ATK_OBJECT(child2), c2);
+  EXPECT_EQ(atk_object_get_parent(ATK_OBJECT(root)), nullptr);
+
+  EXPECT_EQ(atk_object_get_parent(ATK_OBJECT(child1)), ATK_OBJECT(root));
+  EXPECT_EQ(atk_object_get_n_accessible_children(ATK_OBJECT(child1)), 0);
+
+  EXPECT_EQ(atk_object_get_parent(ATK_OBJECT(child2)), ATK_OBJECT(root));
+  EXPECT_EQ(atk_object_get_n_accessible_children(ATK_OBJECT(child2)), 0);
 }
 
 // Checks node name is exposed to ATK.
