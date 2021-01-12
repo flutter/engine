@@ -368,7 +368,7 @@ deps = {
    Var('chromium_git') + '/webm/libwebp.git' + '@' + '0.6.0',
 
   'src/third_party/wuffs':
-   Var('skia_git') + '/external/github.com/google/wuffs.git' + '@' +  '00cc8a50aa0c86b6bcb37e9ece8fb100047cc17b',
+   Var('skia_git') + '/external/github.com/google/wuffs.git' + '@' +  'c86add25f790360f0aca026c4f1c2c4e2d12408d',
 
   'src/third_party/fontconfig/src':
    Var('chromium_git') + '/external/fontconfig.git' + '@' + 'c336b8471877371f0190ba06f7547c54e2b890ba',
@@ -399,7 +399,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/ndk/${{platform}}',
-        'version': 'version:r21.0.6113669'
+        'version': 'version:r22.0.7026061'
        }
      ],
      'condition': 'download_android_deps',
@@ -500,7 +500,7 @@ deps = {
     'packages': [
       {
         'package': 'fuchsia/third_party/clang/${{platform}}',
-        'version': 'git_revision:7e9747b50bcb1be28d4a3236571e8050835497a6'
+        'version': 'git_revision:8af160b0b8ca8102b9490a287244af75727872f5'
       }
     ],
     'condition': 'host_os == "mac" or host_os == "linux"',
