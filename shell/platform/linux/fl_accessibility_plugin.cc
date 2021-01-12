@@ -16,9 +16,11 @@ G_DEFINE_TYPE(FlAccessibilityPlugin, fl_accessibility_plugin, G_TYPE_OBJECT)
 static void fl_accessibility_plugin_dispose(GObject* object) {
   FlAccessibilityPlugin* self = FL_ACCESSIBILITY_PLUGIN(object);
 
-  g_object_remove_weak_pointer(G_OBJECT(self),
-                               reinterpret_cast<gpointer*>(&(self->view)));
-  self->view = nullptr;
+  if (self->view != nullptr) {
+    g_object_remove_weak_pointer(G_OBJECT(self),
+                                 reinterpret_cast<gpointer*>(&(self->view)));
+    self->view = nullptr;
+  }
 
   G_OBJECT_CLASS(fl_accessibility_plugin_parent_class)->dispose(object);
 }
