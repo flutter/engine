@@ -12,7 +12,7 @@
 namespace flutter {
 namespace testing {
 
-TEST(FlutterAccessibilityTest, canPerfomActions) {
+TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
   TestAccessibilityBridgeDelegate* delegate =
       new TestAccessibilityBridgeDelegate();
   std::unique_ptr<TestAccessibilityBridgeDelegate> ptr(delegate);
@@ -57,7 +57,7 @@ TEST(FlutterAccessibilityTest, canPerfomActions) {
             FlutterSemanticsAction::kFlutterSemanticsActionShowOnScreen);
 }
 
-TEST(FlutterAccessibilityTest, canGetBridge) {
+TEST(FlutterPlatformNodeDelegateTest, canGetBridge) {
   // Set up a flutter accessibility node.
   AccessibilityBridge bridge(
       std::make_unique<TestAccessibilityBridgeDelegate>());
@@ -82,7 +82,7 @@ TEST(FlutterAccessibilityTest, canGetBridge) {
   EXPECT_EQ(accessibility->GetBridge(), &bridge);
 }
 
-TEST(FlutterAccessibilityTest, canGetAXNode) {
+TEST(FlutterPlatformNodeDelegateTest, canGetAXNode) {
   // Set up a flutter accessibility node.
   AccessibilityBridge bridge(
       std::make_unique<TestAccessibilityBridgeDelegate>());
@@ -107,7 +107,7 @@ TEST(FlutterAccessibilityTest, canGetAXNode) {
   EXPECT_EQ(accessibility->GetAXNode()->data().id, 0);
 }
 
-TEST(FlutterAccessibilityTest, canCalculateBoundsCorrectly) {
+TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
   AccessibilityBridge bridge(
       std::make_unique<TestAccessibilityBridgeDelegate>());
   FlutterSemanticsNode root;
@@ -151,7 +151,7 @@ TEST(FlutterAccessibilityTest, canCalculateBoundsCorrectly) {
   EXPECT_EQ(result, ui::AXOffscreenResult::kOnscreen);
 }
 
-TEST(FlutterAccessibilityTest, canCalculateOffScreenBoundsCorrectly) {
+TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
   AccessibilityBridge bridge(
       std::make_unique<TestAccessibilityBridgeDelegate>());
   FlutterSemanticsNode root;

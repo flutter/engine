@@ -7,7 +7,7 @@
 namespace flutter {
 
 std::unique_ptr<FlutterPlatformNodeDelegate>
-TestAccessibilityBridgeDelegate::CreateFlutterAccessibility() {
+TestAccessibilityBridgeDelegate::CreateFlutterPlatformNodeDelegate() {
   return std::make_unique<FlutterPlatformNodeDelegate>();
 };
 

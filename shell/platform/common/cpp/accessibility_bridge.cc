@@ -139,7 +139,7 @@ void AccessibilityBridge::OnRoleChanged(ui::AXTree* tree,
 
 void AccessibilityBridge::OnNodeCreated(ui::AXTree* tree, ui::AXNode* node) {
   BASE_DCHECK(node);
-  id_wrapper_map_[node->id()] = delegate_->CreateFlutterAccessibility();
+  id_wrapper_map_[node->id()] = delegate_->CreateFlutterPlatformNodeDelegate();
   id_wrapper_map_[node->id()]->Init(this, node);
 }
 

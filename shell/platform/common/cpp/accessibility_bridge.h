@@ -96,7 +96,7 @@ class AccessibilityBridge : public ui::AXTreeObserver {
     ///             AXTree. Each platform needs to implement this method in
     ///             order to inject its subclass into the accessibility bridge.
     virtual std::unique_ptr<FlutterPlatformNodeDelegate>
-    CreateFlutterAccessibility() = 0;
+    CreateFlutterPlatformNodeDelegate() = 0;
   };
   //-----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a accessibility bridge.

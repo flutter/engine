@@ -20,7 +20,8 @@ class TestAccessibilityBridgeDelegate
                                    FlutterSemanticsAction action,
                                    std::unique_ptr<uint8_t[]> data,
                                    size_t data_size) override;
-  std::unique_ptr<FlutterPlatformNodeDelegate> CreateFlutterAccessibility();
+  std::unique_ptr<FlutterPlatformNodeDelegate>
+  CreateFlutterPlatformNodeDelegate();
 
   std::vector<ui::AXEventGenerator::TargetedEvent> accessibilitiy_events;
   std::vector<FlutterSemanticsAction> performed_actions;
