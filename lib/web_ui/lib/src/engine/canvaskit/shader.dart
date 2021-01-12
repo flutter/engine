@@ -40,7 +40,7 @@ class CkGradientSweep extends CkShader implements ui.Gradient {
     return canvasKit.Shader.MakeSweepGradient(
       center.dx,
       center.dy,
-      toSkFloatColorList(colors),
+      toFlatColors(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
       matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
@@ -88,7 +88,7 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
     return canvasKit.Shader.MakeLinearGradient(
       toSkPoint(from),
       toSkPoint(to),
-      toSkFloatColorList(colors),
+      toFlatColors(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
     );
@@ -116,7 +116,7 @@ class CkGradientRadial extends CkShader implements ui.Gradient {
     return canvasKit.Shader.MakeRadialGradient(
       toSkPoint(center),
       radius,
-      toSkFloatColorList(colors),
+      toFlatColors(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
       matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
@@ -149,7 +149,7 @@ class CkGradientConical extends CkShader implements ui.Gradient {
       focalRadius,
       toSkPoint(center),
       radius,
-      toSkFloatColorList(colors),
+      toFlatColors(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
       matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,

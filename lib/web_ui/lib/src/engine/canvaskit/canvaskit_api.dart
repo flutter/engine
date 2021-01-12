@@ -51,7 +51,7 @@ class CanvasKit {
   external SkMaskFilterNamespace get MaskFilter;
   external SkColorFilterNamespace get ColorFilter;
   external SkImageFilterNamespace get ImageFilter;
-  external SkPath MakePathFromOp(SkPath path1, SkPath path2, SkPathOp pathOp);
+  external SkPathNamespace get Path;
   external SkTonalColors computeTonalColors(SkTonalColors inTonalColors);
   external SkVertices MakeVertices(
     SkVertexMode mode,
@@ -97,18 +97,13 @@ class CanvasKit {
   external SkSurface MakeSWCanvasSurface(html.CanvasElement canvas);
   external void setCurrentContext(int glContext);
 
-  /// Creates an [SkPath] using commands obtained from [SkPath.toCmds].
-  // TODO(yjbanov): switch to CanvasKit.Path.MakeFromCmds when it's available.
-  external SkPath MakePathFromCmds(List<dynamic> pathCommands);
-
   /// Creates an image from decoded pixels represented as a list of bytes.
   ///
-  /// The pixel data must match the [width], [height], [alphaType], [colorType],
-  /// and [colorSpace].
+  /// The pixel data must be encoded according to the image info in [info].
   ///
   /// Typically pixel data is obtained using [SkImage.readPixels]. The
-  /// parameters specified in [SkImageInfo] passed [SkImage.readPixels] much
-  /// match the arguments passed to this method.
+  /// parameters specified in [SkImageInfo] passed [SkImage.readPixels] must
+  /// match [info].
   external SkImage MakeImage(
     SkImageInfo info,
     Uint8List pixels,
@@ -746,7 +741,7 @@ class SkImage {
     SkMipmapMode mipmapMode,
     Float32List? matrix, // 3x3 matrix
   );
-  external Uint8List readPixels(SkImageInfo imageInfo, int srcX, int srcY);
+  external Uint8List readPixels(int srcX, int srcY, SkImageInfo imageInfo);
   external SkData encodeToData();
   external bool isAliasOf(SkImage other);
   external bool isDeleted();
@@ -757,7 +752,7 @@ class SkShaderNamespace {
   external SkShader MakeLinearGradient(
     Float32List from, // 2-element array
     Float32List to, // 2-element array
-    List<Float32List> colors,
+    Uint32List colors,
     Float32List colorStops,
     SkTileMode tileMode,
   );
@@ -765,7 +760,7 @@ class SkShaderNamespace {
   external SkShader MakeRadialGradient(
     Float32List center, // 2-element array
     double radius,
-    List<Float32List> colors,
+    Uint32List colors,
     Float32List colorStops,
     SkTileMode tileMode,
     Float32List? matrix, // 3x3 matrix
@@ -777,7 +772,7 @@ class SkShaderNamespace {
     double focalRadius,
     Float32List center,
     double radius,
-    List<Float32List> colors,
+    Uint32List colors,
     Float32List colorStops,
     SkTileMode tileMode,
     Float32List? matrix, // 3x3 matrix
@@ -787,7 +782,7 @@ class SkShaderNamespace {
   external SkShader MakeSweepGradient(
     double cx,
     double cy,
-    List<Float32List> colors,
+    Uint32List colors,
     Float32List colorStops,
     SkTileMode tileMode,
     Float32List? matrix, // 3x3 matrix
@@ -806,7 +801,7 @@ class SkShader {
 @JS()
 class SkMaskFilterNamespace {
   external SkMaskFilter MakeBlur(
-    SkBlurStyle blurStyle, double sigma, bool respectCTM);
+      SkBlurStyle blurStyle, double sigma, bool respectCTM);
 }
 
 // This needs to be bound to top-level because SkPaint is initialized
@@ -885,6 +880,15 @@ class SkImageFilterNamespace {
 @anonymous
 class SkImageFilter {
   external void delete();
+}
+
+@JS()
+class SkPathNamespace {
+  /// Creates an [SkPath] using commands obtained from [SkPath.toCmds].
+  external SkPath MakeFromCmds(List<dynamic> pathCommands);
+
+  /// Creates an [SkPath] by combining [path1] and [path2] using [pathOp].
+  external SkPath MakeFromOp(SkPath path1, SkPath path2, SkPathOp pathOp);
 }
 
 // Mappings from SkMatrix-index to input-index.
@@ -1041,39 +1045,6 @@ Float32List toSharedSkColor3(ui.Color color) {
 
 final SkFloat32List _sharedSkColor3 = mallocFloat32List(4);
 
-Uint32List toSkIntColorList(List<ui.Color> colors) {
-  final int len = colors.length;
-  final Uint32List result = Uint32List(len);
-  for (int i = 0; i < len; i++) {
-    result[i] = colors[i].value;
-  }
-  return result;
-}
-
-List<Float32List> toSkFloatColorList(List<ui.Color> colors) {
-  final int len = colors.length;
-  final List<Float32List> result = <Float32List>[];
-  for (int i = 0; i < len; i++) {
-    final Float32List array = Float32List(4);
-    final ui.Color color = colors[i];
-    array[0] = color.red / 255.0;
-    array[1] = color.green / 255.0;
-    array[2] = color.blue / 255.0;
-    array[3] = color.alpha / 255.0;
-    result.add(array);
-  }
-  return result;
-}
-
-List<Float32List> encodeRawColorList(Int32List rawColors) {
-  final int colorCount = rawColors.length;
-  final List<ui.Color> colors = <ui.Color>[];
-  for (int i = 0; i < colorCount; ++i) {
-    colors.add(ui.Color(rawColors[i]));
-  }
-  return toSkFloatColorList(colors);
-}
-
 @JS('window.flutterCanvasKit.Path')
 class SkPath {
   external SkPath([SkPath? other]);
@@ -1206,7 +1177,7 @@ class SkPath {
 
   /// Serializes the path into a list of commands.
   ///
-  /// The list can be used to create a new [SkPath] using [CanvasKit.MakePathFromCmds].
+  /// The list can be used to create a new [SkPath] using [CanvasKit.Path.MakeFromCmds].
   external List<dynamic> toCmds();
 
   external void delete();
@@ -1308,36 +1279,6 @@ Uint32List toFlatColors(List<ui.Color> colors) {
   return result;
 }
 
-// TODO(yjbanov): this is inefficient. We should be able to pass points
-//                as Float32List without a conversion.
-List<Float32List> rawPointsToSkPoints2d(Float32List points) {
-  assert(points.length % 2 == 0);
-  final int pointLength = points.length ~/ 2;
-  final List<Float32List> result = <Float32List>[];
-  for (int i = 0; i < pointLength; i++) {
-    int x = i * 2;
-    int y = x + 1;
-    final Float32List skPoint = Float32List(2);
-    skPoint[0] = points[x];
-    skPoint[1] = points[y];
-    result.add(skPoint);
-  }
-  return result;
-}
-
-List<Float32List> toSkPoints2d(List<ui.Offset> offsets) {
-  final int len = offsets.length;
-  final List<Float32List> result = <Float32List>[];
-  for (int i = 0; i < len; i++) {
-    final ui.Offset offset = offsets[i];
-    final Float32List skPoint = Float32List(2);
-    skPoint[0] = offset.dx;
-    skPoint[1] = offset.dy;
-    result.add(skPoint);
-  }
-  return result;
-}
-
 Uint16List toUint16List(List<int> ints) {
   final int len = ints.length;
   final Uint16List result = Uint16List(len);
@@ -1392,7 +1333,7 @@ class SkCanvas {
     Float32List rstTransforms,
     SkPaint paint,
     SkBlendMode blendMode,
-    List<Float32List>? colors,
+    Uint32List? colors,
   );
   external void drawCircle(
     double x,
@@ -1830,7 +1771,8 @@ abstract class Collector {
 /// Uses timers to delete objects in batches and outside the animation frame.
 class ProductionCollector implements Collector {
   ProductionCollector() {
-    _skObjectFinalizationRegistry = SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
+    _skObjectFinalizationRegistry =
+        SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
       // This is called when GC decides to collect the wrapper object and
       // notify us, which may happen after the object is already deleted
       // explicitly, e.g. when its ref count drops to zero. When that happens
@@ -2011,7 +1953,8 @@ bool browserSupportsFinalizationRegistry =
 
 /// Sets the value of [browserSupportsFinalizationRegistry] to its true value.
 void debugResetBrowserSupportsFinalizationRegistry() {
-  browserSupportsFinalizationRegistry = _finalizationRegistryConstructor != null;
+  browserSupportsFinalizationRegistry =
+      _finalizationRegistryConstructor != null;
 }
 
 @JS()

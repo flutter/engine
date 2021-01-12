@@ -162,7 +162,7 @@ void drawTestPicture(CkCanvas canvas) {
       ..[1] = 0
       ..[2] = 15
       ..[3] = 15,
-    [Float32List(4)],
+    Uint32List.fromList(<int>[0x00000000]),
     ui.BlendMode.srcOver,
   );
 
