@@ -322,14 +322,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (FlutterCompositor*)createFlutterCompositor {
   // When rendering with metal do not support platform views.
   if (_enableMetalRendering) {
-    return nullptr;
+    return nil;
   }
 
   // TODO(richardjcai): Add support for creating a FlutterGLCompositor
   // with a nil _viewController for headless engines.
   // https://github.com/flutter/flutter/issues/71606
-  if (_viewController == nullptr) {
-    return nullptr;
+  if (!_viewController) {
+    return nil;
   }
 
   [_openGLRenderer.openGLContext makeCurrentContext];

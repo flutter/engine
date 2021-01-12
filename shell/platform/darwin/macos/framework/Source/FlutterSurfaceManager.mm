@@ -81,16 +81,16 @@ enum {
 }
 
 - (FlutterBackingStoreDescriptor*)renderBufferDescriptor {
-  uint32_t fboId = [_frameBuffers[kFlutterSurfaceManagerBackBuffer] glFrameBufferId];
-  return [[FlutterBackingStoreDescriptor alloc] initOpenGLDescriptorWithFBOId:fboId];
+  uint32_t fboID = [_frameBuffers[kFlutterSurfaceManagerBackBuffer] glFrameBufferId];
+  return [[FlutterBackingStoreDescriptor alloc] initOpenGLDescriptorWithFBOId:fboID];
 }
 
 @end
 
 @implementation FlutterMetalSurfaceManager {
   CGSize _surfaceSize;
-  id<MTLDevice> _mtlDevice;
-  id<MTLCommandQueue> _mtlCommandQueue;
+  id<MTLDevice> _device;
+  id<MTLCommandQueue> _commandQueue;
   CAMetalLayer* _containingLayer;  // provided (parent layer)
   CALayer* _contentLayer;
 
@@ -103,8 +103,8 @@ enum {
                              metalLayer:(nonnull CAMetalLayer*)layer {
   self = [super init];
   if (self) {
-    _mtlDevice = device;
-    _mtlCommandQueue = commandQueue;
+    _device = device;
+    _commandQueue = commandQueue;
     _containingLayer = layer;
 
     // Layer for content. This is separate from provided layer, because it needs to be flipped
@@ -134,9 +134,9 @@ enum {
     textureDescriptor.usage =
         MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget | MTLTextureUsageShaderWrite;
     // plane = 0 for BGRA.
-    _textures[i] = [_mtlDevice newTextureWithDescriptor:textureDescriptor
-                                              iosurface:[_ioSurfaces[i] ioSurface]
-                                                  plane:0];
+    _textures[i] = [_device newTextureWithDescriptor:textureDescriptor
+                                           iosurface:[_ioSurfaces[i] ioSurface]
+                                               plane:0];
   }
 }
 

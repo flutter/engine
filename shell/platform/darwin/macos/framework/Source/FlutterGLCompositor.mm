@@ -9,7 +9,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h"
-#include "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h"
 #include "third_party/skia/include/core/SkCanvas.h"

@@ -34,14 +34,14 @@ static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* 
   if (self) {
     _engine = flutterEngine;
 
-    _mtlDevice = MTLCreateSystemDefaultDevice();
-    if (!_mtlDevice) {
+    _device = MTLCreateSystemDefaultDevice();
+    if (!_device) {
       NSLog(@"Could not acquire Metal device.");
       return nil;
     }
 
-    _mtlCommandQueue = [_mtlDevice newCommandQueue];
-    if (!_mtlCommandQueue) {
+    _commandQueue = [_device newCommandQueue];
+    if (!_commandQueue) {
       NSLog(@"Could not create Metal command queue.");
       return nil;
     }
@@ -60,8 +60,8 @@ static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* 
   FlutterRendererConfig config = {
       .type = FlutterRendererType::kMetal,
       .metal.struct_size = sizeof(FlutterMetalRendererConfig),
-      .metal.device = (__bridge FlutterMetalDeviceHandle)_mtlDevice,
-      .metal.present_command_queue = (__bridge FlutterMetalCommandQueueHandle)_mtlCommandQueue,
+      .metal.device = (__bridge FlutterMetalDeviceHandle)_device,
+      .metal.present_command_queue = (__bridge FlutterMetalCommandQueueHandle)_commandQueue,
       .metal.get_next_drawable_callback =
           reinterpret_cast<FlutterMetalTextureCallback>(OnGetNextDrawable),
       .metal.present_drawable_callback =
@@ -82,12 +82,12 @@ static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* 
   return embedderTexture;
 }
 
-- (bool)present:(int64_t)textureId {
-  if (!_mtlCommandQueue || !_flutterView) {
-    return false;
+- (BOOL)present:(int64_t)textureId {
+  if (!_commandQueue || !_flutterView) {
+    return NO;
   }
   [_flutterView present];
-  return true;
+  return YES;
 }
 
 #pragma mark - FlutterTextureRegistrar methods.

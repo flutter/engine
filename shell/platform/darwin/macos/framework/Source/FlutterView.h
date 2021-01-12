@@ -22,6 +22,9 @@
  */
 @interface FlutterView : NSView
 
+/**
+ * Initialize a FlutterView that will be rendered to using Metal rendering apis.
+ */
 - (nullable instancetype)initWithMTLDevice:(nonnull id<MTLDevice>)device
                               commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
                            reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener

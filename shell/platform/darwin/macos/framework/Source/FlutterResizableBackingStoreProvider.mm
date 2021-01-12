@@ -15,7 +15,7 @@
   id<FlutterSurfaceManager> _surfaceManager;
 }
 
-- (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext caLayer:(CALayer*)layer {
+- (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext layer:(CALayer*)layer {
   self = [super init];
   if (self) {
     _mainContext = mainContext;
@@ -25,7 +25,7 @@
   return self;
 }
 
-- (void)updateBackingStoreIfNecessaryForSize:(CGSize)size {
+- (void)onBackingStoreResized:(CGSize)size {
   [_surfaceManager ensureSurfaceSize:size];
 }
 
@@ -50,26 +50,26 @@
 @end
 
 @implementation FlutterMetalResizableBackingStoreProvider {
-  id<MTLDevice> _mtlDevice;
-  id<MTLCommandQueue> _mtlCommandQueue;
+  id<MTLDevice> _device;
+  id<MTLCommandQueue> _commandQueue;
   id<FlutterSurfaceManager> _surfaceManager;
 }
 
-- (instancetype)initWithDevice:(id<MTLDevice>)mtlDevice
-                  commandQueue:(id<MTLCommandQueue>)mtlCommandQueue
+- (instancetype)initWithDevice:(id<MTLDevice>)device
+                  commandQueue:(id<MTLCommandQueue>)commandQueue
                     metalLayer:(CAMetalLayer*)layer {
   self = [super init];
   if (self) {
-    _mtlDevice = mtlDevice;
-    _mtlCommandQueue = mtlCommandQueue;
-    _surfaceManager = [[FlutterMetalSurfaceManager alloc] initWithDevice:mtlDevice
-                                                            commandQueue:mtlCommandQueue
+    _device = device;
+    _commandQueue = commandQueue;
+    _surfaceManager = [[FlutterMetalSurfaceManager alloc] initWithDevice:device
+                                                            commandQueue:commandQueue
                                                               metalLayer:layer];
   }
   return self;
 }
 
-- (void)updateBackingStoreIfNecessaryForSize:(CGSize)size {
+- (void)onBackingStoreResized:(CGSize)size {
   [_surfaceManager ensureSurfaceSize:size];
 }
 
@@ -82,7 +82,7 @@
 }
 
 - (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer {
-  id<MTLCommandBuffer> commandBuffer = [_mtlCommandQueue commandBuffer];
+  id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
   [commandBuffer commit];
   [commandBuffer waitUntilScheduled];
   [_surfaceManager swapBuffers];

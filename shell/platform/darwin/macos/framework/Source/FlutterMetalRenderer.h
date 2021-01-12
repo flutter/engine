@@ -16,9 +16,9 @@
  */
 @interface FlutterMetalRenderer : NSObject <FlutterTextureRegistry>
 
-@property(nonatomic, readonly, nonnull) id<MTLDevice> mtlDevice;
+@property(nonatomic, readonly, nonnull) id<MTLDevice> device;
 
-@property(nonatomic, readonly, nonnull) id<MTLCommandQueue> mtlCommandQueue;
+@property(nonatomic, readonly, nonnull) id<MTLCommandQueue> commandQueue;
 
 /**
  * Intializes the renderer with the given FlutterEngine.
@@ -43,6 +43,6 @@
 /**
  * Presents the texture specefied by the texture id.
  */
-- (bool)present:(int64_t)textureId;
+- (BOOL)present:(int64_t)textureId;
 
 @end

@@ -5,14 +5,14 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
 
 @implementation FlutterBackingStoreDescriptor {
-  uint32_t _fboId;
+  uint32_t _fboID;
   id<MTLTexture> _mtlTexture;
 }
 
-- (instancetype)initOpenGLDescriptorWithFBOId:(uint32_t)fboId {
+- (instancetype)initOpenGLDescriptorWithFBOId:(uint32_t)fboID {
   self = [super init];
   if (self) {
-    _fboId = fboId;
+    _fboID = fboID;
     _backingStoreType = FlutterMacOSBackingStoreTypeOpenGL;
   }
   return self;
@@ -21,7 +21,7 @@
 - (uint32_t)frameBufferId {
   NSAssert(_backingStoreType == FlutterMacOSBackingStoreTypeOpenGL,
            @"Only OpenGL backing stores can request FBO id.");
-  return _fboId;
+  return _fboID;
 }
 
 - (instancetype)initMetalDescriptorWithTexture:(id<MTLTexture>)texture {

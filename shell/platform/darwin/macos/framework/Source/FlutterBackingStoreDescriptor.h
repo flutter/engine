@@ -28,7 +28,7 @@ typedef NS_ENUM(NSInteger, FlutterMacOSBackingStoreType) {
 /**
  * Initializes a backing store descriptor with the specified frame buffer id.
  */
-- (nullable instancetype)initOpenGLDescriptorWithFBOId:(uint32_t)fboId;
+- (nullable instancetype)initOpenGLDescriptorWithFBOId:(uint32_t)fboID;
 
 /**
  * Frame buffer ID referenced by this backing store instance. Only valid when `backingStoreType` is

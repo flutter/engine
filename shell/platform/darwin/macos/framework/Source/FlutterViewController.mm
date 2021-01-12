@@ -277,14 +277,14 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)loadView {
   FlutterView* flutterView;
   if (_engine.metalRenderer) {
-    id<MTLDevice> mtlDevice = _engine.metalRenderer.mtlDevice;
-    id<MTLCommandQueue> mtlCommandQueue = _engine.metalRenderer.mtlCommandQueue;
-    if (!mtlDevice || !mtlCommandQueue) {
+    id<MTLDevice> device = _engine.metalRenderer.device;
+    id<MTLCommandQueue> commandQueue = _engine.metalRenderer.commandQueue;
+    if (!device || !commandQueue) {
       NSLog(@"Unable to create FlutterView; no MTLDevice or MTLCommandQueue available.");
       return;
     }
-    flutterView = [[FlutterView alloc] initWithMTLDevice:mtlDevice
-                                            commandQueue:mtlCommandQueue
+    flutterView = [[FlutterView alloc] initWithMTLDevice:device
+                                            commandQueue:commandQueue
                                          reshapeListener:self];
   } else {
     NSOpenGLContext* mainContext = _engine.openGLRenderer.openGLContext;

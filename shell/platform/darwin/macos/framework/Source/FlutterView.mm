@@ -62,7 +62,7 @@
     _reshapeListener = reshapeListener;
     _resizableBackingStoreProvider =
         [[FlutterOpenGLResizableBackingStoreProvider alloc] initWithMainContext:mainContext
-                                                                        caLayer:self.layer];
+                                                                          layer:self.layer];
     _resizeSynchronizer =
         [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
   }
@@ -71,7 +71,7 @@
 
 - (FlutterBackingStoreDescriptor*)backingStoreForSize:(CGSize)size {
   if ([_resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
-    [_resizableBackingStoreProvider updateBackingStoreIfNecessaryForSize:size];
+    [_resizableBackingStoreProvider onBackingStoreResized:size];
   }
   return [_resizableBackingStoreProvider backingStoreDescriptor];
 }

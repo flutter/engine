@@ -17,7 +17,7 @@
 /**
  * Notify of the required backing store size updates. Called during window resize.
  */
-- (void)updateBackingStoreIfNecessaryForSize:(CGSize)size;
+- (void)onBackingStoreResized:(CGSize)size;
 
 /**
  * Returns the FlutterBackingStoreDescriptor corresponding to the latest size.
@@ -27,7 +27,7 @@
 @end
 
 /**
- * OpenGL backed FlutterResizableBackingStoreProvider. Backing store in this context implies a frame
+ * OpenGL-backed FlutterResizableBackingStoreProvider. Backing store in this context implies a frame
  * buffer.
  */
 @interface FlutterOpenGLResizableBackingStoreProvider
@@ -37,12 +37,12 @@
  * Creates a resizable backing store provider for the given CALayer.
  */
 - (nullable instancetype)initWithMainContext:(nonnull NSOpenGLContext*)mainContext
-                                     caLayer:(nonnull CALayer*)layer;
+                                       layer:(nonnull CALayer*)layer;
 
 @end
 
 /**
- * Metal backed FlutterResizableBackingStoreProvider. Backing store in this context implies a
+ * Metal-backed FlutterResizableBackingStoreProvider. Backing store in this context implies a
  * MTLTexture.
  */
 @interface FlutterMetalResizableBackingStoreProvider
@@ -51,8 +51,8 @@
 /**
  * Creates a resizable backing store provider for the given CAMetalLayer.
  */
-- (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)mtlDevice
-                           commandQueue:(nonnull id<MTLCommandQueue>)mtlCommandQueue
+- (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
+                           commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
                              metalLayer:(nonnull CAMetalLayer*)layer;
 
 @end
