@@ -849,8 +849,6 @@ class SemanticsObject {
     final bool hasIdentityTransform =
         transform == null || isIdentityFloat32ListTransform(transform);
 
-    // On Mac OS and iOS, VoiceOver requires left=0 top=0 value to correctly
-    // handle order. See https://github.com/flutter/flutter/issues/73347.
     if (hasZeroRectOffset &&
         hasIdentityTransform &&
         verticalContainerAdjustment == 0.0 &&
@@ -941,6 +939,8 @@ class SemanticsObject {
     }
   }
 
+  // On Mac OS and iOS, VoiceOver requires left=0 top=0 value to correctly
+  // handle order. See https://github.com/flutter/flutter/issues/73347.
   void _resetContainerOffsets(html.Element? containerElement) {
     if (isMacOrIOS) {
       if (containerElement != null) {
