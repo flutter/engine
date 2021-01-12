@@ -206,7 +206,9 @@ class DartIsolate : public UIDartState {
   ///                                         for all isolate shutdowns
   ///                                         (including the children of the
   ///                                         root isolate).
-  ///
+  /// @param[in]  spawning_isolate            The isolate that is spawning the
+  ///                                         new isolate. See also
+  ///                                         DartIsolate::SpawnIsolate.
   /// @return     A weak pointer to the root Dart isolate. The caller must
   ///             ensure that the isolate is not referenced for long periods of
   ///             time as it prevents isolate collection when the isolate
@@ -238,13 +240,17 @@ class DartIsolate : public UIDartState {
   /// @brief     Creates a running DartIsolate who shares as many resources as
   ///            possible with the caller DartIsolate.  This allows them to
   ///            occupy less memory together and to be created faster.
-  /// @details   Shared components will be destroyed when the last DartIsolate
-  ///            is destroyed.  SpawnIsolate can only be used to create
-  ///            DartIsolates whose executable code is shared with the calling
-  ///            DartIsolate.
+  /// @details   Shared components will be destroyed when the last live
+  ///            DartIsolate is destroyed.  SpawnIsolate can only be used to
+  ///            create DartIsolates whose executable code is shared with the
+  ///            calling DartIsolate.
   /// @attention Only certain setups can take advantage of the most savings
   ///            currently, AOT specifically.
-  /// @return    A running DartIsolate.
+  /// @return     A weak pointer to a new running DartIsolate. The caller must
+  ///             ensure that the isolate is not referenced for long periods of
+  ///             time as it prevents isolate collection when the isolate
+  ///             terminates itself. The caller may also only use the isolate on
+  ///             the thread on which the isolate was created.
   std::weak_ptr<DartIsolate> SpawnIsolate(
       const Settings& settings,
       std::unique_ptr<PlatformConfiguration> platform_configuration,
