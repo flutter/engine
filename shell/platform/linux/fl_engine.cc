@@ -499,7 +499,6 @@ void fl_engine_set_update_semantics_node_handler(
     gpointer user_data,
     GDestroyNotify destroy_notify) {
   g_return_if_fail(FL_IS_ENGINE(self));
-  g_return_if_fail(handler != nullptr);
 
   if (self->update_semantics_node_handler_destroy_notify) {
     self->update_semantics_node_handler_destroy_notify(
