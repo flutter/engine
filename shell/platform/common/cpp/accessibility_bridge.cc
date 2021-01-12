@@ -219,7 +219,8 @@ void AccessibilityBridge::SetRoleFromFlutterUpdate(ui::AXNodeData& node_data,
     node_data.role = ax::mojom::Role::kButton;
     return;
   }
-  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField) {
+  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
+      !(flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly)) {
     node_data.role = ax::mojom::Role::kTextField;
     return;
   }
