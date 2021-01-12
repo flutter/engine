@@ -20,6 +20,8 @@ namespace flutter {
 
 class GPUSurfaceGL : public Surface {
  public:
+  static sk_sp<GrDirectContext> MakeGLContext(GPUSurfaceGLDelegate* delegate);
+
   GPUSurfaceGL(GPUSurfaceGLDelegate* delegate, bool render_to_surface);
 
   // Creates a new GL surface reusing an existing GrDirectContext.
