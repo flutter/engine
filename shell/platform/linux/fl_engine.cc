@@ -672,7 +672,8 @@ void fl_engine_dispatch_semantics_action(FlEngine* self,
   const uint8_t* action_data = nullptr;
   size_t action_data_length = 0;
   if (data != nullptr) {
-    g_bytes_get_data(data, &action_data_length);
+    action_data = static_cast<const uint8_t*>(
+        g_bytes_get_data(data, &action_data_length));
   }
 
   self->embedder_api.DispatchSemanticsAction(self->engine, id, action,
