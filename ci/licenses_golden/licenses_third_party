@@ -1,4 +1,4 @@
-Signature: 16dc8625fbc46c1ca83151714aa0885d
+Signature: 31eecec08755333f2f4581cc077968aa
 
 UNUSED LICENSES:
 
@@ -1069,7 +1069,7 @@ FILE: ../../../third_party/wuffs/cmd/wuffs/main.go
 FILE: ../../../third_party/wuffs/cmd/wuffs/release.go
 FILE: ../../../third_party/wuffs/cmd/wuffs/test.go
 FILE: ../../../third_party/wuffs/cmd/wuffsfmt/main.go
-FILE: ../../../third_party/wuffs/cbor-to-json/cbor-to-json.cc
+FILE: ../../../third_party/wuffs/example/cbor-to-json/cbor-to-json.cc
 FILE: ../../../third_party/wuffs/example/convert-to-nia/convert-to-nia.c
 FILE: ../../../third_party/wuffs/example/crc32/crc32.cc
 FILE: ../../../third_party/wuffs/example/gifplayer/gifplayer.c
@@ -1205,7 +1205,6 @@ FILE: ../../../third_party/wuffs/script/checksum.go
 FILE: ../../../third_party/wuffs/script/compress-giflzw.go
 FILE: ../../../third_party/wuffs/script/convert-png-to-wbmp.go
 FILE: ../../../third_party/wuffs/script/crawl.go
-FILE: ../../../third_party/wuffs/script/draw-with-mask.go
 FILE: ../../../third_party/wuffs/script/draw-with-mask.go
 FILE: ../../../third_party/wuffs/script/extract-cbor-rfc-7049-examples.go
 FILE: ../../../third_party/wuffs/script/extract-deflate-offsets.go
