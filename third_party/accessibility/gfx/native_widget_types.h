@@ -192,7 +192,8 @@ typedef base::android::ScopedJavaGlobalRef<jobject> NativeEvent;
 constexpr NativeView kNullNativeView = nullptr;
 constexpr NativeWindow kNullNativeWindow = nullptr;
 #else
-#error Unknown build environment.
+// for unknown platform.
+typedef void* NativeCursor;
 #endif
 
 #if defined(OS_WIN)
@@ -246,7 +247,9 @@ constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
 typedef uint32_t AcceleratedWidget;
 constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
 #else
-#error unknown platform
+// for unknown platform.
+typedef void* AcceleratedWidget;
+constexpr AcceleratedWidget kNullAcceleratedWidget= nullptr;
 #endif
 
 }  // namespace gfx

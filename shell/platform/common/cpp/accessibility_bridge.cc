@@ -23,12 +23,12 @@ AccessibilityBridge::AccessibilityBridge(
     std::unique_ptr<AccessibilityBridgeDelegate> delegate)
     : delegate_(std::move(delegate)) {
   event_generator_.SetTree(&tree_);
-  tree_.AddObserver((ui::AXTreeObserver*)this);
+  tree_.AddObserver(static_cast<ui::AXTreeObserver*>(this));
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
   event_generator_.ReleaseTree();
-  tree_.RemoveObserver((ui::AXTreeObserver*)this);
+  tree_.RemoveObserver(static_cast<ui::AXTreeObserver*>(this));
 }
 
 void AccessibilityBridge::AddFlutterSemanticsNodeUpdate(
@@ -80,8 +80,9 @@ void AccessibilityBridge::CommitUpdates() {
   for (const auto& targeted_event : event_generator_) {
     auto event_target =
         GetFlutterPlatformNodeDelegateFromID(targeted_event.node->id());
-    if (event_target.expired())
+    if (event_target.expired()) {
       continue;
+    }
 
     delegate_->OnAccessibilityEvent(targeted_event);
   }
@@ -92,8 +93,9 @@ std::weak_ptr<FlutterPlatformNodeDelegate>
 AccessibilityBridge::GetFlutterPlatformNodeDelegateFromID(
     ui::AXNode::AXID id) const {
   const auto iter = id_wrapper_map_.find(id);
-  if (iter != id_wrapper_map_.end())
+  if (iter != id_wrapper_map_.end()) {
     return iter->second;
+  }
 
   return std::weak_ptr<FlutterPlatformNodeDelegate>();
 }
