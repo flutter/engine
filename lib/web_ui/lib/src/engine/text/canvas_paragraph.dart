@@ -133,6 +133,8 @@ class CanvasParagraph implements EngineParagraph {
     final html.CssStyleDeclaration cssStyle = rootElement.style;
     cssStyle
       ..position = 'absolute'
+      // Prevent the browser from doing any line breaks in the paragraph. We want
+      // to insert our own <BR> breaks based on layout results.
       ..whiteSpace = 'pre';
 
     if (paragraphStyle._maxLines != null || paragraphStyle._ellipsis != null) {
@@ -144,8 +146,8 @@ class CanvasParagraph implements EngineParagraph {
     if (paragraphStyle._ellipsis != null &&
         (paragraphStyle._maxLines == null || paragraphStyle._maxLines == 1)) {
       cssStyle
+        ..width = '${width}px'
         ..overflowX = 'hidden'
-        ..whiteSpace = 'pre'
         ..textOverflow = 'ellipsis';
     }
 
