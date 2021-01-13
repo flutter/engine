@@ -6,6 +6,7 @@
 
 #include "flutter/shell/platform/android/android_shell_holder.h"
 
+#include <memory>
 #include <pthread.h>
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -14,11 +15,14 @@
 #include <string>
 #include <utility>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/shell/common/rasterizer.h"
+#include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
+#include "flutter/shell/platform/android/context/android_context.h"
 
 namespace flutter {
 
@@ -33,13 +37,14 @@ AndroidShellHolder::AndroidShellHolder(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     bool is_background_view)
     : settings_(std::move(settings)), jni_facade_(jni_facade) {
-  static size_t shell_count = 1;
-  auto thread_label = std::to_string(shell_count++);
+  static size_t thread_host_count = 1;
+  auto thread_label = std::to_string(thread_host_count++);
 
+  thread_host_ = std::make_shared<ThreadHost>();
   if (is_background_view) {
-    thread_host_ = {thread_label, ThreadHost::Type::UI};
+    *thread_host_ = {thread_label, ThreadHost::Type::UI};
   } else {
-    thread_host_ = {thread_label, ThreadHost::Type::UI |
+    *thread_host_ = {thread_label, ThreadHost::Type::UI |
                                       ThreadHost::Type::RASTER |
                                       ThreadHost::Type::IO};
   }
@@ -82,14 +87,14 @@ AndroidShellHolder::AndroidShellHolder(
   fml::RefPtr<fml::TaskRunner> platform_runner =
       fml::MessageLoop::GetCurrent().GetTaskRunner();
   if (is_background_view) {
-    auto single_task_runner = thread_host_.ui_thread->GetTaskRunner();
+    auto single_task_runner = thread_host_->ui_thread->GetTaskRunner();
     raster_runner = single_task_runner;
     ui_runner = single_task_runner;
     io_runner = single_task_runner;
   } else {
-    raster_runner = thread_host_.raster_thread->GetTaskRunner();
-    ui_runner = thread_host_.ui_thread->GetTaskRunner();
-    io_runner = thread_host_.io_thread->GetTaskRunner();
+    raster_runner = thread_host_->raster_thread->GetTaskRunner();
+    ui_runner = thread_host_->ui_thread->GetTaskRunner();
+    io_runner = thread_host_->io_thread->GetTaskRunner();
   }
 
   flutter::TaskRunners task_runners(thread_label,     // label
@@ -129,9 +134,25 @@ AndroidShellHolder::AndroidShellHolder(
   is_valid_ = shell_ != nullptr;
 }
 
+AndroidShellHolder::AndroidShellHolder(Settings settings,
+                     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+                     std::shared_ptr<ThreadHost> thread_host,
+                     std::unique_ptr<Shell> shell,
+                     fml::WeakPtr<PlatformViewAndroid> platform_view)
+                     : settings_(std::move(settings)),
+                       jni_facade_(jni_facade),
+                       platform_view_(platform_view),
+                       thread_host_(thread_host),
+                       shell_(std::move(shell)) {
+  FML_DCHECK(jni_facade);
+  FML_DCHECK(shell_);
+  FML_DCHECK(platform_view_);
+  is_valid_ = shell_ != nullptr;
+}
+
 AndroidShellHolder::~AndroidShellHolder() {
   shell_.reset();
-  thread_host_.Reset();
+  thread_host_->Reset();
 }
 
 bool AndroidShellHolder::IsValid() const {
@@ -140,6 +161,60 @@ bool AndroidShellHolder::IsValid() const {
 
 const flutter::Settings& AndroidShellHolder::GetSettings() const {
   return settings_;
+}
+
+std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
+  std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+  RunConfiguration configuration) const {
+  FML_DCHECK(shell_) << "A new Shell can only be spawned if the current Shell "
+                        "is properly constructed";
+
+  // Take the old Settings but overwrite the entrypoint components with the
+  // new parameter's.
+  Settings newSettings = GetSettings();
+  newSettings.advisory_script_uri = configuration.GetEntrypointLibrary();
+  newSettings.advisory_script_entrypoint = configuration.GetEntrypoint();
+
+  fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
+  PlatformViewAndroid* android_platform_view = platform_view_.get();
+  // There's some indirection with platform_view_ being a weak pointer but
+  // we just checked that the shell_ exists above and a valid shell is the
+  // owner of the platform view so this weak pointer always exists.
+  FML_DCHECK(android_platform_view);
+  std::shared_ptr<flutter::AndroidContext> android_context =
+      android_platform_view->GetAndroidContext();
+  FML_DCHECK(android_context);
+
+  // This is a synchronous call, so the captures don't have race checks.
+  Shell::CreateCallback<PlatformView> on_create_platform_view =
+      [&jni_facade, android_context, &weak_platform_view](Shell& shell) {
+        std::unique_ptr<PlatformViewAndroid> platform_view_android;
+        platform_view_android = std::make_unique<PlatformViewAndroid>(
+            shell,                   // delegate
+            shell.GetTaskRunners(),  // task runners
+            jni_facade,              // JNI interop
+            shell.GetSettings()
+                .enable_software_rendering  // use software rendering
+        );
+        weak_platform_view = platform_view_android->GetWeakPtr();
+        shell.OnDisplayUpdates(DisplayUpdateType::kStartup,
+                               {Display(jni_facade->GetDisplayRefreshRate())});
+        return platform_view_android;
+      };
+
+  Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
+    return std::make_unique<Rasterizer>(shell);
+  };
+
+  std::unique_ptr<flutter::Shell> shell =
+      shell_->Spawn(std::move(newSettings), on_create_platform_view, on_create_rasterizer);
+
+  return AndroidShellHolder(
+    newSettings,
+    jni_facade,
+    thread_host_,
+    shell,
+    weak_platform_view);
 }
 
 void AndroidShellHolder::Launch(RunConfiguration config) {

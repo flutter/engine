@@ -63,11 +63,11 @@ PlatformViewAndroid::PlatformViewAndroid(
       platform_view_android_delegate_(jni_facade) {
   if (use_software_rendering) {
     android_context_ =
-        std::make_unique<AndroidContext>(AndroidRenderingAPI::kSoftware);
+        std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   } else {
 #if SHELL_ENABLE_VULKAN
     android_context_ =
-        std::make_unique<AndroidContext>(AndroidRenderingAPI::kVulkan);
+        std::make_shared<AndroidContext>(AndroidRenderingAPI::kVulkan);
 #else   // SHELL_ENABLE_VULKAN
     android_context_ = std::make_unique<AndroidContextGL>(
         AndroidRenderingAPI::kOpenGLES,

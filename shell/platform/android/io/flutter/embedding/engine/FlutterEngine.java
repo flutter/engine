@@ -114,6 +114,12 @@ public class FlutterEngine {
           platformViewsController.onPreEngineRestart();
           restorationChannel.clearData();
         }
+
+        @Override
+        public void onEngineDestroy() {
+          // This inner implementation doesn't do anything since FlutterEngine sent this
+          // notification in the first place. It's meant for external listeners.
+        }
       };
 
   /**
@@ -382,6 +388,9 @@ public class FlutterEngine {
    */
   public void destroy() {
     Log.v(TAG, "Destroying.");
+    for (EngineLifecycleListener listener : engineLifecycleListeners) {
+      listener.onEngineDestroy();
+    }
     // The order that these things are destroyed is important.
     pluginRegistry.destroy();
     platformViewsController.onDetachedFromJNI();
@@ -567,5 +576,11 @@ public class FlutterEngine {
   public interface EngineLifecycleListener {
     /** Lifecycle callback invoked before a hot restart of the Flutter engine. */
     void onPreEngineRestart();
+    /**
+     * Lifecycle callback invoked before the Flutter engine is destroyed.
+     *
+     * For the duration of the call, the Flutter engine is still valid.
+     */
+    void onEngineDestroy();
   }
 }

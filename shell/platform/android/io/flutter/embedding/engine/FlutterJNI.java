@@ -28,6 +28,7 @@ import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+import io.flutter.util.Preconditions;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
 import java.nio.ByteBuffer;
@@ -104,19 +105,35 @@ public class FlutterJNI {
    *
    * <p>This must be called before any other native methods, and can be overridden by tests to avoid
    * loading native libraries.
+   *
+   * <p>This method should only be called once.
    */
   public void loadLibrary() {
+    if (loadLibraryCalled = true) {
+      Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
+    }
+
     System.loadLibrary("flutter");
+    loadLibraryCalled = true;
   }
+  private static boolean loadLibraryCalled = false;
 
   /**
    * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
    * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
    * noticeable time, but later calls will return a reference to the preexisting font manager.
+   *
+   * <p>This method should only be called once.
    */
   public void prefetchDefaultFontManager() {
+    if (prefetchDefaultFontManagerCalled = true) {
+      Log.w(TAG, "FlutterJNI.prefetchDefaultFontManager called more than once");
+    }
+
     FlutterJNI.nativePrefetchDefaultFontManager();
+    prefetchDefaultFontManagerCalled = true;
   }
+  private static boolean prefetchDefaultFontManagerCalled = false;
 
   /**
    * Perform one time initialization of the Dart VM and Flutter engine.
@@ -137,9 +154,15 @@ public class FlutterJNI {
       @NonNull String appStoragePath,
       @NonNull String engineCachesPath,
       long initTimeMillis) {
+    if (initCalled = true) {
+      Log.w(TAG, "FlutterJNI.init called more than once");
+    }
+
     FlutterJNI.nativeInit(
-        context, args, bundlePath, appStoragePath, engineCachesPath, initTimeMillis);
+    context, args, bundlePath, appStoragePath, engineCachesPath, initTimeMillis);
+    initCalled = true;
   }
+  private static boolean initCalled = false;
   // END methods related to FlutterLoader
 
   @Nullable private static AsyncWaitForVsyncDelegate asyncWaitForVsyncDelegate;
@@ -167,20 +190,35 @@ public class FlutterJNI {
   private native boolean nativeGetIsSoftwareRenderingEnabled();
 
   @UiThread
-  // TODO(mattcarroll): add javadocs
+  /**
+   * Checks launch settings for whether software rendering is requested.
+   *
+   * The value is the same per program.
+   */
   public boolean getIsSoftwareRenderingEnabled() {
     return nativeGetIsSoftwareRenderingEnabled();
   }
 
   @Nullable
-  // TODO(mattcarroll): add javadocs
+  /**
+   * Observatory URI for the VM instance.
+   *
+   * Its value is set by the native engine once
+   * {@link #init(Context, String[], String, String, String, long)} is run.
+   */
   public static String getObservatoryUri() {
     return observatoryUri;
   }
 
   public static void setRefreshRateFPS(float refreshRateFPS) {
+    if (setRefreshRateFPSCalled = true) {
+      Log.w(TAG, "FlutterJNI.setRefreshRateFPS called more than once");
+    }
+
     FlutterJNI.refreshRateFPS = refreshRateFPS;
+    setRefreshRateFPSCalled = true;
   }
+  private static boolean setRefreshRateFPSCalled = false;
 
   // TODO(mattcarroll): add javadocs
   public static void setAsyncWaitForVsyncDelegate(@Nullable AsyncWaitForVsyncDelegate delegate) {
@@ -219,6 +257,9 @@ public class FlutterJNI {
   public native boolean nativeFlutterTextUtilsIsRegionalIndicator(int codePoint);
 
   // ----- End Engine FlutterTextUtils Methods ----
+
+  // Below represents the stateful part of the FlutterJNI instances that aren't static per program.
+  // Conceptually, it represents a native shell instance.
 
   @Nullable private Long nativePlatformViewId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;
@@ -271,6 +312,36 @@ public class FlutterJNI {
   }
 
   private native long nativeAttach(@NonNull FlutterJNI flutterJNI, boolean isBackgroundView);
+
+  /**
+   * Spawns a new FlutterJNI instance from the current instance.
+   *
+   * This creates another native shell from the current shell. This causes the 2 shells to re-use
+   * some of the shared resources, reducing the total memory consumption versus creating a
+   * new FlutterJNI by calling its standard constructor.
+   *
+   * This can only be called once the current FlutterJNI instance is attached by calling
+   * {@link #attachToNative(boolean)}.
+   *
+   * Static methods that should be only called once such as
+   * {@link #init(Context, String[], String, String, String, long)} or
+   * {@link #setRefreshRateFPS(float)} shouldn't be called again on the spawned FlutterJNI instance.
+   */
+  @UiThread
+  public FlutterJNI spawn() {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    FlutterJNI spawnedJNI = new FlutterJNI();
+    spawnedJNI.nativePlatformViewId = nativeSpawn(this);
+    Preconditions.checkState(
+      spawnedJNI.nativePlatformViewId != null &&
+      spawnedJNI.nativePlatformViewId > 0,
+      "Failed to spawn new JNI connected shell from existing shell.");
+
+    return spawnedJNI;
+  }
+
+  private native long nativeSpawn(@NonNull FlutterJNI flutterJNI);
 
   /**
    * Detaches this {@code FlutterJNI} instance from Flutter's native engine, which precludes any

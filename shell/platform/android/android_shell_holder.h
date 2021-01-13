@@ -19,15 +19,63 @@
 
 namespace flutter {
 
+  //----------------------------------------------------------------------------
+  /// @brief      This is the Android owner of the core engine Shell.
+  ///
+  ///             This is the top orchestrator class on the C++ side for the
+  ///             Android embedding. It corresponds to a FlutterEngine on the
+  ///             Java side. This class is in C++ because the core Shell is in
+  ///             C++ and an Android specific orchestrator needs to exist to
+  ///             compose it with other Android specific components such as
+  ///             the PlatformViewAndroid. This composition of many to one
+  ///             C++ components would be difficult to do through JNI whereas
+  ///             a FlutterEngine and AndroidShellHolder has a 1:1 relationship.
+  ///
+  ///             Technically, the FlutterJNI class owns this AndroidShellHolder
+  ///             class instance, but the FlutterJNI class is meant to be mostly
+  ///             static and has minimal state to perform the C++ pointer <->
+  ///             Java class instance translation.
+  ///
 class AndroidShellHolder {
  public:
   AndroidShellHolder(flutter::Settings settings,
                      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
                      bool is_background_view);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Constructor with its components injected.
+  ///
+  ///             This is similar to the standard constructor, except its
+  ///             members were constructed elsewhere and injected.
+  ///
+  AndroidShellHolder(flutter::Settings settings,
+                     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+                     std::shared_ptr<ThreadHost> thread_host,
+                     std::unique_ptr<Shell> shell,
+                     fml::WeakPtr<PlatformViewAndroid>);
+
   ~AndroidShellHolder();
 
   bool IsValid() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      This is a factory for a derived AndroidShellHolder from an
+  ///             existing AndroidShellHolder.
+  ///
+  ///             The new and existing AndroidShellHolder and underlying
+  ///             Shells Creates one Shell from another Shell where the created Shell
+  ///             takes the opportunity to share any internal components it can.
+  ///             This results is a Shell that has a smaller startup time cost
+  ///             and a smaller memory footprint than an Shell created with a
+  ///             Create function.
+  ///
+  ///             The new Shell's flutter::Settings cannot be changed from that
+  ///             of the initial Shell. The RunConfiguration subcomponent can
+  ///             be changed however in the spawned Shell to run a different
+  ///             entrypoint than the existing shell.
+  ///
+  std::unique_ptr<AndroidShellHolder> Spawn(std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+                                            RunConfiguration configuration) const;
 
   void Launch(RunConfiguration configuration);
 
@@ -46,7 +94,7 @@ class AndroidShellHolder {
   const flutter::Settings settings_;
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
   fml::WeakPtr<PlatformViewAndroid> platform_view_;
-  ThreadHost thread_host_;
+  std::shared_ptr<ThreadHost> thread_host_;
   std::unique_ptr<Shell> shell_;
   bool is_valid_ = false;
   uint64_t next_pointer_flow_id_ = 0;
