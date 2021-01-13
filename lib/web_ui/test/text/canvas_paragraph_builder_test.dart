@@ -8,6 +8,9 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.iOs;
+
 String get defaultFontFamily {
   String fontFamily = canonicalizeFontFamily('Ahem')!;
   if (browserEngine == BrowserEngine.firefox) {
@@ -103,10 +106,15 @@ void testMain() async {
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.toPlainText(), 'Hello');
 
+    double expectedHeight = 14.0;
+    if (isIosSafari) {
+      // On iOS Safari, the height measurement is one extra pixel.
+      expectedHeight++;
+    }
     paragraph.layout(ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="$paragraphStyle overflow-y: hidden; height: 14px;">'
+      '<p style="$paragraphStyle overflow-y: hidden; height: ${expectedHeight}px;">'
       '<span style="$defaultColor $defaultFontSize $defaultFontFamily">'
       'Hello'
       '</span>'
@@ -124,10 +132,15 @@ void testMain() async {
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.toPlainText(), 'Hello');
 
+    double expectedHeight = 14.0;
+    if (isIosSafari) {
+      // On iOS Safari, the height measurement is one extra pixel.
+      expectedHeight++;
+    }
     paragraph.layout(ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="$paragraphStyle overflow: hidden; height: 14px; text-overflow: ellipsis;">'
+      '<p style="$paragraphStyle overflow: hidden; height: ${expectedHeight}px; text-overflow: ellipsis;">'
       '<span style="$defaultColor $defaultFontSize $defaultFontFamily">'
       'Hello'
       '</span>'
