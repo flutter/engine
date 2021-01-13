@@ -14,11 +14,13 @@
 static FlutterMetalTexture OnGetNextDrawable(FlutterEngine* engine,
                                              const FlutterFrameInfo* frameInfo) {
   CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
-  return [engine.metalRenderer createTextureForSize:size];
+  FlutterMetalRenderer* metalRenderer = (FlutterMetalRenderer*)engine.renderer;
+  return [metalRenderer createTextureForSize:size];
 }
 
 static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* texture) {
-  return [engine.metalRenderer present:texture->texture_id];
+  FlutterMetalRenderer* metalRenderer = (FlutterMetalRenderer*)engine.renderer;
+  return [metalRenderer present:texture->texture_id];
 }
 
 #pragma mark - FlutterMetalRenderer implementation

@@ -9,7 +9,9 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
@@ -276,9 +278,14 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)loadView {
   FlutterView* flutterView;
-  if (_engine.metalRenderer) {
-    id<MTLDevice> device = _engine.metalRenderer.device;
-    id<MTLCommandQueue> commandQueue = _engine.metalRenderer.commandQueue;
+  BOOL enableMetalRendering = NO;
+#ifdef SHELL_ENABLE_METAL
+  enableMetalRendering = YES;
+#endif
+  if (enableMetalRendering) {
+    FlutterMetalRenderer* metalRenderer = (FlutterMetalRenderer*)_engine.renderer;
+    id<MTLDevice> device = metalRenderer.device;
+    id<MTLCommandQueue> commandQueue = metalRenderer.commandQueue;
     if (!device || !commandQueue) {
       NSLog(@"Unable to create FlutterView; no MTLDevice or MTLCommandQueue available.");
       return;
@@ -287,7 +294,8 @@ static void CommonInit(FlutterViewController* controller) {
                                             commandQueue:commandQueue
                                          reshapeListener:self];
   } else {
-    NSOpenGLContext* mainContext = _engine.openGLRenderer.openGLContext;
+    FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)_engine.renderer;
+    NSOpenGLContext* mainContext = openGLRenderer.openGLContext;
     if (!mainContext) {
       NSLog(@"Unable to create FlutterView; no GL context available.");
       return;

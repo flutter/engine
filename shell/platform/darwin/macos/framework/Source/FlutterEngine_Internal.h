@@ -6,8 +6,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterEngine ()
@@ -18,16 +17,10 @@
 @property(nonatomic, readonly) BOOL running;
 
 /**
- * Provides the openGL renderer config needed to initialize the engine and also handles external
+ * Provides the renderer config needed to initialize the engine and also handles external
  * texture management.
  */
-@property(nonatomic, readonly, nullable) FlutterOpenGLRenderer* openGLRenderer;
-
-/**
- * Provides the metal renderer config needed to initialize the engine. When using metal rendering
- * external textures are not supported.
- */
-@property(nonatomic, readonly, nullable) FlutterMetalRenderer* metalRenderer;
+@property(nonatomic, readonly, nullable) id<FlutterRenderer> renderer;
 
 /**
  * Function pointers for interacting with the embedder.h API.

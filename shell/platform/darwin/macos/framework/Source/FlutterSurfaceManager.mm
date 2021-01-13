@@ -124,6 +124,7 @@ enum {
                              metalLayer:(nonnull CAMetalLayer*)layer {
   self = [super initWithLayer:layer contentTransform:CATransform3DIdentity];
   if (self) {
+    super.delegate = self;
     _device = device;
     _commandQueue = commandQueue;
   }

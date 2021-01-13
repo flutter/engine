@@ -53,10 +53,10 @@ source_set("flutter_framework_source") {
 
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
-    "framework/Source/FlutterBackingStoreData.h",
-    "framework/Source/FlutterBackingStoreData.mm",
     "framework/Source/FlutterBackingStore.h",
     "framework/Source/FlutterBackingStore.mm",
+    "framework/Source/FlutterBackingStoreData.h",
+    "framework/Source/FlutterBackingStoreData.mm",
     "framework/Source/FlutterDartProject.mm",
     "framework/Source/FlutterDartProject_Internal.h",
     "framework/Source/FlutterEngine.mm",
@@ -77,6 +77,7 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterMouseCursorPlugin.mm",
     "framework/Source/FlutterOpenGLRenderer.h",
     "framework/Source/FlutterOpenGLRenderer.mm",
+    "framework/Source/FlutterRenderer.h",
     "framework/Source/FlutterResizableBackingStoreProvider.h",
     "framework/Source/FlutterResizableBackingStoreProvider.mm",
     "framework/Source/FlutterResizeSynchronizer.h",

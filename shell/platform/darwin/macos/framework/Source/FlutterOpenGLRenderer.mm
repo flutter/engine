@@ -10,23 +10,28 @@
 #pragma mark - Static methods for openGL callbacks that require the engine.
 
 static bool OnMakeCurrent(FlutterEngine* engine) {
-  return [engine.openGLRenderer makeCurrent];
+  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  return [openGLRenderer makeCurrent];
 }
 
 static bool OnClearCurrent(FlutterEngine* engine) {
-  return [engine.openGLRenderer clearCurrent];
+  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  return [openGLRenderer clearCurrent];
 }
 
 static bool OnPresent(FlutterEngine* engine) {
-  return [engine.openGLRenderer glPresent];
+  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  return [openGLRenderer glPresent];
 }
 
 static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
-  return [engine.openGLRenderer fboForFrameInfo:info];
+  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  return [openGLRenderer fboForFrameInfo:info];
 }
 
 static bool OnMakeResourceCurrent(FlutterEngine* engine) {
-  return [engine.openGLRenderer makeResourceCurrent];
+  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  return [openGLRenderer makeResourceCurrent];
 }
 
 static bool OnAcquireExternalTexture(FlutterEngine* engine,
@@ -34,8 +39,9 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
                                      size_t width,
                                      size_t height,
                                      FlutterOpenGLTexture* openGlTexture) {
-  return [engine.openGLRenderer populateTextureWithIdentifier:textureIdentifier
-                                                openGLTexture:openGlTexture];
+  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  return [openGLRenderer populateTextureWithIdentifier:textureIdentifier
+                                         openGLTexture:openGlTexture];
 }
 
 #pragma mark - FlutterOpenGLRenderer implementation.
