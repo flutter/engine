@@ -51,7 +51,7 @@ TEST(FlutterMetalSurfaceManager, EnsureSizeUpdatesSize) {
   FlutterMetalSurfaceManager* surfaceManager = CreateSurfaceManager();
   CGSize size = CGSizeMake(100, 50);
   [surfaceManager ensureSurfaceSize:size];
-  id<MTLTexture> texture = [surfaceManager renderBufferDescriptor].metalTexture;
+  id<MTLTexture> texture = ((FlutterMetalRenderBackingStore*)[surfaceManager renderBuffer]).texture;
   CGSize textureSize = CGSizeMake(texture.width, texture.height);
   ASSERT_TRUE(CGSizeEqualToSize(size, textureSize));
 }
@@ -61,7 +61,7 @@ TEST(FlutterMetalSurfaceManager, EnsureSizeUpdatesSizeForBackBuffer) {
   CGSize size = CGSizeMake(100, 50);
   [surfaceManager ensureSurfaceSize:size];
   [surfaceManager swapBuffers];
-  id<MTLTexture> texture = [surfaceManager renderBufferDescriptor].metalTexture;
+  id<MTLTexture> texture = ((FlutterMetalRenderBackingStore*)[surfaceManager renderBuffer]).texture;
   CGSize textureSize = CGSizeMake(texture.width, texture.height);
   ASSERT_TRUE(CGSizeEqualToSize(size, textureSize));
 }

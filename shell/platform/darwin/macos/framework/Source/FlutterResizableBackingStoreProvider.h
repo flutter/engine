@@ -6,7 +6,7 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 
 /**
@@ -20,9 +20,9 @@
 - (void)onBackingStoreResized:(CGSize)size;
 
 /**
- * Returns the FlutterBackingStoreDescriptor corresponding to the latest size.
+ * Returns the FlutterBackingStore corresponding to the latest size.
  */
-- (nonnull FlutterBackingStoreDescriptor*)backingStoreDescriptor;
+- (nonnull FlutterRenderBackingStore*)backingStore;
 
 @end
 

@@ -62,9 +62,9 @@ enum {
   [_delegate onSwapBuffers];
 }
 
-- (nonnull FlutterBackingStoreDescriptor*)renderBufferDescriptor {
+- (nonnull FlutterRenderBackingStore*)renderBuffer {
   @throw([NSException exceptionWithName:@"Sub-classes FlutterIOSurfaceManager of"
-                                         " must override renderBufferDescriptor."
+                                         " must override renderBuffer."
                                  reason:nil
                                userInfo:nil]);
 }
@@ -91,9 +91,9 @@ enum {
   return self;
 }
 
-- (FlutterBackingStoreDescriptor*)renderBufferDescriptor {
+- (FlutterRenderBackingStore*)renderBuffer {
   uint32_t fboID = [_frameBuffers[kFlutterSurfaceManagerBackBuffer] glFrameBufferId];
-  return [[FlutterBackingStoreDescriptor alloc] initOpenGLDescriptorWithFBOId:fboID];
+  return [[FlutterOpenGLRenderBackingStore alloc] initWithFrameBufferID:fboID];
 }
 
 - (void)onSwapBuffers {
@@ -130,9 +130,9 @@ enum {
   return self;
 }
 
-- (FlutterBackingStoreDescriptor*)renderBufferDescriptor {
+- (FlutterRenderBackingStore*)renderBuffer {
   id<MTLTexture> texture = _textures[kFlutterSurfaceManagerBackBuffer];
-  return [[FlutterBackingStoreDescriptor alloc] initMetalDescriptorWithTexture:texture];
+  return [[FlutterMetalRenderBackingStore alloc] initWithTexture:texture];
 }
 
 - (void)onSwapBuffers {

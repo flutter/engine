@@ -29,8 +29,8 @@
   [_surfaceManager ensureSurfaceSize:size];
 }
 
-- (FlutterBackingStoreDescriptor*)backingStoreDescriptor {
-  return [_surfaceManager renderBufferDescriptor];
+- (FlutterRenderBackingStore*)backingStore {
+  return [_surfaceManager renderBuffer];
 }
 
 - (void)resizeSynchronizerFlush:(nonnull FlutterResizeSynchronizer*)synchronizer {
@@ -73,8 +73,8 @@
   [_surfaceManager ensureSurfaceSize:size];
 }
 
-- (FlutterBackingStoreDescriptor*)backingStoreDescriptor {
-  return [_surfaceManager renderBufferDescriptor];
+- (FlutterRenderBackingStore*)backingStore {
+  return [_surfaceManager renderBuffer];
 }
 
 - (void)resizeSynchronizerFlush:(nonnull FlutterResizeSynchronizer*)synchronizer {

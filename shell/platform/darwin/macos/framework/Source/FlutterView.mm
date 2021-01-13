@@ -69,11 +69,11 @@
   return self;
 }
 
-- (FlutterBackingStoreDescriptor*)backingStoreForSize:(CGSize)size {
+- (FlutterRenderBackingStore*)backingStoreForSize:(CGSize)size {
   if ([_resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
     [_resizableBackingStoreProvider onBackingStoreResized:size];
   }
-  return [_resizableBackingStoreProvider backingStoreDescriptor];
+  return [_resizableBackingStoreProvider backingStore];
 }
 
 - (void)present {

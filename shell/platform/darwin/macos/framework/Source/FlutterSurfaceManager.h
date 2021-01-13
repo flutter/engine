@@ -5,7 +5,7 @@
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/CAMetalLayer.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreDescriptor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h"
 
 /**
@@ -27,7 +27,7 @@
 /**
  * Returns the backing store for the back buffer.
  */
-- (nonnull FlutterBackingStoreDescriptor*)renderBufferDescriptor;
+- (nonnull FlutterRenderBackingStore*)renderBuffer;
 
 @end
 

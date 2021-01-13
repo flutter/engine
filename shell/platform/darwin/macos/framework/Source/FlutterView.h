@@ -54,6 +54,6 @@
  * Ensures that a backing store with requested size exists and returns the descriptor. Expected to
  * be called on raster thread.
  */
-- (nonnull FlutterBackingStoreDescriptor*)backingStoreForSize:(CGSize)size;
+- (nonnull FlutterRenderBackingStore*)backingStoreForSize:(CGSize)size;
 
 @end

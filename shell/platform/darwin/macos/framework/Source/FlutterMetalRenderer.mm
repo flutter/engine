@@ -70,12 +70,13 @@ static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* 
 #pragma mark - Embedder callback implementations.
 
 - (FlutterMetalTexture)createTextureForSize:(CGSize)size {
-  FlutterBackingStoreDescriptor* backingStore = [_flutterView backingStoreForSize:size];
-  id<MTLTexture> mtlTexture = [backingStore metalTexture];
+  FlutterMetalRenderBackingStore* backingStore =
+      (FlutterMetalRenderBackingStore*)[_flutterView backingStoreForSize:size];
+  id<MTLTexture> texture = backingStore.texture;
   FlutterMetalTexture embedderTexture;
   embedderTexture.struct_size = sizeof(FlutterMetalTexture);
-  embedderTexture.texture = (__bridge void*)mtlTexture;
-  embedderTexture.texture_id = reinterpret_cast<int64_t>(mtlTexture);
+  embedderTexture.texture = (__bridge void*)texture;
+  embedderTexture.texture_id = reinterpret_cast<int64_t>(texture);
   return embedderTexture;
 }
 
