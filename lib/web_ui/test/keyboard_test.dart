@@ -6,6 +6,7 @@
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
+import 'dart:convert' hide Codec;
 
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
@@ -15,6 +16,14 @@ import 'package:ui/ui.dart' as ui;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
+}
+
+ByteData _toByteData(List<int> bytes) {
+  final ByteData byteData = ByteData(bytes.length);
+  for (int i = 0; i < bytes.length; i++) {
+    byteData.setUint8(i, bytes[i]);
+  }
+  return byteData;
 }
 
 void testMain() {
@@ -226,13 +235,23 @@ void testMain() {
       expect(count, 2);
     });
 
-    test('prevents default when "Tab" is pressed', () {
+    test('prevents default when key is handled by the framework', () {
+      ByteData _toByteData(List<int> bytes) {
+        final ByteData byteData = ByteData(bytes.length);
+        for (int i = 0; i < bytes.length; i++) {
+          byteData.setUint8(i, bytes[i]);
+        }
+        return byteData;
+      }
+
       Keyboard.initialize();
 
       int count = 0;
       ui.window.onPlatformMessage = (String channel, ByteData data,
           ui.PlatformMessageResponseCallback callback) {
         count += 1;
+        ByteData response = _toByteData(utf8.encode(json.encode(<String, dynamic>{'handled': true})));
+        callback(response);
       };
 
       final html.KeyboardEvent event = dispatchKeyboardEvent(
@@ -242,6 +261,29 @@ void testMain() {
       );
 
       expect(event.defaultPrevented, isTrue);
+      expect(count, 1);
+
+      Keyboard.instance.dispose();
+    });
+
+    test("Doesn't prevent default when key is not handled by the framework", () {
+      Keyboard.initialize();
+
+      int count = 0;
+      ui.window.onPlatformMessage = (String channel, ByteData data,
+          ui.PlatformMessageResponseCallback callback) {
+        count += 1;
+        ByteData response = _toByteData(utf8.encode(json.encode(<String, dynamic>{'handled': false})));
+        callback(response);
+      };
+
+      final html.KeyboardEvent event = dispatchKeyboardEvent(
+        'keydown',
+        key: 'Tab',
+        code: 'Tab',
+      );
+
+      expect(event.defaultPrevented, isFalse);
       expect(count, 1);
 
       Keyboard.instance.dispose();
@@ -278,6 +320,8 @@ void testMain() {
       ui.window.onPlatformMessage = (String channel, ByteData data,
           ui.PlatformMessageResponseCallback callback) {
         count += 1;
+        ByteData response = _toByteData(utf8.encode(json.encode(<String, dynamic>{'handled': true})));
+        callback(response);
       };
 
       useTextEditingElement((html.Element element) {
