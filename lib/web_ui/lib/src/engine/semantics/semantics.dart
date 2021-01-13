@@ -853,8 +853,10 @@ class SemanticsObject {
         hasIdentityTransform &&
         verticalContainerAdjustment == 0.0 &&
         horizontalContainerAdjustment == 0.0) {
-      _resetElementOffsets();
-      _resetContainerOffsets(containerElement);
+      _resetElementOffsets(element);
+      if (containerElement != null) {
+        _resetElementOffsets(containerElement);
+      }
       return;
     }
 
@@ -913,7 +915,7 @@ class SemanticsObject {
           ..height = '${rect.height}px';
       }
     } else {
-      _resetElementOffsets();
+      _resetElementOffsets(element);
       // TODO: https://github.com/flutter/flutter/issues/73347
     }
 
@@ -934,42 +936,16 @@ class SemanticsObject {
             ..left = '${translateX}px';
         }
       } else {
-        _resetContainerOffsets(containerElement);
+        if (containerElement != null) {
+          _resetElementOffsets(containerElement);
+        }
       }
     }
   }
 
   // On Mac OS and iOS, VoiceOver requires left=0 top=0 value to correctly
   // handle order. See https://github.com/flutter/flutter/issues/73347.
-  void _resetContainerOffsets(html.Element? containerElement) {
-    if (isMacOrIOS) {
-      if (containerElement != null) {
-        if (isDesktop) {
-          containerElement.style
-            ..transformOrigin = '0 0 0'
-            ..transform = 'translate(0px, 0px)';
-        } else {
-          containerElement.style
-            ..top = '0px'
-            ..left = '0px';
-        }
-      }
-    } else {
-      if (containerElement != null) {
-        if (isDesktop) {
-          containerElement.style
-            ..removeProperty('transform-origin')
-            ..removeProperty('transform');
-        } else {
-          containerElement.style
-            ..removeProperty('top')
-            ..removeProperty('left');
-        }
-      }
-    }
-  }
-
-  void _resetElementOffsets() {
+  static void _resetElementOffsets(html.Element element) {
     if (isMacOrIOS) {
       if (isDesktop) {
         element.style
