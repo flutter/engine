@@ -8,11 +8,18 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+String get defaultFontFamily {
+  String fontFamily = canonicalizeFontFamily('Ahem')!;
+  if (browserEngine == BrowserEngine.firefox) {
+    fontFamily = fontFamily.replaceAll('"', '&quot;');
+  } else if (browserEngine == BrowserEngine.blink || browserEngine == BrowserEngine.webkit) {
+    fontFamily = fontFamily.replaceAll('"', '');
+  }
+  return 'font-family: $fontFamily;';
+}
 const String defaultColor = 'color: rgb(255, 0, 0);';
-const String defaultFontFamily =
-    'font-family: Ahem, -apple-system, BlinkMacSystemFont, sans-serif;';
 const String defaultFontSize = 'font-size: 14px;';
-const String paragraphStyle =
+final String paragraphStyle =
     '$defaultFontFamily position: absolute; white-space: pre;';
 
 void main() {
@@ -197,7 +204,7 @@ void testMain() async {
     );
 
     // Should break "Hello world" into "Hello" and " world".
-    paragraph.layout(ParagraphConstraints(width: 65.0));
+    paragraph.layout(ParagraphConstraints(width: 70.0));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="font-size: 13px; $paragraphStyle">'
