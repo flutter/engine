@@ -655,7 +655,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
     [self surfaceUpdated:YES];
   }
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
-  [[_engine.get() restorationPlugin] restorationComplete];
+  [[_engine.get() restorationPlugin] markRestorationComplete];
 
   [super viewWillAppear:animated];
 }
@@ -1533,7 +1533,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)decodeRestorableStateWithCoder:(NSCoder*)coder {
   NSData* restorationData = [coder decodeDataObject];
-  [[_engine.get() restorationPlugin] restorationData:restorationData];
+  [[_engine.get() restorationPlugin] setRestorationData:restorationData];
 }
 
 - (FlutterRestorationPlugin*)restorationPlugin {

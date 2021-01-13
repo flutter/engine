@@ -49,7 +49,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertNil(capturedResult);
 
   NSData* data = [@"testrestortiondata" dataUsingEncoding:NSUTF8StringEncoding];
-  [restorationPlugin restorationData:data];
+  [restorationPlugin setRestorationData:data];
   XCTAssertEqual([capturedResult count], 2u);
   XCTAssertEqual([capturedResult objectForKey:@"enabled"], @YES);
   XCTAssertEqual([[capturedResult objectForKey:@"data"] data], data);
@@ -74,7 +74,7 @@ FLUTTER_ASSERT_ARC
       [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
 
   NSData* data = [@"testrestortiondata" dataUsingEncoding:NSUTF8StringEncoding];
-  [restorationPlugin restorationData:data];
+  [restorationPlugin setRestorationData:data];
 
   __block id capturedResult;
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"get" arguments:nil];
@@ -99,7 +99,7 @@ FLUTTER_ASSERT_ARC
                                }];
   XCTAssertNil(capturedResult);
 
-  [restorationPlugin restorationComplete];
+  [restorationPlugin markRestorationComplete];
   XCTAssertEqual([capturedResult count], 1u);
   XCTAssertEqual([capturedResult objectForKey:@"enabled"], @YES);
 }
@@ -108,7 +108,7 @@ FLUTTER_ASSERT_ARC
   FlutterRestorationPlugin* restorationPlugin =
       [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
 
-  [restorationPlugin restorationComplete];
+  [restorationPlugin markRestorationComplete];
 
   __block id capturedResult;
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"get" arguments:nil];
@@ -123,7 +123,7 @@ FLUTTER_ASSERT_ARC
 - (void)testReturnsDataSetByFramework {
   FlutterRestorationPlugin* restorationPlugin =
       [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
-  [restorationPlugin restorationComplete];
+  [restorationPlugin markRestorationComplete];
 
   NSData* data = [@"testrestortiondata" dataUsingEncoding:NSUTF8StringEncoding];
   FlutterMethodCall* methodCall = [FlutterMethodCall
@@ -139,7 +139,7 @@ FLUTTER_ASSERT_ARC
 - (void)testRespondsWithDataSetByFramework {
   FlutterRestorationPlugin* restorationPlugin =
       [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
-  [restorationPlugin restorationComplete];
+  [restorationPlugin markRestorationComplete];
 
   NSData* data = [@"testrestortiondata" dataUsingEncoding:NSUTF8StringEncoding];
   FlutterMethodCall* methodCall = [FlutterMethodCall
@@ -165,7 +165,7 @@ FLUTTER_ASSERT_ARC
 - (void)testResetClearsData {
   FlutterRestorationPlugin* restorationPlugin =
       [[FlutterRestorationPlugin alloc] initWithChannel:restorationChannel restorationEnabled:YES];
-  [restorationPlugin restorationComplete];
+  [restorationPlugin markRestorationComplete];
 
   NSData* data = [@"testrestortiondata" dataUsingEncoding:NSUTF8StringEncoding];
   FlutterMethodCall* methodCall = [FlutterMethodCall

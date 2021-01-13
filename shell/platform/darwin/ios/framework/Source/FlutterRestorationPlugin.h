@@ -7,7 +7,6 @@
 
 #import <UIKit/UIKit.h>
 
-#include "flutter/fml/memory/weak_ptr.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
 @interface FlutterRestorationPlugin : NSObject
@@ -16,9 +15,9 @@
 - (instancetype)initWithChannel:(FlutterMethodChannel*)channel
              restorationEnabled:(BOOL)waitForData NS_DESIGNATED_INITIALIZER;
 
-- (NSData*)restorationData;
-- (void)restorationData:(NSData*)data;
-- (void)restorationComplete;
+
+@property(nonatomic, retain) NSData* restorationData;
+- (void)markRestorationComplete;
 - (void)reset;
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERRESTORATIONPLUGIN_H_

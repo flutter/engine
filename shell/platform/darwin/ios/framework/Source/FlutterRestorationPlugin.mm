@@ -9,11 +9,12 @@
 
 #include "flutter/fml/logging.h"
 
+FLUTTER_ASSERT_NOT_ARC
+
 @implementation FlutterRestorationPlugin {
   BOOL _waitForData;
   BOOL _restorationEnabled;
   FlutterResult _pendingRequest;
-  NSData* _restorationData;
 }
 
 - (instancetype)init {
@@ -40,11 +41,7 @@
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"put"]) {
     FlutterStandardTypedData* data = [call arguments];
-    NSData* newData = [[data data] retain];
-    if (_restorationData != nil) {
-      [_restorationData release];
-    }
-    _restorationData = newData;
+    _restorationData = [data data];
     result(nil);
   } else if ([[call method] isEqualToString:@"get"]) {
     if (!_restorationEnabled || !_waitForData) {
@@ -57,16 +54,8 @@
   }
 }
 
-- (NSData*)restorationData {
-  return _restorationData;
-}
-
-- (void)restorationData:(NSData*)data {
-  NSData* newData = [data retain];
-  if (_restorationData != nil) {
-    [_restorationData release];
-  }
-  _restorationData = newData;
+- (void)setRestorationData:(NSData*)data {
+  _restorationData = data;
   _waitForData = NO;
   if (_pendingRequest != nil) {
     _pendingRequest([self dataForFramework]);
@@ -75,7 +64,7 @@
   }
 }
 
-- (void)restorationComplete {
+- (void)markRestorationComplete {
   _waitForData = NO;
   if (_pendingRequest != nil) {
     NSAssert(_restorationEnabled, @"No request can be pending when restoration is disabled.");
@@ -86,9 +75,6 @@
 }
 
 - (void)reset {
-  if (_restorationData != nil) {
-    [_restorationData release];
-  }
   _restorationData = nil;
   if (_pendingRequest != nil) {
     [_pendingRequest release];
@@ -107,6 +93,16 @@
     @"enabled" : @YES,
     @"data" : [FlutterStandardTypedData typedDataWithBytes:_restorationData]
   };
+}
+
+-(void)dealloc {
+  if (_restorationData != nil) {
+    [_restorationData release];
+  }
+  if (_pendingRequest != nil) {
+    [_pendingRequest release];
+  }
+  [super dealloc];
 }
 
 @end

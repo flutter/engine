@@ -14,6 +14,7 @@
 static NSString* kUIBackgroundMode = @"UIBackgroundModes";
 static NSString* kRemoteNotificationCapabitiliy = @"remote-notification";
 static NSString* kBackgroundFetchCapatibility = @"fetch";
+static NSString* kRestorationStateAppModificationKey = @"mod-date";
 
 @interface FlutterAppDelegate ()
 @property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
@@ -311,23 +312,23 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
 #pragma mark - State Restoration
 
 - (BOOL)application:(UIApplication*)application shouldSaveApplicationState:(NSCoder*)coder {
-  [coder encodeInt64:self.lastAppModificationTime forKey:@"mod-date"];
+  [coder encodeInt64:self.lastAppModificationTime forKey:kRestorationStateAppModificationKey];
   return YES;
 }
 
 - (BOOL)application:(UIApplication*)application shouldRestoreApplicationState:(NSCoder*)coder {
-  int64_t stateDate = [coder decodeInt64ForKey:@"mod-date"];
+  int64_t stateDate = [coder decodeInt64ForKey:kRestorationStateAppModificationKey];
   return self.lastAppModificationTime == stateDate;
 }
 
 - (BOOL)application:(UIApplication*)application shouldSaveSecureApplicationState:(NSCoder*)coder {
-  [coder encodeInt64:self.lastAppModificationTime forKey:@"mod-date"];
+  [coder encodeInt64:self.lastAppModificationTime forKey:kRestorationStateAppModificationKey];
   return YES;
 }
 
 - (BOOL)application:(UIApplication*)application
     shouldRestoreSecureApplicationState:(NSCoder*)coder {
-  int64_t stateDate = [coder decodeInt64ForKey:@"mod-date"];
+  int64_t stateDate = [coder decodeInt64ForKey:kRestorationStateAppModificationKey];
   return self.lastAppModificationTime == stateDate;
 }
 
