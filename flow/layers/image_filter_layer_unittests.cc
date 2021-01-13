@@ -8,7 +8,7 @@
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
-#include "third_party/skia/include/core/SkImageFilter.h"
+#include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
 namespace testing {
