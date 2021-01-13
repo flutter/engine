@@ -1,4 +1,4 @@
-Signature: 08ddd0c49dbfdd8018be56a7f0161178
+Signature: aeef0817a269e571e366a8f3518f6483
 
 UNUSED LICENSES:
 
@@ -5940,6 +5940,8 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/colorspace.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/colorspace.cpp
+FILE: ../../../third_party/skia/modules/svg/include/SkSVGMask.h
+FILE: ../../../third_party/skia/modules/svg/src/SkSVGMask.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google Inc.
 

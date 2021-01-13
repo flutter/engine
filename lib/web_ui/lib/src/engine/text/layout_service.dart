@@ -71,6 +71,10 @@ class TextLayoutService {
     didExceedMaxLines = false;
     lines.clear();
 
+    if (spanCount == 0) {
+      return;
+    }
+
     final Spanometer spanometer = Spanometer(paragraph, context);
 
     int spanIndex = 0;
@@ -485,6 +489,13 @@ class SpanBox extends RangeBox {
   /// [endIndex].
   bool overlapsWith(int startIndex, int endIndex) {
     return startIndex < this.end.index && this.start.index < endIndex;
+  }
+
+  /// Returns the substring of the paragraph that's represented by this box.
+  ///
+  /// Trailing newlines are omitted, if any.
+  String toText() {
+    return spanometer.paragraph.toPlainText().substring(start.index, end.indexWithoutTrailingNewlines);
   }
 
   /// Returns a [ui.TextBox] representing this range box in the given [line].
