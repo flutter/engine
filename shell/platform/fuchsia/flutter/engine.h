@@ -16,7 +16,7 @@
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/zx/event.h>
 
-#include "flow/embedded_views.h"
+#include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
@@ -52,7 +52,6 @@ class Engine final {
          std::shared_ptr<sys::ServiceDirectory> svc,
          std::shared_ptr<sys::ServiceDirectory> runner_services,
          flutter::Settings settings,
-         fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
          fuchsia::ui::views::ViewToken view_token,
          scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
@@ -114,6 +113,8 @@ class Engine final {
   std::unique_ptr<flutter::Surface> CreateSurface();
 
   friend class testing::EngineTest;
+
+  fidl::InterfacePtr<fuchsia::ui::input3::Keyboard> keyboard_svc_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };

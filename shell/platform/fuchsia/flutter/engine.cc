@@ -7,8 +7,6 @@
 #include <lib/async/cpp/task.h>
 #include <zircon/status.h>
 
-#include "../runtime/dart/utils/files.h"
-#include "flow/embedded_views.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/make_copyable.h"
@@ -18,16 +16,15 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/serialization_callbacks.h"
-#include "flutter_runner_product_configuration.h"
-#include "fuchsia_external_view_embedder.h"
+#include "third_party/skia/include/core/SkPicture.h"
+#include "third_party/skia/include/core/SkSerialProcs.h"
+#include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
+
+#include "../runtime/dart/utils/files.h"
 #include "fuchsia_intl.h"
-#include "include/core/SkPicture.h"
-#include "include/core/SkSerialProcs.h"
 #include "platform_view.h"
 #include "surface.h"
 #include "task_runner_adapter.h"
-#include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
-#include "thread.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 #include "compositor_context.h"  // nogncheck
@@ -67,7 +64,6 @@ Engine::Engine(Delegate& delegate,
                std::shared_ptr<sys::ServiceDirectory> svc,
                std::shared_ptr<sys::ServiceDirectory> runner_services,
                flutter::Settings settings,
-               fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
                fuchsia::ui::views::ViewToken view_token,
                scenic::ViewRefPair view_ref_pair,
                UniqueFDIONS fdio_ns,
@@ -105,10 +101,16 @@ Engine::Engine(Delegate& delegate,
   scenic->CreateSession2(session.NewRequest(), session_listener.Bind(),
                          focuser.NewRequest());
 
-  // Make clones of the `ViewRef` before sending it down to Scenic.
-  fuchsia::ui::views::ViewRef platform_view_ref, isolate_view_ref;
+  // Make clones of the `ViewRef` before sending it down to Scenic, since the
+  // refs are not copyable, and multiple consumers need view refs.
+  fuchsia::ui::views::ViewRef platform_view_ref;
   view_ref_pair.view_ref.Clone(&platform_view_ref);
+  fuchsia::ui::views::ViewRef isolate_view_ref;
   view_ref_pair.view_ref.Clone(&isolate_view_ref);
+  // Input3 keyboard listener registration requires a ViewRef as an event
+  // filter. So we clone it here, as ViewRefs can not be reused, only cloned.
+  fuchsia::ui::views::ViewRef keyboard_view_ref;
+  view_ref_pair.view_ref.Clone(&keyboard_view_ref);
 
   // Session is terminated on the raster thread, but we must terminate ourselves
   // on the platform thread.
@@ -207,6 +209,26 @@ Engine::Engine(Delegate& delegate,
   auto run_configuration = flutter::RunConfiguration::InferFromSettings(
       settings, task_runners.GetIOTaskRunner());
 
+  // Connect to fuchsia.ui.input3.Keyboard to hand out a listener.
+  using fuchsia::ui::input3::Keyboard;
+  using fuchsia::ui::input3::KeyboardListener;
+
+  // Keyboard client-side stub.
+  keyboard_svc_ = svc->Connect<Keyboard>();
+  ZX_ASSERT(keyboard_svc_.is_bound());
+  // KeyboardListener handle pair is not initialized until NewRequest() is
+  // called.
+  fidl::InterfaceHandle<KeyboardListener> keyboard_listener;
+
+  // Server side of KeyboardListener.  Initializes the keyboard_listener
+  // handle.
+  fidl::InterfaceRequest<KeyboardListener> keyboard_listener_request =
+      keyboard_listener.NewRequest();
+  ZX_ASSERT(keyboard_listener_request.is_valid());
+
+  keyboard_svc_->AddListener(std::move(keyboard_view_ref),
+                             keyboard_listener.Bind(), [] {});
+
   // Setup the callback that will instantiate the platform view.
   flutter::Shell::CreateCallback<flutter::PlatformView>
       on_create_platform_view = fml::MakeCopyable(
@@ -226,7 +248,9 @@ Engine::Engine(Delegate& delegate,
            on_create_surface_callback = std::move(on_create_surface_callback),
            external_view_embedder = GetExternalViewEmbedder(),
            vsync_offset = product_config.get_vsync_offset(),
-           vsync_handle = vsync_event_.get()](flutter::Shell& shell) mutable {
+           vsync_handle = vsync_event_.get(),
+           keyboard_listener_request = std::move(keyboard_listener_request)](
+              flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
                 shell,                   // delegate
                 debug_label,             // debug label
@@ -236,6 +260,9 @@ Engine::Engine(Delegate& delegate,
                 std::move(parent_environment_service_provider),  // services
                 std::move(session_listener_request),  // session listener
                 std::move(focuser),
+                // Server-side part of the fuchsia.ui.input3.KeyboardListener
+                // connection.
+                std::move(keyboard_listener_request),
                 std::move(on_session_listener_error_callback),
                 std::move(on_enable_wireframe_callback),
                 std::move(on_create_view_callback),
@@ -310,22 +337,14 @@ Engine::Engine(Delegate& delegate,
         });
       });
 
-  auto vm = flutter::DartVMRef::Create(settings);
-
-  if (!isolate_snapshot) {
-    isolate_snapshot = vm->GetVMData()->GetIsolateSnapshot();
-  }
-
   {
     TRACE_EVENT0("flutter", "CreateShell");
     shell_ = flutter::Shell::Create(
         std::move(task_runners),             // host task runners
         flutter::PlatformData(),             // default window data
         std::move(settings),                 // shell launch settings
-        std::move(isolate_snapshot),         // isolate snapshot
         std::move(on_create_platform_view),  // platform view create callback
-        std::move(on_create_rasterizer),     // rasterizer create callback
-        std::move(vm)                        // vm reference
+        std::move(on_create_rasterizer)      // rasterizer create callback
     );
   }
 

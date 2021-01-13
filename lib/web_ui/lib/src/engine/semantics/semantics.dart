@@ -582,6 +582,8 @@ class SemanticsObject {
       hasAction(ui.SemanticsAction.scrollDown) ||
       hasAction(ui.SemanticsAction.scrollUp);
 
+  bool get hasFocus => hasFlag(ui.SemanticsFlag.isFocused);
+
   /// Whether this object represents a hotizontally scrollable area.
   bool get isHorizontalScrollContainer =>
       hasAction(ui.SemanticsAction.scrollLeft) ||
@@ -925,6 +927,7 @@ class SemanticsObject {
           ..height = '${rect.height}px';
       }
     } else {
+      // TODO: https://github.com/flutter/flutter/issues/73347
       if (isDesktop) {
         element.style
           ..removeProperty('transform-origin')
