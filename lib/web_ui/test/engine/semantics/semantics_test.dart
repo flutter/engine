@@ -7,7 +7,6 @@
 
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:mockito/mockito.dart';
