@@ -95,7 +95,7 @@ FLUTTER_ASSERT_NOT_ARC
   };
 }
 
--(void)dealloc {
+- (void)dealloc {
   if (_restorationData != nil) {
     [_restorationData release];
   }
