@@ -8,6 +8,7 @@
 
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/thread_host.h"
+#include "flutter/testing/fixture_test.h"
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 #include "rapidjson/document.h"
@@ -96,7 +97,7 @@ fml::RefPtr<PlatformMessage> MakePlatformMessage(
   return message;
 }
 
-class EngineTest : public ::testing::Test {
+class EngineTest : public testing::FixtureTest {
  public:
   EngineTest()
       : thread_host_("EngineTest",
@@ -121,7 +122,7 @@ class EngineTest : public ::testing::Test {
 
  protected:
   void SetUp() override {
-    settings_.leak_vm = false;
+    settings_ = CreateSettingsForFixture();
     dispatcher_maker_ = [](PointerDataDispatcher::Delegate&) {
       return nullptr;
     };
