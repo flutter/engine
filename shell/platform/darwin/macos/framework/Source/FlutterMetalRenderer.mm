@@ -53,9 +53,6 @@ static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* 
   _flutterView = view;
 }
 
-/**
- * Creates a FlutterRendererConfig that renders using Metal.
- */
 - (FlutterRendererConfig)createRendererConfig {
   FlutterRendererConfig config = {
       .type = FlutterRendererType::kMetal,
@@ -93,16 +90,19 @@ static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* 
 #pragma mark - FlutterTextureRegistrar methods.
 
 - (int64_t)registerTexture:(id<FlutterTexture>)texture {
-  NSAssert(NO, @"External textures aren't supported when using Metal on macOS.");
+  NSAssert(NO, @"External textures aren't yet supported when using Metal on macOS."
+                " See: https://github.com/flutter/flutter/issues/73826");
   return 0;
 }
 
 - (void)textureFrameAvailable:(int64_t)textureID {
-  NSAssert(NO, @"External textures aren't supported when using Metal on macOS.");
+  NSAssert(NO, @"External textures aren't yet supported when using Metal on macOS."
+                " See: https://github.com/flutter/flutter/issues/73826");
 }
 
 - (void)unregisterTexture:(int64_t)textureID {
-  NSAssert(NO, @"External textures aren't supported when using Metal on macOS.");
+  NSAssert(NO, @"External textures aren't yet supported when using Metal on macOS."
+                " See: https://github.com/flutter/flutter/issues/73826");
 }
 
 @end

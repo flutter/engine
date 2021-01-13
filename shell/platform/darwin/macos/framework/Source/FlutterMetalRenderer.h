@@ -16,8 +16,14 @@
  */
 @interface FlutterMetalRenderer : NSObject <FlutterTextureRegistry>
 
+/**
+ * Interface to the system GPU. Used to issue all the rendering commands.
+ */
 @property(nonatomic, readonly, nonnull) id<MTLDevice> device;
 
+/**
+ * Used to get the command buffers for the MTLDevice to render to.
+ */
 @property(nonatomic, readonly, nonnull) id<MTLCommandQueue> commandQueue;
 
 /**
